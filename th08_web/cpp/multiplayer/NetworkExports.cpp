@@ -28,6 +28,16 @@ extern "C" __attribute__((export_name("multiplayer_network_poll")))
 u32 multiplayer_network_poll(BrowserRuntime* r){return r&&r->pump_network();}
 extern "C" __attribute__((export_name("multiplayer_network_error")))
 const char* multiplayer_network_error(BrowserRuntime* r){return r&&r->network_driver()?r->network_driver()->Error():"";}
+extern "C" __attribute__((export_name("multiplayer_progress")))
+const u32* multiplayer_progress(BrowserRuntime* r){
+    // Keep the published forward frontier distinct from the transient replay
+    // cursor. Hosts must not count historical recovery as new game progress.
+    static u32 words[6]{};std::fill(words,words+6,0);words[5]=Netplay::INVALID_FRAME;
+    if(!r)return words;const auto& net=r->app.session.netplay;
+    words[0]=net.PredictionFrontier();words[1]=net.NextFrame();words[2]=net.Correcting();words[5]=net.CorrectionEnd();
+    if(const auto* driver=r->network_driver()){words[3]=driver->CallbackYielded();words[4]=driver->CorrectionYields();}
+    return words;
+}
 extern "C" __attribute__((export_name("multiplayer_reconcile")))
 u32 multiplayer_reconcile(BrowserRuntime* r){return r&&r->network_driver()&&r->network_driver()->Reconcile();}
 extern "C" __attribute__((export_name("multiplayer_driver_status")))

@@ -104,7 +104,8 @@ public:
     bool finish_network_frame();
     bool connect_network(const char* relay);
     bool connect_spectator(const char* relay,const char* id);
-    bool pump_network();
+    bool pump_network(bool capture_follows=false);
+    bool flush_network_inputs();
     multiplayer::RollbackDriver* network_driver(){return multiplayer_driver.get();}
     void set_device_motion(i32 mode,float x,float y,bool touch,bool bomb){
         device_motion={};device_motion.touchUsed=touch;device_motion.touchBomb=bomb;
@@ -123,7 +124,7 @@ public:
     static std::string path(const char*);
     bool put(const char*,const u8*,u32);bool put_archive(const u8*,u32);bool put_font(i32,const u8*,u32);
     bool mount_archive(std::unique_ptr<ArchiveSource> source){return !prepared&&resources_.mount_archive(std::move(source));}
-    bool put_image(const char*,u32,u32,const u8*,u32);bool initialize();bool step(bool render=true);
+    bool put_image(const char*,u32,u32,const u8*,u32);bool initialize();bool step(bool render=true,double callback_start_ms=-1);
     bool prepare_loading();bool draw_loading(bool advance);
     const std::vector<ArchiveEntry>& resources()const{return resources_.contents();}
     bool native_fonts();

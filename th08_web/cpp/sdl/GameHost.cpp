@@ -68,6 +68,9 @@ multiplayer::NetworkFrameSchedule network_schedule;
 std::uint64_t network_session=0;
 u32 network_generation=0;
 bool network_identity_valid=false;
+touhou::input::TouchState forward_touch_state;
+int forward_touch_stage=-1;
+bool forward_interpolation_ready=false;
 #ifdef TH_MULTIPLAYER_FIXTURES
 bool fixture_full_hidden_draw=false;
 double fixture_cadence[8]{};
@@ -89,7 +92,7 @@ constexpr SDL_GamepadButton gamepad_slots[]={
 int gamepad_axis(SDL_GamepadAxis axis){const int value=SDL_GetGamepadAxis(gamepad,axis);return value<0?value*1000/32768:value*1000/32767;}
 constexpr const char* warmAnimations[]={"etama.anm","enemy.anm","front.anm","times.anm","stg1bg.anm","stg1enm.anm","eff01.anm","stg1txt.anm","stg2bg.anm","stg2enm.anm","eff02.anm","stg2txt.anm","player00.anm","player01.anm","player02.anm","player03.anm","staff01.anm"};
 constexpr u32 warmCount=sizeof(warmAnimations)/sizeof(*warmAnimations);
-touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;
+touhou::input::TouchState read_touch_state(){touhou::input::TouchState s;if(!runtime)return s;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     auto& a=runtime->app;auto& g=a.game;
     if(a.session.netplay.ReadOnly()){s.context=3;return s;}
@@ -113,16 +116,42 @@ touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)
     s.min_x=p.input.minimum.x;s.min_y=p.input.minimum.y;s.max_x=s.min_x+p.input.extent.x;s.max_y=s.min_y+p.input.extent.y;return s;
 #endif
 }
-int touch_stage(){return runtime&&runtime->app.in_game()?runtime->app.game.globals.stage:-1;}
+touhou::input::TouchState touch_state(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Physical events may arrive while the world is a historical prefix.
+    // Keep accumulating them against the last live context; only the next
+    // once-only forward capture is allowed to consume their movement/edges.
+    if(runtime&&runtime->app.session.netplay.Correcting())return forward_touch_state;
+    forward_touch_state=read_touch_state();
+    forward_touch_stage=runtime&&runtime->app.in_game()?runtime->app.game.globals.stage:-1;
+    return forward_touch_state;
+#else
+    return read_touch_state();
+#endif
+}
+int touch_stage(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(runtime&&runtime->app.session.netplay.Correcting())return forward_touch_stage;
+#endif
+    return runtime&&runtime->app.in_game()?runtime->app.game.globals.stage:-1;
+}
 void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2)&&state.context!=1&&state.context!=2)runtime->motion.touch_cancel(touch_stage());}
 void pointer(int type,int id,float x,float y){const auto state=touch_state();sync_touch_context(state);if(runtime&&(state.context==1||state.context==2))runtime->motion.touch_event(touch_stage(),type,id,x,y);touch.pointer(type,id,x,y,SDL_GetTicks(),state,runtime&&runtime->keyboard_state()[16]);}
 void cancel_touch(){if(runtime){runtime->motion.touch_cancel(touch_stage());runtime->motion.target(0,0,0);}touch.cancel_transient();}
-bool interpolation_ready(){
+bool read_interpolation_ready(){
     if(!runtime||runtime->app.loading_game()||runtime->app.title.modal())return false;
     if(runtime->app.title.active())return true;
     if(!runtime->app.in_game())return false;
     const auto& g=runtime->app.game;
     return g.menus.context.supervisor_state==2&&!g.control.state.load_state&&(g.globals.game_flags&0x60)!=0x20;
+}
+bool interpolation_ready(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(runtime&&runtime->app.session.netplay.Correcting())return forward_interpolation_ready;
+    return forward_interpolation_ready=read_interpolation_ready();
+#else
+    return read_interpolation_ready();
+#endif
 }
 void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     ThpracUi::process_event(event);
@@ -162,7 +191,7 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     ThpracUi::update_input(*runtime);
     if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})keys[vk]=0;
 }
-int tick(){poll();return !runtime||!runtime->step(false)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
+int tick(){poll();return !runtime||!runtime->step(false,frame_begin)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #ifdef TH_MULTIPLAYER_FIXTURES
 u32 audio_service_calls=0;
@@ -184,13 +213,13 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     // clock is braking. This only pumps the channel; Step still owns capture,
     // correction and every authoritative update/draw pair.
     if(runtime&&runtime->app.session.netplay.Configured()&&!runtime->app.session.netplay.ReadOnly()&&
-       runtime->app.session.netplay.Mode()==Netplay::AdonisMode::Rollback&&!runtime->pump_network())result=2;
+       runtime->app.session.netplay.Mode()==Netplay::AdonisMode::Rollback&&!runtime->pump_network(true))result=2;
 #endif
     const bool limit60=th08_limit_presentation_to_60()!=0;
     const bool ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)display_cadence.advance(delta);else display_cadence.reset();
     const bool tick_due=cadence.advance(delta)!=0;
     const bool high=display_cadence.high_refresh&&interpolation_ready();bool presented=false;
-    bool due=tick_due;unsigned completed=0;
+    bool due=tick_due;unsigned completed=0;bool completed_after_correction=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const bool catchup=runtime&&runtime->app.session.netplay.Configured()&&
         (!runtime->app.session.netplay.ReadOnly()||(runtime->app.session.netplay.Spectator()&&
@@ -230,11 +259,16 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
         // Recheck the host between logical ticks, including its test input
         // producer. Physical input still belongs to poll/CaptureLocal once.
         if(completed&&!th08_frame_ready())break;
+        const auto corrections_before=runtime&&runtime->network_driver()?runtime->network_driver()->Corrections():0;
         result=tick();
 #if defined(TH_PRESENTATION_AUDIT)
         audit_phase(0,update_started);
 #endif
         const bool advanced=runtime&&runtime->logical_frame_advanced();
+        if(runtime&&runtime->network_driver()&&
+           (runtime->app.session.netplay.Correcting()||runtime->network_driver()->Corrections()!=corrections_before)){
+            presentation_gate.reset();completed_after_correction=false;
+        }
 #else
         elapsed+=touhou::sdl::FrameCadence::interval;result=tick();
 #if defined(TH_PRESENTATION_AUDIT)
@@ -284,6 +318,7 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 #endif
                 ++frames;
                 ++completed;
+                completed_after_correction=true;
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #if defined(TH_PRESENTATION_AUDIT)
                 const double audio_started=emscripten_get_now();
@@ -298,7 +333,8 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         if(catchup){
             if(!advanced){
-                if(live_rollback){network_schedule.blocked(true);network_blocked=true;}
+                const bool cpu_yield=runtime&&runtime->network_driver()&&runtime->network_driver()->CallbackYielded();
+                if(live_rollback&&!cpu_yield){network_schedule.blocked(true);network_blocked=true;}
                 break;
             }
             network_schedule.complete();
@@ -312,14 +348,24 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     // discards overdue wall time; every logical tick still executes in order.
     if(catchup&&!network_blocked&&completed<network_ticks)
         network_schedule.defer(network_ticks-completed);
+    // The display Pump may have deferred a normal input tail in expectation
+    // of capture. No callback (including no-tick and failed callbacks) carries
+    // that obligation across an event-loop turn.
+    if(runtime&&!runtime->flush_network_inputs())result=2;
     // Real-time sequencing is independent of admission and correction count.
     // The confirmed command outbox still owns which track/notes are started.
     if(tick_due&&!result&&!service_frame_audio())result=2;
-    if(catchup&&completed&&!high&&!result)presented=sdl_commit()!=0;
+    const bool correction_pending=runtime&&runtime->app.session.netplay.Correcting();
+    if(correction_pending)presentation_gate.reset();
+    if(catchup&&completed&&!high&&!result&&!correction_pending)presented=sdl_commit()!=0;
 #endif
-    const bool interpolate=presentation_gate.advance(high,completed!=0);
+    const bool interpolate=presentation_gate.advance(high,completed_after_correction);
     float presentation_alpha=1.0f;
-    if(!result&&runtime&&high){
+    if(!result&&runtime&&high
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+       &&!correction_pending
+#endif
+    ){
         const bool frozen=runtime->app.in_game()&&(runtime->app.game.paused||runtime->app.game.retrying||runtime->app.game.menus.context.pause_state||runtime->app.game.menus.context.show_retry);
 #if defined(TH_PRESENTATION_AUDIT)
         const double presentation_started=emscripten_get_now();

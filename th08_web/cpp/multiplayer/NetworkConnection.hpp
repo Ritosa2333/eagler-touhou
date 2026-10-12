@@ -24,7 +24,12 @@ public:
     u32 SpectatorReceived()const{return spectator_frames.Received();}
     u32 SpectatorPublished()const{return spectator_publish;}
     bool SpectatorPublishFailed()const{return spectator_publish_failed;}
-    bool Pump(bool expects_input);
+    // A callback may pump once before choosing its logical work. Step consumes
+    // that pump before capture; it must not pump again and send the older tail.
+    // Flush even when no tick is due, before every callback return or yield.
+    bool Pump(bool expects_input,bool capture_follows=false);
+    bool PumpForCapture(bool expects_input);
+    bool FlushDeferredInputs();
     bool Captured(u32 frame);
     bool CanRetire()const;
     bool Retire();
@@ -55,6 +60,7 @@ private:
     std::uint64_t spectator_deadline=0;
     const char* spectator_error="";
     bool enabled=false,invalid_input=false;
+    bool capture_pump_pending=false;
     double phase_debt_ms=0;
     InputGapPacing input_gap_pacing;
     static std::uint64_t Now();

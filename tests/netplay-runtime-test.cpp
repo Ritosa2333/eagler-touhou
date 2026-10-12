@@ -423,6 +423,8 @@ static void adonis_hybrid_correction(unsigned count){
             states[f+1]=step(states[f],d,count);assert(r.MarkSimulated(f,d));}
         assert(states[f+1]==reference);
     }
+    assert(r.Correcting()&&r.NextFrame()==r.NextCaptureFrame()&&!r.CanCapture()&&
+           !r.CaptureLocal(6,FrameInput{}));
     assert(r.EndCorrection()&&r.NextFrame()==6&&r.NextCaptureFrame()==6);
 }
 static void adonis_mismatch_and_gap(){
@@ -447,6 +449,118 @@ static void adonis_mismatch_and_gap(){
     assert(observer.FeedSpectator(packet));const auto d=observer.Prepare(0);
     assert(d.canAdvance&&d.inputs==packet.inputs&&!d.predictedMask);
 }
+static void correction_continuation_late_inputs(unsigned count,unsigned checkpointSpan){
+    constexpr unsigned end=NetplayRuntime::MaxRollbackFrames;
+    NetplayRuntime peers[3];
+    for(unsigned seat=0;seat<count;++seat)assert(peers[seat].Reset(setup(count,seat)));
+    barrier(peers,count);auto& r=peers[0];assert(r.SetWorldReady(true));
+    // Same admitted runtime and physical tape, with all remote frames exact
+    // before simulation. This checks runtime decisions, not world ownership.
+    auto exact=r;
+    const auto input=[](unsigned seat,unsigned frame){
+        return seat&&frame==0?FrameInput{}:adonis_input(seat,frame);
+    };
+    const auto step=[count](std::uint64_t prior,const Netplay::FrameDecision& decision){
+        for(unsigned seat=0;seat<count;++seat){
+            const auto& in=decision.inputs[seat];
+            prior=prior*131+in.buttons;prior=prior*131+unsigned(in.analogMode);
+            prior=prior*131+std::uint32_t(std::int32_t(in.x*4));
+            prior=prior*131+std::uint32_t(std::int32_t(in.y*4));
+            prior=prior*131+unsigned(in.touchUsed)+2*unsigned(in.touchBomb)+4*unsigned(in.unlimited);
+        }
+        return prior;
+    };
+    std::array<std::uint64_t,end+2> states{},reference{};
+    for(unsigned frame=0;frame<end;++frame){
+        assert(r.CaptureLocal(frame,input(0,frame))&&exact.CaptureLocal(frame,input(0,frame)));
+        for(unsigned seat=1;seat<count;++seat)
+            assert(exact.SubmitRemote(seat,frame,input(seat,frame))==RemoteInputResult::Accepted);
+        const auto predicted=r.Prepare(frame),confirmed=exact.Prepare(frame);
+        assert(predicted.canAdvance&&predicted.predictedMask&&confirmed.canAdvance&&!confirmed.predictedMask);
+        states[frame+1]=step(states[frame],predicted);reference[frame+1]=step(reference[frame],confirmed);
+        assert(r.MarkSimulated(frame,predicted)&&exact.MarkSimulated(frame,confirmed));
+    }
+    // A frontier sample already sent before the first correction belongs to
+    // the original physical tick, including its one-shot touch displacement.
+    assert(r.CaptureLocal(end,input(0,end))&&r.NextCaptureFrame()==end+1);
+    assert(!r.Prepare(end).canAdvance&&r.CorrectionEnd()==Netplay::INVALID_FRAME);
+    assert(r.SubmitRemote(1,4,input(1,4))==RemoteInputResult::RollbackRequired);
+    const unsigned first=checkpointSpan==1?4:3;
+    assert(!r.RestartCorrection(first,checkpointSpan)&&r.BeginCorrection(first,checkpointSpan));
+    assert(r.CorrectionEnd()==end&&r.NextFrame()==first&&r.RollbackFrame()==Netplay::INVALID_FRAME);
+    assert(!r.RestartCorrection(first,checkpointSpan)&&!r.BeginCorrection(first,checkpointSpan));
+    for(unsigned frame=first;frame<end-1;++frame){
+        const auto decision=r.Prepare(frame);assert(decision.canAdvance);
+        states[frame+1]=step(states[frame],decision);assert(r.MarkSimulated(frame,decision));
+        assert(!r.CanCapture()&&r.NextCaptureFrame()==end+1&&r.PredictionFrontier()==end);
+    }
+    // A callback yield allows an input older than the first correction to
+    // arrive. Even a previously prepared decision is now unsafe to consume.
+    const auto stale=r.Prepare(end-1);assert(stale.canAdvance);
+    const unsigned lateSeat=count-1;
+    assert(r.SubmitRemote(lateSeat,1,input(lateSeat,1))==RemoteInputResult::RollbackRequired);
+    assert(r.RollbackFrame()==1&&!r.Prepare(end-1).canAdvance&&!r.MarkSimulated(end-1,stale));
+    assert(!r.EndCorrection()&&!r.EndCorrection(true)&&r.RollbackFrame()==1);
+    assert(!r.RestartCorrection(1,0)&&!r.RestartCorrection(1,4)&&
+           !r.RestartCorrection(2,checkpointSpan)&&!r.RestartCorrection(0,1)&&
+           !r.RestartCorrection(Netplay::INVALID_FRAME,checkpointSpan));
+    assert(r.NextFrame()==end-1&&r.LastFrame()==end-2&&r.CorrectionEnd()==end&&r.RollbackFrame()==1);
+    const unsigned restart=checkpointSpan==1?1:0;
+    assert(r.RestartCorrection(restart,checkpointSpan));
+    assert(r.CorrectionEnd()==end&&r.PredictionFrontier()==end&&r.NextFrame()==restart&&
+           r.NextCaptureFrame()==end+1&&r.HasCapture(end)&&r.RollbackFrame()==Netplay::INVALID_FRAME);
+    assert(!r.CanCapture()&&!r.CaptureLocal(end,input(0,end))&&!r.SetWorldReady(false)&&!r.CanRetire());
+    for(unsigned frame=0;frame<end;++frame)for(unsigned seat=1;seat<count;++seat){
+        if(frame==end-1&&seat==lateSeat)continue;
+        const auto result=r.SubmitRemote(seat,frame,input(seat,frame));
+        assert(result==RemoteInputResult::Accepted||result==RemoteInputResult::Duplicate||
+               result==RemoteInputResult::PredictionCorrect);
+    }
+    assert(r.RollbackFrame()==Netplay::INVALID_FRAME&&r.RemoteInputFrontier()==end-1);
+    for(unsigned frame=restart;frame<end;++frame){
+        const auto decision=r.Prepare(frame);assert(decision.canAdvance);
+        assert(bool(decision.predictedMask)==(frame==end-1));
+        states[frame+1]=step(states[frame],decision);assert(r.MarkSimulated(frame,decision));
+    }
+    // Reaching the original end is insufficient if a packet queued during
+    // the last chunk invalidates a frame that chunk just replayed.
+    assert(r.NextFrame()==end&&r.Correcting()&&!r.CanCapture());
+    assert(r.SubmitRemote(lateSeat,end-1,input(lateSeat,end-1))==RemoteInputResult::RollbackRequired);
+    assert(!r.EndCorrection()&&!r.EndCorrection(true)&&r.RollbackFrame()==end-1&&r.CorrectionEnd()==end);
+    assert(!r.Prepare(end).canAdvance);
+    const unsigned last=checkpointSpan==1?end-1:end-2;
+    assert(r.RestartCorrection(last,checkpointSpan)&&r.CorrectionEnd()==end);
+    std::array<FrameInput,Netplay::MAX_PLAYERS> corrected{},expected{};
+    assert(!r.ConfirmedInputs(0,corrected));
+    for(unsigned frame=last;frame<end;++frame){
+        const auto decision=r.Prepare(frame);
+        assert(decision.canAdvance&&!decision.predictedMask&&!r.CanCapture());
+        states[frame+1]=step(states[frame],decision);assert(r.MarkSimulated(frame,decision));
+    }
+    assert(r.EndCorrection()&&!r.Correcting()&&r.CorrectionEnd()==Netplay::INVALID_FRAME&&
+           r.NextFrame()==end&&r.NextCaptureFrame()==end+1&&r.HasCapture(end));
+    for(unsigned frame=0;frame<end;++frame){
+        assert(r.ConfirmedInputs(frame,corrected)&&exact.ConfirmedInputs(frame,expected)&&corrected==expected);
+        assert(states[frame+1]==reference[frame+1]);
+    }
+    assert(!r.RestartCorrection(0,checkpointSpan)&&!r.EndCorrection());
+    assert(!r.CanCapture()&&!r.CaptureLocal(end+1,input(0,end+1))&&r.CaptureLocal(end,input(0,end)));
+    assert(!r.CaptureLocal(end,FrameInput{}));
+    std::vector<std::uint8_t> bytes;assert(r.BuildInputWire(1,end,1,0,bytes));
+    Netplay::InputPacket packet;assert(Netplay::DecodeInputPacket(bytes.data(),bytes.size(),&packet));
+    assert(packet.firstInputFrame<=end&&packet.latestFrame==end&&
+           packet.inputs[end-packet.firstInputFrame]==input(0,end));
+    assert(exact.CaptureLocal(end,input(0,end)));
+    for(unsigned seat=1;seat<count;++seat){
+        assert(r.SubmitRemote(seat,end,input(seat,end))==RemoteInputResult::Accepted);
+        assert(exact.SubmitRemote(seat,end,input(seat,end))==RemoteInputResult::Accepted);
+    }
+    const auto resumed=r.Prepare(end),confirmed=exact.Prepare(end);
+    assert(resumed.canAdvance&&confirmed.canAdvance&&!resumed.predictedMask&&resumed.inputs==confirmed.inputs);
+    assert(step(states[end],resumed)==step(reference[end],confirmed));
+    assert(r.MarkSimulated(end,resumed)&&exact.MarkSimulated(end,confirmed)&&r.CanCapture());
+    r.Clear();assert(r.CorrectionEnd()==Netplay::INVALID_FRAME&&!r.RestartCorrection(0,checkpointSpan));
+}
 int main(){
     previous_general_rules_are_rejected();
     for(unsigned count:{2u,3u})for(unsigned mode:{1u,2u}){
@@ -467,6 +581,7 @@ int main(){
     delayed_capture_and_wait();
     confirmation_gap_is_bounded();packet_transaction_and_negative_inputs();
     input_gap_frontiers(2);input_gap_frontiers(3);
+    for(unsigned count:{2u,3u})for(unsigned span:{1u,3u})correction_continuation_late_inputs(count,span);
     spectator_is_exact_read_only_and_bounded();
     for(unsigned count:{2u,3u}){for(unsigned delay:{0u,1u,9u})adonis_exact_input_and_generation(count,delay);adonis_hybrid_correction(count);}
     adonis_mismatch_and_gap();

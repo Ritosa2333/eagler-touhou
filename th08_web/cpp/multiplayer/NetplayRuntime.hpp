@@ -85,6 +85,10 @@ public:
     bool SetWorldReady(bool ready);
     bool WorldReady()const{return world_ready_;}
     bool BeginCorrection(std::uint32_t first,std::uint32_t checkpointSpan=1);
+    // A yielded correction keeps its original forward frontier. A later
+    // mismatch may restart history without taking another physical sample.
+    std::uint32_t CorrectionEnd()const{return correction_end_;}
+    bool RestartCorrection(std::uint32_t first,std::uint32_t checkpointSpan=1);
     bool EndCorrection(bool lifecycle_boundary=false);
     bool Correcting()const{return correction_end_!=Netplay::INVALID_FRAME;}
     bool CanRetire()const;

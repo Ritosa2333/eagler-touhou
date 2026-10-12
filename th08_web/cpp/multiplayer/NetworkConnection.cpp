@@ -24,7 +24,7 @@ bool NetworkConnection::Connect(const char* relay){
     if(!transport.Connect(relay,u8(net.Setup().local_player),u8(net.Setup().player_count)))return false;
     if(net.PreparingWorld())calibration.Prepare(net.Config(),net.Mode(),net.Setup().input_delay_auto,net.InputDelay(),net.Setup().prediction_reserve);
     else if(!channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()))){transport.Close();return false;}
-    enabled=true;invalid_input=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());return true;
+    enabled=true;invalid_input=false;capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());return true;
 }
 bool NetworkConnection::ConnectSpectator(const char* relay,const char* id){
     if(enabled||net.ReadOnly()||!relay||!*relay||!id||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
@@ -34,10 +34,13 @@ bool NetworkConnection::ConnectSpectator(const char* relay,const char* id){
     }
     if(!transport.ConnectSpectator(relay,id,u8(net.Setup().player_count)))return false;
     if(!net.BeginSpectator()){transport.Close();return false;}
-    enabled=true;invalid_input=false;spectator_finished=false;spectator_error="";input_gap_pacing.Reset(Now());
+    enabled=true;invalid_input=false;capture_pump_pending=false;spectator_finished=false;spectator_error="";input_gap_pacing.Reset(Now());
     spectator_frames.Clear();return true;
 }
-bool NetworkConnection::Pump(bool expects_input){
+bool NetworkConnection::Pump(bool expects_input,bool capture_follows){
+    // A new independent pump ends an unconsumed capture promise. Only
+    // PumpForCapture may consume it without another receive/send pass.
+    if(capture_pump_pending&&!FlushDeferredInputs())return false;
     if(!enabled)return true;
     if(net.Spectator()){
         if(!spectator_deadline)spectator_deadline=Now()+45'000;
@@ -71,12 +74,37 @@ bool NetworkConnection::Pump(bool expects_input){
     }
     if(calibration.Waiting()){input_gap_pacing.Reset(Now());return true;}
     const auto now=Now();
-    if(!channel.Pump(net.gate_,net.core_,now,expects_input)||invalid_input)return false;
+    const auto next_capture=net.NextCaptureFrame(),latest_capture=channel.LatestCapture();
+    const bool captureFollows=capture_follows&&expects_input&&net.Mode()==Netplay::AdonisMode::Rollback&&
+        net.CanCapture()&&!net.HasCapture(next_capture)&&
+        (latest_capture==Netplay::INVALID_FRAME||next_capture==latest_capture+1);
+    if(!channel.Pump(net.gate_,net.core_,now,expects_input,captureFollows)||invalid_input){
+        // Keep the original failure while completing any valid old tail owed
+        // before a watchdog or title-input validation rejected this pump.
+        channel.FlushDeferredInputs(net.core_,Now());return false;
+    }
     // Measure a continuous input shortage only after draining received packets.
     // Rewinding simulation does not create additional prediction room.
     input_gap_pacing.Update(now,net.MissingRemoteInputs(),
         net.CanStart()&&!net.ReadOnly()&&net.Mode()==Netplay::AdonisMode::Rollback&&expects_input);
+    capture_pump_pending=captureFollows;
     PublishConfirmedSpectatorFrames();return true;
+}
+bool NetworkConnection::PumpForCapture(bool expects_input){
+    if(capture_pump_pending){
+        capture_pump_pending=false;
+        return !invalid_input&&!transport.Failed()&&!calibration.Failed()&&
+            channel.Error()==Netplay::SessionChannel::Failure::None;
+    }
+    const bool ok=Pump(expects_input,true);
+    // This call is already inside Step; only an earlier callback pump creates
+    // a promise another caller may consume. The actual send obligation stays
+    // in SessionChannel until Captured or FlushDeferredInputs completes it.
+    capture_pump_pending=false;return ok;
+}
+bool NetworkConnection::FlushDeferredInputs(){
+    capture_pump_pending=false;
+    return !enabled||net.Spectator()||channel.FlushDeferredInputs(net.core_,Now());
 }
 bool NetworkConnection::ConsumeSpectator(){
     const auto* packet=spectator_frames.Front();if(!packet)return false;
@@ -115,6 +143,7 @@ void NetworkConnection::FinishSpectator(){
     spectator_frames.Clear();
 }
 bool NetworkConnection::Captured(u32 frame){
+    capture_pump_pending=false;
     if(net.Spectator())return false;
     if(!enabled)return true;
     if(net.core_.LocalFrameForCapture(frame)==Netplay::INVALID_FRAME)return false;
@@ -135,15 +164,15 @@ bool NetworkConnection::CanRetire()const{
         spectator_publish_failed||!transport.HasSpectators()||spectator_publish>net.LastFrame();
 }
 bool NetworkConnection::Retire(){
-    if(!CanRetire()||(enabled&&!channel.Retire(net.core_,net.LastFrame(),Now()))||!net.Retire())return false;
+    if(!FlushDeferredInputs()||!CanRetire()||(enabled&&!channel.Retire(net.core_,net.LastFrame(),Now()))||!net.Retire())return false;
     retired_config=net.Config();return true;
 }
-bool NetworkConnection::BeginGeneration(){phase_debt_ms=0;input_gap_pacing.Reset(Now());if(!enabled)return true;
+bool NetworkConnection::BeginGeneration(){capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());if(!enabled)return true;
     // Keep the previous terminal ACKs alive during measurement. The shared
     // calibrator discards only valid packets from this actually retired epoch.
     if(net.PreparingWorld()){calibration.Prepare(net.Config(),net.Mode(),net.Setup().input_delay_auto,net.InputDelay(),net.Setup().prediction_reserve,&retired_config);return true;}
     return channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()));}
-void NetworkConnection::Close(){transport.Close();channel.Clear();calibration.Clear();retired_config={};enabled=false;invalid_input=false;phase_debt_ms=0;input_gap_pacing.Reset(0);spectator_frames.Clear();}
+void NetworkConnection::Close(){transport.Close();channel.Clear();calibration.Clear();retired_config={};enabled=false;invalid_input=false;capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(0);spectator_frames.Clear();}
 double NetworkConnection::IntervalScale()const{
     const auto phase=channel.IntervalScale();
     return enabled&&net.CanStart()&&!net.ReadOnly()&&net.Mode()==Netplay::AdonisMode::Rollback&&input_gap_pacing.Scale()>1

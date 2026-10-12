@@ -279,7 +279,7 @@ bool BrowserRuntime::initialize(){
 #endif
     reset_device();return true;
 }
-bool BrowserRuntime::step(bool render){
+bool BrowserRuntime::step(bool render,double callback_start_ms){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(replay_viewer&&!replay_request.empty())return true;
     if(replay_viewer&&!app.session.netplay.Configured()&&!replay_menu_opened&&app.title.ready_for_session()){
@@ -288,7 +288,7 @@ bool BrowserRuntime::step(bool render){
     auto& session=app.session;auto& net=session.netplay;
     if(net.Configured()){
         if(!multiplayer_driver)multiplayer_driver=std::make_unique<multiplayer::RollbackDriver>(*this);
-        return multiplayer_driver->Step(render);
+        return multiplayer_driver->Step(render,callback_start_ms);
     }
 #endif
     const bool result=prepared&&app.update()&&(!render||app.draw())&&!capture_failed;
@@ -320,7 +320,8 @@ bool BrowserRuntime::connect_spectator(const char* relay,const char* id){
     if(!multiplayer_driver)multiplayer_driver=std::make_unique<multiplayer::RollbackDriver>(*this);
     return multiplayer_driver->ConnectSpectator(relay,id);
 }
-bool BrowserRuntime::pump_network(){return !multiplayer_driver||multiplayer_driver->Pump();}
+bool BrowserRuntime::pump_network(bool capture_follows){return !multiplayer_driver||multiplayer_driver->Pump(capture_follows);}
+bool BrowserRuntime::flush_network_inputs(){return !multiplayer_driver||multiplayer_driver->FlushInputs();}
 bool BrowserRuntime::bind_audio_events(multiplayer::AudioEvents* events){return audio&&audio->bind_audio_events(events);}
 bool BrowserRuntime::commit_audio_events(multiplayer::AudioEvents& events,u32 confirmed,u32 simulated){
     const auto& net=app.session.netplay;

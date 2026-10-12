@@ -17,15 +17,18 @@ class RollbackDriver final:private FileEventOutput {
 public:
     explicit RollbackDriver(BrowserRuntime&);
     ~RollbackDriver(){Shutdown();}
-    bool Step(bool render);
+    bool Step(bool render,double callback_start_ms=-1);
     bool FinishFrame();
-    bool Pump();
+    bool Pump(bool capture_follows=false);
+    bool FlushInputs();
     bool Reconcile();
     bool Connect(const char*);
     bool ConnectSpectator(const char*,const char*);
     void Shutdown();
     bool Failed()const{return failed;}
     bool FrameOpen()const{return open;}
+    bool CallbackYielded()const{return callback_yielded;}
+    u32 CorrectionYields()const{return correction_yields;}
     bool Initialized()const{return initialized;}
     bool HasPending()const{return (world&&world->HasHistory())||audio.PendingFrames()||files.IsOpen();}
     bool RollbackStorageAllocated()const{return bool(world)||bool(textures);}
@@ -92,6 +95,8 @@ private:
     bool skip_resim_visual=true,skip_resim_geometry=true;
     bool generation_transition_pending=false;
     bool corrected_present_pending=false;
+    bool callback_yielded=false,correction_last_visual_suppressed=false;
+    u32 correction_yields=0;
     bool checkpoint_open=false;
     // Three-tick intervals are unfinished experimental work. Keep the proven
     // per-tick policy until interval ownership/output tests and A/B pass.
@@ -114,7 +119,7 @@ private:
     bool Admit();
     bool RunFrame(bool render);
     bool CaptureLocalInput();
-    bool Correct();
+    bool Correct(double callback_start_ms=-1);
     bool PresentCorrection();
     bool apply_file_event(const char*,const u8*,u32)override;
 };

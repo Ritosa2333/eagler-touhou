@@ -56,8 +56,11 @@ bool RollbackDriver::FailNativeUpdate(u32 frame,bool updated){
 }
 bool RollbackDriver::Connect(const char* relay){return !failed&&network.Connect(relay);}
 bool RollbackDriver::ConnectSpectator(const char* relay,const char* id){return !failed&&network.ConnectSpectator(relay,id);}
-bool RollbackDriver::Pump(){
-    return !failed&&(network.Pump(Stable())||FailNetwork("network channel failed"));
+bool RollbackDriver::Pump(bool capture_follows){
+    return !failed&&(network.Pump(Stable(),capture_follows)||FailNetwork("network channel failed"));
+}
+bool RollbackDriver::FlushInputs(){
+    return network.FlushDeferredInputs()||FailNetwork("deferred input send failed");
 }
 bool RollbackDriver::Reconcile(){
     if(failed||open||!Pump())return false;
@@ -65,6 +68,7 @@ bool RollbackDriver::Reconcile(){
     return (!runtime.app.session.netplay.AllowsRollback()||Correct())&&Commit();
 }
 bool RollbackDriver::PresentCorrection(){
+    if(runtime.app.session.netplay.Correcting())return true;
     if(!corrected_present_pending)return true;
     corrected_present_pending=false;
     return graphics_device().present(runtime.back)||Fail("corrected presentation failed");
@@ -266,51 +270,71 @@ bool RollbackDriver::FinishFrame(){
     if(!correcting)corrected_present_pending=false;
     return correcting||Commit();
 }
-bool RollbackDriver::Correct(){
+bool RollbackDriver::Correct(double callback_start_ms){
     auto& net=runtime.app.session.netplay;const auto requested=net.RollbackFrame();
-    if(requested==Netplay::INVALID_FRAME)return true;
+    if(requested==Netplay::INVALID_FRAME&&!net.Correcting())return true;
     if(!bound||!world||!textures)return Fail("correction requested without rollback storage");
-    const auto first=world->CheckpointStart(requested);
-    const auto end=net.NextFrame();
 #ifdef TH_MULTIPLAYER_FIXTURES
-    const auto restore_start=emscripten_get_now();
+    const auto slice_start=emscripten_get_now();
+    const auto record_cost=[&](){const auto ms=emscripten_get_now()-slice_start;
+        diagnostic_correction_ms+=ms;diagnostic_correction_max_ms=std::max(diagnostic_correction_max_ms,ms);};
 #endif
-    if(first==Netplay::INVALID_FRAME||!net.BeginCorrection(first,checkpoint_span)||!world->UndoTo(first)||!textures->UndoTo(first)||
-       !audio.DiscardFrom(first)||!files.DiscardFrom(first))return Fail("rollback restore failed");
+    if(requested!=Netplay::INVALID_FRAME){
+        const auto first=world->CheckpointStart(requested);
 #ifdef TH_MULTIPLAYER_FIXTURES
-    diagnostic_restore_ms+=emscripten_get_now()-restore_start;
+        const auto restore_start=emscripten_get_now();
 #endif
-    runtime.correction_present_suppressed=true;correcting=true;++corrections;
+        // Packets arriving between slices can invalidate an already replayed
+        // prefix. Rewind it again while retaining the original live frontier.
+        if(first==Netplay::INVALID_FRAME||
+           !(net.Correcting()?net.RestartCorrection(first,checkpoint_span):net.BeginCorrection(first,checkpoint_span))||
+           !world->UndoTo(first)||!textures->UndoTo(first)||!audio.DiscardFrom(first)||!files.DiscardFrom(first))
+            return Fail("rollback restore failed");
+#ifdef TH_MULTIPLAYER_FIXTURES
+        diagnostic_restore_ms+=emscripten_get_now()-restore_start;
+#endif
+        correction_last_visual_suppressed=false;corrected_present_pending=false;
+        runtime.correction_present_suppressed=true;correcting=true;++corrections;
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
-    diagnostic::Restored(runtime,first);
+        diagnostic::Restored(runtime,first);
 #endif
-    bool last_visual_suppressed=false;
+    }
+    const auto end=net.CorrectionEnd();
     while(net.NextFrame()<end&&world->CanAdvance()){
         const auto before=net.NextFrame();
         runtime.correction_visual_suppressed=skip_resim_visual&&before+1<end;
         runtime.app.renderer.rollback_visual_geometry_suppressed=skip_resim_geometry&&runtime.correction_visual_suppressed;
         const bool ok=RunFrame(true);
-        last_visual_suppressed=runtime.correction_visual_suppressed;
+        correction_last_visual_suppressed=runtime.correction_visual_suppressed;
         runtime.correction_visual_suppressed=false;
         runtime.app.renderer.rollback_visual_geometry_suppressed=false;
         if(!ok||net.NextFrame()==before){correcting=false;runtime.correction_present_suppressed=false;return Fail("resimulation stalled");}
         ++resimulated;
+        // A history tick is indivisible: all four journals and semantic Draw
+        // are closed before yielding. Native rAF supplies the timestamp taken
+        // before its network Pump; synchronous reconciliation remains atomic.
+        if(callback_start_ms>=0&&net.NextFrame()<end&&world->CanAdvance()&&
+           emscripten_get_now()-callback_start_ms>=8.){
+            callback_yielded=true;++correction_yields;
+#ifdef TH_MULTIPLAYER_FIXTURES
+            record_cost();
+#endif
+            return true;
+        }
     }
     const bool boundary=net.NextFrame()!=end;
-    if(boundary&&last_visual_suppressed&&runtime.app.active()&&
+    if(boundary&&correction_last_visual_suppressed&&runtime.app.active()&&
        !runtime.app.draw(1.0f,true,true,false)){
         correcting=false;runtime.correction_present_suppressed=false;return Fail("correction boundary redraw failed");
     }
 #ifdef TH_MULTIPLAYER_FIXTURES
-    if(boundary&&last_visual_suppressed&&runtime.app.active())++diagnostic_boundary_visual_redraws;
+    if(boundary&&correction_last_visual_suppressed&&runtime.app.active())++diagnostic_boundary_visual_redraws;
 #endif
     if(!net.EndCorrection(boundary)){correcting=false;runtime.correction_present_suppressed=false;return Fail("correction frontier failed");}
     correcting=false;runtime.correction_present_suppressed=false;
     corrected_present_pending=true;
 #ifdef TH_MULTIPLAYER_FIXTURES
-    const auto correction_ms=emscripten_get_now()-restore_start;
-    diagnostic_correction_ms+=correction_ms;
-    diagnostic_correction_max_ms=std::max(diagnostic_correction_max_ms,correction_ms);
+    record_cost();
 #endif
     return Commit();
 }
@@ -329,11 +353,21 @@ bool RollbackDriver::CaptureLocalInput(){
     }
     return net.CaptureLocal(frame,sample);
 }
-bool RollbackDriver::Step(bool render){
+bool RollbackDriver::Step(bool render,double callback_start_ms){
     auto& session=runtime.app.session;auto& net=session.netplay;
-    if(failed||open||session.network_frame_open||!runtime.prepared||runtime.capture_failed)return false;
+    callback_yielded=false;
+    if(failed||open||session.network_frame_open||!runtime.prepared||runtime.capture_failed){FlushInputs();return false;}
     session.network_waiting=false;
-    if(!Pump())return false;
+    if(!network.PumpForCapture(Stable())){FailNetwork("network channel failed");FlushInputs();return false;}
+    // Only the already initialized live frontier may keep Pump's ordinary
+    // tail until the once-only capture below. Every startup/readiness/loading
+    // return and every correction continuation flushes before doing work.
+    bool capture_before_restore=initialized&&Stable()&&bound&&world->CanAdvance()&&net.CanCapture()&&
+        (net.Setup().version<6||net.RollbackFrame()==Netplay::INVALID_FRAME);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    capture_before_restore=capture_before_restore&&diagnostic_early_input;
+#endif
+    if(!capture_before_restore&&!FlushInputs())return false;
     if(network.SpectatorFinished()){session.network_waiting=true;return true;}
     if(net.PreparingWorld()&&!Stable()&&(!net.CanStart()||!initialized)){
         // Resources and the native graph may load, but no gameplay frame,
@@ -369,11 +403,24 @@ bool RollbackDriver::Step(bool render){
     early_input=early_input&&diagnostic_early_input;
 #endif
     if(early_input&&net.CanCapture()){
-        if(!CaptureLocalInput())return Fail("local capture failed");
+        if(!CaptureLocalInput()){Fail("local capture failed");FlushInputs();return false;}
         sent_frame=net.NextCaptureFrame()-1;
-        if(!network.Captured(sent_frame))return FailNetwork("captured input send failed");
+        if(!network.Captured(sent_frame)){FailNetwork("captured input send failed");FlushInputs();return false;}
     }
-    if((net.AllowsRollback()&&!Correct())||!Commit()||!Admit())return false;
+    // Finish the old obligation even if capture was unnecessary or rejected.
+    // Restore, replay and every callback budget exit start with no deferred
+    // ordinary send; historical ticks only reuse retained physical input.
+    if(!FlushInputs())return false;
+    const bool had_correction=net.Correcting()||net.RollbackFrame()!=Netplay::INVALID_FRAME;
+    if(net.AllowsRollback()&&!Correct(callback_start_ms))return false;
+    if(net.Correcting())return true;
+    // Completing recovery does not authorize an extra forward tick after its
+    // callback budget is spent. Preserve the owed tick for the next rAF.
+    if(had_correction&&callback_start_ms>=0&&emscripten_get_now()-callback_start_ms>=8.){
+        callback_yielded=true;
+        return !render||PresentCorrection();
+    }
+    if(!Commit()||!Admit())return false;
     if(session.network_waiting)return PresentCorrection();
     // The outer SDL callback owns the shared observer catch-up budget.
     const auto frame=net.NextFrame();
@@ -401,6 +448,8 @@ void RollbackDriver::Shutdown(){
     if(!initialized&&!bound&&!network.Enabled())return;
     runtime.correction_present_suppressed=false;
     runtime.correction_visual_suppressed=false;
+    runtime.app.renderer.rollback_visual_geometry_suppressed=false;
+    correcting=callback_yielded=correction_last_visual_suppressed=corrected_present_pending=false;
     // Shutdown may arrive while the displayed state is still predicted. Never
     // serialize it as a completed personal record.
     runtime.discard_network_shutdown_writes=true;

@@ -15,7 +15,9 @@ const perfStopGesture=()=>{
   }
 };
 const perfLogicalPosition=()=>{const pointer=core.trace(app);return Array.from(new Float32Array(core.memory.buffer,pointer+28,2));};
-const perfRead=()=>({net:perfWorld.netStatus(),driver:perfWorld.driverStatus(),player0LogicalXY:perfLogicalPosition(),
+const perfProgress=()=>core.multiplayer_progress?Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_progress(app),6)):null;
+const perfFrontier=()=>perfProgress()?.[0]??perfWorld.netStatus()[3];
+const perfRead=()=>({net:perfWorld.netStatus(),progress:perfProgress(),logicalFrame:perfFrontier(),driver:perfWorld.driverStatus(),player0LogicalXY:perfLogicalPosition(),
   motion:core.mp_fixture_motion_sample?Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_motion_sample(),108)):null,
   cadence:core.mp_fixture_cadence_sample?Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_cadence_sample(),8)):null,
   pacing:core.mp_fixture_pacing?Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_pacing(),3)):null,
@@ -94,7 +96,7 @@ window.th08Performance={
         try{
         if(perfState.done||perfState.issues.length){perfStopGesture();return;}
         const now=performance.now();++perfState.touch.callbacks;
-        const frame=perfWorld.netStatus()[3];
+        const frame=perfFrontier();
         if(frame>=180&&frame<end-60){
           const due=perfTouchHz?Math.floor((now-origin)*perfTouchHz/1000):perfState.touch.events+1;
           if(perfTouchHz&&(due<1||due<=lastPlanned)){++perfState.touch.earlyWakeups;return;}
@@ -121,12 +123,12 @@ window.th08Performance={
     }
     Module.runtimePrepare=()=>{
       try{
-        const frame=perfWorld.netStatus()[3];
+        const frame=perfFrontier();
         if(frame>end)throw Error('Measurement frame overshoot '+frame+' > '+end);
         if(frame>=end){
           perfWorld.pollNetwork();perfWorld.reconcile();
           const n=perfWorld.netStatus();
-          if(n[3]===end&&n[5]>=end-1){perfState.done=true;perfState.after=perfRead();perfStopGesture();}
+          if(n[3]===end&&n[5]>=end-1&&!perfProgress()?.[2]){perfState.done=true;perfState.after=perfRead();perfStopGesture();}
           return 0;
         }
         // Direct CaptureLocal injection also needs the diagnostic channel
@@ -147,7 +149,7 @@ window.th08Performance={
       }catch(error){perfState.issues.push(String(error));perfStopGesture();core.sdl_loop_stop();return 0;}
     };
     Module.runtimeFinish=(code,ms)=>{
-      const now=performance.now(),sample=perfRead(),frame=sample.net[3];
+      const now=performance.now(),sample=perfRead(),frame=sample.logicalFrame;
       if(code){perfState.issues.push('Native loop '+code+' '+perfWorld.networkError());perfStopGesture();core.sdl_loop_stop();}
       if(sample.driver[14]!==perfState.lastReceived){perfState.lastReceived=sample.driver[14];perfState.lastReceive=now;}
       if(sample.net[5]!==perfState.lastConfirmed){perfState.lastConfirmed=sample.net[5];perfState.lastConfirm=now;}

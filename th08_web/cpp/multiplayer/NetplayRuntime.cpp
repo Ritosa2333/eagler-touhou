@@ -134,7 +134,7 @@ Netplay::RemoteInputResult NetplayRuntime::SubmitRemote(std::uint8_t seat,std::u
 }
 Netplay::FrameDecision NetplayRuntime::Prepare(std::uint32_t frame)const {
     if(!CanStart()||frame!=next_||frame==Netplay::INVALID_FRAME||
-       (core_.HasRollbackRequest()&&!Correcting()))return {};
+       core_.HasRollbackRequest())return {};
     const auto confirmed=ConfirmedThrough();
     const auto first=confirmed==Netplay::INVALID_FRAME?0:confirmed+1;
     // A later exact packet does not make an earlier gap recoverable. Bound the
@@ -180,9 +180,22 @@ bool NetplayRuntime::BeginCorrection(std::uint32_t first,std::uint32_t checkpoin
     if(!core_.RewindSimulationTo(first))return false;
     correction_end_=end;next_=first;return true;
 }
+bool NetplayRuntime::RestartCorrection(std::uint32_t first,std::uint32_t checkpointSpan){
+    if(!AllowsRollback()||!CanStart()||!world_ready_||!Correcting()||
+       !core_.HasRollbackRequest()||checkpointSpan<1||checkpointSpan>3||
+       next_>correction_end_||core_.RollbackFrame()>=next_||
+       first>core_.RollbackFrame()||core_.RollbackFrame()-first>=checkpointSpan||
+       correction_end_-core_.RollbackFrame()>setup_.prediction_limit||
+       correction_end_-first>setup_.prediction_limit+checkpointSpan-1)return false;
+    // Rewind clears the handled request and only the used-input history.
+    // Validate against the original end, not this chunk's smaller cursor.
+    if(!core_.RewindSimulationTo(first))return false;
+    next_=first;return true;
+}
 bool NetplayRuntime::EndCorrection(bool lifecycle_boundary){
-    if(!Correcting()||(!lifecycle_boundary&&next_!=correction_end_))return false;
-    core_.ClearRollbackRequest();correction_end_=Netplay::INVALID_FRAME;return true;
+    if(!Correcting()||core_.HasRollbackRequest()||
+       (!lifecycle_boundary&&next_!=correction_end_))return false;
+    correction_end_=Netplay::INVALID_FRAME;return true;
 }
 bool NetplayRuntime::CanRetire()const {
     return CanStart()&&!Correcting()&&!core_.HasRollbackRequest()&&
