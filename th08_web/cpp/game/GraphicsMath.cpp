@@ -1,6 +1,7 @@
 #include "GraphicsMath.hpp"
 #include "GameMath.hpp"
 #include "ReciprocalSqrtTable.hpp"
+#include <array>
 #include <cmath>
 #include <initializer_list>
 
@@ -52,7 +53,126 @@ Vec3 cross(const Vec3& a, const Vec3& b) {
 Extended negative_dot(const Vec3& a, const Vec3& b) {
     return -(number(a.y)*number(b.y)+number(a.x)*number(b.x)+number(a.z)*number(b.z));
 }
+
+bool finite_bits(u32 bits) noexcept {return (bits&0x7f800000u)!=0x7f800000u;}
+bool finite_vector(const Vec3& value) noexcept {
+    return finite_bits(to_bits(value.x))&&finite_bits(to_bits(value.y))&&finite_bits(to_bits(value.z));
 }
+bool finite_row(const float* row) noexcept {
+    for(u32 column=0;column<4;++column)if(!finite_bits(to_bits(row[column])))return false;
+    return true;
+}
+struct TranslationKey {
+    std::array<u32,32> matrices{};
+    Precision precision{};Rounding rounding{};GraphicsArithmetic graphics{};
+    bool operator==(const TranslationKey& other)const noexcept {
+        return precision==other.precision&&rounding==other.rounding&&graphics==other.graphics&&matrices==other.matrices;
+    }
+};
+bool translation_key(TranslationKey& key,const Matrix4& projection,const Matrix4& view) noexcept {
+    key.precision=arithmetic_precision();key.rounding=arithmetic_rounding();key.graphics=arithmetic_path;
+    u32 index=0;
+    for(const auto* matrix:{&view,&projection})for(const auto& row:matrix->m)for(float element:row){
+        const u32 bits=to_bits(element);if(!finite_bits(bits))return false;
+        key.matrices[index++]=bits;
+    }
+    return true;
+}
+// Only these derived rows are cached. Actual matrix bits and arithmetic modes
+// are checked on every call, including camera switches within a background draw
+// and matrices restored by rollback. No game-owned state or pointer is retained.
+struct TranslationCache {TranslationKey key;float rows[3][4]{};bool valid=false;};
+static_assert(sizeof(TranslationCache)<=256,"Translation projection cache must remain bounded value storage.");
+TranslationCache translation_cache;
+#ifdef TH_PROJECTION_FASTPATH_TEST
+ProjectionFastpathStats test_projection_stats;
+#endif
+void multiply_row(float* output,const float* first,const Matrix4& second) {
+    // Keep multiply's dispatch-specific grouping and float store boundary.
+    // In particular, this is not a dot product with (view * projection).
+    for(u32 column=0;column<4;++column){
+        if(arithmetic_path==GraphicsArithmetic::Simd){
+            const float a=first[0]*second.m[0][column],b=first[1]*second.m[1][column];
+            const float c=first[2]*second.m[2][column],d=first[3]*second.m[3][column];
+            output[column]=((a+b)+c)+d;
+            continue;
+        }
+        const auto even=number(first[0])*number(second.m[0][column])+number(first[2])*number(second.m[2][column]);
+        const auto odd=number(first[1])*number(second.m[1][column])+number(first[3])*number(second.m[3][column]);
+        output[column]=(even+odd).to_float();
+    }
+}
+bool compose_translation(Matrix4& output,const Vec3& position,const Matrix4& projection,const Matrix4& view) {
+    TranslationKey key;
+    if(!finite_vector(position)||!translation_key(key,projection,view))return false;
+    Matrix4 transform{};
+    const bool hit=translation_cache.valid&&translation_cache.key==key;
+    if(hit)std::memcpy(transform.m,translation_cache.rows,sizeof(translation_cache.rows));
+    else{
+        float intermediate[3][4];
+        for(u32 row=0;row<3;++row){
+            float identity_row[4]{};identity_row[row]=1;
+            // Even identity's zero products and signed-zero sums are retained.
+            multiply_row(intermediate[row],identity_row,view);
+            if(!finite_row(intermediate[row]))return false;
+        }
+        for(u32 row=0;row<3;++row){
+            multiply_row(transform.m[row],intermediate[row],projection);
+            if(!finite_row(transform.m[row]))return false;
+        }
+    }
+    const float translation_row[4]{position.x,position.y,position.z,1};
+    float intermediate[4];
+    multiply_row(intermediate,translation_row,view);
+    if(!finite_row(intermediate))return false;
+    multiply_row(transform.m[3],intermediate,projection);
+    if(!finite_row(transform.m[3]))return false;
+    if(!hit){
+        translation_cache.key=key;
+        std::memcpy(translation_cache.rows,transform.m,sizeof(translation_cache.rows));
+        translation_cache.valid=true;
+    }
+    output=transform;
+#ifdef TH_PROJECTION_FASTPATH_TEST
+    if(hit)++test_projection_stats.translation_hits;else ++test_projection_stats.translation_computations;
+#endif
+    return true;
+}
+bool exact_viewport_integer(u32 value,float& output) noexcept {
+    output=static_cast<float>(value);
+    // Every u32 is exact in double. Avoid an out-of-range float-to-u32 cast
+    // when UINT32_MAX rounds to 2^32, while accepting exact larger multiples.
+    return value<=0x01000000u||static_cast<double>(output)==static_cast<double>(value);
+}
+bool viewport_compound(Vec3& output,const Vec3& input,const Viewport& viewport) noexcept {
+    if(!single_precision_nearest())return false;
+    float width,height,origin_x,origin_y;
+    if(!exact_viewport_integer(viewport.width,width)||!exact_viewport_integer(viewport.height,height)||
+       !exact_viewport_integer(viewport.x,origin_x)||!exact_viewport_integer(viewport.y,origin_y))return false;
+    using touhou::numeric::scalar_binary;
+    float x_shift,x_scale,x_half,y_shift,y_scale,y_half,depth,depth_scale;
+    Vec3 result;
+    // Accept the compound expression only if EVERY original operation stays
+    // in the exact f32 fast range. A failed step restarts the whole viewport
+    // expression below, retaining extended exponents and its original grouping.
+    if(!scalar_binary(input.x,1,x_shift,0)||!scalar_binary(x_shift,width,x_scale,2)||
+       !scalar_binary(x_scale,.5f,x_half,2)||!scalar_binary(x_half,origin_x,result.x,0)||
+       !scalar_binary(1,input.y,y_shift,1)||!scalar_binary(y_shift,height,y_scale,2)||
+       !scalar_binary(y_scale,.5f,y_half,2)||!scalar_binary(y_half,origin_y,result.y,0)||
+       !scalar_binary(viewport.max_z,viewport.min_z,depth,1)||!scalar_binary(depth,input.z,depth_scale,2)||
+       !scalar_binary(depth_scale,viewport.min_z,result.z,0))return false;
+    output=result;
+    return true;
+}
+}
+
+#ifdef TH_PROJECTION_FASTPATH_TEST
+ProjectionFastpathStats GraphicsMath::projection_fastpath_stats() noexcept {return test_projection_stats;}
+void GraphicsMath::reset_projection_fastpath_test() noexcept {translation_cache={};test_projection_stats={};}
+bool GraphicsMath::translation_transform_for_test(Matrix4& output,const Vec3& position,const Matrix4& projection,const Matrix4& view) {
+    return compose_translation(output,position,projection,view);
+}
+#endif
 
 void GraphicsMath::arithmetic(GraphicsArithmetic path) { arithmetic_path=path; }
 GraphicsArithmetic GraphicsMath::arithmetic() noexcept { return arithmetic_path; }
@@ -178,6 +298,17 @@ void GraphicsMath::project_composed(Vec3& output,const Vec3& input,const Viewpor
     transform_coordinate(output,input,transform);
     if (viewport) {
         const auto& v=*viewport;
+        Vec3 mapped;
+        if(viewport_compound(mapped,output,v)){
+            output=mapped;
+#ifdef TH_PROJECTION_FASTPATH_TEST
+            ++test_projection_stats.viewport_hits;
+#endif
+            return;
+        }
+#ifdef TH_PROJECTION_FASTPATH_TEST
+        ++test_projection_stats.viewport_fallbacks;
+#endif
         output.x=((number(output.x)+number(1))*Extended::from_int64(v.width)*number(.5f)+Extended::from_int64(v.x)).to_float();
         output.y=((number(1)-number(output.y))*Extended::from_int64(v.height)*number(.5f)+Extended::from_int64(v.y)).to_float();
         output.z=((number(v.max_z)-number(v.min_z))*number(output.z)+number(v.min_z)).to_float();
@@ -187,5 +318,20 @@ void GraphicsMath::project(Vec3& output, const Vec3& input, const Viewport* view
                            const Matrix4* projection, const Matrix4* view, const Matrix4* world) {
     Matrix4 transform;compose_projection(transform,projection,view,world);
     project_composed(output,input,viewport,transform);
+}
+void GraphicsMath::project_translation(Vec3& output,const Vec3& input,const Vec3& position,
+                                       const Viewport* viewport,const Matrix4& projection,const Matrix4& view) {
+    Matrix4 transform;
+    const bool finite_depth=!viewport||(finite_bits(to_bits(viewport->min_z))&&finite_bits(to_bits(viewport->max_z)));
+    if(finite_vector(input)&&finite_depth&&compose_translation(transform,position,projection,view)){
+        project_composed(output,input,viewport,transform);
+        return;
+    }
+#ifdef TH_PROJECTION_FASTPATH_TEST
+    ++test_projection_stats.translation_fallbacks;
+#endif
+    Matrix4 world;world.identity();
+    world.m[3][0]=position.x;world.m[3][1]=position.y;world.m[3][2]=position.z;
+    project(output,input,viewport,&projection,&view,&world);
 }
 }

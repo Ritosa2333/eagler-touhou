@@ -1,5 +1,6 @@
 #include "BackgroundObjects.hpp"
 #include "GraphicsMath.hpp"
+#include "BackgroundMath.hpp"
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
 #include <cmath>
@@ -10,17 +11,16 @@ bool diagnostic_background_instance_index=false;
 #endif
 Vec3 add(const Vec3& a,const Vec3& b){return {Scalar::add(a.x,b.x),Scalar::add(a.y,b.y),Scalar::add(a.z,b.z)};}
 Vec3 sub(const Vec3& a,const Vec3& b){return {Scalar::sub(a.x,b.x),Scalar::sub(a.y,b.y),Scalar::sub(a.z,b.z)};}
-Extended dot(const Vec3& a,const Vec3& b){return number(a.x)*number(b.x)+number(a.y)*number(b.y)+number(a.z)*number(b.z);}
+Extended dot(const Vec3& a,const Vec3& b){return background_math::dot3(a.x,a.y,a.z,b.x,b.y,b.z);}
 Extended length(const Vec3& v){return number(dot(v,v).to_float()).square_root();}
-Vec3 translated(const Vec3& local,const Vec3& instance,const Vec3& offset){return {(number(local.x)+number(instance.x)-number(offset.x)).to_float(),(number(local.y)+number(instance.y)-number(offset.y)).to_float(),(number(local.z)+number(instance.z)-number(offset.z)).to_float()};}
-Vec3 scaled_add(const Vec3& origin,const Vec3& direction,float distance){return {(number(direction.x)*number(distance)+number(origin.x)).to_float(),(number(direction.y)*number(distance)+number(origin.y)).to_float(),(number(direction.z)*number(distance)+number(origin.z)).to_float()};}
+Vec3 translated(const Vec3& local,const Vec3& instance,const Vec3& offset){return {background_math::translated(local.x,instance.x,offset.x),background_math::translated(local.y,instance.y,offset.y),background_math::translated(local.z,instance.z,offset.z)};}
+Vec3 scaled_add(const Vec3& origin,const Vec3& direction,float distance){return {background_math::scaled_add(origin.x,direction.x,distance),background_math::scaled_add(origin.y,direction.y,distance),background_math::scaled_add(origin.z,direction.z,distance)};}
 }
 #ifdef TH_MULTIPLAYER_FIXTURES
 bool fixture_background_instance_index(bool enabled){diagnostic_background_instance_index=enabled;return diagnostic_background_instance_index;}
 #endif
 Vec3 BackgroundObjects::project(const Vec3& position)const{
-    Matrix4 world;world.identity();world.m[3][0]=position.x;world.m[3][1]=position.y;world.m[3][2]=position.z;Vec3 result;
-    GraphicsMath::project(result,projection_input,&renderer.viewport,&renderer.projection_matrix,&renderer.view_matrix,&world);return result;
+    Vec3 result;GraphicsMath::project_translation(result,projection_input,position,&renderer.viewport,renderer.projection_matrix,renderer.view_matrix);return result;
 }
 float BackgroundObjects::fog_amount(float distance)const{return ((number(state.fog.near_plane)-number(distance))/(number(state.fog.near_plane)-number(state.fog.far_plane))).to_float();}
 u32 BackgroundObjects::fog_color(u32 original,float amount)const{
@@ -41,7 +41,7 @@ void BackgroundObjects::draw(i32 layer){
     const auto eye=add(state.camera.position,state.camera.eye_offset);
     const auto draw_instance=[&](const StageInstance* instance){
         auto& object=*state.objects[instance->object];if(i8(object.layer)!=layer)return;
-        const auto center_component=[](float origin,float instance,float offset,float size){return (number(origin)+number(instance)-number(offset)+number(size)/number(2)).to_float();};
+        const auto center_component=background_math::center;
         const Vec3 center{center_component(object.position.x,instance->position.x,state.position.x,object.dimensions.x),center_component(object.position.y,instance->position.y,state.position.y,object.dimensions.y),center_component(object.position.z,instance->position.z,state.position.z,object.dimensions.z)};
         const auto relative=sub(center,eye);if(number(state.distance_limit)<dot(relative,relative))return;
         const float distance=dot(relative,state.camera.unused24).to_float(),limit=(length(object.dimensions)/number(2)+number(960)).to_float();
@@ -81,7 +81,7 @@ void BackgroundObjects::draw(i32 layer){
     for(auto* instance=state.instances;instance->object>=0;++instance)draw_instance(instance);
 }
 void BackgroundObjects::sprite(AnmVm& vm,const StageSpriteQuad& quad,const StageInstance& instance,const Vec3& right,i32& fog_mode){
-    const auto coordinate=[](float animated,float origin,float instance,float offset){return (number(animated)+number(origin)+number(instance)-number(offset)).to_float();};
+    const auto coordinate=background_math::coordinate;
     vm.pos={coordinate(vm.pos2.x,quad.position.x,instance.position.x,state.position.x),coordinate(vm.pos2.y,quad.position.y,instance.position.y,state.position.y),coordinate(vm.pos2.z,quad.position.z,instance.position.z,state.position.z)};
     if(quad.width!=0)vm.scale.x=Scalar::div(quad.width,vm.loadedSprite->widthPx);
     if(quad.height!=0)vm.scale.y=Scalar::div(quad.height,vm.loadedSprite->heightPx);

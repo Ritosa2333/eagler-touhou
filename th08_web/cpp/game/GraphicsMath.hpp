@@ -2,6 +2,12 @@
 #include "AnmRenderer.hpp"
 namespace th08 {
 enum class GraphicsArithmetic { Simd, Scalar };
+#ifdef TH_PROJECTION_FASTPATH_TEST
+struct ProjectionFastpathStats {
+    u64 translation_hits=0,translation_computations=0,translation_fallbacks=0;
+    u64 viewport_hits=0,viewport_fallbacks=0;
+};
+#endif
 // D3DX 8 has two arithmetic paths with different rounding and normalization.
 // Simd is the original runtime's default; Scalar is its DisablePSGP option.
 struct GraphicsMath {
@@ -18,5 +24,15 @@ struct GraphicsMath {
     static void project_composed(Vec3& output,const Vec3& input,const Viewport* viewport,const Matrix4& transform);
     static void project(Vec3& output, const Vec3& input, const Viewport* viewport,
                         const Matrix4* projection, const Matrix4* view, const Matrix4* world);
+    // The world matrix is exactly identity with position in its last row.
+    // input remains a separate per-call value (background beams reuse it).
+    static void project_translation(Vec3& output,const Vec3& input,const Vec3& position,
+                                    const Viewport* viewport,const Matrix4& projection,const Matrix4& view);
+#ifdef TH_PROJECTION_FASTPATH_TEST
+    static ProjectionFastpathStats projection_fastpath_stats() noexcept;
+    static void reset_projection_fastpath_test() noexcept;
+    static bool translation_transform_for_test(Matrix4& output,const Vec3& position,
+                                               const Matrix4& projection,const Matrix4& view);
+#endif
 };
 }
