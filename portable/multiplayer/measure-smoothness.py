@@ -168,6 +168,8 @@ def freeze(args):
       args.data:'input/th08.dat',WORKSPACE/'th06-eagler/assets/msgothic.ttc':'fonts/msgothic.ttc',
       WORKSPACE/'th08-eagler/build-eagler/fonts/blend.bin':'fonts/blend.bin',
       WORKSPACE/'th08-eagler/build-eagler/fonts/cp932.bin':'fonts/cp932.bin'}
+    symbols=build/'th08-sdl.mjs.symbols'
+    if symbols.exists():source[symbols]='th08-sdl.mjs.symbols'
     launcher=WORKSPACE/'eagler-touhou'
     # Freeze the real relay's complete local module graph, including its
     # packaged-contract loader. A stale hand-maintained list missed imports.
@@ -208,7 +210,19 @@ def run(args,origin,relay,dest,mode):
       'headed':args.headed,'nativeGpu':args.native_gpu,'touchHz':args.touch_hz,'browserChannel':args.browser_channel,
       'browsers':[],'peers':[],'errors':[],'teardown':{'browsersClosed':0,'errors':[]}}
     with sync_playwright() as pw:
-        browsers=[];pages=[]
+        browsers=[];pages=[];cpu_sessions=[]
+        profile_id=uuid.uuid4().hex[:12]
+        report['cpuSampling']={'intervalUs':args.cpu_profile_us,'profiles':[],
+          'scope':'CDP sampling across the active phase, including setup and frames before the measured body starts at logical frame 240; diagnostic timings, not performance acceptance' if args.cpu_profile_us else 'disabled'}
+        def finish_cpu_profiles():
+            while cpu_sessions:
+                seat,session=cpu_sessions.pop(0)
+                profile=session.send('Profiler.stop')['profile']
+                output=Path(args.output)/f'{mode}-{profile_id}-seat{seat}.cpuprofile'
+                output.write_text(json.dumps(profile,separators=(',',':')),encoding='utf-8')
+                report['cpuSampling']['profiles'].append({'seat':seat,'path':output.name,'sha256':digest(output),
+                  'samples':len(profile.get('samples',[])),'startTime':profile.get('startTime'),'endTime':profile.get('endTime')})
+                session.send('Profiler.disable')
         try:
             host_timing=args.runtime_timing=='launcher-rollback'
             room=('th08mp-' if host_timing else 'smooth-')+uuid.uuid4().hex[:12]
@@ -305,6 +319,12 @@ def run(args,origin,relay,dest,mode):
                 if seat in args.slow_seats:
                     context=page.context;session=context.new_cdp_session(page)
                     session.send('Emulation.setCPUThrottlingRate',{'rate':args.cpu_rate})
+                if args.cpu_profile_us:
+                    sampler=page.context.new_cdp_session(page)
+                    sampler.send('Profiler.enable')
+                    sampler.send('Profiler.setSamplingInterval',{'interval':args.cpu_profile_us})
+                    sampler.send('Profiler.start')
+                    cpu_sessions.append((seat,sampler))
             # Arm against the same wall deadline, instead of starting P1 while
             # synchronous CDP setup is still blocking the other processes.
             start_at=time.time()*1000+600
@@ -312,6 +332,7 @@ def run(args,origin,relay,dest,mode):
             # Only accept completion of the newly started phase, even if its
             # timer runs late and the warmup done flag is still visible.
             wait_phase(2)
+            finish_cpu_profiles()
             report['peers']=[page.evaluate('th08Performance.report()') for page in pages]
             for seat,peer in enumerate(report['peers']):
                 imp=peer['impairment']
@@ -385,6 +406,8 @@ def run(args,origin,relay,dest,mode):
                     try:report['peers'].append(page.evaluate('th08Performance.report()'))
                     except Exception:pass
         finally:
+            try:finish_cpu_profiles()
+            except Exception as error:report['teardown']['errors'].append('CPU profile: '+str(error))
             for browser in reversed(browsers):
                 try:
                     browser.close()
@@ -441,6 +464,7 @@ def main():
     p.add_argument('--browser-channel',choices=('default','chromium','chrome','msedge'),default='chromium')
     p.add_argument('--headed',action='store_true',help='Use visible desktop browser windows')
     p.add_argument('--native-gpu',action='store_true',help='Require the actual game WebGL context to expose a non-software renderer')
+    p.add_argument('--cpu-profile-us',type=int,default=0,help='Opt-in CDP CPU sampling interval; timings from this run are diagnostic only')
     p.add_argument('--cap60',action='store_true')
     p.add_argument('--wall-clock-touch',action='store_true')
     p.add_argument('--touch-hz',type=float,default=0,help='Independent Page timer rate for touch; zero preserves the old rAF source')
@@ -458,6 +482,7 @@ def main():
     if len(set(args.touch_seats))!=len(args.touch_seats) or any(s<0 or s>=args.players for s in args.touch_seats):raise ValueError('Invalid touch seats')
     if args.frames<=300 or not all(m in MODES for m in modes) or args.cpu_rate<1:raise ValueError('Invalid settings')
     if args.touch_hz<0 or args.touch_hz>240 or (args.touch_hz and not args.wall_clock_touch):raise ValueError('Invalid touch source rate')
+    if args.cpu_profile_us and not 100<=args.cpu_profile_us<=100000:raise ValueError('Invalid CPU sampling interval')
     if not 0<=args.spike_seat<args.players or (args.spike_ms and not 240<args.spike_frame<args.frames-180):raise ValueError('Invalid spike settings')
     if args.production and (args.bullets or modes!=['frontier']):raise ValueError('Production lane requires authored bullets and unchanged frontier policy')
     if args.production and args.checkpoint_span!=1:raise ValueError('Production lane cannot alter checkpoint span')
@@ -489,6 +514,12 @@ def main():
                     name=f'{round_id+1}-{mode}.json'
                     report=supervised_run(args,'http://127.0.0.1:'+str(server.server_port),'ws://127.0.0.1:'+str(relay_port),dest,mode,name)
                     verify(dest,manifest)
+                    if report['passed'] and args.cpu_profile_us:
+                        sampling=report.get('cpuSampling',{})
+                        profiles=sampling.get('profiles',[])
+                        if sampling.get('intervalUs')!=args.cpu_profile_us or len(profiles)!=args.players or any(not v.get('samples') or digest(args.output/v['path'])!=v['sha256'] for v in profiles):
+                            report['passed']=False;report['error']='Requested CPU sampling was not completed by the frozen harness'
+                            (args.output/name).write_text(json.dumps(report,indent=2))
                     if report['passed'] and args.runtime_timing=='launcher-rollback':
                         if report.get('runtimeTiming')!=args.runtime_timing or not report.get('admission') or not report.get('peers') or any(not peer.get('timing',{}).get('host') for peer in report['peers']):
                             report['passed']=False;report['error']='Frozen harness did not execute the requested host timing path'
