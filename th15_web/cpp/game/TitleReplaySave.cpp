@@ -16,8 +16,8 @@ bool TitleReplaySave::prepare_name(){
 bool TitleReplaySave::append(char value){if(editor.name_length<0||editor.name_length>8)return check(false,"Replay name length outside original range");if(editor.name_length<8){editor.name[editor.name_length++]=value;if(editor.name_length>=8)editor.names.select(90);}else editor.name[editor.name_length-1]=value;return true;}
 bool TitleReplaySave::update(u32 pressed,u32 repeated){
  if(!error.empty())return false;auto& grid=editor.names;
- // Completed assisted runs return through the existing cancel/cleanup path.
- // Also handles assistance enabled while the slot or name editor is open.
+ // A missing recording returns through the existing cancel/cleanup path.
+ // Assistance alone never rejects a live recording (TH06-08 save policy).
  if(!host.replay_save_available()&&state.substate!=4)state.change_substate(4);
  switch(state.substate){
  case 0:

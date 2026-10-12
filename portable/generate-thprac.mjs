@@ -66,6 +66,10 @@ const scoresHelper=scoreBody.replace('float scores[6] = {','std::array<float,6> 
 const replaceOnce=(a,b)=>{if(abResult.split(a).length!==2)throw Error('AB result adapter boundary changed: '+a);abResult=abResult.replace(a,b);};
 replaceOnce('void ABTestRender()','void practice_ab_test_result(ApplicationState& app)');
 replaceOnce('static int t = 0;','auto& t = app.practice.ab_result_frames;');
+// Presentation only: advance the original result animation even while its
+// mobile panel is hidden/collapsed. Desktop keeps the original window ID.
+replaceOnce('ImGui::Begin("##res", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);',
+ 'if (!MobileThprac::show(MobileThprac::Result, true)) return;\n            if (!MobileThprac::begin(MobileThprac::Result, "##res", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar, locale)) { ImGui::End(); return; }');
 replaceOnce('DWORD ecl_glob = *(DWORD*)(0x4E9A80);','const auto& globals = app.scene()->battle.enemy_world;');
 replaceOnce('DWORD m9923 = ecl_glob ? *(DWORD*)(ecl_glob + 0x18) : 0;','const int m9923 = globals.integer_registers[3];');
 for(let i=0;i<5;i++)replaceOnce(`*(float*)(ecl_glob + 0x${(0x38-i*4).toString(16).toUpperCase()})`,`globals.float_registers[${7-i}]`);

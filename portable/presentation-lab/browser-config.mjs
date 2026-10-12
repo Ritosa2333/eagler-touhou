@@ -1,0 +1,12 @@
+import {LabController} from './adapter.mjs';
+let runtime=null,locked=false;
+const panel=document.createElement('div');panel.className='controls';
+const high=document.createElement('button'),sixty=document.createElement('button'),meter=document.createElement('span');
+high.textContent='高刷（默认）';sixty.textContent='限制 60 Hz';
+const select=value=>{locked=value;runtime?.core._th15_limit_presentation(+value);high.className=value?'':'primary';sixty.className=value?'primary':'';document.getElementById('runtime').contentWindow.document.querySelector('canvas')?.focus();};
+high.onclick=()=>select(false);sixty.onclick=()=>select(true);panel.append(high,sixty,meter);
+document.querySelector('.viewer .controls').after(panel);
+document.querySelector('input#replay').disabled=true;
+let previous=null;
+setInterval(()=>{if(!runtime)return;const c=runtime.core,now=performance.now(),tick=c._th15_frame(),pointer=c._th15_probe_graphics_statistics(),presents=pointer?c.HEAPU32[pointer/4+5]:0;if(previous){const seconds=(now-previous.now)/1000;meter.textContent=`${locked?'60 Hz 限制':'高刷'} · 逻辑 ${((tick-previous.tick)/seconds).toFixed(1)} Hz · 呈现 ${((presents-previous.presents)/seconds).toFixed(1)} fps`;}previous={now,tick,presents};},1000);
+export default {game:'th15',title:'TH15 高刷 · 帧间显微镜（部分观测）',dataLabel:'选择自己的 th15.dat',dataUrl:'/input/th15.dat',runtimeUrl:epoch=>`/runtime/runtime.html?runtimeEpoch=${epoch}`,runtime:target=>target.__th15Runtime,configure(value){runtime=value;previous=null;select(locked);},createController:(value,identity)=>new LabController(value,identity)};
