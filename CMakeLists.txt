@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.20)
 
 project(eagler-common VERSION 0.16.0 LANGUAGES CXX)
 
+# Purple THPrac tools are source-level and opt-in. No ImGui/SDL dependency is
+# introduced into netplay or standalone non-UI users.
+add_library(eagler_common_thprac INTERFACE)
+add_library(eagler::thprac ALIAS eagler_common_thprac)
+target_include_directories(eagler_common_thprac INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
+target_compile_features(eagler_common_thprac INTERFACE cxx_std_17)
+
 # Consumers such as Replay metadata readers need the shared protocol types even
 # in ordinary (non-netplay) builds. Keep that dependency header-only so title
 # builds do not accidentally pull transport/core implementation objects into

@@ -1,5 +1,37 @@
 # Browser keyboard ownership
 
+## Startup branding
+
+`startup-branding.mjs` and `startup-wordmark.svg` own the TH06–TH09 startup
+overlay. Generate the self-contained directory module or inline shell block
+with `node tools/sync-startup-branding.mjs TARGET ...`; `--check` detects drift.
+The glyph and yin-yang paths come from the original Eagler wordmark. Per-title
+colors share optical bounds: right edge 628, logo top 112, build bottom 141 on
+the 640×480 game canvas. No external font is required.
+
+Adapters pass their build timestamp and mount the generated transparent pixels
+before showing the startup picture. Each renderer draws the separate texture
+after its startup background and before authored animations/covers. Original
+game images and archives are never modified. TH06/TH07 stamp UTC at link time;
+TH08/TH09 record the native build timestamp in their build/package metadata.
+
+TH10/TH11/TH15/TH20 use `startup-developers.svg` (Georgia Italic serif paths and
+a white/transparent yin-yang with a cutout eye), `startup-developers.mjs`, and `StartupBranding.hpp`.
+Run `node tools/sync-startup-developers.mjs REPOSITORY ...` (or `--check`) to
+generate each title's self-contained shell module and renderer helper. The
+complete “EAGLER ☯ TOUHOU Developers” line is centered below the studio credit,
+220 logical pixels wide, with no shadow. Build time is right-aligned at (628,472)
+in the bottom-right corner of the full game canvas, UTC+8.
+All signature lettering is stored as SVG paths: builds and browsers require no
+Georgia font file, font package, or font download. The small build timestamp
+uses the browser's local serif fallback without loading a font resource.
+Native build metadata owns that timestamp. Retail images are not inputs to the
+transparent texture generator. The native signature VM controls the credit's
+RGB/alpha and draw lifetime; later scene layers still cover it. TH11/TH15 keep
+their isolated signature ANMs ticking during the existing two-second startup
+hold while menu preparation completes. This does not advance gameplay logic.
+The helper restores renderer state and never reads back the game framebuffer.
+
 `keyboard-owners.mjs` owns physical-key identity and release reconciliation.
 The title adapter maps events to bits and decides pulse/lifecycle policy.
 The Launcher has its own session-scoped protocol owner: it returns the original

@@ -14,6 +14,12 @@ required categories fail closed.
 segments plus the versioned legacy JSON digest helper. Title adapters still
 own tick boundaries, field selection and lifecycle semantics.
 
+`capture-file.mjs`, `golden-files.mjs`, `file-suite.mjs` and `join-traces.mjs`
+support the TH11/TH15 file-provider adapters. Complete original captures and
+candidate captures remain separate; stage joins preserve every source tick.
+Golden acceptance is explicit and refuses to overwrite an existing manifest.
+`fetch-fixtures.mjs` downloads only SHA-256-pinned public corpus inputs.
+
 Compare two traces:
 
 ```text
