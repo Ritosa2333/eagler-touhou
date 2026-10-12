@@ -59,9 +59,12 @@ inline bool resource_script_write_case(TextureStore& textures,i16 opcode,u16 mas
 inline const u32* resources_journal_probe(TextureStore& textures){
     static u32 result[10]{};std::fill(result,result+10,0);result[0]=1;
     const auto require=[&](bool condition,u32 step){if(!condition)result[2]=step;return condition;};
+    // AnmLibrary loads slots 0..69. Keep the occupied owner after the clean
+    // owner so Bind must reject it without partially installing earlier hooks.
+    constexpr i32 first_slot=68,later_slot=69;
     AnmLibrary library(textures);const auto source=resource_journal_anm();
     if(!require(library.preload(source.data(),u32(source.size())),1))return result;
-    auto* file=library.load(69,source.data(),u32(source.size()));
+    auto* file=library.load(first_slot,source.data(),u32(source.size()));
     if(!require(file&&file->scriptCount==2&&file->scripts[0]==file->scripts[1]&&library.preload_hits()==1,2))return result;
     ResourcesJournal journal;if(!require(journal.Bind(library),3))return result;
     Rng rng{1234,1234,0};AnmExecutor executor(rng);AnmVm vm{};
@@ -81,15 +84,15 @@ inline const u32* resources_journal_probe(TextureStore& textures){
     if(!require(journal.UndoTo(0),7))return result;
     result[5]=1;
     if(!require(journal.BeginFrame(1)&&journal.EndFrame(),8))return result;
-    library.release(69);
-    if(!require(journal.Failed()&&library.get(69)==file&&journal.UndoTo(1)&&!journal.Failed(),9))return result;
+    library.release(first_slot);
+    if(!require(journal.Failed()&&library.get(first_slot)==file&&journal.UndoTo(1)&&!journal.Failed(),9))return result;
     result[6]=1;
     if(!require(journal.BeginFrame(2)&&journal.EndFrame(),10))return result;
-    if(!require(!library.load(69,source.data(),u32(source.size()))&&library.get(69)==file&&journal.UndoTo(2),11))return result;
+    if(!require(!library.load(first_slot,source.data(),u32(source.size()))&&library.get(first_slot)==file&&journal.UndoTo(2),11))return result;
     result[7]=1;
-    journal.Clear();library.release(69);
-    if(!require(!library.get(69),12))return result;
-    auto* deferred=library.load(69,source.data(),u32(source.size()),true);
+    journal.Clear();library.release(first_slot);
+    if(!require(!library.get(first_slot),12))return result;
+    auto* deferred=library.load(first_slot,source.data(),u32(source.size()),true);
     if(!require(deferred&&deferred->numberEntriesToBeLoaded&&!journal.Bind(library),13))return result;
     if(!require(library.service()&&journal.Bind(library),14))return result;
     result[8]=1;
@@ -97,7 +100,7 @@ inline const u32* resources_journal_probe(TextureStore& textures){
     const auto stable_hash=journal.AuditHash();
     // A clone of a live file owns its private script bytes, never its source's
     // callback. Exercise it while the original has a closed checkpoint.
-    AnmResource clone;clone.clone_from(*library.resource(69),70);
+    AnmResource clone;clone.clone_from(*library.resource(first_slot),later_slot);
     if(!require(!clone.view().script_write_context&&!clone.view().script_before_write&&
         clone.view().rawData!=deferred->rawData&&journal.BeginFrame(3)&&journal.EndFrame(),16))return result;
     executor.invalid=false;executor.start(clone.view(),vm,clone.view().scripts[0]);
@@ -128,9 +131,10 @@ inline const u32* resources_journal_probe(TextureStore& textures){
     if(!require(extend()&&journal.AuditHash()==extended_hash&&journal.UndoTo(5)&&
         journal.AuditHash()==stable_hash&&journal.SetScriptFirstWrite(true),23))return result;
     journal.Clear();
-    if(!require(!deferred->script_write_context&&!deferred->script_before_write,24))return result;
+    if(!require(!deferred->script_write_context&&!deferred->script_before_write&&
+        !library.rollback_journal&&!library.rollback_failed,24))return result;
     // Reject an occupied later file without partially installing earlier ones.
-    auto* occupied=library.load(70,source.data(),u32(source.size()));if(!require(occupied!=nullptr,25))return result;
+    auto* occupied=library.load(later_slot,source.data(),u32(source.size()));if(!require(occupied!=nullptr,25))return result;
     const auto foreign_hook=+[](void*,const AnmLoaded&,void*,std::size_t){return true;};
     occupied->script_write_context=&library;occupied->script_before_write=foreign_hook;
     if(!require(!journal.Bind(library)&&!deferred->script_write_context&&!deferred->script_before_write&&
@@ -145,7 +149,7 @@ inline const u32* resources_journal_probe(TextureStore& textures){
         !occupied->script_write_context&&!occupied->script_before_write,29))return result;
     // A new load also drops runtime hook state instead of retaining old owners.
     clone.view().script_write_context=&library;clone.view().script_before_write=foreign_hook;
-    if(!require(clone.load(70,source.data(),u32(source.size()))&&
+    if(!require(clone.load(later_slot,source.data(),u32(source.size()))&&
         !clone.view().script_write_context&&!clone.view().script_before_write,30))return result;
     const u32 real_input=resource_journal_float_bits(42.5f);
     if(!require(resource_script_write_case(textures,37,0,7,42,42,false,false),31))return result;
