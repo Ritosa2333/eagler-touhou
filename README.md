@@ -13,8 +13,8 @@
 </div>
 
 > [!TIP]
-> 对于游戏支持情况，参见[游戏还原和适配总进度表](https://github.com/YomotsuHisami/eagler-touhou/blob/main/docs/TOUHOU_PROGRESS.md)。
-> 如果您已经着手做某作了，直接提交修改表格的 Issue 或 PR 即可。
+> 对于游戏支持情况，参见[游戏还原和适配总进度表](https://github.com/YomotsuHisami/eagler-touhou/blob/main/docs/TOUHOU_PROGRESS.md)。<br>
+> 如果您已经着手做某作了，直接提交修改表格的 Issue 或 PR 即可。<br>
 > 如果您对原作逆向或原作/东二适配感兴趣，欢迎加入我们的 [QQ 群](https://qm.qq.com/q/eeUrxIltug?from=tim)，我们有个开发者群。
 
 ## 概要
