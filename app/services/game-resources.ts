@@ -1,4 +1,5 @@
 import {componentFileIds} from '../../package/package-generation.mjs';
+import {linkAbortSignals} from './abort-signals';
 import {PRODUCT_GAMES, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {releaseCatalogEntryUrl, type ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
@@ -85,12 +86,13 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   if (metadata.siteManifest?.shared.resourceMode === 'import' || catalog?.games[generation.game]?.revision !== generation.descriptor.revision) {
     onWarning?.(t('music.initialOggIncomplete')); return {generation, music: 'midi'};
   }
+  const linked = linkAbortSignals(signal, downloadSignal);
   try {
     onMusicDownloadActivity?.(true);
     onProgress?.({stage: 'music', message: t('music.preparingInitialOgg')});
     const result = await acquisition.installPublished(generation.game, {catalog, catalogUrl: acquisition.catalogUrl,
       addFileIds: initial, preserveLocalSource: true,
-      signal: signal && downloadSignal ? AbortSignal.any([signal, downloadSignal]) : downloadSignal ?? signal,
+      signal: linked.signal,
       fetchImpl: acquisition.getPackageFetch(generation.game),
       onProgress: progress => onProgress?.({stage: 'music', message: t('music.preparingInitialOggProgress', {...progress}), completed: progress.completed, total: progress.total})});
     checkPreparationAbort(signal);
@@ -104,5 +106,5 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
     checkPreparationAbort(signal);
     if (!downloadSignal?.aborted && !(error instanceof Error && error.name === 'AbortError')) onWarning?.(t('music.initialOggFailed', {reason: preparationErrorText(error)}));
     return {generation, music: 'midi'};
-  } finally {onMusicDownloadActivity?.(false);}
+  } finally {linked.dispose(); onMusicDownloadActivity?.(false);}
 }
