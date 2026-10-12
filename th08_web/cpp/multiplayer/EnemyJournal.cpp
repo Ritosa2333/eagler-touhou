@@ -13,12 +13,13 @@ bool EnemyJournal::Bind(EnemyPopulation& value){
     value.journal=this;failed=false;return true;
 }
 bool EnemyJournal::BeginFrame(u32 frame,bool extend){
-    if(!population||Failed()||bytes.IsFrameOpen()||(!extend&&records.size()>=History)||
-       (extend&&(records.empty()||records.back().end+1!=frame))||
+    if(!population||Failed()||bytes.IsFrameOpen()||(!extend&&record_count>=History)||
+       (extend&&(!record_count||RecordAt(record_count-1).end+1!=frame))||
        program->mutable_data()!=program_data||program->size()!=program_size)return Fail();
     if(!bytes.BeginFrame(frame,extend))return Fail();
-    if(extend){records.back().end=frame;return true;}
-    records.emplace_back();auto& record=records.back();record.frame=record.end=frame;
+    if(extend){RecordAt(record_count-1).end=frame;return true;}
+    auto& record=RecordAt(record_count++);record.frame=record.end=frame;
+    record.existed.fill(false);record.captured.fill(false);record.owners.clear();
     // ECL can write literal bytecode arguments. The loaded buffer is an
     // authoritative mutable owner even though its allocation remains stable.
     if(program_size&&!bytes.Touch(program_data,program_size))return Fail();
@@ -34,9 +35,9 @@ bool EnemyJournal::BeginFrame(u32 frame,bool extend){
 }
 bool EnemyJournal::Capture(u32 slot){
     if(!population||Failed())return false;
-    if(!bytes.IsFrameOpen())return records.empty()?true:Fail();
+    if(!bytes.IsFrameOpen())return !record_count?true:Fail();
     if(slot>=population->enemies.size()||!population->enemies[slot])return Fail();
-    auto& record=records.back();if(record.captured[slot])return true;
+    auto& record=RecordAt(record_count-1);if(record.captured[slot])return true;
     auto& vm=*population->enemies[slot];
     if(vm.active_context||vm.active_slot!=-1)return Fail();
     ContextOwners owners;owners.slot=slot;
@@ -55,18 +56,21 @@ bool EnemyJournal::Capture(u32 slot){
 bool EnemyJournal::EndFrame(){return !Failed()&&bytes.EndFrame();}
 bool EnemyJournal::UndoTo(u32 frame){
     if(!population||Failed()||bytes.IsFrameOpen())return false;
-    auto target=records.begin();while(target!=records.end()&&target->frame!=frame)++target;
-    if(target==records.end())return false;
-    const auto existed=target->existed;
+    std::size_t target=0;while(target<record_count&&RecordAt(target).frame!=frame)++target;
+    if(target==record_count)return false;
+    const auto existed=RecordAt(target).existed;
     if(program->mutable_data()!=program_data||program->size()!=program_size||!bytes.UndoTo(frame))return Fail();
     // Restore in reverse time so the oldest handle wins. Payloads were restored
     // above while all generations were pinned and therefore still alive.
-    while(!records.empty()&&records.back().frame>=frame){
-        for(auto& owner:records.back().owners){
+    while(record_count&&RecordAt(record_count-1).frame>=frame){
+        auto& record=RecordAt(record_count-1);
+        for(auto& owner:record.owners){
             auto& vm=population->enemies[owner.slot];if(!vm)return Fail();
             for(u32 i=0;i<4;++i)vm->asynchronous[i]=owner.contexts[i];
         }
-        records.pop_back();
+        // Keep backing storage, but release each historical context at the
+        // same point as the old pop_back(), before removing newborn VMs.
+        record.owners.clear();--record_count;
     }
     for(u32 slot=0;slot<existed.size();++slot)if(!existed[slot])population->enemies[slot].reset();
     return true;
@@ -74,12 +78,15 @@ bool EnemyJournal::UndoTo(u32 frame){
 void EnemyJournal::DiscardBefore(u32 frame){
     if(bytes.IsFrameOpen())return;
     bytes.DiscardBefore(frame);
-    while(!records.empty()&&records.front().end<frame)records.pop_front();
+    while(record_count&&RecordAt(0).end<frame){
+        RecordAt(0).owners.clear();record_first=(record_first+1)%History;--record_count;
+    }
 }
 void EnemyJournal::Clear(){
     if(population&&population->journal==this)population->journal=nullptr;
     population=nullptr;program=nullptr;program_data=nullptr;program_size=0;
-    records.clear();bytes.Clear();failed=false;
+    for(auto& record:records)record=Record{};
+    record_first=record_count=0;bytes.Clear();failed=false;
 }
 u32 EnemyJournal::AuditHash()const{
     if(!population)return 0;

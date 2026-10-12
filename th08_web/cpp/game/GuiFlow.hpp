@@ -14,6 +14,11 @@ public:
     GuiFlow(GuiController& controller,Dialogue& dialogue,GuiResources& resources):controller(controller),dialogue(dialogue),resources(resources){}
     ~GuiFlow(){detach();}
     GuiLoadContext context;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // External journal ownership; never part of the restored load context.
+    void* transition_touch_context=nullptr;
+    bool (*transition_touch)(void*)=nullptr;
+#endif
     bool setup();
     void release();
     void update();

@@ -41,6 +41,7 @@ public:
     bool TouchRecord(SpellRecord&);
     bool TouchAllRecords();
     bool TouchTitleSpells();
+    bool TouchGuiTransitions();
 #ifdef TH_MULTIPLAYER_FIXTURES
     bool SetBombLazy(bool value){if(HasHistory())return false;bomb_lazy=value;return true;}
     bool BombLazy()const{return bomb_lazy;}
@@ -69,7 +70,7 @@ public:
     std::vector<u32> BlockHashes()const;
     const char* BlockName(u32 index)const{return index<blocks.size()?blocks[index].name:"outside inventory";}
 private:
-    enum class SnapshotMode:u8 {Always,Bomb,Shot,Record,PreviousRecord,TitleSpells};
+    enum class SnapshotMode:u8 {Always,Bomb,Shot,Record,PreviousRecord,TitleSpells,GuiTransitions};
     struct Block {void* address;std::size_t bytes;Group group;const char* name;SnapshotMode mode=SnapshotMode::Always;};
     struct Record {u32 frame,end;std::unique_ptr<ReplayRecording> replay;};
     BrowserRuntime* runtime=nullptr;GameApplication* app=nullptr;

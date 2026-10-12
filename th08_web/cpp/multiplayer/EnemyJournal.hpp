@@ -5,7 +5,6 @@
 #include "../game/EnemyPopulation.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <array>
-#include <deque>
 
 namespace th08::multiplayer {
 // One owner in the eventual world journal, not a standalone world restore.
@@ -25,7 +24,7 @@ public:
     bool UndoTo(u32 frame);
     void DiscardBefore(u32 frame);
     void Clear();
-    bool HasHistory()const{return !records.empty();}
+    bool HasHistory()const{return record_count!=0;}
     bool Failed()const{return failed||bytes.Failed();}
     std::size_t BytesForFrame(u32 frame)const{return bytes.BytesForFrame(frame);}
     u32 AuditHash()const;
@@ -43,7 +42,10 @@ private:
     EclProgram* program=nullptr;
     u8* program_data=nullptr;u32 program_size=0;
     Netplay::RollbackJournal bytes;
-    std::deque<Record> records;
+    std::array<Record,History> records;
+    std::size_t record_first=0,record_count=0;
+    Record& RecordAt(std::size_t index){return records[(record_first+index)%History];}
+    const Record& RecordAt(std::size_t index)const{return records[(record_first+index)%History];}
     bool failed=false;
     bool Fail(){failed=true;return false;}
 };

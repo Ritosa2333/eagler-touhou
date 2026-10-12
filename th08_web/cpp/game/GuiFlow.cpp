@@ -8,6 +8,11 @@ constexpr const char* messages[9][4]={{"msg1a.dat","msg1b.dat","msg1c.dat","msg1
 bool GuiFlow::setup(){
     auto& c=controller;auto& g=c.gui;auto& d=c.display;const auto& s=c.scene;const bool spell=s.flags&0x4000;
     if(s.stage<0||s.stage>=9||s.character<0||s.character>=12)return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Both the initial memset and the stage transition initialize the full
+    // array. Preserve dormant bytes before either path can change them.
+    if(transition_touch&&!transition_touch(transition_touch_context))return false;
+#endif
     if(context.initial){
         g.implementation=&d;
         std::memset(&d,0,sizeof(d));g.front=resources.load(10,"front.anm");if(!g.front)return false;c.reset_clear();

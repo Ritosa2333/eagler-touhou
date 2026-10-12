@@ -60,7 +60,16 @@ bool WorldJournal::Inventory(){
     ADD(g.globals,Enemy);ADD(g.enemies.state,Enemy);ADD(g.enemies.input,Enemy);
     ADD(g.enemies.simulation.failed,Enemy);ADD(g.enemies.failed,Enemy);
     ADD(g.enemies.native_services,Enemy);ADD(g.enemies.time_item_threshold,Enemy);
-    ADD(g.hud,Scene);ADD(g.display,Scene);ADD(g.dialogue_context,Scene);ADD(g.gui_context,Scene);
+    ADD(g.hud,Scene);
+    // An inactive transition never executes or draws. Keep its complete bytes
+    // in the audit inventory, but capture them only while active or before the
+    // setup path first writes them. A nonzero count still visits all 168 VMs.
+    constexpr auto transition_start=offsetof(GuiImplState,transition);
+    constexpr auto transition_end=transition_start+sizeof(g.display.transition);
+    Raw(&g.display,transition_start,Scene,"g.display before transitions");
+    Raw(&g.display.transition,sizeof(g.display.transition),Scene,"g.display.transition",SnapshotMode::GuiTransitions);
+    Raw(reinterpret_cast<u8*>(&g.display)+transition_end,sizeof(g.display)-transition_end,Scene,"g.display after transitions");
+    ADD(g.dialogue_context,Scene);ADD(g.gui_context,Scene);
     ADD(g.background,Scene);ADD(g.background_context,Scene);ADD(g.background_script.invalid,Scene);
     ADD(g.gui.clock_intro_enabled,Scene);ADD(g.presentation.context,Scene);
     ADD(g.ascii_context,Scene);ADD(a.ascii.state,Scene);ADD(a.ascii_context,Scene);
@@ -121,6 +130,8 @@ bool WorldJournal::Bind(BrowserRuntime& value){
     app->world_journal=this;g.player_world.world_journal=this;g.world_journal=this;
     g.spells.record_touch_context=this;
     g.spells.record_touch=[](void* context,SpellRecord& record){return static_cast<WorldJournal*>(context)->TouchRecord(record);};
+    g.gui_flow.transition_touch_context=this;
+    g.gui_flow.transition_touch=[](void* context){return static_cast<WorldJournal*>(context)->TouchGuiTransitions();};
 #ifdef TH_MULTIPLAYER_FIXTURES
     bomb_lazy=fixture_bomb_lazy_enabled;
     shot_sparse=fixture_shot_sparse_enabled;
@@ -183,7 +194,8 @@ bool WorldJournal::BeginFrame(u32 frame,bool extend){
                 (block.mode==SnapshotMode::Shot&&!shot_sparse)||
                 (block.mode==SnapshotMode::Record&&!record_sparse)||
                 (block.mode==SnapshotMode::PreviousRecord&&!record_sparse)||
-                (block.mode==SnapshotMode::TitleSpells&&!title_spells_lazy);
+                (block.mode==SnapshotMode::TitleSpells&&!title_spells_lazy)||
+                (block.mode==SnapshotMode::GuiTransitions&&app->game.display.transition_count!=0);
             if(eager&&!main.Touch(block.address,block.bytes))return Fail(block.name);
         }
     }
@@ -241,6 +253,7 @@ void WorldJournal::DiscardBefore(u32 frame){
 void WorldJournal::Clear(){
     if(app&&app->game.world_journal==this)app->game.world_journal=nullptr;
     if(app&&app->game.spells.record_touch_context==this){app->game.spells.record_touch_context=nullptr;app->game.spells.record_touch=nullptr;}
+    if(app&&app->game.gui_flow.transition_touch_context==this){app->game.gui_flow.transition_touch_context=nullptr;app->game.gui_flow.transition_touch=nullptr;}
     if(app&&app->game.player_world.world_journal==this)app->game.player_world.world_journal=nullptr;
     if(app&&app->world_journal==this)app->world_journal=nullptr;
     enemies.Clear();pools.Clear();resources.Clear();main.Clear();records.clear();blocks.clear();
@@ -276,6 +289,11 @@ bool WorldJournal::TouchTitleSpells(){
     if(!title_spells_lazy)return true;
     if(!main.IsFrameOpen())return !HasHistory()||Fail("title spells write outside checkpoint");
     return main.Touch(&app->title.context.spells,sizeof(app->title.context.spells))||Fail("title spells ownership");
+}
+bool WorldJournal::TouchGuiTransitions(){
+    if(!app||failed)return false;
+    if(!main.IsFrameOpen())return !HasHistory()||Fail("GUI transition write outside checkpoint");
+    return main.Touch(&app->game.display.transition,sizeof(app->game.display.transition))||Fail("GUI transition ownership");
 }
 std::size_t WorldJournal::BytesForFrame(u32 frame)const{
     std::size_t size=main.BytesForFrame(frame)+enemies.BytesForFrame(frame)+pools.BytesForFrame(frame)+resources.BytesForFrame(frame);
