@@ -35,6 +35,35 @@ int main() {
       return 1;
   }
   th12::enemies.clear();
+  // Actual43a480 two-update samples: an invalid still-linked target is
+  // released without turning; the next update acquires the other enemy.
+  for (const auto flags : {1u, 0x20u, 0x2000000u, 0x4000000u}) {
+    th12::enemies.clear();
+    auto old = std::make_unique<th12::Enemy>();
+    old->id = 91; old->active = true; old->flags = flags; old->x = -80; old->y = 100;
+    th12::enemies.push_back(std::move(old));
+    auto other = std::make_unique<th12::Enemy>();
+    other->id = 92; other->active = true; other->flags = 0; other->x = 80; other->y = 100;
+    th12::enemies.push_back(std::move(other));
+    th12::Projectile bullet;
+    bullet.friendly = bullet.active = true;
+    bullet.x = 0; bullet.y = 300; bullet.speed = 8;
+    bullet.angle = -1.5707963705062866f;
+    bullet.update = 1; bullet.age = 10; bullet.targetId = 91;
+    bullet.weapon.phase = th12::pw::Phase::Alive;
+    th12::updateFriendlyProjectile(bullet);
+    if (!check(bullet.targetId == 0 && bullet.speed == 8.100000381469727f &&
+                   bullet.angle == -1.5707963705062866f,
+               "Invalid retained target reacquired during the same original update"))
+      return 1;
+    ++bullet.age;
+    th12::updateFriendlyProjectile(bullet);
+    if (!check(bullet.targetId == 92 && bullet.speed == 8.100000381469727f &&
+                   std::abs(bullet.angle - -1.5403558015823364f) < 0.000001f,
+               "Original homing acquisition did not resume on the following update"))
+      return 1;
+  }
+  th12::enemies.clear();
   if (!check(!th12::bullet_cancellation::viewportOverlaps(-180, 422, 4, 4),
              "Retail ECL510 unexpectedly uses playfield dimensions") ||
       !check(th12::bullet_cancellation::viewportOverlaps(2, 0, 4, 4),

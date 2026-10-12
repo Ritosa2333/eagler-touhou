@@ -677,8 +677,20 @@ void updateFriendlyProjectile(Projectile& b) {
     return;
   }
   if (b.update == 1) {
-    Enemy* target = playerTarget(b.x, b.y, 256, b.targetId);
-    if (!target) {
+    bool rejectedRetainedTarget = false;
+    if (b.targetId)
+      for (const auto& pointer : enemies)
+        if (pointer->active && pointer->id == b.targetId) {
+          // Native43a55f releases a still-linked target that becomes hidden or
+          // untargetable, then takes the no-target acceleration path. A new
+          // acquisition starts on the following update, not this one.
+          rejectedRetainedTarget = bool(pointer->flags & 0x6000021u);
+          if (rejectedRetainedTarget)
+            b.targetId = 0;
+          break;
+        }
+    Enemy* target = rejectedRetainedTarget ? nullptr : playerTarget(b.x, b.y, 256, b.targetId);
+    if (!target && !rejectedRetainedTarget) {
       b.targetId = 0;
       target = playerTarget(b.x, b.y, 256);
     }
