@@ -199,7 +199,7 @@ bool WorldJournal::BeginFrame(u32 frame,bool extend){
             if(eager&&!main.Touch(block.address,block.bytes))return Fail(block.name);
         }
     }
-    if(!app->screen.capture_rollback(main)||!app->game.screen.capture_rollback(main))return Fail("screen callback ownership");
+    if(!app->screen.capture_rollback(main,&app->game.screen))return Fail("screen callback ownership");
 #ifdef TH_MULTIPLAYER_FIXTURES
     diagnostic_capture_ms[0]+=emscripten_get_now()-started-replay_elapsed;
     auto owner_started=emscripten_get_now();

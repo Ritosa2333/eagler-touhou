@@ -111,21 +111,35 @@ i32 ScreenEffects::deleted_callback(void* p){
 #endif
 }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-bool ScreenEffects::capture_rollback(Netplay::RollbackJournal& journal){
-    if(!journal.IsFrameOpen()||allocation_failed)return false;
-    if(!journal.Touch(&context,sizeof(context))||!journal.Touch(&allocation_failed,sizeof(allocation_failed)))return false;
-    for(auto& entry:instances){
-        if(!journal.Touch(&entry.state,sizeof(entry.state))||
-           !journal.Touch(&entry.calculation,sizeof(entry.calculation))||
-           !journal.Touch(&entry.drawing,sizeof(entry.drawing))||
-           !journal.Touch(&entry.occupied,sizeof(entry.occupied)))return false;
-    }
+bool ScreenEffects::capture_rollback(Netplay::RollbackJournal& journal,ScreenEffects* peer){
+    if(peer==this)peer=nullptr;
+    if(!journal.IsFrameOpen()||allocation_failed||
+       (peer&&(&peer->chain!=&chain||peer->allocation_failed)))return false;
+    const auto capture_pool=[&](ScreenEffects& owner){
+        return journal.Touch(&owner.context,sizeof(owner.context))&&
+            journal.Touch(&owner.allocation_failed,sizeof(owner.allocation_failed))&&
+            journal.Touch(owner.instances.data(),sizeof(owner.instances));
+    };
+    // Both fixed owners must be covered before any shared-chain node. A
+    // separately captured node would partially overlap its owner's array.
+    if(!capture_pool(*this)||(peer&&!capture_pool(*peer)))return false;
+    const auto captured_node=[](const ScreenEffects& owner,const ChainElement* node){
+        const auto address=reinterpret_cast<std::uintptr_t>(node);
+        const auto base=reinterpret_cast<std::uintptr_t>(owner.instances.data());
+        if(address<base||address-base>=sizeof(owner.instances))return false;
+        const auto offset=(address-base)%sizeof(Instance);
+        const auto& first=owner.instances.front();
+        return offset==reinterpret_cast<std::uintptr_t>(&first.calculation)-base||
+            offset==reinterpret_cast<std::uintptr_t>(&first.drawing)-base;
+    };
     for(auto* root:{&chain.calculation,&chain.drawing}){
         u32 visited=0;
         for(auto* node=root;node;node=node->next){
-            // Heap-owned MusicRoom jobs belong to an out-of-game scene. Do
-            // not accept them as rewindable gameplay callbacks by accident.
-            if(++visited>4096||(node->flags&1)||!journal.Touch(node,sizeof(*node)))return false;
+            // Validate covered nodes too: pool membership does not authorize
+            // heap ownership or remove the cycle/length bound.
+            if(++visited>4096||(node->flags&1))return false;
+            if(captured_node(*this,node)||(peer&&captured_node(*peer,node)))continue;
+            if(!journal.Touch(node,sizeof(*node)))return false;
         }
     }
     return true;

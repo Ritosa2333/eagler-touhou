@@ -50,9 +50,10 @@ public:
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     static constexpr u32 MaxInstances=128;
     bool invalid()const{return allocation_failed;}
-    // Includes chain links (exact duplicate touches are allowed). A separately
-    // owned dynamic chain node must be retired/pinned by its owner first.
-    bool capture_rollback(Netplay::RollbackJournal&);
+    // Pair owners of the same chain before walking its links. Pool nodes are
+    // covered by whole-array before-images; other native nodes stay separate.
+    // A dynamic node must still be retired/pinned by its owner first.
+    bool capture_rollback(Netplay::RollbackJournal&,ScreenEffects* peer=nullptr);
     void rebase_after_rollback(){presentation_previous.clear();}
 #endif
 private:
