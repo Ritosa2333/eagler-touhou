@@ -45,7 +45,7 @@ for(const file of ['check-network.mjs','check-network.py','smoke.mjs','serve.mjs
 if(hostMode)for(const file of ['check-runtime-host.py','runtime-host.html','host-resources.json'])report.harness[file]=hash(resolve(import.meta.dirname,file));
 if(modes.some(m=>m.startsWith('spectator-')))report.harness['check-spectator.py']=hash(resolve(import.meta.dirname,'check-spectator.py'));
 if(modes.includes('replay'))report.harness['check-replay.py']=hash(resolve(import.meta.dirname,'check-replay.py'));
-if(hostMode)for(const file of ['th08.html','shell.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs']){
+if(hostMode)for(const file of ['th08.html','shell.mjs','startup-branding.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs']){
  const key='../../th08_web/sdl-runtime/'+file;report.harness[key]=hash(resolve(import.meta.dirname,key));
 }
 let server,relay;

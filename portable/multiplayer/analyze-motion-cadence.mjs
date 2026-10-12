@@ -31,6 +31,27 @@ const corrected=(a,b)=>a&&a.generation===b.generation&&finite(a.corrections)&&
   finite(b.corrections)&&b.corrections>=a.corrections?b.corrections-a.corrections:null;
 const bucket=delta=>delta===null?'unknown':delta>0?'withCorrections':'withoutCorrections';
 const waiting=sample=>flagged(sample.raw.net?.[9])||flagged(sample.raw.cadence?.[2]);
+const evidenceNames=['correctionYield','correctionWork','admissionWait','correctionAndAdmission','pendingUnknown','noneObserved','unknown'];
+const evidenceCounts=()=>Object.fromEntries(evidenceNames.map(name=>[name,0]));
+const observedFlag=value=>value===true||value===1?true:value===false||value===0?false:null;
+function counterDelta(a,b,key){
+  return a&&a.generation===b.generation&&finite(a[key])&&finite(b[key])&&b[key]>=a[key]?b[key]-a[key]:null;
+}
+function waitEvidence(a,b){
+  const admissionWait=observedFlag(b.raw.net?.[9]),retryPending=observedFlag(b.raw.cadence?.[2]);
+  const correcting=observedFlag(b.correcting),callbackYielded=observedFlag(b.budgetYielded);
+  const correctionYieldDelta=counterDelta(a,b,'correctionYields'),resimulationDelta=counterDelta(a,b,'resimulated');
+  const correctionStartDelta=corrected(a,b);
+  const yielded=callbackYielded===true||correctionYieldDelta>0;
+  const correction=yielded||correcting===true||resimulationDelta>0||correctionStartDelta>0;
+  const complete=[admissionWait,retryPending,correcting,callbackYielded].every(value=>value!==null);
+  const category=correction&&admissionWait===true?'correctionAndAdmission':
+    yielded?'correctionYield':correction?'correctionWork':admissionWait===true?'admissionWait':
+    retryPending===true?'pendingUnknown':complete?'noneObserved':'unknown';
+  return {category,admissionWait,retryPending,correcting,callbackYielded,
+    intervalScale:at(b.raw.cadence,0)??at(b.raw.pacing,0),missingRemoteInputs:at(b.raw.cadence,1),
+    correctionYieldDelta,resimulationDelta,correctionStartDelta,flagsComplete:complete};
+}
 function distribution(values){
   const sorted=values.filter(finite).sort((a,b)=>a-b),n=sorted.length;
   return n?{count:n,min:round(sorted[0]),p50:round(sorted[Math.floor((n-1)*.5)]),
@@ -87,15 +108,16 @@ function decode(raw,index,origin){
   const sample={raw,index,time:finite(raw.time)?raw.time:null,
     epoch:finite(origin)&&finite(raw.time)?origin+raw.time:null,
     frame:logicalFrame,frameSource,cursor:at(raw.net,3),
-    correcting:at(raw.progress,2),budgetYielded:at(raw.progress,3),
-    generation:at(raw.net,10),corrections:at(raw.driver,3),
-    commit:at(m,1),draw:at(m,3),alpha:at(m,6),excluded:null,
+    correcting:at(raw.progress,2),budgetYielded:at(raw.progress,3),correctionYields:at(raw.progress,4),
+    generation:at(raw.net,10),nativeMode:at(raw.net,14),corrections:at(raw.driver,3),resimulated:at(raw.driver,4),
+    commit:at(m,1),draw:at(m,3),calculationEpoch:at(m,4),presentationAlpha:at(m,5),alpha:at(m,6),
+    renderOnly:at(m,7),interpolationActive:at(m,8),excluded:null,
     supported:Array.isArray(m)&&m.length>=108&&m[0]===1&&m[11]===24};
   const b={valid:at(m,o),kind:at(m,o+1),slot:at(m,o+2),life:at(m,o+3),
     age:at(m,o+4),state:at(m,o+5),script:at(m,o+6),sprite:at(m,o+7),
     auth:vector(m,o+8),previous:vector(m,o+10),previousAge:at(m,o+12),
     previousValid:at(m,o+13)===1,vm:vector(m,o+14),center:vector(m,o+16),
-    shake:vector(m,o+18),quads:at(m,o+20)};
+    shake:vector(m,o+18),quads:at(m,o+20),vertexAlpha:at(m,o+22)};
   b.usable=sample.supported&&b.valid===1&&b.kind===2&&Number.isInteger(b.slot)&&
     b.slot>=0&&b.slot<1537&&finite(b.life)&&finite(b.age)&&finite(b.state)&&finite(b.script)&&
     b.quads===1&&[b.auth,b.vm,b.center,b.shake].every(point)&&m[9]===b.slot&&m[10]===b.life;
@@ -150,6 +172,102 @@ function aligned(a,b,cosine,epsilon){
 function velocity(b){
   return b.endpoints&&b.span>0?subtract(b.auth,b.previous).map(value=>value/b.span):null;
 }
+function endpointKind(sample,mode){
+  if(sample.alpha!==1)return null;
+  const high=observedFlag(sample.raw.cadence?.[5]);
+  const semantic=sample.renderOnly===0&&sample.interpolationActive===0&&sample.presentationAlpha===1;
+  if(high===true&&semantic&&at(sample.raw.cadence,4)>0&&(sample.nativeMode??mode)===0&&
+     sample.raw.scene===2&&sample.raw.loading===0)
+    return 'highRefreshSemanticForwardBudgetCandidate';
+  if(high===true&&semantic)return 'highRefreshSemanticEndpoint';
+  if(sample.renderOnly===1)return 'readonlyAlpha1';
+  return 'otherAlpha1';
+}
+function analyseEndpointHolds(peer,segments,settings,consider){
+  const result={observedStablePairMs:0,observedStableCommitPairs:0,changedCenterCommitPairs:0,alpha1EndpointSamples:0,highRefreshSemanticForwardBudgetCandidates:0,
+    runs:0,heldCommitPairs:0,censoredRuns:0,alpha1HeldCommitPairs:0,
+    gateDisabledReadonlyAlpha1HeldCommitPairs:0,redrawnHeldCommitPairs:0,reusedDrawHeldCommitPairs:0,
+    unknownDrawHeldCommitPairs:0,sameCalculationEpochHeldCommitPairs:0,changedCalculationEpochHeldCommitPairs:0,
+    unknownCalculationEpochHeldCommitPairs:0,forwardProgressHeldCommitPairs:0,authoritativeMovedHeldCommitPairs:0,
+    missingEndpointModelHeldCommitPairs:0,intervalScaleAboveOneHeldCommitPairs:0,missingRemoteInputHeldCommitPairs:0,
+    observedWaitEvidence:evidenceCounts(),byEndpointKind:{},examples:[]};
+  const durations=[],releaseDelays=[],releaseSteps=[],candidateDurations=[],candidateReleaseDelays=[];
+  const mode=peer.raw.timing?.native?.mode??null;
+  const finish=(run,release=null)=>{
+    if(!run)return;
+    const heldMs=run.last.time-run.start.time,releaseMs=release?release.time-run.start.time:null;
+    const releaseStep=release?distance(release.bullet.unshaken,run.start.bullet.unshaken):null;
+    ++result.runs;result.heldCommitPairs+=run.pairs;if(!release)++result.censoredRuns;
+    durations.push(heldMs);if(release){releaseDelays.push(releaseMs);releaseSteps.push(releaseStep);}
+    const kind=result.byEndpointKind[run.kind]??={runs:0,heldCommitPairs:0,totalObservedHeldMs:0,releasedRuns:0};
+    ++kind.runs;kind.heldCommitPairs+=run.pairs;kind.totalObservedHeldMs+=heldMs;if(release)++kind.releasedRuns;
+    if(run.kind==='highRefreshSemanticForwardBudgetCandidate'){
+      candidateDurations.push(heldMs);if(release)candidateReleaseDelays.push(releaseMs);
+    }
+    const example={endpointRow:run.start.index,lastHeldRow:run.last.index,releaseRow:release?.index??null,
+      endpointKind:run.kind,budgetCauseProven:false,endpointTimeMs:run.start.time,lastHeldTimeMs:run.last.time,
+      observedHeldMs:heldMs,releaseDelayMs:releaseMs,releaseStepPx:releaseStep,heldCommitPairs:run.pairs,
+      observedWaitEvidence:run.evidence,endpointEvidence:run.endpointEvidence,
+      generation:run.start.generation,scene:run.start.raw.scene,slot:run.start.bullet.slot,
+      life:run.start.bullet.life,state:run.start.bullet.state,script:run.start.bullet.script,sprite:run.start.bullet.sprite};
+    result.examples.push(example);
+    result.examples.sort((a,b)=>b.observedHeldMs-a.observedHeldMs);
+    if(result.examples.length>8)result.examples.length=8;
+    consider(peer,run.last,{signal:'alpha1EndpointHeldAcrossCommits',details:example,priority:2,score:heldMs});
+  };
+  for(const segment of segments){
+    let previous=null,seed=null,run=null;
+    for(const sample of segment){
+      const kind=endpointKind(sample,mode);
+      if(kind)++result.alpha1EndpointSamples;
+      if(kind==='highRefreshSemanticForwardBudgetCandidate')++result.highRefreshSemanticForwardBudgetCandidates;
+      const sameSprite=previous&&previous.bullet.sprite===sample.bullet.sprite;
+      if(sameSprite){
+        ++result.observedStableCommitPairs;result.observedStablePairMs+=sample.time-previous.time;
+        if(distance(previous.bullet.unshaken,sample.bullet.unshaken)>settings.epsilon)++result.changedCenterCommitPairs;
+      }
+      else {finish(run);run=null;seed=null;}
+      if(sameSprite&&seed&&distance(seed.sample.bullet.unshaken,sample.bullet.unshaken)<=settings.epsilon){
+        if(!run)run={start:seed.sample,last:seed.sample,kind:seed.kind,pairs:0,
+          evidence:evidenceCounts(),endpointEvidence:seed.evidence};
+        const evidence=waitEvidence(previous,sample);
+        ++run.pairs;run.last=sample;++run.evidence[evidence.category];++result.observedWaitEvidence[evidence.category];
+        if(evidence.intervalScale>1+1e-6)++result.intervalScaleAboveOneHeldCommitPairs;
+        if(evidence.missingRemoteInputs>0)++result.missingRemoteInputHeldCommitPairs;
+        if(sample.alpha===1)++result.alpha1HeldCommitPairs;
+        if(sample.alpha===1&&sample.renderOnly===1&&sample.interpolationActive===0)
+          ++result.gateDisabledReadonlyAlpha1HeldCommitPairs;
+        if(finite(previous.draw)&&finite(sample.draw)&&sample.draw>previous.draw)++result.redrawnHeldCommitPairs;
+        else if(finite(previous.draw)&&sample.draw===previous.draw)++result.reusedDrawHeldCommitPairs;
+        else ++result.unknownDrawHeldCommitPairs;
+        if(!finite(previous.calculationEpoch)||!finite(sample.calculationEpoch))++result.unknownCalculationEpochHeldCommitPairs;
+        else if(sample.calculationEpoch===previous.calculationEpoch)++result.sameCalculationEpochHeldCommitPairs;
+        else ++result.changedCalculationEpochHeldCommitPairs;
+        if(sample.frame>previous.frame)++result.forwardProgressHeldCommitPairs;
+        if(distance(sample.bullet.auth,previous.bullet.auth)>settings.epsilon)++result.authoritativeMovedHeldCommitPairs;
+        if(!sample.bullet.endpoints||!previous.bullet.endpoints)++result.missingEndpointModelHeldCommitPairs;
+      }else{
+        if(sameSprite)finish(run,sample);
+        run=null;
+        seed=kind?{sample,kind,evidence:waitEvidence(previous,sample)}:null;
+      }
+      previous=sample;
+    }
+    finish(run);
+  }
+  const totalHeldMs=durations.reduce((sum,value)=>sum+value,0);
+  result.observedStablePairMs=round(result.observedStablePairMs);
+  result.totalObservedHeldMs=round(totalHeldMs);
+  result.changedCenterCommitsPerObservedStableSecond=result.observedStablePairMs>0?round(result.changedCenterCommitPairs*1000/result.observedStablePairMs):null;
+  result.runsPerObservedStableSecond=result.observedStablePairMs>0?round(result.runs*1000/result.observedStablePairMs):null;
+  result.heldFractionOfObservedStableMs=result.observedStablePairMs>0?round(totalHeldMs/result.observedStablePairMs):null;
+  result.observedHeldMs=distribution(durations);result.releaseDelayMs=distribution(releaseDelays);
+  result.releaseStepPx=distribution(releaseSteps);
+  result.forwardBudgetCandidateHolds={runs:candidateDurations.length,observedHeldMs:distribution(candidateDurations),
+    releaseDelayMs:distribution(candidateReleaseDelays)};
+  for(const value of Object.values(result.byEndpointKind))value.totalObservedHeldMs=round(value.totalObservedHeldMs);
+  return result;
+}
 function analysePeer(peer,shared,settings,consider){
   const counts={rawRows:peer.samples.length,eligibleRows:0,filtered:{},committedSamples:0,
     invalidBulletSamples:0,stableSegments:0,stableBulletSamples:0,singletonSegments:0,
@@ -200,10 +318,11 @@ function analysePeer(peer,shared,settings,consider){
     'centerHold','centerHoldWithLiveEndpoints','centerHoldWithStationaryEndpoints','centerHoldWhileModelMoves',
     'releaseAfterHeldCommits','largeCenterStep','largeStepBeyondEndpointModel','reverseAgainstEndpointModel',
     'reverseAlongForwardEndpoints','centerTurnFollowingEndpointModel','centerDirectionChange']
-    .map(name=>[name,{count:0,...association(),whileNetworkWaiting:0}]));
+    .map(name=>[name,{count:0,...association(),whileNetworkWaiting:0,observedWaitEvidence:evidenceCounts()}]));
   const add=(name,a,b,details=null,priority=0,score=0)=>{
-    const signal=signals[name]??={count:0,...association(),whileNetworkWaiting:0};
+    const signal=signals[name]??={count:0,...association(),whileNetworkWaiting:0,observedWaitEvidence:evidenceCounts()};
     ++signal.count;++signal[bucket(corrected(a,b))];if(waiting(b))++signal.whileNetworkWaiting;
+    ++signal.observedWaitEvidence[waitEvidence(a,b).category];
     if(priority)consider(peer,b,{signal:name,details,priority,score});
   };
   const cohort=(name,a,b)=>{++cohorts[name][bucket(corrected(a,b))];};
@@ -303,7 +422,8 @@ function analysePeer(peer,shared,settings,consider){
     stableSegmentLengths:distribution(segments.filter(run=>run.length>=2).map(run=>run.length)),
     endpoints,ageSpan:distribution(ageSpans),renderPhaseStep:distribution(phaseSteps),
     unshakenCenterStepPx:distribution(centerSteps),unshakenCenterSpeedPxPerSecond:distribution(centerSpeeds),
-    heldCommitPairsPerRun:distribution(holdRuns),cohorts,signals,warnings};
+    heldCommitPairsPerRun:distribution(holdRuns),endpointHolds:analyseEndpointHolds(peer,segments,settings,consider),
+    cohorts,signals,warnings};
 }
 function rawWindow(best,settings){
   if(!best)return {selected:false,reason:'No qualifying signal selected; this is not proof of smoothness.',rows:[]};
@@ -316,11 +436,17 @@ function rawWindow(best,settings){
       return {row:s.index,timestampMs:s.time,epochMs:s.epoch,netFrame:s.cursor,
         logicalFrame:s.frame,logicalFrameSource:s.frameSource,correcting:s.correcting,budgetYielded:s.budgetYielded,
         generation:s.generation,
-        commit:s.commit,draw:s.draw,valid:b.valid,slot:b.slot,life:b.life,state:b.state,script:b.script,
+        commit:s.commit,draw:s.draw,calculationEpoch:s.calculationEpoch,presentationAlpha:s.presentationAlpha,
+        renderOnly:s.renderOnly,interpolationActive:s.interpolationActive,
+        valid:b.valid,slot:b.slot,life:b.life,state:b.state,script:b.script,sprite:b.sprite,vertexAlpha:b.vertexAlpha,
         age:b.age,previousAge:b.previousAge,previousValid:b.previousValid,alpha:s.alpha,
         renderPhase:b.phase,authoritative:b.auth,previous:b.previous,vm:b.vm,center:b.center,
         shake:b.shake,centerWithoutShake:b.unshaken,corrections:s.corrections,
         correctionDelta:corrected(all[s.index-1],s),networkWaiting:waiting(s),
+        observedWaitEvidence:waitEvidence(all[s.index-1],s),correctionYields:s.correctionYields,resimulated:s.resimulated,
+        cadence:{scale:at(s.raw.cadence,0),missingRemoteInputs:at(s.raw.cadence,1),
+          retryPending:at(s.raw.cadence,2),debtSeconds:at(s.raw.cadence,3),completedForward:at(s.raw.cadence,4),
+          highRefresh:at(s.raw.cadence,5),interpolate:at(s.raw.cadence,6),presentationAlpha:at(s.raw.cadence,7)},
         effectiveScale:at(s.raw.cadence,0)??at(s.raw.pacing,0),excluded:s.excluded};
     })};
 }
@@ -343,7 +469,7 @@ function main(){
       peers:peers.map(peer=>analysePeer(peer,shared,settings,consider))};
   });
   const {inputs,output,help,...thresholds}=settings;
-  const result={schema:'th08-motion-cadence-analysis-v1',thresholds,
+  const result={schema:'th08-motion-cadence-analysis-v1',observationRevision:2,thresholds,
     rules:[
       'Input rows are observer callback timestamps, not exact GPU scanout timestamps.',
       'Common measured interval uses peer timeOrigin; any peer reaching its target cuts off natural stopped-input tails.',
@@ -355,6 +481,16 @@ function main(){
       'Age-span and endpoint counts include stable segments only. Other age differences list at most eight values.',
       'Age is an owner timer, not a native-frame counter. Spawn states 2..4 intentionally hold age while moving; these are not anomaly candidates.',
       'Corrections are cumulative driver[3] differences between observations; association does not establish causation.',
+      'Legacy whileNetworkWaiting/networkWaiting combine net[9] admission waiting with retry_pending, which also includes CPU correction yields; they are mixed evidence, not a network-cause verdict.',
+      'observedWaitEvidence separates admissionWait, correctionYield/work, both, and pendingUnknown. Admission can await remote/local input or a lifecycle barrier; network transport and peer CPU are not distinguishable here.',
+      'intervalScaleAboveOneHeldCommitPairs reports sampled network clock braking separately; scale/missing-input association still does not isolate transport from peer CPU.',
+      'noneObserved means no reported admission/correction evidence, not proof of sufficient CPU or network capacity; unknown marks incomplete flags, and retry_pending alone is pendingUnknown.',
+      'endpointHolds compares consecutive committed geometry of the same owner and sprite, regardless of PreviousValid. Missing endpoint models never erase a geometric hold.',
+      'Only high-refresh, native mode0, semantic alpha1, completed-forward samples are forward budget candidates. No explicit budget_spent/present-reason probe exists, so budgetCauseProven remains false.',
+      'Endpoint hold durations run from the endpoint observer timestamp through the last held commit: a lower bound. releaseDelayMs ends at the observed release commit; censored runs have no observed release.',
+      'Endpoint hold rate and fraction use observed stable same-owner/sprite commit-pair time, not the entire game duration. Examples retain the eight longest runs.',
+      'CalculationEpoch is a draw/update epoch, not logical progress or bullet identity; normal changes do not split owner continuity. Same versus changed epoch held pairs are reported separately.',
+      'A probe observes one submitted bullet quad, not GPU scanout or occlusion. Stationary/transparent bullets can legitimately hold; raw vertex alpha and authoritative endpoint changes remain evidence, not a verdict.',
       'Large steps, holds and direction changes are descriptive. Expected stationary motion and turns are separate; no CPU benefit is inferred.',
       'The single raw window preserves original numeric samples and zero-based source row indices; derived summary distributions are rounded.'
     ],files,rawWindow:rawWindow(best,settings)};
@@ -365,7 +501,7 @@ function main(){
     process.stdout.write(JSON.stringify({type:'summary',source:file.source,measurementPassed:file.measurementPassed,
       seat:peer.seat,nativeMode:peer.nativeMode,nativeDelay:peer.nativeDelay,counts:peer.counts,commits:peer.commits,
       ageSpan:peer.endpoints.ageMinusPreviousAge,ageSpanByState:peer.endpoints.byState,sameAge:peer.endpoints.sameAge,
-      phaseStep:peer.renderPhaseStep,centerStep:peer.unshakenCenterStepPx,heldRuns:peer.heldCommitPairsPerRun,
+      phaseStep:peer.renderPhaseStep,centerStep:peer.unshakenCenterStepPx,heldRuns:peer.heldCommitPairsPerRun,endpointHolds:peer.endpointHolds,
       cohorts:peer.cohorts,signals:peer.signals,warnings:peer.warnings})+'\n');
   const {rows,...window}=result.rawWindow;
   process.stdout.write(JSON.stringify({type:'rawWindow',...window})+'\n');
