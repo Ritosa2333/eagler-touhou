@@ -67,11 +67,6 @@ struct GameBattle::Services {
     } projectiles;
     struct Items final:ItemCollectionHost {
         GameBattle& g;explicit Items(GameBattle& g):g(g){}
-        bool shared_life_piece(bool& handled)override{
-#if TH15_MULTIPLAYER
-            if(g.mp_enabled)return g.mp_life_piece(handled);
-#endif
-            handled=false;return true;}
         bool options_changed()override{return g.player->configure_options();}
         bool notice(i32 id)override{return g.scene?(g.scene->hud.notification(0,id)||g.fail(g.scene->hud.error)):g.check(g.presentation.notice(id),"Item notice failed");}
         bool sound(i32 id,bool queued)override{return g.sound(id,0,PlayerShots::SoundAction::play,queued);}

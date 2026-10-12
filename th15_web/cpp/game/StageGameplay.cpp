@@ -82,7 +82,14 @@ i32 StageGameplay::update_dialogue(){
  context.dialogue=messages.active();if(!hud.update_after_dialogue(context)){fail(hud.error);return i32(FrameAction::Error);}return i32(FrameAction::Continue);
 }
 bool StageGameplay::chapter_reward(bool boss){
- if(!battle.enemy_world.chapter_total)return true;if(!reward.complete(boss,progress.chapter_deaths))return fail(reward.error);const auto& state=reward.state;
+ if(!battle.enemy_world.chapter_total)return true;bool award_resource=true;
+#if TH15_MULTIPLAYER
+ award_resource=!battle.mp_enabled;
+#endif
+ if(!reward.complete(boss,progress.chapter_deaths,award_resource))return fail(reward.error);const auto& state=reward.state;
+#if TH15_MULTIPLAYER
+ if(battle.mp_enabled&&state.bonus>=1000000){ItemState item;item.kind=4;if(!battle.mp_reward_item(item))return fail(battle.error);}
+#endif
  hud.result_notice=state.animation;hud.result_grazes=state.grazes;hud.result_deaths=state.deaths;hud.result={state.display_percent,state.percent,state.bonus,state.display_bonus,state.base_bonus,state.duration};hud.flags=(hud.flags&~0x1000u)|0x800;hud.intro_age=state.age;return true;
 }
 bool StageGameplay::capture(i32 chapter){

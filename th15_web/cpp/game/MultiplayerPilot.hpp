@@ -11,7 +11,7 @@ class GameBattle;
 // Seat zero keeps the retail session owner used by stage flow and HUD.
 struct MultiplayerPilot final:PlayerHost,BombHost,ItemCollectionHost {
     GameBattle& world;unsigned seat;int character;
-    PlayerLifeSession owned_session;
+    PlayerLifeSession owned_session;i32 owned_life_piece_tier;
     PlayerLifeSession& session;ItemScoreState& score;
     std::unique_ptr<Player> owned_player;Player* player=nullptr;
     std::unique_ptr<BombContext> context;std::unique_ptr<BombController> owned_bomb;BombController* bomb=nullptr;
@@ -30,7 +30,6 @@ struct MultiplayerPilot final:PlayerHost,BombHost,ItemCollectionHost {
     bool stop_sound(i32)override;bool refresh(PlayerFrameContext&)override;
     bool sound(i32,float,PlayerShots::SoundAction)override;bool hit_sound(i32)override;
     bool sound(i32,bool)override;bool popup(const Vec3&,i32,u32)override;bool notice(i32)override;
-    bool shared_life_piece(bool&)override;
     bool cancel_bullets(const Vec3&,float,i32)override;bool cancel_lasers(const Vec3&,float,i32,bool)override;
     bool cancel_bullets_rectangle(const Vec3&,const Vec2&,float,i32)override;
     bool cancel_lasers_rectangle(const Vec3&,const Vec2&,float,i32,bool)override;

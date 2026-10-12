@@ -5,8 +5,8 @@ This is a local experiment; canonical branches have not been promoted.
 
 ## Production artifacts
 
-Multiplayer WASM: `8341e5a2610929f5345a0a0343e9a60182e2d0d7d8954a83aa4ac230d540ba64`.
-Ordinary THPrac WASM: `cac254973e61eda535b1db8be98036be332f53da2e9c43522c373e6b0650a256`.
+Multiplayer WASM: `d44ea8c1aa74ee5d2cd7b20bf294184fbe6b4332229ef782c54a9f07fde638bc`.
+Ordinary THPrac WASM: `0bc64c03931794beec54f5d2a3e09efdd50b3badc0164bb03d00484ba7626728`.
 Both release builds and closed packages pass. The ordinary module has no MP
 exports. Neither production module exposes development probes.
 Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
@@ -17,24 +17,28 @@ Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
   independent local-seat selection and resources, damage pooling, ECL aim,
   item ownership, remote collisions, single team chapter rewards, next-stage
   resources and all-player game-over.
-- Shared economy revision (2026-10-13): one score owner across seats; pooled
+- Shared statistics and independent fragments (2026-10-13): one score owner across seats; pooled
   score/Graze/point value/point-item and collection statistics; one real bullet
   credits three grazing pilots once and retains each pilot's cooldown.
   Remote shot score gains accumulate once. Bomb stock/fragments, Power and
-  life loss remain individual. One chapter reward contributes one team life
-  fragment; pooled fragments grant each pilot one Extend, preserving the
-  eight-spare-life cap, Extra's five-fragment threshold and five-Extend limit.
-  Capped pilots still contribute; all-capped fragments convert only to the
-  recipient's Bomb fragment. Extends do not revive ghosts.
+  life loss remain individual. Life fragments and Extend tiers are also
+  individual. One chapter score reward grants one fragment per eligible pilot,
+  preserving the eight-spare-life cap, Extra's five-fragment threshold and
+  five-Extend limit separately for each pilot. A full-life recipient converts
+  its fragment to its own Bomb fragment even while teammates have spare room;
+  full Bomb stock respects its own cap. Tests cover actual pickups in 2P/3P,
+  mixed-stock chapter rewards, independent Extra tiers and next-stage retention
+  of life/Bomb fragments and Extend progress. Chapter fragments skip ghosts
+  and exhausted pilots awaiting their ghost transition.
 - Protocol: 2P/3P, manual D=0/2/9, challenge on/off, reordered holes,
   capture-once ownership, session generation, build/ABI disagreement,
   all-seat replay including recorded P3, no second replay delay, malformed data,
-  and rejection of gameplay version 1 (the previous per-seat economy).
+  and rejection of gameplay versions 1 and 2 (previous resource rules).
 - Common startup: calibration, immutable timing choice, lost-control repair,
   disconnect handling, and TH08/10/11/15 spectator timing identity regression.
 - Real browser, production shell and Japanese 1.00b DATA, shared relay:
-  2P reached frame 237 with a start-admitted spectator;
-  3P reached frame 235. Both held frame zero until peers arrived,
+  2P reached frame 235 with a start-admitted spectator;
+  3P reached frame 236. Both held frame zero until peers arrived,
   stopped advancing when a producer stopped, resumed when it returned, saved
   valid recordings, rejected a mismatched replay executable, and played through
   the real offline menu to the hosted exit event. The 3P recording is from P3;
