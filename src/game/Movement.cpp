@@ -1,5 +1,6 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "GameState.hpp"
+#include "../native_easing.hpp"
 
 namespace th12 {
 float aim(float x, float y) {
@@ -67,20 +68,7 @@ Enemy* primaryBoss() {
   return nullptr;
 }
 float easing(float value, int mode) {
-  const double t = std::clamp(value, 0.f, 1.f);
-  if (mode >= 1 && mode <= 3)
-    return float(std::pow(t, mode + 1));
-  if (mode >= 4 && mode <= 6)
-    return float(1 - std::pow(1 - t, mode - 2));
-  if (mode >= 9 && mode <= 11) {
-    const int n = mode - 7;
-    return float(t < .5 ? std::pow(2 * t, n) * .5 : 1 - std::pow(2 - 2 * t, n) * .5);
-  }
-  if (mode >= 12 && mode <= 14) {
-    const int n = mode - 10;
-    return float(t < .5 ? (1 - std::pow(1 - 2 * t, n)) * .5 : (std::pow(2 * t - 1, n) + 1) * .5);
-  }
-  return mode == 15 ? 0.f : mode == 16 ? 1.f : float(t);
+  return native_easing::sample(value, mode);
 }
 
 } // namespace th12

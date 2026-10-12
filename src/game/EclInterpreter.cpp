@@ -380,8 +380,16 @@ void command(Enemy& e, Context& c, int op) {
     }
     break;
   }
-  case 275:
+  case 275: {
+    // 41648c..4164b5 reads both integer operands before461970 resolves
+    // the slot handle, then delivers the signed16 IRQ to its root/children.
+    const int slot = I(0), code = int16_t(uint16_t(I(1)));
+    if (slot >= 0 && slot < 16)
+      animationScene.interrupt(enemyAnimationKey(e.id, slot), code);
+    else
+      ++unsupported[op];
     break;
+  }
   case 300:
   case 302: {
     const float x = F(0), y = F(1);

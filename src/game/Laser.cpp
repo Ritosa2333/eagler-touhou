@@ -56,11 +56,18 @@ void cancelPoint(World& w, const State& s, Vec3 p, bool convert, bool boundEffec
 }
 template <class Pred>
 int clearStraight(Laser& object, Manager& manager, World& world, Pred hit, bool convert,
-                  bool force) {
+                  bool force, bool circle) {
   auto& s = object.state;
   if (force && s.protection)
     return 0;
   const bool moving = s.kind == Kind::Moving;
+  const auto appendFragment = [&](Vec3 position, float length) {
+    // Timed circle42bc01..42bc4b alone rejects offscreen starts. The
+    // rectangle42b622..42b6f7 constructs its fragment without that gate.
+    if (circle && !moving && outside(position, 32, 32))
+      return;
+    manager.appendMovingFragment(object, position, length, world);
+  };
   // 429d21/42b32d: samples at 8,24,... with room for the full 16 unit cell.
   if (moving ? s.length < 16 : s.length <= 16)
     return 0;
@@ -108,8 +115,7 @@ int clearStraight(Laser& object, Manager& manager, World& world, Pred hit, bool 
   if (!moving) {
     s.length = first ? 0.f : float(begin * 16);
     if (first && begin > first)
-      manager.appendMovingFragment(object, add(origin, mul(step, float(first))),
-                                   float((begin - first) * 16), world);
+      appendFragment(add(origin, mul(step, float(first))), float((begin - first) * 16));
   } else if (begin < count) {
     const float shortened = float((begin - first) * 16);
     s.parameters.maxLength = float(double(s.parameters.maxLength) - (double(s.length) - shortened));
@@ -127,7 +133,7 @@ int clearStraight(Laser& object, Manager& manager, World& world, Pred hit, bool 
       break;
     const float length = float((begin - a) * 16);
     if (!moving || length > 24)
-      manager.appendMovingFragment(object, add(origin, mul(step, float(a))), length, world);
+      appendFragment(add(origin, mul(step, float(a))), length);
   }
   return hits;
 }
@@ -684,13 +690,13 @@ int Laser::clearAll(Manager&, World& world, bool convert, bool force) {
 int Laser::clearRectangle(Manager& m, World& w, const Vec3& center, const Vec3& dimensions,
                           bool convert, bool force) {
   return clearStraight(
-      *this, m, w, [&](Vec3 p) { return insideRect(p, center, dimensions); }, convert, force);
+      *this, m, w, [&](Vec3 p) { return insideRect(p, center, dimensions); }, convert, force, false);
 }
 int Laser::clearCircle(Manager& m, World& w, const Vec3& center, float radius, uint32_t cancelFlags,
                        bool force) {
   return clearStraight(
       *this, m, w, [&](Vec3 p) { return insideCircle(p, center, radius); }, (cancelFlags & 1u) != 0,
-      force);
+      force, true);
 }
 int CurveLaser::clearAll(Manager&, World& w, bool convert, bool force) {
   auto& s = state;
@@ -865,11 +871,6 @@ void Manager::reset(World* w) {
 }
 Laser* Manager::appendMovingFragment(const Laser& source, const Vec3& position, float length,
                                      World& world) {
-  // Timed42bc01..42bc4b (and its rectangle counterpart) rejects a
-  // disconnected fragment whose starting point is outside the32px margin.
-  // Constructing it anyway creates an extra cancel effect on the next Bomb.
-  if (source.state.kind == Kind::Timed && outside(position, 32, 32))
-    return nullptr;
   Parameters p = source.state.parameters;
   p.position = position;
   p.angle = source.state.angle;

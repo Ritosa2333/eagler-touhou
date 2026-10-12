@@ -28,6 +28,7 @@ const create=(await import(pathToFileURL(output))).default;
 const native=JSON.parse(fs.readFileSync(new URL('../artifacts/reverse/enemy-motion-inspection.json',import.meta.url)));
 const floor=JSON.parse(fs.readFileSync(new URL('fixtures/enemy-quantization-native.json',import.meta.url)));
 assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
+assert.equal(native.x87ControlWord,'0x007f');
 assert.equal(floor.originalExeSha256,native.originalExeSha256);
 const values=c=>Array.from(c.HEAPF32.subarray(c._snapshot()/4,c._snapshot()/4+30));
 function compare(c,expected,label){

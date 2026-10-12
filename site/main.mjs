@@ -291,5 +291,21 @@ async function initialize(){
       else if(hostDrag?.id===m.id){const dx=m.x-hostDrag.x,dy=m.y-hostDrag.y;inputState.touches.set('host-pointer',(Math.abs(dx)>8?(dx<0?64:128):0)|(Math.abs(dy)>8?(dy<0?16:32):0));}
     }});
   window.__th12Preview={state:()=>[...lastHud],report:diagnostic,ready:()=>ready,paused:()=>paused};
+  if(new URL(location.href).searchParams.get('frameInspector')==='1'){
+    const {installFrameInspectorBridge}=await import('/src/frame-inspector-bridge.mjs');
+    const frozen=()=>{if(running)pause(true);$('overlay').hidden=true;};
+    installFrameInspectorBridge({
+      async load(id,stage){
+        if(!/^[a-zA-Z0-9_-]+\.rpy$/.test(id)||!Number.isInteger(stage)||stage<1||stage>7)throw Error('录像或关卡无效');
+        const replay=parseReplay(await bytes('/replays/'+encodeURIComponent(id)));
+        if(!supportedReplay(replay,stage))throw Error('录像不包含此关卡');
+        $('replay-stage').replaceChildren(new Option(String(stage),String(stage)));$('replay-stage').value=stage;
+        audio.enabled=false;$('music').checked=false;await start(replay);frozen();
+      },
+      async seek(frame){if(!Number.isSafeInteger(frame)||frame<0||frame>600000)throw Error('帧号无效');if(!activeReplay)throw Error('请先加载录像');await seekReplay(frame,false);frozen();},
+      async step(){if(!activeReplay)throw Error('请先加载录像');await jumpReplay(1,false);frozen();},
+      state(){const h=hud(),pointer=core._th12_spell(),size=core._th12_spell_size(),spell=JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(pointer,pointer+size)));return {stage:currentStage,replayCursor:replayFrame,logicalFrame:h[0],scoreStored:core._th12_score_stored(),rng:[h[8],h[9]],piv:h[20],graze:h[7],power:h[4],playerFixed:[Math.round(h[1]*128),Math.round(h[2]*128)],spell:{card:spell.cardId,flags:spell.flags,age:spell.age},paused};}
+    });
+  }
 }
 initialize().catch(fail);

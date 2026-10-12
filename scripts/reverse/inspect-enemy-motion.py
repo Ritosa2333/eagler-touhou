@@ -17,7 +17,8 @@ def get(v,a,f):return struct.unpack('<'+f,v.mem_read(a,struct.calcsize(f)))
 def vm_new():
  v=Uc(UC_ARCH_X86,UC_MODE_32);v.mem_map(0x400000,(pe.OPTIONAL_HEADER.SizeOfImage+4095)&~4095);v.mem_write(0x400000,pe.get_memory_mapped_image());v.mem_map(0x1000000,0x10000);v.mem_map(0x2000000,0x40000)
  put(v,0x4b2ed0,'f',1);put(v,0x4d52d4,'I',1) # Native CPU SSE2 availability; avoids CRT exception-service plumbing.
- v.reg_write(UC_X86_REG_MXCSR,0x1f80);v.reg_write(UC_X86_REG_FPCW,0x037f)
+ # Measured on the real D3D9 gameplay thread, not the pre-D3D x87 default.
+ v.reg_write(UC_X86_REG_MXCSR,0x1f80);v.reg_write(UC_X86_REG_FPCW,0x007f)
  put(v,STATE+0x174c,'I',RUNNER);put(v,RUNNER+4,'I',CONTEXT);put(v,CONTEXT+4,'I',INSTRUCTION)
  return v
 def dispatch(v,op,args):
@@ -44,4 +45,4 @@ for name,angle,radius,radius_delta,target_speed,target_radius,target_delta,durat
   put(v,STATE+0x16b8,'I',0);put(v,SP,'II',STOP,STATE);v.reg_write(UC_X86_REG_ESP,SP);v.emu_start(0x413840,0x413ac5,count=100000)
   if tick in [1,2,5,10,11,29,30,59,60,61,62,120]:frames.append({'tick':tick,'absolute':movement(v,0x68),'relative':movement(v,0x9c),'combined':movement(v,0x34),'absolutePolarDuration':get(v,STATE+0x358,'i')[0],'relativePolarDuration':get(v,STATE+0x394,'i')[0],'absoluteRadiusDuration':get(v,STATE+0x3d0,'i')[0],'relativeRadiusDuration':get(v,STATE+0x40c,'i')[0]})
  cases.append({'name':name,'args':{'angle':angle,'initialRadius':radius,'initialRadiusDelta':radius_delta,'initialSpeed':.034906585 if relative else .02,'targetSpeed':target_speed,'targetRadius':target_radius,'targetDelta':target_delta,'duration':duration,'mode':mode,'relative':relative},'afterSet':after_set,'afterInterpolation':after_interpolation,'frames':frames})
-out=TITLE/'artifacts/reverse/enemy-motion-inspection.json';out.write_text(json.dumps({'schema':'th12-enemy-motion-inspection/1','originalExeSha256':SHA,'scope':'native movement dispatch and full update geometry before callbacks','wholeGameDeterminism':False,'quantization':quant,'cases':cases},indent=2)+'\n',encoding='utf-8');print(out)
+out=TITLE/'artifacts/reverse/enemy-motion-inspection.json';out.write_text(json.dumps({'schema':'th12-enemy-motion-inspection/1','originalExeSha256':SHA,'x87ControlWord':'0x007f','scope':'native movement dispatch and full update geometry before callbacks, measured D3D9 gameplay precision','wholeGameDeterminism':False,'quantization':quant,'cases':cases},indent=2)+'\n',encoding='utf-8');print(out)

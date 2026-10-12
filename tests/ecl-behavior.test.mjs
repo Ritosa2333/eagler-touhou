@@ -135,14 +135,16 @@ test('health interrupts preserve their slots and timeout scripts do not replace 
   const c=await ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(100),str('Health')],0,0,4),instruction(414,[word(1),word(0),word(200),str('Death')],0,0,4),instruction(421,[word(0),str('Timeout')],0,0,2),instruction(411,[word(40)],3),hold()],Health:[bind(31),hold()],Death:[bind(32),hold()],Timeout:[bind(33),hold()]},0,true,[1]);
   for(let i=0;i<4;i++)c._th12_tick(0,0);assert.equal(enemyAnimation(c).script,31);
   const d=await ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(3),str('Health')],0,0,4),instruction(421,[word(0),str('Timeout')],0,0,2),hold()],Health:[bind(31),hold()],Timeout:[bind(33),hold()]},0,true,[1]);
-  for(let i=0;i<3;i++)d._th12_tick(0,0);assert.equal(enemyAnimation(d).script,33);
+  // Native413f86 installs a timeout context; unlike a health hurt interrupt,
+  // its ANM bind executes on the following Enemy18 visit.
+  for(let i=0;i<4;i++)d._th12_tick(0,0);assert.equal(enemyAnimation(d).script,33);
 });
 
 test('native timeout checks skip zero duration and stop at the first enabled timed slot',async()=>{
   const make=(first,second)=>ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[bind(0),instruction(414,[word(0),word(50),word(first),str('First')],0,0,4),instruction(414,[word(1),word(40),word(second),str('Second')],0,0,4),hold()],First:[bind(31),hold()],Second:[bind(32),hold()]},0,true,[1]);
   const zero=await make(0,0);for(let i=0;i<4;i++)zero._th12_tick(0,0);assert.equal(enemyAnimation(zero).script,0);
   const ordered=await make(10,2);for(let i=0;i<4;i++)ordered._th12_tick(0,0);assert.equal(enemyAnimation(ordered).script,0);
-  for(let i=0;i<6;i++)ordered._th12_tick(0,0);assert.equal(enemyAnimation(ordered).script,31);
+  for(let i=0;i<7;i++)ordered._th12_tick(0,0);assert.equal(enemyAnimation(ordered).script,31);
   // Phase entry resets its clock; the following enabled slot now owns timeout2.
   for(let i=0;i<2;i++)ordered._th12_tick(0,0);assert.equal(enemyAnimation(ordered).script,32);
 });
