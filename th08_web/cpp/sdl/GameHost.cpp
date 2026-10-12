@@ -228,7 +228,7 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     const double network_scale=catchup&&runtime->network_driver()?runtime->network_driver()->Network().IntervalScale():1.;
     const bool live_rollback=catchup&&!runtime->app.session.netplay.ReadOnly()&&
         runtime->app.session.netplay.Mode()==Netplay::AdonisMode::Rollback;
-    unsigned network_ticks=0;bool network_blocked=false;
+    unsigned network_ticks=0;bool pending_forward=false;
     if(catchup){
         const auto& net=runtime->app.session.netplay;
         if(!network_identity_valid||network_session!=net.Config().sessionId||network_generation!=net.Generation()){
@@ -334,7 +334,11 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
         if(catchup){
             if(!advanced){
                 const bool cpu_yield=runtime&&runtime->network_driver()&&runtime->network_driver()->CallbackYielded();
-                if(live_rollback&&!cpu_yield){network_schedule.blocked(true);network_blocked=true;}
+                if(live_rollback){
+                    if(cpu_yield)network_schedule.recovering();
+                    else network_schedule.blocked(true);
+                    pending_forward=true;
+                }
                 break;
             }
             network_schedule.complete();
@@ -344,9 +348,11 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
         due=false;
     }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    // Preserve ordinary CPU-budget debt. Only a genuine live rollback wait
-    // discards overdue wall time; every logical tick still executes in order.
-    if(catchup&&!network_blocked&&completed<network_ticks)
+    // Ordinary forward catch-up retains bounded CPU debt. During correction,
+    // one already-due forward tick waits for recovery, just as in TH09. Adding
+    // wall-time credit while replaying would cause a fresh prediction burst.
+    // Every authoritative tick and retained physical capture remains in order.
+    if(catchup&&!pending_forward&&completed<network_ticks)
         network_schedule.defer(network_ticks-completed);
     // The display Pump may have deferred a normal input tail in expectation
     // of capture. No callback (including no-tick and failed callbacks) carries
@@ -356,14 +362,36 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     // The confirmed command outbox still owns which track/notes are started.
     if(tick_due&&!result&&!service_frame_audio())result=2;
     const bool correction_pending=runtime&&runtime->app.session.netplay.Correcting();
+    bool committed_endpoint=false;
     if(correction_pending)presentation_gate.reset();
-    if(catchup&&completed&&!high&&!result&&!correction_pending)presented=sdl_commit()!=0;
+    if(catchup&&!result&&!correction_pending){
+        const bool budget_spent=live_rollback&&emscripten_get_now()-frame_begin>=
+            double(Netplay::FrameBudget::CatchupBudgetNs)/1000000.;
+        // Rollback forward ticks already produced complete pixels. When the
+        // callback budget is spent, submit that image instead of drawing the
+        // same world again. Pure delay's lightweight hidden Draw is excluded.
+        if(completed_after_correction&&(!high||budget_spent)){
+            presented=sdl_commit()!=0;committed_endpoint=presented;
+        }else if((!high||budget_spent)&&runtime&&runtime->network_driver()&&
+                 runtime->network_driver()->CorrectedPresentationPending()){
+            // Recovery also ends in a full semantic Draw (or a full boundary
+            // redraw). A partial correction never reaches this branch.
+            if(!runtime->network_driver()->PresentCorrection())result=2;
+            else presented=committed_endpoint=true;
+        }
+    }
+    if(committed_endpoint){
+        // This endpoint has actually reached the display. Do not interpolate
+        // backwards into the same prev/current pair on the next no-tick rAF.
+        // Only a later complete forward tick may prime a new pair.
+        presentation_gate.reset();completed_after_correction=false;
+    }
 #endif
     const bool interpolate=presentation_gate.advance(high,completed_after_correction);
     float presentation_alpha=1.0f;
     if(!result&&runtime&&high
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-       &&!correction_pending
+       &&!correction_pending&&!committed_endpoint
 #endif
     ){
         const bool frozen=runtime->app.in_game()&&(runtime->app.game.paused||runtime->app.game.retrying||runtime->app.game.menus.context.pause_state||runtime->app.game.menus.context.show_retry);

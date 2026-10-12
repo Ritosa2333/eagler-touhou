@@ -104,6 +104,30 @@ void network_wait(){
     CHECK(schedule.advance(0,true)==1);
 }
 
+void correction_continuation(){
+    Schedule schedule;
+    CHECK(schedule.advance(2.25*tick,true)==2);
+    // The first offered forward tick is still pending while its history is
+    // corrected. Several long recovery callbacks must not create a six-tick
+    // prediction burst after that single captured input finally advances.
+    schedule.recovering();
+    for(unsigned slice=0;slice<120;++slice){
+        CHECK(schedule.advance((slice%3+1)*tick,true)==1);
+        CHECK(schedule.retry_pending());
+        CHECK(near(schedule.debt_seconds(),.25*tick));
+        CHECK(schedule.presentation_alpha()==1.);
+        schedule.recovering();
+        schedule.defer(6);
+    }
+    CHECK(schedule.advance(0,true)==1);
+    schedule.complete();
+    CHECK(!schedule.retry_pending());
+    CHECK(schedule.advance(0,true)==0);
+    CHECK(schedule.advance(.75*tick,true)==1);
+    schedule.complete();
+    CHECK(near(schedule.debt_seconds(),0));
+}
+
 void scaled_time(){
     Schedule schedule;
     // The caller divides each new elapsed sample by its current pace.
@@ -157,7 +181,7 @@ void reset_and_nonlive(){
 }
 }
 int main(){
-    normal_cadence();cpu_debt();network_wait();scaled_time();reset_and_nonlive();
+    normal_cadence();cpu_debt();network_wait();correction_continuation();scaled_time();reset_and_nonlive();
     std::printf("TH08 network frame schedule: %u checks PASS\n",checks);
 }
 

@@ -25,8 +25,9 @@ struct NetworkFrameCadence {
 };
 }
 
-// Ordinary CPU catch-up retains its bounded debt. A live input wait instead
-// retries one already-due frame through the shared TH09 pending-frame rule.
+// Ordinary CPU catch-up retains its bounded debt. A live input wait or an
+// unfinished correction retries one already-due forward frame through TH09's
+// pending-frame rule. Recovery must not manufacture more prediction debt.
 // This clock never captures input, skips a logical frame, or changes tick dt.
 class NetworkFrameSchedule {
     using Cadence=detail::NetworkFrameCadence;
@@ -40,11 +41,13 @@ public:
     double debt_seconds()const{return schedule.debt;}
     unsigned advance(double normalized_seconds,bool live=true){return schedule.advance(normalized_seconds,live);}
     void blocked(bool live){schedule.blocked(live);}
+    void recovering(){schedule.blocked(true);}
     void complete(){schedule.complete();}
 
     // advance() has already deducted every offered tick. Return only the
     // unexecuted ticks when the callback's CPU start budget is exhausted.
-    // blocked() owns discarded network-wait debt; never return that work.
+    // blocked()/recovering() already retain the pending forward tick; never
+    // refund the other offered ticks on top of that obligation.
     void defer(unsigned uncompleted){
         if(schedule.retry_pending())return;
         schedule.debt=std::min(Cadence::max_debt,

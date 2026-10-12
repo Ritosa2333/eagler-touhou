@@ -29,6 +29,10 @@ public:
     bool FrameOpen()const{return open;}
     bool CallbackYielded()const{return callback_yielded;}
     u32 CorrectionYields()const{return correction_yields;}
+    bool CorrectedPresentationPending()const{return corrected_present_pending;}
+    // The final history Draw is complete and all owners are closed. The SDL
+    // host can submit that image without another whole-world readonly Draw.
+    bool PresentCorrection();
     bool Initialized()const{return initialized;}
     bool HasPending()const{return (world&&world->HasHistory())||audio.PendingFrames()||files.IsOpen();}
     bool RollbackStorageAllocated()const{return bool(world)||bool(textures);}
@@ -120,7 +124,6 @@ private:
     bool RunFrame(bool render);
     bool CaptureLocalInput();
     bool Correct(double callback_start_ms=-1);
-    bool PresentCorrection();
     bool apply_file_event(const char*,const u8*,u32)override;
 };
 }
