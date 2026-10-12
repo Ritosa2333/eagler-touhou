@@ -110,6 +110,7 @@ EnemyJournal 的 deque<Record> 改为固定 8 槽环形记录。退休时 owners
 - 正常结束后核实关闭两 browser、HTTP thread 和已知 relay 子进程。没有执行全局浏览器/端口清理。
 
 指标口径：
+- 逻辑 Hz 表示模拟前沿推进速率，不等于物理显示 FPS。网络输入缺口引起的主动降速不能仅因逻辑 Hz 低于 60 就判为掉帧；长停顿需结合 callback、Present 及新逻辑状态间隔判断。
 - callbackMs：进入 native rAF 回调至 audio pump 后的墙钟。不是 CPU self，也不包含 rAF 排队或 runtimeFinish observer 尾部。
 - presentGapMs：observer 看到 graphics Present 计数变化的间隔。不是物理扫描，也不保证都是新逻辑画面。
 - advanceGapMs：observer 看到 net logical frontier 变化的间隔。允许一次 callback 多 tick。
@@ -174,7 +175,7 @@ EnemyJournal 的 deque<Record> 改为固定 8 槽环形记录。退休时 owners
 
 候选 P0 最长 772 ms 的逻辑间隔发生于 frame 458→459，期间仍有 83 个游戏 callback、83 次 Present 计数增长，期间单次 callback 最长 60.9 ms，未确认前沿最多 8f。P1 的 764 ms 间隔期间也有 121 个 callback。这支持将该段区分为预测余量耗尽后的缺输入等待，而不是一次占住主线程 772 ms 的函数调用；重复提交画面不代表产生了新逻辑状态。
 
-恢复指标使用“额外延迟注入窗口结束”作为时间零点；A/B 最后一个受尖峰影响的发送分别在其后约 876/885 ms 才发出。候选两端 recoveryToPreSpikeMs 均为 1000，含义是首次满足连续两个 1 秒窗口达到尖峰前速率 95%、confirmed age <200 ms。它不是精确恢复时刻，也不代表后续所有窗口都保持此速度。两版 sustained/settled ≥57 Hz 指标均为 null，不能称恢复后稳定 60fps。
+恢复指标使用“额外延迟注入窗口结束”作为时间零点；A/B 最后一个受尖峰影响的发送分别在其后约 876/885 ms 才发出。候选两端 recoveryToPreSpikeMs 均为 1000，含义是首次满足连续两个 1 秒窗口达到尖峰前速率 95%、confirmed age <200 ms。它不是精确恢复时刻，也不代表后续所有窗口都保持此速度。两版要求逻辑推进 ≥57 Hz 的 sustained/settled 指标均为 null，不能称恢复后逻辑速率稳定接近 60 Hz；该指标本身也不是物理显示 FPS 或画面平滑的判据。
 
 另保留 c3/spike-A 的前置检查失败：脚本在 warmup 之前报 Not RTC，没有尖峰测量数据。源码先等待 netStatus()[2]，随后立即检查 driverStatus()[12]，这次未同时满足；未据此诊断生产链路根因。没有删除失败或降低 RTC 资格要求，同一冻结输入随后在 c2 的两端对照中通过。
 

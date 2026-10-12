@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-12T01:14:11.037Z",
+  "generatedAt": "2026-10-12T01:30:45.375Z",
   "scope": "Local TH08MP journal candidate; correctness and formal desktop CPU4 evidence. Not deployed.",
   "git": {
     "root": "D:\\workspace\\eagler\\worktrees\\th08-rollback-journal-4x",
     "baselineRoot": "D:\\workspace\\eagler\\worktrees\\th08-rollback-journal-baseline",
     "baselineHead": "05199cdb7402510814480a4d2ef6db429e49b03f",
     "measuredHarnessHead": "52af4d28a8227f2ebf66a3e9c33e5fd070e872af",
-    "headBeforeEvidence": "52af4d28a8227f2ebf66a3e9c33e5fd070e872af",
+    "headBeforeEvidence": "96bcbcb3c4823e06f6e308c3e31342db11519a3e",
     "performanceCommit": "a99c70b8d02091f8d29ad2ab30c0b9236800441a",
     "supportCommit": "765a1fafe2c0baf6434225a73491b0948a5950bb",
     "sharedHead": "eae1bdcfa930cc06d564701e0fa2cccacd819fd9",
@@ -8901,6 +8901,7 @@
         "120 Hz is the Page touch schedule target. Actual down/move submissions are coalesced; tapes differ and are not captured per-frame input tapes.",
         "Callback duration is wall time after callback entry, excluding rAF dispatch wait and observer tail; not CPU self time.",
         "Present and frontier gaps are observer metrics; first changed event anchors are excluded.",
+        "LogicalFps measures simulation-frontier advancement, not display FPS. Network-driven pacing below 60 Hz alone does not establish dropped display frames or CPU cost.",
         "Timing rows end at frame 1200; final confirmation/reconcile tail is outside the body metrics.",
         "Recovery windows start at injection-window end. Last delayed sends can arrive later; 1-second window classifications are not precise network-drain or latency timestamps.",
         "Browser flags request disabling background throttling, but no OS focus/visibility/occlusion trace was collected.",
