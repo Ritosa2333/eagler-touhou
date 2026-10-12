@@ -35,6 +35,7 @@ void SessionChannel::Clear()
     policy_ = {};
     session_ = {};
     active_ = observedClock_ = helloSent_ = forceControl_ = forceInputs_ = false;
+    deferredInput_ = false;
     failure_ = Failure::None;
     lastClock_ = beginTime_ = nextControl_ = nextInput_ = nextRetirementFence_ = 0;
     latestCapture_ = INVALID_FRAME;
@@ -93,6 +94,7 @@ bool SessionChannel::BeginSession(const SessionConfig &session, std::uint64_t no
     forceControl_ = true;
     forceInputs_ = false;
     beginTime_ = nextControl_ = nextInput_ = nextRetirementFence_ = nowMs;
+    deferredInput_ = false;
     latestCapture_ = INVALID_FRAME;
     sentSequence_.fill(0);
     receivedSequence_.fill(0);
@@ -120,8 +122,10 @@ bool SessionChannel::SendSession(const SessionGate &gate)
     return true;
 }
 
-bool SessionChannel::SendInputs(const RollbackCore &core, std::uint64_t nowMs, bool force)
+bool SessionChannel::SendInputs(const RollbackCore &core, std::uint64_t nowMs, bool force,
+                                bool deferOrdinaryInput)
 {
+    force = force || deferredInput_;
     if (!active_ || !transport_.IsOpen() || latestCapture_ == INVALID_FRAME ||
         (!force && nowMs < nextInput_))
         return true;
@@ -131,6 +135,42 @@ bool SessionChannel::SendInputs(const RollbackCore &core, std::uint64_t nowMs, b
     // transport applies the repair lane's own small queue bound; retain its
     // interval below and keep ordinary sends blocked at the aggregate limit.
     const bool inputBackpressured = transport_.BufferedAmount() > policy_.bufferedLimit;
+    if (deferOrdinaryInput && !deferredInput_ && !inputBackpressured && !policy_.adonisPhase)
+    {
+        bool canDefer = true;
+        const auto latest = core.LocalFrameForCapture(latestCapture_);
+        for (std::uint8_t peer = 0; peer < session_.playerCount; ++peer)
+        {
+            if (peer == session_.localPlayer) continue;
+            const auto frontier = core.AcknowledgedLocalThrough(peer);
+            const auto outstanding = frontier == INVALID_FRAME ? std::uint64_t(latest) + 1 :
+                (latest > frontier ? std::uint64_t(latest - frontier) : 0);
+            // A full redundant window may lose its oldest sample on capture.
+            // Conservatively keep the original send at that boundary. Also
+            // retain the entire original ordinary-then-repair path when any
+            // peer could need a reliable repair now, including ACK-only tails.
+            if (outstanding >= MAX_REDUNDANT_INPUTS ||
+                (frontier == repairFrontier_[peer] &&
+                 nowMs - lastRepair_[peer] >= policy_.repairIntervalMs))
+                canDefer = false;
+        }
+        if (canDefer)
+        {
+            for (std::uint8_t peer = 0; peer < session_.playerCount; ++peer)
+            {
+                if (peer == session_.localPlayer) continue;
+                const auto frontier = core.AcknowledgedLocalThrough(peer);
+                if (frontier != repairFrontier_[peer])
+                {
+                    repairFrontier_[peer] = frontier;
+                    lastRepair_[peer] = nowMs;
+                }
+            }
+            deferredInput_ = true;
+            return true;
+        }
+    }
+    deferredInput_ = false;
     for (std::uint8_t peer = 0; peer < session_.playerCount; ++peer)
     {
         if (peer == session_.localPlayer) continue;
@@ -175,6 +215,16 @@ bool SessionChannel::SendInputs(const RollbackCore &core, std::uint64_t nowMs, b
     return true;
 }
 
+bool SessionChannel::FlushDeferredInputs(const RollbackCore &core, std::uint64_t nowMs)
+{
+    if (!deferredInput_) return true;
+    deferredInput_ = false;
+    if (!ObserveClock(nowMs)) return false;
+    // A later capture/watchdog failure must not swallow the ACK/retransmit
+    // already owed by Pump. Preserve the failure while flushing valid state.
+    return SendInputs(core, nowMs, true);
+}
+
 bool SessionChannel::LocalCaptured(const RollbackCore &core, std::uint32_t captureFrame,
                                    std::uint64_t nowMs)
 {
@@ -184,6 +234,11 @@ bool SessionChannel::LocalCaptured(const RollbackCore &core, std::uint32_t captu
         return Fail(Failure::InvalidCapture);
     if (!ObserveClock(nowMs)) return false;
     const bool fresh = latestCapture_ != captureFrame;
+    // Only a consecutive notification may replace the postponed tail. This
+    // fallback requires its old ring slots to remain intact; a consumer must
+    // flush before ScheduleLocalInput if a jump could overwrite those slots.
+    if (deferredInput_ && fresh && captureFrame != latestCapture_ + 1 &&
+        !FlushDeferredInputs(core, nowMs)) return false;
     latestCapture_ = captureFrame;
     if (fresh && policy_.adonisPhase) adonis_.ObserveDue(captureFrame, nowMs * 1000);
     return SendInputs(core, nowMs, fresh);
@@ -357,8 +412,17 @@ bool SessionChannel::SendRetired(std::uint64_t nowMs)
     return true;
 }
 
+bool SessionChannel::PumpRetirement(std::uint64_t nowMs)
+{
+    if (failure_ != Failure::None) return false;
+    if (active_) return Fail(Failure::InvalidRetirement);
+    if (!ObserveClock(nowMs)) return false;
+    if (transport_.Failed()) return Fail(Failure::Transport);
+    return SendRetired(nowMs);
+}
+
 bool SessionChannel::Pump(SessionGate &gate, RollbackCore &core, std::uint64_t nowMs,
-                          bool expectsInput)
+                          bool expectsInput, bool deferOrdinaryInput)
 {
     if (failure_ != Failure::None) return false;
     if (!ObserveClock(nowMs)) return false;
@@ -386,7 +450,8 @@ bool SessionChannel::Pump(SessionGate &gate, RollbackCore &core, std::uint64_t n
         forceControl_ = false;
         nextControl_ = nowMs + policy_.controlResendMs;
     }
-    if (!SendInputs(core, nowMs, forceInputs_)) return false;
+    if (!SendInputs(core, nowMs, forceInputs_,
+                    deferOrdinaryInput && expectsInput && gate.CanStart())) return false;
     if (policy_.adonisPhase && gate.CanStart() && transport_.IsOpen())
     {
         AdonisPhaseSample sample;
@@ -443,6 +508,7 @@ bool SessionChannel::Retire(const RollbackCore &core, std::uint32_t terminalFram
         previousNeeded_[peer] = peer != previousLocal_;
     nextRetiredSend_ = nowMs;
     active_ = false;
+    deferredInput_ = false;
     for (auto &watchdog : watchdog_) watchdog.Disarm();
     return SendRetired(nowMs);
 }

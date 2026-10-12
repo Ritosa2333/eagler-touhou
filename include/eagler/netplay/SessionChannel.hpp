@@ -49,7 +49,15 @@ public:
     bool BeginSession(const SessionConfig &session, std::uint64_t nowMs,
                       const SessionChannelConfig &config = {});
     bool Pump(SessionGate &gate, RollbackCore &core, std::uint64_t nowMs,
-              bool expectsInput);
+              bool expectsInput, bool deferOrdinaryInput = false);
+    // Opt-in Pump deferral lasts only until the immediately following local
+    // consecutive capture. Flush BEFORE scheduling a discontinuous capture
+    // or otherwise changing retained input; LocalCaptured runs too late to
+    // protect ring slots which ScheduleLocalInput may already have replaced.
+    // Always flush before simulation, yielding, or an early return.
+    // Control/retirement and due reliable repairs are never deferred. No
+    // sequence or packet is built until the ordinary send actually runs.
+    bool FlushDeferredInputs(const RollbackCore &core, std::uint64_t nowMs);
     // Notify only after ScheduleLocalInput succeeds. A retry never samples
     // again; the same captured frame may be sent any number of times.
     bool LocalCaptured(const RollbackCore &core, std::uint32_t captureFrame,
@@ -62,6 +70,10 @@ public:
     bool CanRetire(const RollbackCore &core, std::uint32_t terminalFrame) const;
     bool Retire(const RollbackCore &core, std::uint32_t terminalFrame,
                 std::uint64_t nowMs);
+    // During the next generation's measurement, keep the retired terminal
+    // ACK cache answerable without draining calibration packets, beginning a
+    // new HELLO or looking at the already replaced simulation input core.
+    bool PumpRetirement(std::uint64_t nowMs);
 
     Failure Error() const { return failure_; }
     bool Active() const { return active_; }
@@ -84,7 +96,8 @@ private:
     bool Fail(Failure failure);
     bool ObserveClock(std::uint64_t nowMs);
     bool SendSession(const SessionGate &gate);
-    bool SendInputs(const RollbackCore &core, std::uint64_t nowMs, bool force);
+    bool SendInputs(const RollbackCore &core, std::uint64_t nowMs, bool force,
+                    bool deferOrdinaryInput = false);
     bool SendRetired(std::uint64_t nowMs);
     bool Receive(SessionGate &gate, RollbackCore &core, std::uint64_t nowMs);
 
@@ -93,6 +106,7 @@ private:
     SessionConfig session_{};
     bool active_ = false, observedClock_ = false, helloSent_ = false;
     bool forceControl_ = false, forceInputs_ = false;
+    bool deferredInput_ = false;
     Failure failure_ = Failure::None;
     std::uint64_t lastClock_ = 0, beginTime_ = 0, nextControl_ = 0, nextInput_ = 0;
     std::uint64_t nextRetirementFence_ = 0;
