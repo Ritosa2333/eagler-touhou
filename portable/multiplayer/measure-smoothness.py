@@ -363,6 +363,8 @@ def main():
     if args.production and (args.bullets or modes!=['frontier']):raise ValueError('Production lane requires authored bullets and unchanged frontier policy')
     if args.production and args.checkpoint_span!=1:raise ValueError('Production lane cannot alter checkpoint span')
     if args.production and args.background_index:raise ValueError('Production lane cannot enable fixture index')
+    if args.production and not (args.wall_clock_touch or args.idle_input):
+        raise ValueError('Production stimulus must use native wall-clock touch or explicit idle input')
     if args.reuse_freeze:
         origin=args.reuse_freeze.resolve();dest=origin/'frozen'
         manifest=json.loads((origin/'manifest.json').read_text());verify(dest,manifest)

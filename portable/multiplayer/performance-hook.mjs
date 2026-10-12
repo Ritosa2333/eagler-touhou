@@ -125,7 +125,10 @@ window.th08Performance={
           if(n[3]===end&&n[5]>=end-1){perfState.done=true;perfState.after=perfRead();perfStopGesture();}
           return 0;
         }
-        if(frame>perfLastCapture&&!(perfWallTouch&&frame>=180)){
+        // Direct CaptureLocal injection also needs the diagnostic channel
+        // announcement below. Formal runs leave capture AND send to the real
+        // SDL/Driver device path; pre-capturing here would prevent that send.
+        if(perfFixture&&frame>perfLastCapture&&!(perfWallTouch&&frame>=180)){
           // Constant tick workload across policies; no frame-rate-dependent
           // input and no duplicate sample while admission is waiting.
           const moving=!perfIdleInput&&frame>=180;
