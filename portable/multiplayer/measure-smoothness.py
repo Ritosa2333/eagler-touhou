@@ -20,7 +20,8 @@ def distribution(values):
     values=sorted(values)
     if not values:return {'count':0}
     return {'count':len(values),'mean':sum(values)/len(values),'p95':values[math.ceil(len(values)*.95)-1],
-            'p99':values[math.ceil(len(values)*.99)-1],'max':values[-1],'over50':sum(v>50 for v in values)}
+            'p99':values[math.ceil(len(values)*.99)-1],'max':values[-1],'over50':sum(v>50 for v in values),
+            'over100':sum(v>100 for v in values),'over250':sum(v>250 for v in values)}
 def summarize(peer):
     rows=peer['rows'];first=peer['before'];last=rows[-1]
     # Keep scene retirement/menu lockstep separate from gameplay throughput.
@@ -87,7 +88,8 @@ def summarize(peer):
     if not result['profileAvailable']:
         for key in ('captureMs','restoreMs','updateMs','resimDrawMs','chainMs','bulletMs',
                     'bulletUpdateSampleMs','collisionChecks','snapshots','skipped','snapshotBytes',
-                    'correctionMs','maxCorrectionMs','updateMsPerExecutedTick','activeBullets','peakBullets'):
+                    'correctionMs','maxCorrectionMs','updateMsPerExecutedTick','activeBullets','peakBullets',
+                    'snapshotOwnerBytes','snapshotOwnerBeginMs','actualSnapshotModes'):
             result[key]=None
     return result
 
@@ -108,15 +110,23 @@ def freeze(args):
       WORKSPACE/'th08-eagler/build-eagler/fonts/blend.bin':'fonts/blend.bin',
       WORKSPACE/'th08-eagler/build-eagler/fonts/cp932.bin':'fonts/cp932.bin'}
     launcher=WORKSPACE/'eagler-touhou'
-    for name in ['server/netplay-relay.mjs','server/room-directory.mjs','server/room-probe-policy.mjs',
-                 'server/spectator-frame.mjs','lib/contracts/product-catalog.mjs',
-                 'lib/contracts/load-compiled-contract.mjs']:
-        source[launcher/name]='relay/'+name
+    # Freeze the real relay's complete local module graph, including its
+    # packaged-contract loader. A stale hand-maintained list missed imports.
+    graph_script="""const [moduleUrl,root]=process.argv.slice(1);
+const {localModuleClosure}=await import(moduleUrl);
+console.log(JSON.stringify(await localModuleClosure({root,entries:['server/netplay-relay.mjs'],allowBareImports:true,allowDynamicImports:true})));"""
+    closure=json.loads(subprocess.check_output(['node','--input-type=module','-e',graph_script,
+      (launcher/'lib/browser-module-graph.mjs').as_uri(),str(launcher)],text=True))
+    for name in closure:source[launcher/name]='relay/'+name
     compiled=launcher/'.cache/build/browser/assets/contracts'
     if not compiled.exists():compiled=launcher/'assets/contracts'
-    for path in compiled.rglob('*.mjs'):source[path]='relay/assets/contracts/'+path.relative_to(compiled).as_posix()
-    for path in (launcher/'node_modules/ws').rglob('*'):
-        if path.is_file():source[path]='relay/node_modules/ws/'+path.relative_to(launcher/'node_modules/ws').as_posix()
+    for path in compiled.rglob('*'):
+        if path.is_file() and path.suffix in ('.mjs','.js'):source[path]='relay/assets/contracts/'+path.relative_to(compiled).as_posix()
+    for package in ('ws','acorn'):
+        package_root=launcher/'node_modules'/package
+        if not (package_root/'package.json').is_file():raise ValueError('Missing relay dependency '+package)
+        for path in package_root.rglob('*'):
+            if path.is_file():source[path]='relay/node_modules/'+package+'/'+path.relative_to(package_root).as_posix()
     for origin,name in source.items():
         target=dest/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(origin,target)
     (dest/'smoke.mjs').write_bytes((dest/'smoke-source.mjs').read_bytes()+b'\n'+(dest/'performance-hook.mjs').read_bytes())
@@ -136,18 +146,24 @@ def run(args,origin,relay,dest,mode):
     report={'passed':False,'mode':mode,'production':args.production,'cpuRate':args.cpu_rate,'players':args.players,
       'denseBullets':args.bullets,'difficulty':args.difficulty,'limit60':args.cap60,'wallClockTouch':args.wall_clock_touch,'idleInput':args.idle_input,'frames':args.frames,'oneWayMs':args.one_way_ms,'jitterMs':args.jitter_ms,
       'slowSeats':args.slow_seats,'touchSeats':args.touch_seats,'checkpointSpan':args.checkpoint_span,'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'titleSpellsLazy':args.title_spells_lazy,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'backMetadataOnly':args.back_metadata_only,'scope':'separate Chromium processes; native rAF; RTC application-send impairment; CPU throttle is not a phone model',
-      'peers':[],'errors':[]}
+      'headed':args.headed,'nativeGpu':args.native_gpu,'touchHz':args.touch_hz,'browserChannel':args.browser_channel,
+      'browsers':[],'peers':[],'errors':[],'teardown':{'browsersClosed':0,'errors':[]}}
     with sync_playwright() as pw:
         browsers=[];pages=[]
         try:
             room='smooth-'+uuid.uuid4().hex[:12]
             for seat in range(args.players):
-                browser=pw.chromium.launch(headless=True,channel=None if args.browser_channel=='default' else args.browser_channel,args=['--disable-background-timer-throttling',
-                  '--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding','--enable-unsafe-swiftshader'])
+                browser_args=['--disable-background-timer-throttling','--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding']
+                if args.native_gpu:
+                    browser_args+=['--ignore-gpu-blocklist']
+                    if os.name=='nt':browser_args+=['--use-gl=angle','--use-angle=d3d11']
+                else:browser_args+=['--enable-unsafe-swiftshader']
+                browser=pw.chromium.launch(headless=not args.headed,channel=None if args.browser_channel=='default' else args.browser_channel,args=browser_args)
                 browsers.append(browser)
-                if seat==0:
-                    gpu=browser.new_browser_cdp_session().send('SystemInfo.getInfo')['gpu']
-                    report['browser']={'version':browser.version,'gpu':gpu}
+                gpu=browser.new_browser_cdp_session().send('SystemInfo.getInfo')['gpu']
+                identity={'seat':seat,'version':browser.version,'gpu':gpu,'launchArgs':browser_args}
+                report['browsers'].append(identity)
+                if seat==0:report['browser']=identity
                 context=browser.new_context(viewport={'width':800,'height':600},service_workers='block')
                 options={'oneWayMs':args.one_way_ms,'jitterMs':args.jitter_ms,'inputLabel':'th08-input','controlLabel':'th08-control','seed':7135+seat}
                 if seat==args.spike_seat:
@@ -157,6 +173,18 @@ def run(args,origin,relay,dest,mode):
                 page.on('pageerror',lambda e,seat=seat:report['errors'].append({'seat':seat,'error':str(e)}))
                 page.goto(origin);page.wait_for_function('window.th08Performance!==undefined',timeout=90000)
                 page.evaluate('(o)=>multiplayerSmoke.start(1234,Array.from({length:o.players},(_,i)=>i),o.seat,[12345,67890],null,o.difficulty)',{'seat':seat,'players':args.players,'difficulty':args.difficulty})
+                identity['actualGL']=page.evaluate("""()=>{
+                  const canvas=document.querySelector('canvas'),gl=canvas?.getContext('webgl2');
+                  if(!gl)return null;
+                  const ext=gl.getExtension('WEBGL_debug_renderer_info');
+                  return {unmasked:!!ext,renderer:gl.getParameter(ext?ext.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
+                    vendor:gl.getParameter(ext?ext.UNMASKED_VENDOR_WEBGL:gl.VENDOR),version:gl.getParameter(gl.VERSION)};
+                }""")
+                actual=identity['actualGL']
+                renderer=(actual or {}).get('renderer','').lower()
+                identity['nativeGpuVerified']=bool(actual and actual['unmasked'] and renderer and
+                  not any(name in renderer for name in ('swiftshader','llvmpipe','software','basic render','warp')))
+                if args.native_gpu and not identity['nativeGpuVerified']:raise AssertionError('Native game WebGL renderer not verified')
             for page in pages:
                 if not page.evaluate('(url)=>multiplayerSmoke.connect(url)',relay+'/?room='+room):raise AssertionError('connect')
             deadline=time.monotonic()+60
@@ -168,34 +196,41 @@ def run(args,origin,relay,dest,mode):
             if not all(page.evaluate('multiplayerSmoke.driverStatus()[12]===1') for page in pages):raise AssertionError('Not RTC')
             for page in pages:
                 if page.evaluate('(span)=>th08Performance.checkpointSpan(span)',args.checkpoint_span)!=args.checkpoint_span:raise AssertionError('Checkpoint span rejected')
-            def wait_phase():
+            def wait_phase(expected_phase):
                 deadline=time.monotonic()+args.timeout
                 while True:
                     states=[page.evaluate('th08Performance.status()') for page in pages]
                     if report['errors'] or any(s['issues'] for s in states):raise AssertionError({'states':states,'errors':report['errors']})
-                    if all(s['done'] for s in states):break
+                    if all(s['phase']==expected_phase and s['done'] for s in states):break
                     if time.monotonic()>deadline:raise TimeoutError(json.dumps(states))
                     time.sleep(.5)
                 for page in pages:page.evaluate('th08Performance.stop()')
             for seat,page in enumerate(pages):page.evaluate('(seat)=>th08Performance.start(180,999999,seat)',seat)
-            wait_phase()
+            wait_phase(1)
             if len({json.dumps(p.evaluate('multiplayerSmoke.canonical()')) for p in pages})!=1:raise AssertionError('Warmup divergence')
             for seat,page in enumerate(pages):
-                page.evaluate('(o)=>th08Performance.configure(o.mode,o.bullets,o.cap60,o.wallTouch,o.earlyInput,o.liveBullets,o.targetFilter,o.broadphase,o.cache,o.idleInput,o.backgroundIndex,o.bombLazy,o.shotSparse,o.recordSparse,o.worldInstancing,o.textureCoalesce,o.skipResimVisual,o.skipResimGeometry,o.titleSpellsLazy,o.backMetadataOnly)',{'mode':MODES[mode],'bullets':args.bullets,'cap60':args.cap60,'wallTouch':args.wall_clock_touch and seat in args.touch_seats,'earlyInput':mode!='frontier-late','liveBullets':mode!='frontier-legacy','targetFilter':mode not in ('frontier-target-legacy','frontier-both-legacy'),'broadphase':mode not in ('frontier-collision-legacy','frontier-both-legacy'),'cache':mode not in ('frontier-cache-legacy','frontier-both-legacy'),'idleInput':args.idle_input or (args.wall_clock_touch and seat not in args.touch_seats),'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'titleSpellsLazy':args.title_spells_lazy,'backMetadataOnly':args.back_metadata_only})
+                page.evaluate('(o)=>th08Performance.configure(o.mode,o.bullets,o.cap60,o.wallTouch,o.earlyInput,o.liveBullets,o.targetFilter,o.broadphase,o.cache,o.idleInput,o.backgroundIndex,o.bombLazy,o.shotSparse,o.recordSparse,o.worldInstancing,o.textureCoalesce,o.skipResimVisual,o.skipResimGeometry,o.titleSpellsLazy,o.backMetadataOnly,o.touchHz)',{'mode':MODES[mode],'bullets':args.bullets,'cap60':args.cap60,'wallTouch':args.wall_clock_touch and seat in args.touch_seats,'earlyInput':mode!='frontier-late','liveBullets':mode!='frontier-legacy','targetFilter':mode not in ('frontier-target-legacy','frontier-both-legacy'),'broadphase':mode not in ('frontier-collision-legacy','frontier-both-legacy'),'cache':mode not in ('frontier-cache-legacy','frontier-both-legacy'),'idleInput':args.idle_input or (args.wall_clock_touch and seat not in args.touch_seats),'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'titleSpellsLazy':args.title_spells_lazy,'backMetadataOnly':args.back_metadata_only,'touchHz':args.touch_hz})
                 if seat in args.slow_seats:
                     context=page.context;session=context.new_cdp_session(page)
                     session.send('Emulation.setCPUThrottlingRate',{'rate':args.cpu_rate})
             # Arm against the same wall deadline, instead of starting P1 while
             # synchronous CDP setup is still blocking the other processes.
             start_at=time.time()*1000+600
-            for seat,page in enumerate(pages):page.evaluate('(o)=>setTimeout(()=>th08Performance.start(o.frames,240,o.seat),Math.max(0,o.at-Date.now()))',{'at':start_at,'frames':args.frames,'seat':seat})
-            # The old warmup done flag stays true until the armed start fires.
-            time.sleep(.8);wait_phase()
+            for seat,page in enumerate(pages):page.evaluate('(o)=>setTimeout(()=>th08Performance.start(o.frames,240,o.seat,o.at),Math.max(0,o.at-Date.now()))',{'at':start_at,'frames':args.frames,'seat':seat})
+            # Only accept completion of the newly started phase, even if its
+            # timer runs late and the warmup done flag is still visible.
+            wait_phase(2)
             report['peers']=[page.evaluate('th08Performance.report()') for page in pages]
             for seat,peer in enumerate(report['peers']):
                 imp=peer['impairment']
                 if not imp['matched'] or not imp['sent'] or imp['errors'] or imp['overflow']:raise AssertionError('RTC impairment not applied cleanly')
                 if not peer['rows'] or peer['after']['net'][3]!=args.frames:raise AssertionError('Incomplete run')
+                # Warmup RTC traffic alone cannot qualify the measured body:
+                # reject a later relay fallback or an idle impairment seam.
+                if peer['after']['driver'][12]!=1 or any(row['driver'][12]!=1 for row in peer['rows']):
+                    raise AssertionError('Measured body left the RTC route')
+                if imp['sent']-peer['before']['impairment']['sent']<=0:
+                    raise AssertionError('No impaired RTC sends during the measured body')
                 if peer['limit60']!=args.cap60:raise AssertionError('Presentation limit not applied')
                 if peer['wallClockTouch']!=(args.wall_clock_touch and seat in args.touch_seats):raise AssertionError('Touch workload not applied')
                 if peer['earlyInput']!=(mode!='frontier-late'):raise AssertionError('Input send order not applied')
@@ -205,6 +240,9 @@ def run(args,origin,relay,dest,mode):
                 if peer['barrierCache']!=(mode not in ('frontier-cache-legacy','frontier-both-legacy')):raise AssertionError('Barrier cache mode not applied')
                 if peer['identity']['fixtureBuild']==args.production or peer['profileAvailable']==args.production:raise AssertionError('Wrong production/fixture lane')
                 if peer['wallClockTouch'] and (peer['touch']['events']<30 or peer['touch']['pathPixels']<10 or peer['touch']['maxX']-peer['touch']['minX']<1):raise AssertionError('Native touch did not move the player')
+                touch=peer['touch']
+                touch['tapeSha256']=hashlib.sha256(json.dumps(touch['tape'],separators=(',',':')).encode()).hexdigest()
+                if peer['wallClockTouch'] and (touch['sourceHz']!=args.touch_hz or touch['timerActive'] or touch['scheduled']!=touch['events']+touch['coalesced']):raise AssertionError('Touch source accounting or cleanup failed')
                 if peer['after']['driver'][2] or peer['after']['driver'][15]:raise AssertionError('Driver/channel failure')
                 if mode in ('exact','exact-snapshots') and peer['after']['driver'][3]:raise AssertionError('Exact control rolled back')
             if len({json.dumps(p['canonical']) for p in report['peers']})!=1:raise AssertionError('Canonical divergence')
@@ -251,7 +289,13 @@ def run(args,origin,relay,dest,mode):
                     try:report['peers'].append(page.evaluate('th08Performance.report()'))
                     except Exception:pass
         finally:
-            for browser in reversed(browsers):browser.close()
+            for browser in reversed(browsers):
+                try:
+                    browser.close()
+                    if browser.is_connected():raise RuntimeError('Browser still connected after close')
+                    report['teardown']['browsersClosed']+=1
+                except Exception as error:report['teardown']['errors'].append(str(error))
+            if report['teardown']['errors']:report['passed']=False
     return report
 
 def supervised_run(args,origin,relay,dest,mode,name):
@@ -296,8 +340,11 @@ def main():
     p.add_argument('--timeout',type=float,default=150);p.add_argument('--freeze-only',action='store_true')
     p.add_argument('--reuse-freeze',type=Path,help='Rerun an existing immutable experiment without rebuilding the old source')
     p.add_argument('--browser-channel',choices=('default','chromium','chrome','msedge'),default='chromium')
+    p.add_argument('--headed',action='store_true',help='Use visible desktop browser windows')
+    p.add_argument('--native-gpu',action='store_true',help='Require the actual game WebGL context to expose a non-software renderer')
     p.add_argument('--cap60',action='store_true')
     p.add_argument('--wall-clock-touch',action='store_true')
+    p.add_argument('--touch-hz',type=float,default=0,help='Independent Page timer rate for touch; zero preserves the old rAF source')
     p.add_argument('--touch-seats',default='',help='Comma-separated wall-clock touch seats; default is all seats')
     p.add_argument('--idle-input',action='store_true',help='Hold both players still after admission; excludes touch stimulus')
     p.add_argument('--bomb-lazy',action='store_true',help='Fixture-only deferred Bomb snapshot diagnostic')
@@ -311,6 +358,7 @@ def main():
     if len(set(args.slow_seats))!=len(args.slow_seats) or any(s<0 or s>=args.players for s in args.slow_seats):raise ValueError('Invalid slow seats')
     if len(set(args.touch_seats))!=len(args.touch_seats) or any(s<0 or s>=args.players for s in args.touch_seats):raise ValueError('Invalid touch seats')
     if args.frames<=300 or not all(m in MODES for m in modes) or args.cpu_rate<1:raise ValueError('Invalid settings')
+    if args.touch_hz<0 or args.touch_hz>240 or (args.touch_hz and not args.wall_clock_touch):raise ValueError('Invalid touch source rate')
     if not 0<=args.spike_seat<args.players or (args.spike_ms and not 240<args.spike_frame<args.frames-180):raise ValueError('Invalid spike settings')
     if args.production and (args.bullets or modes!=['frontier']):raise ValueError('Production lane requires authored bullets and unchanged frontier policy')
     if args.production and args.checkpoint_span!=1:raise ValueError('Production lane cannot alter checkpoint span')
@@ -324,7 +372,7 @@ def main():
     else:dest,manifest=freeze(args)
     if args.freeze_only:return 0
     server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(dest)))
-    threading.Thread(target=server.serve_forever,daemon=True).start()
+    server_thread=threading.Thread(target=server.serve_forever,daemon=True);server_thread.start()
     with socket.socket() as probe:probe.bind(('127.0.0.1',0));relay_port=probe.getsockname()[1]
     env={**os.environ,'EAGLER_NETPLAY_RELAY_HOST':'127.0.0.1','EAGLER_NETPLAY_RELAY_PORT':str(relay_port),'EAGLER_NETPLAY_STUN_URLS':''}
     summaries=[];reference_hashes=None
@@ -353,7 +401,17 @@ def main():
                     (args.output/'summary.json').write_text(json.dumps(summaries,indent=2))
                     if not report['passed']:return 1
         finally:
-            relay.terminate();relay.wait(timeout=10);server.shutdown()
+            cleanup={'relayPid':relay.pid,'relayForced':False}
+            try:
+                if relay.poll() is None:relay.terminate()
+                try:relay.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    cleanup['relayForced']=True;relay.kill();relay.wait(timeout=5)
+                cleanup['relayExitCode']=relay.returncode
+            finally:
+                server.shutdown();server.server_close();server_thread.join(timeout=3)
+                cleanup['serverThreadStopped']=not server_thread.is_alive()
+                (args.output/'teardown.json').write_text(json.dumps(cleanup,indent=2))
     return 0
 if __name__=='__main__':
     if len(sys.argv)>1 and sys.argv[1]=='--worker':

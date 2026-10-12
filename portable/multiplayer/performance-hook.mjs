@@ -2,8 +2,18 @@
 // Test instrumentation only; never loaded by the shipped Runtime shell.
 const perfWorld=window.multiplayerSmoke;
 const perfFixture=typeof core.mp_fixture_performance_mode==='function';
-let perfState=null,perfLastCapture=-1;
+let perfState=null,perfLastCapture=-1,perfPhase=0;
 let perfWallTouch=false,perfTouchEpoch=0,perfTargetFilter=true,perfBroadphase=true,perfBarrierCache=true,perfIdleInput=false;
+let perfTouchHz=0,perfTouchTimer=null;
+const perfStopGesture=()=>{
+  ++perfTouchEpoch;
+  if(perfTouchTimer!==null){clearInterval(perfTouchTimer);perfTouchTimer=null;}
+  if(perfState?.touch){
+    const now=performance.now();perfState.touch.timerActive=false;
+    if(perfState.touch.stoppedAt===null)perfState.touch.stoppedAt=now;
+    perfState.touch.lastCleanupAt=now;
+  }
+};
 const perfRead=()=>({net:perfWorld.netStatus(),driver:perfWorld.driverStatus(),
   pacing:core.mp_fixture_pacing?Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_pacing(),3)):null,
   audioServices:perfWorld.audioServices(),audioClock:core.sdl_loop_time(),
@@ -29,7 +39,7 @@ const perfMainBlocks=()=>{
 window.th08Performance={
   bombLazy(value){return perfFixture?core.mp_fixture_bomb_lazy(app,+value):value?2:0;},
   checkpointSpan(span){return perfFixture?core.mp_fixture_checkpoint_span(app,span):span===1?1:0;},
-  configure(mode,bullets,limit60=false,wallTouch=false,earlyInput=true,liveBullets=true,targetFilter=true,broadphase=true,cache=true,idleInput=false,backgroundIndex=false,bombLazy=false,shotSparse=false,recordSparse=false,worldInstancing=true,textureCoalesce=true,skipResimVisual=false,skipResimGeometry=false,titleSpellsLazy=true,backMetadataOnly=false){
+  configure(mode,bullets,limit60=false,wallTouch=false,earlyInput=true,liveBullets=true,targetFilter=true,broadphase=true,cache=true,idleInput=false,backgroundIndex=false,bombLazy=false,shotSparse=false,recordSparse=false,worldInstancing=true,textureCoalesce=true,skipResimVisual=false,skipResimGeometry=false,titleSpellsLazy=true,backMetadataOnly=false,touchHz=0){
     if(!perfFixture&&(mode||bullets||!earlyInput||!liveBullets||!targetFilter||!broadphase||!cache))
       throw Error('Production measurement requires unchanged defaults and authored bullets');
     if(perfFixture){
@@ -52,7 +62,7 @@ window.th08Performance={
     if(!core.mp_fixture_collision_probe())throw Error('Collision broadphase oracle failed');
     }
     perfTargetFilter=targetFilter;perfBroadphase=broadphase;
-    perfWallTouch=wallTouch;perfIdleInput=idleInput;
+    perfWallTouch=wallTouch;perfIdleInput=idleInput;perfTouchHz=touchHz;
     if(wallTouch){perfWorld.touchConfigure(0,false);perfWorld.touchControls(true,false,0,0);}
     Module.eaglerOptions={...Module.eaglerOptions,limitPresentationTo60:limit60};
     if(perfFixture&&!core.mp_fixture_performance_mode(app,mode))throw Error('Performance mode rejected');
@@ -60,32 +70,51 @@ window.th08Performance={
     const cost=perfRead().costs;
     if(!!cost[0]!== (mode>=2)||!!cost[1]!== (mode===1||mode===3))throw Error('Mode not applied');
   },
-  start(end,measureStart,seat){
-    perfState={end,measureStart,seat,rows:[],issues:[],before:null,after:null,done:false,
+  start(end,measureStart,seat,plannedAt=null){
+    perfStopGesture();
+    perfState={end,measureStart,seat,phase:++perfPhase,plannedAt,startedAt:Date.now(),rows:[],issues:[],before:null,after:null,done:false,
       lastReceive:performance.now(),lastReceived:-1,lastConfirm:performance.now(),lastConfirmed:-1,
-      touch:{events:0,pathPixels:0,minX:Infinity,maxX:-Infinity}};
+      touch:{events:0,pathPixels:0,minX:Infinity,maxX:-Infinity,source:perfTouchHz?'page-timer':'raf',
+        sourceHz:perfTouchHz,scheduled:0,coalesced:0,callbacks:0,earlyWakeups:0,maxLatenessMs:0,
+        firstAt:null,lastAt:null,stoppedAt:null,lastCleanupAt:null,timerActive:false,tape:[],
+        tapeScope:'native touch down/move submissions, not captured per-frame inputs',
+        scheduleCoverage:'phase start through last down/move callback; stop-tail not counted'}};
     if(perfWallTouch){
       // Reuse TH07 netplay-performance-browser-host.html:startBridgeDrag's
       // wall-clock stimulus: 2.5 s period, 4.5% canvas amplitude, seat phase.
       // TH08-specific seam is the existing native SDL touch entry point.
-      const epoch=++perfTouchEpoch,id=991+seat;let active=false,first=0,lastX=0;
+      const epoch=++perfTouchEpoch,id=991+seat,origin=performance.now();
+      perfState.touch.scheduleOrigin=origin;
+      let active=false,first=0,lastX=0,lastPlanned=0;
       const gesture=()=>{
         if(epoch!==perfTouchEpoch)return;
+        try{
+        if(perfState.done||perfState.issues.length){perfStopGesture();return;}
+        const now=performance.now();++perfState.touch.callbacks;
         const frame=perfWorld.netStatus()[3];
         if(frame>=180&&frame<end-60){
-          if(!first)first=performance.now();
-          const phase=(performance.now()-first)/2500*Math.PI*2+seat*.8;
+          const due=perfTouchHz?Math.floor((now-origin)*perfTouchHz/1000):perfState.touch.events+1;
+          if(perfTouchHz&&(due<1||due<=lastPlanned)){++perfState.touch.earlyWakeups;return;}
+          const expected=lastPlanned+1;
+          const count=due-lastPlanned;
+          perfState.touch.scheduled+=count;perfState.touch.coalesced+=count-1;lastPlanned=due;
+          perfState.touch.maxLatenessMs=Math.max(perfState.touch.maxLatenessMs,perfTouchHz?now-(origin+expected*1000/perfTouchHz):0);
+          if(!first){first=now;perfState.touch.firstAt=now;}
+          const phase=(now-first)/2500*Math.PI*2+seat*.8;
           const x=.5+.045*Math.sin(phase);
-          perfWorld.touch(active?1:0,id,x,.8);
+          const action=active?1:0;perfWorld.touch(action,id,x,.8);
+          perfState.touch.tape.push([due,now,frame,action,x,.8]);perfState.touch.lastAt=now;
           if(active)perfState.touch.pathPixels+=Math.abs(x-lastX)*640;
           lastX=x;active=true;++perfState.touch.events;
           const position=perfWorld.status()[8+seat*12+5];
           perfState.touch.minX=Math.min(perfState.touch.minX,position);
           perfState.touch.maxX=Math.max(perfState.touch.maxX,position);
-        }else if(active){perfWorld.touch(2,id,lastX,.8);active=false;}
-        if(!perfState.done&&!perfState.issues.length)requestAnimationFrame(gesture);
+        }else if(active){perfWorld.touch(2,id,lastX,.8);active=false;perfStopGesture();return;}
+        if(!perfTouchHz&&!perfState.done&&!perfState.issues.length)requestAnimationFrame(gesture);
+        }catch(error){perfState.issues.push('Touch source '+String(error));perfStopGesture();core.sdl_loop_stop();}
       };
-      requestAnimationFrame(gesture);
+      if(perfTouchHz){perfTouchTimer=setInterval(gesture,1000/perfTouchHz);perfState.touch.timerActive=true;}
+      else requestAnimationFrame(gesture);
     }
     Module.runtimePrepare=()=>{
       try{
@@ -93,7 +122,7 @@ window.th08Performance={
         if(frame>=end){
           perfWorld.pollNetwork();perfWorld.reconcile();
           const n=perfWorld.netStatus();
-          if(n[3]===end&&n[5]>=end-1){perfState.done=true;perfState.after=perfRead();}
+          if(n[3]===end&&n[5]>=end-1){perfState.done=true;perfState.after=perfRead();perfStopGesture();}
           return 0;
         }
         if(frame>perfLastCapture&&!(perfWallTouch&&frame>=180)){
@@ -108,11 +137,11 @@ window.th08Performance={
           perfLastCapture=frame;
         }
         return 1;
-      }catch(error){perfState.issues.push(String(error));core.sdl_loop_stop();return 0;}
+      }catch(error){perfState.issues.push(String(error));perfStopGesture();core.sdl_loop_stop();return 0;}
     };
     Module.runtimeFinish=(code,ms)=>{
       const now=performance.now(),sample=perfRead(),frame=sample.net[3];
-      if(code){perfState.issues.push('Native loop '+code+' '+perfWorld.networkError());core.sdl_loop_stop();}
+      if(code){perfState.issues.push('Native loop '+code+' '+perfWorld.networkError());perfStopGesture();core.sdl_loop_stop();}
       if(sample.driver[14]!==perfState.lastReceived){perfState.lastReceived=sample.driver[14];perfState.lastReceive=now;}
       if(sample.net[5]!==perfState.lastConfirmed){perfState.lastConfirmed=sample.net[5];perfState.lastConfirm=now;}
       if(frame<measureStart||frame>end)return;
@@ -121,8 +150,8 @@ window.th08Performance={
     };
     core.sdl_loop_start();
   },
-  stop(){core.sdl_loop_stop();++perfTouchEpoch;if(perfWallTouch)perfWorld.touchCancel();},
-  status(){return {done:perfState?.done,issues:perfState?.issues,net:perfWorld.netStatus()};},
+  stop(){core.sdl_loop_stop();perfStopGesture();if(perfWallTouch)perfWorld.touchCancel();},
+  status(){return {phase:perfState?.phase,end:perfState?.end,done:perfState?.done,issues:perfState?.issues,net:perfWorld.netStatus()};},
   report(){return {...perfState,canonical:perfWorld.canonical(),state:perfWorld.status(),
     mainBlocks:perfMainBlocks(),
     profileAvailable:perfFixture,timeOrigin:performance.timeOrigin,

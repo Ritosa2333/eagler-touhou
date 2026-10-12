@@ -7,6 +7,8 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--url',required=True)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--loadouts',action='store_true')
+parser.add_argument('--players',type=int,choices=(2,3),help='Select one player count for a targeted diagnostic')
+parser.add_argument('--scenario',choices=('all','shooting','focused-bombs','native-death','unfocused-bombs'),default='all')
 parser.add_argument('--optimization-oracle',action='store_true',help='Compare legacy Update against optimized replay at every checkpoint')
 parser.add_argument('--bomb-lazy',action='store_true',help='Use deferred Bomb snapshots in the fixture')
 parser.add_argument('--shot-sparse',action='store_true',help='Use sparse PlayerShot snapshots in the fixture')
@@ -17,12 +19,17 @@ report['optimizationOracle']=args.optimization_oracle
 report['bombLazy']=args.bomb_lazy
 report['shotSparse']=args.shot_sparse
 report['recordSparse']=args.record_sparse
+report['selectedScenario']=args.scenario
+report['selectedPlayers']=args.players
 probe_method='updateOptimizationProbe' if args.optimization_oracle else 'worldJournalProbe'
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader'])
     try:
         layouts=([0,1],[2,3],[4,5],[6,7],[8,9],[10,11],[0,1,2],[3,4,5],[6,7,8],[9,10,11]) if args.loadouts else ([0,1],[0,1,2])
         scenarios=[(layout,mode) for layout in layouts for mode in ((1,3) if args.loadouts else (0,1,2,3))]
+        scenario_names=('shooting','focused-bombs','native-death','unfocused-bombs')
+        scenarios=[(layout,mode) for layout,mode in scenarios if (args.players is None or len(layout)==args.players) and (args.scenario=='all' or scenario_names[mode]==args.scenario)]
+        if not scenarios:raise ValueError('No selected world-journal scenarios')
         for layout,mode in scenarios:
             count=len(layout)
             page=browser.new_page()

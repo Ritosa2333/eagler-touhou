@@ -64,6 +64,11 @@ inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0,bool op
                 (mode!=3&&frame<3?InputButton::Focus:0));
         if((mode==1||mode==3)&&frame==0)for(u32 seat=0;seat<app.session.player_count;++seat)buttons[seat]|=InputButton::Bomb;
         if(mode==2&&frame==0)game.pilot(app.session.player_count-1).die();
+        // Match smoke.commit(): this offline fixture still samples P1 through
+        // the physical keyboard path before publishing the shared input.
+        constexpr u16 masks[]{1,2,4,16,32,64,128};
+        constexpr u8 keys[]{90,88,16,38,40,37,39};
+        for(u32 i=0;i<7;++i)runtime.keyboard_state()[keys[i]]=(buttons[0]&masks[i])?128:0;
         if(!game.commit_inputs(buttons,app.session.player_count)||!runtime.step(true))return false;
         if(optimization_oracle&&fixture_barrier_cache_mismatches())return false;
         if((mode==1||mode==3)&&frame==0){
@@ -115,6 +120,117 @@ inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0,bool op
     app.supervisor.state.target=i32(th08::Scene::NextStage);
     if(!journal.EndFrame()||journal.CanAdvance()||!journal.UndoTo(4)||!journal.CanAdvance())return fail(72);
     result[35]=1;
-    journal.Clear();result[1]=1;return result;
+    // Exercise every undo position with a nonzero ring head, including live
+    // records that straddle the last physical slot. Keep an independent full
+    // hash before each capture; mutate the real Replay writer under ownership.
+    const auto ring_before=journal.AuditHash();
+    const auto recording_before=game.recording;
+    const auto random_before=app.session.random;
+    for(u32 round=0;round<8;++round){
+        const u32 base=100+round*16;
+        std::array<std::array<u32,WorldJournal::GroupCount>,11> checkpoints{};
+        const auto capture=[&](u32 offset){
+            checkpoints[offset]=journal.AuditHash();
+            if(!journal.BeginFrame(base+offset))return false;
+            game.recording.input.flags=4;
+            game.recording.input.physical=u16(37*(base+offset));
+            game.recording.input.timing_level=u8(40+offset);
+            game.recording.update();
+            app.session.random.calls+=1;
+            return journal.EndFrame();
+        };
+        for(u32 offset=0;offset<8;++offset)if(!capture(offset))return fail(80);
+        journal.DiscardBefore(base+3);
+        for(u32 offset=8;offset<11;++offset)if(!capture(offset))return fail(81);
+        const u32 target=3+round;
+        if(journal.CheckpointStart(base+2)!=Netplay::INVALID_FRAME||
+           !journal.UndoTo(base+target)||journal.AuditHash()!=checkpoints[target]||
+           journal.CheckpointStart(base+target)!=Netplay::INVALID_FRAME)return fail(82);
+        ++result[59];
+        // Continue from the undone frame before clearing the remaining prefix.
+        if(!journal.BeginFrame(base+target)||!journal.EndFrame()||
+           !journal.UndoTo(base+target)||journal.AuditHash()!=checkpoints[target])return fail(83);
+        journal.DiscardBefore(base+16);
+    }
+    game.recording=recording_before;app.session.random=random_before;
+    if(journal.HasHistory()||journal.AuditHash()!=ring_before)return fail(84);
+    // Extend admission and restored Replay bytes remain identical.
+    if(!journal.BeginFrame(300))return fail(85);
+    game.recording.input.flags=4;game.recording.update();
+    if(!journal.EndFrame()||!journal.BeginFrame(301,true))return fail(86);
+    game.recording.update();
+    if(!journal.EndFrame()||journal.CheckpointStart(301)!=300||
+       !journal.UndoTo(300)||journal.AuditHash()!=ring_before)return fail(87);
+    result[60]=1;
+    journal.Clear();
+    if(!journal.Bind(runtime))return fail(88);
+    for(u32 offset=0;offset<WorldJournal::History;++offset)
+        if(!journal.BeginFrame(400+offset)||!journal.EndFrame())return fail(89);
+    if(journal.BeginFrame(400+WorldJournal::History)||!journal.Failed())return fail(90);
+    result[61]=1; // still fails closed instead of overwriting a needed record
+    journal.Clear();
+    // Exercise the dormant transition bytes independently of animation
+    // liveness. These synthetic VM bytes are never executed or rendered.
+    auto& display=game.display;auto& flow=game.gui_flow;
+    struct RestoreGui {
+        GuiImplState& display;GuiLoadContext& context;
+        std::vector<u8> bytes;GuiLoadContext saved_context;
+        RestoreGui(GuiImplState& d,GuiLoadContext& c):display(d),context(c),
+            bytes(reinterpret_cast<const u8*>(&d),reinterpret_cast<const u8*>(&d)+sizeof(d)),saved_context(c){}
+        ~RestoreGui(){std::memcpy(&display,bytes.data(),bytes.size());context=saved_context;}
+    } restore_gui{display,flow.context};
+    if(!journal.Bind(runtime)||flow.transition_touch_context!=&journal||!flow.transition_touch)return fail(91);
+    if(!flow.transition_touch(flow.transition_touch_context))return fail(92); // no retained history
+    display.transition_count=0;std::memset(display.transition,0xa5,sizeof(display.transition));
+    auto gui_hash=journal.AuditHash();
+    if(!journal.BeginFrame(500))return fail(93);
+    const auto dormant_bytes=journal.DiagnosticBytesForFrame(500)[0];
+    if(!journal.EndFrame()||!journal.UndoTo(500)||journal.AuditHash()!=gui_hash)return fail(94);
+    ++result[62];
+    // count == 1 still executes the entire array, including its last slot.
+    display.transition_count=1;gui_hash=journal.AuditHash();
+    if(!journal.BeginFrame(501))return fail(95);
+    const auto active_bytes=journal.DiagnosticBytesForFrame(501)[0];
+    if(active_bytes!=dormant_bytes+sizeof(display.transition))return fail(96);
+    result[63]=u32(active_bytes-dormant_bytes);
+    std::memset(display.transition,0x5a,sizeof(display.transition));
+    if(!journal.EndFrame()||!journal.UndoTo(501)||journal.AuditHash()!=gui_hash)return fail(97);
+    ++result[62];
+    display.transition_count=0;gui_hash=journal.AuditHash();
+    if(!journal.BeginFrame(502)||!flow.transition_touch(flow.transition_touch_context)||
+       journal.DiagnosticBytesForFrame(502)[0]!=active_bytes)return fail(98);
+    std::memset(display.transition,0x3c,sizeof(display.transition));display.transition_count=168;
+    if(!flow.transition_touch(flow.transition_touch_context)||
+       journal.DiagnosticBytesForFrame(502)[0]!=active_bytes||
+       !journal.EndFrame()||!journal.UndoTo(502)||journal.AuditHash()!=gui_hash)return fail(99);
+    ++result[62]; // first write and repeated touch preserve the original bytes
+    if(!journal.BeginFrame(503)||!journal.EndFrame()||!journal.BeginFrame(504,true)||
+       !flow.transition_touch(flow.transition_touch_context))return fail(100);
+    std::memset(display.transition,0x69,sizeof(display.transition));display.transition_count=1;
+    if(!journal.EndFrame()||journal.CheckpointStart(504)!=503||
+       !journal.UndoTo(503)||journal.AuditHash()!=gui_hash)return fail(101);
+    ++result[62];
+    display.transition_count=1;gui_hash=journal.AuditHash();
+    if(!journal.BeginFrame(505))return fail(102);
+    game.gui.reset_clear();
+    if(!flow.transition_touch(flow.transition_touch_context))return fail(103);
+    std::memset(display.transition,0x96,sizeof(display.transition));display.transition_count=168;
+    if(journal.DiagnosticBytesForFrame(505)[0]!=active_bytes||
+       !journal.EndFrame()||!journal.UndoTo(505)||journal.AuditHash()!=gui_hash)return fail(104);
+    ++result[62];
+    journal.Clear();
+    // Call the real setup entry point for both branches with closed retained
+    // history. The owner must reject before memset, reset_clear or resource IO.
+    std::memcpy(&display,restore_gui.bytes.data(),restore_gui.bytes.size());
+    for(bool initial:{true,false}){
+        flow.context.initial=initial;
+        if(!journal.Bind(runtime)||!journal.BeginFrame(600)||!journal.EndFrame())return fail(105);
+        gui_hash=journal.AuditHash();
+        if(flow.setup()||!journal.Failed()||journal.AuditHash()!=gui_hash)return fail(106);
+        ++result[62];
+        journal.Clear();
+        if(flow.transition_touch||flow.transition_touch_context)return fail(107);
+    }
+    result[1]=1;return result;
 }
 }

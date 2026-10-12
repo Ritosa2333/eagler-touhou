@@ -63,18 +63,48 @@ inline const u32* enemy_journal_probe(){
     first->flags=0;auto* reused=population.spawn(spawn);
     if(!require(reused==first&&journal.EndFrame()&&journal.UndoTo(2)&&hash_vm(*first)==before,12))return result;
     result[6]=1; // same native slot, recreated VM and destroyed contexts
-    if(!require(!population.at(1)&&journal.BeginFrame(3),13))return result;
+    // EnemyPopulation preallocates its native slots. Restoring a newly
+    // activated slot must preserve that allocation and its dormant bytes.
+    auto* dormant=population.at(1);
+    if(!require(dormant&&!(dormant->flags&1),13))return result;
+    const u32 dormant_hash=hash_vm(*dormant);
+    if(!require(journal.BeginFrame(3),13))return result;
     auto* added=population.spawn(spawn);
-    if(!require(added&&added!=first&&journal.EndFrame()&&journal.UndoTo(3)&&!population.at(1),14))return result;
-    result[7]=1; // allocated-after-checkpoint VM removed on undo
+    if(!require(added==dormant&&added!=first&&journal.EndFrame()&&journal.UndoTo(3)&&population.at(1)==dormant&&hash_vm(*dormant)==dormant_hash,14))return result;
+    result[7]=1; // dormant preallocated VM restored after activation
     if(!require(journal.BeginFrame(4),15))return result;
     first->asynchronous[0].reset();
     if(!require(journal.EndFrame()&&!old.expired(),16))return result;
     journal.DiscardBefore(5);if(!require(old.expired(),17))return result;
     result[8]=1; // confirmed retirement releases the old owning contexts
-    for(u32 frame=5;frame<5+EnemyJournal::History;++frame)
+    for(u32 round=0;round<8;++round){
+        const u32 base=100+round*16;
+        std::array<u32,11> hashes{};
+        std::array<std::weak_ptr<EclContext>,11> contexts;
+        const auto capture=[&](u32 offset){
+            hashes[offset]=journal.AuditHash();contexts[offset]=first->asynchronous[0];
+            if(!journal.BeginFrame(base+offset))return false;
+            first->asynchronous[0]=std::make_shared<EclContext>();
+            first->asynchronous[0]->subroutine=i32(base+offset);
+            return journal.EndFrame();
+        };
+        for(u32 offset=0;offset<8;++offset)if(!require(capture(offset),20))return result;
+        journal.DiscardBefore(base+3);
+        if(!require(contexts[1].expired()&&contexts[2].expired()&&!contexts[3].expired(),21))return result;
+        for(u32 offset=8;offset<11;++offset)if(!require(capture(offset),22))return result;
+        std::weak_ptr<EclContext> newest=first->asynchronous[0];
+        const u32 target=3+round;
+        if(!require(journal.UndoTo(base+target)&&journal.AuditHash()==hashes[target]&&!contexts[target].expired()&&newest.expired(),23))return result;
+        for(u32 offset=target+1;offset<11;++offset)if(!require(contexts[offset].expired(),24))return result;
+        if(!require(journal.BeginFrame(base+target)&&journal.EndFrame()&&journal.UndoTo(base+target)&&journal.AuditHash()==hashes[target],25))return result;
+        journal.DiscardBefore(base+16);
+        if(!require(!journal.HasHistory()&&!contexts[target].expired(),26))return result;
+        first->asynchronous[0].reset();
+        if(!require(contexts[target].expired(),27))return result;
+    }
+    for(u32 frame=1000;frame<1000+EnemyJournal::History;++frame)
         if(!require(journal.BeginFrame(frame)&&journal.EndFrame(),18))return result;
-    if(!require(!journal.BeginFrame(5+EnemyJournal::History)&&journal.Failed(),19))return result;
+    if(!require(!journal.BeginFrame(1000+EnemyJournal::History)&&journal.Failed(),19))return result;
     result[9]=1; // no silent overwrite of a still-needed rollback checkpoint
     journal.Clear();population.reset();result[1]=1;return result;
 }
