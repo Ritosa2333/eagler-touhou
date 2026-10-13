@@ -1,5 +1,9 @@
 # Eagler Common Runtime
 
+Purple THPrac shared input, key monitor/HUD, reaction test and simulation-speed
+tools are available as the optional `eagler::thprac` component. See
+[THPrac integration](docs/thprac.md) for title seams and release requirements.
+
 Shared runtime infrastructure for Eagler Touhou ports.
 
 License: MIT.

@@ -1,5 +1,12 @@
 include_guard(GLOBAL)
 
+function(eagler_common_link_thprac target)
+    if(NOT TARGET ${target})
+        message(FATAL_ERROR "eagler_common_link_thprac: unknown target ${target}")
+    endif()
+    target_link_libraries(${target} PRIVATE eagler::thprac)
+endfunction()
+
 get_filename_component(_EAGLER_COMMON_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
 if(NOT TARGET eagler_common_netplay_base)
