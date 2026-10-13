@@ -17,7 +17,7 @@ void GameDraw::prepare_frame()noexcept{background.rate=progress.rate;spell_conte
 #endif
 }
 #if TH15_MULTIPLAYER
-bool GameDraw::prepare_multiplayer_hud(){if(!scene.battle.mp_enabled||!scene.hud.root)return true;if(!multiplayer_hud){multiplayer_hud=std::make_unique<MultiplayerHud>(scene.battle,scene.hud);}if(!multiplayer_hud->error.empty())return fail(multiplayer_hud->error);multiplayer_hud->prepare(renderer);return true;}
+bool GameDraw::prepare_multiplayer_hud(){if(!scene.battle.mp_enabled||!scene.hud.root)return true;if(!multiplayer_hud){multiplayer_hud=std::make_unique<MultiplayerHud>(scene.battle,scene.hud);}if(!multiplayer_hud->error.empty())return fail(multiplayer_hud->error);return multiplayer_hud->prepare(renderer)||fail(multiplayer_hud->error);}
 #endif
 bool GameDraw::fail(const std::string& value){if(error.empty())error=value.empty()?"Gameplay drawing failed":value;return false;}
 bool GameDraw::draw_glyph(AnmVm& vm){return renderer.draw_glyph(vm)!=-2||fail(renderer.error);}

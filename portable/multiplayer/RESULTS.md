@@ -56,13 +56,15 @@ Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
   after later Power loss. ECL Power reads the minimum of the viable team.
   Full Power fills one pilot or awards the shared full-Power point-value bonus
   once, respecting its cap. Cancel point-value items never use Power priority.
-  HUD fixtures cover 2P/3P personal Power, life/Bomb labels, independent Extra
-  thresholds, local/ghost identity, shared values rendered once, side-panel
-  bounds, suppression of the old personal widgets, and unchanged RNG state.
-  Stock markers/counts and numbers use the original native glyph queue.
-  Final 2P/3P screenshots were visually checked: all seat groups fit, the
-  local highlight changes by seat, shared totals appear once, and dimmed
-  decorative panel art keeps the P3 resources readable.
+  HUD fixtures compare each seat's actual ANM sprite selection, fragment fill,
+  dimensions and position with the original single-player life/Bomb widgets,
+  including independent Extra thresholds. They cover native split Power
+  typography, shared values rendered once, panel bounds, unchanged background
+  colour and RNG state, and absence of textual stock/label substitutes.
+  Production 2P/3P browser screenshots verify original labels, hearts/stars,
+  fragment bars, separators, fonts and background, with grouped seat numbers.
+  Three-player seat numbers occupy the gap beside the life label to avoid
+  overlapping the preceding player's original Power row.
 - Protocol: 2P/3P, manual D=0/2/9, challenge on/off, reordered holes,
   capture-once ownership, session generation, build/ABI disagreement,
   all-seat replay including recorded P3, no second replay delay, malformed data,

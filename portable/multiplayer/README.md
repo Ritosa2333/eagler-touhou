@@ -51,11 +51,12 @@ per bullet even when pilots overlap. References include current TH06/07 Eagler,
 TH08 MP 0916231, TH10 MP 288ea8d and TH11 MP d62e3f1; title-specific damage caps,
 Power values and spell formulas remain TH15's own.
 
-The HUD groups native glyph stock markers/counts and Power for every seat,
-including individual fragment progress; the local seat is highlighted and
-ghosts are dimmed. Shared point value and chapter/total Graze appear once in
-the team area. Decorative panel art is dimmed for readability. The original
-text queue owns presentation and consumes no battle or visual RNG.
+The HUD repeats TH15's original life/Bomb icons, labels, fragment bars and
+separators for each seat, following TH11's grouped presentation. All asset
+sizes, the panel background and split Power typography retain the retail
+appearance; the local seat number is highlighted. Shared point value and
+chapter/total Graze appear once below the personal groups. Managed ANM widgets
+and the original text queue consume no battle or visual RNG.
 Small/large P and Full Power items prefer the nearest eligible collector who
 still needs Power; eligibility includes the collector's own POC line, Bomb
 attraction and pickup bounds. Owners are reconsidered while homing and after
