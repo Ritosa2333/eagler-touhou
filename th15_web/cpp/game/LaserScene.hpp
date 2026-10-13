@@ -41,6 +41,7 @@ class LaserScene {
     Rng& game_random;Rng& visual_random;BulletCancellationRewards& rewards;i32 resource;BulletScene* bullets=nullptr;
 public:
     LaserManager manager;std::string error;float rate=1;
+    std::function<Vec3(const Vec3&)> multiplayer_target;
     LaserScene(LaserSceneHost&,AnmManager&,EffectManager&,Rng& game,Rng& visual,BulletCancellationRewards&,i32 resource);
     ~LaserScene();
     u32 create_moving(const MovingLaserRequest&);

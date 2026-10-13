@@ -9,12 +9,14 @@ class MultiplayerHud {
     std::array<std::array<u32,8>,3> lives{},bombs{};
     std::array<std::array<i32,5>,3> displayed{};
     std::vector<u32> widgets;
+    AnmVm transfer_power_icon;
     float top(unsigned)const;float team_top()const;
     u32 widget(i32 script,float original_y,float y);
 public:
     std::string error;
     MultiplayerHud(GameBattle&,GameHud&);~MultiplayerHud();
     bool prepare(AnmRenderer&);bool queue_text(HudDrawServices&);
+    bool draw_transfer_feedback(AnmRenderer&,HudDrawServices&);
 };
 }
 #endif

@@ -10,6 +10,8 @@ class ItemCollection {
     void add_score(i32 value)noexcept;void record(i32 value)noexcept;
 public:
     std::string error;
+    i32 small_power_amount=1;
+    std::function<bool()> shared_life_piece;
     ItemCollection(PlayerLifeSession& p,ItemScoreState& s,PlayerMotion& m,ItemCollectionHost& h,i32 ch,i32* tier=nullptr):player(p),score(s),motion(m),world(h),character(ch),life_piece_tier(tier?*tier:s.life_piece_tier){}
     bool award(const ItemState&);
 };

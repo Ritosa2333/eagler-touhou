@@ -18,10 +18,13 @@ struct MultiplayerPilot final:PlayerHost,BombHost,ItemCollectionHost {
     std::unique_ptr<ItemCollection> owned_collection;ItemCollection* collection=nullptr;
     GameInput keys;MultiplayerInput input;bool ghost=false,spell_startup_bomb=false;
     unsigned ghost_clock=0;u32 ghost_random=1;i32 ghost_dx=0,ghost_dy=0;
+    unsigned life_hold=0,power_taps=0,power_gap=0;bool life_latched=false;
     MultiplayerPilot(GameBattle&,unsigned,int);
     bool initialize(const ShtResource&,int bank);
     bool rebuild_bomb();bool tick();bool tick_bomb();bool reset_stage();
     bool alive()const noexcept;
+    void protect_teammates(i32 frames);
+    bool revive(bool rescued);
     bool allow_bomb()override;bool begin_bomb()override;
     bool cancel_lasers_near(const Vec3&,float,i32,bool)override;
     bool cancel_bullets_near(const Vec3&,float,i32)override;bool cancel_lasers(i32,bool)override;

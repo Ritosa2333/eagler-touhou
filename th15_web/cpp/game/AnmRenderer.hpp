@@ -3,6 +3,7 @@
 #include "ZunGraphics.hpp"
 #include "AnmTransforms.hpp"
 #include "AnmCamera.hpp"
+#include <unordered_map>
 namespace th15 {
 class AnmRenderer {
     ZunGraphics& graphics;std::vector<AnmGeometryVertex> vertices;u32 bound_texture=~0u;
@@ -13,6 +14,7 @@ public:
     u32 presentation_instance=0;
 #if TH15_MULTIPLAYER
     std::vector<const AnmVm*> multiplayer_hidden_hud;
+    std::unordered_map<const AnmVm*,u8> multiplayer_player_opacity;
 #endif
     void submit(AnmVm&,touhou::graphics::Topology,u32,const void*,u32);
     Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;

@@ -106,6 +106,17 @@ int AnmRenderer::trail(AnmVm& vm){
 int AnmRenderer::draw(AnmVm& vm){
 #if TH15_MULTIPLAYER
     if(std::find(multiplayer_hidden_hud.begin(),multiplayer_hidden_hud.end(),&vm)!=multiplayer_hidden_hud.end())return 0;
+    if(const auto found=multiplayer_player_opacity.find(&vm);found!=multiplayer_player_opacity.end()){
+        auto copy=vm;const auto alpha=found->second;
+        const auto fade=[&](u32 color){return (color&0xffffffu)|(((color>>24)*alpha/255)<<24);};
+        copy.visual.color=fade(copy.visual.color);copy.visual.secondary_color=fade(copy.visual.secondary_color);
+        // Match TH11: retain additive blending, normalize other blends so
+        // reduced alpha actually fades focus/hitbox and option animations.
+        if(copy.visual.blend_mode()!=1)copy.visual.flags&=~0x1e0u;
+        for(auto& vertex:copy.geometry.screen_vertices)vertex.color=fade(vertex.color);
+        for(auto& vertex:copy.geometry.world_vertices)vertex.color=fade(vertex.color);
+        return draw(copy);
+    }
 #endif
 #if TH15_DEVELOPMENT_HARNESS
  ++render_modes[vm.visual.draw_mode()&31];

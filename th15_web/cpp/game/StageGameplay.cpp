@@ -1,5 +1,8 @@
 #include "StageGameplay.hpp"
 #include "PracticeSections.hpp"
+#if TH15_MULTIPLAYER
+#include "MultiplayerEconomy.hpp"
+#endif
 namespace th15 {
 u32 StageGameplay::practice_music_start_offset()noexcept{return assets.practice_effects.music_start_offset(assets.practice_active&&assets.practice.mode==1&&assets.practice.section==TH15_ST6_STARS);}
 struct StageGameplay::Services final:DialogueSceneServices,CheckpointSceneServices,HudFrameServices,StageSceneServices,MessageSceneServices {
@@ -82,13 +85,14 @@ i32 StageGameplay::update_dialogue(){
  context.dialogue=messages.active();if(!hud.update_after_dialogue(context)){fail(hud.error);return i32(FrameAction::Error);}return i32(FrameAction::Continue);
 }
 bool StageGameplay::chapter_reward(bool boss){
- if(!battle.enemy_world.chapter_total)return true;bool award_resource=true;
+ if(!battle.enemy_world.chapter_total)return true;bool award_resource=true;i32 resource_threshold=1000000;
 #if TH15_MULTIPLAYER
  award_resource=!battle.mp_enabled;
+ if(battle.mp_enabled)resource_threshold=multiplayer_chapter_threshold(battle.mp_options.seat_count);
 #endif
- if(!reward.complete(boss,progress.chapter_deaths,award_resource))return fail(reward.error);const auto& state=reward.state;
+ if(!reward.complete(boss,progress.chapter_deaths,award_resource,resource_threshold))return fail(reward.error);const auto& state=reward.state;
 #if TH15_MULTIPLAYER
- if(battle.mp_enabled&&state.bonus>=1000000){ItemState item;item.kind=4;if(!battle.mp_reward_item(item))return fail(battle.error);}
+ if(battle.mp_enabled&&state.bonus>=resource_threshold){ItemState item;item.kind=4;if(!battle.mp_reward_item(item))return fail(battle.error);}
 #endif
  hud.result_notice=state.animation;hud.result_grazes=state.grazes;hud.result_deaths=state.deaths;hud.result={state.display_percent,state.percent,state.bonus,state.display_bonus,state.base_bonus,state.duration};hud.flags=(hud.flags&~0x1000u)|0x800;hud.intro_age=state.age;return true;
 }

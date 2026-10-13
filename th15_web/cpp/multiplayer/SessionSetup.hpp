@@ -8,7 +8,7 @@
 
 namespace th15::multiplayer {
 struct SessionSetup {
-    static constexpr std::uint32_t Version=5, Words=22, GameplayVersion=7;
+    static constexpr std::uint32_t Version=5, Words=22, GameplayVersion=13;
     std::uint64_t session_id=0;
     std::uint32_t player_count=2,local_player=0,difficulty=1,seed=1;
     std::uint32_t requested_delay=0,input_delay=0,prediction_reserve=2;

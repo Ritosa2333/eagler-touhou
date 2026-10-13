@@ -3,7 +3,7 @@ namespace th15 {
 void ItemCollection::add_score(i32 value)noexcept{score.score=wrapping_add(score.score,value/10);if(score.score>999999999)score.score=999999999;}
 void ItemCollection::record(i32 value)noexcept{score.chapter_count=wrapping_add(score.chapter_count,1);score.chapter_value=wrapping_add(score.chapter_value,value);score.collection_position=motion.position;}
 bool ItemCollection::power(const ItemState& item,bool large){
-    const float y=motion.position.y;const i32 threshold=character==1?148:128;const i32 amount=large?player.power_step:1;i32 value=100;
+    const float y=motion.position.y;const i32 threshold=character==1?148:128;const i32 amount=large?player.power_step:small_power_amount;i32 value=100;
     if(player.power<score.max_power){player.power=wrapping_add(player.power,amount);if(player.power>score.max_power){player.power=score.max_power;if(!world.notice(2))return false;}
         if(wrapping_sub(player.power,amount)/player.power_step!=player.power/player.power_step){if(!world.options_changed())return false;if(large&&!world.sound(13,false))return false;if(!world.popup(item.position,-1,0xffffff40))return false;if(!large&&!world.sound(13,false))return false;}}
     else{value=large?20000:10000;if(large)add_score(20000);if(!world.popup(item.position,value,large?0xff808080:0xffffffff))return false;if(large&&!world.sound(13,false))return false;}
@@ -23,6 +23,7 @@ bool ItemCollection::life(){if(player.extra_lives>7)return true;player.extra_liv
 bool ItemCollection::bomb(){player.bombs=wrapping_add(player.bombs,1);if(player.bombs<9){if(!world.sound(46,true))return false;}else player.bombs=8;return world.bomb_hud(player.bombs,player.bomb_pieces);}
 bool ItemCollection::bomb_piece(){if(player.bombs>7){player.bomb_pieces=0;return true;}player.bomb_pieces=wrapping_add(player.bomb_pieces,1);if(player.bomb_pieces>4){player.bombs=wrapping_add(player.bombs,1);player.bomb_pieces=0;if(player.bombs<9){if(!world.sound(46,true))return false;}else player.bombs=8;if(!world.bomb_hud(player.bombs,player.bomb_pieces))return false;}return world.bomb_hud(player.bombs,player.bomb_pieces);}
 bool ItemCollection::life_piece(){
+    if(shared_life_piece)return shared_life_piece();
     if(player.extra_lives>=8){if(!bomb_piece())return false;player.life_pieces=0;return true;}if(life_piece_tier<0||(score.difficulty==4&&life_piece_tier>5)){error="Life-piece tier outside verified threshold table";return false;}player.life_pieces=wrapping_add(player.life_pieces,1);const i32 threshold=score.difficulty==4?(life_piece_tier<5?5:99999999):3;
     while(player.life_pieces>=threshold){player.life_pieces=wrapping_sub(player.life_pieces,threshold);if(player.extra_lives<8){player.extra_lives=wrapping_add(player.extra_lives,1);if(player.extra_lives>8)player.extra_lives=8;if(!world.life_hud(player.extra_lives,player.life_pieces)||!world.sound(17,true)||!world.notice(4))return false;}life_piece_tier=wrapping_add(life_piece_tier,1);}return world.life_hud(player.extra_lives,player.life_pieces);
 }

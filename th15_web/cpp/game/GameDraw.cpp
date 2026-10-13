@@ -9,10 +9,12 @@ GameDraw::GameDraw(StageGameplay& s,SessionState& p,RecordStore& v,AnmManager& a
 GameDraw::~GameDraw(){for(auto& c:callbacks)scheduler.remove(c.frame);
 #if TH15_MULTIPLAYER
  renderer.multiplayer_hidden_hud.clear();
+ renderer.multiplayer_player_opacity.clear();
 #endif
 }
 void GameDraw::prepare_frame()noexcept{background.rate=progress.rate;spell_context.character=progress.character;spell_context.subcharacter=progress.subcharacter;spell_context.mode_flags=scene.battle.session.mode_flags;const auto* p=scene.battle.enemy_world.practice;spell_context.disable_master_display=p&&p->enabled&&p->disable_master_display;
 #if TH15_MULTIPLAYER
+ if(scene.battle.mp_enabled)scene.battle.mp_prepare_presentation(renderer);
  prepare_multiplayer_hud();
 #endif
 }
@@ -28,7 +30,7 @@ bool GameDraw::run(u32 index){
  case 0:prepare_frame();return draw_spell_card(b.spell_card,animations,records,spell_context,text,error);
  case 1:
 #if TH15_MULTIPLAYER
- if(b.mp_enabled)return b.mp_draw(renderer)||fail(b.error);
+ if(b.mp_enabled){if(!b.mp_draw(renderer))return fail(b.error);return !multiplayer_hud||multiplayer_hud->draw_transfer_feedback(renderer,text)||fail(multiplayer_hud->error);}
 #endif
  return b.player&&b.player->draw(renderer)||fail(b.player?b.player->error:"Player drawing unavailable");
  case 2:if(progress.scene_flags&4)return true;return b.items&&b.items->draw(renderer)||fail(b.items?b.items->error:"Item drawing unavailable");

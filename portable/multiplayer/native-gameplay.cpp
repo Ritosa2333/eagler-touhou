@@ -56,6 +56,7 @@ struct World {
   for(unsigned s=0;s<3;++s){if(!b.pilots[s]){at+=8;continue;}auto& p=*b.pilots[s];out[at++]=u32(p.player->motion.position_fixed.x);out[at++]=u32(p.player->motion.position_fixed.y);out[at++]=p.session.power;out[at++]=p.session.bombs;out[at++]=p.session.extra_lives;out[at++]=p.player->life.state;out[at++]=p.score.score;out[at++]=p.player->frame.input_age.current;}return out;
  }
 };
+#ifndef TH15_MP_VISUAL_CHECK
 #include "native-items.hpp"
 #include "native-hud.hpp"
 #include "native-balance.hpp"
@@ -162,3 +163,4 @@ int main(int argc,char** argv){
  }
  std::printf("{\"passed\":true,\"ticks\":%u,\"characters\":4,\"localSeats\":[0,2],\"checks\":[\"independent-input-bombs-lives-power-fragments\",\"shared-score-graze-point-value\",\"shared-damage-score\",\"eligible-underpowered-pickup-retail-P-rewards\",\"individual-HUD-shared-statistics-no-battle-RNG\",\"remote-collision\",\"single-team-chapter-score-individual-resources\",\"individual-extend-tiers-caps-extra-threshold\",\"nearest-ECL-aim\",\"next-stage-resources\",\"all-player-game-over\",\"retail-ECL-determinism\",\"co-op-base-Bombs-dynamic-Boss-damage\",\"per-pilot-death-damage-team-miss-statistics\",\"remote-Bomb-spell-startup-Reisen-exception\",\"overlapping-special-bullet-rule-once\"]}\n",ticks);
 }
+#endif

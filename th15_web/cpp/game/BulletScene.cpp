@@ -1,6 +1,7 @@
 #include "BulletScene.hpp"
 #include <algorithm>
 #include "BulletArea.hpp"
+#include "MultiplayerVisualPolicy.hpp"
 namespace th15 {
 struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     BulletScene& scene;u32 index;BulletState& state;BulletVisual visual;bool cancelling=false;
@@ -26,12 +27,15 @@ struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     i32 contact(BulletState& bullet,bool graze_only)override{
         if(scene.host.player_count()==1)return i32(bullet.collide(scene.host.player_collision(),graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error));
         if(!graze_initialized)for(unsigned s=0;s<scene.host.player_count();++s){graze_flash[s]=bullet.graze_flash;graze_duration[s]=bullet.graze_duration;graze_interval[s]=bullet.graze_interval;}
+        MultiplayerGrazeVisual glow;bool hit_player=false;
         i32 result=0;for(unsigned s=0;s<scene.host.player_count();++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);
             bullet.graze_flash=graze_flash[s];bullet.graze_duration=graze_duration[s];bullet.graze_interval=graze_interval[s];
             const auto hit=bullet.collide(scene.host.player_collision(),graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error);
             graze_flash[s]=bullet.graze_flash;graze_duration[s]=bullet.graze_duration;graze_interval[s]=bullet.graze_interval;
-            result=std::max(result,i32(hit));if(hit==PlayerContact::hit)break;
-        }graze_initialized=true;scene.host.select_player(0);return result;
+            glow.observe(bullet.visual_flags,bullet.graze_color,bullet.visual_jitter);
+            result=std::max(result,i32(hit));if(hit==PlayerContact::hit){hit_player=true;break;}
+        }if(!hit_player)glow.apply(bullet.visual_flags,bullet.graze_color,bullet.visual_jitter);
+        graze_initialized=true;scene.host.select_player(0);return result;
     }
     bool sprite_dimensions(Vec2& out)const noexcept override{const auto* sprite=visual.body.sprite;if(!sprite)return false;out={sprite->width,sprite->height};return true;}
     bool animation_finished(bool overlay)override{const i32 result=visual.tick(overlay);if(result<0)scene.error=visual.error;return result>0;}
@@ -55,6 +59,7 @@ BulletScene::BulletScene(BulletSceneHost& services,Rng& game,Rng& visual):host(s
 BulletScene::~BulletScene()=default;
 BulletFrameHost& BulletScene::bullet(u32 index){auto& slot=*slots[index];slot.visual.rate=manager.context.rate;return slot;}
 void BulletScene::prepare(u32 index,BulletFrameContext& context){const auto& vm=slots[index]->visual.body;context.sprite_available=vm.sprite!=nullptr;
+    if(manager.multiplayer_target)context.player=manager.multiplayer_target(slots[index]->state.motion.position);
     // Native 0x419390 reads the selected resource sprite dimensions, even when
     // the animation changes its visual size. Recycling against the latter
     // removes shrinking/cancelling bullets one or more frames too early.

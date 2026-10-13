@@ -83,15 +83,19 @@ public:
     std::unique_ptr<EnemyCombat> combat;std::unique_ptr<EnemyDamage> enemy_damage;std::unique_ptr<EnemyDeath> enemy_death;
     std::unique_ptr<EnemyManager> enemies;std::unique_ptr<BombContext> bomb_context;std::unique_ptr<BombController> bomb;
 #if TH15_MULTIPLAYER
-    MultiplayerOptions mp_options;bool mp_enabled=false;unsigned mp_contact_seat=0;
+    MultiplayerOptions mp_options;bool mp_enabled=false,mp_rebinding=false;unsigned mp_contact_seat=0;
     std::array<std::unique_ptr<MultiplayerPilot>,3> pilots;
     std::array<int,ItemManager::pool_size> mp_item_targets{};
+    std::array<int,ItemManager::pool_size> mp_gift_targets{};
+    i32 mp_fragments=0;
+    bool mp_reward_fragment();bool mp_update_rules();
+    int mp_life_receiver(unsigned)const;bool mp_spawn_transfer(i32,const Vec3&,unsigned);
     bool mp_enable(const MultiplayerOptions&,const std::array<ShtResource,4>&,const std::array<int,4>&);
     void mp_input(const std::array<MultiplayerInput,3>&);
     const PlayerCollision& mp_collision(unsigned);
     int mp_nearest(const Vec3&,bool power=false)const;Vec3 mp_target(const Vec3&)const;
-    bool mp_damage(const DamageQuery&,DamageResult&);bool mp_draw(AnmRenderer&);bool mp_reward_item(const ItemState&);
-    int mp_item_owner(const ItemState&)const;
+    bool mp_damage(const DamageQuery&,DamageResult&);void mp_prepare_presentation(AnmRenderer&);bool mp_draw(AnmRenderer&);bool mp_reward_item(const ItemState&);
+    int mp_item_owner(u32,ItemState&);
     unsigned mp_viable_count()const;bool mp_bomb_active(bool damaging_only=false)const;
     bool mp_prepare_spell_startup();bool mp_spell_startup_active();
     i32 mp_boss_damage(EnemyState&,i32 amount);

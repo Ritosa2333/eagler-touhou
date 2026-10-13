@@ -226,15 +226,20 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  PROFILE_AT(1);
  if(!display->draw())return fail(display->error);
  PROFILE_AT(2);
- if(scene()
-#if TH15_MULTIPLAYER
- &&!multiplayer
-#endif
- ){
+ if(scene()){
   auto& battle=scene()->battle;auto& clock=battle.spell_card.clock;
   if(clock.needs_sample(battle.spell.flags)){
-   double now=0;if(!seconds(now))return fail("Spell presentation clock unavailable");
+   double now=0;
+#if TH15_MULTIPLAYER
+   // step() advances only on confirmed frames, including replay/spectators.
+   // Wall time would include network stalls and differ between peers.
+   if(multiplayer)now=double(frames)/60.0;else
+#endif
+   if(!seconds(now))return fail("Spell presentation clock unavailable");
    if(clock.sample(battle.spell.flags,battle.spell_card.active_frames,now)==SpellPresentationClock::Event::completed&&!(battle.session.mode_flags&0x300)){
+#if TH15_MULTIPLAYER
+    if(!multiplayer)
+#endif
     if(!replay||!replay->spell_timing(clock.sequence,clock.encoded))return fail(replay?replay->error:"Spell replay owner unavailable");
     clock.sequence=wrapping_add(clock.sequence,1);
    }

@@ -2,6 +2,8 @@
 #include "GameBattle.hpp"
 #include "MultiplayerPilot.hpp"
 #include "BattleSceneBindings.hpp"
+#include "MultiplayerBombProtection.hpp"
+#include "MultiplayerVisualPolicy.hpp"
 #include <algorithm>
 namespace th15 {
 MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned s,int ch):world(w),seat(s),character(ch),owned_session(w.session),owned_life_piece_tier(w.score.life_piece_tier),session(s?owned_session:w.session),score(w.score){ghost_random=w.mp_options.seed^(0x9e3779b9u*(s+1));if(!ghost_random)ghost_random=1;}
@@ -66,20 +68,35 @@ bool MultiplayerPilot::tick(){
 bool MultiplayerPilot::tick_bomb(){
     if(ghost)return true;
     if(context){context->hud_available=world.input.hud_available;context->hud_collect=world.input.hud_collect||world.dialogue_present();}
-    return bomb->update(world.input.rate)||world.fail(bomb->error);
+    const bool active=session.bomb_state==1;
+    const i32 charges=character==3?static_cast<BombReisen&>(*bomb).charges:0;
+    if(!bomb->update(world.input.rate))return world.fail(bomb->error);
+    const bool broken=character==3&&static_cast<BombReisen&>(*bomb).charges<charges;
+    // Also share the final frame/tail, when update just ended the bomb.
+    protect_teammates(multiplayer_bomb_protection(character,active,broken));
+    return true;
+}
+void MultiplayerPilot::protect_teammates(i32 frames){
+    if(frames<=0)return;
+    for(unsigned s=0;s<world.mp_options.seat_count;++s){auto& p=*world.pilots[s];
+        if(s==seat||p.ghost||p.session.extra_lives<0)continue;
+        auto& timer=p.player->life.invulnerability;
+        const i32 next=multiplayer_protection_timer(timer.current,frames);
+        if(next!=timer.current)timer.set(next);
+    }
 }
 bool MultiplayerPilot::reset_stage(){
-    session.bomb_state=0;spell_startup_bomb=false;keys={};input={};
+    session.bomb_state=0;spell_startup_bomb=false;keys={};input={};life_hold=power_taps=power_gap=0;life_latched=false;
     if(!rebuild_bomb())return false;
-    return ghost||player->reset_for_stage()||world.fail(player->error);
+    if(ghost)return revive(false);
+    return player->reset_for_stage()||world.fail(player->error);
 }
 bool MultiplayerPilot::allow_bomb(){return !ghost&&!world.mp_options.challenge&&bomb&&bomb->allowed();}
 bool MultiplayerPilot::begin_bomb(){
     if(!allow_bomb()||!bomb->begin())return false;
     spell_startup_bomb=(world.spell.flags&1)&&world.spell.frame<60;
     world.enemy_world.counters[1]=world.bomb_enemies.uses;world.enemy_world.counters[2]=world.bomb_enemies.chain;
-    // Non-shield bombs protect all operable teammates; Reisen's shields stay personal.
-    if(character!=3)for(unsigned s=0;s<world.mp_options.seat_count;++s)if(s!=seat&&!world.pilots[s]->ghost&&world.pilots[s]->session.extra_lives>=0){auto& timer=world.pilots[s]->player->life.invulnerability;if(timer.current<180)timer.set(180);}
+    protect_teammates(multiplayer_bomb_start_protection(character));
     return true;
 }
 bool MultiplayerPilot::cancel_lasers_near(const Vec3& p,float r,i32 k,bool h){return world.laser_scene->cancel_circle(p,r,k,h)>=0;}
@@ -88,7 +105,7 @@ bool MultiplayerPilot::cancel_lasers(i32 k,bool h){return world.laser_scene->can
 bool MultiplayerPilot::item(i32 k,const Vec3& p,float a,float s){return world.spawn_item(k,p,a,s);}
 bool MultiplayerPilot::options_changed(){return player->configure_options();}
 bool MultiplayerPilot::game_over(){
-    if(ghost)return true;ghost=true;ghost_clock=0;ghost_dx=ghost_dy=0;keys={};input={};spell_startup_bomb=false;
+    if(ghost)return true;ghost=true;ghost_clock=0;ghost_dx=ghost_dy=0;keys={};input={};spell_startup_bomb=false;life_hold=power_taps=power_gap=0;life_latched=false;
     if(bomb&&!bomb->stop())return false;
     player->motion.option_count=0;for(auto& option:player->motion.options)option.active=0;
     for(auto& pair:player->visuals.option_handles)for(auto& handle:pair)if(!world.animations.retire(handle))return world.fail(world.animations.error);
@@ -108,6 +125,7 @@ bool MultiplayerPilot::sound(i32 id,bool q){return world.sound(id,0,PlayerShots:
 bool MultiplayerPilot::popup(const Vec3& p,i32 v,u32 c){return world.popup(p,v,c);}
 bool MultiplayerPilot::notice(i32 id){return world.check(world.presentation.notice(id),"Multiplayer item notice failed");}
 bool GameBattle::mp_reward_item(const ItemState& item){
+    if(item.kind==4)return mp_reward_fragment();
     for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];if(p.ghost||p.session.extra_lives<0)continue;
         if(!p.collection->award(item))return fail(p.collection->error);}
     return true;
@@ -120,13 +138,18 @@ bool MultiplayerPilot::shake(const ScreenShakeSpec& s){return world.presentation
 bool MultiplayerPilot::nudge(const ScreenNudgeSpec& s){return world.presentation.nudge(s);}
 bool GameBattle::mp_enable(const MultiplayerOptions& o,const std::array<ShtResource,4>& shots,const std::array<int,4>& banks){
     if(!initialized||mp_enabled||!o.valid()||o.selections[0]!=character||(session.mode_flags&0x300))return fail("Invalid TH15 Legacy multiplayer setup");
-    mp_options=o;mp_enabled=true;mp_item_targets.fill(-1);
+    mp_options=o;mp_enabled=true;mp_item_targets.fill(-1);mp_gift_targets.fill(-1);mp_fragments=session.life_pieces;
     for(unsigned s=0;s<o.seat_count;++s)pilots[s]=std::make_unique<MultiplayerPilot>(*this,s,o.selections[s]);
     for(unsigned s=0;s<o.seat_count;++s)if(!pilots[s]->initialize(shots[o.selections[s]],banks[o.selections[s]]))return false;
-    enemy_world.multiplayer_target=[this](const Vec3& p){return mp_target(p);};bullet_scene->manager.multiplayer_target=enemy_world.multiplayer_target;return true;
+    for(unsigned s=0;s<o.seat_count;++s){auto& c=*pilots[s]->collection;c.small_power_amount=i32(o.seat_count);c.shared_life_piece=[this](){return mp_reward_fragment();};}
+    items->multiplayer_release=[this](u32 index){mp_gift_targets[index]=-1;};
+    enemy_world.multiplayer_target=[this](const Vec3& p){return mp_target(p);};bullet_scene->manager.multiplayer_target=enemy_world.multiplayer_target;laser_scene->multiplayer_target=enemy_world.multiplayer_target;return true;
 }
-int GameBattle::mp_item_owner(const ItemState& item)const{
+int GameBattle::mp_item_owner(u32 index,ItemState& item){
     const bool power=item.kind==1||item.kind==3||item.kind==8;
+    auto& directed=mp_gift_targets[index];
+    if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){directed=-1;item.state=1;item.velocity={};}
+    if(directed>=0)return directed;
     const auto contains=[](const PlayerBox& box,const Vec3& p){return p.x>=box.minimum.x&&p.x<=box.maximum.x&&p.y>=box.minimum.y&&p.y<=box.maximum.y;};
     auto eligible=[&](const MultiplayerPilot& p){
         if(!p.alive()||item.state==5||(item.state==1&&item.delay>0))return false;
@@ -186,14 +209,35 @@ i32 GameBattle::mp_boss_damage(EnemyState& enemy,i32 amount){
     const u64 scaled=u64(unsigned(amount))*numerator+enemy.multiplayer_damage_remainder;
     enemy.multiplayer_damage_remainder=unsigned(scaled%12);return i32(scaled/12);
 }
+void GameBattle::mp_prepare_presentation(AnmRenderer& r){
+    // Tag the current native VMs on every draw, including registered focus/
+    // option/shot trees. The renderer scales draw copies, never simulation VMs.
+    r.multiplayer_player_opacity.clear();
+    const auto local_position=pilots[mp_options.local_seat]->player->motion.position;
+    for(unsigned s=0;s<mp_options.seat_count;++s){const auto& pilot=*pilots[s];const auto position=pilot.player->motion.position;
+        const double dx=double(local_position.x)-position.x,dy=double(local_position.y)-position.y;
+        const u8 opacity=multiplayer_player_opacity(s==mp_options.local_seat,pilot.ghost,dx*dx+dy*dy);
+        if(opacity==255)continue;
+        const auto tag=[&](auto&& self,AnmVm* vm)->void{if(!vm)return;r.multiplayer_player_opacity[vm]=opacity;for(auto* child:animations.registry.children(*vm))self(self,child);};
+        auto& visuals=pilot.player->visuals;tag(tag,&visuals.root);tag(tag,animations.registry.find(visuals.focus_handle));tag(tag,animations.registry.find(visuals.barrier_handle));
+        for(const auto& pair:visuals.option_handles)for(auto handle:pair)tag(tag,animations.registry.find(handle));
+        for(const auto& shot:pilot.player->shots.shots)if(shot.state)tag(tag,animations.registry.find(shot.animation));
+    }
+}
 bool GameBattle::mp_draw(AnmRenderer& r){
+    mp_prepare_presentation(r);
     for(unsigned s=0;s<mp_options.seat_count;++s){auto& pilot=*pilots[s];
         if(!pilot.ghost){if(!pilot.player->draw(r))return fail(pilot.player->error);continue;}
         // A presentation copy keeps the original character sprite visible,
         // independently of native death hiding and invulnerability flashing.
         auto body=pilot.player->visuals.root;body.visual.flags=(body.visual.flags|3u)&~0x60000u;
         body.visual.render_flags=(body.visual.render_flags&~0x80060u)|0x40000u;
-        body.visual.color=(body.visual.color&0xffffffu)|((s==mp_options.local_seat?112u:88u)<<24);
+        const unsigned base_alpha=s==mp_options.local_seat?112u:88u;unsigned alpha=base_alpha;
+        // TH11 rescue feedback: the recipient becomes opaque as the donor's
+        // confirmed 90-tick hold progresses. No authoritative ANM mutation.
+        for(unsigned giver=0;giver<mp_options.seat_count;++giver){const auto& donor=*pilots[giver];
+            if(donor.life_hold&&mp_life_receiver(giver)==int(s))alpha=std::max(alpha,base_alpha+(255-base_alpha)*std::min(donor.life_hold,90u)/90);}
+        body.visual.color=(body.visual.color&0xffffffu)|(alpha<<24);
         body.visual.translation=pilot.player->motion.position;body.presentation_motion=true;
         if(r.draw(body)==-2)return fail(r.error);
     }return true;
