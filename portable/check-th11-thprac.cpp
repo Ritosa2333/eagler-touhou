@@ -6,6 +6,7 @@
 #include "../th11_web/cpp/game/PracticeSiteChecks.hpp"
 #include "../th11_web/cpp/game/StageCompletion.hpp"
 #include "../th11_web/cpp/game/GameResources.hpp"
+#include <eagler/thprac/PracticeKeyMonitor.hpp>
 #include <fstream>
 #include <iostream>
 #include <cassert>
@@ -17,6 +18,9 @@ using namespace th11;
 static u32 site_crc(const u8* data,size_t size){u32 crc=~0u;for(size_t i=0;i<size;++i){crc^=data[i];for(int bit=0;bit<8;++bit)crc=(crc>>1)^(0xedb88320u&u32(-i32(crc&1)));}return ~crc;}
 struct ClearEffects:StageCompletionEffects {bool stage_result_animation()override{return true;}};
 int main(int argc,char** argv){
+    {eagler::thprac::PracticeInput input;u8 keys[256]{};keys[88]=keys[67]=keys[90]=keys[160]=128;input.disable_xkey=input.disable_shiftkey=input.disable_zkey=true;input.apply(keys);assert(!keys[88]&&!keys[67]&&!keys[90]&&!keys[160]);input.force_shiftkey=true;input.apply(keys);assert(keys[160]==128&&keys[161]==128);input.enable_fast_retry=true;input.begin_retry(0);assert(!input.fast_retry_count_down);input.begin_retry(1);for(int i=15;i>0;--i){u8 retry[256]{};input.apply(retry);assert(retry[27]==128);assert(bool(retry[82])==(i==1));input.gui_tick();}assert(!input.fast_retry_count_down);input.reset();}
+    {eagler::thprac::PracticeKeyMonitor keys;keys.g_record_key_aps=true;keys.record(11,0x219);assert(keys.g_keys_down[eagler::thprac::Key_Shift]&&keys.g_keys_down[eagler::thprac::Key_Z]&&keys.g_keys_down[eagler::thprac::Key_Up]&&keys.g_keys_down[eagler::thprac::Key_Ctrl]);assert(!keys.g_keys_down[eagler::thprac::Key_C]);keys.record(11,0);assert(keys.g_aps_cur==8);assert(keys.csv().find("frame,aps,")==0);keys.clear_record();assert(keys.g_recorded_keys.empty());}
+    {eagler::thprac::PracticeSpeed speed;assert(speed.interval(false,false,false,false)==1./60.);assert(speed.interval(true,false,true,false)==1./15.);speed.fps_replay_fast=180;assert(speed.interval(true,true,false,false)==1./180.);PracticeCadence clock;unsigned ticks=0;for(int i=0;i<240;++i)ticks+=clock.advance(1./240.);assert(ticks==60);clock.reset();assert(clock.advance(10)==4);}
     for(int stage:{6,7})for(bool bonus:{false,true})for(bool replay:{false,true}){GameEconomy economy;economy.lives=3;economy.power=80;economy.point_value=5000000;economy.difficulty=1;ClearRecords records;ClearEffects effects;float rate=1;StageCompletion clear(economy,records,effects,&rate);clear.mode.stage=stage;clear.mode.practice=!replay;clear.mode.replay_practice=replay;clear.mode.control_mode=clear.mode.replay_mode=replay;clear.mode.all_clear_bonus=bonus;assert(clear.complete());assert(clear.state.exit==(replay?StageExit::ReplayEnd:StageExit::Results));assert(records.clears[0][1]==0);assert(economy.score_units==(bonus?(stage==6?14600000:stage==7?21200000:0):(3+stage)*100000));}
     {PracticeBgm bgm;assert(!bgm.filter(PracticeBgmEvent::Play,5,true,true));assert(bgm.filter(PracticeBgmEvent::Play,5,true,true));assert(!bgm.filter(PracticeBgmEvent::Pause,0,false,true));assert(!bgm.filter(PracticeBgmEvent::Resume,0,true,true));assert(bgm.filter(PracticeBgmEvent::Other,0,true,true));assert(!bgm.filter(PracticeBgmEvent::Play,6,true,true));assert(!bgm.filter(PracticeBgmEvent::Stop,0,false,false));}
     assert(argc==2||argc==3);const bool emit_sites=argc==3&&std::string(argv[2])=="--emit-sites";std::ifstream input(argv[1],std::ios::binary);
@@ -33,10 +37,10 @@ int main(int argc,char** argv){
     }
     unsigned passed=0;
     std::map<std::pair<int,int>,std::set<u32>> sites;
-    auto collect=[&](int stage,const PracticeBuffers& after){const auto& before=originals[stage];auto compare=[&](int file,const std::vector<u8>& a,const std::vector<u8>& b){assert(a.size()==b.size());for(u32 i=0;i<a.size();++i)if(a[i]!=b[i])sites[{stage,file}].insert(i);};for(u32 file=0;file<before.ecl.size();++file)compare(file,before.ecl[file],after.ecl[file]);compare(-1,before.scene,after.scene);compare(-2,before.background,after.background);};
+    auto collect=[&](int stage,const PracticeBuffers& after){const auto& before=originals[stage];auto compare=[&](int file,const std::vector<u8>& a,const std::vector<u8>& b){assert(a.size()<=b.size());for(u32 i=0;i<a.size();++i)if(a[i]!=b[i])sites[{stage,file}].insert(i);};for(u32 file=0;file<before.ecl.size();++file)compare(file,before.ecl[file],after.ecl[file]);compare(-1,before.scene,after.scene);compare(-2,before.background,after.background);};
     for(u32 section=1;section<sizeof(practice_sections)/sizeof(*practice_sections);++section){
         PracticeConfig config;config.section=section;const int appearance=practice_sections[section].appearance;config.stage=appearance>7?3:appearance-1;
-        const int phases=section==TH11_ST6_BOSS9?5:section==TH11_ST7_END_S9?3:section==TH11_ST7_END_S10?4:1;
+        const int phases=practice_phase_count(section);
         for(int phase=0;phase<phases;++phase)for(bool dialogue:{false,true}){
             config.phase=phase;config.dlg=dialogue;auto b=originals[config.stage];std::string error;
             if(!patch_practice_buffers(b,config,error)){std::cerr<<"section "<<section<<" phase "<<phase<<": "<<error<<'\n';return 1;}
@@ -52,11 +56,16 @@ int main(int argc,char** argv){
             ++passed;
         }
     }
+    for(int waves:{0,25,40})for(int phase:{0,1}){PracticeConfig p;p.stage=4;p.section=10504;p.wave_passed=waves;p.phase=phase;auto b=originals[4];std::string error;assert(patch_practice_buffers(b,p,error));collect(4,b);const auto json=practice_replay_json(p);PracticeConfig decoded;assert(practice_replay_parse(json.data(),u32(json.size()),decoded));assert(decoded.wave_passed==waves&&decoded.phase==phase);++passed;}
+    for(int section:{TH11_ST4_RA2,TH11_ST4_RA_BOSS5})for(float x:{-140.f,100.f,140.f})for(float y:{80.f,100.f,176.f}){PracticeConfig p;p.stage=3;p.section=section;p.phase=1;p.boss_x=x;p.boss_y=y;auto b=originals[3];std::string error;assert(patch_practice_buffers(b,p,error));collect(3,b);const auto json=practice_replay_json(p);PracticeConfig decoded;assert(practice_replay_parse(json.data(),u32(json.size()),decoded));assert(decoded.boss_x==x&&decoded.boss_y==y);++passed;}
     constexpr int chapters[]{4,4,3,7,6,6,7};
+    for(int phase=0;phase<3;++phase){PracticeConfig p;p.stage=6;p.section=TH11_ST7_END_S9;p.phase=phase;p.legacy_blue=true;const auto json=practice_replay_json(p);PracticeConfig decoded;assert(practice_replay_parse(json.data(),u32(json.size()),decoded));assert(decoded.legacy_blue&&decoded.phase==phase);auto b=originals[6];std::string error;assert(patch_practice_buffers(b,decoded,error));auto loaded=std::make_unique<StageResources>();assert(source->load_practice_stage(7,*loaded,decoded));collect(6,b);++passed;}
     for(int stage=0;stage<7;++stage)for(int chapter=1;chapter<=chapters[stage];++chapter){PracticeConfig p;p.stage=stage;p.section=10000+(stage+1)*100+chapter;auto b=originals[stage];std::string error;assert(patch_practice_buffers(b,p,error));auto loaded=std::make_unique<StageResources>();assert(source->load_practice_stage(stage+1,*loaded,p));collect(stage,b);++passed;}
     PracticeConfig p;p.mode=0;p.section=TH11_ST1_MID1;auto b=originals[0];std::string error;assert(patch_practice_buffers(b,p,error));assert(b.ecl==originals[0].ecl&&b.scene==originals[0].scene&&b.background==originals[0].background);
     p.mode=1;b.ecl[0].resize(64);const auto before=b.ecl;assert(!patch_practice_buffers(b,p,error));assert(b.ecl==before);
+#ifndef TH11_PRACTICE_SITE_GENERATION
     for(const auto& site:practice_site_checks)if(site.stage==0&&site.file>=0){b=originals[0];b.ecl[site.file][site.offset]^=1;const auto changed=b;assert(!patch_practice_buffers(b,p,error));assert(b.ecl==changed.ecl&&b.scene==changed.scene&&b.background==changed.background);break;}
+#endif
     p.stage=5;p.section=TH11_ST6_BOSS1;b=originals[5];b.background.resize(64);const auto truncated=b;assert(!patch_practice_buffers(b,p,error));assert(b.ecl==truncated.ecl&&b.scene==truncated.scene&&b.background==truncated.background);
     p.stage=0;p.section=TH11_ST6_BOSS1;assert(!source->load_practice_stage(1,*std::make_unique<StageResources>(),p));
     p.reset();assert(!p.mode&&!p.life&&!p.power&&!p.value&&!p.section);

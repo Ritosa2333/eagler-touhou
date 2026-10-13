@@ -56,12 +56,17 @@ bool SpellController::end(){
     return effects.spell_sound(45);
 }
 void SpellController::survival(){world.spell_flags|=8;}
-bool SpellController::queue_text(AsciiText& output,u32 title_color)const{
+bool SpellController::queue_text(AsciiText& output,u32 title_color,bool outer_pass)const{
     // 40c4a0: the title ANM supplies alpha; the ASCII atlas supplies digits
     // (and '$', the failed-bonus symbol), on the inner ASCII render pass.
     if(!(world.spell_flags&1))return true;
     if(selection<0||selection>=6||world.spell_id<0||world.spell_id>=175)return false;
     AsciiStyle style;style.font=2;style.pass=1;style.color=0xffffff|(title_color&0xff000000);
+#ifdef TH_ENABLE_THPRAC
+    // Purple th11_master_disable2 writes ASCII owner +0x1849c (request pass).
+    // Spell is queued before both passes; keep the original coordinates/font.
+    if(outer_pass)style.pass=0;
+#endif
     char text[64];
     if(world.spell_flags&2){
         std::snprintf(text,sizeof(text),"%.8d",world.spell_bonus);

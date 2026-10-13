@@ -48,9 +48,11 @@ u32 AnmRenderer::fog_color(u32 value,float amount,bool fade_alpha)const noexcept
     for(u32 i=0;i<3;++i){const i32 original=(value>>(i*8))&255;const double target=fade_alpha?double(i32(channels[i])):double(channels[i]);out|=u32(u8(original-i32((double(original)-target)*amount)))<<(i*8);}
     return out|(fade_alpha?u32(u8(i32(double(value>>24)*(1.-amount))))<<24:value&0xff000000);
 }
-int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors){
+int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors,bool preserve_subpixel){
     for(auto& p:positions){p.x=float(double(p.x)+offset.x);p.y=float(double(p.y)+offset.y);}
-    if(pixel)for(auto& p:positions){p.x=float(std::nearbyint(double(p.x))-.5);p.y=float(std::nearbyint(double(p.y))-.5);}
+    // Keep the D3D half-pixel convention, but do not quantize continuous bullet
+    // motion at final submission. This is draw-only; authored VM state is unchanged.
+    if(pixel)for(auto& p:positions){p.x=float((preserve_subpixel?double(p.x):std::nearbyint(double(p.x)))-.5);p.y=float((preserve_subpixel?double(p.y):std::nearbyint(double(p.y)))-.5);}
     float min_x=positions[0].x,max_x=min_x,min_y=positions[0].y,max_y=min_y;for(u32 i=1;i<4;++i){min_x=std::min(min_x,positions[i].x);max_x=std::max(max_x,positions[i].x);min_y=std::min(min_y,positions[i].y);max_y=std::max(max_y,positions[i].y);}
     if(max_x<double(viewport.x)||max_y<double(viewport.y)||min_x>double(viewport.x+viewport.width)||min_y>double(viewport.y+viewport.height))return 0;
     material(vm);const u32 diffuse=color(vm);AnmVertex quad[4];for(u32 i=0;i<4;++i)quad[i]={positions[i],1,colors?colors[i]:diffuse,{float(double(vm.uv[i].x)+vm.uv_offset.x),float(double(vm.uv[i].y)+vm.uv_offset.y)}};
@@ -62,15 +64,15 @@ int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
     Vec3 positions[4];if(!anm_quad_positions(vm,positions))return -2;
     return submit_quad(vm,positions,true);
 }
-int AnmRenderer::draw(AnmVm& vm){
+int AnmRenderer::draw(AnmVm& vm,bool preserve_subpixel){
     if((vm.flags&3)!=3||!(vm.color>>24))return -1;
     if(!vm.sprite||!vm.resource)return -2;const u32 mode=(vm.flags>>22)&15;
     if(mode<=3){
         Vec3 positions[4];const u32 saved_flags=vm.flags;
         const bool pixel=mode==0||(mode==1&&vm.rotation.z==0);
         const u32 geometry_mode=pixel?0:mode==3?(vm.rotation.z==0?2:1):mode;
-        vm.flags=(vm.flags&~0x3c00000u)|(geometry_mode<<22);const bool ok=anm_quad_positions(vm,positions);vm.flags=saved_flags;if(!ok)return -2;
-        return submit_quad(vm,positions,pixel);
+        vm.flags=(vm.flags&~0x3c00000u)|(geometry_mode<<22);const bool ok=anm_quad_positions(vm,positions,preserve_subpixel);vm.flags=saved_flags;if(!ok)return -2;
+        return submit_quad(vm,positions,pixel,nullptr,preserve_subpixel);
     }
     if(mode==4||mode==5){Vec3 positions[4];if(mode==4?!anm_billboard_quad(vm,camera,positions):!anm_projected_quad(vm,camera,positions))return -1;return submit_quad(vm,positions,false);}
     if(mode==6||mode==7){

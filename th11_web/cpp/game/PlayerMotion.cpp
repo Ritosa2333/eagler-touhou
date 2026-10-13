@@ -133,7 +133,20 @@ bool PlayerMotion::update(const PlayerMotionInput& in){
     s.position.x=float(double(s.x)/128);s.position.y=float(double(s.y)/128);
     if(animations.find(focus_animation))place(focus_animation,s.position);else focus_animation=0;
     if(combination==4&&!in.bomb){
-        if(in.pressed&(0x400|4)){s.weapon_mode=wrapping_add(s.weapon_mode,1)%5;for(i32 i=0;i<s.option_count;++i){if(i>=8){last_error=7;return false;}auto& o=options[i];erase(o.animation);o.animation=0;auto* a=animations.create(player_resource,s.weapon_mode+34,player_file,11);if(!a){last_error=2;return false;}o.animation=a->id;}}
+        int next_mode=s.weapon_mode;
+        if(in.pressed&(0x400|4)){
+#ifdef TH_ENABLE_THPRAC
+        if(practice_locked_formation>=0)next_mode=practice_locked_formation%5;else
+#endif
+        next_mode=wrapping_add(s.weapon_mode,1)%5;
+        }
+        bool rebind=next_mode!=s.weapon_mode;
+#ifdef TH_ENABLE_THPRAC
+        // Native 430921 replaces the selected mode inside the C-key edge path;
+        // the following option-animation rebuild still runs for the same mode.
+        rebind=rebind||(practice_locked_formation>=0&&(in.pressed&(0x400|4)));
+#endif
+        if(rebind){s.weapon_mode=next_mode;for(i32 i=0;i<s.option_count;++i){if(i>=8){last_error=7;return false;}auto& o=options[i];erase(o.animation);o.animation=0;auto* a=animations.create(player_resource,s.weapon_mode+34,player_file,11);if(!a){last_error=2;return false;}o.animation=a->id;}}
         if(s.weapon_mode<0||s.weapon_mode>=5){last_error=8;return false;}for(auto& o:options){o.normal_x=o.focus_x=o.modes[s.weapon_mode][0];o.normal_y=o.focus_y=o.modes[s.weapon_mode][1];}
     }
     if(s.flags&8)s.recall_timer=wrapping_add(s.recall_timer,1);

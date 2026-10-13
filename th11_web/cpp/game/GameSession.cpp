@@ -151,9 +151,8 @@ bool GameSession::record_stage_entry(bool initial){
     recording_active=true;return true;
 }
 bool GameSession::save_replay(const char* name,std::vector<u8>& output,bool terminal,float slowdown){
-#ifdef TH_ENABLE_THPRAC
-    if(practice.enabled&&practice.assisted)return false;
-#endif
+    // Preserve assisted recordings as well. Playback does not apply live
+    // cheats, so deterministic reproduction of these runs is not promised.
     if(!battle){if(!completed_run)return false;return recording.save(name,completed_score,8,completed_continues,slowdown,output);}
     if(state.replay||!recording.selected)return false;
     recording.spell_times(battle->spell_timing.records);
@@ -192,7 +191,7 @@ bool GameSession::update(const GameSessionInput& input) {
     if(state.phase==GameSessionPhase::paused||state.phase==GameSessionPhase::game_over){
         if(!pause_menu)return fail("pause menu lifetime missing");
 #ifdef TH_ENABLE_THPRAC
-        pause_menu->practice_save_disabled=practice.enabled&&practice.assisted;
+        pause_menu->practice_save_disabled=false;
 #endif
         menu_input.update((input.held&~256u)|((input.held&256)?0x80000:0)|(input.pause?256:0));
         if(!pause_menu->update(menu_input.pressed,menu_input.long_repeat))return fail(pause_menu->error.c_str());

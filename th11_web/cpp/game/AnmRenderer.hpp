@@ -15,7 +15,9 @@ public:
     // camera endpoint. Keep those values and its reference origin explicit.
     Vec3 fog_origin{},fog_channels{160,160,160};float fog_start=1000;
     bool tint_enabled=false;u32 tint=0x80808080;
-    int draw(AnmVm& vm);
+    // Continuous world sprites may preserve fractional presentation coordinates;
+    // retail pixel-aligned UI and logical screen-UV geometry retain the default.
+    int draw(AnmVm& vm,bool preserve_subpixel=false);
     int draw_ascii_sprite(AnmVm& vm);
     int draw_ripple(AnmVm& vm);
     int draw_layer(AnmVm* first);
@@ -33,7 +35,7 @@ private:
     u32 texture_handle=~0u,blend_mode=~0u,filter=~0u;
     const AnmSprite* uv_sprite=nullptr;Matrix4 cached_uv{};
     void material(const AnmVm& vm);
-    int submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors=nullptr);
+    int submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors=nullptr,bool preserve_subpixel=false);
     float fog_amount(Vec3 position,Vec3 origin)const noexcept;
     u32 fog_color(u32 color,float amount,bool fade_alpha)const noexcept;
     u32 color(const AnmVm& vm)const noexcept;

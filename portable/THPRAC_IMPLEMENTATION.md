@@ -1,5 +1,124 @@
 # TH11 THPrac adaptation — in progress
 
+## Keyboard HUD presentation parity (2026-10-09)
+
+TH11 uses TH15's default 34x34 KeyRectStyle, dark (32,32,32) text and
+(1280,0)/(840,0) anchors. Per-title key masks and APS input recording are
+unchanged; the existing font atlas already includes arrow/Delta/Sigma symbols.
+Production ON WASM:
+`a3ef22b2108c565a23920b6f16b8e5907595db069d3a46776455e9118a7b3d16`.
+
+## Replay Miss observation fix (2026-10-10)
+
+Miss counting now belongs to `PlayerFrame::die`, not the live-only
+`GameBattle::record_death` callback. Replay observes the same committed death
+transition while retaining the original prohibition on live Death score events.
+The counter is incremented once; deathbomb recovery is not counted as a Miss.
+The production build excludes the development-only death probe.
+
+Browser regression passes for all six shots in zh-CN/en-US/ja-JP: after loading
+an actual saved PRAC Replay, a native death increases Tracker by one and emits
+zero live Death events. Existing restart, touch, C, stage-six/Extra and PRAC
+save/restore regressions also pass. Physical-device/full-run oracle checks remain
+manual. Production WASM SHA256:
+`d62d294d0e30522e342bee2efafc4e70da73b7fd4a81b421757d85544501a15d`.
+
+## Purple replacement (2026-10-09)
+
+This section supersedes the blue-source identity and phase counts below. Older
+sections remain historical evidence, not current purple completion claims.
+
+### Recorded boundary
+
+- Authoritative source: `thprac/thprac_purple`, commit
+  `17780056107a014e88d35fceb3ad86c121d94287`, version `2.2.2.7`.
+- Normalized TH11 source SHA256:
+  `6236d13b9c62ac981fc5bb625a81d0e93553b67bf64a2095fd4d6bd1c7a4abc0`.
+- Canonical Eagler branch/base: `th11`, `eagler`, `0a582e6`.
+- Experiment: `_scratch/th11-thprac-purple`,
+  `experiment/th11-thprac-purple`, based on `0a582e6`.
+- Companion Launcher experiment: `_scratch/launcher-th11-purple`,
+  `experiment/th11-purple-launcher`, base
+  `70eb01f33b0726094fd102a850b53e76fd47c266`.
+- Implementation references: TH15's source extraction/shared-tools/native ImGui
+  boundary, plus the existing TH11 gameplay and Practice lifecycle owners.
+- Integration status: isolated working implementation; not merged into canonical
+  `th11`, not pushed and not deployed. No Launcher Runtime path is redirected to
+  this experiment. Promotion still follows the worktree playbook's reviewable
+  commit and canonical re-verification requirements.
+- Handoff boundary: generated `th11_web/artifacts/th11-purple.patch` against the
+  recorded base, with all new generated source headers included, plus companion
+  `th11-purple-launcher.patch`. These are candidate patch artifacts, not accepted
+  canonical commits. The experiment build directory is `build-eagler`.
+
+### Changed owners
+
+- Purple's 136 sections and exact patch order replace blue extraction. Added
+  boss coordinates, stage-five wave controls/injected wave ECL, eight final-boss
+  phases and the purple Extra phase catalog. Writes remain bounded,
+  transactional and protected by the retail patch-site CRC inventory.
+- The native wave array is 12024 bytes although the Windows code copies 12040;
+  the portable adapter appends the real array only, avoiding the native
+  out-of-bounds read. This ownership adaptation is explicit, not new game logic.
+- F12 uses the purple TH11 group membership: speed, key filtering/fast retry,
+  native keyboard HUD/APS CSV, infinite-life mapping, Hint, boss move-down,
+  MASTER display routing, Marisa B formation lock, lock timer, All Clear Bonus,
+  reaction test and About/license. Speed is authoritative simulation pace,
+  not the Launcher's high-refresh presentation option.
+- U enemy invincibility reaches the enemy damage owner. Backspace uses native
+  green/bracket rows; Tab/F7 retain in-game information. All three source locales
+  share the original font and keyboard glyph ranges.
+- Practice config/replay metadata includes position/wave parameters. Old blue
+  `2.3.0.3` Extra timeout recordings use a source-extracted replay-only legacy
+  case; the removed blue phases are not reintroduced into purple's menu.
+- Touch forwarding preserves pointer cancellation, persistent held-fire,
+  Escape and the existing C functionality. Launcher declares extra U-key support
+  as product capability rather than another game-name branch.
+
+### Evidence
+
+- Both generators' `--check` pass against the recorded source.
+- All 366 section/phase/dialogue/chapter and old-blue replay cases pass using
+  the Japanese retail archive, including actual decoded-stage loading,
+  original-mode isolation, CRC checks and failed-transaction rollback.
+- Shared input filtering, 15-frame retry, keyboard masks/APS/CSV and simulation
+  cadence checks pass in the C++ resource harness.
+- Browser regression passes zh-CN/en-US/ja-JP: original Practice entry/cancel,
+  six shots, boss/chapter warps, Pause-R, PRAC save/restore, all special phases,
+  portrait/landscape/tablet touch sliders/popups/cancel, held-fire continuity,
+  existing C gap/formation behavior, F12 touch input-owner toggling, live Marisa B
+  formation lock and U carrier.
+- Default OFF compiles/links, advertises `thprac: false`, and excludes Practice
+  configuration and test-only exports. OFF WASM SHA256:
+  `567537b82011dd9548df53ab54fa97bc06544e59f1b0db9d21ac0e59c79309ea`.
+- Packaged ON WASM SHA256:
+  `4d4a9224c947efd20286f8e96cfbb1f89c5f50a0d197bd2d7785bdf7652b6654`.
+- Launcher product-catalog tests and launcher TypeScript compilation pass.
+  The full Launcher check still fails unrelated existing ownership registration
+  and TH15 support-inventory expectations; these are not silently fixed here.
+
+Unknown/not-run: physical Android/iOS/tablet validation, comprehensive native
+oracle comparisons of every F12 feature, full-run stage-six replay clocks and
+broad ordinary-game/localized-resource regression. Passing source/lifecycle
+checks must not be described as complete device/native-oracle certification.
+
+```powershell
+$env:EMSDK = '<existing emsdk>'
+$env:EAGLER_WORKSPACE = '<maintainer workspace>'
+node portable/generate-thprac.mjs '<thprac/thprac_purple>' --check
+node portable/generate-thprac-tools.mjs '<thprac/thprac_purple>' --check
+node portable/check-th11-thprac.mjs '<Japanese th11.dat>' '<thprac/thprac_purple>'
+node portable/build.mjs --thprac
+node th11_web/tests/browser/thprac.mjs
+$env:EAGLER_FONT_ROOT = '<private SDL-native fonts>'
+node portable/package-eagler.mjs
+```
+
+The generator also reads sibling `thprac_blue` for historical replay-only
+compatibility. Runtime packaging is distinct from a private game import ZIP;
+shared `/unifont.otf` still must be supplied by the ordinary site's resource
+provider. No private retail resources or baked fonts are committed.
+
 The user requested the ordinary launcher option on 2026-10-03, with device
 testing after their own deployment. TH11 now uses the same production entry and
 prelaunch enable/locale options as TH08/TH10; no separate test product is added.
@@ -67,7 +186,9 @@ node portable/check-th11-thprac.mjs '<path to th11.data>' '<path to thprac repo>
 - Separate pending config and live run owners; native Pause-R preserves the
   run, cancel/exit clear it. Vanilla and custom replay owners reject cheat keys.
 - USER/PRAC metadata is appended after native/touch metadata and restored only
-  for the matching selected stage; assisted recordings cannot be saved.
+  for the matching selected stage. Assisted recordings can also be saved;
+  the live assisted marker is retained, but playback does not reapply cheats
+  and deterministic reproduction is not guaranteed (matching TH06–TH08).
 - F1..F5 reach the native player/enemy/spell owners; F6 BGM uses upstream
   ElBgmTest state transitions. Initial boss music, stage-six intro skipping and
   stage-logo conditions follow THBGMTest and the original source hooks.

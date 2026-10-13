@@ -166,7 +166,7 @@ bool BulletManager::draw_group(u32 group,AnmRenderer& renderer){
     for(auto* b=heads[group];b;b=b->draw_next){
         b->vm.script_position={float((double(b->position.x)+32)+192),float(double(b->position.y)+16),b->position.z};
         if(b->vm.flags&0x8000000){b->vm.rotation.z=normalize_angle(float(double(b->angle)+1.57079637050628662109375));b->vm.flags|=4;}
-        if(renderer.draw(b->vm)==-2)return false;
+        if(renderer.draw(b->vm,true)==-2)return false;
     }return true;
 }
 }

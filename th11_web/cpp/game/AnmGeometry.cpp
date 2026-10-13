@@ -1,7 +1,7 @@
 #include "AnmGeometry.hpp"
 #include <cmath>
 namespace th11 {
-bool anm_quad_positions(const AnmVm& vm,Vec3 (&out)[4]) noexcept {
+bool anm_quad_positions(const AnmVm& vm,Vec3 (&out)[4],bool preserve_subpixel) noexcept {
     const u32 mode=(vm.flags>>22)&15,anchor_x=(vm.flags>>18)&3,anchor_y=(vm.flags>>20)&3;
     if(mode>3||anchor_x==3||anchor_y==3)return false;
     const float w=float(double(vm.sprite_size.x)*vm.scale.x),h=float(double(vm.sprite_size.y)*vm.scale.y);
@@ -18,7 +18,7 @@ bool anm_quad_positions(const AnmVm& vm,Vec3 (&out)[4]) noexcept {
         for(u32 i=0;i<4;++i)out[i]={float(double(c)*xs[i]-double(s)*ys[i]+cx),float(double(c)*ys[i]+double(s)*xs[i]+cy),z};
     }else{
         auto extent=[&](double origin,float size,u32 anchor,float& low,float& high){
-            if(anchor==0){low=float(origin-float(double(size)*.5));if(mode==0)low=std::floor(low);high=float(double(low)+size);}
+            if(anchor==0){low=float(origin-float(double(size)*.5));if(mode==0&&!preserve_subpixel)low=std::floor(low);high=float(double(low)+size);}
             else if(anchor==1){low=float(origin);high=float(origin+size);}
             else{low=float(origin-size);high=float(origin);}
         };

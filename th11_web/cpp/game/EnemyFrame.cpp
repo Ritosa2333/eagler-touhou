@@ -1,4 +1,5 @@
 #include "EnemyFrame.hpp"
+#include "PracticeConfig.hpp"
 #include <cmath>
 namespace th11 {
 i32 enemy_death(EnemyState& e,EnemyAnimations& animations,EnemyFrameWorld& world){
@@ -38,7 +39,11 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
         if((world.spell_flags&1)&&world.spell_id>=0x9e&&world.spell_id<=0xa1&&(world.special_active||world.special_ending)&&!(world.player_flags&4))damage/=5;
         if(!enlarged&&damage){
             if((world.spell_flags&0x21)==0x21)damage/=7;
-            if(!(e.flags&0x10)&&e.damage_immunity.current<=0)e.take_damage(damage);
+            if(!(e.flags&0x10)&&e.damage_immunity.current<=0
+#ifdef TH_ENABLE_THPRAC
+                &&!world.practice_enemy_invincible
+#endif
+            )e.take_damage(damage);
             if(const char* name=e.check_interrupts(phase)){transition(name);result=script.update(elapsed);if(result)return result==-2?-2:-1;}
             if(e.health<=0&&!(e.flags&0x80)){
                 if(!world.add_score(e.score))return -2;
@@ -74,6 +79,9 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
     if(e.damage_immunity.current>0)e.damage_immunity.advance(-1);
     if(e.collision_immunity.current>0)e.collision_immunity.advance(-1);
 #ifdef TH_ENABLE_THPRAC
+    // The native 0x417c71 hook sets one flag for all enemy callbacks; its
+    // renderer consumes it once per tick, not once per enemy.
+    if(script.commands.practice&&script.commands.practice->enabled)script.commands.practice->lock_tick_seen=true;
     if(!world.practice_time_lock)
 #endif
     e.lifetime.tick();return 0;

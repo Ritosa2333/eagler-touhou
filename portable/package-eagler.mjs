@@ -7,7 +7,7 @@ import {resolve,dirname,relative,sep} from 'node:path';
 import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'..');
 const game='th11';
-const out=resolve(root,'build-eagler');
+const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,'build-eagler');
 const buildRoot=resolve(root,'th11_web/artifacts/sdl3');
 const fonts=process.env.EAGLER_FONT_ROOT;
 if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private SDL-native font resource directory');
