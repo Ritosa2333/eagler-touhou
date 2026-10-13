@@ -17,6 +17,7 @@ struct MultiplayerPilot final:PlayerHost,BombHost,ItemCollectionHost {
     std::unique_ptr<BombContext> context;std::unique_ptr<BombController> owned_bomb;BombController* bomb=nullptr;
     std::unique_ptr<ItemCollection> owned_collection;ItemCollection* collection=nullptr;
     GameInput keys;MultiplayerInput input;bool ghost=false,spell_startup_bomb=false;
+    unsigned ghost_clock=0;u32 ghost_random=1;i32 ghost_dx=0,ghost_dy=0;
     MultiplayerPilot(GameBattle&,unsigned,int);
     bool initialize(const ShtResource&,int bank);
     bool rebuild_bomb();bool tick();bool tick_bomb();bool reset_stage();

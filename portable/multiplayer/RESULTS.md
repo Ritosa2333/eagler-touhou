@@ -68,7 +68,7 @@ Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
 - Protocol: 2P/3P, manual D=0/2/9, challenge on/off, reordered holes,
   capture-once ownership, session generation, build/ABI disagreement,
   all-seat replay including recorded P3, no second replay delay, malformed data,
-  and rejection of gameplay versions 1 through 5 (previous resource/item rules).
+  and rejection of gameplay versions 1 through 6 (previous resource/item rules).
 - Common startup: calibration, immutable timing choice, lost-control repair,
   disconnect handling, and TH08/10/11/15 spectator timing identity regression.
 - Real browser, production shell and Japanese 1.00b DATA, shared relay:
@@ -106,3 +106,9 @@ not high-refresh performance or handset acceptance.
 
 Integration is local commits on the title, launcher and common experiment
 branches. Publish the common dependency before distributing the title pin.
+
+- Ghost state (2026-10-13): actual final-death transition, TH11-style bounded
+  drift, input/resource/RNG isolation, local-seat independence, and original
+  character sprite submission at translucent alpha despite native death hiding.
+  Real bullet and moving/stationary/curved laser fixtures exclude ghosts and
+  retain positive live-player Graze controls. Gameplay ABI is now version 7.

@@ -16,7 +16,7 @@ struct LaserScene::MovingLaser final:LaserObject,LaserCancellationHost,LaserCont
     }
     bool update_visual(float rate,bool graze_only)override{
         if(scene.host.player_count()==1)return contact.moving(motion.position,motion.angle,motion.length,motion.width,u32(request.transform_parameter),graze_only,rate,scene.host.player_collision(),scene.host,*this);
-        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){scene.host.select_player(s);ok=contacts[s].moving(motion.position,motion.angle,motion.length,motion.width,u32(request.transform_parameter),graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].moving(motion.position,motion.angle,motion.length,motion.width,u32(request.transform_parameter),graze_only,rate,scene.host.player_collision(),scene.host,*this);}
         scene.host.select_player(0);return ok;
     }
     bool retire()override{return true;}
@@ -52,7 +52,7 @@ struct LaserScene::StationaryLaser final:LaserObject,LaserCancellationHost,Laser
     }
     bool update_visual(float rate,bool graze_only)override{
         if(scene.host.player_count()==1)return contact.stationary(motion.position,motion.angle,motion.length,motion.width,state,graze_only,rate,scene.host.player_collision(),scene.host,*this);
-        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){scene.host.select_player(s);ok=contacts[s].stationary(motion.position,motion.angle,motion.length,motion.width,state,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].stationary(motion.position,motion.angle,motion.length,motion.width,state,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
         scene.host.select_player(0);return ok;
     }
     bool retire()override{return true;}
@@ -86,7 +86,7 @@ struct LaserScene::CurveLaser final:LaserObject,CurveCancellationHost,LaserConta
     }
     bool update_visual(float rate,bool graze_only)override{
         if(scene.host.player_count()==1)return contact.curved(motion,graze_only,rate,scene.host.player_collision(),scene.host,*this);
-        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){scene.host.select_player(s);ok=contacts[s].curved(motion,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].curved(motion,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
         scene.host.select_player(0);return ok;
     }
     bool retire()override{visual.retain_children_on_retire=true;return true;}

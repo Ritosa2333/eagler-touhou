@@ -26,7 +26,7 @@ struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     i32 contact(BulletState& bullet,bool graze_only)override{
         if(scene.host.player_count()==1)return i32(bullet.collide(scene.host.player_collision(),graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error));
         if(!graze_initialized)for(unsigned s=0;s<scene.host.player_count();++s){graze_flash[s]=bullet.graze_flash;graze_duration[s]=bullet.graze_duration;graze_interval[s]=bullet.graze_interval;}
-        i32 result=0;for(unsigned s=0;s<scene.host.player_count();++s){scene.host.select_player(s);
+        i32 result=0;for(unsigned s=0;s<scene.host.player_count();++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);
             bullet.graze_flash=graze_flash[s];bullet.graze_duration=graze_duration[s];bullet.graze_interval=graze_interval[s];
             const auto hit=bullet.collide(scene.host.player_collision(),graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error);
             graze_flash[s]=bullet.graze_flash;graze_duration[s]=bullet.graze_duration;graze_interval[s]=bullet.graze_interval;

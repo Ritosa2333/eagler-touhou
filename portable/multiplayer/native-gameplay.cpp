@@ -59,9 +59,10 @@ struct World {
 #include "native-items.hpp"
 #include "native-hud.hpp"
 #include "native-balance.hpp"
+#include "native-ghost.hpp"
 int main(int argc,char** argv){
  require(argc==2,"Pass a legally supplied Japanese TH15 1.00b archive");RetailAssets files(argv[1]);unsigned ticks=0;
- item_rules(files);hud_rules(files);balance_rules(files);
+ item_rules(files);hud_rules(files);balance_rules(files);ghost_rules(files);
  for(const auto selections:{std::array<int,3>{0,1,2},std::array<int,3>{3,3,0}}){
   auto left=std::make_unique<World>(files,3,0,selections),right=std::make_unique<World>(files,3,2,selections);
   auto& b=*left->battle;

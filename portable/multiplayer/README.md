@@ -97,7 +97,7 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 6 rejects earlier recordings with different statistics,
+Gameplay ABI version 7 rejects earlier recordings with different statistics,
 resources, damage balance or Bomb/Power ownership rules (versions 1 through 5).
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
@@ -133,6 +133,13 @@ and missing-input wait, admits a 2P spectator, then imports and plays both
 2P/3P recordings through the offline viewer menu and hosted exit lifecycle.
 Ordinary THPrac compiles/packages separately without multiplayer exports; its
 existing typed-owner gameplay regression also passes.
+
+Exhausted pilots remain visible as translucent original character sprites.
+Their bounded automatic drift follows TH11, using an independent per-seat
+random stream. Ghosts ignore movement, shot and Bomb input; death and ghost
+states are excluded from bullets, all three active laser kinds and enemy
+contact. They cannot graze, collect items, deal damage or become ECL targets.
+The final-death transition clears options, focus and barrier effects.
 
 This experiment implements Legacy only. Pointdevice retry/checkpoint files,
 THPrac, ghost rescue, Power transfer, multiplayer drop multipliers and teammate

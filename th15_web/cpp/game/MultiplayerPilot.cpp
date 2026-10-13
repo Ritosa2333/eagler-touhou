@@ -4,7 +4,7 @@
 #include "BattleSceneBindings.hpp"
 #include <algorithm>
 namespace th15 {
-MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned s,int ch):world(w),seat(s),character(ch),owned_session(w.session),owned_life_piece_tier(w.score.life_piece_tier),session(s?owned_session:w.session),score(w.score){}
+MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned s,int ch):world(w),seat(s),character(ch),owned_session(w.session),owned_life_piece_tier(w.score.life_piece_tier),session(s?owned_session:w.session),score(w.score){ghost_random=w.mp_options.seed^(0x9e3779b9u*(s+1));if(!ghost_random)ghost_random=1;}
 bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
     if(seat){
         owned_player=std::make_unique<Player>(sht,world.animations,world.effects,world.game_random,world.visual_random,session,world.spell,*this,character,bank,world.resources.effect);
@@ -42,7 +42,14 @@ bool MultiplayerPilot::refresh(PlayerFrameContext& c){
     player->shot_context.screen_origin=world.environment.playfield_origin;return true;
 }
 bool MultiplayerPilot::tick(){
-    if(ghost)return true;
+    if(ghost){
+        // TH11's bounded drift uses a private per-seat stream and ignores input.
+        if(ghost_clock++%90==0){const auto next=[&](){ghost_random^=ghost_random<<13;ghost_random^=ghost_random>>17;ghost_random^=ghost_random<<5;return ghost_random;};ghost_dx=i32(next()%97)-48;ghost_dy=i32(next()%81)-40;}
+        auto& motion=player->motion;auto& fixed=motion.position_fixed;
+        fixed.x=std::clamp(fixed.x+ghost_dx,-23552,23552);fixed.y=std::clamp(fixed.y+ghost_dy,4096,55296);
+        motion.position={float(fixed.x)/128,float(fixed.y)/128,0};
+        return world.animations.tick_instance(player->visuals.root)>=0||world.fail(world.animations.error);
+    }
     keys.update(world.mp_options.challenge?input.held&~2u:input.held);
     PlayerFrameContext c;c.held=keys.held;c.pressed=keys.pressed;refresh(c);
     // The target is transmitted as an absolute field coordinate. Never derive
@@ -81,7 +88,11 @@ bool MultiplayerPilot::cancel_lasers(i32 k,bool h){return world.laser_scene->can
 bool MultiplayerPilot::item(i32 k,const Vec3& p,float a,float s){return world.spawn_item(k,p,a,s);}
 bool MultiplayerPilot::options_changed(){return player->configure_options();}
 bool MultiplayerPilot::game_over(){
-    ghost=true;if(bomb&&!bomb->stop())return false;
+    if(ghost)return true;ghost=true;ghost_clock=0;ghost_dx=ghost_dy=0;keys={};input={};spell_startup_bomb=false;
+    if(bomb&&!bomb->stop())return false;
+    player->motion.option_count=0;for(auto& option:player->motion.options)option.active=0;
+    for(auto& pair:player->visuals.option_handles)for(auto& handle:pair)if(!world.animations.retire(handle))return world.fail(world.animations.error);
+    if(!player->visuals.focus_begin(false,1)||!player->visuals.barrier_remove())return world.fail(world.animations.error);
     for(auto& source:player->damage.sources)source.flags=0;
     for(auto& shot:player->shots.shots)shot.state=0;
     bool live=false;for(unsigned s=0;s<world.mp_options.seat_count;++s)live|=!world.pilots[s]->ghost;
@@ -175,6 +186,17 @@ i32 GameBattle::mp_boss_damage(EnemyState& enemy,i32 amount){
     const u64 scaled=u64(unsigned(amount))*numerator+enemy.multiplayer_damage_remainder;
     enemy.multiplayer_damage_remainder=unsigned(scaled%12);return i32(scaled/12);
 }
-bool GameBattle::mp_draw(AnmRenderer& r){for(unsigned s=0;s<mp_options.seat_count;++s)if(!pilots[s]->ghost&&!pilots[s]->player->draw(r))return fail(pilots[s]->player->error);return true;}
+bool GameBattle::mp_draw(AnmRenderer& r){
+    for(unsigned s=0;s<mp_options.seat_count;++s){auto& pilot=*pilots[s];
+        if(!pilot.ghost){if(!pilot.player->draw(r))return fail(pilot.player->error);continue;}
+        // A presentation copy keeps the original character sprite visible,
+        // independently of native death hiding and invulnerability flashing.
+        auto body=pilot.player->visuals.root;body.visual.flags=(body.visual.flags|3u)&~0x60000u;
+        body.visual.render_flags=(body.visual.render_flags&~0x80060u)|0x40000u;
+        body.visual.color=(body.visual.color&0xffffffu)|((s==mp_options.local_seat?112u:88u)<<24);
+        body.visual.translation=pilot.player->motion.position;body.presentation_motion=true;
+        if(r.draw(body)==-2)return fail(r.error);
+    }return true;
+}
 }
 #endif

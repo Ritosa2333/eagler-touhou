@@ -3,7 +3,7 @@ struct HudCapture final:HudDrawServices {
  std::vector<HudTextDraw> texts;bool hud_text(const HudTextDraw& v)override{texts.push_back(v);return true;}
  unsigned count(const std::string& v)const{unsigned n=0;for(const auto& t:texts)n+=t.text==v;return n;}
 };
-struct HudGraphics final:ZunGraphics {
+struct HudGraphics:ZunGraphics {
  touhou::graphics::PipelineState state;
  touhou::graphics::PipelineState& pipeline()override{return state;}
  u32 texture(const AnmResource&,u32 index)override{return index+1;}void bind_texture(u32)override{}

@@ -47,6 +47,12 @@ struct GameBattle::Services {
 #if TH15_MULTIPLAYER
         unsigned player_count()const noexcept override{return g.mp_enabled?g.mp_options.seat_count:1;}
         void select_player(unsigned seat)override{g.mp_contact_seat=seat;}
+        bool player_active(unsigned seat)const noexcept override{
+#if TH15_MULTIPLAYER
+            if(g.mp_enabled)return g.pilots[seat]->alive();
+#endif
+            return true;
+        }
 #endif
         void hit()override{
 #if TH15_MULTIPLAYER
@@ -130,7 +136,7 @@ struct GameBattle::Services {
             handled=false;return true;}
         bool contact_override(EnemyState& e,AnmVm* vm,i32& result,bool& handled)override{
 #if TH15_MULTIPLAYER
-            if(g.mp_enabled){handled=true;result=0;for(unsigned s=0;s<g.mp_options.seat_count;++s){g.mp_contact_seat=s;result=std::max(result,i32(enemy_player_contact(e,vm,g.mp_collision(s),g.pilots[s]->player)));}g.mp_contact_seat=0;return g.error.empty();}
+            if(g.mp_enabled){handled=true;result=0;for(unsigned s=0;s<g.mp_options.seat_count;++s){if(!g.pilots[s]->alive())continue;g.mp_contact_seat=s;result=std::max(result,i32(enemy_player_contact(e,vm,g.mp_collision(s),g.pilots[s]->player)));}g.mp_contact_seat=0;return g.error.empty();}
 #endif
             g.player_collision();return g.check(g.presentation.enemy_contact(e,vm,result,handled),"Enemy contact service failed");}
         bool graze(const Vec3& p)override{return g.record_graze(p);}
@@ -196,6 +202,9 @@ bool GameBattle::check(bool ok,const char* message){return ok||fail(message);}
 bool GameBattle::life_hud(i32 lives,i32 pieces){return scene?(scene->hud.life(lives,pieces)||fail(scene->hud.error)):check(presentation.life_hud(lives,pieces),"Life HUD failed");}
 bool GameBattle::bomb_hud(i32 stock,i32 pieces){return scene?(scene->hud.bombs(stock,pieces)||fail(scene->hud.error)):check(presentation.bomb_hud(stock,pieces),"Bomb HUD failed");}
 bool GameBattle::record_graze(const Vec3& position){
+#if TH15_MULTIPLAYER
+    if(mp_enabled&&!pilots[mp_contact_seat]->alive())return true;
+#endif
     if(!scene
 #if TH15_MULTIPLAYER
        &&!mp_enabled
