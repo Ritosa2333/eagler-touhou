@@ -1,3 +1,4 @@
+import {normalizeGameVersion} from "./game-version.mjs";
 import { validatePackageDescriptor } from "./package-descriptor.mjs";
 import { componentFileIds } from "./package-generation.mjs";
 import { installPackageFromRemote } from "./package-installer.mjs";
@@ -117,6 +118,7 @@ export function desiredFilesForPublishedPackage(descriptor, {
 }
 
 export async function installPublishedPackage(game, {
+  gameVersion = "original",
   catalog,
   catalogUrl,
   addComponents = [],
@@ -129,6 +131,8 @@ export async function installPublishedPackage(game, {
 } = {}) {
   const published = await fetchPublishedPackage(game, { catalog, catalogUrl, fetchImpl, signal });
   if (!published) throw new Error(`${game}: no published Package`);
+  if (normalizeGameVersion(gameVersion) === "beauty") published.descriptor = {...published.descriptor, gameVersion: "beauty"};
+  else if (published.descriptor.gameVersion === "beauty") throw new Error(`${game}: original catalog declares a beauty Package`);
   const installed = await installPackageFromRemote(published.descriptor, {
     descriptorUrl: published.descriptorUrl,
     // Resolve preservation policy inside the installer's per-game mutation

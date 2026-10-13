@@ -82,6 +82,10 @@ export function validatePackageDescriptor(descriptor, { supportedRuntimeTypes = 
     throw new Error("invalid package descriptor header");
   }
 
+  if (descriptor.gameVersion != null && !["original", "beauty"].includes(descriptor.gameVersion)) {
+    throw new Error("invalid package game version");
+  }
+
   if (!isPlainObject(descriptor.files) || Object.keys(descriptor.files).length === 0) {
     throw new Error("package descriptor has no files");
   }

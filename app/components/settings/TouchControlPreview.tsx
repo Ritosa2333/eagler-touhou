@@ -24,10 +24,10 @@ export function TouchControlPreview({settings, live, spectator = false, fireEnab
     <div className="touch-joystick" id="touchJoystick" data-touch-layout-control="joystick" aria-label={t('touch.joystickAria')} role="application" hidden={!(touchMovementUsesJoystick(options.touchMovementMode) && touchSurfaceVisible)}><div className="touch-joystick-base"><i className="touch-joystick-ring" aria-hidden="true"/><b className="touch-joystick-knob" id="touchJoystickKnob" aria-hidden="true"/></div><Resize/></div>
     <button className="touch-escape" id="touchEscape" data-touch-layout-control="escape" type="button" aria-label={t('touch.escapeAria')} title={t('touch.escapeTitle')}>ESC<Resize/></button>
     <button className="touch-restart" id="touchRestart" data-touch-layout-control="restart" type="button" aria-label="R" title={t('touch.restartTitle')} hidden={!options.restartButtonEnabled}>R<Resize/></button>
-    <button className="touch-thprac-tab" id="touchThpracTab" data-touch-layout-control="thpracTab" data-thprac-key="Tab" type="button" hidden={!thpracVisible}><strong>Tab</strong><small>Tracker</small><Resize/></button>
+    <button className="touch-thprac-tab" id="touchThpracTab" data-touch-layout-control="thpracTab" data-thprac-key="Tab" type="button" hidden><strong>Tab</strong><small>Tracker</small><Resize/></button>
     <div className="touch-thprac-menu" id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden={!thpracVisible}>
-      <button className="touch-thprac-backspace" id="touchThpracBackspace" type="button">{t('touch.cheatMenu')}</button>
-      <div className="touch-thprac-function-keys" id="touchThpracFunctionKeys" hidden={!live?.thpracMenuOpen}>
+      <button className="touch-thprac-backspace" id="touchThpracBackspace" type="button" aria-expanded={live?.thpracMenuOpen ?? false}>{t('touch.cheatsAndSettings')}</button>
+      <div className="touch-thprac-function-keys" id="touchThpracFunctionKeys" hidden>
         {([['F12','touch.advancedMenu'],['F1','touch.invincible'],['F2','touch.infiniteLives'],['F3','touch.infiniteBombs'],['F4','touch.infinitePower'],['F5','touch.timeLock'],['F6','touch.autoBomb'],['F7','touch.enemyBgm'],['U','touch.enemyInvincible']] as const).map(([key, label]) => <button key={key} type="button" data-thprac-key={key} hidden={key === 'U' && !extraU}><strong>{key}</strong><small>{t(label)}</small></button>)}
       </div><Resize/>
     </div>

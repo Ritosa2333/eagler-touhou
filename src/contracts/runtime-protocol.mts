@@ -261,6 +261,8 @@ export interface RuntimeCommandPayloads {
   keyboard: { down: boolean; code: string };
   "keyboard-clear": Record<string, never>;
   "touch-controls": {
+    thpracMobilePanelsEnabled?: boolean;
+    thpracMobilePanelsVisible?: boolean;
     fireEnabled: boolean;
     focusEnabled: boolean;
     bombSerial: number;

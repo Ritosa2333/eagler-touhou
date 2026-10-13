@@ -52,6 +52,16 @@ publication contract and a production Runtime must not depend on it.
 
 ## thprac
 
+Mobile THPrac uses one Launcher entry, "Cheats and advanced settings".
+The existing live `touch-controls` snapshot optionally carries
+`thpracMobilePanelsEnabled` and `thpracMobilePanelsVisible` booleans.
+These only control native panel presentation, never synthesize simultaneous
+Backspace/F12/Tab presses or enable cheats. When visible, Runtime renders the
+cheat, advanced and information panels as independent collapsed headers.
+Reopening resets them to collapsed; only the expanded advanced panel captures
+gameplay input. Touch checkbox mutations still use title-owned cheat handlers
+and Replay guards. Missing fields retain desktop/legacy Runtime behavior.
+
 thprac is enabled only when both the Product Catalog and the concrete Runtime
 Release attest the optional profile.
 

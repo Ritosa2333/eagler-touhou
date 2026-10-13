@@ -1,7 +1,8 @@
+import {loadGameVersion} from "../../package/game-version.mjs";
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {linkAbortSignals} from '../services/abort-signals';
-import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId} from '../../src/contracts/product-catalog.mts';
+import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiMessageKey, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAccept} from '../../src/launcher/replay-files.mts';
@@ -18,7 +19,6 @@ import {createDecisionStore} from '../models/decisions';
 import {createTransferModel} from '../models/transfer';
 import {createNetworkActivityTracker} from '../../src/launcher/network-activity.mts';
 import {createGameDataImportModel} from '../models/game-data-import';
-import {readCurrentPackageGeneration} from '../../package/package-store.mjs';
 import {roomCodeFromUrl, resolveRoomInvite, routedProductFromUrl} from '../../src/launcher/route-state.mts';
 import {createStartupErrorModel} from '../models/startup-error';
 import {createFeedbackModel} from '../models/feedback';
@@ -152,8 +152,30 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     try {owner.cancel(); gameData.clear(); transfer.hide(); midi?.reset();}
     catch (error) {reportError(error);}
   }
+  let versionSwitch: Promise<void> | null = null;
+  const selectedVersion = (game: GameId) => settings.getSnapshot()?.gameId === game
+    ? settings.getSnapshot()!.gameVersion : loadGameVersion(storage, game);
   const settings = createGameSettingsModel({storage, onChange: change => {
     if (!settingsChangeResetsRuntime(change)) return;
+    if (change.reason === 'game-version') {
+      queueMicrotask(() => {void metadata.refreshInstalled(change.current.gameId).then(() => {
+        if (settings.getSnapshot()?.gameId === change.current.gameId) settings.refreshContext(settingsContext(change.current.context.productId, snapshot.locale));
+      });});
+      if (runtime?.getSnapshot().launched && !change.current.multiplayer && !versionSwitch) {
+        // configuredLaunch owns the existing save-sync close barrier. Resource
+        // version never changes the Runtime's game/save identity.
+        versionSwitch = (async () => {
+          while (!disposed && settings.getSnapshot()?.context.productId === change.current.context.productId) {
+            const desired = settings.getSnapshot()!.gameVersion;
+            await configuredLaunch(change.current.context.productId);
+            if (settings.getSnapshot()?.gameVersion === desired) break;
+          }
+        })().catch(reportError).finally(() => {versionSwitch = null;});
+        return;
+      }
+        // A second choice during the save/load barrier is handled by the loop.
+        if (versionSwitch && !change.current.multiplayer) return;
+    }
     if (change.reason === 'sharing') {const key = change.current.shareSingleplayerSettings ? 'status.shareSettings' : 'status.separateSettings'; feedback.translatedStatus(() => t(key));}
     if (!change.current.multiplayer && change.reason === 'music') {
       const mode = change.current.music;
@@ -186,7 +208,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       playerStatus: feedback.playerStatus, toast: feedback.toast, noteGameDataTransfer: message => gameData.noteTransfer(message)},
   });
   const network = createNetworkActivityTracker({fetchImpl: window.fetch.bind(window), onChange: transfer.networkSnapshot});
-  const metadata = createMetadataService({baseUrl, storage, indexedDBFactory: window.indexedDB,
+  const metadata = createMetadataService({baseUrl, storage, getGameVersion: selectedVersion, indexedDBFactory: window.indexedDB,
     translate: (locale, key, params) => {if (!isUiMessageKey(key)) throw new Error(`Unknown main translation key: ${key}`); return translate(locale === 'en' ? 'en' : 'zh-CN', key, params);},
     webAudioAvailable: audio, webMidiAvailable: 'requestMIDIAccess' in window.navigator, mobile: preferTouchSettings(), locale: () => snapshot.locale,
     testBuild: new URL(window.location.href).searchParams.has('test')});
@@ -240,7 +262,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       setTimer: callback => window.setTimeout(callback, 0), clearTimer: id => window.clearTimeout(id)},
   });
   const preparationNetwork = createPreparationNetwork({foreground: network, baseUrl, translate: t, fetchImpl: window.fetch.bind(window)});
-  const acquisition = createPackageAcquisition({metadata, baseUrl, translate: t, fetchImpl: window.fetch.bind(window), network: preparationNetwork,
+  const acquisition = createPackageAcquisition({metadata, baseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: window.fetch.bind(window), network: preparationNetwork,
     testBuild: entryUrl.searchParams.has('test'),
     requestPersistence: async () => {try {await window.navigator.storage?.persist?.();} catch {}}});
   let sessionStorage: Storage | null = null; try {sessionStorage = window.sessionStorage;} catch {}
@@ -353,6 +375,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const gameData = createGameDataImportModel({acquisition, translate: t,
     getContext: () => ({product: settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID,
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
+      runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
       runtimeReady: runtime?.getSnapshot().ready === true, launched: runtime?.getSnapshot().launched === true,
       playerOpen: snapshot.playerOpen, importServer: metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
@@ -360,6 +383,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       pickFile: ({accept}) => ports.pickFile(accept), feedback, showGameDataTransfer: transfer.revealGameData,
       closePlayer: async () => {const titleOverlayWasOpen = titleNetwork.getSnapshot().open; if (!await requestRuntimeClose()) return false; requiredNavigation().completeRuntimeClose({titleOverlayWasOpen}); return true;},
       resetUnlaunchedRuntime: () => {if (runtime && !runtime.getSnapshot().launched && runtime.getSnapshot().epoch !== null) runtime.cancel();},
+      captureUnlaunchedRuntimeReset() {
+        const owner = runtime, controller = launchAbort;
+        return async expectedEpoch => {
+          if (!owner || runtime !== owner || launchAbort !== controller) return;
+          const current = owner.getSnapshot();
+          if (current.launched || current.epoch !== expectedEpoch) return;
+          controller?.abort(new RuntimeSessionSupersededError());
+          if (!await owner.close({decide: closeDecision})) throw new Error('Runtime retirement was not completed');
+        };
+      },
       openPlayer(product) {requiredNavigation().openPlayer(product); publish({playerOpen: true});},
       launchConfigured: () => configuredLaunch(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID, {multiplayer: snapshot.replayViewer ? {kind: 'replay'} : roomSession?.service.getSnapshot().room ? {kind: 'room', options: roomSession.service.runtimeOptions()} : undefined}),
       roomPreparationForImport(continuation) {
@@ -637,7 +670,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       const owner = requiredRuntime();
       if (owner.getSnapshot().launched) {frame?.focus({preventScroll: true}); return;}
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
-      if (metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import' && !(await readCurrentPackageGeneration(gameIdForProduct(product))).generation) {
+      if (metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import' && !(await acquisition.readCurrent(gameIdForProduct(product))).generation) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
       if (!await confirmInputWarnings()) return;

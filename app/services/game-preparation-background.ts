@@ -1,3 +1,4 @@
+import {descriptorGameVersion} from "../../package/game-version.mjs";
 import {componentFileIds} from '../../package/package-generation.mjs';
 import type {GameId} from '../../src/contracts/product-catalog.mts';
 import type {CurrentPackageGeneration, InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
@@ -23,7 +24,7 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
   const current = () => {const snapshot = runtime.getSnapshot(); return snapshot.epoch === epoch && snapshot.launched && snapshot.game === game;};
   const currentOgg = () => current() && runtime.getSnapshot().music === 'ogg';
   const backgroundUpdate = deferredUpdate ? acquisition.startBackgroundUpdate(deferredUpdate, {
-    productId: input.productId, music: prepared.music, language: input.settings.language,
+    productId: input.productId, gameVersion: input.settings.gameVersion, music: prepared.music, language: input.settings.language,
   }).catch(error => {input.onBackgroundError?.(error, `${game}: background Package update failed${deferredUpdate.installation?.source === 'local' ? ' for local install' : ''}`);}) : Promise.resolve();
   if (!loaded || !resources || !oggMusic(prepared.music) || !currentOgg()) {await backgroundUpdate; return;}
   const ids = componentFileIds(resources.descriptor, 'ogg'), installed = ids.slice(2).filter(id => !!resources.files[id]?.objectId);
@@ -43,19 +44,22 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
   const progressive = (async () => {
     const predecessor = ownerSlots.get(game);
     if (predecessor) {try {await predecessor;} catch {} if (!currentOgg()) return;}
-    const catalog = acquisition.getMetadata().releaseCatalog;
+    const gameVersion = descriptorGameVersion(loaded.descriptor);
+    let publication;
+    try {publication = await acquisition.getPublication(gameVersion);} catch {return;}
+    const {catalog, catalogUrl} = publication;
     if (catalog?.games[game]?.revision !== loaded.descriptor.revision || !currentOgg()) return;
     let generation = resources;
     const task = (async () => {
       // A previous worker may have completed an object after its Runtime closed.
-      const latest = await acquisition.readCurrent(game);
+      const latest = await acquisition.readCurrent(game, {gameVersion});
       if (!currentOgg()) return;
       if (latest.generation && sameBase(loaded, latest.generation)) generation = latest.generation;
       for (const id of ids.slice(2).filter(id => !resources.files[id]?.objectId)) {
         if (!currentOgg()) return;
         try {
           if (!generation.files[id]?.objectId) {
-            const result = await acquisition.installPublished(game, {catalog, catalogUrl: acquisition.catalogUrl,
+            const result = await acquisition.installPublished(game, {catalog, catalogUrl, gameVersion,
               addFileIds: [id], preserveLocalSource: true, fetchImpl: acquisition.getPackageFetch(game)});
             generation = result.generation;
             // The transaction intentionally finishes when close happens mid-fetch.

@@ -211,3 +211,23 @@ test('main4840–4845: explicit unlaunched locale restoration rereads defaults w
   assert.equal(after.disclosure.advanced, true); assert.equal(changes.at(-1).reason, 'locale-restore');
   assert.equal(api.settingsChangeResetsRuntime(changes.at(-1)), false);
 });
+
+
+test('game version persists per game across SP/MP while language/options remain shared', () => {
+  const values=new Map(), changes=[];
+  const storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v)};
+  const model=api.createGameSettingsModel({storage,onChange:c=>changes.push(c)});
+  const context=fixture().context;
+  model.hydrate(context);model.setLanguage('ja');model.setOption('touchEnabled',true);
+  model.setGameVersion('beauty');
+  assert.equal(model.getSnapshot().gameVersion,'beauty');
+  assert.equal(model.getSnapshot().language,'ja');
+  assert.equal(model.getSnapshot().options.touchEnabled,true);
+  assert.equal(api.settingsChangeResetsRuntime(changes.at(-1)),true);
+  model.hydrate({...context,productId:'th06mp'});
+  assert.equal(model.getSnapshot().gameVersion,'beauty');
+  model.hydrate({...context,productId:'th07'});
+  assert.equal(model.getSnapshot().gameVersion,'original');
+  model.hydrate(context);assert.equal(model.getSnapshot().gameVersion,'beauty');
+  model.setGameVersion('original');assert.equal(model.getSnapshot().language,'ja');
+});

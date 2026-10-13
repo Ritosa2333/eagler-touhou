@@ -10,7 +10,7 @@ export const touchLayoutControlMeta = Object.freeze({
   restart: Object.freeze({ id: "touchRestart", title: "R", priority: 5 }),
   function: Object.freeze({ id: "touchFunction", title: "特殊功能", titleKey: "touch.specialFunction", priority: 5.5 }),
   thpracTab: Object.freeze({ id: "touchThpracTab", title: "Tab", priority: 6 }),
-  thpracMenu: Object.freeze({ id: "touchThpracMenu", title: "作弊菜单", titleKey: "touch.cheatMenu", priority: 7 }),
+  thpracMenu: Object.freeze({ id: "touchThpracMenu", title: "作弊和高级设置", titleKey: "touch.cheatsAndSettings", priority: 7 }),
 });
 
 export const touchLayoutScaleMin = 0.6;

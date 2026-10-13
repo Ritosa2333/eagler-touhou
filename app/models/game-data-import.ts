@@ -9,6 +9,7 @@ export interface GameDataImportContext {
   roomCode: string | null;
   replayViewer: boolean;
   runtimeReady: boolean;
+  runtimeEpoch: number | null;
   launched: boolean;
   playerOpen: boolean;
   importServer: boolean;
@@ -48,6 +49,8 @@ export interface GameDataImportPorts {
   pickFile(options: {accept: string}): Promise<(Blob & {name?: string}) | null>;
   closePlayer(): Promise<boolean>;
   resetUnlaunchedRuntime(): void | Promise<void>;
+  /** Captures the interrupted launch owner before installation waits. */
+  captureUnlaunchedRuntimeReset?(): (expectedEpoch: number) => void | Promise<void>;
   openPlayer(product: ProductId): void;
   /** Internal configured launch, with its own failure presentation. Does not
    * repeat the launcher click's warnings or automatic fullscreen request. */
@@ -173,6 +176,9 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
   async function importFile(file: (Blob & {name?: string}) | null) {
     if (!file || !available() || busy) return;
     const id = attempt!.id, game = gameIdForProduct(getContext().product);
+    const importContext = capture('launch'), runtimeEpoch = getContext().runtimeEpoch;
+    const interruptedLoad = !attempt!.importFlow || attempt!.continuation?.kind === 'launch';
+    const retireRuntime = ports.captureUnlaunchedRuntimeReset?.() ?? (() => ports.resetUnlaunchedRuntime());
     const roomImport = ports.roomPreparationForImport?.(attempt!.continuation) ?? null;
     busy = true; busyText = t(roomImport ? 'package.importingSimple' : 'package.importing');
     roomImport?.markImporting(); publish();
@@ -182,27 +188,27 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
       }});
       if (disposed || attempt?.id !== id) return;
       ports.feedback.toast(t('package.imported', {count: Object.keys(imported.files).length}));
-      if (attempt.importFlow && !getContext().launched) {
-        const continuation = attempt.continuation;
-        const preparedRoom = ports.roomPreparationForImport?.(continuation) ?? null;
-        clear();
-        if (preparedRoom) {ports.feedback.status(t('package.continuing')); void preparedRoom.resume(); return;}
-        if (gameDataContinuationMatches(continuation, getContext())) {
-          ports.feedback.playerStatus(t('package.continuing')); await ports.resetUnlaunchedRuntime();
-          if (disposed || !gameDataContinuationMatches(continuation, getContext())) return;
-          ports.openPlayer(getContext().product); await ports.launchConfigured(); return;
+      if (disposed || attempt?.id !== id) return;
+      roomImport?.cancelIfImporting();
+      if (disposed || attempt?.id !== id) return;
+      clear();
+      ports.feedback.status(t('package.importedReady'));
+      // Retire only the load captured by this import. Publishing completion can
+      // synchronously create a new attempt, change routes or start a new Runtime.
+      const current = getContext();
+      if (!disposed && serial === id && interruptedLoad && runtimeEpoch !== null &&
+          current.runtimeEpoch === runtimeEpoch && !current.launched &&
+          gameDataContinuationMatches(importContext, current)) {
+        try {await retireRuntime(runtimeEpoch);}
+        catch (error) {
+          if (!disposed && serial === id && gameDataContinuationMatches(importContext, getContext())) {
+            const message = preparationErrorText(error);
+            ports.feedback.playerStatus(message); ports.feedback.toast(message);
+          }
         }
-        ports.feedback.status(t('package.importedReady')); publish(); return;
       }
-      if (getContext().runtimeReady) {ports.feedback.playerStatus(t('package.readyNextLaunch')); return;}
-      if (attempt?.id !== id) return;
-      const continuation = capture('launch');
-      ports.feedback.playerStatus(t('package.localLaunching')); clear(); await ports.resetUnlaunchedRuntime();
-      if (disposed || !gameDataContinuationMatches(continuation, getContext())) return;
-      await ports.launchConfigured();
     } catch (error) {
-      // Once an import is committed and its attempt cleared, any continuation
-      // failure belongs to the launch/room owner, never to "invalid ZIP" UI.
+      // After installation, a Runtime retirement failure is not an invalid ZIP.
       if (disposed || attempt?.id !== id) return;
       roomImport?.cancelIfImporting();
       const message = preparationErrorText(error); ports.feedback.playerStatus(message);

@@ -16,6 +16,7 @@ export interface PublishedPackageFileSelection {
 }
 
 export interface InstallPublishedPackageOptions extends Omit<PublishedPackageFileSelection, "current"> {
+  gameVersion?: "original" | "beauty";
   catalog: unknown;
   catalogUrl: string;
   preserveLocalSource?: boolean;

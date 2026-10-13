@@ -76,6 +76,24 @@ test('TH09 held fire never also enables automatic pulse stream and releases on l
   assert.deepEqual(f.sent.filter(x => x.command === 'keyboard').map(x => [x.code, x.down]), [['KeyZ', true], ['KeyZ', false]]);
   assert.equal(f.sent.find(x => x.command === 'touch-controls').fireEnabled, false);
 });
+test('single mobile practice entry changes native panel visibility without a Backspace pulse', () => {
+  const f = fixture({game: 'th11'});
+  f.pointer('thpracBackspace', 'pointerdown');
+  assert.equal(f.touch.getSnapshot().thpracMenuOpen, true);
+  assert.equal(f.sent.at(-1).command, 'touch-controls');
+  assert.equal(f.sent.at(-1).thpracMobilePanelsEnabled, true);
+  assert.equal(f.sent.at(-1).thpracMobilePanelsVisible, true);
+  f.click('thpracBackspace', 1);
+  assert.equal(f.touch.getSnapshot().thpracMenuOpen, true);
+  f.native.target.dispatchEvent(new env.window.CustomEvent('eagler-thprac-menu', {detail: {open: false}}));
+  assert.equal(f.touch.getSnapshot().thpracMenuOpen, true);
+  f.edit(true); f.touch.syncControls();
+  assert.equal(f.sent.at(-1).thpracMobilePanelsVisible, false);
+  f.edit(false); f.click('thpracBackspace');
+  assert.equal(f.touch.getSnapshot().thpracMenuOpen, false);
+  assert.equal(f.sent.filter(message => message.command === 'keyboard').length, 0);
+});
+
 test('toggle fire ignores compatibility click; intentional detail-zero keyboard activation works', () => {
   const f = fixture(); f.pointer('fire', 'pointerdown'); f.click('fire', 1); assert.equal(f.touch.getSnapshot().fireEnabled, false);
   f.click('fire'); assert.equal(f.touch.getSnapshot().fireEnabled, true);

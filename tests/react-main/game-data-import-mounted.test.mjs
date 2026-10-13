@@ -31,7 +31,7 @@ after(async () => {env?.close(); if (work) await rm(work, {recursive: true, forc
 const deferred = () => {let resolve; const promise = new Promise(yes => {resolve = yes;}); return {promise, resolve};};
 async function mount({locale = 'zh-CN', fallback = null, install} = {}) {
   env.errors.length = 0; const picked = [], installed = [], effects = [];
-  const context = {product: 'th06', roomCode: null, replayViewer: false, runtimeReady: false, launched: false, playerOpen: false, importServer: false, fallback};
+  const context = {product: 'th06', roomCode: null, replayViewer: false, runtimeEpoch: null, runtimeReady: false, launched: false, playerOpen: false, importServer: false, fallback};
   const model = api.createGameDataImportModel({translate: (key, params) => api.translate(locale, key, params), getContext: () => context,
     acquisition: {importPackage: async value => {installed.push(value); return install ? install(value) : {files: {data: {objectId: 'data'}}};}},
     ports: {pickFile: async options => {picked.push(options); return null;}, closePlayer: async () => {effects.push('close'); return true;},

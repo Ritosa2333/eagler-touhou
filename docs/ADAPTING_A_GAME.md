@@ -17,6 +17,8 @@ Read this together with:
 - [`playbooks/adaptation-worktrees.md`](playbooks/adaptation-worktrees.md) for
   upstream/Eagler isolation and the four mandatory experiment lanes;
 - [`GAME_ADAPTER_CONTRACT.md`](GAME_ADAPTER_CONTRACT.md) for ownership rules;
+- [`Purple THPrac shared library`](playbooks/thprac.md#purple-thprac-shared-library)
+  for reusing common purple tools without copying title-owned gameplay hooks;
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) for subsystem boundaries;
 - [`PRODUCT_SURFACE.md`](PRODUCT_SURFACE.md) for what is intentionally exposed;
 - [`../src/contracts/runtime-protocol.mts`](../src/contracts/runtime-protocol.mts)

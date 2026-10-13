@@ -132,10 +132,7 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
                     <div className="guide-key-row"><kbd>F7</kbd><span data-i18n="touch.enemyBgm">{t("touch.enemyBgm")}</span></div>
                   </div>
                   <div className="guide-key-grid help-mobile-only">
-                    <div className="guide-key-row"><kbd data-i18n="touch.cheatMenu">{t("touch.cheatMenu")}</kbd><span data-i18n="help.cheatMenu">{t("help.cheatMenu")}</span></div>
-                    <div className="guide-key-row"><kbd>Tab</kbd><span data-i18n="help.tracker">{t("help.tracker")}</span></div>
-                    <div className="guide-key-row"><kbd>F12</kbd><span data-i18n="touch.advancedMenu">{t("touch.advancedMenu")}</span></div>
-                    <div className="guide-key-row"><kbd>F1–F7</kbd><span data-i18n="help.thpracFeatures">{t("help.thpracFeatures")}</span></div>
+                    <div className="guide-key-row"><kbd data-i18n="touch.cheatsAndSettings">{t("touch.cheatsAndSettings")}</kbd><span data-i18n="help.thpracMobilePanels">{t("help.thpracMobilePanels")}</span></div>
                   </div>
                   <p className="guide-info-note help-desktop-only" data-i18n="help.thpracReplayDesktop">{t("help.thpracReplayDesktop")}</p>
                   <p className="guide-info-note help-mobile-only" data-i18n="help.thpracReplayMobile">{t("help.thpracReplayMobile")}</p>

@@ -1,9 +1,9 @@
 import {execFileSync} from 'node:child_process';
 /** Git blobs use LF even when the Windows checkout uses CRLF. */
 export const normalizeSourceText = value => value.replaceAll('\r\n', '\n');
-/** The sole added UI label is covered separately by the shared-settings fixture.
+/** Added settings labels are covered separately by the shared-settings fixture.
  * All prior messages and domain authorities remain pinned byte for byte. */
-export const pinnedUiAuthorityText = value => normalizeSourceText(value).replace(/^  \["settings.thpracMultiplayerDisabled".*\n/m, '');
+export const pinnedUiAuthorityText = value => normalizeSourceText(value).replace(/^  \["settings\.(?:thpracMultiplayerDisabled|gameVersion|version\.(?:original|beauty|hint))".*\n/gm, '');
 
 /** Domain facts now include main's TH11 policy. The newer editable-nickname
  * label is retained from origin/main; do not bless the candidate as its own oracle. */

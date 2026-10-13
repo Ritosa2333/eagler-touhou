@@ -68,7 +68,11 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   const key = (spec: Readonly<HostedKeySpec>, down: boolean) => postHostedKey(context(), spec, down);
   function syncControls() {
     const current = settings(); if (!current) return false;
-    return postTouchControls(context(), heldMode() ? {...controls, fireEnabled: false} : controls, current.options.touchSensitivity);
+    return postTouchControls(context(), {...controls,
+      fireEnabled: heldMode() ? false : controls.fireEnabled,
+      thpracMobilePanelsEnabled: !runtime.getInputContext().spectator && current.options.touchEnabled && current.options.thpracTouchControlsEnabled,
+      thpracMobilePanelsVisible: thpracMenuOpen && !options.editing(),
+    }, current.options.touchSensitivity);
   }
   function queueControls() {
     if (raf !== null || !context().launched) return;
@@ -147,8 +151,14 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     if (!name || !Object.hasOwn(thpracKeys, name) || !allowed() || !settings()?.options.thpracTouchControlsEnabled) return;
     pulse(thpracKeys[name]);
   }
-  for (const button of [el.thpracBackspace, ...el.thpracKeys]) {
-    const name = button === el.thpracBackspace ? 'Backspace' : button.dataset.thpracKey;
+  function toggleMobileThpracPanels() {
+    if (!allowed() || !settings()?.options.thpracTouchControlsEnabled) return;
+    thpracMenuOpen = !thpracMenuOpen; publish(); syncControls(); refocus();
+  }
+  on(el.thpracBackspace, 'pointerdown', event => {if (!allowed()) return; event.preventDefault(); event.stopPropagation(); toggleMobileThpracPanels();});
+  on(el.thpracBackspace, 'click', event => {if (event.detail === 0) toggleMobileThpracPanels();});
+  for (const button of el.thpracKeys) {
+    const name = button.dataset.thpracKey;
     on(button, 'pointerdown', event => {if (!allowed()) return; event.preventDefault(); event.stopPropagation(); pulseThprac(name);});
     on(button, 'click', event => {if (event.detail === 0 && allowed()) pulseThprac(name);});
   }
@@ -185,8 +195,8 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
       if (next) {
         const handler: EventListener = event => {
           const now = runtime.getMidiEventContext(); if (now?.epoch !== next.epoch || now.document !== next.document || now.target !== next.target) return;
-          const detail: unknown = (event as CustomEvent<unknown>).detail;
-          thpracMenuOpen = !!detail && typeof detail === 'object' && 'open' in detail && detail.open === true; publish();
+          // Native Backspace state does not own the mobile panel entry.
+          void event;
         };
         next.target.addEventListener('eagler-thprac-menu', handler); unbindNative = () => next.target.removeEventListener('eagler-thprac-menu', handler);
       }

@@ -67,6 +67,14 @@ assert.deepEqual(sent.pop(), {
 });
 
 const touch = { id: -3, x: 0.25, y: 0.75 };
+assert.equal(postTouchControls(ready, {
+  ...controls, thpracMobilePanelsEnabled: true, thpracMobilePanelsVisible: true,
+}, 150), true);
+assert.equal(sent.at(-1).message.thpracMobilePanelsEnabled, true);
+assert.equal(sent.pop().message.thpracMobilePanelsVisible, true);
+assert.equal(postTouchControls({ ...ready, spectator: true }, {
+  ...controls, thpracMobilePanelsEnabled: true, thpracMobilePanelsVisible: true,
+}, 150), false);
 assert.equal(postDirectTouch({ ...ready, launched: false }, "down", touch), false);
 assert.equal(postDirectTouch({ ...ready, ready: false }, "down", touch), false);
 assert.equal(postDirectTouch(ready, "down", null), false);

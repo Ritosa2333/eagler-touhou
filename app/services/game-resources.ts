@@ -1,3 +1,4 @@
+import {descriptorGameVersion} from "../../package/game-version.mjs";
 import {componentFileIds} from '../../package/package-generation.mjs';
 import {linkAbortSignals} from './abort-signals';
 import {PRODUCT_GAMES, type GameId} from '../../src/contracts/product-catalog.mts';
@@ -82,7 +83,10 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   const initial = componentFileIds(generation.descriptor, 'ogg').slice(0, 2);
   if (initial.length < 2) return {generation, music: 'midi'};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
-  const metadata = acquisition.getMetadata(), catalog = metadata.releaseCatalog;
+  const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
+  let publication;
+  try {publication = await acquisition.getPublication(gameVersion, signal);} catch {onWarning?.(t("music.initialOggIncomplete")); return {generation, music: "midi"};}
+  const {catalog, catalogUrl} = publication;
   if (metadata.siteManifest?.shared.resourceMode === 'import' || catalog?.games[generation.game]?.revision !== generation.descriptor.revision) {
     onWarning?.(t('music.initialOggIncomplete')); return {generation, music: 'midi'};
   }
@@ -90,7 +94,7 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   try {
     onMusicDownloadActivity?.(true);
     onProgress?.({stage: 'music', message: t('music.preparingInitialOgg')});
-    const result = await acquisition.installPublished(generation.game, {catalog, catalogUrl: acquisition.catalogUrl,
+    const result = await acquisition.installPublished(generation.game, {catalog, catalogUrl, gameVersion,
       addFileIds: initial, preserveLocalSource: true,
       signal: linked.signal,
       fetchImpl: acquisition.getPackageFetch(generation.game),

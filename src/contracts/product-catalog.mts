@@ -166,6 +166,7 @@ export const PRODUCT_GAMES = Object.freeze({
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
   th08: Object.freeze({
+    thpracExtraFunctionKeys: Object.freeze(["U"] as const),
     cardArtwork: "th08-card.webp",
     number: "08",
     title: "東方永夜抄",
@@ -278,6 +279,7 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     display: Object.freeze({ faithBar: true }),
     runtime: "./runtime/th10/th10.html",
+    thpracExtraFunctionKeys: Object.freeze(["U"] as const),
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
@@ -446,6 +448,7 @@ export const PRODUCT_GAMES = Object.freeze({
     number: "20",
     title: "東方錦上京",
     subtitle: "Fossilized Wonders",
+    cardArtwork: "th20-card.webp",
     storage: Object.freeze({
       saveRoot: "/savesth20",
       scoreFile: "scoreth20.dat",

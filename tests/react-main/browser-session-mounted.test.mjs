@@ -855,7 +855,7 @@ async function selectImport(file) {
   await React.act(async () => {input.dispatchEvent(new env.window.Event('change', {bubbles: true}));}); await tick();
 }
 
-test('actual BrowserLauncher: import-only Start → invalid file → valid canonical ZIP retries the captured launch without a second warning/fullscreen', async () => {
+test('actual BrowserLauncher: import-only Start → invalid file → valid canonical ZIP waits for another explicit Start', async () => {
   const f = await mountBrowser({resourceMode: 'import'});
   await click('#launch'); await until(() => !node('#gameDataImportWindow').hidden, 'main import-required window opens');
   assert.equal(node('#decisionDialog').open, false); assert.equal(playerOpen(), false); assert.equal(f.navigations.length, 0);
@@ -863,8 +863,10 @@ test('actual BrowserLauncher: import-only Start → invalid file → valid canon
   assert.equal(node('#gameDataImportWindow').hidden, false); assert.equal(node('#gameDataImportWindow').getAttribute('aria-busy'), 'false');
   await React.act(async () => {assert.equal((await api.readCurrentPackageGeneration('th06')).generation, null, 'invalid input cannot install a partial current generation');});
   await selectImport(importPackageFile());
-  await until(() => commands().includes('launch'), 'validated canonical import resumes the original launch');
-  assert.equal(playerOpen(), true); assert.equal(node('#decisionDialog').open, false); assert.equal(f.order.includes('fullscreen-enter'), false);
+  assert.equal(commands().includes('launch'), false); assert.equal(playerOpen(), false);
+  assert.equal(f.navigations.length, 0); assert.equal(node('#gameDataImportWindow').hidden, true);
+  await start(); await until(() => commands().includes('launch'), 'explicit Start launches the installed package');
+  assert.equal(playerOpen(), true); assert.equal(node('#decisionDialog').open, false);
   let current; await React.act(async () => {current = await api.readCurrentPackageGeneration('th06');});
   assert.equal(current.generation.descriptor.revision, 'synthetic-import-r1');
   assert.deepEqual(f.dataReads, [[1, 2, 3]], 'actual managed DATA callback reads the installed canonical object');
@@ -1411,8 +1413,8 @@ for (const status of ['ready', 'preparing', 'cancelled', 'failed']) for (const o
     });
     await React.act(async () => {await importing;});
     if (outcome === 'success') {
-      if (eligible) await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'interrupted room resumes real preparation against the committed package');
-      assert.equal(node('#status').textContent, eligible ? 'Game package imported; continuing the previous action…' : 'Game package imported; the game is ready to start');
+      assert.equal(session.room.service.getSnapshot().preparation.status, eligible ? 'cancelled' : status);
+      assert.equal(node('#status').textContent, 'Game package imported; the game is ready to start');
       assert.equal(session.gameData.getSnapshot().attempt, null); assert.equal(node('#gameDataImportWindow').hidden, true);
     } else {
       assert.equal(session.gameData.getSnapshot().busy, false); assert.equal(node('#gameDataImportWindow').hidden, false);
@@ -1502,8 +1504,10 @@ for (const locale of ['zh-CN', 'en']) test(`actual BrowserLauncher: completed di
       assert.equal(node('#gameDataImportReason').textContent, '游戏运行组件加载已超时。\n你可以继续等待；如果当前下载太慢，也可以点击「打开链接」取得游戏包后导入。手动导入的本地版本不会被服务器自动替换，只有你主动选择更新时才会更新。');
       await click('#startupErrorClose'); f.autoReady = true;
       await React.act(async () => {await session.gameData.importFile(importPackageFile());});
-      await until(() => session.getRuntime().getSnapshot().launched, 'the recovered import commits locally and starts the same Player without another Start click');
+      assert.equal(session.getRuntime().getSnapshot().launched, false); assert.equal(session.getRuntime().getSnapshot().epoch, null);
       assert.equal(session.gameData.getSnapshot().attempt, null); assert.equal(playerOpen(), true);
+      await back(); await start();
+      await until(() => session.getRuntime().getSnapshot().launched, 'explicit Start launches the recovered package');
     } else assert.deepEqual(events, ['startup'], 'pinned main only matches its literal Chinese timeout expression');
   } finally {timers.restore();}
 });
@@ -1871,4 +1875,16 @@ for (const testBuild of [false, true]) test(`BrowserSession preserves entry test
   await mountBrowser({initial:`/?game=th06${testBuild ? '&test' : ''}`});
   assert.equal(api.getAcquisitionOptions().testBuild, testBuild);
   assert.equal(new URL(api.getAcquisitionOptions().baseUrl).search, '');
+});
+
+test('actual BrowserLauncher: direct fallback import retires its loading epoch and ignores late ready', async () => {
+  const f = await mountBrowser({autoReady: false}), session = api.getTestSession(); await start();
+  await until(() => session.getRuntime().getSnapshot().phase === 'loading', 'direct load starts');
+  await React.act(async () => {session.gameData.unlock('slow'); await session.gameData.importFile(importPackageFile());});
+  assert.equal(session.getRuntime().getSnapshot().epoch, null);
+  assert.equal(session.getRuntime().getSnapshot().launched, false);
+  assert.equal(session.gameData.getSnapshot().attempt, null);
+  await React.act(async () => {f.native.emit('ready');}); await tick();
+  assert.equal(commands().includes('launch'), false); assert.equal(commands().includes('configure'), false);
+  assert.equal(f.native.location.href, 'about:blank');
 });
