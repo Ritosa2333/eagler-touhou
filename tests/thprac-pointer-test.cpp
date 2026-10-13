@@ -36,5 +36,29 @@ int main() {
     assert(pointers.route_touch(0,13,true,true,450,260).route==Route::Pending);
     pointers.reset();
     assert(pointers.route_touch(2,13,true,true,450,260).route==Route::Game);
-    std::puts("PASS trainer pointer ownership: game crossing, UI release, second finger, cancel");
+    // A replacement DOWN retires stale ownership after a lost UP/CANCEL.
+    assert(pointers.route(0, 9, true));
+    assert(!pointers.route(0, 9, false));
+    assert(!pointers.route(1, 9, true));
+    // SDL's native finger identity must not alias its low 32 bits.
+    const std::int64_t wide = (std::int64_t(1) << 40) + 9;
+    assert(pointers.route(0, wide, true));
+    assert(!pointers.route(1, 9, true));
+    assert(pointers.route(2, wide, false));
+    // The deferred classifier also keeps all 64 bits of a finger identity.
+    assert(pointers.route_touch(0,wide,true,true,450,260).route==Route::Pending);
+    assert(pointers.route_touch(1,9,true,true,470,275).route==Route::Game);
+    assert(pointers.route_touch(2,wide,true,true,451,261).route==Route::Tap);
+    // A replacement DOWN retires both UI and deferred ownership.
+    assert(pointers.route_touch(0,20,true,true,450,260).route==Route::Pending);
+    assert(pointers.route_touch(0,20,false,false,40,40).route==Route::Game);
+    assert(pointers.route_touch(2,20,true,true,450,260).route==Route::Game);
+    assert(pointers.route_touch(0,21,true,false,10,10).route==Route::Ui);
+    assert(pointers.route_touch(0,21,true,true,450,260).route==Route::Pending);
+    assert(pointers.route_touch(2,21,true,true,451,261).route==Route::Tap);
+    assert(pointers.route_touch(0,22,true,true,450,260).route==Route::Pending);
+    assert(pointers.route_touch(0,22,true,false,10,10).route==Route::Ui);
+    assert(pointers.route_touch(2,22,false,false,20,20).route==Route::Ui);
+    pointers.reset();
+    std::puts("PASS trainer pointer ownership: game crossing, UI release, passive swipe/tap, 64-bit identity, replacement down, reset");
 }
