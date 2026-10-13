@@ -39,22 +39,23 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
       report({status: 'preparing', stage, percent: total > 0 ? Math.min(100, loaded / total * 100) : null,
         error: '', loaded, total, title: active?.title || t('room.preparingResources')});
     }});
-    let installed = await acquisition.readCurrent(game);
+    const gameVersion = acquisition.getGameVersion(game);
+    let installed = await acquisition.readCurrent(game, {gameVersion});
     if (!context.isCurrent()) return;
     if (!installed.generation) {
       if (!acquisition.getMetadata().releaseCatalog) {try {await options.metadataReady();} catch {}}
       if (!context.isCurrent()) return;
-      const catalog = acquisition.getMetadata().releaseCatalog;
+      const {catalog, catalogUrl} = await acquisition.getPublication(gameVersion, context.signal);
       if (!catalog?.games[game]) throw new Error(t('package.releaseNotReadyNoLocal', {game: game.toUpperCase()}));
       try {
-        await acquisition.installPublished(game, {catalog, catalogUrl: acquisition.catalogUrl, addComponents: [],
+        await acquisition.installPublished(game, {catalog, catalogUrl, gameVersion, addComponents: [],
           fetchImpl: (input, init) => tracker.xhrFetch(input, init, packageNetworkMetadata(game, input, options.baseUrl, t)),
           signal: context.signal});
       } catch (error) {
         if (context.signal.aborted || (error !== null && typeof error === 'object' && 'name' in error && error.name === 'AbortError') || /已取消下载/.test(preparationErrorText(error))) throw error;
         throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});
       }
-      installed = await acquisition.readCurrent(game);
+      installed = await acquisition.readCurrent(game, {gameVersion});
       if (!installed.generation) throw new Error(t('package.objectNotPersisted'));
     }
     if (!context.isCurrent()) return;

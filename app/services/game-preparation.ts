@@ -76,7 +76,7 @@ export interface PreparedGame extends PreparedGamePlan {
 function requestFor(input: FilePreparationInput, withUpdate: boolean): AcquisitionRequest {
   if (input.settings.context.productId !== input.productId || input.settings.gameId !== gameIdForProduct(input.productId)) throw new Error('Settings product changed before preparation');
   const game = input as GamePreparationInput;
-  return {productId: input.productId, music: input.settings.music, language: input.settings.language,
+  return {productId: input.productId, gameVersion: input.settings.gameVersion, music: input.settings.music, language: input.settings.language,
     signal: input.signal, onProgress: input.onProgress, onAcquisitionActivity: input.onAcquisitionActivity,
     ...(withUpdate ? {updateSignal: game.updateSignal, onUpdateActivity: game.onUpdateActivity, decideUpdate: game.decideUpdate, onWarning: game.onWarning} : {})};
 }

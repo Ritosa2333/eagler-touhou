@@ -1,3 +1,4 @@
+import { descriptorGameVersion } from "./game-version.mjs";
 import {
   planPackageGeneration,
 } from "./package-generation.mjs";
@@ -132,8 +133,10 @@ async function installPackageFromAcquisitionExclusive({
   onProgress = null,
   signal = null,
 }, webLockHeld = false) {
+  const gameVersion = descriptorGameVersion(descriptor);
+  const storeOptions = { gameVersion };
   const currentResult = reuseCurrent
-    ? await readCurrentPackageGeneration(descriptor.game)
+    ? await readCurrentPackageGeneration(descriptor.game, storeOptions)
     : { installation: null, generation: null };
   const resolvedSource = typeof source === "function" ? await source(currentResult) : source;
   const resolvedDesiredFileIds = typeof desiredFileIds === "function"
@@ -165,7 +168,7 @@ async function installPackageFromAcquisitionExclusive({
   throwIfAborted(signal);
   await stageWhenAvailable(plan.generation, { source: resolvedSource, operationId: owner, signal, webLockHeld });
   const heartbeat = setInterval(() => {
-    void refreshPendingPackageOperation(descriptor.game, plan.generation.id, owner).catch(() => {});
+    void refreshPendingPackageOperation(descriptor.game, plan.generation.id, owner, storeOptions).catch(() => {});
   }, 30_000);
 
   let generation = plan.generation;
@@ -183,7 +186,7 @@ async function installPackageFromAcquisitionExclusive({
           generation.id,
           fileId,
           verified.objectId,
-          { operationId: owner },
+          { ...storeOptions, operationId: owner },
         );
         completed++;
         onProgress?.({ completed, total: resolvedDesiredFileIds.length, fileId, found: true, reused: true });
@@ -210,6 +213,7 @@ async function installPackageFromAcquisitionExclusive({
           }
         }
         const stored = await putPendingPackageObject(descriptor.game, generation.id, fileId, acquired, {
+          ...storeOptions,
           type: acquired?.type || packageMimeType(declaration.source),
           sha256: declaration?.sha256 || null,
           operationId: owner,
@@ -229,12 +233,12 @@ async function installPackageFromAcquisitionExclusive({
     // transaction has committed, the operation is complete and later aborts
     // do not masquerade as a rollback.
     throwIfAborted(signal);
-    const installation = await commitPendingPackageGeneration(descriptor.game, generation.id, { source: resolvedSource, operationId: owner });
+    const installation = await commitPendingPackageGeneration(descriptor.game, generation.id, { ...storeOptions, source: resolvedSource, operationId: owner });
     clearInterval(heartbeat);
-    return { installation, generation: (await readCurrentPackageGeneration(descriptor.game)).generation };
+    return { installation, generation: (await readCurrentPackageGeneration(descriptor.game, storeOptions)).generation };
   } catch (error) {
     clearInterval(heartbeat);
-    try { await cancelPendingPackageGeneration(descriptor.game, { generationId: generation.id, operationId: owner }); } catch {}
+    try { await cancelPendingPackageGeneration(descriptor.game, { ...storeOptions, generationId: generation.id, operationId: owner }); } catch {}
     try { await garbageCollectPackageStore(); } catch {}
     throw error;
   }

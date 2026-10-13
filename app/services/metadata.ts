@@ -1,3 +1,4 @@
+import {loadGameVersion, descriptorGameVersion} from "../../package/game-version.mjs";
 import {loadRemoteMetadata} from '../../src/launcher/remote-metadata.mts';
 import {createLocalProductManifest, PRODUCT_IDS, PRODUCT_GAMES, gameIdForProduct,
   isMultiplayerProductId, productEnabledForBuild, languagePriority,
@@ -26,6 +27,7 @@ export interface MetadataServiceOptions {
   baseUrl: string;
   fetchImpl?: typeof fetch;
   storage: Storage | null;
+  getGameVersion?: (game: GameId) => "original" | "beauty";
   indexedDBFactory?: IDBFactory;
   translate: (locale: string, key: string, params?: Record<string, string | number>) => string;
   webAudioAvailable: boolean;
@@ -70,9 +72,10 @@ export function createMetadataService(options: MetadataServiceOptions) {
     await Promise.all(games.map(async id => {
       const version = (reads.get(id) ?? 0) + 1;
       reads.set(id, version);
+      const gameVersion = options.getGameVersion?.(id) ?? loadGameVersion(options.storage, id);
       try {
-        const result = await readCurrentPackageGeneration(id, {indexedDBFactory: options.indexedDBFactory});
-        if (disposed || reads.get(id) !== version) return;
+        const result = await readCurrentPackageGeneration(id, {indexedDBFactory: options.indexedDBFactory, gameVersion});
+        if (disposed || reads.get(id) !== version || gameVersion !== (options.getGameVersion?.(id) ?? loadGameVersion(options.storage, id))) return;
         const installed = new Map(snapshot.installed);
         if (result.generation) installed.set(id, result.generation);
         else installed.delete(id);
@@ -156,7 +159,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
     /** Display hint from the canonical deferred migration/read owner. Launch
      * still rereads Package Store and never treats this map as DATA authority. */
     acceptInstalledHint(game: GameId, generation: InstalledPackageGeneration) {
-      if (disposed) return;
+      if (disposed || descriptorGameVersion(generation.descriptor) !== (options.getGameVersion?.(game) ?? loadGameVersion(options.storage, game))) return;
       if (generation.game !== game) throw new Error('Package hint game mismatch');
       const installed = new Map(snapshot.installed); installed.set(game, generation); publish({installed});
     },

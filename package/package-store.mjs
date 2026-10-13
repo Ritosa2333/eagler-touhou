@@ -1,4 +1,5 @@
 import { validatePackageDescriptor } from "./package-descriptor.mjs";
+import { packageInstallationKey, descriptorGameVersion } from "./game-version.mjs";
 import { isGameId } from "../product-catalog.mjs";
 
 export const PACKAGE_STORE_DB = "eagler-touhou-package-store-v1";
@@ -261,12 +262,13 @@ export async function attestPackageObjectSha256(objectId, sha256, bytes, { index
   }, indexedDBFactory);
 }
 
-export async function readPackageInstallation(game, { indexedDBFactory } = {}) {
+export async function readPackageInstallation(game, { gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
   assertGame(game);
   return withPackageDb(async db => {
     const transaction = db.transaction([PACKAGE_INSTALLATIONS], "readonly");
     const done = transactionDone(transaction);
-    const value = await requestResult(transaction.objectStore(PACKAGE_INSTALLATIONS).get(game));
+    const value = await requestResult(transaction.objectStore(PACKAGE_INSTALLATIONS).get(slot));
     await done;
     return value || null;
   }, indexedDBFactory);
@@ -283,12 +285,13 @@ export async function readPackageGeneration(game, generationId, { indexedDBFacto
   }, indexedDBFactory);
 }
 
-export async function readCurrentPackageGeneration(game, { indexedDBFactory } = {}) {
+export async function readCurrentPackageGeneration(game, { gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
   assertGame(game);
   return withPackageDb(async db => {
     const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_GENERATIONS], "readonly");
     const done = transactionDone(transaction);
-    const installation = await requestResult(transaction.objectStore(PACKAGE_INSTALLATIONS).get(game));
+    const installation = await requestResult(transaction.objectStore(PACKAGE_INSTALLATIONS).get(slot));
     const generation = installation?.currentGeneration
       ? await requestResult(transaction.objectStore(PACKAGE_GENERATIONS).get(generationKey(game, installation.currentGeneration)))
       : null;
@@ -311,12 +314,13 @@ export async function stagePendingPackageGeneration(generation, {
   validatePackageDescriptor(generation.descriptor);
   assertGenerationId(generation.id);
   assertOperationId(operationId);
+  const slot = packageInstallationKey(generation.game, descriptorGameVersion(generation.descriptor));
   return withPackageDb(async db => {
     const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_GENERATIONS], "readwrite");
     const done = transactionDone(transaction);
     const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
     const generations = transaction.objectStore(PACKAGE_GENERATIONS);
-    const current = await requestResult(installs.get(generation.game));
+    const current = await requestResult(installs.get(slot));
     if (current?.pendingGeneration && current.pendingOperationId !== operationId) {
       const started = Number(current.pendingStartedAt) || 0;
       const fresh = started > 0 && now - started < staleMs;
@@ -346,31 +350,33 @@ export async function stagePendingPackageGeneration(generation, {
       pendingSource: nextSource,
       pendingStartedAt: now,
     };
-    installs.put(installation, generation.game);
+    installs.put(installation, slot);
     await done;
     return installation;
   }, indexedDBFactory);
 }
 
-export async function refreshPendingPackageOperation(game, generationId, operationId, { now = Date.now(), indexedDBFactory } = {}) {
+export async function refreshPendingPackageOperation(game, generationId, operationId, { now = Date.now(), gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
   generationKey(game, generationId);
   assertOperationId(operationId);
   return withPackageDb(async db => {
     const transaction = db.transaction([PACKAGE_INSTALLATIONS], "readwrite");
     const done = transactionDone(transaction);
     const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
-    const installation = await requestResult(installs.get(game));
+    const installation = await requestResult(installs.get(slot));
     if (installation?.pendingGeneration !== generationId || installation.pendingOperationId !== operationId) {
       throw new Error("pending generation ownership changed");
     }
     installation.pendingStartedAt = now;
-    installs.put(installation, game);
+    installs.put(installation, slot);
     await done;
     return installation;
   }, indexedDBFactory);
 }
 
-export async function attachPendingPackageObject(game, generationId, fileId, objectId, { operationId = null, indexedDBFactory } = {}) {
+export async function attachPendingPackageObject(game, generationId, fileId, objectId, { operationId = null, gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
   const key = generationKey(game, generationId);
   if (typeof fileId !== "string" || !fileId || typeof objectId !== "string" || !objectId) throw new Error("invalid package file attachment");
   return withPackageDb(async db => {
@@ -380,7 +386,7 @@ export async function attachPendingPackageObject(game, generationId, fileId, obj
     const objects = transaction.objectStore(PACKAGE_OBJECTS);
     const generations = transaction.objectStore(PACKAGE_GENERATIONS);
     const [installation, object, generation] = await Promise.all([
-      requestResult(installs.get(game)),
+      requestResult(installs.get(slot)),
       requestResult(objects.get(objectId)),
       requestResult(generations.get(key)),
     ]);
@@ -409,8 +415,10 @@ export async function putPendingPackageObject(game, generationId, fileId, value,
   sha256 = null,
   objectId = null,
   operationId,
+  gameVersion = "original",
   indexedDBFactory,
 } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
   const key = generationKey(game, generationId);
   assertOperationId(operationId);
   const id = objectId || randomObjectId();
@@ -426,7 +434,7 @@ export async function putPendingPackageObject(game, generationId, fileId, value,
     const objects = transaction.objectStore(PACKAGE_OBJECTS);
     const generations = transaction.objectStore(PACKAGE_GENERATIONS);
     const [installation, generation] = await Promise.all([
-      requestResult(installs.get(game)),
+      requestResult(installs.get(slot)),
       requestResult(generations.get(key)),
     ]);
     if (installation?.pendingGeneration !== generationId || installation.pendingOperationId !== operationId) {
@@ -450,7 +458,8 @@ export async function putPendingPackageObject(game, generationId, fileId, value,
   }, indexedDBFactory);
 }
 
-export async function commitPendingPackageGeneration(game, generationId, { operationId, source = null, indexedDBFactory } = {}) {
+export async function commitPendingPackageGeneration(game, generationId, { operationId, source = null, gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
   const key = generationKey(game, generationId);
   assertOperationId(operationId);
   return withPackageDb(async db => {
@@ -459,7 +468,7 @@ export async function commitPendingPackageGeneration(game, generationId, { opera
     const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
     const generations = transaction.objectStore(PACKAGE_GENERATIONS);
     const [installation, generation] = await Promise.all([
-      requestResult(installs.get(game)),
+      requestResult(installs.get(slot)),
       requestResult(generations.get(key)),
     ]);
     if (!generation || generation.game !== game) throw new Error("pending generation not found");
@@ -479,20 +488,21 @@ export async function commitPendingPackageGeneration(game, generationId, { opera
       pendingSource: null,
       pendingStartedAt: null,
     };
-    installs.put(committed, game);
+    installs.put(committed, slot);
     await done;
     return committed;
   }, indexedDBFactory);
 }
 
-export async function cancelPendingPackageGeneration(game, { generationId = null, operationId = null, indexedDBFactory } = {}) {
+export async function cancelPendingPackageGeneration(game, { generationId = null, operationId = null, gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
   assertGame(game);
   return withPackageDb(async db => {
     const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_GENERATIONS], "readwrite");
     const done = transactionDone(transaction);
     const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
     const generations = transaction.objectStore(PACKAGE_GENERATIONS);
-    const installation = await requestResult(installs.get(game));
+    const installation = await requestResult(installs.get(slot));
     if (!installation?.pendingGeneration ||
         (generationId && installation.pendingGeneration !== generationId) ||
         (operationId && installation.pendingOperationId !== operationId)) {
@@ -505,7 +515,7 @@ export async function cancelPendingPackageGeneration(game, { generationId = null
     installation.pendingWebLock = null;
     installation.pendingSource = null;
     installation.pendingStartedAt = null;
-    installs.put(installation, game);
+    installs.put(installation, slot);
     await done;
     return installation;
   }, indexedDBFactory);
