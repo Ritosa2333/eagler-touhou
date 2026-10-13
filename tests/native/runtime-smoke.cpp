@@ -73,6 +73,51 @@ int main() {
       !check(th12::bullet_cancellation::viewportOverlaps(-180, 422, 4, 4, 0, 224, 384, 448),
              "Explicitly constructed rectangle differs from original probes"))
     return 1;
+  // Actual43a810: both ends of Sanae A's vertical targeting band are
+  // inclusive, stop sends IRQ2, and the horizontal launch waits until1004.
+  auto target = std::make_unique<th12::Enemy>();
+  target->id = 94; target->active = true; target->flags = 0;
+  target->x = -42.26f; target->y = 160;
+  th12::enemies.push_back(std::move(target));
+  struct SanaeSample {float y;int age;bool impact,stop;};
+  const SanaeSample sanaeSamples[]={{176.01f,5,false,false},{176,5,false,true},
+      {175.99f,5,false,true},{128,5,false,true},{127.99f,5,false,false},
+      {128.01f,5,false,true},{176,4,false,false},{176,5,true,false}};
+  auto savedInterruptHook = th12::friendlyInterruptHook;
+  int interruptCount = 0, interruptCode = 0;
+  th12::friendlyInterruptHook = [&](th12::Projectile&,int code,bool auxiliary) {
+    if (!auxiliary) {++interruptCount;interruptCode=code;}
+  };
+  for (const auto& sample : sanaeSamples) {
+    interruptCount=interruptCode=0;
+    th12::Projectile bullet;
+    bullet.friendly = bullet.active = true; bullet.x=30;bullet.y=sample.y;
+    bullet.speed=20;bullet.angle=-1.5707963705062866f;
+    bullet.update=3;bullet.age=sample.age;
+    bullet.weapon.phase=sample.impact?th12::pw::Phase::Impact:th12::pw::Phase::Alive;
+    bullet.weapon.impactDuration=100;
+    th12::updateFriendlyProjectile(bullet);
+    if (!check(bullet.age==(sample.stop?1000:sample.age)&&
+                   bullet.speed==(sample.stop?0.f:20.f)&&
+                   interruptCount==(sample.stop?1:0)&&(!sample.stop||interruptCode==2),
+               "Sanae A stop differs from original vertical-band/age/phase sample")||
+        !check(!sample.stop||(bullet.weapon.previousAge==999&&bullet.weapon.ageTime==1000.f),
+               "Sanae A stop did not reset the original complete timer"))
+      return 1;
+  }
+  th12::friendlyInterruptHook = savedInterruptHook;
+  for (int age=1000;age<=1004;++age) {
+    th12::Projectile bullet;
+    bullet.friendly=bullet.active=true;bullet.update=3;bullet.age=age;
+    bullet.speed=0;bullet.angle=-1.5707963705062866f;bullet.targetId=0;
+    bullet.weapon.phase=th12::pw::Phase::Alive;
+    th12::updateFriendlyProjectile(bullet);
+    if (!check(bullet.speed==(age==1004?24.f:0.f)&&
+                   bullet.angle==(age==1004?3.1415927410125732f:-1.5707963705062866f),
+               "Sanae A horizontal launch differs from original1000..1004 samples"))
+      return 1;
+  }
+  th12::enemies.clear();
   // Four independently captured values from the immutable native RNG corpus.
   struct RngSample {
     int seed;
@@ -130,6 +175,46 @@ int main() {
     return 1;
 
   th12::laser::Manager lasers;
+  {
+    // Original42a328..42a360, precision32: this squared distance is exactly
+    //58^2 after per-operation rounding; the next float outward is outside.
+    struct CircleSample {float x,y,r;bool hit;};
+    const CircleSample boundary[]={{43.16087341308594f,89.25546264648438f,58,true},
+      {43.1608772277832f,89.25546264648438f,58,false},
+      {43.16086959838867f,89.25546264648438f,58,true},
+      {3,132,5,true},{0,128,0,true}};
+    for(const auto& sample:boundary){
+      th12::laser::Manager circle;th12::laser::World circleWorld;
+      th12::laser::Parameters p;p.position={sample.x-8,sample.y,0};
+      p.angle=0;p.initialLength=p.maxLength=16;p.width=14;p.speed=0;
+      circle.spawn(th12::laser::Kind::Moving,p,circleWorld);
+      if(!check(bool(circle.clearCircle(circleWorld,{0,128,0},sample.r))==sample.hit,
+        "Laser circle edge differs from actual precision32 predicate"))return 1;
+    }
+  }
+  {
+    // Real replay21 fragment67256 inherits offset32; after one native update
+    // its position is[-34.6570511,363.327087]. Timed fragments clear the offset.
+    th12::laser::World fragmentWorld;
+    th12::laser::Manager fragments;
+    th12::laser::Parameters source;
+    source.position={0,128,0};source.angle=1.994135856628418f;
+    source.initialOffset=32;source.initialLength=source.maxLength=128;
+    source.travelDistance=512;source.width=14;source.speed=3;
+    int parent=fragments.spawn(th12::laser::Kind::Moving,source,fragmentWorld);
+    auto* child=fragments.appendMovingFragment(*fragments.find(parent),{-20.278789520263672f,331.41680908203125f,0},48,fragmentWorld);
+    const int childId=child->state.serialId;
+    fragments.tick(fragmentWorld);child=fragments.find(childId);
+    if(!check(child&&child->state.parameters.initialOffset==32&&
+        std::abs(child->state.position.x- -34.65705108642578f)<.00003f&&
+        std::abs(child->state.position.y-363.32708740234375f)<.00003f,
+        "Moving fragment lost the actual parent's constructor offset"))return 1;
+    fragments.reset();source.delay=8;source.grow=3;source.hold=30;source.shrink=5;source.lookupId=123;
+    parent=fragments.spawn(th12::laser::Kind::Timed,source,fragmentWorld);
+    child=fragments.appendMovingFragment(*fragments.find(123),{20,120,0},48,fragmentWorld);
+    if(!check(child&&child->state.parameters.initialOffset==0&&child->state.position.x==20&&child->state.position.y==120,
+        "Timed fragment incorrectly inherited a Moving-only constructor offset"))return 1;
+  }
   th12::laser::World world;
   th12::laser::Parameters p;
   p.position = {0, 100, 0};

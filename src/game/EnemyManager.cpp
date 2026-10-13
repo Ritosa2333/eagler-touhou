@@ -137,6 +137,22 @@ void finishEnemyUpdate(Enemy& e) {
       ufoManager.notifyEnemyRemoved(e.id, ufo_system::RemovalReason::NaturalExit);
     return;
   }
+  // 413c7e..413d55: Extra103..112's Bomb shield widens the hurt query even
+  // though the later shield gate prevents HP loss. Shot impact callbacks run.
+  if ((e.flags & 0x400000u) && !(e.flags & 0x20u)) {
+    const bool shield = spellState.active() && spellState.cardId >= 103 &&
+                        spellState.cardId <= 112 && playerBomb.active && !(playerFlags & 4u);
+    if (shield) {
+      if (!e.extraBombShieldAnimation || !animationScene.find(e.extraBombShieldAnimation))
+        e.extraBombShieldAnimation = bindScreenAnimation(2, 50, 10);
+      animationScene.position(e.extraBombShieldAnimation, e.x + 224, e.y + 16);
+      e.hitWidth = e.hitHeight = 192;
+    } else if (e.extraBombShieldAnimation && animationScene.find(e.extraBombShieldAnimation)) {
+      animationScene.interrupt(e.extraBombShieldAnimation, 1);
+      e.extraBombShieldAnimation = 0;
+      e.hitWidth = e.hitHeight = 48;
+    }
+  }
   // 413d8b calls 439ed0 before the HP immunity filters. Impact callbacks,
   // source accumulation and the stored-score hit award still run in immunity.
   e.flags &= ~0x100000u; // Native413d57 clears the preceding tick's hurt flag.

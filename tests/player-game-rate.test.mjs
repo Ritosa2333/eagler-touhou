@@ -10,7 +10,7 @@ import {loadLiveMain} from './helpers/live-main.mjs';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root),directory=path.join(root,'artifacts/player-game-rate-tests');
 const temp=path.join(directory,"tmp");fs.mkdirSync(temp,{recursive:true});
 const python=emscripten(root).python,compiler=emscripten(root).compiler,output=path.join(directory,'core.mjs');
-const names=['player_rate_prepare','player_rate_tick','player_rate_snapshot','th12_load_ecl','th12_load_anm','th12_load_sht','malloc','free'];
+const names=['player_rate_prepare','player_rate_tick','player_rate_snapshot','player_respawn_prepare','player_respawn_snapshot','th12_load_ecl','th12_load_anm','th12_load_sht','malloc','free'];
 const result=spawnSync(python,[compiler,'tests/fixtures/player-game-rate.cpp',...runtimeSources(root),'-std=c++20','-O0','-o',output,
  '-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=33554432',
  '-sEXPORTED_FUNCTIONS='+JSON.stringify(names.map(n=>'_'+n)),'-sEXPORTED_RUNTIME_METHODS=["HEAPU8"]'],
@@ -41,4 +41,19 @@ test('all six retail loadouts use slowed normal/focused straight/diagonal moveme
   }
  }
  assert.equal(count,1296);
+});
+
+test('retail respawn restores global rate before its common tail for all six loadouts',async()=>{
+ const fixture=JSON.parse(fs.readFileSync(new URL('fixtures/player-respawn-rate-original.json',import.meta.url)));
+ assert.equal(fixture.originalExeSha256,native.originalExeSha256);
+ assert.equal(fixture.rows.length,36);const core=await prepared();
+ for(const row of fixture.rows){
+  core._player_respawn_prepare(row.loadout,row.rate,row.age);
+  for(let tick=0;tick<row.frames.length;tick++){
+   if(tick)core._player_rate_tick(0);
+   const actual=[...new Float32Array(core.HEAPU8.buffer,core._player_respawn_snapshot(),8)],s=row.frames[tick];
+   assert.deepEqual(actual,[...s.fixed,s.state,s.stateAge,s.stateTime,s.totalAge,s.invulnerability,s.rate],
+    `loadout${row.loadout}/rate${row.rate}/age${row.age}/tick${tick}`);
+  }
+ }
 });

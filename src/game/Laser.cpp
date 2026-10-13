@@ -42,7 +42,10 @@ bool insideRect(Vec3 p, Vec3 c, Vec3 dimensions) {
 }
 bool insideCircle(Vec3 p, Vec3 c, float r) {
   const float dx = float(double(c.x) - p.x), dy = float(double(c.y) - p.y);
-  const float sq = float(double(dx) * dx + double(dy) * dy), rr = float(double(r) * r);
+  // Native42a340..42a34e under gameplay x87 precision32 rounds each
+  // multiplication before the sum. The unrounded double sum can reject
+  // a real inclusive boundary, omitting the cancellation VM and its RNG.
+  const float sq = fadd(fmul(dx, dx), fmul(dy, dy)), rr = fmul(r, r);
   return sq <= rr;
 }
 AnimationGeometry geometry(const State& s) {
@@ -301,9 +304,15 @@ void CurveLaser::initialize(World& world) {
 bool Laser::extensions(Manager& manager, World& world) {
   auto& s = state;
   bool repeat = false;
+  size_t dispatchBudget = 0;
   do {
     repeat = false;
     while (s.cursor < 18) {
+      if (s.cursor < 0 || ++dispatchBudget > 4096) {
+        world.unsupported(0x400000);
+        s.cursor = 18;
+        break;
+      }
       auto& r = s.parameters.program.records[size_t(s.cursor)];
       if (!r.kind || (!r.concurrent && s.activeExtensions))
         break;
@@ -312,6 +321,13 @@ bool Laser::extensions(Manager& manager, World& world) {
       ++s.cursor;
       if (r.kind == 0x80000000)
         continue;
+      if (r.kind == 0x400000) {
+        // Moving42903b/Curve42d5bf replace the extension cursor with record.c
+        // and dispatch again. Timed42c23d ignores this command and advances.
+        if (s.kind != Kind::Timed)
+          s.cursor = r.c;
+        continue;
+      }
       if (r.kind == 0x1000 && s.kind != Kind::Timed) {
         s.activeExtensions |= 0x1000;
         s.wait.reset(r.c);
@@ -875,11 +891,11 @@ Laser* Manager::appendMovingFragment(const Laser& source, const Vec3& position, 
   p.position = position;
   p.angle = source.state.angle;
   p.width = source.state.width;
-  p.initialOffset = 0;
   p.initialLength = length;
   p.maxLength = length;
   p.lookupId = 0;
   if (source.state.kind == Kind::Timed) {
+    p.initialOffset = 0;
     p.speed = 8;
     p.travelDistance = float(double(source.state.parameters.maxLength) -
                              std::hypot(double(position.x) - source.state.position.x,
@@ -887,6 +903,8 @@ Laser* Manager::appendMovingFragment(const Laser& source, const Vec3& position, 
     p.program = {};
     p.flags = 1;
   }
+  // Moving42a6c0 copies the complete parent parameters, including initial
+  // offset. The child's constructor applies that offset again after the cut.
   const int id = spawn(Kind::Moving, p, world);
   return find(id);
 }

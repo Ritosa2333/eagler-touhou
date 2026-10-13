@@ -169,6 +169,7 @@ struct Enemy {
   float ageTime = 0, phaseAgeTime = 0;
   int deathSound = -1, deathAnimation = -1, deathAnimationBank = 0;
   int hitSound = -1, hitFlashTicks = 0; // Native EnemyState+168c/+1684.
+  uint64_t extraBombShieldAnimation = 0; // Native shield handle Enemy+115c.
   int bombAnimation = 0, bombSavedAnimation = 0; // Native+16bc/+16c0 IRQ codes.
   int customUpdate = 0, customDamage = 0, customCollision = 0;
   CircularMotion absoluteCircle{}, relativeCircle{};

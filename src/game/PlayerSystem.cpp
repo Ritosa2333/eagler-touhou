@@ -722,9 +722,16 @@ void updateFriendlyProjectile(Projectile& b) {
     }
     if (b.age >= 5) {
       auto* target = playerTarget(b.x, b.y, 192);
-      if (target && target->y > b.y - 16 && target->y <= b.y + 32) {
+      // Native43a89c/43a8b4 include both vertical-band endpoints. Equality
+      // at y-16 must stop now, before another20px upward movement.
+      if (target && target->y >= b.y - 16 && target->y <= b.y + 32) {
         b.speed = 0;
+        b.weapon.interrupt = 2;
+        if (friendlyInterruptHook)
+          friendlyInterruptHook(b, 2, false); // Native461970, deferred VM IRQ.
+        b.weapon.previousAge = 999;
         b.age = 1000;
+        b.weapon.ageTime = 1000.f; // Native4067e0 resets the complete timer.
         b.targetId = target->x >= b.x ? 1 : 0;
       }
     }
@@ -1135,6 +1142,10 @@ void tickPlayer(int held, int pressed) {
       if (lives < 0)
         ended = 2;
       else {
+        // 436ec8..436ed7 restores the global rate before the respawn source
+        // and common tail. This also changes Enemy18/Spell23 in this frame,
+        // including a BossDead half/quarter-speed sequence still in progress.
+        gameSpeed = animationScene.runtime.delta = 1;
         // 436efc creates the expanding damage source before saving+a08 and
         // resetting the player position. Player16's common source pass below
         // advances the new source in this same callback.

@@ -28,14 +28,14 @@ def bits(value): return struct.unpack('<I', struct.pack('<f', value))[0]
 
 def experiment(kind, position, angle, length, speed, c, flags, changed_speed=-1., extension=0x100,
                width=8., player_position=(5000., 5000.), player_width=2., active_phase=False,
-               initial_age=0, steps=4):
+               initial_age=0, steps=4, program_records=None, x87_control_word=0x37f):
     v = Uc(UC_ARCH_X86, UC_MODE_32)
     for address, size in [(0, 0x10000), (0x400000, (PE.OPTIONAL_HEADER.SizeOfImage + 4095) & ~4095),
                           (0x1000000, 0x10000), (0x2000000, 0x1000000),
                           (0x3000000, 0x1000000), (0x5000000, 0x1000000),
                           (0x6000000, 0x1000000)]: v.mem_map(address, size)
     v.mem_write(0x400000, IMAGE)
-    v.reg_write(UC_X86_REG_FPCW, 0x37f)
+    v.reg_write(UC_X86_REG_FPCW, x87_control_word)
     v.reg_write(UC_X86_REG_MXCSR, 0x1f80)
     LM, PLAYER, SHT, ENEMIES, PARAM = 0x2000000, 0x2010000, 0x2020000, 0x2030000, 0x2040000
     SP, STOP = 0x100e000, 0x100f000
@@ -130,6 +130,10 @@ def experiment(kind, position, angle, length, speed, c, flags, changed_speed=-1.
         put(PARAM + 80, 'HHI', 17, 4, 2)
         put(PARAM + 0x58, 'ffiiII', changed_speed, 0., c, flags, extension, 0)
     else: raise ValueError(kind)
+    if program_records is not None:
+        offset={0:0x30,1:0x58,2:0x28}[kind]
+        for index, record in enumerate(program_records):
+            put(PARAM+offset+index*24,'ffiiII',*record)
     call(0x428450, [kind], {UC_X86_REG_EDI: PARAM})
     laser = get(LM + 0x18, 'I')[0]
     if active_phase:
@@ -148,7 +152,7 @@ def experiment(kind, position, angle, length, speed, c, flags, changed_speed=-1.
                          'phase': get(node + 0xc, 'i')[0], 'age': get(node + 0x18, 'i')[0],
                          'position': get(node + 0x50, '3f'), 'velocity': get(node + 0x5c, '3f'),
                          'geometry': get(node + 0x68, '5f'), 'active': get(node + 0x430, 'I')[0],
-                         'cursor': get(node + 0x42c, 'i')[0], 'bounce': get(node + 0x168, 'f')[0:1] + get(node + 0x17c, 'iii'),
+                         'cursor': get(node + 0x42c, 'i')[0], 'protection': get(node+0x44c,'i')[0], 'bounce': get(node + 0x168, 'f')[0:1] + get(node + 0x17c, 'iii'),
                          'parameterHex': bytes(v.mem_read(node + 0x454, parameter_size)).hex(),
                          'animationFlags': get(vm + 0x47c, 'II')})
             node = get(node + 8, 'I')[0]
@@ -163,7 +167,8 @@ def experiment(kind, position, angle, length, speed, c, flags, changed_speed=-1.
                       'length': length, 'speed': speed, 'c': c, 'flags': flags,
                       'changedSpeed': changed_speed, 'extension': extension, 'width': width,
                       'playerPosition': list(map(f32, player_position)), 'playerWidth': player_width,
-                      'activePhase': active_phase, 'initialAge': initial_age}, 'frames': frames, 'events': events}
+                      'activePhase': active_phase, 'initialAge': initial_age,
+                      'programRecords':program_records,'x87ControlWord':hex(x87_control_word)}, 'frames': frames, 'events': events}
 
 def main():
     records = []

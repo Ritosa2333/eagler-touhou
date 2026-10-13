@@ -35,8 +35,11 @@ void tick(int held, int pressed) {
   tickMessage(held, pressed);
   syncItemPresentation();
   for (const auto& e : enemies)
-    if (!e->active)
+    if (!e->active) {
+      if (e->extraBombShieldAnimation)
+        animationScene.remove(e->extraBombShieldAnimation);
       animationScene.removeOwner(e->id);
+    }
   animationScene.collect();
   animationScene.tickPrimary();
   animationScene.collect();
