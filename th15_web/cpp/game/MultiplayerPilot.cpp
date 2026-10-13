@@ -102,13 +102,10 @@ bool MultiplayerPilot::shake(const ScreenShakeSpec& s){return world.presentation
 bool MultiplayerPilot::nudge(const ScreenNudgeSpec& s){return world.presentation.nudge(s);}
 bool GameBattle::mp_enable(const MultiplayerOptions& o,const std::array<ShtResource,4>& shots,const std::array<int,4>& banks){
     if(!initialized||mp_enabled||!o.valid()||o.selections[0]!=character||(session.mode_flags&0x300))return fail("Invalid TH15 Legacy multiplayer setup");
-    mp_options=o;mp_enabled=true;mp_item_targets.fill(-1);items->multiplayer_power_full=[this]{return mp_all_power_full();};
+    mp_options=o;mp_enabled=true;mp_item_targets.fill(-1);
     for(unsigned s=0;s<o.seat_count;++s)pilots[s]=std::make_unique<MultiplayerPilot>(*this,s,o.selections[s]);
     for(unsigned s=0;s<o.seat_count;++s)if(!pilots[s]->initialize(shots[o.selections[s]],banks[o.selections[s]]))return false;
     enemy_world.multiplayer_target=[this](const Vec3& p){return mp_target(p);};bullet_scene->manager.multiplayer_target=enemy_world.multiplayer_target;return true;
-}
-bool GameBattle::mp_all_power_full()const{
-    bool found=false;for(unsigned s=0;s<mp_options.seat_count;++s){const auto& p=*pilots[s];if(p.ghost||p.session.extra_lives<0)continue;found=true;if(p.session.power<p.score.max_power)return false;}return found;
 }
 int GameBattle::mp_item_owner(const ItemState& item)const{
     const bool power=item.kind==1||item.kind==3||item.kind==8;

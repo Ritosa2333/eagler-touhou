@@ -27,7 +27,6 @@ public:
     u32 spawn(i32 kind,const Vec3&,float angle,float speed);
     bool release(u32 id);bool falling(u32 id);
     std::function<ItemFrameContext*(u32,const ItemState&)> multiplayer_context;
-    std::function<bool()> multiplayer_power_full;
     bool update(ItemFrameContext&);
     bool draw(AnmRenderer&);
     u32 free_head(bool cancel)const noexcept{return free_slots[cancel].empty()?0:free_slots[cancel].back()+1;}

@@ -38,10 +38,11 @@ text queue owns presentation and consumes no battle or visual RNG.
 Small/large P and Full Power items prefer the nearest eligible collector who
 still needs Power; eligibility includes the collector's own POC line, Bomb
 attraction and pickup bounds. Owners are reconsidered while homing and after
-death. Normal P converts to blue point items only when every non-exhausted
-pilot is full, including respawning pilots; ghosts do not block conversion.
-Both new drops and existing field P convert, including the same frame as the
-last Power pickup. ECL Power conditions read the minimum Power of the same
+death. Small/large P retain their authored types on spawn and in the field,
+even when the whole team is full. The actual collector's own Power selects
+the retail Power gain or full-Power score reward, credited once to team score;
+P does not become a blue point item or increment point-item statistics.
+ECL Power conditions read the minimum Power of the same
 non-exhausted team, so a full primary pilot cannot suppress a teammate's P
 drops. Full Power remains an F item and only fills its collector;
 at full Power its retail bonus increases the shared point value once.
@@ -74,8 +75,8 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 4 rejects earlier recordings with different statistics,
-fragment or Power-item ownership rules (versions 1 through 3).
+Gameplay ABI version 5 rejects earlier recordings with different statistics,
+fragment or Power-item ownership rules (versions 1 through 4).
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
 workspace and provide the multiplayer worktree at

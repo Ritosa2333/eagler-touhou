@@ -13,7 +13,6 @@ bool ItemManager::update(ItemFrameContext& default_context){
     const auto auto_collect=[](const ItemFrameContext& c){return (c.player_state!=2&&c.player_state!=4&&c.player.position.y<float(c.character==1?148:128))||(c.bomb_state==1&&c.bomb_frame<60)||c.hud_collect;};
     for(u32 index=0;index<pool_size;index++){
         auto& slot=slots[index];auto& s=slot.state;if(!s.state)continue;
-        if((s.kind==1||s.kind==3)&&multiplayer_power_full&&multiplayer_power_full()){s.kind=2;if(!appearance(slot,2))return false;}
         auto* selected=multiplayer_context?multiplayer_context(index,s):nullptr;
         auto passive=default_context;const bool unowned=multiplayer_context&&!selected;
         if(unowned){passive.player_state=2;passive.bomb_state=0;passive.hud_collect=false;if(s.state==3||s.state==4){s.state=1;s.velocity={};}}

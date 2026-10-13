@@ -157,5 +157,5 @@ int main(int argc,char** argv){
   require(run.pilots[2]->session.life_pieces==2&&run.pilots[2]->session.bomb_pieces==3&&run.pilots[2]->owned_life_piece_tier==4,"Next stage discarded individual fragments or Extend progress");
   for(unsigned f=0;f<30;++f)transition.step({});
  }
- std::printf("{\"passed\":true,\"ticks\":%u,\"characters\":4,\"localSeats\":[0,2],\"checks\":[\"independent-input-bombs-lives-power-fragments\",\"shared-score-graze-point-value\",\"shared-damage-score\",\"eligible-underpowered-pickup-full-P-conversion\",\"individual-HUD-shared-statistics-no-battle-RNG\",\"remote-collision\",\"single-team-chapter-score-individual-resources\",\"individual-extend-tiers-caps-extra-threshold\",\"nearest-ECL-aim\",\"next-stage-resources\",\"all-player-game-over\",\"retail-ECL-determinism\"]}\n",ticks);
+ std::printf("{\"passed\":true,\"ticks\":%u,\"characters\":4,\"localSeats\":[0,2],\"checks\":[\"independent-input-bombs-lives-power-fragments\",\"shared-score-graze-point-value\",\"shared-damage-score\",\"eligible-underpowered-pickup-retail-P-rewards\",\"individual-HUD-shared-statistics-no-battle-RNG\",\"remote-collision\",\"single-team-chapter-score-individual-resources\",\"individual-extend-tiers-caps-extra-threshold\",\"nearest-ECL-aim\",\"next-stage-resources\",\"all-player-game-over\",\"retail-ECL-determinism\"]}\n",ticks);
 }

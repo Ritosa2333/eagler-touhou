@@ -5,8 +5,8 @@ This is a local experiment; canonical branches have not been promoted.
 
 ## Production artifacts
 
-Multiplayer WASM: `6ade33af16e8e6b43f0ce76572c0cf62e16a6044f4a36e71b7afc1d8c4c2a350`.
-Ordinary THPrac WASM: `fd1add818b94c75aa0809aba64ea010f1fe134ac26d11c14354c353544ee5315`.
+Multiplayer WASM: `951916b7e90049df7688cad1fadb336991bfd2a17a6541ead169a31471d61053`.
+Ordinary THPrac WASM: `cf2591e0098c81234277ec22122e8d36d8f82cfa9709a4a433fe8e9c9ae99c0b`.
 Both release builds and closed packages pass. The ordinary module has no MP
 exports. Neither production module exposes development probes.
 Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
@@ -34,13 +34,12 @@ Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
   pickups select an eligible underpowered collector before a full teammate.
   A farther pilot above its own POC line can attract an item which the nearest
   pilot cannot collect. Homing ownership changes after a ghost transition.
-  Normal P converts on spawn and in the field only when all non-exhausted,
-  non-ghost pilots are full, including temporary Miss/respawn states; the last
-  Power pickup converts remaining field P and its appearance in the same tick.
-  ECL Power reads the minimum of that team. Full Power fills one pilot or
-  awards the shared full-Power point-value bonus once, respecting its cap.
-  Cancel point-value items never use Power priority. Converted P scores once
-  using the shared point value and native recipient height calculation.
+  Small/large P retain their types and appearance even with all pilots full.
+  Retail full-Power score rewards are credited once without increasing blue
+  point counts or shared point value; a retained field P can refill a pilot
+  after later Power loss. ECL Power reads the minimum of the viable team.
+  Full Power fills one pilot or awards the shared full-Power point-value bonus
+  once, respecting its cap. Cancel point-value items never use Power priority.
   HUD fixtures cover 2P/3P personal Power, life/Bomb labels, independent Extra
   thresholds, local/ghost identity, shared values rendered once, side-panel
   bounds, suppression of the old personal widgets, and unchanged RNG state.
@@ -51,12 +50,12 @@ Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
 - Protocol: 2P/3P, manual D=0/2/9, challenge on/off, reordered holes,
   capture-once ownership, session generation, build/ABI disagreement,
   all-seat replay including recorded P3, no second replay delay, malformed data,
-  and rejection of gameplay versions 1 through 3 (previous resource/item rules).
+  and rejection of gameplay versions 1 through 4 (previous resource/item rules).
 - Common startup: calibration, immutable timing choice, lost-control repair,
   disconnect handling, and TH08/10/11/15 spectator timing identity regression.
 - Real browser, production shell and Japanese 1.00b DATA, shared relay:
-  2P reached frame 244 with a start-admitted spectator;
-  3P reached frame 243. Both held frame zero until peers arrived,
+  2P reached frame 242 with a start-admitted spectator;
+  3P reached frame 240. Both held frame zero until peers arrived,
   stopped advancing when a producer stopped, resumed when it returned, saved
   valid recordings, rejected a mismatched replay executable, and played through
   the real offline menu to the hosted exit event. The 3P recording is from P3;
