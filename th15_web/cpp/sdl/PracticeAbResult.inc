@@ -21,7 +21,8 @@
             ImGui::SetNextWindowPos({ mid_st.x - sz.x * 0.5f, mid_st.y - sz.y * 0.5f });
             ImGui::SetNextWindowSize(sz);
             ImGui::SetNextWindowBgAlpha(0.8f);
-            ImGui::Begin("##res", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+            if (!MobileThprac::show(MobileThprac::Result, true)) return;
+            if (!MobileThprac::begin(MobileThprac::Result, "##res", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar, locale)) { ImGui::End(); return; }
             if (t >= 90) {
                 std::array<float,5> result_origs = {
                     globals.float_registers[7],

@@ -1,4 +1,5 @@
 import {spawnSync} from 'node:child_process';
+import {commonInclude} from './common-root.mjs';
 import {readFileSync,mkdirSync,existsSync,writeFileSync} from 'node:fs';
 import {resolve,dirname} from 'node:path';
 const root=resolve(import.meta.dirname,'..'),data=process.argv[2],upstream=process.argv[3],sdk=process.env.TH15_EMSDK;
@@ -12,7 +13,7 @@ run(process.execPath,['portable/generate-thprac.mjs',resolve(upstream),'--check'
 run(process.execPath,['portable/generate-thprac-tools.mjs',resolve(upstream),'--check']);
 run(process.execPath,['portable/check-th15-thprac-native.mjs',resolve(dirname(data),'th15.exe')]);
 const sources=['PracticePatcher','PracticeProgram','PracticeConfig','PracticeReplay','Archive','ResourceCrypt','Lzss','EclResource','MusicLayout'].map(n=>'th15_web/cpp/game/'+n+'.cpp');
-const compile=(target,generate=false)=>run('python',[compiler,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','-sNODERAWFS=1','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=134217728','-sSTACK_SIZE=2097152',...(generate?['-DTH15_PRACTICE_SITE_GENERATION=1']:[]),'portable/check-th15-thprac.cpp',...sources,'-o',target]);
+const compile=(target,generate=false)=>run('python',[compiler,'-I'+commonInclude,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','-sNODERAWFS=1','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=134217728','-sSTACK_SIZE=2097152',...(generate?['-DTH15_PRACTICE_SITE_GENERATION=1']:[]),'portable/check-th15-thprac.cpp',...sources,'-o',target]);
 if(process.argv.includes('--generate-sites')){
  const target=resolve(out,'sites.cjs');compile(target,true);
  const sites=run(process.execPath,[target,resolve(data),'--emit-sites'],true);
@@ -24,9 +25,9 @@ const sites=run(process.execPath,[target,resolve(data),'--emit-sites'],true);
 if(sites.trimEnd()!==readFileSync(resolve(root,'th15_web/cpp/game/PracticeSiteChecks.hpp'),'utf8').replaceAll('\r\n','\n').trimEnd())throw Error('Purple TH15 instruction-site inventory drift');
 console.log('Purple source extraction and retail instruction-site inventory verified');
 const gameplay=resolve(out,'gameplay.cjs');
-run('python',[compiler,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','-sNODERAWFS=1','portable/check-th15-thprac-gameplay.cpp',...['SpellCard','SpellDraw','EnemyInterrupts','ChapterCheckpoint','SessionRuntime'].map(n=>'th15_web/cpp/game/'+n+'.cpp'),'-o',gameplay]);
+run('python',[compiler,'-I'+commonInclude,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','-sNODERAWFS=1','portable/check-th15-thprac-gameplay.cpp',...['SpellCard','SpellDraw','EnemyInterrupts','ChapterCheckpoint','SessionRuntime'].map(n=>'th15_web/cpp/game/'+n+'.cpp'),'-o',gameplay]);
 run(process.execPath,[gameplay]);
 run(process.execPath,['portable/check-th15-thprac-menus.mjs']);
 const sharedTools=resolve(out,'tools.cjs');
-run('python',[compiler,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','portable/check-th15-thprac-tools.cpp','-o',sharedTools]);
+run('python',[compiler,'-I'+commonInclude,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','portable/check-th15-thprac-tools.cpp','-o',sharedTools]);
 run(process.execPath,[sharedTools]);

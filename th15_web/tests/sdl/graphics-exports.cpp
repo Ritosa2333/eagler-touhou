@@ -3,9 +3,11 @@
 #include "../../cpp/sdl/FontDevice.hpp"
 #include "../../cpp/game/AnmGeometry.hpp"
 #include "../../cpp/game/ScreenTargets.hpp"
+#include "../../cpp/game/AsciiFrame.hpp"
 #include "../../cpp/sdl/SceneCaptureDevice.hpp"
 #include <memory>
 #include <cmath>
+#include <emscripten.h>
 using namespace th15;using namespace touhou::graphics;
 namespace {std::unique_ptr<sdl::GraphicsDevice> graphics;std::vector<std::unique_ptr<AnmResource>> files;}
 namespace {
@@ -13,8 +15,40 @@ struct ScreenProbe {Rng random;AnmEnvironment environment;AnmManager animations{
  bool initialize(const u8* data,u32 size){environment.screen_offsets={320,16,320,16};if(!animations.load(0,data,size)){error=animations.error;return false;}if(!graphics->preload(*animations.resource(0))){error=graphics->error;return false;}if(!targets.prepare()){error=targets.error;return false;}screenshots.pause_source=compositor.alternate;return true;}
  ~ScreenProbe(){renderer.flush();if(auto* file=animations.resource(0))graphics->unload(*file);}
 };std::unique_ptr<ScreenProbe> screen_probe;
+std::unique_ptr<AnmDrawSchedule> chapter_schedule;
+std::unique_ptr<AsciiText> chapter_text;
+std::unique_ptr<AsciiFrame> chapter_ascii_frame;
 }
 extern "C" {
+EMSCRIPTEN_KEEPALIVE int graphics_initialize_scaled(u32 scale){graphics=std::make_unique<sdl::GraphicsDevice>();graphics->render_scale=scale==2?2:1;return graphics->initialize();}
+void graphics_depth_quad(float,float,float,float,float,u32);
+EMSCRIPTEN_KEEPALIVE int graphics_chapter_initialize(const u8* data,u32 size){
+ if(!screen_probe)return 0;auto& s=*screen_probe;
+ if(!s.animations.load(1,data,size)||!graphics->preload(*s.animations.resource(1)))return 0;
+ chapter_schedule=std::make_unique<AnmDrawSchedule>(s.scheduler,s.animations,s.renderer,*graphics,s.views);
+ return s.animations.create(1,241,-1,0)!=0;
+}
+EMSCRIPTEN_KEEPALIVE int graphics_chapter_frame(u32 age){
+ if(!screen_probe||!chapter_schedule)return 0;auto& s=*screen_probe;
+ if(age==290){for(u32 i=0;i<s.animations.registry.ordered_count(false);++i){auto id=s.animations.registry.ordered_handle(false,i);auto* vm=s.animations.registry.find(id);if(vm&&vm->source_script==241&&!s.animations.interrupt(id,1))return 0;}}
+ if(!s.animations.update(false)||!s.animations.update(true)){s.error=s.animations.error;return 0;}
+ if(chapter_text){chapter_text->update();for(float y:{226.f,246.f,266.f,286.f}){HudTextDraw text;text.position={300,y,0};text.text="223.36%";text.style.font=2;text.style.coordinate_space=2;text.style.alignment=2;if(!chapter_text->enqueue(text))return 0;}}
+ struct Marker {ScreenProbe* probe;u32 age;} moving{&s,age};FrameCallback background,marker;
+ background.enabled=marker.enabled=true;background.owner=&s;marker.owner=&moving;
+ background.run=[](void* p){auto& s=*static_cast<ScreenProbe*>(p);s.renderer.invalidate();graphics->clear_target(0xff123456,nullptr);return 1;};
+ marker.run=[](void* p){auto& m=*static_cast<Marker*>(p);m.probe->renderer.invalidate();const auto state=graphics->pipeline();graphics_depth_quad(180+float(m.age%200),360,8,8,.1f,0xffff0000);graphics->backend.flush();graphics->pipeline()=state;m.probe->renderer.invalidate();return 1;};
+ s.scheduler.add(background,FramePass::Draw,4);
+ s.scheduler.add(marker,FramePass::Draw,29);
+ const auto result=s.scheduler.draw();s.scheduler.remove(background);s.scheduler.remove(marker);s.renderer.flush();
+ if(result==i32(FrameAction::Error)){s.error=s.renderer.error;return 0;}graphics->present();return 1;
+}
+EMSCRIPTEN_KEEPALIVE int graphics_chapter_ascii(const u8* data,u32 size){
+ if(!screen_probe)return 0;auto& s=*screen_probe;
+ if(!s.animations.load(2,data,size)||!graphics->preload(*s.animations.resource(2)))return 0;
+ chapter_text=std::make_unique<AsciiText>(s.animations,s.environment);
+ if(!chapter_text->initialize(2))return 0;
+ chapter_ascii_frame=std::make_unique<AsciiFrame>(s.scheduler,*chapter_text,s.renderer,s.views);return 1;
+}
 int graphics_screen_initialize(const u8* data,u32 size){screen_probe=std::make_unique<ScreenProbe>();return screen_probe->initialize(data,size);}
 int graphics_screen_pass(u32 index){if(!screen_probe)return 0;const bool ok=screen_probe->compositor.pass(index);if(!ok)screen_probe->error=screen_probe->compositor.error;return ok;}
 int graphics_screen_capture(int results){if(!screen_probe)return 0;const bool ok=screen_probe->screenshots.capture(screen_probe->snapshot,results!=0);if(!ok)screen_probe->error=screen_probe->screenshots.error;return ok;}
@@ -25,7 +59,7 @@ u32 graphics_texture_format(u32 id){auto* image=graphics->pixels(id);return imag
 const u8* graphics_read_texture(u32 id){graphics->backend.read(id);auto* image=graphics->pixels(id);return image?image->pixels.data():nullptr;}
 const char* graphics_screen_error(){return screen_probe?screen_probe->error.c_str():"No screen probe";}
 void graphics_screen_paint(u32 color){graphics->clear_target(color,nullptr);}
-void graphics_screen_close(){screen_probe.reset();graphics->select_target(nullptr,0);}
+void graphics_screen_close(){chapter_ascii_frame.reset();chapter_text.reset();chapter_schedule.reset();screen_probe.reset();graphics->select_target(nullptr,0);}
 int graphics_initialize(){graphics=std::make_unique<sdl::GraphicsDevice>();return graphics->initialize();}
 const char* graphics_error(){return graphics?(graphics->error.empty()?graphics->backend.error():graphics->error.c_str()):"No graphics fixture";}
 u32 graphics_texture(i32 format,i32 w,i32 h,const u8* data,u32 size){auto file=std::make_unique<AnmResource>();AnmTexture t;t.name="fixture";t.format=t.pixel_format=format;t.width=t.pixel_width=w;t.height=t.pixel_height=h;t.pixels.assign(data,data+size);file->textures.push_back(std::move(t));if(!graphics->preload(*file))return 0;const u32 id=graphics->texture(*file,0);files.push_back(std::move(file));return id;}

@@ -1,8 +1,10 @@
 #pragma once
 #include "Types.hpp"
 #include "PracticeNativeHooks.hpp"
-#include "PracticeInput.hpp"
-#include "PracticeSpeed.hpp"
+#include <eagler/thprac/PracticeInput.hpp>
+#include "Types.hpp"
+#include <eagler/thprac/PracticeSpeed.hpp>
+#include "PracticeCadence.hpp"
 #include <string>
 #include <vector>
 #include <functional>
@@ -45,8 +47,8 @@ struct PracticeState {
  bool show_lock_timer=false;
  bool show_keyboard_monitor=false;
  bool flip_screen_y=false;
- PracticeInput input;
- PracticeSpeed speed;
+ eagler::thprac::PracticeInput input;
+ eagler::thprac::PracticeSpeed speed;
  std::function<void(u32)> record_keys;
  mutable PracticeLockTimer lock_timer;
  float boss_move_down_range=practice_boss_range_default;
