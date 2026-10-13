@@ -30,7 +30,7 @@ export function readPackageObjectKeys(
 
 export function readCurrentPackageGeneration(
   game: string,
-  options?: { indexedDBFactory?: IDBFactory },
+  options?: { indexedDBFactory?: IDBFactory; gameVersion?: "original" | "beauty" },
 ): Promise<CurrentPackageGeneration>;
 
 export function garbageCollectPackageStore(options?: {

@@ -1,5 +1,7 @@
 import type { GameId } from "./product-catalog.mjs";
 
+export type GameVersion = "original" | "beauty";
+
 export interface PackageFileDeclaration {
   revision: string;
   source: string;
@@ -32,6 +34,7 @@ export interface PackageComponentDeclaration {
 }
 
 export interface PackageDescriptor {
+  gameVersion?: GameVersion;
   schema: string;
   game: GameId;
   revision: string;
