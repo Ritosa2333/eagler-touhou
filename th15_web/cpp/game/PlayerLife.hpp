@@ -23,7 +23,7 @@ class PlayerLife {
 public:
     PracticeState* practice=nullptr;
     bool cheat(u32 bit)const noexcept{return practice&&practice->cheat(bit);}
-    i32 state=0;Timer age,invulnerability;Vec3 last_death_position{};std::string error;
+    i32 state=0,base_bombs=3;Timer age,invulnerability;Vec3 last_death_position{};std::string error;
     std::function<bool(i32)> sound;std::function<bool(i32,i32)> life_hud;
     PlayerLife(PlayerMotion& p,PlayerAnmHost& v,EffectManager& e,PlayerLifeSession& s,PlayerSpellStatus& b):motion(p),visuals(v),effects(e),session(s),spell(b){}
     bool hit();bool commit_death();void cancel_death()noexcept{age.set(60);state=1;}

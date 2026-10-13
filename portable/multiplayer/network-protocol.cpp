@@ -63,7 +63,7 @@ std::vector<unsigned char> run(unsigned count,unsigned delay,bool challenge=fals
   CHECK(viewer.Finish());CHECK(!viewer.BeginNextRun(418));
   CHECK(players[s].BeginNextRun(418));CHECK(players[s].Generation()==1);CHECK(players[s].NextFrame()==0);CHECK(!players[s].CanStart());
   auto corrupt=bytes;corrupt.back()^=1;CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
-  for(unsigned old:{1u,2u,3u,4u}){corrupt=bytes;corrupt[Netplay::InputReplay::HeaderBytes+8]=old;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));} // previous economies
+  for(unsigned old:{1u,2u,3u,4u,5u}){corrupt=bytes;corrupt[Netplay::InputReplay::HeaderBytes+8]=old;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));} // previous economies
   corrupt=bytes;corrupt[12]=10;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
   corrupt=bytes;corrupt[21]=static_cast<unsigned char>((s+1)%count);checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
   corrupt=bytes;corrupt[136]=2;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size())); // measured mode word

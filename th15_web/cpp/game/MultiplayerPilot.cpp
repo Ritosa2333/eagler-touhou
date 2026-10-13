@@ -15,6 +15,7 @@ bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
         if(!rebuild_bomb())return false;
         owned_collection=std::make_unique<ItemCollection>(session,score,player->motion,*this,character,&owned_life_piece_tier);collection=owned_collection.get();
     }else{player=world.player.get();bomb=world.bomb.get();collection=world.collection.get();}
+    player->life.base_bombs=world.mp_options.challenge?0:2;session.bombs=player->life.base_bombs;
     const float x=(float(seat)-float(world.mp_options.seat_count-1)*.5f)*48.f;
     player->motion.position={x,400,0};player->motion.position_fixed={i32(x*128),51200};player->motion.snap_options();
     return true;
@@ -47,7 +48,12 @@ bool MultiplayerPilot::tick(){
     // The target is transmitted as an absolute field coordinate. Never derive
     // movement from a sender's pre-delay simulation state.
     player->motion.touch={input.touch_mode,input.touch_x,input.touch_y};
+    session.enemy_deaths=world.enemy_world.counters[0];session.enemy_chain=world.enemy_world.counters[2];
+    const i32 before=session.deaths,before_enemy_deaths=world.enemy_world.counters[0];
     if(!player->update(c,world.input.rate))return world.fail(player->error);
+    const i32 misses=wrapping_sub(session.deaths,before);
+    if(misses>0){world.enemy_world.counters[0]=wrapping_add(before_enemy_deaths,misses);world.enemy_world.counters[2]=world.bomb_enemies.chain=0;
+        if(world.progress){auto& progress=*world.progress;progress.chapter_deaths=wrapping_add(progress.chapter_deaths,misses);progress.stage_deaths[0]=wrapping_add(progress.stage_deaths[0],misses);if(progress.stage>=1&&progress.stage<8)progress.stage_deaths[progress.stage+1]=wrapping_add(progress.stage_deaths[progress.stage+1],misses);}}
     return true;
 }
 bool MultiplayerPilot::tick_bomb(){
@@ -56,16 +62,17 @@ bool MultiplayerPilot::tick_bomb(){
     return bomb->update(world.input.rate)||world.fail(bomb->error);
 }
 bool MultiplayerPilot::reset_stage(){
-    session.bomb_state=0;keys={};input={};
+    session.bomb_state=0;spell_startup_bomb=false;keys={};input={};
     if(!rebuild_bomb())return false;
     return ghost||player->reset_for_stage()||world.fail(player->error);
 }
 bool MultiplayerPilot::allow_bomb(){return !ghost&&!world.mp_options.challenge&&bomb&&bomb->allowed();}
 bool MultiplayerPilot::begin_bomb(){
     if(!allow_bomb()||!bomb->begin())return false;
+    spell_startup_bomb=(world.spell.flags&1)&&world.spell.frame<60;
     world.enemy_world.counters[1]=world.bomb_enemies.uses;world.enemy_world.counters[2]=world.bomb_enemies.chain;
     // Non-shield bombs protect all operable teammates; Reisen's shields stay personal.
-    if(character!=3)for(unsigned s=0;s<world.mp_options.seat_count;++s)if(s!=seat&&!world.pilots[s]->ghost)world.pilots[s]->player->life.invulnerability.set(180);
+    if(character!=3)for(unsigned s=0;s<world.mp_options.seat_count;++s)if(s!=seat&&!world.pilots[s]->ghost&&world.pilots[s]->session.extra_lives>=0){auto& timer=world.pilots[s]->player->life.invulnerability;if(timer.current<180)timer.set(180);}
     return true;
 }
 bool MultiplayerPilot::cancel_lasers_near(const Vec3& p,float r,i32 k,bool h){return world.laser_scene->cancel_circle(p,r,k,h)>=0;}
@@ -147,8 +154,26 @@ bool GameBattle::mp_damage(const DamageQuery& q,DamageResult& out){
         const i32 gain=wrapping_sub(p.player->damage.score,before);
         if(s)player->damage.score=std::min(wrapping_add(player->damage.score,gain),999999999);
         score.score=std::min(wrapping_add(score.score,gain),999999999);
-        out.amount=wrapping_add(out.amount,hit.amount);out.direct|=hit.direct;if(hit.position_written){out.position=hit.position;out.position_written=true;}}
+        i32 amount=hit.amount;if(p.player->life.state==0||p.player->life.state==2)amount/=5;
+        out.amount=wrapping_add(out.amount,amount);out.direct|=hit.direct;if(hit.position_written){out.position=hit.position;out.position_written=true;}}
     return true;
+}
+unsigned GameBattle::mp_viable_count()const{unsigned count=0;for(unsigned s=0;s<mp_options.seat_count;++s)if(!pilots[s]->ghost&&pilots[s]->session.extra_lives>=0)++count;return count;}
+bool GameBattle::mp_bomb_active(bool damaging_only)const{for(unsigned s=0;s<mp_options.seat_count;++s){const auto& p=*pilots[s];if(!p.ghost&&p.session.bomb_state==1&&(!damaging_only||p.character!=3))return true;}return false;}
+bool GameBattle::mp_prepare_spell_startup(){
+    bool active=false;for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];p.spell_startup_bomb=!p.ghost&&p.session.bomb_state==1&&p.character!=3;active|=p.spell_startup_bomb;}return active;
+}
+bool GameBattle::mp_spell_startup_active(){
+    bool active=false;for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];if(p.ghost||p.session.bomb_state!=1){p.spell_startup_bomb=false;continue;}
+        // Retail Reisen startup hits can set flag 32 even for an older shield.
+        if(p.character==3&&p.player->life.state==4&&spell.frame<60&&(spell.flags&32))p.spell_startup_bomb=true;
+        active|=p.spell_startup_bomb;}return active;
+}
+i32 GameBattle::mp_boss_damage(EnemyState& enemy,i32 amount){
+    if(amount<=0||!(enemy.flags&0x40800000u))return amount;
+    const unsigned count=mp_viable_count(),numerator=count>=3?8:count==2?9:12;
+    const u64 scaled=u64(unsigned(amount))*numerator+enemy.multiplayer_damage_remainder;
+    enemy.multiplayer_damage_remainder=unsigned(scaled%12);return i32(scaled/12);
 }
 bool GameBattle::mp_draw(AnmRenderer& r){for(unsigned s=0;s<mp_options.seat_count;++s)if(!pilots[s]->ghost&&!pilots[s]->player->draw(r))return fail(pilots[s]->player->error);return true;}
 }

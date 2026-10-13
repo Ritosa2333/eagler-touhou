@@ -79,7 +79,11 @@ struct GameBattle::Services {
         EnemyVisualHost* animations()override{return &g.enemy_visuals;}
         LaserScene* lasers()override{return g.laser_scene.get();}
         BulletEmissionHost* bullets()override{return &g.bullet_scene->manager;}
-        int after_script(EnemyRuntime& e,float rate)override{if(!enemy_update_rule(e.state,*g.bullet_scene,*g.laser_scene,g.player_collision(),g.dialogue_present())){e.error=g.bullet_scene->error.empty()?"Enemy special update rule failed":g.bullet_scene->error;return -2;}return g.presentation.enemy_callback(e,rate);}
+        int after_script(EnemyRuntime& e,float rate)override{
+#if TH15_MULTIPLAYER
+            if(g.mp_enabled&&e.state.update_rule==EnemyUpdateRule::scale_near_player){std::array<PlayerCollision,3> players;u32 count=0;for(unsigned s=0;s<g.mp_options.seat_count;++s)if(g.pilots[s]->alive())players[count++]=g.mp_collision(s);scale_bullets_near_players(g.bullet_scene->manager,players.data(),count,e.state.float_registers[0],g.dialogue_present());return g.presentation.enemy_callback(e,rate);}
+#endif
+            if(!enemy_update_rule(e.state,*g.bullet_scene,*g.laser_scene,g.player_collision(),g.dialogue_present())){e.error=g.bullet_scene->error.empty()?"Enemy special update rule failed":g.bullet_scene->error;return -2;}return g.presentation.enemy_callback(e,rate);}
         int collide_and_damage(EnemyRuntime& e,float rate)override{return g.enemy_damage->update(e,rate);}
         bool update_distortion(EnemyState& e,float rate)override{return g.scene?(e.distortion_mesh.update(g.animations,e.distortion,e.motion.position,rate,g.scene->screen_view)||g.fail("Enemy distortion grid update failed")):g.check(g.presentation.enemy_distortion(e,rate),"Enemy distortion failed");}
         bool destroy(EnemyState& e)override{return g.cleanup_enemy(e);}
@@ -103,7 +107,17 @@ struct GameBattle::Services {
         bool effect(const EnemyCommandHost::EffectRequest& e)override{const u32 handle=g.animations.create(g.enemy_visuals.resource_id(e.resource),e.script,-1,e.ordering,e.position,e.rotation);if(!handle)return g.fail(g.animations.error);g.effects.track(handle);return g.effects.error.empty()||g.fail(g.effects.error);}
         bool begin_distortion(EnemyState& e)override{return g.scene?(e.distortion_mesh.initialize(g.animations,g.scene->text_bank)||g.fail("Enemy distortion grid creation failed")):g.check(g.presentation.begin_enemy_distortion(e),"Enemy distortion creation failed");}
         bool retire_distortion(EnemyState& e)override{return g.scene?(e.distortion_mesh.retire(g.animations)||g.fail(g.animations.error)):g.check(g.presentation.retire_enemy_distortion(e),"Enemy distortion retirement failed");}
-        bool begin_spell(const SpellStartRequest& request)override{if(g.scene&&g.scene->assets)g.spell_visuals=g.scene->assets->spell_resources(g.scene->progress.chapter);SpellStartContext c;c.stage=g.stage;c.difficulty=g.enemy_world.difficulty;c.character=g.character;c.bomb_state=g.session.bomb_state;c.replay=g.session.replay_state==1;c.visuals=g.spell_visuals;const bool ok=g.spell_card.begin(request,c);return ok||g.fail(g.spell_card.error);}
+        i32 effective_damage(EnemyState& enemy,i32 amount)override{
+#if TH15_MULTIPLAYER
+            if(g.mp_enabled)return g.mp_boss_damage(enemy,amount);
+#endif
+            return amount;
+        }
+        bool begin_spell(const SpellStartRequest& request)override{if(g.scene&&g.scene->assets)g.spell_visuals=g.scene->assets->spell_resources(g.scene->progress.chapter);SpellStartContext c;c.stage=g.stage;c.difficulty=g.enemy_world.difficulty;c.character=g.character;c.bomb_state=g.session.bomb_state;
+#if TH15_MULTIPLAYER
+            if(g.mp_enabled){c.bomb_state=g.mp_prepare_spell_startup()?1:0;if(c.bomb_state)c.character=0;}
+#endif
+            c.replay=g.session.replay_state==1;c.visuals=g.spell_visuals;const bool ok=g.spell_card.begin(request,c);return ok||g.fail(g.spell_card.error);}
         bool finish_spell()override{g.score.score=g.player->damage.score;const bool ok=g.spell_card.finish();g.player->damage.score=g.score.score;return ok||g.fail(g.spell_card.error);}
         bool bomb_damage(const DamageQuery& q,i32& amount)override{return g.check(g.presentation.bomb_damage(q,amount),"Bomb damage service failed");}
         bool additional_damage(EnemyState& e,i32 incoming,i32& amount)override{const bool ok=e.damage_rule==EnemyDamageRule::animation_regions?g.combat->animation_region_damage(e,g.animations.registry.find(e.animation_handles[0]),incoming,amount):enemy_additional_damage(e,incoming,amount);if(!ok)return g.fail("Enemy additional damage rule failed");i32 extra=0;if(!g.check(g.presentation.enemy_additional_damage(e,incoming,extra),"Enemy additional damage failed"))return false;amount=wrapping_add(amount,extra);return true;}
@@ -222,6 +236,9 @@ bool GameBattle::refresh_world(){
     if(mp_enabled){i32 power=score.max_power;bool found=false;for(unsigned s=0;s<mp_options.seat_count;++s){const auto& p=*pilots[s];if(p.ghost||p.session.extra_lives<0)continue;found=true;power=std::min(power,p.session.power);}enemy_world.state=found?power:0;}
 #endif
     enemy_world.player_position=player->motion.position;enemy_world.player_damage_state=player->life.state;enemy_world.game_state=session.bomb_state;
+#if TH15_MULTIPLAYER
+    if(mp_enabled){enemy_world.player_damage_state=1;enemy_world.game_state=mp_bomb_active()?1:0;i32 deaths=0;for(unsigned s=0;s<mp_options.seat_count;++s)deaths=wrapping_add(deaths,pilots[s]->session.deaths);enemy_world.counter3=std::min(deaths,999999);}
+#endif
     // ECL, player deaths and Bomb activation share the native manager counters.
     session.enemy_deaths=enemy_world.counters[0];session.enemy_chain=enemy_world.counters[2];
     bomb_enemies.uses=enemy_world.counters[1];bomb_enemies.chain=enemy_world.counters[2];
@@ -254,7 +271,11 @@ i32 GameBattle::update_enemies(){
 #endif
 refresh_world();if(!battle_enemy_frame(input.game_flags))return 1;player->damage.score=score.score;enemies->rate=input.rate;enemies->background_delta=input.background_delta;const bool ok=enemies->update();score.score=player->damage.score;if(!ok){fail(enemies->error);return 5;}return error.empty()?1:5;}
 i32 GameBattle::update_lasers(){refresh_world();if(!laser_scene->update(input.rate,input.game_flags)){fail(laser_scene->error);return 5;}return error.empty()?1:5;}
-i32 GameBattle::update_spell(){refresh_world();if(!spell_card.update({input.rate,player->motion.position.y,session.bomb_state,enemy_world.practice&&enemy_world.practice->cheat(PracticeTime)})){fail(spell_card.error);return 5;}return refresh_world()?1:5;}
+i32 GameBattle::update_spell(){refresh_world();i32 active_bomb=session.bomb_state;
+#if TH15_MULTIPLAYER
+ if(mp_enabled)active_bomb=mp_spell_startup_active()?1:0;
+#endif
+ if(!spell_card.update({input.rate,player->motion.position.y,active_bomb,enemy_world.practice&&enemy_world.practice->cheat(PracticeTime)})){fail(spell_card.error);return 5;}return refresh_world()?1:5;}
 i32 GameBattle::update_bullets(){refresh_world();const auto mode=battle_bullet_frame(input.game_flags);if(mode==BulletFrameMode::Skipped)return 1;refresh_world();bullet_scene->manager.world_paused=mode==BulletFrameMode::VisualOnly;if(!bullet_scene->update()){fail(bullet_scene->error);return 5;}return error.empty()?1:5;}
 i32 GameBattle::update_items(){
 #if TH15_MULTIPLAYER

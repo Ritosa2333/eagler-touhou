@@ -30,6 +30,27 @@ The primary pilot's Extend tier retains its retail score-state field for the
 HUD; other pilots' collections bind separate tier owners. Extends do not
 reactivate ghosts, and chapter fragments are not granted to ghosts.
 Whole-life and whole-Bomb pickups go to their collecting pilot.
+Cooperative lives start and respawn with two Bombs per pilot (zero in the
+Bomb-disabled challenge); fragments remain personal and survive respawn.
+Stage survivors retain their earned stock. Retail single-player still uses
+three base Bombs. Boss/midboss effective damage is scaled after native spell
+and Bomb protection: 2 viable pilots use 3/4, 3 use 2/3, one uses native damage.
+Temporary dying/respawning pilots remain viable; exhausted/ghost pilots do not.
+Enemy HP, phase thresholds and ordinary-enemy damage stay in retail units.
+A per-enemy fixed-denominator carry retains fractional damage as seats leave.
+Each pilot's death/respawn reduces only their own damage before pooling.
+Shared ECL counters and chapter/stage deaths include each committed pilot miss.
+Spell startup tracks the Bomb owners that triggered its protection. Existing
+Reisen shields do not protect a new spell; shields activated or hit during
+the first 60 frames retain retail startup protection until that owner's
+shield ends. Remote damaging Bombs and mixed Reisen teams use the same owner
+tracking, so an unrelated older shield cannot prolong team startup reduction.
+Non-Reisen teammate protection never shortens existing invulnerability.
+Special near-player bullet rules consider every operable pilot and apply once
+per bullet even when pilots overlap. References include current TH06/07 Eagler,
+TH08 MP 0916231, TH10 MP 288ea8d and TH11 MP d62e3f1; title-specific damage caps,
+Power values and spell formulas remain TH15's own.
+
 The HUD groups native glyph stock markers/counts and Power for every seat,
 including individual fragment progress; the local seat is highlighted and
 ghosts are dimmed. Shared point value and chapter/total Graze appear once in
@@ -75,8 +96,8 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 5 rejects earlier recordings with different statistics,
-fragment or Power-item ownership rules (versions 1 through 4).
+Gameplay ABI version 6 rejects earlier recordings with different statistics,
+resources, damage balance or Bomb/Power ownership rules (versions 1 through 5).
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
 workspace and provide the multiplayer worktree at

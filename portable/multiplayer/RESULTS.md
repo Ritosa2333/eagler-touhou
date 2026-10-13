@@ -5,13 +5,29 @@ This is a local experiment; canonical branches have not been promoted.
 
 ## Production artifacts
 
-Multiplayer WASM: `951916b7e90049df7688cad1fadb336991bfd2a17a6541ead169a31471d61053`.
-Ordinary THPrac WASM: `cf2591e0098c81234277ec22122e8d36d8f82cfa9709a4a433fe8e9c9ae99c0b`.
+Multiplayer WASM: `1c7047f4fa8ce6dac9567ca78a6e1fae52461888ec544d9b41fbc01635894935`.
+Ordinary THPrac WASM: `805c45624dc50a1d7896f2bd6421c49a2b5841419a472f52b7907d95bf20cc5d`.
 Both release builds and closed packages pass. The ordinary module has no MP
 exports. Neither production module exposes development probes.
 Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
 
 ## Passing gates
+
+- Co-op balance/state ownership (2026-10-13): two personal base Bombs at start
+  and respawn, personal fragments retained, Bomb debit isolated; teammate
+  protection extends short timers without shortening longer respawn grace.
+  Every seat can die without reducing teammates' damage. Real EnemyDamage
+  traversal applies native protection before Boss scaling; ordinary enemies
+  retain pooled native damage. Per-enemy fractional carry preserves tiny hits;
+  temporary respawn retains participant count, exhaustion/ghosts reduce it.
+  Production ECL spell services retain remote Bomb startup protection with
+  either Reimu or Reisen as primary; it ends after the final damaging Bomb,
+  while Reisen-only shields keep native spell behavior. Shields activated
+  during the first 60 spell frames retain protection until their own end;
+  pre-existing shields do not prolong a teammate's startup Bomb reduction. Remote committed misses
+  update chapter, stage and ECL counters once. Overlapping remote pilots apply
+  the native special-bullet velocity factor only once per bullet.
+
 
 - Production C++ gameplay under Node/WASM: 3,600 retail ticks, four characters,
   independent local-seat selection and resources, damage pooling, ECL aim,
@@ -50,12 +66,12 @@ Common netplay pin: `dd93c944ce2f2830e99be9c8dba7ff2ac645f548`.
 - Protocol: 2P/3P, manual D=0/2/9, challenge on/off, reordered holes,
   capture-once ownership, session generation, build/ABI disagreement,
   all-seat replay including recorded P3, no second replay delay, malformed data,
-  and rejection of gameplay versions 1 through 4 (previous resource/item rules).
+  and rejection of gameplay versions 1 through 5 (previous resource/item rules).
 - Common startup: calibration, immutable timing choice, lost-control repair,
   disconnect handling, and TH08/10/11/15 spectator timing identity regression.
 - Real browser, production shell and Japanese 1.00b DATA, shared relay:
   2P reached frame 242 with a start-admitted spectator;
-  3P reached frame 240. Both held frame zero until peers arrived,
+  3P reached frame 246. Both held frame zero until peers arrived,
   stopped advancing when a producer stopped, resumed when it returned, saved
   valid recordings, rejected a mismatched replay executable, and played through
   the real offline menu to the hosted exit event. The 3P recording is from P3;

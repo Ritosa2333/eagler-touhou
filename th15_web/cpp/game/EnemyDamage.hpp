@@ -6,6 +6,7 @@ struct EnemyDamageHost {
     virtual ~EnemyDamageHost()=default;
     virtual bool shot_damage(EnemyState&,bool special,EnemyShotDamage&)=0;
     virtual bool additional_damage(EnemyState&,i32 incoming,i32&)=0;
+    virtual i32 effective_damage(EnemyState&,i32 amount){return amount;}
     virtual int die(EnemyRuntime&,float rate)=0;
     virtual bool contact(EnemyState&,AnmVm*,i32& result)=0;
     virtual bool graze(const Vec3&)=0;

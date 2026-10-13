@@ -17,7 +17,7 @@ bool PlayerLife::advance_state(u32 pressed,float& rate,bool hud_available,Player
         if(age.current<=29)return true;
         if(session.mode_flags&0x300)return host.game_over();
         if(session.extra_lives<0&&age.current==30){if(session.replay_state!=1&&!host.game_over())return false;age.tick(&rate);return true;}
-        state=0;rate=1;if(!host.respawn_damage(motion.position,32.f,16.f,30,150))return false;session.bombs=3;if(hud_available&&!host.bomb_hud(3,session.bomb_pieces))return false;
+        state=0;rate=1;if(!host.respawn_damage(motion.position,32.f,16.f,30,150))return false;session.bombs=base_bombs;if(hud_available&&!host.bomb_hud(session.bombs,session.bomb_pieces))return false;
         last_death_position=motion.position;motion.position_fixed={0,61440};motion.position.x=0;motion.position.y=480;motion.snap_options();invulnerability.set(280);age.set(0);return true;
     case 3:if(age.current==15)return host.cancel_lasers(1,false);return true;
     default:return true;

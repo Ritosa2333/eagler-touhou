@@ -40,13 +40,14 @@ struct Presentation final:BattleWorldServices {
 };
 struct World {
  Rng visual{417,0,0};AnmEnvironment environment;AnmManager animations{visual,environment};StageAssets assets;Presentation output;SessionState progress;std::unique_ptr<GameBattle> battle;
- World(RetailAssets& files,unsigned count,unsigned local,std::array<int,3> selection):assets(files,animations){
+ World(RetailAssets& files,unsigned count,unsigned local,std::array<int,3> selection,bool challenge=false):assets(files,animations){
   environment.game_rng={417,0,0};environment.playfield_origin={192,224};environment.screen_offsets={32,16,32,16};
   require(assets.load(1,selection[0])&&assets.load_multiplayer(),assets.error);
   battle=std::make_unique<GameBattle>(animations,environment,environment.game_rng,visual,output,assets.scripts,assets.shots,selection[0],BattleResources{assets.player,assets.bullet,assets.effect});
   auto& b=*battle;progress.character=selection[0];progress.difficulty=1;b.bind_progress(progress);b.session.power=400;b.score.point_value=1000000;b.score.max_point_value=50000000;b.enemy_world.difficulty=1;
   require(b.initialize(),b.error);for(unsigned i=0;i<6;++i)b.enemy_visuals.map_resource(i,assets.enemy_banks[i]);b.spell_visuals=assets.spell_resources(0);
-  require(b.mp_enable({count,local,1,417,1,false,selection},assets.multiplayer_shots,assets.multiplayer_players),b.error);
+  require(b.player->life.base_bombs==3,"Retail base Bomb stock changed before co-op setup");
+  require(b.mp_enable({count,local,1,417,1,challenge,selection},assets.multiplayer_shots,assets.multiplayer_players),b.error);
   for(unsigned s=0;s<count;++s){auto& p=*b.pilots[s];p.player->life.state=1;p.player->life.invulnerability.set(30000);p.player->frame.ready_age.set(30);}
  }
  void step(const std::array<MultiplayerInput,3>& input){battle->mp_input(input);BattleFrame frame;frame.focus_allowed=true;require(battle->step(frame),battle->error);}
@@ -57,9 +58,10 @@ struct World {
 };
 #include "native-items.hpp"
 #include "native-hud.hpp"
+#include "native-balance.hpp"
 int main(int argc,char** argv){
  require(argc==2,"Pass a legally supplied Japanese TH15 1.00b archive");RetailAssets files(argv[1]);unsigned ticks=0;
- item_rules(files);hud_rules(files);
+ item_rules(files);hud_rules(files);balance_rules(files);
  for(const auto selections:{std::array<int,3>{0,1,2},std::array<int,3>{3,3,0}}){
   auto left=std::make_unique<World>(files,3,0,selections),right=std::make_unique<World>(files,3,2,selections);
   auto& b=*left->battle;
@@ -97,9 +99,9 @@ int main(int argc,char** argv){
  b.pilots[1]->session.power=100;picked.kind=1;require(b.pilots[1]->collection->award(picked),"Power pickup failed");
  require(b.pilots[1]->session.power==101&&b.session.power==400&&b.pilots[2]->session.power==400,"Power not independent");
  picked.kind=6;for(unsigned n=0;n<5;++n)require(b.pilots[2]->collection->award(picked),"Bomb piece failed");
- require(b.pilots[2]->session.bombs==4&&b.session.bombs==3&&b.pilots[1]->session.bomb_pieces==0,"Bomb fragments not independent");
+ require(b.pilots[2]->session.bombs==3&&b.session.bombs==2&&b.pilots[1]->session.bomb_pieces==0,"Bomb fragments not independent");
  std::array<MultiplayerInput,3> in{};in[1].held=0x40;world->step(in);require(b.pilots[1]->player->motion.position.x<0&&b.pilots[0]->player->motion.position.x==-48,"Input leaked across seats");
- b.bomb_enemies.available=true;require(b.pilots[1]->begin_bomb(),"Remote bomb did not begin");require(b.pilots[1]->session.bombs==2&&b.session.bombs==3&&b.pilots[2]->session.bombs==4,"Bomb stock not independent");
+ b.bomb_enemies.available=true;require(b.pilots[1]->begin_bomb(),"Remote bomb did not begin");require(b.pilots[1]->session.bombs==1&&b.session.bombs==2&&b.pilots[2]->session.bombs==3,"Bomb stock not independent");
  const auto location=b.pilots[2]->player->motion.position;
  require(b.mp_nearest(location)==2,"Nearest target ownership");
  for(unsigned s=0;s<3;++s)b.pilots[s]->player->damage.circle({0,100,0},30,0,30,10*(s+1));
@@ -157,5 +159,5 @@ int main(int argc,char** argv){
   require(run.pilots[2]->session.life_pieces==2&&run.pilots[2]->session.bomb_pieces==3&&run.pilots[2]->owned_life_piece_tier==4,"Next stage discarded individual fragments or Extend progress");
   for(unsigned f=0;f<30;++f)transition.step({});
  }
- std::printf("{\"passed\":true,\"ticks\":%u,\"characters\":4,\"localSeats\":[0,2],\"checks\":[\"independent-input-bombs-lives-power-fragments\",\"shared-score-graze-point-value\",\"shared-damage-score\",\"eligible-underpowered-pickup-retail-P-rewards\",\"individual-HUD-shared-statistics-no-battle-RNG\",\"remote-collision\",\"single-team-chapter-score-individual-resources\",\"individual-extend-tiers-caps-extra-threshold\",\"nearest-ECL-aim\",\"next-stage-resources\",\"all-player-game-over\",\"retail-ECL-determinism\"]}\n",ticks);
+ std::printf("{\"passed\":true,\"ticks\":%u,\"characters\":4,\"localSeats\":[0,2],\"checks\":[\"independent-input-bombs-lives-power-fragments\",\"shared-score-graze-point-value\",\"shared-damage-score\",\"eligible-underpowered-pickup-retail-P-rewards\",\"individual-HUD-shared-statistics-no-battle-RNG\",\"remote-collision\",\"single-team-chapter-score-individual-resources\",\"individual-extend-tiers-caps-extra-threshold\",\"nearest-ECL-aim\",\"next-stage-resources\",\"all-player-game-over\",\"retail-ECL-determinism\",\"co-op-base-Bombs-dynamic-Boss-damage\",\"per-pilot-death-damage-team-miss-statistics\",\"remote-Bomb-spell-startup-Reisen-exception\",\"overlapping-special-bullet-rule-once\"]}\n",ticks);
 }

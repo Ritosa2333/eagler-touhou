@@ -47,6 +47,9 @@ struct EnemyState {
     float slowdown=0;u32 lifecycle_flags=0;
     i32 chapter=0,chapter_contribution=0;u32 life_flags=0;
     i32 pending_damage=0,cumulative_damage=0,damage_flash_frames=0;
+#if TH15_MULTIPLAYER
+    u32 multiplayer_damage_remainder=0;
+#endif
     i32 inactive_animation=0,normal_animation=0;Vec3 last_hit_position{};
     std::array<EnemyInterrupt,8> interrupts;std::string death_script;
     std::array<i32,2> script_control{};

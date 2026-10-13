@@ -92,6 +92,9 @@ public:
     int mp_nearest(const Vec3&,bool power=false)const;Vec3 mp_target(const Vec3&)const;
     bool mp_damage(const DamageQuery&,DamageResult&);bool mp_draw(AnmRenderer&);bool mp_reward_item(const ItemState&);
     int mp_item_owner(const ItemState&)const;
+    unsigned mp_viable_count()const;bool mp_bomb_active(bool damaging_only=false)const;
+    bool mp_prepare_spell_startup();bool mp_spell_startup_active();
+    i32 mp_boss_damage(EnemyState&,i32 amount);
 #endif
     std::string error;
     std::function<bool()> game_over_begin;
