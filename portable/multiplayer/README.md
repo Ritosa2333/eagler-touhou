@@ -20,15 +20,13 @@ per-seat owners. Score, total/chapter Graze, point value, point-item counts,
 collection statistics and chapter rewards use one team owner. Each pilot's
 eligible graze contributes once, including multiple pilots grazing one bullet.
 Chapter score and point-value rewards are calculated once from the team statistics.
-An eligible chapter grants one fragment to each non-ghost pilot's own stock.
-Life fragments and Extend progress are individual: three grant the collecting
-pilot one life in Legacy; Extra requires five for each pilot's first five
-Extends, as in retail TH15. Each pilot remains capped at eight spare lives.
-A life fragment collected by a capped pilot converts to that pilot's Bomb
-fragment, regardless of teammates' stock; it does not contribute to teammates.
-The primary pilot's Extend tier retains its retail score-state field for the
-HUD; other pilots' collections bind separate tier owners. Extends do not
-reactivate ghosts, and chapter fragments are not granted to ghosts.
+Life fragments and Extend progress are shared: each eligible event adds exactly
+one fragment, including ghosts banking reserves. Chapter bonus thresholds are
+1,500,000 for 2P and 2,000,000 for 3P. Three fragments grant each uncapped pilot
+one spare life in Legacy; Extra requires five for the first five team Extends,
+then stops fragment-based Extends. Each pilot remains capped at eight spare
+lives. Extends do not reactivate ghosts. See
+[the current economy and teammate-action contract](../../docs/TH15_MULTIPLAYER_ECONOMY.md).
 Whole-life and whole-Bomb pickups go to their collecting pilot.
 Cooperative lives start and respawn with two Bombs per pilot (zero in the
 Bomb-disabled challenge); fragments remain personal and survive respawn.
@@ -97,8 +95,8 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 7 rejects earlier recordings with different statistics,
-resources, damage balance or Bomb/Power ownership rules (versions 1 through 5).
+Gameplay ABI version 13 rejects older incompatible economy generations.
+Display-only local-hitbox filtering does not change that gameplay version.
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
 workspace and provide the multiplayer worktree at
@@ -142,10 +140,15 @@ contact. They cannot graze, collect items, deal damage or become ECL targets.
 The final-death transition clears options, focus and barrier effects.
 
 This experiment implements Legacy only. Pointdevice retry/checkpoint files,
-THPrac, ghost rescue, Power transfer, multiplayer drop multipliers and teammate
-opacity adjustments are not implemented. Stock exhaustion disables that pilot;
-the game-over menu opens after all pilots exhaust their stocks. Non-Reisen
-bombs protect teammates for 180 frames; Reisen's shields remain personal.
+THPrac and multiplayer drop multipliers are not implemented. Ghost rescue,
+life/Power transfer and teammate opacity follow the current economy contract.
+Small P grants 0.02 in 2P and 0.03 in 3P; large P remains 1.00. Power gifts
+require at least 2.00P and leave at least 1.00P. Stock exhaustion disables that
+pilot; the game-over menu opens after all pilots exhaust their stocks.
+Non-Reisen bombs give teammates 120 startup frames and refresh protection to
+at least 40 frames during active updates. Reisen gives 30 frames on startup
+and every shield-layer break, without sharing persistent shields.
+Only the selected viewpoint's hitbox is drawn, including native fade-out.
 All restart/continue/exit choices return to the lobby. Touch-free joystick
 preferences use directional joystick inputs in this mode, so queued movement
 never depends on a sender's earlier simulated position.

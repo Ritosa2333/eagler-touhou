@@ -73,8 +73,14 @@ copies/text only, with no spawned items or gameplay mutations. The native icon
 script initializes once using private copies of its RNG/environment, never
 advancing either authoritative RNG stream.
 
+Only the selected local viewpoint's hitbox is drawn, including native focus,
+always-visible markers and native fade-out. Generation-tagged ownership is
+retained until the animation retires, so changing the selected viewpoint also
+changes which marker is visible. This is a rendering filter, not a collision,
+animation update, RNG, gameplay ABI or recorded-input change.
+
 TH11 teammate opacity policy is applied to draw copies of each seat's body,
-focus/hitbox, options, shots and attached children: local 255, remote 160,
+options, shots and attached children: local 255, remote 160,
 remote within 48px 72, local ghost 112, remote ghost 88. Gameplay VM alpha,
 hitboxes and RNG remain unchanged. Bullet red graze glow is aggregated across
 all active seats rather than overwritten by the last collision check.
@@ -95,3 +101,8 @@ policy and ItemCollection, and checks TH11's action-source gates. Set
 `TH15_EMSDK` when the SDK is elsewhere. Source/unit checks and compilation are
 not human/device acceptance, an actual multiplayer transfer test, or full
 Replay parity proof.
+
+The player-facing Chinese rules are maintained in the Launcher repository's
+`content/MULTIPLAYER.md`, section `TH15 绀珠传`; its generated HTML and shared
+guide tab must be updated together. This document describes the implementation
+contract, not a separate balance preset.
