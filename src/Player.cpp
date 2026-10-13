@@ -3524,13 +3524,15 @@ i32 Player::UpdateDeath()
             this->playerSprite.scale.x = 3.0f;
             this->playerSprite.scale.y = 3.0f;
             g_AnmManager->SetAnmIdxAndExecuteScript(&this->playerSprite, ANM_SCRIPT_PLAYER_IDLE);
-            if ((i32)g_GameManager.globals->livesRemaining <= 0)
+            if ((i32)g_GameManager.globals->livesRemaining <= 0 &&
+                !PracticeRuntime::OverlayInfiniteLives())
             {
                 g_GameManager.isInRetryMenu = 1;
             }
             else
             {
                 // THOverlay F2 patches the -1 immediate at 0x44116B to 0.
+                PracticeRuntime::OnLifeDecrement();
                 if (!PracticeRuntime::OverlayInfiniteLives())
                     g_GameManager.AddLivesRemaining(-1);
                 g_Gui.lifeDisplayUpdateFrames = 2;
@@ -3975,6 +3977,9 @@ void Player::UpdateUI()
 
 u32 Player::OnUpdate(Player *arg)
 {
+    // Native purple th07_record_key observes gameplay input at this owner,
+    // including Replay input. It must not run from a presentation-only frame.
+    if (arg == &g_Player) PracticeRuntime::RecordKeyInput(g_CurFrameGameInput);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::IsMultiplayer())
     {

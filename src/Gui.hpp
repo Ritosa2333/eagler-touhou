@@ -1,4 +1,5 @@
 #pragma once
+#include "PracticeRuntime.hpp"
 
 #include "AnmIdx.hpp"
 #include "AnmVm.hpp"
@@ -259,6 +260,7 @@ struct Gui
 
     void SetSpellcardSecondsRemaining(i32 seconds)
     {
+        PracticeRuntime::TickLockTimer();
         this->spellcardSecondsRemaining = seconds;
     }
 

@@ -2700,6 +2700,28 @@ ZunResult ResultScreen::AddedCallback(ResultScreen *arg)
     return ZUN_SUCCESS;
 }
 
+void ResultScreen::SavePracticePauseExit()
+{
+    // Purple TH07 th07_save_data1/2: initialize state 18, AddedCallback,
+    // WriteScore, ReleaseScoreDat. No result-screen chain is registered.
+    if (!PracticeRuntime::AlwaysSaveScoreOnPauseExit() || g_GameManager.replay ||
+        !g_GameManager.globals || ShouldSkipPersistentResultWrite())
+        return;
+    auto* screen = new ResultScreen;
+    // Native state 18 is PRACTICE_END, not INIT_PARSE_ONLY (which deletes).
+    screen->resultScreenState = RESULT_STATE_PRACTICE_END;
+    if (AddedCallback(screen) == ZUN_SUCCESS && screen->scoreDat)
+        screen->WriteScore();
+    if (screen->scoreDat) ReleaseScoreDat(screen->scoreDat);
+    screen->scoreDat = nullptr;
+    for (i32 difficulty = 0; difficulty < DIFF_COUNT; ++difficulty)
+        for (i32 character = 0; character < SHOT_COUNT; ++character)
+            screen->FreeScore(difficulty, character);
+    // DeletedCallback unloads shared result textures and cuts the chain;
+    // neither is owned by this temporary, unregistered native save object.
+    delete screen;
+}
+
 ZunResult ResultScreen::DeletedCallback(ResultScreen *arg)
 {
     i32 i;

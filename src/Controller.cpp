@@ -1,5 +1,6 @@
 #include "EaglerOptions.hpp"
 #include "Controller.hpp"
+#include "PracticeRuntime.hpp"
 #ifdef TH_ENABLE_NETPLAY
 #include <eagler/netplay/NetplayInput.hpp>
 #endif
@@ -225,6 +226,7 @@ u16 Controller::GetInput()
             buttons |= TH_BUTTON_UP;
     }
     buttons |= Touch::GetButtonBits();
+    buttons = PracticeRuntime::FilterGameplayInput(buttons);
 #ifdef TH_ENABLE_NETPLAY
     return Netplay::Input::ResolveLocal(buttons);
 #else

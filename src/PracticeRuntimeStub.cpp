@@ -31,11 +31,19 @@ bool OverlayInfinitePower() { return false; }
 bool OverlayTimeLock() { return false; }
 bool OverlayAutoBomb() { return false; }
 bool OverlayEverlastingBgm() { return false; }
+bool OverlayEnemyInvincible() { return false; }
+u16 FilterGameplayInput(u16 buttons) { return buttons; }
 bool AdvancedAllClearBonus() { return false; }
+bool AlwaysSaveScoreOnPauseExit() { return false; }
 bool AdvancedFixSpellBonusDisplay() { return false; }
 bool ConsumeResurrectionButterflySpawnSkip() { return false; }
 void ResetTracker() {}
 void RecordBorderBreak() {}
+void ResetLockTimer() {}
+void TickLockTimer() {}
+void RecordKeyInput(u16) {}
+void OnLifeDecrement() {}
+double SimulationInterval() { return 1.0 / 60.0; }
 void SetSupervisorFadeOutScope(bool) {}
 bool FilterAudioCommand(i32, i32) { return false; }
 void OpenPracticeMenu(i32, i32) {}

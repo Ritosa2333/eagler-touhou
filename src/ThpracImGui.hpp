@@ -81,6 +81,8 @@ enum class TextId
     AdvancedOptions,
     GameSpeed,
     FixSpellBonusDisplay,
+    InGameInfo,
+    EnemyInvincible,
 };
 
 bool Initialize();
@@ -101,6 +103,8 @@ bool InputPressed(std::uint16_t button);
 // client area and the 640x480 logical render surface.
 void ProcessEvent(const SDL_Event &event);
 void ProcessLogicalPointer(int type, float x, float y);
+bool RouteTouchPointer(unsigned type, std::int64_t id, float x, float y, bool logical);
+void CancelLogicalPointers();
 
 // The game owns the fixed 640x480 logical surface.  The platform backend
 // deliberately does not read a separate window or request a server resource.

@@ -1609,6 +1609,7 @@ restart:
                 g_EnemyManager.unused_9545f0 = GET_INT_VALUE(enemy, 0);
                 break;
             case ECL_SET_BOSS:
+                PracticeRuntime::ResetLockTimer();
                 if (GET_INT_VALUE(enemy, 0) >= 0)
                 {
                     g_EnemyManager.bosses[GET_INT_VALUE(enemy, 0)] = enemy;
@@ -1824,6 +1825,7 @@ restart:
                 enemy->lifeCallbackSub[GET_INT_VALUE(enemy, 0)] = GET_INT_VALUE(enemy, 2);
                 break;
             case ECL_SET_TIMER_CALLBACK_THRESHOLD:
+                PracticeRuntime::ResetLockTimer();
                 enemy->timerCallbackThreshold = GET_INT_VALUE(enemy, 0);
                 enemy->timer = 0;
                 break;

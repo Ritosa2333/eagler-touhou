@@ -547,6 +547,7 @@ void Gui::ShowSpellcard(i32 spellcardSprite, const char *spellcardName)
 
 ZunResult Gui::ActualAddedCallback()
 {
+    PracticeRuntime::ResetLockTimer();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     ResetSpellcardCountdownAudio();
 #endif

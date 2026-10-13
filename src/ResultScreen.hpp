@@ -421,6 +421,7 @@ struct ResultScreen
     static void FreeAllScores(ScoreListNode *scores);
     static ZunBool ParseLsnm(ScoreDat *scoreDat, Lsnm *outLsnm);
     void WriteScore();
+    static void SavePracticePauseExit();
 
     void UpdatePrev()
     {

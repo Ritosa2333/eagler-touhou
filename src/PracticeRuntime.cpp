@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cfloat>
 #include <string>
 #include <vector>
 
@@ -27,6 +28,13 @@
 #ifdef TH_ENABLE_THPRAC
 #include <SDL3/SDL.h>
 #include "ThpracImGui.hpp"
+#include <eagler/thprac/PracticeMobilePanels.hpp>
+namespace MobileThprac = eagler::thprac::mobile;
+#include "PurpleHotkey.hpp"
+#include "PurpleInput.hpp"
+#include "PurpleLicense.hpp"
+#include "PurpleVisuals.hpp"
+#include "PurplePlatform.hpp"
 #endif
 #if defined(THPRAC_PORTABLE_ENABLED)
 #include "section_catalog.hpp"
@@ -110,6 +118,7 @@ struct OverlayState
     bool autoBomb = false;
     bool everlastingBgm = false;
     bool trackerOpen = false;
+    bool enemyInvincible = false;
 };
 static OverlayState g_Overlay;
 // THOverlay::OnPreUpdate runs after THGuiPrac/THGuiRep in the same ImGui frame
@@ -123,11 +132,21 @@ struct AdvancedOptionsState
     bool allClearBonus = false;
     bool fixSpellBonusDisplay = false;
     bool showLicense = false;
+    bool mapInfiniteLivesToNoContinue = false;
+    bool showLockTimer = false;
+    bool alwaysSaveScore = false;
+    bool showBulletHitbox = false;
+    bool showKeyboardMonitor = false;
+    eagler::thprac::PracticeSpeed speed;
+    KeyRectStyle keyboardStyle;
+    PurpleInput input;
+    THGuiTestReactionTest reaction;
 };
 static AdvancedOptionsState g_AdvancedOptions;
-static bool g_OverlayKeyDown[13] = {};
+static bool g_OverlayKeyDown[15] = {};
 #endif
 static i32 g_TrackerBorderBreaks = 0;
+static i32 g_LockTimer = 0;
 static i32 g_EverlastingCurrentSong = -1;
 static bool g_SupervisorFadeOutScope = false;
 static bool g_ResurrectionButterflySpawnSkipPending = false;
@@ -1608,7 +1627,11 @@ bool OverlayInvincible()
 bool OverlayInfiniteLives()
 {
 #ifdef TH_ENABLE_THPRAC
-    return !g_GameManager.replay && g_Overlay.infiniteLives;
+    // Purple th07_inf_lives (0x441171) preserves the decrement unless
+    // no-continue mapping is off or the pre-decrement life count is < 1.
+    return !g_GameManager.replay && g_Overlay.infiniteLives &&
+        (!g_AdvancedOptions.mapInfiniteLivesToNoContinue ||
+         (g_GameManager.globals && g_GameManager.globals->livesRemaining < 1.0f));
 #else
     return false;
 #endif
@@ -1654,12 +1677,42 @@ bool OverlayEverlastingBgm()
 #endif
 }
 
+bool AlwaysSaveScoreOnPauseExit()
+{
+#ifdef TH_ENABLE_THPRAC
+    return Enabled() && !g_GameManager.replay && g_AdvancedOptions.alwaysSaveScore;
+#else
+    return false;
+#endif
+}
+
 bool AdvancedAllClearBonus()
 {
 #ifdef TH_ENABLE_THPRAC
     return !g_GameManager.replay && g_AdvancedOptions.allClearBonus;
 #else
     return false;
+#endif
+}
+
+bool OverlayEnemyInvincible()
+{
+#ifdef TH_ENABLE_THPRAC
+    return !g_GameManager.replay && g_Overlay.enemyInvincible;
+#else
+    return false;
+#endif
+}
+
+u16 FilterGameplayInput(u16 buttons)
+{
+#ifdef TH_ENABLE_THPRAC
+    // Filter the merged keyboard/controller/touch sample before it becomes
+    // recorded gameplay input. ImGui navigation retains its own raw owner.
+    return g_AdvancedOptions.input.filter(buttons,
+        Enabled() && g_Supervisor.curState == 2 && !CapturesGameInput(), g_GameManager.replay);
+#else
+    return buttons;
 #endif
 }
 
@@ -1689,6 +1742,41 @@ void RecordBorderBreak()
 {
     if (g_TrackerBorderBreaks < 0x7fffffff)
         ++g_TrackerBorderBreaks;
+}
+
+void ResetLockTimer() { g_LockTimer = 0; }
+double SimulationInterval()
+{
+#ifdef TH_ENABLE_THPRAC
+    if (Enabled()) {
+        const auto* keys = SDL_GetKeyboardState(nullptr);
+        const bool fast = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL] ||
+            (g_CurFrameRawInput & TH_BUTTON_SKIP);
+        const bool slow = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+        return g_AdvancedOptions.speed.interval(g_GameManager.replay != 0, fast, slow, keys[SDL_SCANCODE_R]);
+    }
+#endif
+    return 1.0 / 60.0;
+}
+void OnLifeDecrement()
+{
+#ifdef TH_ENABLE_THPRAC
+    // Purple th07_inf_lives at 0x441171, before the actual life subtraction.
+    if (Enabled() && !g_GameManager.replay)
+        g_AdvancedOptions.input.begin_retry(AdvancedActive() ? 1 : 0);
+#endif
+}
+void RecordKeyInput(u16 buttons)
+{
+#ifdef TH_ENABLE_THPRAC
+    if (Enabled()) key_monitor.record(7, buttons);
+#endif
+}
+void TickLockTimer()
+{
+    // Native th07_lock_timer4 observes the boss countdown setter even when F5
+    // prevents that countdown advancing. Never count presentation frames.
+    if (Enabled() && g_LockTimer < 0x7fffffff) ++g_LockTimer;
 }
 
 void SetSupervisorFadeOutScope(bool active)
@@ -1738,6 +1826,9 @@ static bool EaglerOverlayKeyDown(SDL_Scancode scancode)
     case SDL_SCANCODE_F6: bit = 6; break;
     case SDL_SCANCODE_F7: bit = 7; break;
     case SDL_SCANCODE_TAB: bit = 8; break;
+    case SDL_SCANCODE_F12: bit = 9; break;
+    case SDL_SCANCODE_U: bit = 10; break;
+    case SDL_SCANCODE_F8: bit = 11; break;
     default: return false;
     }
     return EM_ASM_INT({
@@ -1781,8 +1872,10 @@ static bool OverlayKeyPressed(i32 slot, SDL_Scancode scancode)
 void UpdateOverlay()
 {
 #ifdef TH_ENABLE_THPRAC
+    g_AdvancedOptions.input.gui_tick();
     if (OverlayKeyPressed(0, SDL_SCANCODE_BACKSPACE)) g_ModMenuToggleRequested = true;
     if (OverlayKeyPressed(8, SDL_SCANCODE_TAB)) g_Overlay.trackerOpen = !g_Overlay.trackerOpen;
+    if (OverlayKeyPressed(14, SDL_SCANCODE_F8)) g_Overlay.trackerOpen = !g_Overlay.trackerOpen;
     if (OverlayKeyPressed(9, SDL_SCANCODE_F12)) g_AdvancedMenuToggleRequested = true;
 #endif
 }
@@ -1808,7 +1901,7 @@ void DrawOverlay()
         g_ModMenuToggleRequested = false;
     }
     PublishEaglerOverlayMenuState(g_Overlay.menuOpen);
-    if (g_Overlay.menuOpen)
+    if (MobileThprac::show(MobileThprac::Cheats, g_Overlay.menuOpen))
     {
         // GuiHotKey F1..F7 are only evaluated from THOverlay::OnContentUpdate
         // while the Mod Menu is open. Their key history intentionally does not
@@ -1820,21 +1913,24 @@ void DrawOverlay()
         if (OverlayKeyPressed(5, SDL_SCANCODE_F5)) g_Overlay.timeLock = !g_Overlay.timeLock;
         if (OverlayKeyPressed(6, SDL_SCANCODE_F6)) g_Overlay.autoBomb = !g_Overlay.autoBomb;
         if (OverlayKeyPressed(7, SDL_SCANCODE_F7)) g_Overlay.everlastingBgm = !g_Overlay.everlastingBgm;
+        if (OverlayKeyPressed(13, SDL_SCANCODE_U)) g_Overlay.enemyInvincible = !g_Overlay.enemyInvincible;
 
         ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
         ImGui::SetNextWindowBgAlpha(0.5f);
         constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
             ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-        if (ImGui::Begin("Mod Menu###th07-thprac-overlay", nullptr, flags))
+        if (MobileThprac::begin(MobileThprac::Cheats, "Mod Menu###th07-thprac-overlay", flags, static_cast<int>(ThpracImGui::GetLocale())))
         {
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::Invincible), &g_Overlay.invincible);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::InfLives), &g_Overlay.infiniteLives);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::InfBombs), &g_Overlay.infiniteBombs);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::InfPower), &g_Overlay.infinitePower);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::TimeLock), &g_Overlay.timeLock);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::AutoBomb), &g_Overlay.autoBomb);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::EverlastingBgm), &g_Overlay.everlastingBgm);
+            DrawPurpleHotkey("F1", ThpracImGui::Text(ThpracImGui::TextId::Invincible), g_Overlay.invincible);
+            DrawPurpleHotkey("F2", ThpracImGui::Text(ThpracImGui::TextId::InfLives), g_Overlay.infiniteLives);
+            DrawPurpleHotkey("F3", ThpracImGui::Text(ThpracImGui::TextId::InfBombs), g_Overlay.infiniteBombs);
+            DrawPurpleHotkey("F4", ThpracImGui::Text(ThpracImGui::TextId::InfPower), g_Overlay.infinitePower);
+            DrawPurpleHotkey("F5", ThpracImGui::Text(ThpracImGui::TextId::TimeLock), g_Overlay.timeLock);
+            DrawPurpleHotkey("F6", ThpracImGui::Text(ThpracImGui::TextId::AutoBomb), g_Overlay.autoBomb);
+            DrawPurpleHotkey("F7", ThpracImGui::Text(ThpracImGui::TextId::EverlastingBgm), g_Overlay.everlastingBgm);
+            DrawPurpleHotkey("F8", ThpracImGui::Text(ThpracImGui::TextId::InGameInfo), g_Overlay.trackerOpen);
+            DrawPurpleHotkey("U", ThpracImGui::Text(ThpracImGui::TextId::EnemyInvincible), g_Overlay.enemyInvincible);
         }
         ImGui::End();
     }
@@ -1844,7 +1940,7 @@ void DrawOverlay()
         g_AdvancedOptions.menuOpen = !g_AdvancedOptions.menuOpen;
         g_AdvancedMenuToggleRequested = false;
     }
-    if (g_Overlay.trackerOpen && g_Supervisor.curState == 2 && g_GameManager.globals)
+    if (MobileThprac::show(MobileThprac::Information, g_Overlay.trackerOpen) && g_Supervisor.curState == 2 && g_GameManager.globals)
     {
         static const char *diff[3][6] = {
             {"Easy", "Normal", "Hard", "Lunatic", "Extra", "Phantasm"},
@@ -1863,7 +1959,7 @@ void DrawOverlay()
             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
             ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoFocusOnAppearing |
             ImGuiWindowFlags_NoNav;
-        if (ImGui::Begin("Tracker###th07-thprac-tracker", nullptr, flags))
+        if (MobileThprac::begin(MobileThprac::Information, "Tracker###th07-thprac-tracker", flags, static_cast<int>(ThpracImGui::GetLocale())))
         {
             char title[48] = {};
             std::snprintf(title, sizeof(title), "%s (%s)", diff[locale][Clamp(g_GameManager.difficulty, 0, 5)],
@@ -1882,12 +1978,35 @@ void DrawOverlay()
                 ImGui::TableNextRow(); ImGui::TableNextColumn();
                 ImGui::TextUnformatted(ThpracImGui::Text(ThpracImGui::TextId::TrackerBorderBreak));
                 ImGui::TableNextColumn(); ImGui::Text("%d", g_TrackerBorderBreaks);
+                ImGui::TableNextRow(); ImGui::TableNextColumn();
+                ImGui::TextUnformatted(purple_THPRAC_INGAMEINFO_07_CHERRY[locale]);
+                ImGui::TableNextColumn(); ImGui::Text("%d", static_cast<i32>(g_GameManager.cherry));
+                ImGui::TableNextRow(); ImGui::TableNextColumn();
+                ImGui::TextUnformatted(purple_THPRAC_INGAMEINFO_07_CHERRY_PLUS[locale]);
+                ImGui::TableNextColumn(); ImGui::Text("%d", static_cast<i32>(g_GameManager.cherryPlus));
+                ImGui::TableNextRow(); ImGui::TableNextColumn();
+                ImGui::TextUnformatted(purple_THPRAC_INGAMEINFO_07_CHERRY_MAX[locale]);
+                ImGui::TableNextColumn(); ImGui::Text("%d", static_cast<i32>(g_GameManager.cherryMax));
                 ImGui::EndTable();
             }
         }
         ImGui::End();
     }
-    if (g_AdvancedOptions.menuOpen)
+    RenderPurpleHitbox(ImGui::GetOverlayDrawList(), g_AdvancedOptions.showBulletHitbox);
+    if (g_AdvancedOptions.showKeyboardMonitor && g_Supervisor.curState == 2 &&
+        MobileThprac::draw_tool(MobileThprac::Keyboard, "Keys###th07-purple-keys", ImVec2(450, 8),
+            static_cast<int>(ThpracImGui::GetLocale())))
+        KeysHUD(7, ImVec2(1280.0f, 0.0f), ImVec2(833.0f, 0.0f),
+                g_AdvancedOptions.keyboardStyle, true, false);
+    if (g_AdvancedOptions.showLockTimer && g_Overlay.timeLock && g_Supervisor.curState == 2)
+    {
+        char text[32]; std::snprintf(text, sizeof(text), "%.2f", float(g_LockTimer) / 60.0f);
+        const auto size = ImGui::CalcTextSize(text);
+        auto* draw = ImGui::GetOverlayDrawList();
+        draw->AddRectFilled(ImVec2(32.0f, 0.0f), ImVec2(110.0f, size.y), 0xFFFFFFFF);
+        draw->AddText(ImVec2(110.0f - size.x, 0.0f), 0xFF000000, text);
+    }
+    if (MobileThprac::show(MobileThprac::Advanced, g_AdvancedOptions.menuOpen))
     {
         const i32 locale = static_cast<i32>(ThpracImGui::GetLocale());
         static const char *gameplay[3] = {"游戏玩法", "Gameplay", "ゲームプレイ"};
@@ -1906,7 +2025,7 @@ void DrawOverlay()
         ImGui::SetNextWindowBgAlpha(0.8f);
         constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
-        if (ImGui::Begin("Advanced Options###th07-thprac-advanced", nullptr, flags))
+        if (MobileThprac::begin(MobileThprac::Advanced, "Advanced Options###th07-thprac-advanced", flags, static_cast<int>(ThpracImGui::GetLocale())))
         {
             ImGui::TextUnformatted(ThpracImGui::Text(ThpracImGui::TextId::AdvancedOptions));
             ImGui::Separator();
@@ -1915,22 +2034,91 @@ void DrawOverlay()
                                         ImGuiTreeNodeFlags_DefaultOpen))
             {
                 ImGui::Indent();
-                ImGui::BeginDisabled();
-                i32 fixedFps = 60;
-                ImGui::SliderInt("FPS", &fixedFps, 60, 6000);
-                ImGui::EndDisabled();
-                ImGui::TextWrapped("%s", fpsUnavailable[locale]);
+                GameFPSOpt(g_AdvancedOptions.speed, g_GameManager.replay != 0);
                 ImGui::Unindent();
             }
 
             if (ImGui::CollapsingHeader(gameplay[locale], ImGuiTreeNodeFlags_DefaultOpen))
             {
                 ImGui::Indent();
+                const auto inputOption = [&](const char* const* text, bool& value) {
+                    ImGui::Checkbox(text[locale], &value);
+                };
+                inputOption(purple_TH_ADV_DISABLE_X_KEY, g_AdvancedOptions.input.disable_xkey);
+                ImGui::SameLine();
+                inputOption(purple_TH_ADV_DISABLE_SHIFT_KEY, g_AdvancedOptions.input.disable_shiftkey);
+                ImGui::SameLine();
+                inputOption(purple_TH_ADV_DISABLE_Z_KEY, g_AdvancedOptions.input.disable_zkey);
+                inputOption(purple_TH_ADV_DISABLE_C_KEY_SAMETIME, g_AdvancedOptions.input.disable_Ckey_at_same_time);
+                ImGui::SameLine();
+                inputOption(purple_TH_ADV_FORCE_SHIFT_KEY, g_AdvancedOptions.input.force_shiftkey);
+                inputOption(purple_THPRAC_FAST_RETRY, g_AdvancedOptions.input.enable_fast_retry);
+                ImGui::SameLine();
+                ImGui::TextDisabled("(?)");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", purple_THPRAC_FAST_RETRY_DESC2[locale]);
+                inputOption(purple_THPRAC_INFLIVES_MAP, g_AdvancedOptions.mapInfiniteLivesToNoContinue);
+                inputOption(purple_THPRAC_KB_OPEN, g_AdvancedOptions.showKeyboardMonitor);
+                if (g_AdvancedOptions.showKeyboardMonitor)
+                {
+                    auto& monitor = key_monitor;
+                    if (ImGui::Button((monitor.g_record_key_aps ? purple_THPRAC_KB_RECORD_STOP : purple_THPRAC_KB_RECORD_START)[locale]))
+                    {
+                        if (!monitor.g_record_key_aps) monitor.clear_record();
+                        monitor.g_record_key_aps = !monitor.g_record_key_aps;
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button(purple_THPRAC_KB_OUTPUT[locale]))
+                    {
+                        const auto csv = monitor.csv();
+#ifdef __EMSCRIPTEN__
+                        EM_ASM({
+                            const url = URL.createObjectURL(new Blob([UTF8ToString($0)], {type:'text/csv;charset=utf-8'}));
+                            const a = document.createElement('a'); a.href = url; a.download = 'APS.csv'; a.click();
+                            setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        }, csv.c_str());
+#else
+                        FILE* file = std::fopen("APS.csv", "wb");
+                        if (file) { std::fwrite(csv.data(), 1, csv.size(), file); std::fclose(file); }
+#endif
+                    }
+                    // The native widget incorrectly reinterprets vector<int>
+                    // as vector<uint8_t>; use its actual recorded element type.
+                    if (monitor.g_recorded_aps.size() >= 2)
+                        ImGui::PlotLines("##APS", [](void* data, int index) -> float {
+                            const auto& values = *static_cast<const std::vector<int>*>(data);
+                            return float(values[(values.size() > 600 ? values.size() - 600 : 0) + index]);
+                        }, &monitor.g_recorded_aps, int(std::min<size_t>(600, monitor.g_recorded_aps.size())),
+                        0, nullptr, FLT_MAX, FLT_MAX, ImVec2(0, ImGui::GetFrameHeight() * 3.0f));
+                }
+                inputOption(purple_TH_ENABLE_LOCK_TIMER, g_AdvancedOptions.showLockTimer);
+                inputOption(purple_THPRAC_SHOW_BULLET_HITBOX, g_AdvancedOptions.showBulletHitbox);
+                if (ImGui::Button(purple_TH_ONE_KEY_DIE[locale]) &&
+                    g_Supervisor.curState == 2 && g_GameManager.globals && !g_GameManager.replay)
+                {
+                    // Native 0x626278 globals +0x5c/+0x68, player +0x2408.
+                    // Use the real death state; do not simulate a collision or
+                    // clear F1/F2/F6 (purple leaves those independent).
+                    g_GameManager.SetLivesRemaining(0);
+                    g_GameManager.SetBombsRemainingAndComputeCsum(0);
+                    g_Player.playerState = PLAYER_STATE_DEAD;
+                }
+                ImGui::SameLine();
+                ImGui::TextDisabled("(?)");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", purple_TH_ONE_KEY_DIE_DESC[locale]);
+                inputOption(purple_THPRAC_TH07_ALWAYS_SAVE_SCORE_SPELL_HIST, g_AdvancedOptions.alwaysSaveScore);
+                ImGui::SameLine();
+                ImGui::TextDisabled("(?)");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", purple_THPRAC_TH07_ALWAYS_SAVE_SCORE_SPELL_HIST_DESC[locale]);
                 ImGui::Checkbox(allClearBonus[locale], &g_AdvancedOptions.allClearBonus);
                 ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::FixSpellBonusDisplay),
                                 &g_AdvancedOptions.fixSpellBonusDisplay);
                 ImGui::Unindent();
             }
+
+            if (ImGui::CollapsingHeader(purple_THPRAC_TOOLS_REACTION_TEST[locale]))
+                g_AdvancedOptions.reaction.GuiUpdate(true);
+            else
+                g_AdvancedOptions.reaction.Reset();
 
             if (ImGui::CollapsingHeader(about[locale], ImGuiTreeNodeFlags_DefaultOpen))
             {
@@ -1943,7 +2131,7 @@ void DrawOverlay()
                 if (g_AdvancedOptions.showLicense)
                 {
                     ImGui::BeginChild("THPRAC license", ImVec2(0.0f, 100.0f), true);
-                    THPrac::Gui::ShowLicenceInfo();
+                    ImGui::TextUnformatted(purple_license);
                     ImGui::EndChild();
                 }
                 ImGui::Unindent();
@@ -1978,7 +2166,7 @@ void DrawOverlay()
 bool AdvancedOptionsOpen()
 {
 #ifdef TH_ENABLE_THPRAC
-    return g_AdvancedOptions.menuOpen;
+    return MobileThprac::captures_advanced(g_AdvancedOptions.menuOpen);
 #else
     return false;
 #endif
@@ -1990,7 +2178,7 @@ bool CapturesGameInput()
     // Match TH08 ThpracUi::captures_game_input(): this identifies trainer
     // ownership but does not suppress the finger stream that also feeds the
     // existing menu/navigation path.
-    return g_MenuOpen || g_AdvancedOptions.menuOpen;
+    return g_MenuOpen || MobileThprac::captures_advanced(g_AdvancedOptions.menuOpen);
 #else
     return false;
 #endif

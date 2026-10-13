@@ -18,6 +18,7 @@
 #include "Localization.hpp"
 #include "Player.hpp"
 #include "PracticeRuntime.hpp"
+#include "ResultScreen.hpp"
 #include "SoundPlayer.hpp"
 #include "Supervisor.hpp"
 #include "ZunResult.hpp"
@@ -1052,6 +1053,7 @@ i32 PauseMenu::OnUpdate()
     case PAUSE_MENU_STATE_RETURN_TO_MENU:
         if (this->numFrames >= 20)
         {
+            ResultScreen::SavePracticePauseExit();
             this->curState = PAUSE_MENU_STATE_INIT;
             g_GameManager.isInPauseMenu = 0;
             g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
@@ -1065,6 +1067,7 @@ i32 PauseMenu::OnUpdate()
     case PAUSE_MENU_STATE_RESTART_STAGE:
         if (this->numFrames >= 20)
         {
+            ResultScreen::SavePracticePauseExit();
             this->curState = PAUSE_MENU_STATE_INIT;
             g_GameManager.isInPauseMenu = 0;
             g_Supervisor.curState = SUPERVISOR_STATE_RESTART_FROM_BEGINNING;

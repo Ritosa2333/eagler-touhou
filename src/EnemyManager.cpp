@@ -1053,7 +1053,10 @@ u32 EnemyManager::OnUpdate(EnemyManager *arg)
                                                      (u32)(damage - damageAttributed));
                         }
 #endif
-                        enemy->life -= damage;
+                        // Purple th07::mEnemyMuteki patches only the life
+                        // subtraction at 0x421447; retain damage/score/cherry.
+                        if (!PracticeRuntime::OverlayEnemyInvincible())
+                            enemy->life -= damage;
                         enemy->lastDamage = damage;
                     }
                     playedDamageSound = 1;

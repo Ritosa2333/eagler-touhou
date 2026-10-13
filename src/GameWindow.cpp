@@ -217,10 +217,14 @@ RenderResult GameWindow::Render()
 
     GameWindow::RememberWindowedState();
 
-    const f64 baseTargetDt = 1.0 / 60.0;
 #ifdef TH_ENABLE_NETPLAY
+    // Rollback peers must keep the fixed logical clock regardless of local
+    // practice-speed preferences; LAN owns its pacing correction below.
+    const f64 baseTargetDt = Netplay::Th07LanStageProbe::Requested() ? 1.0 / 60.0 :
+        PracticeRuntime::SimulationInterval();
     const f64 targetDt = baseTargetDt * Netplay::Th07LanStageProbe::SimulationIntervalScale();
 #else
+    const f64 baseTargetDt = PracticeRuntime::SimulationInterval();
     const f64 targetDt = baseTargetDt;
 #endif
 #ifdef __EMSCRIPTEN__

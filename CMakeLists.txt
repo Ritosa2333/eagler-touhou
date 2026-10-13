@@ -170,6 +170,13 @@ if(TH_ENABLE_THPRAC)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THPRAC)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE IMGUI_DISABLE_WIN32_FUNCTIONS)
     target_include_directories(${TH_EXEC_NAME} PRIVATE "${THPRAC_IMGUI_ROOT}")
+    # Archived imgui_user.h needs intptr_t, including in extension sources.
+    # Supply its standard declaration without modifying archived THPrac code.
+    if(MSVC)
+        target_compile_options(${TH_EXEC_NAME} PRIVATE "/FIcstdint")
+    else()
+        target_compile_options(${TH_EXEC_NAME} PRIVATE "-include" "cstdint")
+    endif()
 endif()
 if(TH_ENABLE_THCRAP)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THCRAP)
@@ -186,10 +193,15 @@ endif()
 
 # Optional, generic out-of-tree runtime extension. Ordinary builds leave this
 # empty and retain no dependency on the extension implementation.
-set(TH_RUNTIME_EXTENSION_CMAKE "" CACHE FILEPATH "Optional runtime extension CMake integration")
+set(TH_RUNTIME_EXTENSION_CMAKE "${CMAKE_SOURCE_DIR}/portable/AttachReallyportable.cmake" CACHE FILEPATH "Optional runtime extension CMake integration; source-only TH07 adapter by default")
 if(TH_ENABLE_THPRAC AND TH_RUNTIME_EXTENSION_CMAKE)
     include("${TH_RUNTIME_EXTENSION_CMAKE}")
     thprac_portable_attach(${TH_EXEC_NAME} th07 "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    if(EMSCRIPTEN)
+        # The adapter's EM_ASM returns a JSON string allocated by this helper.
+        # New SDKs do not infer that JavaScript dependency from EM_ASM text.
+        target_link_options(${TH_EXEC_NAME} PRIVATE "-sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE=['$stringToNewUTF8']")
+    endif()
 endif()
 
 if(TH_EXTERNAL_ASSETS)
@@ -211,7 +223,7 @@ if(EMSCRIPTEN)
     target_link_options(th07 PRIVATE
         "-sALLOW_MEMORY_GROWTH"
         "-sMAX_WEBGL_VERSION=2"
-        "-sMIN_SAFARI_VERSION=140100"
+        "-sMIN_SAFARI_VERSION=150000"
         "-sENVIRONMENT=web"
         "${TH_WEB_OPT_LEVEL}"
         "-sINVOKE_RUN=0"
