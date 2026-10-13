@@ -876,9 +876,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           (configurablePredictionLimit != null && (!Number.isInteger(predictionLimit) || predictionLimit < 1 || predictionLimit > configurablePredictionLimit))) {
         sendLobby(socket, { type: 'error', error: 'invalid input timing' }); return;
       }
-      room.lobby.inputDelay = inputDelay;
-      room.lobby.adonisMode = adonisMode;
-      room.lobby.inputDelayAuto=inputDelayAuto;
+      const rollback = !!room.multiplayer && timingPolicy.rollback && adonisMode !== 1;
+      room.lobby.inputDelay = rollback ? 0 : inputDelay;
+      room.lobby.adonisMode = rollback ? 0 : adonisMode;
+      room.lobby.inputDelayAuto=rollback ? false : inputDelayAuto;
       room.lobby.predictionReserve=predictionReserve;
       room.lobby.timing=null;
       if (configurablePredictionLimit != null) room.lobby.predictionLimit = predictionLimit;

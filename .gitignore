@@ -36,6 +36,7 @@ public/assets/th08-card.webp
 public/assets/th06-title00.jpg
 public/assets/th07-title00.jpg
 public/assets/th08-title00.png
+public/assets/favicon.ico
 public/assets/th06.ico
 public/assets/fonts/NotoSansCJKsc-Regular.otf
 public/assets/fonts/OFL-NotoSansCJK.txt
@@ -61,3 +62,5 @@ __pycache__/
 
 # Generated React Router type metadata
 .react-router/
+
+/th06-card.webp

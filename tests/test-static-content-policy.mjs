@@ -9,7 +9,7 @@ import {
   staticContentType,
 } from "../server/static-content-policy.mjs";
 
-assert.equal(staticContentType("assets/th06.ico"), "image/x-icon");
+assert.equal(staticContentType("assets/favicon.ico"), "image/x-icon");
 assert.equal(staticContentType("assets/example.jpg"), "image/jpeg");
 assert.equal(staticContentType("runtime/th07.wasm"), "application/wasm");
 assert.equal(staticContentType("runtime/font.otf"), "font/otf");
@@ -19,7 +19,7 @@ assert.equal(staticContentType("unknown.bin"), "application/octet-stream");
 
 assert.equal(staticContentCompressible("runtime/th07.data", 2048), true);
 assert.equal(staticContentCompressible("runtime/th07.data", 512), false);
-assert.equal(staticContentCompressible("assets/th06.ico", 4096), false);
+assert.equal(staticContentCompressible("assets/favicon.ico", 4096), false);
 
 assert.equal(staticContentCacheControl("packs/lang.0123456789abcdef01234567.zip"), "public, max-age=31536000, immutable");
 assert.equal(staticContentCacheControl("packs/lang_en.zip"), "public, max-age=0, must-revalidate");

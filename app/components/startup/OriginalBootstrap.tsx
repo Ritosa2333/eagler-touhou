@@ -54,7 +54,7 @@ export function OriginalBootstrapHead() {
       <link rel="manifest" href="site.webmanifest"/>
       <link rel="apple-touch-icon" sizes="180x180" href="assets/pwa/apple-touch-icon.png"/>
     </>}
-    <link rel="icon" href={lobby ? 'th06.ico' : 'assets/th06.ico'} type={lobby ? undefined : 'image/x-icon'}/>
+    <link rel="icon" href={lobby ? 'favicon.ico' : 'assets/favicon.ico'} type={lobby ? undefined : 'image/x-icon'}/>
     <link rel="preload" href={backgroundUrl} as="image" fetchPriority="high"/>
     <link rel="preload" href={touhouFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>
     <link rel="preload" href={yatraFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>

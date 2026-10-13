@@ -347,14 +347,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       challengeMode: saved?.room.challengeMode ?? false, prankMode: false, seats: null, synced: false, connection: 'connecting'};
     state.seat = saved?.seat ?? (created ? 0 : null); state.ready = !!saved?.ready;
     state.spectatorRequested = !!saved?.spectatorRequested; state.roomSettingsOpen = !!saved?.roomSettingsOpen;
-    state.timingChoice = 'auto'; state.rollbackEnabled = false;
+    state.timingChoice = 'auto'; state.rollbackEnabled = multiplayerInputTimingPolicy(config).rollback;
     ports.routes.restore({product: restoredProduct, code, fromDirectory: state.fromDirectory});
     publish(); connect(); void prepareResources(); return true;
   }
   function enterRoom(nextProduct: MultiplayerProductId, codeInput: string, created: boolean) {
     const code = normalizeRoomCode(codeInput); if (!code || !isMultiplayerProductId(nextProduct)) return;
     resetRoom(); hydrateProduct(nextProduct); stopped = false; intent = created ? 'create' : 'join'; autoSeat = false;
-    state.fromDirectory = false; state.timingChoice = 'auto'; state.rollbackEnabled = false;
+    state.fromDirectory = false; state.timingChoice = 'auto'; state.rollbackEnabled = multiplayerInputTimingPolicy(policy()).rollback;
     room = {code, playerCount: policy()!.playerCounts[0], difficulty: 1, created, seats: null, synced: false, connection: 'connecting'};
     state.seat = created ? 0 : null;
     ports.routes.enter({product: nextProduct, code, created}); publish(); connect(); void prepareResources();
@@ -433,7 +433,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function timingRecommendation() {
     const config = policy();
-    if (config?.inputTiming?.measuredStartup) return {inputDelay: 0, targetRollbackFrames: multiplayerInputTimingPolicy(config).rollback && state.rollbackEnabled ? 2 : 0, networkFrames: 0, mobileSeats: 0};
+    if (config?.inputTiming?.measuredStartup) return {inputDelay: 0, targetRollbackFrames: multiplayerInputTimingPolicy(config).rollback && state.rollbackEnabled ? config.inputTiming.rollbackLimit : 0, networkFrames: 0, mobileSeats: 0};
     const seats = room?.seats?.slice(0, room.playerCount) || [];
     const settings = ports.settings();
     const phones = seats.reduce((count, seat, index) => count + (seat && (seat.mobileDevice || (index === state.seat && (settings.mobileDevice || settings.touchEnabled))) ? 1 : 0), 0);
@@ -455,10 +455,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const timing = policy()?.inputTiming;
     if (!timing) {send({type: 'start'}); return;}
     const timingPolicy = multiplayerInputTimingPolicy(policy());
-    const measured = timingPolicy.measuredStartup, adonisMode = measured ? timingPolicy.rollback && state.rollbackEnabled ? 2 : 1 : 0;
-    const automatic = measured && state.timingChoice === 'auto';
+    const rollback = timingPolicy.rollback && state.rollbackEnabled;
+    const measured = timingPolicy.measuredStartup, adonisMode = measured ? rollback ? 0 : 1 : 0;
+    const automatic = !rollback && measured && state.timingChoice === 'auto';
     const selected = Number(state.timingChoice);
-    const inputDelay = automatic ? 0 : Number.isInteger(selected) && selected >= 0 && selected <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
+    const inputDelay = rollback || automatic ? 0 : Number.isInteger(selected) && selected >= 0 && selected <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
       ? selected : timingRecommendation().inputDelay;
     send({type: 'start', inputDelay, ...(measured ? {adonisMode, inputDelayAuto: automatic, predictionReserve: 2} : {}),
       ...(!timingPolicy.rollback || timing.sendPredictionLimit != null ? {predictionLimit: timingPolicy.predictionLimit} : {})});

@@ -24,11 +24,6 @@ const etag = info => `\"${createHash("sha1").update(`${info.size}:${info.mtimeMs
 createServer(async (request, response) => {
   try {
     const url = new URL(request.url || "/", `http://${host}:${port}`);
-    if (url.pathname === "/favicon.ico") {
-      response.writeHead(204, { "Cache-Control": "public, max-age=86400" });
-      response.end();
-      return;
-    }
     if (url.pathname === "/eagler-touhou" || url.pathname === "/eagler-touhou/") {
       response.writeHead(302, { Location: "/", "Cache-Control": "no-store" });
       response.end();

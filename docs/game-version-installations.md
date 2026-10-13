@@ -19,4 +19,3 @@
 - `settings-midi-title.test.mjs` 的四项旧提示文字快照在原仓库已有与固定基线不一致的 touch.thpracButtonsHint 文案；不属于这次游戏版本行为回归。
 
 浏览器复验脚本和报告位于工作区 `prepared/beautified-import-20261012/version-switch.mjs`、`report.json`。发布 ZIP 位于 `游戏包/美化导入包-20261012/启动器-双版本切换-20261013.zip`，需要与此前服务器资源包中的 beauty/ 一起部署。
-

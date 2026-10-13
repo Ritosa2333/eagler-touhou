@@ -4,8 +4,8 @@
 
 The Launcher has a relative, stable Web App Manifest identity and scope, PNG
 192/512 icons, a separately declared maskable icon and an Apple touch icon.
-The PWA and Apple icons are Host artwork derived from the established TH06 site
-icon by `scripts/prepare-host-artwork.py`. They are packaged beside `th06.ico`,
+The PWA and Apple icons are Host artwork derived from the font-based yin-yang site
+icon by `scripts/prepare-host-artwork.py`. They are packaged beside `favicon.ico`,
 included in the App Shell, and intentionally remain outside public source.
 
 The masthead's **Install / offline** entry provides a one-shot, user-initiated

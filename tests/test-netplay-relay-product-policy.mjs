@@ -186,7 +186,7 @@ async function verifyTh08Timing(port) {
       response=>response.room?.seats?.[1]?.ready===true);
     const started=await sendAndMatch(p1,{type:"start",inputDelay:4,predictionLimit:2},response=>response.type==="start");
     assert.equal(started.type,"start");
-    assert.equal(started.room.inputDelay,4);
+    assert.equal(started.room.inputDelay,0);
     assert.equal(started.room.predictionLimit,2);
   } finally { p1.close(1000);p2.close(1000); }
 }
@@ -213,13 +213,14 @@ async function verifyFixedRollbackInputDelay(port, product, adonisMode=0) {
     }
     const inputDelay=adonisMode?9:3;
     const started=await sendAndMatch(p1,{type:"start",inputDelay,predictionLimit:2,adonisMode},response=>response.type==="start");
-    assert.equal(started.room.inputDelay,inputDelay);
-    assert.equal(started.room.adonisMode,adonisMode);
+    const rollback=adonisMode!==1;
+    assert.equal(started.room.inputDelay,rollback?0:inputDelay);
+    assert.equal(started.room.adonisMode,rollback?0:adonisMode);
     assert.equal(started.room.predictionLimit,product==="th08mp"?2:8,
       `${product} must not let lobby timing override its runtime rollback policy`);
     const duplicate=await sendAndMatch(p1,{type:"start",inputDelay:1,adonisMode:2},response=>response.type==="state");
-    assert.equal(duplicate.room.inputDelay,inputDelay,"live timing is immutable");
-    assert.equal(duplicate.room.adonisMode,adonisMode,"repeated start is not a live mode switch");
+    assert.equal(duplicate.room.inputDelay,rollback?0:inputDelay,"live timing is immutable");
+    assert.equal(duplicate.room.adonisMode,rollback?0:adonisMode,"repeated start is not a live mode switch");
   } finally { p1.close(1000);p2.close(1000); }
 }
 
@@ -234,6 +235,8 @@ async function verifyMeasuredTiming(port,mode,reserve,automatic,rttP95Us=90000,p
     for(const bad of [{inputDelayAuto:'true'},{predictionReserve:0},{predictionReserve:3}])
       await sendAndMatch(p1,{type:'start',adonisMode:mode,inputDelay:0,inputDelayAuto:automatic,predictionReserve:reserve,...bad},r=>r.type==='error');
     const start=await sendAndMatch(p1,{type:'start',adonisMode:mode,inputDelay:automatic?0:9,inputDelayAuto:automatic,predictionReserve:reserve},r=>r.type==='start');
+    if(mode===2){assert.equal(start.room.adonisMode,0);assert.equal(start.room.inputDelay,0);assert.equal(start.room.inputDelayAuto,false);assert.equal(start.room.timing,null);
+      await sendAndMatch(p1,{type:'timing-result',serial:start.serial,timing:{phase:'ready',automatic:true,adonisMode:2,inputDelay:1,fullDelay:3,predictionReserve:2,rttP95Us:90000,samples:119,lost:2,route:'rtc'}},r=>r.type==='error');return;}
     assert.equal(start.room.inputDelayAuto,automatic);assert.equal(start.room.predictionReserve,reserve);assert.equal(start.room.timing,null);
     const fullDelay=Math.max(1,Math.ceil(Math.floor(rttP95Us/2)*60/1000000));
     const prediction=mode===2?Math.min(reserve,fullDelay-(automatic?1:0)):0;

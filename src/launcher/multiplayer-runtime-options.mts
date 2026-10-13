@@ -95,19 +95,21 @@ export function buildMultiplayerRuntimeOptions(
   });
   if (loadouts.length !== playerCount) throw new Error("LAN 机体配置数量不足");
 
-  const adonisMode = input.adonisMode ?? 0;
+  const requestedMode = input.adonisMode ?? 0;
   const timingPolicy = multiplayerInputTimingPolicy(product);
+  const rollback = timingPolicy.rollback && [0, 2].includes(requestedMode);
+  const adonisMode = rollback ? 0 : requestedMode;
   const measuredTitle = timingPolicy.measuredStartup;
   if ((input.inputDelayAuto!==undefined && typeof input.inputDelayAuto!=="boolean") ||
-      (input.inputDelayAuto && (!measuredTitle || !adonisMode)) ||
+      (input.inputDelayAuto && (!measuredTitle || !requestedMode)) ||
       (input.predictionReserve!==undefined && (!measuredTitle || !Number.isInteger(input.predictionReserve) || input.predictionReserve<1 || input.predictionReserve>2)))
     throw new Error("实测输入时序参数无效");
-  if (!Number.isInteger(adonisMode) || adonisMode < 0 || adonisMode > 2 ||
-      (adonisMode !== 0 && !measuredTitle))
+  if (!Number.isInteger(requestedMode) || requestedMode < 0 || requestedMode > 2 ||
+      (requestedMode !== 0 && !measuredTitle))
     throw new Error("该多人 Runtime 不支持 Adonis 时序");
   if (!timingPolicy.rollback && (adonisMode !== 1 || (input.predictionLimit !== undefined && input.predictionLimit !== 0)))
     throw new Error("该多人 Runtime 仅支持纯延迟时序，不能启用预测或回滚");
-  if (adonisMode && (!Number.isInteger(input.inputDelay) || input.inputDelay! < 0 || input.inputDelay! > timingPolicy.manualDelayLimit))
+  if (requestedMode && (!Number.isInteger(input.inputDelay) || input.inputDelay! < 0 || input.inputDelay! > timingPolicy.manualDelayLimit))
     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
   return {
     netplayMode: "lan",
@@ -117,8 +119,8 @@ export function buildMultiplayerRuntimeOptions(
     netplayPlayerCount: playerCount,
     netplaySeed: seed,
     netplayDifficulty: difficulty,
-    ...(input.inputDelay !== undefined ? {
-      netplayInputDelay: input.inputDelayAuto?0:Number.isInteger(input.inputDelay) && input.inputDelay >= 0 && input.inputDelay <= (adonisMode ? timingPolicy.manualDelayLimit : 8) ? input.inputDelay : 0,
+    ...(rollback || input.inputDelay !== undefined ? {
+      netplayInputDelay: rollback || input.inputDelayAuto?0:typeof input.inputDelay === 'number' && Number.isInteger(input.inputDelay) && input.inputDelay >= 0 && input.inputDelay <= (adonisMode ? timingPolicy.manualDelayLimit : 8) ? input.inputDelay : 0,
     } : {}),
     ...(input.adonisMode !== undefined ? { netplayAdonisMode: adonisMode } : {}),
     ...(measuredTitle && adonisMode ? {netplayInputDelayAuto:input.inputDelayAuto??false,netplayPredictionReserve:input.predictionReserve??2} : {}),

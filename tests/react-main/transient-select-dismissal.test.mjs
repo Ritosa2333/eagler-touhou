@@ -40,7 +40,7 @@ const act = fn => React.act(async () => {await fn();});
 const deferred = () => {let resolve, reject; const promise = new Promise((yes, no) => {resolve = yes; reject = no;}); return {promise, resolve, reject};};
 async function mount() {
   let serial = 0; const timers = {setTimeout: () => ++serial, clearTimeout() {}}, t = (key, values) => api.translate('en', key, values);
-  const context = {product: 'th06', roomCode: null, replayViewer: false, runtimeReady: false, launched: false, playerOpen: false, importServer: false, fallback: {url: 'https://example.invalid/package.zip'}};
+  const context = {product: 'th06', roomCode: null, replayViewer: false, runtimeEpoch: null, runtimeReady: false, launched: false, playerOpen: false, importServer: false, fallback: {url: 'https://example.invalid/package.zip'}};
   const feedback = api.createFeedbackModel(timers), error = api.createStartupErrorModel({translate: t, launched: () => context.launched, copyText: async () => true, toast: feedback.toast});
   let install = async () => ({files: {data: {objectId: 'fixture-data'}}});
   const importer = api.createGameDataImportModel({translate: t, getContext: () => context, timers, acquisition: {importPackage: (...args) => install(...args)},
