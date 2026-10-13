@@ -1,4 +1,7 @@
 #include "EclManager.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 #include "AnmManager.hpp"
 #include "EffectManager.hpp"
 #include "Enemy.hpp"
@@ -570,6 +573,9 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 }
                 break;
             case ECL_OPCODE_BOSSSET:
+#ifdef TH_ENABLE_THPRAC
+                PracticeRuntime::Purple::ResetLockTimer();
+#endif
                 if (instruction->args.setInt >= 0)
                 {
                     g_EnemyManager.bosses[instruction->args.setInt] = enemy;
@@ -614,6 +620,10 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->flags.movementEaseType = 0;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEDECELERATE:
+#ifdef TH_ENABLE_THPRAC
+                // Retail 0x40907F precedes MovePosTime, ease type 1 only.
+                PracticeRuntime::Purple::RememberWallBoss(enemy);
+#endif
                 EnemyEclInstr::MovePosTime(enemy, instruction);
                 enemy->flags.movementEaseType = 1;
                 break;
@@ -650,6 +660,9 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->lowerMoveLimit.y = instruction->args.moveBoundSet.lowerMoveLimit.y;
                 enemy->upperMoveLimit.x = instruction->args.moveBoundSet.upperMoveLimit.x;
                 enemy->upperMoveLimit.y = instruction->args.moveBoundSet.upperMoveLimit.y;
+#ifdef TH_ENABLE_THPRAC
+                PracticeRuntime::Purple::SetBossBounds(enemy);
+#endif
                 enemy->flags.shouldClampPos = 1;
                 break;
             case ECL_OPCODE_MOVEBOUNDSDISABLE:
@@ -754,6 +767,9 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 g_EnemyManager.spellcardInfo.isCapturing = 1;
                 g_EnemyManager.spellcardInfo.isActive = 1;
                 g_EnemyManager.spellcardInfo.idx = instruction->args.spellcardStart.spellcardId;
+#ifdef TH_ENABLE_THPRAC
+                PracticeRuntime::Purple::SpellAttempt(g_EnemyManager.spellcardInfo.idx);
+#endif
                 g_EnemyManager.spellcardInfo.captureScore = g_SpellcardScore[g_EnemyManager.spellcardInfo.idx];
                 g_BulletManager.TurnAllBulletsIntoPoints();
                 g_Stage.spellcardState = RUNNING;
@@ -811,6 +827,9 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                         scoreIncrease = g_BulletManager.DespawnBullets(12800, 1);
                         if (g_EnemyManager.spellcardInfo.isCapturing)
                         {
+#ifdef TH_ENABLE_THPRAC
+                            PracticeRuntime::Purple::SpellCapture(g_EnemyManager.spellcardInfo.idx);
+#endif
                             local_80 = &g_GameManager.catk[g_EnemyManager.spellcardInfo.idx];
                             local_88 = g_EnemyManager.spellcardInfo.captureScore >= 500000
                                            ? 500000 / 10
@@ -846,6 +865,9 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->lifeCallbackSub = instruction->args.setInt;
                 break;
             case ECL_OPCODE_TIMERCALLBACKTHRESHOLD:
+#ifdef TH_ENABLE_THPRAC
+                PracticeRuntime::Purple::ResetLockTimer();
+#endif
                 enemy->timerCallbackThreshold = instruction->args.setInt;
                 enemy->bossTimer.SetCurrent(0);
                 break;

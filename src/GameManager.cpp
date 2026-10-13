@@ -1,4 +1,7 @@
 #include "GameManager.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 #include "AsciiManager.hpp"
 #include "BulletManager.hpp"
 #include "ChainPriorities.hpp"
@@ -482,6 +485,9 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         mgr->maxRank = g_DifficultyInfoForReplay[g_GameManager.difficulty].maxRank;
     }
     g_Rng.generationCount = 0;
+#ifdef TH_ENABLE_THPRAC
+    PracticeRuntime::Purple::PrepareSeed();
+#endif
     mgr->randomSeed = g_Rng.seed;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::IsMultiplayer() &&
@@ -634,6 +640,9 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
 
 ZunResult GameManager::DeletedCallback(GameManager *mgr)
 {
+#ifdef TH_ENABLE_THPRAC
+    PracticeRuntime::Purple::SaveStatistics();
+#endif
     i32 padding1, padding2, padding3;
 
     //    g_Supervisor.d3dDevice->ResourceManagerDiscardBytes(0);

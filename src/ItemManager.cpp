@@ -1,4 +1,7 @@
 #include "ItemManager.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 
 #include <cmath>
 
@@ -651,6 +654,9 @@ void ItemManager::OnUpdate()
                 g_Gui.flags.flag2 = 2;
                 break;
             case ITEM_POINT_BULLET:
+#ifdef TH_ENABLE_THPRAC
+                PracticeRuntime::Purple::GreyItem(targetPlayer->bombInfo.isInUse!=0);
+#endif
                 itemScore = (g_GameManager.grazeInStage / 3) * 10 + 500;
                 if (targetPlayer->bombInfo.isInUse != 0)
                 {

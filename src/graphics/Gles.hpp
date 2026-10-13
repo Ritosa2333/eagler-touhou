@@ -117,6 +117,8 @@ class GlesGraphics : public GfxInterface
 
 #ifdef TH_ENABLE_THPRAC
     void RenderImGui(const ImDrawData *drawData);
+    u32 CreateImGuiTexture(int width,int height,const void* pixels);
+    void ReleaseImGuiTexture(u32 texture);
 #endif
 
   private:

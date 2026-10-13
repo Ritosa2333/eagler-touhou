@@ -9,7 +9,7 @@ const down=source.indexOf('void Touch::FingerDown');
 const downOwner=source.slice(down).match(/if \(IsEndingTouchOwner\(\)\)[\s\S]*?\n    }\n/)[0];
 const holdStart=source.indexOf('if (!IsDialogueTouchOwner() && g_DialogueHoldFinger.active)');
 const hold=source.slice(holdStart,source.indexOf('// keep firing for a bit after release',holdStart));
-const cpp=String.raw`
+const cpp='#include '+JSON.stringify(resolve(root,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp').replaceAll('\\','/'))+'\n'+String.raw`
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -18,6 +18,8 @@ enum{SUPERVISOR_STATE_ENDING=9,TH_BUTTON_SHOOT=1,TH_BUTTON_SKIP=256};
 struct {int curState=0;} g_Supervisor;
 struct Gui{bool present=false;bool HasCurrentMsgIdx(){return present;}bool IsDialogueSkippable(){return false;}bool IsWaitingForPlayerAdvance(){return false;}}g_Gui;
 struct Finger{bool active=false;int id=0;float lastPxX=0,lastPxY=0;u64 start=0;}g_DialogueHoldFinger,g_MoveFinger;
+eagler::input::DialogueGesture g_DialogueGestures;bool g_DialogueHoldMoved=false;
+bool IsGameplayTouchMode(){return false;}
 bool g_MoveGestureUncaptured=false,g_DialogueTapPending=false;float g_DialogueTapStartX=0,g_DialogueTapStartY=0;
 u64 now=1;u64 SDL_GetTicks(){return now;}
 void AssignFinger(Finger* finger,int id,float x,float y){*finger={true,id,x,y,now};}

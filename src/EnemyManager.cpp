@@ -1,4 +1,7 @@
 #include "EnemyManager.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 #include "AnmManager.hpp"
 #include "BulletManager.hpp"
 #include "Chain.hpp"
@@ -205,6 +208,9 @@ void EnemyManager::RunEclTimeline()
                 {
                     args1 = &this->timelineInstr->args;
                     tmpVec3 = *args1->Var1AsVec();
+#ifdef TH_ENABLE_THPRAC
+                    PracticeRuntime::Purple::BookEnd(unsigned(reinterpret_cast<const u8*>(this->timelineInstr)-reinterpret_cast<const u8*>(g_EclManager.eclFile)));
+#endif
                     this->SpawnEnemy(this->timelineInstr->arg0, &tmpVec3, args1->ushortVar1, args1->ushortVar2,
                                      args1->uintVar4);
                 }
@@ -251,8 +257,10 @@ void EnemyManager::RunEclTimeline()
                     {
                         pos1.z = g_Rng.GetRandomF32InRange(800.0f);
                     }
-                    this->SpawnEnemy(this->timelineInstr->arg0, &pos1, args3->ushortVar1, args3->ushortVar2,
-                                     args3->uintVar4);
+#ifdef TH_ENABLE_THPRAC
+                    PracticeRuntime::Purple::BookStart(unsigned(reinterpret_cast<const u8*>(this->timelineInstr)-reinterpret_cast<const u8*>(g_EclManager.eclFile)),pos1.x,pos1.y);
+#endif
+                    this->SpawnEnemy(this->timelineInstr->arg0, &pos1, args3->ushortVar1, args3->ushortVar2,args3->uintVar4);
                 }
                 break;
             case 5:
@@ -416,11 +424,19 @@ bool Enemy::HandleTimerCallback()
 
     if (this->flags.isBoss)
     {
+#ifdef TH_ENABLE_THPRAC
+        // Native 0x411F88 is the boss countdown assignment, not all enemy ticks.
+        PracticeRuntime::Purple::TickLockTimer();
+#endif
         g_Gui.SetSpellcardSeconds((this->timerCallbackThreshold - this->bossTimer.AsFrames()) / 60);
     }
 
     if (this->HasBossTimerFinished())
     {
+#ifdef TH_ENABLE_THPRAC
+        if(g_EnemyManager.spellcardInfo.isCapturing)
+            PracticeRuntime::Purple::SpellTimeout(g_EnemyManager.spellcardInfo.idx);
+#endif
         if (this->lifeCallbackThreshold > 0)
         {
             this->life = this->lifeCallbackThreshold;
@@ -769,7 +785,10 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                                 damageOwnerId, static_cast<u32>(damage - damageAttributed));
                     }
 #endif
-                    curEnemy->life -= damage;
+#ifdef TH_ENABLE_THPRAC
+                    if (!PracticeRuntime::Purple::EnemyInvincible())
+#endif
+                        curEnemy->life -= damage;
                 }
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 if (g_Player.positionOfLastEnemyHit.y < curEnemy->position.y)
@@ -872,6 +891,9 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
             if (curEnemy->flags.isBoss != 0 && !g_Gui.HasCurrentMsgIdx())
             {
                 g_Gui.SetBossHealthBar(curEnemy->LifePercent());
+#ifdef TH_ENABLE_THPRAC
+                PracticeRuntime::Purple::CaptureBossLife(curEnemy);
+#endif
             }
             if (curEnemy->unk_e41 != 0)
             {

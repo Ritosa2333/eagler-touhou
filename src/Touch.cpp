@@ -3,6 +3,7 @@
 #include <SDL3/SDL_events.h>
 #include <algorithm>
 #include <cmath>
+#include "../third_party/eagler-common/include/eagler/input/DialogueGesture.hpp"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -47,6 +48,8 @@ FingerSlot g_FocusFinger;
 FingerSlot g_DialogueHoldFinger;
 MenuGestureTracker g_MenuGesture;
 
+eagler::input::DialogueGesture g_DialogueGestures;
+bool g_DialogueHoldMoved = false;
 bool g_DialogueTapPending = false;
 f32 g_DialogueTapStartX = 0.0f;
 f32 g_DialogueTapStartY = 0.0f;
@@ -515,6 +518,7 @@ void ClearGameplayFingers()
 void ReleaseGameplayFingerState(SDL_FingerID id)
 {
     RemoveGameplayFinger(id);
+    g_DialogueGestures.erase(id);
 
     if (IsFinger(g_DialogueHoldFinger, id))
     {
@@ -564,6 +568,9 @@ void Touch::SetReplayUsageState(bool usedThisRun, bool bombedWithTouch, bool che
 
 void Touch::CancelTouches()
 {
+#ifdef TH_ENABLE_THPRAC
+    ThpracImGui::CancelLogicalPointers();
+#endif
     if (HasReplayRecordFinger())
     {
         ReplayExtension::CaptureTouchCancelAll();
@@ -581,6 +588,8 @@ void Touch::CancelTouches()
     ClearGameplayFingers();
     g_PausePending = false;
     g_DialogueTapPending = false;
+    g_DialogueGestures.clear();
+    g_DialogueHoldMoved = false;
     g_BombPending = false;
     g_BombedWithTouch = false;
     g_MenuGesture = {};
@@ -589,6 +598,9 @@ void Touch::CancelTouches()
 
 void Touch::FingerDown(const SDL_TouchFingerEvent &f)
 {
+#ifdef TH_ENABLE_THPRAC
+    if (ThpracImGui::RouteTouchPointer(0,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+#endif
     if (!EaglerOptions::TouchEnabled())
     {
         return;
@@ -611,6 +623,7 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
         if (!g_DialogueHoldFinger.active)
         {
             AssignFinger(&g_DialogueHoldFinger, f.fingerID, px, py);
+            g_DialogueHoldMoved = false;
             g_DialogueTapStartX = px;
             g_DialogueTapStartY = py;
         }
@@ -670,14 +683,12 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
             StartDoubleTapCandidate(f.fingerID, px, py);
         }
 
-        if (IsDialogueTouchOwner() && !g_DialogueHoldFinger.active)
+        // Dialogue recognition and movement share the same physical finger.
+        // Other fingers can still tap/hold while the movement finger drags.
+        if (g_Gui.HasCurrentMsgIdx())
         {
-            AssignFinger(&g_DialogueHoldFinger, f.fingerID, px, py);
-            g_DialogueTapStartX = px;
-            g_DialogueTapStartY = py;
+            g_DialogueGestures.begin(f.fingerID, px, py, SDL_GetTicks());
             MarkNonReplayableTouchUse();
-            CaptureReplayTouchEvent(f, ReplayExtension::TOUCH_ACTION_DOWN);
-            return;
         }
 
         // In joystick mode gameplay screen touches are never allowed to become
@@ -723,6 +734,9 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
 
 void Touch::FingerUp(const SDL_TouchFingerEvent &f)
 {
+#ifdef TH_ENABLE_THPRAC
+    if (ThpracImGui::RouteTouchPointer(f.type == SDL_EVENT_FINGER_CANCELED ? 3 : 2,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+#endif
     if (!EaglerOptions::TouchEnabled())
     {
         // Never leave a latched gameplay role behind merely because touch was
@@ -745,10 +759,16 @@ void Touch::FingerUp(const SDL_TouchFingerEvent &f)
         const f32 dx = px - g_DialogueTapStartX;
         const f32 dy = py - g_DialogueTapStartY;
         const f32 threshold = GetSwipeThreshold();
-        if (held < 500 && std::abs(dx) <= threshold && std::abs(dy) <= threshold)
+        if (!g_DialogueHoldMoved && held < 500 && std::abs(dx) <= threshold && std::abs(dy) <= threshold)
         {
             g_DialogueTapPending = true;
         }
+    }
+
+    if (IsGameplayTouchMode() && g_Gui.HasCurrentMsgIdx() &&
+        g_DialogueGestures.end(f.fingerID, px, py, SDL_GetTicks()))
+    {
+        g_DialogueTapPending = true;
     }
 
     // Cleanup must be keyed by the finger that ended, not by the game mode at
@@ -766,12 +786,22 @@ void Touch::FingerUp(const SDL_TouchFingerEvent &f)
 
 void Touch::FingerMotion(const SDL_TouchFingerEvent &f)
 {
+#ifdef TH_ENABLE_THPRAC
+    if (ThpracImGui::RouteTouchPointer(1,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+#endif
     if (!EaglerOptions::TouchEnabled())
     {
         return;
     }
     f32 px, py;
     FingerToWindowPx(f, &px, &py);
+
+    g_DialogueGestures.move(f.fingerID, px, py);
+    if (IsFinger(g_DialogueHoldFinger, f.fingerID))
+    {
+        const f32 dx = px - g_DialogueTapStartX, dy = py - g_DialogueTapStartY;
+        if (dx * dx + dy * dy > 64) g_DialogueHoldMoved = true;
+    }
 
     if (!IsGameplayTouchMode())
     {
@@ -898,11 +928,16 @@ u16 Touch::GetButtonBits()
     {
         u64 held = SDL_GetTicks() - g_DialogueHoldFinger.start;
 
-        if (held >= 500)
+        if (!g_DialogueHoldMoved && held >= 500)
         {
             buttons |= TH_BUTTON_SKIP;
         }
     }
+
+    if (!IsGameplayTouchMode() || !g_Gui.HasCurrentMsgIdx())
+        g_DialogueGestures.clear();
+    else if (g_Gui.IsDialogueSkippable() && g_DialogueGestures.skip(SDL_GetTicks()))
+        buttons |= TH_BUTTON_SKIP;
 
     // keep firing for a bit after release
     if (EaglerOptions::TouchFireEnabled() && IsGameplayTouchMode() && !g_Gui.HasCurrentMsgIdx())
@@ -1190,13 +1225,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchDown(i32 id, f32 x, f32 y)
         return;
     }
 
-    if (PracticeRuntime::CapturesGameInput())
-    {
-#ifdef TH_ENABLE_THPRAC
-        ThpracImGui::ProcessLogicalPointer(1, x * 640.0f, y * 480.0f);
-#endif
-    }
     SDL_TouchFingerEvent event = {};
+    event.touchID = -1;
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;
     event.y = y;
@@ -1205,13 +1235,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchDown(i32 id, f32 x, f32 y)
 
 extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchMotion(i32 id, f32 x, f32 y)
 {
-    if (PracticeRuntime::CapturesGameInput())
-    {
-#ifdef TH_ENABLE_THPRAC
-        ThpracImGui::ProcessLogicalPointer(0, x * 640.0f, y * 480.0f);
-#endif
-    }
     SDL_TouchFingerEvent event = {};
+    event.touchID = -1;
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;
     event.y = y;
@@ -1220,13 +1245,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchMotion(i32 id, f32 x, f32 y)
 
 extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchUp(i32 id, f32 x, f32 y)
 {
-    if (PracticeRuntime::CapturesGameInput())
-    {
-#ifdef TH_ENABLE_THPRAC
-        ThpracImGui::ProcessLogicalPointer(2, x * 640.0f, y * 480.0f);
-#endif
-    }
     SDL_TouchFingerEvent event = {};
+    event.touchID = -1;
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;
     event.y = y;

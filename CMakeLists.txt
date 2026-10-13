@@ -72,7 +72,7 @@ set(TH06_SOURCES
 )
 
 if(TH_ENABLE_THPRAC)
-    list(APPEND TH06_SOURCES src/PracticeRuntime.cpp)
+    list(APPEND TH06_SOURCES src/PracticeRuntime.cpp src/PurpleRuntime.cpp)
     if(NOT EXISTS "${THPRAC_IMGUI_ROOT}/imgui.cpp" OR NOT EXISTS "${THPRAC_IMGUI_ROOT}/imgui.h")
         message(FATAL_ERROR "TH_ENABLE_THPRAC requires Dear ImGui sources at ${THPRAC_IMGUI_ROOT}")
     endif()
@@ -187,6 +187,12 @@ if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
 endif()
 if(TH_ENABLE_THPRAC)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THPRAC)
+    eagler_common_link_thprac(${TH_EXEC_NAME})
+    if(MSVC)
+        target_compile_options(${TH_EXEC_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/FIcstdint>")
+    else()
+        target_compile_options(${TH_EXEC_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include cstdint>")
+    endif()
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE
         IMGUI_DISABLE_WIN32_FUNCTIONS
     )
@@ -202,10 +208,13 @@ if(TH_ENABLE_NETPLAY)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_NETPLAY)
 endif()
 
-set(TH_RUNTIME_EXTENSION_CMAKE "" CACHE FILEPATH "Optional runtime extension CMake integration")
+set(TH_RUNTIME_EXTENSION_CMAKE "${CMAKE_CURRENT_SOURCE_DIR}/portable/AttachReallyportable.cmake" CACHE FILEPATH "Optional runtime extension CMake integration")
 if(TH_ENABLE_THPRAC AND TH_RUNTIME_EXTENSION_CMAKE)
     include("${TH_RUNTIME_EXTENSION_CMAKE}")
     thprac_portable_attach(${TH_EXEC_NAME} th06 "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    if(EMSCRIPTEN)
+        target_link_options(${TH_EXEC_NAME} PRIVATE "-sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE=['$stringToNewUTF8']")
+    endif()
 endif()
 
 if(TH_EXTERNAL_ASSETS)
@@ -227,7 +236,7 @@ if(EMSCRIPTEN)
         -O2
         -sALLOW_MEMORY_GROWTH
         -sMAX_WEBGL_VERSION=2
-        -sMIN_SAFARI_VERSION=140100
+        -sMIN_SAFARI_VERSION=150000
         -sENVIRONMENT=web
         -sINVOKE_RUN=0
         "-sEXPORTED_RUNTIME_METHODS=['callMain']"

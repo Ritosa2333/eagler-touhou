@@ -4,6 +4,9 @@
 #include "FileSystem.hpp"
 #include "GameErrorContext.hpp"
 #include "PracticeRuntime.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 #include "ScreenEffect.hpp"
 #include "SoundPlayer.hpp"
 #include "Stage.hpp"
@@ -119,9 +122,19 @@ RenderResult GameWindow::Render()
 #ifdef TH_ENABLE_NETPLAY
     const f64 targetDt = baseTargetDt * Netplay::Th06LanStageProbe::SimulationIntervalScale();
 #else
+#ifdef TH_ENABLE_THPRAC
+    const f64 targetDt = PracticeRuntime::Purple::SimulationInterval();
+#else
     constexpr f64 targetDt = baseTargetDt;
 #endif
+#endif
     const u64 renderStartNs = SDL_GetTicksNS();
+    static f64 previousTargetDt = targetDt;
+    if (previousTargetDt != targetDt)
+    {
+        this->ResetTiming();
+        previousTargetDt = targetDt;
+    }
     ZunViewport viewport;
 
     if (this->lastActiveAppValue == 0)
@@ -256,7 +269,7 @@ RenderResult GameWindow::Render()
     }
     else
 #endif
-    if (limitPresentationTo60 || preserveReplayCadence)
+    if ((limitPresentationTo60 || preserveReplayCadence) && targetDt==baseTargetDt)
     {
         if (this->accumulator >= targetDt)
         {
@@ -330,6 +343,7 @@ RenderResult GameWindow::Render()
 #endif
 
     g_RenderAlpha = std::clamp(static_cast<f32>(this->accumulator / targetDt), 0.0f, 1.0f);
+    if (targetDt != baseTargetDt) g_RenderAlpha = 1.0f;
 #ifdef __EMSCRIPTEN__
     // When presentation itself is capped to the fixed 60 Hz simulation ticks,
     // there are no intermediate presentation frames to interpolate. Drawing a
@@ -350,7 +364,11 @@ RenderResult GameWindow::Render()
 
     g_GfxBackend->BeginFrame();
 
-    if (g_Supervisor.RedrawWholeFrame())
+    if (g_Supervisor.RedrawWholeFrame()
+#ifdef TH_ENABLE_THPRAC
+        || PracticeRuntime::Purple::BackgroundFix()
+#endif
+        )
     {
         viewport = {0, 0, GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT, 0.0f, 1.0f};
         viewport.Set();

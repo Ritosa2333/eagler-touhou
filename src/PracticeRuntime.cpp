@@ -7,6 +7,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <random>
 
 #ifdef TH_DEV_TOOLS
 #include <SDL3/SDL_log.h>
@@ -28,13 +29,14 @@
 #ifdef TH_ENABLE_THPRAC
 #include <SDL3/SDL.h>
 #include "ThpracImGui.hpp"
+#include "PurpleRuntime.hpp"
+#include "PurpleLabels.hpp"
+#include "PurpleLicense.hpp"
+#include <eagler/thprac/PracticeMobilePanels.hpp>
+namespace MobileThprac = eagler::thprac::mobile;
 #endif
 #if defined(THPRAC_PORTABLE_ENABLED)
 #include "section_catalog.hpp"
-namespace THPrac::Gui
-{
-void ShowLicenceInfo();
-}
 
 // GAMEMANAGER_REINIT is also used by ordinary stage progression, so Replay
 // teardown cannot be attached to that Supervisor state globally.  A thprac
@@ -182,7 +184,7 @@ struct AdvancedOptionsState
 static AdvancedOptionsState g_AdvancedOptions;
 // Backspace, F1..F7, Tab, F12. SDL is sampled only at the fixed 60 Hz trainer
 // update boundary, matching upstream GuiHotKey rising-edge semantics.
-static bool g_OverlayKeyDown[14] = {};
+static bool g_OverlayKeyDown[16] = {};
 static i32 g_TrackerMisses = 0;
 #endif
 static bool g_PreserveBgmRestart = false;
@@ -281,6 +283,7 @@ void ResetTracker()
 void RecordTrackerMiss()
 {
 #ifdef TH_ENABLE_THPRAC
+    Purple::OnMiss();
     if (g_TrackerMisses < 0x7fffffff)
         ++g_TrackerMisses;
 #endif
@@ -302,6 +305,8 @@ static bool EaglerOverlayKeyDown(SDL_Scancode scancode)
     case SDL_SCANCODE_F6: bit = 6; break;
     case SDL_SCANCODE_F7: bit = 7; break;
     case SDL_SCANCODE_TAB: bit = 8; break;
+    case SDL_SCANCODE_F12: bit = 9; break;
+    case SDL_SCANCODE_U: bit = 10; break;
     default: return false;
     }
     return EM_ASM_INT({
@@ -345,6 +350,7 @@ static bool OverlayKeyPressed(i32 slot, SDL_Scancode scancode)
 void UpdateOverlay()
 {
 #ifdef TH_ENABLE_THPRAC
+    Purple::GuiTick();
     // Upstream th06_update runs at the RunCalcChain return boundary and calls
     // THPauseMenu::Update() every trainer tick, even while its window is
     // closed. OnPreUpdate owns the persistent mFrameCounter; fade progression
@@ -404,7 +410,7 @@ void DrawOverlay()
     }
     PublishEaglerOverlayMenuState(g_Overlay.menuOpen);
 
-    if (g_Overlay.menuOpen)
+    if (MobileThprac::show(MobileThprac::Cheats, g_Overlay.menuOpen))
     {
         // GuiHotKey::operator() for F1..F7 exists only in
         // THOverlay::OnContentUpdate(). Do not update their key history while
@@ -417,6 +423,7 @@ void DrawOverlay()
         if (OverlayKeyPressed(5, SDL_SCANCODE_F5)) g_Overlay.timeLock = !g_Overlay.timeLock;
         if (OverlayKeyPressed(6, SDL_SCANCODE_F6)) g_Overlay.autoBomb = !g_Overlay.autoBomb;
         if (OverlayKeyPressed(7, SDL_SCANCODE_F7)) g_Overlay.everlastingBgm = !g_Overlay.everlastingBgm;
+        if (OverlayKeyPressed(14, SDL_SCANCODE_U)) Purple::enemyInvincible = !Purple::enemyInvincible;
 
         ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
@@ -428,15 +435,20 @@ void DrawOverlay()
                                            ImGuiWindowFlags_NoSavedSettings |
                                            ImGuiWindowFlags_NoFocusOnAppearing |
                                            ImGuiWindowFlags_NoNav;
-        if (ImGui::Begin("Mod Menu###thprac-overlay", nullptr, flags))
+        if (MobileThprac::begin(MobileThprac::Cheats, "Mod Menu###thprac-overlay", flags, static_cast<int>(ThpracImGui::GetLocale())))
         {
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::Invincible), &g_Overlay.invincible);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::InfLives), &g_Overlay.infiniteLives);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::InfBombs), &g_Overlay.infiniteBombs);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::InfPower), &g_Overlay.infinitePower);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::TimeLock), &g_Overlay.timeLock);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::AutoBomb), &g_Overlay.autoBomb);
-            ImGui::Checkbox(ThpracImGui::Text(ThpracImGui::TextId::EverlastingBgm), &g_Overlay.everlastingBgm);
+            const auto row = [](const char* key, const char* text, bool& value) {
+                if (MobileThprac::enabled) MobileThprac::checkbox(key, text, value);
+                else if (PurpleHotkeyWidget(key, text, value)) value = !value;
+            };
+            row("F1", ThpracImGui::Text(ThpracImGui::TextId::Invincible), g_Overlay.invincible);
+            row("F2", ThpracImGui::Text(ThpracImGui::TextId::InfLives), g_Overlay.infiniteLives);
+            row("F3", ThpracImGui::Text(ThpracImGui::TextId::InfBombs), g_Overlay.infiniteBombs);
+            row("F4", ThpracImGui::Text(ThpracImGui::TextId::InfPower), g_Overlay.infinitePower);
+            row("F5", ThpracImGui::Text(ThpracImGui::TextId::TimeLock), g_Overlay.timeLock);
+            row("F6", ThpracImGui::Text(ThpracImGui::TextId::AutoBomb), g_Overlay.autoBomb);
+            row("F7", ThpracImGui::Text(ThpracImGui::TextId::EverlastingBgm), g_Overlay.everlastingBgm);
+            row("U", purple_TH_ENEMY_MUTEKI[static_cast<int>(ThpracImGui::GetLocale())], Purple::enemyInvincible);
         }
         ImGui::End();
     }
@@ -448,7 +460,7 @@ void DrawOverlay()
         g_AdvancedMenuToggleRequested = false;
     }
 
-    if (g_Overlay.trackerOpen && (g_GameManager.isInMenu || g_GameManager.isInGameMenu || g_GameManager.isInRetryMenu))
+    if (MobileThprac::show(MobileThprac::Information, g_Overlay.trackerOpen) && (g_GameManager.isInMenu || g_GameManager.isInGameMenu || g_GameManager.isInRetryMenu))
     {
         static const char *difficulty[3][5] = {
             {"Easy", "Normal", "Hard", "Lunatic", "Extra"},
@@ -475,7 +487,7 @@ void DrawOverlay()
                                                   ImGuiWindowFlags_NoInputs |
                                                   ImGuiWindowFlags_NoFocusOnAppearing |
                                                   ImGuiWindowFlags_NoNav;
-        if (ImGui::Begin("Tracker###thprac-tracker", nullptr, trackerFlags))
+        if (MobileThprac::begin(MobileThprac::Information, "Tracker###thprac-tracker", trackerFlags, static_cast<int>(ThpracImGui::GetLocale())))
         {
             char title[48] = {};
             std::snprintf(title, sizeof(title), "%s (%s)", difficulty[locale][diff], shots[locale][shot]);
@@ -496,23 +508,18 @@ void DrawOverlay()
                 ImGui::Text("%d", g_GameManager.bombsUsed);
                 ImGui::EndTable();
             }
+            Purple::DrawTrackerExtras();
         }
         ImGui::End();
     }
 
-    // TH06 THAdvOptWnd has only Game Speed + About. GameplayInit/GameplaySet
-    // are empty in v2.3.0.3; do not import TH07's gameplay options here.
-    if (g_AdvancedOptions.menuOpen)
+    Purple::DrawIndicators();
+    // Purple native TH06 options, not Launcher preferences.
+    if (MobileThprac::show(MobileThprac::Advanced, g_AdvancedOptions.menuOpen))
     {
         const i32 locale = static_cast<i32>(ThpracImGui::GetLocale());
         static const char *advanced[3] = {"高级选项", "Advanced Options", "詳細設定"};
-        static const char *gameSpeed[3] = {"游戏速度", "Game Speed", "ゲーム速度"};
         static const char *about[3] = {"关于 thprac", "About thprac", "thprac について"};
-        static const char *fpsUnavailable[3] = {
-            "当前 portable 架构没有加载 openinputlagpatch/vpatch；与原版 thprac 的 fps_status=0 相同，游戏速度选项不可用。",
-            "No openinputlagpatch/vpatch backend is loaded; matching upstream fps_status=0, Game Speed is unavailable.",
-            "openinputlagpatch/vpatch が読み込まれていないため、原版の fps_status=0 と同様にゲーム速度は使用できません。",
-        };
         static const char *showLicense[3] = {"显示许可证", "Show license", "ライセンスを表示"};
         static const char *hideLicense[3] = {"隐藏许可证", "Hide license", "ライセンスを隠す"};
 
@@ -521,26 +528,16 @@ void DrawOverlay()
         ImGui::SetNextWindowBgAlpha(0.8f);
         constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
-        if (ImGui::Begin("Advanced Options###th06-thprac-advanced", nullptr, flags))
+        if (MobileThprac::begin(MobileThprac::Advanced, "Advanced Options###th06-thprac-advanced", flags, static_cast<int>(ThpracImGui::GetLocale())))
         {
             ImGui::TextUnformatted(advanced[locale]);
             ImGui::Separator();
-
-            if (ImGui::CollapsingHeader(gameSpeed[locale], ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::Indent();
-                ImGui::BeginDisabled();
-                i32 fixedFps = 60;
-                ImGui::SliderInt("FPS", &fixedFps, 60, 6000);
-                ImGui::EndDisabled();
-                ImGui::TextWrapped("%s", fpsUnavailable[locale]);
-                ImGui::Unindent();
-            }
+            Purple::DrawAdvanced();
 
             if (ImGui::CollapsingHeader(about[locale], ImGuiTreeNodeFlags_DefaultOpen))
             {
                 ImGui::Indent();
-                ImGui::TextUnformatted("thprac v2.3.0.3");
+                ImGui::TextUnformatted("thprac purple / TH06");
                 ImGui::TextUnformatted("github.com/touhouworldcup/thprac");
                 ImGui::TextUnformatted("Thanks: You!");
                 if (ImGui::Button(g_AdvancedOptions.showLicense ? hideLicense[locale] : showLicense[locale]))
@@ -548,7 +545,7 @@ void DrawOverlay()
                 if (g_AdvancedOptions.showLicense)
                 {
                     ImGui::BeginChild("THPRAC license", ImVec2(0.0f, 100.0f), true);
-                    THPrac::Gui::ShowLicenceInfo();
+                    ImGui::TextWrapped("%s", purpleLicense);
                     ImGui::EndChild();
                 }
                 ImGui::Unindent();
@@ -596,7 +593,7 @@ bool ConsumeScreenshotRequest()
 bool AdvancedOptionsOpen()
 {
 #ifdef TH_ENABLE_THPRAC
-    return g_AdvancedOptions.menuOpen;
+    return MobileThprac::captures_advanced(g_AdvancedOptions.menuOpen);
 #else
     return false;
 #endif
@@ -608,7 +605,7 @@ bool CapturesGameInput()
     // Match TH08 ThpracUi::captures_game_input(): this identifies trainer
     // ownership but does not suppress the finger stream that also feeds the
     // existing menu/navigation path.
-    return g_MenuOpen || g_AdvancedOptions.menuOpen;
+    return g_MenuOpen || MobileThprac::captures_advanced(g_AdvancedOptions.menuOpen);
 #else
     return false;
 #endif
@@ -786,7 +783,9 @@ static void PublishPortableSession()
         g_Config.dialogue ? "true" : "false", static_cast<long long>(g_Config.score), g_Config.life,
         g_Config.bomb, g_Config.power, g_Config.graze, g_Config.point, g_Config.rank,
         g_Config.rankLock ? "true" : "false", g_Config.fakeType, RuntimeDifficulty(), RuntimeShotType());
-    ThpracPortableTh06SetSessionJson(json);
+    std::string payload(json);
+    payload.insert(payload.size()-2,g_Config.PurpleJsonFields());
+    ThpracPortableTh06SetSessionJson(payload.c_str());
 }
 #endif
 
@@ -821,10 +820,12 @@ static void PublishConfigToHost()
         g_Config.dialogue ? "true" : "false", static_cast<long long>(g_Config.score), g_Config.life,
         g_Config.bomb, g_Config.power, g_Config.graze, g_Config.point, g_Config.rank,
         g_Config.rankLock ? "true" : "false", g_Config.fakeType, RuntimeDifficulty(), RuntimeShotType());
+    std::string payload(json);
+    payload.insert(payload.size()-2,g_Config.PurpleJsonFields());
     EM_ASM({
         Module.eaglerOptions = Module.eaglerOptions || {};
         Module.eaglerOptions.thpracSession = JSON.parse(UTF8ToString($0));
-    }, json);
+    }, payload.c_str());
 }
 #endif
 
@@ -845,6 +846,7 @@ void SetConfig(const Config &config)
     g_Config.point = Clamp(g_Config.point, 0, 9999);
     g_Config.rank = Clamp(g_Config.rank, 0, 99);
     g_Config.fakeType = Clamp(g_Config.fakeType, 0, 4);
+    g_Config.NormalizePurple();
 #if defined(THPRAC_PORTABLE_ENABLED)
     // The portable wire schema has no `active` field: deserializing any valid
     // session object makes adapter Session::active=true.  Therefore an
@@ -934,6 +936,8 @@ void RefreshFromHost()
     config.rank = static_cast<i32>(HostNumber("rank", 0));
     config.rankLock = HostBool("rankLock", false);
     config.fakeType = static_cast<i32>(HostNumber("fakeType", 0));
+    config.ReadPurple(HostNumber,HostBool);
+    config.purpleSections=HostNumber("bF",-1)!=-1;
     SetConfig(config);
 #else
     // Upstream th06_restart resets thPracParam on every ordinary new/reinit
@@ -1224,6 +1228,28 @@ static void CommitMenuConfigToRuntime(bool preserveConditionalFields)
         committed.dialogue = preserveConditionalFields ? previousRuntime.dialogue : false;
     if (!SectionStoresFakeType(committed.section))
         committed.fakeType = preserveConditionalFields ? previousRuntime.fakeType : 0;
+    PurpleParams previousPurple=preserveConditionalFields ? static_cast<const PurpleParams&>(previousRuntime) : PurpleParams{};
+    if(!preserveConditionalFields) {
+        // Native Reset resets book coordinates and snipe ratios, but omits
+        // delay_st6bs9 and wall_prac_st6. Preserve that source-level quirk.
+        previousPurple.delay_st6bs9=previousRuntime.delay_st6bs9;
+        previousPurple.wall_prac_st6=previousRuntime.wall_prac_st6;
+    }
+    if (committed.section != 49)
+        committed.delay_st6bs9=previousPurple.delay_st6bs9;
+    if (committed.section != 49 && committed.section != 46) {
+        committed.wall_prac_st6=previousPurple.wall_prac_st6;
+        committed.snipeN=previousPurple.snipeN;
+        committed.snipeF=previousPurple.snipeF;
+    }
+    if (committed.section != 22) {
+        const int delay=committed.delay_st6bs9,near=committed.snipeN,far=committed.snipeF;
+        const bool wall=committed.wall_prac_st6;
+        static_cast<PurpleParams&>(committed)=previousPurple;
+        committed.delay_st6bs9=delay; committed.snipeN=near; committed.snipeF=far;
+        committed.wall_prac_st6=wall;
+    }
+    committed.purpleSections=true;
     g_Config = committed;
 }
 
@@ -1441,10 +1467,10 @@ static bool GuiPauseButton(const char *label, const ImVec2 &size)
 
 template <typename T> struct GuiStepState
 {
-    T value;
-    T minimum;
-    T maximum;
-    T multiplier;
+    T value = 1;
+    T minimum = 1;
+    T maximum = 10;
+    T multiplier = 10;
 };
 
 template <typename T> static void CycleGuiStep(GuiStepState<T> &step)
@@ -1648,6 +1674,7 @@ static void ResetWarpDependentMenuState()
     g_MenuChapter = 1;
     g_Config.phase = 0;
     g_Config.frame = 0;
+    g_Config.ResetPurpleMenuWarp();
     CurrentSection(0, false);
 }
 
@@ -1819,6 +1846,108 @@ static void DrawPracticeControls(bool includeActions)
             {
                 g_Config.phase = Clamp(g_Config.phase, 0, 1);
                 GuiCombo(ThpracImGui::Text(ThpracImGui::TextId::Phase), &g_Config.phase, phaseSelector, phaseItems);
+            }
+            else if (section && (section->id==22 || section->id==38 || section->id==49))
+            {
+                const int locale=static_cast<int>(ThpracImGui::GetLocale());
+                const char* items[6]{};
+                int selector[7]{1,2,3,4,5,6,0};
+                const int count=section->id==22?5:section->id==38?4:6;
+                for(int i=0;i<count;++i) items[i]=section->id==22?purpleOptions_TH_BOOKS_PHASE_INF_TIME[locale][i]:
+                    section->id==38?purpleOptions_TH_EOSD_SAKUYA_DOLLS[locale][i]:purpleOptions_TH06_FINAL_SPELL[locale][i];
+                selector[count]=0;
+                g_Config.phase=Clamp(g_Config.phase,0,count-1);
+                GuiCombo(ThpracImGui::Text(ThpracImGui::TextId::Phase),&g_Config.phase,selector,items);
+                if(section->id==49 && g_Config.phase>=1 && g_Config.phase<=3) {
+                    static GuiStepState<i32> delayStep{1,1,10,10};
+                    GuiDragInt(purple_TH_DELAY[locale],&g_Config.delay_st6bs9,0,600,delayStep);
+                }
+                if(section->id==22 && g_Config.phase==4) {
+                    int* xs[]{&g_Config.bX1,&g_Config.bX2,&g_Config.bX3,&g_Config.bX4,&g_Config.bX5,&g_Config.bX6};
+                    int* ys[]{&g_Config.bY1,&g_Config.bY2,&g_Config.bY3,&g_Config.bY4,&g_Config.bY5,&g_Config.bY6};
+                    const char* const* cs[]{purple_TH_BOOK_C1,purple_TH_BOOK_C2,purple_TH_BOOK_C3,purple_TH_BOOK_C4,purple_TH_BOOK_C5,purple_TH_BOOK_C6};
+                    const char* const* xl[]{purple_TH_BOOK_X1,purple_TH_BOOK_X2,purple_TH_BOOK_X3,purple_TH_BOOK_X4,purple_TH_BOOK_X5,purple_TH_BOOK_X6};
+                    const char* const* yl[]{purple_TH_BOOK_Y1,purple_TH_BOOK_Y2,purple_TH_BOOK_Y3,purple_TH_BOOK_Y4,purple_TH_BOOK_Y5,purple_TH_BOOK_Y6};
+                    static GuiStepState<i32> xStep[6],yStep[6];
+                    const float bookWidth=ImGui::GetColumnWidth();
+                    ImGui::Columns(3,"purpleBooks");
+                    ImGui::SetColumnWidth(0,0.2f*bookWidth);
+                    for(int i=0;i<6;++i) {
+                        ImGui::PushID(i);
+                        bool fixed=(g_Config.bF&(1<<i))!=0;
+                        if(GuiCheckBox(cs[i][locale],&fixed))
+                            g_Config.bF=(g_Config.bF&~(1<<i))|(fixed?(1<<i):0);
+                        ImGui::NextColumn();
+                        GuiDragInt(xl[i][locale],xs[i],-192,192,xStep[i]); ImGui::NextColumn();
+                        GuiDragInt(yl[i][locale],ys[i],-50,448,yStep[i]); ImGui::NextColumn();
+                        ImGui::PopID();
+                    }
+                    ImGui::Columns(1);
+                    if(ImGui::Button(purple_TH_BOOK_RANDX[locale])) {
+                        // Native menu-only entropy must not consume title RNG.
+                        static std::mt19937 engine{unsigned(SDL_GetTicksNS())};
+                        std::uniform_int_distribution<int> distribution(-192,192);
+                        for(auto p:xs) *p=distribution(engine);
+                    }
+                    ImGui::SameLine();
+                    if(ImGui::Button(purple_TH_BOOK_MIRROR[locale])) {
+                        *xs[3]=-*xs[2]; *xs[4]=-*xs[1]; *xs[5]=-*xs[0];
+                    }
+                    ImGui::SameLine();
+                    if(ImGui::Button(purple_TH_BOOK_MIRROR2[locale]))
+                        for(auto p:xs) *p=-*p;
+                    ImGui::SameLine();
+                    if(ImGui::Button(purple_TH_BOOK_ROLL[locale])) {
+                        const int temp=*xs[5];
+                        for(int i=5;i>0;--i) *xs[i]=*xs[i-1];
+                        *xs[0]=temp;
+                    }
+                    if(ImGui::Button(purple_TH_BOOK_RESETY[locale])) {
+                        const int defaults[]{32,128,144,64,80,96};
+                        for(int i=0;i<6;++i) *ys[i]=defaults[i];
+                    }
+                    char clipboard[256];
+                    std::snprintf(clipboard,sizeof(clipboard),"(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d)",
+                        *xs[0],*ys[0],*xs[1],*ys[1],*xs[2],*ys[2],*xs[3],*ys[3],*xs[4],*ys[4],*xs[5],*ys[5]);
+                    if(ImGui::Button(purple_TH_BOOK_COPY_SETTING[locale])) SDL_SetClipboardText(clipboard);
+                    ImGui::SameLine();
+                    bool paste=ImGui::Button(purple_TH_BOOK_PASTE_SETTING[locale]);
+#ifdef __EMSCRIPTEN__
+                    if(paste) EM_ASM({
+                        if(navigator.clipboard?.readText) navigator.clipboard.readText().then(text=>{
+                            Module.eaglerThpracBookClipboard=text;
+                        }).catch(error=>console.warn('THPrac clipboard read failed',error));
+                    });
+                    char* pasted=reinterpret_cast<char*>(EM_ASM_PTR({
+                        if(typeof Module.eaglerThpracBookClipboard!=='string') return 0;
+                        const text=Module.eaglerThpracBookClipboard;
+                        delete Module.eaglerThpracBookClipboard;
+                        return stringToNewUTF8(text);
+                    }));
+#else
+                    char* pasted=paste?SDL_GetClipboardText():nullptr;
+#endif
+                    if(pasted) {
+                        int x[6],y[6];
+                        if(std::sscanf(pasted," (%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d)",
+                            &x[0],&y[0],&x[1],&y[1],&x[2],&y[2],&x[3],&y[3],&x[4],&y[4],&x[5],&y[5])==12)
+                            for(int i=0;i<6;++i) {*xs[i]=Clamp(x[i],-192,192);*ys[i]=Clamp(y[i],-50,448);}
+#ifdef __EMSCRIPTEN__
+                        free(pasted);
+#else
+                        SDL_free(pasted);
+#endif
+                    }
+                }
+            }
+            if(section && (section->id==46 || section->id==49)) {
+                const int locale=static_cast<int>(ThpracImGui::GetLocale());
+                GuiCheckBox(purple_TH06_ST6_WALL_PRAC[locale],&g_Config.wall_prac_st6);
+                if(g_Config.wall_prac_st6) {
+                    static GuiStepState<i32> nearStep{1,1,10,10},farStep{1,1,10,10};
+                    GuiSliderInt(purple_TH06_ST6_WALL_PRAC_SNIPE_N[locale],&g_Config.snipeN,0,100,nearStep);
+                    GuiSliderInt(purple_TH06_ST6_WALL_PRAC_SNIPE_F[locale],&g_Config.snipeF,0,100,farStep);
+                }
             }
         }
 
@@ -2475,6 +2604,9 @@ static bool ParseConfigJson(const std::string &json, Config &config, bool preser
     config.rank = static_cast<i32>(JsonNumber(json, "rank", config.rank));
     config.rankLock = JsonBool(json, "rankLock", config.rankLock);
     config.fakeType = static_cast<i32>(JsonNumber(json, "fakeType", config.fakeType));
+    config.ReadPurple([&](const char* k,int v){return JsonNumber(json,k,v);},
+                      [&](const char* k,bool v){return JsonBool(json,k,v);});
+    config.purpleSections=json.find("\"bF\"")!=std::string::npos;
     return true;
 }
 
@@ -2557,7 +2689,7 @@ static std::string ReplayMetadataJson()
     // is UI-only and never serialized; section/phase/frame/dlg are omitted at
     // their default values rather than emitted as explicit zero/false fields.
     char tail[384];
-    std::string json = "{\"version\":\"2.3.0.3\",\"game\":\"th06\",\"mode\":" +
+    std::string json = std::string("{\"version\":\"")+(g_Config.purpleSections?"2.2.2.7":"2.3.0.3")+"\",\"game\":\"th06\",\"mode\":" +
         std::to_string(g_Config.mode) + ",\"stage\":" + std::to_string(g_Config.stage);
     if (g_Config.section != 0)
         json += ",\"section\":" + std::to_string(g_Config.section);
@@ -2577,6 +2709,7 @@ static std::string ReplayMetadataJson()
     if (length <= 0 || static_cast<size_t>(length) >= sizeof(tail))
         return {};
     json.append(tail, static_cast<size_t>(length));
+    json.insert(json.size()-1,g_Config.PurpleJsonFields());
     return json;
 }
 

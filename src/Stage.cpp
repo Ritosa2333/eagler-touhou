@@ -12,6 +12,9 @@
 #include "ZunColor.hpp"
 #include "ZunMemory.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 // #include <d3d8.h>
 
 static ChainElem g_StageCalcChain;
@@ -130,6 +133,10 @@ ChainCallbackResult Stage::OnUpdate(Stage *stage)
             if (stage->scriptTime.current >= curInsn->frame)
             {
                 stage->skyFog.color = StdU32Arg(0);
+#ifdef TH_ENABLE_THPRAC
+                // Purple TH06BgFix at 0x4039e5: the STD fog color assignment.
+                if (PracticeRuntime::Purple::BackgroundFix()) stage->skyFog.color = 0;
+#endif
                 stage->skyFog.nearPlane = StdF32Arg(1);
                 stage->skyFog.farPlane = StdF32Arg(2);
                 if (stage->skyFogInterpDuration == 0)

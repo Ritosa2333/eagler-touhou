@@ -1,4 +1,7 @@
 #include "Gui.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 
 #if defined(TH_DEV_TOOLS) && defined(__EMSCRIPTEN__)
 #include <emscripten/emscripten.h>
@@ -227,9 +230,13 @@ ChainCallbackResult Gui::OnUpdate(Gui *gui)
     // and must advance with the fixed 60 Hz update chain, not the presentation
     // rate, so they are handled here instead. The refresh condition mirrors
     // the one that gates the HUD border rendering.
-    if (((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS) & 1) == 0 &&
-        (gui->impl->vms[6].currentInstruction != NULL || g_Supervisor.unk198 != 0 ||
-         g_Supervisor.RedrawWholeFrame()))
+    if (
+#ifdef TH_ENABLE_THPRAC
+        PracticeRuntime::Purple::BackgroundFix() ||
+#endif
+        (((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS) & 1) == 0 &&
+         (gui->impl->vms[6].currentInstruction != NULL || g_Supervisor.unk198 != 0 ||
+          g_Supervisor.RedrawWholeFrame())))
     {
         gui->flags.flag0 = 2;
         gui->flags.flag1 = 2;
@@ -500,6 +507,9 @@ void Gui::ShowSpellcard(i32 spellcardSprite, i32 spellcardId, const char *spellc
 
 ZunResult Gui::ActualAddedCallback()
 {
+#ifdef TH_ENABLE_THPRAC
+    PracticeRuntime::Purple::ResetLockTimer();
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     ResetSpellcardCountdownAudio();
 #endif
@@ -1454,6 +1464,17 @@ void Gui::DrawGameScene()
         vm->pos.z = 0.0;
         g_AnmManager->DrawInterpNoRotation(vm);
         ZunVec3 textPos(80.0f, 16.0f, 0.0);
+#ifdef TH_ENABLE_THPRAC
+        const float thresholdRatio=PracticeRuntime::Purple::BossThresholdRatio(this->bossHealthBar2);
+        if(thresholdRatio>=0) {
+            AnmVm thresholdVm=*vm;
+              thresholdVm.scaleX=thresholdRatio*288.0f/14.0f;
+              thresholdVm.color=0xffffaaaa;
+              thresholdVm.prevScaleX=thresholdVm.scaleX;
+              thresholdVm.prevColor=thresholdVm.color;
+            g_AnmManager->DrawInterpNoRotation(&thresholdVm);
+        }
+#endif
         g_AsciiManager.SetColor(this->bossUIOpacity << 24 | 0xffff80);
         g_AsciiManager.AddFormatText(&textPos, "%d", this->eclSetLives);
         textPos = ZunVec3(384.0f, 16.0f, 0.0f);
@@ -1502,8 +1523,12 @@ void Gui::DrawGameScene()
     //    g_Supervisor.d3dDevice->SetViewport(&g_Supervisor.viewport);
 
     vm = &this->impl->vms[6];
-    if (((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS) & 1) == 0 &&
-        (vm->currentInstruction != NULL || g_Supervisor.unk198 != 0 || g_Supervisor.RedrawWholeFrame()))
+    if (
+#ifdef TH_ENABLE_THPRAC
+        PracticeRuntime::Purple::BackgroundFix() ||
+#endif
+        (((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS) & 1) == 0 &&
+         (vm->currentInstruction != NULL || g_Supervisor.unk198 != 0 || g_Supervisor.RedrawWholeFrame())))
     {
         for (yPos = 0.0f; yPos < 464.0f; yPos += 32.0f)
         {

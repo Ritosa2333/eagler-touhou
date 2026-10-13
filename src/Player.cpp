@@ -1,4 +1,7 @@
 #include "Player.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -1166,6 +1169,9 @@ void Player::SyncRenderState(Player *p)
 
 ChainCallbackResult Player::OnUpdate(Player *p)
 {
+#ifdef TH_ENABLE_THPRAC
+    if (p == &g_Player) PracticeRuntime::Purple::RecordPlayerInput();
+#endif
     f32 scaleFactor1, scaleFactor2;
     i32 idx;
     ZunVec3 lastEnemyHit;
@@ -1178,7 +1184,11 @@ ChainCallbackResult Player::OnUpdate(Player *p)
         (PlayerUsedTouch(p) && !PlayerUsedTouchToBomb(p)) ? Touch::DEATHBOMB_TOLERANCE : 0;
 #else
     const i32 livesRemaining = g_GameManager.livesRemaining;
-    const bool canRespawn = livesRemaining > 0;
+    const bool canRespawn = livesRemaining > 0
+#ifdef TH_ENABLE_THPRAC
+        || PracticeRuntime::OverlayInfiniteLives()
+#endif
+        ;
     const i32 bombsRemaining = g_GameManager.bombsRemaining;
     const i32 minRequiredDeathbombTimer =
         (Touch::WasUsedThisRun() && !Touch::UsedTouchToBomb()) ? Touch::DEATHBOMB_TOLERANCE : 0;
@@ -1245,6 +1255,9 @@ ChainCallbackResult Player::OnUpdate(Player *p)
 #endif
             p->bombInfo.calc(p);
             g_EnemyManager.spellcardInfo.isCapturing = false;
+#ifdef TH_ENABLE_THPRAC
+            if (!PracticeRuntime::Purple::DisableRankDrop())
+#endif
             g_GameManager.DecreaseSubrank(
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 multiplayer ? GetMultiplayerRankPenalty(200) :
@@ -1335,6 +1348,9 @@ ChainCallbackResult Player::OnUpdate(Player *p)
 #endif
                         g_GameManager.extraLives = -1;
                 }
+#ifdef TH_ENABLE_THPRAC
+                if (!PracticeRuntime::Purple::DisableRankDrop())
+#endif
                 g_GameManager.DecreaseSubrank(
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                     multiplayer ? GetMultiplayerRankPenalty(1600) :
@@ -1412,7 +1428,13 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     if (MultiplayerGameplay::IsChallengeMode())
                         ++g_MultiplayerContributionStats[p->initParam].challengeDeaths;
 #endif
-                    if (!PracticeRuntime::OverlayInfiniteLives())
+                    if (
+#ifdef TH_ENABLE_THPRAC
+                        !PracticeRuntime::Purple::PreserveLifeStock(livesRemaining)
+#else
+                        !PracticeRuntime::OverlayInfiniteLives()
+#endif
+                    )
                     {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                         if (multiplayer)
@@ -3021,6 +3043,9 @@ void Player::Die()
     int curLaserTimerIdx;
 
     g_EnemyManager.spellcardInfo.isCapturing = 0;
+#ifdef TH_ENABLE_THPRAC
+    PracticeRuntime::Purple::BookFailed();
+#endif
     // Upstream Muteki replaces the first death-particle call with stack
     // cleanup and changes the state immediate from DEAD(2) to
     // INVULNERABLE(3); the remaining hit feedback/sound/death counter stays.

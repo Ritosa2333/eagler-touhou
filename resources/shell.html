@@ -349,6 +349,7 @@
       const installMusic = async message => {
         if (launched) throw new Error("music cannot be changed after launch");
         const options = message.options || {};
+        if (options.thpracAutoShootKey != null && (!Number.isInteger(options.thpracAutoShootKey) || options.thpracAutoShootKey < -1 || options.thpracAutoShootKey > 255)) throw new Error("invalid thprac auto-shoot trigger");
         if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
         thpracCatalog = message.thpracCatalog ?? [];
         Module.eaglerThpracCatalog = thpracCatalog;
@@ -406,6 +407,7 @@
         if (session != null && (session.schema !== "eagler-touhou/thprac-session/1" || session.game !== "th06" || typeof session.params !== "object" || !session.params)) throw new Error("invalid thprac session");
         Module.eaglerOptions = {
           thpracEnabled: !!options.thpracEnabled,
+          thpracAutoShootKey: options.thpracAutoShootKey ?? -1,
           limitPresentationTo60: !!options.limitPresentationTo60,
           touchEnabled: !!options.touchEnabled,
           touchMovementMode: options.touchMovementMode || "touch",
@@ -585,14 +587,20 @@ async function installStartupBranding(core, {game, builtAt, fs = core.FS} = {}) 
         case "F6": return 1 << 6;
         case "F7": return 1 << 7;
         case "Tab": return 1 << 8;
+        case "F12": return 1 << 9;
+        case "KeyU": return 1 << 10;
         }
         const key = String(event.key || "").toLowerCase();
         if (key === "backspace") return 1 << 0;
         if (key === "tab") return 1 << 8;
+        if (key === "f12") return 1 << 9;
+        if (key === "u") return 1 << 10;
         if (/^f[1-7]$/.test(key)) return 1 << Number(key.slice(1));
         const keyCode = Number(event.keyCode) || 0;
         if (keyCode === 8) return 1 << 0;
         if (keyCode === 9) return 1 << 8;
+        if (keyCode === 123) return 1 << 9;
+        if (keyCode === 85) return 1 << 10;
         if (keyCode >= 112 && keyCode <= 118) return 1 << (keyCode - 111);
         return 0;
       };
@@ -800,6 +808,8 @@ async function installStartupBranding(core, {game, builtAt, fs = core.FS} = {}) 
                 !Number.isFinite(message.touchSensitivity) || message.touchSensitivity < 100 || message.touchSensitivity > 300)
               throw new Error("invalid touch controls");
             Module.eaglerControls.fireEnabled = message.fireEnabled;
+            Module.eaglerControls.thpracMobilePanelsEnabled = message.thpracMobilePanelsEnabled === true;
+            Module.eaglerControls.thpracMobilePanelsVisible = message.thpracMobilePanelsVisible === true;
             Module.eaglerControls.focusEnabled = message.focusEnabled;
             Module.eaglerControls.bombSerial = message.bombSerial;
             Module.eaglerControls.escapeSerial = message.escapeSerial;

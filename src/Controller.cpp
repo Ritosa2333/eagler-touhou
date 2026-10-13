@@ -1,4 +1,7 @@
 #include "EaglerOptions.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 #include "Controller.hpp"
 
 #include <SDL3/SDL.h>
@@ -443,6 +446,9 @@ u16 Controller::GetInput(void)
         buttons |= JOYSTICK_BUTTON_PRESSED(TH_BUTTON_UP, -stickY, JOYSTICK_MIDPOINT(0, INT16_MAX));
     }
     buttons |= Touch::GetButtonBits();
+#ifdef TH_ENABLE_THPRAC
+    buttons = PracticeRuntime::Purple::FilterInput(buttons);
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     return Netplay::Input::ResolveLocal(buttons);
 #else

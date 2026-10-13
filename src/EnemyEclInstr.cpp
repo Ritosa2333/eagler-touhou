@@ -8,6 +8,9 @@
 #include "Gui.hpp"
 #include "Player.hpp"
 #include "PracticeRuntime.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
 #include "Rng.hpp"
 #include "utils.hpp"
 
@@ -980,6 +983,9 @@ void ExInsStage6Func9(Enemy *enemy, EclRawInstr *instr)
     EnemyBulletShooter unusedBulletProps;
 
     randomAngleModifier = g_Rng.GetRandomF32InRange(ZUN_PI * 2) - ZUN_PI;
+#ifdef TH_ENABLE_THPRAC
+    randomAngleModifier=PracticeRuntime::Purple::AdjustWallAngle(enemy,randomAngleModifier);
+#endif
     g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &enemy->position, 1, COLOR_WHITE);
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
@@ -1047,7 +1053,11 @@ void ExInsStage6Func11(Enemy *enemy, EclRawInstr *instr)
             currentBullet->timer.InitializeForPopup();
             currentBullet->ex5Int0 = 120;
 
-            sincosmul(&currentBullet->ex4Acceleration, g_Rng.GetRandomF32InRange(ZUN_PI * 2) - ZUN_PI, 0.01f);
+            float angle=g_Rng.GetRandomF32InRange(ZUN_PI * 2) - ZUN_PI;
+#ifdef TH_ENABLE_THPRAC
+            angle=PracticeRuntime::Purple::AdjustWallSnipe(currentBullet->pos.x,currentBullet->pos.y,angle);
+#endif
+            sincosmul(&currentBullet->ex4Acceleration, angle, 0.01f);
         }
     }
 }

@@ -1,12 +1,13 @@
 #pragma once
 
 #include "inttypes.hpp"
+#include "PurpleParams.hpp"
 
 struct GameManager;
 
 namespace PracticeRuntime
 {
-struct Config
+struct Config : PurpleParams
 {
     bool active = false;
     i32 mode = 0;
