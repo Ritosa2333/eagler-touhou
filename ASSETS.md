@@ -41,10 +41,10 @@ original-game-derived files are rejected from source publication candidates.
 
 ## Site brand assets
 
-The final hosted `assets/th06.ico` is reconstructed from the application-icon
-resource in the deployer's original `th06.exe`, unless the deployer supplies a
-custom replacement. Like the card backgrounds, it is generated during host
-assembly and is not tracked as public source content.
+`favicon.ico` is the site's yin-yang icon, rendered from the U+262F glyph in
+`font-touhou98@1.0.0`. It is tracked as a source brand asset and copied to
+`assets/favicon.ico` during host assembly. An operator may supply a custom override.
+The preview is `docs/assets/eagler-touhou-icon.png`.
 
 `assets/fonts/touhou98.woff2` is the self-hosted Web font from
 `font-touhou98@1.0.0`; the masthead wordmark `eagler☯touhou` uses it. Upstream
@@ -55,12 +55,11 @@ wordmark as font outlines for the repository README.
 
 ## PWA application icons
 
-The PWA icons preserve the site's established TH06 executable icon instead of
-introducing a separate Launcher mark. `scripts/prepare-host-artwork.py` derives
-`assets/pwa/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` and
-`apple-touch-icon.png` from the same host-generated `th06.ico`. The maskable and
-Apple variants add the platform-safe inset and background. Like `th06.ico`, all
-four files are Host inputs and are not tracked as public source content.
+The PWA icons derive from the site's font-based yin-yang icon.
+`scripts/prepare-host-artwork.py` produces `pwa/icon-192.png`,
+`icon-512.png`, `icon-maskable-512.png` and `apple-touch-icon.png`, with the
+maskable and Apple variants using the platform-safe inset and background.
+These sizes are generated during host assembly.
 
 ## Announcement brand icons
 

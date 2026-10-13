@@ -36,7 +36,7 @@ function timersFixture() {
     } now = end;}};
 }
 function fixture({context: patch = {}, importPackage, portOverrides = {}} = {}) {
-  const context = {product: 'th06', roomCode: null, replayViewer: false, runtimeReady: false, launched: false,
+  const context = {product: 'th06', roomCode: null, replayViewer: false, runtimeEpoch: null, runtimeReady: false, launched: false,
     playerOpen: false, importServer: false, fallback: null, ...patch};
   const calls = [], statuses = [], playerStatuses = [], toasts = [], timers = timersFixture();
   const installed = {id: 'fixture-generation', game: 'th06', files: {data: {objectId: 'fixture-data'}, font: {objectId: 'fixture-font'}}};
@@ -70,12 +70,12 @@ test('main manual import is install-only; success closes the window without prep
   assert.deepEqual(f.statuses, [t('package.importedReady')]); assert.deepEqual(f.toasts, [t('package.imported', {count: 2})]);
 });
 
-test('main import-required resumes matching captured launch by reset → open → configured launch without another user step', async () => {
-  const f = fixture({context: {importServer: true}}); f.model.beginImportRequired();
+test('import-required installs resources without automatically launching', async () => {
+  const f = fixture({context: {importServer: true, runtimeEpoch: 1}}); f.model.beginImportRequired();
   assert.equal(f.model.getSnapshot().reason, t('package.importServerOnly', {reason: t('package.noLaunchableLocal')}));
   await f.model.importFile(file());
-  assert.deepEqual(f.calls, [['install', 'th06'], ['reset'], ['open', 'th06'], ['launch']]);
-  assert.deepEqual(f.playerStatuses, [t('package.continuing')]); assert.equal(f.model.getSnapshot().attempt, null);
+  assert.deepEqual(f.calls, [['install', 'th06'], ['reset']]);
+  assert.deepEqual(f.playerStatuses, []); assert.deepEqual(f.statuses, [t('package.importedReady')]); assert.equal(f.model.getSnapshot().attempt, null);
 });
 
 for (const change of [{product: 'th07'}, {roomCode: 'OTHER'}, {replayViewer: true}]) test(`original lifecycle: captured launch does not cross ${Object.keys(change)[0]} change`, async () => {
@@ -163,18 +163,18 @@ test('main stale import completion cannot clear/launch a newer attempt', async (
   assert.equal(f.calls.some(([name]) => name === 'launch'), false);
 });
 
-test('main room install-only import resumes its captured preparation rather than launching gameplay', async () => {
+test('room import completes without resuming preparation or gameplay', async () => {
   const calls = [], handle = {markImporting() {calls.push('importing');}, cancelIfImporting() {calls.push('cancelled');}, async resume() {calls.push('resume');}};
   const f = fixture({context: {product: 'th06mp', roomCode: 'ROOM'}, portOverrides: {roomPreparationForImport: value => value?.kind === 'install-only' ? handle : null}});
   f.model.beginManual(); await f.model.importFile(file());
-  assert.deepEqual(calls, ['importing', 'resume']); assert.deepEqual(f.statuses, [t('package.continuing')]); assert.equal(f.calls.some(([name]) => name === 'launch'), false);
+  assert.deepEqual(calls, ['importing', 'cancelled']); assert.deepEqual(f.statuses, [t('package.importedReady')]); assert.equal(f.calls.some(([name]) => name === 'launch'), false);
 });
 
-test('main direct fallback import replaces the loading Runtime and launches without opening a second Player', async () => {
-  const f = fixture({context: {playerOpen: true}}); f.model.beginDirectDownload(); f.model.unlock('slow'); await f.model.importFile(file());
+test('direct fallback import retires loading without opening or launching a Player', async () => {
+  const f = fixture({context: {playerOpen: true, runtimeEpoch: 1}}); f.model.beginDirectDownload(); f.model.unlock('slow'); await f.model.importFile(file());
   assert.equal(f.calls.some(([name]) => name === 'open'), false);
-  assert.deepEqual(f.calls.filter(([name]) => ['install', 'reset', 'launch'].includes(name)), [['install', 'th06'], ['reset'], ['launch']]);
-  assert.deepEqual(f.playerStatuses, [t('package.localLaunching')]); assert.equal(f.model.getSnapshot().attempt, null);
+  assert.deepEqual(f.calls.filter(([name]) => ['install', 'reset', 'launch'].includes(name)), [['install', 'th06'], ['reset']]);
+  assert.deepEqual(f.playerStatuses, []); assert.deepEqual(f.statuses, [t('package.importedReady')]); assert.equal(f.model.getSnapshot().attempt, null);
 });
 
 test('asynchronous reset port cannot launch a changed product after the canonical continuation check', async () => {
@@ -182,4 +182,64 @@ test('asynchronous reset port cannot launch a changed product after the canonica
   const importing = f.model.importFile(file()); await Promise.resolve(); await Promise.resolve();
   f.context.product = 'th07'; reset.resolve(); await importing;
   assert.equal(f.calls.some(([name]) => name === 'launch' || name === 'open'), false);
+});
+
+for (const change of [{product: 'th07'}, {roomCode: 'OTHER'}, {replayViewer: true}, {runtimeEpoch: 2}, {launched: true, runtimeReady: true}]) {
+  test(`direct fallback completion does not retire a changed ${Object.keys(change)[0]}`, async () => {
+    const pending = deferred(), f = fixture({context: {runtimeEpoch: 1}, importPackage: () => pending.promise});
+    f.model.beginDirectDownload(); f.model.unlock('slow');
+    const importing = f.model.importFile(file()); Object.assign(f.context, change);
+    pending.resolve(f.installed); await importing;
+    assert.equal(f.calls.some(([name]) => ['reset', 'open', 'launch'].includes(name)), false);
+    assert.equal(f.model.getSnapshot().attempt, null);
+  });
+}
+test('an idle import cannot retire a Runtime started while installation waits', async () => {
+  const pending = deferred(), f = fixture({importPackage: () => pending.promise});
+  f.model.beginImportRequired(); const importing = f.model.importFile(file());
+  f.context.runtimeEpoch = 1; pending.resolve(f.installed); await importing;
+  assert.deepEqual(f.calls, [['install', 'th06']]);
+});
+test('completion publication cannot retire a newer Runtime or clear a new import', async () => {
+  const f = fixture({context: {runtimeEpoch: 1}}); f.model.beginImportRequired();
+  let changed = false;
+  f.model.subscribe(() => {
+    if (!changed && f.model.getSnapshot().attempt === null) {
+      changed = true; f.context.runtimeEpoch = 2; f.model.openManual();
+    }
+  });
+  await f.model.importFile(file());
+  assert.deepEqual(f.calls, [['install', 'th06']]);
+  assert.ok(f.model.getSnapshot().attempt); assert.equal(f.model.getSnapshot().importOpen, true);
+});
+test('successful import reports retirement failure without reopening invalid-package UI', async () => {
+  const f = fixture({context: {runtimeEpoch: 1}, portOverrides: {resetUnlaunchedRuntime() {throw new Error('retirement failed');}}});
+  f.model.beginImportRequired(); await f.model.importFile(file());
+  assert.equal(f.model.getSnapshot().attempt, null); assert.equal(f.model.getSnapshot().importOpen, false);
+  assert.deepEqual(f.statuses, [t('package.importedReady')]);
+  assert.deepEqual(f.playerStatuses, ['retirement failed']); assert.equal(f.toasts.at(-1), 'retirement failed');
+  assert.equal(f.calls.some(([name]) => name === 'launch'), false);
+});
+
+test('retirement uses the import-time owner rather than a later launch reset', async () => {
+  const pending = deferred(), calls = [], f = fixture({context: {runtimeEpoch: 1}, importPackage: () => pending.promise,
+    portOverrides: {captureUnlaunchedRuntimeReset() {calls.push('capture'); return epoch => calls.push(['captured-reset', epoch]);}}});
+  f.model.beginImportRequired(); const importing = f.model.importFile(file());
+  pending.resolve(f.installed); await importing;
+  assert.deepEqual(calls, ['capture', ['captured-reset', 1]]);
+  assert.deepEqual(f.calls, [['install', 'th06']]);
+});
+test('success toast cannot let an old completion clear a newly opened import', async () => {
+  let f, replace = true;
+  f = fixture({portOverrides: {feedback: {status() {}, playerStatus() {}, toast() {if (replace) {replace = false; f.model.openManual();}}}}});
+  f.model.beginImportRequired(); const old = f.model.getSnapshot().attempt.id;
+  await f.model.importFile(file());
+  assert.ok(f.model.getSnapshot().attempt.id > old); assert.equal(f.model.getSnapshot().importOpen, true);
+  assert.deepEqual(f.calls, [['install', 'th06']]);
+});
+
+test('ordinary manual import leaves an unrelated loading Runtime intact', async () => {
+  const f = fixture({context: {runtimeEpoch: 1}}); f.model.openManual(); await f.model.importFile(file());
+  assert.deepEqual(f.calls, [['install', 'th06']]);
+  assert.equal(f.model.getSnapshot().attempt, null);
 });

@@ -2,6 +2,7 @@ import {normalizeGameVersion} from "../../package/game-version.mjs";
 import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
+import {linkAbortSignals} from './abort-signals';
 import {componentFileIds} from '../../package/package-generation.mjs';
 import {installPublishedPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
@@ -178,19 +179,20 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     checkPreparationAbort(request.signal);
     if (choice === 'cancel') return 'none' as const;
     if (choice === 'secondary') return 'background' as const;
+    const linked = linkAbortSignals(request.signal, request.updateSignal);
     try {
       request.onUpdateActivity?.(true);
       progress(request, local ? 'package.updatingLocal' : 'package.updatingRemote');
       await deps.installPublished(game, {catalog, catalogUrl, gameVersion: request.gameVersion ?? "original", addComponents: [],
         selectedComponentEntries: selectedLanguages(game, request.language), preserveLocalSource: true, fetchImpl: getPackageFetch(game),
-        signal: request.signal && request.updateSignal ? AbortSignal.any([request.signal, request.updateSignal]) : request.updateSignal ?? request.signal,
+        signal: linked.signal,
         onProgress: value => progress(request, local ? 'package.updatingLocalProgress' : 'package.updatingRemoteProgress', {...value})});
       checkPreparationAbort(request.signal); await installedChanged(game); request.onWarning?.(t('package.updated')); return 'updated' as const;
     } catch (error) {
       checkPreparationAbort(request.signal);
       request.onWarning?.(t(request.updateSignal?.aborted || (error instanceof Error && error.name === 'AbortError') ? 'package.updateCancelled' : 'package.updateFailed', {reason: preparationErrorText(error)}));
       return 'none' as const;
-    } finally {request.onUpdateActivity?.(false);}
+    } finally {linked.dispose(); request.onUpdateActivity?.(false);}
   }
   async function acquire(request: AcquisitionRequest): Promise<PackageAcquisitionResult> {
     checkPreparationAbort(request.signal);

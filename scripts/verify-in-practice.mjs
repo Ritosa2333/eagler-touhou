@@ -126,11 +126,6 @@ async function createReferenceServer(workRoot) {
   }, async (request, response) => {
     try {
       const url = new URL(request.url || "/", "https://localhost");
-      if (url.pathname === "/favicon.ico") {
-        response.writeHead(204);
-        response.end();
-        return;
-      }
       const relative = decodeURIComponent(url.pathname.slice(1));
       const artwork = REFERENCE_ARTWORK[basename(relative)];
       if (artwork && relative.startsWith("assets/")) {
@@ -143,7 +138,7 @@ async function createReferenceServer(workRoot) {
         response.end(request.method === "HEAD" ? undefined : body);
         return;
       }
-      if (relative === "assets/th06.ico") {
+      if (relative === "assets/favicon.ico") {
         const body = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#361317"/><circle cx="16" cy="16" r="8" fill="#a7343e"/></svg>');
         response.writeHead(200, {
           "Content-Type": "image/svg+xml; charset=utf-8",

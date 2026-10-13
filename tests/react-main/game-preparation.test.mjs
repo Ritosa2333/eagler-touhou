@@ -22,7 +22,9 @@ const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseUrl = 'https://launcher.invalid/deploy/', origin = new URL(baseUrl).origin;
 const bytes = new Uint8Array([1, 2, 3]), hash = createHash('sha256').update(bytes).digest('hex');
 let work, api; const runtimeOwners = [];
+const abortAnyDescriptor=Object.getOwnPropertyDescriptor(AbortSignal,'any');
 before(async () => {
+  Object.defineProperty(AbortSignal,'any',{configurable:true,value:undefined});
   await mkdir(resolve(project, '.cache'), {recursive: true});
   work = await mkdtemp(resolve(project, '.cache/react-main-preparation-'));
   const outfile = resolve(work, 'actual-owners.mjs');
@@ -43,7 +45,7 @@ before(async () => {
   api = await import(pathToFileURL(outfile).href);
 });
 afterEach(async () => {for (const runtime of runtimeOwners.splice(0)) {await runtime.close({discardUnsaved: true}); runtime.dispose();}});
-after(async () => {if (work) await rm(work, {recursive: true, force: true});});
+after(async () => {if(abortAnyDescriptor)Object.defineProperty(AbortSignal,'any',abortAnyDescriptor);else delete AbortSignal.any;if (work) await rm(work, {recursive: true, force: true});});
 const t = (key, params) => api.translate('zh-CN', key, params);
 const flush = async () => {for (let index = 0; index < 30; index++) await Promise.resolve();};
 const deferred = () => {let resolve, reject; const promise = new Promise((yes, no) => {resolve = yes; reject = no;}); return {promise, resolve, reject};};

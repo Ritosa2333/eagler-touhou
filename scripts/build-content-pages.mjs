@@ -136,7 +136,7 @@ const faqHtml = `<!doctype html>
   <meta name="theme-color" content="#0d0d0c">
   <title>常见问题 ~ EAGLER TOUHOU</title>
   <meta name="description" content="EAGLER TOUHOU 的浏览器兼容、操作说明、存档、作品支持和常见故障解答。">
-  <link rel="icon" href="assets/th06.ico" type="image/x-icon">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <link rel="preload" href="assets/fonts/chill-round-gothic-site-medium.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/yatra-one-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">

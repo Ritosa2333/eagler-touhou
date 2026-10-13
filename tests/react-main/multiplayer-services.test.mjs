@@ -156,6 +156,23 @@ function roomFixture(extra = {}) {
   const service = owner.createMultiplayerRoom(ports);
   return {service, ports, clock, sockets, events, decisions, settings, ...storage};
 }
+test('rollback products default to D0 for both room creation and restored invites',async()=>{
+  for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp']){
+    const f=roomFixture();f.service.enterRoom(product,'1234',true);await flush();
+    const rollback=product!=='th11mp';assert.equal(f.service.getSnapshot().rollbackEnabled,rollback,product);
+    const socket=f.sockets[0],id=f.identity.lobbyClientId(product);socket.open();
+    socket.message({type:'state',room:roomState(id,{predictionLimit:rollback?8:0,seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}]})});
+    f.service.setTimingChoice(7);f.service.start();const started=socket.sent.findLast(m=>m.type==='start');
+    assert.ok(started,product);if(['th08mp','th09mp','th10mp'].includes(product)){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,0);assert.equal(started.inputDelayAuto,false);
+      f.service.setRollbackEnabled(false);f.service.start();const delay=socket.sent.findLast(m=>m.type==='start');assert.equal(delay.adonisMode,1);assert.equal(delay.inputDelay,7);
+    }
+    if(product==='th11mp'){assert.equal(started.adonisMode,1);assert.equal(started.inputDelay,7);f.service.setRollbackEnabled(true);assert.equal(f.service.getSnapshot().rollbackEnabled,false);}
+    f.service.dispose();
+    const restored=roomFixture();assert.equal(restored.service.restoreInvite('https://launcher.invalid/?j='+fOwnerInvite(product),product),true);assert.equal(restored.service.getSnapshot().rollbackEnabled,rollback,product+' restore');restored.service.dispose();
+  }
+});
+function fOwnerInvite(product){return owner.encodeRoomInvite({g:product,r:'1234',f:true,a:'create'});}
+
 function roomState(clientId, overrides = {}) {
   return {code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, predictionLimit: 8, startSerial: 0,
     seats: [{clientId, name: 'A', loadout: 0, ready: false}, null], spectators: [], ...overrides};

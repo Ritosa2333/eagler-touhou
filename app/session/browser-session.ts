@@ -1,6 +1,7 @@
 import {loadGameVersion} from "../../package/game-version.mjs";
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
+import {linkAbortSignals} from '../services/abort-signals';
 import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiMessageKey, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
@@ -374,6 +375,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const gameData = createGameDataImportModel({acquisition, translate: t,
     getContext: () => ({product: settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID,
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
+      runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
       runtimeReady: runtime?.getSnapshot().ready === true, launched: runtime?.getSnapshot().launched === true,
       playerOpen: snapshot.playerOpen, importServer: metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
@@ -381,6 +383,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       pickFile: ({accept}) => ports.pickFile(accept), feedback, showGameDataTransfer: transfer.revealGameData,
       closePlayer: async () => {const titleOverlayWasOpen = titleNetwork.getSnapshot().open; if (!await requestRuntimeClose()) return false; requiredNavigation().completeRuntimeClose({titleOverlayWasOpen}); return true;},
       resetUnlaunchedRuntime: () => {if (runtime && !runtime.getSnapshot().launched && runtime.getSnapshot().epoch !== null) runtime.cancel();},
+      captureUnlaunchedRuntimeReset() {
+        const owner = runtime, controller = launchAbort;
+        return async expectedEpoch => {
+          if (!owner || runtime !== owner || launchAbort !== controller) return;
+          const current = owner.getSnapshot();
+          if (current.launched || current.epoch !== expectedEpoch) return;
+          controller?.abort(new RuntimeSessionSupersededError());
+          if (!await owner.close({decide: closeDecision})) throw new Error('Runtime retirement was not completed');
+        };
+      },
       openPlayer(product) {requiredNavigation().openPlayer(product); publish({playerOpen: true});},
       launchConfigured: () => configuredLaunch(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID, {multiplayer: snapshot.replayViewer ? {kind: 'replay'} : roomSession?.service.getSnapshot().room ? {kind: 'room', options: roomSession.service.runtimeOptions()} : undefined}),
       roomPreparationForImport(continuation) {
@@ -518,7 +530,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   function preparationIntent(product: ProductId, multiplayer?: MultiplayerPreparation, externalSignal?: AbortSignal) {
     const owner = requiredRuntime(), clickSettings = capturedSettings(product), controller = new AbortController();
-    const signal = externalSignal ? AbortSignal.any([controller.signal, externalSignal]) : controller.signal;
+    const linked = linkAbortSignals(controller.signal, externalSignal), signal = linked.signal;
     let directAttemptId: number | null = null;
     launchAbort = controller; activeSettings = clickSettings; updateAbort = new AbortController(); musicAbort = new AbortController();
     startupError.close();
@@ -542,7 +554,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         if (launchAbort === controller && !signal.aborted && directAttemptId !== null &&
             gameData.getSnapshot().attempt?.id === directAttemptId && /超时/.test(errorText(error))) gameData.unlock(t('runtime.loadTimedOutImport'));
       },
-      finish() {if (launchAbort === controller) {launchAbort = null; updateAbort = null; musicAbort = null; updating = false; downloadingMusic = false; downloadingPackage = false; downloadingLanguage = false; transfer.setCancellation(null); publish({});}}};
+      finish() {linked.dispose(); if (launchAbort === controller) {launchAbort = null; updateAbort = null; musicAbort = null; updating = false; downloadingMusic = false; downloadingPackage = false; downloadingLanguage = false; transfer.setCancellation(null); publish({});}}};
   }
   async function configuredLaunch(product: ProductId, intent: {multiplayer?: MultiplayerPreparation; signal?: AbortSignal; awaitFirstFrame?: boolean; throwErrors?: boolean} = {}) {
     const operation = preparationIntent(product, intent.multiplayer, intent.signal), {owner, clickSettings, controller} = operation;
