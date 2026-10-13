@@ -129,6 +129,7 @@ void AnimationEngine::draw(AnmVm& vm){
        (vm.script_index==8||vm.script_index==9))return;
     if(player_view_alpha&&player_view_owner){
         const u8 alpha=player_view_alpha(player_view_owner,vm);
+        if(!alpha)return;
         if(alpha<255){
             auto copy=vm;present(copy,vm);
             const u32 primary_alpha=std::min<u32>(copy.color>>24,alpha);

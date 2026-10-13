@@ -704,6 +704,17 @@ i32 World::update_player(Player* player){
 }
 
 u8 World::player_visual_alpha(const AnmVm& vm)const{
+    // Viewer-only hitbox filtering also applies to the selected Replay view.
+    if(vm.id&&local_player<player_count){const auto* root=&vm.child_node;
+        for(u32 i=0;root->previous&&i<4096;++i)root=root->previous;
+        const u32 id=root->value?root->value->id:vm.id;
+        for(auto it=multiplayer_hitbox_owners.begin();it!=multiplayer_hitbox_owners.end();)
+            if(!engine.manager.registry.find(it->first))it=multiplayer_hitbox_owners.erase(it);else ++it;
+        for(u32 seat=0;seat<player_count;++seat)if(pilots[seat].player&&pilots[seat].player->focus_animation)
+            multiplayer_hitbox_owners[pilots[seat].player->focus_animation]=seat;
+        const auto owner=multiplayer_hitbox_owners.find(id);
+        if(owner!=multiplayer_hitbox_owners.end()&&owner->second!=local_player)return 0;
+    }
     if(!vm.id||local_player>=player_count||
        state.netplay_runtime.Spectator()||state.netplay_runtime.Playback()||!pilots[local_player].player)return 255;
     const auto* root=&vm.child_node;
@@ -715,7 +726,6 @@ u8 World::player_visual_alpha(const AnmVm& vm)const{
         const float dx=p->position.x-local.position.x,dy=p->position.y-local.position.y;
         const u8 alpha=multiplayer::player_proximity_alpha(dx,dy);
         if(alpha==255)continue;
-        if(id==p->focus_animation)return alpha;
         for(const auto& shot:p->shots)if(shot.state&&
             (id==shot.animation||id==shot.secondary_animation))return alpha;
         for(const auto& option:p->options)for(auto animation:option.animations)if(animation&&animation==id)return alpha;
