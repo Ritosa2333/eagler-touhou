@@ -57,6 +57,11 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
     bullets.bind_roster(roster);
     enemies.bind_roster(roster);
     effect_system.player_view=this;
+    effect_system.player_effect_visible=[](void* owner,const EffectState& effect,i32 seat)->bool{
+        auto& scene=*static_cast<GameplayScene*>(owner);
+        // Native focus kind 22 retains its fixed-pool owner during fade-out.
+        return effect.kind!=22||seat<0||seat==i32(scene.session.local_player);
+    };
     effect_system.player_view_alpha=[](void* owner,i32 seat)->u8{
         auto& scene=*static_cast<GameplayScene*>(owner);const auto local=scene.session.local_player;
         if(scene.session.netplay.ReadOnly()||seat==i32(local)||!scene.roster.eligible(local)||!scene.roster.eligible(seat))return 255;
