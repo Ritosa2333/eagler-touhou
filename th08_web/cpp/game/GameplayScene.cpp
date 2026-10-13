@@ -94,6 +94,11 @@ void GameplayScene::publish_dialogue(){
 }
 void GameplayScene::message(i32 entry){synchronize();failed|=!dialogue.read(entry);publish_dialogue();}
 void GameplayScene::synchronize(){
+    gui_context.practice_all_clear_bonus=session.practice.enabled&&session.practice.all_clear_bonus;
+    spell_drawing.disable_master=session.practice.enabled&&session.practice.disable_master;
+    globals.practice_force_last_spell=session.practice.enabled&&!session.practice.replay&&session.practice.force_last_spell;
+    globals.practice_enemy_invincible=session.practice.enabled&&!session.practice.replay&&(session.practice.cheats&64);
+    globals.practice_tools_enabled=session.practice.enabled;
     auto& p=player_state;auto& n=session.numbers;const auto& limits=session.thresholds;
     auto& m=menus.context;m.flags=globals.game_flags;m.show_retry=globals.stage_completion;m.stage=globals.stage;m.character=globals.shot;m.spell=globals.current_spell;m.difficulty=globals.difficulty;m.spell_captured=bool(globals.spell_flags&512);m.times=hud.times;
     paused=m.pause_state!=0;retrying=m.show_retry!=0;p.context.game_over=m.show_retry;
@@ -189,6 +194,8 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     // Original RegisterChain: 0164d2ec=(8,16), 0164d2f4=(368,416).
     player_state.input.minimum={8,16};player_state.input.extent={368,416};
     display.dialogue.message=-1;globals.gui=&hud;hud.implementation=&display;
+    // Purple 00437AF3 resets the display sidecar when the GUI owner starts.
+    globals.practice_lock_frames=0;
     dialogue_context.text=get(0);ascii.state.ascii=dialogue_context.ascii=get(1);ascii.state.capture=dialogue_context.capture=get(3);
     if(!dialogue_context.text||!dialogue_context.ascii||!dialogue_context.capture)return false;
     if(initialize_values&&!startup.before_player(wanted.initial))return false;
@@ -245,6 +252,7 @@ bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
     if(recording_game){recording.input.physical=buttons;publish_input(recording.input);}else if(playing_replay)publish_input(playback.input);
     // Practice cheats run after input publication so F6 can press the bomb key.
     update_practice(*this,session);
+    if(session.practice.enabled&&session.practice.show_keyboard_monitor)session.practice.key_monitor.record(8,player_state.input.buttons);
     synchronize();return !invalid();
 }
 bool GameplayScene::update(u16 buttons,float rate,bool force_unit){presentation::CalculationScope presentation_tick;if(!prepare_frame(buttons,rate,force_unit))return false;failed|=chain.run()<0;return !invalid();}

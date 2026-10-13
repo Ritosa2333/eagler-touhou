@@ -44,16 +44,17 @@ assert.match(packageScript,/Production build contains diagnostic export/);
 assert.match(labStart,/package-eagler\.mjs --presentation-lab/);
 assert.match(labServer,/artifacts\/presentation-lab\/runtime/);
 
-// Fixed game clock: one rAF callback may execute zero or one fixed tick. Late
-// callbacks skip expired 60 Hz deadlines instead of replaying catch-up ticks.
+// Normal game clock: late callbacks skip expired 60 Hz deadlines. Purple's
+// explicit game-speed option owns a separate clock; it is not high refresh.
 assert.match(host,/int tick\(\).*runtime->step\(false\)/s);
-assert.match(host,/const bool tick_due=cadence\.advance\(delta\)!=0/);
-assert.match(host,/if\(tick_due&&!result\)/);
+assert.match(host,/const unsigned ticks=custom_speed\?practice_cadence\.advance\(delta\):cadence\.advance\(delta\);const bool tick_due=ticks!=0/);
+assert.match(host,/for\(unsigned tick_index=0;tick_index<ticks&&!result;\+\+tick_index\)/);
 assert.doesNotMatch(host,/for\(unsigned i=0;i<ticks/);
-assert.match(host,/elapsed\+=touhou::sdl::FrameCadence::interval;result=tick\(\)/);
+assert.match(host,/elapsed\+=touhou::sdl::FrameCadence::interval;[\s\S]*?result=tick\(\)/);
 assert.match(host,/th08_limit_presentation_to_60/);
 assert.match(host,/const bool limit60=th08_limit_presentation_to_60\(\)!=0/);
-assert.match(host,/const bool ready=interpolation_ready\(\)&&!limit60/);
+assert.match(host,/const bool ready=interpolation_ready\(\)&&!limit60&&!custom_speed/);
+assert.match(host,/const bool high=display_cadence\.high_refresh&&interpolation_ready\(\)&&!custom_speed/);
 
 // Every real 60 Hz tick still executes TH08's authoritative draw once. High
 // refresh only hides that swap and follows it with a presentation-only draw.

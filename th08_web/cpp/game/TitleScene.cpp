@@ -1,4 +1,5 @@
 #include "TitleScene.hpp"
+#include "PracticeSections.hpp"
 namespace th08 {
 TitleScene::TitleScene(GameplaySession& s,AnmLibrary& l,AnmRenderer& r,AsciiManager& a,const AsciiContext& ac,TextWriter& t,ScreenEffects& e,TitlePlatform& p)
  :session(s),library(l),renderer(r),platform(p),screen(e),animations(s.random),menus(context,s.display_config,animations,t,p),flow(menus,a,ac,*this),view(menus,a,r),information(r,context.input,p){menus.practice=&s.practice;}
@@ -21,8 +22,9 @@ bool TitleScene::attach(Chain& owner){
     calculation.set_callback([](void* p){auto& s=*static_cast<TitleScene*>(p);if(s.information.active||s.pending_load)return JobResult::Continue;
         auto& practice=s.session.practice;
         if(practice.enabled&&s.menus.state.currentScreen==TitleCurrentScreen_PracticeStageSelect){
-            if(practice.accepted){practice.accepted=false;practice.menu=false;s.context.currentStage=practice.run.stage;
+            if(practice.accepted){practice.accepted=false;practice.menu=false;s.context.currentStage=practice_runtime_stage(practice.run);
                 if(practice.run.stage==8)s.context.difficulty=4;s.context.flags.isPracticeMode=true;s.context.flags.isReplay=false;s.context.flags.isSpellPractice=false;
+                if(practice.run.stage==9){s.context.difficulty=1;s.context.flags.isSpellPractice=true;s.context.currentSpellCardNumber=practice.run.section-TH08_LW_1+205;}
                 s.context.supervisor_state=2;s.platform.stop_audio();return JobResult::Remove;}
             practice.menu=true;s.menus.state.practiceState=0;return JobResult::Continue;
         }

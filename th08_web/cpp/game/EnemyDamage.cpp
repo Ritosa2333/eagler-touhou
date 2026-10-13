@@ -18,7 +18,10 @@ bool damage_enemy(EclVm& enemy,const EnemyDamageContext& input,PlayerFrameState&
                 else damage=damage>2?(Extended::from_int(damage)/number(2.5f)).truncate_int():damage?1:0;
             }
             if(enemy.damage_protection.current>0)damage=enemy.flags&2?damage/9:0;
-            enemy.life=wrapping_sub(enemy.life,damage);enemy.last_damage=damage;damage_familiar_parent(enemy,damage,input.bomb);
+            // Purple NOPs only the enemy and familiar-parent life subtraction.
+            // Keep hit feedback, score and damage calculation in original order.
+            if(!enemy.environment||!enemy.environment->practice_enemy_invincible)enemy.life=wrapping_sub(enemy.life,damage);
+            enemy.last_damage=damage;damage_familiar_parent(enemy,damage,input.bomb);
         }
     }
     if(enemy.flags&2){

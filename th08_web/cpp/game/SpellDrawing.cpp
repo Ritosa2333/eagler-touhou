@@ -3,6 +3,7 @@
 #include "PresentationVisual.hpp"
 #include "PresentationAudit.hpp"
 #include "GameMath.hpp"
+#include "PracticeHistoryDigits.hpp"
 #include <cmath>
 namespace th08 {
 namespace {
@@ -83,7 +84,10 @@ bool SpellDrawing::draw(){
                 if(n>999)n=999;if(n/100){valid=digit(n/100,digit_vm)&&valid;n%=100;leading=true;}pos.x=add(pos.x,7);
                 if(n/10||leading){valid=digit(n/10,digit_vm)&&valid;n%=10;}pos.x=add(pos.x,7);valid=digit(n%10,digit_vm)&&valid;
             };
-            pos.x=add(pos.x,32);three(signed_bits(history.captures[state.shot]));pos.x=add(pos.x,13);three(signed_bits(history.attempts[state.shot]));
+            const auto full=[&](i32 n,bool captures){return disable_master&&practice_history_overflow(n,captures,pos.x,[&](int d){valid=digit(d,digit_vm)&&valid;},add);};
+            const i32 captures=signed_bits(history.captures[state.shot]),attempts=signed_bits(history.attempts[state.shot]);
+            if(!full(captures,true)){pos.x=add(pos.x,32);three(captures);}
+            if(!full(attempts,false)){pos.x=add(pos.x,13);three(attempts);}
         }
     }
     r.mix_enabled=false;r.mix_color=0x80808080;return valid;

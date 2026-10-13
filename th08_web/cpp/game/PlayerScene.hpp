@@ -55,7 +55,7 @@ public:
     PlayerScene(PlayerSimulationState& s,ShotResource (&r)[2],GameGlobals& n,GameValues& v,GameGauge& g,GameRank& rank,PracticeState& practice,AnmLibrary& l,AnmExecutor& a,AnmRenderer& renderer,PlayerScenePlatform& p)
      :state(s),shots(r),numbers(n),values(v),gauge(g),rank(rank),practice(practice),library(l),animations(a),renderer(renderer),platform(p){}
     void bind(PlayerSceneWorld& scene){world=&scene;scene.items.bind_hud(scene.hud);}
-    void reset(){failed=false;for(u32 i=0;i<8;i++){boss_owners[i]=nullptr;boss_views[i]={};}}
+    void reset(){failed=false;practice.input.reset();for(u32 i=0;i<8;i++){boss_owners[i]=nullptr;boss_views[i]={};}}
     PlayerSimulationServices services(){return {*this,motion,*this,*this,patterns,*this,*this};}
     bool prepare();void finish();void sync_values();bool invalid()const{return failed;}
     bool load_shots(bool focused,const char* path)override{const auto bytes=platform.read(path);return shots[focused].load(bytes.data(),bytes.size());}
@@ -67,7 +67,7 @@ public:
     void hud_group(i32 index,i32 interrupt)override{if(u32(index)<4)world->ascii.state.boss_markers[index].pendingInterrupt=i16(interrupt);else failed=true;}
     void time_item_threshold(i32 value)override{world->enemies.time_item_threshold=value;}
     void update_integrity()override{values.update_integrity();}
-    void dissolve()override{++practice.tracker_dissolve_count;}
+    void dissolve()override{++practice.tracker_dissolve_count;if(practice.enabled&&!practice.replay)practice.input.begin_retry(practice.active?practice.run.mode:0);}
     void randomize_integrity()override{values.randomize_integrity();}
     void effect(i32 kind,const Vec3& p,i32 count,u32 color)override{world->effects.spawn(kind,p,count,color);failed|=world->effects.invalid;}
     void effect(i32 kind,const Vec3& p)override{effect(kind,p,1,0xffffffff);}
@@ -85,7 +85,7 @@ public:
     void set_power(i32 n)override{values.set_power(n);sync_values();}
     void add_power(i32 n)override{failed|=!values.add_power(n);sync_values();}
     void set_bombs(i32 n)override{values.set_bombs(n);sync_values();}
-    void add_lives(i32 n)override{failed|=!values.add_lives(n);sync_values();}
+    void add_lives(i32 n)override{if(n<0&&practice.enabled&&!practice.replay)practice.input.begin_retry(practice.active?practice.run.mode:0);failed|=!values.add_lives(n);sync_values();}
     void subtract_rank(i32 n)override{rank.subtract(n);}
     void item(i32 kind,const Vec3& p,i32 mode)override{world->items.spawn(p,kind,mode);failed|=world->items.invalid();}
     void update(PlayerBombKind)override{failed=true;}

@@ -76,7 +76,20 @@ std::vector<std::string> BrowserRuntime::user_replays(){return resources_.user_r
 void BrowserRuntime::calendar(char date[6],char stamp[20]){file_device().calendar(date,stamp);}
 u32 BrowserRuntime::milliseconds(){return file_device().milliseconds();}
 u64 BrowserRuntime::performance_counter(){return u64(milliseconds())*1000;}
-u16 BrowserRuntime::poll_input(){const auto touch=u16(file_device().supplemental_input());return input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);}
+u16 BrowserRuntime::poll_input(){
+    const auto touch=u16(file_device().supplemental_input());u16 result=input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);
+    auto& p=app.session.practice;
+    if(p.enabled&&!p.replay&&app.in_game()){
+#ifdef TH_NATIVE_PLATFORM
+        if(ThpracUi::captures_game_input())return result;
+#endif
+        u8 filtered[256]{};filtered[90]=(result&Shoot)?128:0;filtered[88]=(result&Bomb)?128:0;filtered[160]=filtered[161]=(result&Focus)?128:0;filtered[27]=(result&Menu)?128:0;filtered[82]=(result&Reset)?128:0;
+        p.input.apply(filtered);
+        result=u16((result&~(Shoot|Bomb|Focus|Menu|Reset))|(filtered[90]?Shoot:0)|(filtered[88]?Bomb:0)|((filtered[160]||filtered[161])?Focus:0)|(filtered[27]?Menu:0)|(filtered[82]?Reset:0));
+        if(p.input.disable_xkey||p.input.disable_zkey||p.input.disable_shiftkey||p.input.force_shiftkey||p.input.enable_fast_retry)p.assisted=true;
+    }
+    return result;
+}
 void BrowserRuntime::Graphics::bind_texture(u32 h){graphics_device().texture(h);}
 #ifdef TH_NATIVE_PLATFORM
 PipelineState& BrowserRuntime::Graphics::pipeline(){return graphics_device().pipeline();}

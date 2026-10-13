@@ -4,6 +4,7 @@
 // candidate lifecycle used by the title replay menu.
 #include "../th08_web/cpp/game/PracticeConfig.hpp"
 #include "../th08_web/cpp/game/PracticeSections.hpp"
+#include "../th08_web/cpp/game/PracticeVersion.hpp"
 #include "../portable/input/MotionTrack.hpp"
 #include <cassert>
 #include <cstring>
@@ -40,11 +41,33 @@ int main(){
     double words[PracticeConfig::word_count]{};original.encode(words);
     PracticeConfig decoded;assert(decoded.decode(words,PracticeConfig::word_count));
     assert(decoded.stage==5&&decoded.section==original.section&&decoded.score==original.score&&decoded.gauge==-5000);
+    assert(words[22]==1); // Keep the original bridge's schema slot stable.
+    PracticeConfig legacy;assert(legacy.decode(words,23));
+    assert(legacy.stage==5&&legacy.sp1_pts==0);
+    auto point_words=original;point_words.sp1_pts=1;point_words.bsX=-160;point_words.bsY=128;point_words.encode(words);
+    assert(decoded.decode(words,26)&&decoded.sp1_pts==1&&decoded.bsX==-160&&decoded.bsY==128);
+    words[25]=129;assert(!decoded.decode(words,26));
+    original.encode(words);
     words[3]=19999;assert(!decoded.decode(words,PracticeConfig::word_count));
+    constexpr int lw_stages[]{0,1,2,5,6,7,8,5,8,3,4,3,3,3,3,3,3};
+    for(int i=0;i<17;++i){auto lw=original;lw.stage=9;lw.section=TH08_LW_1+i;
+        assert(lw.valid()&&practice_runtime_stage(lw)==lw_stages[i]);
+        assert(practice_last_word_matches(lw,lw_stages[i],205+i));
+        assert(!practice_last_word_matches(lw,lw_stages[i]+1,205+i));
+        assert(!practice_last_word_matches(lw,lw_stages[i],204+i));
+        auto lw_json=practice_replay_json(lw);PracticeConfig copy;
+        assert(practice_replay_parse(lw_json.data(),u32(lw_json.size()),copy)&&copy.stage==9&&copy.section==lw.section);
+    }
+    auto invalid_lw=original;invalid_lw.stage=9;assert(!invalid_lw.valid());invalid_lw.section=11001;assert(!invalid_lw.valid());
 
     // THPracParam::GetJson() byte layout: compact, optional keys omitted.
     const std::string json=practice_replay_json(original);
-    assert(json.find("{\"version\":\"2.3.0.3\",\"game\":\"th08\",\"mode\":1,\"stage\":5,\"section\":")==0);
+    assert(json.find(std::string("{\"version\":\"")+practice_source_version+"\",\"game\":\"th08\",\"mode\":1,\"stage\":5,\"section\":")==0);
+    auto points=original;points.stage=1;points.section=TH08_ST2_BOSS3;points.sp1_pts=1;points.bsX=48;points.bsY=96;
+    const auto points_json=practice_replay_json(points);PracticeConfig points_copy;
+    assert(practice_replay_parse(points_json.data(),u32(points_json.size()),points_copy));
+    assert(points_copy.sp1_pts==1&&points_copy.bsX==48&&points_copy.bsY==96);
+    points.bsY=129;assert(!points.valid());
     assert(json.find("\"phase\"")==std::string::npos&&json.find("\"frame\"")==std::string::npos&&json.find("\"dlg\"")==std::string::npos);
     assert(json.find("\"score\":9876543210")!=std::string::npos&&json.size()>=16&&json.compare(json.size()-16,16,"\"rankLock\":true}")==0);
     PracticeConfig parsed;assert(practice_replay_parse(json.data(),u32(json.size()),parsed));
@@ -54,6 +77,10 @@ int main(){
     // THPracParam::ReadJson() Reset()s first: missing keys stay zero, never menu defaults.
     PracticeConfig sparse;const std::string partial="{\"version\":\"2.3.0.3\",\"game\":\"th08\",\"mode\":1,\"stage\":5,\"life\":3,\"bomb\":2,\"power\":100,\"gauge\":0,\"score\":100,\"graze\":0,\"point_total\":0,\"point_stage\":0,\"time\":0,\"value\":60000,\"night\":0,\"familiar\":0,\"rank\":12,\"rankLock\":false}";
     assert(practice_replay_parse(partial.data(),u32(partial.size()),sparse)&&sparse.section==0&&sparse.life==3&&sparse.value==60000);
+    assert(sparse.legacy_blue_replay);
+    const auto blue_json=practice_replay_json(sparse);assert(blue_json.find("\"version\":\"2.3.0.3\"")!=std::string::npos);
+    assert(!parsed.legacy_blue_replay);
+    sparse.encode(words);assert(decoded.decode(words,26)&&!decoded.legacy_blue_replay);
     // Wrong game / missing schema / invalid values all degrade to Original.
     PracticeConfig rejected;
     assert(!practice_replay_parse("{\"version\":\"2.3.0.3\",\"game\":\"th07\",\"mode\":1}",35,rejected));

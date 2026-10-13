@@ -8,6 +8,7 @@ struct GuiContext {
     i32 difficulty=0;Vec3 player;
     i32 stage_frames=1,human_frames=0,youkai_frames=0;
     bool practice_replay=false,time_stopped=false,paused=false,retry=false;
+    bool practice_all_clear_bonus=false;
     bool spell_active=false,boss_exists=false;u16 input=0;
     i32 familiar_count=0,familiar_multiplier=0;
     u32 graphics_options=0;

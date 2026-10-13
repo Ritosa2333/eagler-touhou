@@ -6,6 +6,7 @@ enum class GraphicsArithmetic { Simd, Scalar };
 // Simd is the original runtime's default; Scalar is its DisablePSGP option.
 struct GraphicsMath {
     static void arithmetic(GraphicsArithmetic path);
+    static void practice_rsqrt(bool enabled,char cpu);
     static void multiply(Matrix4& output, const Matrix4& first, const Matrix4& second);
     static void rotation(Matrix4& output, u32 axis, float radians);
     static void quaternion(Matrix4& output,const float* xyzw);

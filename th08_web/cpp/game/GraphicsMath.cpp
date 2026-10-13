@@ -1,12 +1,14 @@
 #include "GraphicsMath.hpp"
 #include "GameMath.hpp"
 #include "ReciprocalSqrtTable.hpp"
+#include "PracticeRsqrtTables.hpp"
 #include <cmath>
 #include <initializer_list>
 
 namespace th08 {
 namespace {
 GraphicsArithmetic arithmetic_path=GraphicsArithmetic::Simd;
+bool practice_rsqrt_enabled=false;char practice_rsqrt_cpu='i';
 float from_bits(u32 bits) { float value; std::memcpy(&value,&bits,4); return value; }
 u32 to_bits(float value) { u32 bits; std::memcpy(&bits,&value,4); return bits; }
 void rotation_sine_cosine(float angle, float& sin, float& cos) {
@@ -55,6 +57,7 @@ Extended negative_dot(const Vec3& a, const Vec3& b) {
 }
 
 void GraphicsMath::arithmetic(GraphicsArithmetic path) { arithmetic_path=path; }
+void GraphicsMath::practice_rsqrt(bool enabled,char cpu){practice_rsqrt_enabled=enabled;practice_rsqrt_cpu=cpu;if(enabled)PracticeRsqrtTables::initialize();}
 
 void GraphicsMath::multiply(Matrix4& output, const Matrix4& first, const Matrix4& second) {
     // D3DX's initialized scalar dispatch (0x486fd6) sums even and odd
@@ -92,7 +95,9 @@ void GraphicsMath::normalize(Vec3& output, const Vec3& input) {
         if (!(square>=0x1p-46f)) { output={}; return; }
         // RCP/RSQRT estimate seeds vary by processor. Preserve the reference
         // browser runtime's seed and the original single-precision refinement.
-        const float seed=1.0f/std::sqrt(square);
+        // Purple 0048D452 / 0048F032 intercept only the SIMD RSQRT seed;
+        // retain retail guards, refinement order and scalar dispatch unchanged.
+        const float seed=practice_rsqrt_enabled?PracticeRsqrtTables::lookup(square,practice_rsqrt_cpu):1.0f/std::sqrt(square);
         const float product=(square*seed)*seed;
         const float scale=(.5f*seed)*(3.0f-product);
         output={scale*v.x,scale*v.y,scale*v.z};

@@ -14,7 +14,7 @@ void damage_familiar_parent(EclVm& enemy,i32 damage,bool bomb){
     auto* parent=enemy.parent;if(!parent||bomb)return;
     i32 minimum=0;for(const i32 threshold:parent->life_thresholds)if(minimum<threshold)minimum=threshold;
     i32 amount=damage/2;if(parent->damage_protection.current>0)amount=(parent->flags&2)?amount/9:0;
-    if(amount){parent->life=wrapping_sub(parent->life,amount);if(parent->life<=minimum)parent->life=minimum;}
+    if(amount){if(!enemy.environment||!enemy.environment->practice_enemy_invincible)parent->life=wrapping_sub(parent->life,amount);if(parent->life<=minimum)parent->life=minimum;}
 }
 bool contact_enemy_and_trail(EclVm& enemy,u8 character,EnemyContactActions& actions){
     if(!(enemy.flags&4))return true;

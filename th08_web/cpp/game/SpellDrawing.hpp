@@ -14,6 +14,7 @@ class SpellDrawing {
     AnmVm presentation_vm(u32 index)const;
     bool digit(i32 value,AnmVm& vm);
 public:
+    bool disable_master=false;
     AnmLoaded* digits=nullptr;
     SpellDrawing(EclGlobals& s,const SpellRecord* r,AnmRenderer& a):state(s),records(r),renderer(a){}
     void snapshot_presentation();

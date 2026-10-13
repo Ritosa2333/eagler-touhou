@@ -44,7 +44,7 @@ bool SpellSystem::begin(EclVm& enemy,u32 number,i32 portrait,u32 bonus,const u8*
         auto& record=records[number];std::memcpy(record.name,s.spell_name,std::strlen(s.spell_name)+1);
         char decoded[48];decode(decoded,owner,48,0xbb);const auto* end=static_cast<const char*>(std::memchr(decoded,0,48));if(!end)return false;std::memcpy(record.owner,decoded,end-decoded+1);
         const bool practice=s.game_flags&0x4000;if(practice){std::memcpy(s.spell_comment1,comment1,64);std::memcpy(s.spell_comment2,comment2,64);}
-        encounter_spell(record,u32(s.shot),practice,u8(s.difficulty));
+        encounter_spell(record,u32(s.shot),practice,u8(s.difficulty),this->practice.enabled&&this->practice.doswnc);
     }
     return !anm.invalid;
 }
@@ -70,7 +70,7 @@ bool SpellSystem::end(){
                 if(!(s.game_flags&8)){
                     auto& record=records[s.spell_number];const bool practice=s.game_flags&0x4000;
                     if(practice){decode(record.comment1,reinterpret_cast<const u8*>(s.spell_comment1),64,0xdd);decode(record.comment2,reinterpret_cast<const u8*>(s.spell_comment2),64,0xee);}
-                    capture_spell(record,u32(s.shot),practice,u8(s.difficulty),s.spell_bonus);++high_score.spell_counters[s.spell_number];
+                    capture_spell(record,u32(s.shot),practice,u8(s.difficulty),s.spell_bonus,this->practice.enabled&&this->practice.doswnc);++high_score.spell_counters[s.spell_number];
                 }
                 numbers.captured_spells=wrapping_add(numbers.captured_spells,1);
                 static constexpr u16 last_spells[]{10,11,12,29,30,31,51,52,53,74,75,76,97,98,99,116,117,118,143,144,145,146,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,204};

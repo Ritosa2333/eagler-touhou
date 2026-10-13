@@ -35,14 +35,14 @@ struct Buffer {
 };
 struct Audio {
     ma_engine engine{};SDL_AudioStream* stream=nullptr;bool ready=false,paused=false,music=true,ogg_full=false,refill=true;u32 error=0,pumps=0,mixed=0,min_queue=~0u,resource_changes=0;float rms=0;
-    std::map<u32,std::unique_ptr<Buffer>> buffers;
+    float music_speed=1.f;std::map<u32,std::unique_ptr<Buffer>> buffers;
     bool initialize(){if(ready)return true;auto config=ma_engine_config_init();config.noDevice=MA_TRUE;config.channels=2;config.sampleRate=44100;config.defaultVolumeSmoothTimeInPCMFrames=0;
         if(ma_engine_init(&config,&engine)!=MA_SUCCESS){error=1;return false;}
         SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
         if(SDL_InitSubSystem(SDL_INIT_AUDIO))stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
         if(!stream){ma_engine_uninit(&engine);error=2;return false;}ready=true;SDL_ResumeAudioStreamDevice(stream);return true;}
     bool attach(Buffer& b,ma_data_source* source){if(ma_sound_init_from_data_source(&engine,source,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&b.sound)!=MA_SUCCESS)return false;b.sound_ready=true;return true;}
-    void controls(Buffer& b){ma_sound_set_volume(&b.sound,std::pow(10.f,float(b.volume)/2000.f));ma_sound_set_pan_mode(&b.sound,ma_pan_mode_balance);
+    void controls(Buffer& b){if(b.music)ma_sound_set_pitch(&b.sound,music_speed);ma_sound_set_volume(&b.sound,std::pow(10.f,float(b.volume)/2000.f));ma_sound_set_pan_mode(&b.sound,ma_pan_mode_balance);
         ma_sound_set_pan(&b.sound,b.pan>=0?1.f-std::pow(10.f,-float(b.pan)/2000.f):std::pow(10.f,float(b.pan)/2000.f)-1.f);}
     void pump(){if(!ready||paused)return;auto queued=std::max(0,SDL_GetAudioStreamQueued(stream))/8;min_queue=std::min(min_queue,u32(queued));
         if(!refill&&queued<4096)refill=true;if(!refill)return;if(queued>=6144){refill=false;return;}
@@ -109,8 +109,9 @@ if(!PcmWave::valid(format)||size%format.align)return -1;
 };
 SoundDevice& sound_device(){static SDLSound sound;return sound;}
 void sdl_audio_pump(){audio.pump();}
+void sdl_audio_music_speed(float ratio){audio.music_speed=std::isfinite(ratio)?std::clamp(ratio,1.f/60.f,100.f):1.f;for(auto& [id,buffer]:audio.buffers)if(buffer->music&&buffer->sound_ready)ma_sound_set_pitch(&buffer->sound,audio.music_speed);}
 void sdl_audio_pause(bool pause){if(audio.paused==pause)return;audio.paused=pause;if(audio.stream){if(pause)SDL_PauseAudioStreamDevice(audio.stream);else SDL_ResumeAudioStreamDevice(audio.stream);}}
-void sdl_audio_shutdown(){audio.buffers.clear();if(audio.stream)SDL_DestroyAudioStream(audio.stream);audio.stream=nullptr;if(audio.ready)ma_engine_uninit(&audio.engine);audio.ready=false;}
+void sdl_audio_shutdown(){audio.buffers.clear();if(audio.stream)SDL_DestroyAudioStream(audio.stream);audio.stream=nullptr;if(audio.ready)ma_engine_uninit(&audio.engine);audio.ready=false;audio.music_speed=1.f;}
 extern "C" {
 __attribute__((export_name("sdl_music_enabled"))) void sdl_music_enabled(u32 on){audio.music=on!=0;if(!audio.music)if(auto* b=audio.buffers.count(1000)?audio.buffers[1000].get():nullptr){b->requested=false;if(b->sound_ready)ma_sound_stop(&b->sound);}}
 __attribute__((export_name("sdl_ogg_decode_mode"))) void sdl_ogg_decode_mode(u32 full){audio.ogg_full=full!=0;}

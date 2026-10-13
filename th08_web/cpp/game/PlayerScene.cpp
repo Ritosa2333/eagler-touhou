@@ -8,6 +8,8 @@ bool PlayerScene::prepare(){
     if(!world){failed=true;return false;}sync_values();state.context.game_flags=world->ecl.game_flags;state.context.pause=world->ecl.paused;state.context.time_spell=u8(world->ecl.spell_flags&1);state.context.game_over=world->ecl.stage_completion;
     std::memcpy(&state.context.hud_flags,&world->hud.flags,4);state.input.gui_blocked=gui_blocked();state.input.tampered=values.tampered();
     state.context.cheats=state.bomb_input.cheats=u8(practice_cheats());
+    // Purple's life hook suppresses decrement only once no spare lives remain.
+    if(practice.map_inf_life_to_no_continue&&numbers.lives>=1)state.context.cheats&=~2u;
     for(u32 i=0;i<8;i++){auto* enemy=world->ecl.boss_slots[i];boss_owners[i]=enemy;state.bomb_input.bosses[i]=enemy?&boss_views[i]:nullptr;if(enemy)boss_views[i]={enemy->life,enemy->flags};}
     return !failed;
 }

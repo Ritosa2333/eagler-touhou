@@ -25,7 +25,7 @@ EX("practice_configure") bool browser_practice_configure(BrowserRuntime* r,const
 }
 EX("practice_cancel") void browser_practice_cancel(BrowserRuntime* r){if(!r||!r->app.session.practice.menu)return;auto& p=r->app.session.practice;p.menu=p.accepted=false;
     r->app.title.menus.state.cursor=r->app.title.context.character;r->app.title.menus.ChangeCurrentScreen(TitleCurrentScreen_CharacterSelectPractice);}
-EX("practice_cheats") bool browser_practice_cheats(BrowserRuntime* r,u32 mask){if(!r||!r->app.in_game()||!r->app.session.practice.enabled||r->app.session.practice.replay||mask>63)return false;auto& p=r->app.session.practice;p.cheats=mask;if(mask)p.assisted=true;return true;}
+EX("practice_cheats") bool browser_practice_cheats(BrowserRuntime* r,u32 mask){if(!r||!r->app.in_game()||!r->app.session.practice.enabled||r->app.session.practice.replay||mask>127)return false;auto& p=r->app.session.practice;p.cheats=mask;if(mask)p.assisted=true;return true;}
 EX("resident_hits") u32 browser_resident_hits(BrowserRuntime* r){return r->app.library.resident_hits();}
 EX("preload_stats") const u32* browser_preload_stats(BrowserRuntime* r){static u32 out[2];out[0]=r->app.library.preload_count();out[1]=r->app.library.preload_hits();return out;}
 EX("allocate") void* browser_allocate(u32 n){return std::calloc(n,1);}

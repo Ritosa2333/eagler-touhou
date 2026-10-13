@@ -69,7 +69,8 @@ bool GameApplication::enter_game(){
             // attract demos never go through the replay menu and stay vanilla.
             if(!game.load_replay(bytes.data(),bytes.size())){platform.replay_error();return false;}
             p.active=p.enabled&&p.run.mode==1&&!(g.game_flags&2);
-        }else p.active=p.enabled&&(g.game_flags&1)&&!(g.game_flags&0x4002)&&p.run.mode==1;
+        }else p.active=p.enabled&&(g.game_flags&1)&&!(g.game_flags&2)&&p.run.mode==1&&
+            (!(g.game_flags&0x4000)||practice_last_word_matches(p.run,i32(g.stage),g.current_spell));
     }
     title.detach();show_loading(from_title?Vec3{500,440,0}:Vec3{280,430,0},true);if(from_title)start_effect();
     GameplayLoad prepared=request;if((prepared.flags&0x60)>=0x40)prepared.flags=(prepared.flags&~0x60u)|0x20;

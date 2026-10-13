@@ -79,7 +79,8 @@ void GuiController::update_stage(){
     if(display.spell_bonus.display){if(display.spell_bonus.timer.current>=280)display.spell_bonus.display=0;display.spell_bonus.timer.tick(executor.timing);}
     if(display.clear_frames==1){
         i32 score=display.clear_stage;for(const auto term:{product(display.clear_graze,50),product(display.clear_points,5000),product(display.clear_time,100)})score=wrapping_add(score,term);
-        if(scene.stage>=6&&!(scene.flags&1)){score=wrapping_add(score,product(Scalar::truncate(globals.lives),2500000));score=wrapping_add(score,product(Scalar::truncate(globals.bombs),500000));}
+        // Purple 00435F8E skips only the Practice-mode test, not the stage gate.
+        if(scene.stage>=6&&(!(scene.flags&1)||context.practice_all_clear_bonus)){score=wrapping_add(score,product(Scalar::truncate(globals.lives),2500000));score=wrapping_add(score,product(Scalar::truncate(globals.bombs),500000));}
         if(scene.stage==7)score=wrapping_add(score,product(12-globals.clock_time,2000000));
         switch(context.difficulty){case 0:score/=2;break;case 2:score=product(score,12)/10;break;case 3:score=product(score,15)/10;break;case 4:score=product(score,2);break;}
         switch(config.lives){case 3:score=product(score,5)/10;break;case 4:score=product(score,2)/10;break;case 5:score/=10;break;case 6:score/=20;break;}
@@ -103,7 +104,8 @@ void GuiController::draw_clear(){
     const i32 total=context.stage_frames?context.stage_frames:1;
     ascii.add_format(pos,software(),"over-80%% = %3d.%.2d%%",product(context.human_frames,100)/total,(product(context.human_frames,10000)/total)%100);pos.y+=16;
     ascii.add_format(pos,software(),"over 80%% = %3d.%.2d%%",product(context.youkai_frames,100)/total,(product(context.youkai_frames,10000)/total)%100);
-    if(scene.stage>=6&&!(scene.flags&1)&&!context.practice_replay){
+    // Purple 004384B9/00438568 retain the separate Practice-replay gate.
+    if(scene.stage>=6&&(!(scene.flags&1)||context.practice_all_clear_bonus)&&!context.practice_replay){
         pos.y+=16;a.color=0xffffff80;ascii.add_format(pos,software(),"Player =%8d0",product(Scalar::truncate(globals.lives),2500000));pos.y+=16;ascii.add_format(pos,software(),"Bomb   = %7d0",product(Scalar::truncate(globals.bombs),500000));
         if(scene.stage==7){pos.y+=16;ascii.add_format(pos,software(),"Last Time = %2d:%.2d",(display.clear_clock/60)%12,display.clear_clock%60);pos.y+=16;ascii.add_format(pos,software(),"Night Bonus");pos.y+=16;ascii.add_format(pos,software(),"        %8d0",product(12-globals.clock_time,2000000));}
     }

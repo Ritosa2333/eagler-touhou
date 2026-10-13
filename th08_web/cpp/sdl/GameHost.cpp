@@ -60,6 +60,7 @@ constexpr SDL_GamepadButton gamepad_slots[]={
     SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,SDL_GAMEPAD_BUTTON_BACK,
     SDL_GAMEPAD_BUTTON_START,SDL_GAMEPAD_BUTTON_LEFT_STICK,SDL_GAMEPAD_BUTTON_RIGHT_STICK,SDL_GAMEPAD_BUTTON_GUIDE,
 };
+PracticeCadence practice_cadence;double practice_period=1./60.;
 int gamepad_axis(SDL_GamepadAxis axis){const int value=SDL_GetGamepadAxis(gamepad,axis);return value<0?value*1000/32768:value*1000/32767;}
 constexpr const char* warmAnimations[]={"etama.anm","enemy.anm","front.anm","times.anm","stg1bg.anm","stg1enm.anm","eff01.anm","stg1txt.anm","stg2bg.anm","stg2enm.anm","eff02.anm","stg2txt.anm","player00.anm","player01.anm","player02.anm","player03.anm","staff01.anm"};
 constexpr u32 warmCount=sizeof(warmAnimations)/sizeof(*warmAnimations);
@@ -67,14 +68,22 @@ touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)
     if(a.supervisor.state.active==i32(th08::Scene::Ending)){s.context=2;return s;}
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||p.context.game_over||(g.globals.game_flags&0x60))return s;
-    s.context=g.dialogue.present()?2:1;s.ready=p.life.state!=1&&p.life.state!=2;s.instance=g.globals.stage+1;
+    s.context=g.dialogue.present()?2:1;s.choice=g.dialogue.choosing();s.ready=p.life.state!=1&&p.life.state!=2;s.instance=g.globals.stage+1;
     s.x=p.motion.movement.position.x;s.y=p.motion.movement.position.y;s.fast=g.shots[0].settings().normal_speed*g.player.timing.rate;s.slow=g.shots[1].settings().focus_speed*g.player.timing.rate;
     s.min_x=p.input.minimum.x;s.min_y=p.input.minimum.y;s.max_x=s.min_x+p.input.extent.x;s.max_y=s.min_y+p.input.extent.y;return s;
 }
 int touch_stage(){return runtime&&runtime->app.in_game()?runtime->app.game.globals.stage:-1;}
-void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2))runtime->motion.touch_cancel(touch_stage());}
-void pointer(int type,int id,float x,float y){const auto state=touch_state();sync_touch_context(state);if(runtime&&(state.context==1||state.context==2))runtime->motion.touch_event(touch_stage(),type,id,x,y);touch.pointer(type,id,x,y,SDL_GetTicks(),state,runtime&&runtime->keyboard_state()[16]);}
-void cancel_touch(){if(runtime){runtime->motion.touch_cancel(touch_stage());runtime->motion.target(0,0,0);}touch.cancel_transient();}
+void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2)&&state.context!=1&&state.context!=2)runtime->motion.touch_cancel(touch_stage());}
+// Ownership is acquired on pointer-down and retained through release, even
+// when the drag leaves an ImGui window. Other fingers remain game-owned.
+bool practice_pointer_active=false;int practice_pointer_id=0;
+void pointer(int type,int id,float x,float y){
+    if(type<0||type>2||!std::isfinite(x)||!std::isfinite(y))return;
+    if(type==0&&!practice_pointer_active&&ThpracUi::captures_pointer(x*640.f,y*480.f)){practice_pointer_active=true;practice_pointer_id=id;}
+    if(practice_pointer_active&&id==practice_pointer_id){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);if(type==2)practice_pointer_active=false;return;}
+    const auto state=touch_state();sync_touch_context(state);if(runtime&&(state.context==1||state.context==2))runtime->motion.touch_event(touch_stage(),type,id,x,y);touch.pointer(type,id,x,y,SDL_GetTicks(),state,runtime&&runtime->keyboard_state()[16]);
+}
+void cancel_touch(){practice_pointer_active=false;ThpracUi::cancel_pointer();if(runtime){runtime->motion.touch_cancel(touch_stage());runtime->motion.target(0,0,0);}touch.cancel_transient();}
 bool interpolation_ready(){
     if(!runtime||runtime->app.loading_game()||runtime->app.title.modal())return false;
     if(runtime->app.title.active())return true;
@@ -104,14 +113,16 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     ThpracUi::update_input(*runtime);
     if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})keys[vk]=0;
 }
-int tick(){poll();return !runtime||!runtime->step(false)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
+int tick(){poll();if(runtime)runtime->app.session.practice.input.gui_tick();return !runtime||!runtime->step(false)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
 EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double delta=last<0?0:std::max(0.,(now-last)/1000.);last=now;frame_begin=emscripten_get_now();
-    if(suspended||!th08_frame_ready()){sdl_audio_pause(true);cadence.reset();display_cadence.reset();presentation_gate.reset();return EM_TRUE;}sdl_audio_pause(false);int result=0;
+    if(suspended||!th08_frame_ready()){sdl_audio_pause(true);practice_cadence.reset();cadence.reset();display_cadence.reset();presentation_gate.reset();return EM_TRUE;}sdl_audio_pause(false);int result=0;
     const bool limit60=th08_limit_presentation_to_60()!=0;
-    const bool ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)display_cadence.advance(delta);else display_cadence.reset();
-    const bool tick_due=cadence.advance(delta)!=0;
-    const bool high=display_cadence.high_refresh&&interpolation_ready();const bool interpolate=presentation_gate.advance(high,tick_due);bool presented=false;
-    if(tick_due&&!result){
+    const double period=ThpracUi::simulation_interval(*runtime);if(period!=practice_period){practice_period=practice_cadence.period=period;practice_cadence.reset();cadence.reset();display_cadence.reset();presentation_gate.reset();}
+    const bool custom_speed=std::abs(period-1./60.)>1e-12;
+    const bool ready=interpolation_ready()&&!limit60&&!custom_speed,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)display_cadence.advance(delta);else display_cadence.reset();
+    const unsigned ticks=custom_speed?practice_cadence.advance(delta):cadence.advance(delta);const bool tick_due=ticks!=0;
+    const bool high=display_cadence.high_refresh&&interpolation_ready()&&!custom_speed;const bool interpolate=presentation_gate.advance(high,tick_due);bool presented=false;
+    for(unsigned tick_index=0;tick_index<ticks&&!result;++tick_index){
         elapsed+=touhou::sdl::FrameCadence::interval;
 #if defined(TH_PRESENTATION_AUDIT)
         const double update_started=emscripten_get_now();
@@ -125,7 +136,7 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
             // presentation rates every fixed-tick draw is semantic but hidden;
             // the visible frame below is a second, side-effect-free presentation
             // pass. Missed original deadlines are skipped rather than caught up.
-            const bool hidden=high;const bool lightweight=hidden&&runtime&&!runtime->visual_capture_pending();if(hidden)sdl_defer(1);
+            const bool hidden=high||tick_index+1<ticks;const bool lightweight=hidden&&runtime&&!runtime->visual_capture_pending();if(hidden)sdl_defer(1);
             if(lightweight){runtime->suppress_visual_draw(true);runtime->app.renderer.visual_geometry_suppressed=true;}
 #if defined(TH_PRESENTATION_AUDIT)
             const double semantic_started=emscripten_get_now();
@@ -193,9 +204,9 @@ EX("sdl_prepare_next") i32 sdl_prepare_next(){if(!runtime)return -1;if(prepared>
     ++prepared;return ok?i32(prepared):-1;}
 EX("sdl_warm_assets") u32 sdl_warm_assets(){return warm_mask;}
 EX("sdl_game_initialize") bool sdl_game_initialize(){if(!runtime||prepared!=sdl_prepare_total()||!runtime->initialize()||!ThpracUi::initialize())return false;sdl_validate_capture();return true;}
-EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;cadence.reset();display_cadence.reset();presentation_gate.reset();emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
-EX("sdl_loop_stop") void sdl_loop_stop(){running=false;++loop_epoch;sdl_audio_pause(true);}
-EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;cadence.reset();display_cadence.reset();presentation_gate.reset();sdl_audio_pause(suspended);}
+EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;practice_cadence.reset();cadence.reset();display_cadence.reset();presentation_gate.reset();emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
+EX("sdl_loop_stop") void sdl_loop_stop(){running=false;++loop_epoch;practice_cadence.reset();sdl_audio_pause(true);}
+EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;practice_cadence.reset();cadence.reset();display_cadence.reset();presentation_gate.reset();sdl_audio_pause(suspended);}
 EX("sdl_loop_time") double sdl_loop_time(){return elapsed;}
 #if defined(TH_PRESENTATION_AUDIT)
 // Diagnostic freeze is NOT the in-game pause. It retains the last endpoint pair
@@ -254,9 +265,8 @@ EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
 }
 EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();sdl_keys_clear();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
-EX("sdl_keys_clear") void sdl_keys_clear(){th08_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& key:keyboard_map)key.hosted=false;if(runtime)std::memset(runtime->keyboard_state(),0,256);cancel_touch();touch.reset();}
+EX("sdl_keys_clear") void sdl_keys_clear(){th08_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& key:keyboard_map)key.hosted=false;if(runtime){std::memset(runtime->keyboard_state(),0,256);runtime->app.session.practice.input.reset();}cancel_touch();touch.reset();}
 EX("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){
-    if(ThpracUi::captures_game_input())ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);
     pointer(type,id,x,y);
 }
 EX("sdl_touch_cancel") void sdl_touch_cancel(){cancel_touch();}

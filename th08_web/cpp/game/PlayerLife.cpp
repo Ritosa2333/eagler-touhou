@@ -52,7 +52,7 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
         if(state.timer.current>=30){
             state.state=1;movement.position={Scalar::div(context.extent.x,2),Scalar::sub(context.extent.y,64),.2f};state.timer.set(0);animation.scale={3,3};
             actions.animation(((context.character<4&&!context.focused)||!(context.character&1))?0:5);
-            if(context.lives>0){if(!(context.cheats&2))actions.add_lives(-1);context.hud_flags=(context.hud_flags&~3u)|2;actions.set_bombs(Scalar::truncate(profile.initial_bombs));context.hud_flags=(context.hud_flags&~12u)|8;return true;}
+            if(context.lives>0||(context.cheats&2)){if(!(context.cheats&2))actions.add_lives(-1);context.hud_flags=(context.hud_flags&~3u)|2;actions.set_bombs(Scalar::truncate(profile.initial_bombs));context.hud_flags=(context.hud_flags&~12u)|8;return true;}
             context.game_over=1;
         }
     }

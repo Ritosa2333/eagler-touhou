@@ -16,6 +16,7 @@ bool EclVm::execute_lifecycle(const EclInstruction& instruction){
     const bool restricted=(globals.game_flags&0x4000)&&(globals.game_flags&0x180);
     switch(op){
     case 127:
+        if(globals.practice_tools_enabled)globals.practice_lock_frames=0;
         if(n(0)<0){
             const u32 index=u8(boss_id);if(!boss_index(i32(index)))return false;
             if(index<4){globals.gui_blocks_spawn=false;if(globals.gui)globals.gui->boss_present=false;}
@@ -35,7 +36,7 @@ bool EclVm::execute_lifecycle(const EclInstruction& instruction){
     case 129:if(!restricted)flags=(flags&~0x700000u)|(raw(0)&7)<<20;break;
     case 130:if(!restricted)death_subroutine=i16(raw(0));break;
     case 131:{const i32 value=n(0);life=initial_life=remaining_life=value;if(u8(boss_id)==0&&(flags&2)&&globals.gui){for(auto& x:globals.gui->segment_start)x=0;for(auto& x:globals.gui->segment_end)x=0;}break;}
-    case 132:lifetime.set(n(0));break;
+    case 132:lifetime.set(n(0));if(globals.practice_tools_enabled)globals.practice_lock_frames=0;break;
     case 133:{
         const i32 value=n(1),index=n(0);if(!life_index(index))return false;life_thresholds[index]=value;
         if(!restricted){const i32 sub=n(2),target=n(0);if(!life_index(target))return false;life_subroutines[target]=sub;}
