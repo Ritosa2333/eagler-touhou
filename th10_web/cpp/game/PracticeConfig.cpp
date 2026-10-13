@@ -1,5 +1,6 @@
 #include "PracticeConfig.hpp"
 #include "PracticeSections.hpp"
+#include "PracticeVersion.hpp"
 #include <cmath>
 #include <algorithm>
 #include <cstdio>
@@ -59,7 +60,7 @@ std::string practice_replay_json(const PracticeConfig& p){
     // THPracParam::GetJson(): section/phase/dlg are only written when set.
     if(!p.valid())return {};
     char buffer[1024];
-    int length=std::snprintf(buffer,sizeof(buffer),"{\"version\":\"2.3.0.3\",\"game\":\"th10\",\"mode\":%d,\"stage\":%d",p.mode,p.stage);
+    int length=std::snprintf(buffer,sizeof(buffer),"{\"version\":\"%s\",\"game\":\"th10\",\"mode\":%d,\"stage\":%d",practice_source_version,p.mode,p.stage);
     if(length<=0||static_cast<std::size_t>(length)>=sizeof(buffer))return {};
     auto append=[&](const char* fmt,auto... args){
         const int written=std::snprintf(buffer+length,sizeof(buffer)-static_cast<std::size_t>(length),fmt,args...);

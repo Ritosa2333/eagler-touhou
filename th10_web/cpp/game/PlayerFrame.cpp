@@ -31,6 +31,10 @@ void set_bounds(PlayerBounds& bounds,const Vec3& point,Extended x,Extended y,Ext
 // 0x425730. State changes fall through only at the two points present in the
 // original: entering active play and exhausting the deathbomb window.
 i32 Player::update(PlayerFrameEnvironment& env){
+#ifdef TH_ENABLE_THPRAC
+    // Purple th10_player_state, native 0x425730. Authoritative tick, not draw.
+    if(env.practice&&env.practice->enabled&&env.practice->show_keyboard_monitor&&env.practice->record_keys)env.practice->record_keys(*env.input_keys);
+#endif
     auto& economy=*env.economy;
     if(state==0){
         const i32 distance=static_cast<i32>(static_cast<u32>(state_timer.current)*8000u)/60;

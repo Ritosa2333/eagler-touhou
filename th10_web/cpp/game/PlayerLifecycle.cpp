@@ -40,10 +40,10 @@ void Player::die(PlayerLifecycleEnvironment& env){
     // thprac_th10.cpp:2269 (0x426A1C) counts the miss at its own instruction,
     // independent of the F2 life patch at 0x426A15, so a death is recorded even
     // with infinite lives enabled.
-    if(env.practice)++env.practice->tracker_misses;
+    if(env.practice){++env.practice->tracker_misses;if(env.practice->enabled&&!env.practice->replay)env.practice->input.begin_retry(env.practice->active?env.practice->run.mode:0);}
     // F2 infinite lives: block the decrement (0x426A15 upstream) instead of
     // rewriting the stored value every frame.
-    if(!(env.practice&&practice_infinite_lives(*env.practice))){economy.lives=wrapping_add(economy.lives,-1);if(economy.lives>=0)env.update_lives(economy.lives);}
+    if(!(env.practice&&practice_hold_life(*env.practice,economy.lives))){economy.lives=wrapping_add(economy.lives,-1);if(economy.lives>=0)env.update_lives(economy.lives);}
 #else
     economy.lives=wrapping_add(economy.lives,-1);if(economy.lives>=0)env.update_lives(economy.lives);
 #endif

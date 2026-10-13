@@ -1,5 +1,8 @@
 #pragma once
 #include "Types.hpp"
+#include <eagler/thprac/PracticeInput.hpp>
+#include <eagler/thprac/PracticeSpeed.hpp>
+#include "PracticeCadence.hpp"
 #include <string>
 #include <vector>
 namespace th10 {
@@ -34,11 +37,22 @@ struct PracticeState {
     // Advanced Options owns this independently of the in-game F1-F6 flags,
     // exactly like THAdvOptWnd's persistent context in upstream thprac.
     bool all_clear_bonus=false;
+    // Purple TH10 EHOOK 0x426A15: optionally consume lives until the last one.
+    bool map_inf_life_to_no_continue=false;
+    eagler::thprac::PracticeInput input;
+    bool show_keyboard_monitor=false;
+    void (*record_keys)(u32)=nullptr;
     // TH10's Tab tracker keeps its own counters (TH10Info) instead of reading
     // the aggregate score fields the original game stores.
     u32 tracker_misses=0,tracker_bombs=0;
-    // The real-bullet-sprite toggle has no exact runtime mapping yet; the
-    // request is retained here for the Phase D consumer.
+    bool force_boss_move_down=false,show_point_items=false;
+    float boss_move_down_range=.5f; // purple BOSS_MOVE_DOWN_RANGE_INIT
+    u32 tracker_white=0,tracker_yellow=0;
+    bool enable_lock_timer=false,lock_timer_pending=false;
+    u32 lock_timer=0;
+    bool flip_screen_y=false;
+    eagler::thprac::PracticeSpeed speed;bool keep_player_speed=false;
+    // Native 0x406e03 sprite-override bypass, consumed by BulletCommands.
     bool real_bullet_sprite=false;
 };
 // Upstream thprac THPracParam::GetJson()/ReadJson() payload for th10.

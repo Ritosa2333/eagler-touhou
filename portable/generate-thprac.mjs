@@ -8,7 +8,7 @@ if(!sourceArgument)throw Error('Usage: node portable/generate-thprac.mjs <path-t
 const upstream=resolve(sourceArgument);
 if(!existsSync(resolve(upstream,'thprac/src/thprac/thprac_th10.cpp')))
  throw Error('Missing upstream thprac checkout at '+upstream+'; pass its path explicitly: node portable/generate-thprac.mjs <path-to-thprac> --check');
-const read=p=>readFileSync(resolve(upstream,p),'utf8').replaceAll('\r\n','\n');
+const read=p=>readFileSync(resolve(upstream,p),'utf8').replace(/^\uFEFF/,'').replaceAll('\r\n','\n');
 const source=read('thprac/src/thprac/thprac_th10.cpp');
 const definitions=JSON.parse(read('thprac/src/thprac/thprac_games_def.json'));
 const entries=Object.entries(definitions.th10.sections);
@@ -40,11 +40,18 @@ const globalAccess=/\*\(\s*\(?(?:unsigned\s+|signed\s+)?(?:u?int(?:8|16|32|64)_t
 let body=source.slice(source.indexOf('    __declspec(noinline) void THStageWarp'),source.indexOf('    __declspec(noinline) void THSectionPatch'));
 body=body.replaceAll('__declspec(noinline) ','').replaceAll('THPrac::TH10::','').replaceAll('th_sections_t','int');
 body=body.replace(globalAccess,(match,address)=>globals[address.toLowerCase()]??match);
+body=body.replace(/[\t ]+$/gm,'');
 if(/GetMem|\*\([^\n]*\*\)/.test(body))throw Error('Unmapped executable address in upstream patch');
 const glossary=Object.assign({},...Object.values(definitions).map(g=>g.glossary||{}));
+const versionHeader=read('thprac/src/thprac/thprac_version.h');
+const version=Array.from({length:4},(_,i)=>{const match=versionHeader.match(new RegExp('#define THPRAC_VERSION_'+i+' (\\d+)'));if(!match)throw Error('Purple version boundary changed');return match[1];}).join('.');
+const sharedTools=['thprac_games.cpp','thprac_launcher_tools.cpp','thprac_games_SSS.cpp'].map(p=>read('thprac/src/thprac/'+p)).join('\n');
+const uiKeys=[...new Set([...source.match(/\bTH[A-Z0-9_]+\b/g),...sharedTools.match(/\bTH[A-Z0-9_]+\b/g),'THPRAC_INFLIVES_MAP','TH_FACTOR_ACB','TH_FACTOR_ACB_DESC'])].filter(k=>glossary[k]);
 const sections=entries.map(([key,value],index)=>({id:index+1,key,stage:value.appearance[0]-1,group:value.appearance[1],spell:!!value.spell,bgm:value.bgm,
  names:Array.from({length:5},(_,difficulty)=>{const selector='ENHLX'[difficulty];const entry=Object.entries(value).find(([k])=>k.startsWith('!')&&(k.includes(selector)||k.includes('X')))?.[1];if(entry!==undefined)return typeof entry==='string'?glossary[entry]||[entry,entry,entry]:entry;return ['','',''];})}));
 const files={
+ 'th10_web/cpp/game/PracticeVersion.hpp':`// Generated from purple thprac_version.h (MIT).\n#pragma once\nnamespace th10 {inline constexpr const char* practice_source_version="${version}";}\n`,
+ 'th10_web/cpp/game/PracticeUiLabels.hpp':`// Generated from purple thprac_games_def.json (MIT).\n#pragma once\nnamespace th10 {\n${uiKeys.map(k=>`inline constexpr const char* practice_${k}[3]{${glossary[k].map(v=>JSON.stringify(v)).join(',')}};`).join('\n')}\n}\n`,
  'th10_web/cpp/game/PracticePatches.inc':`// Generated from thprac (MIT), sha256 ${digest}.\n// Regenerate with portable/generate-thprac.mjs; included inside PracticePatcher.\n${body}`,
  'th10_web/cpp/game/PracticeSections.hpp':`// Generated from thprac_games_def.json (MIT); upstream enum order is significant.\n#pragma once\nnamespace th10 {\nenum PracticeSection {\n PracticeNone=0,\n${entries.map(([key],i)=>` ${key}=${i+1},`).join('\n')}\n};\nstruct PracticeSectionInfo {int stage,bgm;};\ninline constexpr PracticeSectionInfo practice_sections[]{\n {-1,0},\n${sections.map(s=>` {${s.stage},${s.bgm}},`).join('\n')}\n};\n}\n`,
  'th10_web/sdl-runtime/practice-sections.mjs':`// Generated from thprac (MIT), source sha256 ${digest}.\nexport const sections=${JSON.stringify(sections,null,2)};\n`,

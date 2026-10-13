@@ -152,6 +152,7 @@ void AppScreens::create_game(i32 mode){auto& a=owner;if(!a.ensure_world())return
     if(a.value.previous_screen==4){
         auto& p=a.state.practice;
         p.cheats=0;p.assisted=false;p.replay=mode!=0;
+        p.input.reset();
         p.active=p.enabled&&p.run.mode==1&&(p.replay||(a.state.game.flags&0x10)!=0);
     }
 #endif

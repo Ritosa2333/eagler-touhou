@@ -4,6 +4,7 @@
 #include "../game/EnemySystems.hpp"
 #ifdef TH_ENABLE_THPRAC
 #include "../game/PracticeRuntime.hpp"
+#include "../game/PracticeGameplay.hpp"
 #endif
 #include <cstdlib>
 namespace th10::browser {
@@ -15,6 +16,9 @@ struct Frame final:EnemyFrameEnvironment,EnemyDropEnvironment {
         auto& spell=*w.actors.spell;auto& gui=*w.actors.gui;auto& player=*w.actors.player;
         phase.default_rate=default_rate;phase.countdown=&gui.countdown;phase.item_value=&w.state.game.item_value;phase.spell_flags=&spell.spell_flags;phase.spell_elapsed=&spell.elapsed.current;phase.spell_bonus=&spell.bonus;
         const u32 indices[]={0,1,3,4,5,6,7};for(u32 i=0;i<7;++i)phase.spell_animation_flags[i]=&spell.bonus_digits[indices[i]].flags;
+#ifdef TH_ENABLE_THPRAC
+        if(w.state.practice.enabled)phase.lock_timer_pending=&w.state.practice.lock_timer_pending;
+#endif
         alternate_active=&w.actors.bomb->active;player_state=&player.state;player_target=&player.target;player_target_seen=&player.target_seen;score=&w.state.game.score;enemy_activity=&w.state.game.enemy_activity;boss_hp_flags=&gui.enemy_marker.flags;boss_slots=w.actors.enemies->bosses;health_bars=reinterpret_cast<EnemyHealthBar*>(gui.boss_health);boss_lives=&gui.boss_lives;message_status=gui.dialogue?reinterpret_cast<const u32*>(&gui.dialogue->blocking_frames):nullptr;
     }
     AnmVm* animation(u32& id) override{return registry->find_and_clear(id);}
@@ -27,6 +31,9 @@ struct Frame final:EnemyFrameEnvironment,EnemyDropEnvironment {
 #ifdef TH_ENABLE_THPRAC
     // F4 time lock (0x40e5b0): hold the enemy lifetime counter.
     bool time_locked() const override{return practice_time_lock(w.state.practice);}
+    bool enemy_invincible() const override{return practice_enemy_invincible(w.state.practice);}
+    void practice_clamp(float& y,float& range) override{practice_boss_clamp(w.state.practice,y,range);}
+    void reset_practice_timer() override{practice_reset_lock_timer(w.state.practice);}
 #endif
 };
 struct Script final:EclServices {
@@ -71,8 +78,18 @@ struct Enemies final:EnemyManagerEnvironment {
 };
 struct Scripts final:EnemyScriptResourceEnvironment {
     World& w;explicit Scripts(World& world):w(world){enemy_animations=w.actors.enemies?w.actors.enemies->animation_files:nullptr;}
-    void* allocate(u32 size) override{return std::malloc(size);}void release(void* p) override{std::free(p);}
-    u8* read_file(const char* name) override{return static_cast<u8*>(w.read_file(name));}
+    void* allocate(u32 size) override{return std::malloc(size);}void release(void* p) override{
+#ifdef TH_ENABLE_THPRAC
+        w.practice_script_sizes.erase(p);
+#endif
+        std::free(p);}
+    u8* read_file(const char* name) override{
+#ifdef TH_ENABLE_THPRAC
+        u32 size=0;auto* data=ResourceFiles{w.scores.files}.load(name,&size,false);if(data)w.practice_script_sizes[data]=size;return data;
+#else
+        return static_cast<u8*>(w.read_file(name));
+#endif
+    }
     AnmFile* load_animation(u32 slot,const char* name) override{return w.engine.manager.load(slot,name,w.engine.resources);}
     void missing_animation() override{w.fail();}
 };
@@ -97,6 +114,9 @@ struct Spawning final:EnemySpawnEnvironment {
     Vec3 project_world(const Vec3& p) override{w.engine.active=&w.engine.world;w.engine.configure_camera(false);w.engine.screen_space=0;Vec3 out;auto& camera=w.engine.world;Matrix4 identity{};for(u32 i=0;i<4;++i)identity.elements[i][i]=1;GraphicsMath::project(out,p,&camera.viewport,&camera.projection,&camera.view,&identity);return out;}
 };
 struct Scene final:EnemySceneEnvironment {
+#ifdef TH_ENABLE_THPRAC
+    void reset_practice_timer() override{practice_reset_lock_timer(w.state.practice);}
+#endif
     World& w;explicit Scene(World& world):w(world){difficulty=&w.state.game.difficulty;game=&w.state.game;registry=&w.engine.manager.registry;spell_flags=&w.actors.spell->spell_flags;spell_bonus_animation=&w.actors.spell->circle_animation;}
     void screen_effect(i32 a,i32 b,i32 c) override{ScreenEffect::create(ScreenEffectKind::ShakeLinear,a,b,c,0,49,w.effects);}
     void start_dialogue(i32 id) override{w.hud->start_dialogue(id);}

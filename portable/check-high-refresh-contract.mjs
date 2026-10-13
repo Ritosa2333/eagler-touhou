@@ -23,8 +23,10 @@ const hud=read('th10_web/cpp/platform/Hud.cpp');
 // rAF may schedule extra presentation frames, but authoritative simulation is
 // at most one Application::step(true) per callback. Late callbacks skip expired
 // original deadlines instead of replaying multiple catch-up ticks.
-assert.match(host,/const bool tick_due=cadence\.advance\(delta\)!=0/);
-assert.match(host,/if\(tick_due\)\{sdl_native_input\(application\);result=application->step\(true\);\}/);
+assert.match(host,/unsigned ticks=cadence\.advance\(delta\)/);
+assert.match(host,/if\(std::abs\(period-1\.\/60\.\)>1e-12\)\{ticks=practice_cadence\.advance\(delta\);presentation\.reset\(\);presentation_primed=false;\}/);
+assert.match(host,/const bool tick_due=ticks!=0/);
+assert.match(host,/for\(unsigned tick=0;tick<ticks&&!result;\+\+tick\)\{sdl_native_input\(application\);result=application->step\(true\);\}/);
 assert.doesNotMatch(host,/for\(unsigned i=0;i<ticks/);
 assert.match(host,/sdl_defer\(1\)/);
 assert.match(host,/frame_alpha=interpolate\?float\(cadence\.interpolation_alpha\(\)\):1\.0f/);

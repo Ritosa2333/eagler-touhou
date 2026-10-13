@@ -26,7 +26,11 @@ i32 EnemyState::update(EnemyFrameEnvironment& env){
         if(*env.player_state==2||*env.player_state==0)damage/=5;
         if(damage){
             if((*env.phase.spell_flags&1)&&(flags&0x8000)){damage/=5;if(damage<1)damage=1;}
-            if(!(flags&8)&&damage_immunity.current<1)health=wrapping_add(health,static_cast<i32>(0u-static_cast<u32>(damage)));
+            if(!(flags&8)&&damage_immunity.current<1
+#ifdef TH_ENABLE_THPRAC
+                &&!env.enemy_invincible()
+#endif
+            )health=wrapping_add(health,static_cast<i32>(0u-static_cast<u32>(damage)));
             if(const auto* name=check_interrupts(env.phase)){
                 switch_phase(name);if(script_owner->update_threads(*lifetime.rate,*env.scripts))return -1;
             }

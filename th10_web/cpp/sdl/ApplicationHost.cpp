@@ -6,6 +6,11 @@
 #include "FrameCadence.hpp"
 #include "PresentationCadence.hpp"
 #include "Renderer.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "ThpracUi.hpp"
+#include <eagler/thprac/PracticeSpeed.hpp>
+#include "../game/PracticeCadence.hpp"
+#endif
 #include "../game/PresentationAudit.hpp"
 #include <algorithm>
 #include <cstddef>
@@ -20,6 +25,14 @@ EM_JS(void, browser_finish_frame, (int result,double milliseconds), { Module['ru
 EM_JS(void, browser_loop_stopped, (), { if(Module['runtimeStopped'])Module['runtimeStopped'](); });
 namespace {
 th10::browser::Application* application=nullptr;
+#ifdef TH_ENABLE_THPRAC
+th10::PracticeCadence practice_cadence;
+#endif
+void reset_practice_cadence(){
+#ifdef TH_ENABLE_THPRAC
+    practice_cadence.reset();
+#endif
+}
 unsigned loop_epoch=0;bool running=false,suspended=false,presentation_primed=false;double elapsed=0,last=-1,audio_remainder=0,callback_begin=0;touhou::sdl::FrameCadence cadence;touhou::sdl::PresentationCadence presentation;
 #ifdef TH_PRESENTATION_AUDIT
 bool presentation_lab_fault=false;
@@ -58,11 +71,12 @@ EM_BOOL frame(double timestamp,void* epoch){
     // The C++ ApplicationLoop owns deadlines, logic, draw and the original
     // 60Hz cadence, independent of display callback frequency.
     const int ready=browser_prepare_frame();if(!running)return EM_FALSE;
-    if(ready<=0||suspended){sdl_audio_pause(1);cadence.reset();presentation.reset();presentation_primed=false;return EM_TRUE;}
+    if(ready<=0||suspended){reset_practice_cadence();sdl_audio_pause(1);cadence.reset();presentation.reset();presentation_primed=false;return EM_TRUE;}
     sdl_audio_pause(0);elapsed+=delta;audio_remainder+=delta*1000;
     const auto milliseconds=th10::u32(std::floor(audio_remainder));audio_remainder-=milliseconds;
     application->audio.advance(milliseconds);
     if(application->world&&application->world->loading){
+        reset_practice_cadence();
         // Share the exact object creation sequence with the synchronous test
         // entry point, but yield between owners on the browser thread. Keep
         // gameplay/RNG/recording frozen until the original loading barrier.
@@ -78,8 +92,15 @@ EM_BOOL frame(double timestamp,void* epoch){
     // no extra interpolated draws. Keep logic/input and audio cadence intact.
     const bool limit60=th10_limit_presentation_to_60()!=0;
     const bool presentation_ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(presentation_ready)presentation.advance(delta);else presentation.reset();if(!presentation.high_refresh||!fast)presentation_primed=false;
-    const bool tick_due=cadence.advance(delta)!=0;int result=0;sdl_defer(1);
-    if(tick_due){sdl_native_input(application);result=application->step(true);}
+    unsigned ticks=cadence.advance(delta);int result=0;sdl_defer(1);
+#ifdef TH_ENABLE_THPRAC
+    const double period=th10::browser::ThpracUi::simulation_interval(*application);
+    if(period!=practice_cadence.period){practice_cadence.period=period;practice_cadence.reset();}
+    if(std::abs(period-1./60.)>1e-12){ticks=practice_cadence.advance(delta);presentation.reset();presentation_primed=false;}
+    else practice_cadence.reset();
+#endif
+    const bool tick_due=ticks!=0;
+    for(unsigned tick=0;tick<ticks&&!result;++tick){sdl_native_input(application);result=application->step(true);}
     const bool high=presentation.high_refresh&&interpolation_ready();if(high&&fast&&!presentation_primed&&tick_due)presentation_primed=true;const bool interpolate=high&&fast&&presentation_primed;float frame_alpha=1.0f;
     sdl_defer(0);bool presented=false;
     if(!result&&high){const bool frozen=application->world&&application->world->actors.session&&(application->world->actors.session->session_flags&0x74);frame_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=application->presentation_draw(frame_alpha,interpolate,!frozen);}else presented=sdl_commit()!=0;
@@ -98,13 +119,13 @@ __attribute__((export_name("sdl_loop_time"))) double sdl_loop_time(){return elap
 __attribute__((export_name("sdl_loop_tick"))) int sdl_loop_tick(th10::browser::Application* app,double seconds,th10::u32 milliseconds){
     if(running)return -1;elapsed+=seconds;app->audio.advance(milliseconds);sdl_native_input(app);return app->step(true);
 }
-__attribute__((export_name("sdl_loop_pause"))) void sdl_loop_pause(th10::u32 pause){suspended=pause!=0;last=-1;cadence.reset();presentation.reset();presentation_primed=false;sdl_audio_pause(pause);}
+__attribute__((export_name("sdl_loop_pause"))) void sdl_loop_pause(th10::u32 pause){reset_practice_cadence();suspended=pause!=0;last=-1;cadence.reset();presentation.reset();presentation_primed=false;sdl_audio_pause(pause);}
 __attribute__((export_name("sdl_loop_start"))) void sdl_loop_start(th10::browser::Application* app){
-    application=app;elapsed=audio_remainder=0;cadence.reset();presentation.reset();presentation_primed=false;last=-1;callback_begin=emscripten_get_now();running=true;
+    reset_practice_cadence();application=app;elapsed=audio_remainder=0;cadence.reset();presentation.reset();presentation_primed=false;last=-1;callback_begin=emscripten_get_now();running=true;
     emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 __attribute__((export_name("sdl_loop_stop"))) void sdl_loop_stop(){
-    if(!running&&!application)return;running=false;++loop_epoch;sdl_audio_pause(1);browser_loop_stopped();application=nullptr;
+    reset_practice_cadence();if(!running&&!application)return;running=false;++loop_epoch;sdl_audio_pause(1);browser_loop_stopped();application=nullptr;
 }
 #ifdef TH_PRESENTATION_AUDIT
 // Diagnostic freeze is intentionally distinct from runtime shutdown. Preserve

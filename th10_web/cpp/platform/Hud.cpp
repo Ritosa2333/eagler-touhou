@@ -2,6 +2,9 @@
 #include "Hud.hpp"
 #include "../game/TextFormat.hpp"
 #include "../game/HighRefresh.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../game/PracticeGameplay.hpp"
+#endif
 #include "AudioData.hpp"
 #include <cmath>
 #include <cstdlib>
@@ -53,6 +56,7 @@ Hud::Hud(GameState& s,GameActors& a,AnimationEngine& e,Common& c,Fonts& f,Input&
     game=&s.game;
 #ifdef TH_ENABLE_THPRAC
     practice=&s.practice;
+    practice_reset_lock_timer(s.practice);
 #endif
     current=&a.gui;stage=&s.current_stage;cached_message=&message_cache;rate=&e.speed;filename=resource_name;current_screen=&s.pending_screen;display_difficulty=&difficulty_visible;controller_stage=&a.session->replay_mode;effects=&c.value->effects;slots=e.manager.files;registry=&e.manager.registry;chain=&update_chain;callbacks=&e.callback_environment;update_callback=callback_id::HudUpdate;draw_callback=callback_id::HudDraw;e.register_receiver(*this);
 }

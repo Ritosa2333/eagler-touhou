@@ -44,6 +44,9 @@ bool collect(Item& item,ItemFrameEnvironment& env){
                 color=0xffffffff;rank=1;
             }
         }
+#ifdef TH_ENABLE_THPRAC
+        env.point_collected(color==0xffffff00);
+#endif
         env.popup(item.position,points,color);economy.add_rank(rank);economy.add_score(points);economy.extend_faith_timer(100,env.default_rate);break;
     }
     case 3:{

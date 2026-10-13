@@ -26,6 +26,9 @@ struct World final:HudActions,CallbackReceiver {
     struct ItemPresentation {Vec3 position{};i32 age=0,state=0,kind=0;bool active=false;} item_regular_presentation[150]{},item_faith_presentation[2048]{};
     struct LaserPresentation {Vec3 position{};float angle=0,length=0,width=0;u32 id=0;i32 state=0;u32 kind=0;};
     std::map<const EnemyLaser*,LaserPresentation> laser_presentation;
+#ifdef TH_ENABLE_THPRAC
+    std::map<const void*,u32> practice_script_sizes;
+#endif
     struct PopupPresentation {Vec3 position{};float elapsed=0;i32 timer=-2;u8 active=0,length=0;};
     PopupPresentation popup_presentation[723]{};
     GameSessionResources::Progress loading_progress;

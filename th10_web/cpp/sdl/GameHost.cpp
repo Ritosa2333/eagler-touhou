@@ -65,13 +65,27 @@ void poll_controllers(InputSnapshot& input){for(u32 i=0;i<2;i++){auto* p=control
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+#ifdef TH_ENABLE_THPRAC
+std::set<int> practice_pointers;
+#endif
 touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!session||!session->app)return s;u32 raw[8];application_touch_state(session->app,raw);float values[5];std::memcpy(values,raw+3,20);
     s.context=raw[0];s.instance=raw[1];s.ready=raw[2];s.x=values[0];s.y=values[1];s.fast=values[2];s.slow=values[3];s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;}
 World* touch_world(){return session&&session->app?session->app->world:nullptr;}
-void cancel(){if(auto* world=touch_world()){world->motion.touch_cancel(world->state.game.stage);world->motion.target(0,0,0);}gestures.cancel_transient();}
+void cancel(){if(auto* world=touch_world()){world->motion.touch_cancel(world->state.game.stage);world->motion.target(0,0,0);}gestures.cancel_transient();
+#ifdef TH_ENABLE_THPRAC
+    practice_pointers.clear();
+    ThpracUi::cancel_pointer();
+#endif
+}
 void key(InputSnapshot& s,u32 scan,u32 vk){s.scan_keys[scan]=128;s.virtual_keys[vk]=128;if(vk>=160&&vk<=165)s.virtual_keys[16+(vk-160)/2]=128;}
-void sync_touch_context(const touhou::input::TouchState& state){const int previous=gestures.current_context();if(previous!=state.context&&(previous==1||previous==2))if(auto* world=touch_world())world->motion.touch_cancel(world->state.game.stage);}
-void touch(int type,int id,float x,float y){const auto state=touch_state();sync_touch_context(state);if((state.context==1||state.context==2))if(auto* world=touch_world())world->motion.touch_event(world->state.game.stage,type,id,x,y);gestures.pointer(type,id,x,y,SDL_GetTicks(),state,session&&session->input&&session->input->snapshot.virtual_keys[16]);}
+void sync_touch_context(const touhou::input::TouchState& state){const int previous=gestures.current_context();if(previous!=state.context&&(previous==1||previous==2)&&state.context!=1&&state.context!=2)if(auto* world=touch_world())world->motion.touch_cancel(world->state.game.stage);}
+void touch(int type,int id,float x,float y){
+#ifdef TH_ENABLE_THPRAC
+    if(type==0&&ThpracUi::captures_pointer(x*640.f,y*480.f))practice_pointers.insert(id);
+    if(practice_pointers.count(id)){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);if(type==2)practice_pointers.erase(id);return;}
+    if(session&&session->state&&session->state->practice.enabled&&session->state->practice.flip_screen_y)y=1-y;
+#endif
+    const auto state=touch_state();sync_touch_context(state);if((state.context==1||state.context==2))if(auto* world=touch_world())world->motion.touch_event(world->state.game.stage,type,id,x,y);gestures.pointer(type,id,x,y,SDL_GetTicks(),state,session&&session->input&&session->input->snapshot.virtual_keys[16]);}
 
 }
 extern "C" {
@@ -96,7 +110,24 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
     if(app->world)app->world->motion.target(sample.motion,sample.x,sample.y);
 #ifdef TH_ENABLE_THPRAC
     ThpracUi::update_input(*app);
-    if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})snapshot.virtual_keys[vk]=0;
+    if(app->state.practice.enabled&&!app->state.practice.replay&&app->world&&app->world->actors.session&&!ThpracUi::captures_game_input()){
+        auto filtered=snapshot;
+        app->state.practice.input.apply(filtered.virtual_keys);
+        // Input filters run after physical and touch input have merged, before
+        // either legacy VK or DirectInput scan-code mapping reads the snapshot.
+        if(filtered.virtual_keys[160]||filtered.virtual_keys[161])filtered.virtual_keys[16]=128;
+        else filtered.virtual_keys[16]=0;
+        for(const int vk:{27,67,88,90,82,160,161})snapshot.virtual_keys[vk]=filtered.virtual_keys[vk];
+        snapshot.virtual_keys[16]=filtered.virtual_keys[16];
+        for(const auto& k:keyboard_map)if(k.vk==27||k.vk==67||k.vk==88||k.vk==90||k.vk==82||k.vk==160||k.vk==161)snapshot.scan_keys[k.scan]=filtered.virtual_keys[k.vk];
+        app->state.practice.input.gui_tick();
+        const auto& input=app->state.practice.input;
+        if(input.disable_xkey||input.disable_zkey||input.disable_shiftkey||input.force_shiftkey||input.enable_fast_retry)app->state.practice.assisted=true;
+    }
+    if(ThpracUi::captures_game_input()){
+        for(const int vk:{16,27,37,38,39,40,88,90,160,161})snapshot.virtual_keys[vk]=0;
+        for(const auto& k:keyboard_map)if(k.vk==27||k.vk==37||k.vk==38||k.vk==39||k.vk==40||k.vk==88||k.vk==90||k.vk==160||k.vk==161)snapshot.scan_keys[k.scan]=0;
+    }
 #endif
 }
 #define EXPORT(name) __attribute__((export_name(name)))
@@ -123,14 +154,15 @@ EXPORT("sdl_game_close") void sdl_game_close(){sdl_keys_clear();
 #endif
     close_controllers();session.reset();}
 EXPORT("sdl_key") void sdl_key(const char* code,u32 down){for(auto& k:keyboard_map)if(!std::strcmp(code,k.code)){k.hosted=down!=0;return;}}
-EXPORT("sdl_keys_clear") void sdl_keys_clear(){th10_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;if(session&&session->app)std::memset(&session->app->input.snapshot,0,sizeof(session->app->input.snapshot));cancel();gestures.reset();}
+EXPORT("sdl_keys_clear") void sdl_keys_clear(){th10_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;if(session&&session->app){std::memset(&session->app->input.snapshot,0,sizeof(session->app->input.snapshot));session->app->state.practice.input.reset();}cancel();gestures.reset();}
 EXPORT("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){
-#ifdef TH_ENABLE_THPRAC
-    if(ThpracUi::captures_game_input())ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);
-#endif
     touch(type,id,x,y);
 }
-EXPORT("sdl_touch_cancel") void sdl_touch_cancel(){cancel();}
+EXPORT("sdl_touch_cancel") void sdl_touch_cancel(){cancel();
+#ifdef TH_ENABLE_THPRAC
+    ThpracUi::cancel_pointer();
+#endif
+}
 #ifdef TH_ENABLE_THPRAC
 EXPORT("sdl_thprac_mouse") void sdl_thprac_mouse(u32 type,float x,float y){ThpracUi::mouse(int(type),x,y);}
 EXPORT("practice_enable") void practice_enable(Application* app,bool enabled){
@@ -149,7 +181,7 @@ EXPORT("practice_cancel") void practice_cancel(Application* app){if(!app||!app->
     if(app->title&&app->title->value){app->title->value->menu.select(app->state.game.stage);app->title->value->set_screen(8,&app->engine.speed);}
 }
 EXPORT("practice_cheats") bool practice_cheats(Application* app,u32 mask){
-    if(!app||!(app->world&&app->world->actors.session)||!app->state.practice.enabled||app->state.practice.replay||mask>63)return false;auto& p=app->state.practice;p.cheats=mask;if(mask)p.assisted=true;return true;
+    if(!app||!(app->world&&app->world->actors.session)||!app->state.practice.enabled||app->state.practice.replay||mask>127)return false;auto& p=app->state.practice;p.cheats=mask;if(mask)p.assisted=true;return true;
 }
 #endif
 EXPORT("sdl_touch_options") void sdl_touch_options(u32 on,u32 free,float speed){gestures.enabled=on;gestures.unlimited=free;gestures.sensitivity=std::clamp(speed,1.f,3.f);if(!on)cancel();}

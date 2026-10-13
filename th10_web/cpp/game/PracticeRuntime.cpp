@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <utility>
+#include <vector>
 namespace th10 {
 namespace {
 using std::pair;
@@ -26,14 +27,21 @@ struct StdStatus {
     u32 camDirChgTime,camDirX,camDirY,camDirZ;
 };
 // Upstream ECLHelper::SetFile uses a 0x99999 byte window into loaded_files[0].
-constexpr u32 kEclBytes=0x99999;
+u32 ecl_size(browser::World& world,const void* data){
+#ifdef TH_ENABLE_THPRAC
+    const auto found=world.practice_script_sizes.find(data);return found==world.practice_script_sizes.end()?0:found->second;
+#else
+    return 0;
+#endif
+}
 // All addresses in generated code are offsets into owned game scripts.
 // Bounds failures mark the writer invalid instead of touching foreign memory.
 class ScriptWriter {
-    u8* data;u32 size;u32 position=0;
+    u8* original;std::vector<u8> copy;u8* data;u32 size;u32 position=0;
 public:
     bool valid=true;
-    ScriptWriter(u8* bytes,u32 length):data(bytes),size(length){}
+    ScriptWriter(u8* bytes,u32 length):original(bytes),copy(bytes&&length?std::vector<u8>(bytes,bytes+length):std::vector<u8>{}),data(copy.empty()?nullptr:copy.data()),size(length){}
+    void commit(){if(valid&&data)std::memcpy(original,data,size);}
     void SetPos(u32 offset){position=offset;}
     template<class T> ScriptWriter& operator<<(T value){if(!data||position>size||sizeof(T)>size-position){valid=false;return *this;}std::memcpy(data+position,&value,sizeof(T));position+=sizeof(T);return *this;}
     template<class K,class T> ScriptWriter& operator<<(std::pair<K,T> value){SetPos(u32(value.first));return *this<<value.second;}
@@ -43,9 +51,17 @@ public:
 using ECLHelper=ScriptWriter;
 u8* ecl_data(browser::World& world){auto* enemies=world.actors.enemies;return enemies&&enemies->program?enemies->program->loaded_files[0]:nullptr;}
 u8* stage_data(Stage* stage){return stage?reinterpret_cast<u8*>(stage->file):nullptr;}
+u8* stage_anm(Stage* stage){return stage&&stage->animation_file?stage->animation_file->loaded:nullptr;}
+u32 stage_anm_size(browser::World& world,Stage* stage){
+#ifdef TH_ENABLE_THPRAC
+ const auto& sizes=world.engine.resources.practice_animation_sizes;const auto found=sizes.find(stage_anm(stage));return found==sizes.end()?0:found->second;
+#else
+ return 0;
+#endif
+}
 class PracticePatcher {
     Stage* stage;GameEconomy& game;const PracticeConfig& thPracParam;
-    ScriptWriter ecl,stdfile;bool valid=true;
+    ScriptWriter ecl,stdfile,anm;bool valid=true;
     StdStatus st4_status{};
     enum {ECL_INS_TIME=0,ECL_INS_OPCODE=4,ECL_INS_ARG1=12,ECL_INS_ARG2=16};
     // thprac_th10.cpp:881. Uses the ECL time/opcode word layout.
@@ -128,9 +144,8 @@ class PracticePatcher {
     }
     // thprac_th10.cpp:709. Rewrite the ST4 stage ANM timing words in place.
     void THStage4ANM(std::int16_t time_delta){
-        u8* buffer=stage&&stage->animation_file?stage->animation_file->loaded:nullptr;
         const std::int16_t d1=std::int16_t(8300-time_delta),d2=std::int16_t(8600-time_delta),d3=std::int16_t(15000-time_delta);
-        const auto word=[&](u32 pos,std::int16_t value){if(buffer)std::memcpy(buffer+pos,&value,2);};
+        const auto word=[&](u32 pos,std::int16_t value){anm.SetPos(pos);anm<<value;};
         word(0xf4,d1);word(0x110,d2);word(0x118,d2);
         word(0x164,0);word(0x178,d1);word(0x194,d2);word(0x19c,d2);
         word(0x1e8,0);word(0x1fc,d1);word(0x218,d2);word(0x220,d2);
@@ -153,8 +168,6 @@ class PracticePatcher {
     // thprac_th10.cpp:766. Zero stage 6 boss ANM timing words.
     void THStage6ANM(){
         if(thPracParam.mode!=1||thPracParam.section<TH10_ST6_BOSS1||thPracParam.section>TH10_ST6_BOSS9)return;
-        u8* buffer=stage&&stage->animation_file?stage->animation_file->loaded:nullptr;
-        if(!buffer)return;
         const std::int16_t zero=0;
         const u32 offsets[]{
             0x0801d4,0x0801e8,0x080224,0x080238,
@@ -162,7 +175,7 @@ class PracticePatcher {
             0x0c048c,0x0c04a8,0x0c04f8,0x0c0514,0x0c0564,0x0c0580,
             0x0c05d0,0x0c05ec,
             0x01047f8,0x0104804,0x010484c,0x0104858};
-        for(const u32 position:offsets)std::memcpy(buffer+position,&zero,2);
+        for(const u32 position:offsets){anm.SetPos(position);anm<<zero;}
     }
     // thprac_th10.cpp:800. Shift stage 6 boss STD times by 3487 and enable the
     // three boss phase flags.
@@ -202,15 +215,17 @@ public:
         stage(world.backgrounds.current),
         game(state.game),
         thPracParam(state.practice.run),
-        ecl(ecl_data(world),kEclBytes),
-        stdfile(stage_data(stage),stage?stage->source_size:0){
+        ecl(ecl_data(world),ecl_size(world,ecl_data(world))),
+        stdfile(stage_data(stage),stage?stage->source_size:0),
+        anm(stage_anm(stage),stage_anm_size(world,stage)){
         if(!ecl_data(world)||!stage||!stage->file)valid=false;
     }
     bool apply(){
         // Upstream th10_patch_main only invokes the section patch in Custom
         // mode; apply_practice already gates that.
         if(thPracParam.mode==1)THSectionPatch();
-        return valid&&ecl.valid&&stdfile.valid;
+        if(!(valid&&ecl.valid&&stdfile.valid&&anm.valid))return false;
+        ecl.commit();stdfile.commit();anm.commit();return true;
     }
 };
 bool cheat_active(const PracticeState& p,u32 bit){return p.enabled&&!p.replay&&(p.cheats&bit)!=0;}
@@ -237,6 +252,8 @@ bool practice_boss_bgm(const PracticeState& p){
 }
 bool practice_invincible(const PracticeState& p){return cheat_active(p,1u);}
 bool practice_infinite_lives(const PracticeState& p){return cheat_active(p,2u);}
+bool practice_hold_life(const PracticeState& p,i32 lives){return practice_infinite_lives(p)&&(!p.map_inf_life_to_no_continue||lives==0);}
+bool practice_enemy_invincible(const PracticeState& p){return cheat_active(p,64u);}
 bool practice_infinite_power(const PracticeState& p){return cheat_active(p,4u);}
 bool practice_time_lock(const PracticeState& p){return cheat_active(p,8u);}
 bool practice_auto_bomb(const PracticeState& p){return cheat_active(p,16u);}

@@ -39,6 +39,9 @@ public:
     bool resample(u32,const i32*,u32,const i32*,const float*,u32,u32);
     void read(u32);void release(u32);void present(u32);void prepare(u32);
     void render_imgui(const ImDrawData*,u32 target);
+    u32 create_imgui_texture(int width,int height,const u8* rgba);
+    void release_imgui_texture(u32 texture);
+    bool flip_present_y=false;
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
 private:

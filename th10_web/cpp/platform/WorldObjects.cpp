@@ -2,6 +2,9 @@
 #include "World.hpp"
 #include "../game/GameObjectResources.hpp"
 #include "../game/HighRefresh.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../game/PracticeGameplay.hpp"
+#endif
 #include <cstdlib>
 namespace th10::browser {
 namespace {
@@ -28,6 +31,9 @@ struct Items final:ItemFrameEnvironment,ItemDrawEnvironment {
     void update_power_display(i32 whole,i32 fraction) override{w.hud->update_power(whole,fraction);}
     void refresh_player_power() override{w.configure_player();}
     void popup(const Vec3& p,i32 value,u32 color) override{w.popup(p,value,color);}
+#ifdef TH_ENABLE_THPRAC
+    void point_collected(bool yellow) override{practice_point_collected(w.state.practice,yellow);}
+#endif
     void play_sound(i32 id,float x) override{w.sound(id,x);}
     void bind_item_sprite(AnmVm& vm,i32 sprite) override{animation_file->bind_sprite(vm,sprite);}
     void draw_animation(AnmVm& vm) override{w.engine.draw(vm);}

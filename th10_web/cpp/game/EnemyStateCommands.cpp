@@ -20,7 +20,11 @@ bool EnemyState::state_command(EclContext& context,EclGlobals& globals,EnemyFram
     case 0x143:{flags&=~static_cast<u32>(integer(0));if(!(flags&0x10))for(const auto id:animations)env.registry->set_visibility(id,true);return true;}
     case 0x144:
         flags|=0x200;clamp_center.x=floating(0).to_float();clamp_center.y=floating(1).to_float();
-        clamp_size.x=floating(2).to_float();clamp_size.y=floating(3).to_float();return true;
+        clamp_size.x=floating(2).to_float();clamp_size.y=floating(3).to_float();
+#ifdef TH_ENABLE_THPRAC
+        env.practice_clamp(clamp_center.y,clamp_size.y);
+#endif
+        return true;
     case 0x145:flags&=~0x200u;return true;
     case 0x146:std::memset(drops.counts,0,sizeof(drops.counts));return true;
     case 0x147:{
@@ -34,6 +38,9 @@ bool EnemyState::state_command(EclContext& context,EclGlobals& globals,EnemyFram
     case 0x14b:
         health=maximum_health=integer(0);std::memset(env.health_bars,0,4*sizeof(EnemyHealthBar));health_to_interrupt=health;return true;
     case 0x14c:{
+#ifdef TH_ENABLE_THPRAC
+        env.reset_practice_timer();
+#endif
         const auto slot=integer(0);
         if(slot<0){if(flags&0x8000)env.boss_slots[boss_slot]=nullptr;flags&=~0x8000u;}
         else{flags|=0x8000;env.boss_slots[slot]=reinterpret_cast<Enemy*>(script_owner);boss_slot=slot;}

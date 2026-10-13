@@ -44,6 +44,9 @@ struct ItemFrameEnvironment : ItemEnvironment,EconomyEnvironment {
     const ItemRegion* pickup_region;
     const ItemRegion* slow_region;
     const ItemRegion* fast_region;
+#ifdef TH_ENABLE_THPRAC
+    virtual void point_collected(bool) {}
+#endif
     virtual void update_power_display(i32 whole,i32 fraction)=0;
     virtual void refresh_player_power()=0;
     virtual void popup(const Vec3& position,i32 value,u32 color)=0;
