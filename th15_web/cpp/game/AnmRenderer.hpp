@@ -15,6 +15,8 @@ public:
 #if TH15_MULTIPLAYER
     std::vector<const AnmVm*> multiplayer_hidden_hud;
     std::unordered_map<const AnmVm*,u8> multiplayer_player_opacity;
+    std::vector<const AnmVm*> multiplayer_hidden_hitboxes;
+    std::unordered_map<u32,unsigned> multiplayer_hitbox_owners;
 #endif
     void submit(AnmVm&,touhou::graphics::Topology,u32,const void*,u32);
     Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;

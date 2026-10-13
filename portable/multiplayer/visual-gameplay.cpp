@@ -30,12 +30,26 @@ int main(int argc,char** argv){
  {
   VisualGraphics graphics;AnmRenderer renderer(graphics);auto& remote=*b.pilots[2]->player;auto& local=*b.pilots[1]->player;
   remote.motion.position=local.motion.position;require(remote.visuals.focus_begin(true,1),"Remote focus creation failed");
-  const auto alpha=remote.visuals.root.visual.color,game=w.environment.game_rng.calls,visual=w.visual.calls;
+   const auto alpha=remote.visuals.root.visual.color,game=w.environment.game_rng.calls;
   b.mp_prepare_presentation(renderer);
   require(renderer.multiplayer_player_opacity.at(&remote.visuals.root)==72,"Near teammate not faded");
   auto* focus=w.animations.registry.find(remote.visuals.focus_handle);require(focus&&renderer.multiplayer_player_opacity.at(focus)==72,"Teammate hitbox not faded");
+  require(std::find(renderer.multiplayer_hidden_hitboxes.begin(),renderer.multiplayer_hidden_hitboxes.end(),focus)!=renderer.multiplayer_hidden_hitboxes.end(),"Remote hitbox still visible");
+  require(local.visuals.focus_begin(true,1),"Local focus creation failed");b.mp_prepare_presentation(renderer);
+  auto* own_focus=w.animations.registry.find(local.visuals.focus_handle);require(own_focus&&std::find(renderer.multiplayer_hidden_hitboxes.begin(),renderer.multiplayer_hidden_hitboxes.end(),own_focus)==renderer.multiplayer_hidden_hitboxes.end(),"Own hitbox hidden");
+   const auto visual=w.visual.calls;
+   const auto vertices=renderer.pending().size();require(renderer.draw(*focus)==0&&renderer.pending().size()==vertices,"Remote hitbox submitted pixels");
   require(renderer.draw(remote.visuals.root)!=-2,renderer.error);
-  require(remote.visuals.root.visual.color==alpha&&game==w.environment.game_rng.calls&&visual==w.visual.calls,"Fade changed native VM or RNG");
+   require(remote.visuals.root.visual.color==alpha&&game==w.environment.game_rng.calls&&visual==w.visual.calls,"Fade changed native VM or RNG");
+   const auto focus_handle=remote.visuals.focus_handle;
+   remote.visuals.focus_handle=0;b.mp_prepare_presentation(renderer);
+   const auto fade_vertices=renderer.pending().size();
+   require(renderer.draw(*focus)==0&&renderer.pending().size()==fade_vertices,"Fading teammate hitbox became visible");
+   remote.visuals.focus_handle=focus_handle;
+   b.mp_options.local_seat=2;b.mp_prepare_presentation(renderer);
+   require(std::find(renderer.multiplayer_hidden_hitboxes.begin(),renderer.multiplayer_hidden_hitboxes.end(),focus)==renderer.multiplayer_hidden_hitboxes.end(),"Selected viewpoint hitbox hidden");
+   require(std::find(renderer.multiplayer_hidden_hitboxes.begin(),renderer.multiplayer_hidden_hitboxes.end(),own_focus)!=renderer.multiplayer_hidden_hitboxes.end(),"Previous viewpoint hitbox visible");
+   b.mp_options.local_seat=1;
   remote.motion.position.x+=100;b.mp_prepare_presentation(renderer);require(renderer.multiplayer_player_opacity.at(&remote.visuals.root)==160,"Far teammate opacity incorrect");
  }
  b.pilots[0]->ghost=true;b.pilots[0]->player->motion.position={0,100,0};
@@ -50,5 +64,5 @@ int main(int argc,char** argv){
  b.laser_scene->multiplayer_target=[&](const Vec3& origin){++selections;const auto target=laser_select(origin);require(target.y==400,"Laser transform selected ghost");return target;};
  MovingLaserRequest laser;laser.position={0,100,0};laser.width=8;laser.maximum_length=64;laser.initial_length=32;
  require(b.laser_scene->create_moving(laser)!=0,b.laser_scene->error);require(b.laser_scene->update(1),b.laser_scene->error);require(selections>0,"Moving-laser target hook missing");
- std::puts("PASS: retail 2P/3P graze glow for every seat, accounting retained, ghost excluded from per-frame bullet and moving-laser targets (headless, not GPU/device)");
+ std::puts("PASS: retail 2P/3P graze glow, local-only hitbox including fade-out/viewpoint changes, native VM/RNG retained, ghost excluded from per-frame bullet and moving-laser targets (headless, not GPU/device)");
 }

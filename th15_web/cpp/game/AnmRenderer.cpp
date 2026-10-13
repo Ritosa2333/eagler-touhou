@@ -106,6 +106,7 @@ int AnmRenderer::trail(AnmVm& vm){
 int AnmRenderer::draw(AnmVm& vm){
 #if TH15_MULTIPLAYER
     if(std::find(multiplayer_hidden_hud.begin(),multiplayer_hidden_hud.end(),&vm)!=multiplayer_hidden_hud.end())return 0;
+    if(std::find(multiplayer_hidden_hitboxes.begin(),multiplayer_hidden_hitboxes.end(),&vm)!=multiplayer_hidden_hitboxes.end())return 0;
     if(const auto found=multiplayer_player_opacity.find(&vm);found!=multiplayer_player_opacity.end()){
         auto copy=vm;const auto alpha=found->second;
         const auto fade=[&](u32 color){return (color&0xffffffu)|(((color>>24)*alpha/255)<<24);};

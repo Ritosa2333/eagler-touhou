@@ -213,16 +213,25 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
     // Tag the current native VMs on every draw, including registered focus/
     // option/shot trees. The renderer scales draw copies, never simulation VMs.
     r.multiplayer_player_opacity.clear();
+    r.multiplayer_hidden_hitboxes.clear();
+    for(auto it=r.multiplayer_hitbox_owners.begin();it!=r.multiplayer_hitbox_owners.end();)
+        if(!animations.registry.find(it->first))it=r.multiplayer_hitbox_owners.erase(it);else ++it;
     const auto local_position=pilots[mp_options.local_seat]->player->motion.position;
     for(unsigned s=0;s<mp_options.seat_count;++s){const auto& pilot=*pilots[s];const auto position=pilot.player->motion.position;
         const double dx=double(local_position.x)-position.x,dy=double(local_position.y)-position.y;
         const u8 opacity=multiplayer_player_opacity(s==mp_options.local_seat,pilot.ghost,dx*dx+dy*dy);
+        auto& visuals=pilot.player->visuals;
+        // Keep ownership until the generation-tagged VM is actually retired,
+        // including fade-out and subsequent changes of the selected viewpoint.
+        const auto remember=[&](auto&& self,AnmVm* vm)->void{if(!vm)return;if(auto id=animations.registry.handle(*vm))r.multiplayer_hitbox_owners[id]=s;for(auto* child:animations.registry.children(*vm))self(self,child);};remember(remember,animations.registry.find(visuals.focus_handle));
         if(opacity==255)continue;
         const auto tag=[&](auto&& self,AnmVm* vm)->void{if(!vm)return;r.multiplayer_player_opacity[vm]=opacity;for(auto* child:animations.registry.children(*vm))self(self,child);};
-        auto& visuals=pilot.player->visuals;tag(tag,&visuals.root);tag(tag,animations.registry.find(visuals.focus_handle));tag(tag,animations.registry.find(visuals.barrier_handle));
+        tag(tag,&visuals.root);tag(tag,animations.registry.find(visuals.focus_handle));tag(tag,animations.registry.find(visuals.barrier_handle));
         for(const auto& pair:visuals.option_handles)for(auto handle:pair)tag(tag,animations.registry.find(handle));
         for(const auto& shot:pilot.player->shots.shots)if(shot.state)tag(tag,animations.registry.find(shot.animation));
     }
+    for(const auto& entry:r.multiplayer_hitbox_owners)if(entry.second!=mp_options.local_seat)
+        if(auto* vm=animations.registry.find(entry.first))r.multiplayer_hidden_hitboxes.push_back(vm);
 }
 bool GameBattle::mp_draw(AnmRenderer& r){
     mp_prepare_presentation(r);

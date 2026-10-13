@@ -10,6 +10,8 @@ GameDraw::~GameDraw(){for(auto& c:callbacks)scheduler.remove(c.frame);
 #if TH15_MULTIPLAYER
  renderer.multiplayer_hidden_hud.clear();
  renderer.multiplayer_player_opacity.clear();
+ renderer.multiplayer_hidden_hitboxes.clear();
+ renderer.multiplayer_hitbox_owners.clear();
 #endif
 }
 void GameDraw::prepare_frame()noexcept{background.rate=progress.rate;spell_context.character=progress.character;spell_context.subcharacter=progress.subcharacter;spell_context.mode_flags=scene.battle.session.mode_flags;const auto* p=scene.battle.enemy_world.practice;spell_context.disable_master_display=p&&p->enabled&&p->disable_master_display;
