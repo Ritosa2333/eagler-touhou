@@ -1,3 +1,4 @@
+import {validTh15ChapterThreshold,defaultTh15ChapterThreshold} from "./th15-chapter-reward.mjs";
 import { multiplayerConfigForProduct, multiplayerInputTimingPolicy, type MultiplayerInputTimingConfig } from "../contracts/product-catalog.mjs";
 
 export interface MultiplayerRuntimeLoadout {
@@ -27,6 +28,7 @@ export interface MultiplayerRuntimeOptionInput {
   spectatorId: string;
   spectatorCount: number;
   challengeMode?: boolean;
+  chapterThreshold?: number;
   iceServers: unknown;
   loadouts: MultiplayerRuntimeLoadout[];
 }
@@ -47,6 +49,7 @@ export interface MultiplayerRuntimeOptions {
   netplaySpectatorId: string;
   netplaySpectatorCount: number;
   netplayChallengeMode?: boolean;
+  netplayChapterThreshold?: number;
   netplayIceServers: unknown[];
   netplayLoadouts: MultiplayerRuntimeLoadout[];
 }
@@ -65,6 +68,7 @@ export function buildMultiplayerRuntimeOptions(
   const roomProduct = (url.searchParams.get("room") || "").split("-")[0];
   const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
   if(input.challengeMode!==undefined && typeof input.challengeMode!=="boolean")throw new Error("挑战模式参数无效");
+  if(input.chapterThreshold !== undefined && (roomProduct !== "th15mp" || !validTh15ChapterThreshold(input.chapterThreshold)))throw new Error("奖残所需得分无效");
   const { player, playerCount, seed } = input;
   const spectator = input.spectator === true;
   if (!constraints.playerCounts.includes(playerCount as 2 | 3) || (!spectator &&
@@ -111,6 +115,7 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
   return {
     netplayMode: "lan",
+    ...(roomProduct === "th15mp" ? {netplayChapterThreshold:input.chapterThreshold ?? defaultTh15ChapterThreshold(playerCount)} : {}),
     ...(input.challengeMode!==undefined?{netplayChallengeMode:input.challengeMode}:{}),
     netplayUrl: url.href,
     netplayPlayer: player,

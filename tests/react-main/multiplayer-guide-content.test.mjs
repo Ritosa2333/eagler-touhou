@@ -103,7 +103,7 @@ for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 't
       assert.equal(initial.document.querySelector('[aria-selected="true"]').dataset.game, ['th06', 'th07', 'th08', 'th10', 'th11', 'th15'].includes(game) ? game : 'th07');
       if (name === 'authored' && game === 'th15') {
         const rules = initial.document.querySelector('.multiplayer-rule-panel[data-game="th15"] .multiplayer-rule-disclosure-specific').textContent;
-        for (const text of ['1,500,000', '2,000,000', '0.02 Power', '0.03 Power', '2.00 Power', '280', '铃仙', '只显示自己的判定点']) assert.ok(rules.includes(text), `Missing TH15 rule: ${text}`);
+        for (const text of ['1,500,000', '1,250,000', '0.02 Power', '0.03 Power', '2.00 Power', '280', '铃仙', '只显示自己的判定点']) assert.ok(rules.includes(text), `Missing TH15 rule: ${text}`);
         assert.ok(!rules.endsWith('本作特有规则无'));
       }
       if (name === 'headings') {
