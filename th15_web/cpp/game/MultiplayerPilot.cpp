@@ -111,7 +111,15 @@ bool MultiplayerPilot::game_over(){
     for(auto& pair:player->visuals.option_handles)for(auto& handle:pair)if(!world.animations.retire(handle))return world.fail(world.animations.error);
     if(!player->visuals.focus_begin(false,1)||!player->visuals.barrier_remove())return world.fail(world.animations.error);
     for(auto& source:player->damage.sources)source.flags=0;
-    for(auto& shot:player->shots.shots)shot.state=0;
+    // Shot animations belong to the shared ANM registry, which keeps ticking
+    // after this pilot stops updating. Retire them before freeing their slots.
+    for(auto& shot:player->shots.shots){
+        if(!world.animations.retire(shot.animation))return world.fail(world.animations.error);
+        shot.state=0;shot.damage_source=0;
+    }
+    auto& shooting=player->frame.shooting;shooting.shot.set(-1);shooting.continuous.set(-1);shooting.auxiliary=0;shooting.auxiliary_active=false;
+    player->shot_context.shoot_frame=-1;player->shot_context.laser_power.fill(0);
+    if(!stop_sound(20)||!stop_sound(30)||!stop_sound(55))return false;
     bool live=false;for(unsigned s=0;s<world.mp_options.seat_count;++s)live|=!world.pilots[s]->ghost;
     return live||world.check(world.game_over_begin?world.game_over_begin():world.presentation.game_over(),"Multiplayer game-over failed");
 }
