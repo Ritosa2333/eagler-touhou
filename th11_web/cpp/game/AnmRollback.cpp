@@ -95,4 +95,3 @@ bool AnmManager::RestoreRollbackFrame(const AnmRollbackFrame& frame,u32 restored
 }
 }
 #endif
-

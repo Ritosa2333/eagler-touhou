@@ -200,5 +200,3 @@ dense、真实 BGM loop seam、48000 guard 三项都有“两路能量均大于�
 3P Challenge Lunatic 整场 BGM/SFX，以及普通 3P Bomb 压力仍需各自运行证据。
 Challenge 明确屏蔽 Bomb，不能通过给该模式发送 KeyX 声称 Bomb 被覆盖；
 Bomb 实际启动必须在普通三人场单独验证。
-
-

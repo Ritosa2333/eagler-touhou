@@ -65,4 +65,3 @@ bool TextureRollback::FinishRollbackRestore(){
 }
 }
 #endif
-

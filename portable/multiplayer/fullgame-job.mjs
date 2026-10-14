@@ -250,4 +250,3 @@ try{
   if(args[0]==='--worker'){assert.equal(args.length,3,'Invalid internal worker invocation');await work(args[1],args[2]);}
   else await launch(args);
 }catch(error){console.error(error?.stack||String(error));process.exitCode=1;}
-

@@ -315,4 +315,3 @@ bool multiplayer_tick(bool forward_due=true){
     if(!rollback_commit())return false;
     refresh_multiplayer_touch_frontier();graphics.present();return true;
 }
-

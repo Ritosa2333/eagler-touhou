@@ -97,4 +97,3 @@ bool EnemyManager::RestoreRollbackFrame(const EnemyRollbackFrame& frame,u32 rest
 }
 }
 #endif
-

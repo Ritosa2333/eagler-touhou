@@ -263,4 +263,3 @@ test('runtime diagnostics preserve live lifecycle and explicit hash sample ident
   assert.deepEqual(f.errors,[]);
  });
 });
-

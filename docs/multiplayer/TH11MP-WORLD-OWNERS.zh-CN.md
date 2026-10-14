@@ -306,4 +306,3 @@ command `XW9BlZCQ2xdzkZTlrWeZwmf_`，exit 0；ordinary **1 group / 19 checks**�
 组件通过后，世界 oracle 仍须比较参考、预测纠正、再次重演的完整 owner 值/拓扑与副作用，
 涵盖 stage Draw、逐席触控/射击、六机体 Bomb/护盾、Ghost/救援、对白与资源屏障。
 这份清单只列实际源码 owner 与已确定边界，不宣称上述 world oracle 已实现或通过。
-

@@ -179,4 +179,3 @@ int main(){
     ordinary_equivalence();cpu_refund();exact_loop_ledger();network_wait();transitions();bounded_and_defensive();reset();budget_and_forward();sustained_cpu();
     std::printf("PASS TH11 frame schedule: %u groups, %u checks\n",groups,checks);return 0;
 }
-

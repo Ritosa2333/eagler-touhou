@@ -75,4 +75,3 @@ node portable/multiplayer/laser-rollback-test.mjs --output artifacts/rollback-sm
 这些结果证明本 fixture 中被测 owner 的恢复与实际行为一致，不证明三世界 exact 一致、完整 Stage/Enemy/Player/资源图覆盖、确认输出水位、网络波动处理或高回滚深度稳定帧间隔。没有移动设备或浏览器测试，也没有绝对性能承诺。
 
 下一步是完成其余 owner 与世界事务，按“结束所有 observer → common UndoTo 全部字节 → typed owner metadata → 释放未来 checkpoint”的整体顺序集成，然后通过完整世界与有限性能门禁。不得因独立组件通过而提前宣称 TH11 可交付。
-

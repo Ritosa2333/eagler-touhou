@@ -92,4 +92,3 @@ o2-02 使用 wasm32-WASI、C++17、O2、ffp-contract=off、fno-strict-aliasing�
 
 AnmManager + AnmRollback 成对列入链接依赖，但这份 suite 不把它们的动态 owner 恢复计入通过范围。
 未运行：完整 Application 事务、真实资源 transition、网络延迟纠正、全部副作用 owner、高刷实际像素、4× CPU 性能、手机或公开网络。
-

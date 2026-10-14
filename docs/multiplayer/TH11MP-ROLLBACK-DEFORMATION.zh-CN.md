@@ -73,4 +73,3 @@ node portable/multiplayer/deformation-rollback.mjs --output artifacts/rollback-s
 - 未运行手机、浏览器、4× CPU、输入延迟或回滚深度性能测试。typed vector snapshot 成本尚未测量。
 - 本次收据早于后续 ANM literal destination pre-write hook；新增 self-modifying script 专项需要新收据，不能借用本次成功。
 - 未更改既有 canonical hash 门禁，也不能因这份组件报告提前宣布 TH11 预测回滚可交付。
-

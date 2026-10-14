@@ -54,4 +54,3 @@ finally{
     writeFileSync(resolve(out,'receipt.json'),JSON.stringify(receipt,null,2)+'\n');
 }
 process.exitCode=exitCode;
-

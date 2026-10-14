@@ -342,4 +342,3 @@ test('real shell: letterbox and managed pointer owners share cancellation eligib
   pointer('pointermove',90);assert.equal(count(h,'touch'),2);
   pointer('pointerdown',60);assert.equal(count(h,'touch'),3);
 });
-

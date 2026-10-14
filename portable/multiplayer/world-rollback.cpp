@@ -481,4 +481,3 @@ int main(int argc,char** argv){
     std::puts("SCOPE: stable stage real owners and authored CPU Draw command/geometry oracle. No host FontDevice textures, GPU pixels, Application/netplay, browser or performance acceptance.");
     return 0;
 }
-

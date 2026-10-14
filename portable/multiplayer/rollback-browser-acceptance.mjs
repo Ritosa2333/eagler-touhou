@@ -709,4 +709,3 @@ try{
   console.log('TH11 rollback browser '+report.status+': '+resolve(out,'receipt.json'));
   if(firstFailure)console.error(String(firstFailure));
 }
-

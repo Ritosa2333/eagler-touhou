@@ -315,4 +315,3 @@ int main(){
     std::printf("PASS ANM Stage batching ordinary: %u groups, %u checks\n",groups,checks);
 #endif
 }
-

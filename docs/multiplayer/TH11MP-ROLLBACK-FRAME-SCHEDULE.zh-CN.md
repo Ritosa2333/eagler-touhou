@@ -89,4 +89,3 @@ root 在工作树根目录串行执行：
 | WASM 大小 | 130980 bytes |
 | oracle | 8 组 / 24429 checks |
 | 完整性 | passed=true、sourceStable=true |
-

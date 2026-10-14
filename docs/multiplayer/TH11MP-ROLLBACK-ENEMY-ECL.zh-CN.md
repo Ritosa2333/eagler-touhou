@@ -117,4 +117,3 @@ runner 由主执行者串行运行，顺序生成 ordinary / multiplayer WASI `-
 `EclContext.cpp::integer_reference/float_reference` 在 references 位未置时返回 nullptr，不会回退到 instruction 参数地址。合法引用分别指向本 context 的 stack 或 EnemyGlobals 提供的 Enemy / boss 字段、environment.shared_integers。完整 Enemy 前像覆盖 root stack 和 Enemy 字段；动态 context block 覆盖 secondary stack；shared_integers 必须由 world/environment owner 单独捕获。
 
 在当前 ECL/Enemy 写目的地搜索中，没有发现 ANM 那种可直接写 script bytes 的非引用参数 fallback；call_subroutine 只读资源并写 target.stack，diagnostic 写 scratch。现存 stack local offset/frame_base 缺少完整边界检查，是畸形 ECL 的既有输入验证风险；本组件不声称通过回滚捕获解决了越界输入。
-

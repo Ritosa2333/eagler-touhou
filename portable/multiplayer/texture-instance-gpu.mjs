@@ -253,4 +253,3 @@ finally{
   if(server){server.closeAllConnections?.();await new Promise(accept=>server.close(accept));}
   receipt.completedAt=new Date().toISOString();save();console.log('Texture instance GPU receipt: '+resolve(out,'receipt.json'));
 }
-

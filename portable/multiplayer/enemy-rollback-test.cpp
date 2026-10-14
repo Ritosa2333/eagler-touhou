@@ -268,4 +268,3 @@ int main(){
 #endif
     std::printf("TH11 Enemy/ECL rollback components: %u cases, %u checks PASS\n",cases,checks);return 0;
 }
-

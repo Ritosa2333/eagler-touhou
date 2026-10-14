@@ -118,4 +118,3 @@ runner 拒绝覆盖已有 receipt，成功与失败都保存命令、开始/结�
 源码 manifest 没有 Application 路径；Application 仍需独立构建和事务接线测试。上述通过仅对应收据里的组件源与字体身份，不自动适用于之后任意改动。
 
 后续仅需围绕实际缺口继续：接入 host 与 World 同一完整事务窗口、使资源 boundary latch 真正到达调度器、构建正式 MP/ordinary SDL host、验证 Undo 前 flush 与恢复后 revision 能触发真实 GPU 重新上传、覆盖本地化 TTF 分支。GPU render target 内容与 renderer state 是不同 owner，不由本 CPU 文字纹理组件代证；其恢复/重绘约束须由完整渲染架构验证。本组件不提供帧率、4× CPU、移动触控或端到端网络性能承诺。
-

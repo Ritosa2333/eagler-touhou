@@ -182,5 +182,3 @@ journal 运行中容量/overlap 捕获失败必须拒绝 seal/提交；有些 fi
 测试每帧主动 reset RecordingGraphics pipeline，而实际应用主要在初始化配置 pipeline；因此当前 PASS 隔离了跨帧主机 state。Application 新增的 renderer 纯值 owner 应有相应恢复比较，不能假设 world checkpoint 已包含这些值。
 
 CPU Draw trace 也没有比较 A/B render target 的像素、清理 region 外的旧内容、纹理版本同步或 FontDevice 输出。正常 SceneSchedule 每帧清理并重建 A/B，再合成 screen，为整帧重演提供了明确重建顺序；但在 Browser/GPU gate 之前，不能宣称所有后处理读取区域和持久纹理都已验证。主机 CPU 纹理必须完成自己的 first-write/Undo/dirty 同步，Pause capture 和资源变更仍在 P0 confirmed 边界执行。
-
-

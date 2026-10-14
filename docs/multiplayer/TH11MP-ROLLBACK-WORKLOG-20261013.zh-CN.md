@@ -363,5 +363,3 @@ Application/JS 已有正式 O2 SDL/Web 构建，短场RTC/relay及普通3P Bomb�
 生产 fastBulkCopy/coalesceRestore 已有真实World组件复核。Launcher P12合同已通过，严格4×性能仍失败。
 完整3P Challenge Lunatic首场进入第六关后因一端browser关闭失败，原因未明；第六关结束、Ending/Staff/Results/菜单Replay保存及Extra均未完成。
 普通3P Bomb自然结束已覆盖，音效大量触发和长场生命周期仍须继续验证。当前不能宣称完整性能或交付通过。
-
-

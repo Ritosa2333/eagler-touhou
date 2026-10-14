@@ -167,4 +167,3 @@ bool WorldRollback::RestoreRollbackFrame(const WorldRollbackFrame& frame,u32 res
 }
 }
 #endif
-

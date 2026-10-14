@@ -342,4 +342,3 @@ EMSCRIPTEN_KEEPALIVE const u32* ti_metadata(){return metadata.data();}
 EMSCRIPTEN_KEEPALIVE const char* ti_error(){return failure.c_str();}
 EMSCRIPTEN_KEEPALIVE void ti_shutdown(){renderer.reset();images.clear();}
 }
-

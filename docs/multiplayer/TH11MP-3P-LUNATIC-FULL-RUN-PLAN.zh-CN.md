@@ -388,7 +388,3 @@ sent/repair 的增加表示发送 API 接受或夹具成功排队，不等于已
 当前 runner 的最小修正仍只发送一次 Host Escape，保留原 capture/NextFrame held/release 证据，然后在原普通场总预算内最多再等 10 秒，轮询真实三端 phase/PauseMenu 状态，直到三端均回到 Stage 且 Bomb 只读 ABI 有效。记录请求前、输入证据、状态转换、最后状态及等候耗时；意外菜单状态、生命周期变化、原生错误或到期均失败。不会通过再次 Escape 盲重试，以免已恢复的席位又进入暂停。200 个后续模拟帧从真正观测到 Stage 后计数，两个 confirmed Pause、Replay、SFX、生命与最终 elapsed>=181 门保持。
 
 此修改只涉及专属 runner 和本文档，不改生产行为、不放宽确认门。本子任务未运行命令；实际语法与第二场结果由 root 串行执行并另留收据。
-
-
-
-

@@ -137,4 +137,3 @@ node portable/multiplayer/rollback-browser-acceptance.mjs --launcher-root <真�
 - 不包含 3P、全部机体/六 Bomb、整局、Extra；六 Bomb 与复杂对象回滚已有组件证据，但不等于浏览器全部场景已通过。
 - 不包含高刷真实显示器的像素扫描、移动设备或不同 GPU 驱动。
 - 不因短测通过而宣称“所有网络、所有设备绝无掉帧”。
-

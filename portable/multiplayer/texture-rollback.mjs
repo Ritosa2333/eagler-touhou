@@ -124,5 +124,3 @@ if(process.argv.includes('--run-wasm')){
   }catch(error){receipt.error=error?.stack||String(error);process.exitCode=1;console.error(String(error));}
   finally{receipt.completedAt=new Date().toISOString();save();console.log('texture component receipt: '+resolve(out,'receipt.json'));}
 }
-
-

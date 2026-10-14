@@ -67,4 +67,3 @@ motion 在 Stage 中约每 100 ms 采样，stage 字段在间隔中沿用最近�
 musicTransfers.checkerMs/completedMs 属于 Node runner 的 performance 时钟；receipt 没有保存 checker timeOrigin。原区间原样输出，并关联邻近 segment 的 checker capture 区间，但不伪装成与页面 gap 的精确 epoch 对齐或因果证明。
 
 根代理提示的 Stage 5 约 5 秒停显位于 segment 0137、frames 89925–90387；不是提示时最新 progress 的 frame 104736。脚本从 raw 自动定位，不把该提示硬编码成归因。
-

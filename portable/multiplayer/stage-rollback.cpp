@@ -291,4 +291,3 @@ int main(){
     std::printf("PASS Stage ordinary: %u groups, %u checks\n",groups,checks);
 #endif
 }
-
