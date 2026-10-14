@@ -25,11 +25,11 @@ const defaultContext = {launched: false, th09NetworkOverlayOpen: false, launchSt
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client')); ({MemoryRouter} = await import('react-router'));
   for (const file of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) {
-    let expected=pinned(file);
-    if(file==='src/launcher/i18n.mts')expected=expected
-      .replace(/^  \["room.enableRollback".*$/m,'  ["room.enableRollback", "启用回滚(降低输入延迟，需要更高的性能)", "Enable rollback (lower input delay, requires higher performance)"],')
-      .replace(/^  \["room.rollbackHint".*$/m,'  ["room.rollbackHint", "开启后输入延迟固定为 0 帧；关闭后使用所选输入延迟。开局后设置固定。", "When enabled, input delay is fixed at 0 frames. When disabled, use the selected input delay. Settings are fixed once the game starts."],');
-    assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project,file),'utf8')),expected,`Pinned authority changed: ${file}`);
+    const expected=execFileSync('git', ['show', 'b479f0a:'+file], {cwd: project, encoding: 'utf8'});
+    let actual = readFileSync(resolve(project,file),'utf8');
+    // TH09 adds translations without changing the pinned shared vocabulary.
+    if (file === 'src/launcher/i18n.mts') actual = actual.replace(/const entries = \[[\s\S]*?(?=  \["touch\.tools")/, 'const entries = [\n');
+    assert.equal(pinnedUiAuthorityText(actual),pinnedUiAuthorityText(file === 'src/contracts/product-catalog.mts' ? expected.replace('rollbackLimit: 0, measuredStartup: true, manualDelayLimit: 9','rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9') : expected),`Pinned authority changed: ${file}`);
   }
   originalHTML = pinned('public/index.html'); const mainSource = execFileSync('git', ['show', '8bdf6dbf4a81032f0725cc841b86d03e1465fe07:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
   // Retain origin/main's separately accepted editable-name block with main's
@@ -80,7 +80,7 @@ test('Room connection distinguishes initial connect, synchronization and actual 
   assert.equal(message(), t('zh-CN', 'multiplayer.connectingRoom'));
   await act(() => f.socket.open());
   assert.equal(message(), t('zh-CN', 'multiplayer.syncingMembers'));
-  await f.receive({predictionLimit: 8, adonisMode: 0});
+  await f.receive({predictionLimit: 12, adonisMode: 3});
   assert.equal(f.service.getSnapshot().room.synced, false);
   assert.equal(message(), t('zh-CN', 'multiplayer.syncingMembers'));
   await f.receive();
@@ -124,7 +124,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true} = {}) {
     get id() {return identity.lobbyClientId(product);}, get socket() {return sockets.at(-1);},
     async enter() {await act(() => service.enterRoom(product, '1234', created)); return f;},
     async receive(patch = {}) {await act(() => f.socket.message({code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, startSerial: 0,
-      ...(product === 'th11mp' ? {adonisMode: 1, predictionLimit: 0} : {}),
+      ...(product === 'th11mp' ? {adonisMode: 0, predictionLimit: 12} : {}),
       seats: [{clientId: f.id, name: 'A', loadout: 0, ready: false, controlMode: 'normal'}, null], spectators: [], ...patch})); return f;},
     async live(patch = {}) {await f.enter(); await act(() => f.socket.open()); await f.receive(patch); return f;},
     async report(progress) {await act(() => preparations.at(-1).report({status: 'preparing', stage: 'package', percent: null, error: '', ...progress}));},
@@ -180,6 +180,9 @@ function canonical(element) {
 }
 function compare(f, options = {}) {
   const doc = baseline(f, options);
+  if (f.service.getSnapshot().product === 'th09mp') {
+    n('#mpRoomMode', doc).textContent = t(f.locale, 'room.versus', {count: f.service.getSnapshot().room.playerCount});
+  }
   const selectors = ['#mpRoomConnection', '#mpCopyRoomCode', '#mpRoomTitle', '.mp-room-tags', '#mpRoomResourceProgress', '#mpRoomSettingsDrawer', '#mpInputTiming',
     '#mpSpectatorAvatars', '#mpSpectatorCount', '.mp-room-footer', '#mpNameEditor', '#mpUnseatedNote', '#mpLocalPlayer', '#mpCheckGame',
     '#mpRoomSettings', '#mpSpectatorContent', '[data-room-panel="network"]'];
@@ -547,9 +550,10 @@ test('Drawer departure and unmount cancel retained 220ms timers with no stale fo
   } finally {clock.restore();}
 });
 
-test('TH11 rollback is hidden and disabled even for a ready host', async()=>{
+test('TH11 ready host can choose rollback and pure delay', async()=>{
  const f=await fixture({product:'th11mp'}).live(); const {m}=await mountRoom(f);
- assert.equal(n('#mpRollbackToggle').hidden,true); assert.equal(n('#mpRollbackToggle').disabled,true);
- await act(()=>f.service.setRollbackEnabled(true)); assert.equal(f.service.getSnapshot().rollbackEnabled,false);
+ assert.equal(n('#mpRollbackToggle').hidden,false); assert.equal(n('#mpRollbackToggle').disabled,false);
+ await act(()=>f.service.setRollbackEnabled(true)); assert.equal(f.service.getSnapshot().rollbackEnabled,true);
+ await act(()=>f.service.setRollbackEnabled(false)); assert.equal(f.service.getSnapshot().rollbackEnabled,false);
  await m.unmount();
 });

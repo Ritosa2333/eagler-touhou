@@ -1,6 +1,11 @@
-import type {ProbeLane, ProbeMetric, createRoomNetwork} from '../../../src/launcher/room-network.mts';
-import type {MultiplayerRoomService} from '../../services/multiplayer-room';
-import type {TouchMovementMode} from '../../../src/launcher/game-preferences.mts';
+import type {
+  ProbeLane,
+  ProbeMetric,
+  createRoomNetwork,
+} from '../../../src/launcher/room-network.mts';
+import type { MultiplayerRoomService } from '../../services/multiplayer-room';
+import type { TouchMovementMode } from '../../../src/launcher/game-preferences.mts';
+import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
 export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game';
 export interface RoomNetworkPresentation {
   subscribe(listener: () => void): () => void;
@@ -10,6 +15,7 @@ export interface RoomNetworkPresentation {
   retry(peer?: string): void;
 }
 export interface RoomViewContext {
+  transfer?: import('../../models/transfer').TransferSnapshot;
   launched: boolean;
   th09NetworkOverlayOpen: boolean;
   launchStage: 'path' | 'preparing' | null;
@@ -17,6 +23,7 @@ export interface RoomViewContext {
   touchMovementMode: TouchMovementMode;
 }
 export interface RoomViewProps {
+  quickChat?: MultiplayerQuickChatModel;
   service: MultiplayerRoomService;
   network: RoomNetworkPresentation;
   context: RoomViewContext;
@@ -28,7 +35,7 @@ export interface RoomViewProps {
   settingsOpen: boolean;
   visible?: boolean;
   settingsClosing?: boolean;
-  panel: {kind: RoomPanelKind; peerId?: string} | null;
+  panel: { kind: RoomPanelKind; peerId?: string } | null;
   onOpenPanel(kind: RoomPanelKind, peerId?: string): void;
   onClosePanel(): void;
 }
