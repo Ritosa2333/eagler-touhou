@@ -77,7 +77,7 @@ def main():
             elif path=='/':file=HERE/'index.html'
             elif path=='/inspector.mjs':file=HERE/'inspector.mjs'
             elif path=='/auto-scan.mjs':file=HERE/'auto-scan.mjs'
-            elif path=='/candidate':file=TITLE/'site/index.html'
+            elif path=='/candidate':file=TITLE/'site/preview.html'
             else:
                 root=TITLE/'src' if path.startswith('/src/') else TITLE/'site'
                 relative=path[5:] if path.startswith('/src/') else path[1:]

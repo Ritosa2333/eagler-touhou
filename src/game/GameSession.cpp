@@ -6,6 +6,7 @@
 #include "HostilePool.hpp"
 #include "ItemPresentation.hpp"
 #include "LaserWorld.hpp"
+#include "StageFlow.hpp"
 namespace th12 {
 void selectStage(int number) {
   gameSpeed = animationScene.runtime.delta = 1;
@@ -30,7 +31,7 @@ void selectStage(int number) {
   stageState = {};
   backgroundEnemyOrigin = {};
 }
-void startGame(int c, int s, int d, int seed, const int* replayInitial) {
+void startGame(int c, int s, int d, int seed, const int* replayInitial, const SessionCarry* carry) {
   gameSpeed = animationScene.runtime.delta = 1;
   sound_system::queue.reset();
   character = std::clamp(c, 0, 2);
@@ -115,10 +116,24 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial) {
     replayStageGlobals = {r[13], r[14], r[15], r[16]};
     graze = r[16]; // 43b311 restores CDC during independent stage selection.
   }
+  if (carry) {
+    resources = carry->resources;
+    px = carry->x;
+    py = carry->y;
+    graze = carry->graze;
+    replayStageGlobals = carry->nativeGlobals;
+    random = {carry->seed, 0}; // 43c77b..43c78d: retain seed, new per-stage call counter.
+    displayRandom = carry->displayRandom;
+    ufoManager.inventory = carry->inventory;
+    // The new presentation must bind the retained inventory; old queued VMs
+    // belong to the previous scene and must not be replayed during its birth.
+    ufoManager.inventory.hudEvents.clear();
+    ufoManager.inventory.refresh();
+  }
   playerMotion.updateOptions(loadouts[character * 2 + shot], power, px, py, false, true);
   // 43c590 restores C598 after the initial option layout. Later body resets
   // must retain the live focus field rather than replaying this stage header.
-  playerFocused = replayInitial && replayStageGlobals[2] != 0;
+  playerFocused = carry ? carry->focused : replayInitial && replayStageGlobals[2] != 0;
   // Both4385b0's initial construction and replay43add0 mark these reset flags.
   playerMotion.resetOptionPositions();
   bulletWorld.playerX = px / 128.f;

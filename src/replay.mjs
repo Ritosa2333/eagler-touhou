@@ -35,7 +35,8 @@ export function parseReplay(source) {
     if(offset>size-160)throw Error('录像关卡头不完整');
     const number=d.getUint16(offset,true),seed=d.getUint16(offset+2,true),frames=d.getUint32(offset+4,true),payload=d.getUint32(offset+8,true);
     if(number<1||number>7||stages.some(s=>s.number===number)||frames<1||frames>1e7||payload>size-offset-160||payload<frames*6)throw Error('录像关卡流无效');
-    const fpsCount=frames>1?1+Math.floor((frames-2)/30):0;
+    const lastInput=offset+160+(frames-1)*6,hasEnd=[0,2,4].every(at=>d.getUint16(lastInput+at,true)===0xffff);
+    const fpsCount=Math.ceil((frames-(hasEnd?1:0))/30);
     if(payload-frames*6<fpsCount)throw Error('录像帧率数据不完整');
     stages.push({number,seed,frames,payload,offset,inputOffset:offset+160,fpsOffset:offset+160+frames*6,fpsCount,
       // Native40de94/40de9b indexes the fixed21 result-time words at+4c.
@@ -44,7 +45,7 @@ export function parseReplay(source) {
     offset+=160+payload;
   }
   if(offset!==size)throw Error('录像包含未识别的解压尾部');
-  return {name:new TextDecoder('shift-jis').decode(data.subarray(0,8)).trim(),character,shot,difficulty,stages,data,
+  return {name:new TextDecoder('shift-jis').decode(data.subarray(0,8)).trim(),character,shot,difficulty,practice:!!(data[10]&1),stages,data,
     recordedFps(stage,cursor){return recordedReplayFps(data,stages.find(s=>s.number===stage),cursor);},
     input(stage,frame){const s=stages.find(s=>s.number===stage);if(!s||frame<0||frame>=s.frames)return null;const p=s.inputOffset+frame*6;return {held:d.getUint16(p,true),pressed:d.getUint16(p+2,true),released:d.getUint16(p+4,true)};}};
 }

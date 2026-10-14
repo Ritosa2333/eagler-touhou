@@ -117,7 +117,7 @@ class Track {
       case 102:{const n=I(0),range=I(1),random=this.random32(true);if(!range){this.owner.unimplemented.add('102-native-division-by-zero');this.ended=true;break;}s.sprite=n+random%(range>>>0);s.visible=true;break;}
       case 103:s.mode=14;s.geometryRadius=F(0);s.geometryWidth=F(1);break;
       case 104:case 105:s.mode=c.op===104?15:16;s.geometryRadius=F(0);s.geometryCount=I(1);break;
-      case 110:s.mode=20;s.geometryRadius=F(0);s.geometryWidth=F(1);this.owner.unimplemented.add('geometry-20');break;
+      case 110:s.mode=20;s.geometryRadius=F(0);s.geometryWidth=F(1);break;
       default:this.owner.unimplemented.add('opcode-'+c.op);break;
     }
     return false;
@@ -168,4 +168,29 @@ export class AnimationSampler {
     const walk=(s,offset={x:0,y:0,z:0})=>{result.push({...s,x:s.x+offset.x,y:s.y+offset.y,z:s.z+offset.z,children:undefined});for(const child of s.children)walk(child,offset);};walk(root);return result;
   }
   diagnostics(){return {unimplemented:[...this.unimplemented],unresolvedGameRandom:[...this.unresolvedGameRandom],wholePresentationOracle:false};}
+}
+
+// Menu VMs are long-lived bindings. Selection interrupts must preserve their
+// current interpolation and also reach the children created by the root ANM.
+// Stage presentation continues to use the immutable age-based sampler above.
+export class MenuAnimation {
+  constructor(sampler,name,id,options={}) {
+    this.track=new Track(sampler,name,id,null,options);
+    this.track.commandsAtTime();
+  }
+  interrupt(code,{recursive=true,immediate=false,script=null}={}) {
+    const visit=track=>{
+      if(script===null||track.id===script){track.interrupt(code);if(immediate)track.commandsAtTime();}
+      if(recursive)for(const child of track.children)visit(child);
+    };
+    visit(this.track);
+  }
+  tick(){this.track.tick();}
+  setSprite(script,sprite){const visit=track=>{if(track.id===script)track.state.sprite=sprite;for(const child of track.children)visit(child);};visit(this.track);}
+  poses(){
+    const root=this.track.frames[0];if(!root)return [];
+    const output=[];
+    const visit=state=>{output.push({...state,children:undefined});for(const child of state.children)visit(child);};
+    visit(root);return output;
+  }
 }

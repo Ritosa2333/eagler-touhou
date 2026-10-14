@@ -33,6 +33,7 @@ workspace/
 python scripts/prepare-assets.py
 python scripts/prepare-presentation.py
 python scripts/prepare-music.py
+python scripts/prepare-menu-assets.py
 python scripts/reverse/sample-sound-queue.py
 node scripts/build-corpus.mjs
 ```
@@ -42,4 +43,6 @@ Unicorn 2.1.4；反编译工具的依赖见 `scripts/reverse/requirements.txt`�
 输出只进入被忽略的 `local/`、`artifacts/`、`site/assets/` 和 `site/replays/`。
 
 资产相关测试、原版探针及全程比较使用本地输入，不能用其他作品资源替代。
-完整行为 Oracle 尚未通过，子系统测试成功不代表整局还原成功。
+默认游戏入口为 `site/index.html`，完整流程及局部验证范围见 [FULL_GAME_FLOW.md](FULL_GAME_FLOW.md)。
+`site/preview.html` 保留独立关卡、拖动回放及检查入口。
+完整行为／展示 Oracle 尚未验收，子系统及合成短流程成功不代表整局还原成功。

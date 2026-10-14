@@ -6,8 +6,13 @@
 #include "../game/LaserDraw.hpp"
 #include "../game/LaserWorld.hpp"
 #include "../game/PresentationGeometry.hpp"
+#include "../game/StageFlow.hpp"
+#include "../game/SpellHistory.hpp"
 
 extern "C" {
+int th12_load_spell_history(const int32_t* words, int count) { return th12::loadSpellHistory(words, count) ? 1 : 0; }
+const char* th12_spell_history() { return th12::captureSpellHistory().c_str(); }
+int th12_spell_history_size() { return int(th12::spellHistorySnapshotBuffer.size()); }
 int th12_sound_events() {
   return th12::sound_system::capture();
 }
@@ -95,14 +100,26 @@ int th12_load_sht(int index, const uint8_t* p, int n) {
   return 1;
 }
 void th12_start(int c, int s, int d, int seed) {
+  th12::resetFullGameFlow();
   th12::startGame(c, s, d, seed);
 }
+int th12_start_full_game(int c, int s, int d, int seed, int practice) {
+  return th12::startFullGame(c, s, d, seed, practice != 0);
+}
+void th12_set_full_game_mode(int practice) {
+  th12::setFullGameMode(practice != 0);
+}
+int th12_start_next_stage() { return th12::startNextStage(); }
+int th12_continue_game() { return th12::continueFullGame(); }
+const char* th12_stage_flow() { return th12::captureStageFlow().c_str(); }
+int th12_stage_flow_size() { return int(th12::stageFlowSnapshotBuffer.size()); }
 void th12_set_wall_time(double milliseconds) {
   th12::spellState.observeWallTime(milliseconds);
 }
 int th12_start_replay(int c, int s, int d, int seed, const int32_t* initial, int count) {
   if (!initial || (count != 17 && count != 38))
     return 0;
+  th12::resetFullGameFlow();
   th12::startGame(c, s, d, seed, initial);
   if (count == 38) {
     std::copy(initial + 17, initial + 38, th12::spellState.replayResultTimes.begin());
@@ -160,7 +177,8 @@ int th12_background_size() {
   return th12::backgroundSnapshotBuffer.size();
 }
 void th12_tick(int held, int pressed) {
-  th12::tick(held, pressed);
+  if (!th12::tickFullGame(held, pressed))
+    th12::tick(held, pressed);
 }
 int th12_draw() {
   using namespace th12;

@@ -11,6 +11,15 @@ void th12_unload_anm(int);
 int th12_load_sht(int, const uint8_t*, int);
 void th12_select_stage(int);
 void th12_start(int character, int shot, int difficulty, int seed);
+int th12_start_full_game(int character, int shot, int difficulty, int seed, int practice);
+void th12_set_full_game_mode(int practice);
+int th12_start_next_stage();
+int th12_continue_game();
+const char* th12_stage_flow();
+int th12_stage_flow_size();
+int th12_load_spell_history(const int32_t* words, int count);
+const char* th12_spell_history();
+int th12_spell_history_size();
 void th12_set_wall_time(double milliseconds);
 int th12_start_replay(int character, int shot, int difficulty, int seed, const int32_t* initial,
                       int count);

@@ -5,10 +5,10 @@ $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
 if (-not $nodeCommand) {
     throw 'Node.js 22 or newer is required. Install Node.js, then run this launcher again.'
 }
-Write-Host 'TH12 development preview: http://127.0.0.1:8112/'
+Write-Host 'TH12 full-game preview: http://127.0.0.1:8112/'
 try {
     $existingPreview = Invoke-WebRequest -Uri 'http://127.0.0.1:8112/' -UseBasicParsing -TimeoutSec 2
-    if ($existingPreview.StatusCode -eq 200 -and $existingPreview.Content.Contains('UNDEFINED FANTASTIC OBJECT')) {
+    if ($existingPreview.StatusCode -eq 200 -and $existingPreview.Content.Contains('Undefined Fantastic Object')) {
         Write-Host 'The TH12 preview is already running. Open the address above.'
         Read-Host 'Press Enter to close this launcher window'
         exit 0

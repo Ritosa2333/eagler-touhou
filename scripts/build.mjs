@@ -22,6 +22,8 @@ exports.push('_th12_laser_draw','_th12_laser_draw_ptr','_th12_laser_draw_stride'
 exports.push('_th12_mesh_draw','_th12_mesh_draw_ptr','_th12_mesh_draw_stride','_th12_mesh_vertices_ptr','_th12_mesh_vertices_count','_th12_mesh_vertex_stride');
 exports.push('_th12_score_popups','_th12_score_popups_ptr','_th12_score_popups_stride');
 exports.push('_th12_score_stored');
+exports.push('_th12_start_full_game','_th12_set_full_game_mode','_th12_start_next_stage','_th12_continue_game','_th12_stage_flow','_th12_stage_flow_size');
+exports.push('_th12_load_spell_history','_th12_spell_history','_th12_spell_history_size');
 const result=spawnSync(python,[compiler,...runtimeSources(root),'-std=c++20','-O2','-o','site/runtime/core.mjs','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,node','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=33554432','-sEXPORTED_FUNCTIONS='+JSON.stringify(exports),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','HEAPU16','HEAPU32','HEAPF32']),'-sASSERTIONS=1'],{cwd:root,stdio:'inherit',env:{...process.env,EM_CACHE:cache,EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});
 if(result.status!==0)process.exit(result.status||1);
 const {createHash}=await import('node:crypto'),sources=runtimeSourceFiles(root);

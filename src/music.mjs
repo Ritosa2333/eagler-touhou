@@ -43,6 +43,9 @@ export class MusicPlayer {
     if(source){try{source.stop();}catch{}}
   }
 
+  setVolume(value){this.volume=Math.max(0,Math.min(1,value));if(this.gain)this.gain.gain.value=this.volume;}
+  fade(seconds=1){if(this.gain){const now=this.context.currentTime;this.gain.gain.cancelScheduledValues(now);this.gain.gain.setValueAtTime(this.gain.gain.value,now);this.gain.gain.linearRampToValueAtTime(0,now+Math.max(0,seconds));}}
+
   async play(track,isCurrent=()=>true,{offsetSeconds=0}={}) {
     this.stop();
     const request=this.request;
@@ -59,6 +62,7 @@ export class MusicPlayer {
     source.loopStart=track.loopStart;
     source.loopEnd=track.loopEnd;
     gain.gain.value=this.volume;
+    this.gain=gain;
     source.connect(gain);
     gain.connect(this.context.destination);
     source.onended=()=>{if(this.source===source)this.source=null;};

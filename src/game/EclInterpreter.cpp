@@ -6,6 +6,7 @@
 #include "GameState.hpp"
 #include "HostilePool.hpp"
 #include "LaserWorld.hpp"
+#include "SpellHistory.hpp"
 
 namespace th12 {
 void referenceFault(const Context& c, int operand, bool floating, i32 value) {
@@ -790,10 +791,13 @@ void command(Enemy& e, Context& c, int op) {
     const int length = rd<i32>(c.pc + 28);
     if (length >= 0 && length <= int(rd<u16>(c.pc + 6)) - 32)
       start.title = spell_system::decryptTitle(c.pc + 32, length);
+    restoreSpellHistory(start);
     if (!spellState.start(start))
       ++unsupported[op];
-    else
+    else {
+      rememberSpellStart();
       startSpellAnimations();
+    }
     spell = spellState.active();
     e.lifeFlags |= 1u; // Native418947..41895d, independent of capture eligibility.
     e.lifeRaw = enemy_life::expanded(e.life);

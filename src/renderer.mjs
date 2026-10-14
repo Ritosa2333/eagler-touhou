@@ -5,6 +5,7 @@ import {readCoreSpell,spellTextDescriptors,bossTimerDescriptors,spellResultDescr
 import {readCoreUfo,ufoTextPoses,ufoTextRenderPriority} from './ufo-presentation.mjs';
 import {asciiGlyphs} from './ascii-presentation.mjs';
 import {fpsTextDescriptors} from './fps-presentation.mjs';
+import {stageClearText} from './stage-clear-presentation.mjs';
 import {readCoreDrawSchedule,orderPresentation} from './draw-scheduler.mjs';
 export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10;if(size>40)exact[40]=score*10;return exact;}
 export function readCoreBossHud(core){
@@ -272,6 +273,13 @@ export class Renderer {
   }
   state(a,x,y,angle=0,scale=1,alpha=1,screenShake=[0,0]){
     if(!a.visible)return;
+    if(a.mode===20){
+      // Native45cbaa ->45d0a0 colors the two right vertices with primary
+      // and the two left vertices with secondary, then rotates the quad.
+      const right=a.primaryColor??[a.r,a.g,a.b,a.alpha],left=[a.r2,a.g2,a.b2,a.alpha2],points=quadCorners(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.geometryWidth*a.sy*scale,a.rotation+angle);
+      const colors=[left,right,right,left].map(c=>[c[0],c[1],c[2],c[3]*alpha]);
+      this.solidTriangles(points.map(([x,y],i)=>({x,y,color:colors[i]})),[0,1,2,0,2,3],a.blend);return;
+    }
     if(a.mode===14){if(a.alpha<=0)return;const color=[a.r,a.g,a.b,a.alpha*alpha],corners=quadCorners(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.geometryWidth*a.sy*scale,a.rotation+angle);this.solidTriangles(corners.map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],a.blend);return;}
     if(a.mode===15||a.mode===16){const count=a.geometryCount;if(count<3||count>512)return;const primary=a.primaryColor??[a.r,a.g,a.b,a.alpha],center=[primary[0],primary[1],primary[2],primary[3]*alpha],edge=[a.r2,a.g2,a.b2,a.alpha2*alpha];if(a.mode===16){if(center[3]>0)this.solidLineStrip(outlineVertices(x+a.x,y+a.y,Math.fround(a.geometryRadius*a.sx*scale),a.rotation+angle,count,center),a.blend);return;}if(center[3]<=0&&edge[3]<=0)return;const vertices=circleVertices(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.rotation+angle,count,center,edge),indices=[];for(let i=1;i<=count;i++)indices.push(0,i,i+1);this.solidTriangles(vertices,indices,a.blend);return;}
     const s=this.atlases[a.name]?.sprites[a.sprite];if(!s||a.alpha<=0)return;this.region(a.name,s.entry,s.x,s.y,s.w,s.h,x+a.x,y+a.y,(a.nativeWidth!==undefined&&a.nativeWidth!==-1?a.nativeWidth:s.w)*scale*a.sx,(a.nativeHeight!==undefined&&a.nativeHeight!==-1?a.nativeHeight:s.h)*scale*a.sy,a.rotate?a.rotation+angle:0,a.alpha*alpha,[a.r,a.g,a.b],a.blend,{anchorX:a.anchorX,anchorY:a.anchorY,u:a.u,v:a.v,uvScaleX:a.uvScaleX,uvScaleY:a.uvScaleY,pixel:a.mode===0,nativeMode:a.mode,screenShake,point:a.point});
@@ -290,16 +298,34 @@ export class Renderer {
     // (600), then text rendering reduces by two. Browser rasterization remains
     // a presentation fallback until the original GDI texture oracle is sampled.
     const key=JSON.stringify([text,record,metrics,raster]);if(this.dialogueTextures.has(key))return this.dialogueTextures.get(key);
-    const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${style===2?700:serif?600:400} ${style===2?15:32}px "${serif?'ＭＳ 明朝':'ＭＳ ゴシック'}", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';
-    const foreground='#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{ctx.fillStyle='#000';for(const [dx,dy]of [[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,dy);ctx.fillStyle=foreground;ctx.fillText(text,x,2);};
+    const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${raster?.fontWeight??(style===2?700:serif?600:400)} ${raster?.fontPixelHeight??(style===2?15:32)}px "${raster?.fontFamily??(serif?'ＭＳ 明朝':'ＭＳ ゴシック')}", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';ctx.textAlign=raster?.align??'left';
+    const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{const y=raster?.sourceY??2;ctx.fillStyle='#000';for(const [dx,dy]of raster?.outlineOffsets??[[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,y+dy-2);ctx.fillStyle=foreground;ctx.fillText(text,x,y);};
     if(spacing){const bytes=Uint8Array.from(record.textHex.match(/../g)??[],v=>parseInt(v,16));for(let i=0;i<bytes.length;i+=2)draw(new TextDecoder('shift-jis').decode(bytes.slice(i,i+2)),2*offset+i*spacing);}
     else draw(text,raster?.sourceX??2*offset+2);
     const g=this.gl,texture=g.createTexture();this.flush();g.bindTexture(g.TEXTURE_2D,texture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,canvas);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
     const result={texture,w:canvas.width,h:canvas.height};this.dialogueTextures.set(key,result);if(this.dialogueTextures.size>16){const oldest=this.dialogueTextures.keys().next().value,old=this.dialogueTextures.get(oldest);this.dialogueTextures.delete(oldest);g.deleteTexture(old.texture);}return result;
   }
   dialogueLine(p){if(!p.text||p.a.alpha<=0)return;const texture=this.dialogueTexture(p.text,p.record,p.metrics,p.raster);this.material(p.a.blend??0);this.texture(texture,!!p.a.point);this.primitive(this.gl.TRIANGLES);const points=p.a.mode===0||p.a.mode===1?nativeQuadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY,p.a.mode,p.screenShake):quadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY),uv=[[0,0],[1,0],[1,1],[0,1]];for(const i of [0,1,2,0,2,3])this.batch.push(...points[i],...uv[i],p.a.r??1,p.a.g??1,p.a.b??1,p.a.alpha*p.alpha,1,0);}
+  renderMenu(poses,texts=[],fps=null,{overlay=false,shade=0}={}) {
+    const g=this.gl;
+    if(!overlay)this.begin();
+    g.disable(g.SCISSOR_TEST);g.uniform3fv(this.fogColor,[0,0,0]);
+    if(shade>0)this.solidTriangles([[0,0],[640,0],[640,480],[0,480]].map(([x,y])=>({x,y,color:[0,0,0,shade]})),[0,1,2,0,2,3],0);
+    for(const pose of orderPresentation(poses))this.state(pose.a??pose,pose.x??0,pose.y??0,0,1,pose.alpha??1);
+    for(const text of texts) {
+      if(text.font!==undefined)this.nativeText(text);
+      else {
+        const {x=0,y=0,width=600,height=20,color=0xffffff,alpha=1,size=16,align='left'}=text;
+        this.dialogueLine({text:text.text,x,y,alpha:1,a:{sx:1,sy:1,alpha,blend:0,anchorX:1,anchorY:1},
+          metrics:{width,height,sourceWidth:width*2,sourceHeight:height*2},record:{style:0,color,outlineColor:0,offset:0,spacing:0},
+          raster:{fontFamily:'ＭＳ ゴシック',fontPixelHeight:size*2,fontWeight:400,sourceX:align==='right'?width*2:align==='center'?width:0,sourceY:0,foregroundColor:color,outlineColor:0,outlineOffsets:[[2,2],[-2,2],[2,-2],[-2,-2]],align}});
+      }
+    }
+    for(const text of fpsTextDescriptors({currentFps:fps}))this.nativeText(text);
+    this.flush();
+  }
   render(core,fps={}){
-    this.begin();const h=readCoreHud(core),frame=h[0];if(frame<this.lastFrame)this.animations=new AnimationSampler(this.atlases);this.lastFrame=frame;this.animations.beginFrame();
+    this.begin();const originalHud=readCoreHud(core),h=fps.scoreLowDigit?[...originalHud]:originalHud,frame=h[0];if(fps.scoreLowDigit){h[3]+=fps.scoreLowDigit;if(h.length>40)h[40]+=fps.scoreLowDigit;}if(frame<this.lastFrame)this.animations=new AnimationSampler(this.atlases);this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0];g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
@@ -313,6 +339,7 @@ export class Renderer {
     for(const text of [...bossTimerDescriptors(bossHud),...spellResultDescriptors(spell,logicalPoses)])poses.push({nativeText:text,drawPriority:44,clip:2,order:poses.length});
     for(const text of ufoTextPoses(readCoreUfo(core))){const priority=ufoTextRenderPriority(text);poses.push({nativeText:text,drawPriority:priority,clip:priority===22?2:0,order:poses.length});}
     for(const text of fpsTextDescriptors(fps))poses.push({nativeText:text,drawPriority:text.drawPriority,clip:0,order:poses.length});
+    if(fps.stageClear){const text=stageClearText(h,logicalPoses,fps.practice);if(text)poses.push({nativeText:text,drawPriority:69,clip:0,order:poses.length});}
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,order:poses.length});};
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;

@@ -10,5 +10,5 @@ body{margin:24px;background:#161623;color:#ededf5;font:16px system-ui}h1{font-si
 <div class="controls"><button id="auto-start">自动找分歧点</button><button id="auto-stop" disabled>停止自动检查</button></div>
 <p>选择与原版相同的录像、关卡并在原版停帧，直接点击“自动找分歧点”，网页会自动加载并对齐。首次内部数据不同就停住两边。检查整关请从关卡开头开始。显示分数滚动与贴图不参与比较。</p><p id="scan-status" role="status">选好同一录像和关卡，在原版停帧后直接开始。</p><pre id="scan-result" aria-label="首个分歧详情"></pre>
 <p id="status">正在连接原版…</p><p id="comparison">加载同一份录像后，可比较同帧内部数据。画面帧和录像帧分别显示，不按秒数猜测对齐。</p>
-<div class="views"><section class="view"><h2>原版当前帧</h2><img id="original" alt="停帧后显示原版画面"><pre id="native-state"></pre></section><section class="view"><h2>网页版</h2><iframe id="candidate" src="/candidate?frameInspector=1" title="网页版逐帧检查"></iframe><pre id="candidate-state"></pre></section></div>
+<div class="views"><section class="view"><h2>原版当前帧</h2><img id="original" alt="停帧后显示原版画面"><pre id="native-state"></pre></section><section class="view"><h2>网页版</h2><iframe id="candidate" src="/preview.html?frameInspector=1" title="网页版逐帧检查"></iframe><pre id="candidate-state"></pre></section></div>
 <script type="module" src="/inspector.mjs"></script></html>

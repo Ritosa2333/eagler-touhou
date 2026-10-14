@@ -1,5 +1,6 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "GameState.hpp"
+#include "SpellHistory.hpp"
 
 namespace th12 {
 uint64_t enemyAnimationKey(u32 id, int slot) {
@@ -220,6 +221,7 @@ void startSpellAnimations() {
 void endSpellAnimations(const spell_system::Result& result) {
   if (result.kind == spell_system::ResultKind::None)
     return;
+  rememberSpellResult(result);
   for (int i = 0; i < 3; i++)
     animationScene.interrupt(spellAnimationKeys[i], 1);
   animationScene.remove(spellAnimationKeys[5]);
