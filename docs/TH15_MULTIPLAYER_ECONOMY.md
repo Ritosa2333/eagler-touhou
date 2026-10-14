@@ -90,6 +90,12 @@ The default world target also excludes ghosts instead of reading seat zero.
 
 Power gifts require at least 2.00P and leave a 1.00P floor after donating
 the unchanged 1.00P large item. No gift icon is offered below this threshold.
+Life rescue/transfer also works during dialogue, with the same 20px / 90-tick
+Shift-without-Z rule and one-life donor cost. Pause/transition flags still
+block transfers. Multiplayer failure/clear menus follow TH11: Return and
+Replay Save only, no single-player Continue/Retry or credit display. Closing
+a Replay slot dialog reapplies the end-menu restrictions; P1 owns menus.
+
 Dialogue retains TH11's short-tap confirm and stationary 500ms hold-to-skip
 semantics, with explicit movement support when the native pilot is ready.
 Dragging is not a confirm/skip gesture, auto-fire and double-tap Bomb are

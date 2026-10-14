@@ -30,6 +30,9 @@ struct RunPause::Services final:PauseActivationServices,PauseRestorationServices
  bool finish_pause_selection()override{return owner.actions.execute(owner.selection);}
 };
 RunPause::RunPause(StageGameplay& s,SessionGameplay& driver,SessionState& p,RecordStore& r,AnmManager& a,RunPausePlatform& h,i32& skip,i32 bank):services(std::make_unique<Services>(*this)),scene(s),progress(p),animations(a),platform(h),front(bank),gameplay(s,a),time(r,p,s.battle.session,h),activation(state,p,s.battle.session,skip,*services),restoration(state,p,skip,*services),actions(state,p,s.battle.session,s.battle.score,a,restoration,gameplay,h,skip),menu(state,p,s.battle.session,s.battle.score,r,a,*services),frame(state,p,s.battle.session,driver.runtime.age,activation,menu,s.frame_scheduler(),bank),visuals(state,p,s.battle.session,r,a,menu.replays){
+#if TH15_MULTIPLAYER
+ state.multiplayer=scene.battle.mp_enabled;
+#endif
  frame.enable(false);previous_message_over=scene.game_over_begin;previous_player_over=scene.battle.game_over_begin;scene.game_over_begin=scene.battle.game_over_begin=[this](){return open(PauseEntrance::GameOver,selection);};
 }
 RunPause::~RunPause(){frame.enable(false);scene.game_over_begin=std::move(previous_message_over);scene.battle.game_over_begin=std::move(previous_player_over);}

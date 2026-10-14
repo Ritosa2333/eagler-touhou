@@ -44,7 +44,8 @@ bool mp_tick(u32 held,bool physical=true){
  if(network.Spectator()){if(!network.Backlog())return true;if(!network.FeedSpectator(frame)){last_error=network.Error();return false;}}
  const auto decision=network.Prepare(frame);if(!decision.canAdvance)return true;
  std::array<MultiplayerInput,3> lanes;if(!multiplayer::InputLanes::Decode(decision.inputs.data(),network.Setup().player_count,lanes)){last_error="Invalid TH15 confirmed inputs";return false;}
- u32 menu=0;for(unsigned s=0;s<network.Setup().player_count;++s)menu|=(lanes[s].held&~0x100u)|(lanes[s].pause?0x100u:0);mp_menu.update(menu);
+ u32 menu=0;for(unsigned s=0;s<network.Setup().player_count;++s)menu|=(lanes[s].held&~0x100u)|(lanes[s].pause?0x100u:0);// TH11 accepts any seat's pause edge, then P1 owns the native menus.
+ if(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)menu=(lanes[0].held&~0x100u)|(lanes[0].pause?0x100u:0);mp_menu.update(menu);
  if(!mp_recording&&!mp_playback&&!network.Spectator()){if(!mp_replay.Begin(network.Setup(),std::uint64_t(std::time(nullptr)))){last_error="MP recording initialization failed";return false;}mp_recording=true;}
  const auto stage=app->progress.stage;app->scene()->battle.mp_input(lanes);
  if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}

@@ -98,7 +98,7 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 14 rejects older incompatible economy generations.
+Gameplay ABI version 15 rejects older incompatible economy generations.
 Display-only local-hitbox filtering does not change that gameplay version.
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
@@ -152,7 +152,11 @@ Non-Reisen bombs give teammates 120 startup frames and refresh protection to
 at least 40 frames during active updates. Reisen gives 30 frames on startup
 and every shield-layer break, without sharing persistent shields.
 Only the selected viewpoint's hitbox is drawn, including native fade-out.
-All restart/continue/exit choices return to the lobby. Touch-free joystick
+Life rescue and transfer remain available during dialogue. Pauses and inactive
+run transitions still block them. Following TH11, multiplayer failure/clear
+menus offer only Return and Replay Save; Continue/Retry and their shortcuts
+cannot reset one seat inside the current generation. P1 owns native menu
+input, while dialogue input remains shared. Return ends the run in the lobby. Touch-free joystick
 preferences use directional joystick inputs in this mode, so queued movement
 never depends on a sender's earlier simulated position.
 

@@ -22,7 +22,7 @@ class PauseMenu final:private PauseNameServices {
  PauseNameEditor names;PauseScoreRegistration registration;
  bool check(bool,const char*);bool interrupt(u32,i32,bool immediate=false);bool child(i32,i32);bool freeze(bool);bool navigate(u32,u32,i32,bool visual=true);bool disable(i32);
  bool sound(i32)override;bool write_replay(i32,const std::array<char,9>&)override;bool prepare_results_menu()override;
- bool replay_slots();bool restrict_replay_save();
+ bool replay_slots();bool restrict_replay_save();bool restrict_multiplayer_result();
 public:
  std::array<std::shared_ptr<Replay>,25> replays{};std::string error;
  PauseMenu(PauseState& s,SessionState& p,PlayerLifeSession& v,ItemScoreState& score,RecordStore& records,AnmManager& a,PauseMenuServices& h):state(s),progress(p),player(v),animations(a),host(h),names(s,p,v,records,*this),registration(s,p,v,score,records,names,h){}

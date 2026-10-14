@@ -18,6 +18,7 @@ bool PauseActions::continue_run(){
 bool PauseActions::execute(bool selection){
  if(!error.empty())return false;if(!check(restoration.restore(),"Pause presentation restoration failed"))return false;
  const i32 item=state.menu.cursor;
+ if(state.multiplayer&&state.screen!=PauseScreen::Pause&&(item==0||item==4))return check(host.destination(PauseDestination::Title),"Multiplayer result return failed");
  if(item==0){
   if(state.screen==PauseScreen::Pause)return check(host.resume_looping_sounds(),"Pause looping sounds resume failed")&&check(host.resume_music(),"Pause music resume failed");
   if(state.screen==PauseScreen::GameOver){if(state.result_mode)return check(host.destination(PauseDestination::RestartRun),"Finished run restart failed");if(progress.stage==7)return check(host.destination(PauseDestination::ExtraGameOver),"Extra game-over destination failed");return continue_run();}

@@ -51,7 +51,7 @@ bool PauseDraw::draw(HudDrawServices& sink,ReplayCalendarServices& dates,std::ar
  if(state.screen==PauseScreen::GameOver&&state.phase==15&&!ranking(sink,dates))return false;
  if(state.screen==PauseScreen::Pause||state.screen==PauseScreen::GameOver||state.screen==PauseScreen::Results){const u32 overlay=state.flags&3;
  if(overlay==1)return slots(sink,dates);if(overlay==2)return replay?replay_name(*replay,sink,dates):check(false,"Live replay unavailable for pause name caption");
- if(state.screen==PauseScreen::GameOver&&!(player.mode_flags&0x300)&&state.phase!=14){char buffer[48];std::snprintf(buffer,sizeof buffer,"Credit %d",progress.continue_budget);text.position={184,448,0};text.text=buffer;return emit(sink);}}
+ if(!state.multiplayer&&state.screen==PauseScreen::GameOver&&!(player.mode_flags&0x300)&&state.phase!=14){char buffer[48];std::snprintf(buffer,sizeof buffer,"Credit %d",progress.continue_budget);text.position={184,448,0};text.text=buffer;return emit(sink);}}
  return true;
 }
 }

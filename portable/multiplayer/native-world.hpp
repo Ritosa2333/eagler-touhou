@@ -19,7 +19,8 @@ struct RetailAssets final:AssetSource {
 // runs production ECL, ANM, players, shots, bombs, bullets, lasers and items;
 // it does not certify GPU/audio output or retail dialogue rendering.
 struct Presentation final:BattleWorldServices {
- unsigned game_overs=0;
+ unsigned game_overs=0;bool dialogue=false;
+ bool dialogue_present()const noexcept override{return dialogue;}
  bool audio(i32,float,PlayerShots::SoundAction,bool)override{return true;}
  bool life_hud(i32,i32)override{return true;}bool bomb_hud(i32,i32)override{return true;}
  bool game_over()override{++game_overs;return true;}bool notice(i32)override{return true;}

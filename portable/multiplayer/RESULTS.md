@@ -118,3 +118,14 @@ branches. Publish the common dependency before distributing the title pin.
   reward checks cover all 19 values immediately below and at each threshold.
   Network ABI rejects differing thresholds; Replay stores the selected value.
   Gameplay ABI 14, setup 6 (23 words), Replay metadata 2 (132 bytes).
+
+## Dialogue rescue and multiplayer result menus
+
+- Production native world verifies 89/90-tick dialogue rescue for every donor
+  in 2P/3P, one-life cost, restored stock/Power/Bomb/protection, held-Shift
+  latch and pause/transition exclusion.
+- Retail PauseMenu/PauseActions verify TH11-style Return/Replay-only results,
+  blocked R, Esc-to-Return, Replay-slot cancellation restoring restrictions,
+  defensive Continue/Retry rejection and unchanged single-player Continue.
+- Gameplay ABI 15 rejects recordings/peers with the prior dialogue economy.
+  These headless checks do not certify live remote dialogue/device rendering.

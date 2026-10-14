@@ -12,7 +12,7 @@ for(const gate of ['(p.keys.held&9)!=8','distance2(p.player->motion.position,q.p
 assert(rules.includes('else if(mp_spawn_transfer(5')&&rules.includes('if(receiver>=0&&mp_spawn_transfer(3'),'deduct only after successful spawn');
 assert(read('th15_web/cpp/game/MultiplayerPilot.cpp').includes('if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){directed=-1;item.state=1;item.velocity={};}'));
 assert(read('th15_web/cpp/game/MultiplayerPilot.cpp').includes('mp_gift_targets[index]=-1'));
-assert(read('th15_web/cpp/multiplayer/SessionSetup.hpp').includes('GameplayVersion=14'));
+assert(read('th15_web/cpp/multiplayer/SessionSetup.hpp').includes('GameplayVersion=15'));
 assert(rules.includes('if(multiplayer_can_give_power(p.session.power,p.session.power_step))'));
 assert(read('th15_web/cpp/game/BulletScene.cpp').includes('context.player=manager.multiplayer_target(slots[index]->state.motion.position)'));
 assert(read('th15_web/cpp/game/MultiplayerPilot.cpp').includes('laser_scene->multiplayer_target=enemy_world.multiplayer_target'));
