@@ -14,7 +14,7 @@ assert.deepEqual(validateMultiplayerOptions({replayViewer:true}),{replay:true});
 assert.throws(()=>validateMultiplayerOptions({...options,replayViewer:true}));
 const exports=WebAssembly.Module.exports(new WebAssembly.Module(readFileSync(resolve(root,'build-eagler-multiplayer/th15.wasm')))).map(e=>e.name);
 assert.ok(exports.includes('th15_mp_start'));assert.ok(exports.includes('th15_mp_replay_load'));
-assert.ok(!exports.some(n=>/^th15_probe|^application_/.test(n)));
+assert.ok(!exports.some(n=>/^th15_probe|^th15_check_|^application_/.test(n)));
 const ordinary=WebAssembly.Module.exports(new WebAssembly.Module(readFileSync(resolve(root,'build-eagler/th15.wasm')))).map(e=>e.name);
 assert.ok(!ordinary.some(n=>n.startsWith('th15_mp_')),'Ordinary THPrac build exposed multiplayer');
 assert.equal(JSON.parse(readFileSync(resolve(root,'build-eagler/manifest.json'))).features.multiplayer,false);

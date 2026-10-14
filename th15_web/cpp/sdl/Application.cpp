@@ -179,12 +179,17 @@ bool ApplicationState::begin_run(){
 }
 bool ApplicationState::begin_ending(){
  if(!scene())return fail("Ending requires departing run state");selection_player=scene()->battle.session;selection_score=scene()->battle.score;
- release_run();ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,0);return ending->initialize(progress,selection_player.mode_flags,selection_player.deaths)||fail(ending->error);
+ release_run();ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,0);if(!ending->initialize(progress,selection_player.mode_flags,selection_player.deaths))return fail(ending->error);
+#if TH15_MULTIPLAYER
+ // Local unlock history must not change confirmed ending timing or skipping.
+ if(multiplayer){completed_recording=true;ending->script.run.first_seen_flags=2;}
+#endif
+ return true;
 }
 bool ApplicationState::apply_destination(){
  if(pending_destination<0)return true;
 #if TH15_MULTIPLAYER
- if(multiplayer&&pending_destination!=13){completed_recording=pending_destination==15||pending_destination==16;pending_destination=-1;exiting=true;return save_settings();}
+ if(multiplayer&&pending_destination!=13&&pending_destination!=15&&pending_destination!=16){completed_recording=pending_destination==15||pending_destination==16;pending_destination=-1;exiting=true;return save_settings();}
 #endif
  const auto next=pending_destination;pending_destination=-1;
  if(next==13||next==10||next==11){
@@ -196,7 +201,11 @@ bool ApplicationState::apply_destination(){
  // Native 44e600 sends normal completion through the ending (15);
  // Extra and the ending itself return directly to title/results (16).
  if(next==15){current_destination=next;return begin_ending();}
- if(next==16){if(!save_settings())return false;return begin_title(3);}
+ if(next==16){
+#if TH15_MULTIPLAYER
+ if(multiplayer)completed_recording=true;
+#endif
+ if(!save_settings())return false;return begin_title(3);}
  if(next==2||next==4||next==14){if(!save_settings())return false;return begin_title(next==2?4:next==14?3:progress.replay&&!(selection_player.mode_flags&0x40)?2:1);}
  if(next==3){exiting=true;return save_settings();}return fail("Unrecognized application destination: "+std::to_string(next));
 }

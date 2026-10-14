@@ -82,8 +82,11 @@ animation update, RNG, gameplay ABI or recorded-input change.
 TH11 teammate opacity policy is applied to draw copies of each seat's body,
 options, shots and attached children: local 255, remote 160,
 remote within 48px 72, local ghost 112, remote ghost 88. Gameplay VM alpha,
-hitboxes and RNG remain unchanged. Bullet red graze glow is aggregated across
-all active seats rather than overwritten by the last collision check.
+hitboxes and RNG remain unchanged. Bullet red Graze state is aggregated authoritatively across
+all active seats, while draw copies use only the selected viewpoint's per-seat
+Graze color/jitter. Player Graze rings and sparks retain seat ownership through
+fade-out, using the same selected-view filter as hitboxes. Rendering does not
+change Graze totals, rewards or either RNG.
 Bullet per-frame activation/turning and moving-laser transforms now select
 the nearest alive pilot from their own origin, as initial emit/ECL already do.
 The default world target also excludes ghosts instead of reading seat zero.

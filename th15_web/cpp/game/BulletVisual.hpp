@@ -1,6 +1,7 @@
 #pragma once
 #include "BulletSpriteSource.hpp"
 #include "AnmRenderer.hpp"
+#include "MultiplayerVisualPolicy.hpp"
 namespace th15 {
 // Animation ownership for one pooled bullet. Collision and frame logic share
 // the same visual fields rather than maintaining an unrelated display copy.
@@ -21,6 +22,6 @@ public:
     bool interrupt_overlay(i32 id)noexcept;
     // 1 destroys the animation; 0 keeps it; -1 reports an execution error.
     i32 tick(bool overlay_animation);
-    bool draw(AnmRenderer&);
+    bool draw(AnmRenderer&,const MultiplayerGrazeVisual* graze=nullptr);
 };
 }

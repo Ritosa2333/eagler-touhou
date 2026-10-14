@@ -98,7 +98,7 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 15 rejects older incompatible economy generations.
+Gameplay ABI version 16 rejects older incompatible economy generations.
 Display-only local-hitbox filtering does not change that gameplay version.
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
@@ -163,3 +163,10 @@ never depends on a sender's earlier simulated position.
 Acceptance still requires long full-stage/Extra play, remote-network and
 physical touch-device checks. Local protocol or headless tests do not establish
 those results.
+
+Selected-view rendering also applies to player Graze rings/sparks and each
+bullet's per-seat Graze tint/jitter. Shared Graze, bullet collision/rewards and
+the authoritative aggregate remain unchanged. Normal clears run the native
+ending and score/replay result owners on confirmed inputs before returning to
+the lobby. Result inputs belong to P1; ending timing ignores local unlock
+history. Native named saves write the complete multiplayer input archive.

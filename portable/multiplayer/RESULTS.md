@@ -129,3 +129,17 @@ branches. Publish the common dependency before distributing the title pin.
   defensive Continue/Retry rejection and unchanged single-player Continue.
 - Gameplay ABI 15 rejects recordings/peers with the prior dialogue economy.
   These headless checks do not certify live remote dialogue/device rendering.
+
+## Selected-view Graze and clear lifecycle
+
+- Production native 2P/3P checks cover every grazer/viewpoint: local-only
+  bullet color/jitter and player Graze rings, fade-out ownership, unchanged
+  shared Graze, authoritative bullet fields and both RNG streams.
+- A test-only wrapper links production SDL objects, triggers a confirmed clear
+  at frame 320 and allows 300 real native ending ticks before requesting its
+  finish. 2P/3P reach native ending art/text, result/name menus, actual named
+  multiplayer Replay saves and successful hosted exit with preserved score.
+  This is an injected completion/lifecycle check, not full stage/staff play.
+- The retirement fence may wait without an error; runtime exit is published
+  only after final confirmed-input retirement. Production exports exclude
+  the test-only completion hooks. Gameplay ABI is 16.

@@ -19,6 +19,7 @@ struct MultiplayerPilot final:PlayerHost,BombHost,ItemCollectionHost {
     GameInput keys;MultiplayerInput input;bool ghost=false,spell_startup_bomb=false;
     unsigned ghost_clock=0;u32 ghost_random=1;i32 ghost_dx=0,ghost_dy=0;
     unsigned life_hold=0,power_taps=0,power_gap=0;bool life_latched=false;
+    std::vector<u32> graze_animations;
     MultiplayerPilot(GameBattle&,unsigned,int);
     bool initialize(const ShtResource&,int bank);
     bool rebuild_bomb();bool tick();bool tick_bomb();bool reset_stage();

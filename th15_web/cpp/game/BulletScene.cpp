@@ -10,7 +10,7 @@ struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     void hit()override{scene.host.hit();}
     bool interrupt(i32 id)override{return visual.interrupt(id);}
     bool bind_appearance(i32 script,i32 overlay)override{
-        graze_initialized=false;
+        graze_initialized=false;graze_views={};
         visual.resource=scene.resource;visual.body.environment=scene.environment;visual.body.object_host=scene.animation_objects;
         const bool result=visual.bind(script,overlay);if(!result)scene.error=visual.error;return result;
     }
@@ -23,15 +23,16 @@ struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     bool create_laser(const StationaryLaserRequest& request)override{return scene.host.create_laser(request);}
     bool cancel_bullet(i32 kind)override{cancelling=true;const bool result=state.cancel(kind,scene.manager.context.rate,scene.game_random,scene.manager.cancellation_rewards,*this,*this,scene.error);cancelling=false;return result&&scene.error.empty();}
     std::array<Timer,3> graze_flash{},graze_duration{};std::array<i32,3> graze_interval{{3,3,3}};
-    bool graze_initialized=false;
+    bool graze_initialized=false;std::array<MultiplayerGrazeVisual,3> graze_views{};
     i32 contact(BulletState& bullet,bool graze_only)override{
         if(scene.host.player_count()==1)return i32(bullet.collide(scene.host.player_collision(),graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error));
         if(!graze_initialized)for(unsigned s=0;s<scene.host.player_count();++s){graze_flash[s]=bullet.graze_flash;graze_duration[s]=bullet.graze_duration;graze_interval[s]=bullet.graze_interval;}
-        MultiplayerGrazeVisual glow;bool hit_player=false;
+        graze_views={};MultiplayerGrazeVisual glow;bool hit_player=false;
         i32 result=0;for(unsigned s=0;s<scene.host.player_count();++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);
             bullet.graze_flash=graze_flash[s];bullet.graze_duration=graze_duration[s];bullet.graze_interval=graze_interval[s];
             const auto hit=bullet.collide(scene.host.player_collision(),graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error);
             graze_flash[s]=bullet.graze_flash;graze_duration[s]=bullet.graze_duration;graze_interval[s]=bullet.graze_interval;
+            graze_views[s]={bullet.visual_flags&0x60000u,bullet.graze_color,bullet.visual_jitter};
             glow.observe(bullet.visual_flags,bullet.graze_color,bullet.visual_jitter);
             result=std::max(result,i32(hit));if(hit==PlayerContact::hit){hit_player=true;break;}
         }if(!hit_player)glow.apply(bullet.visual_flags,bullet.graze_color,bullet.visual_jitter);
@@ -66,6 +67,7 @@ void BulletScene::prepare(u32 index,BulletFrameContext& context){const auto& vm=
     context.sprite_size=vm.sprite?Vec2{vm.sprite->width,vm.sprite->height}:Vec2{};}
 void BulletScene::play(i32 id){host.sound(id);}
 BulletVisual* BulletScene::visual(u32 index)noexcept{return index<slots.size()?&slots[index]->visual:nullptr;}
+const MultiplayerGrazeVisual* BulletScene::viewpoint_graze(u32 index)const noexcept{return host.player_count()>1&&index<slots.size()?&slots[index]->graze_views[std::min(host.local_player(),2u)]:nullptr;}
 void BulletScene::reset(){manager.reset();cancellation_animations.fill(0);error.clear();for(auto& slot:slots){if(!slot->visual.clear_children()){error=slot->visual.error;return;}slot->visual.body=AnmVm{};slot->visual.overlay=AnmVm{};slot->visual.error.clear();}}
 bool BulletScene::emit(const BulletShooter& shooter,float minimum){error.clear();const bool result=manager.emit(shooter,minimum);if(!result&&error.empty())error=manager.error;return result&&error.empty();}
 bool BulletScene::update(){error.clear();const bool result=manager.update();if(!result&&error.empty())error=manager.error;return result&&error.empty();}

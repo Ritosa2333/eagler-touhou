@@ -46,6 +46,7 @@ struct GameBattle::Services {
             return g.player_collision();}
 #if TH15_MULTIPLAYER
         unsigned player_count()const noexcept override{return g.mp_enabled?g.mp_options.seat_count:1;}
+        unsigned local_player()const noexcept override{return g.mp_enabled?g.mp_options.local_seat:0;}
         void select_player(unsigned seat)override{g.mp_contact_seat=seat;}
         bool player_active(unsigned seat)const noexcept override{
 #if TH15_MULTIPLAYER
@@ -229,6 +230,9 @@ bool GameBattle::record_graze(const Vec3& position){
 #endif
         player->motion.position;const Vec3 middle{float(float(player_position.x+position.x)*.5f),float(float(player_position.y+position.y)*.5f),0};
     const auto handle=animations.create(resources.effect,24,-1,0,middle);if(!handle)return fail(animations.error);
+    #if TH15_MULTIPLAYER
+    if(mp_enabled)pilots[mp_contact_seat]->graze_animations.push_back(handle);
+#endif
     scene->popups.number(middle,score.graze_chapter,0xffc0c0ff);return sound(42,position.x,PlayerShots::SoundAction::play,true);
 }
 bool GameBattle::popup(const Vec3& position,i32 value,u32 color){if(scene){scene->popups.number(position,value,color);return true;}return check(presentation.popup(position,value,color),"Item popup failed");}
