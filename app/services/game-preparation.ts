@@ -145,7 +145,9 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
     input.onWarning?.(t('language.launchFallback', {language: entry?.title || entry?.id || t('language.fallbackName'), reason: preparationErrorText(error)}));
   }
   guard();
+  const completeOgg = input.settings.gameId === 'th09' && input.multiplayer?.kind === 'room';
   ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,
+    completeSet: completeOgg,
     downloadSignal: input.musicDownloadSignal, onMusicDownloadActivity: input.onMusicDownloadActivity,
     translate: t, onProgress: input.onProgress, onWarning: input.onWarning}));
   guard();
@@ -159,7 +161,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
     configure: {music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
       runtimeResources: remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
-    ...(ids.length ? {localOgg: {fileIds: ids.slice(0, 2), fallbackToMidi: true}} : {}),
+    ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: true}} : {}),
     launcherControls: {restartButtonEnabled: settings.options.restartButtonEnabled,
       thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
       touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};

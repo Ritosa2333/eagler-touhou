@@ -27,7 +27,10 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
     productId: input.productId, gameVersion: input.settings.gameVersion, music: prepared.music, language: input.settings.language,
   }).catch(error => {input.onBackgroundError?.(error, `${game}: background Package update failed${deferredUpdate.installation?.source === 'local' ? ' for local install' : ''}`);}) : Promise.resolve();
   if (!loaded || !resources || !oggMusic(prepared.music) || !currentOgg()) {await backgroundUpdate; return;}
-  const ids = componentFileIds(resources.descriptor, 'ogg'), installed = ids.slice(2).filter(id => !!resources.files[id]?.objectId);
+  const initial = new Set(prepared.plan.localOgg?.fileIds ?? []);
+  const ids = componentFileIds(resources.descriptor, 'ogg');
+  const remaining = ids.filter(id => !initial.has(id));
+  const installed = remaining.filter(id => !!resources.files[id]?.objectId);
   const local = (async () => {
     if (!installed.length) return;
     try {
@@ -55,7 +58,7 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
       const latest = await acquisition.readCurrent(game, {gameVersion});
       if (!currentOgg()) return;
       if (latest.generation && sameBase(loaded, latest.generation)) generation = latest.generation;
-      for (const id of ids.slice(2).filter(id => !resources.files[id]?.objectId)) {
+      for (const id of remaining.filter(id => !resources.files[id]?.objectId)) {
         if (!currentOgg()) return;
         try {
           if (!generation.files[id]?.objectId) {

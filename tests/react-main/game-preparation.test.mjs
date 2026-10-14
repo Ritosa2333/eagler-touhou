@@ -368,6 +368,26 @@ test('main 4126: cancelling language aborts launch rather than choosing optional
   assert.deepEqual(activity, [true, false]); assert.deepEqual(warnings, []); assert.equal(JSON.stringify([...state.storage]), before);
 });
 
+test('complete-set OGG startup waits for every declared file and preserves DATA', async () => {
+  const current = generation({ogg: ['track-1', 'track-2']}), gate = deferred(), requests = [];
+  let completed = false;
+  const acquisition = {
+    getMetadata: () => ({siteManifest: host()}),
+    getPublication: async () => ({catalog: catalog(), catalogUrl: new URL('release-catalog.json', baseUrl).href}),
+    getPackageFetch: () => fetch,
+    installPublished: async (_game, options) => {requests.push(options.addFileIds); await gate.promise; return {generation: added(current, options.addFileIds)};},
+    refreshInstalled: async () => {},
+  };
+  const pending = api.ensureOggStartup({generation: current, music: 'ogg-stream', completeSet: true, acquisition, translate: t}).then(result => {completed = true; return result;});
+  for (let i = 0; i < 8; i++) await Promise.resolve();
+  assert.deepEqual(requests, [['track-1', 'track-2', 'track-3', 'track-4']]);
+  assert.equal(completed, false);
+  gate.resolve();
+  const result = await pending;
+  assert.equal(result.music, 'ogg-stream');
+  assert.deepEqual(result.generation.files['game-data'], current.files['game-data']);
+  for (const id of requests[0]) assert.ok(result.generation.files[id]?.objectId);
+});
 test('main 5768 and music availability original: exactly two OGG tracks gate startup, DATA stays pinned, remaining tracks start after launch', async () => {
   const initial = generation(), order = [], installs = [], progress = [], third = deferred(), state = settingsFixture({music: 'ogg-full'});
   let f;

@@ -72,15 +72,17 @@ export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteM
 }
 /** Main 5768–5815: only the first TWO OGG objects gate startup. An unavailable
  * optional soundtrack chooses the launch-only MIDI sentinel, never rewrites prefs. */
-export async function ensureOggStartup({generation, music, acquisition, signal, downloadSignal, translate: t, onProgress, onWarning, onMusicDownloadActivity}: {
+export async function ensureOggStartup({generation, music, acquisition, signal, downloadSignal, translate: t, onProgress, onWarning, onMusicDownloadActivity, completeSet = false}: {
   generation: InstalledPackageGeneration | null; music: MusicMode; acquisition: PackageAcquisition;
   signal?: AbortSignal; downloadSignal?: AbortSignal; translate: Translate;
   onProgress?(progress: PreparationProgress): void; onWarning?(message: string): void;
   onMusicDownloadActivity?(active: boolean): void;
+  completeSet?: boolean;
 }): Promise<{generation: InstalledPackageGeneration | null; music: MusicMode}> {
   if (!generation || !oggMusic(music)) return {generation, music};
   checkPreparationAbort(signal);
-  const initial = componentFileIds(generation.descriptor, 'ogg').slice(0, 2);
+  const declared = componentFileIds(generation.descriptor, 'ogg');
+  const initial = completeSet ? declared : declared.slice(0, 2);
   if (initial.length < 2) return {generation, music: 'midi'};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
   const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
