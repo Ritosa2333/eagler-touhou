@@ -232,6 +232,10 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
         // Keep ownership until the generation-tagged VM is actually retired,
         // including fade-out and subsequent changes of the selected viewpoint.
         const auto remember=[&](auto&& self,AnmVm* vm)->void{if(!vm)return;if(auto id=animations.registry.handle(*vm))r.multiplayer_hitbox_owners[id]=s;for(auto* child:animations.registry.children(*vm))self(self,child);};remember(remember,animations.registry.find(visuals.focus_handle));
+        // Retail Reisen shield scripts 14-16 are the persistent hitbox markers;
+        // scripts 11-13 are shield rings and remain visible to teammates.
+        if(pilot.character==3&&pilot.bomb)if(auto* shield=animations.registry.find(static_cast<BombReisen&>(*pilot.bomb).barrier))
+            for(auto* child:animations.registry.children(*shield))if(child->source_script>=14&&child->source_script<=16)remember(remember,child);
         if(opacity==255)continue;
         const auto tag=[&](auto&& self,AnmVm* vm)->void{if(!vm)return;r.multiplayer_player_opacity[vm]=opacity;for(auto* child:animations.registry.children(*vm))self(self,child);};
         tag(tag,&visuals.root);tag(tag,animations.registry.find(visuals.focus_handle));tag(tag,animations.registry.find(visuals.barrier_handle));
