@@ -1,3 +1,4 @@
+import {validTh15ChapterThreshold,defaultTh15ChapterThreshold} from "../../src/launcher/th15-chapter-reward.mts";
 import {gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, multiplayerInputTimingPolicy,
   type MultiplayerProductId} from '../../src/contracts/product-catalog.mts';
 import {multiplayerDisplayInitial, type MultiplayerIdentityStore} from '../../src/launcher/multiplayer-identity.mts';
@@ -125,7 +126,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (!product || !room) return;
     ports.sessions.save(product, {room: {code: room.code, playerCount: room.playerCount, difficulty: room.difficulty,
       created: room.created, visibility: room.visibility, disableCheatMovement: room.disableCheatMovement,
-      challengeMode: room.challengeMode, prankMode: false}, seat: state.seat, ready: state.ready,
+      chapterThreshold: room.chapterThreshold, challengeMode: room.challengeMode, prankMode: false}, seat: state.seat, ready: state.ready,
       spectatorRequested: state.spectatorRequested, roomSettingsOpen: state.roomSettingsOpen});
   }
   function publish() {
@@ -201,7 +202,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (!room || state.seat !== 0) return;
     send({type: 'settings', playerCount: room.playerCount, difficulty: room.difficulty,
       visibility: room.visibility || 'public', disableCheatMovement: !!room.disableCheatMovement,
-      challengeMode: !!room.challengeMode, prankMode: false});
+      ...(product === "th15mp" ? {chapterThreshold:room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount)} : {}),challengeMode: !!room.challengeMode, prankMode: false});
   }
   function applySnapshot(value: unknown) {
     const config = policy(); if (!room || !config) return;
@@ -235,7 +236,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     let relay;
     try {relay = buildMultiplayerLobbyRelayUrl(ports.relayUrl(product), {product, roomCode: room.code, clientId,
       memberId: ports.memberId(), intent, visibility: room.visibility, disableCheatMovement: room.disableCheatMovement,
-      challengeMode: room.challengeMode, prankMode: false, playerCount: room.playerCount, difficulty: room.difficulty});}
+      chapterThreshold: room.chapterThreshold, challengeMode: room.challengeMode, prankMode: false, playerCount: room.playerCount, difficulty: room.difficulty});}
     catch {return;}
     if (socket && socketRoom === relay.roomId && socket.readyState <= 1) return;
     if (reconnectTimer !== null) cancel(reconnectTimer); reconnectTimer = null;
@@ -344,7 +345,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       difficulty: saved?.room.difficulty ?? (created ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? 0))) : 1),
       created: created || !!saved?.room.created, visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
-      challengeMode: saved?.room.challengeMode ?? false, prankMode: false, seats: null, synced: false, connection: 'connecting'};
+      chapterThreshold: saved?.room.chapterThreshold, challengeMode: saved?.room.challengeMode ?? false, prankMode: false, seats: null, synced: false, connection: 'connecting'};
     state.seat = saved?.seat ?? (created ? 0 : null); state.ready = !!saved?.ready;
     state.spectatorRequested = !!saved?.spectatorRequested; state.roomSettingsOpen = !!saved?.roomSettingsOpen;
     state.timingChoice = 'auto'; state.rollbackEnabled = multiplayerInputTimingPolicy(config).rollback;
@@ -416,18 +417,20 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (!current(ownedEpoch) || state.seat == null || room.phase !== 'lobby' || pendingLoadout) return;
     if (send({type: 'set-ready', ready, ...input()})) {state.ready = ready; publish();}
   }
-  function setRoomSettings(patch: Partial<Pick<MultiplayerRoomState, 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode'>>) {
+  function setRoomSettings(patch: Partial<Pick<MultiplayerRoomState, 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'chapterThreshold'>>) {
     if (!room || !ownerLocal() || !state.connected) return;
     // Main count/difficulty selects have no phase guard; rule/visibility
     // buttons are lobby-only. Keep that action distinction in this owner.
     if (room.phase !== 'lobby' && (patch.visibility !== undefined || patch.disableCheatMovement !== undefined || patch.challengeMode !== undefined)) return;
+    if(patch.chapterThreshold !== undefined && (product !== "th15mp" || room.phase !== "lobby" || !validTh15ChapterThreshold(patch.chapterThreshold)))return;
     const config = policy()!;
+    const chapterThreshold = product === "th15mp" ? patch.chapterThreshold ?? (patch.playerCount !== undefined && patch.playerCount !== room.playerCount ? defaultTh15ChapterThreshold(patch.playerCount) : room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount)) : undefined;
     const playerCount = patch.playerCount && config.playerCounts.includes(patch.playerCount) ? patch.playerCount : room.playerCount;
     const difficulty = patch.difficulty === undefined ? room.difficulty : Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(Number(patch.difficulty) || 0)));
     // Count/difficulty inputs update their displayed selection immediately in main.
     if (patch.playerCount !== undefined) {room.playerCount = playerCount; if (state.seat != null && state.seat >= playerCount) state.seat = null;}
     if (patch.difficulty !== undefined) room.difficulty = difficulty;
-    send({type: 'settings', playerCount, difficulty, visibility: patch.visibility ?? room.visibility ?? 'public',
+    send({type: 'settings', playerCount, difficulty, ...(chapterThreshold !== undefined ? {chapterThreshold} : {}), visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
       challengeMode: patch.challengeMode ?? !!room.challengeMode, prankMode: false}); publish();
   }
@@ -489,6 +492,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(!multiplayerInputTimingPolicy(config).rollback || config.inputTiming?.sendPredictionLimit != null ? {predictionLimit: room.predictionLimit ?? multiplayerInputTimingPolicy(config).predictionLimit} : {}),
       spectator, spectatorId: spectator ? clientId : '',
       spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
+      ...(product === 'th15mp' ? {chapterThreshold:room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount)} : {}),
       ...(config.gameplay === 'cooperative' ? {challengeMode: room.challengeMode === true} : {}),
       iceServers: ports.settings().iceServers, loadouts}, config);
   }
