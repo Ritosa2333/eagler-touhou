@@ -29,9 +29,9 @@ struct SpectatorPlayback {
         return true;
     }
     unsigned Rate(std::uint32_t played, std::uint32_t received) {
-        if(following) target = std::max(played, Limit(received));
+        // A live seek finishes once. Network jitter must not re-arm it.
+        (void)received;
         if(played >= target) seeking = false;
-        else if(following && target - played > 8) seeking = true;
         return seeking ? 4 : 1;
     }
     std::uint32_t Available(std::uint32_t played, std::uint32_t received) const {

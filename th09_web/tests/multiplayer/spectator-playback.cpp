@@ -15,7 +15,10 @@ int main(){
     assert(p.Control(2,0,400,900)&&p.Rate(400,900)==4);
     assert(p.target==810);
     p.Boundary(500,1);assert(p.roundStart==500&&p.target==810&&p.seeking);
-    assert(p.Rate(500,1000)==4&&p.target==910);
+    assert(p.Rate(500,1000)==4&&p.target==810);
+    assert(p.Rate(810,1000)==1&&!p.seeking&&p.following);
+    assert(p.Rate(811,1400)==1&&p.target==810);
+    assert(p.Control(2,0,811,1400)&&p.target==1310&&p.Rate(811,1400)==4);
     assert(p.Control(1,950,500,1100));p.Boundary(600,2);
     assert(p.round==2&&p.target==950&&p.Rate(600,1100)==4);
     assert(p.Available(949,1100)==1&&p.Rate(950,1100)==1);
