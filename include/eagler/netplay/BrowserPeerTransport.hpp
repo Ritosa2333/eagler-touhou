@@ -53,7 +53,9 @@ public:
     // SendSpectator separately enforces actual socket backpressure.
     int SpectatorState() const;
     // Terminal for this run; notify viewers without closing player transports.
-    void StopSpectators();
+    // Graceful completion queues the stop marker on the same reliable relay
+    // stream as the final frames. Failure keeps the immediate signaling path.
+    void StopSpectators(bool graceful = false);
     bool Poll(std::vector<std::uint8_t> *packet) override;
     std::size_t BufferedAmount() const override;
     // Read-only RTC lane diagnostics; relay bytes remain in BufferedAmount.

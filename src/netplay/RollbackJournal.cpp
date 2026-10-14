@@ -407,11 +407,8 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
 
 bool RollbackJournal::EndFrame()
 {
-    // Defensive closure for callers that end a still-read-only checkpoint.
-    // The normal adapter must end the window before its first game mutation.
-    if (readOnlyCaptureOpen_)
-        EndReadOnlyCapture();
-    if (!frameOpen_ || failed_)
+    // A read-only phase must be explicitly closed before sealing the frame.
+    if (!frameOpen_ || failed_ || readOnlyCaptureOpen_)
     {
         return false;
     }

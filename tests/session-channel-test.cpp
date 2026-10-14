@@ -365,6 +365,7 @@ void pacing_validated_packets_and_reset(){
     p.channel.Clear();mesh.begin(0,200);
     CHECK(p.channel.IntervalScale()==1&&p.channel.FrameLead()==0);
 }
+// Reused from TH09's independently tested input-batch work (512353c).
 struct InputSendTrace {
     struct Send {bool reliable;std::uint64_t at;InputPacket packet;std::vector<std::uint8_t> wire;};
     Mesh& mesh;std::vector<Send> sends;unsigned controls=0;

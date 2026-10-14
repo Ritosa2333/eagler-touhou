@@ -55,6 +55,7 @@ public:
     bool BeginReadOnlyCapture();
     bool EndReadOnlyCapture();
     bool IsReadOnlyCaptureOpen() const { return readOnlyCaptureOpen_; }
+    bool ReadOnlyCaptureActive() const { return IsReadOnlyCaptureOpen(); }
     std::size_t PendingReadOnlyCaptureBlocks() const { return pendingReadOnlyCaptureBlocks_; }
     std::size_t PendingReadOnlyCaptureBytes() const { return pendingReadOnlyCaptureBytes_; }
     const RollbackReadOnlyCaptureStats &ReadOnlyCaptureStats() const { return readOnlyCaptureStats_; }

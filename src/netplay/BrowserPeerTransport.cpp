@@ -684,7 +684,7 @@ EM_JS(int, eagler_peer_spectator_state, (), {
     return state.relay.readyState === WebSocket.OPEN ? 1 : 0;
 });
 
-EM_JS(void, eagler_peer_stop_spectators, (), {
+EM_JS(void, eagler_peer_stop_spectators, (int graceful), {
     const state = globalThis.__eaglerPeerTransport;
     if (!state || state.closed || state.spectatorStopped || state.localPlayer !== 0) return;
     state.spectatorStopped = true;
@@ -693,7 +693,7 @@ EM_JS(void, eagler_peer_stop_spectators, (), {
     // terminal marker is sent ONCE even under backpressure. RTC signaling can
     // notify the server without waiting behind a blocked spectator upload.
     try {
-        if (state.route === 'rtc') state.sendSignal?.({type: 'spectator-stop'});
+        if (!graceful && state.route === 'rtc') state.sendSignal?.({type: 'spectator-stop'});
     } catch {}
     try {
         if (state.relay?.readyState === WebSocket.OPEN)
@@ -911,10 +911,12 @@ int BrowserPeerTransport::SpectatorState() const
 #endif
 }
 
-void BrowserPeerTransport::StopSpectators()
+void BrowserPeerTransport::StopSpectators(bool graceful)
 {
 #ifdef __EMSCRIPTEN__
-    eagler_peer_stop_spectators();
+    eagler_peer_stop_spectators(graceful ? 1 : 0);
+#else
+    (void)graceful;
 #endif
 }
 
