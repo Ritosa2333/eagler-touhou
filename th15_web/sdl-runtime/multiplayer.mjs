@@ -19,14 +19,16 @@ export function validateMultiplayerOptions(options={}){
  if(!Array.isArray(loadouts)||loadouts.length!==count||loadouts.some(v=>!v||!Number.isInteger(v.character)||v.character<0||v.character>3||v.shot!==0))throw Error('TH15 多人机体配置无效');
  if(spectator&&(typeof options.netplaySpectatorId!=='string'||!options.netplaySpectatorId))throw Error('观战身份缺失');
  if(options.netplayChallengeMode!==undefined&&typeof options.netplayChallengeMode!=='boolean')throw Error('挑战模式配置无效');
- return {url,room,run,count,seat,spectator,delay,automatic,reserve,loadouts,replay:false};
+ const chapterThreshold=options.netplayChapterThreshold??(count===3?1500000:1250000);
+ if(!Number.isInteger(chapterThreshold)||chapterThreshold<500000||chapterThreshold>5000000||chapterThreshold%250000)throw Error("奖残所需得分无效");
+ return {url,room,run,count,seat,spectator,delay,automatic,reserve,loadouts,chapterThreshold,replay:false};
 }
 export async function multiplayerSetupWords(options,buildWords,cryptoProvider=globalThis.crypto){
  const c=validateMultiplayerOptions(options);if(c.replay||!Array.isArray(buildWords)||buildWords.length!==4||!buildWords.some(Boolean))throw Error('构建身份或连接配置无效');
  const digest=new DataView(await cryptoProvider.subtle.digest('SHA-256',new TextEncoder().encode('th15mp:'+c.url.origin+c.url.pathname+':'+c.room+':'+c.run)));
- const words=[5,c.count,c.seat,options.netplayDifficulty,options.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,c.delay];
+ const words=[6,c.count,c.seat,options.netplayDifficulty,options.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,c.delay];
  for(let i=0;i<3;i++){const p=c.loadouts[i]||{character:0,shot:0};words.push(p.character,p.shot);}
- words.push(1,+c.automatic,c.reserve,...buildWords,+!!options.netplayChallengeMode);return {config:c,words};
+ words.push(1,+c.automatic,c.reserve,...buildWords,+!!options.netplayChallengeMode,c.chapterThreshold);return {config:c,words};
 }
 export function createMultiplayerBridge({core,getOptions,manifest,emit,onError,onExit,target=globalThis}){
  const buildWords=multiplayerBuildWords(manifest);let active=false,calibration=null;

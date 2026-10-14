@@ -36,8 +36,8 @@ int main(){
  assert(multiplayer_transfer_feedback(true,45,false,0).kind==Feedback::none);
  assert(multiplayer_transfer_feedback(false,45,true,4).kind==Feedback::none);
  assert(multiplayer_chapter_threshold(1)==1000000);
- assert(multiplayer_chapter_threshold(2)==1500000);
- assert(multiplayer_chapter_threshold(3)==2000000);
+ assert(multiplayer_chapter_threshold(2)==1250000);
+ assert(multiplayer_chapter_threshold(3)==1500000);
  for(unsigned seats:{2u,3u}){
   const auto threshold=multiplayer_chapter_threshold(seats);
   assert(!(threshold-1>=multiplayer_chapter_threshold(seats)));

@@ -112,3 +112,9 @@ branches. Publish the common dependency before distributing the title pin.
   character sprite submission at translucent alpha despite native death hiding.
   Real bullet and moving/stationary/curved laser fixtures exclude ghosts and
   retain positive live-player Graze controls. Gameplay ABI is now version 7.
+
+- Custom chapter reward (2026-10-14): host-only room rule, 2P/3P defaults
+  1,250,000/1,500,000, range 500,000-5,000,000, step 250,000. Native chapter
+  reward checks cover all 19 values immediately below and at each threshold.
+  Network ABI rejects differing thresholds; Replay stores the selected value.
+  Gameplay ABI 14, setup 6 (23 words), Replay metadata 2 (132 bytes).

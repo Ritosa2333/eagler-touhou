@@ -5,7 +5,7 @@
 namespace th15::multiplayer {
 class ReplayArchive {
 public:
-    static constexpr std::uint32_t DescriptionBytes=128,Magic=0x4d353154u,Version=1;
+    static constexpr std::uint32_t DescriptionBytes=132,Magic=0x4d353154u,Version=2;
     static constexpr std::uint32_t MaxFrames=Netplay::InputReplay::MaxFrames;
     bool Begin(const SessionSetup&,std::uint64_t timestamp);
     bool Append(std::uint32_t frame,std::uint32_t stage,const Netplay::FrameInput*,unsigned);

@@ -12,7 +12,7 @@ using namespace th15::multiplayer;
 namespace {
 SessionSetup setup(unsigned count,unsigned seat,unsigned delay){
  SessionSetup s;s.session_id=0x1122334455667788ull;s.player_count=count;s.local_player=seat;s.seed=417;s.difficulty=1;
- s.automatic=false;s.requested_delay=s.input_delay=delay;s.selections={0,1,count==3?3u:0u};s.build={0x12345678,0x90abcdef,0x87654321,0xfedcba09};return s;
+ s.automatic=false;s.requested_delay=s.input_delay=delay;s.selections={0,1,count==3?3u:0u};s.chapter_threshold=delay==9?5000000:delay==2?500000:0;s.build={0x12345678,0x90abcdef,0x87654321,0xfedcba09};return s;
 }
 Netplay::FrameInput input(unsigned frame,unsigned seat){
  Netplay::FrameInput out;const unsigned held=((frame+seat)%7==0?2:1)|((frame/6+seat)%2?0x10:0x20)|((frame/11)%2?4:0);
@@ -63,7 +63,7 @@ std::vector<unsigned char> run(unsigned count,unsigned delay,bool challenge=fals
   CHECK(viewer.Finish());CHECK(!viewer.BeginNextRun(418));
   CHECK(players[s].BeginNextRun(418));CHECK(players[s].Generation()==1);CHECK(players[s].NextFrame()==0);CHECK(!players[s].CanStart());
   auto corrupt=bytes;corrupt.back()^=1;CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
-  for(unsigned old:{1u,2u,3u,4u,5u,6u}){corrupt=bytes;corrupt[Netplay::InputReplay::HeaderBytes+8]=old;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));} // previous economies
+  for(unsigned old=1;old<SessionSetup::GameplayVersion;++old){corrupt=bytes;corrupt[Netplay::InputReplay::HeaderBytes+8]=old;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));} // previous economies
   corrupt=bytes;corrupt[12]=10;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
   corrupt=bytes;corrupt[21]=static_cast<unsigned char>((s+1)%count);checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
   corrupt=bytes;corrupt[136]=2;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size())); // measured mode word
@@ -81,6 +81,8 @@ __attribute__((export_name("network_free"))) void network_free(void* pointer){st
 __attribute__((export_name("network_validate"))) int network_validate(const unsigned char* bytes,unsigned size){return ReplayArchive::Validate(bytes,size);}
 }
 int main(int argc,char** argv){
+ for(unsigned count:{2u,3u}){auto s=setup(count,0,0);auto words=EncodeSessionSetup(s);CHECK(words[22]==(count==2?1250000u:1500000u));SessionSetup decoded;CHECK(DecodeSessionSetup(decoded,words.data(),words.size()));s.chapter_threshold=5000000;CHECK(GameplayAbi(s)!=GameplayAbi(decoded));NetplayRuntime a,b;CHECK(a.Reset(s));decoded.local_player=1;CHECK(b.Reset(decoded));CHECK(a.ApplySession(b.Hello())==Netplay::SessionPacketResult::ContractMismatch);
+ for(unsigned value:{0u,250000u,500001u,5250000u}){words[22]=value;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));}}
  auto config=setup(3,2,2);auto words=EncodeSessionSetup(config);SessionSetup decoded;CHECK(DecodeSessionSetup(decoded,words.data(),words.size()));
  CHECK(GameplayAbi(config)==GameplayAbi(setup(3,0,2)));CHECK(!decoded.challenge);words[14]=2;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));words[14]=1;words[21]=1;CHECK(DecodeSessionSetup(decoded,words.data(),words.size())&&decoded.challenge);CHECK(EncodeSessionSetup(decoded)==words);CHECK(GameplayAbi(config)!=GameplayAbi(decoded));words[21]=2;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));
  auto changed=config;changed.local_player=0;changed.build[0]^=1;NetplayRuntime left,right;CHECK(left.Reset(config));CHECK(right.Reset(changed));CHECK(left.ApplySession(right.Hello())==Netplay::SessionPacketResult::ContractMismatch);

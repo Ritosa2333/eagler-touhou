@@ -88,7 +88,7 @@ bool StageGameplay::chapter_reward(bool boss){
  if(!battle.enemy_world.chapter_total)return true;bool award_resource=true;i32 resource_threshold=1000000;
 #if TH15_MULTIPLAYER
  award_resource=!battle.mp_enabled;
- if(battle.mp_enabled)resource_threshold=multiplayer_chapter_threshold(battle.mp_options.seat_count);
+ if(battle.mp_enabled)resource_threshold=multiplayer_chapter_threshold(battle.mp_options.seat_count,battle.mp_options.chapter_threshold);
 #endif
  if(!reward.complete(boss,progress.chapter_deaths,award_resource,resource_threshold))return fail(reward.error);const auto& state=reward.state;
 #if TH15_MULTIPLAYER

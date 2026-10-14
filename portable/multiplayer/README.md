@@ -22,7 +22,10 @@ eligible graze contributes once, including multiple pilots grazing one bullet.
 Chapter score and point-value rewards are calculated once from the team statistics.
 Life fragments and Extend progress are shared: each eligible event adds exactly
 one fragment, including ghosts banking reserves. Chapter bonus thresholds are
-1,500,000 for 2P and 2,000,000 for 3P. Three fragments grant each uncapped pilot
+1,250,000 for 2P and 1,500,000 for 3P by default. The room owner can set
+500,000 to 5,000,000 in steps of 250,000 before starting. At 100% defeat rate,
+the required Graze count is the threshold divided by 5,000. The value is
+synchronized to players/spectators and retained in the Replay. Three fragments grant each uncapped pilot
 one spare life in Legacy; Extra requires five for the first five team Extends,
 then stops fragment-based Extends. Each pilot remains capped at eight spare
 lives. Extends do not reactivate ghosts. See
@@ -95,7 +98,7 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 13 rejects older incompatible economy generations.
+Gameplay ABI version 14 rejects older incompatible economy generations.
 Display-only local-hitbox filtering does not change that gameplay version.
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
