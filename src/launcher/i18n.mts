@@ -30,6 +30,7 @@ const entries = [
   ["room.cheatHint", "开启后，禁用无限速触控移动；玩家需使用普通移动或摇杆。", "Disables unlimited-speed touch movement. Players use normal movement or a joystick."],
   ["room.challengeMode", "挑战模式", "Challenge mode"],
   ["room.th15ChapterThreshold", "奖残所需得分", "Chapter score required for a life fragment"],
+  ["room.th15ChapterSettingsHint", "（可在“房间/难度设置”处更改）", "(Change in Room / Difficulty settings)"],
   ["room.th15ChapterGraze", "折合100%击破率的擦弹数：{count}", "Equivalent Graze count at 100% defeat rate: {count}"],
   ["room.challengeHint", "无法使用 Bomb，只记录死亡次数。死亡后正常掉落资源并重生。", "No Bombs; count deaths instead of losing lives. Deaths still drop normal resources and respawn the player."],
   ["room.modeOn", "开启", "On"],
