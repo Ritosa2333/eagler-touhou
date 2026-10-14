@@ -40,6 +40,9 @@ class PlayerFrame:private PlayerMotionWorld {
 public:
     PracticeState* practice=nullptr;
     PlayerFrame(ShtResource&,AnmResource&,AnmResource&,AnmManager&,GameEconomy&,PlayerFrameWorld&,u16 player_file=7,u16 bullet_file=0);
+#ifdef TH11_MULTIPLAYER
+    bool CaptureRollbackFrame(Netplay::RollbackJournal&);
+#endif
     PlayerMotion motion;ShotManager shots;PlayerFrameState state;
     PlayerFrameInput input;PlayerSpellState spell;i32 last_error=0;
     bool initialize();bool update();bool hit();bool die();bool draw(AnmRenderer&);

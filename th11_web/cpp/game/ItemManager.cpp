@@ -3,14 +3,68 @@
 #include "AnmRenderer.hpp"
 #include <cmath>
 #include <algorithm>
+#ifdef TH11_MULTIPLAYER
+#include <eagler/netplay/RollbackJournal.hpp>
+#include <type_traits>
+#endif
 namespace th11 {
+#ifdef TH11_MULTIPLAYER
+static_assert(std::is_trivially_copyable<ItemState>::value,"item slot must not own dynamic objects");
+bool ItemManager::preserve_rollback_slots(u32 first,u32 count)noexcept{
+    if(!rollback_journal)return true;
+    bool ok=true;const u32 end=first+count;
+    while(first<end){
+        if(rollback_captured[first]){++first;continue;}
+        const u32 begin=first;while(first<end&&!rollback_captured[first])++first;
+        if(rollback_journal->Touch(storage.get()+begin,sizeof(ItemState)*(first-begin)))
+            for(u32 i=begin;i<first;++i)rollback_captured[i]=true;
+        else ok=false;
+    }
+    return ok;
+}
+void ItemManager::preserve_rollback_slot(ItemState& value)noexcept{
+    if(!rollback_journal)return;
+    const auto address=reinterpret_cast<uintptr_t>(&value),base=reinterpret_cast<uintptr_t>(storage.get());
+    if(address>=base&&address-base<sizeof(ItemState)*capacity&&(address-base)%sizeof(ItemState)==0)
+        preserve_rollback_slots(u32((address-base)/sizeof(ItemState)),1);
+    else rollback_journal->Touch(&value,sizeof value);
+}
+bool ItemManager::BeginRollbackFrame(Netplay::RollbackJournal& journal){
+    if(rollback_journal||!journal.IsFrameOpen()||journal.Failed())return false;
+    rollback_journal=&journal;rollback_captured.fill(false);bool ok=true;
+    const auto capture=[&](auto& value){if(!journal.Touch(&value,sizeof value))ok=false;};
+    // Preserve the exact pre-call cache, including an invalid cache. Rebuilding
+    // here would alter the manager before the snapshot's first-write boundary.
+    capture(activity);
+    capture(player);capture(cancel_cursor);capture(cancel_spawn_count);capture(active_count);capture(last_error);
+    capture(multiplayer_targets);capture(multiplayer_current_target);
+    capture(multiplayer_spawning_transfer);capture(multiplayer_fan);
+    for(u32 i=0;i<capacity;){
+        if(activity.valid&&!exposed->count)i=activity.next(i);
+        if(i==capacity)break;
+        if(!storage[i].state){++i;continue;}
+        const u32 first=i;while(i<capacity&&storage[i].state)++i;
+        if(!preserve_rollback_slots(first,i-first))ok=false;
+    }
+    return ok;
+}
+void ItemManager::EndRollbackFrame()noexcept{rollback_journal=nullptr;rollback_captured.fill(false);}
+#endif
 ItemManager::ItemManager(AnmResource& r,AnmEnvironment& a,ItemWorld& w,u16 id):storage(new ItemState[capacity]),resource(r),animations(a),world(w),file_id(id){reset();}
-void ItemManager::reset()noexcept{std::memset(storage.get(),0,sizeof(ItemState)*capacity);active_count=0;last_error=0;
+void ItemManager::reset()noexcept{
+#ifdef TH11_MULTIPLAYER
+    preserve_rollback_slots(0,capacity);
+#endif
+    std::memset(storage.get(),0,sizeof(ItemState)*capacity);active_count=0;last_error=0;
 #ifdef TH11_MULTIPLAYER
     multiplayer_targets.fill(-1);multiplayer_current_target=-1;multiplayer_fan.fill(0);
+    activity.clear();
 #endif
 }
 bool ItemManager::bind(ItemState& item,i32 script){
+#ifdef TH11_MULTIPLAYER
+    preserve_rollback_slot(item);
+#endif
     if(!item.vm.bind_script(resource,script,file_id,&animations.rate)){last_error=1;return false;}
     // The caller sets 16x16 before the original bind, whose second reset clears it.
     if(item.vm.update(animations)<0){last_error=2;return false;}return true;
@@ -37,16 +91,21 @@ i32 ItemManager::spawn_single(i32 type,Vec3 position,u32 color,float angle,float
         auto& item=storage[ordinary_capacity+cancel_cursor];++cancel_spawn_count;
         if(!item.state){
 #ifdef TH11_MULTIPLAYER
+            preserve_rollback_slots(ordinary_capacity+cancel_cursor,1);
             multiplayer_targets[ordinary_capacity+cancel_cursor]=-1;
 #endif
             item.delay=cancel_spawn_count<256?i32(cancel_cursor%4):cancel_spawn_count<512?i32(cancel_cursor%8+4):cancel_spawn_count<1024?i32(cancel_cursor%16+8):i32(cancel_cursor%32+16);
-            item.state=5;item.type=item.display_type=8;item.position=position;
+            set_state(item,5);item.type=item.display_type=8;item.position=position;
             const auto v=polar(angle,speed);item.velocity={v.x,v.y,0};item.lifetime.set(0,&animations.rate);item.reserved_44c=0;
         }
         cancel_cursor=(cancel_cursor+1)%cancel_capacity;return 0;
     }
     ItemState* selected=nullptr;for(u32 i=0;i<ordinary_capacity;++i)if(!storage[i].state){selected=&storage[i];break;}
-    if(!selected)return 0;if(out)*out=selected;auto& item=*selected;item.state=1;item.position=position;
+    if(!selected)return 0;if(out)*out=selected;auto& item=*selected;
+#ifdef TH11_MULTIPLAYER
+    preserve_rollback_slot(item);
+#endif
+    set_state(item,1);item.position=position;
 #ifdef TH11_MULTIPLAYER
     multiplayer_targets[selected-storage.get()]=-1;multiplayer_fan[selected-storage.get()]=0;
 #endif
@@ -61,7 +120,12 @@ i32 ItemManager::spawn_single(i32 type,Vec3 position,u32 color,float angle,float
     item.type=item.display_type=type;if(type==10)item.display_type=1;else if(type==11)item.display_type=4;
     if(!bind(item,item.display_type+0x60))return -2;item.vm.color=color;return 0;
 }
-bool ItemManager::activate(ItemState& item){item.state=2;return bind(item,item.type+0x60);}
+bool ItemManager::activate(ItemState& item){
+#ifdef TH11_MULTIPLAYER
+    preserve_rollback_slot(item);
+#endif
+    set_state(item,2);return bind(item,item.type+0x60);
+}
 void ItemManager::move(ItemState& item){
     const auto axis=[&](float p,float v){return float(double(p)+float(double(v)*animations.rate));};
     item.position={axis(item.position.x,item.velocity.x),axis(item.position.y,item.velocity.y),axis(item.position.z,item.velocity.z)};
@@ -74,16 +138,16 @@ void ItemManager::home(ItemState& item){
     if(item.attraction_speed<12)item.attraction_speed=float(double(item.attraction_speed)+double(.2f));
     if(player.state==4){item.state=1;item.velocity.x=item.velocity.y=0;}
 }
-void ItemManager::attract_all(){for(u32 i=0;i<capacity;++i)if(storage[i].state==1){storage[i].state=3;storage[i].attraction_speed=player.attraction_speed;}}
+void ItemManager::attract_all(){for(u32 i=next_active(0);i<capacity;i=next_active(i+1))if(storage[i].state==1){storage[i].state=3;storage[i].attraction_speed=player.attraction_speed;}}
 bool ItemManager::convert_power_items(){
-    for(u32 i=0;i<ordinary_capacity;++i){auto& item=storage[i];if(item.state&&(item.type==1||item.type==4||item.type==10||item.type==11)){
-        const Vec3 position=item.position;item.state=0;
+    for(u32 i=next_active(0);i<ordinary_capacity;i=next_active(i+1)){auto& item=storage[i];if(item.state&&(item.type==1||item.type==4||item.type==10||item.type==11)){
+        const Vec3 position=item.position;set_state(item,0);
         if(spawn(9,position)<0||!world.effect(position,0x73)){last_error=4;return false;}
     }}return true;
 }
 bool ItemManager::update(){
     if(last_error)return false;active_count=cancel_spawn_count=0;bool convert=false;
-    for(u32 i=0;i<capacity;++i){auto& item=storage[i];if(!item.state)continue;
+    for(u32 i=next_active(0);i<capacity;i=next_active(i+1)){auto& item=storage[i];if(!item.state)continue;
 #ifdef TH11_MULTIPLAYER
         if(world.multiplayer_world()&&!world.multiplayer_item_player(item,player)){player=ItemPlayer{};player.state=2;}
 #endif
@@ -94,16 +158,16 @@ bool ItemManager::update(){
         if(item.state==1){
             const bool fall=(player.state==2||player.state==4||((item.lifetime.current<40||player.communication<10000)&&player.position.y>=128))&&!player.force_attract;
             if(fall){move(item);item.velocity.y=float(double(item.velocity.y)+double(animations.rate)*double(.03f));
-                if(item.velocity.y>=0)item.velocity.x=0;if(item.velocity.y>2)item.velocity.y=2;if(item.position.y>472){item.state=0;continue;}
+                if(item.velocity.y>=0)item.velocity.x=0;if(item.velocity.y>2)item.velocity.y=2;if(item.position.y>472){set_state(item,0);continue;}
             }else{item.state=3;item.attraction_speed=player.attraction_speed;home(item);}
         }else if(item.state==2){
             move(item);item.velocity.y=float(double(item.velocity.y)+double(animations.rate)*double(.03f));
             if(item.velocity.y>=0){item.state=3;item.attraction_speed=player.attraction_speed;home(item);}
-            else if(item.position.y>472){item.state=0;if(!world.rank_delta(-4)){last_error=5;return false;}continue;}
+            else if(item.position.y>472){set_state(item,0);if(!world.rank_delta(-4)){last_error=5;return false;}continue;}
         }else if(item.state==3||item.state==4)home(item);
         if(player.state!=2){
             if(player.pickup.contains(item.position)){
-                if(!world.collect(item,convert)){last_error=6;return false;}item.state=0;
+                if(!world.collect(item,convert)){last_error=6;return false;}set_state(item,0);
                 if(!world.sound(0x14,item.position.x)){last_error=7;return false;}continue;
             }
             if(item.state!=3&&item.state!=4&&(player.focused?player.focused_attract:player.unfocused_attract).contains(item.position)){
@@ -139,7 +203,7 @@ bool ItemManager::scatter(EnemyDrop& drops,Vec3 position){
 }
 bool ItemManager::drop(EnemyDrop& drops,Vec3 position){if(drops.primary>0&&spawn(drops.primary,position)<0)return false;if(!scatter(drops,position))return false;drops.primary=0;return true;}
 bool ItemManager::draw(AnmRenderer& renderer){
-    for(u32 i=0;i<capacity;++i){auto& item=storage[i];if(!item.state)continue;auto& vm=item.vm;
+    for(u32 i=next_active(0);i<capacity;i=next_active(i+1)){auto& item=storage[i];if(!item.state)continue;auto& vm=item.vm;
         vm.script_position={float((double(item.position.x)+32)+192),float(double(item.position.y)+16),item.position.z};
         if(vm.script_position.y<8){
             const float distance=float(double(vm.script_position.y)-8);vm.script_position.y=24;

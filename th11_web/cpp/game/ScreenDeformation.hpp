@@ -24,5 +24,13 @@ public:
     void update(EnemyState&,i32 spell_id);
     void copy_strips();
     static void draw_callback(AnmVm&);
+private:
+    void erase_animations();
+#ifdef TH11_MULTIPLAYER
+    friend class ScreenDeformationPool;
+    // A pool performs semantic retirement explicitly. Its retained physical
+    // objects must never erase unrelated, restored IDs during destruction.
+    bool erase_on_destruction_=true;
+#endif
 };
 }

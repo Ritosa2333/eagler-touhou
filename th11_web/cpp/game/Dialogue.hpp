@@ -45,6 +45,8 @@ public:
     // 0 remains active, 1 ended, -2 failed. Elapsed is ticked by the HUD owner.
     i32 update(u32 held,u32 pressed);
 private:
+    friend class WorldRollback;
+    friend struct WorldRollbackTestAccess;
     AnmManager& manager;EnemyAnimations families;
     AnmResource& text;AnmResource& player;AnmResource& front;AnmResource& enemy;AnmResource& logo;
     DialogueEffects& effects;const u8* end=nullptr;

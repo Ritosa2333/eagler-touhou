@@ -26,7 +26,9 @@ public:
     u32 multiplayer_tint(u32,unsigned)const noexcept;
     void multiplayer_geometry(const AnmVm&,touhou::graphics::Topology,u32,const AnmVertex*);
 #endif
-    int draw(AnmVm& vm);
+    // Continuous bullet submission preserves fractional positions; other ANM
+    // owners retain their authored pixel-aligned presentation by default.
+    int draw(AnmVm& vm,bool preserve_subpixel=false);
     int draw_ascii_sprite(AnmVm& vm);
     int draw_ripple(AnmVm& vm);
     int draw_layer(AnmVm* first);
@@ -34,20 +36,31 @@ public:
     void flush();
     void invalidate();
     touhou::graphics::PipelineState& pipeline(){flush();return graphics.pipeline();}
+    // Preserve queued vertices under their original state. Repeated Stage
+    // fog/depth requests need not split an otherwise identical screen batch.
+    void set_fog(bool value){if(graphics.pipeline().fog!=value){flush();graphics.pipeline().fog=value;}}
+    void set_depth_write(bool value){if(graphics.pipeline().depthWrite!=value){flush();graphics.pipeline().depthWrite=value;}}
     bool select_target(const AnmResource* file,u32 index){invalidate();return graphics.select_target(file,index);}
     bool clear_target(u32 color,const GraphicsViewport* rect=nullptr){flush();return graphics.clear_target(color,rect);}
-    void set_viewport(const GraphicsViewport& value){flush();viewport=value;graphics.set_viewport(value);}
+    void set_viewport(const GraphicsViewport& value){flush();viewport=value;graphics.set_viewport(value);
+#ifdef TH11_MULTIPLAYER
+        camera_state_valid=false;
+#endif
+    }
     void set_camera(SceneCamera&,bool screen);
 private:
     ZunGraphics& graphics;
     std::vector<AnmVertex> vertices;
 #ifdef TH11_MULTIPLAYER
     std::vector<AnmVertex> multiplayer_geometry_vertices;
+    // Derived host state, invalidated with material state on rewind/target
+    // changes. Never substitute a camera pointer for exact matrix identity.
+    bool camera_state_valid=false;
 #endif
     u32 texture_handle=~0u,blend_mode=~0u,filter=~0u;
     const AnmSprite* uv_sprite=nullptr;Matrix4 cached_uv{};
     void material(const AnmVm& vm);
-    int submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors=nullptr);
+    int submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors=nullptr,bool preserve_subpixel=false);
     float fog_amount(Vec3 position,Vec3 origin)const noexcept;
     u32 fog_color(u32 color,float amount,bool fade_alpha)const noexcept;
     u32 color(const AnmVm& vm)const noexcept;

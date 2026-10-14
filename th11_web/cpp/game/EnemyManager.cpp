@@ -7,9 +7,22 @@ EnemyManager::~EnemyManager(){
 }
 Enemy* EnemyManager::spawn(const char* name,const EnemySpawn& parameters){
     if(last_error||spawn_depth>=128){last_error=-2;return nullptr;}
-    auto entry=std::make_unique<Entry>(environment,commands);auto& enemy=entry->enemy;auto& e=enemy.state;
+#ifdef TH11_MULTIPLAYER
+    // Reserve before the first ECL frame, which can recursively spawn children.
+    // Linking still happens afterwards, preserving native child-before-parent.
+    auto entry=acquire_rollback_entry();
+#else
+    auto entry=std::make_unique<Entry>(environment,commands);
+#endif
+    auto& enemy=entry->enemy;auto& e=enemy.state;
     enemy.script.initialize_context();enemy.script.program=program;enemy.script.select_subroutine(name);
-    if(!enemy.script.root.instruction){last_error=-2;return nullptr;}
+    if(!enemy.script.root.instruction){
+        last_error=-2;
+#ifdef TH11_MULTIPLAYER
+        release_rollback_entry(entry);
+#endif
+        return nullptr;
+    }
     e.initialize(&enemy,&environment.rate);e.absolute.position=parameters.position;e.score=parameters.score;
     e.health=e.max_health=parameters.health;e.drops.primary=parameters.drop;e.flags|=(parameters.mirrored&1)<<15;
     enemy.script.root.difficulty=u8(1u<<(u32(environment.difficulty)&31));
@@ -18,7 +31,14 @@ Enemy* EnemyManager::spawn(const char* name,const EnemySpawn& parameters){
     // The native constructor executes the first frame before joining the list.
     // Child spawns therefore appear before their parent, and inherit RNG order.
     ++spawn_depth;const i32 result=enemy_frame(entry->script,world);--spawn_depth;
-    if(result==-2||last_error){last_error=-2;if(!script_error.instruction)script_error=entry->script.error;enemy.script.release_threads(entry->script);return nullptr;}
+    if(result==-2||last_error){
+        last_error=-2;if(!script_error.instruction)script_error=entry->script.error;
+        enemy.script.release_threads(entry->script);
+#ifdef TH11_MULTIPLAYER
+        release_rollback_entry(entry);
+#endif
+        return nullptr;
+    }
     if(e.flags&0x80000){if(e.drops.primary==1)e.drops.primary=10;else if(e.drops.primary==4)e.drops.primary=11;}
     e.death_sound=i32(total_created&1)+2;e.death_animation=0x51;e.death_animation_file=0;
     if(e.bound_animation_file==1){switch(e.animation_script){case 5:case 50:e.death_animation=0x4e;break;case 10:case 51:e.death_animation=0x54;break;case 15:case 52:e.death_animation=0x57;break;}}
@@ -36,7 +56,11 @@ bool EnemyManager::destroy(Enemy& enemy){
     if((e.flags&0x80000)&&u32(e.boss_slot)<8){commands.bosses[e.boss_slot]=nullptr;environment.boss=commands.bosses[0];}
     if(commands.animations)for(auto& id:e.animations){commands.animations->erase(id);id=0;}
     if(world.target==&enemy){world.target=nullptr;world.target_locked=false;}world.clear_shot_targets(&enemy);
-    enemy.script.release_threads(found->second->script);entries.erase(found);return true;
+    enemy.script.release_threads(found->second->script);
+#ifdef TH11_MULTIPLAYER
+    release_rollback_entry(found->second);
+#endif
+    entries.erase(found);return true;
 }
 bool EnemyManager::reset(EclProgram& next){
     while(first)if(!destroy(*first->value))return false;

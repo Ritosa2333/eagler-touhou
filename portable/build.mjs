@@ -10,13 +10,15 @@ const builtAt = new Date().toISOString();
 const workspace = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const root = resolve(workspace, 'th11_web');
 const multiplayer = process.argv.includes('--multiplayer');
+const lto=process.argv.includes('--lto');
+const simdExperiment=process.argv.includes('--simd-experiment');
 const printPlan = process.argv.includes('--print-plan');
 const thprac = process.env.TH_ENABLE_THPRAC === '1' || process.argv.includes('--thprac');
 if (multiplayer && thprac) throw Error('TH11 multiplayer and THPrac are separate runtime variants.');
 const profile = multiplayer ? 'multiplayer' : 'sdl3';
 const variant = multiplayer ? 'multiplayer' : 'normal';
 const out = resolve(root, 'artifacts', profile);
-const commonRevision = '984a8a10834c35fe9ef86c4ffe03daf1fb61f87c';
+const commonRevision = '62345858e1a4b101074cdc04720eac44a7c89cf0';
 const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, 'third_party/eagler-common'));
 const sdk = process.env.EMSDK || [
   resolve(workspace, 'tools/emsdk'),
@@ -28,7 +30,8 @@ const emcc = sdk && ['install/emscripten/emcc.py', 'upstream/emscripten/emcc.py'
 if (!emcc && !printPlan) throw Error('TH11 build needs Emscripten; set EMSDK to the shared pinned SDK.');
 const imgui = resolve(root, 'cpp/third_party/imgui');
 const flags = [
-  '-O2', '-g0', '-std=c++17', '-ffp-contract=off', '-fno-strict-aliasing',
+  lto?'-O3':'-O2', ...(lto?['-flto']:[]), '-g0', '-std=c++17', '-ffp-contract=off', '-fno-strict-aliasing',
+  ...(simdExperiment?['-msimd128']:[]),
   '-fno-exceptions', '-fno-rtti', '-DTH_NATIVE_PLATFORM=1', '-DTH_ENABLE_THCRAP=1',
   '-DTH11_DEVELOPMENT_HARNESS=0', '-DIMGUI_DISABLE_WIN32_FUNCTIONS',
   '-I' + imgui, '-I' + resolve(root, 'cpp'),
@@ -61,11 +64,17 @@ const exported = [
 if (thprac) exported.push('_th11_practice_configure');
 // MP entry points carry EMSCRIPTEN_KEEPALIVE in their owning translation units.
 const linkFlags = multiplayer ? ['-lwebsocket'] : [];
+// The Host deliberately calls named native exports directly. O3's default
+// export-name minification would change that ABI even though JS glue works.
+// libexports.js is the supported named-export API; the pinned linker keeps
+// export names stable when it is linked. Do not set private compiler options
+// or use DECLARE_ASM_MODULE_EXPORTS=0 (which changes module scoping).
+if(lto)linkFlags.push('-lexports.js');
 if (printPlan) {
   console.log(JSON.stringify({game: 'th11', profile, variant, outputDirectory: out,
     packageDirectory: resolve(workspace, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
     flags, linkFlags, sources: source.map(path => relative(workspace, path).replaceAll('\\', '/')),
-    commonRevision: multiplayer ? commonRevision : null, prediction: false, rollback: false}, null, 2));
+    commonRevision: multiplayer ? commonRevision : null, prediction: multiplayer, rollback: multiplayer}, null, 2));
   process.exit(0);
 }
 if (multiplayer) {
@@ -95,9 +104,10 @@ const headers = [...headerFiles(resolve(root, 'cpp')), ...headerFiles(resolve(wo
 const headerHash = sha(headers.map(path => path + sha(readObserved(path))).join('\n'));
 readObserved(fileURLToPath(import.meta.url));
 readObserved(resolve(workspace, 'portable/response-file.mjs'));
-const runtimeSourceFiles = multiplayer ? {
-  'adonis-calibration.mjs': sha(readObserved(resolve(netplayRoot, 'browser/adonis-calibration.mjs'))),
-} : {};
+const runtimeSourceFiles = {
+  'direct-input-bridge.mjs': sha(readObserved(resolve(netplayRoot, 'browser/direct-input-bridge.mjs'))),
+  ...(multiplayer?{'adonis-calibration.mjs': sha(readObserved(resolve(netplayRoot, 'browser/adonis-calibration.mjs')))}:{}),
+};
 async function run(args) {
   let command = args;
   if (process.platform === 'win32' && args.reduce((length, value) => length + value.length + 3, emcc.length) > 20000) {
@@ -129,17 +139,23 @@ console.log('Build th11 C++ / SDL3 / Emscripten (' + variant + ')');
 const objectsBuilt = new Array(source.length);
 const rendererIndex = source.indexOf(renderer);
 objectsBuilt[rendererIndex] = await compile(renderer); // Populate the shared SDL port cache before parallel compilation.
-let cursor = 0, done = 0;
+let cursor = 0, done = 0, compileFailure = null;
 const jobs = Math.max(1, Math.min(16, Number.parseInt(process.env.TH_BUILD_JOBS || '4', 10) || 4));
 await Promise.all(Array.from({length: jobs}, async () => {
-  while (cursor < source.length) {
+  while (cursor < source.length && !compileFailure) {
     const index = cursor++;
-    if (index !== rendererIndex) objectsBuilt[index] = await compile(source[index]);
+    try { if (index !== rendererIndex) objectsBuilt[index] = await compile(source[index]); }
+    catch (error) { compileFailure ||= error; return; }
     if (++done % 40 === 0) console.log(done + '/' + source.length + ' translation units');
   }
 }));
+// Let already running compilers finish before reporting failure, so a serial
+// retry cannot race abandoned workers against the same object directory.
+if (compileFailure) throw compileFailure;
 const loader = resolve(out, 'th11-sdl.mjs');
-await run([...flags, ...linkFlags, '--no-entry', '-sDEFAULT_TO_CXX=1', '-sMODULARIZE=1', '-sEXPORT_ES6=1',
+// Keep an external index-to-function map for release crash/performance evidence.
+// The shipped module still uses -O2/-g0; no function-name payload is requested.
+await run([...flags, ...linkFlags, '--emit-symbol-map', '--no-entry', '-sDEFAULT_TO_CXX=1', '-sMODULARIZE=1', '-sEXPORT_ES6=1',
   '-sENVIRONMENT=web,worker', '-sALLOW_MEMORY_GROWTH=1', '-sSTACK_SIZE=1048576', '-sINITIAL_MEMORY=134217728',
   '-sMAXIMUM_MEMORY=1073741824', '-sFILESYSTEM=1', '-lidbfs.js', '-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8',
   '-sINVOKE_RUN=0', '-sEXIT_RUNTIME=0', '-sMIN_WEBGL_VERSION=2', '-sMAX_WEBGL_VERSION=2',
@@ -155,11 +171,15 @@ const toolchain = existsSync(sdkMetadata) ? JSON.parse(readFileSync(sdkMetadata)
   {emsdkRoot: relative(workspace, sdk).replaceAll('\\', '/'), layout: 'external'};
 const report = {
   builtAt, game: 'th11', kind: 'cpp-sdl3', profile, variant, diagnostic: false,
-  version: multiplayer ? '1.0.0-mp1-sdl3' : '1.0.0-sdl3',
+  optimization:{level:lto?'O3':'O2',linkTime:lto,fastMath:false,fpContract:'off',simdExperiment},
+  ...(simdExperiment?{compatibility:{experimental:true,requiredWasmFeatures:['simd128'],scalarFallbackPackaged:false,
+    warning:'Private performance experiment; cannot replace the default compatible Runtime without a separately validated fallback/peer-build policy.'}}:{}),
+  version: multiplayer ? '1.0.0-mp2-rollback-sdl3' : '1.0.0-sdl3',
   features: {thprac, languages: true, focusHitbox: false, ...(multiplayer ? {multiplayer: true} : {})},
-  ...(multiplayer ? {commonRevision, runtimeSourceFiles,
-    netplay: {prediction: false, rollback: false, measuredStartup: true}} : {}),
-  architecture: {loop: multiplayer ? 'cpp-fixed-60hz-confirmed-lockstep' : 'cpp-fixed-60hz-bounded-catchup',
+  runtimeSourceFiles,
+  ...(multiplayer ? {commonRevision,
+    netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true}} : {}),
+  architecture: {loop: multiplayer ? 'cpp-fixed-60hz-bounded-rollback' : 'cpp-fixed-60hz-bounded-catchup',
     audio: 'cpp-miniaudio-vorbis-sdl3-stream', renderer: 'cpp-gles-semantic-batched',
     graphicsInterface: 'semantic-state-texture-matrix', vertexUpload: 'web-bufferData-direct-game-batches-cached-vao',
     files: 'sdl-io-idbfs', fonts: 'cpp-original-baked-glyphs-argb4444', input: 'cpp-sdl', launcher: 'eagler-touhou/1'},
@@ -168,6 +188,7 @@ const report = {
   sharedSources: ['Renderer.cpp', 'Renderer.hpp', 'Shaders.hpp', 'GraphicsState.hpp', 'AssetPixelFormat.hpp',
     'RenderCommands.hpp', 'LegacyGraphics.hpp', 'MotionTrack.hpp', 'TouchController.hpp'],
   bytes: wasm.length, sha256: sha(wasm), loaderSha256: sha(readFileSync(loader)),
+  symbolMap: {file: 'th11-sdl.mjs.symbols', sha256: sha(readFileSync(loader + '.symbols'))},
   imports: WebAssembly.Module.imports(module), exports: WebAssembly.Module.exports(module), toolchain,
 };
 writeFileSync(resolve(out, 'build.json'), JSON.stringify(report, null, 2) + '\n');

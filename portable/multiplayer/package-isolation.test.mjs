@@ -8,7 +8,7 @@ import {
   createRuntimeManifest, packageEagler, MULTIPLAYER_EXPORTS, sha256,
 } from '../package-eagler.mjs';
 
-const revision = '984a8a10834c35fe9ef86c4ffe03daf1fb61f87c';
+const revision = '62345858e1a4b101074cdc04720eac44a7c89cf0';
 const leb = value => {
   const bytes = [];
   do { const part = value & 127; value >>>= 7; bytes.push(part | (value ? 128 : 0)); } while (value);
@@ -33,8 +33,10 @@ function buildFor(bytes, multiplayer = false) {
     version: 'test', builtAt: '2026-10-09T00:00:00.000Z', kind: 'cpp-sdl3',
     features: {thprac: false, languages: true, ...(multiplayer ? {multiplayer: true} : {})},
     ...(multiplayer ? {commonRevision: revision,
-      netplay: {prediction: false, rollback: false, measuredStartup: true},
-      runtimeSourceFiles: {'adonis-calibration.mjs': sha256('// calibration\n')}} : {}),
+      netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true},
+      } : {}),
+    runtimeSourceFiles:{'direct-input-bridge.mjs':sha256('// input bridge\n'),
+      ...(multiplayer?{'adonis-calibration.mjs':sha256('// calibration\n')}:{})},
     sourceFiles, sourceDigest: sha256(JSON.stringify(sourceFiles)),
     sha256: sha256(bytes), loaderSha256: sha256('// loader\n'),
     exports: WebAssembly.Module.exports(new WebAssembly.Module(bytes)),
@@ -62,6 +64,7 @@ function withFixture(multiplayer, body) {
   put('portable/browser/motion-replay.mjs', '// replay\n');
   put('portable/browser/multiplayer-replay.mjs', '// mp replay\n');
   put('third_party/eagler-common/browser/adonis-calibration.mjs', '// calibration\n');
+  put('third_party/eagler-common/browser/direct-input-bridge.mjs','// input bridge\n');
   for (const name of ['font0.bin', 'font1.bin', 'font2.bin', 'font3.bin', 'cp932.bin', 'blend4444.bin'])
     put('private-fonts/' + name, Buffer.from([0]));
   try {
@@ -79,14 +82,14 @@ test('ordinary and MP plans use separate binary, object-profile and package dire
   assert.throws(() => resolvePackagePlan('/workspace/title', ['--multiplayer-fixtures']), /Diagnostic/);
 });
 
-test('MP attestation rejects rollback, prediction, wrong common pin and ordinary substitution', () => {
+test('MP attestation requires bounded rollback, the correct common pin and an isolated variant', () => {
   const plan = resolvePackagePlan('/workspace/title', ['--multiplayer']);
   const build = buildFor(wasm(MULTIPLAYER_EXPORTS), true);
   validateBuildManifest(build, plan);
   for (const netplay of [
-    {...build.netplay, prediction: true}, {...build.netplay, rollback: true},
+    {...build.netplay, prediction: false}, {...build.netplay, rollback: false}, {...build.netplay, predictionLimit: 8},
     {...build.netplay, measuredStartup: false},
-  ]) assert.throws(() => validateBuildManifest({...build, netplay}, plan), /pure delay/);
+  ]) assert.throws(() => validateBuildManifest({...build, netplay}, plan), /12-frame rollback/);
   assert.throws(() => validateBuildManifest({...build, commonRevision: '0'.repeat(40)}, plan), /pinned/);
   assert.throws(() => validateBuildManifest({...build, variant: 'normal'}, plan), /variant/);
   assert.throws(() => validateBuildManifest({...build, sourceDigest: '0'.repeat(64)}, plan), /inventory/);
@@ -128,6 +131,8 @@ test('closed runtime inventories include the complete MP browser module closure 
     const shell = readFileSync(resolve(fixture.plan.out, 'shell.mjs'), 'utf8');
     assert.equal(manifest.game, 'th11');
     assert.match(shell, new RegExp('"multiplayer":' + multiplayer));
+    assert.match(shell,/\.\/direct-input-bridge\.mjs/);
+    assert(Object.hasOwn(inventory.files,'direct-input-bridge.mjs'));
     for (const name of ['multiplayer.mjs', 'multiplayer.css', 'multiplayer-replay.mjs', 'adonis-calibration.mjs']) {
       assert.equal(Object.hasOwn(inventory.files, name), multiplayer);
       assert.equal(existsSync(resolve(fixture.plan.out, name)), multiplayer);
@@ -145,14 +150,15 @@ test('closed runtime inventories include the complete MP browser module closure 
 });
 
 test('bad hashes, stale sources, calibration and shell mismatches leave existing output untouched', () => {
-  for (const kind of ['wasm', 'source', 'calibration', 'factory']) withFixture(true, fixture => {
+  for (const kind of ['wasm', 'source', 'calibration', 'inputBridge', 'factory']) withFixture(true, fixture => {
     fixture.put('build-eagler-multiplayer/manifest.json', 'previous generation');
     if (kind === 'wasm') fixture.put('th11_web/artifacts/multiplayer/th11-sdl.wasm', wasm(['wrong']));
     if (kind === 'source') fixture.put('source.cpp', '// changed\n');
     if (kind === 'calibration') fixture.put('third_party/eagler-common/browser/adonis-calibration.mjs', '// changed\n');
+    if (kind === 'inputBridge') fixture.put('third_party/eagler-common/browser/direct-input-bridge.mjs','// changed\n');
     if (kind === 'factory') fixture.put('th11_web/sdl-runtime/shell.mjs',
       readFileSync(resolve(fixture.root, 'th11_web/sdl-runtime/shell.mjs'), 'utf8').replace('/*TH11_MULTIPLAYER_FACTORY*/', ''));
-    assert.throws(() => fixture.package(), /identity mismatch|modified source|calibration module|factory marker/);
+    assert.throws(() => fixture.package(), /identity mismatch|modified source|calibration module|input bridge|factory marker/);
     assert.equal(readFileSync(resolve(fixture.plan.out, 'manifest.json'), 'utf8'), 'previous generation');
     assert.deepEqual(readdirSync(fixture.plan.out), ['manifest.json']);
   });

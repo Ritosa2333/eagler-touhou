@@ -5,6 +5,7 @@ import {installStartupBranding,finishStartupAnimation} from './startup-branding.
 import createModule from './th11-sdl.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
+import {createDirectInputBridge} from './direct-input-bridge.mjs';
 import {validateMotionReplay} from './motion-replay.mjs';
 import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
 const runtimeBuild=/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false,multiplayer:false};
@@ -13,12 +14,44 @@ const createMultiplayerRuntime=/*TH11_MULTIPLAYER_FACTORY*/multiplayerRuntime?(a
 const protocol='eagler-touhou/1',game='th11',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
+const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 const $=s=>document.querySelector(s);
 let Module,core,app=0,multiplayer=null,runtimeManifest=null,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null,storageSync=Promise.resolve();
-const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled&&(!multiplayerRuntime||multiplayer?.acceptInput()));
-const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}else{const node=$('#error');if(node)node.textContent=message;}emit('error',{message,error:message});console.error(reason);};
+let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=false,touchPageSuspended=false;
+// Native TH11 reset/cancel preserves its action serials. Keep both mappings
+// for this document/core lifetime, including a stop and subsequent launch.
+// Rejected snapshots consume only the source baseline, never a future pulse.
+let sourceBomb=0,sourceEscape=0,mappedBomb=0,mappedEscape=0;
+class SupersededTouchCommand extends Error {}
+function ownsTouchDocument(){
+ try{return document===runtimeDocument&&(!hosted||!!ownerFrame&&ownerFrame.isConnected&&ownerFrame.contentWindow===window&&ownerFrame.contentDocument===runtimeDocument);}
+ catch{return false;}
+}
+function touchReady(){
+ return initializedReady&&!!core&&launched&&launchSettled&&!stopping&&!touchRetired&&!touchPageSuspended&&!document.hidden&&
+  !!options.touchEnabled&&!options.netplaySpectator&&(!multiplayerRuntime||!!multiplayer?.acceptInput())&&ownsTouchDocument();
+}
+function cancelTouchInput(){
+ const delivered=touchReady();cancelTouches();
+ // Native cancel_transient clears focus, axes and pending pulses, but keeps
+ // the accepted fire toggle and serials. Neutralization creates no action.
+ if(!delivered&&initializedReady&&core)core.sdl_touch_cancel();
+}
+function invalidateTouches(terminal=false){
+ ++touchLifetime;launchSettled=false;if(terminal)touchRetired=true;cancelTouchInput();
+}
+function acceptsTouch(){
+ if(!ownsTouchDocument()){if(!touchRetired)invalidateTouches(true);return false;}
+ return touchReady();
+}
+function assertTouchLifetime(value){
+ if(!ownsTouchDocument()){if(!touchRetired)invalidateTouches(true);}
+ if(value!==touchLifetime||touchRetired||stopping)throw new SupersededTouchCommand('Runtime launch was superseded');
+}
+const cancelTouches=bindOutsideTouches(document,canvas,()=>touchReady()?core:null,acceptsTouch);
+const error=reason=>{invalidateTouches(true);const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}else{const node=$('#error');if(node)node.textContent=message;}emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Int32Array(Module.HEAPU8.buffer,ptr,count);
 const sync=(populate=false)=>{const current=storageSync.then(()=>new Promise((r,j)=>Module.FS.syncfs(populate,e=>e?j(e):r())));storageSync=current.catch(()=>{});return current;};
 const coreError=()=>{const p=core.th11_error(),end=Module.HEAPU8.indexOf(0,p);return new TextDecoder().decode(Module.HEAPU8.subarray(p,end<0?p+256:end));};
@@ -80,33 +113,50 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop({returnToMenu=false}={}){if(stopping)return;stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
+async function stop({returnToMenu=false}={}){if(stopping)return;invalidateTouches();stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(multiplayerRuntime?/^\/savesth11(?:mp)?\//:/^\/savesth11\//,'').replace(/^\//,'');const valid=multiplayerRuntime?/^replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/:/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;if(!valid.test(name))throw Error('存档路径无效');return name;}
-async function launch(){
- if(launched)return;clearKeyboard();
- runtimeManifest??=await(await fetch('./manifest.json')).json();
- await installStartupBranding(Module,{game,builtAt:runtimeManifest.builtAt});
+async function launch(receivedTouchLifetime=touchLifetime){
+ assertTouchLifetime(receivedTouchLifetime);
+ if(launched){if(!launchSettled)throw Error('Runtime launch did not complete');return;}
+ launchSettled=false;clearKeyboard();
+ runtimeManifest??=await(await fetch('./manifest.json')).json();assertTouchLifetime(receivedTouchLifetime);
+ await installStartupBranding(Module,{game,builtAt:runtimeManifest.builtAt});assertTouchLifetime(receivedTouchLifetime);
  if(!core.th11_prepare_loading())throw Error(coreError());
- const startupImageAt=performance.now();performance.mark('eagler-startup-image');await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
- if(!core.th11_initialize())throw Error(coreError());await finishStartupAnimation(startupImageAt,frames=>core.th11_draw_loading(frames));performance.mark('eagler-startup-menu-ready');
+ const startupImageAt=performance.now();performance.mark('eagler-startup-image');await new Promise(requestAnimationFrame);assertTouchLifetime(receivedTouchLifetime);await new Promise(requestAnimationFrame);assertTouchLifetime(receivedTouchLifetime);
+ if(!core.th11_initialize())throw Error(coreError());await finishStartupAnimation(startupImageAt,frames=>core.th11_draw_loading(frames));assertTouchLifetime(receivedTouchLifetime);performance.mark('eagler-startup-menu-ready');
  if(!multiplayerRuntime&&core.th11_phase()===4&&!core.th11_return_title())throw Error(coreError());
  launched=true;apply();first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  const loading=$('#loading');if(loading)loading.textContent='';
- const mode=multiplayerRuntime?await multiplayer.launch():{runLoop:true};
+ const mode=multiplayerRuntime?await multiplayer.launch():{runLoop:true};assertTouchLifetime(receivedTouchLifetime);
  if(mode.runLoop)canvas.focus({preventScroll:true});if(!multiplayerRuntime)core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();if(mode.runLoop)core.th11_loop_start();
- if(multiplayerRuntime&&!mode.runLoop){await new Promise(requestAnimationFrame);first=true;emit('first-frame');}
+ if(multiplayerRuntime&&!mode.runLoop){await new Promise(requestAnimationFrame);assertTouchLifetime(receivedTouchLifetime);first=true;emit('first-frame');}
+ launchSettled=true;
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
 }
-async function command(m){switch(m.command){
+// Both carriers use this synchronous input-only dispatch. It never steps the
+// world, polls the network, pumps audio, or starts asynchronous lifecycle work.
+function dispatchInput(m){switch(m.command){
+ case 'keyboard':if(launched&&!document.hidden&&!stopping){if(!multiplayer?.keyboard(m,!!m.down)&&(!multiplayerRuntime||multiplayer.acceptInput()))keyboard.event(m,!!m.down,'hosted');}return true;
+ case 'keyboard-clear':clearKeyboard();return true;
+ case 'touch-cancel':if(!ownsTouchDocument()){if(!touchRetired)invalidateTouches(true);}else cancelTouchInput();return true;
+ case 'direct-touch':if(acceptsTouch())directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return true;
+ case 'touch-controls':{
+  const controls=m.controls??m,bomb=controls.bombSerial>>>0,escape=controls.escapeSerial>>>0;
+  const changedBomb=bomb!==sourceBomb,changedEscape=escape!==sourceEscape;
+  sourceBomb=bomb;sourceEscape=escape;if(!acceptsTouch())return true;
+  const nextBomb=(mappedBomb+Number(changedBomb))>>>0,nextEscape=(mappedEscape+Number(changedEscape))>>>0;
+  touchControls(core,options,{controls:{...controls,bombSerial:nextBomb,escapeSerial:nextEscape}});
+  mappedBomb=nextBomb;mappedEscape=nextEscape;return true;
+ }
+ default:return false;
+}}
+async function command(m,receivedTouchLifetime=touchLifetime){
+ if(dispatchInput(m))return {};
+ switch(m.command){
  case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);if(multiplayerRuntime)multiplayer.validateOptions(options);else if(options.netplayMode==='lan'||options.netplaySpectator)throw Error('此 Runtime 不支持多人游戏');music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
  case 'resources':await installResources(m.resources);return {};
- case 'keyboard':if(launched&&!document.hidden&&!stopping){if(!multiplayer?.keyboard(m,!!m.down)&&(!multiplayerRuntime||multiplayer.acceptInput()))keyboard.event(m,!!m.down,'hosted');}return {};
- case 'keyboard-clear':clearKeyboard();return {};
  case 'thprac-mouse':{if(!options.thpracEnabled||!core.sdl_thprac_mouse)return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);core.sdl_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(Number(m.x)-r.left-(r.width-640*scale)/2)/scale,(Number(m.y)-r.top-(r.height-480*scale)/2)/scale);return {};}
- case 'touch-cancel':cancelTouches();return {};
- case 'direct-touch':if(!multiplayerRuntime||multiplayer.acceptInput())directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
- case 'touch-controls':if(!multiplayerRuntime||multiplayer.acceptInput())touchControls(core,options,m);return {};
- case 'launch':await launch();return {};
+ case 'launch':await launch(receivedTouchLifetime);return {};
  case 'sync':await save();return {};
  case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir(saveRoot+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat(saveRoot+'/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
  case 'read':return {bytes:Array.from(Module.FS.readFile(saveRoot+'/'+path(m.path)))};
@@ -121,20 +171,37 @@ async function command(m){switch(m.command){
  case 'remove':{if(launched)throw Error('请先退出游戏');Module.FS.unlink(saveRoot+'/'+path(m.path));await sync(false);return {};}
  default:throw Error('不支持的操作');}}
 let queue=Promise.resolve();
-async function dispatchCommand(m){
- try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}
- catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else error(e);}
+if(validEpoch)Object.defineProperty(window,'__eaglerDirectInputBridge',{configurable:true,
+ value:createDirectInputBridge({protocol,game,epoch,origin:location.origin,ready:()=>!!core,
+  dispatch:dispatchInput})});
+async function dispatchCommand(m,receivedTouchLifetime=touchLifetime){
+ try{const result=await command(m,receivedTouchLifetime);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}
+ catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else if(!(e instanceof SupersededTouchCommand))error(e);}
 }
 window.addEventListener('message',event=>{
  const m=event.data;if(!validEpoch||event.source!==parent||event.origin!==location.origin||m?.protocol!==protocol||m.game!==game||m.epoch!==epoch||typeof m.command!=='string')return;
- if(m.command==='keyboard'||m.command==='keyboard-clear'){void dispatchCommand(m);return;}
- queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
+ // The validated input task must not wait for resource or IDB operations.
+ // Its synchronous command body checks current document/lifecycle eligibility;
+ // it never advances the simulation or services the network here.
+ if(m.command==='keyboard'||m.command==='keyboard-clear'||m.command==='direct-touch'||m.command==='touch-controls'||m.command==='touch-cancel'){void dispatchCommand(m);return;}
+ const receivedTouchLifetime=touchLifetime;
+ queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m,receivedTouchLifetime);}).catch(error);
 });
-document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
-window.addEventListener('blur',()=>{clearKeyboard();if(core)cancelTouches();});
+document.addEventListener('visibilitychange',()=>{cancelTouchInput();if(!core||!launched)return;clearKeyboard();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
+window.addEventListener('blur',()=>{clearKeyboard();cancelTouchInput();});
 window.addEventListener('eagler-thprac-menu',event=>emit('thprac-menu',{open:!!event.detail?.open}));
-window.addEventListener('pagehide',()=>{clearKeyboard();cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
-window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
+window.addEventListener('pagehide',event=>{
+ // BFCache keeps this document/core. Suspend transient gestures without
+ // retiring its launch or resetting the accepted/source action serials.
+ if(event.persisted){touchPageSuspended=true;cancelTouchInput();}else invalidateTouches(true);
+ clearKeyboard();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}
+});
+window.addEventListener('pageshow',event=>{
+ if(!ownsTouchDocument()){if(!touchRetired)invalidateTouches(true);return;}
+ if(touchRetired)return;
+ if(event.persisted)touchPageSuspended=false;
+ if(!touchPageSuspended&&core&&launched&&!document.hidden)void resumeForegroundAudio(true);
+});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
@@ -162,7 +229,8 @@ const initialized=(async()=>{
  let last=performance.now(),ticks=0;
  Module.onGameFrame=(ok,ms,count)=>{if(!ok){if(multiplayerRuntime)multiplayer.fail(Error(coreError()));else error(Error(coreError()));return;}try{multiplayer?.frame();}catch(reason){multiplayer.fail(reason);return;}ticks+=count;if(!first&&(!multiplayerRuntime||count>0)){first=true;last=performance.now();ticks=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){emit('frame-health',{fps:ticks*1000/(now-last),maxGapMs:ms});const a=u32(core.th11_audio_statistics(),9);emit('audio-health',{queuedMs:a[4]*1000/44100,minQueuedMs:0,backend:'script',underruns:a[3]});last=now;ticks=0;}if(!multiplayerRuntime&&core.th11_phase()===4)void stop().catch(error);};
  window.__th11Runtime={core,Module,get app(){return launched?1:0;},get multiplayer(){return multiplayer;},get saveRoot(){return saveRoot;},launch,stop,command};
- emit('ready');
+ if(!ownsTouchDocument()||touchRetired)return false;
+ initializedReady=true;emit('ready');
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});
 async function mountData(){
  // eagler-touhou managed package: the retail archive arrives through the parent

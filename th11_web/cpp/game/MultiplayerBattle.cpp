@@ -76,7 +76,7 @@ bool MultiplayerPilot::enemy_death(){return world.enemy_death();}
 bool MultiplayerPilot::game_over(bool){
     EffectOwner effect(world,seat);
     if(ghost)return true;ghost=true;ghost_clock=0;player->motion.clear_options();player->motion.clear_focus();
-    for(u32 i=0;i<256;++i){auto& shot=player->shots.at(i);erase_animation(world.animations,shot.animation);erase_animation(world.animations,shot.extra_animation);shot.state=0;}
+    player->shots.clear_projectiles();
     for(auto& a:player->shots.damage_areas.areas)a.flags=0;
     if(bomb)bomb->multiplayer_clear();
     return player->motion.reset_body();
@@ -126,7 +126,7 @@ Vec3 GameBattle::multiplayer_target(Vec3 origin)const{const auto target=mp_targe
 void GameBattle::multiplayer_enemy_target(Vec3 origin){const Vec3 p=multiplayer_target(origin);enemy_environment.player_position=p;bullets.player=p;LaserWorld::player=p;}
 bool GameBattle::mp_all_power_full()const noexcept{bool found=false;for(unsigned i=0;i<mp_options.seat_count;++i){const auto& p=*pilots[i];if(p.ghost)continue;found=true;if(p.economy.power<p.economy.max_power)return false;}return found;}
 bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
-    const auto index=&item-&items.at(0);auto& directed=items.multiplayer_targets[index];
+    const auto index=items.index_of(item);auto& directed=items.multiplayer_targets[index];
     const bool power=item.type==1||item.type==4||item.type==6||item.type==10||item.type==11;
     // A Power gift whose recipient becomes a ghost returns to the ordinary
     // field pool. The successful emission already consumed the donor's Power.
@@ -245,13 +245,14 @@ u32 GameBattle::mp_hash()const noexcept{
     for(auto value:enemy_environment.shared_integers)word(value);flt(animations.rate);word(transitioning);word(transition_started);word(stage_active);timer(transition_timer);
     if(stage){const auto& s=stage->state;word(s.instruction_offset);timer(s.script_timer);timer(s.fade_timer);word(s.frame_count);word(s.draw_flags);word(s.effects_enabled);}
     for(unsigned i=0;i<mp_options.seat_count;++i){const auto& p=*pilots[i];const auto& s=p.player->motion.state;const auto& e=p.economy;word(p.ghost);word(s.x);word(s.y);word(s.weapon_mode);word(s.flags);word(p.player->state.life_state);word(p.player->state.state_timer.current);word(p.player->state.invincibility.current);word(e.lives);word(e.power);word(e.communication);word(e.graze);word(e.point_value);word(p.keys.held);word(p.life_hold);word(p.life_latched);word(p.power_taps);word(p.power_gap);word(p.ghost_random);word(p.ghost_dx);word(p.ghost_dy);word(p.bomb?p.bomb->state.active:0);word(p.bomb?p.bomb->state.elapsed.current:0);
-        for(u32 j=0;j<256;++j){const auto& shot=p.player->shots.at(j);if(!shot.state)continue;word(j);word(shot.state);flt(shot.movement.position.x);flt(shot.movement.position.y);word(shot.timer.current);}
+        const auto& shots=static_cast<const ShotManager&>(p.player->shots);
+        for(u32 j=0;j<256;++j){const auto& shot=shots.at(j);if(!shot.state)continue;word(j);word(shot.state);flt(shot.movement.position.x);flt(shot.movement.position.y);word(shot.timer.current);}
     }
     for(auto* n=enemies.first;n;n=n->next){const auto& e=n->value->state;word(e.health);word(e.max_health);word(e.flags);timer(e.lifetime);flt(e.current.position.x);flt(e.current.position.y);flt(e.current.velocity.x);flt(e.current.velocity.y);for(auto v:e.integers)word(v);for(auto v:e.floats)flt(v);for(auto v:e.extra_floats)flt(v);auto r=mp_damage_remainders.find(n->value);word(r==mp_damage_remainders.end()?0:r->second);
         const auto& script=n->value->script;for(auto* thread=&script.threads;thread;thread=thread->next){const auto& c=*thread->value;word(c.thread_id);flt(c.time);pc(script,c.instruction);word(c.state);word(c.flags);word(c.stack.top);word(c.stack.frame_base);}word(~0u);
     }
-    for(u32 i=0;i<BulletManager::capacity;++i){const auto& b=const_cast<BulletManager&>(bullets).at(i);if(!b.state)continue;word(i);word(b.state);word(b.flags);flt(b.position.x);flt(b.position.y);flt(b.speed);flt(b.angle);word(b.lifetime.current);word(bullets.multiplayer_grazed[i]);}
-    for(u32 i=0;i<ItemManager::capacity;++i){const auto& item=const_cast<ItemManager&>(items).at(i);if(!item.state)continue;word(i);word(item.state);word(item.type);flt(item.position.x);flt(item.position.y);word(item.lifetime.current);word(items.multiplayer_targets[i]);flt(item.velocity.x);flt(item.velocity.y);if(i<ItemManager::ordinary_capacity)word(items.multiplayer_fan[i]);}
+    for(u32 i=0;i<BulletManager::capacity;++i){const auto& b=bullets.at(i);if(!b.state)continue;word(i);word(b.state);word(b.flags);flt(b.position.x);flt(b.position.y);flt(b.speed);flt(b.angle);word(b.lifetime.current);word(bullets.multiplayer_grazed[i]);}
+    for(u32 i=0;i<ItemManager::capacity;++i){const auto& item=items.at(i);if(!item.state)continue;word(i);word(item.state);word(item.type);flt(item.position.x);flt(item.position.y);word(item.lifetime.current);word(items.multiplayer_targets[i]);flt(item.velocity.x);flt(item.velocity.y);if(i<ItemManager::ordinary_capacity)word(items.multiplayer_fan[i]);}
     for(auto* l=lasers.first();l;l=l->next){word(l->id);word(l->state);word(l->type);flt(l->position.x);flt(l->position.y);flt(l->velocity.x);flt(l->velocity.y);flt(l->angle);flt(l->length);flt(l->width);flt(l->speed);flt(l->offset);timer(l->lifetime);timer(l->graze_timer);timer(l->offscreen_timer);word(l->active_transforms);word(l->transform_index);
         for(const auto& motion:l->motion){timer(motion.timer);flt(motion.a);flt(motion.b);flt(motion.vector.x);flt(motion.vector.y);word(motion.duration);word(motion.limit);word(motion.count);}
         if(l->type==0){const auto& p=reinterpret_cast<const LaserLine*>(l)->parameters;flt(p.growth_limit);flt(p.initial_length);flt(p.end_distance);word(p.flags);}else{const auto& p=reinterpret_cast<const LaserInfinite*>(l)->parameters;flt(p.angular_velocity);flt(p.max_length);word(p.warning_frames);word(p.expand_frames);word(p.active_frames);word(p.shrink_frames);word(p.flags);}

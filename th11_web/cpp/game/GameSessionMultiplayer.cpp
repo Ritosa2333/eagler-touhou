@@ -3,6 +3,10 @@
 #include <cmath>
 namespace th11 {
 namespace {u32 menu_keys(u32 held){return (held&~256u)|((held&256u)?0x80000u:0u);}}
+bool GameSession::multiplayer_rollback_boundary(){
+    if(!animations.RollbackFrameActive())return false;
+    multiplayer_rollback_boundary_requested=true;return true;
+}
 bool GameSession::begin_multiplayer(GameResources& data,const MultiplayerOptions& options){
     if(!options.valid())return fail("Invalid TH11 multiplayer options");
     multiplayer_active=true;multiplayer_options=options;multiplayer_frame=0;multiplayer_pause_held={};
@@ -54,6 +58,7 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
         return true;
     }
     if(pause_edge&&state.phase==GameSessionPhase::stage){
+        if(multiplayer_rollback_boundary())return false;
         // Native menu overlays have their own fixed-rate presentation owner.
         // The shared combat ANMs and their bound clocks stay frozen at rate 0.
         battle->mp_presentation.rate=1;
@@ -87,6 +92,7 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
 }
 MultiplayerSeatView GameSession::multiplayer_seat(unsigned seat)const noexcept{return battle?battle->mp_seat(seat):MultiplayerSeatView{};}
 bool GameSession::multiplayer_open_result(bool completed,u32 held){
+    if(multiplayer_rollback_boundary())return false;
     battle->mp_finished=true;battle->mp_paused=false;animations.rate=1;
     pause_menu=std::make_unique<PauseMenu>(animations,resources.core.text,resources.core.front,scores);
     pause_menu->selection=state.character*3+state.subtype;pause_menu->difficulty=state.difficulty;pause_menu->stage=state.stage;
@@ -99,6 +105,7 @@ bool GameSession::multiplayer_open_result(bool completed,u32 held){
     state.phase=GameSessionPhase::game_over;return true;
 }
 bool GameSession::multiplayer_open_ending(u32 held){
+    if(multiplayer_rollback_boundary())return false;
     if(!source||!battle)return fail("MP ending requires completed combat owner");
     battle->mp_finished=true;battle->mp_paused=false;battle_attached=false;
     completed_run=true;completed_score=economy.score_units;completed_continues=0;
@@ -114,6 +121,7 @@ bool GameSession::multiplayer_open_ending(u32 held){
     return true;
 }
 bool GameSession::multiplayer_open_clear_results(u32 held){
+    if(multiplayer_rollback_boundary())return false;
     animations.clear();
     if(ending&&resources.effects)for(auto& entry:ending->resources)resources.effects->release_animation(entry.second);
     ending.reset();compositor.reset();animations.rate=1;

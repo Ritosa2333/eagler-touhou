@@ -1,14 +1,33 @@
 #include "BombController.hpp"
 #include "EnemyAnimations.hpp"
 #include "GraphicsMath.hpp"
+#ifdef TH11_MULTIPLAYER
+#include <eagler/netplay/RollbackJournal.hpp>
+#include <type_traits>
+#endif
 namespace th11 {
 namespace {constexpr i32 marisa_b_scripts[]={48,50,52,54,56};}
-BombController::BombController(AnmManager& a,AnmResource& r,PlayerFrame& p,BombWorld& w,u16 file,AnmResource* text):animations(a),resource(r),player(p),world(w),file_id(file),text_resource(text){}
+BombController::BombController(AnmManager& a,AnmResource& r,PlayerFrame& p,BombWorld& w,u16 file,AnmResource* text):animations(a),resource(r),player(p),world(w),file_id(file),text_resource(text)
+#ifdef TH11_MULTIPLAYER
+    ,deformation_pool(a)
+#endif
+{}
 BombController::~BombController(){if(auto* vm=animations.find(state.animation))if(vm->after_update==ring_noise){vm->after_update=nullptr;vm->reserved_418=0;}}
 #ifdef TH11_MULTIPLAYER
+bool BombController::BeginRollbackFrame(Netplay::RollbackJournal& journal,DeformationRollbackFrame& frame){
+    if(!deformation_pool.BeginRollbackFrame(journal,frame))return false;
+    static_assert(std::is_trivially_copyable<BombState>::value,"Bomb state must be a value payload");
+    // The Player, world, ANM callbacks and resources have separate owners.
+    // This controller must survive every referring world checkpoint.
+    bool ok=journal.Touch(&state,sizeof state);
+    ok=journal.Touch(&selection,sizeof selection)&&ok;
+    ok=journal.Touch(&last_error,sizeof last_error)&&ok;
+    ok=journal.Touch(&mesh,sizeof mesh)&&ok;
+    return ok&&!journal.Failed();
+}
 void BombController::multiplayer_clear(){
     if(auto* vm=animations.find(state.animation))if(vm->after_update==ring_noise){vm->after_update=nullptr;vm->reserved_418=0;}
-    EnemyAnimations helper(animations);helper.erase(state.animation);helper.erase(state.auxiliary);mesh.reset();state.active=0;state.animation=state.auxiliary=0;
+    EnemyAnimations helper(animations);helper.erase(state.animation);helper.erase(state.auxiliary);clear_distortion();state.active=0;state.animation=state.auxiliary=0;
 }
 #endif
 bool BombController::sound(i32 id,bool positional){return world.bomb_sound(id,positional?state.position.x:0,positional);}
@@ -71,7 +90,7 @@ i32 BombController::tick(){
     }
     if(selection==3){
         if(!vm)return -1;
-        if(state.elapsed.current>90){interrupt(state.animation,1);mesh.reset();return -1;}
+        if(state.elapsed.current>90){interrupt(state.animation,1);clear_distortion();return -1;}
         update_distortion();return world.bomb_cancel_beam(state.position,!(player.spell.flags&1))?0:-2;
     }
     if(selection==5){
@@ -101,7 +120,7 @@ i32 BombController::tick(){
         }
         return 0;
     }
-    invincible(40);if(!vm){if(selection==2)mesh.reset();return -1;}
+    invincible(40);if(!vm){if(selection==2)clear_distortion();return -1;}
     if(selection==2){
         state.position=player.motion.state.position;EnemyAnimations helper(animations);helper.position(state.animation,state.position,true);
         if(!world.bomb_cancel(state.position,state.radius,!(player.spell.flags&1),false))return -2;
@@ -142,15 +161,34 @@ bool BombController::damage(const Vec3& p,const Vec2& size,i32& value){
         const float d=float(dx*dx+dy*dy);if(double(d)<double(vm->scale.y)*vm->scale.y)value+=20;
     }return true;
 }
+void BombController::clear_distortion(){
+#ifdef TH11_MULTIPLAYER
+    deformation_pool.release(mesh);mesh=nullptr;
+#else
+    mesh.reset();
+#endif
+}
+bool BombController::initialize_distortion(u32 width,u32 height,bool second_target){
+#ifdef TH11_MULTIPLAYER
+    mesh=deformation_pool.create(*text_resource,width,height,second_target);return mesh!=nullptr;
+#else
+    return mesh->initialize(*text_resource,width,height,second_target);
+#endif
+}
 bool BombController::create_distortion(){
-    if(!text_resource)return false;mesh=std::make_unique<ScreenDeformation>(animations);
+    if(!text_resource)return false;
+#ifdef TH11_MULTIPLAYER
+    clear_distortion();
+#else
+    mesh=std::make_unique<ScreenDeformation>(animations);
+#endif
     if(selection==2){
-        if(!mesh->initialize(*text_resource,13,13))return false;
+        if(!initialize_distortion(13,13))return false;
         mesh->rectangle(float(double(state.position.x)-17),float(double(state.position.y)-17),34,34);
     }else{
         const float bottom=float(double(state.position.y)+64);
         const i32 rows=(truncate_int(bottom)+32)/32+2;
-        if(rows<3||!mesh->initialize(*text_resource,4,u32(rows),true))return false;
+        if(rows<3||!initialize_distortion(4,u32(rows),true))return false;
         mesh->rectangle(float(double(state.position.x)-60),0,120,float(double(bottom)+32));
         for(u32 row=0;row<mesh->rows;++row){
             for(u32 col=0;col<4;++col){auto& p=mesh->positions[col*mesh->rows+row];const float jitter=float(double(animations.script_rng.signed_unit())*4);p.x=float(double(p.x)+jitter);}

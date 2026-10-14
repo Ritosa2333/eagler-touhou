@@ -3,7 +3,13 @@
 #include "GraphicsMath.hpp"
 #include <cmath>
 namespace th11 {
-ScreenDeformation::~ScreenDeformation(){EnemyAnimations helper(manager);for(auto id:animations)helper.erase(id);}
+void ScreenDeformation::erase_animations(){EnemyAnimations helper(manager);for(auto id:animations)helper.erase(id);}
+ScreenDeformation::~ScreenDeformation(){
+#ifdef TH11_MULTIPLAYER
+    if(!erase_on_destruction_)return;
+#endif
+    erase_animations();
+}
 bool ScreenDeformation::initialize(AnmResource& text,u32 width,u32 height,bool second_target){
     if(width<2||height<3||width>128||height>128||!animations.empty())return false;
     columns=width;rows=height;vertices.resize(columns*rows);positions.resize(columns*rows);animations.resize(columns-1);

@@ -1,6 +1,9 @@
 #pragma once
 #include "PlayerFrame.hpp"
 #include "ScreenDeformation.hpp"
+#ifdef TH11_MULTIPLAYER
+#include "ScreenDeformationPool.hpp"
+#endif
 namespace th11 {
 struct BombWorld {
     virtual ~BombWorld()=default;
@@ -27,16 +30,35 @@ public:
     BombController(AnmManager&,AnmResource&,PlayerFrame&,BombWorld&,u16 file=7,AnmResource* text=nullptr);
     ~BombController();
     bool supported()const noexcept{return selection>=0&&selection<6&&((selection!=2&&selection!=3)||text_resource);}
-    const ScreenDeformation* distortion()const noexcept{return mesh.get();}
+    const ScreenDeformation* distortion()const noexcept{
+#ifdef TH11_MULTIPLAYER
+        return mesh;
+#else
+        return mesh.get();
+#endif
+    }
     i32 start();
     bool update();
     bool damage(const Vec3&,const Vec2&,i32&);
 #ifdef TH11_MULTIPLAYER
     void multiplayer_clear();
+    bool BeginRollbackFrame(Netplay::RollbackJournal&,DeformationRollbackFrame&);
+    bool RollbackFrameActive()const noexcept{return deformation_pool.RollbackFrameActive();}
+    void EndRollbackFrame()noexcept{deformation_pool.EndRollbackFrame();}
+    bool RestoreRollbackFrame(const DeformationRollbackFrame& frame,u32 restored_frame){return deformation_pool.RestoreRollbackFrame(frame,restored_frame);}
 #endif
 private:
+    friend struct WorldRollbackTestAccess;
     AnmManager& animations;AnmResource& resource;PlayerFrame& player;BombWorld& world;u16 file_id;
-    AnmResource* text_resource;std::unique_ptr<ScreenDeformation> mesh;
+    AnmResource* text_resource;
+#ifdef TH11_MULTIPLAYER
+    ScreenDeformationPool deformation_pool;
+    ScreenDeformation* mesh=nullptr;
+#else
+    std::unique_ptr<ScreenDeformation> mesh;
+#endif
+    void clear_distortion();
+    bool initialize_distortion(u32 width,u32 height,bool second_target=false);
     bool fail_spell();bool sound(i32,bool=false);bool create(u32&,i32,bool);
     bool body(i32);void invincible(i32);void interrupt(u32,i16);
     AnmVm* child(i32);Vec3 game_position(const AnmVm&)const;

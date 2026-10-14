@@ -7,10 +7,10 @@ import {createHash} from 'node:crypto';
 
 const GAME = 'th11';
 const SHA256 = /^[a-f0-9]{64}$/i;
-const COMMON_REVISION = '984a8a10834c35fe9ef86c4ffe03daf1fb61f87c';
+const COMMON_REVISION = '62345858e1a4b101074cdc04720eac44a7c89cf0';
 export const MULTIPLAYER_EXPORTS = Object.freeze([
   'configure', 'connect', 'spectator_connect', 'start', 'pump', 'status',
-  'calibration_status', 'error', 'stop', 'replay_validate', 'replay_load',
+  'calibration_status', 'rollback_status', 'error', 'stop', 'replay_validate', 'replay_load',
   'replay_size', 'replay_data', 'replay_save', 'replay_seek', 'replay_menu', 'replay_ui_status', 'always_hitbox', 'local_visibility', 'game_status',
 ].map(name => 'th11_mp_' + name));
 
@@ -45,9 +45,9 @@ export function validateBuildManifest(build, plan) {
     throw Error('Build manifest is missing a valid source identity inventory.');
   if (plan.multiplayer) {
     if (build.features?.multiplayer !== true || build.features?.thprac !== false ||
-        build.netplay?.prediction !== false || build.netplay?.rollback !== false ||
+        build.netplay?.prediction !== true || build.netplay?.rollback !== true || build.netplay?.predictionLimit !== 12 ||
         build.netplay?.measuredStartup !== true || build.commonRevision !== COMMON_REVISION)
-      throw Error('TH11 MP requires the pinned shared protocol, measured startup and pure delay lockstep.');
+      throw Error('TH11 MP requires the pinned shared protocol, measured startup and bounded 12-frame rollback.');
   } else if (build.features?.multiplayer === true || build.commonRevision || build.netplay) {
     throw Error('Ordinary TH11 cannot package a multiplayer build.');
   }
@@ -144,6 +144,11 @@ export function packageEagler({
     } else copy(resolve(shellRoot, name), name);
   }
   copy(resolve(root, 'portable/browser/motion-replay.mjs'), 'motion-replay.mjs');
+  const inputBridge=resolve(commonRoot,'browser/direct-input-bridge.mjs');
+  const inputBridgeHash=build.runtimeSourceFiles?.['direct-input-bridge.mjs'];
+  if(!SHA256.test(inputBridgeHash||'')||sha256(readFileSync(inputBridge))!==inputBridgeHash)
+    throw Error('The direct input bridge does not match the build.');
+  copy(inputBridge,'direct-input-bridge.mjs');
   if (multiplayer) {
     copy(resolve(root, 'portable/browser/multiplayer-replay.mjs'), 'multiplayer-replay.mjs');
     const calibration = resolve(commonRoot, 'browser/adonis-calibration.mjs');

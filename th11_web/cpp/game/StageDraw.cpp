@@ -89,8 +89,9 @@ bool stage_visible(const StageObject& object,Vec3 instance,const SceneCamera& ca
         {object.position.x,lo.y,lo.z},{object.position.x,hi.y,lo.z},{object.position.x,lo.y,hi.z},{object.position.x,hi.y,hi.z}
     };
     Matrix4 world;world.identity();world.m[12]=instance.x;world.m[13]=instance.y;world.m[14]=instance.z;
+    const auto combined=GraphicsMath::multiply(GraphicsMath::multiply(world,camera.view),camera.projection);
     float min_x=424,max_x=24,min_y=472,max_y=8;
-    for(const auto& point:points){const auto p=GraphicsMath::project(point,camera.viewport,camera.projection,camera.view,world);
+    for(const auto& point:points){const auto p=GraphicsMath::project_matrix(point,camera.viewport,combined);
         if(p.z>0&&p.z<=1){
             // The original's mutually exclusive branches deliberately retain
             // these initial bounds; replacing them by min/max changes culling.
@@ -115,12 +116,12 @@ bool Stage::draw_layer(AnmRenderer& renderer,SceneCamera& camera,u32 layer){
                 if(primitive.size.x!=0){vm.scale.x=float(double(primitive.size.x)/vm.sprite->width);vm.flags|=8;}
                 if(primitive.size.y!=0){vm.scale.y=float(double(primitive.size.y)/vm.sprite->height);vm.flags|=8;}
             }
-            auto& pipeline=renderer.pipeline();pipeline.fog=mode==8;
-            const bool write=(vm.flags&0x800)==0;if(write!=depth_write){pipeline.depthWrite=write;depth_write=write;}
+            renderer.set_fog(mode==8);
+            const bool write=(vm.flags&0x800)==0;if(write!=depth_write){renderer.set_depth_write(write);depth_write=write;}
             if(renderer.draw(vm)==-2){error="stage primitive draw failed";return false;}++state.drawn_primitives;
         }
         instance.flags|=1;++state.drawn_objects;
     }
-    if(!depth_write)renderer.pipeline().depthWrite=true;return true;
+    if(!depth_write)renderer.set_depth_write(true);return true;
 }
 }

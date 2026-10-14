@@ -28,7 +28,10 @@ Matrix4 GraphicsMath::perspective(float fov,float aspect,float near_plane,float 
 }
 void GraphicsMath::transform(Vec3 p,const Matrix4& m,float (&out)[4])noexcept{for(u32 c=0;c<4;++c)out[c]=float(((double(p.x)*m.m[c]+double(p.y)*m.m[4+c])+double(p.z)*m.m[8+c])+m.m[12+c]);}
 Vec3 GraphicsMath::project(Vec3 p,const GraphicsViewport& v,const Matrix4& projection,const Matrix4& view,const Matrix4& world)noexcept{
-    const auto m=multiply(multiply(world,view),projection);float q[4];transform(p,m,q);
+    return project_matrix(p,v,multiply(multiply(world,view),projection));
+}
+Vec3 GraphicsMath::project_matrix(Vec3 p,const GraphicsViewport& v,const Matrix4& m)noexcept{
+    float q[4];transform(p,m,q);
     if(std::abs(float(double(q[3])-1))>0x1p-23f){const float inverse=float(1./q[3]);for(u32 c=0;c<3;++c)q[c]=float(double(q[c])*inverse);}
     return {float((double(q[0])+1)*.5*v.width+v.x),float((1.-q[1])*.5*v.height+v.y),float((double(v.far_depth)-v.near_depth)*q[2]+v.near_depth)};
 }

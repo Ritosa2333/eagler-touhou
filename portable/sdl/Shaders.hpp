@@ -11,6 +11,10 @@ layout(location=5) in vec4 instanceWorld1;
 layout(location=6) in vec4 instanceWorld2;
 layout(location=7) in vec4 instanceWorld3;
 layout(location=8) in vec4 instanceFactor;
+layout(location=9) in vec4 instanceTexture0;
+layout(location=10) in vec4 instanceTexture1;
+layout(location=11) in vec4 instanceTexture2;
+layout(location=12) in vec4 instanceTexture3;
 uniform mat4 world,view,projection,textureMatrix;
 uniform vec4 factor;
 uniform vec4 viewport;
@@ -29,7 +33,8 @@ void main(){
   else {gl_Position=projection*eye;gl_Position.y=-gl_Position.y;gl_Position.xy+=gl_Position.w/viewport.zw;gl_Position.z=gl_Position.z*2.0-gl_Position.w;}
   vColor=diffuse.bgra;vSpecular=specular.bgra;
   vFactor=instanced?instanceFactor.bgra:factor;
-  vUV=textureTransform&&!transformed?(textureMatrix*vec4(uv,1.0,0.0)).xy:uv;
+  mat4 textureModel=instanced?mat4(instanceTexture0,instanceTexture1,instanceTexture2,instanceTexture3):textureMatrix;
+  vUV=textureTransform&&!transformed?(textureModel*vec4(uv,1.0,0.0)).xy:uv;
   float z=rangeFog?length(eye.xyz):abs(eye.z);
   float fog=fogMode==1?exp(-fogParams.z*z):fogMode==2?exp(-pow(fogParams.z*z,2.0)):(fogParams.y-z)/(fogParams.y-fogParams.x);
   vFog=fogEnabled?(transformed?specular.a:fog):1.0;

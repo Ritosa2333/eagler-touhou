@@ -7,7 +7,11 @@
 namespace th11 {
 using namespace touhou::graphics;
 void AnmRenderer::flush(){if(vertices.empty())return;auto& p=graphics.pipeline();p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);graphics.triangles(vertices.size()/3,vertices.data(),sizeof(AnmVertex));vertices.clear();}
-void AnmRenderer::invalidate(){flush();texture_handle=blend_mode=filter=~0u;uv_sprite=nullptr;}
+void AnmRenderer::invalidate(){flush();texture_handle=blend_mode=filter=~0u;uv_sprite=nullptr;
+#ifdef TH11_MULTIPLAYER
+    camera_state_valid=false;
+#endif
+}
 void AnmRenderer::solid_rectangle(float left,float top,float right,float bottom,u32 color){
     // 447f70 draws directly, then invalidates the ANM material cache.
     flush();auto& p=graphics.pipeline();p.alpha.operation=p.color.operation=ColorOperation::First;
@@ -19,10 +23,28 @@ void AnmRenderer::solid_rectangle(float left,float top,float right,float bottom,
     p.alpha.operation=p.color.operation=ColorOperation::Multiply;p.alpha.first=p.color.first={ArgumentSource::Texture};
 }
 void AnmRenderer::set_camera(SceneCamera& value,bool screen){
+#ifdef TH11_MULTIPLAYER
+    // Keep every authored camera calculation and mutation. The only removed
+    // operation is a submission boundary when GL matrices/viewport are exact
+    // repeats; consecutive HUD strings then remain one ordered glyph batch.
+    if(screen)value.screen();else value.perspective();
+    const bool changed=!camera_state_valid||
+        std::memcmp(camera.view.m,value.view.m,sizeof value.view.m)||
+        std::memcmp(camera.projection.m,value.projection.m,sizeof value.projection.m)||
+        std::memcmp(&viewport,&value.viewport,sizeof viewport);
+    if(changed)flush();
+#else
     flush();if(screen)value.screen();else value.perspective();
+#endif
     camera.position=value.position;camera.right=value.right;camera.view=value.view;camera.projection=value.projection;camera.viewport=value.viewport;
     camera.fog_near=value.fog.near_distance;camera.fog_far=value.fog.far_distance;camera.fog_color=value.fog.color;
+#ifdef TH11_MULTIPLAYER
+    offset=value.offset;
+    if(changed){graphics.set_matrix(MatrixKind::View,value.view);graphics.set_matrix(MatrixKind::Projection,value.projection);
+        viewport=value.viewport;graphics.set_viewport(value.viewport);camera_state_valid=true;}
+#else
     offset=value.offset;graphics.set_matrix(MatrixKind::View,value.view);graphics.set_matrix(MatrixKind::Projection,value.projection);set_viewport(value.viewport);
+#endif
 }
 u32 AnmRenderer::color(const AnmVm& vm)const noexcept {u32 original=vm.flags&0x8000?vm.secondary_color:vm.color;
 #ifdef TH11_MULTIPLAYER
@@ -77,9 +99,11 @@ u32 AnmRenderer::fog_color(u32 value,float amount,bool fade_alpha)const noexcept
     for(u32 i=0;i<3;++i){const i32 original=(value>>(i*8))&255;const double target=fade_alpha?double(i32(channels[i])):double(channels[i]);out|=u32(u8(original-i32((double(original)-target)*amount)))<<(i*8);}
     return out|(fade_alpha?u32(u8(i32(double(value>>24)*(1.-amount))))<<24:value&0xff000000);
 }
-int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors){
+int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors,bool preserve_subpixel){
     for(auto& p:positions){p.x=float(double(p.x)+offset.x);p.y=float(double(p.y)+offset.y);}
-    if(pixel)for(auto& p:positions){p.x=float(std::nearbyint(double(p.x))-.5);p.y=float(std::nearbyint(double(p.y))-.5);}
+    // Preserve the D3D half-pixel convention without quantizing continuous
+    // bullet coordinates. Authoritative VM values remain untouched.
+    if(pixel)for(auto& p:positions){p.x=float((preserve_subpixel?double(p.x):std::nearbyint(double(p.x)))-.5);p.y=float((preserve_subpixel?double(p.y):std::nearbyint(double(p.y)))-.5);}
     float min_x=positions[0].x,max_x=min_x,min_y=positions[0].y,max_y=min_y;for(u32 i=1;i<4;++i){min_x=std::min(min_x,positions[i].x);max_x=std::max(max_x,positions[i].x);min_y=std::min(min_y,positions[i].y);max_y=std::max(max_y,positions[i].y);}
     if(max_x<double(viewport.x)||max_y<double(viewport.y)||min_x>double(viewport.x+viewport.width)||min_y>double(viewport.y+viewport.height))return 0;
     material(vm);const u32 diffuse=color(vm);AnmVertex quad[4];for(u32 i=0;i<4;++i)quad[i]={positions[i],1,colors?colors[i]:diffuse,{float(double(vm.uv[i].x)+vm.uv_offset.x),float(double(vm.uv[i].y)+vm.uv_offset.y)}};
@@ -91,7 +115,7 @@ int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
     Vec3 positions[4];if(!anm_quad_positions(vm,positions))return -2;
     return submit_quad(vm,positions,true);
 }
-int AnmRenderer::draw(AnmVm& vm){
+int AnmRenderer::draw(AnmVm& vm,bool preserve_subpixel){
     if((vm.flags&3)!=3||!(vm.color>>24))return -1;
 #ifdef TH11_MULTIPLAYER
     if(&vm==multiplayer_hud_background){
@@ -114,8 +138,8 @@ int AnmRenderer::draw(AnmVm& vm){
         Vec3 positions[4];const u32 saved_flags=vm.flags;
         const bool pixel=mode==0||(mode==1&&vm.rotation.z==0);
         const u32 geometry_mode=pixel?0:mode==3?(vm.rotation.z==0?2:1):mode;
-        vm.flags=(vm.flags&~0x3c00000u)|(geometry_mode<<22);const bool ok=anm_quad_positions(vm,positions);vm.flags=saved_flags;if(!ok)return -2;
-        return submit_quad(vm,positions,pixel);
+        vm.flags=(vm.flags&~0x3c00000u)|(geometry_mode<<22);const bool ok=anm_quad_positions(vm,positions,preserve_subpixel);vm.flags=saved_flags;if(!ok)return -2;
+        return submit_quad(vm,positions,pixel,nullptr,preserve_subpixel);
     }
     if(mode==4||mode==5){Vec3 positions[4];if(mode==4?!anm_billboard_quad(vm,camera,positions):!anm_projected_quad(vm,camera,positions))return -1;return submit_quad(vm,positions,false);}
     if(mode==6||mode==7){

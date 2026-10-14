@@ -13,8 +13,18 @@ void Stage::stage_camera_position_interpolated(){
     if(offset){state.script_timer.current=offset;state.script_timer.fractional=float(offset);state.position_interpolation.timer.current=offset;state.position_interpolation.timer.fractional=float(offset);}
 #endif
 }
-Stage::~Stage(){for(auto& vm:object_animations)manager.release_geometry(vm);for(auto& vm:state.script_animations)manager.release_geometry(vm);for(auto& vm:state.effect_animations)manager.release_geometry(vm);}
+Stage::~Stage(){
+#ifdef TH11_MULTIPLAYER
+    EndRollbackFrame();deformation_pool.release(mesh);mesh=nullptr;
+#endif
+    for(auto& vm:object_animations)manager.release_geometry(vm);for(auto& vm:state.script_animations)manager.release_geometry(vm);for(auto& vm:state.effect_animations)manager.release_geometry(vm);
+}
 bool Stage::initialize(const StageResource& file,i32 number,const SceneCamera& camera,bool start){
+#ifdef TH11_MULTIPLAYER
+    // Resource replacement and vector growth require a confirmed lifecycle
+    // barrier. Even a closed observer can still have address-bearing history.
+    if(!rollback_structure_mutable())return false;
+#endif
     if(!object_animations.empty()||file.instructions.empty())return false;
     resource=file;std::memset(&state,0,sizeof state);state.flags=2;state.stage_number=number;state.camera=camera;
     state.camera.position={0,0,-600};state.camera.direction={0,300,600};state.camera.up={0,1,0};state.camera.eye_offset={};
@@ -22,6 +32,9 @@ bool Stage::initialize(const StageResource& file,i32 number,const SceneCamera& c
     return !start||start_objects();
 }
 bool Stage::start_objects(){
+#ifdef TH11_MULTIPLAYER
+    if(!rollback_structure_mutable())return false;
+#endif
     if(!object_animations.empty())return false;
     object_animations.resize(resource.animation_count);
     for(auto& object:resource.objects){object.flags=1;for(const auto& primitive:object.primitives)if(!stage_animation(object_animations[primitive.animation],primitive.script))return false;}
@@ -33,9 +46,17 @@ bool Stage::stage_animation(AnmVm& vm,i32 script){
     if(vm.update(manager)==-2){error="stage animation execution failed";return false;}return true;
 }
 bool Stage::stage_deformation(i32 mode){
+#ifdef TH11_MULTIPLAYER
+    if(!deformation_pool.release(mesh)){error="stage deformation retirement failed";return false;}
+    mesh=nullptr;state.deformation=0;
+    mesh=deformation_pool.create(text,17,mode==1?25:17,false);
+    if(!mesh){error="stage deformation initialization failed";return false;}
+    state.deformation=1;return true;
+#else
     mesh.reset();state.deformation=0;auto next=std::make_unique<ScreenDeformation>(manager);
     if(!next->initialize(text,17,mode==1?25:17,false)){error="stage deformation initialization failed";return false;}
     mesh=std::move(next);state.deformation=1;return true;
+#endif
 }
 bool Stage::update_objects(){
     for(auto& object:resource.objects){if(!(object.flags&1))continue;u32 active=0;

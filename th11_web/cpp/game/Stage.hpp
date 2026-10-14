@@ -3,6 +3,9 @@
 #include "SceneCamera.hpp"
 #include "AnmManager.hpp"
 #include "ScreenDeformation.hpp"
+#ifdef TH11_MULTIPLAYER
+#include "StageRollback.hpp"
+#endif
 #include <memory>
 namespace th11 {
 class AnmRenderer;
@@ -57,7 +60,12 @@ public:
     AnmResource& animations;
     AnmResource& text;
     std::vector<AnmVm> object_animations;
+#ifdef TH11_MULTIPLAYER
+    ScreenDeformationPool deformation_pool;
+    ScreenDeformation* mesh=nullptr;
+#else
     std::unique_ptr<ScreenDeformation> mesh;
+#endif
     u32& background_color;
     u16 file_id;
     SceneCamera* active_camera=nullptr;
@@ -69,8 +77,24 @@ public:
     u32 multiplayer_tint_source=0;
 #endif
     std::string error;
-    Stage(AnmManager& m,AnmResource& a,AnmResource& t,u32& color,u16 id):manager(m),animations(a),text(t),background_color(color),file_id(id){}
+    Stage(AnmManager& m,AnmResource& a,AnmResource& t,u32& color,u16 id):manager(m),animations(a),text(t),
+#ifdef TH11_MULTIPLAYER
+        deformation_pool(m),
+#endif
+        background_color(color),file_id(id){}
     ~Stage();
+#ifdef TH11_MULTIPLAYER
+    // Fresh checkpoint over a fixed resource/VM layout. The caller captures
+    // ANM, active_camera, background_color and fades through their own owners.
+    // Complete the whole shared UndoTo before restoring any typed metadata.
+    bool BeginRollbackFrame(Netplay::RollbackJournal&,StageRollbackFrame&);
+    void EndRollbackFrame()noexcept;
+    // Preflight BEFORE UndoTo, so stale vector addresses are never memcpy'd.
+    bool ValidateRollbackFrame(const StageRollbackFrame&,u32 restored_frame)const noexcept;
+    bool RestoreRollbackFrame(const StageRollbackFrame&,u32 restored_frame);
+    bool RollbackFrameActive()const noexcept{return rollback_journal_!=nullptr;}
+    bool RollbackHistoryRetained()const noexcept{return !rollback_history_.expired();}
+#endif
     bool initialize(const StageResource&,i32,const SceneCamera&,bool start=true);
     bool start_objects();
     bool update_script(){return stage_script(state,resource,&manager.rate,*this);}
@@ -89,5 +113,11 @@ public:
     void stage_camera_position_interpolated()override;
 private:
     bool update_deformation();
+#ifdef TH11_MULTIPLAYER
+    Netplay::RollbackJournal* rollback_journal_=nullptr;
+    std::shared_ptr<const unsigned char> rollback_identity_;
+    std::weak_ptr<const unsigned char> rollback_history_;
+    bool rollback_structure_mutable()const noexcept{return !rollback_journal_&&rollback_history_.expired();}
+#endif
 };
 }

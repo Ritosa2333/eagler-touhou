@@ -25,12 +25,14 @@ bool anm_projected_quad(AnmVm& vm,const AnmCamera& camera,Vec3 (&out)[4],Matrix4
     const Matrix4 world=anm_world_matrix(vm,false);if(result)*result=world;
     const float left=ax==0?-128:ax==1?0:-256,right=ax==0?128:ax==1?256:0,top=ay==0?-128:ay==1?0:-256,bottom=ay==0?128:ay==1?256:0;
     const Vec3 quad[]={{left,top,0},{right,top,0},{left,bottom,0},{right,bottom,0}};
-    for(u32 i=0;i<4;++i)out[i]=GraphicsMath::project(quad[i],camera.viewport,camera.projection,camera.view,world);return true;
+    const auto combined=GraphicsMath::multiply(GraphicsMath::multiply(world,camera.view),camera.projection);
+    for(u32 i=0;i<4;++i)out[i]=GraphicsMath::project_matrix(quad[i],camera.viewport,combined);return true;
 }
 bool anm_billboard_quad(const AnmVm& vm,const AnmCamera& camera,Vec3 (&out)[4])noexcept{
     Matrix4 world;world.identity();world.m[12]=float(double(vm.position.x)+vm.script_position.x+vm.child_position.x);world.m[13]=float(double(vm.position.y)+vm.script_position.y+vm.child_position.y);world.m[14]=float(double(vm.position.z)+vm.script_position.z+vm.child_position.z);
-    const Vec3 center=GraphicsMath::project({},camera.viewport,camera.projection,camera.view,world);if(center.z<0||center.z>1)return false;
-    const Vec3 right=GraphicsMath::project(camera.right,camera.viewport,camera.projection,camera.view,world);
+    const auto combined=GraphicsMath::multiply(GraphicsMath::multiply(world,camera.view),camera.projection);
+    const Vec3 center=GraphicsMath::project_matrix({},camera.viewport,combined);if(center.z<0||center.z>1)return false;
+    const Vec3 right=GraphicsMath::project_matrix(camera.right,camera.viewport,combined);
     const float dx=float(double(right.x)-center.x),dy=float(double(right.y)-center.y),dz=float(double(right.z)-center.z);
     const float squared=float((double(dx)*dx+double(dy)*dy)+double(dz)*dz),half=float(double(float(std::sqrt(double(squared))))*.5);
     const float width=float(double(vm.sprite_size.x)*half*vm.scale.x),height=float(double(half)*vm.sprite_size.y*vm.scale.y);

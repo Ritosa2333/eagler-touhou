@@ -1,11 +1,16 @@
 #include "GameBattle.hpp"
+#include "RuntimeCost.hpp"
 #include "Localization.hpp"
 #include "GameSession.hpp"
 #include <algorithm>
 
 namespace th11 {
 GameBattle::GameBattle(GameSessionResources& r,AnmManager& a,GameEconomy& e,SpellRecords& records,SceneCompositor& scene,ClearRecords& clears)
-    :resources(r),animations(a),economy(e),compositor(scene),completion(e,clears,*this,&a.rate),
+    :resources(r),animations(a),
+#ifdef TH11_MULTIPLAYER
+     deformation_pool(a),
+#endif
+     economy(e),compositor(scene),completion(e,clears,*this,&a.rate),
      hud(a,r.core.front,r.core.ascii,e,enemy_commands,completion.state,*this),ascii(r.core.ascii),enemy_animations(a),
      enemies(resources.stage->timeline,enemy_environment,enemy_commands,*this),
      enemy_callbacks(enemy_environment,enemy_commands,*this),
@@ -34,7 +39,21 @@ GameBattle::GameBattle(GameSessionResources& r,AnmManager& a,GameEconomy& e,Spel
 }
 
 GameBattle::~GameBattle(){for(auto* node=enemies.first;node;node=node->next)release_deformation(node->value->state);if(dialogue)dialogue->clear();for(auto& vm:spell_backgrounds)animations.release_geometry(vm);}
-bool GameBattle::create_deformation(EnemyState& e){auto effect=std::make_unique<ScreenDeformation>(animations);if(!effect->initialize(resources.core.text))return false;e.deformation=effect.release();return true;}
+bool GameBattle::create_deformation(EnemyState& e){
+#ifdef TH11_MULTIPLAYER
+    auto* effect=deformation_pool.create(resources.core.text);if(!effect)return false;e.deformation=effect;return true;
+#else
+    auto effect=std::make_unique<ScreenDeformation>(animations);if(!effect->initialize(resources.core.text))return false;e.deformation=effect.release();return true;
+#endif
+}
+bool GameBattle::release_deformation(EnemyState& e){
+#ifdef TH11_MULTIPLAYER
+    if(!deformation_pool.release(e.deformation))return false;
+#else
+    delete e.deformation;
+#endif
+    e.deformation=nullptr;return true;
+}
 bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     if(character<0||character>1||subtype<0||subtype>2||difficulty<0||difficulty>4)return unavailable("invalid battle selection");
     initialized=false;last_error=0;frame=0;error.clear();events.clear();
@@ -112,6 +131,9 @@ bool GameBattle::stage_result_animation(){
     result_animation=vm?vm->id:0;return vm!=nullptr;
 }
 bool GameBattle::next_stage(GameResources& source,u32 number){
+#ifdef TH11_MULTIPLAYER
+    if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+#endif
     if(transitioning||number<2||number>6)return false;
     // 41fe10 retains the player, bullet/item/laser pools and HUD. Stage-local
     // scripts and animations are retired before replacing their owners.
@@ -238,8 +260,8 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     // Native tick priorities: overlay ANM 8, game globals 10, stage 12, shake/fade 14,
     // player 16, Bomb 17, enemies 18, lasers 19, bullets 20, items 21, spell 22,
     // dialogue/HUD 24, normal ANM 26. ECL-created shakes first run next tick.
-    if(!animations.update(true)){last_error=-1005;return false;}
-    if(!stage_control()){last_error=-1009;return false;}
+    if(!runtime_cost::run(24,[&]{return animations.update(true);})){last_error=-1005;return false;}
+    if(!runtime_cost::run(25,[&]{return stage_control();})){last_error=-1009;return false;}
     const bool control_running=!transitioning||transition_started;
 #ifdef TH_ENABLE_THPRAC
     practice_time_lock=practice&&practice->enabled&&!replaying&&(practice->cheats&8);
@@ -261,8 +283,8 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     // which selects the incoming stage's stream at activation, before players.
     if(sample_input&&!sample_input())return false;
     // Equal-priority callbacks insert newest first (456b70/456c10).
-    if((!transitioning||transition_started)&&!stage->update()){last_error=-1008;error=stage->error;return false;}
-    if(outgoing_stage&&!outgoing_stage->update()){last_error=-1008;error=outgoing_stage->error;return false;}
+    if((!transitioning||transition_started)&&!runtime_cost::run(26,[&]{return stage->update();})){last_error=-1008;error=stage->error;return false;}
+    if(outgoing_stage&&!runtime_cost::run(26,[&]{return outgoing_stage->update();})){last_error=-1008;error=outgoing_stage->error;return false;}
     camera_position=compositor.play_camera.position;
     enemy_environment.camera_delta=compositor.play_camera.animation_delta;
     shakes.offset=compositor.world_camera.offset;
@@ -272,7 +294,7 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     popups.update(animations.rate);
     synchronize_player();
 #ifdef TH11_MULTIPLAYER
-    if(mp_enabled){if(!mp_update_players())return false;}
+    if(mp_enabled){if(!runtime_cost::run(27,[&]{return mp_update_players();}))return false;}
     else
 #endif
     if(player_live&&player){
@@ -295,20 +317,20 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
 #ifdef TH11_MULTIPLAYER
     if(mp_enabled)for(unsigned i=0;i<mp_options.seat_count;++i)pilots[i]->player->shots.target_locked=0;
 #endif
-    if(stage_active&&!enemies.update()){last_error=-1001;if(error.empty())error="ECL opcode "+std::to_string(enemies.script_error.opcode)+" at time "+std::to_string(enemies.script_error.time);return false;}
+    if(stage_active&&!runtime_cost::run(28,[&]{return enemies.update();})){last_error=-1001;if(error.empty())error="ECL opcode "+std::to_string(enemies.script_error.opcode)+" at time "+std::to_string(enemies.script_error.time);return false;}
     animations.rate=enemy_environment.rate;
     synchronize_player();
-    if(!lasers.update(false,false)){last_error=-1003;return false;}
-    if(stage_active&&!bullets.update(false)){last_error=-1002;return false;}
+    if(!runtime_cost::run(29,[&]{return lasers.update(false,false);})){last_error=-1003;return false;}
+    if(stage_active&&!runtime_cost::run(30,[&]{return bullets.update(false);})){last_error=-1002;return false;}
     synchronize_player();
-    if(!items.update()){last_error=-1004;return false;}
+    if(!runtime_cost::run(31,[&]{return items.update();})){last_error=-1004;return false;}
     if(spell_flags&1){Vec3 boss;bool blocking_bomb=special_active;
 #ifdef TH11_MULTIPLAYER
         if(mp_enabled)blocking_bomb=spells.bomb_active;
 #endif
         if(!boss_position(boss)||!spells.update(player->motion.state.position.y,boss,blocking_bomb)){last_error=-1006;if(error.empty())error="spell update";return false;}}
     completion.update();
-    if(!hud.update(hud_input())){last_error=-1010;error="HUD update";return false;}
+    if(!runtime_cost::run(32,[&]{return hud.update(hud_input());})){last_error=-1010;error="HUD update";return false;}
     if(dialogue&&dialogue->active){
         u32 held=player_input.movement.held,pressed=player_input.movement.pressed;
 #ifdef TH11_MULTIPLAYER
@@ -323,9 +345,9 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
 #endif
         const i32 result=dialogue->update(held,pressed);if(result<0){last_error=-1007;if(error.empty())error=dialogue->error+" MSG opcode "+std::to_string(dialogue->last_opcode);return false;}if(result){if(enemy_commands.stage_section)enemy_commands.section_frame=0;enemy_commands.stage_section=0;}else dialogue->state.elapsed.tick();}
     if(!hud.finish_update(hud_input())){last_error=-1010;error="HUD indicator update";return false;}
-    if(!animations.update(false)){last_error=-1005;return false;}
+    if(!runtime_cost::run(33,[&]{return animations.update(false);})){last_error=-1005;return false;}
 #ifdef TH11_MULTIPLAYER
-    if(mp_enabled&&(!mp_update_rules()||!mp_update_presentation()))return false;
+    if(mp_enabled&&(!runtime_cost::run(34,[&]{return mp_update_rules();})||!runtime_cost::run(35,[&]{return mp_update_presentation();})))return false;
 #endif
     hitbox_presentation.rate=animations.rate;
     if(!hitbox_presentation.update(true)||!hitbox_presentation.update(false))return false;

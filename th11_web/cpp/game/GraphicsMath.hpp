@@ -11,5 +11,8 @@ struct GraphicsMath {
     static Matrix4 perspective(float fov,float aspect,float near_plane,float far_plane) noexcept;
     static void transform(Vec3,const Matrix4&,float (&out)[4]) noexcept;
     static Vec3 project(Vec3,const GraphicsViewport&,const Matrix4& projection,const Matrix4& view,const Matrix4& world) noexcept;
+    // Same scalar projection with the already-composed matrix. Hoisting its
+    // construction within one primitive does not change arithmetic order.
+    static Vec3 project_matrix(Vec3,const GraphicsViewport&,const Matrix4& combined) noexcept;
 };
 }

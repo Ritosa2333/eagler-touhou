@@ -12,6 +12,13 @@ bool outside(Vec3 p,float x,float y){return double(p.x)+x<=-192||double(p.x)-x>=
 ShotManager::ShotManager(ShtResource& s,AnmResource& a,AnmManager& m,ShotWorld& w,u16 file):resource(s),animation_resource(a),animations(m),world(w),file_id(file){schedule.timer.set(-1,&m.rate);}
 void ShotManager::interrupt(u32 id,i16 label){family(animations.find(id),[&](AnmVm& a){a.pending_interrupt=label;});}
 void ShotManager::erase(u32 id){family(animations.find(id),[](AnmVm& a){a.flags|=0x4000000;});}
+#ifdef TH11_MULTIPLAYER
+void ShotManager::clear_projectiles(){
+    // Preserve the original ghost transition: visit ALL physical slots and
+    // retire both animation families, including stale inactive-slot IDs.
+    for(u32 i=0;i<shots.size();++i){auto& s=shots[i];erase(s.animation);erase(s.extra_animation);deactivate(i);}
+}
+#endif
 Enemy* ShotManager::nearest(Vec3 p,float radius)const noexcept{
     Enemy* result=nullptr;float distance=float(double(radius)*radius);
     for(auto* node=world.enemies;node;node=node->next){auto* e=node->value;if(e->state.flags&0xc00021)continue;
@@ -36,6 +43,9 @@ i32 ShotManager::spawn(const ShotSpec& spec,i32 firing_frame,const Vec3& origin)
     if(spec.type==4&&laser_active[spec.option])return -1;
     u32 index=0;while(index<shots.size()&&shots[index].state)++index;if(index==shots.size())return -1;
     auto& s=shots[index];s.state=1;s.spec=&spec;s.timer.set(0,&animations.rate);s.damage=spec.damage;
+#ifdef TH11_MULTIPLAYER
+    activity.set(index,true);
+#endif
     s.movement.position=origin;
     if(spec.option){const auto& o=player.options[spec.option-1];s.movement.position={float(double(o.x)/128),float(double(o.y)/128),0};}
     if(spec.type==4)laser_active[spec.option]=1;
@@ -115,7 +125,7 @@ bool ShotManager::on_update(ShotState& s){
     }return false;
 }
 bool ShotManager::update(){
-    for(auto& s:shots){if(!s.state)continue;if(!s.spec){last_error=6;return false;}
+    for(u32 i=next_active(0);i<shots.size();i=next_active(i+1)){auto& s=shots[i];if(!s.state)continue;if(!s.spec){last_error=6;return false;}
         if(s.spec->type==4&&s.state==1&&(schedule.timer.current<0||s.spec->option-1>=player.option_count||player.bomb_active||!player.enemies_present)){
             interrupt(s.animation,1);interrupt(s.extra_animation,1);s.state=2;laser_active[s.spec->option]=0;
         }
@@ -123,11 +133,11 @@ bool ShotManager::update(){
         s.hit_this_frame=0;if(!on_update(s)){last_error=7;return false;}
         s.movement.update_velocity();s.movement.update();
         auto* a=animations.find(s.animation);
-        if(!a){s.state=0;erase(s.extra_animation);s.animation=s.extra_animation=0;continue;}
+        if(!a){deactivate(i);erase(s.extra_animation);s.animation=s.extra_animation=0;continue;}
         if(s.spec->type!=4&&s.timer.current>=10){
             if(!a->sprite){last_error=8;return false;}
             const float width=float(double(a->sprite->width)*a->scale.x),height=float(double(a->sprite->height)*a->scale.y);const auto p=s.movement.position;
-            if(outside(p,width,height)&&!(s.spec->type==2&&p.x>-224&&p.x<224&&p.y>=-32)){erase(s.animation);s.animation=0;s.state=0;continue;}
+            if(outside(p,width,height)&&!(s.spec->type==2&&p.x>-224&&p.x<224&&p.y>=-32)){erase(s.animation);s.animation=0;deactivate(i);continue;}
         }
         a->position=screen(s.movement.position);
         if(s.extra_animation){auto* extra=animations.find(s.extra_animation);if(extra)extra->position=a->position;else s.extra_animation=0;}
@@ -140,7 +150,7 @@ bool ShotManager::damage(const Vec3& p,const Vec2& size,bool frame_advanced,Game
     result=0;if(!frame_advanced)return true;
     const float left=float(double(p.x)-double(size.x)*.5),right=float(double(p.x)+double(size.x)*.5);
     const float top=float(double(p.y)-double(size.y)*.5),bottom=float(double(p.y)+double(size.y)*.5);
-    for(auto& s:shots){if(!s.state||s.state==2)continue;if(!s.spec){last_error=6;return false;}const auto& spec=*s.spec;
+    for(u32 i=next_active(0);i<shots.size();i=next_active(i+1)){auto& s=shots[i];if(!s.state||s.state==2)continue;if(!s.spec){last_error=6;return false;}const auto& spec=*s.spec;
         const auto q=s.movement.position;
         const float l=float(double(q.x)-double(spec.hitbox.x)*.5),r=float(double(q.x)+double(spec.hitbox.x)*.5);
         const float t=float(double(q.y)-double(spec.hitbox.y)*.5),b=float(double(q.y)+double(spec.hitbox.y)*.5);

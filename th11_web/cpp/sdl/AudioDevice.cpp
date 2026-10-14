@@ -24,8 +24,13 @@ struct AudioDevice::Impl {
     ma_engine engine{};SDL_AudioStream* stream=nullptr;bool engine_ready=false,ready=false,suspended=false,refill=true,music_paused=false;
     std::array<std::unique_ptr<Voice>,56> sounds;std::array<std::vector<u8>,46> samples;std::unique_ptr<Voice> music;
     std::vector<u8> formats;i32 track=-1,pending_track=-1,fade=0,fade_total=0;ma_uint64 pending_frames=0;bool music_retry=false;mutable u32 stats[9]{};
+    // Impl lifetime, never journaled: version, words, successful/failed starts,
+    // last ma_result/handle, invalid handles, fixed capacity; 56 counts per kind.
+    std::array<u32,120> sound_stats{1,120,0,0,0,0,0,56};
     ~Impl(){music.reset();for(auto& sound:sounds)sound.reset();if(stream)SDL_DestroyAudioStream(stream);if(engine_ready)ma_engine_uninit(&engine);}
-    bool attach(Voice& v){if(ma_sound_init_from_data_source(&engine,&v.decoder,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&v.sound)!=MA_SUCCESS)return false;v.attached=true;return true;}
+    // TH11 never changes pitch. Skip the unity-rate resampler and its one-PCM-
+    // frame history; miniaudio still enables conversion for unequal source rates.
+    bool attach(Voice& v){if(ma_sound_init_from_data_source(&engine,&v.decoder,MA_SOUND_FLAG_NO_SPATIALIZATION|MA_SOUND_FLAG_NO_PITCH,nullptr,&v.sound)!=MA_SUCCESS)return false;v.attached=true;return true;}
     Voice* voice(u32 n){return n&&n<=sounds.size()?sounds[n-1].get():nullptr;}
 };
 AudioDevice::AudioDevice():impl(std::make_unique<Impl>()){}
@@ -95,16 +100,55 @@ bool AudioDevice::mix(float* pcm,u32 frames){
     ma_uint64 read=0;if(!impl->ready||!pcm||ma_engine_read_pcm_frames(&impl->engine,pcm,frames,&read)!=MA_SUCCESS||read!=frames)return false;
     for(u32 n=0;n<frames*2;++n)pcm[n]=std::clamp(pcm[n],-1.f,1.f);return true;
 }
+const double* AudioDevice::pump_profile(int enabled){
+    if(enabled>=0)pump_profile_[2]=enabled!=0;return pump_profile_.data();
+}
+void AudioDevice::begin_pump_profile_frame(){
+    auto& p=pump_profile_;if(!p[2])return;const double callback=p[3]+1;
+    p.fill(0);p[0]=1;p[1]=18;p[2]=1;p[3]=callback;p[14]=p[15]=-1;
+}
 void AudioDevice::pump(){
-    auto& a=*impl;if(!a.ready||!a.stream||a.suspended)return;i32 queued=std::max(0,SDL_GetAudioStreamQueued(a.stream))/8;
-    if(!a.refill&&queued<4096)a.refill=true;if(!a.refill)return;if(queued>=6144){a.refill=false;return;}
-    for(i32 n=0;n<6&&queued<6144;++n){float pcm[2048]{};if(!mix(pcm,1024)){a.stats[3]=1;return;}if(!SDL_PutAudioStreamData(a.stream,pcm,sizeof(pcm))){a.stats[3]=2;return;}++a.stats[1];a.stats[2]+=1024;queued+=1024;}if(queued>=6144)a.refill=false;
+    if(!pump_profile_[2]){
+        // Keep the default path free of clocks and additional queue reads.
+        auto& a=*impl;if(!a.ready||!a.stream||a.suspended)return;i32 queued=std::max(0,SDL_GetAudioStreamQueued(a.stream))/8;
+        if(!a.refill&&queued<4096)a.refill=true;if(!a.refill)return;if(queued>=6144){a.refill=false;return;}
+        for(i32 n=0;n<6&&queued<6144;++n){float pcm[2048]{};if(!mix(pcm,1024)){a.stats[3]=1;return;}if(!SDL_PutAudioStreamData(a.stream,pcm,sizeof(pcm))){a.stats[3]=2;return;}++a.stats[1];a.stats[2]+=1024;queued+=1024;}if(queued>=6144)a.refill=false;
+        return;
+    }
+    auto& a=*impl;auto& p=pump_profile_;const auto now=[](){return double(SDL_GetTicksNS())/1000000.;};
+    const double started=now();++p[4];
+    const auto queue=[&](){const double began=now();const i32 frames=std::max(0,SDL_GetAudioStreamQueued(a.stream))/8;p[12]+=now()-began;++p[13];return frames;};
+    const auto finish=[&](){
+        // Only diagnostics read the real queue after the unchanged refill loop.
+        // This added read is included in queue time and total pump time.
+        if(a.ready&&a.stream&&!a.suspended)p[15]=queue();
+        p[9]+=now()-started;
+    };
+    if(!a.ready||!a.stream||a.suspended){finish();return;}
+    i32 queued=queue();if(p[14]<0)p[14]=queued;
+    if(!a.refill&&queued<4096)a.refill=true;if(!a.refill){finish();return;}if(queued>=6144){a.refill=false;finish();return;}
+    for(i32 n=0;n<6&&queued<6144;++n){
+        float pcm[2048]{};const double mixAt=now();++p[5];const bool mixed=mix(pcm,1024);p[10]+=now()-mixAt;
+        if(!mixed){++p[16];a.stats[3]=1;finish();return;}p[7]+=1024;
+        const double putAt=now();const bool submitted=SDL_PutAudioStreamData(a.stream,pcm,sizeof(pcm));p[11]+=now()-putAt;
+        if(!submitted){++p[17];a.stats[3]=2;finish();return;}++p[6];p[8]+=1024;
+        ++a.stats[1];a.stats[2]+=1024;queued+=1024;
+    }
+    if(queued>=6144)a.refill=false;finish();
 }
 void AudioDevice::suspend(bool paused){auto& a=*impl;a.suspended=paused;if(a.stream){if(paused)SDL_PauseAudioStreamDevice(a.stream);else SDL_ResumeAudioStreamDevice(a.stream);}}
 void AudioDevice::sound_stop(u32 n){if(auto* v=impl->voice(n))ma_sound_stop(&v->sound);}
 void AudioDevice::sound_position(u32 n,u32 frame){if(auto* v=impl->voice(n))ma_sound_seek_to_pcm_frame(&v->sound,frame);}
 void AudioDevice::sound_pan(u32 n,i32 value){if(auto* v=impl->voice(n)){ma_sound_set_pan_mode(&v->sound,ma_pan_mode_balance);ma_sound_set_pan(&v->sound,value>=0?1.f-std::pow(10.f,-float(value)/2000.f):std::pow(10.f,float(value)/2000.f)-1.f);}}
 void AudioDevice::sound_volume(u32 n,i32 value){if(auto* v=impl->voice(n))ma_sound_set_volume(&v->sound,volume(value));}
-void AudioDevice::sound_play(u32 n){if(auto* v=impl->voice(n))ma_sound_start(&v->sound);}
+void AudioDevice::sound_play(u32 n){
+    auto& a=*impl;
+    if(auto* v=a.voice(n)){
+        const auto result=ma_sound_start(&v->sound); // Same single call and playback semantics.
+        if(result==MA_SUCCESS){++a.sound_stats[2];++a.sound_stats[8+n-1];}
+        else{++a.sound_stats[3];++a.sound_stats[64+n-1];a.sound_stats[4]=u32(result);a.sound_stats[5]=n;}
+    }else ++a.sound_stats[6];
+}
+const u32* AudioDevice::sound_statistics()const{return impl->sound_stats.data();}
 const u32* AudioDevice::statistics()const{auto& a=*impl;a.stats[0]=a.ready;a.stats[4]=a.stream?std::max(0,SDL_GetAudioStreamQueued(a.stream))/8:0;a.stats[5]=u32(a.track);a.stats[6]=a.fade;a.stats[7]=a.music?u32(std::round(ma_sound_get_volume(&a.music->sound)*1000000.f)):0;a.stats[8]=a.music_paused;return a.stats;}
 }

@@ -68,8 +68,16 @@ int AnmVm::update(AnmEnvironment& env){
         auto* current=instruction;const i32 op=current->opcode;
         auto integer=[&](u32 n){const auto v=current->argument<i32>(n);return current->references&(1u<<n)?integer_value(v,env):v;};
         auto floating=[&](u32 n)->double{const auto v=current->argument<float>(n);return current->references&(1u<<n)?float_value(v,env):v;};
-        auto int_dest=[&](u32 n){auto* p=reinterpret_cast<i32*>(reinterpret_cast<u8*>(current)+8+n*4);return current->references&(1u<<n)?integer_destination(p):p;};
-        auto float_dest=[&](u32 n){auto* p=reinterpret_cast<float*>(reinterpret_cast<u8*>(current)+8+n*4);return current->references&(1u<<n)?float_destination(p):p;};
+        auto int_dest=[&](u32 n){auto* p=reinterpret_cast<i32*>(reinterpret_cast<u8*>(current)+8+n*4);auto* out=current->references&(1u<<n)?integer_destination(p):p;
+#ifdef TH11_MULTIPLAYER
+            if(out==p)env.preserve_script_write(p,sizeof *p);
+#endif
+            return out;};
+        auto float_dest=[&](u32 n){auto* p=reinterpret_cast<float*>(reinterpret_cast<u8*>(current)+8+n*4);auto* out=current->references&(1u<<n)?float_destination(p):p;
+#ifdef TH11_MULTIPLAYER
+            if(out==p)env.preserve_script_write(p,sizeof *p);
+#endif
+            return out;};
         auto jump=[&](u32 off,i32 time){timer.set(time,&env.rate);instruction=reinterpret_cast<AnmInstruction*>(reinterpret_cast<u8*>(script_begin)+off);};
         auto field=[&](u32 mask,u32 shift,u32 value){flags=(flags&~mask)|((value<<shift)&mask);};
         if(op>=6&&op<=27){

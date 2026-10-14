@@ -75,5 +75,11 @@ struct AnmEnvironment {
     virtual bool allocate_geometry(AnmVm&,u32){return false;}
     virtual bool update_geometry(AnmVm&){return false;}
     virtual bool screen_uv(AnmVm&);
+#ifdef TH11_MULTIPLAYER
+    // Some authored destinations resolve to the instruction operand itself.
+    // Only that 4-byte resource word belongs here; VM destinations are already
+    // captured in full by the VM's independent owner.
+    virtual void preserve_script_write(void*,u32){}
+#endif
 };
 }

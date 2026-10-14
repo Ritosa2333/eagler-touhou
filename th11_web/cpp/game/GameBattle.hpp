@@ -26,6 +26,7 @@
 #include "Hud.hpp"
 #ifdef TH11_MULTIPLAYER
 #include "MultiplayerBattle.hpp"
+#include "ScreenDeformationPool.hpp"
 #endif
 #include <memory>
 #include <vector>
@@ -53,6 +54,9 @@ public:
     bool practice_replay_has_stage5=false;
     GameSessionResources& resources;
     AnmManager& animations;
+#ifdef TH11_MULTIPLAYER
+    ScreenDeformationPool deformation_pool;
+#endif
     GameEconomy& economy;
     SceneCompositor& compositor;
     std::unique_ptr<Stage> stage;
@@ -99,6 +103,7 @@ public:
     MultiplayerOptions mp_options{};
     std::array<std::unique_ptr<MultiplayerPilot>,3> pilots;
     bool mp_enabled=false,mp_failed=false;
+    bool mp_rollback_boundary_requested=false;
     bool mp_always_hitbox=false,mp_local_visibility=false;
     void mp_share_invincibility(unsigned,i32);
     bool mp_paused=false,mp_finished=false;
@@ -205,7 +210,7 @@ public:
     bool cancel_reward(Vec3 p) override { return point_reward(p); }
     bool create_deformation(EnemyState&) override;
     bool deform(EnemyState& e) override { e.deformation->update(e,spell_id);return true; }
-    bool release_deformation(EnemyState& e) override { delete e.deformation;e.deformation=nullptr;return true; }
+    bool release_deformation(EnemyState&) override;
     void clear_shot_targets(Enemy*) override;
     bool project_spawn(Vec3,Vec3&) override;
 

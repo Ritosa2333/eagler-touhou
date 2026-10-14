@@ -9,6 +9,32 @@
 #include <cmath>
 #endif
 namespace th11::sdl {
+#ifdef TH11_MULTIPLAYER
+TextureImage* GraphicsDevice::rollback_pixels(void* owner,u32 handle){return static_cast<GraphicsDevice*>(owner)->pixels(handle);}
+void GraphicsDevice::rollback_dirty(void* owner,u32 handle){
+    auto& device=*static_cast<GraphicsDevice*>(owner);auto found=device.textures.find(handle);
+    if(found!=device.textures.end())++found->second.revision;
+}
+bool GraphicsDevice::BeforeTextureWrite(u32 handle,TextureImage& image){
+    if(!texture_rollback_.BeforeWrite(handle,image)){texture_boundary_requested_=true;error=texture_rollback_.error();return false;}
+    // Flush old submissions before mutating their CPU texture source.
+    backend.flush_raster();backend.flush();return true;
+}
+bool GraphicsDevice::PrepareTextureRollbackRestore(const TextureRollbackFrame* const* frames,std::size_t count,u32 restored_frame){
+    if(!texture_rollback_.PrepareRollbackRestore(frames,count,restored_frame)){error=texture_rollback_.error();return false;}
+    // The raster tape owns copies of all vertex bytes and render state. A
+    // CPU-only rewind cannot invalidate those commands while this validated
+    // resource graph remains alive. Keep them until a later clear proves
+    // their output dead. Any restored CPU texture is a real dependency fence.
+    for(std::size_t i=0;i<count;++i)if(frames[i]->texture_count()){
+        backend.flush_raster();break;
+    }
+    backend.flush();return true;
+}
+bool GraphicsDevice::FinishTextureRollbackRestore(){
+    if(!texture_rollback_.FinishRollbackRestore()){error=texture_rollback_.error();return false;}return true;
+}
+#endif
 #if defined(TH_ENABLE_THCRAP)
 namespace {
 // TH10 AnimationResources::override_embedded uses thcrap's per-sprite "auto"
@@ -77,15 +103,24 @@ touhou::sdl::Surface GraphicsDevice::resolve(void* owner,u32 id){
     auto& t=it->second;auto& image=t.image;return {id,image.width,image.height,image.format,image.pitch,image.pixels.data(),u32(image.pixels.size()),t.revision};
 }
 void GraphicsDevice::draw_startup_branding(u32 tint){
+#ifdef TH11_MULTIPLAYER
+    if(!startup_credit&&!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Startup texture allocation requires confirmed rollback boundary";return;}
+#endif
     if(!startup_credit){auto pixels=touhou::sdl::startup_branding::load();if(pixels.empty())return;
         startup_credit=next_handle++;auto& image=textures[startup_credit].image;
         image.width=1280;image.height=960;image.pitch=1280*4;image.format=touhou::graphics::PixelFormat::Bgra8;image.pixels=std::move(pixels);}
     touhou::sdl::startup_branding::draw(backend,startup_credit,screen,tint);
 }
 void GraphicsDevice::release_startup_branding(){
+#ifdef TH11_MULTIPLAYER
+    if(startup_credit&&!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Startup texture release requires confirmed rollback boundary";return;}
+#endif
     if(startup_credit){backend.release(startup_credit);textures.erase(startup_credit);startup_credit=0;}
 }
 bool GraphicsDevice::initialize(){
+#ifdef TH11_MULTIPLAYER
+    if(!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Graphics initialization requires confirmed rollback boundary";return false;}
+#endif
     using namespace touhou::graphics;
     for(u32 id:{screen,depth}){auto& image=textures[id].image;image.width=640;image.height=480;image.pitch=640*(id==screen?4:2);image.format=id==screen?PixelFormat::Bgra8:PixelFormat::Depth16;if(id==screen)image.pixels.resize(image.pitch*image.height);}
     SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT,"#canvas");
@@ -93,6 +128,9 @@ bool GraphicsDevice::initialize(){
 }
 bool GraphicsDevice::preload(AnmResource& file,bool low_color){
     if(resources.find(&file)!=resources.end())return true;
+#ifdef TH11_MULTIPLAYER
+    if(!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Texture preload requires confirmed rollback boundary";return false;}
+#endif
     std::vector<u32> handles;handles.reserve(file.textures.size());
     for(u32 index=0;index<file.textures.size();++index){const auto& source=file.textures[index];Texture texture;
 #if defined(TH_ENABLE_THCRAP)
@@ -107,6 +145,9 @@ bool GraphicsDevice::preload(AnmResource& file,bool low_color){
     resources.emplace(&file,std::move(handles));return true;
 }
 void GraphicsDevice::unload(const AnmResource& file){
+#ifdef TH11_MULTIPLAYER
+    if(resources.find(&file)!=resources.end()&&!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Texture unload requires confirmed rollback boundary";return;}
+#endif
     auto it=resources.find(&file);if(it==resources.end())return;backend.flush();for(u32 id:it->second){backend.release(id);textures.erase(id);}resources.erase(it);
 }
 u32 GraphicsDevice::texture(const AnmResource& file,u32 index){

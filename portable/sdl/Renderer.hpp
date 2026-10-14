@@ -28,8 +28,23 @@ class Renderer : public StateCommands {
 public:
     using Resolve=Surface(*)(void*,u32);
     Statistics stats{};State state{};bool defer=false;
+    // Host-only 80-byte model quad. Screen vertices and instance data remain
+    // streaming; a hit requires exact bytes, not VM identity or frame number.
+    bool residentUploads=false;
+    // Ordered upload runs, opt-in until the title's resource-write barriers
+    // are verified. No simulation or Draw callback is omitted.
+    bool queuedUploads=false;
+    // The tape contains GPU commands, not game state. Every semantic Draw
+    // still executes. Consumers and resource mutations force a raster fence.
+    bool deferredRaster=false;
+    void flush_raster();
+    struct RasterStatistics {u32 runs=0,draws=0,clears=0,skippedDraws=0,skippedClears=0,capacityFences=0,conservativeRuns=0,peakCommands=0,peakBytes=0;};
+    RasterStatistics rasterStats{};
     Renderer(int version,Resolve,void*);~Renderer();
     bool initialize();void flush();void discard();bool commit();
+    // A present request names a mutable FBO, not an immutable frame. Cancel
+    // it before rollback starts drawing intermediate states into that FBO.
+    void cancel_present()noexcept{pending=0;}
     PipelineState& pipeline() override { return state.pipeline; }
     void transform(MatrixKind,const void*);void viewport(const Viewport&);
     void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
@@ -56,9 +71,32 @@ private:
     GLint imguiProjMtx=-1,imguiTexture=-1;
     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
     Stream vertices{},indices{},instances{};State batchState{};
+    GLuint residentQuadVbo=0;std::array<u8,80> residentQuad{};bool residentQuadValid=false;
+    std::map<std::array<u32,7>,GLuint> residentLayouts;
+#ifdef __EMSCRIPTEN__
+    std::array<u8,80> vertexQuad{};bool vertexQuadValid=false;
+#endif
     std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;
+    struct QueuedDraw {State state;Topology primitive;u32 count,first,vertexBytes,instanceOffset,instanceBytes;};
+    std::vector<QueuedDraw> queuedDraws;
+    std::vector<u8> queuedVertices,queuedInstances;
+    void finish_batch();void submit_batches();
+    void queue_upload_draw(const State&,Topology,u32,const void*,u32,const void*,u32);
+    struct RasterCommand {
+        State state;Topology primitive=Topology::Triangles;
+        u32 count=0,vertexOffset=0,vertexBytes=0,instanceOffset=0,instanceBytes=0;
+        u32 clearFlags=0,color=0,stencil=0,rectOffset=0,rectCount=0;float clearDepth=1;
+        bool clear=false,needed=true;
+    };
+    std::vector<RasterCommand> rasterCommands;
+    std::vector<u8> rasterBytes;
+    std::vector<std::array<i32,4>> rasterRects;
+    void queue_raster_draw(const State&,Topology,u32,const void*,u32,const void*,u32);
+    bool queue_raster_clear(u32,u32,float,u32,const i32*,u32);
+    void resolve_raster_liveness();
     u32 batchCount=0,pending=0;std::string failure;
     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32);
+    void issue_uploaded(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,u32,bool);
     void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);
     u32 upload(Stream&,GLenum,const void*,u32,u32);
@@ -68,6 +106,7 @@ Renderer* current();void set_current(Renderer*);
 
 extern "C" {
 __attribute__((export_name("sdl_stats"))) const touhou::sdl::Statistics* sdl_stats();
+__attribute__((export_name("sdl_raster_stats"))) const touhou::sdl::Renderer::RasterStatistics* sdl_raster_stats();
 __attribute__((export_name("sdl_defer"))) void sdl_defer(int);
 __attribute__((export_name("sdl_commit"))) int sdl_commit();
 __attribute__((export_name("sdl_error"))) const char* sdl_error();

@@ -1,4 +1,5 @@
 #include "GameSession.hpp"
+#include "RuntimeCost.hpp"
 #include "MusicCatalog.hpp"
 
 namespace th11 {
@@ -420,6 +421,7 @@ bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
     const auto& fog=compositor.play_camera.fog;
     renderer.fog_channels={fog.channels[0],fog.channels[1],fog.channels[2]};renderer.fog_start=fog.near_distance;
     for(const auto& pass:scene_draw_passes) {
+        runtime_cost::Scope measured(2+u32(pass.kind));
         if(title)title_fades.draw(renderer,pass.priority);
         if(ending){ending->fades.draw(renderer,pass.priority);if(pass.kind==SceneDrawKind::End)ending->fades.draw(renderer,67);}
         if(pass.kind==SceneDrawKind::End&&battle_attached&&battle)battle->fades.draw(renderer,67);

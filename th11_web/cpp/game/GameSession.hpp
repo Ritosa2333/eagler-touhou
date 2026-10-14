@@ -79,6 +79,10 @@ public:
     std::string error;
 #ifdef TH11_MULTIPLAYER
     bool multiplayer_active=false;
+    // Transaction control, not rewindable game state. A requested resource
+    // boundary is undone, then retried with confirmed inputs and no history.
+    bool multiplayer_rollback_boundary_requested=false;
+    bool multiplayer_rollback_boundary();
     bool multiplayer_always_hitbox=false,multiplayer_local_visibility=false;
     MultiplayerOptions multiplayer_options{};
     u32 multiplayer_frame=0;
@@ -109,6 +113,8 @@ public:
     bool battle_callbacks_attached() const noexcept { return battle_attached; }
     const char* phase_name() const noexcept;
 private:
+    friend class WorldRollback;
+    friend struct WorldRollbackTestAccess;
     bool battle_attached=false;
     u32 last_held=0;
     bool last_pause=false;

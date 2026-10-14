@@ -128,6 +128,11 @@ bool FontDevice::text(AnmVm& vm,const DialogueText& request){
     if(request.right_aligned)style.offset=i32(s.width)-text_width;
     if(request.centered)style.offset=i32(s.width)/2-text_width/2;
     const ImageRect rect{i32(s.x),i32(s.y),i32(s.x+s.width),i32(s.y+s.height)};
+#ifdef TH11_MULTIPLAYER
+    // Preserve complete old CPU pixels before either raster path writes. A
+    // redraw of old text cannot reconstruct untouched atlas regions exactly.
+    if(!graphics.BeforeTextureWrite(handle,*image)){error=graphics.error;return false;}
+#endif
     bool written=false;
 #if defined(TH_ENABLE_THCRAP)
     if(unicode)written=write_unicode(*image,rect,request.bytes,style);

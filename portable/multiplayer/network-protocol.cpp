@@ -79,7 +79,9 @@ __attribute__((export_name("network_allocate"))) void* network_allocate(unsigned
 __attribute__((export_name("network_free"))) void network_free(void* pointer){std::free(pointer);}
 __attribute__((export_name("network_validate"))) int network_validate(const unsigned char* bytes,unsigned size){return ReplayArchive::Validate(bytes,size);}
 }
+void rollback_tests(const char* direct_path,const char* hybrid_path);
 int main(int argc,char** argv){
+ rollback_tests(argc>3?argv[3]:nullptr,argc>4?argv[4]:nullptr);
  auto config=setup(3,2,2);auto words=EncodeSessionSetup(config);SessionSetup decoded;CHECK(DecodeSessionSetup(decoded,words.data(),words.size()));
  CHECK(GameplayAbi(config)==GameplayAbi(setup(3,0,2)));CHECK(!decoded.challenge);words[14]=2;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));words[14]=1;words[21]=1;CHECK(DecodeSessionSetup(decoded,words.data(),words.size())&&decoded.challenge);CHECK(EncodeSessionSetup(decoded)==words);CHECK(GameplayAbi(config)!=GameplayAbi(decoded));words[21]=2;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));
  auto changed=config;changed.local_player=0;changed.build[0]^=1;NetplayRuntime left,right;CHECK(left.Reset(config));CHECK(right.Reset(changed));CHECK(left.ApplySession(right.Hello())==Netplay::SessionPacketResult::ContractMismatch);

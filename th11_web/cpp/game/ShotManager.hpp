@@ -6,6 +6,9 @@
 #include "DamageArea.hpp"
 #include "GameEconomy.hpp"
 #include <array>
+#ifdef TH11_MULTIPLAYER
+#include "ActiveSlotIndex.hpp"
+#endif
 namespace th11 {
 struct ShotState {
     Timer timer;Movement movement;
@@ -32,6 +35,10 @@ struct ShotWorld {
 class ShotManager {
 public:
     ShotManager(ShtResource&,AnmResource&,AnmManager&,ShotWorld&,u16 file=7);
+#ifdef TH11_MULTIPLAYER
+    bool CaptureRollbackFrame(Netplay::RollbackJournal&);
+    void clear_projectiles();
+#endif
     ShotPlayer player;ShotSchedule schedule;
     std::array<u32,9> laser_active{};
     DamageAreas damage_areas;
@@ -45,10 +52,36 @@ public:
     bool update();
     bool damage(const Vec3&,const Vec2&,bool frame_advanced,GameEconomy&,i32& result);
     void invalidate_target(Enemy*)noexcept;
-    ShotState& at(u32 index)noexcept{return shots[index];}
+    ShotState& at(u32 index)noexcept{
+#ifdef TH11_MULTIPLAYER
+        exposed->remember(index);activity.invalidate();
+#endif
+        return shots[index];
+    }
+    const ShotState& at(u32 index)const noexcept{return shots[index];}
 private:
+    friend struct WorldRollbackTestAccess;
     ShtResource& resource;AnmResource& animation_resource;AnmManager& animations;ShotWorld& world;u16 file_id;
     std::array<ShotState,256> shots{};
+#ifdef TH11_MULTIPLAYER
+    ActiveSlotIndex<256> activity;
+    std::unique_ptr<ExposedSlotIndex<256>> exposed=std::make_unique<ExposedSlotIndex<256>>();
+#endif
+    u32 next_active(u32 first){
+#ifdef TH11_MULTIPLAYER
+        if(exposed->count>64){while(first<shots.size()&&!shots[first].state)++first;return first;}
+        activity.ensure([&](u32 i){return shots[i].state!=0;});
+        if(exposed->count)exposed->refresh(activity,[&](u32 i){return shots[i].state!=0;});
+        return activity.next(first);
+#else
+        return first;
+#endif
+    }
+    void deactivate(u32 i){shots[i].state=0;
+#ifdef TH11_MULTIPLAYER
+        activity.set(i,false);
+#endif
+    }
     ShotSpec converted_laser_spec{30,0,20,{0,0},{24,24},0,12,0,0,4,5,24,ShotSpawn::ConvertedLaser,ShotUpdate::ConvertedLaser,0,0};
     bool on_spawn(ShotState&,i32);
     bool on_update(ShotState&);

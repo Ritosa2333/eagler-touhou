@@ -30,9 +30,10 @@ const text=pointer=>{
 };
 window.host={
   events,snapshots,generations,replayUiStates,language:'ja',
-  open(){
+  open(runtimePath='/runtime/'){
+    if(!['/runtime/','/reference-runtime/'].includes(runtimePath))throw Error('Unknown local oracle Runtime');
     iframe=document.createElement('iframe');
-    iframe.src='/runtime/th11.html?hosted=1&managedData=1&gameGeneration=th11-mp-acceptance&runtimeEpoch=1&runtimeVariant=multiplayer';
+    iframe.src=runtimePath+'th11.html?hosted=1&managedData=1&gameGeneration=th11-mp-acceptance&runtimeEpoch=1&runtimeVariant=multiplayer';
     document.querySelector('#runtime').append(iframe);
   },
   ready(){return events.some(m=>m.event==='ready');},
