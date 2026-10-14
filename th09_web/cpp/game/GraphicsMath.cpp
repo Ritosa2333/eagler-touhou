@@ -32,7 +32,20 @@ Matrix4 GraphicsMath::perspective(float fov,float aspect,float near_plane,float 
     m.m[0][0]=cot/aspect;m.m[1][1]=cot;m.m[2][2]=far_plane/(far_plane-near_plane);m.m[2][3]=1;m.m[3][2]=-(m.m[2][2]*near_plane);return m;
 }
 Vec3 GraphicsMath::project(const Vec3& p,const Viewport& v,const Matrix4& projection,const Matrix4& view,const Matrix4& world){
-    const auto m=multiply(multiply(world,view),projection);float q[4];for(u32 c=0;c<4;++c)q[c]=((p.x*m.m[0][c]+p.y*m.m[1][c])+p.z*m.m[2][c])+m.m[3][c];
+    return project(p,v,multiply(multiply(world,view),projection));
+}
+Vec3 GraphicsMath::project(const Vec3& p,const Viewport& v,const Matrix4& m){
+    float q[4];for(u32 c=0;c<4;++c)q[c]=((p.x*m.m[0][c]+p.y*m.m[1][c])+p.z*m.m[2][c])+m.m[3][c];
     const float inv=1.f/q[3];return {(q[0]*inv+1.f)*float(v.width)*.5f+float(v.x),(1.f-q[1]*inv)*float(v.height)*.5f+float(v.y),q[2]*inv*(v.far_depth-v.near_depth)+v.near_depth};
+}
+Matrix4 GraphicsMath::translated_projection(const Vec3& p,const Matrix4& view,const Matrix4& projection,const Matrix4& untranslated){
+    const auto row=[](float* out,const float* a,const Matrix4& b){
+        out[0]=((a[3]*b.m[3][0]+a[0]*b.m[0][0])+a[1]*b.m[1][0])+a[2]*b.m[2][0];
+        out[1]=((a[3]*b.m[3][1]+a[2]*b.m[2][1])+a[1]*b.m[1][1])+a[0]*b.m[0][1];
+        out[2]=((a[1]*b.m[1][2]+a[0]*b.m[0][2])+a[3]*b.m[3][2])+a[2]*b.m[2][2];
+        out[3]=((a[3]*b.m[3][3]+a[2]*b.m[2][3])+a[1]*b.m[1][3])+a[0]*b.m[0][3];
+    };
+    const float translation[4]={p.x,p.y,p.z,1.f};float translated_view[4];row(translated_view,translation,view);
+    auto result=untranslated;row(result.m[3],translated_view,projection);return result;
 }
 }

@@ -9,6 +9,7 @@ window.addEventListener('error',e=>testErrors.push(String(e.error??e.message)));
 window.addEventListener('unhandledrejection',e=>testErrors.push(String(e.reason)));
 window.openProbe=async(a=0,b=1,mode=0,diff=1,title=false)=>{
  const core=window.core=await createModule({canvas,printErr:s=>{testErrors.push(s);console.error(s);}});
+ if(typeof window.onProbeModuleReady==='function')await window.onProbeModuleReady(core);
  const music=await(await fetch('/music.json')).json();core.FS.mkdir('/music');core.FS.mkdir('/fonts');
  const names=['th09.dat','cp932.bin','blend.bin','msgothic.ttc',...music.map(n=>'music/'+n)];
  let cursor=0,loaded=0;await Promise.all(Array.from({length:4},async()=>{while(cursor<names.length){const name=names[cursor++],response=await fetch('/'+name);if(!response.ok)throw Error(name+': '+response.status);const destination=['cp932.bin','blend.bin','msgothic.ttc'].includes(name)?'/fonts/'+name:'/'+name;core.FS.writeFile(destination,new Uint8Array(await response.arrayBuffer()),{canOwn:true});status.textContent=`Assets ${++loaded}/${names.length}`;}}));

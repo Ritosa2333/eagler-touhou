@@ -86,7 +86,7 @@ TextureAllocation GraphicsDevice::image(const u8* data,u32 size){
 }
 void GraphicsDevice::destroy(u32 id){if(id<3)return;backend.flush();backend.release(id);textures.erase(id);}
 TextureImage* GraphicsDevice::pixels(u32 id){auto it=textures.find(id);return it==textures.end()?nullptr:&it->second.image;}
-void GraphicsDevice::before_text(u32 id){auto* image=pixels(id);if(checkpoint&&image&&!image->pixels.empty()){checkpoint->Touch(image->pixels.data(),image->pixels.size());checkpoint->AfterRestore([this,id]{changed(id);});}}
+void GraphicsDevice::before_text(u32 id){backend.flush();auto* image=pixels(id);if(checkpoint&&image&&!image->pixels.empty()){checkpoint->Touch(image->pixels.data(),image->pixels.size());checkpoint->AfterRestore([this,id]{changed(id);});}}
 void GraphicsDevice::changed(u32 id){auto it=textures.find(id);if(it!=textures.end())++it->second.revision;}
 void GraphicsDevice::viewport(const Viewport& v){backend.viewport({v.x,v.y,v.width,v.height,v.near_depth,v.far_depth});}
 void GraphicsDevice::transform(MatrixKind kind,const Matrix4& value){backend.transform(kind,&value);}

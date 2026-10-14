@@ -1,0 +1,415 @@
+{
+  "schema": "th09-native-callback-present-repeat/v1",
+  "scope": "Existing desktop both-CPU4 diagnostics only. Count repeated actual presentations within a retained native callback; these counts bound repeated blit/swap opportunities, not CPU or GPU time saved. Preserve semantic Draw/flush/Save/Seal; cannot explain pre-dispatch RAF waits. Not a matched input/performance A/B.",
+  "runs": [
+    {
+      "label": "desktop-touch-both4-relay39-c3",
+      "raw": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c3-report.json",
+        "bytes": 29358458,
+        "sha256": "4c0fee9625eaccf3ead1bdb96e505150ec3e52ab7c3f74f9c4dca371cc8aa685"
+      },
+      "peers": [
+        {
+          "side": 0,
+          "bodyRange": [
+            455,
+            4690
+          ],
+          "bodyCallbacks": 4235,
+          "windowStatus": [
+            "complete"
+          ],
+          "totalFrames": 1620,
+          "totalPresentations": 1620,
+          "presentedCallbacks": 1620,
+          "multiplePresentationCallbacks": 0,
+          "extraSameCallbackPresentations": 0,
+          "extraPresentationFraction": 0,
+          "presentationDeltaHistogram": {
+            "0": 2615,
+            "1": 1620
+          },
+          "cppWallMs": {
+            "all": 13943.809999644756,
+            "multi": 0
+          },
+          "multiCallbacks": []
+        },
+        {
+          "side": 1,
+          "bodyRange": [
+            504,
+            5138
+          ],
+          "bodyCallbacks": 4634,
+          "windowStatus": [
+            "complete"
+          ],
+          "totalFrames": 1620,
+          "totalPresentations": 1620,
+          "presentedCallbacks": 1620,
+          "multiplePresentationCallbacks": 0,
+          "extraSameCallbackPresentations": 0,
+          "extraPresentationFraction": 0,
+          "presentationDeltaHistogram": {
+            "0": 3014,
+            "1": 1620
+          },
+          "cppWallMs": {
+            "all": 12359.659999191761,
+            "multi": 0
+          },
+          "multiCallbacks": []
+        }
+      ]
+    },
+    {
+      "label": "desktop-touch-both4-direct-c1",
+      "raw": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-c1-report.json",
+        "bytes": 24198823,
+        "sha256": "50cebeb50ac38dc5bbc681a6cbe48d70fb892842301117107efb705317629570"
+      },
+      "peers": [
+        {
+          "side": 0,
+          "bodyRange": [
+            481,
+            4990
+          ],
+          "bodyCallbacks": 4509,
+          "windowStatus": [
+            "complete"
+          ],
+          "totalFrames": 1620,
+          "totalPresentations": 1620,
+          "presentedCallbacks": 1619,
+          "multiplePresentationCallbacks": 1,
+          "extraSameCallbackPresentations": 1,
+          "extraPresentationFraction": 0.0006172839506172839,
+          "presentationDeltaHistogram": {
+            "0": 2890,
+            "1": 1618,
+            "2": 1
+          },
+          "cppWallMs": {
+            "all": 4274.674995005131,
+            "multi": 6.8450000286102295
+          },
+          "multiCallbacks": [
+            {
+              "sampleIndex": 4633,
+              "rendererFrames": 2,
+              "presentations": 2,
+              "cppMs": 6.8450000286102295,
+              "nextDelta": 2,
+              "corrDelta": 0,
+              "resimDelta": 0,
+              "worldSaves": 1,
+              "pacing": [
+                4633,
+                1,
+                1,
+                1000,
+                1000,
+                1670,
+                1669
+              ]
+            }
+          ]
+        },
+        {
+          "side": 1,
+          "bodyRange": [
+            490,
+            4909
+          ],
+          "bodyCallbacks": 4419,
+          "windowStatus": [
+            "complete"
+          ],
+          "totalFrames": 1620,
+          "totalPresentations": 1620,
+          "presentedCallbacks": 1614,
+          "multiplePresentationCallbacks": 4,
+          "extraSameCallbackPresentations": 6,
+          "extraPresentationFraction": 0.003703703703703704,
+          "presentationDeltaHistogram": {
+            "0": 2805,
+            "1": 1610,
+            "2": 3,
+            "4": 1
+          },
+          "cppWallMs": {
+            "all": 7032.945000052452,
+            "multi": 28.524999976158142
+          },
+          "multiCallbacks": [
+            {
+              "sampleIndex": 826,
+              "rendererFrames": 4,
+              "presentations": 4,
+              "cppMs": 8.520000040531158,
+              "nextDelta": 4,
+              "corrDelta": 0,
+              "resimDelta": 0,
+              "worldSaves": 0,
+              "pacing": [
+                826,
+                1,
+                0,
+                1000,
+                1000,
+                306,
+                310
+              ]
+            },
+            {
+              "sampleIndex": 827,
+              "rendererFrames": 2,
+              "presentations": 2,
+              "cppMs": 5.084999978542328,
+              "nextDelta": 2,
+              "corrDelta": 0,
+              "resimDelta": 0,
+              "worldSaves": 0,
+              "pacing": [
+                827,
+                1,
+                0,
+                1000,
+                1000,
+                308,
+                310
+              ]
+            },
+            {
+              "sampleIndex": 1582,
+              "rendererFrames": 2,
+              "presentations": 2,
+              "cppMs": 6.664999961853027,
+              "nextDelta": 2,
+              "corrDelta": 0,
+              "resimDelta": 0,
+              "worldSaves": 2,
+              "pacing": [
+                1582,
+                1,
+                2,
+                1000,
+                1000,
+                584,
+                582
+              ]
+            },
+            {
+              "sampleIndex": 4554,
+              "rendererFrames": 2,
+              "presentations": 2,
+              "cppMs": 8.254999995231628,
+              "nextDelta": 2,
+              "corrDelta": 1,
+              "resimDelta": 2,
+              "worldSaves": 3,
+              "pacing": [
+                4554,
+                1,
+                3,
+                1000,
+                1000,
+                1671,
+                1668
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "desktop-touch-both4-direct-raf-c1",
+      "raw": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-raf-c1-report.json",
+        "bytes": 36603176,
+        "sha256": "eab798213ba54bfd7b933aa8c5fc2560ec4a058555ae852146b140c947d2bbc5"
+      },
+      "peers": [
+        {
+          "side": 0,
+          "bodyRange": [
+            472,
+            4823
+          ],
+          "bodyCallbacks": 4351,
+          "windowStatus": [
+            "complete"
+          ],
+          "totalFrames": 1620,
+          "totalPresentations": 1620,
+          "presentedCallbacks": 1619,
+          "multiplePresentationCallbacks": 1,
+          "extraSameCallbackPresentations": 1,
+          "extraPresentationFraction": 0.0006172839506172839,
+          "presentationDeltaHistogram": {
+            "0": 2732,
+            "1": 1618,
+            "2": 1
+          },
+          "cppWallMs": {
+            "all": 8280.465002536774,
+            "multi": 17.259999990463257
+          },
+          "multiCallbacks": [
+            {
+              "sampleIndex": 2529,
+              "rendererFrames": 2,
+              "presentations": 2,
+              "cppMs": 17.259999990463257,
+              "nextDelta": 2,
+              "corrDelta": 0,
+              "resimDelta": 0,
+              "worldSaves": 1,
+              "pacing": [
+                2529,
+                1,
+                1,
+                1000,
+                1000,
+                936,
+                935
+              ]
+            }
+          ]
+        },
+        {
+          "side": 1,
+          "bodyRange": [
+            486,
+            4883
+          ],
+          "bodyCallbacks": 4397,
+          "windowStatus": [
+            "complete"
+          ],
+          "totalFrames": 1620,
+          "totalPresentations": 1620,
+          "presentedCallbacks": 1618,
+          "multiplePresentationCallbacks": 2,
+          "extraSameCallbackPresentations": 2,
+          "extraPresentationFraction": 0.0012345679012345679,
+          "presentationDeltaHistogram": {
+            "0": 2779,
+            "1": 1616,
+            "2": 2
+          },
+          "cppWallMs": {
+            "all": 9511.669999361038,
+            "multi": 19.024999976158142
+          },
+          "multiCallbacks": [
+            {
+              "sampleIndex": 496,
+              "rendererFrames": 2,
+              "presentations": 2,
+              "cppMs": 6.534999966621399,
+              "nextDelta": 2,
+              "corrDelta": 1,
+              "resimDelta": 1,
+              "worldSaves": 1,
+              "pacing": [
+                496,
+                1,
+                1,
+                1000,
+                1000,
+                185,
+                184
+              ]
+            },
+            {
+              "sampleIndex": 2538,
+              "rendererFrames": 2,
+              "presentations": 2,
+              "cppMs": 12.490000009536743,
+              "nextDelta": 2,
+              "corrDelta": 0,
+              "resimDelta": 0,
+              "worldSaves": 2,
+              "pacing": [
+                2538,
+                1,
+                3,
+                1000,
+                1000,
+                937,
+                934
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "desktop-touch-both4-direct-sched-c1",
+      "raw": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-report.json",
+        "bytes": 36168002,
+        "sha256": "a24d75bc216ee2a20360ea7bf3e63134adbc1657fd7ced5801108770c924332e"
+      },
+      "peers": [
+        {
+          "side": 0,
+          "bodyRange": [
+            483,
+            4588
+          ],
+          "bodyCallbacks": 4105,
+          "windowStatus": [
+            "complete"
+          ],
+          "totalFrames": 1620,
+          "totalPresentations": 1620,
+          "presentedCallbacks": 1620,
+          "multiplePresentationCallbacks": 0,
+          "extraSameCallbackPresentations": 0,
+          "extraPresentationFraction": 0,
+          "presentationDeltaHistogram": {
+            "0": 2485,
+            "1": 1620
+          },
+          "cppWallMs": {
+            "all": 10082.079999566078,
+            "multi": 0
+          },
+          "multiCallbacks": []
+        },
+        {
+          "side": 1,
+          "bodyRange": [
+            490,
+            4849
+          ],
+          "bodyCallbacks": 4359,
+          "windowStatus": [
+            "complete"
+          ],
+          "totalFrames": 1620,
+          "totalPresentations": 1620,
+          "presentedCallbacks": 1620,
+          "multiplePresentationCallbacks": 0,
+          "extraSameCallbackPresentations": 0,
+          "extraPresentationFraction": 0,
+          "presentationDeltaHistogram": {
+            "0": 2739,
+            "1": 1620
+          },
+          "cppWallMs": {
+            "all": 8760.810001313686,
+            "multi": 0
+          },
+          "multiCallbacks": []
+        }
+      ]
+    }
+  ]
+}

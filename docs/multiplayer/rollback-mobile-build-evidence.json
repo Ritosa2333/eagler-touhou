@@ -1,0 +1,5788 @@
+{
+  "schema": "th09/mobile-build-evidence/1",
+  "createdAt": "2026-10-11T03:49:58.582Z",
+  "passed": false,
+  "scope": "Build inputs and binary identities; this is neither gameplay correctness nor a performance result. Root-path compiler include relocation is normalized explicitly; raw flags remain below.",
+  "plan": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\docs\\multiplayer\\rollback-mobile-validation-plan.json",
+    "bytes": 8872,
+    "sha256": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
+  },
+  "analyzer": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\mobile-build-identity.mjs",
+    "bytes": 5570,
+    "sha256": "b5e4b266152ec0915eab7b6f7335be271e6911246de73aa173463b410da3a585"
+  },
+  "pairs": [
+    {
+      "name": "release",
+      "checks": {
+        "frozenBaselineWasm": true,
+        "baselineManifestWasm": true,
+        "candidateManifestWasm": true,
+        "onlyRollbackSessionSourceChanged": false,
+        "sourceListsEqual": true,
+        "compilerFlagsEqualAfterTitleRootNormalization": true,
+        "perSourceFlagsEqual": true,
+        "importsEqual": true,
+        "exportsEqual": true,
+        "audioSimdDisabled": true,
+        "kindEqual": true,
+        "sourceMatchesCurrentFile": true
+      },
+      "passed": false,
+      "sourceCount": 275,
+      "unchangedSourceCount": 273,
+      "changed": [
+        {
+          "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+          "baseline": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
+          "candidate": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808"
+        },
+        {
+          "path": "th09_web/cpp/sdl/PerformanceDiagnostics.hpp",
+          "baseline": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
+          "candidate": "12be62ebfc146c9836eec53ee5cae17787922e5e8d169e9fdf680f3172cb62c0"
+        }
+      ],
+      "wasmBytesDelta": -67,
+      "baseline": {
+        "manifest": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-release\\build.json",
+          "bytes": 87045,
+          "sha256": "ad19bc3a5f0c4e2bb39a9051d7fa8337a5f4b31748f327de85407829f72b61e9"
+        },
+        "wasm": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-release\\th09.wasm",
+          "bytes": 2827974,
+          "sha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577"
+        },
+        "loader": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-release\\th09.mjs",
+          "bytes": 257184,
+          "sha256": "4e53b06c7e2a99624bc4234ffde1682a9a18ce7c89be3d2a414b4f0cb3620ee8"
+        }
+      },
+      "candidate": {
+        "manifest": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release\\build.json",
+          "bytes": 87059,
+          "sha256": "3a225055933a4e8a6f6f2f58c15fd9cfbea3e4b3c4cff587e883b0a087ebf16e"
+        },
+        "wasm": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release\\th09.wasm",
+          "bytes": 2827907,
+          "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
+        },
+        "loader": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release\\th09.mjs",
+          "bytes": 257184,
+          "sha256": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3"
+        }
+      },
+      "compilerFlags": {
+        "baseline": [
+          "-O2",
+          "-g0",
+          "-std=c++17",
+          "-ffp-contract=off",
+          "-fno-strict-aliasing",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\sdl",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer",
+          "-DTH_NATIVE_PLATFORM=1",
+          "-DTH_ENABLE_THCRAP=1",
+          "-DTH09_DEVELOPMENT_HARNESS=0",
+          "--use-port=sdl3",
+          "--use-port=sdl3_ttf"
+        ],
+        "candidate": [
+          "-O2",
+          "-g0",
+          "-std=c++17",
+          "-ffp-contract=off",
+          "-fno-strict-aliasing",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\sdl",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer",
+          "-DTH_NATIVE_PLATFORM=1",
+          "-DTH_ENABLE_THCRAP=1",
+          "-DTH09_DEVELOPMENT_HARNESS=0",
+          "--use-port=sdl3",
+          "--use-port=sdl3_ttf"
+        ]
+      },
+      "sourceCompilerFlags": {
+        "baseline": {},
+        "candidate": {}
+      },
+      "imports": [
+        {
+          "module": "env",
+          "name": "th09_reset_browser_keyboard",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_now",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_network_result",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_network_spectator_frame",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_network_send",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_browser_keyboard",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_keyboard_gamepad_dpad",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_request_animation_frame_loop",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_browser_frame",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_network_request",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__assert_fail",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_close",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_connect",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_spectator_connect",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_send",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_is_open",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_failed",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_recovering",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_disconnected",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_calibration_suspended",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_send_to",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_send_repair_to",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_send_spectator",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_has_spectators",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_spectator_state",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_stop_spectators",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_poll_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_poll_copy",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_buffered_amount",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_copy_error",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_journal_copy_bytes",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "touhou_clip_control",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glActiveTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glCreateProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glAttachShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glLinkProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetProgramiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenVertexArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenTextures",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glCreateShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glShaderSource",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glCompileShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetShaderiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetShaderInfoLog",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUseProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetUniformLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetProgramInfoLog",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteTextures",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteFramebuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteRenderbuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteVertexArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniformMatrix4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniform4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniform3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniform1f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniform1i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindBuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBufferData",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenFramebuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glTexParameteri",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glFramebufferTexture2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glPixelStorei",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glTexImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glTexSubImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenRenderbuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glRenderbufferStorage",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glFramebufferRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glEnable",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDisable",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glViewport",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDepthRangef",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDepthMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDepthFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBlendFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBlendEquation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glFrontFace",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glCullFace",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glColorMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindVertexArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glEnableVertexAttribArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDisableVertexAttribArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glVertexAttrib4f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glVertexAttrib2f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glVertexAttribPointer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glVertexAttribDivisor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDrawArraysInstanced",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDrawArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glClearColor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glClearDepthf",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glClearStencil",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glStencilMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glScissor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glClear",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBlitFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_asm_const_int_sync_on_main_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_sample_gamepad_data",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_num_gamepads",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_gamepad_status",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_gamepadconnected_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_gamepaddisconnected_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "SDL_GetEmscriptenJoystickVendor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "SDL_GetEmscriptenJoystickProduct",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "SDL_IsEmscriptenJoystickXInput",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_has_asyncify",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_sleep",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_main_loop_timing",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_main_loop_timing",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_webgl_create_context",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_webgl_make_context_current",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_webgl_destroy_context",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_asm_const_int",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_screen_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_device_pixel_ratio",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_asm_const_ptr_sync_on_main_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_request_pointerlock",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_exit_pointerlock",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_asm_const_double_sync_on_main_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_element_css_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_focus_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_blur_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_pointerlockchange_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_fullscreenchange_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_resize_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_wheel_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_orientationchange_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_keydown_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_keyup_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_keypress_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_visibilitychange_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_beforeunload_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_canvas_element_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_element_css_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_window_title",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_fullscreen_status",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_request_fullscreen_strategy",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_exit_fullscreen",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "invoke_iii",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "invoke_iiiii",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenQueriesEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteQueriesEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsQueryEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBeginQueryEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEndQueryEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glQueryCounterEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryivEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjectivEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjectuivEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjecti64vEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjectui64vEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindVertexArrayOES",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteVertexArraysOES",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenVertexArraysOES",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsVertexArrayOES",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawBuffersWEBGL",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstancedANGLE",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstancedANGLE",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisorANGLE",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glActiveTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glAttachShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindAttribLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindBuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendColor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendEquation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendEquationSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendFuncSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBufferData",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBufferSubData",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCheckFramebufferStatus",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClear",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearColor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearDepthf",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearStencil",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glColorMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompileShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompressedTexImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompressedTexSubImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCopyTexImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCopyTexSubImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCreateProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCreateShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCullFace",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteFramebuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteRenderbuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteTextures",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDepthFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDepthMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDepthRangef",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDetachShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDisable",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDisableVertexAttribArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElements",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEnable",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEnableVertexAttribArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFinish",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFlush",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFramebufferRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFramebufferTexture2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFrontFace",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenerateMipmap",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenFramebuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenRenderbuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenTextures",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveAttrib",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveUniform",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetAttachedShaders",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetAttribLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetBooleanv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetBufferParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetError",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetFloatv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetFramebufferAttachmentParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetIntegerv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetProgramiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetProgramInfoLog",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetRenderbufferParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetShaderiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetShaderInfoLog",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetShaderPrecisionFormat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetShaderSource",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetString",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetTexParameterfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetTexParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribPointerv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glHint",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsBuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsEnabled",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glLineWidth",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glLinkProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPixelStorei",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPolygonOffset",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glReadPixels",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glReleaseShaderCompiler",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glRenderbufferStorage",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSampleCoverage",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glScissor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glShaderBinary",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glShaderSource",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilFuncSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilMaskSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilOp",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilOpSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexParameterf",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexParameterfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexParameteri",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexSubImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUseProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glValidateProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib1f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib1fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib2f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib3f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib4f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribPointer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glViewport",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPolygonOffsetClampEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClipControlEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPolygonModeWEBGL",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisorEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstancedEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstancedNV",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawBuffersEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glReadBuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawRangeElements",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexSubImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCopyTexSubImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompressedTexImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompressedTexSubImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenQueries",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteQueries",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsQuery",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBeginQuery",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEndQuery",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjectuiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix2x3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix3x2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix2x4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix4x2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix3x4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix4x3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlitFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glRenderbufferStorageMultisample",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFramebufferTextureLayer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindVertexArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteVertexArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenVertexArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsVertexArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetIntegeri_v",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBeginTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEndTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindBufferRange",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindBufferBase",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTransformFeedbackVaryings",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetTransformFeedbackVarying",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribIPointer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribIiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribIuiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribI4i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribI4ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribI4iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribI4uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformuiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetFragDataLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearBufferiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearBufferuiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearBufferfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearBufferfi",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetStringi",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCopyBufferSubData",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformIndices",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveUniformsiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformBlockIndex",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveUniformBlockiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveUniformBlockName",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformBlockBinding",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstanced",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstanced",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFenceSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClientWaitSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glWaitSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetInteger64v",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetSynciv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetInteger64i_v",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetBufferParameteri64v",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenSamplers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteSamplers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsSampler",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindSampler",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSamplerParameteri",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSamplerParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSamplerParameterf",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSamplerParameterfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetSamplerParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetSamplerParameterfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteTransformFeedbacks",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenTransformFeedbacks",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPauseTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glResumeTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetProgramBinary",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glProgramBinary",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glProgramParameteri",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glInvalidateFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glInvalidateSubFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexStorage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexStorage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetInternalformativ",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisorNV",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisorARB",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstancedNV",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstancedARB",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstancedEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstancedARB",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "environ_sizes_get",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "environ_get",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_abort_js",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "fd_close",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_date_now",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_fcntl64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_fdatasync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_openat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_ioctl",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "fd_write",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "fd_read",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_fstat64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_stat64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_newfstatat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_lstat64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_getegid32",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_geteuid32",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_getgid32",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_getuid32",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "fd_seek",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_mkdirat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_tzset_js",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_localtime_js",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_munmap_js",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_mmap_js",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_getdents64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_unlinkat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_rmdir",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_heap_max",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_resize_heap",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_emscripten_throw_longjmp",
+          "kind": "function"
+        }
+      ],
+      "exports": [
+        {
+          "name": "memory",
+          "kind": "memory"
+        },
+        {
+          "name": "__wasm_call_ctors",
+          "kind": "function"
+        },
+        {
+          "name": "__indirect_function_table",
+          "kind": "table"
+        },
+        {
+          "name": "SDL_free",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_open",
+          "kind": "function"
+        },
+        {
+          "name": "th09_prepare_loading",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_metrics",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_room_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_adonis_configure",
+          "kind": "function"
+        },
+        {
+          "name": "th09_adonis_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_pacing_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_rollback_enable",
+          "kind": "function"
+        },
+        {
+          "name": "th09_rollback_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_rollback_pump",
+          "kind": "function"
+        },
+        {
+          "name": "th09_measured_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_startup_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_rollback_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_feed",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_frame",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_end",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_receive",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_end",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_hash",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_close",
+          "kind": "function"
+        },
+        {
+          "name": "th09_music_enabled",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_restart",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_tick",
+          "kind": "function"
+        },
+        {
+          "name": "th09_loop_pause",
+          "kind": "function"
+        },
+        {
+          "name": "th09_loop_stop",
+          "kind": "function"
+        },
+        {
+          "name": "th09_loop_start",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_draw",
+          "kind": "function"
+        },
+        {
+          "name": "th09_key",
+          "kind": "function"
+        },
+        {
+          "name": "th09_keys_clear",
+          "kind": "function"
+        },
+        {
+          "name": "th09_pulse",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_cancel",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_controls",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_options",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_stick",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_state",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_probe",
+          "kind": "function"
+        },
+        {
+          "name": "th09_title_status",
+          "kind": "function"
+        },
+        {
+          "name": "th09_session_status",
+          "kind": "function"
+        },
+        {
+          "name": "th09_error",
+          "kind": "function"
+        },
+        {
+          "name": "th09_storage_revision",
+          "kind": "function"
+        },
+        {
+          "name": "th09_file_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_file_valid",
+          "kind": "function"
+        },
+        {
+          "name": "th09_import_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_import_file",
+          "kind": "function"
+        },
+        {
+          "name": "th09_save_snapshot",
+          "kind": "function"
+        },
+        {
+          "name": "th09_audio_pump",
+          "kind": "function"
+        },
+        {
+          "name": "th09_suspend",
+          "kind": "function"
+        },
+        {
+          "name": "malloc",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_url_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_spectator_id_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_packet_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_error",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_connect",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_connect_spectator",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_state",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_send",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_has_spectators",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_send_spectator",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_spectator_state",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_stop_spectators",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_poll",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_close",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_stats",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_defer",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_commit",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_error",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_version",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_ticks",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_canvas",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_pump",
+          "kind": "function"
+        },
+        {
+          "name": "SDL_calloc",
+          "kind": "function"
+        },
+        {
+          "name": "SDL_malloc",
+          "kind": "function"
+        },
+        {
+          "name": "SDL_realloc",
+          "kind": "function"
+        },
+        {
+          "name": "SDLEmscriptenCameraPermissionOutcome",
+          "kind": "function"
+        },
+        {
+          "name": "SDLEmscriptenThreadIterate",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandlePointerEnter",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandlePointerLeave",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandlePointerGeneric",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandleMouseButtonUpGlobal",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendDragEvent",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendDragCompleteEvent",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendDragTextEvent",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendDragFileEvent",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandleLockKeysCheck",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendSystemThemeChangedEvent",
+          "kind": "function"
+        },
+        {
+          "name": "requestFullscreenThroughSDL",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_force_free",
+          "kind": "function"
+        },
+        {
+          "name": "emscripten_builtin_memalign",
+          "kind": "function"
+        },
+        {
+          "name": "setThrew",
+          "kind": "function"
+        },
+        {
+          "name": "_emscripten_stack_restore",
+          "kind": "function"
+        },
+        {
+          "name": "_emscripten_stack_alloc",
+          "kind": "function"
+        },
+        {
+          "name": "emscripten_stack_get_current",
+          "kind": "function"
+        }
+      ],
+      "builtAt": {
+        "baseline": "2026-10-11T01:42:05.168Z",
+        "candidate": "2026-10-11T03:46:28.642Z"
+      }
+    },
+    {
+      "name": "diagnostic",
+      "checks": {
+        "frozenBaselineWasm": true,
+        "baselineManifestWasm": true,
+        "candidateManifestWasm": true,
+        "onlyRollbackSessionSourceChanged": false,
+        "sourceListsEqual": true,
+        "compilerFlagsEqualAfterTitleRootNormalization": true,
+        "perSourceFlagsEqual": true,
+        "importsEqual": true,
+        "exportsEqual": true,
+        "audioSimdDisabled": true,
+        "kindEqual": true,
+        "sourceMatchesCurrentFile": true
+      },
+      "passed": false,
+      "sourceCount": 275,
+      "unchangedSourceCount": 273,
+      "changed": [
+        {
+          "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+          "baseline": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
+          "candidate": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808"
+        },
+        {
+          "path": "th09_web/cpp/sdl/PerformanceDiagnostics.hpp",
+          "baseline": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
+          "candidate": "12be62ebfc146c9836eec53ee5cae17787922e5e8d169e9fdf680f3172cb62c0"
+        }
+      ],
+      "wasmBytesDelta": -45,
+      "baseline": {
+        "manifest": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-live\\build.json",
+          "bytes": 89493,
+          "sha256": "be81865662f0672c3aff96c8cd5765fb895cc1fc9b7dc02244502f273c220b4c"
+        },
+        "wasm": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-live\\th09-presentation.wasm",
+          "bytes": 3155589,
+          "sha256": "59364fa88a9a23913fe2d808ae6e303790dcb1c1533f5e4d4e5893d14fde4877"
+        },
+        "loader": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-live\\th09-presentation.mjs",
+          "bytes": 260890,
+          "sha256": "7f7080fa2d91486b07971b0054862554dd62c632a7320512ff0bd8d72a4f808a"
+        }
+      },
+      "candidate": {
+        "manifest": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live\\build.json",
+          "bytes": 89507,
+          "sha256": "4616b9ba6eb6f17dccc68ec305b140cadaf43f7ac7feb765f5d7624cc3f7ba2a"
+        },
+        "wasm": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live\\th09-presentation.wasm",
+          "bytes": 3155544,
+          "sha256": "f0fe104e03cf4c10617c16c8c08897784a83b02d5e8eeeabf8c2ee1e7e9e58cb"
+        },
+        "loader": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live\\th09-presentation.mjs",
+          "bytes": 260890,
+          "sha256": "d6dfb6c40fd632bb748bc4a881e6f5dd1429aaa6de1cc4dade11ba82005da295"
+        }
+      },
+      "compilerFlags": {
+        "baseline": [
+          "-O2",
+          "-g0",
+          "-std=c++17",
+          "-ffp-contract=off",
+          "-fno-strict-aliasing",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\sdl",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer",
+          "-DTH_NATIVE_PLATFORM=1",
+          "-DTH_ENABLE_THCRAP=1",
+          "-DTH09_DEVELOPMENT_HARNESS=1",
+          "--use-port=sdl3",
+          "--use-port=sdl3_ttf"
+        ],
+        "candidate": [
+          "-O2",
+          "-g0",
+          "-std=c++17",
+          "-ffp-contract=off",
+          "-fno-strict-aliasing",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\sdl",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer",
+          "-DTH_NATIVE_PLATFORM=1",
+          "-DTH_ENABLE_THCRAP=1",
+          "-DTH09_DEVELOPMENT_HARNESS=1",
+          "--use-port=sdl3",
+          "--use-port=sdl3_ttf"
+        ]
+      },
+      "sourceCompilerFlags": {
+        "baseline": {},
+        "candidate": {}
+      },
+      "imports": [
+        {
+          "module": "env",
+          "name": "emscripten_get_now",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_reset_browser_keyboard",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_network_result",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_network_spectator_frame",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_network_send",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_browser_keyboard",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_keyboard_gamepad_dpad",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_request_animation_frame_loop",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__assert_fail",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_browser_frame",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "th09_network_request",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_close",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_connect",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_spectator_connect",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_send",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_is_open",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_failed",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_recovering",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_disconnected",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_calibration_suspended",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_send_to",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_send_repair_to",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_send_spectator",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_has_spectators",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_spectator_state",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_stop_spectators",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_poll_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_poll_copy",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_buffered_amount",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_peer_copy_error",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "eagler_journal_copy_bytes",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "touhou_clip_control",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glActiveTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glCreateProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glAttachShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glLinkProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetProgramiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenVertexArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenTextures",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glCreateShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glShaderSource",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glCompileShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetShaderiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetShaderInfoLog",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUseProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetUniformLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGetProgramInfoLog",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteTextures",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteFramebuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteRenderbuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteVertexArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDeleteBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniformMatrix4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniform4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniform3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniform1f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glUniform1i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindBuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBufferData",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenFramebuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glTexParameteri",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glFramebufferTexture2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glPixelStorei",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glTexImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glTexSubImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glGenRenderbuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glRenderbufferStorage",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glFramebufferRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glEnable",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDisable",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glViewport",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDepthRangef",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDepthMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDepthFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBlendFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBlendEquation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glFrontFace",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glCullFace",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glColorMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBindVertexArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glEnableVertexAttribArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDisableVertexAttribArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glVertexAttrib4f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glVertexAttrib2f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glVertexAttribPointer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glVertexAttribDivisor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDrawArraysInstanced",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glDrawArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glClearColor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glClearDepthf",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glClearStencil",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glStencilMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glScissor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glClear",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "glBlitFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_asm_const_int_sync_on_main_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_sample_gamepad_data",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_num_gamepads",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_gamepad_status",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_gamepadconnected_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_gamepaddisconnected_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "SDL_GetEmscriptenJoystickVendor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "SDL_GetEmscriptenJoystickProduct",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "SDL_IsEmscriptenJoystickXInput",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_has_asyncify",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_sleep",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_main_loop_timing",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_main_loop_timing",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_webgl_create_context",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_webgl_make_context_current",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_webgl_destroy_context",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_asm_const_int",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_screen_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_device_pixel_ratio",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_asm_const_ptr_sync_on_main_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_request_pointerlock",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_exit_pointerlock",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_asm_const_double_sync_on_main_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_element_css_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_focus_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_blur_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_pointerlockchange_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_fullscreenchange_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_resize_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_wheel_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_orientationchange_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_keydown_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_keyup_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_keypress_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_visibilitychange_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_beforeunload_callback_on_thread",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_canvas_element_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_element_css_size",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_set_window_title",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_fullscreen_status",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_request_fullscreen_strategy",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_exit_fullscreen",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "invoke_iii",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "invoke_iiiii",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenQueriesEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteQueriesEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsQueryEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBeginQueryEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEndQueryEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glQueryCounterEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryivEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjectivEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjectuivEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjecti64vEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjectui64vEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindVertexArrayOES",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteVertexArraysOES",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenVertexArraysOES",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsVertexArrayOES",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawBuffersWEBGL",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstancedANGLE",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstancedANGLE",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisorANGLE",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glActiveTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glAttachShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindAttribLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindBuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendColor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendEquation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendEquationSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlendFuncSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBufferData",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBufferSubData",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCheckFramebufferStatus",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClear",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearColor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearDepthf",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearStencil",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glColorMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompileShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompressedTexImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompressedTexSubImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCopyTexImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCopyTexSubImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCreateProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCreateShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCullFace",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteFramebuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteRenderbuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteTextures",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDepthFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDepthMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDepthRangef",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDetachShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDisable",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDisableVertexAttribArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElements",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEnable",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEnableVertexAttribArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFinish",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFlush",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFramebufferRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFramebufferTexture2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFrontFace",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenerateMipmap",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenFramebuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenRenderbuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenTextures",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveAttrib",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveUniform",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetAttachedShaders",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetAttribLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetBooleanv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetBufferParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetError",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetFloatv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetFramebufferAttachmentParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetIntegerv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetProgramiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetProgramInfoLog",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetRenderbufferParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetShaderiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetShaderInfoLog",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetShaderPrecisionFormat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetShaderSource",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetString",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetTexParameterfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetTexParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribPointerv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glHint",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsBuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsEnabled",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsRenderbuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsShader",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsTexture",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glLineWidth",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glLinkProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPixelStorei",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPolygonOffset",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glReadPixels",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glReleaseShaderCompiler",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glRenderbufferStorage",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSampleCoverage",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glScissor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glShaderBinary",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glShaderSource",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilFunc",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilFuncSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilMask",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilMaskSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilOp",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glStencilOpSeparate",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexParameterf",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexParameterfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexParameteri",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexSubImage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUseProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glValidateProgram",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib1f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib1fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib2f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib3f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib4f",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttrib4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribPointer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glViewport",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPolygonOffsetClampEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClipControlEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPolygonModeWEBGL",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisorEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstancedEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstancedNV",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawBuffersEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glReadBuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawRangeElements",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexSubImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCopyTexSubImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompressedTexImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCompressedTexSubImage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenQueries",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteQueries",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsQuery",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBeginQuery",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEndQuery",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetQueryObjectuiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawBuffers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix2x3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix3x2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix2x4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix4x2fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix3x4fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformMatrix4x3fv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBlitFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glRenderbufferStorageMultisample",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFramebufferTextureLayer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindVertexArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteVertexArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenVertexArrays",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsVertexArray",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetIntegeri_v",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBeginTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glEndTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindBufferRange",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindBufferBase",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTransformFeedbackVaryings",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetTransformFeedbackVarying",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribIPointer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribIiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetVertexAttribIuiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribI4i",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribI4ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribI4iv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribI4uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformuiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetFragDataLocation",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4ui",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform1uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform2uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform3uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniform4uiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearBufferiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearBufferuiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearBufferfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClearBufferfi",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetStringi",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glCopyBufferSubData",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformIndices",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveUniformsiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetUniformBlockIndex",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveUniformBlockiv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetActiveUniformBlockName",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glUniformBlockBinding",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstanced",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstanced",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glFenceSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glClientWaitSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glWaitSync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetInteger64v",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetSynciv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetInteger64i_v",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetBufferParameteri64v",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenSamplers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteSamplers",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsSampler",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindSampler",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSamplerParameteri",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSamplerParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSamplerParameterf",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glSamplerParameterfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetSamplerParameteriv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetSamplerParameterfv",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisor",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glBindTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDeleteTransformFeedbacks",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGenTransformFeedbacks",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glIsTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glPauseTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glResumeTransformFeedback",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetProgramBinary",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glProgramBinary",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glProgramParameteri",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glInvalidateFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glInvalidateSubFramebuffer",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexStorage2D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glTexStorage3D",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glGetInternalformativ",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisorNV",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glVertexAttribDivisorARB",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstancedNV",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawArraysInstancedARB",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstancedEXT",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_glDrawElementsInstancedARB",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "environ_sizes_get",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "environ_get",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_abort_js",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "fd_close",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_date_now",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_fcntl64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_fdatasync",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_openat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_ioctl",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "fd_write",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "fd_read",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_fstat64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_stat64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_newfstatat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_lstat64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_getegid32",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_geteuid32",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_getgid32",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_getuid32",
+          "kind": "function"
+        },
+        {
+          "module": "wasi_snapshot_preview1",
+          "name": "fd_seek",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_mkdirat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_tzset_js",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_localtime_js",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_munmap_js",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_mmap_js",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_getdents64",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_unlinkat",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "__syscall_rmdir",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_get_heap_max",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "emscripten_resize_heap",
+          "kind": "function"
+        },
+        {
+          "module": "env",
+          "name": "_emscripten_throw_longjmp",
+          "kind": "function"
+        }
+      ],
+      "exports": [
+        {
+          "name": "memory",
+          "kind": "memory"
+        },
+        {
+          "name": "__wasm_call_ctors",
+          "kind": "function"
+        },
+        {
+          "name": "__indirect_function_table",
+          "kind": "table"
+        },
+        {
+          "name": "SDL_free",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_open",
+          "kind": "function"
+        },
+        {
+          "name": "th09_prepare_loading",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_metrics",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_room_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_adonis_configure",
+          "kind": "function"
+        },
+        {
+          "name": "th09_adonis_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_pacing_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_rollback_enable",
+          "kind": "function"
+        },
+        {
+          "name": "th09_rollback_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_rollback_pump",
+          "kind": "function"
+        },
+        {
+          "name": "th09_measured_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_startup_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_rollback_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_begin",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_feed",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_frame",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_spectator_end",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_receive",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_end",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_hash",
+          "kind": "function"
+        },
+        {
+          "name": "th09_network_info",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_close",
+          "kind": "function"
+        },
+        {
+          "name": "th09_music_enabled",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_restart",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_tick",
+          "kind": "function"
+        },
+        {
+          "name": "th09_loop_pause",
+          "kind": "function"
+        },
+        {
+          "name": "th09_loop_stop",
+          "kind": "function"
+        },
+        {
+          "name": "th09_loop_start",
+          "kind": "function"
+        },
+        {
+          "name": "th09_game_draw",
+          "kind": "function"
+        },
+        {
+          "name": "th09_key",
+          "kind": "function"
+        },
+        {
+          "name": "th09_keys_clear",
+          "kind": "function"
+        },
+        {
+          "name": "th09_pulse",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_cancel",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_controls",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_options",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_stick",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_state",
+          "kind": "function"
+        },
+        {
+          "name": "th09_touch_probe",
+          "kind": "function"
+        },
+        {
+          "name": "th09_title_open",
+          "kind": "function"
+        },
+        {
+          "name": "th09_title_status",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_title_details",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_save_replay",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_world",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_replay",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_return_title",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_open",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_frame_limit",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_tick_cost",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_performance_enable",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_performance_reset",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_performance",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_performance_schema",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_menu_barrier",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_load",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_draw_mode",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_checkpoint",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_restore",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_enemy_detail",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_pool_boundary",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_bullet_boundary",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_recording_boundary",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_hash_parts",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_state_hash",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_rollback_step",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_tick",
+          "kind": "function"
+        },
+        {
+          "name": "th09_session_status",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_inputs",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_end_round",
+          "kind": "function"
+        },
+        {
+          "name": "th09_error",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_status",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_audio",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_error",
+          "kind": "function"
+        },
+        {
+          "name": "th09_storage_revision",
+          "kind": "function"
+        },
+        {
+          "name": "th09_file_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_file_valid",
+          "kind": "function"
+        },
+        {
+          "name": "th09_import_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_import_file",
+          "kind": "function"
+        },
+        {
+          "name": "th09_save_snapshot",
+          "kind": "function"
+        },
+        {
+          "name": "th09_audio_pump",
+          "kind": "function"
+        },
+        {
+          "name": "th09_suspend",
+          "kind": "function"
+        },
+        {
+          "name": "th09_probe_close",
+          "kind": "function"
+        },
+        {
+          "name": "malloc",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_url_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_spectator_id_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_packet_buffer",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_error",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_connect",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_connect_spectator",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_state",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_send",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_has_spectators",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_send_spectator",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_spectator_state",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_stop_spectators",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_poll",
+          "kind": "function"
+        },
+        {
+          "name": "th09_peer_close",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_stats",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_defer",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_commit",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_error",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_version",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_ticks",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_canvas",
+          "kind": "function"
+        },
+        {
+          "name": "sdl_pump",
+          "kind": "function"
+        },
+        {
+          "name": "SDL_calloc",
+          "kind": "function"
+        },
+        {
+          "name": "SDL_malloc",
+          "kind": "function"
+        },
+        {
+          "name": "SDL_realloc",
+          "kind": "function"
+        },
+        {
+          "name": "SDLEmscriptenCameraPermissionOutcome",
+          "kind": "function"
+        },
+        {
+          "name": "SDLEmscriptenThreadIterate",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandlePointerEnter",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandlePointerLeave",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandlePointerGeneric",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandleMouseButtonUpGlobal",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendDragEvent",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendDragCompleteEvent",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendDragTextEvent",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendDragFileEvent",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_HandleLockKeysCheck",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_SendSystemThemeChangedEvent",
+          "kind": "function"
+        },
+        {
+          "name": "requestFullscreenThroughSDL",
+          "kind": "function"
+        },
+        {
+          "name": "Emscripten_force_free",
+          "kind": "function"
+        },
+        {
+          "name": "emscripten_builtin_memalign",
+          "kind": "function"
+        },
+        {
+          "name": "setThrew",
+          "kind": "function"
+        },
+        {
+          "name": "_emscripten_stack_restore",
+          "kind": "function"
+        },
+        {
+          "name": "_emscripten_stack_alloc",
+          "kind": "function"
+        },
+        {
+          "name": "emscripten_stack_get_current",
+          "kind": "function"
+        }
+      ],
+      "builtAt": {
+        "baseline": "2026-10-11T01:50:54.603Z",
+        "candidate": "2026-10-11T03:48:15.449Z"
+      }
+    }
+  ],
+  "invocations": [
+    {
+      "label": "mobile-rollback-build-release-01",
+      "identity": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-invocation.json",
+        "bytes": 2397,
+        "sha256": "45bb9b9c94c5977d936864541e094aa7ec49694bbf74c894278f9eedc9519ef8"
+      },
+      "startedAt": "2026-10-11T03:46:28.592Z",
+      "endedAt": "2026-10-11T03:47:28.465Z",
+      "elapsedMs": 59871.9304,
+      "status": 0,
+      "signal": null,
+      "args": [
+        "th09_web/scripts/build-sdl.mjs",
+        "--release"
+      ],
+      "runLabel": "mobile-rollback-build-release-01",
+      "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
+      "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
+      "scriptSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+      "scriptAfterSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+      "identityBefore": {
+        "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+        "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
+      },
+      "identityAfter": {
+        "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+        "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
+      },
+      "identityError": null,
+      "build": "artifacts/mobile-rollback-release",
+      "reference": null,
+      "declaredParameters": {
+        "candidate": "held absolute touch/vector in mode0",
+        "release": true,
+        "profile": false,
+        "audioSimd": false,
+        "buildJobs": 4,
+        "parentCommit": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9"
+      },
+      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-process.log",
+      "logSha256": "8a4ffab323d020fc58fc8dcc6784e197f162c3118dffdddb4d13bbeece0cebe7",
+      "stdoutBytes": 8306,
+      "stderrBytes": 0
+    },
+    {
+      "label": "mobile-rollback-build-live-01",
+      "identity": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-invocation.json",
+        "bytes": 2488,
+        "sha256": "d06717b9d43a6feefdab4aa0ca43b96fe221ac1aa45e645e0db94f0e75ae8033"
+      },
+      "startedAt": "2026-10-11T03:48:15.400Z",
+      "endedAt": "2026-10-11T03:49:12.504Z",
+      "elapsedMs": 57103.3474,
+      "status": 0,
+      "signal": null,
+      "args": [
+        "th09_web/scripts/build-sdl.mjs"
+      ],
+      "runLabel": "mobile-rollback-build-live-01",
+      "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
+      "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
+      "scriptSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+      "scriptAfterSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+      "identityBefore": {
+        "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+        "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
+      },
+      "identityAfter": {
+        "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+        "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
+      },
+      "identityError": null,
+      "build": "artifacts/mobile-rollback-live",
+      "reference": null,
+      "declaredParameters": {
+        "candidate": "held absolute touch/vector in mode0",
+        "release": false,
+        "profile": true,
+        "audioSimd": false,
+        "buildJobs": 4,
+        "parentCommit": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
+        "scope": "DEV three-world correctness and call-pressure build, matched diagnostic flags to old E live baseline"
+      },
+      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-process.log",
+      "logSha256": "5c4df074a3c5b48ffc1e6cd71368d5734ece3451698bd6e3deccd59bae6fc810",
+      "stdoutBytes": 8316,
+      "stderrBytes": 0
+    }
+  ]
+}

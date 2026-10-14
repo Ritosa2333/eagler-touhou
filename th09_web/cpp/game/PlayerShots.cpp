@@ -17,10 +17,14 @@ void PlayerShots::initialize(PlayerShot& s,const ShotDefinition& d){
     if(d.sound>=0)actions.play_positioned_sound(d.sound,player_position.x);actions.start_animation(s.animation,d.animation+5);s.hit_flash=0;
 }
 bool PlayerShots::create(PlayerShot& s,const ShotDefinition& d,i32 frame){
-    if(d.creation==ShotCreation::lyrica_normal){if(actions.effect_active(5)||frame!=d.frame)return false;initialize(s,d);return true;}
+    if(d.creation==ShotCreation::lyrica_normal){if(actions.effect_active(5)||frame!=d.frame)return false;before_write(s);initialize(s,d);return true;}
     if(frame!=d.frame)return false;
+    if(d.creation==ShotCreation::lyrica_effect){actions.effect(35,player_position,5);return false;}
+    // A dormant slot can still contain meaningful VM/trail bytes. Capture it
+    // before the first actual write, including Marisa's pre-initialize fields.
+    // Definitions that do not create a shot never pay for a cold-slot copy.
+    before_write(s);
     switch(d.creation){
-    case ShotCreation::lyrica_effect:actions.effect(35,player_position,5);return false;
     case ShotCreation::marisa_beam:
         beam_time.reset(30);beam=&s;s.option=d.option;s.offset=d.offset;s.trail_length=15;initialize(s,d);s.type=2;for(auto& p:s.trail)p.x=-999;s.position.x=-999;return true;
     case ShotCreation::sakuya_delayed:initialize(s,d);s.velocity={0,0};s.angle=d.angle;return true;
@@ -36,6 +40,9 @@ void PlayerShots::fire(const ShotResource& resource,u32 set,i32 frame){
         while(next<definitions.size()){const auto& d=definitions[next++];if(create(s,d,frame)){s.animation.zWriteDisabled=1;s.state=1;s.definition=&d;break;}}
         if(next>=definitions.size())return;
     }
+}
+void PlayerShots::deactivate_all(){
+    for(auto& s:shots){if(s.state)before_write(s);s.state=0;}
 }
 bool PlayerShots::update_special(PlayerShot& s,const FrameTiming& timing){
     if(!s.definition)return false;

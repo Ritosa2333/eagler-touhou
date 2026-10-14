@@ -104,7 +104,7 @@ FrameInput heldMotion(unsigned side,unsigned frame){
     else if(phase==3){value.analogMode=AnalogMode::Joystick;value.x=.75f;value.y=-.5f;value.touchUsed=true;}
     return value; // Last phase is a real release, which must be reconciled.
 }
-void hybridHeldPrediction(){
+void heldMotionPrediction(){
     for(auto mode:{AdonisMode::Rollback,AdonisMode::Delay,AdonisMode::Hybrid})for(auto analog:{AnalogMode::DirectTouch,AnalogMode::Joystick}){
         Link a,b;a.peer=&b;b.peer=&a;RollbackSession left(a),right(b);
         CHECK(left.Begin(config(0),0,0,mode)&&right.Begin(config(1),0,0,mode));
@@ -118,8 +118,8 @@ void hybridHeldPrediction(){
             if(mode==AdonisMode::Delay){CHECK(!predicted.canAdvance);break;}
             CHECK(predicted.canAdvance&&(predicted.predictedMask&2));
             CHECK(!(predicted.inputs[1].buttons&(2|8))&&!predicted.inputs[1].touchBomb);
-            if(mode==AdonisMode::Hybrid){CHECK(predicted.inputs[1].analogMode==analog&&predicted.inputs[1].x==held.x&&predicted.inputs[1].y==held.y);}
-            else CHECK(predicted.inputs[1].analogMode==AnalogMode::None);
+            CHECK(predicted.inputs[1].analogMode==analog&&predicted.inputs[1].x==held.x&&predicted.inputs[1].y==held.y);
+            CHECK(predicted.inputs[1].touchUsed==held.touchUsed&&predicted.inputs[1].unlimited==held.unlimited);
             CHECK(left.Complete(predicted));
         }
     }
@@ -161,7 +161,7 @@ int main(){
         CHECK(!failed&&!l.Captures()&&!r.Captures()&&!l.Ready()&&!r.Ready());
         CHECK(l.Startup().State()==AdonisStartup::Stage::Unavailable&&r.Startup().State()==AdonisStartup::Stage::Unavailable);
     }
-    hybridHeldPrediction();
+    heldMotionPrediction();
     mismatch(AdonisMode::Delay,3,AdonisMode::Hybrid,3);
     mismatch(AdonisMode::Delay,3,AdonisMode::Rollback,3);
     mismatch(AdonisMode::Hybrid,2,AdonisMode::Hybrid,3);

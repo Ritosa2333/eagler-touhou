@@ -1,5 +1,295 @@
 # TH09 rollback handoff for a new agent
 
+> **2026-10-11 mobile movement rollback results (current):**
+> Continue performance work in D:/workspace/eagler/worktrees/th09-mobile-rollback-4x,
+> branch experiment/mobile-rollback-4x, from b243bb1. The sections below this
+> current block retain older history; do not resume edits in the frozen old tree.
+> Read [rollback-mobile-work.md](rollback-mobile-work.md), the corrected deep
+> evidence, release evidence, gap-dispatch evidence and managed-queue evidence.
+> User priorities: D0 prediction, continuous new states, CPU4 headroom, no
+> sudden freezes; information-limited smooth slowdown is acceptable. Include
+> continuous mobile movement, Launcher input delivery, independent relay and
+> actual direct routes. Preserve adverse runs and shared-host uncertainty.
+>
+> All environment work MUST use nig. Root owns the serialized execution slot
+> for builds, tests, browsers and raw-data aggregation. Agents only perform
+> scoped small reads or disjoint patches until root authorizes more.
+> Modern authored source only; no original executable/oracle or new downloads.
+> No push, merge or deploy. Local commits are authorized.
+>
+> Code commit a93fb876eb6be6c84c1cf2cf271153ee7fa4763e preserves held analog
+> target/vector prediction in mode0, keeps D0/H8 and full-field correction,
+> and adds focused C++ cases. Input capture remains once-only before restore.
+> The isolated common stays 512353cab9eaa4f6744f867b0eb07c61ee7f2b0e at
+> D:/workspace/eagler/worktrees/th09-rollback-input-batch-common.
+>
+> Matched release WASM 037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373;
+> matched diagnostic f0fe104e03cf4c10617c16c8c08897784a83b02d5e8eeeabf8c2ee1e7e9e58cb.
+> Use artifacts/mobile-rollback-release-matched and mobile-rollback-live-matched.
+> 275 native build inputs: 274 exact matches, only RollbackSession.cpp differs.
+> Preserve initial EOL identity failure and exact LF header control. Header
+> bytes equal HEAD/index despite initial Git stat dirt; staging refreshed that
+> stat without changing its f64d10...54035 bytes. Audio SIMD remains OFF.
+>
+> Three-world direct B/C has identical actual 12B tape and Replay. Whole-run
+> corrections/resim decrease ~5%; 60 hold frames/side go from 60 to 20
+> restore-starts and 480 to 202 resim frame visits. The 216-frame main drag
+> stays at 216 restore-starts. Candidate manual wall time is WORSE and kept.
+> Manual three-world CPU4 timing is not real FPS or relay/direct evidence.
+> Source-derived cursor restore distance is not all remaining replay debt;
+> rechecking the same harness formula is not an independent restore hook.
+>
+> Six release runs passed. P2 closed-frontier Hz in relay B1/C1/C2/B2 order:
+> 34.422/59.109/59.552/59.740. New-state sampledAt max:
+> 175.270/117.005/67.325/78.980 ms. Actual tapes differ across ABBA, and B
+> self-drift prevents a causal whole-game speedup claim. Burst120:59.209Hz,
+> max86.270ms; direct120-c2:59.948Hz,max53.270ms. Direct selected ICE was
+> host/host UDP with open input/control lanes; not WAN/NAT/phone acceptance.
+> direct120-c1 was only a retained relay-trace-option preflight failure.
+>
+> All twelve maximum-gap request analyses qualify. P2 registered RAF wait
+> union B1/C1/C2/B2/burst/direct:108.665/104.720/55.800/67.165/65.115/42.145ms.
+> This uses max(requestedAt,parent.exitedAt) to enteredAt, clipped/unioned
+> in one Page clock. It does not identify OS/browser/GPU/other JS causality.
+> s[2] is whole C++ RAF callback wall time, not pure single-tick CPU. Repeated
+> zero-tick callbacks must not hide fresh-single-step or recovery cost.
+> stats[5] is Channel RepairsSent, NEVER a native wait counter. v1 deep
+> analyzer/evidence remain archived; corrected v2 preserved all quantities.
+>
+> Managed queue characterization ran six tests with real source listeners,
+> fake dependencies/clock and native call recording. Active resources blocked
+> five touch messages (native0 while keyboard3); release produced native7 and
+> cleared ACKs. Blur allowed two old direct calls after cancel; hidden allowed
+> controls/stick after cancel. Pre-ready input reached native after init before
+> launch. Four goals are FALSE; characterization PASS is not repair acceptance.
+> No actual movement, native capture, phone delay or game freeze measured there.
+>
+> NEXT: isolated managed touch fastpath candidate, with initialized/launch-
+> settled and current document owner checks. launched=true precedes awaited
+> netplay.connect, so it alone is insufficient. Do not require hasFocus:
+> ordinary Android host overlay can legitimately own touch. Preserve source
+> envelope gates, per-MOVE clamp ordering, ordinary controls and action serial
+> semantics; do not let cancel race older queued input. Local generation cannot
+> identify old parent messages not yet dispatched without protocol support.
+> Keep this experiment separate from the frozen performance artifacts.
+>
+> Continuous moving-target prediction still needs work. Start any extrapolation
+> idea as a causal-history-limited float-accurate shadow, not a promised reduction
+> in corrections/FPS. Begin/Delta migration has TH09 state/Replay/encoding
+> obligations. Existing information-pacing shadow remains OFFLINE/OFF.
+> An Android device was observed connected; real ordinary Launcher/device
+> acceptance has NOT run. Use existing legitimate session/package ownership,
+> never replace it with a bare native ABI run or fabricated provider.
+
+
+> **2026-10-11 enemy index, continuous windows and information-budget results (historical):**
+> Continue in `D:/workspace/eagler/worktrees/th09-rollback-4x`, branch
+> `experiment/rollback-4x`. Read the current top of
+> [rollback-chain-work.md](rollback-chain-work.md), then the enemy-index series,
+> response, E1 gap, burst gap and information-pacing-shadow results beside it.
+> The user's priorities remain D=0 local prediction, continuous new game states,
+> good CPU4 behavior and smooth information-limited slowdown; sudden freezes are
+> unacceptable. Keep TH06MP/TH07MP as useful references and retain shared-host
+> load observations without attributing every adverse result to the host.
+>
+> Local commits: `d6ba14f00e317c6400fee0e7316094cf506d859e` implements fixed-pool
+> enemy first-write indexing; `0cdea91f6dbe56a8cf208915f222fc8074b7e980` saves
+> the continuous-window/anomaly/deep/ABBA/response harness and evidence;
+> `1cc2cbd7bd13b0f9e7394a8e670a27c07940e13f` saves the executed shadow model.
+> The following documentation commit records this handoff and gap diagnosis.
+> Candidate common stays at isolated `512353cab9eaa4f6744f867b0eb07c61ee7f2b0e`.
+> Preserve B scalar release WASM `47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97`
+> and E scalar release `766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577`.
+> Only WorldState.cpp/.hpp differ among 275 build source/header inputs. SIMD
+> remains OFF. Do not silently replace frozen builds or analysis dependencies.
+>
+> Index correctness: components-01 retains the old 265-owner relocation failure
+> in both paths; components-03 passes 118 cases, including 9 record slots used
+> 90 times. These are not 118 full GameSession Save integrations. Deep8 CPU4,
+> D0, 1800 frames passes all three world hashes, 48 state fields, framebuffer
+> and Replay. It runs manual native calls for three worlds sequentially in one
+> throttled renderer, not real rAF/RTC/FPS. The 466.467 s whole-run time cannot
+> be converted into game FPS. Long native calls 148.585/107.130 ms remain;
+> about 64% of continuous native time is continued replay without new correction.
+>
+> Frozen release B1/E1/E2/B2 all completed in order with CPU[1,4], headed GPU,
+> D0, 1800 identical tape frames and each-way relay39+/-5. Fifteen confirmed
+> checkpoints and input identities agree. P2 logical Hz=59.444/59.526/59.760/59.489;
+> post-native new-state max=62.790/98.075/56.610/61.400 ms. RAF timestamp maxima
+> are different: 54.585/85.035/48.560/54.195 ms. Baseline self-drift prevents a
+> stable speedup claim. Helper schema continuous-prediction-frontier-v1 uses
+> first F=max(next,replayEnd) crossings [180,1800), keeps every callback, closes
+> the end boundary and retains startup/tail. Capture is not completion; neither
+> logical Hz nor renderer submissions prove physical display FPS.
+>
+> E1 has actual completion gaps 98.075 and 84.660 ms with no correction/resim,
+> identified eligible RAF waits 73.710/62.920 ms and overlapping independent
+> relay send API brackets 57.783/63.237 ms. Original RAF 85.035 corresponds to
+> only 23.550 ms completion gap at other endpoints; retain all three intervals.
+> The new E burst response passes all 125 intents per side (body 110/111), P2
+> planned-input-to-new-state p95/max 38.500/49.840 ms, but max completion gap
+> remains 103.660 ms. That event is 5.926 s after burst end and 5.766 s after the
+> final burst send: no P2 correction/resim/wait, native 10.210 ms, eligible RAF
+> wait 93.080 ms and overlapping relay send brackets 47.692/44.955 ms. P1 has
+> separate callback gaps and one zero-resim wait; do not merge peer counters.
+> Get-Process query brackets do not overlap these E1/burst long spans. Coarse
+> CPU percentages and timeOrigin alignment cannot establish OS/relay causality.
+>
+> Overall smoothness is NOT accepted; the older active 1.4 s RAF stall remains
+> unresolved. RAF_ANOMALY=1 is a bounded 250 ms evidence trigger, not an acceptance
+> threshold. Eight ABBA peers have no episodes; E1 P1 coverage is incomplete by
+> one request. New burst P1 anomaly coverage is also incomplete. Full samples
+> and RAF diagnostics are separate evidence. Preserve all failed attempts.
+>
+> Information-budget shadow formally executed once; 12 model contracts and raw
+> identities pass. All-report first warnings 99 = 82 unnecessary-warning proxies
+> + 17 later-contaminated unknowns; body 97 = 81 + 16. None identifies a qualified
+> opportunity, but an independent all-point/no-warning-gap analysis finds one
+> missed model opportunity per burst peer. Both have enough history; positive
+> lead lower bounds only 5.045/2.040 ms. Do not claim zero global opportunities,
+> counterfactual FPS, or that history was insufficient. Relay125 is mostly
+> already braking. Keep this rule offline; do not retune the same raw and
+> overwrite evidence. Full evidence 11,695,729 B and compact summary are saved.
+>
+> Next work: distinguish producer, relay, browser queue and per-Pump native
+> acceptance using default-off O(1), bounded observations; retain actual route
+> validation for direct/relay and vary window/host/probe controls separately.
+> Node 24.13 threadCpuUsage was independently calibrated: waits report 0 CPU,
+> but 50 ms busy brackets report 62/63 ms CPU, so retain coarse raw values and
+> never derive exact wall-minus-CPU waiting. It is not yet in the relay probe.
+> RestoreChain VM-copy coalescing is a concrete design only, not implemented:
+> any AfterRestore or nonempty polymorphic AttackState causes full-chain old
+> path fallback. Continued replay costs still require separate optimization.
+> TH09 cp3 needs cross-frame journal/owning work; do not merely delete Saves.
+>
+> All browser/build/model commands are finished; root serializes new heavy work.
+> All environment operations remain nig-only. Local commits only, no push,
+> merge or deploy. Do not touch canonical repositories or the unrelated dirty
+> common prototype. Exact analyzed bytes retain documented EOF-only style
+> findings; do not silently rewrite frozen SHA inputs to normalize whitespace.
+> Final verification checks all 26 protected source/evidence/build identities
+> and the clean isolated common pin after the first three commits; all agree.
+> Earlier snapshots below are historical and keep their original boundaries.
+
+> **2026-10-10 scheduler and relay125 continuation (preceding snapshot):** Continue in
+> `D:/workspace/eagler/worktrees/th09-rollback-4x`, branch `experiment/rollback-4x`.
+> Read [rollback-chain-work.md](rollback-chain-work.md), the Chrome scheduler,
+> relay125 response/transport, and network-pacing contract evidence beside it.
+> Current code includes `fd64e7` bounded tracing and `3e3df073daf07787c1dcb71aadf015fffd3246b8`
+> for the two measured local-budget constants; helper SHA `e15457ff9a36e15a49cbdfb7fdb762bbc4da819087991234c95040517a03db58`.
+> Keep B scalar Wasm `47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97`
+> as the default candidate, with isolated common `512353cab9eaa4f6744f867b0eb07c61ee7f2b0e`.
+> SIMD remains OFF; no stable code speedup has been established by ABCA.
+> Scheduler-01 failed trace completion; short-02 failed audio sampling and local
+> trace capacity. Short-03 (360 frames, output-block sampling OFF but runtime
+> audio ON) passed both trace collection/clock/active coverage, zero overflow.
+> All three raw cases and failures are preserved. Stop this capture calibration:
+> the valid short window did not reproduce the old seconds-long active stall.
+> Relay125-01 is completed: D0, 1800 wall-clock-input frames, CPU[1,4], each
+> direction planned 125+/-5 ms, scalar release, no Chrome trace. Fifteen confirmed
+> hash checks pass. Continuous 180-to-1800 boundaries report 40.608/40.616 Hz,
+> new-state maxima 41.135/44.695 ms; P2 corrections 299/resim 1740 (endpoint deltas).
+> P2 legacy 83.735 ms RAF and 99.180 ms Present gaps are non-adjacent filter artifacts:
+> next/cursor rewound into frame 1799 after ten excluded 1800..1802 samples.
+> Preserve old summary; use fixed first-cross continuous windows and retain
+> startup, terminal crossing and tail. Captures is not simulation completion.
+> Formal intent cohorts are 161 each: P1 all captured/presented, P2 160/161.
+> P2 id40 was the held combination Z+Shift+Left for only 4.840 ms, then Z+Left;
+> Left DOWN was captured subsequently, but the intermediate full mask was not.
+> Do not delete it, call it zero latency, or add a mask-history queue without
+> checking the game's actual held/pressed/released contract.
+> Overall smoothness is NOT accepted: the earlier relay39 active 1.4 s RAF wait
+> remains unresolved while its independent relay continued forwarding.
+> Next work targets anomaly-triggered bounded capture, actual deeper recovery
+> cost versus TH07, and relay/direct startup/repair/network conditions. Actual
+> local host/host UDP direct was verified; public NAT/TURN remains uncovered.
+> All planned browser commands are finished; root serializes any new heavy work.
+> All environment operations remain nig-only. Local commits only, no push/deploy.
+> Do not touch canonical repos or the unrelated dirty common prototype. Earlier
+> snapshots below are historical and retain their original measurements.
+
+> **2026-10-10 transport and ordinary-frame continuation (preceding snapshot):** Continue
+> in `D:/workspace/eagler/worktrees/th09-rollback-4x`. Read
+> [rollback-chain-work.md](rollback-chain-work.md) before historical overrides.
+> Local TH09 commit `17077dd` combines an already-due Pump input send with the
+> immediately following once-only frontier capture, and flushes before Restore
+> or yielding. The new common pin is
+> `512353cab9eaa4f6744f867b0eb07c61ee7f2b0e`, isolated at
+> `D:/workspace/eagler/worktrees/th09-rollback-input-batch-common` on branch
+> `experiment/th09-input-batch`. Common channel and TH09 session/Adonis component
+> gates pass. A real 900-frame relay trace verifies P2 old-tail/fresh duplicate
+> sends 519 to 0 and P1 321 to 1, with all wire tapes and confirmed hashes equal.
+> The remaining P1 pair is consistent with the preserved due-repair guard.
+> Audio SIMD is default-off and confined to AudioDevice.cpp, saved in local
+> commit `6a486298a731d4aff8ec8d2b19df605a98abf48e`. Both WASI and actual
+> Emscripten gates pass all 84 bit-exact cases; the actual toolchain warm-mix
+> total was 8.45% slower. Combined deep-8 recovery and 7200-frame production
+> render equivalence pass. Do not substitute these gates for performance.
+> Frozen headed release A/B/C/A at CPU4 now reports P2 59.987 / 60.009 /
+> 58.253 / 59.921 Hz and maximum new-state gaps 24.365 / 30.770 / 31.405 /
+> 30.545 ms. A is unchanged P, B adds input batching, C also enables SIMD.
+> This establishes that the tested headed release can approach 60 Hz; it does
+> not establish a code speedup or resolve old rAF starvation. Preserve compiler
+> activity, overlapping window bounds, CIM startup observation, and all failures.
+> The 1800-frame B relay39 run passed state but FAILED the smoothness goal:
+> both active rAF requests waited about 1.4s while independent relay kept
+> receiving/scheduling/sending, with window schedule-to-send maxima about 55ms.
+> Burst response (500ms at +120ms on top of 39+/-5ms) ran about 58.425Hz,
+> new-state max91.840ms; preserve the warmup intent superseded after only 1.635ms.
+> Actual 900-frame headed direct passed: selected host/host UDP succeeded,
+> P2 59.981Hz and new-state max24.265ms. This is not public NAT/TURN coverage.
+> Headed/startup controls are now local commit
+> `83c447177b6da7f77429e35c97e2f35ec65f0245`; startup seven contracts pass.
+> Harness `a0ce03e2e79efaeab2f605c2e14f94415bce543cfdcb57d0e83eee4be4f34fef`
+> stayed byte-identical through ABCA, relay39, burst and direct. Next is one
+> bounded Chrome scheduler/compositor/GPU trace for active rAF starvation,
+> not a gameplay scheduling change. Root serializes all heavy work.
+> All frozen P/live baseline comparisons still use common `43add4d` at
+> `D:/workspace/eagler/worktrees/th09-rollback-transport-common`. Do not use the
+> unrelated dirty `th09-rollback-4x-common` prototype. Preserve every failed run.
+> RTC constructor waits occur even without a game (about 1.32s); live reached
+> about 4.7s before relay fallback. An active release rAF remained pending for
+> at least 15.6s while audio callbacks continued; compiler activity was present.
+> Neither is proven to be rollback CPU cost or a particular host service.
+> All environment work uses nig. Local commits only; no push or deployment.
+
+> **2026-10-10 responsiveness continuation override (newest):** Work remains in
+> `D:/workspace/eagler/worktrees/th09-rollback-4x`, branch `experiment/rollback-4x`.
+> Implementation commit `0365fb286d872f41e8bf692bbb5b09d8b94d4bf6` adds earlier
+> once-only D=0 capture, a shared recovery budget, reusable text-resample storage,
+> actual-input-gap pacing, and complete-VM first-write pages. Read
+> [rollback-responsive-work.md](rollback-responsive-work.md),
+> [rollback-responsive-evidence.json](rollback-responsive-evidence.json), and
+> [rollback-network-trace-plan.md](rollback-network-trace-plan.md) first.
+> The current experimental P release is frozen at
+> `th09_web/artifacts/rollback4x-responsive-vm-final-release`, WASM SHA-256
+> `de1760ac76f3aaa8cd49c9f267f37f85e86c70d6bf251679a5c93fefacca9b68`.
+> Deep-8 state/Replay and 7,200-frame release-render gates pass; **4x smoothness
+> and overall performance gains remain unaccepted/unconfirmed**. Actual compiler
+> contention and a same-binary page bias were observed. Activated M/M controls
+> reduce the old page asymmetry; activated M/P costs still show no aggregate win.
+> Do not discard unfavorable runs or blame all differences on the host.
+> New M/P packet traces retain 0.3-0.6 s startup stalls; their formal 180..1799
+> windows did not reproduce the older seconds-long stalls. No relay-side packet
+> trace exists. Missing input can originate from a slow peer as well as transport;
+> input-gap pacing is not proof that CPU-induced slowdown has been eliminated.
+> Next priority is live ordinary Draw/submit/audio and first-frame preparation,
+> while preserving exact game state, confirmed audio, D=0 and new-frame cadence.
+> All environment work must use **nig**. Shared common stays at canonical
+> `43add4dc9085c65468f7ab15428c00206cbe3834`; preserve the unrelated dirty common
+> prototype. No push/deployment was performed. All overrides below are historical.
+
+> **2026-10-10 experiment/rollback-4x override:** Current work is isolated in
+> `D:/workspace/eagler/worktrees/th09-rollback-4x`, based on authored `6ce1c46`.
+> Read [rollback-4x-performance.md](rollback-4x-performance.md) and
+> [rollback-4x-evidence.json](rollback-4x-evidence.json) first. The selected J
+> source and frozen release improve presentation continuity, but **4x stable
+> 60 Hz is not achieved** (about 31 Hz in release A/B/B/A). Shared common stays
+> at `43add4dc9085c65468f7ab15428c00206cbe3834`, read explicitly from the canonical
+> title's submodule. Use the named frozen artifacts, never stale default builds.
+> The user restricts environment work to **nig**. No public push or deployment
+> was performed. Older paths, pins and measurements below are historical.
+
 > **2026-10-02 experiment/adonis override:** This worktree is now
 > `D:/workspace/eagler/worktrees/adonis/th09`, branched from MP `5b9305c`.
 > Read [ADONIS-EXPERIMENT.md](ADONIS-EXPERIMENT.md) first for the new timing

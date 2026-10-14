@@ -94,13 +94,18 @@ struct Driver {
     std::vector<std::uint64_t> hashes;
     std::vector<unsigned> captureCount;
     unsigned published=0, waits=0, localImmediate=0;
-    explicit Driver(Link& link):session(link),hashes(800),captureCount(800){}
+    bool deferInputs=false;
+    explicit Driver(Link& link,bool defer=false):session(link),hashes(800),captureCount(800),deferInputs(defer){}
     void tick(unsigned side,std::uint64_t now,unsigned limit) {
-        CHECK(session.Pump(now,session.Frame()<limit));
-        if(!session.Ready())return;
+        const bool pumped=session.Pump(now,session.Frame()<limit,0,deferInputs);
+        if(!pumped){CHECK(session.FlushDeferredInputs(now));CHECK(pumped);}
+        if(!session.Ready()){CHECK(session.FlushDeferredInputs(now));return;}
         if(session.NeedsCapture()&&session.Frame()<limit){
-            auto f=session.Frame();CHECK(++captureCount[f]==1);CHECK(session.Capture(input(side,f),now));
+            auto f=session.Frame();
+            CHECK(session.Channel().LatestCapture()==INVALID_FRAME||session.Channel().LatestCapture()+1==f);
+            CHECK(++captureCount[f]==1);CHECK(session.Capture(input(side,f),now));
         }
+        CHECK(session.FlushDeferredInputs(now));
         auto rollback=session.RollbackFrame();
         if(rollback!=INVALID_FRAME){
             const auto end=session.Frame();CHECK(end-rollback<=RollbackSession::History);
@@ -120,15 +125,16 @@ struct Driver {
         const auto f=session.Frame();auto d=session.Prepare();if(!d.canAdvance)return false;
         CHECK(d.inputs[side]==input(side,f));++localImmediate;
         for(unsigned p=0;p<2;++p)if(d.predictedMask&(1u<<p)){
-            CHECK(!(d.inputs[p].buttons&(2|8)));CHECK(d.inputs[p].analogMode==AnalogMode::None);
+            CHECK(!(d.inputs[p].buttons&(2|8))&&!d.inputs[p].touchBomb);
+            CHECK(RollbackSession::ValidInput(d.inputs[p]));
         }
         checkpoints[f%RollbackSession::History]=state;state.step(d.inputs);hashes[f]=state.hash;
         CHECK(session.Complete(d));return true;
     }
 };
-void simulation(unsigned mode) {
+void simulation(unsigned mode,bool deferInputs=false) {
     Link a,b;a.peer=&b;b.peer=&a;a.mode=b.mode=mode;
-    Driver left(a),right(b);CHECK(left.session.Begin(config(0),0));CHECK(right.session.Begin(config(1),0));
+    Driver left(a,deferInputs),right(b,deferInputs);CHECK(left.session.Begin(config(0),0));CHECK(right.session.Begin(config(1),0));
     constexpr unsigned frames=600;std::uint64_t now=0;
     for(;now<50000;++now){
         a.now=b.now=now;
@@ -149,7 +155,7 @@ void simulation(unsigned mode) {
     if(mode==3)CHECK(left.session.Channel().RepairsSent()>0&&right.session.Channel().RepairsSent()>0);
     CHECK(left.session.Retire(now));CHECK(right.session.Retire(now));
     CHECK(!left.session.Ready()&&!right.session.Ready());
-    std::printf("mode=%u frames=%u corrections=%u/%u resim=%u/%u waits=%u/%u elapsed=%llu ms PASS\n",mode,frames,
+    std::printf("mode=%u deferInputs=%u frames=%u corrections=%u/%u resim=%u/%u waits=%u/%u elapsed=%llu ms PASS\n",mode,unsigned(deferInputs),frames,
         left.session.Corrections(),right.session.Corrections(),left.session.Resimulated(),right.session.Resimulated(),
         left.waits,right.waits,(unsigned long long)now);
 }
@@ -183,5 +189,166 @@ void contracts() {
     std::puts("ABI gate, zero-frame local input, once-only capture, input bounds PASS");
 }
 #ifndef TH09_SESSION_FIXTURE_ONLY
-int main(){contracts();for(unsigned mode=0;mode<5;++mode)simulation(mode);return 0;}
+struct PacingFixture {
+    Link a,b;
+    Driver left,right;
+    std::uint64_t now=0;
+    unsigned sequence=0,remoteFrame=0;
+    explicit PacingFixture(AdonisMode mode=AdonisMode::Rollback):left(a),right(b) {
+        a.peer=&b;b.peer=&a;
+        CHECK(left.session.Begin(config(0),0,0,mode));
+        CHECK(right.session.Begin(config(1),0,0,mode));
+        // A real handshake at time zero catches clock-origin sentinel bugs.
+        for(unsigned i=0;i<32&&(!left.session.Ready()||!right.session.Ready());++i){
+            CHECK(left.session.Pump(0));CHECK(right.session.Pump(0));
+            CHECK(left.session.IntervalScale()==left.session.Channel().IntervalScale());
+        }
+        CHECK(left.session.Ready()&&right.session.Ready());
+        CHECK(left.session.InputDelay()==0);
+        a.pending.clear();b.pending.clear();
+    }
+    void pump(std::uint64_t at,bool expectsInput=true) {
+        a.now=b.now=now=at;CHECK(left.session.Pump(now,expectsInput));
+    }
+    void capture() {
+        const auto f=left.session.Frame();CHECK(left.session.NeedsCapture());
+        CHECK(++left.captureCount[f]==1);CHECK(left.session.Capture(input(0,f),now));
+    }
+    void advance(unsigned count) {
+        for(unsigned i=0;i<count;++i){capture();CHECK(left.step(0));}
+    }
+    void actual(unsigned first,unsigned last) {
+        // Deliver a valid slice of the peer tape, permitting an earlier hole
+        // to remain missing while later actual inputs arrive through Link.
+        CHECK(first<=last&&last-first+1<=MAX_REDUNDANT_INPUTS);
+        InputPacket packet;packet.sessionId=config(1).sessionId;packet.sequence=++sequence;
+        packet.senderPlayer=1;packet.playerCount=2;packet.firstInputFrame=first;
+        packet.latestFrame=last;packet.inputCount=std::uint8_t(last-first+1);
+        packet.senderFrame=remoteFrame=std::max(remoteFrame,last+1);
+        for(unsigned i=0;i<packet.inputCount;++i)packet.inputs[i]=input(1,first+i);
+        Packet wire{now,{}};CHECK(EncodeInputPacket(packet,&wire.bytes));
+        a.pending.push_back(std::move(wire));
+    }
+    void restore() {
+        const auto f=left.session.RollbackFrame();CHECK(f!=INVALID_FRAME);
+        CHECK(left.session.Frame()-f<=RollbackSession::History);
+        left.state=left.checkpoints[f%RollbackSession::History];CHECK(left.session.Restored(f));
+    }
+};
+void input_batch_scopes() {
+    {
+        PacingFixture f;f.advance(8);f.actual(0,7);f.pump(20);
+        CHECK(f.left.session.RollbackFrame()==0);f.restore();
+        CHECK(f.left.session.Frame()==0&&!f.left.session.NeedsCapture());
+        const auto sent=f.a.sent;
+        f.a.now=f.b.now=f.now=60;
+        CHECK(f.left.session.Pump(60,true,0,true));
+        // An unfinished replay cannot postpone an ACK for a future capture,
+        // even if its caller supplies the opt-in hint on every callback.
+        CHECK(f.a.sent==sent+1&&f.left.session.Captures()==8);
+        CHECK(f.left.session.FlushDeferredInputs(60));CHECK(f.a.sent==sent+1);
+        CHECK(f.left.step(0)&&!f.left.session.NeedsCapture());
+    }
+    {
+        PacingFixture f;f.advance(1);f.actual(0,0);
+        f.a.now=f.b.now=f.now=1;const auto sent=f.a.sent;
+        CHECK(f.left.session.Pump(1,true,0,true));CHECK(f.a.sent==sent);
+        FrameInput invalid;invalid.analogMode=AnalogMode::DirectTouch;
+        invalid.x=std::numeric_limits<float>::infinity();
+        CHECK(!f.left.session.Capture(invalid,1));
+        CHECK(f.left.session.Failed()&&f.left.session.Captures()==1);
+        CHECK(f.left.session.FlushDeferredInputs(1));CHECK(f.a.sent==sent+1);
+        InputPacket old;const auto& wire=f.b.pending.back().bytes;
+        CHECK(DecodeInputPacket(wire.data(),wire.size(),&old));
+        CHECK(old.sequence==2&&old.ackFrame==0&&old.latestFrame==0);
+        CHECK(old.inputCount==1&&old.inputs[0]==input(0,0));
+        CHECK(f.left.session.Failed());
+    }
+    std::puts("Input send batch: partial replay and rejected capture flush PASS");
+}
+void network_pacing() {
+    {
+        PacingFixture f;f.advance(7);f.pump(0);
+        CHECK(f.left.session.IntervalScale()==1);
+        f.pump(25);const auto half=f.left.session.IntervalScale();CHECK(half>1&&half<2);
+        for(unsigned i=0;i<8;++i){f.pump(25);CHECK(f.left.session.IntervalScale()==half);}
+        f.pump(50);CHECK(f.left.session.IntervalScale()==2);
+        // Preserve the channel's existing ClockReversed failure contract.
+        f.a.now=f.b.now=49;CHECK(!f.left.session.Pump(49));CHECK(f.left.session.Failed());
+        CHECK(!f.left.session.Ready());
+        CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+        f.left.session.Clear();CHECK(f.left.session.IntervalScale()==1);
+        CHECK(f.left.session.Begin(config(0),0));CHECK(f.left.session.IntervalScale()==1);
+    }
+    {
+        // One slow callback can have a complete remote tape waiting in Link.
+        // Pending correction and an unfinished eight-frame replay are CPU
+        // work, not missing network information.
+        PacingFixture f;f.advance(8);f.actual(0,7);f.pump(1000);
+        CHECK(f.left.session.RollbackFrame()==0);
+        CHECK(f.left.session.ConfirmedThrough()==INVALID_FRAME);
+        CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+        f.restore();f.pump(1200);CHECK(f.left.session.Frame()==0);
+        CHECK(f.left.session.ConfirmedThrough()==INVALID_FRAME);
+        CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+    }
+    {
+        PacingFixture f;f.advance(4);f.pump(16);
+        CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+        f.advance(1);f.pump(32);const auto first=f.left.session.IntervalScale();
+        CHECK(first>1&&first<2);
+        f.advance(2);f.pump(48);CHECK(f.left.session.IntervalScale()>first);
+        CHECK(f.left.session.IntervalScale()<2);
+        f.pump(66);CHECK(f.left.session.IntervalScale()==2);
+        f.advance(1);f.capture();CHECK(f.left.session.Frame()==RollbackSession::History);
+        CHECK(!f.left.session.Prepare().canAdvance); // The ninth prediction stays forbidden.
+        f.pump(82);f.actual(1,7);f.pump(98);
+        CHECK(f.left.session.RollbackFrame()==1);
+        CHECK(f.left.session.ConfirmedThrough()==INVALID_FRAME);
+        CHECK(f.left.session.IntervalScale()==2); // Later packets did not fill frame zero.
+        f.restore();CHECK(f.left.session.Frame()==1);f.pump(114);
+        CHECK(f.left.session.IntervalScale()==2); // Rewinding next_ did not create room.
+        CHECK(f.left.step(0));f.actual(0,0);f.pump(130);
+        CHECK(f.left.session.RollbackFrame()==0);
+        CHECK(f.left.session.IntervalScale()>1&&f.left.session.IntervalScale()<2);
+        f.restore();CHECK(f.left.session.ConfirmedThrough()==INVALID_FRAME);
+        const auto recovering=f.left.session.IntervalScale();f.pump(130);
+        CHECK(f.left.session.IntervalScale()==recovering); // Repeated pumps cannot speed recovery.
+        f.pump(180);CHECK(f.left.session.IntervalScale()<recovering);
+        CHECK(f.left.session.IntervalScale()>1);CHECK(f.left.step(0));
+        f.pump(230);CHECK(f.left.session.IntervalScale()>1);CHECK(f.left.step(0));
+        f.pump(280);CHECK(f.left.session.Frame()<8);
+        CHECK(f.left.session.ConfirmedThrough()==INVALID_FRAME);
+        CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+        while(f.left.session.Frame()<8)CHECK(f.left.step(0));
+        State reference;
+        for(unsigned frame=0;frame<8;++frame){
+            std::array<FrameInput,MAX_PLAYERS> exact{input(0,frame),input(1,frame),{}};
+            reference.step(exact);CHECK(f.left.hashes[frame]==reference.hash);
+            CHECK(f.left.captureCount[frame]==1);
+        }
+        CHECK(f.left.captureCount[8]==1&&!f.left.session.NeedsCapture());
+        const auto next=f.left.session.Prepare();CHECK(next.canAdvance);
+        CHECK(next.inputs[0]==input(0,8));CHECK(f.left.session.InputDelay()==0);
+    }
+    {
+        PacingFixture f;f.advance(7);f.pump(50);CHECK(f.left.session.IntervalScale()==2);
+        f.pump(50,false);CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+        f.pump(1000,false);f.pump(1000);
+        CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+        f.pump(1010);CHECK(f.left.session.IntervalScale()>1&&f.left.session.IntervalScale()<2);
+    }
+    for(auto mode:{AdonisMode::Delay,AdonisMode::Hybrid}){
+        PacingFixture f(mode);
+        if(mode==AdonisMode::Hybrid)f.advance(7);
+        else{f.capture();CHECK(!f.left.session.Prepare().canAdvance);}
+        f.pump(1000);CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+    }
+    std::puts("Network headroom, input holes, partial replay, recovery, clock and mode pacing contracts PASS");
+}
+int main(){
+    contracts();network_pacing();input_batch_scopes();
+    for(bool deferInputs:{false,true})for(unsigned mode=0;mode<5;++mode)simulation(mode,deferInputs);
+    return 0;
+}
 #endif

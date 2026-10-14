@@ -1,0 +1,33 @@
+{
+  "schema": "th09-information-pacing-shadow-command-v1",
+  "kind": "formal-single-execution",
+  "startedAt": "2026-10-11T02:51:34.9220229Z",
+  "completedAt": "2026-10-11T02:51:35.7840942Z",
+  "nodeElapsedMs": 838,
+  "command": [
+    "node",
+    "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs"
+  ],
+  "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+  "nodeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+  "nodeFileVersion": "24.13.0",
+  "exitCode": 0,
+  "before": {
+    "planSha256": "3c242cc7974c9cd546a43bd6dd6c8aa70fbc0f8a8103d17e5b4bef27e3361139",
+    "analyzerSha256": "d0c0cb5eea57b89b138b3f53ce8d763789a1325bea680818543fc31fb99674e9"
+  },
+  "after": {
+    "planSha256": "3c242cc7974c9cd546a43bd6dd6c8aa70fbc0f8a8103d17e5b4bef27e3361139",
+    "analyzerSha256": "d0c0cb5eea57b89b138b3f53ce8d763789a1325bea680818543fc31fb99674e9"
+  },
+  "identityStable": true,
+  "evidenceExistedBefore": false,
+  "evidence": {
+    "path": "docs/multiplayer/rollback-information-pacing-shadow-evidence.json",
+    "bytes": 11695729,
+    "sha256": "e08302b1efce870057e8197eb8d17d10f66f20d133c3939fe3433356b54fda6c"
+  },
+  "outputLines": [
+    "{\"output\":\"D:\\\\workspace\\\\eagler\\\\worktrees\\\\th09-rollback-4x\\\\docs\\\\multiplayer\\\\rollback-information-pacing-shadow-evidence.json\",\"bytes\":11695729,\"sha256\":\"e08302b1efce870057e8197eb8d17d10f66f20d133c3939fe3433356b54fda6c\",\"analysisValid\":true,\"contractChecks\":12,\"cases\":[{\"id\":\"relay39_burst_response\",\"status\":\"analyzed\",\"peers\":[{\"side\":0,\"status\":\"analyzed\",\"summary\":{\"count\":36,\"byWarning\":{\"none\":0,\"predicted-bridgeable\":2,\"predicted-beyond-ramp\":0,\"overdue-unknown\":34},\"closureQualification\":{\"unclassified\":0,\"observed-fields-unflagged\":28,\"local-observation-contaminated\":8,\"right-censored-no-next-A\":0,\"clock-unavailable\":0},\"qualifiedGeometry\":{\"unknown\":0,\"unnecessary-warning-proxy\":28,\"model-bridgeable\":0,\"beyond-ramp-model\":0,\"interval-overlap-unknown\":0},\"usefulPrethresholdModelOpportunities\":0,\"unnecessaryWarningProxy\":28,\"originalThresholdLeadLowerMs\":{\"observed\":1,\"missing\":35,\"min\":-0.009999990463256836,\"p50\":-0.009999990463256836,\"p90\":-0.009999990463256836,\"p99\":-0.009999990463256836,\"max\":-0.009999990463256836},\"originalNetworkBrakeLeadLowerMs\":{\"observed\":1,\"missing\":35,\"min\":9.859999984502792,\"p50\":9.859999984502792,\"p90\":9.859999984502792,\"p99\":9.859999984502792,\"max\":9.859999984502792}}},{\"side\":1,\"status\":\"analyzed\",\"summary\":{\"count\":63,\"byWarning\":{\"none\":0,\"predicted-bridgeable\":0,\"predicted-beyond-ramp\":0,\"overdue-unknown\":63},\"closureQualification\":{\"unclassified\":0,\"observed-fields-unflagged\":54,\"local-observation-contaminated\":9,\"right-censored-no-next-A\":0,\"clock-unavailable\":0},\"qualifiedGeometry\":{\"unknown\":0,\"unnecessary-warning-proxy\":54,\"model-bridgeable\":0,\"beyond-ramp-model\":0,\"interval-overlap-unknown\":0},\"usefulPrethresholdModelOpportunities\":0,\"unnecessaryWarningProxy\":54,\"originalThresholdLeadLowerMs\":{\"observed\":3,\"missing\":60,\"min\":-0.010000020265579224,\"p50\":-0.009999990463256836,\"p90\":3.2349999845027924,\"p99\":3.2349999845027924,\"max\":3.2349999845027924},\"originalNetworkBrakeLeadLowerMs\":{\"observed\":1,\"missing\":62,\"min\":10.069999992847443,\"p50\":10.069999992847443,\"p90\":10.069999992847443,\"p99\":10.069999992847443,\"max\":10.069999992847443}}}]},{\"id\":\"relay125_steady\",\"status\":\"analyzed\",\"peers\":[{\"side\":0,\"status\":\"analyzed\",\"summary\":{\"count\":0,\"byWarning\":{\"none\":0,\"predicted-bridgeable\":0,\"predicted-beyond-ramp\":0,\"overdue-unknown\":0},\"closureQualification\":{\"unclassified\":0,\"observed-fields-unflagged\":0,\"local-observation-contaminated\":0,\"right-censored-no-next-A\":0,\"clock-unavailable\":0},\"qualifiedGeometry\":{\"unknown\":0,\"unnecessary-warning-proxy\":0,\"model-bridgeable\":0,\"beyond-ramp-model\":0,\"interval-overlap-unknown\":0},\"usefulPrethresholdModelOpportunities\":0,\"unnecessaryWarningProxy\":0,\"originalThresholdLeadLowerMs\":{\"observed\":0,\"missing\":0,\"min\":null,\"p50\":null,\"p90\":null,\"p99\":null,\"max\":null},\"originalNetworkBrakeLeadLowerMs\":{\"observed\":0,\"missing\":0,\"min\":null,\"p50\":null,\"p90\":null,\"p99\":null,\"max\":null}}},{\"side\":1,\"status\":\"analyzed\",\"summary\":{\"count\":0,\"byWarning\":{\"none\":0,\"predicted-bridgeable\":0,\"predicted-beyond-ramp\":0,\"overdue-unknown\":0},\"closureQualification\":{\"unclassified\":0,\"observed-fields-unflagged\":0,\"local-observation-contaminated\":0,\"right-censored-no-next-A\":0,\"clock-unavailable\":0},\"qualifiedGeometry\":{\"unknown\":0,\"unnecessary-warning-proxy\":0,\"model-bridgeable\":0,\"beyond-ramp-model\":0,\"interval-overlap-unknown\":0},\"usefulPrethresholdModelOpportunities\":0,\"unnecessaryWarningProxy\":0,\"originalThresholdLeadLowerMs\":{\"observed\":0,\"missing\":0,\"min\":null,\"p50\":null,\"p90\":null,\"p99\":null,\"max\":null},\"originalNetworkBrakeLeadLowerMs\":{\"observed\":0,\"missing\":0,\"min\":null,\"p50\":null,\"p90\":null,\"p99\":null,\"max\":null}}}]}]}"
+  ]
+}

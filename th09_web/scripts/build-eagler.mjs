@@ -8,14 +8,14 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const compiled = resolve(root, process.env.TH09_OUTPUT || 'artifacts/sdl-release');
 const variant = process.argv.includes('--multiplayer') ? 'multiplayer' : 'normal';
-const output = resolve(root, variant === 'multiplayer' ? 'build-eagler-multiplayer' : 'build-eagler');
+const output = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, process.env.TH09_PACKAGE_OUTPUT || (variant === 'multiplayer' ? 'build-eagler-multiplayer' : 'build-eagler'));
 const native = process.env.TH09_RUNTIME_ASSETS ? resolve(process.env.TH09_RUNTIME_ASSETS) : resolve(root, 'assets/sdl-native');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const inputs = [
   ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
   ['shell.mjs', resolve(root, 'sdl-runtime/managed.mjs')],
   ['managed.css', resolve(root, 'sdl-runtime/managed.css')],
-  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'motion-replay.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
+  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
   ['th09.mjs', resolve(compiled, 'th09.mjs')],
   ['th09.wasm', resolve(compiled, 'th09.wasm')],
   ['fonts/cp932.bin', resolve(native, 'cp932.bin')],

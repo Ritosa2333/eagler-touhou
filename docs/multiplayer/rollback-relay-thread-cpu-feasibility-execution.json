@@ -1,0 +1,22 @@
+{
+  "schema": "th09-relay-thread-cpu-feasibility-execution-v1",
+  "command": [
+    "node",
+    "th09_web/tests/multiplayer/relay-thread-cpu-feasibility.mjs"
+  ],
+  "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+  "commandId": "6JXn_UdCpCZfhNfBPS5q9YBG",
+  "elapsedMs": 712,
+  "exitCode": 0,
+  "status": "exited",
+  "stdout": "{\"path\":\"D:\\\\workspace\\\\eagler\\\\worktrees\\\\th09-rollback-4x\\\\docs\\\\multiplayer\\\\rollback-relay-thread-cpu-feasibility.json\",\"bytes\":5665,\"sha256\":\"7fbe18d927438cab93e2d876ea94e04035de294583821625943f2697a19e5e15\",\"checksPassed\":true,\"observations\":[{\"kind\":\"meter-pairs\",\"wallMs\":0.8345999999999982,\"cpuMs\":0,\"meanMsPerReadIncludingLoop\":0.00041729999999999914},{\"kind\":\"blocked-wait\",\"wallMs\":58.164699999999996,\"cpuMs\":0,\"meanMsPerReadIncludingLoop\":null},{\"kind\":\"busy-loop\",\"wallMs\":50.0774,\"cpuMs\":63,\"meanMsPerReadIncludingLoop\":null},{\"kind\":\"blocked-wait\",\"wallMs\":59.475899999999996,\"cpuMs\":0,\"meanMsPerReadIncludingLoop\":null},{\"kind\":\"busy-loop\",\"wallMs\":50.0214,\"cpuMs\":62,\"meanMsPerReadIncludingLoop\":null}]}\n",
+  "stderr": "",
+  "outputTruncated": false,
+  "interpretation": {
+    "checksPassedMeaning": "API available; finite non-regressing counters; source SHA unchanged. No game or relay performance acceptance.",
+    "observations": "Controlled waits consumed 58.1647 and 59.4759 ms wall with zero reported thread CPU. Controlled busy loops consumed 50.0774 and 50.0214 ms wall with reported CPU deltas 63 and 62 ms.",
+    "precision": "Busy-loop CPU deltas exceed their short wall brackets. Preserve these values; the current short-window readings cannot support exact CPU fractions, submillisecond ordering, or wall-minus-CPU waiting estimates.",
+    "meterCost": "One 2000-read loop took 0.8346 ms including loop, outer counter reads and clock observations. This is a finite feasibility observation, not a guaranteed per-send overhead.",
+    "next": "A future opt-in bounded relay probe may retain raw wall and thread-CPU brackets for coarse long-stall classification after a matched observer control. No relay or frozen harness instrumentation was changed."
+  }
+}

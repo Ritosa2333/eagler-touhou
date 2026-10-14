@@ -11,14 +11,19 @@ const sdk=process.env.WASI_SDK_BIN;
 if(!sdk)throw Error('Set WASI_SDK_BIN to the workspace WASI SDK bin directory');
 const compiler=resolve(sdk,process.platform==='win32'?'clang++.exe':'clang++');
 if(!existsSync(compiler))throw Error('WASI compiler not found');
-const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:true});
+const runLabel=process.env.RUN_LABEL;
+if(runLabel&&!/^[A-Za-z0-9_-]+$/.test(runLabel))throw Error('Invalid component run label');
+const out=resolve(root,'artifacts/multiplayer-tests',runLabel||'');
+if(runLabel&&existsSync(out))throw Error('Retained component run already exists: '+runLabel);
+mkdirSync(out,{recursive:true});
 const flags=['-std=c++17','-O2','-g','-ffp-contract=off','-fno-exceptions',
   '-I'+resolve(common,'include'),'-I'+resolve(root,'cpp/multiplayer'),
 ];
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headers=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headers(resolve(dir,e.name)):
   /\.(hpp|h|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headerInputs=[...headers(resolve(root,'cpp/multiplayer')),...headers(resolve(root,'cpp/game')),...headers(resolve(common,'include'))];
+const headerInputs=[...headers(resolve(root,'cpp/multiplayer')),...headers(resolve(root,'cpp/game')),...headers(resolve(common,'include')),
+  resolve(root,'../portable/input/TouchController.hpp')];
 const headerHashes=Object.fromEntries(headerInputs.map(p=>[p,sha(readFileSync(p))]));
 function compile(args){
   const result=spawnSync(compiler,args,{encoding:'utf8',windowsHide:true});
@@ -26,20 +31,41 @@ function compile(args){
   if(result.status!==0)throw Error(result.stdout+result.stderr);
 }
 const suites={
+  'image-resample':[resolve(root,'cpp/game/ImageResample.cpp')],
+  'graphics-projection':[resolve(root,'cpp/game/GraphicsMath.cpp')],
+  'sprite-subpixel':[resolve(root,'cpp/game/AnmRenderer.cpp')],
+  'audio-pitch':[],
   'frame-schedule':[],
   'spectator-schedule':[],
+  'spectator-playback':[],
+  'round-bootstrap':[resolve(root,'cpp/game/MatchRules.cpp'),resolve(root,'cpp/game/Rng.cpp')],
+  'touch-controller':[],
   session:[resolve(root,'cpp/multiplayer/RollbackSession.cpp'),
     ...['NetplayCore','NetplayProtocol','NetplaySession','SessionChannel'].map(n=>resolve(common,'src/netplay',n+'.cpp'))],
   adonis:[resolve(root,'cpp/multiplayer/RollbackSession.cpp'),
     ...['NetplayCore','NetplayProtocol','NetplaySession','SessionChannel'].map(n=>resolve(common,'src/netplay',n+'.cpp'))],
+  'mobile-prediction':[resolve(root,'cpp/multiplayer/RollbackSession.cpp'),
+    ...['NetplayCore','NetplayProtocol','NetplaySession','SessionChannel'].map(n=>resolve(common,'src/netplay',n+'.cpp'))],
   'dynamic-state':[resolve(root,'cpp/multiplayer/DynamicState.cpp')],
+  'enemy-capture':[resolve(root,'cpp/multiplayer/WorldState.cpp'),resolve(root,'cpp/multiplayer/DynamicState.cpp'),
+    resolve(common,'src/netplay/RollbackJournal.cpp')],
+  'shot-capture':[resolve(root,'cpp/multiplayer/WorldState.cpp'),resolve(root,'cpp/multiplayer/DynamicState.cpp'),
+    ...['PlayerShots','AttackAreas','Timer','GameMath'].map(n=>resolve(root,'cpp/game',n+'.cpp')),
+    resolve(common,'src/netplay/RollbackJournal.cpp')],
   'bullet-snapshot':[
     ...['BulletManager','BulletExtras','BulletPattern','Rng','Timer','GameMath'].map(n=>resolve(root,'cpp/game',n+'.cpp')),
     resolve(common,'src/netplay/RollbackJournal.cpp')],
 };
+const requested=process.argv.slice(2);
+for(const name of requested)if(!Object.hasOwn(suites,name))throw Error('Unknown component suite: '+name);
 for(const [suite,implementation] of Object.entries(suites)){
+  if(requested.length&&!requested.includes(suite))continue;
   const wasm=resolve(out,suite+'.wasm');
   const sources=[resolve(root,'tests/multiplayer',suite+'.cpp'),...implementation];
+  // Included fixtures are not compiled twice; retain their transitive C++ input.
+  const sourceInputs=[...sources];
+  if(['adonis','mobile-prediction'].includes(suite))sourceInputs.push(resolve(root,'tests/multiplayer/session.cpp'));
+  if(suite==='touch-controller')sourceInputs.push(resolve(root,'../portable/input/touch-bomb-check.cpp'));
   // RTTI is a test oracle for dynamic-type preservation only. Production
   // implementations and all attack constructors are checked without it below.
   compile([...flags,...(suite==='session'?['-fno-rtti']:[]),'-Wl,-z,stack-size=1048576',...sources,'-o',wasm]);
@@ -50,8 +76,10 @@ for(const [suite,implementation] of Object.entries(suites)){
   writeFileSync(resolve(out,suite+'-report.json'),JSON.stringify({passed:true,
     scope:'TH09 rollback component gate; not whole-game, browser, phone or performance acceptance',
     wasmSha256:sha(bytes),compiler:spawnSync(compiler,['--version'],{encoding:'utf8',windowsHide:true}).stdout.trim(),
-    flags,headers:headerHashes,sources:Object.fromEntries(sources.map(p=>[p,sha(readFileSync(p))]))},null,2)+'\n');
+    flags,headers:headerHashes,sources:Object.fromEntries(sourceInputs.map(p=>[p,sha(readFileSync(p))]))},null,2)+'\n');
 }
-compile([...flags,'-fno-rtti','-fsyntax-only',resolve(root,'cpp/multiplayer/DynamicState.cpp'),
-  ...['CharacterAttacks','FieldAttacks','MystiaAttacks','AttackQueue'].map(n=>resolve(root,'cpp/game',n+'.cpp'))]);
-console.log('Production attack constructors and checkpoint adapters compile without RTTI: PASS');
+if(!requested.length||requested.includes('dynamic-state')){
+  compile([...flags,'-fno-rtti','-fsyntax-only',resolve(root,'cpp/multiplayer/DynamicState.cpp'),
+    ...['CharacterAttacks','FieldAttacks','MystiaAttacks','AttackQueue'].map(n=>resolve(root,'cpp/game',n+'.cpp'))]);
+  console.log('Production attack constructors and checkpoint adapters compile without RTTI: PASS');
+}

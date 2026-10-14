@@ -17,7 +17,9 @@ public:
     const Netplay::AdonisStartup& Startup() const {return startup_;}
     void Clear();
     bool Verify(std::uint32_t frame,std::uint32_t hash);
-    bool Pump(std::uint64_t now, bool expectsInput = true, std::uint64_t measurementNowUs = 0);
+    bool Pump(std::uint64_t now, bool expectsInput = true, std::uint64_t measurementNowUs = 0,
+              bool deferOrdinaryInput = false);
+    bool FlushDeferredInputs(std::uint64_t now);
     bool NeedsCapture() const;
     bool Capture(const Netplay::FrameInput&, std::uint64_t now);
     Netplay::FrameDecision Prepare() const;
@@ -36,7 +38,11 @@ public:
     void FinishExactBoundary(){if(InputsReconciledBeforeNext())replayEnd_=next_;}
     bool CanRetire() const;
     bool Retire(std::uint64_t now);
-    double IntervalScale() const { return channel_.IntervalScale(); }
+    double IntervalScale() const;
+    double NetworkIntervalScale() const { return networkIntervalScale_; }
+    std::uint32_t PredictionFrontier() const { return next_ > replayEnd_ ? next_ : replayEnd_; }
+    std::uint32_t RemoteInputFrontier() const;
+    std::uint32_t MissingRemoteInputs() const;
     double PacedElapsedMs(double elapsedMs);
     Netplay::AdonisMode Mode() const { return mode_; }
     unsigned InputDelay() const { return inputDelay_; }
@@ -49,6 +55,7 @@ private:
     bool Configure(const Netplay::SessionConfig&,std::uint64_t now,std::uint8_t delay,
                    Netplay::AdonisMode mode,unsigned predictionReserve=0);
     bool PumpStartup(std::uint64_t now, std::uint64_t measurementNowUs);
+    void UpdateNetworkPacing(std::uint64_t now, bool expectsInput);
     Netplay::AdonisStartup startup_;
     Netplay::SessionConfig startupSession_{};
     std::uint64_t startupNowUs_=0;
@@ -65,6 +72,8 @@ private:
     Netplay::AdonisMode mode_ = Netplay::AdonisMode::Rollback;
     std::uint8_t inputDelay_ = 0;
     double phaseDebtMs_ = 0;
+    double networkIntervalScale_ = 1;
+    std::uint64_t networkPaceAt_ = 0;
     const char* error_ = "";
     bool Fail(const char* error) { failed_ = true; error_ = error; return false; }
     bool IsOpen() const override { return transport_.IsOpen(); }

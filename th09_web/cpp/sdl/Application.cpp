@@ -3,7 +3,9 @@
 #include "Assets.hpp"
 #include "AudioDevice.hpp"
 #include "FontDevice.hpp"
+#include "PerformanceDiagnostics.hpp"
 #include "../game/GamePresentation.hpp"
+#include "../game/BulletDraw.hpp"
 #include "../game/TitleMenus.hpp"
 #include "../game/GameSession.hpp"
 #include "../game/MusicCatalog.hpp"
@@ -14,6 +16,7 @@
 #include "../multiplayer/RollbackSession.hpp"
 #include "../multiplayer/FrameSchedule.hpp"
 #include "../multiplayer/SpectatorSchedule.hpp"
+#include "../multiplayer/SpectatorPlayback.hpp"
 #include <dirent.h>
 #include <ctime>
 #include <algorithm>
@@ -30,6 +33,11 @@ EM_JS(void, th09_reset_browser_keyboard, (), {Module["resetBrowserKeyboard"]?.()
 Netplay::PeerTransport& th09_shared_transport();
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
+EM_JS(void, th09_network_spectator_begin, (std::uint32_t frame,const void* bytes,std::uint32_t size), {
+    Module["onNetworkSpectatorBegin"]?.(frame,HEAPU8.slice(bytes,bytes+size));
+});
+EM_JS(void, th09_network_spectator_end, (std::uint32_t frame,int winner), { Module["onNetworkSpectatorEnd"]?.(frame,winner); });
+EM_JS(void, th09_network_spectator_round, (std::uint32_t frame,std::uint32_t round), { Module["onNetworkSpectatorRound"]?.(frame,round); });
 EM_JS(void, th09_network_request, (), { Module["onNetworkRequest"]?.(); });
 EM_JS(void, th09_network_send, (unsigned frame,unsigned keys,int moving,float x,float y), { Module["onNetworkInput"]?.(frame,keys,moving,x,y); });
 EM_JS(void, th09_network_spectator_frame,
@@ -62,10 +70,22 @@ bool rollback_active=false;
 Netplay::AdonisMode adonis_mode=Netplay::AdonisMode::Rollback;
 u32 adonis_snapshots=0,adonis_waits=0;
 u32 rollback_published=0,rollback_catchup=0;
+// ABI-bound start initializer: scalar RNG and menu edges, no owning state,
+// resource addresses, pointers, or containers. Retry uses the same room config.
+struct SpectatorBeginState { Rng random; InputFrame menu; };
+static_assert(std::is_trivially_copyable_v<SpectatorBeginState>);
+static_assert(offsetof(SpectatorBeginState,menu)==sizeof(Rng));
+constexpr u32 spectator_begin_bytes=sizeof(Rng)+sizeof(InputFrame); // exclude tail padding
+SpectatorBeginState spectator_begin_buffer;
+bool spectator_after_restart=false;
 struct RollbackFrame {
     u32 number=Netplay::INVALID_FRAME,hash=0;
     std::unique_ptr<multiplayer::WorldState> state;
     bool captured=false;
+    bool hasBegin=false,hasEnd=false;
+    i32 winner=-1;
+    i32 round=-1;
+    SpectatorBeginState begin;
     struct Sound {i32 kind,id;float value;};
     std::vector<Sound> sounds;
 };
@@ -79,6 +99,7 @@ bool probe_full_sprite_geometry=false;
 struct SpectatorFrame { u32 frame=0;u16 keys[2]{};NetworkInput::Motion motion[2]; };
 std::deque<SpectatorFrame> spectator_frames;
 bool spectator_mode=false;
+multiplayer::SpectatorPlayback spectator_playback;
 u32 spectator_next=0,spectator_simulated=0;
 u32 spectator_last_ticks=0,spectator_max_ticks=0,spectator_yields=0,spectator_max_work_us=0;
 struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServices {
@@ -95,6 +116,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     ReplayFile pending_replay;u32 replay_stage=0;bool replay_pending=false,demo_pending=false;u32 ending_image=0,ending_width=640,ending_height=480;
     bool paused=false,over=false,complete=false;u32 frames=0;std::string error;Vec2 shake[3]{};
     bool checkpoint(multiplayer::WorldState& out){
+        TH09_PERF_SCOPE(checkpoint_cost,Checkpoint);
         presentation.renderer.flush();graphics.backend.flush();
         if(!out.Save(*session))return false;
         out.Fields(device,left_device,right_device,paused,over,complete,frames,shake,pending_action,requested_transition,mode,difficulty,game_flags,continues,capture_enabled);
@@ -109,7 +131,11 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
     bool queue_sound(i32 kind,i32 id,float value=0){if(!recording_frame)return false;recording_frame->sounds.push_back({kind,id,value});return true;}
     void pause_audio(bool on){if(!queue_sound(4,on))audio.pause_music(on);}
-    bool prepare_platform(){if(platform_prepared)return true;if(!graphics.initialize()){error=graphics.error;return false;}if(!assets.open("/th09.dat")){error=assets.error;return false;}platform_prepared=true;return true;}
+    bool prepare_platform(){
+        if(platform_prepared)return true;
+        {TH09_PERF_SCOPE(graphics_cost,GraphicsInit);if(!graphics.initialize()){error=graphics.error;return false;}}
+        if(!assets.open("/th09.dat")){error=assets.error;return false;}platform_prepared=true;return true;
+    }
     bool prepare_loading(){
         if(!prepare_platform()||!title_background("th09logo.jpg"))return false;
         startup_background=background_image;
@@ -126,16 +152,23 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         for(i32 i=0;i<3;++i){if(!loading_resources->start(AnimationFile::menu,loading_vms[i],i)){error="Startup loading animation failed";return false;}loading_vms[i].pos={500,440,0};}
         presentation.begin_frame();title_begin_draw();for(auto& vm:loading_vms)presentation.renderer.draw_2d(vm);presentation.finish_frame();graphics.present();return true;
     }
-    bool initialize_platform(){if(!prepare_platform())return false;if(!fonts.initialize()){error=fonts.error;return false;}fonts.prewarm_game(assets);if(!audio.initialize(assets)){error=audio.error;return false;}SDL_CreateDirectory("/save/replay");std::vector<u8> bytes;if(read_file("/save/th09.cfg",bytes))saved_configuration.load(bytes.data(),u32(bytes.size()));saved_configuration.apply(settings);title_configuration();if(!write_file("/save/th09.cfg",saved_configuration.data().data(),204)){error="Unable to save configuration";return false;}if(read_file("/save/score.dat",bytes))records.load(bytes.data(),u32(bytes.size()));sync_records();records.application_clock=records.game_clock=u32(SDL_GetTicks());loading_vms={};loading_resources.reset();return true;}
+    bool initialize_platform(){
+        TH09_PERF_SCOPE(platform_cost,PlatformInit);
+        if(!prepare_platform())return false;
+        {TH09_PERF_SCOPE(font_cost,FontInit);if(!fonts.initialize()){error=fonts.error;return false;}}
+        {TH09_PERF_SCOPE(warm_cost,FontWarm);fonts.prewarm_game(assets);}
+        if(!audio.initialize(assets)){error=audio.error;return false;}SDL_CreateDirectory("/save/replay");std::vector<u8> bytes;if(read_file("/save/th09.cfg",bytes))saved_configuration.load(bytes.data(),u32(bytes.size()));saved_configuration.apply(settings);title_configuration();if(!write_file("/save/th09.cfg",saved_configuration.data().data(),204)){error="Unable to save configuration";return false;}if(read_file("/save/score.dat",bytes))records.load(bytes.data(),u32(bytes.size()));sync_records();records.application_clock=records.game_clock=u32(SDL_GetTicks());loading_vms={};loading_resources.reset();return true;
+    }
     void update_clocks(){const u32 now=u32(SDL_GetTicks());if(clock_running)records.update_application_clock(now);else records.application_clock=now;if(clock_running&&!in_title&&!paused&&!over&&!complete&&session&&session->phase==SessionPhase::match)records.update_game_clock(now);else records.game_clock=now;}
     void clock_pause(bool on){update_clocks();clock_running=!on;}
-    bool open_title(){if(!initialize_platform())return false;state.random={0x7531,0,0};title=std::make_unique<TitleMenus>(resources,*this,state.random,settings);if(!title->initialize()||!resources.load(AnimationFile::ascii,"ascii.anm")||!presentation.ascii.initialize()){error="Title initialization "+title->error+resources.error;return false;}in_title=true;return true;}
+    bool open_title(){TH09_PERF_SCOPE(title_cost,TitleInit);if(!initialize_platform())return false;state.random={0x7531,0,0};title=std::make_unique<TitleMenus>(resources,*this,state.random,settings);if(!title->initialize()||!resources.load(AnimationFile::ascii,"ascii.anm")||!presentation.ascii.initialize()){error="Title initialization "+title->error+resources.error;return false;}in_title=true;return true;}
     bool open(i32 left,i32 right,i32 mode,i32 diff){
         if(!initialize_platform())return false;
         state.random={0x7531,0,0};configuration.selection.characters[0]=left;configuration.selection.characters[1]=right;configuration.selection.mode=GameMode(mode);configuration.selection.difficulty=diff;configuration.selection.lives=2;configuration.selection.selector=left;
         configuration.controllers[1]=1;return start();
     }
     bool start(){
+        TH09_PERF_SCOPE(start_cost,StartMatch);
         presentation.renderer.flush();presentation.world=nullptr;world=nullptr;session.reset();executor.invalid=false;
         session=std::make_unique<GameSession>(state,resources,executor,presentation,*this,records);
         bool ok=false;if(replay_pending){replay_pending=false;ok=session->play(pending_replay,replay_stage,demo_pending);}
@@ -146,9 +179,9 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(!ok){error=session->error;return false;}world=session->world.get();presentation.world=world;
         if(!presentation.ascii.initialize()){error="ASCII initialization failed";return false;}paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};requested_transition=-1;return true;
     }
-    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
-    void sound(i32 id,i32 pan)override{if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
-    void positioned_sound(i32 id,float x)override{if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
+    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
+    void sound(i32 id,i32 pan)override{if(spectator_mode&&spectator_playback.seeking)return;if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
+    void positioned_sound(i32 id,float x)override{if(spectator_mode&&spectator_playback.seeking)return;if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
     void music(i32 n)override{if(queue_sound(2,n))return;if(!audio.music(n))error=audio.error;else if(const auto* entry=music_track(n))if(!session||!session->is_replay)records.music_unlocked[entry->unlock]=1;}
     void fade_music()override{if(!queue_sound(3,0))audio.fade_music();}
     void encountered(i32 c)override{if(!queue_sound(5,c)&&(!session||!session->is_replay))records.count_encounter(c);}
@@ -163,8 +196,10 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void menu_sprite(AnmVm& a)override{presentation.renderer.draw_no_rotation(a);}
     i32 pending_action=-1;
     bool tick_title(u16 left,u16 right,u16 keys,bool render=true){
+        TH09_PERF_SCOPE(title_update_cost,Update);
         update_clocks();device.update(keys);left_device.update(left);right_device.update(right);if(!title||!error.empty())return false;
         if(!launch_pending)title->update(left_device,right_device,device);if(network.active&&title->state.screen==TitleScreen::versus_type){release_network();title->state={};th09_network_result();}save_configuration();if(!title->error.empty()){error=title->error;return false;}
+        TH09_PERF_STOP(title_update_cost);
         if(launch_pending){launch_pending=false;in_title=false;if(!start())return false;}
         else{if(render)draw();audio.update();audio.pump();++frames;}return error.empty();
     }
@@ -226,11 +261,15 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void ending_sprite(AnmVm& vm)override{presentation.renderer.draw_2d(vm);}
     void ending_cover(u32 color)override{presentation.renderer.rectangle(0,0,640,480,color,color);}
     bool tick(u16 keys){return tick_inputs(keys,0,keys);}
-    bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true){
+    bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true,bool afterRestart=false){
+        TH09_PERF_SCOPE(tick_cost,TickInputs);
 #if TH09_DEVELOPMENT_HARNESS
         const double cost_begin=emscripten_get_now();
 #endif
-        if(in_title)return tick_title(left,right,keys,render);if(!session||!world||!error.empty())return false;update_clocks();device.update(keys);mode=world->rules.mode;difficulty=world->configuration.selection.difficulty;game_flags=world->battle->state.flags;continues=session->continues;
+        if(in_title)return tick_title(left,right,keys,render);if(!session||!world||!error.empty())return false;
+        TH09_PERF_SCOPE(update_cost,Update);
+        if(!afterRestart){
+        update_clocks();device.update(keys);mode=world->rules.mode;difficulty=world->configuration.selection.difficulty;game_flags=world->battle->state.flags;continues=session->continues;
         PopupFrame popup;popup.paused=paused;popup.game_over=over;popup.game_flags=game_flags;for(i32 s=0;s<2;++s)popup.field_flags[s]=world->battle->fields[s].script.flags;presentation.ascii.update(popup);
         if(paused)menus.update_pause(device);else if(over)menus.update_game_over(device);else if(complete)menus.update_match_end(device);else if(!session->is_demo()&&(device.pressed&8)&&session->phase==SessionPhase::match){paused=world->paused=true;sound(34,0);pause_audio(true);}
         if(pending_action>=0){
@@ -238,14 +277,20 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
             // the driver's read-only lifetime barrier. Never rewind freed owners.
             if(recording_frame&&recording_frame->captured){error="Speculative menu resource action";return false;}
             const auto action=InGameAction(pending_action);pending_action=-1;
-            if(action==InGameAction::retry||action==InGameAction::replay_retry||action==InGameAction::restart_extra){presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
-            else if(action==InGameAction::continue_match){audio.music(-1);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;pause_audio(false);}
+            if(action==InGameAction::retry||action==InGameAction::replay_retry||action==InGameAction::restart_extra){
+                if(network.active&&network.side==0){const SpectatorBeginState begin{state.random,device};
+                    if(recording_frame){recording_frame->begin=begin;recording_frame->hasBegin=true;}
+                    else th09_network_spectator_begin(network.frame()-1,&begin,spectator_begin_bytes);}
+                presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
+            else if(action==InGameAction::continue_match){pause_audio(true);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;pause_audio(false);}
             else {session->finish();return return_title(action==InGameAction::save_score);}
+        }
         }
         if(!paused&&!over&&!complete){presentation.renderer.flush();if(!session->update(left,right,keys)){error=session->error;return false;}world=session->world.get();presentation.world=world;}
         over=session->phase==SessionPhase::game_over;complete=session->phase==SessionPhase::match_complete;
         if(session->phase==SessionPhase::finished)return return_title(!session->is_replay);
         requested_transition=world->transition_pending?100+i32(world->transition):-1;
+        TH09_PERF_STOP(update_cost);
 #if TH09_DEVELOPMENT_HARNESS
         const double cost_draw=emscripten_get_now();probe_tick_cost[0]=cost_draw-cost_begin;
 #endif
@@ -260,9 +305,16 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 #if TH09_DEVELOPMENT_HARNESS
         probe_tick_cost[1]=emscripten_get_now()-cost_draw;
 #endif
-        if(!recording_frame){audio.update();audio.pump();}session->warm_resources();++frames;return error.empty();
+        if(!recording_frame){audio.update();audio.pump();}
+        {TH09_PERF_SCOPE(warm_cost,WarmResources);session->warm_resources();}
+        ++frames;return error.empty();
     }
-    void draw(bool present=true){presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();if(present)graphics.present();}
+    void draw(bool present=true){
+        TH09_PERF_SCOPE(draw_cost,SemanticDraw);
+        presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+        TH09_PERF_STOP(draw_cost);
+        if(present){TH09_PERF_SCOPE(present_cost,Present);graphics.present();}
+    }
     i32 requested_transition=-1;
     bool import_file(u32 kind,u32 size){
         if(!in_title||size>import_bytes.size())return false;
@@ -290,8 +342,9 @@ i32 joy_button(i32 n){if(n<0||n>1||!controllers[n])return 32;for(i32 i=0;i<i32(s
 u16 joy_keys(i32 side){if(!probe||side<0||side>1)return 0;const u32 device=probe->settings.devices[side];if(device>1||!controllers[device])return 0;auto* p=controllers[device];u16 keys=0;for(i32 n=0;n<9;++n){const i32 button=probe->settings.bindings[side].gamepad[n];if(button>=0&&button<i32(std::size(gamepad_slots))&&SDL_GetGamepadButton(p,gamepad_slots[button]))keys|=u16(1u<<n);}const i32 x=SDL_GetGamepadAxis(p,SDL_GAMEPAD_AXIS_LEFTX),y=SDL_GetGamepadAxis(p,SDL_GAMEPAD_AXIS_LEFTY);if(x<-19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_LEFT))keys|=64;if(x>19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))keys|=128;if(y<-19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_UP))keys|=16;if(y>19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_DOWN))keys|=32;return keys;}
 touhou::input::TouchState touch_state(){
     touhou::input::TouchState s;if(!probe)return s;if(probe->in_title||probe->paused||probe->over||probe->complete||!probe->world||!probe->session)return s;
-    auto& run=*probe->session;auto& w=*probe->world;if(run.is_replay){s.context=3;return s;}if(run.phase==SessionPhase::ending){s.context=2;return s;}if(w.dialogue->id>=0){s.context=2;return s;}
-    i32 side=network.active?network.side:w.configuration.controllers[0]?1:0;if(w.configuration.controllers[side])return s;auto& p=*w.battle->fields[side].player;s.context=1;s.instance=1+side+2*w.configuration.selection.stage+32*w.rules.progress.round;s.ready=(p.control.player_state==0||p.control.player_state==3)&&p.motion.health>0;
+    auto& run=*probe->session;auto& w=*probe->world;if(run.is_replay){s.context=3;return s;}if(run.phase==SessionPhase::ending){s.context=2;return s;}
+    s.context=w.dialogue->id>=0?2:1;
+    i32 side=network.active?network.side:w.configuration.controllers[0]?1:0;if(w.configuration.controllers[side]){s.context=0;return s;}auto& p=*w.battle->fields[side].player;s.instance=1+side+2*w.configuration.selection.stage+32*w.rules.progress.round;s.ready=(p.control.player_state==0||p.control.player_state==3)&&p.motion.health>0;
     s.x=p.motion.position.x;s.y=p.motion.position.y;s.fast=p.resource.movement.normal;s.slow=p.resource.movement.focused;const auto& limit=w.battle->state.limits;s.min_x=limit.origin.x;s.max_x=limit.origin.x+limit.extent.x;s.min_y=limit.origin.y;s.max_y=limit.origin.y+limit.extent.y;return s;
 }
 void clear_inputs(){th09_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;gestures.reset();if(probe&&probe->session)probe->session->clear_motion();std::fill(std::begin(pulse_ticks),std::end(pulse_ticks),0);}
@@ -328,10 +381,11 @@ void sample_keys(u16 (&out)[3]){
 extern "C" {
 #define TH09_EXPORT(n) __attribute__((export_name(n)))
 TH09_EXPORT("th09_game_open") u32 th09_game_open(u32 seed){
+    TH09_PERF_SCOPE(open_cost,GameOpen);
     network.end();spectator_mode=false;spectator_frames.clear();spectator_next=spectator_simulated=0;clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
     if(!probe||!probe->platform_prepared||probe->in_title)probe=std::make_unique<Application>();if(!probe->open_title()){failure=probe->error;return 0;}probe->state.random={u16(seed),0,0};return 1;
 }
-TH09_EXPORT("th09_prepare_loading") u32 th09_prepare_loading(){if(running)return 0;probe=std::make_unique<Application>();if(!probe->prepare_loading()){failure=probe->error;return 0;}return 1;}
+TH09_EXPORT("th09_prepare_loading") u32 th09_prepare_loading(){TH09_PERF_SCOPE(loading_cost,PrepareLoading);if(running)return 0;probe=std::make_unique<Application>();if(!probe->prepare_loading()){failure=probe->error;return 0;}return 1;}
 TH09_EXPORT("th09_game_metrics") const u32* th09_game_metrics(){static u32 data[10]{};if(probe){auto& s=probe->graphics.backend.stats;data[0]=s.batches;data[1]=s.uploadBytes;data[2]=s.readBytes;data[3]=s.vertexUploadBytes;data[4]=s.programCompiles;data[5]=s.bufferReplacements;data[6]=s.bufferSubUpdates;data[7]=s.frames;data[8]=s.resamples;data[9]=s.presentations;}return data;}
 TH09_EXPORT("th09_network_begin") u32 th09_network_begin(u32 seed,i32 side,u32 unlocked,u32 difficulty,u32 focus){
     if(!probe||!probe->in_title||side<0||side>1||difficulty>3||network.active)return 0;probe->local_focus=probe->settings.auto_focus;probe->local_versus=probe->settings.versus==4?1:probe->settings.versus;clear_inputs();probe->state.random={u16(seed),0,0};probe->settings.versus=4;probe->settings.difficulty=u8(difficulty);probe->settings.game_flags=0;probe->settings.characters[0]=0;probe->settings.characters[1]=1;
@@ -353,6 +407,12 @@ TH09_EXPORT("th09_adonis_info") const u32* th09_adonis_info(){
     data[2]=adonis_snapshots;data[3]=rollback.Channel().AdonisStatistics().Adjustments();
     data[4]=u32(rollback.Channel().AdonisStatistics().TotalDelayUs());data[5]=adonis_waits;return data;
 }
+// Read-only diagnostics: actual input shortage is distinct from pending replay.
+TH09_EXPORT("th09_network_pacing_info") const u32* th09_network_pacing_info(){
+    static u32 data[6];data[0]=1;data[1]=rollback.MissingRemoteInputs();
+    data[2]=u32(rollback.NetworkIntervalScale()*1000+.5);data[3]=u32(rollback.IntervalScale()*1000+.5);
+    data[4]=rollback.PredictionFrontier();data[5]=rollback.RemoteInputFrontier();return data;
+}
 TH09_EXPORT("th09_rollback_enable") u32 th09_rollback_enable(u32 seed,u32 side,u32 idLow,u32 idHigh,u32 abi,u32 inputDelay){
     if(rollback_active||!probe||!network.active||side>1||inputDelay>9)return 0;
     for(auto& frame:rollback_frames){frame.number=Netplay::INVALID_FRAME;frame.captured=false;frame.sounds.clear();}
@@ -365,12 +425,15 @@ TH09_EXPORT("th09_rollback_begin") u32 th09_rollback_begin(u32 seed,u32 side,u32
     if(!probe->tick_title(0,0,0,false)||probe->in_title)return 0;
     return th09_rollback_enable(seed,side,idLow,idHigh,abi,inputDelay);
 }
-TH09_EXPORT("th09_rollback_pump") u32 th09_rollback_pump(){
+u32 pump_rollback_transport(bool deferOrdinaryInput){
+    TH09_PERF_SCOPE(network_cost,NetworkPump);
     if(!rollback_active)return 0;
     const double now=emscripten_get_now();
-    if(!rollback.Pump(std::uint64_t(now),network.active,std::uint64_t(now*1000))){probe->error=rollback.Error();return 0;}
+    if(!rollback.Pump(std::uint64_t(now),network.active,std::uint64_t(now*1000),deferOrdinaryInput)){probe->error=rollback.Error();return 0;}
     return rollback.Ready()?2:1;
 }
+// The independent timer remains a complete receive/send/repair pump.
+TH09_EXPORT("th09_rollback_pump") u32 th09_rollback_pump(){return pump_rollback_transport(false);}
 TH09_EXPORT("th09_measured_begin") u32 th09_measured_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,
                                                           u32 idLow,u32 idHigh,u32 abi,u32 requestedDelay,u32 reserve){
     if(rollback_active || (requestedDelay!=Netplay::AdonisStartup::Automatic&&requestedDelay>9) ||
@@ -403,11 +466,11 @@ TH09_EXPORT("th09_rollback_info") const u32* th09_rollback_info(){
 }
 TH09_EXPORT("th09_spectator_begin") u32 th09_spectator_begin(u32 seed,u32 difficulty,u32 left,u32 right){
     if(!th09_network_room_begin(seed,0,0xffff,difficulty,0,left,right))return 0;
-    spectator_last_ticks=spectator_max_ticks=spectator_yields=spectator_max_work_us=0;
+    spectator_playback={};spectator_last_ticks=spectator_max_ticks=spectator_yields=spectator_max_work_us=0;
     if(!probe->tick_title(0,0,0,false)||probe->in_title)return 0;network.end();spectator_frames.clear();spectator_next=spectator_simulated=0;spectator_mode=true;return 1;
 }
 TH09_EXPORT("th09_spectator_feed") u32 th09_spectator_feed(u32 frame,u32 left,u32 right,u32 leftMode,float leftX,float leftY,u32 rightMode,float rightX,float rightY){
-    if(!spectator_mode||frame!=spectator_next||left>65535||right>65535||spectator_frames.size()>=8192)return 0;
+    if(!spectator_mode||frame!=spectator_next||left>65535||right>65535||spectator_frames.size()>=multiplayer::SpectatorPlayback::Capacity)return 0;
     const auto motion=[](u32 mode,float x,float y,NetworkInput::Motion& out){
         const bool target=mode==NetworkInput::MotionTarget||mode==NetworkInput::MotionTargetUnlimited;
         const float limit=target?4096.f:16.f;
@@ -419,6 +482,37 @@ TH09_EXPORT("th09_spectator_feed") u32 th09_spectator_feed(u32 frame,u32 left,u3
     spectator_frames.push_back(packet);++spectator_next;return 1;
 }
 TH09_EXPORT("th09_spectator_frame") u32 th09_spectator_frame(){return spectator_simulated;}
+TH09_EXPORT("th09_spectator_control") u32 th09_spectator_control(u32 action,u32 frame){
+    if(!spectator_mode||!spectator_playback.Control(action,frame,spectator_simulated,spectator_next))return 0;
+    if(probe)probe->audio.suspend(spectator_playback.paused);
+    return 1;
+}
+TH09_EXPORT("th09_spectator_finish") u32 th09_spectator_finish(u32 frame){
+    if(!spectator_mode||frame!=spectator_next)return 0;spectator_playback.ended=true;return 1;
+}
+TH09_EXPORT("th09_spectator_begin_buffer") void* th09_spectator_begin_buffer(){return &spectator_begin_buffer;}
+TH09_EXPORT("th09_confirmed_frame_hash") const u32* th09_confirmed_frame_hash(u32 frame){
+    static u32 data[2];const auto& record=rollback_frames[frame%rollback_frames.size()];
+    data[0]=record.number==frame?frame:Netplay::INVALID_FRAME;data[1]=record.number==frame?record.hash:0;return data;
+}
+TH09_EXPORT("th09_spectator_restart") u32 th09_spectator_restart(u32 frame,u32 size){
+    if(!spectator_mode||!probe||!probe->session||size!=spectator_begin_bytes||frame<spectator_next)return 0;
+    probe->presentation.renderer.flush();probe->state.random=spectator_begin_buffer.random;
+    if(!probe->session->retry()){probe->error=probe->session->error;return 0;}
+    probe->world=probe->session->world.get();probe->presentation.world=probe->world;
+    probe->device=spectator_begin_buffer.menu;probe->paused=probe->over=probe->complete=false;
+    probe->pending_action=-1;probe->requested_transition=-1;probe->menus.pause={};probe->menus.game_over={};probe->menus.match_end={};
+    spectator_frames.clear();spectator_next=spectator_simulated=frame;spectator_playback={};
+    spectator_playback.roundStart=spectator_playback.target=frame;spectator_after_restart=true;
+    probe->audio.suspend(false);return 1;
+}
+TH09_EXPORT("th09_spectator_playback_info") const u32* th09_spectator_playback_info(){
+    static u32 data[11];data[0]=1;data[1]=spectator_simulated;data[2]=spectator_next;
+    data[3]=spectator_playback.Limit(spectator_next);data[4]=spectator_playback.target;
+    data[5]=spectator_playback.paused;data[6]=spectator_playback.seeking;
+    data[7]=spectator_playback.following;data[8]=spectator_playback.roundStart;data[9]=spectator_playback.round;
+    data[10]=spectator_playback.ended;return data;
+}
 TH09_EXPORT("th09_spectator_info") const u32* th09_spectator_info(){
     static u32 data[8];data[0]=1;data[1]=spectator_next;data[2]=spectator_simulated;data[3]=u32(spectator_frames.size());
     data[4]=spectator_last_ticks;data[5]=spectator_max_ticks;data[6]=spectator_yields;data[7]=spectator_max_work_us;return data;
@@ -438,27 +532,54 @@ TH09_EXPORT("th09_game_close") void th09_game_close(){rollback_active=false;roll
 TH09_EXPORT("th09_music_enabled") void th09_music_enabled(u32 enabled){if(probe){probe->host_music_enabled=enabled!=0;probe->title_configuration();}}
 TH09_EXPORT("th09_game_restart") u32 th09_game_restart(){if(!probe||!probe->in_title)return 0;clear_inputs();probe->requested_transition=-1;probe->settings.game_flags=0;return probe->return_title(false);}
 u32 rollback_tick(u32 render){
-    if(!th09_rollback_pump())return 0;
-    if(!rollback.Ready())return 2;
+    TH09_PERF_SCOPE(rollback_cost,RollbackTick);
+    // Recovery and transport work consume the same callback budget as replay.
+    const double start=emscripten_get_now();
+    bool deferOrdinaryInput=true;
+#if TH09_DEVELOPMENT_HARNESS
+    deferOrdinaryInput=rollback.Frame()<rollback_test_limit;
+#endif
+    const auto pumped=pump_rollback_transport(deferOrdinaryInput);
+    const auto flush=[](){
+        if(!rollback.FlushDeferredInputs(std::uint64_t(emscripten_get_now()))){probe->error=rollback.Error();return false;}
+        return true;
+    };
+    if(!pumped){flush();return 0;}
+    if(!rollback.Ready()){if(!flush())return 0;return 2;}
+    const auto capture=[](){
+#if TH09_DEVELOPMENT_HARNESS
+        if(rollback.Frame()>=rollback_test_limit)return true;
+#endif
+        if(!rollback.NeedsCapture())return true;
+        TH09_PERF_SCOPE(input_cost,InputCapture);
+        u16 keys[3]{};sample_keys(keys);Netplay::FrameInput in(keys[2]);
+        if(probe->session){const auto& m=probe->session->motion_input[network.side];if(m.enabled){in.analogMode=m.target?Netplay::AnalogMode::DirectTouch:Netplay::AnalogMode::Joystick;in.x=m.x;in.y=m.y;in.unlimited=m.unlimited;in.touchUsed=true;}}
+        if(!rollback.Capture(in,std::uint64_t(emscripten_get_now()))){probe->error=rollback.Error();return false;}
+        return true;
+    };
+    // Sample the visible frontier once, before recovery can span callbacks.
+    // The peer receives this input while we reconcile; historical ticks reuse
+    // retained packets and never consume physical input or gesture edges.
+    // Complete the old send obligation even when capture is rejected. All
+    // deferral ends here, before Restore, Prepare, or a callback budget exit.
+    const bool captured=capture();
+    const bool flushed=flush();
+    if(!captured||!flushed)return 0;
     auto correction=rollback.RollbackFrame();
     if(correction!=Netplay::INVALID_FRAME){
+        TH09_PERF_SCOPE(restore_cost,Restore);
         rollback_catchup=std::max(rollback_catchup,rollback.Frame());
         probe->presentation.renderer.flush();probe->graphics.backend.flush();
-        for(u32 f=rollback.Frame();f-->correction;){auto& saved=rollback_frames[f%rollback_frames.size()];if(saved.number!=f||!saved.captured||!saved.state||!saved.state->Restore()){probe->error="Rollback world restore failed";return 0;}saved.sounds.clear();}
+        for(u32 f=rollback.Frame();f-->correction;){auto& saved=rollback_frames[f%rollback_frames.size()];if(saved.number!=f||!saved.captured||!saved.state||!saved.state->Restore()){probe->error="Rollback world restore failed";return 0;}TH09_PERF_COUNT(RestoredCheckpoints,1);saved.sounds.clear();}
         if(!rollback.Restored(correction)){probe->error=rollback.Error();return 0;}
     }
     // One callback starts at most eight recovery ticks. Its caller also has a
     // wall-time budget; physical input is never sampled on these replay ticks.
-    const double start=emscripten_get_now();
     for(unsigned count=0;count<9;++count){
 #if TH09_DEVELOPMENT_HARNESS
         if(rollback.Frame()>=rollback_test_limit)break;
 #endif
-        if(rollback.NeedsCapture()){
-            u16 keys[3]{};sample_keys(keys);Netplay::FrameInput in(keys[2]);
-            if(probe->session){const auto& m=probe->session->motion_input[network.side];if(m.enabled){in.analogMode=m.target?Netplay::AnalogMode::DirectTouch:Netplay::AnalogMode::Joystick;in.x=m.x;in.y=m.y;in.unlimited=m.unlimited;in.touchUsed=true;}}
-            if(!rollback.Capture(in,std::uint64_t(emscripten_get_now()))){probe->error=rollback.Error();return 0;}
-        }
+        if(!capture())return 0;
         auto decision=rollback.Prepare();if(!decision.canAdvance){++adonis_waits;return 2;}
         const u32 f=rollback.Frame();const auto confirmed=rollback.ConfirmedThrough();
         const bool reconciled=rollback.InputsReconciledBeforeNext();
@@ -479,14 +600,21 @@ u32 rollback_tick(u32 render){
         record.captured=speculative;
         if(speculative){if(!record.state)record.state=std::make_unique<multiplayer::WorldState>();if(!probe->checkpoint(*record.state)){probe->error="Rollback world capture failed";return 0;}probe->graphics.checkpoint=record.state.get();}
         // Retain arena capacity across exact and speculative frames.
-        recording_frame=&record;
+        record.hasBegin=record.hasEnd=false;record.round=-1;recording_frame=&record;
         if(probe->session&&!probe->in_title)for(unsigned side=0;side<2;++side){const auto& in=decision.inputs[side];probe->session->motion_input[side]={in.analogMode!=Netplay::AnalogMode::None,in.x,in.y,in.unlimited,in.analogMode==Netplay::AnalogMode::DirectTouch};}
         // Recovery does not consume the wall-clock tick's forward step. Replay
         // through the old frontier, then capture/simulate its new input once.
         const bool final=f>=rollback_catchup;
+        TH09_PERF_COUNT(ForwardTicks,final?1:0);TH09_PERF_COUNT(ReplayTicks,final?0:1);TH09_PERF_COUNT(SpeculativeTicks,speculative?1:0);
+        const bool wasComplete=probe->complete;
+        const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
         const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,render&&final);
+        if(!record.hasBegin&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0)
+            record.round=probe->world->rules.progress.round;
+        record.hasEnd=!wasComplete&&probe->complete;
+        if(record.hasEnd)record.winner=probe->world->scene->winner;
         recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
-        if(record.captured&&!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}
+        if(record.captured){if(!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}TH09_PERF_COUNT(SealedCheckpoints,1);}
         if(!ok||!rollback.Complete(decision)){if(ok)probe->error=rollback.Error();return 0;}
         if(!network.active)rollback.FinishExactBoundary();
         record.hash=th09_network_hash();
@@ -494,15 +622,24 @@ u32 rollback_tick(u32 render){
         if(emscripten_get_now()-start>=8)break;
     }
     // Publish side effects and spectator input only from reconciled history.
+    {
+    TH09_PERF_SCOPE(publish_cost,ConfirmedPublish);
     const auto through=rollback.ConfirmedThrough();
     while(through!=Netplay::INVALID_FRAME&&rollback_published<=through){
         auto& record=rollback_frames[rollback_published%rollback_frames.size()];
         if(record.number!=rollback_published){probe->error="Confirmed output history expired";return 0;}
-        for(const auto& s:record.sounds)switch(s.kind){case 0:probe->audio.effects.enqueue(s.id,i32(s.value));break;case 1:probe->audio.effects.positioned(s.id,s.value);break;case 2:probe->music(s.id);break;case 3:probe->audio.fade_music();break;case 4:probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
+        TH09_PERF_COUNT(PublishedCommands,record.sounds.size());
+        for(const auto& s:record.sounds)switch(s.kind){case 0:TH09_PERF_COUNT(PublishedSfx,1);probe->audio.effects.enqueue(s.id,i32(s.value));break;case 1:TH09_PERF_COUNT(PublishedSfx,1);probe->audio.effects.positioned(s.id,s.value);break;case 2:TH09_PERF_COUNT(PublishedMusic,1);probe->music(s.id);break;case 3:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.fade_music();break;case 4:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
         record.sounds.clear();
-        if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return 0;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y);}
+        if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return 0;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
+            if(record.hasBegin)th09_network_spectator_begin(rollback_published,&record.begin,spectator_begin_bytes);
+            th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y);
+            if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round));
+            if(record.hasEnd)th09_network_spectator_end(rollback_published+1,record.winner);}
         if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return 0;}
         ++rollback_published;
+        TH09_PERF_COUNT(PublishedFrames,1);
+    }
     }
     probe->audio.update();probe->audio.pump();
     return rollback.Frame()<=rollback_catchup?2:1;
@@ -510,30 +647,43 @@ u32 rollback_tick(u32 render){
 u32 spectator_tick(u32 render,u32 dueTicks=1){
         spectator_last_ticks=0;
         if(spectator_frames.empty())return 2;
-        const auto count=multiplayer::SpectatorSchedule::Plan(spectator_frames.size(),dueTicks);
+        const auto rate=spectator_playback.Rate(spectator_simulated,spectator_next);
+        const auto available=spectator_playback.Available(spectator_simulated,spectator_next);
+        const auto count=std::min(available,std::min(Netplay::FrameBudget::MaxCatchupTicks,std::min(dueTicks,4u)*rate));
+        if(!count)return 2;
         const double began=emscripten_get_now();u32 ok=1;
         for(u32 n=0;n<count&&ok&&!spectator_frames.empty();++n){
             if(!multiplayer::SpectatorSchedule::CanStart(n,emscripten_get_now()-began)){++spectator_yields;break;}
             const auto packet=spectator_frames.front();spectator_frames.pop_front();
             if(packet.frame!=spectator_simulated)return 0;
             const bool was_title=probe->in_title;
+            const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
+            const auto priorSessionFrames=probe->session?probe->session->frames:0;
             if(!was_title&&probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={packet.motion[s].enabled,packet.motion[s].x,packet.motion[s].y,packet.motion[s].unlimited,packet.motion[s].target};
             const bool prior=rollback_active;rollback_active=true;
-            ok=probe->tick_inputs(packet.keys[0],packet.keys[1],u16(packet.keys[0]|packet.keys[1]),render!=0&&multiplayer::SpectatorSchedule::Render(n,count));
+            ok=probe->tick_inputs(packet.keys[0],packet.keys[1],u16(packet.keys[0]|packet.keys[1]),render!=0&&multiplayer::SpectatorSchedule::Render(n,count),spectator_after_restart);
+            spectator_after_restart=false;
             rollback_active=prior;++spectator_simulated;++spectator_last_ticks;
+            if(probe->world&&probe->session&&(probe->world->rules.progress.round_frames<priorRoundFrames||probe->session->frames<priorSessionFrames))
+                spectator_playback.Boundary(spectator_simulated,u32(probe->world->rules.progress.round));
             if(!was_title&&probe->in_title){spectator_mode=false;spectator_frames.clear();break;}
         }
         spectator_max_ticks=std::max(spectator_max_ticks,spectator_last_ticks);
         spectator_max_work_us=std::max(spectator_max_work_us,u32((emscripten_get_now()-began)*1000));
         return ok;
 }
-TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){if(!probe)return 0;u16 keys[3]{};
+TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(game_cost,GameTick);if(!probe)return 0;u16 keys[3]{};
     if(spectator_mode)return spectator_tick(render);
     if(rollback_active&&network.active)return rollback_tick(render);
     if(network.active){if(network.wants_input()){sample_keys(keys);const u32 frame=network.sending_frame();const auto m=probe->session&&!probe->in_title?probe->session->motion_input[network.side]:GameSession::MotionSample{};const u8 mode=!m.enabled?NetworkInput::MotionNone:m.target?(m.unlimited?NetworkInput::MotionTargetUnlimited:NetworkInput::MotionTarget):NetworkInput::MotionVelocity;if(!network.submit(network.side,frame,keys[2],mode,m.x,m.y))return 0;th09_network_send(frame,keys[2],i32(mode),m.x,m.y);}if(network.failed){probe->error="Network input order invalid";return 0;}NetworkInput::Motion motion[2];const u32 frame=network.frame();const bool publisher=network.side==0;if(!network.take(keys,motion))return 2;if(probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={motion[s].enabled,motion[s].x,motion[s].y,motion[s].unlimited,motion[s].target};
+        const bool wasComplete=probe->complete;
+        const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
         const u32 ok=probe->tick_inputs(keys[0],keys[1],keys[2],render!=0);
         if(ok&&publisher){const auto mode=[](const NetworkInput::Motion& m){return !m.enabled?0:m.target?(m.unlimited?3:2):1;};
-            th09_network_spectator_frame(frame,keys[0],keys[1],mode(motion[0]),motion[0].x,motion[0].y,mode(motion[1]),motion[1].x,motion[1].y);}
+            th09_network_spectator_frame(frame,keys[0],keys[1],mode(motion[0]),motion[0].x,motion[0].y,mode(motion[1]),motion[1].x,motion[1].y);
+            if(probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0)
+                th09_network_spectator_round(frame+1,u32(probe->world->rules.progress.round));
+            if(!wasComplete&&probe->complete)th09_network_spectator_end(frame+1,probe->world->scene->winner);}
         return ok;}
     sample_keys(keys);u32 ok=1;for(u32 extra=0;extra<3&&ok;++extra){ok=probe->tick_inputs(keys[0],keys[1],keys[2],false);if(!ok||probe->in_title||probe->paused||probe->over||probe->complete||!probe->session->is_replay||probe->session->phase!=SessionPhase::match||probe->session->playback_schedule()!=6)break;}if(ok&&render)probe->draw();return ok;
 }
@@ -542,7 +692,9 @@ TH09_EXPORT("th09_loop_stop") void th09_loop_stop(){running=false;++loop_epoch;i
 TH09_EXPORT("th09_loop_start") void th09_loop_start(){
     if(!probe||running)return;running=true;suspended=false;previous_frame=-1;cadence.reset();probe->clock_pause(false);probe->audio.suspend(false);
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
-        if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
+        if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
+        TH09_PERF_SCOPE(callback_cost,FrameCallback);
+        const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
         if(suspended||!probe){cadence.reset();return EM_TRUE;}
         const bool active=rollback_active&&network.active;
         // A pending due tick ignores new wall-time credit. Keep phase advice
@@ -556,7 +708,11 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
             ok=spectator_tick(1,ticks);
             if(ok==2)cadence.blocked(false);else cadence.complete();
         }else for(u32 n=0;n<ticks&&ok;++n){
-            ok=th09_game_tick(n+1==ticks);if(ok==2){cadence.blocked(rollback_active&&network.active);break;}
+            // A netplay tick can exhaust the callback budget by itself. Draw
+            // its current result before that exit instead of waiting for a
+            // later due tick that may never run. Historical resimulation is
+            // still filtered by rollback_tick's catch-up frontier.
+            ok=th09_game_tick(rollback_active||n+1==ticks);if(ok==2){cadence.blocked(rollback_active&&network.active);break;}
             cadence.complete();
             if(rollback_active&&emscripten_get_now()-begin>=10){
                 // Drop overdue work only when due ticks were left unfinished.
@@ -565,7 +721,7 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
                 cadence.exhausted(n+1,ticks);break;
             }
         }
-        probe->audio.pump();th09_browser_frame(ok,emscripten_get_now()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running?EM_TRUE:EM_FALSE;
+        probe->audio.pump();TH09_PERF_STOP(callback_cost);th09_browser_frame(ok,emscripten_get_now()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running?EM_TRUE:EM_FALSE;
     },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 TH09_EXPORT("th09_game_draw") void th09_game_draw(){if(probe)probe->draw();}
@@ -593,11 +749,15 @@ TH09_EXPORT("th09_probe_save_replay") u32 th09_probe_save_replay(){return probe&
 TH09_EXPORT("th09_probe_world") const i32* th09_probe_world(){return probe?audit::snapshot(probe->world,probe->state):nullptr;}
 TH09_EXPORT("th09_probe_replay") u32 th09_probe_replay(u32 size,u32 stage){if(!probe||size>probe->import_bytes.size())return 0;ReplayFile f;if(!f.decode(probe->import_bytes.data(),size))return 0;probe->title_play_replay(f,stage,"");probe->launch_pending=false;probe->in_title=false;return probe->start();}
 TH09_EXPORT("th09_probe_return_title") u32 th09_probe_return_title(u32 score){if(!probe)return 0;if(probe->session)probe->session->finish();return probe->return_title(score!=0);}
-TH09_EXPORT("th09_probe_open") u32 th09_probe_open(i32 a,i32 b,i32 mode,i32 difficulty){probe=std::make_unique<Application>();if(!probe->open(a,b,mode,difficulty)){failure=probe->error;return 0;}return 1;}
+TH09_EXPORT("th09_probe_open") u32 th09_probe_open(i32 a,i32 b,i32 mode,i32 difficulty){TH09_PERF_SCOPE(open_cost,GameOpen);probe=std::make_unique<Application>();if(!probe->open(a,b,mode,difficulty)){failure=probe->error;return 0;}return 1;}
 #endif
 #if TH09_DEVELOPMENT_HARNESS
 TH09_EXPORT("th09_probe_frame_limit") void th09_probe_frame_limit(u32 frame){rollback_test_limit=frame;}
 TH09_EXPORT("th09_probe_tick_cost") const double* th09_probe_tick_cost(){return probe_tick_cost;}
+TH09_EXPORT("th09_probe_performance_enable") void th09_probe_performance_enable(u32 on){performance::enabled=on!=0;}
+TH09_EXPORT("th09_probe_performance_reset") void th09_probe_performance_reset(){performance::reset();}
+TH09_EXPORT("th09_probe_performance") const double* th09_probe_performance(){return performance::snapshot();}
+TH09_EXPORT("th09_probe_performance_schema") const char* th09_probe_performance_schema(){return performance::schema;}
 // Exercise the actual menu implementation against its lifetime preflight.
 // Animation assets are real; actions are observed rather than executed here.
 TH09_EXPORT("th09_probe_menu_barrier") const u32* th09_probe_menu_barrier(){
@@ -728,6 +888,68 @@ TH09_EXPORT("th09_probe_bullet_boundary") u32 th09_probe_bullet_boundary(){
         for(unsigned side=0;side<2;++side)good=!std::memcmp(bytes[side].data(),battle.fields[side].bullets->pool.data(),bytes[side].size())&&good;
         for(unsigned side=0;side<2;++side)good=!std::memcmp(visualBytes[side].data(),battle.fields[side].bullet_visuals->instances.data(),visualBytes[side].size())&&good;
         good=hash()==initial&&good;
+    }
+    // Exercise the real Draw first-write barrier across VM identities 63/64,
+    // another page, and the final sentinel VM. Reuse ONE physical record both
+    // after Restore and after confirmation-like retirement without Restore.
+    struct DrawBarrier final:BulletDrawServices {
+        u32 calls=0;
+        void begin_field()override{}
+        void upper_effects()override{}
+        void draw_animation(AnmVm& vm)override{
+            ++calls;vm.matrix3.m[3][3]=float(91+calls);vm.reserved29a[9]^=0xa5;
+        }
+    };
+    multiplayer::WorldState pages;
+    constexpr std::size_t pageBytes=64*sizeof(AnmVm);
+    for(u32 pass=0;pass<3;++pass){
+        auto& field=battle.fields[0];auto& pool=field.bullets->pool;auto& visual=*field.bullet_visuals;
+        field.bullets->reset_pool();field.bullets->draw_heads.fill(-1);
+        for(auto& laser:field.lasers->pool)laser.active=false;
+        const bool tail=pass!=1;const u32 tailSlot=pass==2?BulletManager::update_count:25;
+        if(!visual.prepare(pool[12],12,0,0,8))return 0;
+        pool[12].state=4;pool[12].position={float(13+pass),17,0};pool[12].draw_next=tail?i32(tailSlot):-1;
+        if(tail){
+            if(!visual.prepare(pool[tailSlot],tailSlot,0,0,pass==2?0:8))return 0;
+            pool[tailSlot].state=pass==2?5:4;pool[tailSlot].position={19,float(23+pass),0};pool[tailSlot].draw_next=-1;
+        }
+        field.bullets->draw_heads[0]=12;
+        // Distinct bytes on EVERY reuse expose stale bitmap entries and stale
+        // page contents even in VMs that this pass never writes.
+        for(auto& f:battle.fields)for(auto& slot:f.bullet_visuals->instances)
+            for(auto& vm:slot)vm.reserved29a[0]=u8(0x31+pass);
+        const auto baseline=hash();
+        for(unsigned side=0;side<2;++side){
+            auto& b=battle.fields[side].bullets->pool;std::memcpy(bytes[side].data(),b.data(),bytes[side].size());
+            auto& v=battle.fields[side].bullet_visuals->instances;std::memcpy(visualBytes[side].data(),v.data(),visualBytes[side].size());
+        }
+        if(!pages.Save(session))return 0;
+        const auto beforeBytes=pages.FirstWriteBytes(),beforeBlocks=pages.FirstWriteBlocks(),beforeTotal=pages.Bytes();
+        DrawBarrier draw;draw.geometry=battle.state.geometry[0];
+        BulletDraw::draw(*field.bullets,visual,*field.lasers,draw);
+        pool[12].state=5; // Already captured as a live Bullet by Save.
+        BulletDraw::draw(*field.bullets,visual,*field.lasers,draw);
+        const std::size_t drawn=2+std::size_t(tail);
+        good=draw.calls==2*(1+u32(tail))&&good;
+        good=pages.FirstWriteBlocks()==beforeBlocks+drawn&&good;
+        good=pages.FirstWriteBytes()==beforeBytes+drawn*sizeof(AnmVm)&&good;
+        // The full-slot write must keep the two Draw-captured VM originals.
+        if(!visual.change_type(pool[12],12,1,0)||!visual.change_type(pool[12],12,1,0))return 0;
+        const std::size_t captured=drawn+3;
+        good=pages.FirstWriteBlocks()==beforeBlocks+captured&&good;
+        good=pages.FirstWriteBytes()==beforeBytes+captured*sizeof(AnmVm)&&good;
+        good=pages.Bytes()==beforeTotal+captured*sizeof(AnmVm)&&good;
+        good=pages.VisualPageCapacityBytes()==(pass==2?4:3)*pageBytes&&good;
+        if(!pages.Seal())return 0;
+        if(pass==1)continue; // The next Save must retire/reset this record itself.
+        if(!pages.Restore())return 0;
+        good=pages.FirstWriteBytes()==0&&pages.FirstWriteBlocks()==0&&good;
+        good=pages.VisualPageCapacityBytes()==(pass==2?4:3)*pageBytes&&good;
+        for(unsigned side=0;side<2;++side){
+            good=!std::memcmp(bytes[side].data(),battle.fields[side].bullets->pool.data(),bytes[side].size())&&good;
+            good=!std::memcmp(visualBytes[side].data(),battle.fields[side].bullet_visuals->instances.data(),visualBytes[side].size())&&good;
+        }
+        good=hash()==baseline&&good;
     }
     return original.Restore()&&good;
 }

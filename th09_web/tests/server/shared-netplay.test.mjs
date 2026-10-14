@@ -4,14 +4,14 @@ import {SharedNetplay} from '../../sdl-runtime/shared-netplay.mjs';
 
 // The two entries (Launcher card and the in-game title dialog) share one room
 // and one gameplay transport; these tests cover the transport contract itself.
-function harness() {
+function harness(timeline = false) {
   const previous = {fetch: globalThis.fetch, location: globalThis.location, document: globalThis.document, __eaglerPeerTransport:globalThis.__eaglerPeerTransport, __eaglerNetplayCalibrationSuspended:globalThis.__eaglerNetplayCalibrationSuspended, setInterval: globalThis.setInterval};
   const timers=[];globalThis.setInterval=(...args)=>{const timer=previous.setInterval(...args);timers.push(timer);return timer;};
   const peers = new Map();
   const spectators = new Set();
   const core = () => {
     const buffer = new ArrayBuffer(2048), bytes = new Uint8Array(buffer);
-    const calls = {begin: [], modes: [], receive: [], pauses: [], timing:[], spectatorBegin: [], spectatorFeed: [], pumps: 0,ends:0};
+    const calls = {begin: [], modes: [], receive: [], pauses: [], timing:[], spectatorOutput: [], spectatorBegin: [], spectatorFeed: [], pumps: 0,ends:0};
     const self = {
       HEAPU8: bytes, HEAPU32: new Uint32Array(buffer), calls, incoming: [], side: -1,
       _th09_peer_url_buffer: () => 256,
@@ -41,6 +41,7 @@ function harness() {
       _th09_peer_spectator_state:()=>1,
       _th09_peer_stop_spectators:()=>{},
       _th09_peer_send_spectator: length => {
+        calls.spectatorOutput.push(bytes.slice(1280, 1280 + length));
         for (const viewer of spectators) viewer.incoming.push(bytes.slice(1280, 1280 + length));
         return 1;
       },
@@ -67,6 +68,7 @@ function harness() {
       _th09_spectator_end: () => {},
       _th09_loop_pause: value => calls.pauses.push(value),
     };
+    if (timeline) self._th09_spectator_control = () => 1;
     return self;
   };
   const restore = () => {for(const timer of timers)clearInterval(timer);Object.assign(globalThis, previous);};
@@ -111,14 +113,156 @@ test('launcher and in-game entries share the TH09 room through the common peer t
   }
 });
 
-test('launcher input delay reaches the native rollback session', async () => {
+test('stopping optional spectators keeps match statistics and repeated Retry bounded', async () => {
+  const box=harness(true);let pair;
+  try {
+    pair=await connectPair(box);const {left,leftCore}=pair,reports=[];
+    left.onMatch=value=>reports.push(value);
+    left.stopSpectators('optional stream stopped');
+    const at=leftCore._th09_rollback_info()/4;
+    leftCore.HEAPU32[at+1]=3600;left.frame();
+    assert.deepEqual(reports,[{start:0,frames:3600}]);
+    left.endMatch(3700,1);left.endMatch(3700,1);
+    assert.deepEqual(reports[1],{start:0,frames:3700,winner:1});
+    for(let n=1;n<=1000;n++){
+      left.beginMatch(n*4000,new Uint8Array(50));
+      left.endMatch(n*4000+3700,n%2);
+    }
+    assert.equal(reports.length,2002);
+    assert.deepEqual(reports[2],{start:4000,frames:0},'new match immediately resets its clock');
+    assert.equal(left.spectatorPending.length,0,'stopped stream must retain no new start/end packets');
+    assert.equal(left.connected,true);assert.equal(left.active,true);
+  } finally {pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('experimental delayed spectator gets retained timing even without initial viewers', async () => {
+  const box = harness(true); let pair, viewer;
+  try {
+    pair = await connectPair(box, 4, 1);
+    const {left, leftCore} = pair;
+    assert.equal(left.options.netplaySpectatorCount, undefined);
+    assert.equal(leftCore.eaglerOptions.netplaySpectatorCount, 1);
+    const timing = leftCore.calls.spectatorOutput.find(bytes => bytes.length === 40);
+    assert.ok(timing, 'host must upload calibration metadata before anybody joins');
+    const viewerCore = box.core();
+    viewer = new SharedNetplay(viewerCore, {onStatus() {}, onClose() {}, onResult() {},
+      onTiming: value => viewerCore.calls.timing.push(value)});
+    await viewer.connect({
+      netplayUrl: 'wss://example.test/netplay?room=th09mp-1234&run=1&spectator=c12345678',
+      netplayPlayerCount: 2, netplaySpectator: true, netplaySpectatorId: 'c12345678',
+      netplaySeed: 1234, netplayDifficulty: 2, netplayAdonisMode: 1, netplayInputDelay: 4,
+      netplayLoadouts: [{character: 3}, {character: 10}],
+    });
+    viewer.pump(); assert.equal(viewer.active, false);
+    viewer.receive(timing); assert.equal(viewer.active, true);
+    left.publish(0, 1, 2, 0, 0, 0, 0, 0, 0); left.pump(); viewer.pump();
+    assert.equal(viewer.connected, true); assert.equal(viewer.spectatorFrame, 1);
+    assert.equal(viewerCore.calls.timing.at(-1).inputDelay, 4);
+    // A malformed replay batch must close only the viewer.
+    viewer.receive(new Uint8Array(47));
+    assert.equal(viewer.connected, false); assert.equal(left.connected, true);
+  } finally { viewer?.close(); pair?.left.close(); pair?.right.close(); box.restore(); }
+});
+
+test('paused viewer drains the previous match before either of two queued same-connection retries', async()=>{
+  const box=harness(true);let pair,viewer;
+  try{
+    pair=await connectPair(box);const core=box.core(),state=core.HEAPU32.subarray(256,267),starts=[];
+    core._th09_spectator_playback_info=()=>1024;core._th09_spectator_begin_buffer=()=>1080;
+    core._th09_spectator_frame=()=>state[1];
+    core._th09_spectator_finish=frame=>{if(frame!==state[2])return 0;state[10]=1;return 1;};
+    core._th09_spectator_restart=(frame,size)=>{assert.equal(size,50);starts.push(frame);state.fill(0);state[1]=state[2]=state[8]=frame;return 1;};
+    core._th09_spectator_control=action=>{if(action===2)state[7]=1;return 1;};
+    const feed=core._th09_spectator_feed;core._th09_spectator_feed=(...args)=>{state[2]=args[0]+1;return feed(...args);};
+    viewer=new SharedNetplay(core,{onStatus(){},onClose(){},onResult(){}});
+    await viewer.connect({netplayUrl:'wss://example.test/netplay?room=th09mp-1234&run=1&spectator=c12345678',
+      netplayPlayerCount:2,netplaySpectator:true,netplaySpectatorId:'c12345678',netplaySeed:1234,
+      netplayDifficulty:2,netplayLoadouts:[{character:3},{character:10}]});viewer.pump();
+    const packet=(kind,frame)=>{const bytes=new Uint8Array(kind==='begin'?74:kind==='end'?24:46);
+      bytes.set(kind==='begin'?[84,57,66,71,1,0,2,0]:kind==='end'?[84,57,83,69,1,0,2,0]:[84,57,83,80,1,3,2,0]);
+      new DataView(bytes.buffer).setUint32(8,frame,true);bytes.fill(0xaa,12,24);return bytes;};
+    for(let n=0;n<3;n++)viewer.receive(packet('input',n));state[1]=1;state[5]=1;state[7]=1;
+    viewer.receive(packet('end',3));viewer.receive(packet('begin',100));
+    for(let n=100;n<105;n++)viewer.receive(packet('input',n));viewer.receive(packet('end',105));
+    viewer.receive(packet('begin',200));viewer.receive(packet('input',200));
+    viewer.frame();assert.deepEqual(starts,[]);assert.equal(state[1],1);assert.equal(state[5],1);
+    assert.equal(viewer.spectatorFrame,3);assert.equal(viewer.spectatorTape.begins,2);assert.equal(viewer.connected,true);
+    state[5]=0;state[1]=2;viewer.frame();assert.deepEqual(starts,[]);
+    state[1]=3;viewer.frame();assert.deepEqual(starts,[100]);assert.equal(state[1],100);assert.equal(state[2],105);
+    assert.equal(state[7],1,'follow-live intent survives a complete match transition');
+    state[1]=105;state[5]=1;viewer.frame();assert.deepEqual(starts,[100]);assert.equal(viewer.connected,true);
+    state[5]=0;viewer.frame();assert.deepEqual(starts,[100,200]);assert.equal(viewer.spectatorFrame,201);
+    assert.deepEqual(core.calls.spectatorFeed.map(row=>row[0]),[0,1,2,100,101,102,103,104,200]);
+    assert.equal(pair.left.connected,true);assert.equal(pair.right.connected,true);
+  }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('viewer waits between matches and drains the final tail after the connection ends', async () => {
+  const box=harness(true);let pair,viewer,results=0,closed=0;
+  try {
+    pair=await connectPair(box);const core=box.core(),state=core.HEAPU32.subarray(256,267),starts=[];
+    core._th09_spectator_playback_info=()=>1024;core._th09_spectator_begin_buffer=()=>1080;
+    core._th09_spectator_frame=()=>state[1];
+    core._th09_spectator_finish=frame=>{if(frame!==state[2])return 0;state[10]=1;return 1;};
+    core._th09_spectator_restart=(frame,size)=>{assert.equal(size,50);starts.push(frame);state.fill(0);state[1]=state[2]=state[8]=frame;return 1;};
+    const feed=core._th09_spectator_feed;core._th09_spectator_feed=(...args)=>{state[2]=args[0]+1;return feed(...args);};
+    viewer=new SharedNetplay(core,{onStatus(){},onClose(){++closed;},onResult(){++results;}});
+    await viewer.connect({netplayUrl:'wss://example.test/netplay?room=th09mp-1234&run=1&spectator=c12345678',
+      netplayPlayerCount:2,netplaySpectator:true,netplaySpectatorId:'c12345678',netplaySeed:1234,
+      netplayDifficulty:2,netplayLoadouts:[{character:3},{character:10}]});viewer.pump();
+    const packet=(kind,frame)=>{const bytes=new Uint8Array(kind==='begin'?74:kind==='end'?24:46);
+      bytes.set(kind==='begin'?[84,57,66,71,1,0,2,0]:kind==='end'?[84,57,83,69,1,0,2,0]:[84,57,83,80,1,3,2,0]);
+      new DataView(bytes.buffer).setUint32(8,frame,true);bytes.fill(0xaa,12,24);return bytes;};
+    for(let n=0;n<3;n++)viewer.receive(packet('input',n));viewer.receive(packet('end',3));state[1]=3;
+    for(let n=0;n<3;n++)viewer.frame();
+    assert.equal(viewer.connected,true,'a match end is not a session end');assert.equal(results,0);assert.equal(closed,0);
+    viewer.receive(packet('begin',100));viewer.receive(packet('input',100));viewer.receive(packet('end',101));
+    assert.deepEqual(starts,[100]);assert.equal(viewer.spectatorFrame,101);
+    state[5]=1;viewer.connectionEnded();viewer.frame();
+    assert.equal(core.calls.pauses.at(-1),0,'transport loss must not suspend confirmed playback');
+    assert.equal(viewer.connected,true,'paused viewers keep their final tail');
+    state[5]=0;viewer.frame();assert.equal(viewer.connected,true,'unplayed final input must not be discarded');
+    state[1]=101;viewer.frame();viewer.frame();
+    assert.equal(viewer.connected,false);assert.equal(results,1);assert.equal(closed,1);
+    assert.equal(pair.left.connected,true);assert.equal(pair.right.connected,true);
+  } finally {viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
+});
+
+for(const transportEnd of [-1,3]) test(`viewer drains buffered final packets across bounded pumps after transport state ${transportEnd}`,async()=>{
+  const box=harness(true);let pair,viewer,results=0;
+  try {
+    pair=await connectPair(box);const core=box.core(),state=core.HEAPU32.subarray(256,267);
+    core._th09_spectator_playback_info=()=>1024;core._th09_spectator_frame=()=>state[1];
+    core._th09_spectator_finish=frame=>{if(frame!==state[2])return 0;state[10]=1;return 1;};
+    const feed=core._th09_spectator_feed;core._th09_spectator_feed=(...args)=>{state[2]=args[0]+1;return feed(...args);};
+    viewer=new SharedNetplay(core,{onStatus(){},onClose(){},onResult(){++results;}});
+    await viewer.connect({netplayUrl:'wss://example.test/netplay?room=th09mp-1234&run=1&spectator=c12345678',
+      netplayPlayerCount:2,netplaySpectator:true,netplaySpectatorId:'c12345678',netplaySeed:1234,
+      netplayDifficulty:2,netplayLoadouts:[{character:3},{character:10}]});viewer.pump();
+    for(let frame=0;frame<=129;frame++){
+      const end=frame===129,bytes=new Uint8Array(end?24:46);
+      bytes.set(end?[84,57,83,69,1,0,2,0]:[84,57,83,80,1,3,2,0]);
+      new DataView(bytes.buffer).setUint32(8,frame,true);bytes.fill(0xaa,12,24);core.incoming.push(bytes);
+    }
+    core.peerState=transportEnd;viewer.pump();
+    assert.equal(core.incoming.length,2,'one pump remains bounded to 128 packets');
+    assert.equal(viewer.connected,true);assert.equal(viewer.disconnected,false);
+    viewer.pump();assert.equal(core.incoming.length,0);assert.equal(viewer.disconnected,true);
+    assert.equal(viewer.spectatorFrame,129);assert.equal(core.calls.pauses.at(-1),0);
+    state[1]=127;viewer.frame();assert.equal(viewer.connected,true);assert.equal(results,0);
+    state[1]=129;viewer.frame();assert.equal(viewer.connected,false);assert.equal(results,1);
+    assert.equal(pair.left.connected,true);assert.equal(pair.right.connected,true);
+  }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('TH09 rollback ignores a stale nonzero launcher delay and starts at zero', async () => {
   const box = harness();
   try {
     const {left, right, leftCore, rightCore} = await connectPair(box, 3);
     const baseAbi = (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0;
-    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 3]]);
-    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 3]]);
-    assert.equal(globalThis.__eaglerNetplayInputDelayFrames, 3);
+    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 0]]);
+    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 0]]);
+    assert.equal(globalThis.__eaglerNetplayInputDelayFrames, 0);
     left.close(); right.close();
   } finally { box.restore(); }
 });
@@ -128,12 +272,13 @@ test('Adonis mode and all nine delay frames reach the native session without JS 
     const box = harness();
     try {
       const {left,right,leftCore,rightCore} = await connectPair(box,9,mode);
-      assert.deepEqual(leftCore.calls.modes,[mode]);
-      assert.deepEqual(rightCore.calls.modes,[mode]);
-      assert.equal(leftCore.calls.begin[0].at(-2),9);
-      assert.equal(rightCore.calls.begin[0].at(-2),9);
+      const effectiveMode=mode===2?0:mode;
+      assert.deepEqual(leftCore.calls.modes,[effectiveMode]);
+      assert.deepEqual(rightCore.calls.modes,[effectiveMode]);
+      assert.equal(leftCore.calls.begin[0][8],mode===2?0:9);
+      assert.equal(rightCore.calls.begin[0][8],mode===2?0:9);
       assert.deepEqual(leftCore.calls.receive,[]);
-      assert.equal(globalThis.__eaglerNetplayAdonisMode,mode);
+      assert.equal(globalThis.__eaglerNetplayAdonisMode,effectiveMode);
       left.close();right.close();
     } finally { box.restore(); }
   }

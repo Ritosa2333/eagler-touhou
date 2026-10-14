@@ -1,0 +1,20 @@
+{
+  "createdAt": "2026-10-11T16:32:33.092Z",
+  "branch": "experiment/subpixel-journal-4x",
+  "parent": "a3a59db525d2e76faf9bb683bc624d455d3aa3ae",
+  "head": "cc35222ed5f7fe652821cfec8f44e055da0c3b54",
+  "files": [
+    "th09_web/cpp/game/Player.cpp",
+    "th09_web/cpp/game/PlayerShots.cpp",
+    "th09_web/cpp/game/PlayerShots.hpp",
+    "th09_web/cpp/game/PoolCheckpoint.hpp",
+    "th09_web/cpp/multiplayer/WorldState.cpp",
+    "th09_web/cpp/multiplayer/WorldState.hpp",
+    "th09_web/tests/multiplayer/bullet-snapshot.cpp",
+    "th09_web/tests/multiplayer/run-tests.mjs",
+    "th09_web/tests/multiplayer/shot-capture.cpp"
+  ],
+  "diffSha256": "7750b7a2f2f79754fa1311563b2f43f48762fe454100e021cd5fd2c7fc42a473",
+  "stat": " th09_web/cpp/game/Player.cpp                   |   2 +-\n th09_web/cpp/game/PlayerShots.cpp              |  11 +-\n th09_web/cpp/game/PlayerShots.hpp              |   4 +\n th09_web/cpp/game/PoolCheckpoint.hpp           |   3 +-\n th09_web/cpp/multiplayer/WorldState.cpp        |  24 ++-\n th09_web/cpp/multiplayer/WorldState.hpp        |  11 ++\n th09_web/tests/multiplayer/bullet-snapshot.cpp |   1 +\n th09_web/tests/multiplayer/run-tests.mjs       |   3 +\n th09_web/tests/multiplayer/shot-capture.cpp    | 245 +++++++++++++++++++++++++\n 9 files changed, 298 insertions(+), 6 deletions(-)\n",
+  "scope": "Local isolated performance commit. No remote push, merge or deployment."
+}

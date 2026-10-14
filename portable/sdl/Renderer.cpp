@@ -8,6 +8,15 @@
 #include <cstdio>
 #include <cstdlib>
 
+// Coarse TH09 development probes; no title dependency or clocks in other
+// builds. Draw order, storage lifetime and existing GL statistics are intact.
+#if TH09_DEVELOPMENT_HARNESS
+#include "../../th09_web/cpp/sdl/PerformanceDiagnostics.hpp"
+#else
+#define TH09_PERF_SCOPE(name,phase) ((void)0)
+#define TH09_PERF_COUNT(counter,amount) ((void)0)
+#endif
+
 EM_JS(int, touhou_clip_control, (), {
   const e=GL.currentContext.GLctx.getExtension('EXT_clip_control');
   if(e)e.clipControlEXT(e.LOWER_LEFT_EXT,e.ZERO_TO_ONE_EXT);return !!e;
@@ -21,6 +30,7 @@ struct DrawStateCache {
  PipelineState pipeline{};Viewport viewport{};bool valid=false,has_viewport=false;
 } drawState;
 constexpr std::array<float,16> identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
+constexpr u32 instanceMatrixBytes=sizeof(identity),instanceStride=2*instanceMatrixBytes+sizeof(u32);
 float bits(u32 n){float f;std::memcpy(&f,&n,4);return f;}
 std::array<float,4> color(u32 n){return {float(n>>16&255)/255,float(n>>8&255)/255,float(n&255)/255,float(n>>24)/255};}
 void replace(std::string& s,const std::string& a,const std::string& b){size_t p=0;while((p=s.find(a,p))!=std::string::npos){s.replace(p,a.size(),b);p+=b.size();}}
@@ -29,7 +39,7 @@ GLuint shader(GLenum type,const std::string& source){GLuint s=glCreateShader(typ
 bool equal(const State& a,const State& b,bool world=false){
  if(a.layout!=b.layout||a.stride!=b.stride||a.texture!=b.texture||a.target!=b.target||a.depth!=b.depth||std::memcmp(&a.viewport,&b.viewport,sizeof(Viewport)))return false;
  if(!a.pipeline.compatible(b.pipeline,world))return false;
- if(world){for(int i=1;i<4;i++)if(a.matrix[i]!=b.matrix[i])return false;}
+ if(world){for(int i=1;i<3;i++)if(a.matrix[i]!=b.matrix[i])return false;}
  else if(!a.layout.screen&&a.matrix!=b.matrix)return false;
  return true;
 }
@@ -60,17 +70,17 @@ bool Renderer::initialize(){
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
  warming=false;set_current(this);return true;
 }
-Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
+Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second.id);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
 void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
 void Renderer::bind_framebuffer(GLenum target,GLuint id){
  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;
  if((read&&readFramebuffer!=id)||(draw&&drawFramebuffer!=id)){glBindFramebuffer(target,id);++stats.framebufferBinds;if(read)readFramebuffer=id;if(draw)drawFramebuffer=id;}
 }
 void Renderer::draw_batch(u32 count,const void* data,u32 stride){
- // The game already coalesced these triangles. Consume while its arena is
- // valid, without retaining a pointer to a buffer the next sprite can reuse.
- flush();++stats.calls;state.stride=stride;stats.directBytes+=count*3*stride;
- issue(state,Topology::Triangles,count,data,count*3*stride,nullptr,IndexType::UInt16,nullptr,0);
+ // Copy into the bounded reusable arena before the owner's buffer is reused.
+ // Adjacent compatible owner batches can then share one upload and draw;
+ // clear/copy/read/release/present retain their existing submission barriers.
+ draw(Topology::Triangles,count,data,stride);
 }
 void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32(kind)];if(std::memcmp(m.data(),p,64))std::memcpy(m.data(),p,64);}
 void Renderer::viewport(const Viewport& v){state.viewport=v;}
@@ -80,6 +90,7 @@ void Renderer::select(const State& s){
  if(it==programs.end()&&!warming){program=&generic;++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}return;}
  if(it==programs.end()){
   ++stats.programCompiles;
+  TH09_PERF_COUNT(ProgramCompiles,1);
   static const char* constants[]{"hasTexture","alphaTest","fogEnabled","colorOp","alphaOp","colorArg1","colorArg2","alphaArg1","alphaArg2","alphaFunc"};
   std::string source=fragmentSource,defs;if(!buildingGeneric){replace(source,"uniform bool hasTexture,alphaTest,fogEnabled;","");replace(source,"uniform int colorOp,alphaOp,colorArg1,colorArg2,alphaArg1,alphaArg2,alphaFunc;","");
   for(int i=0;i<10;i++)defs+="const "+std::string(i<3?"bool ":"int ")+constants[i]+"="+(i<3?(key[i]?"true":"false"):std::to_string(key[i]))+";\n";
@@ -107,8 +118,10 @@ u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 min
 #endif
 }
 Renderer::GPU& Renderer::surface(u32 h){
- auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];if(!g.texture){glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
+ auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];if(!g.texture){TH09_PERF_COUNT(TextureCreates,1);glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
  if(g.version!=s.version){
+  TH09_PERF_SCOPE(texture_cost,TextureUpload);
+  TH09_PERF_COUNT(TextureUploads,1);TH09_PERF_COUNT(TextureUploadBytes,s.size);
   stats.uploadBytes+=s.size;bind_texture(g.texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);GLenum format=GL_RGBA,type=GL_UNSIGNED_BYTE,internal=GL_RGBA8;
   bool rgb=s.format==PixelFormat::Bgr8||s.format==PixelFormat::Bgrx8||s.format==PixelFormat::Rgb565;u32 channels=rgb?3:4;pixels.resize(s.width*s.height*(s.format==PixelFormat::Argb4444?2:channels));
   if(s.format==PixelFormat::Argb4444){for(u32 y=0;y<s.height;y++)for(u32 x=0;x<s.width;x++){uint16_t n;std::memcpy(&n,s.data+y*s.pitch+x*2,2);n=(n<<4)|(n>>12);std::memcpy(pixels.data()+(y*s.width+x)*2,&n,2);}type=GL_UNSIGNED_SHORT_4_4_4_4;internal=GL_RGBA4;}
@@ -128,27 +141,76 @@ Renderer::GPU& Renderer::target(u32 id,u32 depthId){auto& g=surface(id);GLuint b
 void Renderer::prepare(u32 h){surface(h);}
 void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,const void* index,IndexType indexFormat){
  stats.calls++;state.stride=stride;
- if(index||primitive<Topology::Triangles||primitive>Topology::Fan){flush();issue(state,primitive,count,data,vertex_count(primitive,count)*stride,index,indexFormat,nullptr,0);return;}
- const bool instance=version==10&&state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
- if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))flush();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+68);std::memcpy(worlds.data()+old,state.matrix[0].data(),64);std::memcpy(worlds.data()+old+64,&state.pipeline.textureFactor,4);if(worlds.size()>=1024*68)flush();return;}
- if(batching&&(instancing||!equal(batchState,state)))flush();if(!batching){batchState=state;batching=true;instancing=false;}
- const auto* src=static_cast<const u8*>(data);const size_t start=batchBytes.size(),size=count*3*stride;stats.copiedBytes+=size;batchBytes.resize(start+size);auto* dest=batchBytes.data()+start;
- if(primitive==Topology::Triangles)std::memcpy(dest,src,size);else if(count){std::memcpy(dest,src,3*stride);dest+=3*stride;for(u32 i=1;i<count;i++){u32 a=primitive==Topology::Fan?0:i&1?i+1:i,b=primitive==Topology::Fan?i+1:i&1?i:i+1,c=i+2;for(u32 v:{a,b,c}){std::memcpy(dest,src+v*stride,stride);dest+=stride;}}}batchCount+=count;if(batchBytes.size()>=1048576)flush();
+ const bool lines=primitive==Topology::Lines;
+ if(index||(!lines&&(primitive<Topology::Triangles||primitive>Topology::Fan))){flush();TH09_PERF_SCOPE(direct_cost,GpuDirect);TH09_PERF_COUNT(GpuDirectBatches,1);issue(state,primitive,count,data,vertex_count(primitive,count)*stride,index,indexFormat,nullptr,0);return;}
+ // This is a property of the semantic vertex layout, independent of the
+ // title's alpha/depth compatibility rules selected by version.
+ const bool instance=state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
+ if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))finish_batch();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+instanceStride);std::memcpy(worlds.data()+old,state.matrix[0].data(),instanceMatrixBytes);std::memcpy(worlds.data()+old+instanceMatrixBytes,state.matrix[3].data(),instanceMatrixBytes);std::memcpy(worlds.data()+old+2*instanceMatrixBytes,&state.pipeline.textureFactor,sizeof(u32));if(worlds.size()>=1024*instanceStride)finish_batch();return;}
+ // Independent line segments concatenate without introducing a connection
+ // between owner draws. Line strips and indexed draws keep their barriers.
+ const auto topology=lines?Topology::Lines:Topology::Triangles;
+ if(batching&&(instancing||batchTopology!=topology||!equal(batchState,state)))finish_batch();if(!batching){batchState=state;batchTopology=topology;batching=true;instancing=false;}
+ const auto* src=static_cast<const u8*>(data);const size_t start=batchBytes.size(),size=count*(lines?2:3)*stride;stats.copiedBytes+=size;batchBytes.resize(start+size);auto* dest=batchBytes.data()+start;
+ if(lines||primitive==Topology::Triangles)std::memcpy(dest,src,size);else if(count){std::memcpy(dest,src,3*stride);dest+=3*stride;for(u32 i=1;i<count;i++){u32 a=primitive==Topology::Fan?0:i&1?i+1:i,b=primitive==Topology::Fan?i+1:i&1?i:i+1,c=i+2;for(u32 v:{a,b,c}){std::memcpy(dest,src+v*stride,stride);dest+=stride;}}}batchCount+=count;if(batchBytes.size()>=1048576)finish_batch();
 }
-void Renderer::flush(){if(!batching)return;batching=false;if(instancing)issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>68?worlds.data():nullptr,worlds.size()>68?worlds.size():0);else issue(batchState,Topology::Triangles,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);batchBytes.clear();worlds.clear();batchCount=0;instancing=false;}
-void Renderer::discard(){batching=instancing=false;batchBytes.clear();worlds.clear();batchCount=0;}
-void Renderer::issue(const State& d,Topology primitive,u32 count,const void* data,u32 size,const void* index,IndexType indexFormat,const void* instance,u32 instanceSize){
+void Renderer::finish_batch(){
+ if(!batching)return;batching=false;
+ const auto primitive=instancing?Topology::Strip:batchTopology;
+ const u32 count=instancing?2:batchCount,size=instancing?quad.size():batchBytes.size();
+ const u8* data=instancing?quad.data():batchBytes.data();
+ const u32 instanceSize=instancing&&worlds.size()>instanceStride?worlds.size():0;
+#ifdef __EMSCRIPTEN__
+ // Upload all vertices before issuing this ordered run. No earlier draw can
+ // still reference a backing store that we subsequently update with SubData.
+ // Instance uploads remain separate: WebGL2 has no base-instance draw.
+ if(size){
+  constexpr std::size_t limit=1048576;
+  auto offset=(queuedVertices.size()+batchState.stride-1)/batchState.stride*batchState.stride;
+  if(offset+size>limit||queuedInstances.size()+instanceSize>limit||queuedDraws.size()>=1024){submit_batches();offset=0;}
+  queuedVertices.resize(offset+size);std::memcpy(queuedVertices.data()+offset,data,size);
+  const auto instanceOffset=queuedInstances.size();
+  if(instanceSize){queuedInstances.resize(instanceOffset+instanceSize);std::memcpy(queuedInstances.data()+instanceOffset,worlds.data(),instanceSize);}
+  stats.copiedBytes+=size+instanceSize;
+  queuedDraws.push_back({batchState,primitive,count,u32(offset/batchState.stride),size,u32(instanceOffset),instanceSize});
+  // An individual oversized draw is retained in full and submitted at once.
+  if(queuedVertices.size()>=limit||queuedInstances.size()>=limit)submit_batches();
+ }
+#else
+ issue(batchState,primitive,count,data,size,nullptr,IndexType::UInt16,instanceSize?worlds.data():nullptr,instanceSize);
+#endif
+ batchBytes.clear();worlds.clear();batchCount=0;instancing=false;
+}
+void Renderer::submit_batches(){
+ if(queuedDraws.empty())return;
+ TH09_PERF_SCOPE(submit_cost,GpuSubmit);
+ TH09_PERF_COUNT(GpuQueuedBatches,queuedDraws.size());
+ upload(vertices,GL_ARRAY_BUFFER,queuedVertices.data(),queuedVertices.size(),1048576);
+ for(const auto& q:queuedDraws)issue(q.state,q.primitive,q.count,queuedVertices.data()+q.first*q.state.stride,q.vertexBytes,nullptr,IndexType::UInt16,q.instanceBytes?queuedInstances.data()+q.instanceOffset:nullptr,q.instanceBytes,q.first,true);
+ queuedDraws.clear();queuedVertices.clear();queuedInstances.clear();
+}
+void Renderer::flush(){finish_batch();submit_batches();}
+void Renderer::discard(){batching=instancing=false;batchBytes.clear();worlds.clear();batchCount=0;queuedDraws.clear();queuedVertices.clear();queuedInstances.clear();}
+void Renderer::issue(const State& d,Topology primitive,u32 count,const void* data,u32 size,const void* index,IndexType indexFormat,const void* instance,u32 instanceSize,u32 first,bool verticesUploaded){
  stats.batches++;const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
  if(all||cached.dither!=p.dither)p.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
  GPU* texture=d.texture?&surface(d.texture):nullptr;auto& g=target(d.target,d.depth);const auto& v=d.viewport;
  if(!drawState.has_viewport||std::memcmp(&drawState.viewport,&v,sizeof(v))){glViewport(v.x,v.y,v.width,v.height);glDepthRangef(v.min,v.max);drawState.viewport=v;drawState.has_viewport=true;}select(d);
  float vp[]{float(v.x),float(v.y),float(v.width),float(v.height)};uniform(0,4,vp);const bool transformed=d.layout.screen;
- integer(1,transformed);integer(2,p.textureTransform);integer(3,!!instance);for(int i=0;i<4;i++)uniform(4+i,16,d.matrix[i].data());
- integer(8,p.fog);integer(9,p.rangeFog);integer(10,u32(p.fogMode));float fog[]{p.fogNear,p.fogFar,p.fogDensity};uniform(11,3,fog);uniform(12,4,color(p.fogColor).data());integer(13,!!texture);uniform(14,4,color(p.textureFactor).data());
+ integer(1,transformed);integer(2,p.textureTransform);integer(3,!!instance);
+ // Screen vertices already contain their projection and fog. Instanced
+ // world/texture transforms and factors come from the instance buffer.
+ // Leave skipped uniform caches untouched so a later regular draw uploads
+ // its own values even when it reuses this program.
+ if(!transformed){if(!instance)uniform(4,16,d.matrix[0].data());uniform(5,16,d.matrix[1].data());uniform(6,16,d.matrix[2].data());if(p.textureTransform&&!instance)uniform(7,16,d.matrix[3].data());}
+ integer(8,p.fog);if(p.fog){if(!transformed){integer(9,p.rangeFog);integer(10,u32(p.fogMode));float fog[]{p.fogNear,p.fogFar,p.fogDensity};uniform(11,3,fog);}uniform(12,4,color(p.fogColor).data());}
+ integer(13,!!texture);if(!instance)uniform(14,4,color(p.textureFactor).data());
  auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
  integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);integer(23,u32(p.alphaCompare));integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
  if(texture){
-  glActiveTexture(GL_TEXTURE0);bind_texture(texture->texture);
+  // This renderer owns the context; initialize establishes texture unit 0
+  // and the resample utility restores it before returning.
+  bind_texture(texture->texture);
   constexpr GLint address[]{GL_REPEAT,GL_MIRRORED_REPEAT,GL_CLAMP_TO_EDGE};GLint sampler[]{address[u32(p.addressU)],address[u32(p.addressV)],p.minFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR,p.magFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR};
   constexpr GLenum names[]{GL_TEXTURE_WRAP_S,GL_TEXTURE_WRAP_T,GL_TEXTURE_MIN_FILTER,GL_TEXTURE_MAG_FILTER};
   for(int i=0;i<4;i++)if(texture->sampler[i]!=sampler[i]){glTexParameteri(GL_TEXTURE_2D,names[i],sampler[i]);texture->sampler[i]=sampler[i];}
@@ -167,19 +229,23 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  if(all||cached.cull!=p.cull){if(p.cull!=Cull::None){glEnable(GL_CULL_FACE);glFrontFace(GL_CW);glCullFace(p.cull==Cull::Back?GL_BACK:GL_FRONT);}else glDisable(GL_CULL_FACE);}
  if(all||cached.colorMask!=p.colorMask)glColorMask(!!(p.colorMask&1),!!(p.colorMask&2),!!(p.colorMask&4),!!(p.colorMask&8));
  cached=p;drawState.valid=true;
- const std::array<u32,6> layoutKey{d.stride,u32(d.layout.screen),d.layout.diffuse,d.layout.specular,d.layout.uv,u32(!!instance)};
- auto& vao=layouts[layoutKey];const bool setup=!vao;
+ // ANGLE's line path can lose a draw with a nonzero first vertex. Rebase
+ // independent lines through byte offsets in a separate VAO; other draws
+ // retain their zero-offset layout and the shared uploaded backing store.
+ const bool rebase=verticesUploaded&&primitive==Topology::Lines;
+ const std::array<u32,6> layoutKey{d.stride,u32(d.layout.screen),d.layout.diffuse,d.layout.specular,d.layout.uv,u32(!!instance)|(rebase?2u:0u)};
+ auto& layout=layouts[layoutKey];auto& vao=layout.id;const bool setup=!vao;
  if(setup)glGenVertexArrays(1,&vao);if(currentLayout!=vao){glBindVertexArray(vao);currentLayout=vao;}
- const u32 base=upload(vertices,GL_ARRAY_BUFFER,data,size,1048576);
-#ifdef __EMSCRIPTEN__
- if(setup){
-#else
- {
-#endif
- ++stats.layoutSetups;
-glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,false,d.stride,reinterpret_cast<void*>(base));
- for(int j=0;j<2;j++){const int loc=j?3:1;const u32 offset=j?d.layout.specular:d.layout.diffuse;if(offset!=VertexAttributes::absent){glEnableVertexAttribArray(loc);glVertexAttribPointer(loc,4,GL_UNSIGNED_BYTE,true,d.stride,reinterpret_cast<void*>(base+offset));}else{glDisableVertexAttribArray(loc);glVertexAttrib4f(loc,1,1,1,1);}}
- if(d.layout.uv!=VertexAttributes::absent){glEnableVertexAttribArray(2);glVertexAttribPointer(2,2,GL_FLOAT,false,d.stride,reinterpret_cast<void*>(base+d.layout.uv));}else{glDisableVertexAttribArray(2);glVertexAttrib2f(2,0,0);}
+ const u32 base=verticesUploaded?(rebase?first*d.stride:0):upload(vertices,GL_ARRAY_BUFFER,data,size,1048576);
+ if(rebase)first=0;
+ // ARRAY_BUFFER is not restored by binding a VAO. A preceding instance
+ // upload may have changed it before a new vertex layout is initialized.
+ if(setup){glEnableVertexAttribArray(0);for(int j=0;j<2;j++){const int loc=j?3:1;const u32 offset=j?d.layout.specular:d.layout.diffuse;if(offset!=VertexAttributes::absent)glEnableVertexAttribArray(loc);else{glDisableVertexAttribArray(loc);glVertexAttrib4f(loc,1,1,1,1);}}if(d.layout.uv!=VertexAttributes::absent)glEnableVertexAttribArray(2);else{glDisableVertexAttribArray(2);glVertexAttrib2f(2,0,0);}}
+ if(setup||layout.base!=base){
+  if(verticesUploaded)glBindBuffer(GL_ARRAY_BUFFER,vertices.id);++stats.layoutSetups;
+  glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,false,d.stride,reinterpret_cast<void*>(base));
+  for(int j=0;j<2;j++){const int loc=j?3:1;const u32 offset=j?d.layout.specular:d.layout.diffuse;if(offset!=VertexAttributes::absent)glVertexAttribPointer(loc,4,GL_UNSIGNED_BYTE,true,d.stride,reinterpret_cast<void*>(base+offset));}
+  if(d.layout.uv!=VertexAttributes::absent)glVertexAttribPointer(2,2,GL_FLOAT,false,d.stride,reinterpret_cast<void*>(base+d.layout.uv));layout.base=base;
  }
  constexpr GLenum modes[]{GL_POINTS,GL_LINES,GL_LINE_STRIP,GL_TRIANGLES,GL_TRIANGLE_STRIP,GL_TRIANGLE_FAN};const GLenum mode=modes[u32(primitive)];const u32 n=vertex_count(primitive,count);
  if(instance){u32 b=upload(instances,GL_ARRAY_BUFFER,instance,instanceSize,65536);
@@ -188,10 +254,10 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,fa
 #else
  {
 #endif
- for(int i=0;i<4;i++){glEnableVertexAttribArray(4+i);glVertexAttribPointer(4+i,4,GL_FLOAT,false,68,reinterpret_cast<void*>(b+i*16));glVertexAttribDivisor(4+i,1);}glEnableVertexAttribArray(8);glVertexAttribPointer(8,4,GL_UNSIGNED_BYTE,true,68,reinterpret_cast<void*>(b+64));glVertexAttribDivisor(8,1);}
- glDrawArraysInstanced(mode,0,n,instanceSize/68);}
+ for(int i=0;i<8;i++){glEnableVertexAttribArray(4+i);glVertexAttribPointer(4+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+i*16));glVertexAttribDivisor(4+i,1);}glEnableVertexAttribArray(12);glVertexAttribPointer(12,4,GL_UNSIGNED_BYTE,true,instanceStride,reinterpret_cast<void*>(b+2*instanceMatrixBytes));glVertexAttribDivisor(12,1);}
+ glDrawArraysInstanced(mode,first,n,instanceSize/instanceStride);}
  else if(index){u32 b=upload(indices,GL_ELEMENT_ARRAY_BUFFER,index,n*(indexFormat==IndexType::UInt16?2:4),65536);glDrawElements(mode,n,indexFormat==IndexType::UInt16?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(b));}
- else glDrawArrays(mode,0,n);g.rendered=true;
+ else glDrawArrays(mode,first,n);g.rendered=true;
 }
 void Renderer::clear(u32 flags,u32 c,float depth,u32 stencil,const i32* rects,u32 count){flush();auto& g=target(state.target,state.depth);const auto& v=state.viewport;i32 box[]{i32(v.x),i32(v.y),i32(v.x+v.width),i32(v.y+v.height)};if(!rects){rects=box;count=1;}glEnable(GL_SCISSOR_TEST);glColorMask(true,true,true,true);glDepthMask(true);drawState.pipeline.colorMask=15;drawState.pipeline.depthWrite=true;auto rgba=color(c);glClearColor(rgba[0],rgba[1],rgba[2],rgba[3]);glClearDepthf(depth);glClearStencil(stencil);glStencilMask(255);GLbitfield bits=(flags&1?GL_COLOR_BUFFER_BIT:0)|(flags&2?GL_DEPTH_BUFFER_BIT:0)|(flags&4?GL_STENCIL_BUFFER_BIT:0);for(u32 i=0;i<count;i++){const i32* p=rects+i*4;glScissor(p[0],p[1],p[2]-p[0],p[3]-p[1]);glClear(bits);}glDisable(GL_SCISSOR_TEST);g.rendered=true;}
 void Renderer::copy(u32 src,const i32* rect,u32 dst,const i32* point){flush();auto& a=surface(src);auto& b=surface(dst);bind_framebuffer(GL_READ_FRAMEBUFFER,a.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,b.framebuffer);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(rect[0],rect[1],rect[2],rect[3],point[0],point[1],point[0]+rect[2]-rect[0],point[1]+rect[3]-rect[1],GL_COLOR_BUFFER_BIT,GL_NEAREST);b.rendered=true;b.version=resolve(owner,dst).version+1;}
@@ -217,14 +283,14 @@ bool Renderer::resample(u32 src,const i32* from,u32 dst,const i32* to,const floa
  // valid VAOs, while the regular draw cache must restore all pipeline state.
  drawState=DrawStateCache{};output.rendered=true;output.version=b.version+1;++stats.resamples;return true;
 }
-void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.end()||!it->second.rendered)return;auto s=resolve(owner,id);auto& g=it->second;stats.readBytes+=s.size;pixels.resize(s.width*s.height*4);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glPixelStorei(GL_PACK_ALIGNMENT,1);glReadPixels(0,0,s.width,s.height,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.end()||!it->second.rendered)return;TH09_PERF_COUNT(Readbacks,1);auto s=resolve(owner,id);auto& g=it->second;stats.readBytes+=s.size;pixels.resize(s.width*s.height*4);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glPixelStorei(GL_PACK_ALIGNMENT,1);glReadPixels(0,0,s.width,s.height,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
  for(u32 y=0;y<s.height;y++)for(u32 x=0;x<s.width;x++){const auto* p=pixels.data()+(y*s.width+x)*4;u32 r=p[0],gc=p[1],b=p[2],a=p[3];auto* out=s.data+y*s.pitch;
   if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){out+=x*4;out[0]=b;out[1]=gc;out[2]=r;out[3]=s.format==PixelFormat::Bgra8?a:255;}else if((s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555||s.format==PixelFormat::Argb4444)){uint16_t n=s.format==PixelFormat::Argb4444?(a>>4)<<12|(r>>4)<<8|(gc>>4)<<4|(b>>4):s.format==PixelFormat::Rgb565?(r>>3)<<11|(gc>>2)<<5|(b>>3):(s.format==PixelFormat::Argb1555&&a>=128?0x8000:0)|(r>>3)<<10|(gc>>3)<<5|(b>>3);std::memcpy(out+x*2,&n,2);}else if(s.format==PixelFormat::Alpha8)out[x]=a;else if(s.format==PixelFormat::Luminance8)out[x]=r;else std::abort();
  }g.rendered=false;
 }
 void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
 void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
-bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+bool Renderer::commit(){if(!pending)return false;TH09_PERF_SCOPE(commit_cost,GpuCommit);auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
 }
 extern "C" {
 const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}

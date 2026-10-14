@@ -10,12 +10,13 @@ Matrix4 AnmRenderer::world_matrix(AnmVm& vm){
     if(vm.anchor&1)m.m[3][0]=std::fabs(vm.spriteSize.x*vm.scale.x*.5f)+vm.pos.x;
     if(vm.anchor&2)m.m[3][1]=std::fabs(vm.spriteSize.y*vm.scale.y*.5f)+vm.pos.y;return m;
 }
-void AnmRenderer::transform_world(AnmVm& vm){last_world=world_matrix(vm);for(u32 n=0;n<4;++n)quad[n].position=GraphicsMath::project(world_vertices[n],view,camera.projection,camera.view,last_world);}
+void AnmRenderer::transform_world(AnmVm& vm){last_world=world_matrix(vm);const auto combined=GraphicsMath::multiply(GraphicsMath::multiply(last_world,camera.view),camera.projection);for(u32 n=0;n<4;++n)quad[n].position=GraphicsMath::project(world_vertices[n],view,combined);}
 i32 AnmRenderer::draw_world(AnmVm& vm){if(!drawable(vm))return -1;transform_world(vm);return finish(vm,false);}
 i32 AnmRenderer::draw_facing_camera(AnmVm& vm){
     if(!drawable(vm))return -1;Matrix4 world;world.identity();world.m[3][0]=vm.pos.x;world.m[3][1]=vm.pos.y;world.m[3][2]=vm.pos.z;
-    const Vec3 center=GraphicsMath::project({},view,camera.projection,camera.view,world);if(center.z<0||center.z>1)return -1;
-    const Vec3 reference=GraphicsMath::project(camera.right,view,camera.projection,camera.view,world);
+    const auto combined=GraphicsMath::multiply(GraphicsMath::multiply(world,camera.view),camera.projection);
+    const Vec3 center=GraphicsMath::project({},view,combined);if(center.z<0||center.z>1)return -1;
+    const Vec3 reference=GraphicsMath::project(camera.right,view,combined);
     const float half_ratio=GraphicsMath::length({reference.x-center.x,reference.y-center.y,reference.z-center.z})*.5f;
     const float width=vm.spriteSize.x*vm.scale.x*half_ratio,height=vm.spriteSize.y*vm.scale.y*half_ratio,sine=float(std::sin(double(vm.rotation.z))),cosine=float(std::cos(double(vm.rotation.z)));
     for(u32 n=0;n<4;++n){float x=n&1?width:-width,y=n&2?height:-height;auto& v=quad[n].position;v={x*cosine-y*sine+center.x,y*cosine+x*sine+center.y,center.z};if(vm.anchor&1)v.x+=width;if(vm.anchor&2)v.y+=height;}

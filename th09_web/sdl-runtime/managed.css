@@ -1,1 +1,37 @@
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#000;color:#eee;font:16px system-ui;overflow:hidden}body{display:grid;place-items:center}canvas{width:min(100vw,133.333vh);height:min(75vw,100vh);outline:none;touch-action:none}#loading,#error{position:fixed;top:40%;max-width:90%;text-align:center}#error{color:#ffb7b7}dialog{width:min(480px,94vw);max-height:90vh;overflow:auto;background:#171514;color:#eee;border:1px solid #6e554f;border-radius:12px;padding:24px}dialog::backdrop{background:#000b}button,input{font:inherit;border:1px solid #65544e;border-radius:6px;background:#292220;color:#fff;padding:10px;margin:6px 4px 6px 0}label{display:block;margin-top:12px}input{width:100%;letter-spacing:.12em}
+#spectatorTimeline{position:fixed;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(660px,calc(100% - 24px));padding:12px 16px;border-radius:12px;background:rgba(24,24,27,.88);border:1px solid rgba(255,255,255,.07);font:13px/1.4 var(--ui-font,system-ui);color:#e8e6e8;z-index:10}
+#spectatorTimeline[data-collapsed=true]{background:rgba(24,24,27,.44)}
+#spectatorTimeline [hidden]{display:none}
+.spectator-bar,.spectator-detail-bar{display:flex;gap:12px;align-items:center;justify-content:space-between}
+#spectatorMatchStats{flex:1;min-width:0;display:grid;gap:2px}
+#spectatorScore{display:flex;align-items:baseline;gap:10px;min-width:0;line-height:1.3;font-weight:700}
+.spectator-score-player{min-width:0;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}
+.spectator-score-value{flex:none;font-size:24px;font-variant-numeric:tabular-nums}
+#spectatorMatchDuration{font-size:13px;color:#b7aabd}
+.spectator-playback-meta{flex:1;min-width:0;display:grid;gap:1px;font-size:12px;color:#b7aabd}
+#spectatorPlaybackStatus{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spectator-actions{display:flex;align-items:center;gap:16px;flex:none}
+#spectatorTimeline input{appearance:none;display:block;width:100%;height:24px;padding:0;margin:2px 0 6px;border:0;background:transparent;cursor:pointer;letter-spacing:normal}
+#spectatorTimeline input::-webkit-slider-runnable-track{height:6px;border:1px solid #e7d6ef55;border-radius:5px;background:linear-gradient(to right,transparent var(--played),#e7d6ef var(--played))}
+#spectatorTimeline input::-moz-range-track{height:6px;border:1px solid #e7d6ef55;border-radius:5px;background:linear-gradient(to right,transparent var(--played),#e7d6ef var(--played))}
+#spectatorTimeline input::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#e7d6ef;margin-top:-5px;border:0}
+#spectatorTimeline input::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#e7d6ef;border:0}
+#spectatorTimeline button{display:inline-flex;align-items:center;justify-content:center;gap:7px;font:inherit;color:inherit;border:0;border-radius:8px;background:transparent;padding:6px 8px;margin:0;min-height:32px;cursor:pointer;touch-action:manipulation;white-space:nowrap}
+#spectatorToggle{align-self:start;font-size:18px!important;width:32px;flex:none}
+#spectatorTimeline button:hover{background:rgba(255,255,255,.04)}
+#spectatorTimeline button:focus-visible,#spectatorTimeline input:focus-visible{outline:2px solid #e7d6ef;outline-offset:1px}
+#spectatorTimeline button:disabled{opacity:.4;cursor:default}
+#spectatorRoundMarks{position:relative;height:22px;margin:6px 7px 0}
+#spectatorTimeline .spectator-round-mark{position:absolute;bottom:0;transform:translateX(-50%);min-height:22px;min-width:24px;padding:0 4px;background:transparent;border:0;border-radius:0;font-size:11px;color:#b7aabd}
+#spectatorTimeline .spectator-round-mark::after{content:'';position:absolute;bottom:-6px;left:50%;height:7px;border-left:1px solid currentColor;pointer-events:none}
+#spectatorTimeline .spectator-round-mark[data-next=true]{color:#e7d6ef}
+#spectatorTimeline .spectator-round-mark[data-align=left]{transform:none}#spectatorTimeline .spectator-round-mark[data-align=right]{transform:translateX(-100%)}
+@media(max-width:560px){
+ #spectatorTimeline{padding:10px 12px}
+ #spectatorScore{gap:6px}.spectator-score-player{font-size:14px;flex:0 1 auto}.spectator-score-value{font-size:20px}
+ #spectatorMatchDuration{font-size:12px}.spectator-actions{gap:6px}.spectator-playback-meta{font-size:11px}
+}
+.spectator-control-icon{width:18px;height:18px;filter:brightness(0) invert(.9);flex:none}
+#spectatorToggle .spectator-control-icon{width:16px;height:16px;transform:rotate(90deg)}
+#spectatorTimeline[data-collapsed=true] #spectatorToggle .spectator-control-icon{transform:rotate(-90deg)}
+#spectatorPause:not([data-paused=true]) .spectator-play-icon,#spectatorPause[data-paused=true] .spectator-pause-icon{display:none}

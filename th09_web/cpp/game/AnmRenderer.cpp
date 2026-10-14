@@ -37,7 +37,9 @@ void AnmRenderer::rotated(const AnmVm& vm){
 }
 i32 AnmRenderer::finish(AnmVm& vm,bool round,bool mirror,bool keep_color){
     for(auto& v:quad){v.position.x+=shake.x;v.position.y+=shake.y;}
-    if(round){const float left=std::nearbyint(quad[0].position.x)-.5f,right=std::nearbyint(quad[1].position.x)-.5f,top=std::nearbyint(quad[0].position.y)-.5f,bottom=std::nearbyint(quad[2].position.y)-.5f;
+    // Keep fractional sprite motion and size at the final presentation boundary.
+    // The half-pixel offset is still required by the original raster convention.
+    if(round){const float left=quad[0].position.x-.5f,right=quad[1].position.x-.5f,top=quad[0].position.y-.5f,bottom=quad[2].position.y-.5f;
         quad[0].position.x=quad[2].position.x=left;quad[1].position.x=quad[3].position.x=right;quad[0].position.y=quad[1].position.y=top;quad[2].position.y=quad[3].position.y=bottom;}
     const auto& sprite=*vm.loadedSprite;const float u0=(mirror?sprite.uvEnd.x:sprite.uvStart.x)+vm.uvScrollPos.x,u1=(mirror?sprite.uvStart.x:sprite.uvEnd.x)+vm.uvScrollPos.x,v0=sprite.uvStart.y+vm.uvScrollPos.y,v1=sprite.uvEnd.y+vm.uvScrollPos.y;
     for(u32 n=0;n<4;++n)quad[n].uv={n&1?u1:u0,n&2?v1:v0};

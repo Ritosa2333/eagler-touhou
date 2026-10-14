@@ -1,0 +1,165 @@
+{
+  "schema": "th09/desktop-gpu-vsync-closeout/1",
+  "createdAt": "2026-10-11T13:23:06.093Z",
+  "report": {
+    "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/docs/multiplayer/rollback-managed-touch-work.md",
+    "bytes": 239580,
+    "lines": 1638,
+    "sha256": "d38637be1f645cf6beac1f2deb6e1ddf241c399958313009f7c907a4dc53233f"
+  },
+  "checkedFiles": [
+    {
+      "role": "driver",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "bytes": 81690,
+      "sha256": "d899f3cf53ab6b769ccb6df7ae86e9e1aa28b091cae8ef60ff3fddc66ad27001",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "gpu-helper",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/gpu-vsync-control.mjs",
+      "bytes": 4192,
+      "sha256": "d41c9213c38555d89d97196dac73c58b36d35ad47d76dd409c97468527bb3083",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "gpu-helper-tests",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/gpu-vsync-control.test.mjs",
+      "bytes": 5512,
+      "sha256": "1f6a488f56f7df19857813312949f58bd419e17f27aac10a8318854f98d6a9f0",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "touch-source",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/touch-input-probe.mjs",
+      "bytes": 20658,
+      "sha256": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "window-helper",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/smoothness-window.mjs",
+      "bytes": 9700,
+      "sha256": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "managed-input-fix",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
+      "bytes": 21364,
+      "sha256": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "baseline-Application",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/cpp/sdl/Application.cpp",
+      "bytes": 87130,
+      "sha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "baseline-RollbackSession",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "bytes": 14579,
+      "sha256": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "recovery-tail-Application",
+      "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/cpp/sdl/Application.cpp",
+      "bytes": 87712,
+      "sha256": "5a8580c706cde19b8ea411bbb4f54ccae776524e5971f7c658c58e8bb94a066b",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "network-brake-RollbackSession",
+      "path": "D:/workspace/eagler/worktrees/th09-network-brake-4x/th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "bytes": 14655,
+      "sha256": "198776ef3209f4d02c6954f4864648d0308355bd4477ee937e7924a26b47709d",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "frozen-original-WASM",
+      "path": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched/th09.wasm",
+      "bytes": 2827907,
+      "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "launcher-input-fix",
+      "path": "D:/workspace/eagler/worktrees/launcher-th09-input-activity-4x/app/components/AppShellProvider.tsx",
+      "bytes": 8435,
+      "sha256": "c22af28f30ad6fadf837dc2971be24f9e3ec6eacb31c4fb41260f6a4ff788932",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "gpu-preflight",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/docs/multiplayer/rollback-desktop-gpu-vsync-preflight-c1.json",
+      "bytes": 4980,
+      "sha256": "e44bc523a8d186bd7a7c4d3a4cdd9c1ba0cc2095749214c569958776e538095f",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "predeclared-plan",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/docs/multiplayer/rollback-desktop-gpu-vsync-plan.json",
+      "bytes": 3346,
+      "sha256": "f5fdfde58e12c61010c5c65f78652d08193b90979f6b8e0ca9ab4d77609893b1",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "nine-run-comparison",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/docs/multiplayer/rollback-desktop-continuous-touch-comparison-c1.json",
+      "bytes": 312716,
+      "sha256": "9ecebbb86f68b6a42f76f659767cdd9fc4d780c7e4668f5f29c9657c470abd56",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "gpu-series-comparison",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/docs/multiplayer/rollback-desktop-gpu-vsync-comparison-c1.json",
+      "bytes": 115833,
+      "sha256": "07de0d47711f58848f9e57e098dbc7b1620b7f0ea011d6fb51e32aeafb0a9ca9",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "gpu-series-timeline",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/docs/multiplayer/rollback-desktop-gpu-vsync-joint-timeline-c1.json",
+      "bytes": 829386,
+      "sha256": "cd547d95986043945451a4a45e8c80b9173dd82b911b744846e9093bed4ef1e9",
+      "matchedFrozenIdentity": true
+    },
+    {
+      "role": "gpu-series-decision",
+      "path": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/docs/multiplayer/rollback-desktop-gpu-vsync-decision-c1.json",
+      "bytes": 190076,
+      "sha256": "be96ba1027b018f2ca613cbb255642169d35518b550c5aa4c73326e738c0a0aa",
+      "matchedFrozenIdentity": true
+    }
+  ],
+  "scope": "Final read/hash verification after the completed A0/B1/A0 and offline analyses; no browser/test rerun, source or build mutation. A final report wording refinement limits GPU span maxima to retained top-overlap lists. Original raw and evidence artifacts remain unchanged.",
+  "conclusions": {
+    "desktopOnly": true,
+    "noPhoneTestingOrDeviceOperations": true,
+    "bothCpuThrottleRates": [
+      4,
+      4
+    ],
+    "inputDelayFrames": 0,
+    "historyFrames": 8,
+    "originalGameWasmPreserved": true,
+    "measurementSeriesComplete": true,
+    "smoothnessGoalComplete": false,
+    "gpuFlagAdopted": false,
+    "recoveryTailAdopted": false,
+    "fixedEarlierNetworkBrakeAdopted": false,
+    "nextCoarseReleaseProbeImplemented": false,
+    "pushMergeOrDeploymentPerformed": false
+  },
+  "knownLimits": [
+    "The twelve qualified desktop bodies are not twelve smoothness passes.",
+    "All three GPU pre-drain endpoints and trace windows qualify; all three later teardownClean values remain false.",
+    "Independent source plans produce different actual captured input tapes and host load.",
+    "Native callback and trace span wall are not CPU self or physical GPU time.",
+    "All input coalescing/censoring denominators are preserved; conditional input proxies are not physical latency.",
+    "Next coarse release phase ledger is a reviewed plan only."
+  ]
+}

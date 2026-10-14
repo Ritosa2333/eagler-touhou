@@ -25,7 +25,7 @@ bool Player::initialize(const u8* data,u32 size,u32 side,u32 character,i32 contr
 void Player::reset_round(i32 health,i32 difficulty,i32 round,float height){
     actions.body_interrupt(body,0);motion.position={-160,height-64,.49f};shots.areas.reset();
     motion.direction=0;combo_state.pending=0;control.player_state=5;control.protection.reset(120);
-    for(auto& shot:shots.shots)shot.state=0;motion.base_scale=motion.effect_scale={1,1};motion.history.fill(motion.position);
+    shots.deactivate_all();motion.base_scale=motion.effect_scale={1,1};motion.history.fill(motion.position);
     control.flags=(control.flags&~1u)|2;control.cooldown.reset(6);cpu.charge_goal=std::min(float(world.random.range(400))+100.f,400.f);
     flush_combo();control.shock.reset();control.charge=0;motion.health=health;
     if(difficulty==4){motion.health=1;control.available=400;}

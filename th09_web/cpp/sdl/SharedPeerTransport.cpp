@@ -9,7 +9,7 @@ namespace {
 Netplay::BrowserPeerTransport transport;
 char relay_url[1024]{};
 char spectator_id[128]{};
-std::uint8_t packet_buffer[128]{};
+std::uint8_t packet_buffer[8192]{};
 char error_buffer[256]{};
 }
 

@@ -59,6 +59,9 @@ async function openRuntime(directory, databases) {
     parent: {postMessage() {}, __eaglerPrepareManagedRuntimeDataV1: async () => ({buffer: new ArrayBuffer(1000000)})},
     fetch: async () => ({ok: true, arrayBuffer: async () => new ArrayBuffer(1)}),
   };
+  context.window.document = context.document;
+  context.document.defaultView = context.window;
+  context.window.frameElement = {isConnected: true, contentWindow: context.window, contentDocument: context.document};
   const source = (await readFile(join(directory, 'shell.mjs'), 'utf8')).replace(/^import .*;\r?\n/gm, '');
   const command = await vm.runInNewContext('(async()=>{\n' + source + '\nawait initialized; return command;})()', context);
   return {command, FS, mount, links};
@@ -77,10 +80,11 @@ test('packaged normal and multiplayer shells isolate saves and Replay across rel
     await writeFile(join(compiled, 'th09.wasm'), wasm);
     await writeFile(join(compiled, 'th09.mjs'), 'export default function() {}');
     await writeFile(join(compiled, 'build.json'), JSON.stringify({kind: 'th09-native-web-release-candidate',
-      sha256: createHash('sha256').update(wasm).digest('hex')}));
+      builtAt: new Date().toISOString(), sha256: createHash('sha256').update(wasm).digest('hex')}));
     for (const name of ['cp932.bin', 'blend.bin']) await writeFile(join(fonts, name), 'fixture');
     for (const args of [[], ['--multiplayer']]) {
       const env = {...process.env}; delete env.TH09_OUTPUT; delete env.TH09_RUNTIME_ASSETS;
+      delete env.TH09_PACKAGE_OUTPUT; delete env.EAGLER_RUNTIME_OUTPUT;
       const result = spawnSync(process.execPath, [join(temporary, 'scripts/build-eagler.mjs'), ...args],
         {encoding: 'utf8', windowsHide: true, env});
       assert.equal(result.status, 0, result.stderr);

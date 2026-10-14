@@ -82,7 +82,7 @@ void GameSession::finish(){capture_result();phase=SessionPhase::finished;}
 bool GameSession::movement(const PlayerMotion& p,float speed,float,float& x,float& y){
     const i32 track=current.selection.stage*2+i32(p.player);
     if(is_replay)return motion.playback(track,x,y);
-    const auto& input=motion_input[p.player];const bool enabled=input.enabled&&world&&world->dialogue->id<0&&world->dialogue->id!=-2;
+    const auto& input=motion_input[p.player];const bool enabled=input.enabled&&world;
     if(enabled){x=input.x;y=input.y;
         // A networked gesture ships the absolute field target, so both peers
         // convert it here, at the frame that moves the player. Converting at

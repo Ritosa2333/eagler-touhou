@@ -1,9 +1,36 @@
 #include "WorldState.hpp"
 
 namespace th09::multiplayer {
-WorldState::WorldState() { enemies.reserve(260);effects.reserve(1400);attacks.reserve(257);good=journal.Reset({1,32*1024*1024,8192,true,true}); }
+WorldState::WorldState() { enemies.reserve(260);effects.reserve(1400);attacks.reserve(257);good=journal.Reset({1,FirstWriteByteBudget,FirstWriteBlockBudget,true,true}); }
+#if !defined(NDEBUG) && (!defined(TH09_DEVELOPMENT_HARNESS) || TH09_DEVELOPMENT_HARNESS)
+bool WorldState::JournalRangeDisjoint(const void* data,std::size_t size) const {
+    if(!size)return true;const auto address=reinterpret_cast<std::uintptr_t>(data);
+    for(std::size_t i=0;i<bulletRangeCount;++i){
+        const auto& instances=bulletRanges[i].visuals->instances;
+        const auto base=reinterpret_cast<std::uintptr_t>(instances.data());
+        const auto bytes=instances.size()*sizeof(instances[0]);
+        // Compare differences rather than overflowing either range's end.
+        if(address<base?size>base-address:address-base<bytes)return false;
+    }
+    return true;
+}
+#endif
 void WorldState::BeforeEnemy(EclVm& e){
-    for(std::size_t i=0;i<enemyCount;++i)if(enemies[i].first==&e)return;
+    std::size_t slot=enemySaved.size();
+    for(std::size_t i=0;i<enemyRanges.size();++i){
+        const auto& range=enemyRanges[i];
+        if(range.prototype==&e){slot=i*EnemySlotsPerRange;break;}
+        if(!range.pool)continue;
+        const auto base=reinterpret_cast<std::uintptr_t>(range.pool);
+        const auto address=reinterpret_cast<std::uintptr_t>(&e);
+        if(address>=base&&address-base<(EnemySlotsPerRange-1)*sizeof(EclVm)&&
+            (address-base)%sizeof(EclVm)==0){
+            slot=i*EnemySlotsPerRange+1+(address-base)/sizeof(EclVm);break;
+        }
+    }
+    if(slot<enemySaved.size()){
+        if(enemySaved[slot])return;enemySaved.set(slot);
+    }else for(std::size_t i=0;i<enemyCount;++i)if(enemies[i].first==&e)return;
     if(enemyCount==enemies.size())enemies.emplace_back();
     auto& saved=enemies[enemyCount++];saved.first=&e;
     good=saved.second.Save(e)&&good;if(hashEnabled)HashPart("dynamic enemy",saved.second.Fingerprint(e));ownedBytes+=saved.second.Bytes();
@@ -48,9 +75,17 @@ void WorldState::BeforeBulletVisual(BulletVisuals& x,std::size_t index) {
 void WorldState::BeforeBulletAnimation(BulletVisuals& x,std::size_t index,std::size_t animation) {
     if(index>=x.instances.size()||animation>=x.instances[index].size()){good=false;return;}
     for(std::size_t i=0;i<bulletRangeCount;++i)if(bulletRanges[i].visuals==&x){
-        auto& saved=bulletRanges[i].visualSaved;const auto at=index*x.instances[index].size()+animation;
+        auto& range=bulletRanges[i];auto& saved=range.visualSaved;
+        const auto at=index*x.instances[index].size()+animation;
         if(at>=saved.size()){good=false;return;}if(saved[at])return;
-        auto& vm=x.instances[index][animation];if(Touch(&vm,sizeof(vm)))saved.set(at);
+        if(!good||journal.Failed()||!journal.IsFrameOpen()||
+            FirstWriteBytes()>FirstWriteByteBudget-sizeof(AnmVm)||
+            FirstWriteBlocks()>=FirstWriteBlockBudget){good=false;return;}
+        auto& page=range.visualPages[at/BulletRange::VMsPerPage];
+        if(!page){page.reset(new u8[BulletRange::PageBytes]);++visualPageCount;}
+        const auto offset=(at%BulletRange::VMsPerPage)*sizeof(AnmVm);
+        std::memcpy(page.get()+offset,&x.instances[index][animation],sizeof(AnmVm));
+        saved.set(at);range.visualOrder[range.visualCount++]=u16(at);++visualFirstWriteBlocks;
         return;
     }
     good=false;
@@ -75,15 +110,40 @@ void WorldState::Attacks(AttackQueue& x) {
     if(sparse&&!hashEnabled)Bind(x.checkpoint);
     for(auto& list:x.draw_lists)Vector(list);
 }
+void WorldState::BeforePlayerShot(PlayerShots& x,std::size_t index) {
+    if(index>=x.shots.size()){good=false;return;}
+    for(std::size_t i=0;i<shotRangeCount;++i)if(shotRanges[i].owner==&x){
+        good=shotRanges[i].capture.TouchSlot(x.shots.data(),&x.shots[index],
+            [this](void* p,std::size_t n){return Touch(p,n);})&&good;
+        return;
+    }
+    good=false;
+}
+void WorldState::Shots(PlayerShots& x) {
+    static_assert(std::is_trivially_copyable_v<PlayerShot>);
+    // Keep the independent dense/hash path and complete per-slot bytes. The
+    // sparse path changes capture timing, never the fields a live shot owns.
+    if(!sparse||hashEnabled){NamedFields("s.shots",x.shots);return;}
+    if(shotRangeCount==shotRanges.size()){good=false;return;}
+    auto& range=shotRanges[shotRangeCount++];range.owner=&x;
+    good=range.capture.Capture(x.shots.data(),[](const PlayerShot& shot){return shot.state!=0;},
+        [this](void* p,std::size_t n){return Touch(p,n);})&&good;
+    Bind(x.checkpoint);
+}
 void WorldState::PlayerState(Player& x) {
     NamedFields("x.frame",x.frame);NamedFields("x.motion",x.motion);NamedFields("x.control",x.control);NamedFields("x.body",x.body);NamedFields("x.input",x.input);NamedFields("x.hazards",x.hazards);NamedFields("x.cpu",x.cpu);NamedFields("x.combo_state",x.combo_state);NamedFields("x.secondary_target",x.secondary_target);NamedFields("x.target_priority",x.target_priority);NamedFields("x.attack_levels",x.attack_levels);NamedFields("x.initialized",x.initialized);
-    auto& s=x.shots;NamedFields("s.shots",s.shots);NamedFields("s.player_position",s.player_position);NamedFields("s.option_positions",s.option_positions);NamedFields("s.target",s.target);NamedFields("s.player_scale",s.player_scale);NamedFields("s.side",s.side);NamedFields("s.beam_time",s.beam_time);NamedFields("s.beam",s.beam);NamedFields("s.areas",s.areas);
+    auto& s=x.shots;Shots(s);NamedFields("s.player_position",s.player_position);NamedFields("s.option_positions",s.option_positions);NamedFields("s.target",s.target);NamedFields("s.player_scale",s.player_scale);NamedFields("s.side",s.side);NamedFields("s.beam_time",s.beam_time);NamedFields("s.beam",s.beam);NamedFields("s.areas",s.areas);
     NamedFields("x.items.items",x.items.items);NamedFields("x.items.attraction",x.items.attraction);
     auto& l=x.life;NamedFields("l.input_controller",l.input_controller);NamedFields("l.display_frames",l.display_frames);NamedFields("l.hidden",l.hidden);NamedFields("l.knockback_z",l.knockback_z);NamedFields("l.shield_active",l.shield_active);NamedFields("l.shield_position",l.shield_position);
 }
 void WorldState::BackgroundState(Background& x) {
     // primitives never reallocates between match construction and retirement.
-    for(auto& p:x.primitives)NamedFields("p",p);
+    // Every VM is captured, so keep the same complete bytes in one journal
+    // range instead of one registration/host copy per animation. The hash
+    // oracle retains its independent per-VM ordering and diagnostics.
+    static_assert(std::is_trivially_copyable_v<AnmVm>);
+    if(hashEnabled)for(auto& p:x.primitives)NamedFields("p",p);
+    else if(!x.primitives.empty())Touch(x.primitives.data(),x.primitives.size()*sizeof(x.primitives[0]));
     NamedFields("x.camera,x.goals,x.starts,x.end_tangents,x.start_tangents,x.fov_goal,x.fov_start,x.durations,x.interpolation_times,x.interpolation_modes,x.script_time,x.instruction,x.frame,x.position,x.clear_color,x.fog,x.fog_start,x.fog_goal,x.fog_duration,x.fog_time,x.requested_label,x.transition_state,x.transition_frames,x.overlays,x.boss_animations,x.boss_state,x.boss_frames,x.boss_count,x.boss_parameter,x.tint,x.next_position,x.next_position_time,x.previous_position,x.previous_position_time,x.jumped,x.sway,x.distance_squared,x.invalid",x.camera,x.goals,x.starts,x.end_tangents,x.start_tangents,x.fov_goal,x.fov_start,x.durations,x.interpolation_times,x.interpolation_modes,x.script_time,x.instruction,x.frame,x.position,x.clear_color,x.fog,x.fog_start,x.fog_goal,x.fog_duration,x.fog_time,x.requested_label,x.transition_state,x.transition_frames,x.overlays,x.boss_animations,x.boss_state,x.boss_frames,x.boss_count,x.boss_parameter,x.tint,x.next_position,x.next_position_time,x.previous_position,x.previous_position_time,x.jumped,x.sway,x.distance_squared,x.invalid);
 }
 void WorldState::Recording(ReplayArchive& x) {
@@ -99,8 +159,8 @@ void WorldState::Recording(ReplayArchive& x) {
     }
 }
 bool WorldState::Save(GameSession& s) {
-    Unbind();hashParts.clear();digest={};if(journal.IsFrameOpen())journal.EndFrame();journal.DiscardBefore(1);undo.clear();enemyCount=effectCount=attackCount=0;effectRangeCount=effectSlots=0;effectSaved.reset();attackSaved.reset();ownedBytes=0;good=journal.BeginFrame(0);
-    bulletRangeCount=0;
+    Unbind();hashParts.clear();digest={};if(journal.IsFrameOpen())journal.EndFrame();journal.DiscardBefore(1);undo.clear();ResetEnemyCapture();effectCount=attackCount=0;effectRangeCount=effectSlots=0;effectSaved.reset();attackSaved.reset();ownedBytes=visualFirstWriteBlocks=0;good=journal.BeginFrame(0);
+    bulletRangeCount=shotRangeCount=0;
     // This adapter is specifically the stable live two-human versus world.
     if(!s.world||s.is_replay||s.world->rules.mode!=GameMode::versus)return good=false;
     NamedFields("s.state,s.animations.timing,s.animations.executed,s.animations.invalid,s.initial,s.current,s.inputs,s.scores,s.starting_replay_stage,s.demo,s.demo_input,s.demo_frames,s.warmed_stage,s.result,s.phase,s.continues,s.recordable,s.frames,s.timing,s.motion_input",s.state,s.animations.timing,s.animations.executed,s.animations.invalid,s.initial,s.current,s.inputs,s.scores,s.starting_replay_stage,s.demo,s.demo_input,s.demo_frames,s.warmed_stage,s.result,s.phase,s.continues,s.recordable,s.frames,s.timing,s.motion_input);Text(s.error);
@@ -110,6 +170,12 @@ bool WorldState::Save(GameSession& s) {
     auto& r=w.rules;NamedFields("r.progress,r.mode,r.scores,r.attack_levels",r.progress,r.mode,r.scores,r.attack_levels);Vector(w.screen_effects.effects);
     auto& ss=w.scene_services();NamedFields("ss.game_flags,ss.wins_required,ss.wins,ss.starting_extra_lives,ss.opponent_character,ss.music_track,ss.cpu_level,ss.route,ss.players,ss.geometry",ss.game_flags,ss.wins_required,ss.wins,ss.starting_extra_lives,ss.opponent_character,ss.music_track,ss.cpu_level,ss.route,ss.players,ss.geometry);
     auto& b=*w.battle;NamedFields("b.state,b.patterns",b.state,b.patterns);Text(b.error);
+    // Register both pools before capturing either side: a boss alias can point
+    // across them without first being saved through the unknown-owner path.
+    for(std::size_t side=0;side<enemyRanges.size();++side){
+        auto& manager=*b.fields[side].enemies;
+        enemyRanges[side]={&manager.prototype,manager.enemies.data()};
+    }
     for(auto& f:b.fields){
         NamedFields("f.script,f.enemy_player,f.focus_aura,f.capture_effect,f.shield,f.targeted_enemy,f.cpu_level,f.spells,f.bosses,f.counters",f.script,f.enemy_player,f.focus_aura,f.capture_effect,f.shield,f.targeted_enemy,f.cpu_level,f.spells,f.bosses,f.counters);
         PlayerState(*f.player);Enemy(*f.enemies);Effects(*f.effects);
@@ -123,7 +189,7 @@ bool WorldState::Save(GameSession& s) {
         else if(!sparse)Touch(bullets.pool.data(),bullets.pool.size()*sizeof(bullets.pool[0]));
         else {
             if(bulletRangeCount>=bulletRanges.size()||bullets.pool.size()!=BulletManager::update_count+1)return good=false;
-            auto& range=bulletRanges[bulletRangeCount++];range.owner=&bullets;range.visuals=f.bullet_visuals.get();range.visualSaved.reset();
+            auto& range=bulletRanges[bulletRangeCount++];range.owner=&bullets;range.visuals=f.bullet_visuals.get();range.visualSaved.reset();range.visualCount=0;
             good=range.capture.Capture(bullets.pool.data(),[](const Bullet& b){return b.state!=0;},
                 [this](void* p,std::size_t n){return Touch(p,n);})&&good;
             // Hazards can retain a slot across a paused/frozen player update.
@@ -138,7 +204,10 @@ bool WorldState::Save(GameSession& s) {
             }
             Bind(bullets.checkpoint);
         }
-        NamedFields("f.bullet_visuals->appearances",f.bullet_visuals->appearances);
+        // initialize() is the sole writer of these resource templates, before
+        // the match/checkpoint horizon. Live animation writes target instances.
+        // The independent dense/hash oracle still includes every template byte.
+        if(!sparse||hashEnabled)NamedFields("f.bullet_visuals->appearances",f.bullet_visuals->appearances);
         auto& visuals=*f.bullet_visuals;
         if(!sparse||hashEnabled)for(auto& v:visuals.instances)Fields(v);
         else {
@@ -163,6 +232,20 @@ bool WorldState::Save(GameSession& s) {
 bool WorldState::Restore() {
     Unbind();
     if(!Good()||(journal.IsFrameOpen()&&!journal.EndFrame())||!journal.UndoTo(0))return false;
+    // VM ranges are disjoint from the journal and from each other. Restore all
+    // POD before any owning/texture undo can observe it, as the journal did.
+    for(std::size_t i=0;i<bulletRangeCount;++i){
+        auto& range=bulletRanges[i];
+        for(std::size_t n=range.visualCount;n;--n){
+            const auto at=range.visualOrder[n-1];
+            const auto* page=range.visualPages[at/BulletRange::VMsPerPage].get();
+            assert(page&&range.visualSaved[at]);
+            std::memcpy(&range.visuals->instances[at/5][at%5],
+                page+(at%BulletRange::VMsPerPage)*sizeof(AnmVm),sizeof(AnmVm));
+        }
+        range.visualSaved.reset();range.visualCount=0;
+    }
+    visualFirstWriteBlocks=0;
     for(auto& action:undo)action();
     for(std::size_t i=0;i<enemyCount;++i){auto& e=enemies[i];good=e.second.Restore(*e.first)&&good;}
     for(std::size_t i=0;i<effectCount;++i){auto& e=effects[i];good=e.second.Restore(*e.first)&&good;}

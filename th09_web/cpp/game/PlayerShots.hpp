@@ -2,6 +2,7 @@
 #include "ShotResource.hpp"
 #include "AnmLayout.hpp"
 #include "AttackAreas.hpp"
+#include "PoolCheckpoint.hpp"
 namespace th09 {
 struct PlayerShot {
     AnmVm animation;Vec3 position;std::array<Vec3,32> trail;Vec3 hitbox;Vec2 velocity,offset;float speed=0,angle=0;Timer time;
@@ -27,12 +28,15 @@ class PlayerShots {
     void draw_special(PlayerShot&,const PlayfieldGeometry&);
 public:
     static constexpr u32 capacity=128;
+    PoolCheckpoint* checkpoint=nullptr;
+    void before_write(PlayerShot& shot){if(checkpoint)checkpoint->BeforePlayerShot(*this,&shot-shots.data());}
     std::array<PlayerShot,capacity> shots;
     Vec3 player_position;std::array<Vec3,4> option_positions;Vec3 target;
     Vec2 player_scale{1,1};i32 side=0;Timer beam_time{0,0,0};PlayerShot* beam=nullptr;
     AttackAreas areas;
     explicit PlayerShots(PlayerShotActions& a):actions(a){}
     void fire(const ShotResource&,u32 set,i32 frame);
+    void deactivate_all();
     void update(const FrameTiming&,u32 field_flags);
     void draw(const PlayfieldGeometry&,bool fading);
     i32 hit(const Vec3&,const Vec3& extent,const Timer& protection,i32& direct_damage,u32* token,i32& special_damage);

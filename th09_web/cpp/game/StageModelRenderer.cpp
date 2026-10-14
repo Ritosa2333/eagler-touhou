@@ -14,11 +14,12 @@ u32 fog_color(u32 color,const BackgroundFog& fog,float distance){
 }
 void StageModelRenderer::draw(Background& bg,i32 layer,StageDrawServices& s){
     s.camera.scene(s.viewport,bg.camera);s.begin_models(s.camera);Matrix4 identity;identity.identity();
+    const auto untranslated=GraphicsMath::multiply(GraphicsMath::multiply(identity,s.camera.view),s.camera.projection);
     const Vec3 basis=GraphicsMath::normalize({s.camera.view.m[0][0],s.camera.view.m[0][1],s.camera.view.m[0][2]});
     // The original projection input is shared with the ribbon direction. A
     // ribbon changes the input used by subsequent primitives in this pass.
     Vec3 projection_point{};
-    const auto project=[&](const Vec3& p){auto world=identity;world.m[3][0]=p.x;world.m[3][1]=p.y;world.m[3][2]=p.z;return GraphicsMath::project(projection_point,s.viewport,s.camera.projection,s.camera.view,world);};
+    const auto project=[&](const Vec3& p){return GraphicsMath::project(projection_point,s.viewport,GraphicsMath::translated_projection(p,s.camera.view,s.camera.projection,untranslated));};
     const Vec3 cull_eye=add(s.first_camera.position,s.first_camera.offset),eye=add(bg.camera.position,bg.camera.offset);i32 fog_mode=-1;
     const auto fog=[&](bool value){if(fog_mode!=i32(value)){s.fog_enabled(value);fog_mode=value;}};
     for(const auto& instance:bg.resource.instances){if(instance.object<0||u32(instance.object)>=bg.resource.objects.size())continue;auto& object=bg.resource.objects[instance.object];if(object.layer!=layer)continue;

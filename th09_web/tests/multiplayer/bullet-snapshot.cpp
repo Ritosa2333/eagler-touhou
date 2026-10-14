@@ -46,6 +46,7 @@ struct Checkpoint final:PoolCheckpoint {
     void BeforeAttack(AttackQueue&,std::size_t)override{CHECK(false);}
     void BeforeBulletVisual(BulletVisuals&,std::size_t)override{CHECK(false);}
     void BeforeBulletAnimation(BulletVisuals&,std::size_t,std::size_t)override{CHECK(false);}
+    void BeforePlayerShot(PlayerShots&,std::size_t)override{CHECK(false);}
     void BeforeBytes(void*,std::size_t)override{CHECK(false);}
 };
 int main(){

@@ -1,0 +1,170 @@
+{
+  "schema": "th09-enemy-index-series-execution-v1",
+  "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+  "analysisKind": "Offline reanalysis of the four frozen B/E/E/B raw reports, not new browser performance runs.",
+  "syntax": {
+    "command": "node --check th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+    "command_id": "dX2c_F5YjjhKeWUVcJQnhP4K",
+    "elapsed_ms": 582,
+    "exit_code": 0,
+    "ok": true,
+    "output_ref": "command:dX2c_F5YjjhKeWUVcJQnhP4K:stdout",
+    "output_refs": {
+      "stderr": "command:dX2c_F5YjjhKeWUVcJQnhP4K:stderr",
+      "stdout": "command:dX2c_F5YjjhKeWUVcJQnhP4K:stdout"
+    },
+    "output_stream": "stdout",
+    "signal": null,
+    "status": "exited",
+    "stderr": "",
+    "stderr_dropped_bytes": 0,
+    "stderr_omitted_bytes": 0,
+    "stderr_output_bytes": 0,
+    "stderr_output_lines": 1,
+    "stderr_truncated": false,
+    "stderr_truncated_by": null,
+    "stdout": "",
+    "stdout_dropped_bytes": 0,
+    "stdout_omitted_bytes": 0,
+    "stdout_output_bytes": 0,
+    "stdout_output_lines": 1,
+    "stdout_truncated": false,
+    "stdout_truncated_by": null,
+    "summary": "exit 0 | 0.6s | 0 lines",
+    "timed_out": false,
+    "truncated": false
+  },
+  "attempts": [
+    {
+      "command": "node th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+      "commandId": "AGeNJFbkEtkdYzHHQN4Hvln6",
+      "exitCode": 1,
+      "source": {
+        "path": "th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+        "bytes": 49515,
+        "sha256": "17451405470a55f7c36a98fdfadb4a4e7020366ab2ba020d96306e6c099ab54c"
+      },
+      "reason": "Pretty-printed evidence exceeded the 524288-byte output cap. The analyzer refused omission or truncation and did not create target evidence.",
+      "log": "th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-series-analysis-01-command.json"
+    },
+    {
+      "command": "node th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+      "commandId": "3i5tr0PRSAmEJz-SE6N0DkTw",
+      "exitCode": 0,
+      "source": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\analyze-enemy-index-series.mjs",
+        "bytes": 49508,
+        "sha256": "6b5eebf03b19058175527c798f2c3c1b0432304144059af0dafcd742292dabf9",
+        "available": true
+      },
+      "comparisonAvailable": true,
+      "requiredFailures": [],
+      "log": "th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-series-analysis-02-command.json"
+    }
+  ],
+  "repair": {
+    "scope": "Changed only output JSON indentation; no field, sample, run, metric, gate or failure was removed.",
+    "oldAnalyzerSha256": "17451405470a55f7c36a98fdfadb4a4e7020366ab2ba020d96306e6c099ab54c",
+    "newAnalyzerSha256": "6b5eebf03b19058175527c798f2c3c1b0432304144059af0dafcd742292dabf9",
+    "sourceIdentityCommandId": "CBtiIzJWb6Y3UkeMVxOEvsq9"
+  },
+  "output": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\docs\\multiplayer\\rollback-enemy-index-series-evidence.json",
+    "bytes": 401235,
+    "sha256": "cd0f1155f161bb1cf55a8401307f84c70ad5723bcc033372fa22f08a466651d1",
+    "completeJsonReadback": true,
+    "requiredFailures": []
+  },
+  "metadataInspection": {
+    "command_id": "ihoSq1RbX-rH1WH4tEvnGLTv",
+    "diagnostics": [
+      {
+        "code": "OUTPUT_TRUNCATED",
+        "evidence": "stdout/stderr exceeded max_output_bytes or session buffer limits",
+        "severity": "warning",
+        "suggested_fix": "Increase max_output_bytes or poll the running session more frequently."
+      }
+    ],
+    "elapsed_ms": 607,
+    "exit_code": 0,
+    "next_action": {
+      "arguments": {
+        "limit": 4096,
+        "offset": 0,
+        "output_ref": "command:ihoSq1RbX-rH1WH4tEvnGLTv:stdout"
+      },
+      "tool": "read_output"
+    },
+    "next_actions": [
+      {
+        "arguments": {
+          "limit": 4096,
+          "offset": 0,
+          "output_ref": "command:ihoSq1RbX-rH1WH4tEvnGLTv:stdout"
+        },
+        "tool": "read_output"
+      }
+    ],
+    "ok": true,
+    "output_ref": "command:ihoSq1RbX-rH1WH4tEvnGLTv:stdout",
+    "output_refs": {
+      "stderr": "command:ihoSq1RbX-rH1WH4tEvnGLTv:stderr",
+      "stdout": "command:ihoSq1RbX-rH1WH4tEvnGLTv:stdout"
+    },
+    "output_stream": "stdout",
+    "output_truncated": true,
+    "signal": null,
+    "status": "exited",
+    "stderr_dropped_bytes": 0,
+    "stderr_omitted_bytes": 0,
+    "stderr_output_bytes": 0,
+    "stderr_output_lines": 1,
+    "stderr_truncated": false,
+    "stderr_truncated_by": null,
+    "stdout_dropped_bytes": 0,
+    "stdout_omitted_bytes": 0,
+    "stdout_output_bytes": 60000,
+    "stdout_output_lines": 1,
+    "stdout_truncated": true,
+    "stdout_truncated_by": "bytes",
+    "summary": "exit 0 | 0.6s | 2 lines | tail: '{\"evidence\":{\"path\":\"docs/multiplayer/rollback-enemy-index-series-evidence.json\",\"bytes\":401235,\"sha256\":\"cd0f1155f16...'",
+    "timed_out": false,
+    "truncated": true,
+    "truncated_output_streams": [
+      "stdout"
+    ],
+    "warnings": [
+      "stdout truncated from tail by bytes"
+    ],
+    "scope": "Read only generated evidence, not the raw report inputs.",
+    "issue": "stdout hit the 60000-byte tool output cap and captured text was not a complete JSON document. This was an inspection-output truncation, not evidence corruption or analyzer failure.",
+    "recovery": "The complete 401235-byte evidence was read through nig_read_file and parsed in functions; no analyzer or browser rerun.",
+    "stdoutFullCopyIncluded": false
+  },
+  "preservation": {
+    "newBrowserRuns": 0,
+    "rawInputsModified": false,
+    "helperOrHarnessModified": false,
+    "evidenceFieldsTruncated": false,
+    "commandSlotReleased": true,
+    "inFlightCommands": 0
+  },
+  "findings": {
+    "requiredChecksPassed": true,
+    "completeNativeWindows": 8,
+    "allCostPartitionsCountAndCostConserved": true,
+    "exactPartitionCostDifferenceMsAllSides": 0,
+    "matchedInputTapePrefixFramesPerSide": 1800,
+    "confirmedCheckpointsPerSide": 15,
+    "baselineDriftBlocksStableSpeedupClaim": true,
+    "candidateE1P2FormalNewStateMaximumGapMs": 85.035,
+    "rafEpisodesRecorded": 0,
+    "rafCoverage": {
+      "completePeers": 7,
+      "incompletePeers": 1,
+      "incomplete": "E1/P1 requestsSkipped=1; no missing records were silently repaired or interpreted as absence of a stall."
+    },
+    "scope": "Passing source, input and window checks is not game smoothness acceptance. Native callback cadence is not physical scanout; finite no-episode observation does not resolve earlier seconds-long waits."
+  }
+}
+

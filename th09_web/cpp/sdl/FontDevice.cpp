@@ -10,7 +10,7 @@
 namespace th09::sdl {
 struct FontDevice::Impl {
     struct Glyph {i32 advance=0,width=0,height=0;std::vector<u8> coverage;};
-    std::map<i32,TTF_Font*> faces;std::map<std::pair<i32,u16>,Glyph> glyphs;std::vector<u8> encoding,blend;bool ready=false;
+    std::map<i32,TTF_Font*> faces;std::map<std::pair<i32,u16>,Glyph> glyphs;std::vector<u8> encoding,blend;TextureImage scratch;bool ready=false;
     ~Impl(){for(auto& f:faces)TTF_CloseFont(f.second);if(ready)TTF_Quit();}
     u16 next(const u8*& p,const u8* end){
         if(Localization::Active()){
@@ -69,7 +69,9 @@ bool FontDevice::text(AnmVm& vm,const char* text,u32 color,u32 outline){
     const i32 fw=vm.fontWidth?vm.fontWidth:15,fh=vm.fontHeight?vm.fontHeight:15;const bool large=fw>8;
     const i32 height=large?i32(float(fw)*s.scaleFactor.x):8,destination_height=large?i32(float(fh)*s.scaleFactor.y):8;
     const i32 x=i32(s.startPixelInclusive.x),y=i32(s.startPixelInclusive.y),width=i32(s.width);if(height<=0||height>64||width<=0||width>1024||destination_height<=0)return false;
-    TextureImage scratch;scratch.width=1024;scratch.height=std::max(128,height*2+6);scratch.pitch=2048;scratch.format=PixelFormat::Argb1555;scratch.pixels.resize(size_t(scratch.pitch)*scratch.height);
+    // Glyph blending needs the entire fresh-image zero state, including bytes
+    // outside the alpha-fill area; retain only the allocation between calls.
+    auto& scratch=impl->scratch;scratch.width=1024;scratch.height=std::max(128,height*2+6);scratch.pitch=2048;scratch.format=PixelFormat::Argb1555;scratch.pixels.assign(size_t(scratch.pitch)*scratch.height,u8{});
     const i32 area_width=large?width*2:1024,area=area_width*(height*2+6);if(size_t(area)*2>scratch.pixels.size())return false;
     for(i32 n=0;n<area;++n)scratch.pixels[n*2+1]=0x80;
     const i32 center=x*2+2,shift=outline==0xffffffff?1:2;

@@ -39,11 +39,11 @@ bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint6
     config.predictableButtons = 1 | 4 | 0xf0;
     config.directionButtons = 0xf0;
     config.maxDirectionPredictionFrames = 3;
-    // TH09's network pointer is a held absolute field target, not a fresh
-    // displacement. Hybrid can predict the last target (or joystick vector)
-    // without repeatedly erasing it. Late moves/releases still use full undo.
-    // Keep mode 0 unchanged as the experiment's frozen-policy control.
-    config.directTouchIsAbsolute = mode == Netplay::AdonisMode::Hybrid;
+    // TH09 transmits a held absolute field target, not fresh displacement.
+    // Both rollback modes retain that target (or the held joystick vector).
+    // Actual moves, releases and metadata changes still use full input
+    // comparison and undo; no device displacement is consumed again.
+    config.directTouchIsAbsolute = mode != Netplay::AdonisMode::Delay;
     Netplay::SessionChannelConfig policy;
     policy.repairIntervalMs = Netplay::InputRepairBudget::StalledMs;
     policy.adonisPhase = mode != Netplay::AdonisMode::Rollback;
@@ -52,6 +52,7 @@ bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint6
     if (!core_.Reset(config) || !gate_.Reset(negotiated) || !channel_.BeginSession(negotiated, now, policy))
         return Fail("TH09 rollback bootstrap failed");
     configured_ = true;
+    networkIntervalScale_ = 1; networkPaceAt_ = now;
     return true;
 }
 void RollbackSession::Clear() {
@@ -59,6 +60,7 @@ void RollbackSession::Clear() {
     next_ = replayEnd_ = captures_ = corrections_ = resimulated_ = 0;
     configured_ = failed_ = invalidInput_ = false; error_ = "";
     mode_ = Netplay::AdonisMode::Rollback; inputDelay_ = 0; phaseDebtMs_ = 0;
+    networkIntervalScale_ = 1; networkPaceAt_ = 0;
     startup_=Netplay::AdonisStartup{};startupSession_={};startupNowUs_=0;
     measuring_=measured_=false;startupPending_.clear();
 }
@@ -91,6 +93,40 @@ bool RollbackSession::PumpStartup(std::uint64_t now,std::uint64_t measurementNow
     return true;
 }
 
+std::uint32_t RollbackSession::RemoteInputFrontier() const {
+    const auto confirmed = core_.ConfirmedThroughAllRemotes();
+    return confirmed == Netplay::INVALID_FRAME ? 0 : confirmed + 1;
+}
+std::uint32_t RollbackSession::MissingRemoteInputs() const {
+    const auto frontier = PredictionFrontier(), actual = RemoteInputFrontier();
+    return frontier > actual ? frontier - actual : 0;
+}
+double RollbackSession::IntervalScale() const {
+    const auto phase = channel_.IntervalScale();
+    return Ready() && mode_ == Netplay::AdonisMode::Rollback && networkIntervalScale_ > 1
+        ? std::max(phase, networkIntervalScale_) : phase;
+}
+void RollbackSession::UpdateNetworkPacing(std::uint64_t now, bool expectsInput) {
+    if (!Ready() || mode_ != Netplay::AdonisMode::Rollback || !expectsInput) {
+        networkIntervalScale_ = 1; networkPaceAt_ = now;
+        return;
+    }
+    // Zero is a valid clock origin. Repeated pumps earn no extra time; the
+    // channel rejects reversed clocks before this update can run.
+    if (now <= networkPaceAt_) return;
+    const double elapsed = double(now - networkPaceAt_);
+    networkPaceAt_ = now;
+    // Rewinding next_ does not create prediction room. Use the highest live
+    // frontier and contiguous actual remote inputs, even during correction.
+    const auto outstanding = MissingRemoteInputs();
+    const double target = 1 + std::clamp((double(outstanding) - 4) / 3, 0.0, 1.0);
+    // Only future wall-clock scheduling changes. Capture ownership, the
+    // eight-frame prediction bound and 60 Hz logical steps stay unchanged.
+    if (target > networkIntervalScale_)
+        networkIntervalScale_ = std::min(target, networkIntervalScale_ + elapsed / 50);
+    else
+        networkIntervalScale_ = std::max(target, networkIntervalScale_ - elapsed / 150);
+}
 double RollbackSession::PacedElapsedMs(double elapsedMs) {
     if (!std::isfinite(elapsedMs) || elapsedMs < 0) return 0;
     phaseDebtMs_ += channel_.TakeAdonisDelayMs();
@@ -98,14 +134,29 @@ double RollbackSession::PacedElapsedMs(double elapsedMs) {
     phaseDebtMs_ -= used;
     return elapsedMs - used;
 }
-bool RollbackSession::Pump(std::uint64_t now, bool expectsInput,std::uint64_t measurementNowUs) {
+bool RollbackSession::Pump(std::uint64_t now, bool expectsInput,std::uint64_t measurementNowUs,
+                           bool deferOrdinaryInput) {
     if(failed_)return false;
     if(measured_&&!PumpStartup(now,measurementNowUs))return false;
     if(measuring_)return true;
     if (!configured_ || failed_) return false;
-    if (!channel_.Pump(gate_, core_, now, expectsInput && gate_.CanStart())) return Fail(channel_.ErrorText());
+    // Only a frontier capture already due at entry can replace Pump's older
+    // ordinary input packet. Never hold ACKs through a replay or startup wait.
+    const bool captureFollows = deferOrdinaryInput && expectsInput &&
+        mode_ == Netplay::AdonisMode::Rollback && NeedsCapture();
+    if (!channel_.Pump(gate_, core_, now, expectsInput && gate_.CanStart(), captureFollows)) return Fail(channel_.ErrorText());
     if (invalidInput_) return Fail("Invalid TH09 peer input");
+    // Drain received packets before measuring shortage: a slow local callback
+    // must not mistake queued, already available input for a network deficit.
+    UpdateNetworkPacing(now, expectsInput);
     return !failed_;
+}
+bool RollbackSession::FlushDeferredInputs(std::uint64_t now) {
+    // Even a rejected capture must finish the old ACK/retransmit obligation.
+    // Keep the original title failure when the flush also reports an error.
+    if (channel_.FlushDeferredInputs(core_, now)) return true;
+    if (!failed_) Fail(channel_.ErrorText());
+    return false;
 }
 bool RollbackSession::Verify(std::uint32_t frame,std::uint32_t hash) {
     auto& slot=hashes_[(frame/120)%hashes_.size()];
@@ -165,15 +216,7 @@ Netplay::FrameDecision RollbackSession::Prepare() const {
     auto decision = core_.PrepareFrame(next_);
     if (!decision.canAdvance) return decision;
     for (unsigned seat = 0; seat < 2; ++seat) {
-        auto& input = decision.inputs[seat];
-        if ((decision.predictedMask & (1u << seat)) && mode_ != Netplay::AdonisMode::Hybrid) {
-            // Common DirectTouch prediction models displacement. TH09 ships a
-            // field target: zeroing its axes would aim at the origin. Missing
-            // pointer input therefore predicts no pointer override.
-            input.analogMode = Netplay::AnalogMode::None;
-            input.x = input.y = 0;
-            input.unlimited = input.touchUsed = input.touchBomb = false;
-        }
+        const auto& input = decision.inputs[seat];
         if (!ValidInput(input)) return {};
     }
     return decision;

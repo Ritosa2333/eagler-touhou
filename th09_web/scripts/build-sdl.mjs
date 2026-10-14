@@ -8,6 +8,7 @@ import {createHash} from 'node:crypto';
 const release=process.argv.includes('--release');
 const builtAt=new Date().toISOString();
 const profiling=process.env.TH09_PROFILE==='1';
+const audioSimd=process.env.TH09_AUDIO_SIMD==='1';
 if(release&&profiling)throw Error('Profiling symbols are diagnostic-only');
 const root=fileURLToPath(new URL('../',import.meta.url)),workspace=resolve(root,'..'),commonRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'third_party/eagler-common'));
 if(!existsSync(resolve(commonRoot,'include/eagler/netplay/SessionChannel.hpp')))throw Error('Initialize the pinned eagler-common submodule before building TH09');
@@ -23,7 +24,11 @@ const source=[];for(const dir of ['cpp/game','cpp/sdl','cpp/multiplayer'])for(co
 const allHeaders=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?allHeaders(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
 const headers=[...allHeaders(resolve(root,'cpp')),...allHeaders(resolve(workspace,'portable/sdl')),...allHeaders(resolve(workspace,'portable/input')),...allHeaders(resolve(commonRoot,'include'))].sort();
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex'),headerHash=createHash('sha256');for(const name of headers)headerHash.update(name).update(readFileSync(name));const settings=JSON.stringify([common,headerHash.digest('hex')]);
-async function compile(file){const name=relative(workspace,file).replaceAll('\\','_').replaceAll('/','_'),object=resolve(objects,name+'.o'),key=sha(settings+sha(readFileSync(file)));if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;await run([...common,'-c',file,'-o',object]);writeFileSync(object+'.key',key);return object;}
+// Keep SIMD opt-in and confined to the audio translation unit. The linker
+// detects its target features; game logic and SDL ports keep their old flags.
+const audioSource=resolve(root,'cpp/sdl/AudioDevice.cpp');
+const sourceFlags=file=>audioSimd&&file===audioSource?['-msimd128']:[];
+async function compile(file){const flags=sourceFlags(file),name=relative(workspace,file).replaceAll('\\','_').replaceAll('/','_'),object=resolve(objects,name+'.o'),key=sha(settings+(flags.length?JSON.stringify(flags):'')+sha(readFileSync(file)));if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;await run([...common,...flags,'-c',file,'-o',object]);writeFileSync(object+'.key',key);return object;}
 // The shared unit warms SDL's cached ports before independent compilations.
 const shared=await compile(source.pop()),outputs=new Array(source.length);let cursor=0,done=0;
 const buildJobs=Number(process.env.TH09_BUILD_JOBS||4);
@@ -33,6 +38,6 @@ const loader=resolve(out,release?'th09.mjs':'th09-presentation.mjs');
 await run([...common,...(profiling?['--profiling-funcs']:[]),'--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAP32,HEAPU32','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0',...outputs,shared,'-o',loader]);
 const wasm=readFileSync(loader.replace('.mjs','.wasm')),module=new WebAssembly.Module(wasm);
 if(release&&WebAssembly.Module.exports(module).some(e=>e.name.startsWith('th09_probe_')||e.name==='th09_title_open'))throw Error('Development entry point in release');
-writeFileSync(resolve(out,'build.json'),JSON.stringify({kind:release?'th09-native-web-release-candidate':'th09-presentation-harness',builtAt,completeGame:false,sha256:sha(wasm),bytes:wasm.length,imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),sources:Object.fromEntries([...source,...headers,resolve(workspace,'portable/sdl/Renderer.cpp')].map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]))},null,2)+'\n');
+writeFileSync(resolve(out,'build.json'),JSON.stringify({kind:release?'th09-native-web-release-candidate':'th09-presentation-harness',builtAt,completeGame:false,audioSimd,compilerFlags:common,sourceCompilerFlags:Object.fromEntries(source.filter(file=>sourceFlags(file).length).map(file=>[relative(workspace,file).replaceAll('\\','/'),sourceFlags(file)])),sha256:sha(wasm),bytes:wasm.length,imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),sources:Object.fromEntries([...source,...headers,resolve(workspace,'portable/sdl/Renderer.cpp')].map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]))},null,2)+'\n');
 console.log(JSON.stringify({loader,bytes:wasm.length,sha256:sha(wasm)}));
 
