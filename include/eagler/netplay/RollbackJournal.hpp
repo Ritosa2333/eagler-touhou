@@ -31,6 +31,13 @@ public:
     bool BeginFrame(std::uint32_t frame, bool extendPrevious = false);
     bool Touch(void *address, std::size_t size);
     bool EndFrame();
+    // Explicit read-only snapshot-construction phase. Touch still validates
+    // first-write/overlap/capacity immediately, but new preimages are copied
+    // together at EndReadOnlyCapture. NO source region may be mutated or freed
+    // between these calls. Ordinary Touch remains synchronous outside a phase.
+    bool BeginReadOnlyCapture();
+    bool EndReadOnlyCapture();
+    bool ReadOnlyCaptureActive() const { return captureBatchOpen_; }
 
     // Restore the state immediately before the checkpoint containing `frame`
     // began, then discard that checkpoint and every newer checkpoint. When
@@ -87,7 +94,7 @@ private:
     FrameRecord *CurrentRecord();
     FrameRecord &BackRecord();
     const FrameRecord *FindFrame(std::uint32_t frame) const;
-    void EnsureByteCapacity(FrameRecord &record, std::size_t required);
+    void EnsureByteCapacity(FrameRecord &record, std::size_t required, std::size_t validBytes);
     void CopyBytes(void *destination, const void *source, std::size_t size);
     static bool CoversBlock(const FrameRecord &record, const Block &block);
     static int Height(const FrameRecord &record, std::uint32_t index);
@@ -105,6 +112,8 @@ private:
     bool configured_ = false;
     bool frameOpen_ = false;
     bool failed_ = false;
+    bool captureBatchOpen_ = false;
+    std::size_t captureBatchFirstBlock_ = 0, captureBatchFirstByte_ = 0;
     std::uint32_t openFrame_ = 0;
     std::uint64_t restoreCopiedBytes_ = 0;
     std::uint64_t restoreSkippedBytes_ = 0;

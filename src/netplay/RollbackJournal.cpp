@@ -16,6 +16,21 @@ EM_JS(void, eagler_journal_copy_bytes, (void *destination, const void *source, s
         throw new RangeError('rollback copy outside WASM memory');
     HEAPU8.copyWithin(to, from, from + length);
 });
+// The first three uint32 words of each wasm32 Block are address/offset/size.
+// Validate every region before copying any; resolve current heaps after growth.
+EM_JS(void, eagler_journal_copy_blocks, (void *arena, std::size_t arenaBytes, const void *blocks, std::size_t count, std::size_t stride), {
+    const base=arena>>>0, cap=arenaBytes>>>0, at=blocks>>>0, n=count>>>0, step=stride>>>0;
+    const heap=HEAPU8, words=HEAPU32;
+    if(!base||!at||at%4||step<12||step%4||cap>heap.length||base>heap.length-cap||
+       n>Math.floor((heap.length-at)/step))throw new RangeError('rollback batch outside WASM memory');
+    for(let i=0;i<n;++i){const p=(at+i*step)>>>2,from=words[p],offset=words[p+1],size=words[p+2];
+        if(!from||!size||size>cap||offset>cap-size||size>heap.length||from>heap.length-size)
+            throw new RangeError('rollback batch region outside WASM memory');
+    }
+    for(let i=0;i<n;++i){const p=(at+i*step)>>>2,from=words[p],offset=words[p+1],size=words[p+2];
+        heap.copyWithin(base+offset,from,from+size);
+    }
+});
 #endif
 
 namespace Netplay
@@ -56,6 +71,8 @@ void RollbackJournal::Clear()
     configured_ = false;
     frameOpen_ = false;
     failed_ = false;
+    captureBatchOpen_ = false;
+    captureBatchFirstBlock_ = captureBatchFirstByte_ = 0;
     openFrame_ = 0;
 }
 
@@ -114,7 +131,7 @@ RollbackJournal::FrameRecord &RollbackJournal::BackRecord()
     return frames_[(firstFrame_ + frameCount_ - 1) % frames_.size()];
 }
 
-void RollbackJournal::EnsureByteCapacity(FrameRecord &record, std::size_t required)
+void RollbackJournal::EnsureByteCapacity(FrameRecord &record, std::size_t required, std::size_t validBytes)
 {
     if (required <= record.byteCapacity)
         return;
@@ -125,8 +142,8 @@ void RollbackJournal::EnsureByteCapacity(FrameRecord &record, std::size_t requir
             ? capacity * 2 : config_.maxBytesPerFrame;
     std::unique_ptr<std::uint8_t[]> bytes(new std::uint8_t[capacity]);
     ++arenaGrowths_;
-    if (record.byteSize != 0)
-        CopyBytes(bytes.get(), record.bytes.get(), record.byteSize);
+    if (validBytes != 0)
+        CopyBytes(bytes.get(), record.bytes.get(), validBytes);
     record.bytes = std::move(bytes);
     record.byteCapacity = capacity;
 }
@@ -244,8 +261,11 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
     }
 
     const std::size_t offset = record->byteSize;
-    EnsureByteCapacity(*record, offset + size);
-    CopyBytes(record->bytes.get() + offset, address, size);
+    if (!captureBatchOpen_)
+    {
+        EnsureByteCapacity(*record, offset + size, record->byteSize);
+        CopyBytes(record->bytes.get() + offset, address, size);
+    }
     record->byteSize += size;
     const auto inserted = static_cast<std::uint32_t>(record->blocks.size());
     record->blocks.push_back(Block{start, offset, size});
@@ -278,9 +298,46 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
     return true;
 }
 
+bool RollbackJournal::BeginReadOnlyCapture()
+{
+    auto *record = CurrentRecord();
+    if (!record || failed_ || captureBatchOpen_) return false;
+    captureBatchFirstBlock_ = record->blocks.size();
+    captureBatchFirstByte_ = record->byteSize;
+    captureBatchOpen_ = true;
+    return true;
+}
+
+bool RollbackJournal::EndReadOnlyCapture()
+{
+    auto *record = CurrentRecord();
+    if (!record || !captureBatchOpen_) return false;
+    captureBatchOpen_ = false;
+    if (failed_) return false;
+    const auto count = record->blocks.size() - captureBatchFirstBlock_;
+    if (!count) return true;
+    EnsureByteCapacity(*record, record->byteSize, captureBatchFirstByte_);
+#if defined(__EMSCRIPTEN__) && !defined(__wasm64__)
+    static_assert(offsetof(Block,address)==0 && offsetof(Block,offset)==4 && offsetof(Block,size)==8,
+                  "wasm32 batch descriptor prefix changed");
+    if (config_.fastBulkCopy)
+    {
+        eagler_journal_copy_blocks(record->bytes.get(), record->byteSize,
+            record->blocks.data()+captureBatchFirstBlock_, count, sizeof(Block));
+        return true;
+    }
+#endif
+    for (std::size_t i=captureBatchFirstBlock_;i<record->blocks.size();++i)
+    {
+        const auto &block=record->blocks[i];
+        CopyBytes(record->bytes.get()+block.offset,reinterpret_cast<const void*>(block.address),block.size);
+    }
+    return true;
+}
+
 bool RollbackJournal::EndFrame()
 {
-    if (!frameOpen_ || failed_)
+    if (!frameOpen_ || failed_ || captureBatchOpen_)
     {
         return false;
     }
