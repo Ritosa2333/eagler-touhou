@@ -31,9 +31,15 @@ std::unique_ptr<ApplicationState> app;
 std::string last_error;
 #if TH15_MULTIPLAYER
 multiplayer::NetplayRuntime network;multiplayer::ReplayArchive mp_replay;
-GameInput mp_menu;bool mp_started=false,mp_recording=false,mp_playback=false;
+GameInput mp_menu;bool mp_started=false,mp_recording=false,mp_playback=false,mp_local_results=false;
 std::string mp_replay_path;std::string mp_saved_name="PLAYER";unsigned mp_stage=1;
 bool mp_tick(u32 held,bool physical=true){
+ if(mp_local_results){
+  if(!network.Pump(false)){last_error=network.Error();return false;}
+  if(!network.Retired()){if(!network.Finish()&&*network.Error()){last_error=network.Error();return false;}return true;}
+  if(app->exiting||!physical)return true;mp_menu.update(held);
+  if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}return true;
+ }
  if(!network.Pump(true)){last_error=network.Error();return false;}
  // Retirement can wait for the final confirmed-input fence without an error.
  if(app->exiting){if(!network.Finish()&&*network.Error()){last_error=network.Error();return false;}return true;}
@@ -53,6 +59,8 @@ bool mp_tick(u32 held,bool physical=true){
  if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
  if(mp_recording&&!mp_replay.Append(frame,stage,decision.inputs.data(),network.Setup().player_count)){last_error="MP recording capacity exhausted";return false;}
  if(!network.MarkSimulated(frame,decision)){last_error=network.Error();return false;}
+ // Rankings and stored names belong to each browser, after the common ending fence.
+ if(app->title){mp_local_results=true;mp_menu={};}
  if(app->exiting&&!network.Finish()&&*network.Error()){last_error=network.Error();return false;}return true;
 }
 #endif
@@ -127,7 +135,7 @@ bool sample_and_tick(){
 #if TH15_MULTIPLAYER
  // Touch pulses and held/pressed edges are sampled exactly once per frame.
  // While a captured frame waits, only pump the confirmed-input runtime.
- if(mp_started&&!network.NeedsCapture())return mp_tick(0,false);
+ if(mp_started&&!mp_local_results&&!network.NeedsCapture())return mp_tick(0,false);
 #endif
  if(!app)return false;SDL_Event event;while(SDL_PollEvent(&event)){
   ThpracUi::process_event(event,float(render_scale));
@@ -171,7 +179,7 @@ bool sample_and_tick(){
 }
 extern "C" {
 #if TH15_MULTIPLAYER
-EMSCRIPTEN_KEEPALIVE int th15_mp_configure(const unsigned* words,unsigned count){using namespace th15::sdl;th15::multiplayer::SessionSetup setup;if(running||!app||!th15::multiplayer::DecodeSessionSetup(setup,words,count)||!network.Reset(setup))return 0;mp_started=mp_recording=mp_playback=false;mp_menu={};mp_replay.Clear();mp_replay_path.clear();last_error.clear();return 1;}
+EMSCRIPTEN_KEEPALIVE int th15_mp_configure(const unsigned* words,unsigned count){using namespace th15::sdl;th15::multiplayer::SessionSetup setup;if(running||!app||!th15::multiplayer::DecodeSessionSetup(setup,words,count)||!network.Reset(setup))return 0;mp_started=mp_recording=mp_playback=mp_local_results=false;mp_menu={};mp_replay.Clear();mp_replay_path.clear();last_error.clear();return 1;}
 EMSCRIPTEN_KEEPALIVE int th15_mp_connect(const char* url){using namespace th15::sdl;return network.Connect(url);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_spectator_connect(const char* url,const char* id){using namespace th15::sdl;return network.ConnectSpectator(url,id);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_pump(){using namespace th15::sdl;return network.Pump(app&&app->scene());}
@@ -189,12 +197,12 @@ EMSCRIPTEN_KEEPALIVE int th15_mp_start(){using namespace th15::sdl;if(running||!
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_validate(const unsigned char* bytes,unsigned size){return th15::multiplayer::ReplayArchive::Validate(bytes,size);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_load(const unsigned char* bytes,unsigned size,const unsigned* build){using namespace th15::sdl;th15::multiplayer::ReplayArchive parsed;if(running||!app||!build||!parsed.Load(bytes,size))return 0;
  for(unsigned i=0;i<4;++i)if(parsed.Setup().build[i]!=build[i]){last_error="Multiplayer replay build mismatch";return 0;}
- if(!network.BeginPlayback(parsed.Setup()))return 0;mp_replay=std::move(parsed);mp_playback=true;mp_recording=false;mp_menu={};last_error.clear();return 1;}
+ if(!network.BeginPlayback(parsed.Setup()))return 0;mp_replay=std::move(parsed);mp_playback=true;mp_recording=mp_local_results=false;mp_menu={};last_error.clear();return 1;}
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_save(){using namespace th15::sdl;if(!mp_recording||!mp_replay.FrameCount())return 1;std::vector<th15::u8> bytes;th15::u32 score=0;
  if(app&&app->scene()){const auto& battle=app->scene()->battle;const auto seat=network.Setup().local_player;score=th15::u32(battle.mp_enabled&&seat<battle.mp_options.seat_count?battle.pilots[seat]->score.score:battle.score.score);}
  if(app&&!app->scene())score=th15::u32(app->selection_score.score);if(!mp_replay.Encode(bytes,mp_saved_name.c_str(),score,app&&app->completed_recording))return 0;if(mp_replay_path.empty()){for(unsigned slot=1;slot<=99;++slot){char path[64];std::snprintf(path,sizeof path,"/save/replay/th15mp_%02u.rpy",slot);auto* existing=SDL_IOFromFile(path,"rb");if(!existing){mp_replay_path=path;break;}SDL_CloseIO(existing);}if(mp_replay_path.empty())mp_replay_path="/save/replay/th15mp_01.rpy";}
  auto* f=SDL_IOFromFile(mp_replay_path.c_str(),"wb");if(!f)return 0;const bool ok=SDL_WriteIO(f,bytes.data(),bytes.size())==bytes.size();const bool closed=SDL_CloseIO(f);return ok&&closed;}
-EMSCRIPTEN_KEEPALIVE void th15_mp_close(){using namespace th15::sdl;network.Clear();mp_started=mp_recording=mp_playback=false;mp_menu={};}
+EMSCRIPTEN_KEEPALIVE void th15_mp_close(){using namespace th15::sdl;network.Clear();mp_started=mp_recording=mp_playback=mp_local_results=false;mp_menu={};}
 #endif
 EMSCRIPTEN_KEEPALIVE int th15_draw_startup(unsigned frames){using namespace th15::sdl;return app&&!running&&app->render_loading(true,frames);}
 EMSCRIPTEN_KEEPALIVE int th15_prepare_loading(){using namespace th15::sdl;if(running)return 0;ThpracUi::shutdown();if(app)app->scheduler.remove(fps_drawing);app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;return app->prepare_loading();}
@@ -255,7 +263,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
 #endif
    ok=sample_and_tick();
 #if TH15_MULTIPLAYER
-   completed+=!mp_started||network.NextFrame()!=before;
+   completed+=!mp_started||(mp_local_results&&network.Retired())||network.NextFrame()!=before;
 #else
    ++completed;
 #endif

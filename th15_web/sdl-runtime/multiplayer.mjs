@@ -38,7 +38,7 @@ export function createMultiplayerBridge({core,getOptions,manifest,emit,onError,o
  const fail=e=>{target.__eaglerNetplayFailed=true;target.__eaglerNetplayError=e?.message||String(e);calibration?.stop();core._th15_loop_stop();onError(e);};
  const memory={get buffer(){return core.HEAPU8.buffer;}};
  function startCalibration(){
-  calibration=createAdonisCalibration({core:{memory,multiplayer_calibration_status:()=>core._th15_mp_calibration_status(),multiplayer_network_poll:()=>core._th15_mp_pump()},getApp:()=>active?1:0,getOptions,emit,game:'th15',build:manifest.execution.sha256,onError:fail,pause:()=>{core._th15_loop_stop();onExit();},target});
+  calibration=createAdonisCalibration({core:{memory,multiplayer_calibration_status:()=>core._th15_mp_calibration_status(),multiplayer_network_poll:()=>core._th15_mp_pump()},getApp:()=>active?1:0,getOptions,emit,game:'th15',build:manifest.execution.sha256,onError:fail,pause:()=>{if(core._th15_phase()===0||getOptions().netplaySpectator)return;core._th15_loop_stop();onExit();},target});
   calibration.start();
  }
  async function launch(){
@@ -61,7 +61,7 @@ export function createMultiplayerBridge({core,getOptions,manifest,emit,onError,o
   active=true;target.__eaglerNetplayLanActive=true;target.__eaglerNetplaySpectator=config.spectator;target.__eaglerNetplayFailed=false;
   target.__eaglerNetplayInputDelayFrames=config.delay;target.__eaglerNetplayAdonisMode=1;startCalibration();return true;
  }
- function frame(){if(!active)return;const s=Array.from(core.HEAPU32.subarray(core._th15_mp_status()>>>2,(core._th15_mp_status()>>>2)+24));target.__eaglerNetplayLanConfirmed=s[4];target.__eaglerNetplayLanFrame=s[3];calibration?.pump();}
+ function frame(){if(!active)return;if(core._th15_phase()===0)calibration?.stop();const s=Array.from(core.HEAPU32.subarray(core._th15_mp_status()>>>2,(core._th15_mp_status()>>>2)+24));target.__eaglerNetplayLanConfirmed=s[4];target.__eaglerNetplayLanFrame=s[3];calibration?.pump();}
  function save(){if(active&&getOptions().replayViewer!==true&&!getOptions().netplaySpectator&&!core._th15_mp_replay_save())throw Error(error());}
  function close(){calibration?.stop();core._th15_mp_close();active=false;target.__eaglerNetplayLanActive=false;}
  return {launch,frame,save,close};

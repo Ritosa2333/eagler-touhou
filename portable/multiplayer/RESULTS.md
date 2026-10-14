@@ -143,3 +143,18 @@ branches. Publish the common dependency before distributing the title pin.
 - The retirement fence may wait without an error; runtime exit is published
   only after final confirmed-input retirement. Production exports exclude
   the test-only completion hooks. Gameplay ABI is 16.
+
+## Independent completed-run save flow (2026-10-14)
+
+- Native SDL ending lifecycle: 2P/3P with different local ranking histories,
+  blank names, an idle Score Ranking screen, native slot/name entry, actual
+  MP Replay writes and successful exit only after write. A completed peer
+  disconnects while the next peer remains in ranking and saves independently.
+- The 2P spectator drains the final confirmed frame and reaches native ranking;
+  normal transport completion does not abort the remaining local UI.
+- Shared input retirement is at the common ending boundary (test frame 621),
+  before local ranking and save menus. Gameplay ABI 17 rejects earlier peers.
+- Network protocol, native dialogue/result menu regression, production module
+  exports and production browser lockstep/offline playback checks pass.
+- Ending is entered by a test-only clear trigger; this is lifecycle coverage,
+  not a complete natural six-stage playthrough.

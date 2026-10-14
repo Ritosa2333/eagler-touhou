@@ -98,7 +98,7 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 16 rejects older incompatible economy generations.
+Gameplay ABI version 17 rejects older incompatible economy generations.
 Display-only local-hitbox filtering does not change that gameplay version.
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
@@ -170,3 +170,8 @@ the authoritative aggregate remain unchanged. Normal clears run the native
 ending and score/replay result owners on confirmed inputs before returning to
 the lobby. Result inputs belong to P1; ending timing ignores local unlock
 history. Native named saves write the complete multiplayer input archive.
+
+After the common ending, each browser retires at the same confirmed frame.
+The native Score Ranking and Replay Save menus then use local input and local
+records; another player exiting cannot dismiss these menus. A successful named
+Replay write follows native cleanup and persistence before the hosted exit.

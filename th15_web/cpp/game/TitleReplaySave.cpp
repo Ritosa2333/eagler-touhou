@@ -38,7 +38,7 @@ bool TitleReplaySave::update(u32 pressed,u32 repeated){
    else if(grid.cursor==89){if(editor.name_length==0)return true;editor.name[--editor.name_length]=' ';}
    else {
     if(!check(host.sound(17),"Replay write sound failed"))return false;files[state.menu.cursor].reset();if(!check(host.save_slot(state.menu.cursor,editor.name),"Completed replay write failed")||!check(host.read_slot(state.menu.cursor,files[state.menu.cursor]),"Completed replay reload failed"))return false;
-    for(u32 n=0;n<9;n++){records.name[n]=editor.name[n];if(!editor.name[n])break;}state.change_substate(2);
+    for(u32 n=0;n<9;n++){records.name[n]=editor.name[n];if(!editor.name[n])break;}state.change_substate(host.exit_after_replay_save()?4:2);
    }
    if(!check(host.sound(7),"Replay name confirm sound failed"))return false;
   }
