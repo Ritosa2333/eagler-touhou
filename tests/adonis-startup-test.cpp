@@ -240,6 +240,119 @@ static void connection_owner(){
     assert(host.Startup().Ready()&&!host.Startup().Failed());
     assert(host.Status()[1]==5&&host.Startup().Selected().delay==choice.delay);
 }
+static std::vector<std::uint8_t> connection_input_wire(const SessionConfig& c,unsigned sender,bool withInput=false){
+    InputPacket packet;packet.sessionId=c.sessionId;packet.senderPlayer=sender;packet.playerCount=c.playerCount;
+    packet.sequence=3;packet.ackSequence=2;packet.latestFrame=packet.ackFrame=59;packet.senderFrame=60;
+    if(withInput){packet.firstInputFrame=59;packet.inputCount=1;packet.inputs[0]=FrameInput(1);}
+    std::vector<std::uint8_t> bytes;assert(EncodeInputPacket(packet,&bytes));return bytes;
+}
+static std::vector<std::uint8_t> connection_session_wire(const SessionConfig& c,unsigned sender,
+                                                        SessionPhase phase=SessionPhase::Hello){
+    SessionPacket packet;packet.sessionId=c.sessionId;packet.seed=c.seed;packet.gameplayAbi=c.gameplayAbi;
+    packet.gameId=c.gameId;packet.playerCount=c.playerCount;packet.senderPlayer=sender;packet.phase=phase;
+    std::vector<std::uint8_t> bytes;assert(EncodeSessionPacket(packet,&bytes));return bytes;
+}
+static std::vector<std::uint8_t> connection_phase_wire(const SessionConfig& c,unsigned sender,unsigned target){
+    AdonisPhaseSample sample;sample.sessionId=c.sessionId;sample.senderPlayer=sender;sample.targetPlayer=target;
+    sample.frame=64;sample.waitCount=16;sample.waitUs=16000;
+    std::vector<std::uint8_t> bytes;assert(EncodeAdonisPhaseSample(sample,&bytes));return bytes;
+}
+static std::vector<std::uint8_t> connection_calibration_wire(SessionConfig c,unsigned sender){
+    Link a,b;a.other=&b;b.other=&a;c.localPlayer=sender;
+    AdonisStartup startup;assert(startup.Begin(c,0,AdonisMode::Delay,1));assert(startup.Tick(a,0));
+    assert(b.incoming.size()==1);return b.incoming.front().bytes;
+}
+static void connection_retired_generation(){
+    Link a,b;a.other=&b;b.other=&a;
+    auto old=config(0);old.gameId=10;auto next=old;++next.sessionId;++next.seed;++next.gameplayAbi;
+    auto oldPeer=old,nextPeer=next;oldPeer.localPlayer=nextPeer.localPlayer=1;
+    AdonisConnection host(a),peer(b);
+    host.Prepare(next,AdonisMode::Delay,false,1,2,&old);
+    peer.Prepare(nextPeer,AdonisMode::Delay,false,1,2,&oldPeer);
+    // Retire() can succeed while its first reliable ACK is refused. That
+    // cached ACK, an older input tail, HELLO/READY and phase advice can all
+    // arrive after the next world's Prepare, before its calibration commits.
+    const std::vector<std::vector<std::uint8_t>> oldPackets{
+        connection_input_wire(old,1),connection_input_wire(old,1,true),
+        connection_session_wire(old,1),connection_session_wire(old,1,SessionPhase::Ready),
+        connection_phase_wire(old,1,0),connection_calibration_wire(old,1)};
+    for(const auto& bytes:oldPackets)a.incoming.push_back({0,bytes});
+    const auto hello=connection_session_wire(next,1);
+    a.incoming.push_back({0,hello});
+    assert(host.Pump(0,false)&&host.Waiting()&&a.incoming.size()==oldPackets.size()+1);
+    for(std::uint64_t now=0;now<7'000'000;now+=1000){
+        a.now=b.now=now;
+        // The slower peer is still loading and can keep retrying retirement.
+        // Neither those ACKs nor its old calibration HELLO can open new input.
+        if(now<2'000'000&&now%100'000==0)a.incoming.push_back({now,oldPackets.front()});
+        assert(host.Pump(now,true)&&peer.Pump(now,now>=2'000'000));
+        if(now<2'000'000)assert(host.Waiting()&&!host.Startup().Ready()&&host.Startup().Probes()==0);
+        if(host.NeedsApply())host.Applied();
+        if(peer.NeedsApply())peer.Applied();
+    }
+    assert(!host.Failed()&&!peer.Failed()&&!host.Waiting()&&!peer.Waiting());
+    assert(host.Startup().Replies()==120&&peer.Startup().Replies()==120);
+    assert(host.Startup().Selected().delay==1&&peer.Startup().Selected().delay==1);
+    // The current generation's deferred HELLO retains its exact bytes/order;
+    // no retired input reaches the downstream SessionChannel or new core.
+    std::vector<std::uint8_t> bytes;assert(host.Poll(&bytes)&&bytes==hello);assert(!host.Poll(&bytes));
+    const auto input=connection_input_wire(next,1,true);a.incoming.push_back({a.now,input});
+    assert(host.Poll(&bytes)&&bytes==input);
+
+    // ADP uses broadcast control. A valid report between the other two seats
+    // is also harmless retired traffic, even though its target is not local.
+    Link x,y;x.other=&y;y.other=&x;auto oldMesh=old,nextMesh=next;
+    oldMesh.playerCount=nextMesh.playerCount=3;
+    AdonisConnection mesh(x);mesh.Prepare(nextMesh,AdonisMode::Delay,false,1,2,&oldMesh);
+    x.incoming.push_back({0,connection_phase_wire(oldMesh,1,2)});
+    assert(mesh.Pump(0,true)&&mesh.Waiting()&&!mesh.Startup().Ready()&&x.incoming.empty());
+}
+static void connection_rejects_unretired_or_malformed_packets(){
+    auto old=config(0);old.gameId=10;auto next=old;++next.sessionId;++next.seed;++next.gameplayAbi;
+    const auto rejected=[&](const std::vector<std::uint8_t>& bytes,const SessionConfig* retired){
+        Link a,b;a.other=&b;b.other=&a;AdonisConnection host(a);
+        host.Prepare(next,AdonisMode::Delay,false,1,2,retired);a.incoming.push_back({0,bytes});
+        assert(!host.Pump(0,true)&&host.Failed()&&!host.Startup().Ready()&&!host.NeedsApply());
+    };
+    const auto ack=connection_input_wire(old,1);
+    rejected(ack,nullptr); // all existing consumers retain the strict default
+    rejected(connection_input_wire(next,1),&old); // even current ACK-only input is too early
+    rejected(connection_input_wire(next,1,true),&old);
+    rejected(connection_input_wire(old,0),&old); // local-seat forgery
+    auto unknown=old;unknown.sessionId+=100;
+    rejected(connection_input_wire(unknown,1),&old);
+    rejected(connection_session_wire(unknown,1),&old);
+    rejected(connection_phase_wire(unknown,1,0),&old);
+    auto wrong=old;wrong.playerCount=3;
+    rejected(connection_input_wire(wrong,1),&old);
+    rejected(connection_input_wire(wrong,2),&old);
+    rejected(connection_session_wire(wrong,1),&old);
+    rejected(connection_session_wire(old,0),&old);
+    wrong=old;++wrong.seed;rejected(connection_session_wire(wrong,1),&old);
+    wrong=old;++wrong.gameplayAbi;rejected(connection_session_wire(wrong,1),&old);
+    wrong=old;++wrong.gameId;rejected(connection_session_wire(wrong,1),&old);
+    rejected(connection_phase_wire(old,0,1),&old);
+    rejected(connection_phase_wire(old,1,2),&old); // third seat absent from the retired mesh
+    rejected(connection_phase_wire(next,1,0),&old);
+    for(auto bytes:{ack,connection_input_wire(old,1,true),connection_session_wire(old,1),
+                    connection_phase_wire(old,1,0),connection_calibration_wire(old,1)}){
+        bytes.pop_back();rejected(bytes,&old); // an old ID cannot exempt malformed framing/payload
+    }
+    auto badPhase=connection_phase_wire(old,1,0);badPhase[12]=65;rejected(badPhase,&old);
+    rejected(connection_input_wire(next,1),&next); // a current descriptor is never a retired exception
+    wrong=old;wrong.localPlayer=1;rejected(ack,&wrong);
+    wrong=old;wrong.playerCount=3;rejected(ack,&wrong);
+    wrong=old;++wrong.gameId;rejected(ack,&wrong);
+    // Reuse/clear cannot accidentally carry this one-generation exception
+    // into a fresh lobby which has never retired a session on this wire.
+    for(bool clear:{false,true}){
+        Link a,b;a.other=&b;b.other=&a;AdonisConnection host(a);
+        host.Prepare(next,AdonisMode::Delay,false,1,2,&old);
+        if(clear)host.Clear();
+        host.Prepare(next,AdonisMode::Delay,false,1,2);a.incoming.push_back({0,ack});
+        assert(!host.Pump(0,true)&&host.Failed()&&!host.Startup().Ready());
+    }
+}
 static void connection_waits_for_loading_peer(){
     // RTC can be healthy while a slower endpoint is still creating its world.
     // The local resource-ready time must not consume the measurement deadline.
@@ -302,6 +415,8 @@ int main(){
     _set_abort_behavior(0,_WRITE_ABORT_MSG|_CALL_REPORTFAULT);
 #endif
     connection_owner();
+    connection_retired_generation();
+    connection_rejects_unretired_or_malformed_packets();
     connection_waits_for_loading_peer();
     for(unsigned count:{2u,3u})for(unsigned seat=0;seat<count;++seat)
         for(auto mode:{AdonisMode::Delay,AdonisMode::Hybrid})for(auto delay:{AdonisStartup::Automatic,0u,9u})

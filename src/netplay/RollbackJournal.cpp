@@ -16,6 +16,32 @@ EM_JS(void, eagler_journal_copy_bytes, (void *destination, const void *source, s
         throw new RangeError('rollback copy outside WASM memory');
     HEAPU8.copyWithin(to, from, from + length);
 });
+
+// Block's wasm32 layout is checked at the call site. Read its existing
+// insertion-order suffix instead of allocating a second descriptor queue.
+EM_JS(void, eagler_journal_copy_capture_batch,
+      (void *destination, const void *blocks, std::size_t first, std::size_t end), {
+    const heap = HEAPU8, words = HEAPU32;
+    const arena = destination >>> 0, base = blocks >>> 0;
+    const begin = first >>> 0, finish = end >>> 0;
+    if (!base || (base & 3) || finish < begin || base > heap.length ||
+        finish > (heap.length - base) / 24)
+        throw new RangeError('rollback block queue outside WASM memory');
+    for (let index = begin; index < finish; ++index) {
+        const word = (base + index * 24) >>> 2;
+        const from = words[word] >>> 0;
+        const offset = words[word + 1] >>> 0;
+        const length = words[word + 2] >>> 0;
+        if (length < 1024) continue;
+        // Do not wrap arena + offset: the original helper also rejects a
+        // destination range that exceeds the current memory.
+        const to = arena + offset;
+        if (length > heap.length || from > heap.length - length ||
+            to > heap.length - length || (length && (!from || !to)))
+            throw new RangeError('rollback copy outside WASM memory');
+        heap.copyWithin(to, from, from + length);
+    }
+});
 #endif
 
 namespace Netplay
@@ -37,6 +63,7 @@ bool RollbackJournal::Reset(const RollbackJournalConfig &config)
     Clear();
     restoreCopiedBytes_ = restoreSkippedBytes_ = 0;
     arenaGrowths_ = 0;
+    readOnlyCaptureStats_ = {};
     if (config.maxFrames == 0 || config.maxBytesPerFrame == 0 ||
         config.maxBlocksPerFrame == 0 || config.maxBlocksPerFrame >= NO_BLOCK)
     {
@@ -50,6 +77,8 @@ bool RollbackJournal::Reset(const RollbackJournalConfig &config)
 
 void RollbackJournal::Clear()
 {
+    if (readOnlyCaptureOpen_)
+        EndReadOnlyCapture();
     frames_.clear();
     firstFrame_ = 0;
     frameCount_ = 0;
@@ -57,6 +86,8 @@ void RollbackJournal::Clear()
     frameOpen_ = false;
     failed_ = false;
     openFrame_ = 0;
+    firstReadOnlyCaptureBlock_ = 0;
+    pendingReadOnlyCaptureBlocks_ = pendingReadOnlyCaptureBytes_ = 0;
 }
 
 bool RollbackJournal::BeginFrame(std::uint32_t frame, bool extendPrevious)
@@ -114,10 +145,71 @@ RollbackJournal::FrameRecord &RollbackJournal::BackRecord()
     return frames_[(firstFrame_ + frameCount_ - 1) % frames_.size()];
 }
 
+bool RollbackJournal::BeginReadOnlyCapture()
+{
+    FrameRecord *record = CurrentRecord();
+    if (!record || failed_ || readOnlyCaptureOpen_)
+        return false;
+    readOnlyCaptureOpen_ = true;
+    firstReadOnlyCaptureBlock_ = record->blocks.size();
+    pendingReadOnlyCaptureBlocks_ = pendingReadOnlyCaptureBytes_ = 0;
+    ++readOnlyCaptureStats_.scopes;
+    return true;
+}
+
+bool RollbackJournal::EndReadOnlyCapture()
+{
+    if (!readOnlyCaptureOpen_)
+        return false;
+    // A rejected later Touch must not discard already accepted source bytes.
+    // Flush deliberately does not depend on failed_.
+    FlushReadOnlyCapture();
+    readOnlyCaptureOpen_ = false;
+    return !failed_;
+}
+
+void RollbackJournal::FlushReadOnlyCapture()
+{
+    if (pendingReadOnlyCaptureBlocks_ == 0)
+        return;
+    FrameRecord &record = BackRecord();
+#if defined(__EMSCRIPTEN__) && !defined(__wasm64__)
+    if (config_.fastBulkCopy)
+    {
+        static_assert(sizeof(Block) == 24 && offsetof(Block, address) == 0 &&
+                      offsetof(Block, offset) == 4 && offsetof(Block, size) == 8,
+                      "capture batch JS requires the wasm32 Block layout");
+        eagler_journal_copy_capture_batch(record.bytes.get(), record.blocks.data(),
+                                         firstReadOnlyCaptureBlock_, record.blocks.size());
+        ++readOnlyCaptureStats_.batchImports;
+    }
+    else
+#endif
+    {
+        for (std::size_t index = firstReadOnlyCaptureBlock_; index < record.blocks.size(); ++index)
+        {
+            const Block &block = record.blocks[index];
+            if (block.size >= 1024)
+                std::memcpy(record.bytes.get() + block.offset,
+                            reinterpret_cast<const void *>(block.address), block.size);
+        }
+    }
+    ++readOnlyCaptureStats_.flushes;
+    readOnlyCaptureStats_.copiedBlocks += pendingReadOnlyCaptureBlocks_;
+    readOnlyCaptureStats_.copiedBytes += pendingReadOnlyCaptureBytes_;
+    readOnlyCaptureStats_.maxBlocksPerFlush = std::max<std::uint64_t>(
+        readOnlyCaptureStats_.maxBlocksPerFlush, pendingReadOnlyCaptureBlocks_);
+    firstReadOnlyCaptureBlock_ = record.blocks.size();
+    pendingReadOnlyCaptureBlocks_ = pendingReadOnlyCaptureBytes_ = 0;
+}
+
 void RollbackJournal::EnsureByteCapacity(FrameRecord &record, std::size_t required)
 {
     if (required <= record.byteCapacity)
         return;
+    // The relocation copy must see every accepted byte in the old arena.
+    // Queued targets use offsets, and never outlive this drain and relocation.
+    FlushReadOnlyCapture();
     std::size_t capacity = record.byteCapacity != 0 ? record.byteCapacity
         : std::min<std::size_t>(config_.maxBytesPerFrame, 256 * 1024);
     while (capacity < required)
@@ -189,6 +281,7 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
     FrameRecord *record = CurrentRecord();
     if (!record || failed_ || address == nullptr || size == 0)
     {
+        FlushReadOnlyCapture();
         return false;
     }
 
@@ -196,6 +289,7 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
     if (size > std::numeric_limits<std::uintptr_t>::max() - start)
     {
         failed_ = true;
+        FlushReadOnlyCapture();
         return false;
     }
     // Retain the search path so insertion does not search the tree again.
@@ -213,6 +307,7 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
         if (depth == 64)
         {
             failed_ = true;
+            FlushReadOnlyCapture();
             return false;
         }
         ancestors[depth++] = index;
@@ -221,6 +316,7 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
             if (size > block.address - start)
             {
                 failed_ = true;
+                FlushReadOnlyCapture();
                 return false;
             }
             index = block.left;
@@ -230,6 +326,7 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
             if (start - block.address < block.size)
             {
                 failed_ = true;
+                FlushReadOnlyCapture();
                 return false;
             }
             index = block.right;
@@ -240,15 +337,45 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
         size > config_.maxBytesPerFrame - record->byteSize)
     {
         failed_ = true;
+        FlushReadOnlyCapture();
         return false;
     }
 
     const std::size_t offset = record->byteSize;
     EnsureByteCapacity(*record, offset + size);
-    CopyBytes(record->bytes.get() + offset, address, size);
+    bool defer = readOnlyCaptureOpen_ && size >= 1024;
+#if defined(__wasm__)
+    if (readOnlyCaptureOpen_ && (defer || pendingReadOnlyCaptureBlocks_ != 0))
+    {
+        // Match the original copy's failure point, after its allocation but
+        // before inserting a Block or letting the caller mark pool coverage.
+        // Even an immediate small memcpy can trap: drain its accepted prefix
+        // first, then let the unchanged CopyBytes path raise the same failure.
+        const std::uint64_t memoryBytes =
+            static_cast<std::uint64_t>(__builtin_wasm_memory_size(0)) * 65536u;
+        const auto destination = reinterpret_cast<std::uintptr_t>(record->bytes.get() + offset);
+        if (size > memoryBytes || start > memoryBytes - size ||
+            destination > memoryBytes - size || destination == 0)
+        {
+            FlushReadOnlyCapture();
+            defer = false;
+        }
+    }
+#endif
+    if (!defer)
+        CopyBytes(record->bytes.get() + offset, address, size);
     record->byteSize += size;
     const auto inserted = static_cast<std::uint32_t>(record->blocks.size());
     record->blocks.push_back(Block{start, offset, size});
+    if (defer)
+    {
+        if (pendingReadOnlyCaptureBlocks_ == 0)
+            firstReadOnlyCaptureBlock_ = inserted;
+        ++pendingReadOnlyCaptureBlocks_;
+        pendingReadOnlyCaptureBytes_ += size;
+        ++readOnlyCaptureStats_.deferredBlocks;
+        readOnlyCaptureStats_.deferredBytes += size;
+    }
     if (depth == 0)
         record->root = inserted;
     else
@@ -280,6 +407,10 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
 
 bool RollbackJournal::EndFrame()
 {
+    // Defensive closure for callers that end a still-read-only checkpoint.
+    // The normal adapter must end the window before its first game mutation.
+    if (readOnlyCaptureOpen_)
+        EndReadOnlyCapture();
     if (!frameOpen_ || failed_)
     {
         return false;
