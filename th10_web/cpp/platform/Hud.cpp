@@ -3,15 +3,25 @@
 #include "../game/TextFormat.hpp"
 #include "../game/HighRefresh.hpp"
 #include "AudioData.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/RollbackState.hpp"
+#endif
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 namespace th10::browser {
 HudMessages::HudMessages(Hud& h):owner(h){gui=h.actors.gui;game=&h.state.game;registry=&h.engine.manager.registry;keys=reinterpret_cast<const u32*>(&h.input.player_profiles[0].input.current);pressed=&h.input.player_profiles[0].input.pressed;rate=&h.engine.speed;decoded_text=text;}
 AnmFile& HudMessages::file(DialogueAnimationFile kind){switch(kind){case DialogueAnimationFile::Player:return *owner.actors.player->animation_file;case DialogueAnimationFile::Boss:return *owner.actors.enemies->animation_files[2];case DialogueAnimationFile::Interface:return *gui->animations;case DialogueAnimationFile::Text:return *owner.common.value->text_animations;case DialogueAnimationFile::MusicCaption:return *gui->stage_animations;}__builtin_trap();}
 Dialogue* HudMessages::allocate(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    return static_cast<Dialogue*>(owner.rollback_dialogues.allocate(sizeof(Dialogue),true));
+    auto* dialogue=static_cast<Dialogue*>(owner.rollback_dialogues.allocate(sizeof(Dialogue)));
+    if(!dialogue)return nullptr;
+    // Capture the dormant slot before the original pool clear. Touch expands
+    // the payload to aligned Storage and latches failure for EndFrame.
+    if(owner.engine.rollback_state)(void)owner.engine.rollback_state->Touch(dialogue,sizeof(Dialogue));
+    std::memset(dialogue,0,sizeof(Dialogue));
+    return dialogue;
 #else
     return static_cast<Dialogue*>(std::malloc(sizeof(Dialogue)));
 #endif

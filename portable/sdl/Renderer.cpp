@@ -80,7 +80,7 @@ bool Renderer::initialize(){
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
  warming=false;set_current(this);return true;
 }
-Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
+Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(modelQuadVbo)glDeleteBuffers(1,&modelQuadVbo);glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
 void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
 void Renderer::bind_framebuffer(GLenum target,GLuint id){
  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;
@@ -91,6 +91,17 @@ void Renderer::draw_batch(u32 count,const void* data,u32 stride){
  // valid, without retaining a pointer to a buffer the next sprite can reuse.
  flush();++stats.calls;state.stride=stride;stats.directBytes+=count*3*stride;
  issue(state,Topology::Triangles,count,data,count*3*stride,nullptr,IndexType::UInt16,nullptr,0);
+}
+bool Renderer::model_quad_residency(bool enabled){
+ // Finish queued draws under the old option before switching their GPU store.
+ // This is renderer-owned derived state, independent of simulation/journals.
+ flush();
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+ modelQuadStats.enabled=enabled&&version==10?1u:0u;
+#else
+ (void)enabled;modelQuadStats.enabled=0;
+#endif
+ return modelQuadStats.enabled!=0;
 }
 void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32(kind)];if(std::memcmp(m.data(),p,64))std::memcpy(m.data(),p,64);}
 void Renderer::viewport(const Viewport& v){state.viewport=v;}
@@ -146,6 +157,10 @@ Renderer::GPU& Renderer::surface(u32 h){
 }
 Renderer::GPU& Renderer::target(u32 id,u32 depthId){auto& g=surface(id);GLuint buffer=0;bool stencil=false;if(depthId){auto& d=depths[depthId];if(!d.buffer){auto s=resolve(owner,depthId);d.stencil=s.format==PixelFormat::Depth24Stencil8;glGenRenderbuffers(1,&d.buffer);glBindRenderbuffer(GL_RENDERBUFFER,d.buffer);glRenderbufferStorage(GL_RENDERBUFFER,d.stencil?GL_DEPTH24_STENCIL8:s.format==PixelFormat::Depth16?GL_DEPTH_COMPONENT16:GL_DEPTH_COMPONENT24,s.width,s.height);}buffer=d.buffer;stencil=d.stencil;}bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);if(g.attached!=buffer){glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,buffer);glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,GL_RENDERBUFFER,stencil?buffer:0);g.attached=buffer;}return g;}
 void Renderer::prepare(u32 h){surface(h);}
+bool Renderer::cpu_texture_state(u32 handle,CpuTextureState& out) const noexcept{
+ const auto it=surfaces.find(handle);if(it==surfaces.end())return false;
+ out={it->second.version,it->second.rendered};return true;
+}
 void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,const void* index,IndexType indexFormat){
  stats.calls++;state.stride=stride;
  if(index||primitive<Topology::Triangles||primitive>Topology::Fan){flush();issue(state,primitive,count,data,vertex_count(primitive,count)*stride,index,indexFormat,nullptr,0);return;}
@@ -187,10 +202,40 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  if(all||cached.cull!=p.cull){if(p.cull!=Cull::None){glEnable(GL_CULL_FACE);glFrontFace(GL_CW);glCullFace(p.cull==Cull::Back?GL_BACK:GL_FRONT);}else glDisable(GL_CULL_FACE);}
  if(all||cached.colorMask!=p.colorMask)glColorMask(!!(p.colorMask&1),!!(p.colorMask&2),!!(p.colorMask&4),!!(p.colorMask&8));
  cached=p;drawState.valid=true;
- const std::array<u32,6> layoutKey{d.stride,u32(d.layout.screen),d.layout.diffuse,d.layout.specular,d.layout.uv,u32(!!instance)};
+ // TH10's model strip is four XYZ+UV vertices. Preserve all 80 input bytes,
+ // including signed zero and NaN payloads; no matrix or shader state is cached
+ // here. A different quad replaces this one bounded store before its draw.
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+ const bool modelQuad=version==10&&d.layout==attributes(VertexLayout::WorldUv)&&
+     d.stride==20&&primitive==Topology::Strip&&count==2&&size==80&&!index;
+#else
+ const bool modelQuad=false;
+#endif
+ if(modelQuad)++modelQuadStats.eligible;
+ const bool resident=modelQuad&&modelQuadStats.enabled;
+ if(resident&&!modelQuadVbo)glGenBuffers(1,&modelQuadVbo);
+ const GLuint vertexBuffer=resident?modelQuadVbo:vertices.id;
+ // Attribute pointers retain the actual VBO, so dynamic/resident and
+ // instanced/non-instanced submissions each need their corresponding VAO.
+ const std::array<u32,7> layoutKey{d.stride,u32(d.layout.screen),d.layout.diffuse,d.layout.specular,d.layout.uv,u32(!!instance),vertexBuffer};
  auto& vao=layouts[layoutKey];const bool setup=!vao;
  if(setup)glGenVertexArrays(1,&vao);if(currentLayout!=vao){glBindVertexArray(vao);currentLayout=vao;}
- const u32 base=upload(vertices,GL_ARRAY_BUFFER,data,size,1048576);
+ u32 base=0;
+ if(resident){
+  // Bind even on a hit: a newly created VAO must not capture the instances VBO
+  // left bound by the previous draw. Existing VAOs keep their own references.
+  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
+  if(!modelQuadValid||std::memcmp(modelQuadBytes.data(),data,modelQuadBytes.size())){
+   glBufferData(GL_ARRAY_BUFFER,size,data,GL_STATIC_DRAW);
+   std::memcpy(modelQuadBytes.data(),data,modelQuadBytes.size());modelQuadValid=true;
+   ++stats.bufferReplacements;stats.vertexUploadBytes+=size;
+   ++modelQuadStats.uploads;modelQuadStats.uploadedBytes+=size;
+   modelQuadStats.residentBytes=size;
+  }else{++modelQuadStats.hits;modelQuadStats.reusedBytes+=size;}
+ }else{
+  base=upload(vertices,GL_ARRAY_BUFFER,data,size,1048576);
+  if(modelQuad){++modelQuadStats.uploads;modelQuadStats.uploadedBytes+=size;}
+ }
 #ifdef __EMSCRIPTEN__
  if(setup){
 #else
@@ -284,6 +329,8 @@ bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);a
 }
 extern "C" {
 const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
+int sdl_model_quad_residency(int enabled){auto* r=touhou::sdl::current();return r&&r->model_quad_residency(enabled!=0);}
+const touhou::sdl::ModelQuadStatistics* sdl_model_quad_stats(){static const touhou::sdl::ModelQuadStatistics zero{};auto* r=touhou::sdl::current();return r?&r->model_quad_statistics():&zero;}
 void sdl_defer(int enabled){if(auto* r=touhou::sdl::current())r->defer=enabled;}
 int sdl_commit(){return touhou::sdl::current()&&touhou::sdl::current()->commit();}
 const char* sdl_error(){return touhou::sdl::current()?touhou::sdl::current()->error():SDL_GetError();}

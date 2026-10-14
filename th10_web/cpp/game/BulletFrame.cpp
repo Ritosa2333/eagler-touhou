@@ -1,6 +1,9 @@
 #include "BulletFrame.hpp"
 #include "GameMath.hpp"
 #include "HighRefresh.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/LiveMotionObservation.hpp"
+#endif
 namespace th10 {
 namespace {
 void reset_timer(Timer& timer,u32& flags,const float* rate){if(!(flags&1)){flags|=1;timer.rate=rate;}timer.initialize(-1);}
@@ -74,6 +77,9 @@ i32 EnemyBulletManager::draw_layer(i32 layer,BulletFrameEnvironment& env){
         if(high_refresh::render_only){copy=source;vm=&copy;}env.presentation(*bullet,point,angle);
         vm->script_position={Scalar::add(point.x,224.f),Scalar::add(point.y,16.f),point.z};
         if(vm->flags&0x8000000){vm->rotation.z=add_angle(angle,1.57079637050628662109375f).to_float();vm->flags|=4;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        multiplayer::live_motion::ObjectScope observation(*bullet,*vm);
+#endif
         env.submit(*vm);
     }
     return 1;

@@ -9,6 +9,14 @@ struct Hints final:StageHintsEnvironment,HintRecordingEnvironment {
     ~Hints(){end_file();}
     void* allocate(u32 bytes) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(bytes==sizeof(StageHints)){
+            auto* result=w.rollback_hint_owners.allocate(bytes);
+            if(!result){w.fail();return nullptr;}
+            // Save the complete aligned slot before initialize overwrites a
+            // retired owner. A live owner was already captured at BeginFrame.
+            if(w.engine.rollback_state&&!w.engine.rollback_state->Touch(result,sizeof(multiplayer::HintOwnerPool::Storage))){w.fail();return nullptr;}
+            return result;
+        }
         if(bytes==sizeof(StageHint)){
             auto* result=w.rollback_hints.allocate(bytes);
             if(!result){w.fail();return nullptr;}
@@ -22,6 +30,9 @@ struct Hints final:StageHintsEnvironment,HintRecordingEnvironment {
     }
     void release_object(void* p) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(w.rollback_hint_owners.owns(p)){
+            if(!w.rollback_hint_owners.release(p))__builtin_trap();return;
+        }
         if(w.rollback_hints.owns(p)){
             if(!w.rollback_hints.release(p))__builtin_trap();return;
         }
@@ -42,7 +53,7 @@ struct Hints final:StageHintsEnvironment,HintRecordingEnvironment {
 };
 }
 bool World::create_hints(){Hints env(*this);return StageHints::create(env)!=nullptr;}
-void World::destroy_hints(StageHints* hints){Hints env(*this);hints->shutdown(env);std::free(hints);}
+void World::destroy_hints(StageHints* hints){Hints env(*this);hints->shutdown(env);env.release_object(hints);}
 i32 World::update_hints(){Hints env(*this);return actors.hints->update(env);}
 void World::record_hint(const char* text,const Vec3& position,bool caution){Hints env(*this);if(caution)actors.hints->record_caution(text,position,env);else actors.hints->record(text,position,env);}
 }

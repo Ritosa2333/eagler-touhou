@@ -3,6 +3,7 @@
 #include "../game/LaserBehavior.hpp"
 #include "../game/HighRefresh.hpp"
 #include <cstdlib>
+#include <cstring>
 namespace th10::browser {
 namespace {
 constexpr u32 straight_kind=1,timed_kind=2;
@@ -47,7 +48,12 @@ struct Lasers final:LaserEnvironment {
     World& w;explicit Lasers(World& world):w(world){default_rate=&w.engine.speed;straight_methods=straight_kind;timed_methods=timed_kind;}
     void* allocate(u32 size) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        if(auto* p=w.rollback_lasers.allocate(size,true))return p;
+        if(auto* p=w.rollback_lasers.allocate(size)){
+            // Straight and timed lasers share this pool. Preserve and clear
+            // its original TimedLaser-sized payload for either request.
+            if(w.engine.rollback_state)(void)w.engine.rollback_state->Touch(p,sizeof(TimedLaser));
+            std::memset(p,0,sizeof(TimedLaser));return p;
+        }
         w.fail();return nullptr;
 #else
         return std::malloc(size);

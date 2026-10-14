@@ -11,9 +11,27 @@ struct Resources final:ProjectileSystemsEnvironment {
     AnmFile* load_bullet_animations() override{return w.engine.manager.load(7,"bullet.anm",w.engine.resources);}
     void discard_file_animations(AnmFile* file) override{w.engine.manager.registry.discard_file(file);}
     void missing_bullet_animations() override{w.fail();}
-    void* allocate_manager(u32 size) override{return std::malloc(size);}
+    void* allocate_manager(u32 size) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(size==sizeof(LaserManager)){
+            auto* result=w.rollback_laser_owners.allocate(size);
+            if(!result){w.fail();return nullptr;}
+            // allocate does not clear retired payload; save its complete
+            // aligned storage before the native initializer overwrites it.
+            if(w.engine.rollback_state&&!w.engine.rollback_state->Touch(result,sizeof(multiplayer::LaserOwnerPool::Storage))){
+                if(!w.rollback_laser_owners.release(result))__builtin_trap();
+                w.fail();return nullptr;
+            }
+            return result;
+        }
+#endif
+        return std::malloc(size);
+    }
     void release_manager(void* p) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(w.rollback_laser_owners.owns(p)){
+            if(!w.rollback_laser_owners.release(p))__builtin_trap();return;
+        }
         // LaserManager::shutdown releases concrete beams through this resource
         // adapter, not the ordinary LaserEnvironment::release callback.
         if(p&&w.rollback_lasers.owns(p)){
@@ -95,5 +113,5 @@ void World::cancel_bullet(EnemyBullet& bullet){Bullets env(*this);bullet.cancel(
 void World::cancel_bullet_circle(const Vec3& p,float radius,bool convert,bool protection){Bullets env(*this);th10::cancel_bullet_circle(actors.bullets->pool,p,radius,convert,protection,env);}
 i32 World::cancel_bullet_rectangle(i32 convert){Bullets env(*this);return actors.bullets->cancel_rectangle(convert,gameplay_data::small_colors,gameplay_data::medium_colors,gameplay_data::large_colors,env);}
 bool World::create_lasers(){Resources env(*this);return LaserManager::create(env)!=nullptr;}
-void World::destroy_lasers(LaserManager* p){Resources env(*this);p->shutdown(env);std::free(p);}
+void World::destroy_lasers(LaserManager* p){Resources env(*this);p->shutdown(env);env.release_manager(p);}
 }

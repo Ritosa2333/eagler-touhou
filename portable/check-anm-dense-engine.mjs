@@ -1,3 +1,4 @@
+import {parseMakeDependencies} from './make-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {resolve, relative, dirname, isAbsolute} from 'node:path';
@@ -22,7 +23,7 @@ const compileFlags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11',
   '-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
-const dependencies=new Set([resolve(root,'portable/check-anm-dense-engine.mjs')]);
+const dependencies=new Set([resolve(root,'portable/check-anm-dense-engine.mjs'),resolve(root,'portable/make-dependencies.mjs')]);
 const objects=new Map();
 function compile(source,flags=compileFlags){
   if(objects.has(source))return objects.get(source);
@@ -32,9 +33,8 @@ function compile(source,flags=compileFlags){
     {cwd:root,stdio:'inherit',windowsHide:true});
   // Clang supplies the complete non-system source/header closure. Toolchain
   // system headers/libraries are represented by the SDK version, not hashed.
-  const make=readFileSync(depfile,'utf8').replace(/\\\r?\n/g,'').replace(/^source:\s*/,'');
-  for(const token of make.match(/(?:\\.|[^\s])+/g)??[]){
-    const path=resolve(root,token.replace(/\\(.)/g,'$1'));
+  for(const token of parseMakeDependencies(readFileSync(depfile,'utf8'))){
+    const path=resolve(root,token);
     const name=relative(root,path);
     if(name.startsWith('..')||isAbsolute(name))throw new Error(`Project dependency outside checkout: ${path}`);
     dependencies.add(path);
@@ -42,6 +42,9 @@ function compile(source,flags=compileFlags){
   objects.set(source,object);return object;
 }
 const softfloat=compile('th10_web/cpp/rebuild/third_party/softfloat.c',softfloatFlags);
+// MP-only isolated tests: observer callbacks abort; this is not a live-motion test.
+// compile() records the stub/header closure in the existing dependency hashes.
+const observerStub=compile('tests/live-motion-disabled-stub.cpp');
 const gameSources=['AnmRenderer','Arithmetic','GameMath'].map(name=>`th10_web/cpp/game/${name}.cpp`);
 const engineSources=['AnmVm','AnmInterpreter','AnmVariables','AnmFile','Timer','Interpolation','Rng']
   .map(name=>`th10_web/cpp/game/${name}.cpp`);
@@ -51,7 +54,7 @@ for(const [name,sources] of [
     'third_party/eagler-common/src/netplay/RollbackJournal.cpp']],
 ]){
   const wasm=resolve(out,name+'.wasm');
-  execFileSync(compiler,[...linkFlags,...sources.map(source=>compile(source)),softfloat,'-o',wasm],
+  execFileSync(compiler,[...linkFlags,...sources.map(source=>compile(source)),observerStub,softfloat,'-o',wasm],
     {cwd:root,stdio:'inherit',windowsHide:true});
   const wasi=new WASI({version:'preview1',args:[name,...(process.argv.includes('--reverse')?['--reverse']:[])],env:{},returnOnExit:true});
   const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});

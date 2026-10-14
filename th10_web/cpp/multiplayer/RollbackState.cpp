@@ -1,4 +1,5 @@
 #include "RollbackState.hpp"
+#include "CallbackWorkTiming.hpp"
 #include "../platform/World.hpp"
 #include "../game/Dialogue.hpp"
 #include "../game/StartupScreen.hpp"
@@ -9,6 +10,9 @@
 namespace th10::multiplayer {
 namespace {
 
+bool packed_occupancy_scan=false;
+bool initial_capture_batch=false;
+
 template<class T>
 bool touch(Netplay::RollbackJournal& journal,T& value){
     return journal.Touch(&value,sizeof(value));
@@ -18,7 +22,7 @@ template<std::size_t BlockSize,std::size_t Capacity>
 bool touch_pool(Netplay::RollbackJournal& journal,
                 RollbackPool<BlockSize,Capacity>& pool,
                 RollbackPoolCapture<Capacity>& capture){
-    return capture.Capture(pool,[&](void* p,std::size_t size){return journal.Touch(p,size);});
+    return capture.Capture(pool,[&](void* p,std::size_t size){return journal.Touch(p,size);},packed_occupancy_scan);
 }
 
 bool touch_stage(Netplay::RollbackJournal& journal,Stage* stage){
@@ -43,9 +47,9 @@ bool touch_animation_manager(Netplay::RollbackJournal& journal,browser::Animatio
        !journal.Touch(&manager.processed_count,sizeof(manager.processed_count))||
        !journal.Touch(manager.occupied,sizeof(manager.occupied)+sizeof(manager.cursor))||
        !journal.Touch(&manager.registry,sizeof(manager.registry)+sizeof(manager.draw_layers)+sizeof(manager.last_id)))return false;
-    if(!capture.Capture(manager.pool,[&](const AnmVm& vm){return manager.occupied[&vm-manager.pool]!=0;},
-        [&](void* p,std::size_t size){return journal.Touch(p,size);}))return false;
-    return true;
+    const auto save=[&](void* p,std::size_t size){return journal.Touch(p,size);};
+    if(packed_occupancy_scan)return capture.CaptureOccupied(manager.pool,manager.occupied,save);
+    return capture.Capture(manager.pool,[&](const AnmVm& vm){return manager.occupied[&vm-manager.pool]!=0;},save);
 }
 
 bool touch_bullets(Netplay::RollbackJournal& journal,EnemyBulletManager* manager,
@@ -79,6 +83,29 @@ bool pool_slot(T* pool,void* address,std::size_t bytes){
 
 } // namespace
 
+bool RollbackState::SetPackedOccupancyScan(bool enabled){
+#if defined(__wasm__)
+    packed_occupancy_scan=enabled;
+#else
+    (void)enabled;packed_occupancy_scan=false;
+#endif
+    return packed_occupancy_scan;
+}
+bool RollbackState::PackedOccupancyScanEnabled(){return packed_occupancy_scan;}
+
+bool RollbackState::InitialCaptureBatchSupported(){
+#if defined(__EMSCRIPTEN__) && !defined(__wasm64__)
+    return true;
+#else
+    return false;
+#endif
+}
+bool RollbackState::SetInitialCaptureBatch(bool enabled){
+    initial_capture_batch=enabled&&InitialCaptureBatchSupported();
+    return initial_capture_batch;
+}
+bool RollbackState::InitialCaptureBatchEnabled(){return initial_capture_batch;}
+
 bool RollbackState::Reset(){
     Clear();
     configured_=journal_.Reset(Netplay::RollbackJournalConfig{
@@ -98,6 +125,8 @@ void RollbackState::ClearPoolCaptures(){
     overflow_capture_.Clear();geometry_capture_.Clear();callback_capture_.Clear();
     enemy_capture_.Clear();laser_capture_.Clear();ecl_capture_.Clear();
     hint_capture_.Clear();effect_capture_.Clear();dialogue_capture_.Clear();
+    hint_owner_capture_.Clear();laser_owner_capture_.Clear();bomb_owner_capture_.Clear();
+    session_owner_capture_.Clear();game_effect_owner_capture_.Clear();
 }
 
 bool RollbackState::Touch(void* address,std::size_t bytes){
@@ -118,18 +147,33 @@ bool RollbackState::Touch(void* address,std::size_t bytes){
     if(laser_capture_.OwnsSlot(address,bytes))return laser_capture_.TouchSlot(address,bytes,save);
     if(ecl_capture_.OwnsSlot(address,bytes))return ecl_capture_.TouchSlot(address,bytes,save);
     if(hint_capture_.OwnsSlot(address,bytes))return hint_capture_.TouchSlot(address,bytes,save);
+    if(hint_owner_capture_.OwnsSlot(address,bytes))return hint_owner_capture_.TouchSlot(address,bytes,save);
+    if(laser_owner_capture_.OwnsSlot(address,bytes))return laser_owner_capture_.TouchSlot(address,bytes,save);
+    if(bomb_owner_capture_.OwnsSlot(address,bytes))return bomb_owner_capture_.TouchSlot(address,bytes,save);
+    if(session_owner_capture_.OwnsSlot(address,bytes))return session_owner_capture_.TouchSlot(address,bytes,save);
+    if(game_effect_owner_capture_.OwnsSlot(address,bytes))return game_effect_owner_capture_.TouchSlot(address,bytes,save);
     if(effect_capture_.OwnsSlot(address,bytes))return effect_capture_.TouchSlot(address,bytes,save);
     if(dialogue_capture_.OwnsSlot(address,bytes))return dialogue_capture_.TouchSlot(address,bytes,save);
     return address&&bytes&&journal_.Touch(address,bytes);
 }
 
 bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool capture){
+    callback_work_timing::PhaseScope work_phase(callback_work_timing::state,
+        world.rollback_resimulating?callback_work_timing::Phase::HistoryCapture:
+                                    callback_work_timing::Phase::ForwardCapture,capture);
+    if(!capture)callback_work_timing::state.CountElided(world.rollback_resimulating);
     if(!configured_&&!Reset())return false;
     if(frame_open_||journal_.Failed())return false;
     frame_open_=true;open_frame_=frame;
     if(!capture)return true;
     if(!journal_.BeginFrame(frame))return false;
     ClearPoolCaptures();
+    const bool batched=initial_capture_batch;
+    if(batched&&!journal_.BeginReadOnlyCapture())return false;
+    // The complete enumeration is synchronous and reads game storage only.
+    // Every ordinary false exit must drain the accepted prefix before the
+    // caller can mutate the world or report capture failure.
+    const bool captured=[&]() -> bool {
 
     auto& state=world.state;
     auto& engine=world.engine;
@@ -158,6 +202,9 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
        !journal_.Touch(&engine.speed,sizeof(engine.speed))||
        !touch(journal_,world.cooperation)||
        !touch(journal_,world.backgrounds.current)||!touch(journal_,world.backgrounds.previous)||
+       !touch(journal_,world.actors.hints)||
+       !touch(journal_,world.actors.lasers)||!touch(journal_,world.actors.bomb)||
+       !touch(journal_,world.actors.session)||!touch(journal_,world.actors.effects)||
        !journal_.Touch(world.regular_item_owners,sizeof(world.regular_item_owners))||
        !journal_.Touch(world.faith_item_owners,sizeof(world.faith_item_owners))||
        !touch(journal_,engine.chain_value)||
@@ -169,6 +216,11 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
        !touch_pool(journal_,world.rollback_lasers,laser_capture_)||
        !touch_pool(journal_,world.rollback_ecl,ecl_capture_)||
        !touch_pool(journal_,world.rollback_hints,hint_capture_)||
+       !touch_pool(journal_,world.rollback_hint_owners,hint_owner_capture_)||
+       !touch_pool(journal_,world.rollback_laser_owners,laser_owner_capture_)||
+       !touch_pool(journal_,world.rollback_bomb_owners,bomb_owner_capture_)||
+       !touch_pool(journal_,world.rollback_session_owners,session_owner_capture_)||
+       !touch_pool(journal_,world.rollback_game_effect_owners,game_effect_owner_capture_)||
        !touch_pool(journal_,world.effects.rollback_effects,effect_capture_))return false;
 
     // These owners survive the title screen. Their loading/introduction ANM
@@ -183,7 +235,7 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
     if(world.scores.data&&(!touch(journal_,world.scores.data->characters)||
                           !touch(journal_,world.scores.data->settings)))return false;
 
-    if(world.actors.session&&!touch(journal_,*world.actors.session))return false;
+    if(world.actors.session&&!Touch(world.actors.session,sizeof(*world.actors.session)))return false;
     if(state.replay){
         auto& replay=*state.replay;
         // Capture native gameplay metadata, not emitted file buffers, malloc
@@ -196,12 +248,13 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
     for(std::uint32_t seat=0;seat<world.player_count;++seat){
         auto& pilot=world.pilots[seat];
         if(!journal_.Touch(&pilot.input_keys,sizeof(pilot.input_keys)))return false;
+        if(!touch(journal_,pilot.bomb))return false;
         if(pilot.player&&!touch(journal_,*pilot.player))return false;
-        if(pilot.bomb&&!touch(journal_,*pilot.bomb))return false;
+        if(pilot.bomb&&!Touch(pilot.bomb,sizeof(*pilot.bomb)))return false;
     }
 
     if(world.actors.enemies&&!touch(journal_,*world.actors.enemies))return false;
-    if(world.actors.lasers&&!touch(journal_,*world.actors.lasers))return false;
+    if(world.actors.lasers&&!Touch(world.actors.lasers,sizeof(*world.actors.lasers)))return false;
     if(!touch_bullets(journal_,world.actors.bullets,bullet_capture_)||
        !touch_items(journal_,world.actors.items,regular_capture_,faith_capture_))return false;
     if(world.actors.spell&&!touch(journal_,*world.actors.spell))return false;
@@ -215,11 +268,14 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
     }
     if(world.actors.results&&!touch(journal_,*world.actors.results))return false;
     if(world.actors.popups&&!touch(journal_,*world.actors.popups))return false;
-    if(world.actors.hints&&!touch(journal_,*world.actors.hints))return false;
-    if(world.actors.effects&&!touch(journal_,*world.actors.effects))return false;
+    if(world.actors.hints&&!Touch(world.actors.hints,sizeof(*world.actors.hints)))return false;
+    if(world.actors.effects&&!Touch(world.actors.effects,sizeof(*world.actors.effects)))return false;
     if(!touch_stage(journal_,world.backgrounds.current)||
        !touch_stage(journal_,world.backgrounds.previous))return false;
     return true;
+    }();
+    const bool drained=!batched||journal_.EndReadOnlyCapture();
+    return captured&&drained;
 }
 
 bool RollbackState::EndFrame(){
@@ -236,7 +292,10 @@ bool RollbackState::EndFrame(){
 }
 
 bool RollbackState::RestoreTo(std::uint32_t frame,std::uint32_t* replayFrom){
-    return configured_&&!frame_open_&&journal_.UndoTo(frame,replayFrom);
+    if(!configured_||frame_open_)return false;
+    callback_work_timing::PhaseScope work_phase(callback_work_timing::state,
+                                               callback_work_timing::Phase::Restore);
+    return journal_.UndoTo(frame,replayFrom);
 }
 
 } // namespace th10::multiplayer

@@ -7,8 +7,29 @@ namespace th10::browser {
 namespace {
 struct Resources final:GameObjectResourceEnvironment {
     World& w;explicit Resources(World& world):w(world){items=&w.actors.items;bomb=&w.actors.bomb;effects=&w.actors.effects;chain=&w.chain;callbacks=&w.engine.callback_environment;item_update=callback_id::ItemsUpdate;item_draw=callback_id::ItemsDraw;bomb_update=callback_id::BombUpdate;bomb_draw=callback_id::BombDraw;effects_update=callback_id::EffectsUpdate;effects_draw=callback_id::EffectsDraw;}
-    void* allocate(u32 size) override{return std::malloc(size);}
-    void delete_object(void* p) override{std::free(p);}void release_geometry(void* p) override{w.engine.release_memory(p);}
+    void* allocate(u32 size) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(size==sizeof(GameEffects)){
+            auto* result=w.rollback_game_effect_owners.allocate(size);
+            if(!result){w.fail();return nullptr;}
+            if(w.engine.rollback_state&&!w.engine.rollback_state->Touch(result,sizeof(multiplayer::GameEffectOwnerPool::Storage))){
+                if(!w.rollback_game_effect_owners.release(result))__builtin_trap();
+                w.fail();return nullptr;
+            }
+            return result;
+        }
+#endif
+        return std::malloc(size);
+    }
+    void delete_object(void* p) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(w.rollback_game_effect_owners.owns(p)){
+            if(!w.rollback_game_effect_owners.release(p))__builtin_trap();return;
+        }
+#endif
+        std::free(p);
+    }
+    void release_geometry(void* p) override{w.engine.release_memory(p);}
     AnmFile* load_effect_animations() override{return w.engine.manager.load(7,"bullet.anm",w.engine.resources);}
     void report_effect_error() override{w.fail();}
 };
@@ -190,5 +211,5 @@ bool World::create_bomb(){Resources env(*this);return GameObjectResources{env}.c
 void World::destroy_bomb(Bomb* p){Resources env(*this);GameObjectResources{env}.shutdown(*p);std::free(p);}
 #endif
 bool World::create_effects(){Resources env(*this);return GameObjectResources{env}.create(GameObjectKind::Effects)!=nullptr;}
-void World::destroy_effects(GameEffects* p){Resources env(*this);GameObjectResources{env}.shutdown(*p);std::free(p);}
+void World::destroy_effects(GameEffects* p){Resources env(*this);GameObjectResources{env}.shutdown(*p);env.delete_object(p);}
 }

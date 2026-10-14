@@ -7,6 +7,14 @@ import { WASI } from 'node:wasi';
 // Use the same WASI compilation lane as check-frame-cadence.mjs.
 const root = resolve(import.meta.dirname, '..');
 const audioOnly = process.argv.includes('--audio-only');
+const selectedSuites = new Set();
+for (let at=2;at<process.argv.length;++at) {
+  if (process.argv[at] === '--audio-only') continue;
+  if (process.argv[at] !== '--suite' || !process.argv[at+1] || process.argv[at+1].startsWith('--'))
+    throw new Error('Expected --suite NAME or --audio-only');
+  selectedSuites.add(process.argv[++at]);
+}
+const remainingSuites = new Set(selectedSuites);
 const sanitized = process.env.TH10_TEST_UBSAN === '1';
 if (sanitized && !audioOnly) throw new Error('This sanitizer lane is limited to --audio-only.');
 const sanitizerFlags = sanitized ? ['-fsanitize=undefined', '-fsanitize-trap=undefined'] : [];
@@ -32,7 +40,10 @@ const economySources = [
   'th10_web/cpp/game/Timer.cpp', 'th10_web/cpp/game/Arithmetic.cpp',
 ].map(path => resolve(root, path));
 for (const [name, sources, flags = []] of [
-  ['netplay-pacing', [resolve(root,'tests/netplay-pacing-test.cpp')]],
+  ['callback-work-timing', [resolve(root,'tests/callback-work-timing-test.cpp')],
+    ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['netplay-pacing', [resolve(root,'tests/netplay-pacing-test.cpp'),
+    resolve(common,'src/netplay/NetplayCore.cpp'),resolve(common,'src/netplay/NetplayProtocol.cpp')]],
   ['common-session-pacing', [resolve(common,'tests/session-pacing-test.cpp')]],
   ['cooperative-rules', [resolve(root, 'tests/cooperative-rules-test.cpp')]],
   ['multiplayer-balance', [
@@ -96,9 +107,45 @@ for (const [name, sources, flags = []] of [
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-ffp-contract=off','-fno-strict-aliasing']],
   ['player-presentation', [resolve(root,'tests/player-presentation-test.cpp')],
     ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['touch-input-frontier', [resolve(root,'tests/touch-input-frontier-test.cpp')],
+    ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['camera-math-cache', [
+    ...['tests/camera-math-cache-test.cpp','th10_web/cpp/game/GraphicsMath.cpp',
+      'th10_web/cpp/game/Arithmetic.cpp','th10_web/cpp/game/GameMath.cpp']
+      .map(path=>resolve(root,path)),softfloat,
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-ffp-contract=off','-fno-strict-aliasing']],
+  ['common-sparse-pool', [
+    resolve(common,'tests/sparse-pool-test.cpp'),
+    resolve(common,'src/netplay/RollbackJournal.cpp'),
+  ],
+    ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['rollback-pool', [
     resolve(root,'tests/rollback-pool-test.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['common-journal-capture-batch', [
+    resolve(root,'tests/rollback-journal-capture-batch-test.cpp'),
+    resolve(common,'src/netplay/RollbackJournal.cpp'),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['hint-owner-lifetime', [
+    ...['tests/hint-owner-lifetime-test.cpp','th10_web/cpp/game/StageHints.cpp',
+      'th10_web/cpp/game/UpdateChain.cpp','th10_web/cpp/game/AnmRegistry.cpp',
+      'th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+    resolve(common,'src/netplay/RollbackJournal.cpp'),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_NATIVE_PLATFORM=1']],
+  ['scene-owner-lifetime', [
+    ...['tests/scene-owner-lifetime-test.cpp','th10_web/cpp/game/ProjectileSystems.cpp',
+      'th10_web/cpp/game/GameObjectResources.cpp','th10_web/cpp/game/UpdateChain.cpp']
+      .map(path=>resolve(root,path)),
+    resolve(common,'src/netplay/RollbackJournal.cpp'),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_NATIVE_PLATFORM=1']],
+  ['session-effect-owner-lifetime', [
+    ...['tests/session-effect-owner-lifetime-test.cpp','th10_web/cpp/game/GameSessionResources.cpp',
+      'th10_web/cpp/game/GameSession.cpp','th10_web/cpp/game/GameObjectResources.cpp',
+      'th10_web/cpp/game/UpdateChain.cpp','th10_web/cpp/game/Timer.cpp',
+      'th10_web/cpp/game/AnmRegistry.cpp','th10_web/cpp/game/Arithmetic.cpp']
+      .map(path=>resolve(root,path)),softfloat,
+    resolve(common,'src/netplay/RollbackJournal.cpp'),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_NATIVE_PLATFORM=1','-fno-strict-aliasing']],
   ['rollback-pool-capture', [
     resolve(root,'tests/rollback-pool-capture-test.cpp'),
     resolve(common,'src/netplay/RollbackJournal.cpp'),
@@ -179,6 +226,8 @@ for (const [name, sources, flags = []] of [
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
 ]) {
   if (audioOnly && !audioSuites.has(name)) continue;
+  if (selectedSuites.size && !selectedSuites.has(name)) continue;
+  remainingSuites.delete(name);
   console.log(`${name}: compile wasm32`);
   const wasm = resolve(out, name + '.wasm');
   execFileSync(compiler, [
@@ -201,3 +250,4 @@ for (const [name, sources, flags = []] of [
   if (code !== 0) throw new Error(`Cooperative rule tests failed: ${code}`);
   console.log(`${name}: PASS`);
 }
+if (remainingSuites.size) throw new Error('Unknown or excluded suites: '+[...remainingSuites].join(', '));

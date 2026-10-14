@@ -41,8 +41,11 @@ function compile(source,compileFlags=flags){
   return object;
 }
 const softfloat=compile('th10_web/cpp/rebuild/third_party/softfloat.c',softfloatFlags);
+// This MP bullet-owner test keeps observation disabled; observer callbacks abort.
+// compile() records the stub/header closure, not live-motion correctness coverage.
+const observerStub=compile('tests/live-motion-disabled-stub.cpp');
 const wasm=resolve(out,'bullet-owner-check.wasm');
-execFileSync(compiler,[...linkFlags,...sources.map(source=>compile(source)),softfloat,'-o',wasm],{cwd:root,stdio:'inherit'});
+execFileSync(compiler,[...linkFlags,...sources.map(source=>compile(source)),observerStub,softfloat,'-o',wasm],{cwd:root,stdio:'inherit'});
 // The guest host implementation permits only read-only opens of th10.dat.
 const log=resolve(out,'results.jsonl'),stdout=openSync(log,'w',0o600);
 try{

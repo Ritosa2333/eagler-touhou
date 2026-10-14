@@ -153,7 +153,7 @@ void AnimationEngine::bind_sprite(AnmVm& vm,i32 index){vm.animation_file->bind_s
 void AnimationEngine::change_draw_mode(AnmVm& vm){AnmDistortion::initialize(vm,*this);}
 void* AnimationEngine::allocate_geometry(u32 bytes){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    return rollback_geometry.allocate(bytes,true);
+    return allocate(bytes);
 #else
     return std::malloc(bytes);
 #endif
@@ -164,7 +164,13 @@ AnmVm* AnimationEngine::spawn_child(AnmVm& parent,i32 script,u32 mode){
 }
 AnmVm* AnimationEngine::allocate_animation(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    return static_cast<AnmVm*>(rollback_animation_overflow.allocate(sizeof(AnmVm),true));
+    auto* vm=static_cast<AnmVm*>(rollback_animation_overflow.allocate(sizeof(AnmVm)));
+    if(!vm)return nullptr; // Preserve the existing exhausted-pool result.
+    // Overflow slots are sparse-captured just like callback slots. Preserve
+    // their complete preimage before the original zero/initialize sequence.
+    preserve_animation_slot(*vm);
+    std::memset(vm,0,sizeof(AnmVm));
+    return vm;
 #else
     return static_cast<AnmVm*>(std::malloc(sizeof(AnmVm)));
 #endif
@@ -172,6 +178,12 @@ AnmVm* AnimationEngine::allocate_animation(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 void AnimationEngine::preserve_animation_slot(AnmVm& vm){
     if(rollback_state)(void)rollback_state->Touch(&vm,sizeof(vm));
+}
+void AnimationEngine::preserve_callback_entry(UpdateChainEntry* entry){
+    // Reuse the frame owner already installed/cleared by World. TouchSlot
+    // expands this valid payload address to the complete aligned Storage.
+    // Sticky failure is checked before the frame can be marked simulated.
+    if(rollback_state)(void)rollback_state->Touch(entry,sizeof(UpdateChainEntry));
 }
 #endif
 void AnimationEngine::release_memory(void* p){
@@ -189,7 +201,15 @@ void AnimationEngine::release_memory(void* p){
 }
 void* AnimationEngine::allocate(u32 bytes){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    return rollback_geometry.allocate(bytes,true);
+    constexpr std::size_t payload_bytes=65536;
+    static_assert(sizeof(rollback_geometry.blocks[0])==payload_bytes);
+    auto* memory=rollback_geometry.allocate(bytes);
+    if(!memory)return nullptr; // Preserve invalid-size and exhausted-pool results.
+    // Both ANM mesh and distortion entry points own complete 64 KiB slots.
+    // The original zero=true cleared this whole payload, not requested bytes.
+    if(rollback_state)(void)rollback_state->Touch(memory,payload_bytes);
+    std::memset(memory,0,payload_bytes);
+    return memory;
 #else
     return std::malloc(bytes);
 #endif

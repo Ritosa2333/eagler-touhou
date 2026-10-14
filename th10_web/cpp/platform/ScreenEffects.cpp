@@ -1,7 +1,11 @@
 #include "../game/CallbackNames.hpp"
 #include "../game/HighRefresh.hpp"
 #include "ScreenEffects.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/RollbackState.hpp"
+#endif
 #include <algorithm>
+#include <cstring>
 namespace th10::browser {
 ScreenEffects::ScreenEffects(AnimationEngine& e,const u32& quit,const u32* controller):engine(e),update_chain(&e.chain_value){
     rate=&e.speed;quitting=&quit;controller_flags=controller;random=&e.script_random;camera_offset=&e.world.draw_offset;chain=&update_chain;callbacks=&e.callback_environment;
@@ -29,7 +33,11 @@ bool ScreenEffects::invoke(CallbackToken token,void* object,i32& result){
 #endif
 ScreenEffect* ScreenEffects::allocate(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    return static_cast<ScreenEffect*>(rollback_effects.allocate(sizeof(ScreenEffect),true));
+    auto* effect=static_cast<ScreenEffect*>(rollback_effects.allocate(sizeof(ScreenEffect)));
+    if(!effect)return nullptr;
+    if(engine.rollback_state)(void)engine.rollback_state->Touch(effect,sizeof(ScreenEffect));
+    std::memset(effect,0,sizeof(ScreenEffect));
+    return effect;
 #else
     return reinterpret_cast<ScreenEffect*>(memory.allocate(sizeof(ScreenEffect)));
 #endif

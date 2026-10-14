@@ -41,6 +41,35 @@ const double* multiplayer_pacing_status(browser::Application* app){
     values[1]=app?app->state.netplay_runtime.Channel().FrameLead():0;
     return values;
 }
+extern "C" __attribute__((export_name("multiplayer_network_gap_tail_set_enabled")))
+u32 multiplayer_network_gap_tail_set_enabled(browser::Application* app,u32 enabled){
+    if(!app||app->stopped||enabled>1)return 0;
+    return app->state.netplay_runtime.SetNetworkGapTailEnabled(enabled!=0)?1:0;
+}
+extern "C" __attribute__((export_name("multiplayer_network_gap_tail_status")))
+const double* multiplayer_network_gap_tail_status(browser::Application* app){
+    // Six doubles: schema, selected, locked, gap scale, phase scale, effective.
+    static double values[6]{};std::memset(values,0,sizeof(values));
+    if(!app)return values;
+    const auto& runtime=app->state.netplay_runtime;
+    values[0]=1;values[1]=runtime.NetworkGapTailEnabled();values[2]=runtime.NetworkGapTailLocked();
+    values[3]=runtime.InputGapScale();values[4]=runtime.Channel().IntervalScale();
+    values[5]=runtime.IntervalScale();return values;
+}
+extern "C" __attribute__((export_name("multiplayer_network_tail_presentation_set_enabled")))
+u32 multiplayer_network_tail_presentation_set_enabled(browser::Application* app,u32 enabled){
+    if(!app||app->stopped||enabled>1)return 0;
+    return app->state.netplay_runtime.SetNetworkTailPresentationEnabled(enabled!=0)?1:0;
+}
+extern "C" __attribute__((export_name("multiplayer_network_tail_presentation_status")))
+const double* multiplayer_network_tail_presentation_status(browser::Application* app){
+    // Independent display choice; the existing six-double pacing ABI is unchanged.
+    static double values[3]{};std::memset(values,0,sizeof(values));
+    if(!app)return values;
+    const auto& runtime=app->state.netplay_runtime;
+    values[0]=1;values[1]=runtime.NetworkTailPresentationEnabled();
+    values[2]=runtime.NetworkTailPresentationLocked();return values;
+}
 extern "C" __attribute__((export_name("multiplayer_transport_status")))
 const u32* multiplayer_transport_status(browser::Application* app){
     static u32 words[15]{};std::memset(words,0,sizeof(words));words[0]=1;if(!app)return words;

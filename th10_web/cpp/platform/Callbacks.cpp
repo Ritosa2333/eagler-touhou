@@ -1,6 +1,7 @@
 #include "Callbacks.hpp"
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 namespace th10::browser {
 i32 Callbacks::invoke(CallbackToken token,void* owner){++calls;
 #ifdef TH_NATIVE_PLATFORM
@@ -22,7 +23,15 @@ NativeCallback Callbacks::resolve(CallbackToken token){
 }
 UpdateChainEntry* Callbacks::allocate_entry(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    return static_cast<UpdateChainEntry*>(rollback_entries.allocate(sizeof(UpdateChainEntry),true));
+    auto* entry=static_cast<UpdateChainEntry*>(rollback_entries.allocate(sizeof(UpdateChainEntry)));
+    if(!entry)return nullptr; // Preserve the existing exhausted-pool result.
+    // Metadata was captured at BeginFrame. An initially dormant slot still
+    // needs its complete preimage before calloc semantics clear the payload.
+    // A journal failure is sticky and rejects EndFrame; as with ANM first
+    // writes, allocation itself remains non-null and may finish initialization.
+    receiver.preserve_callback_entry(entry);
+    std::memset(entry,0,sizeof(UpdateChainEntry));
+    return entry;
 #else
     return static_cast<UpdateChainEntry*>(std::calloc(1,sizeof(UpdateChainEntry)));
 #endif

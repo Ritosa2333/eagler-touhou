@@ -47,6 +47,9 @@ struct Session {
     FileSystem* files=nullptr;Input* input=nullptr;GameState* state=nullptr;GraphicsDevice* device=nullptr;
     AnimationEngine* animation=nullptr;Fonts* fonts=nullptr;Audio* audio=nullptr;ScreenEffects* effects=nullptr;Application* app=nullptr;
     Rng random{},visual{};float rate=1;u32 quitting=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    std::uint64_t touch_frontier_epoch=0;
+#endif
     ~Session(){sdl_loop_stop();if(app)application_destroy(app);if(effects)effects_destroy(effects);if(audio)audio_destroy(audio);sdl_audio_shutdown();if(fonts)fonts_destroy(fonts);sdl_fonts_shutdown();if(animation)animation_engine_destroy(animation);if(device)graphics_destroy(device);if(state)game_state_destroy(state);if(input)input_destroy(input);if(files)files_destroy(files);sdl_shutdown();}
 };
 std::unique_ptr<Session> session;
@@ -66,6 +69,14 @@ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_S
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
 touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!session||!session->app)return s;u32 raw[8];application_touch_state(session->app,raw);float values[5];std::memcpy(values,raw+3,20);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto epoch=session->app->touch_input_frontier.Epoch();
+    if(session->touch_frontier_epoch!=epoch){
+        // A same-address Restart/seat change still retires the old anchor.
+        // Preserve launcher action serials; only sdl_game_open begins them.
+        gestures.cancel_transient();session->touch_frontier_epoch=epoch;
+    }
+#endif
     s.context=raw[0];s.instance=raw[1];s.ready=raw[2];s.x=values[0];s.y=values[1];s.fast=values[2];s.slow=values[3];s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;}
 World* touch_world(){return session&&session->app?session->app->world:nullptr;}
 void cancel(){if(auto* world=touch_world()){world->motion.touch_cancel(world->state.game.stage);world->motion.target(0,0,0);}gestures.cancel_transient();}

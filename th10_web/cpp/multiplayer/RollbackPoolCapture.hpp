@@ -4,6 +4,7 @@
 #endif
 
 #include "RollbackPool.hpp"
+#include <eagler/netplay/SparsePoolCapture.hpp>
 #include <array>
 
 namespace th10::multiplayer {
@@ -18,7 +19,7 @@ public:
     void Clear() noexcept {base_=nullptr;stride_=payload_=0;}
 
     template<std::size_t BlockSize,class Touch>
-    bool Capture(RollbackPool<BlockSize,Capacity>& pool,Touch touch){
+    bool Capture(RollbackPool<BlockSize,Capacity>& pool,Touch touch,bool packed_scan=false){
         using Storage=typename RollbackPool<BlockSize,Capacity>::Storage;
         base_=reinterpret_cast<std::uint8_t*>(pool.blocks);
         stride_=sizeof(Storage);payload_=BlockSize;
@@ -33,6 +34,10 @@ public:
                !touch(&pool.cursor,sizeof(pool.cursor)))return false;
         }
         for(std::size_t index=0;index<Capacity;){
+            if(packed_scan){
+                index=Netplay::NextOccupiedSlot(pool.occupied,index,Capacity);
+                if(index==Capacity)break;
+            }
             if(!pool.active(index)){++index;continue;}
             const auto first=index++;
             while(index<Capacity&&pool.active(index))++index;

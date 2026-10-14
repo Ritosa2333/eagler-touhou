@@ -2,6 +2,9 @@
 #include "Renderer.hpp"
 #include "StartupBranding.hpp"
 #include "AssetPixelFormat.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/LiveMotionObservation.hpp"
+#endif
 #ifndef TH_NATIVE_PLATFORM
 #include "LegacyGraphics.hpp"
 #endif
@@ -9,6 +12,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
 using namespace touhou::sdl;
 namespace {
 u32 addr(const void* p){return reinterpret_cast<uintptr_t>(p);}template<class T=u32>T* ptr(u32 p){return reinterpret_cast<T*>(uintptr_t(p));}
@@ -44,9 +49,15 @@ struct Host {
  i32 copy(u32 a,const i32* from,u32 b,const i32* dest){auto& x=get(a).s;auto& y=get(b).s;if(a==b||x.format!=y.format)return i32(0x8876086c);
   i32 box[]{0,0,i32(x.width),i32(x.height)};if(!from)from=box;i32 point[]{from[0],from[1]};if(!dest)dest=point;
   if(from[0]<0||from[1]<0||from[2]<=from[0]||from[3]<=from[1]||from[2]>i32(x.width)||from[3]>i32(x.height)||dest[0]<0||dest[1]<0||dest[0]+from[2]-from[0]>i32(y.width)||dest[1]+from[3]-from[1]>i32(y.height))return i32(0x8876086c);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+  if(th10::multiplayer::live_motion::enabled)th10::multiplayer::live_motion::SurfaceWrite(b);
+#endif
   gpu->copy(a,from,b,dest);y.version++;return 0;
  }
  void draw(TopologyParameter p,u32 n,const u8* data,u32 stride,const void* idx=nullptr,u32 fmt=0,u32 minimum=0,u32 vertexCount=0){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+  if(th10::multiplayer::live_motion::enabled)th10::multiplayer::live_motion::SurfaceWrite(target);
+#endif
   gpu->state.texture=bound?get(bound).child:0;gpu->state.target=target;gpu->state.depth=depthTarget;
   if(idx){
 #ifdef TH_NATIVE_PLATFORM
@@ -63,11 +74,56 @@ expanded.resize(count*stride);for(u32 i=0;i<count;i++){u32 k=fmt==101?static_cas
  }
 }host;
 }
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_NATIVE_PLATFORM)
+namespace {
+namespace motion=th10::multiplayer::live_motion;
+// This diagnostic lifetime is outside every game/journal owner. Handles start
+// over after host shutdown; a submit stamp from the old host must not match.
+u32 motion_texture_host_epoch=1;
+void next_motion_texture_host_epoch()noexcept{
+ if(!++motion_texture_host_epoch)++motion_texture_host_epoch;
+}
+motion::TextureResult motion_texture_source(u32 owner,u32 surface,const Resource*& out)noexcept{
+ const auto& resources=host.resources;
+ const auto texture=resources.find(owner),image=resources.find(surface);
+ if(!owner||!surface||texture==resources.end()||image==resources.end())
+  return motion::TextureResult::ResourceMissing;
+ const auto& t=*texture->second;const auto& s=*image->second;
+ if(t.kind!=Resource::Texture||t.child!=surface||s.kind!=Resource::Image||
+    s.parent!=owner||s.s.handle!=surface)return motion::TextureResult::ResourceBindingMismatch;
+ out=&s;return motion::TextureResult::Ok;
+}
+u32 motion_texture_pixel_bytes(PixelFormat format)noexcept{
+ switch(format){
+ case PixelFormat::Bgr8:return 3;
+ case PixelFormat::Bgra8:case PixelFormat::Bgrx8:return 4;
+ case PixelFormat::Rgb565:case PixelFormat::Xrgb1555:
+ case PixelFormat::Argb1555:case PixelFormat::Argb4444:return 2;
+ case PixelFormat::Alpha8:case PixelFormat::Luminance8:return 1;
+ default:return 0; // Includes LuminanceAlpha8, which the renderer cannot upload.
+ }
+}
+motion::TextureResult motion_texture_storage(const Resource& resource,u32 bytes)noexcept{
+ const auto& s=resource.s;
+ if(!bytes)return motion::TextureResult::UnsupportedFormat;
+ if(!s.width||!s.height||!s.pitch||!s.data||s.data!=resource.bytes.data()||
+    s.size>resource.bytes.size())return motion::TextureResult::InvalidStorage;
+ const auto row=std::uint64_t(s.width)*bytes;
+ if(row>s.pitch)return motion::TextureResult::InvalidStorage;
+ const auto extent=std::uint64_t(s.height-1)*s.pitch+row;
+ if(extent>s.size||extent>resource.bytes.size())return motion::TextureResult::InvalidStorage;
+ return motion::TextureResult::Ok;
+}
+}
+#endif
 extern "C" {
 void sdl_startup_branding_draw(unsigned tint){
  if(!host.startup_credit){auto pixels=startup_branding::load();if(pixels.empty())return;
   host.startup_credit=host.image(1280,960,21);auto& resource=host.get(host.startup_credit);
   resource.bytes=std::move(pixels);resource.s.data=resource.bytes.data();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+ if(th10::multiplayer::live_motion::enabled)th10::multiplayer::live_motion::SurfaceWrite(host.back);
+#endif
  startup_branding::draw(*host.gpu,host.startup_credit,host.back,tint);
 }
 
@@ -96,6 +152,9 @@ void sdl_transform(MatrixParameter kind,const th10::Matrix4* matrix){
 }
 void sdl_viewport(const th10::CameraViewport* view){host.gpu->viewport(*reinterpret_cast<const Viewport*>(view));}
 u32 graphics_host_create(const th10::browser::GraphicsPresentation* p,u32 flags){
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_NATIVE_PLATFORM)
+ next_motion_texture_host_epoch();
+#endif
  if(!(flags&2))th10::arithmetic_mode(th10::Precision::Single,th10::Rounding::NearestEven);
  host.gpu=std::make_unique<Renderer>(10,Host::resolve,&host);if(!host.gpu->initialize())return 0;
  host.back=host.image(p->width?p->width:640,p->height?p->height:480,p->format?p->format:22,0);host.depth=host.image(host.get(host.back).s.width,host.get(host.back).s.height,80,0);host.device=host.create(Resource::Device);
@@ -116,7 +175,13 @@ i32 native_graphics_create_texture(u32 width,u32 height,u32 format,void*& out){o
 void* native_graphics_texture_surface(void* texture){const auto child=host.get(addr(texture)).child;host.add(child);return ptr<void>(child);}
 th10::TextureDescription native_graphics_describe_surface(void* surface){auto& r=host.get(addr(surface));const auto& s=host.get(r.kind==Resource::Texture?r.child:addr(surface)).s;return {asset_pixel_code(s.format),s.width,s.height};}
 th10::TextureLock native_graphics_map_surface(void* surface){auto& r=host.get(addr(surface));const auto id=r.kind==Resource::Texture?r.child:addr(surface);host.gpu->read(id);auto& s=host.get(id).s;return {i32(s.pitch),s.data};}
-void native_graphics_unmap_surface(void* surface){auto& r=host.get(addr(surface));host.get(r.kind==Resource::Texture?r.child:addr(surface)).s.version++;}
+void native_graphics_unmap_surface(void* surface){
+ auto& r=host.get(addr(surface));const auto id=r.kind==Resource::Texture?r.child:addr(surface);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+ if(th10::multiplayer::live_motion::enabled)th10::multiplayer::live_motion::SurfaceWrite(id);
+#endif
+ host.get(id).s.version++;
+}
 void native_graphics_resource_priority(void*,u32){}
 void native_graphics_preload_resource(void* value){if(value){auto& r=host.get(addr(value));if(r.kind==Resource::Texture)host.gpu->prepare(r.child);else if(r.kind==Resource::Image)host.gpu->prepare(addr(value));}}
 i32 native_graphics_create_vertices(u32 bytes,LayoutParameter format,void*& out){const auto id=host.create(Resource::Buffer);auto& r=host.get(id);r.layout=format;r.pool=1;r.bytes.resize(bytes);out=ptr<void>(id);return 0;}
@@ -124,8 +189,147 @@ void* native_graphics_map_vertices(void* buffer){return host.get(addr(buffer)).b
 void native_graphics_unmap_vertices(void*){}
 void native_graphics_vertex_buffer(void* buffer,u32 stride){const auto id=addr(buffer);host.add(id);host.release(host.stream);host.stream=id;host.streamOffset=0;host.streamStride=stride;}
 void native_graphics_draw_vertices(TopologyParameter primitive,u32 first,u32 count){host.draw(primitive,count,host.get(host.stream).bytes.data()+first*host.streamStride,host.streamStride);}
-void native_graphics_clear_target(u32 flags,u32 color,float depth,u32 stencil,const i32* rectangles,u32 count){host.gpu->state.target=host.target;host.gpu->state.depth=host.depthTarget;host.gpu->clear(flags,color,depth,stencil,rectangles,count);}
-i32 native_graphics_present_frame(){host.gpu->present(host.back);return 0;}
+void native_graphics_clear_target(u32 flags,u32 color,float depth,u32 stencil,const i32* rectangles,u32 count){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+ if(th10::multiplayer::live_motion::enabled)th10::multiplayer::live_motion::SurfaceWrite(host.target);
+#endif
+ host.gpu->state.target=host.target;host.gpu->state.depth=host.depthTarget;host.gpu->clear(flags,color,depth,stencil,rectangles,count);
+}
+i32 native_graphics_present_frame(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+ const bool observe=th10::multiplayer::live_motion::enabled;
+ const auto before=observe?host.gpu->stats.presentations:0u;
+ if(observe){
+  const auto& surface=host.get(host.back).s;
+  th10::multiplayer::live_motion::BindPendingSurface(host.back,surface.width,surface.height,host.gpu->stats.frames);
+ }
+#endif
+ host.gpu->present(host.back);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+ if(observe&&host.gpu->stats.presentations!=before)
+  th10::multiplayer::live_motion::CommitBound(host.gpu->stats.presentations);
+#endif
+ return 0;
+}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+// C++-only, read-only resource identities. Do not call back_surface(): that
+// accessor acquires a reference. These reads leave refs and renderer state alone.
+void native_graphics_motion_resources(u32* out){
+ out[0]=host.target;out[1]=host.bound?host.get(host.bound).child:0;
+ out[2]=host.bound;out[3]=host.back;
+}
+// These two helpers inspect only existing CPU/GPU metadata. They never call
+// get() for an untrusted handle, resolve(), surface(), prepare(), map(), read(),
+// flush(), or any GL function. The stamp is captured before the real append;
+// the copy is allowed only later at that draw's real pending default blit.
+void native_graphics_motion_texture_stamp(u32 owner,u32 surface,motion::TextureSourceStamp* out)noexcept{
+ if(!out)return;*out=motion::TextureSourceStamp{};
+ out->texture_owner=owner;out->texture_surface=surface;
+ if(!motion::enabled||!motion::texture_enabled){out->result=u32(motion::TextureResult::Disabled);return;}
+ const Resource* image=nullptr;
+ auto result=motion_texture_source(owner,surface,image);
+ if(result!=motion::TextureResult::Ok){out->result=u32(result);return;}
+ if(host.bound!=owner){out->result=u32(motion::TextureResult::ResourceBindingMismatch);return;}
+ const auto& s=image->s;out->host_epoch=motion_texture_host_epoch;
+ out->cpu_version=s.version;out->width=s.width;out->height=s.height;out->pitch=s.pitch;
+ if(u32(s.format)<=u32(PixelFormat::Depth24Stencil8))out->format=asset_pixel_code(s.format);
+ out->flags=motion::SubmitStamped;
+ if(!host.gpu){out->result=u32(motion::TextureResult::GpuUnavailable);return;}
+ // apply_state already selected these sampler fields. Do not record the
+ // combiner: screen-quad flush sets its final Diffuse argument after this hook.
+ const auto& pipeline=host.gpu->state.pipeline;
+ out->min_filter=u32(pipeline.minFilter);out->mag_filter=u32(pipeline.magFilter);
+ out->address_u=u32(pipeline.addressU);out->address_v=u32(pipeline.addressV);
+ if(out->min_filter>1||out->mag_filter>1||out->address_u>2||out->address_v>2){
+  out->result=u32(motion::TextureResult::UnsupportedSampling);return;
+ }
+ result=motion_texture_storage(*image,motion_texture_pixel_bytes(s.format));
+ if(result!=motion::TextureResult::Ok){out->result=u32(result);return;}
+ CpuTextureState gpu;
+ if(!host.gpu->cpu_texture_state(surface,gpu)){out->result=u32(motion::TextureResult::GpuUnavailable);return;}
+ if(gpu.rendered){out->result=u32(motion::TextureResult::GpuWritten);return;}
+ if(gpu.version!=s.version){out->result=u32(motion::TextureResult::VersionMismatch);return;}
+ out->result=u32(motion::TextureResult::Ok);
+}
+u32 native_graphics_motion_texture_copy(const motion::TextureSourceStamp* stamp,
+ const motion::Record* record,motion::TexturePacket* packet)noexcept{
+ using Result=motion::TextureResult;
+ if(!stamp||!record||!packet)return u32(Result::NoSubmitStamp);
+ auto& h=packet->header;h.rgba_pitch=h.payload_bytes=0;
+ if(!motion::enabled||!motion::texture_enabled)return u32(Result::Disabled);
+ if(stamp->result!=u32(Result::Ok))return stamp->result;
+ if(stamp->host_epoch!=motion_texture_host_epoch||stamp->texture_owner!=record->texture_owner||
+    stamp->texture_surface!=record->texture_surface)return u32(Result::ResourceBindingMismatch);
+ const Resource* image=nullptr;
+ auto result=motion_texture_source(stamp->texture_owner,stamp->texture_surface,image);
+ if(result!=Result::Ok)return u32(result);
+ const auto& s=image->s;h.current_cpu_version=s.version;
+ if(s.width!=stamp->width||s.height!=stamp->height||s.pitch!=stamp->pitch||
+    u32(s.format)>u32(PixelFormat::Depth24Stencil8)||asset_pixel_code(s.format)!=stamp->format)
+  return u32(Result::ResourceBindingMismatch);
+ if(s.version!=stamp->cpu_version)return u32(Result::VersionMismatch);
+ const u32 bytes=motion_texture_pixel_bytes(s.format);
+ result=motion_texture_storage(*image,bytes);
+ if(result!=Result::Ok)return u32(result);
+ if(!host.gpu)return u32(Result::GpuUnavailable);
+ CpuTextureState gpu;
+ if(!host.gpu->cpu_texture_state(stamp->texture_surface,gpu))return u32(Result::GpuUnavailable);
+ h.current_gpu_version=gpu.version;
+ if(gpu.rendered)return u32(Result::GpuWritten);
+ if(gpu.version!=s.version)return u32(Result::VersionMismatch);
+ h.flags|=motion::ExistingGpuEqualClean;
+ if(stamp->min_filter>1||stamp->mag_filter>1||stamp->address_u>2||stamp->address_v>2)
+  return u32(Result::UnsupportedSampling);
+ double u0=record->quad[0].uv.x,u1=u0,v0=record->quad[0].uv.y,v1=v0;
+ for(const auto& q:record->quad){
+  if(!std::isfinite(q.uv.x)||!std::isfinite(q.uv.y))return u32(Result::InvalidUv);
+  // Positive reciprocal W keeps interpolated UVs within their corner bounds.
+  if(!std::isfinite(q.reciprocal_w)||q.reciprocal_w<=0)return u32(Result::UnsupportedRecord);
+  u0=std::min(u0,double(q.uv.x));u1=std::max(u1,double(q.uv.x));
+  v0=std::min(v0,double(q.uv.y));v1=std::max(v1,double(q.uv.y));
+ }
+ if(!(u0<u1&&v0<v1))return u32(Result::InvalidUv);
+ if(u0<0||v0<0||u1>1||v1>1)return u32(Result::FootprintOutOfBounds);
+ // Full conservative one-texel halo, even for Nearest. Never clamp or wrap a
+ // crop to turn a rejected sample into evidence. Normal Repeat is safe only
+ // when this entire footprint lies inside the actual source texture.
+ const double left=std::floor(u0*double(s.width))-1.,right=std::ceil(u1*double(s.width))+1.;
+ const double top=std::floor(v0*double(s.height))-1.,bottom=std::ceil(v1*double(s.height))+1.;
+ if(left<0||top<0||right>double(s.width)||bottom>double(s.height))
+  return u32(Result::FootprintOutOfBounds);
+ if(right-left>motion::TextureMaxSide||bottom-top>motion::TextureMaxSide)
+  return u32(Result::CropTooLarge);
+ const u32 x=u32(left),y=u32(top),width=u32(right-left),height=u32(bottom-top);
+ if(!width||!height||std::uint64_t(width)*height*4>sizeof(packet->rgba))
+  return u32(Result::InvalidStorage);
+ // Identical source-channel interpretation to Renderer::surface. No alpha
+ // multiplication, framebuffer coordinates, background colors or mask fitting.
+ for(u32 row=0;row<height;++row){
+  const auto offset=std::uint64_t(y+row)*s.pitch+std::uint64_t(x)*bytes;
+  const u8* p=image->bytes.data()+std::size_t(offset);
+  u8* out=packet->rgba+row*width*4;
+  for(u32 column=0;column<width;++column,p+=bytes,out+=4){
+   u32 r=0,g=0,b=0,a=255;
+   if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){
+    b=p[0];g=p[1];r=p[2];a=s.format==PixelFormat::Bgra8?p[3]:255;
+   }else if(s.format==PixelFormat::Bgr8){b=p[0];g=p[1];r=p[2];}
+   else if(s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555){
+    std::uint16_t n;std::memcpy(&n,p,2);b=((n&31)*255+15)/31;
+    if(s.format==PixelFormat::Rgb565){g=((n>>5&63)*255+31)/63;r=((n>>11)*255+15)/31;}
+    else{g=((n>>5&31)*255+15)/31;r=((n>>10&31)*255+15)/31;a=s.format==PixelFormat::Argb1555?(n&0x8000?255:0):255;}
+   }else if(s.format==PixelFormat::Argb4444){
+    std::uint16_t n;std::memcpy(&n,p,2);b=(n&15)*17;g=(n>>4&15)*17;r=(n>>8&15)*17;a=(n>>12)*17;
+   }else if(s.format==PixelFormat::Alpha8){r=g=b=255;a=p[0];}
+   else if(s.format==PixelFormat::Luminance8){r=g=b=p[0];}
+   out[0]=u8(r);out[1]=u8(g);out[2]=u8(b);out[3]=u8(a);
+  }
+ }
+ h.crop_x=x;h.crop_y=y;h.crop_width=width;h.crop_height=height;
+ h.rgba_pitch=width*4;h.payload_bytes=width*height*4;
+ h.flags|=motion::StraightRgba8|motion::CpuRowsTopToBottom|motion::FullOneTexelHalo|motion::NoActualWrap;
+ return u32(Result::Ok);
+}
+#endif
 void* native_graphics_back_surface(){host.add(host.back);return ptr<void>(host.back);}
 i32 native_graphics_reset_presentation(void*){return 0;}
 void native_graphics_clear_shader(){}
@@ -178,5 +382,10 @@ i32 graphics_host_resource(u32 id,u32 op,const u32* a){auto& h=host;if(op==0)ret
 }
 #endif
 __attribute__((export_name("sdl_read_back"))) u32 sdl_read_back(){host.gpu->read(host.back);return addr(host.get(host.back).s.data);}
-__attribute__((export_name("sdl_shutdown"))) void sdl_shutdown(){host.gpu.reset();host.resources.clear();host.next=1;host.startup_credit=0;host.device=host.back=host.depth=host.target=host.depthTarget=host.bound=host.stream=host.index=0;}
+__attribute__((export_name("sdl_shutdown"))) void sdl_shutdown(){
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_NATIVE_PLATFORM)
+ next_motion_texture_host_epoch();
+#endif
+ host.gpu.reset();host.resources.clear();host.next=1;host.startup_credit=0;host.device=host.back=host.depth=host.target=host.depthTarget=host.bound=host.stream=host.index=0;
+}
 }

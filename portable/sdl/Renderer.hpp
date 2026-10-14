@@ -16,8 +16,16 @@ namespace touhou::sdl {
 using u32=uint32_t;using i32=int32_t;using u8=uint8_t;
 using namespace touhou::graphics;
 struct Surface {u32 handle=0,width=0,height=0;PixelFormat format=PixelFormat::Bgra8;u32 pitch=0;u8* data=nullptr;u32 size=0,version=0;};
+struct CpuTextureState {u32 version=0;bool rendered=false;};
 struct Viewport {u32 x=0,y=0,width=640,height=480;float min=0,max=1;};
 struct Statistics {u32 calls=0,batches=0,uploadBytes=0,readBytes=0,frames=0,presentations=0,bufferReplacements=0,bufferSubUpdates=0,vertexUploadBytes=0,directBytes=0,copiedBytes=0,layoutSetups=0,textureBinds=0,framebufferBinds=0,programCompiles=0,genericBatches=0,resamples=0;};
+// Read-only experiment counters. Eligible uploads are counted with the option
+// off as well, so one Wasm can compare the same draw workload in both modes.
+struct ModelQuadStatistics {
+    u32 schema=1,enabled=0,eligible=0,uploads=0,hits=0;
+    u32 uploadedBytes=0,reusedBytes=0,residentBytes=0;
+};
+static_assert(sizeof(ModelQuadStatistics)==8*sizeof(u32));
 struct State {
     PipelineState pipeline{};
     std::array<std::array<float,16>,4> matrix{};
@@ -34,10 +42,15 @@ public:
     void transform(MatrixKind,const void*);void viewport(const Viewport&);
     void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
     void draw_batch(u32 count,const void*,u32 stride);
+    bool model_quad_residency(bool enabled);
+    const ModelQuadStatistics& model_quad_statistics()const{return modelQuadStats;}
     void clear(u32 flags,u32 color,float depth,u32 stencil,const i32* rects=nullptr,u32 count=0);
     void copy(u32 source,const i32* rect,u32 target,const i32* point);
     bool resample(u32,const i32*,u32,const i32*,const float*,u32,u32);
     void read(u32);void release(u32);void present(u32);void prepare(u32);
+    // Inspect an existing GPU record without uploads, readback or state changes.
+    // A missing record returns false and leaves out unchanged.
+    bool cpu_texture_state(u32 handle,CpuTextureState& out) const noexcept;
     void render_imgui(const ImDrawData*,u32 target);
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
@@ -50,12 +63,14 @@ private:
     SDL_Window* window=nullptr;SDL_GLContext context=nullptr;
     std::map<u32,GPU> surfaces;std::map<u32,Depth> depths;std::map<std::array<u32,10>,Program> programs;
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
-    std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
+    std::map<std::array<u32,7>,GLuint> layouts;GLuint currentLayout=0;
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
     GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;
     GLint imguiProjMtx=-1,imguiTexture=-1;
     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
     Stream vertices{},indices{},instances{};State batchState{};
+    GLuint modelQuadVbo=0;std::array<u8,80> modelQuadBytes{};
+    bool modelQuadValid=false;ModelQuadStatistics modelQuadStats{};
     std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;
     u32 batchCount=0,pending=0;std::string failure;
     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32);
@@ -68,6 +83,8 @@ Renderer* current();void set_current(Renderer*);
 
 extern "C" {
 __attribute__((export_name("sdl_stats"))) const touhou::sdl::Statistics* sdl_stats();
+__attribute__((export_name("sdl_model_quad_residency"))) int sdl_model_quad_residency(int);
+__attribute__((export_name("sdl_model_quad_stats"))) const touhou::sdl::ModelQuadStatistics* sdl_model_quad_stats();
 __attribute__((export_name("sdl_defer"))) void sdl_defer(int);
 __attribute__((export_name("sdl_commit"))) int sdl_commit();
 __attribute__((export_name("sdl_error"))) const char* sdl_error();

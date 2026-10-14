@@ -304,3 +304,19 @@ extern "C" __attribute__((export_name("sdl_music_enabled"))) void sdl_music_enab
 extern "C" __attribute__((export_name("sdl_ogg_decode_mode"))) void sdl_ogg_decode_mode(u32 full){ogg_full=full!=0;}
 extern "C" __attribute__((export_name("sdl_music_resource_changed"))) void sdl_music_resource_changed(){for(auto* stream:music_streams)stream->resource_changed();}
 extern "C" __attribute__((export_name("sdl_music_stats"))) const u32* sdl_music_stats(){static u32 out[6]{};out[0]=music_enabled;out[1]=ogg_full;out[2]=music_streams.size();out[3]=out[4]=out[5]=0;for(auto* stream:music_streams){out[3]+=stream->waiting;out[4]+=stream->valid;out[5]+=stream->full_ready;}return out;}
+// Read-only, on-demand observation. No decoder work, allocation, audio pump or
+// hot-path counters are added. Frame/cursor values belong to the current
+// selections, so callers must not treat a track change as a monotonic delta.
+extern "C" __attribute__((export_name("sdl_music_observation"))) const double* sdl_music_observation(){
+    static double out[11]{};
+    out[0]=1;out[1]=music_enabled;out[2]=ogg_full;out[3]=music_streams.size();
+    for(unsigned i=4;i<11;++i)out[i]=0;
+    u32 tracks=0;
+    for(const auto* stream:music_streams){
+        out[4]+=stream->waiting;out[5]+=stream->valid;out[6]+=stream->full_ready;
+        out[7]+=double(stream->decoder_frame);out[8]+=double(stream->cursor);
+        out[9]+=double(stream->full_pcm.size());
+        if(stream->track>=0&&stream->track<18)tracks|=u32(1)<<stream->track;
+    }
+    out[10]=tracks;return out;
+}

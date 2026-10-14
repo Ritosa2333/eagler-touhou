@@ -1,9 +1,79 @@
 // Test-only control of the REAL native rAF loop. No JS game tick scheduler,
 // remote-input injection, invulnerability, frame skipping or synthetic FPS.
+import {configureCameraMath,readCameraMathStatus,readCameraMathVerification,cameraMathStatusSchema} from './camera-math-oracle.mjs';
+import {configureInitialCaptureBatch,readInitialCaptureBatchStatus,initialCaptureBatchStatusSchema} from './initial-capture-batch.mjs';
+import {readNetworkGapTailStatus,networkGapTailStatusSchema,
+ readNetworkTailPresentationStatus,networkTailPresentationStatusSchema} from './network-gap-tail.mjs';
+import {configureRafDeadlineGuard,readRafDeadlineGuardStatus,rafDeadlineGuardStatusSchema} from './raf-deadline-guard.mjs';
+import {createTransportTrace} from './transport-trace.mjs';
+import {createTouchFrontierOracle} from './touch-frontier-oracle.mjs';
+import {createLiveMotionCapture} from './live-motion-capture.mjs';
+import {configureCallbackWorkTiming,observeCallbackWorkTiming,stopCallbackWorkTiming,
+ callbackWorkTimingSchema} from './callback-work-timing.mjs';
+import {validateRafDispatchDelayOptions,installRafDispatchDelay} from './raf-dispatch-delay.mjs';
 export function startPerformance(api,options={}){
- const {core,Module,app,netStatus,transportStatus,capturePeerInput,memoryStatus,canonical,status,audioStatus,errorDetail,networkError,lifecycle}=api;
+ const rafDelayOptions=validateRafDispatchDelayOptions(options);
+ for(const name of ['callbackTiming','callbackWorkTiming'])
+  if(options[name]!==undefined&&typeof options[name]!=='boolean')
+   throw TypeError(name+' must be boolean');
+ const {core,Module,app,netStatus,transportStatus,capturePeerInput,memoryStatus,canonical,status,audioStatus,musicStatus,errorDetail,networkError,lifecycle}=api;
  const initial=netStatus(),target=options.targetFrame,seat=options.seat??0;
  const touchHz=options.touchMotionHz??0,lateStartMs=options.lateStartMs||0;
+ const touchPath=options.touchPath??'orbit';
+ if(!['orbit','separated-lanes'].includes(touchPath)||
+    (touchPath==='separated-lanes'&&(touchHz<=0||seat>1||options.verifyTouchFrontier)))
+  throw Error('Invalid wall-clock touch path or unsupported seat/stimulus');
+ const initialRafDeadlineGuard=configureRafDeadlineGuard(core,options.rafDeadlineGuard);
+ if(options.verifyTouchFrontier&&(touchHz>0||options.directTouchP1||(options.inputDelay??0)!==0))
+  throw Error('Touch frontier oracle requires its own stimulus and zero input delay');
+ configureCameraMath(core,options.cameraMathCache,options.cameraMathVerifyEvery??0);
+ configureInitialCaptureBatch(core,app,options.initialCaptureBatch);
+ const initialNetworkGapTail=readNetworkGapTailStatus(core,app);
+ if(options.networkGapTail!==null&&options.networkGapTail!==undefined&&
+    (!initialNetworkGapTail||initialNetworkGapTail[1]!==Number(options.networkGapTail)))
+  throw Error('Network gap tail must already be configured before performance startup');
+ const initialNetworkTailPresentation=readNetworkTailPresentationStatus(core,app);
+ if(options.networkTailPresentation!==null&&options.networkTailPresentation!==undefined&&
+    (!initialNetworkTailPresentation||initialNetworkTailPresentation[1]!==Number(options.networkTailPresentation)))
+  throw Error('Network tail presentation must already be configured before performance startup');
+ if(options.packedOccupancyScan!==null&&options.packedOccupancyScan!==undefined){
+  if(!core.multiplayer_packed_occupancy_scan_set_enabled||!core.multiplayer_packed_occupancy_scan_status)
+   throw Error('Packed occupancy scan controls required');
+  if(core.multiplayer_packed_occupancy_scan_set_enabled(options.packedOccupancyScan?1:0)!==Number(!!options.packedOccupancyScan))
+   throw Error('Packed occupancy scan option rejected');
+ }
+ if(options.modelQuadResidency!==null&&options.modelQuadResidency!==undefined){
+  if(!core.sdl_model_quad_residency||!core.sdl_model_quad_stats)throw Error('Model quad residency option and statistics exports required');
+  if(core.sdl_model_quad_residency(options.modelQuadResidency?1:0)!==(options.modelQuadResidency?1:0))
+   throw Error('Model quad residency option rejected');
+ }
+ if(options.callbackTiming){
+  if(!core.sdl_callback_timing_set_enabled||!core.sdl_callback_timing_status)
+   throw Error('Native callback timing exports required');
+  core.sdl_callback_timing_set_enabled(1);
+ }
+ const initialCallbackWorkTiming=configureCallbackWorkTiming(core,
+  {enabled:options.callbackWorkTiming??false,parentEnabled:options.callbackTiming??false});
+ const words=(fn,count)=>fn?Array.from(new Uint32Array(core.memory.buffer,fn(),count)):null;
+ const rendererCounters=()=>({renderer:words(core.sdl_stats,17),audio:words(core.sdl_audio_stats,12),
+  modelQuad:words(core.sdl_model_quad_stats,8),cameraMath:readCameraMathStatus(core),
+  packedOccupancyScan:core.multiplayer_packed_occupancy_scan_status?.()??null,
+  initialCaptureBatch:readInitialCaptureBatchStatus(core,app)});
+ const callbackTimingSchema=['schema','sequence','offered','completed','networkPrepareMs',
+  'nativeInputAndStepMs','flushPresentationMs','audioPumpMs','nativeTotalMs','maxSingleApplicationStepMs',
+  'stepCalls','spectatorStepCalls','loadingMs','replaySeekBatchMs','exitReason','finishResult','finishCalled',
+  'cumulativeRollbacks','cumulativeResimulatedFrames'];
+ // Read the opt-in ABI once before the loop. Frozen schema-1 runtimes retain
+ // their original 19-word view; schema 2 appends six presentation decisions.
+ const callbackTimingVersion=options.callbackTiming?new Float64Array(
+  core.memory.buffer,core.sdl_callback_timing_status(),1)[0]:null;
+ if(options.callbackTiming&&![1,2].includes(callbackTimingVersion))
+  throw Error('Unsupported native callback timing schema: '+callbackTimingVersion);
+ if(callbackTimingVersion===2)callbackTimingSchema.push('presentationGateMs',
+  'scheduledInputGapScale','presentationScheduleAlpha','authoredBoundaryFlags',
+  'tailPresentationDecision','tailPresentationCommitted');
+ const callbackTiming=()=>options.callbackTiming?Array.from(new Float64Array(
+  core.memory.buffer,core.sdl_callback_timing_status(),callbackTimingSchema.length)):null;
  if(!Number.isInteger(target)||target<=initial[3]||target-initial[3]>36000)
   throw Error('Invalid bounded performance target');
  if(!Number.isFinite(touchHz)||touchHz<0||touchHz>240||
@@ -22,9 +92,21 @@ export function startPerformance(api,options={}){
   rowSchema:['callbackEndMs','nativeCallbackMs','nativeLastSimulatedFrame','confirmedThrough','heapBytes',
    'observedFrameHighWater','nativeNextFrame','rollbackRequestFrame','nativeRecoveryYields',
    'nativeCorrecting','nativeCorrectionEnd','nativePredictionFrontier','nativeMissingInputs','nativeIntervalScaleMilli',
-   'nativeHighRefresh','nativeInterpolate','nativeAlpha','nativePresented','nativePresentationPrimed'],
+   'nativeHighRefresh','nativeInterpolate','nativeAlpha','nativePresented','nativePresentationPrimed',
+   ...callbackTimingSchema.map(name=>'callbackTiming.'+name),
+   ...(options.callbackWorkTiming?callbackWorkTimingSchema.map(name=>'callbackWorkTiming.'+name):[])],
   progressScope:'high-water of actually observed native LastSimulatedFrame at callback ends; not a new native counter',
-  rows:[],presents:[],longTasks:[],sessionIdentityChanges:[],initialMemory:memoryStatus(),
+  rows:[],presents:[],longTasks:[],sessionIdentityChanges:[],initialMemory:memoryStatus(),initialMusic:musicStatus?.()??null,
+  requestedModelQuadResidency:options.modelQuadResidency??null,callbackTimingEnabled:!!options.callbackTiming,
+  callbackWorkTimingEnabled:!!options.callbackWorkTiming,callbackWorkTimingSchema,initialCallbackWorkTiming,
+  callbackWorkTimingOwner:options.callbackWorkTiming?app:null,
+  requestedCameraMathCache:options.cameraMathCache??null,cameraMathVerifyEvery:options.cameraMathVerifyEvery??0,
+  requestedPackedOccupancyScan:options.packedOccupancyScan??null,cameraMathStatusSchema,
+  requestedInitialCaptureBatch:options.initialCaptureBatch??null,initialCaptureBatchStatusSchema,
+  requestedNetworkGapTail:options.networkGapTail??null,networkGapTailStatusSchema,initialNetworkGapTail,
+  requestedNetworkTailPresentation:options.networkTailPresentation??null,networkTailPresentationStatusSchema,initialNetworkTailPresentation,
+  requestedRafDeadlineGuard:options.rafDeadlineGuard??null,rafDeadlineGuardStatusSchema,initialRafDeadlineGuard,
+  callbackTimingSchema,callbackTimingVersion,initialRendererCounters:rendererCounters(),
   renderer:gl.getParameter(gl.RENDERER),unmaskedRenderer:rendererInfo?gl.getParameter(rendererInfo.UNMASKED_RENDERER_WEBGL):null,
   size:[gl.drawingBufferWidth,gl.drawingBufferHeight]};
  const smoothnessStatus=()=>core.multiplayer_smoothness_status?Array.from(new Int32Array(
@@ -32,17 +114,43 @@ export function startPerformance(api,options={}){
  const presentationStatus=()=>core.multiplayer_presentation_status?Array.from(new Float64Array(
   core.memory.buffer,core.multiplayer_presentation_status(),6)):null;
  report.smoothnessStatusSchema=['schema','recoveryYields','correcting','correctionEnd','predictionFrontier',
-  'missingInputs','intervalScaleMilli','forwardAdvanced','correctedPresentationPending','localCaptureAtNext'];
+  'missingInputs','intervalScaleMilli','lastStepForwardAdvanced','correctedPresentationPending','localCaptureAtNext'];
  report.initialSmoothness=smoothnessStatus();
  report.presentationStatusSchema=['schema','highRefresh','interpolate','alpha','presented','primed'];
  let drawFramebuffer=gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING);
  const bind=gl.bindFramebuffer,blit=gl.blitFramebuffer,keys=[];
- const start=performance.now();let finished=false,touchPhase=0,touchFrame=-1,observedFrame=initial[3];
+ const start=performance.now();let finished=false,finishQueued=false,touchPhase=0,touchFrame=-1,observedFrame=initial[3];
+ let rafDispatchDelay=null;
+ const transportTrace=createTransportTrace({netStatus,transportStatus},
+  {enabled:!!options.transportTrace,startedAtPerformanceMs:start,
+   intervalMs:options.transportTraceIntervalMs??20,relayHopTrace:!!options.relayHopTrace});
+ const touchOracle=createTouchFrontierOracle({core,app,netStatus,transportStatus,status},
+  {enabled:!!options.verifyTouchFrontier,seat,inputDelay:options.inputDelay??0});
+ const liveMotion=createLiveMotionCapture({core,app,gl},
+  {enabled:!!options.verifyLiveMotion,startedAtPerformanceMs:start});
+ report.diagnosticInstrumentation=[options.transportTrace?'bounded transport metadata':null,
+  options.callbackWorkTiming?'callback-local capture/update/semantic-draw/restore/confirmed-commit wall clocks':null,
+  options.relayHopTrace?'browser binary receive and actual impaired-send counters':null,
+  options.verifyTouchFrontier?'real between-callback touch correctness oracle':null,
+  options.verifyLiveMotion?'actual submitted object geometry and asynchronous default-buffer pixels':null].filter(Boolean).join('; ')||null;
+ let touchStatePointer=0;
+ if(touchHz>0){
+  if(!core.application_touch_state)throw Error('Native touch state getter required');
+  touchStatePointer=core.files_allocate(32);
+  if(!touchStatePointer)throw Error('Touch state observation allocation failed');
+ }
  report.startedAtPerformanceMs=start; // Same-realm anchor for impairment timestamps only.
- let touchTimer=null,nextTouchIndex=0,touchActive=false;
+ let touchTimer=null,nextTouchIndex=0,touchActive=false,touchGestureStartIndex=0;
  const touchPeriod=touchHz>0?1000/touchHz:0,touchId=191+seat;
  const motion=report.touchMotion={enabled:touchHz>0,targetHz:touchHz,startMs:lateStartMs,
+  path:touchPath,pathPolicy:touchPath==='separated-lanes'?{
+   schema:1,begin:'center pointer, anchored by the ordinary native relative drag',
+   rampMs:400,laneOffsetNormalized:0.16,sweepAmplitudeNormalized:0.06,sweepPeriodMs:1800,
+   verticalAmplitudeNormalized:0.04,verticalPeriodMs:2600,
+   reset:'new ready gesture after native not-ready cancellation',
+   scope:'controlled visible-player coverage; no player teleport, opacity override, invulnerability or adaptive pixel selection'}:null,
   scope:'wall-clock normalized pointer path through native TouchController -> absolute DirectTarget input',
+  readinessSource:'application_touch_state / complete-frontier 8-word view; raw playerState is diagnostic only',
   latePolicy:'coalesce overdue pointer positions to the latest planned position; never replay a burst',
   unlimited:true,plannedEvents:0,accountedEvents:0,submittedEvents:0,coalescedEvents:0,
   skippedNotReadyEvents:0,unservicedAtStop:0,timerCallbacks:0,begins:0,moves:0,cancels:0,
@@ -50,7 +158,7 @@ export function startPerformance(api,options={}){
   firstSubmittedMs:null,lastSubmittedMs:null,traceLimit:24000,traceDropped:0,
   traceSchema:['firstPlanIndex','lastPlanIndex','firstPlannedMs','lastPlannedMs','dispatchMs',
    'timerLatenessMs','latestTargetAgeMs','plannedInBatch','action','pointerX','pointerY',
-   'nativeLastSimulatedFrame','localPlayerState','nativeSubmissionMs'],
+   'nativeLastSimulatedFrame','localPlayerState','nativeSubmissionMs','touchContext','touchReady'],
   actions:{0:'not-ready',1:'begin',2:'move',3:'cancel-not-ready'},trace:[]};
  report.touchTrace=[];
  if(touchHz>0||(options.directTouchP1&&seat===0)){core.sdl_touch_mode(0);core.sdl_touch_options(1,1,1);}
@@ -74,10 +182,19 @@ export function startPerformance(api,options={}){
  };
  gl.blitFramebuffer=function(...args){
   const result=blit.apply(this,args);
-  if(drawFramebuffer===null)report.presents.push(performance.now()-start);
+  if(drawFramebuffer===null){report.presents.push(performance.now()-start);liveMotion.afterBlit(args);}
   return result;
  };
  function finish(error){
+  if(finished||finishQueued)return;
+  if(touchOracle.enabled||liveMotion.enabled){
+   // Its pointer events and cleanup must run after the complete native
+   // callback returns. The oracle observation microtask is queued first.
+   finishQueued=true;queueMicrotask(()=>completeFinish(error));return;
+  }
+  completeFinish(error);
+ }
+ function completeFinish(error){
   if(finished)return;finished=true;
   if(touchTimer!==null){clearTimeout(touchTimer);touchTimer=null;}
   if(touchHz>0){
@@ -87,19 +204,42 @@ export function startPerformance(api,options={}){
    motion.unservicedAtStop=Math.max(0,motion.plannedEvents-motion.accountedEvents);
    if(touchActive){++motion.cancels;touchActive=false;}
   }
-  core.sdl_loop_stop();core.sdl_keys_clear();
+  try{core.sdl_loop_stop();}
+  finally{report.rafDispatchDelay=rafDispatchDelay?.finish()??null;}
+  core.sdl_keys_clear();
+  report.finalMusic=musicStatus?.()??null;
+  report.touchFrontierOracle=touchOracle.finish({reason:error||null,nativeStopped:true});
+  report.liveMotion=liveMotion.finish();
+  if(report.liveMotion.enabled){
+   report.coverage.presentation=report.liveMotion.scope;
+   report.coverage.motionContinuity=report.liveMotion.analysis?.passed?
+    'finite naturally presented object windows verified; see analysis scope':
+    'actual live motion diagnostic incomplete or failed; see analysis';
+  }
   if(observer){recordLongTasks(observer.takeRecords());observer.disconnect();}
   gl.bindFramebuffer=bind;gl.blitFramebuffer=blit;
   for(const pointer of keys)core.files_free(pointer);
+  if(touchStatePointer){core.files_free(touchStatePointer);touchStatePointer=0;}
+  report.transportTrace=transportTrace.finish();
   report.elapsedMs=performance.now()-start;report.finalNet=netStatus();
   report.finalMemory=memoryStatus();report.transport=transportStatus();
+  report.finalRendererCounters=rendererCounters();
+  report.finalNetworkGapTail=readNetworkGapTailStatus(core,app);
+  report.finalNetworkTailPresentation=readNetworkTailPresentationStatus(core,app);
+  report.finalRafDeadlineGuard=readRafDeadlineGuardStatus(core);
+  report.cameraMathFirstMismatch=readCameraMathVerification(core,true);
+  stopCallbackWorkTiming(core,options.callbackWorkTiming??false,report);
+  if(options.callbackTiming)core.sdl_callback_timing_set_enabled(0);
   report.finalSmoothness=smoothnessStatus();
   report.finalPresentation=presentationStatus();
   report.canonical=canonical();report.state=status();report.audio=audioStatus();
   report.lifecycle=lifecycle();report.nativeError=errorDetail();report.networkError=networkError();
   if(core.multiplayer_rollback_storage)report.storage=Array.from(new Float64Array(
    core.memory.buffer,core.multiplayer_rollback_storage(app),9));
-  report.error=error||null;report.passed=!error;report.done=true;
+  report.error=error||(report.callbackWorkTimingError?
+   'Callback work timing failed: '+report.callbackWorkTimingError.message:null)||
+   (report.rafDispatchDelay&&!report.rafDispatchDelay.valid?'RAF dispatch delay diagnostic failed':null);
+  report.passed=!report.error;report.done=true;
  }
  function scheduleTouch(){
   if(finished)return;
@@ -117,10 +257,28 @@ export function startPerformance(api,options={}){
    // Lateness belongs to the FIRST overdue deadline. Measuring only the latest
    // coalesced position would hide a long event-loop stall behind <1 period.
    const lateness=Math.max(0,now-firstPlanned),targetAge=Math.max(0,now-lastPlanned);
-   const angle=lastIndex*touchPeriod/2400*Math.PI*2+seat*.83;
-   const x=.5+.18*Math.sin(angle),y=.5+.075*Math.sin(angle*.73+seat*.4);
    const n=netStatus(),players=status(),playerState=players[12+seat*12];
-   const ready=!!n[9]&&!!players[3]&&!players[4]&&!players[5]&&playerState===1;
+   // Device events must use the same completed input view as GameHost. The
+   // raw player state can currently belong to a yielded historical frame.
+   core.application_touch_state(app,touchStatePointer);
+   const touchWords=new Uint32Array(core.memory.buffer,touchStatePointer,8);
+   const touchContext=touchWords[0],touchReady=touchWords[2]!==0;
+   const ready=!!n[9]&&(touchContext===1||touchContext===2)&&touchReady;
+   if(ready&&!touchActive)touchGestureStartIndex=lastIndex;
+   let x,y;
+   if(touchPath==='separated-lanes'){
+    // A fixed physical drag path: each new gesture starts at its current
+    // native player, then moves into one lane. No gameplay state is written.
+    // Distinct lanes avoid proximity fading below the unchanged RGB oracle's
+    // supported opacity; the original orbit scenario remains independently recorded.
+    const elapsed=(lastIndex-touchGestureStartIndex)*touchPeriod;
+    const ramp=Math.min(1,elapsed/400),side=seat===0?-1:1;
+    x=.5+side*.16*ramp+.06*Math.sin(elapsed/1800*Math.PI*2);
+    y=.5+.04*Math.sin(elapsed/2600*Math.PI*2);
+   }else{
+    const angle=lastIndex*touchPeriod/2400*Math.PI*2+seat*.83;
+    x=.5+.18*Math.sin(angle);y=.5+.075*Math.sin(angle*.73+seat*.4);
+   }
    ++motion.timerCallbacks;motion.timerLatenessTotalMs+=lateness;
    motion.maxTimerLatenessMs=Math.max(motion.maxTimerLatenessMs,lateness);
    motion.latestTargetAgeTotalMs+=targetAge;motion.maxLatestTargetAgeMs=Math.max(motion.maxLatestTargetAgeMs,targetAge);
@@ -135,7 +293,7 @@ export function startPerformance(api,options={}){
     if(touchActive){core.sdl_touch_cancel();touchActive=false;++motion.cancels;action=3;}
    }
    const row=[firstIndex,lastIndex,firstPlanned,lastPlanned,now,lateness,targetAge,count,action,x,y,
-    n[3],playerState,performance.now()-submissionStarted];
+    n[3],playerState,performance.now()-submissionStarted,touchContext,touchReady?1:0];
    if(motion.trace.length<motion.traceLimit)motion.trace.push(row);else ++motion.traceDropped;
    motion.lastEvent=row;nextTouchIndex=lastIndex+1;motion.accountedEvents=nextTouchIndex;
    motion.plannedEvents=nextTouchIndex;scheduleTouch();
@@ -150,8 +308,11 @@ export function startPerformance(api,options={}){
    if(n[3]>=target&&!smoothnessStatus()?.[2])return 0;
    const t=performance.now()-start,phase=Math.floor(t/180)+seat;
    if(t<lateStartMs)return 0;
-   core.sdl_key(keys[0],phase%2===0?1:0);core.sdl_key(keys[1],phase%2===1?1:0);
-   core.sdl_key(keys[2],1);core.sdl_key(keys[3],Math.floor(t/730)%2);
+   const oracleOwnsMovement=touchOracle.ownsMovement||touchOracle.holdMovement;
+   core.sdl_key(keys[0],!oracleOwnsMovement&&phase%2===0?1:0);
+   core.sdl_key(keys[1],!oracleOwnsMovement&&phase%2===1?1:0);
+   core.sdl_key(keys[2],1);core.sdl_key(keys[3],oracleOwnsMovement?0:Math.floor(t/730)%2);
+   touchOracle.prepare();
    if(touchHz>0){
     // Arrow input would cancel the native drag. Movement is produced only by
     // the independent wall-clock timer, never by this prepare callback.
@@ -169,13 +330,26 @@ export function startPerformance(api,options={}){
   }catch(error){finish(String(error));return 0;}
  };
  Module.runtimeFinish=(result,milliseconds)=>{
-  if(result||core.application_error(app)){finish('Native loop failed: '+result+' / '+core.application_error(app));return;}
+  liveMotion.afterCallback();
+  const workTiming=observeCallbackWorkTiming(core,options.callbackWorkTiming??false,report,'callback');
+  if(report.callbackWorkTimingError){
+   finish('Callback work timing failed: '+report.callbackWorkTimingError.message);return;
+  }
+  if(result||core.application_error(app)){
+   report.failureCallback={result,milliseconds,timing:callbackTiming(),
+    workTiming};
+   finish('Native loop failed: '+result+' / '+core.application_error(app));return;
+  }
   const n=netStatus(),now=performance.now()-start;
+  touchOracle.afterCallback(result);
   observedFrame=Math.max(observedFrame,n[3]);
   const smooth=smoothnessStatus(),present=presentationStatus();
+  transportTrace.sample(now,n,smooth);
   report.rows.push([now,milliseconds,n[3],n[4],core.memory.buffer.byteLength,observedFrame,n[2],n[5],
    ...(smooth?smooth.slice(1,7):[null,null,null,null,null,null]),
-   ...(present?present.slice(1):[null,null,null,null,null])]);
+   ...(present?present.slice(1):[null,null,null,null,null]),
+   ...(callbackTiming()??Array(callbackTimingSchema.length).fill(null)),
+   ...(options.callbackWorkTiming?workTiming:[])]);
   if((n[7]!==initial[7]||n[8]!==initial[8])&&report.sessionIdentityChanges.length<16)
    report.sessionIdentityChanges.push({atMs:now,sessionWords:n.slice(7,9)});
   if(n[3]>=0&&!report.firstForward)report.firstForward={atMs:now,net:n,transport:transportStatus()};
@@ -190,7 +364,16 @@ export function startPerformance(api,options={}){
   // extra prepare can decline another tick without stopping beneath C++.
   if(n[3]>=target&&!smooth?.[2])finish(null);
  };
+ rafDispatchDelay=installRafDispatchDelay({...rafDelayOptions,observedFrame:()=>observedFrame});
+ if(rafDelayOptions.delayMs)report.diagnosticInstrumentation=[report.diagnosticInstrumentation,
+  'one arrived real RAF callback delayed by a non-blocking timeout'].filter(Boolean).join('; ');
  if(touchHz>0)scheduleTouch();
- core.sdl_loop_start(app);
+ try{core.sdl_loop_start(app);}
+ catch(error){
+  // Native startup failure must not leave global proxies or a held callback.
+  // Retain the original startup exception even if native stop itself fails.
+  try{core.sdl_loop_stop();}catch{}
+  report.rafDispatchDelay=rafDispatchDelay.finish();throw error;
+ }
  return {report,stop:()=>finish('Stopped before confirmed target')};
 }

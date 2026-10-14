@@ -18,5 +18,10 @@ void Item::draw(ItemDrawEnvironment& env){
     }
     env.draw_animation(*vm);
 }
-i32 ItemManager::draw(ItemDrawEnvironment& env){for(auto& item:regular)item.draw(env);for(auto& item:faith)item.draw(env);return 1;}
+i32 ItemManager::draw(ItemDrawEnvironment& env){
+    // Keep inactive slots out of the large draw stack frame; read each state in order so callbacks still affect later slots.
+    for(auto& item:regular)if(item.state)item.draw(env);
+    for(auto& item:faith)if(item.state)item.draw(env);
+    return 1;
+}
 }

@@ -1,6 +1,9 @@
 #pragma once
 #include "../game/GraphicsMath.hpp"
 #include "../game/TexturePlatform.hpp"
+#if defined(__wasm__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+#include "CameraMathCache.hpp"
+#endif
 #include <initializer_list>
 namespace th10::browser {
 #ifndef TH_NATIVE_PLATFORM
@@ -276,8 +279,20 @@ struct GraphicsRenderer final:AnmRenderEnvironment,AnmProjectionEnvironment {
 struct GraphicsCamera final:CameraEnvironment {
     GraphicsRenderer& renderer;AnmManager* manager;
     explicit GraphicsCamera(GraphicsRenderer& renderer):renderer(renderer),manager(renderer.global_manager){animation_manager=&manager;render_environment=&renderer;}
-    void look_at(Matrix4& matrix,const Vec3& eye,const Vec3& target,const Vec3& up) override {GraphicsMath::look_at(matrix,eye,target,up);}
-    void perspective(Matrix4& matrix,float fov,float aspect,float near_plane,float far_plane) override {GraphicsMath::perspective(matrix,fov,aspect,near_plane,far_plane);}
+    void look_at(Matrix4& matrix,const Vec3& eye,const Vec3& target,const Vec3& up) override {
+#if defined(__wasm__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+        camera_math_cache().look_at(matrix,eye,target,up);
+#else
+        GraphicsMath::look_at(matrix,eye,target,up);
+#endif
+    }
+    void perspective(Matrix4& matrix,float fov,float aspect,float near_plane,float far_plane) override {
+#if defined(__wasm__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+        camera_math_cache().perspective(matrix,fov,aspect,near_plane,far_plane);
+#else
+        GraphicsMath::perspective(matrix,fov,aspect,near_plane,far_plane);
+#endif
+    }
     void normalize(Vec3& value) override {GraphicsMath::normalize(value,value);}
     void set_viewport(const CameraViewport& viewport) override;
 };

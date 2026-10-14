@@ -4,6 +4,7 @@
 #endif
 
 #include "SessionSetup.hpp"
+#include "NetworkInputGapPacing.hpp"
 
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
@@ -69,7 +70,8 @@ public:
         return CanStart() ? core_.PrepareFrame(frame) : Netplay::FrameDecision{};
     }
     bool MarkSimulated(std::uint32_t frame, const Netplay::FrameDecision& decision) {
-        return CanStart() && core_.MarkSimulated(frame, decision);
+        if(!CanStart()||!core_.MarkSimulated(frame,decision))return false;
+        network_gap_pacing_locked_=true;return true;
     }
 
     bool HasRollbackRequest() const { return configured_ && core_.HasRollbackRequest(); }
@@ -135,8 +137,21 @@ public:
     const SessionSetup& Setup()const{return setup_;}
     const std::uint32_t* CalibrationStatus(){return calibration_.Status();}
     double PacedElapsedSeconds(double elapsed);
+    // Independent startup choices, outside the wire/gameplay contract. A new
+    // live Rollback session defaults to deep-gap pacing ON and extra Draw OFF.
+    // A real capture or commit locks both across rewind and run generations;
+    // Clear is neutral. No setter is used by the product UI.
+    bool SetNetworkGapTailEnabled(bool enabled);
+    bool NetworkGapTailEnabled()const{return network_gap_tail_enabled_;}
+    bool NetworkGapTailLocked()const{return network_gap_pacing_locked_;}
+    bool SetNetworkTailPresentationEnabled(bool enabled);
+    bool NetworkTailPresentationEnabled()const{return network_tail_presentation_enabled_;}
+    bool NetworkTailPresentationLocked()const{return network_gap_pacing_locked_;}
+    double InputGapScale()const{
+        return network_gap_tail_enabled_?network_input_gap_tail_.Scale():input_gap_pacing_.Scale();
+    }
     double IntervalScale() const {
-        const auto gap=input_gap_pacing_.Scale(),phase=channel_.IntervalScale();
+        const auto gap=InputGapScale(),phase=channel_.IntervalScale();
         return gap>1.?(gap>phase?gap:phase):phase;
     }
     // The HELLO/READY gate agrees on the session, not on completion of each
@@ -164,6 +179,8 @@ private:
     Netplay::SessionChannel channel_{calibration_};
     double phase_debt_ms_=0;
     Netplay::InputGapPacing input_gap_pacing_{};
+    NetworkInputGapPacing network_input_gap_tail_{};
+    bool network_gap_tail_enabled_=false,network_tail_presentation_enabled_=false,network_gap_pacing_locked_=false;
     std::uint32_t correction_end_=Netplay::INVALID_FRAME;
     std::uint64_t network_now_=0;
     bool network_enabled_=false;

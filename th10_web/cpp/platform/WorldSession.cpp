@@ -20,8 +20,28 @@ struct SessionResources final:GameSessionResourceEnvironment {
         drawing_resource=&w.resource_drawing;updating_resource=&w.resource_updating;pending_upload=&w.audio.manager.commands[0].kind;loader_stop_requested=&w.loader_stop;loader_running=&w.loader_running;menu_state=reinterpret_cast<i32*>(&w.state.quitting);background_color=&w.state.background_color;loading_animation=&w.common.value->loading_animation;
         recorded_time=&w.state.active_time;rendered_time=&w.state.total_time;rate=&w.engine.speed;chain=&w.chain;callbacks=&w.engine.callback_environment;update_callback=callback_id::SessionUpdate;draw_callback=callback_id::SessionDraw;loader_callback=0x417c70;
     }
-    GameSession* allocate_session() override{return static_cast<GameSession*>(std::malloc(sizeof(GameSession)));}
-    void release_session(GameSession* p) override{std::free(p);}
+    GameSession* allocate_session() override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        auto* result=w.rollback_session_owners.allocate(sizeof(GameSession));
+        if(!result){w.fail();return nullptr;}
+        // The native factory clears the payload immediately after allocation.
+        if(w.engine.rollback_state&&!w.engine.rollback_state->Touch(result,sizeof(multiplayer::SessionOwnerPool::Storage))){
+            if(!w.rollback_session_owners.release(result))__builtin_trap();
+            w.fail();return nullptr;
+        }
+        return static_cast<GameSession*>(result);
+#else
+        return static_cast<GameSession*>(std::malloc(sizeof(GameSession)));
+#endif
+    }
+    void release_session(GameSession* p) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(w.rollback_session_owners.owns(p)){
+            if(!w.rollback_session_owners.release(p))__builtin_trap();return;
+        }
+#endif
+        std::free(p);
+    }
     void evict_graphics_resources() override{} // Resources are resident native browser textures.
     void begin_loading(CallbackToken token) override{if(token!=loader_callback)__builtin_trap();w.loading=true;w.loading_progress={};w.loader_stop=0;w.loader_running=0;}
     void sleep(u32 milliseconds) override{if(milliseconds!=16)__builtin_trap();w.audio.update();w.audio.pump();} // Complete the original music-command barrier before gameplay starts.
@@ -137,7 +157,7 @@ void World::stop_session(){if(!actors.session)return;
     if(rollback)rollback->Clear();
     if(!backgrounds.collect_retired(Netplay::INVALID_FRAME))fail();
 #endif
-    loading=false;auto* session=actors.session;SessionResources env(*this);GameSessionResources{*session,env}.shutdown();std::free(session);effects.controller_flags=nullptr;
+    loading=false;auto* session=actors.session;SessionResources env(*this);GameSessionResources{*session,env}.shutdown();env.release_session(session);effects.controller_flags=nullptr;
 }
 void World::shutdown(){
     const auto previous_screen=state.pending_screen;state.pending_screen=3;stop_session();state.game.flags&=~0xb;

@@ -14,6 +14,11 @@ struct CallbackReceiver {
     virtual bool invoke(CallbackToken token,void* owner,i32& result)=0;
 #endif
     virtual void bind_callbacks(Callbacks&){}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // MP allocation barrier, before any new callback payload is cleared.
+    // The owner latches journal failure; this is not a nullable allocation.
+    virtual void preserve_callback_entry(UpdateChainEntry*){}
+#endif
 };
 struct Callbacks final:UpdateChainEnvironment {
     CallbackReceiver& receiver;u8 depth=0;u32 calls=0;

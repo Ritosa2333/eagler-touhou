@@ -16,6 +16,20 @@ namespace th10::multiplayer {
 
 class RollbackState {
 public:
+    // Pure traversal choice; the same WASM can exercise both exact paths.
+    static bool SetPackedOccupancyScan(bool enabled);
+    static bool PackedOccupancyScanEnabled();
+    // Explicit synchronous, read-only initial capture experiment. Game-time
+    // first-write hooks still copy immediately after BeginFrame returns.
+    static bool SetInitialCaptureBatch(bool enabled);
+    static bool InitialCaptureBatchEnabled();
+    static bool InitialCaptureBatchSupported();
+    const Netplay::RollbackReadOnlyCaptureStats& InitialCaptureBatchStats()const{
+        return journal_.ReadOnlyCaptureStats();
+    }
+    bool InitialCaptureBatchOpen()const{return journal_.IsReadOnlyCaptureOpen();}
+    std::size_t PendingInitialCaptureBlocks()const{return journal_.PendingReadOnlyCaptureBlocks();}
+    std::size_t PendingInitialCaptureBytes()const{return journal_.PendingReadOnlyCaptureBytes();}
     bool Reset();
     void Clear();
     bool BeginFrame(browser::World& world,std::uint32_t frame,bool capture=true);
@@ -61,6 +75,11 @@ private:
     RollbackPoolCapture<256> laser_capture_{};
     RollbackPoolCapture<1024> ecl_capture_{};
     RollbackPoolCapture<8192> hint_capture_{};
+    RollbackPoolCapture<1> hint_owner_capture_{};
+    RollbackPoolCapture<1> laser_owner_capture_{};
+    RollbackPoolCapture<3> bomb_owner_capture_{};
+    RollbackPoolCapture<1> session_owner_capture_{};
+    RollbackPoolCapture<1> game_effect_owner_capture_{};
     RollbackPoolCapture<128> effect_capture_{};
     RollbackPoolCapture<16> dialogue_capture_{};
     AnmVm* animation_pool_=nullptr;

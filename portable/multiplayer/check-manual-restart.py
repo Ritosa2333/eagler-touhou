@@ -392,6 +392,7 @@ class ManualRestart:
             audio:multiplayerSmoke.audioStatus(),memory:multiplayerSmoke.memoryStatus(),
             net:multiplayerSmoke.netStatus(),generation:multiplayerSmoke.generationStatus(),
             calibration:multiplayerSmoke.calibrationStatus(),scene:multiplayerSmoke.sceneOwners(),
+            graphStorage:multiplayerSmoke.graphStorage(),
             portableCanonical:multiplayerSmoke.portableCanonical()})''') for page in self.pages]
         checkpoint = {'name': label, 'generation': generation, 'lastSimulatedFrame': frame,
                       'confirmedThrough': [x['net'][4] for x in values], 'peers': values}
@@ -450,7 +451,7 @@ class ManualRestart:
         self.report['newGenerationObservation'] = [call(page, '''()=>({
             net:multiplayerSmoke.netStatus(),generation:multiplayerSmoke.generationStatus(),
             calibration:multiplayerSmoke.calibrationStatus(),canonical:multiplayerSmoke.canonical(),
-            scene:multiplayerSmoke.sceneOwners()})''') for page in self.pages]
+            scene:multiplayerSmoke.sceneOwners(),graphStorage:multiplayerSmoke.graphStorage()})''') for page in self.pages]
         fresh = [x['generation'] for x in self.current]
         old_id = initial[0]['generation'][4] | (initial[0]['generation'][5] << 32)
         expected = old_id ^ 0x9e3779b97f4a7c15

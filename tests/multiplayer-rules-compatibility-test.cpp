@@ -32,7 +32,7 @@ bool BrowserPeerTransport::SendControl(const std::uint8_t*,std::size_t){return f
 bool BrowserPeerTransport::SendSpectator(const std::uint8_t*,std::size_t){return false;}
 bool BrowserPeerTransport::HasSpectators()const{return false;}
 int BrowserPeerTransport::SpectatorState()const{return -1;}
-void BrowserPeerTransport::StopSpectators(){}
+void BrowserPeerTransport::StopSpectators(bool){}
 bool BrowserPeerTransport::Poll(Bytes* out){
     auto& pending=queues[this];if(pending.empty())return false;
     *out=std::move(pending.front());pending.pop_front();return true;

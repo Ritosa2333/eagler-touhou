@@ -81,6 +81,7 @@ bool NetplayRuntime::ConnectSpectator(const char* relayUrl,const char* spectator
     // live-session ABI (including negotiated delay) but never delay them again.
     if(!core_.Reset(core_config(setup_,base_session_id_,0))){transport_.Close();return false;}
     network_now_=network_clock();network_enabled_=true;spectator_=true;
+    network_gap_tail_enabled_=network_tail_presentation_enabled_=false;
     spectator_retired_=false;spectator_publish_frame_=spectator_receive_frame_=0;
     spectator_timing_ready_=setup_.version<4||setup_.adonis_mode==0;spectator_deadline_=network_now_+45'000;
     spectator_frames_.clear();spectator_error_.clear();return true;
@@ -166,6 +167,7 @@ bool NetplayRuntime::CaptureLocal(std::uint32_t frame,const Netplay::FrameInput&
     if(network_enabled_&&channel_.LatestCapture()!=Netplay::INVALID_FRAME&&
        frame!=channel_.LatestCapture()+1&&!FlushNetworkInputs())return false;
     if(!core_.ScheduleLocalInput(frame,input))return false;
+    network_gap_pacing_locked_=true;
     if(!network_enabled_)return true;
     network_now_=network_clock();
     return channel_.LocalCaptured(core_,frame,network_now_);
@@ -211,10 +213,28 @@ bool NetplayRuntime::PumpNetwork(bool expectsInput,bool captureFollows){
     }else initial_wait_started_=false;
     // Receive first. This measures missing contiguous information, not local
     // callback cost; the recovery cursor cannot manufacture prediction room.
-    input_gap_pacing_.Update(network_now_,MissingRemoteInputs(),
-        expectsInput&&CanStart()&&InitialInputsReady()&&!playback_&&
-        Mode()==Netplay::AdonisMode::Rollback);
+    const bool pace=expectsInput&&CanStart()&&InitialInputsReady()&&!playback_&&
+        Mode()==Netplay::AdonisMode::Rollback;
+    if(network_gap_tail_enabled_)network_input_gap_tail_.Update(network_now_,MissingRemoteInputs(),pace);
+    else input_gap_pacing_.Update(network_now_,MissingRemoteInputs(),pace);
     PublishConfirmedSpectatorFrames();return true;
+}
+
+bool NetplayRuntime::SetNetworkGapTailEnabled(bool enabled){
+    if(!configured_||playback_||spectator_||retired_||network_gap_pacing_locked_||
+       core_.LastSimulatedFrame()!=Netplay::INVALID_FRAME||core_.HasLocalCapture(0)||
+       (enabled&&Mode()!=Netplay::AdonisMode::Rollback))return false;
+    network_gap_tail_enabled_=enabled;
+    input_gap_pacing_.Reset(network_now_);network_input_gap_tail_.Reset(network_now_);
+    return true;
+}
+
+bool NetplayRuntime::SetNetworkTailPresentationEnabled(bool enabled){
+    if(!configured_||playback_||spectator_||retired_||network_gap_pacing_locked_||
+       core_.LastSimulatedFrame()!=Netplay::INVALID_FRAME||core_.HasLocalCapture(0)||
+       (enabled&&Mode()!=Netplay::AdonisMode::Rollback))return false;
+    network_tail_presentation_enabled_=enabled;
+    return true;
 }
 
 const char* NetplayRuntime::NetworkError()const{
@@ -257,7 +277,11 @@ bool NetplayRuntime::PrepareTransitionFence(){
 bool NetplayRuntime::Reset(const SessionSetup& setup, std::uint64_t sessionId) noexcept {
     Clear();
     if(!Configure(setup,sessionId)){Clear();return false;}
-    setup_=setup;base_session_id_=sessionId;return true;
+    setup_=setup;base_session_id_=sessionId;
+    // Configure also serves calibrated startup and next-run generations;
+    // only a complete Reset installs defaults instead of preserving choices.
+    network_gap_tail_enabled_=Mode()==Netplay::AdonisMode::Rollback;
+    return true;
 }
 
 bool NetplayRuntime::BeginPlayback(SessionSetup& setup) noexcept {
@@ -265,6 +289,7 @@ bool NetplayRuntime::BeginPlayback(SessionSetup& setup) noexcept {
     // send HELLO/READY messages, and can never attach a live network transport.
     auto next=setup;next.sessionId=0x5250591000000001ull;next.started=false;next.input_delay=0;
     if(!Reset(next,next.sessionId))return false;
+    network_gap_tail_enabled_=network_tail_presentation_enabled_=false;
     playback_=true;setup=next;return true;
 }
 
@@ -297,7 +322,7 @@ bool NetplayRuntime::FeedSpectator(u32 frame){
 
 bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId) noexcept {
     if(!setup.configured||!sessionId)return false;
-    EndCorrection();input_gap_pacing_.Reset(network_now_);
+    EndCorrection();input_gap_pacing_.Reset(network_now_);network_input_gap_tail_.Reset(network_now_);
     initial_wait_started_=false;initial_wait_since_=0;initial_wait_error_.clear();
     const u32 words[]{setup.version>=5?5u:setup.version>=4?4u:3u,setup.playerCount,setup.localPlayer,setup.difficulty,setup.seed,
         u32(sessionId),u32(sessionId>>32),setup.input_delay_auto?0u:setup.input_delay,setup.loadouts[0].character,setup.loadouts[0].shot,
@@ -330,7 +355,8 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId
 void NetplayRuntime::Clear() noexcept {
     FlushNetworkInputs();
     transport_.Close();channel_.Clear();calibration_.Clear();phase_debt_ms_=0;network_enabled_=false;network_now_=0;playback_=false;
-    EndCorrection();input_gap_pacing_.Reset(0);
+    EndCorrection();input_gap_pacing_.Reset(0);network_input_gap_tail_.Reset(0);
+    network_gap_tail_enabled_=network_tail_presentation_enabled_=network_gap_pacing_locked_=false;
     initial_wait_started_=false;initial_wait_since_=0;initial_wait_error_.clear();
     spectator_=spectator_retired_=false;spectator_publish_frame_=spectator_receive_frame_=0;
     spectator_timing_ready_=true;spectator_timing_sent_=spectator_publish_failed_=false;spectator_deadline_=0;

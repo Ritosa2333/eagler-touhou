@@ -6,6 +6,7 @@
 #include "../game/PracticeRuntime.hpp"
 #endif
 #include <cstdlib>
+#include <cstring>
 namespace th10::browser {
 namespace {
 struct Frame final:EnemyFrameEnvironment,EnemyDropEnvironment {
@@ -62,7 +63,12 @@ struct Script final:EclServices {
     i32 command(EclContext& context) override{if(!owner)__builtin_trap();return w.enemy_command(owner->state,context,*this);}
     void* allocate(u32 size) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        if(auto* p=w.rollback_ecl.allocate(size,true))return p;
+        if(auto* p=w.rollback_ecl.allocate(size)){
+            // This pool also serves small nodes/scratch allocations. Its
+            // original zero=true cleared a full EclContext, not just size.
+            if(w.engine.rollback_state)(void)w.engine.rollback_state->Touch(p,sizeof(EclContext));
+            std::memset(p,0,sizeof(EclContext));return p;
+        }
         w.fail();return nullptr;
 #else
         return std::malloc(size);
@@ -103,7 +109,10 @@ struct Enemies final:EnemyManagerEnvironment {
     World& w;Script cleanup;explicit Enemies(World& world):w(world),cleanup(world,nullptr){rate=&w.engine.speed;difficulty=&w.state.game.difficulty;registry=&w.engine.manager.registry;player=w.actors.player;scripts=&cleanup;enemy_type_table=reinterpret_cast<void*>(1);script_type_table=reinterpret_cast<void*>(2);}
     Enemy* allocate_enemy() override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        return static_cast<Enemy*>(w.rollback_enemies.allocate(sizeof(Enemy),true));
+        auto* enemy=static_cast<Enemy*>(w.rollback_enemies.allocate(sizeof(Enemy)));
+        if(!enemy)return nullptr;
+        if(w.engine.rollback_state)(void)w.engine.rollback_state->Touch(enemy,sizeof(Enemy));
+        std::memset(enemy,0,sizeof(Enemy));return enemy;
 #else
         return static_cast<Enemy*>(std::malloc(sizeof(Enemy)));
 #endif

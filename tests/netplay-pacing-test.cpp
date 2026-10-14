@@ -2,6 +2,8 @@
 #include <eagler/netplay/SessionPacing.hpp>
 #include <eagler/netplay/PendingFrameSchedule.hpp>
 #include <eagler/netplay/InputGapPacing.hpp>
+#include <eagler/netplay/NetplayCore.hpp>
+#include "../th10_web/cpp/multiplayer/NetworkInputGapPacing.hpp"
 #include "../th10_web/cpp/multiplayer/NetworkFrameSchedule.hpp"
 #include "../th10_web/cpp/multiplayer/RecoveryBudget.hpp"
 #include <cassert>
@@ -109,6 +111,277 @@ void test_input_gap_pacing(){
     // from this timestamp and cannot reuse the disabled interval as credit.
     pacing.Update(2065,12,false);near(pacing.Scale(),1.);
     pacing.Update(2090,7,true);near(pacing.Scale(),1.5);
+}
+
+void test_network_gap_tail_targets_and_release(){
+    using Tail=th10::multiplayer::NetworkInputGapPacing;
+    // The whole old region must match the real common implementation on
+    // changing input and clock traces, including stale pumps and disable.
+    for(unsigned hz:{90u,120u,144u,165u,240u}){
+        Tail tail;Netplay::InputGapPacing legacy;tail.Reset(1000);legacy.Reset(1000);
+        for(unsigned callback=1;callback<=hz*4;++callback){
+            const auto now=1000+std::uint64_t(callback)*1000/hz;
+            const auto missing=(callback/7)%8;
+            const bool enabled=callback%53!=0;
+            tail.Update(now,missing,enabled);legacy.Update(now,missing,enabled);
+            assert(tail.Scale()==legacy.Scale());
+            tail.Update(now,12,true);tail.Update(now-1,12,true);
+            assert(tail.Scale()==legacy.Scale());
+        }
+    }
+    for(unsigned missing:{0u,1u,2u,3u,4u}){
+        Tail tail;tail.Reset(0);
+        for(std::uint64_t now:{1u,16u,1000u,60000u}){
+            tail.Update(now,missing,true);assert(tail.Scale()==1.);
+        }
+    }
+    constexpr double expected[]{1.,1.,1.,1.,1.,4./3.,5./3.,2.,2.375,3.5,5.375,8.,8.};
+    for(unsigned missing=0;missing<=12;++missing){
+        Tail tail;tail.Reset(0);tail.Update(1000,missing,true);near(tail.Scale(),expected[missing]);
+    }
+    Tail tail;tail.Reset(1000);
+    tail.Update(1025,12,true);near(tail.Scale(),1.5);
+    tail.Update(1050,12,true);near(tail.Scale(),2.);
+    tail.Update(1100,12,true);near(tail.Scale(),3.);
+    tail.Update(1350,12,true);near(tail.Scale(),8.);
+    tail.Update(2000,std::numeric_limits<std::uint32_t>::max(),true);near(tail.Scale(),8.);
+
+    // Analytic endpoint checks: 8 -> 2 consumes 225 ms in speed, then the
+    // old 2 -> 1 release consumes 150 ms. A single callback crossing 2 must
+    // use its remainder, just as many short callbacks do (not another 150).
+    for(unsigned elapsed:{1u,50u,100u,224u,225u,226u,300u,374u,375u,600u}){
+        Tail single;single.Reset(1000);single.Update(1350,12,true);
+        single.Update(1350+elapsed,4,true);
+        for(unsigned part:{1u,7u,8u,11u,16u,33u,375u}){
+            Tail split;split.Reset(1000);split.Update(1350,12,true);
+            unsigned at=0;
+            while(at<elapsed){at=std::min(elapsed,at+part);split.Update(1350+at,4,true);}
+            near(split.Scale(),single.Scale());
+        }
+        if(elapsed==225)near(single.Scale(),2.);
+        if(elapsed==300)near(single.Scale(),1.5);
+        if(elapsed==374)near(single.Scale(),1.+1./150.);
+        if(elapsed>=375)near(single.Scale(),1.);
+    }
+    // Receive part of the missing interval, but not all of it. Release must
+    // stop at that remaining target instead of overshooting to free speed.
+    for(unsigned missing=5;missing<=11;++missing){
+        Tail partial;partial.Reset(0);partial.Update(350,12,true);
+        partial.Update(2000,missing,true);near(partial.Scale(),expected[missing]);
+    }
+    tail.Reset(1000);tail.Update(1350,12,true);
+    for(unsigned repeat=0;repeat<100;++repeat){
+        tail.Update(1350,0,true);tail.Update(1300,0,true);near(tail.Scale(),8.);
+    }
+    tail.Update(1350,12,false);near(tail.Scale(),1.);
+    tail.Update(1375,12,true);near(tail.Scale(),1.5);
+    // Oscillation at both policy boundaries cannot ratchet past the larger
+    // target or leave a permanent brake after the remote information returns.
+    for(unsigned low:{4u,7u}){
+        Tail oscillating;oscillating.Reset(0);
+        for(unsigned sample=1;sample<=200;++sample){
+            oscillating.Update(sample*10,low+(sample&1),true);
+            assert(oscillating.Scale()>=1.&&oscillating.Scale()<=expected[low+1]);
+        }
+        oscillating.Update(2375,4,true);near(oscillating.Scale(),1.);
+    }
+}
+
+void test_network_gap_tail_phase_and_debt(){
+    using Tail=th10::multiplayer::NetworkInputGapPacing;
+    using Clock=th10::multiplayer::NetworkFrameSchedule;
+    constexpr double step=Clock::interval;
+    for(unsigned hz:{90u,120u,144u,165u,240u})for(double phase:{0.,.5,.999}){
+        Clock clock;Tail pacing;pacing.Reset(0);
+        assert(clock.advance(phase*step)==0);
+        double normalized=phase*step;unsigned completed=0;
+        for(unsigned callback=1;callback<=hz*2;++callback){
+            const auto now=std::uint64_t(callback)*1000/hz;
+            const auto old_debt=clock.debt_seconds(),old_alpha=clock.presentation_alpha();
+            const unsigned missing=callback<hz/3?4:callback<hz?11:4;
+            pacing.Update(now,missing,true);
+            near(clock.debt_seconds(),old_debt); // changing speed cannot rescale debt
+            const auto elapsed=(1./hz)/pacing.Scale();normalized+=elapsed;
+            const auto due=clock.advance(elapsed);assert(due<=1);
+            if(due){clock.complete();++completed;}
+            else{
+                assert(clock.presentation_alpha()>=old_alpha);
+                assert(clock.presentation_alpha()<1.);
+            }
+            near(completed*step+clock.debt_seconds(),normalized);
+        }
+        near(pacing.Scale(),1.);
+    }
+    Clock cpu;Tail pacing;pacing.Reset(0);pacing.Update(350,12,true);
+    const auto offered=cpu.advance(3.75*step);assert(offered==3);cpu.complete();cpu.defer(2);
+    near(cpu.debt_seconds(),2.75*step);
+    pacing.Update(400,4,true);near(cpu.debt_seconds(),2.75*step);
+    assert(cpu.advance(0)==2);cpu.complete();cpu.complete();near(cpu.debt_seconds(),.75*step);
+    // CPU catch-up/reconciliation owes whole ticks even while the network
+    // scale changes. No new wall time is necessary to service those ticks.
+    assert(cpu.advance(2.*step)==2);cpu.recovering(2);
+    pacing.Update(725,4,true);near(pacing.Scale(),1.);near(cpu.debt_seconds(),2.75*step);
+    assert(cpu.advance(0)==2);cpu.complete();cpu.complete();near(cpu.debt_seconds(),.75*step);
+    pacing.Update(60000,4,true);near(pacing.Scale(),1.);
+    assert(cpu.advance(60./pacing.Scale())==Clock::max_ticks);cpu.recovering(Clock::max_ticks);
+    assert(cpu.advance(0)==Clock::max_ticks);
+    for(unsigned tick=0;tick<Clock::max_ticks;++tick)cpu.complete();
+    near(cpu.debt_seconds(),0.);
+
+    // A genuine H wait discards elapsed wall time, including a deep brake's
+    // recovery interval. It keeps exactly one pending tick and the old phase.
+    Clock pending;assert(pending.advance(1.75*step)==1);pending.blocked(true);
+    pacing.Reset(0);pacing.Update(350,12,true);
+    for(unsigned callback=1;callback<=16;++callback){
+        pacing.Update(350+callback*50,callback<8?12:4,true);
+        assert(pending.advance(.05/pacing.Scale())==1);pending.blocked(true);
+        near(pending.debt_seconds(),.75*step);near(pending.presentation_alpha(),1.);
+    }
+    pending.complete();assert(pending.advance(0)==0);near(pending.presentation_alpha(),.75);
+    assert(pending.advance(.25*step)==1);pending.complete();near(pending.debt_seconds(),0.);
+    assert(pending.advance(1.5*step)==1);pending.blocked(true);
+    assert(pending.advance(10./pacing.Scale())==1);pending.recovering();
+    assert(!pending.retry_pending()&&pending.advance(0)==1);pending.complete();
+    near(pending.presentation_alpha(),.5);
+}
+
+// A real core with fixed deterministic input, H=12 and TH10 absolute touch.
+// This is an isolated receive/cadence fixture; it does not claim a rendering,
+// two-way network, CPU-budget, or real-game performance measurement.
+struct GapCoreFixture {
+    Netplay::RollbackCore core;
+    std::uint32_t next=0;
+    static Netplay::FrameInput remote(){
+        Netplay::FrameInput input{};input.analogMode=Netplay::AnalogMode::DirectTouch;
+        input.x=8300;input.y=36500;input.unlimited=true;input.touchUsed=true;return input;
+    }
+    static Netplay::FrameInput local(std::uint32_t frame){
+        auto input=remote();input.x=12300+float(frame)*17;input.y=30000+float(frame)*3;
+        input.buttons=std::uint16_t(frame&3);return input;
+    }
+    GapCoreFixture(){
+        Netplay::CoreConfig config{};config.sessionId=101;config.maxRollbackFrames=12;
+        config.directTouchIsAbsolute=true;config.maxDirectTouchDeltaPredictionFrames=0;
+        assert(core.Reset(config));
+        assert(core.SubmitRemoteInput(1,0,remote())==Netplay::RemoteInputResult::Accepted);
+        for(unsigned frame=0;frame<5;++frame)assert(advance());
+        assert(missing()==4);
+    }
+    unsigned missing()const{
+        const auto confirmed=core.ConfirmedThroughAllRemotes();
+        assert(confirmed!=Netplay::INVALID_FRAME);
+        return next>confirmed+1?next-confirmed-1:0;
+    }
+    void receiveThrough(std::uint32_t frame){
+        auto confirmed=core.ConfirmedThroughAllRemotes();
+        while(confirmed<frame){
+            const auto result=core.SubmitRemoteInput(1,++confirmed,remote());
+            assert(result==Netplay::RemoteInputResult::Accepted||result==Netplay::RemoteInputResult::PredictionCorrect);
+        }
+        assert(!core.HasRollbackRequest());
+    }
+    bool advance(){
+        const auto input=local(next);
+        if(!core.HasLocalCapture(next))assert(core.ScheduleLocalInput(next,input));
+        assert(core.LocalInput(next)==input);
+        const auto decision=core.PrepareFrame(next);
+        if(!decision.canAdvance){
+            assert(missing()==12);
+            auto changed=input;changed.x+=1;
+            assert(!core.ScheduleLocalInput(next,changed)&&core.LocalInput(next)==input);
+            return false;
+        }
+        assert(decision.inputs[0]==input&&decision.inputs[1]==remote());
+        assert(core.MarkSimulated(next,decision));++next;assert(missing()<=12);return true;
+    }
+};
+template<class Pacing> void check_steady_gap_core(unsigned hz){
+    GapCoreFixture fixture;th10::multiplayer::NetworkFrameSchedule clock;
+    Pacing pacing;pacing.Reset(1000);
+    for(unsigned callback=1;callback<=hz*3;++callback){
+        // Independently paced 60 Hz source, four frames behind the initial
+        // simulation frontier. Its delivery clock is not fed by local scale.
+        fixture.receiveThrough(std::uint64_t(callback)*60/hz);
+        assert(fixture.missing()<=4);
+        pacing.Update(1000+std::uint64_t(callback)*1000/hz,fixture.missing(),true);
+        assert(pacing.Scale()==1.);
+        const auto due=clock.advance((1./hz)/pacing.Scale());assert(due<=1);
+        if(due){assert(fixture.advance());clock.complete();}
+        assert(fixture.missing()<=4&&!clock.retry_pending());
+    }
+    assert(fixture.next==185);near(clock.debt_seconds(),0.);
+}
+struct DroughtResult {
+    double first_wait=-1,first_horizon=-1,first_resume=-1;
+    unsigned blocked=0,fractional=0,final_frame=0;
+};
+template<class Pacing> DroughtResult run_gap_drought(unsigned hz,double phase,unsigned drought_ms){
+    using Clock=th10::multiplayer::NetworkFrameSchedule;
+    GapCoreFixture fixture;Clock clock;Pacing pacing;pacing.Reset(1000);
+    assert(clock.advance(phase*Clock::interval)==0);
+    DroughtResult result{};
+    const auto callbacks=unsigned(std::ceil(double(drought_ms+800)*hz/1000.));
+    for(unsigned callback=1;callback<=callbacks;++callback){
+        const double elapsed=double(callback)*1000./hz;
+        const bool received=elapsed+1.e-7>=drought_ms;
+        // The finite drought ends with the missing contiguous input. Then
+        // new actual samples are available before each next forward frame.
+        if(received)fixture.receiveThrough(fixture.next);
+        pacing.Update(1000+std::uint64_t(elapsed),fixture.missing(),true);
+        const auto old_next=fixture.next;const auto old_alpha=clock.presentation_alpha();
+        const auto due=clock.advance((1./hz)/pacing.Scale());assert(due<=1);
+        if(due){
+            if(fixture.advance()){
+                clock.complete();
+                if(received&&result.first_resume<0)result.first_resume=elapsed;
+                if(fixture.missing()==12&&result.first_horizon<0)result.first_horizon=elapsed;
+            }else{
+                assert(!received);clock.blocked(true);++result.blocked;
+                if(result.first_wait<0)result.first_wait=elapsed;
+                near(clock.presentation_alpha(),1.);
+            }
+        }else{
+            assert(!clock.retry_pending()&&fixture.next==old_next);
+            assert(clock.presentation_alpha()>=old_alpha&&clock.presentation_alpha()<1.);
+            ++result.fractional;
+        }
+        assert(fixture.missing()<=12&&clock.debt_seconds()<Clock::interval);
+    }
+    assert(result.first_wait>=0&&result.first_wait<drought_ms&&result.blocked>0);
+    assert(result.first_resume>=drought_ms-1.e-7&&result.first_resume<drought_ms+1000./hz+1.e-7);
+    assert(!clock.retry_pending()&&fixture.missing()==0);near(pacing.Scale(),1.);
+    result.final_frame=fixture.next;return result;
+}
+void test_network_gap_tail_core_cadence(){
+    using Tail=th10::multiplayer::NetworkInputGapPacing;
+    for(unsigned hz:{90u,120u,144u,165u,240u}){
+        check_steady_gap_core<Netplay::InputGapPacing>(hz);check_steady_gap_core<Tail>(hz);
+        for(double phase:{0.,.5,.999})for(unsigned drought:{600u,2000u}){
+            const auto off=run_gap_drought<Netplay::InputGapPacing>(hz,phase,drought);
+            const auto on=run_gap_drought<Tail>(hz,phase,drought);
+            // The experiment must buy prediction time in this cheap, known
+            // input-drought fixture, without pretending to avoid H forever.
+            assert(on.first_horizon>off.first_horizon&&on.first_wait>off.first_wait);
+            assert(on.blocked<off.blocked&&on.fractional>off.fractional);
+            assert(on.final_frame>13&&off.final_frame>13);
+        }
+    }
+    // Counterexample to a blanket no-hold claim: already-owed CPU work is
+    // not slowed retroactively. It can still consume the remaining H window
+    // after the pacing target rises; the real core must reject the next tick.
+    using Clock=th10::multiplayer::NetworkFrameSchedule;
+    GapCoreFixture fixture;Clock clock;Tail pacing;pacing.Reset(1000);
+    const auto offered=clock.advance(Clock::max_ticks*Clock::interval);
+    assert(offered==6&&fixture.advance());clock.complete();clock.defer(offered-1);
+    pacing.Update(1025,fixture.missing(),true);near(pacing.Scale(),4./3.);
+    assert(clock.advance(0)==5);
+    for(unsigned tick=0;tick<5;++tick){assert(fixture.advance());clock.complete();}
+    assert(fixture.missing()==10);pacing.Update(1275,fixture.missing(),true);near(pacing.Scale(),5.375);
+    assert(clock.advance(0)==0); // target changes invent no normalized time
+    assert(clock.advance(3.*Clock::interval)==3);
+    for(unsigned tick=0;tick<2;++tick){assert(fixture.advance());clock.complete();}
+    assert(fixture.missing()==12&&!fixture.advance());clock.blocked(true);
+    assert(clock.retry_pending());near(clock.presentation_alpha(),1.);
 }
 
 void test_network_frame_schedule(){
@@ -302,6 +575,9 @@ int main(){
         assert(frame[0]>3600&&frame[1]>3600);
     }
     test_input_gap_pacing();
+    test_network_gap_tail_targets_and_release();
+    test_network_gap_tail_phase_and_debt();
+    test_network_gap_tail_core_cadence();
     test_recovery_budget();
     test_network_frame_schedule();
     test_cpu_recovery_schedule();

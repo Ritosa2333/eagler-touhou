@@ -1,5 +1,13 @@
 import createModule from '/th10-sdl.mjs';
 import {startPerformance} from '/performance-driver.mjs';
+import {captureGraphStorage} from '/graph-storage.mjs';
+import {verifyModelQuad} from '/model-quad-oracle.mjs';
+import {verifyCameraMathDraw,readCameraMathStatus,readCameraMathVerification} from '/camera-math-oracle.mjs';
+import {readInitialCaptureBatchStatus} from '/initial-capture-batch.mjs';
+import {configureNetworkGapTail,readNetworkGapTailStatus,
+ configureNetworkTailPresentation,readNetworkTailPresentationStatus} from '/network-gap-tail.mjs';
+import {readRafDeadlineGuardStatus} from '/raf-deadline-guard.mjs';
+import {runFixedWorkProbe} from '/fixed-work-probe.mjs';
 import {allKeyboardInputs,reachedNativeStage} from '/replay-robot.mjs';
 let core,wasmIdentity;
 const assetIdentities={};
@@ -27,6 +35,49 @@ for(const path of ['/input/th10.dat','/fonts/msgothic.ttc','/fonts/blend.bin','/
 function string(value,callback){const bytes=new TextEncoder().encode(value+'\0'),ptr=core.files_allocate(bytes.length);try{new Uint8Array(core.memory.buffer,ptr,bytes.length).set(bytes);return callback(ptr);}finally{core.files_free(ptr);}}
 string('#screen',core.sdl_canvas);core.sdl_music_enabled(0);
 let app=0,seatCount=0,performanceRun=null,performanceComparisonCapture=-1;
+let musicSetup=null,musicPreparing=false;
+function musicStatus(){
+ if(!core.sdl_music_observation)return null; // Older frozen OFF runs remain usable.
+ const pointer=core.sdl_music_observation(),buffer=core.memory.buffer;
+ if(!pointer||pointer%8||pointer+88>buffer.byteLength)throw Error('Music observation bounds');
+ const values=Array.from(new Float64Array(buffer,pointer,11));
+ if(values[0]!==1||values.some(value=>!Number.isSafeInteger(value)||value<0))throw Error('Music observation schema');
+ const names=['schema','enabled','fullDecode','streams','waiting','validDecoders','fullReady',
+  'decoderFrames','cursorBytes','fullPCMBytes','trackMask'];
+ return Object.fromEntries(names.map((name,index)=>[name,values[index]]));
+}
+async function prepareMusic(mode='off'){
+ if(app||performanceRun||musicPreparing||musicSetup)throw Error('Music preparation requires a fresh idle page');
+ if(!['off','stream','full'].includes(mode))throw Error('Invalid music mode');
+ if(mode!=='off'&&(!core.sdl_music_observation||!core.sdl_ogg_decode_mode||!core.sdl_music_resource_changed))
+  throw Error('Real music run needs the native read-only observation and music controls');
+ musicPreparing=true;
+ try{
+  let totalBytes=0,files=0;
+  if(mode!=='off'){
+   Module.FS.mkdirTree('/bgm-ogg');
+   // Canonical retail assets only, loaded before Application construction.
+   // Only download/mount happens here. Decoding remains native-owned and is
+   // measured whenever gameplay refills the source during the native loop.
+   for(let track=0;track<18;++track){
+    const path='/bgm-ogg/th10_'+String(track).padStart(2,'0')+'.ogg';
+    const response=await fetch(path);if(!response.ok)throw Error('Music asset '+path+': '+response.status);
+    const bytes=new Uint8Array(await response.arrayBuffer());totalBytes+=bytes.length;
+    if(bytes.length<4||bytes.length>32*1024*1024||totalBytes>128*1024*1024||
+       bytes[0]!==79||bytes[1]!==103||bytes[2]!==103||bytes[3]!==83)throw Error('Music asset format/bound: '+path);
+    assetIdentities[path]=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');
+    Module.FS.writeFile(path,bytes);++files;
+   }
+  }
+  core.sdl_ogg_decode_mode?.(mode==='full'?1:0);
+  core.sdl_music_enabled(mode==='off'?0:1);
+  core.sdl_music_resource_changed?.();
+  musicSetup={schema:1,mode,files,totalBytes,preloadedBeforeApplication:true,
+   scope:mode==='off'?'BGM source disabled; native SFX/mixer remain live':
+    'Real canonical OGG assets preloaded; native decoder and mixer unchanged; loading occurs before gameplay measurement'};
+  return {...musicSetup,observation:musicStatus()};
+ }finally{musicPreparing=false;}
+}
 const networkInput=core.files_allocate(20);
 function writeFrameInput(pointer,input=0){
  const value=typeof input==='number'?{buttons:input}:input||{};
@@ -51,6 +102,14 @@ const canonical=()=>{const words=Array.from(new Uint32Array(core.memory.buffer,c
 const portableCanonical=()=>{const words=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_portable_hashes(app),12));
  if(words[0]!==1)throw Error('Portable canonical schema 1 required');return words;};
 const memoryStatus=()=>({heap:core.memory.buffer.byteLength,words:Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_memory_status(app),12))});
+const modelQuadStats=()=>{
+ if(!core.sdl_model_quad_stats)throw Error('Native model quad statistics required');
+ const pointer=core.sdl_model_quad_stats();return Array.from(new Uint32Array(core.memory.buffer,pointer,8));
+};
+const modelQuadResidency=enabled=>{
+ if(!core.sdl_model_quad_residency)throw Error('Native model quad option required');
+ return core.sdl_model_quad_residency(enabled?1:0);
+};
 const enemyDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_enemy_debug(app),81));
 const lifecycle=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_lifecycle_status(app),12));
 const audioStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_audio_status(app),9));
@@ -101,6 +160,24 @@ function commitInputs(buttons=[]){
  }finally{core.files_free(ptr);}
 }
 window.multiplayerSmoke={
+ prepareMusic,musicStatus,
+ networkGapTailStatus(){return readNetworkGapTailStatus(core,app);},
+ networkTailPresentationStatus(){return readNetworkTailPresentationStatus(core,app);},
+ rafDeadlineGuardStatus(){return readRafDeadlineGuardStatus(core);},
+ fixedWorkProbe(options){return runFixedWorkProbe(options);},
+ modelQuadStats,modelQuadResidency,
+ verifyCameraMath(){
+  if(!app||!core.mp_fixture_presentation_draw)throw Error('Active diagnostic fixture world required');
+  if(performanceRun&&!performanceRun.report.done)throw Error('Pixel oracle cannot run inside performance measurement');
+  return verifyCameraMathDraw({core,canonical,presentationDraw:alpha=>!!core.mp_fixture_presentation_draw(app,alpha)});
+ },
+ graphStorage(){return core.multiplayer_graph_storage?captureGraphStorage(core,app,canonical()):null;},
+ verifyModelQuad(){
+  if(!app||!core.mp_fixture_presentation_draw)throw Error('Active diagnostic fixture world required');
+  if(performanceRun&&!performanceRun.report.done)throw Error('Pixel oracle cannot run inside performance measurement');
+  return verifyModelQuad({core,canonical,modelQuadResidency,modelQuadStats,
+   presentationDraw:alpha=>!!core.mp_fixture_presentation_draw(app,alpha)});
+ },
  presentationDraw(alpha){if(!core.mp_fixture_presentation_draw)throw Error('Fixture build required');
   return !!core.mp_fixture_presentation_draw(app,alpha);},
  playerDrawProbe(seat,alpha){if(!core.mp_fixture_player_draw_probe)throw Error('Fixture build required');
@@ -108,7 +185,7 @@ window.multiplayerSmoke={
  performanceStart(options){
   if(!app||performanceRun)throw Error('Performance needs a fresh active app');
   performanceRun=startPerformance({core,Module,app,netStatus,transportStatus,capturePeerInput,
-   memoryStatus,canonical,status,audioStatus,errorDetail,networkError,lifecycle},options);return true;
+   memoryStatus,canonical,status,audioStatus,musicStatus,errorDetail,networkError,lifecycle},options);return true;
  },
  performanceDone(){return !!performanceRun?.report.done;},
  performanceResult(){return performanceRun?.report??null;},
@@ -131,7 +208,13 @@ window.multiplayerSmoke={
   if(result||core.application_error(app))throw Error('Comparison tick failed '+result+' '+networkError());
   return netStatus();
  },
- performanceFinal(){return {state:status(),canonical:canonical(),audio:audioStatus(),net:netStatus(),
+ performanceFinal(){return {state:status(),canonical:canonical(),audio:audioStatus(),music:musicStatus(),net:netStatus(),
+  cameraMath:readCameraMathStatus(core),cameraMathFirstMismatch:readCameraMathVerification(core,true),
+  packedOccupancyScan:core.multiplayer_packed_occupancy_scan_status?.()??null,
+  initialCaptureBatch:readInitialCaptureBatchStatus(core,app),
+  networkGapTail:readNetworkGapTailStatus(core,app),
+  networkTailPresentation:readNetworkTailPresentationStatus(core,app),
+  rafDeadlineGuard:readRafDeadlineGuardStatus(core),
   smoothness:core.multiplayer_smoothness_status?Array.from(new Int32Array(
    core.memory.buffer,core.multiplayer_smoothness_status(app),10)):null,
   projectionCache:core.multiplayer_projection_cache_status?Array.from(new Float64Array(
@@ -324,14 +407,17 @@ window.multiplayerSmoke={
   configure(words);
   return status();
  },
- startNet(loadouts,local=0,difficulty=1,seed=1234,sessionLow=0x55667788,sessionHigh=0x11223344,inputDelay=0){
+ startNet(loadouts,local=0,difficulty=1,seed=1234,sessionLow=0x55667788,sessionHigh=0x11223344,inputDelay=0,networkGapTail=null,networkTailPresentation=null){
   if(app)throw Error('Use a fresh page for a new run');
   app=core.sdl_game_open(0,seed);if(!app)throw Error('Native app creation failed');
   seatCount=loadouts.length;
   if(!Number.isInteger(inputDelay)||inputDelay<0||inputDelay>8)throw Error('Invalid input delay');
   const words=[inputDelay?3:2,loadouts.length,local,difficulty,seed,sessionLow>>>0,sessionHigh>>>0,
    ...(inputDelay?[inputDelay]:[]),...loadouts.flat()];
-  while(words.length<(inputDelay?14:13))words.push(0);configure(words);return netStatus();
+  while(words.length<(inputDelay?14:13))words.push(0);configure(words);
+  configureNetworkGapTail(core,app,networkGapTail);
+  configureNetworkTailPresentation(core,app,networkTailPresentation);
+  return netStatus();
  },
  startAdonis(loadouts,local=0){
   if(app)throw Error('Use a fresh page for a new run');

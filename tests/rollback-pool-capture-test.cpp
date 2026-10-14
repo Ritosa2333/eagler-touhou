@@ -75,7 +75,87 @@ struct ScalarCapture {
     }
 };
 
-void dense_reuse_and_padding(){
+
+struct CapturedRange {
+    std::size_t offset,bytes;
+    bool operator==(const CapturedRange& other)const{
+        return offset==other.offset&&bytes==other.bytes;
+    }
+};
+
+template<std::size_t N>
+void ordered_runs_and_retries(){
+    using TestPool=th10::multiplayer::RollbackPool<Payload,N>;
+    using TestCapture=th10::multiplayer::RollbackPoolCapture<N>;
+    constexpr auto stride=sizeof(typename TestPool::Storage);
+    TestPool pool{};
+    auto* representation=reinterpret_cast<unsigned char*>(&pool);
+    std::fill(representation,representation+sizeof(pool),static_cast<unsigned char>(0xa5));
+    pool.cursor=N-1;
+    TestCapture scalar,packed;
+    std::uint32_t state=0x742dae13u+static_cast<std::uint32_t>(N);
+    for(unsigned pattern=0;pattern<9;++pattern){
+        for(std::size_t i=0;i<N;++i){
+            state=state*1664525u+1013904223u;
+            const bool active=pattern==0?false:pattern==1?true:
+                pattern==2?i%2!=0:pattern==3?i==N-1:
+                pattern==4?(i<2||i==N/2||i==N-1):
+                (state>>28)<(pattern==5?1u:pattern==6?4u:pattern==7?8u:15u);
+            pool.occupied[i]=active?static_cast<std::uint8_t>(1+(i+pattern*53)%255):0;
+        }
+        std::array<unsigned char,sizeof(pool)> before{};
+        std::memcpy(before.data(),&pool,sizeof(pool));
+        std::vector<CapturedRange> scalar_runs,packed_runs;
+        const auto record=[&](std::vector<CapturedRange>& runs,void* address,std::size_t bytes){
+            const auto offset=reinterpret_cast<std::uintptr_t>(address)-reinterpret_cast<std::uintptr_t>(&pool);
+            CHECK(offset<sizeof(pool)&&bytes<=sizeof(pool)-offset);
+            runs.push_back({offset,bytes});
+        };
+        CHECK(scalar.Capture(pool,[&](void* p,std::size_t bytes){record(scalar_runs,p,bytes);return true;},false));
+        CHECK(packed.Capture(pool,[&](void* p,std::size_t bytes){record(packed_runs,p,bytes);return true;},true));
+        CHECK(scalar_runs==packed_runs); // metadata order, slot stride and live-run boundaries
+        std::size_t live_count=0,total_bytes=0;
+        for(const auto byte:pool.occupied)live_count+=byte!=0;
+        for(const auto& run:packed_runs)total_bytes+=run.bytes;
+        CHECK(total_bytes==sizeof(pool.occupied)+sizeof(pool.cursor)+live_count*stride);
+
+        // The sparse pattern has separated runs and exercises both adjacent
+        // metadata and odd-capacity metadata padding. Reject every callback,
+        // including metadata, then retry the complete capture.
+        if(pattern==4){
+            const auto failure_and_retry=[&](TestCapture& capture,bool packed_scan){
+                for(std::size_t stop=0;stop<scalar_runs.size();++stop){
+                    std::vector<CapturedRange> attempted;
+                    CHECK(!capture.Capture(pool,[&](void* p,std::size_t bytes){
+                        record(attempted,p,bytes);return attempted.size()<=stop;
+                    },packed_scan));
+                    const std::vector<CapturedRange> prefix(scalar_runs.begin(),scalar_runs.begin()+stop+1);
+                    CHECK(attempted==prefix);
+                    for(std::size_t i=0;i<N;++i){
+                        const auto offset=reinterpret_cast<std::uintptr_t>(pool.at(i))-reinterpret_cast<std::uintptr_t>(&pool);
+                        bool covered=false;
+                        for(std::size_t run=0;run<stop;++run)
+                            covered|=offset>=scalar_runs[run].offset&&offset-scalar_runs[run].offset<scalar_runs[run].bytes;
+                        unsigned calls=0;
+                        CHECK(capture.TouchSlot(pool.at(i),i%2?Payload:stride,[&](void* p,std::size_t bytes){
+                            ++calls;CHECK(p==pool.at(i)&&bytes==stride);return false;
+                        })==covered);
+                        CHECK(calls==(covered?0u:1u));
+                    }
+                    std::vector<CapturedRange> retried;
+                    CHECK(capture.Capture(pool,[&](void* p,std::size_t bytes){
+                        record(retried,p,bytes);return true;
+                    },packed_scan));
+                    CHECK(retried==scalar_runs);
+                }
+            };
+            failure_and_retry(scalar,false);failure_and_retry(packed,true);
+        }
+        CHECK(std::memcmp(&pool,before.data(),sizeof(pool))==0);
+    }
+}
+
+void dense_reuse_and_padding(bool packed_scan){
     Pool pool{};seed(pool);
     std::memset(pool.occupied,1,sizeof(pool.occupied));
     const Pool before=pool;
@@ -83,7 +163,7 @@ void dense_reuse_and_padding(){
     Capture capture;
     const auto save=[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);};
     CHECK(journal.BeginFrame(0));
-    CHECK(capture.Capture(pool,save));
+    CHECK(capture.Capture(pool,save,packed_scan));
     CHECK(journal.BlocksForFrame(0)==2);
     CHECK(journal.BytesForFrame(0)==sizeof(pool.occupied)+sizeof(pool.cursor)+sizeof(pool.blocks));
     for(std::size_t i=0;i<Capacity;++i){
@@ -104,7 +184,7 @@ void dense_reuse_and_padding(){
     CHECK(same(pool,before));
 }
 
-void sparse_dormant_and_clear(){
+void sparse_dormant_and_clear(bool packed_scan){
     Pool pool{};seed(pool);
     for(const auto i:{1u,2u,5u,8u,9u})pool.occupied[i]=1;
     const Pool before=pool;
@@ -112,7 +192,7 @@ void sparse_dormant_and_clear(){
     Capture capture;
     const auto save=[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);};
     CHECK(journal.BeginFrame(0));
-    CHECK(capture.Capture(pool,save));
+    CHECK(capture.Capture(pool,save,packed_scan));
     CHECK(journal.BlocksForFrame(0)==4); // metadata plus three live runs
     CHECK(journal.BytesForFrame(0)==sizeof(pool.occupied)+sizeof(pool.cursor)+5*Stride);
     pool.cursor=0;
@@ -136,17 +216,17 @@ void sparse_dormant_and_clear(){
     capture.Clear();
     CHECK(!capture.OwnsSlot(pool.at(1),Payload));
     CHECK(journal.BeginFrame(0));
-    CHECK(capture.Capture(pool,save));
+    CHECK(capture.Capture(pool,save,packed_scan));
     CHECK(capture.TouchSlot(pool.at(0),Payload,save));
     fill(pool,0,0x8b);
     CHECK(journal.EndFrame());CHECK(journal.UndoTo(0));CHECK(same(pool,before));
 }
 
-void invalid_ownership(){
+void invalid_ownership(bool packed_scan){
     Pool pool{};seed(pool);
     Capture capture;
     CHECK(!capture.OwnsSlot(pool.at(0),Payload));
-    CHECK(capture.Capture(pool,[](void*,std::size_t){return true;}));
+    CHECK(capture.Capture(pool,[](void*,std::size_t){return true;},packed_scan));
     unsigned char outside[Stride]{};
     CHECK(!capture.OwnsSlot(nullptr,Payload));
     CHECK(!capture.OwnsSlot(outside,Payload));
@@ -165,14 +245,14 @@ void invalid_ownership(){
     };
     CHECK(!capture.TouchSlot(outside,Payload-1,foreign));CHECK(forwarded==1);
     Pool replacement{};seed(replacement);
-    CHECK(capture.Capture(replacement,[](void*,std::size_t){return true;}));
+    CHECK(capture.Capture(replacement,[](void*,std::size_t){return true;},packed_scan));
     CHECK(!capture.OwnsSlot(pool.at(0),Payload));
     CHECK(capture.OwnsSlot(replacement.at(0),Payload));
     capture.Clear();CHECK(!capture.OwnsSlot(pool.at(0),Stride));
     CHECK(!capture.OwnsSlot(replacement.at(0),Stride));
 }
 
-void dialogue_duplicate_subrange(){
+void dialogue_duplicate_subrange(bool packed_scan){
     // RollbackState also captures the GUI's dialogue pointer separately. With
     // adjacent live dialogue slots that duplicate MUST use capture routing;
     // sending it directly to the strict journal would overlap the live run.
@@ -183,18 +263,18 @@ void dialogue_duplicate_subrange(){
     CHECK(journal.Reset({2,sizeof(pool),32,true,true}));
     CHECK(journal.BeginFrame(0));
     const auto save=[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);};
-    CHECK(capture.Capture(pool,save));
+    CHECK(capture.Capture(pool,save,packed_scan));
     CHECK(capture.TouchSlot(pool.at(2),144,save));
     CHECK(capture.TouchSlot(pool.at(3),144,save));
     CHECK(journal.BlocksForFrame(0)==2);
     CHECK(!journal.Touch(pool.at(2),144));CHECK(journal.Failed());
 }
 
-void failed_capture_and_retry(){
+void failed_capture_and_retry(bool packed_scan){
     Pool pool{};seed(pool);pool.occupied[3]=pool.occupied[4]=1;
     Capture capture;
     unsigned calls=0;
-    CHECK(!capture.Capture(pool,[&](void*,std::size_t){return ++calls<2;}));
+    CHECK(!capture.Capture(pool,[&](void*,std::size_t){return ++calls<2;},packed_scan));
     CHECK(calls==2); // metadata saved, live-run capture rejected
     calls=0;
     const auto reject=[&](void*,std::size_t){++calls;return false;};
@@ -211,7 +291,7 @@ void failed_capture_and_retry(){
     CHECK(journal.Reset({2,sizeof(pool.occupied)+sizeof(pool.cursor)+Stride,Capacity+8}));
     CHECK(journal.BeginFrame(0));
     capture.Clear();
-    CHECK(!capture.Capture(pool,[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);}));
+    CHECK(!capture.Capture(pool,[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);},packed_scan));
     CHECK(journal.Failed());
     CHECK(!journal.EndFrame());
 }
@@ -221,10 +301,11 @@ struct Pair {
     Capture capture;
     ScalarCapture oracle;
     Netplay::RollbackJournal journal,reference;
-    explicit Pair(bool coalesce){seed(batched);scalar=batched;configure(journal,coalesce);configure(reference,coalesce);}
+    const bool packed_scan;
+    Pair(bool coalesce,bool use_packed):packed_scan(use_packed){seed(batched);scalar=batched;configure(journal,coalesce);configure(reference,coalesce);}
     void begin(std::uint32_t frame){
         CHECK(journal.BeginFrame(frame));CHECK(reference.BeginFrame(frame));
-        CHECK(capture.Capture(batched,[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);}));
+        CHECK(capture.Capture(batched,[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);},packed_scan));
         CHECK(oracle.capture(scalar,reference));
         CHECK(journal.BytesForFrame(frame)==reference.BytesForFrame(frame));
     }
@@ -266,8 +347,8 @@ struct Pair {
     }
 };
 
-void changing_runs_history_and_continuation(bool coalesce){
-    Pair pair(coalesce);
+void changing_runs_history_and_continuation(bool coalesce,bool packed_scan){
+    Pair pair(coalesce,packed_scan);
     for(std::size_t i=0;i<Capacity;++i)pair.batched.occupied[i]=pair.scalar.occupied[i]=i%3!=0;
     const Pool original=pair.batched;
     std::vector<Pool> history;
@@ -291,8 +372,8 @@ void changing_runs_history_and_continuation(bool coalesce){
     CHECK(!pair.journal.Failed()&&!pair.reference.Failed());
 }
 
-void elided_frame_then_capture(){
-    Pair pair(true);
+void elided_frame_then_capture(bool packed_scan){
+    Pair pair(true,packed_scan);
     pair.batched.occupied[1]=pair.scalar.occupied[1]=1;
     pair.begin(0);pair.mutate();pair.end(0);
     pair.journal.DiscardBefore(1);pair.reference.DiscardBefore(1);
@@ -309,7 +390,7 @@ void elided_frame_then_capture(){
 }
 
 template<std::size_t N>
-void metadata_alignment(){
+void metadata_alignment(bool packed_scan){
     using MetadataPool=th10::multiplayer::RollbackPool<37,N>;
     MetadataPool pool{};
     // Nonzero padding detects accidental widening on odd capacities.
@@ -323,7 +404,7 @@ void metadata_alignment(){
     Netplay::RollbackJournal journal;
     CHECK(journal.Reset({2,sizeof(pool),N+8,true,true}));CHECK(journal.BeginFrame(0));
     const auto save=[&](void* p,std::size_t bytes){return journal.Touch(p,bytes);};
-    CHECK(capture.Capture(pool,save));
+    CHECK(capture.Capture(pool,save,packed_scan));
     constexpr bool adjacent=offsetof(MetadataPool,cursor)==offsetof(MetadataPool,occupied)+sizeof(pool.occupied);
     CHECK(journal.BlocksForFrame(0)==(adjacent?1:2));
     CHECK(journal.BytesForFrame(0)==sizeof(pool.occupied)+sizeof(pool.cursor));
@@ -333,17 +414,24 @@ void metadata_alignment(){
     Netplay::RollbackJournal limited;
     CHECK(limited.Reset({1,sizeof(pool.occupied)+sizeof(pool.cursor)-1,N+8}));
     CHECK(limited.BeginFrame(0));
-    CHECK(!capture.Capture(pool,[&](void* p,std::size_t bytes){return limited.Touch(p,bytes);}));
+    CHECK(!capture.Capture(pool,[&](void* p,std::size_t bytes){return limited.Touch(p,bytes);},packed_scan));
     CHECK(limited.Failed());
 }
 } // namespace
 
 int main(){
-    metadata_alignment<1>();metadata_alignment<2>();metadata_alignment<3>();
-    metadata_alignment<4>();metadata_alignment<5>();metadata_alignment<7>();
-    metadata_alignment<8>();metadata_alignment<16>();metadata_alignment<37>();metadata_alignment<64>();
-    dense_reuse_and_padding();sparse_dormant_and_clear();invalid_ownership();
-    dialogue_duplicate_subrange();failed_capture_and_retry();changing_runs_history_and_continuation(false);
-    changing_runs_history_and_continuation(true);elided_frame_then_capture();
-    std::printf("rollback pool capture: PASS payload=%zu stride=%zu; dense/sparse padding, dormant first writes, reuse, 12-frame undo, ring/continuation, elision and failures\n",Payload,Stride);
+    ordered_runs_and_retries<7>();ordered_runs_and_retries<8>();
+    ordered_runs_and_retries<9>();ordered_runs_and_retries<37>();ordered_runs_and_retries<64>();
+    for(unsigned mode=0;mode<2;++mode){
+        const bool packed_scan=mode!=0;
+        random_state=0x683dfa21u; // identical histories for both scanner implementations
+        metadata_alignment<1>(packed_scan);metadata_alignment<2>(packed_scan);metadata_alignment<3>(packed_scan);
+        metadata_alignment<4>(packed_scan);metadata_alignment<5>(packed_scan);metadata_alignment<7>(packed_scan);
+        metadata_alignment<8>(packed_scan);metadata_alignment<16>(packed_scan);metadata_alignment<37>(packed_scan);metadata_alignment<64>(packed_scan);
+        dense_reuse_and_padding(packed_scan);sparse_dormant_and_clear(packed_scan);invalid_ownership(packed_scan);
+        dialogue_duplicate_subrange(packed_scan);failed_capture_and_retry(packed_scan);
+        changing_runs_history_and_continuation(false,packed_scan);changing_runs_history_and_continuation(true,packed_scan);
+        elided_frame_then_capture(packed_scan);
+    }
+    std::printf("rollback pool capture: PASS scalar/packed ordered runs and retries; payload=%zu stride=%zu; dense/sparse padding, dormant first writes, reuse, 12-frame undo, ring/continuation, elision and failures\n",Payload,Stride);
 }

@@ -12,10 +12,13 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/InputLanes.hpp"
 #include "../multiplayer/PresentationCache.hpp"
+#include "../multiplayer/RemotePlayerPresentation.hpp"
 #include "../multiplayer/Pilot.hpp"
 #include "../multiplayer/CooperativeRules.hpp"
 #include "../multiplayer/ItemOwnership.hpp"
 #include "../multiplayer/RollbackPool.hpp"
+#include "../multiplayer/HintOwnerPool.hpp"
+#include "../multiplayer/SceneOwnerPools.hpp"
 #include "../multiplayer/RollbackState.hpp"
 #include "../multiplayer/AudioEvents.hpp"
 #endif
@@ -36,6 +39,15 @@ struct World final:HudActions,CallbackReceiver {
     // during prediction must not leave malloc nodes outside the checkpoint.
     // 8192 covers the two 7*255 files plus retained copies and run recordings.
     multiplayer::RollbackPool<sizeof(StageHint),8192> rollback_hints{};
+    // Restart reconstructs the manager in this same slot. Do not clear it at
+    // BeginNextRun, which happens after the next scene graph has been created.
+    multiplayer::HintOwnerPool rollback_hint_owners{};
+    // Native load creates one laser manager and one bomb per pilot. Keep the
+    // storage and allocator cursor across Restart / BeginNextRun as above.
+    multiplayer::LaserOwnerPool rollback_laser_owners{};
+    multiplayer::BombOwnerPool rollback_bomb_owners{};
+    multiplayer::SessionOwnerPool rollback_session_owners{};
+    multiplayer::GameEffectOwnerPool rollback_game_effect_owners{};
     // Exact-input, spectator and Replay worlds never create undo storage.
     std::unique_ptr<multiplayer::RollbackState> rollback;
     multiplayer::AudioEvents audio_events{};
@@ -100,6 +112,17 @@ struct World final:HudActions,CallbackReceiver {
 #endif
     struct PopupPresentation {Vec3 position{};float elapsed=0;i32 timer=-2;u8 active=0,length=0;};
     PopupPresentation popup_presentation[723]{};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Explicitly outside RollbackState::BeginFrame's enumerated owners and
+    // SessionExports' full44/portable hashes. Neither captures sizeof(World).
+    // This cache never changes Pilot::presentation, native Player, or input.
+    multiplayer::RemotePlayerPresentation remote_player_presentation;
+    u32 remote_player_presentation_revision=0;
+    multiplayer::RemotePlayerPresentation::Identity remote_player_presentation_identity()const;
+    multiplayer::RemotePlayerPresentation::Snapshot remote_player_presentation_snapshot(const multiplayer::Pilot&)const;
+    void read_remote_player_presentation(multiplayer::RemotePlayerPresentation::Snapshots&)const;
+    bool remote_player_presentation_pair(const multiplayer::Pilot&,multiplayer::RemotePlayerPresentation::Pair&)const;
+#endif
     GameSessionResources::Progress loading_progress;
     World(GameState&,AnimationEngine&,Common&,Fonts&,Input&,Audio&,Scores&,ScreenEffects&);
     ~World();

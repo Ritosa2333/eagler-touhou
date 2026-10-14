@@ -37,7 +37,7 @@ EnemyBulletManager* EnemyBulletManager::create(ProjectileSystemsEnvironment& env
     if(manager->start(env)){manager->shutdown(env);env.release_manager(manager);return nullptr;}return manager;
 }
 LaserManager* LaserManager::create(ProjectileSystemsEnvironment& env){
-    auto* manager=static_cast<LaserManager*>(env.allocate_manager(sizeof(LaserManager)));manager->initialize(env);
+    auto* manager=static_cast<LaserManager*>(env.allocate_manager(sizeof(LaserManager)));if(!manager)return nullptr;manager->initialize(env);
     if(manager->start(env)){manager->shutdown(env);env.release_manager(manager);return nullptr;}return manager;
 }
 }

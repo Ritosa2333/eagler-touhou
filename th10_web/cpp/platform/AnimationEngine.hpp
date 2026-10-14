@@ -72,6 +72,7 @@ struct AnimationEngine final:AnmEnvironment,AnmAllocationEnvironment,AnmSystemEn
     void release_memory(void*) override;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     void preserve_animation_slot(AnmVm&) override;
+    void preserve_callback_entry(UpdateChainEntry*) override;
 #endif
     void* allocate(u32) override;
     void release(void*) override;

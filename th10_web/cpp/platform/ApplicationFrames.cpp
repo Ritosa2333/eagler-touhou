@@ -2,6 +2,10 @@
 #include "Application.hpp"
 #include "../game/TextFormat.hpp"
 #include "../game/PresentationAudit.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/LiveMotionObservation.hpp"
+#include "../multiplayer/CallbackWorkTiming.hpp"
+#endif
 #ifdef TH_ENABLE_THPRAC
 #include "../sdl/ThpracUi.hpp"
 #include "Renderer.hpp"
@@ -73,8 +77,21 @@ void AppLoop::draw(){
     // A stalled input frontier is not another authored tick. Keep the last
     // framebuffer; the independent high-refresh renderer may still present it.
     if(owner.multiplayer_waiting)return;
+    // Observe before Draw: its last Stage fade can clear its own timer and
+    // visibility bits. A post-Draw-only predicate would lose that boundary.
+    owner.multiplayer_begin_authored_boundary();
 #endif
-    presentation_audit::begin_reference();owner.engine.draw_all();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(multiplayer::live_motion::enabled)
+        multiplayer::live_motion::BeginDraw(owner,multiplayer::live_motion::DrawKind::Authored);
+#endif
+    presentation_audit::begin_reference();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::callback_work_timing::PhaseScope work_phase(
+        multiplayer::callback_work_timing::state,
+        multiplayer::callback_work_timing::Phase::ForwardSemanticDraw,owner.multiplayer_frame_open);
+#endif
+    owner.engine.draw_all();
 }
 #ifdef TH_NATIVE_PLATFORM
 i32 AppLoop::set_fog_enabled(bool enabled){owner.engine.device.host.set_fog(enabled);return 0;}
@@ -93,7 +110,16 @@ void AppLoop::present(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(owner.multiplayer_active()&&!owner.multiplayer_finalize_frame())return;
 #endif
-    Presentation{owner.presentation}.submit();presentation_audit::end_frame();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(multiplayer::live_motion::enabled)multiplayer::live_motion::SealDraw(owner);
+    // Captures created by Draw must be seen before submit consumes them.
+    owner.multiplayer_observe_authored_boundary(false);
+#endif
+    Presentation{owner.presentation}.submit();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    owner.multiplayer_observe_authored_boundary(true);
+#endif
+    presentation_audit::end_frame();
 }
 AppStatistics::AppStatistics(Application& a):owner(a){current=&a.statistics;chain=&a.chain;callbacks=&a.engine.callback_environment;game=&a.session_view;text=&a.common_view;timing_counters=a.timing_counters;timing_samples=a.timing_samples;pending_screen=&a.state.pending_screen;frame_skip=&a.state.configuration.options[4];draw_callback=callback_id::FrameStatisticsDraw;}
 void* AppStatistics::allocate(u32 bytes){return std::malloc(bytes);}Extended AppStatistics::time(){return owner.time();}

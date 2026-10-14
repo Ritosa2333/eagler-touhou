@@ -7,6 +7,11 @@
 #include "../game/FrameStatistics.hpp"
 #include "../game/Presentation.hpp"
 #include "../game/Screenshot.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/TouchInputFrontier.hpp"
+#include "../multiplayer/RemotePlayerPresentation.hpp"
+#include "../sdl/NetworkTailPresentation.hpp"
+#endif
 namespace th10::browser {
 struct Application;
 struct AppScreens final:ApplicationEnvironment {
@@ -83,6 +88,9 @@ struct Application final:CallbackReceiver {
     i32 reset_frames=0,loading_pause=0,disable_vsync=0,error=0,notice_code=-1,screenshot_error=0;
     bool stopped=false,writer_pending=false,initialized=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Physical controls read the last complete logical endpoint while the
+    // world is rewound. This host view never enters canonical/journal state.
+    multiplayer::TouchInputFrontier touch_input_frontier;
     // A multiplayer logical frame remains journal-open through its authored
     // 60 Hz Draw.  The display-only high-refresh draw happens after this is
     // finalized and therefore cannot enter deterministic rollback state.
@@ -99,12 +107,35 @@ struct Application final:CallbackReceiver {
     u32 multiplayer_recovery_yields=0;
     double multiplayer_callback_started=-1;
     bool multiplayer_forward_advanced=false,multiplayer_corrected_presentation_pending=false;
+    // Host-only acknowledgement for the next real Present. Authored output
+    // shows the endpoint; presentation_draw replaces this with its actual alpha.
+    bool multiplayer_remote_endpoint_presented=true;
+    // Transient host evidence for one step's authored pixels. Only this
+    // Application wrapper owns it: no GameState, journal, hash or wire field.
+    // Saved identities are integers; retired Stage pointers are never read.
+    struct AuthoredPresentationBoundary {
+        struct Identity {
+            std::uintptr_t owners[9]{};
+            u32 generation=0,stage_identifier=0;
+            i32 stage_number=0;
+        } identity;
+        u32 flags=host::NetworkTailPresentation::Unobserved;
+        u32 frame=Netplay::INVALID_FRAME;
+        bool tracking=false;
+    } multiplayer_authored_boundary;
     char multiplayer_failure_detail[256]{};
 #endif
     AppScreens screens;AppFrames frames;AppLoop loop;AppStatistics rates;AppPresentation presentation;AppScreenshot screenshots;AppConfiguration config;
     Application(FileSystem&,Input&,GameState&,AnimationEngine&,Fonts&,Audio&,ScreenEffects&);
     ~Application();bool initialize();i32 step(bool scheduled_tick=false,double callback_started=-1);bool presentation_draw(float alpha,bool interpolate,bool world_interpolate=true);void presentation_frame();void save();void shutdown();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::TouchInputFrontier::Identity touch_input_identity()const;
+    multiplayer::TouchInputFrontier::Progress touch_input_progress()const;
+    void publish_touch_input_frontier();
+    multiplayer::RemotePlayerPresentation::Progress remote_player_presentation_progress()const;
+    void freeze_remote_player_presentation();
+    void publish_remote_player_presentation();
+    void invalidate_remote_player_presentation();
     i32 multiplayer_update();
     void multiplayer_fail(const char* reason);
     bool multiplayer_active()const;
@@ -112,6 +143,9 @@ struct Application final:CallbackReceiver {
     u32 multiplayer_spectator_catchup_budget()const;
     bool multiplayer_resimulate_draw();
     bool multiplayer_finalize_frame();
+    void multiplayer_reset_authored_boundary();
+    void multiplayer_begin_authored_boundary();
+    void multiplayer_observe_authored_boundary(bool submitted);
     bool multiplayer_begin_replay(const char* filename,u32 selected_stage);
     bool multiplayer_replay_seeking()const;
     void multiplayer_finish_replay();

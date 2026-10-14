@@ -44,10 +44,13 @@ for(const multiplayer of [false,true]){
     const variant=multiplayer?'multiplayer':'ordinary';
     const variantFlags=[...flags,...(multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[])];
     const renderer=compile('th10_web/cpp/game/AnmRenderer.cpp',variant+'-renderer',variantFlags);
+    // The original oracle keeps observation disabled; callbacks in this stub abort.
+    // compile() adds the stub/header closure to the existing dependency hashes.
+    const observerObjects=multiplayer?[compile('tests/live-motion-disabled-stub.cpp',variant+'-observer-disabled',variantFlags)]:[];
     for(const suite of ['helper','body']){
         const test=compile(suite==='helper'?'tests/anm-submit-helper-test.cpp':'tests/anm-submit-test.cpp',variant+'-'+suite,variantFlags);
         const wasm=resolve(out,variant+'-'+suite+'.wasm');
-        execFileSync(compiler,[...linkFlags,test,renderer,...common,'-o',wasm],{cwd:root,stdio:'inherit'});
+        execFileSync(compiler,[...linkFlags,test,renderer,...observerObjects,...common,'-o',wasm],{cwd:root,stdio:'inherit'});
         const wasi=new WASI({version:'preview1',args:[variant+'-'+suite],env:{},returnOnExit:true});
         const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});
         console.log(JSON.stringify({variant,suite}));

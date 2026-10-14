@@ -7,15 +7,20 @@
 (function (root) {
   "use strict";
   let installed=null;
-  function installTh10BrowserEvidence() {
-  if (installed) return installed;
+  function installTh10BrowserEvidence(options={}) {
+  const relayHopTrace=options.relayHopTrace===undefined?false:options.relayHopTrace;
+  if(typeof relayHopTrace!=='boolean')throw Error('relayHopTrace must be boolean');
+  if(installed){
+    if(installed.relayHopTraceEnabled!==relayHopTrace)throw Error('relayHopTrace is fixed at observer installation');
+    return installed;
+  }
   if (root.window && root.window !== root.window.top) return null;
   const limits={stages:16,events:64,errors:16,connections:128,sockets:16,peers:8,controlChars:16384,
     peerConnections:8,pcOperations:128};
   const data={schema:'th10-browser-evidence/1',limits,stages:[],events:[],connections:[],errors:[],droppedStages:0,droppedEvents:0,droppedErrors:0,
     droppedConnections:0,droppedSockets:0,oversizedControlMessages:0,webSocketObserverInstalled:false,
     pcObservationRevision:1,pcOperations:[],peerConnectionCount:0,droppedPcOperations:0,
-    droppedPeerConnectionCalls:0,pcObserverInstalled:false,pcObserverMethods:[]};
+    droppedPeerConnectionCalls:0,pcObserverInstalled:false,pcObserverMethods:[],relayHopTraceEnabled:relayHopTrace};
   // Keep only a bounded word prefix, never an address, SDP/ICE line or URL
   // embedded in an exception. Colons are allowed only after an error class.
   const safeDetail=value=>{
@@ -72,7 +77,12 @@
     try{if(data.events.length<limits.events)data.events.push({event:event.type,...snapshot()});else ++data.droppedEvents;}
     catch(error){failed(event.type,error);}
   };
-  const sockets=new WeakMap();let socketCount=0;
+  const sockets=new WeakMap(),relayHops=relayHopTrace?new WeakMap():null;let socketCount=0;
+  let relayHopReadError=null;
+  const relayHopFailed=(where,error)=>{
+    if(relayHopReadError!==null)return;
+    relayHopReadError=where;failed(where,error);
+  };
   const connectionEvent=(socket,event,fields={})=>{
     try{
       const identity=sockets.get(socket);if(!identity)return;
@@ -101,6 +111,46 @@
       connectionEvent(socket,'message',fields);
     }catch(error){failed('socket-control-observation',error);}
   };
+  // Reuse the existing listener. Native WebSocket non-text data is an opaque
+  // binary object; neither its bytes, length, headers nor Blob contents are read.
+  // Counts belong to a socket lifetime, and only accrue while it is state.relay.
+  const binaryMessage=(socket,payload)=>{
+    if(typeof payload!=='object'||payload===null||relayHopReadError!==null)return;
+    try{
+      const identity=sockets.get(socket);
+      if(identity?.lane!=='gameplay'||globalThis.__eaglerPeerTransport?.relay!==socket)return;
+      const hop=relayHops.get(socket),at=performance.now();
+      if(!hop||!Number.isFinite(at)||at<0||
+        hop.lastBinaryReceivePerformanceMs!==null&&at<hop.lastBinaryReceivePerformanceMs||
+        !Number.isSafeInteger(hop.binaryMessagesReceived+1))throw Error('invalid relay receive observation');
+      ++hop.binaryMessagesReceived;hop.lastBinaryReceivePerformanceMs=at;
+    }catch(error){relayHopFailed('relay-hop-message',error);}
+  };
+  const readRelayHop=()=>{
+    if(!relayHopTrace)return null; // No clock, socket or transport read while OFF.
+    const result={schema:'th10-browser-relay-hop/1',enabled:true,valid:relayHopReadError===null,
+      available:false,socketId:null,player:null,route:null,readyState:null,
+      binaryMessagesReceived:null,lastBinaryReceivePerformanceMs:null};
+    if(!result.valid)return result;
+    try{
+      if(!data.webSocketObserverInstalled)throw Error('relay socket observer unavailable');
+      const state=globalThis.__eaglerPeerTransport;
+      result.route=choice(state?.route,['rtc','relay','spectator']);
+      const socket=state?.relay;
+      if(!socket)return result; // Known absence is not an observed zero.
+      result.available=true;
+      const identity=sockets.get(socket),hop=relayHops.get(socket);
+      if(!identity||identity.lane!=='gameplay'||!hop||identity.player===null)
+        throw Error('current relay socket was not observed');
+      result.socketId=identity.socketId;result.player=identity.player;
+      result.readyState=socketState(socket);
+      if(result.readyState===null||result.readyState<0||result.readyState>3)
+        throw Error('invalid relay socket ready state');
+      result.binaryMessagesReceived=hop.binaryMessagesReceived;
+      result.lastBinaryReceivePerformanceMs=hop.lastBinaryReceivePerformanceMs;
+    }catch(error){result.valid=false;relayHopFailed('relay-hop-read',error);}
+    return result;
+  };
   const observeSocket=socket=>{
     const query=new URL(socket.url).searchParams;
     if(query.has('lobby')||!query.has('player')||!query.has('players'))return;
@@ -108,12 +158,17 @@
     const player=query.get('player');
     sockets.set(socket,{socketId:++socketCount,lane:query.get('signal')==='1'?'signal':'gameplay',
       player:/^[0-2]$/.test(player)?Number(player):null});
+    if(relayHopTrace)relayHops.set(socket,{binaryMessagesReceived:0,lastBinaryReceivePerformanceMs:null});
     connectionEvent(socket,'create');
     socket.addEventListener('open',()=>connectionEvent(socket,'open'));
     socket.addEventListener('error',()=>connectionEvent(socket,'error'));
     socket.addEventListener('close',event=>connectionEvent(socket,'close',
       {code:event.code,wasClean:event.wasClean,reason:safeDetail(event.reason)}));
-    socket.addEventListener('message',event=>controlMessage(socket,'receive',event.data));
+    socket.addEventListener('message',event=>{
+      const payload=event.data;
+      if(relayHopTrace)binaryMessage(socket,payload);
+      controlMessage(socket,'receive',payload);
+    });
     const originalSend=socket.send;
     Object.defineProperty(socket,'send',{configurable:true,writable:true,value:new Proxy(originalSend,{
       apply(target,thisArg,args){
@@ -172,14 +227,17 @@
       }
     }catch(observerError){pcObservationFailed('pc-operation-settled',observerError);}
   };
-  const evidence={mark,read:()=>data};
+  const evidence={mark,read:()=>data,relayHopTraceEnabled:relayHopTrace,readRelayHop};
   installed=evidence;
   root.__th10BrowserEvidence=evidence;
   try{
     const NativeWebSocket=globalThis.WebSocket;
     const ObservedWebSocket=new Proxy(NativeWebSocket,{construct(target,args,newTarget){
       const socket=Reflect.construct(target,args,newTarget);
-      try{observeSocket(socket);}catch(error){failed('socket-observer-install',error);}
+      try{observeSocket(socket);}catch(error){
+        if(relayHopTrace)relayHopFailed('socket-observer-install',error);
+        else failed('socket-observer-install',error);
+      }
       return socket;
     }});
     globalThis.WebSocket=ObservedWebSocket;

@@ -1,4 +1,5 @@
 #include "../platform/Application.hpp"
+#include "../platform/CameraMathCache.hpp"
 #include <eagler/netplay/NetplayProtocol.hpp>
 #include <algorithm>
 #include <vector>
@@ -148,6 +149,25 @@ u32 hash_pool(const multiplayer::RollbackPool<BlockSize,Capacity>& pool,u32 hash
     }
     return hash;
 }
+
+template<std::size_t BlockSize,std::size_t Capacity>
+void describe_graph_pool(u32* out,u32 id,
+                         const multiplayer::RollbackPool<BlockSize,Capacity>& pool) noexcept {
+    // Descriptor inputs exactly match hash_pool's coverage. Storage may have
+    // alignment tail bytes, so its stride must not be inferred from BlockSize.
+    out[0]=id;
+    out[1]=u32(reinterpret_cast<std::uintptr_t>(&pool.blocks[0]));
+    out[2]=u32(BlockSize);
+    out[3]=u32(sizeof(pool.blocks[0]));
+    out[4]=u32(Capacity);
+    out[5]=u32(reinterpret_cast<std::uintptr_t>(&pool.occupied[0]));
+    out[6]=u32(sizeof(pool.occupied));
+    out[7]=u32(reinterpret_cast<std::uintptr_t>(&pool.cursor));
+    out[8]=pool.cursor;
+    out[9]=0;
+    for(std::size_t i=0;i<Capacity;++i)if(pool.active(i))++out[9];
+}
+
 u32 hash_bullets(const EnemyBulletManager* manager){
     if(!manager)return 0;u32 hash=2166136261u;
     // The manager survives a native stage transition, while direct Replay
@@ -605,6 +625,80 @@ const double* multiplayer_projection_cache_status(browser::Application* app){
     words[3]=double(count.evictions);words[4]=double(count.fallbacks);
     return words;
 }
+extern "C" __attribute__((export_name("multiplayer_camera_math_cache_set_enabled")))
+u32 multiplayer_camera_math_cache_set_enabled(u32 enabled){
+    return browser::camera_math_cache().set_enabled(enabled!=0)?1u:0u;
+}
+extern "C" __attribute__((export_name("multiplayer_camera_math_cache_set_verify_every")))
+u32 multiplayer_camera_math_cache_set_verify_every(u32 every){
+    auto& cache=browser::camera_math_cache();cache.set_verify_every(every);
+    return cache.verify_every();
+}
+extern "C" __attribute__((export_name("multiplayer_camera_math_cache_status")))
+const double* multiplayer_camera_math_cache_status(){
+    // Fixed derived counters, sampled outside the measured callback hot path.
+    // schema/enabled/supported/verifyEvery/invalidations, then two 7-word sets:
+    // calls/hits/misses/evictions/bypasses/verified/mismatches.
+    static double words[19]{};auto& cache=browser::camera_math_cache();
+    const auto& count=cache.counters();
+    words[0]=1;words[1]=cache.enabled();words[2]=browser::CameraMathCache::supported;
+    words[3]=cache.verify_every();words[4]=double(count.invalidations);
+    const auto copy=[&](u32 at,const browser::CameraMathCache::FunctionCounters& c){
+        words[at]=double(c.calls);words[at+1]=double(c.hits);words[at+2]=double(c.misses);
+        words[at+3]=double(c.evictions);words[at+4]=double(c.bypasses);
+        words[at+5]=double(c.verified);words[at+6]=double(c.mismatches);
+    };
+    copy(5,count.look_at);copy(12,count.perspective);return words;
+}
+extern "C" __attribute__((export_name("multiplayer_camera_math_cache_verification")))
+const u32* multiplayer_camera_math_cache_verification(u32 first_mismatch){
+    // schema, serial lo/hi, function, keyWords, matched, output flags/errno,
+    // 14 key words, then the cached and original full 16-word matrices.
+    static u32 words[56]{};std::fill(words,words+56,0);words[0]=1;
+    const auto& cache=browser::camera_math_cache();
+    const auto& sample=first_mismatch?cache.first_mismatch():cache.last_verification();
+    words[1]=u32(sample.number);words[2]=u32(sample.number>>32);
+    words[3]=u32(sample.function);words[4]=sample.key_words;words[5]=sample.matched;
+    words[6]=sample.cached_flags;words[7]=sample.original_flags;
+    std::memcpy(words+8,&sample.cached_errno,sizeof(sample.cached_errno));
+    std::memcpy(words+9,&sample.original_errno,sizeof(sample.original_errno));
+    std::memcpy(words+10,sample.key.data(),sizeof(sample.key));
+    std::memcpy(words+24,&sample.cached,sizeof(sample.cached));
+    std::memcpy(words+40,&sample.original,sizeof(sample.original));return words;
+}
+extern "C" __attribute__((export_name("multiplayer_packed_occupancy_scan_set_enabled")))
+u32 multiplayer_packed_occupancy_scan_set_enabled(u32 enabled){
+    return multiplayer::RollbackState::SetPackedOccupancyScan(enabled!=0)?1u:0u;
+}
+extern "C" __attribute__((export_name("multiplayer_packed_occupancy_scan_status")))
+u32 multiplayer_packed_occupancy_scan_status(){
+    return multiplayer::RollbackState::PackedOccupancyScanEnabled()?1u:0u;
+}
+extern "C" __attribute__((export_name("multiplayer_initial_capture_batch_set_enabled")))
+u32 multiplayer_initial_capture_batch_set_enabled(u32 enabled){
+    return multiplayer::RollbackState::SetInitialCaptureBatch(enabled!=0)?1u:0u;
+}
+extern "C" __attribute__((export_name("multiplayer_initial_capture_batch_status")))
+const double* multiplayer_initial_capture_batch_status(browser::Application* app){
+    // Fixed counters only; read outside the measured callback hot path.
+    // schema/enabled/supported/open/pendingBlocks/pendingBytes, then
+    // scopes/deferredBlocks/deferredBytes/copiedBlocks/copiedBytes/
+    // flushes/batchImports/maxBlocksPerFlush.
+    static double words[14]{};std::fill(words,words+14,0.);
+    words[0]=1;words[1]=multiplayer::RollbackState::InitialCaptureBatchEnabled();
+    words[2]=multiplayer::RollbackState::InitialCaptureBatchSupported();
+    if(!app||!app->world||!app->world->rollback)return words;
+    const auto& rollback=*app->world->rollback;
+    const auto& stats=rollback.InitialCaptureBatchStats();
+    words[3]=rollback.InitialCaptureBatchOpen();
+    words[4]=double(rollback.PendingInitialCaptureBlocks());
+    words[5]=double(rollback.PendingInitialCaptureBytes());
+    words[6]=double(stats.scopes);words[7]=double(stats.deferredBlocks);
+    words[8]=double(stats.deferredBytes);words[9]=double(stats.copiedBlocks);
+    words[10]=double(stats.copiedBytes);words[11]=double(stats.flushes);
+    words[12]=double(stats.batchImports);words[13]=double(stats.maxBlocksPerFlush);
+    return words;
+}
 extern "C" __attribute__((export_name("multiplayer_canonical_hashes")))
 const u32* multiplayer_canonical_hashes(browser::Application* app){
     static u32 words[44]{};std::fill(words,words+44,0);if(!app||!app->world)return words;
@@ -625,7 +719,14 @@ const u32* multiplayer_canonical_hashes(browser::Application* app){
     // Include transitive hint contents and allocator topology, not merely the
     // list-head pointers. This strengthens the same-layout rollback oracle.
     scene=hash_pool(w.rollback_hints,scene);
+    scene=hash_pool(w.rollback_hint_owners,scene);
     u32 chain=hash_value(app->engine.chain_value);chain=hash_pool(app->engine.callback_environment.rollback_entries,chain);chain=hash_pool(app->effects.rollback_effects,chain);
+    // These stable owner pools are part of the callback graph. Preserve the
+    // original word-11 prefix and also verify their allocator and raw payload.
+    chain=hash_pool(w.rollback_laser_owners,chain);
+    chain=hash_pool(w.rollback_bomb_owners,chain);
+    chain=hash_pool(w.rollback_session_owners,chain);
+    chain=hash_pool(w.rollback_game_effect_owners,chain);
     const auto anm=hash_anm_parts(app->engine);
     words[0]=2;words[2]=economy;words[3]=rng;words[4]=players;words[5]=enemies;words[6]=hash_bullets(w.actors.bullets);words[7]=lasers;words[8]=items;words[9]=hash_anm(anm);words[10]=scene;words[11]=chain;
     u32 composite=2166136261u;for(u32 i=2;i<12;++i)composite=hash_value(words[i],composite);words[1]=composite;words[12]=app->state.multiplayer_session.started;
@@ -676,6 +777,50 @@ const u32* multiplayer_canonical_hashes(browser::Application* app){
     camera=hash_value(app->state.quitting,camera);words[42]=camera;
     words[43]=w.scores.data?hash_value(w.scores.data->settings,hash_value(w.scores.data->characters)):0;
     for(u32 i=38;i<44;++i)words[1]=hash_value(words[i],words[1]);
+    return words;
+}
+// Complete raw storage descriptors for the scene/chain graph investigation.
+// Schema 4 adds the stable GameSession and GameEffects owner pools to the u32 table,
+// copied synchronously with the pointed-to
+// bytes before any runtime step or heap growth. This function allocates no
+// heap storage, changes no owner, and does not replace the raw 44-word oracle.
+//
+// Header (10 words):
+//   0 version=4, 1 headerWords=10, 2 poolDescriptorWords=10, 3 poolCount,
+//   4 pointerBytes, 5 chain_value address, 6 sizeof(UpdateChain),
+//   7 sizeof(UpdateChainEntry), 8 offsetof(update), 9 offsetof(draw).
+// poolCount=0 means no valid wasm32 application/world; callers must reject it.
+// Pool IDs: 1 world.rollback_hints, 2 callback_environment.rollback_entries,
+//           3 effects.rollback_effects, 4 world.rollback_hint_owners,
+//           5 world.rollback_laser_owners, 6 world.rollback_bomb_owners,
+//           7 world.rollback_session_owners, 8 world.rollback_game_effect_owners.
+// Each pool descriptor (10 words):
+//   0 id, 1 blocks address, 2 BlockSize, 3 sizeof(Storage), 4 Capacity,
+//   5 occupied address, 6 occupied bytes, 7 cursor address, 8 cursor value,
+//   9 activeCount. Copy every occupied byte and the cursor, then every nonzero
+//   occupied slot's BlockSize bytes at blocks + slot * sizeof(Storage), keeping
+//   its original slot index. Do not include alignment tails, remap slot order,
+//   normalize occupied values, or omit active slots from the raw comparison.
+extern "C" __attribute__((export_name("multiplayer_graph_storage")))
+const u32* multiplayer_graph_storage(browser::Application* app){
+    constexpr u32 headerWords=10,poolWords=10,poolCount=8;
+    static u32 words[headerWords+poolWords*poolCount]{};
+    std::fill(words,words+headerWords+poolWords*poolCount,0u);
+    words[0]=4;words[1]=headerWords;words[2]=poolWords;words[4]=u32(sizeof(void*));
+    if(sizeof(std::uintptr_t)>sizeof(u32)||!app||!app->world)return words;
+    const auto& chain=app->engine.chain_value;const auto& world=*app->world;
+    words[3]=poolCount;
+    words[5]=u32(reinterpret_cast<std::uintptr_t>(&chain));
+    words[6]=u32(sizeof(chain));words[7]=u32(sizeof(UpdateChainEntry));
+    words[8]=u32(offsetof(UpdateChain,update));words[9]=u32(offsetof(UpdateChain,draw));
+    describe_graph_pool(words+headerWords,1,world.rollback_hints);
+    describe_graph_pool(words+headerWords+poolWords,2,app->engine.callback_environment.rollback_entries);
+    describe_graph_pool(words+headerWords+2*poolWords,3,app->effects.rollback_effects);
+    describe_graph_pool(words+headerWords+3*poolWords,4,world.rollback_hint_owners);
+    describe_graph_pool(words+headerWords+4*poolWords,5,world.rollback_laser_owners);
+    describe_graph_pool(words+headerWords+5*poolWords,6,world.rollback_bomb_owners);
+    describe_graph_pool(words+headerWords+6*poolWords,7,world.rollback_session_owners);
+    describe_graph_pool(words+headerWords+7*poolWords,8,world.rollback_game_effect_owners);
     return words;
 }
 extern "C" __attribute__((export_name("multiplayer_portable_hashes")))

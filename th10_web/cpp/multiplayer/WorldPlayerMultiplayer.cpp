@@ -2,6 +2,7 @@
 #include "PlayerCollisionBroadphase.hpp"
 #include "Balance.hpp"
 #include "PlayerPresentation.hpp"
+#include "LiveMotionObservation.hpp"
 #include "../game/CallbackNames.hpp"
 #include "../game/BombEnvironment.hpp"
 #include "../game/GameObjectResources.hpp"
@@ -383,7 +384,10 @@ struct Draw final:PlayerDrawEnvironment {
             reinterpret_cast<const std::int8_t*>(&world.actors.session->configuration[48]):nullptr;
         results_state=world.actors.results?&world.actors.results->state:nullptr;
     }
-    void draw_animation(AnmVm& vm) override{world.engine.draw(vm);}
+    void draw_animation(AnmVm& vm) override{
+        multiplayer::live_motion::ObjectScope observation(world,pilot,vm);
+        world.engine.draw(vm);
+    }
     void draw_option(PlayerOption&) override{__builtin_trap();}
     void rectangle(const ScreenRect& rect,u32 color) override{world.rectangle(rect,color);}
 };
@@ -424,8 +428,24 @@ struct BombResources final:GameObjectResourceEnvironment {
         bomb_update=callback_id::BombUpdate;bomb_draw=callback_id::BombDraw;
         effects_update=callback_id::EffectsUpdate;effects_draw=callback_id::EffectsDraw;
     }
-    void* allocate(u32 bytes) override{return std::malloc(bytes);}
-    void delete_object(void* object) override{std::free(object);}
+    void* allocate(u32 bytes) override{
+        if(bytes==sizeof(Bomb)){
+            auto* result=world.rollback_bomb_owners.allocate(bytes);
+            if(!result){world.fail();return nullptr;}
+            if(world.engine.rollback_state&&!world.engine.rollback_state->Touch(result,sizeof(multiplayer::BombOwnerPool::Storage))){
+                if(!world.rollback_bomb_owners.release(result))__builtin_trap();
+                world.fail();return nullptr;
+            }
+            return result;
+        }
+        return std::malloc(bytes);
+    }
+    void delete_object(void* object) override{
+        if(world.rollback_bomb_owners.owns(object)){
+            if(!world.rollback_bomb_owners.release(object))__builtin_trap();return;
+        }
+        std::free(object);
+    }
     void release_geometry(void* geometry) override{world.engine.release_memory(geometry);}
     AnmFile* load_effect_animations() override{
         return world.engine.manager.load(7,"bullet.anm",world.engine.resources);
@@ -559,6 +579,7 @@ void World::configure_player(){
 }
 
 bool World::create_player(){
+    remote_player_presentation.Invalidate();remote_player_presentation_revision=0;
     if(player_count<multiplayer::kMinSeats||player_count>multiplayer::kMaxSeats){
         fail();return false;
     }
@@ -631,6 +652,7 @@ bool World::create_player(){
 }
 
 void World::destroy_player(Player*){
+    remote_player_presentation.Invalidate();remote_player_presentation_revision=0;
     const bool retain=(state.game.flags&1u)!=0;
     for(u32 seat=0;seat<player_count;++seat)cleanup_player(*this,pilots[seat],retain);
     actors.player=nullptr;
@@ -723,6 +745,44 @@ u8 World::player_visual_alpha(const AnmVm& vm)const{
     return 255;
 }
 
+multiplayer::RemotePlayerPresentation::Identity World::remote_player_presentation_identity()const{
+    const auto& runtime=state.netplay_runtime;
+    multiplayer::RemotePlayerPresentation::Identity identity;
+    identity.world=this;identity.session=actors.session;
+    identity.session_id=runtime.Config().sessionId;identity.generation=runtime.Generation();
+    identity.stage=u32(state.game.stage);identity.screen=u32(state.application.screen);
+    identity.local_seat=local_player;identity.player_count=player_count;
+    identity.role=runtime.Playback()?2u:runtime.Spectator()?3u:runtime.Retired()?4u:
+        runtime.Configured()&&state.multiplayer_session.started?multiplayer::RemotePlayerPresentation::LiveRole:0u;
+    return identity;
+}
+multiplayer::RemotePlayerPresentation::Snapshot World::remote_player_presentation_snapshot(const multiplayer::Pilot& pilot)const{
+    multiplayer::RemotePlayerPresentation::Snapshot value;
+    if(!pilot.player)return value;
+    value.player=pilot.player;value.deaths=pilot.game.pilot.challenge_deaths;value.state=pilot.player->state;
+    value.position={pilot.player->position.x,pilot.player->position.y,pilot.player->position.z};
+    return value;
+}
+void World::read_remote_player_presentation(multiplayer::RemotePlayerPresentation::Snapshots& output)const{
+    output={};
+    for(u32 seat=0;seat<player_count&&seat<multiplayer::RemotePlayerPresentation::Capacity;++seat)
+        output[seat]=remote_player_presentation_snapshot(pilots[seat]);
+}
+bool World::remote_player_presentation_pair(const multiplayer::Pilot& pilot,multiplayer::RemotePlayerPresentation::Pair& output)const{
+    multiplayer::RemotePlayerPresentation::Progress progress;
+    const auto& runtime=state.netplay_runtime;
+    progress.correcting=runtime.Correcting();progress.resimulating=rollback_resimulating;
+    progress.frame_open=engine.netplay_frame!=Netplay::INVALID_FRAME;
+    progress.usable=high_refresh::render_only&&high_refresh::active&&!loading&&!error&&
+        state.pending_screen==state.application.screen&&actors.session&&
+        !(actors.session->session_flags&0x74u);
+    output={};
+    if(!progress.Complete()||pilot.seat==local_player)return false;
+    return remote_player_presentation.Get(pilot.seat,remote_player_presentation_identity(),progress,
+        runtime.LastSimulatedFrame(),remote_player_presentation_revision,
+        remote_player_presentation_snapshot(pilot),output);
+}
+
 i32 World::draw_player(Player* player){
     auto* pilot=pilot_for(player);
     if(!pilot||!pilot->player)return 1;
@@ -731,7 +791,14 @@ i32 World::draw_player(Player* player){
     if(high_refresh::render_only){
         copy=*player;draw=&copy;engine.present(copy.animation,player->animation);
         const auto& previous=pilot->presentation;
-        if(high_refresh::active&&previous.valid&&previous.state==player->state){
+        multiplayer::RemotePlayerPresentation::Pair remote;
+        if(remote_player_presentation_pair(*pilot,remote)){
+            // Only the temporary high-refresh ship/faith-bar position changes.
+            // Options, shots, collision and physical input keep native sources.
+            copy.position={high_refresh::lerp_world(remote.from.position.x,remote.to.position.x),
+                           high_refresh::lerp_world(remote.from.position.y,remote.to.position.y),
+                           high_refresh::lerp_world(remote.from.position.z,remote.to.position.z)};
+        }else if(high_refresh::active&&previous.valid&&previous.state==player->state){
             const float dx=player->position.x-previous.position.x;
             const float dy=player->position.y-previous.position.y;
             if(dx*dx+dy*dy<16384.0f)
@@ -851,9 +918,11 @@ fail_bombs:
     for(u32 seat=0;seat<player_count;++seat){
         auto& pilot=pilots[seat];
         if(!pilot.bomb)continue;
+        auto* old=pilot.bomb;
         BombResources resources(*this,pilot);
-        GameObjectResources{resources}.shutdown(*pilot.bomb);
-        std::free(pilot.bomb);pilot.bomb=nullptr;
+        GameObjectResources{resources}.shutdown(*old);
+        // shutdown clears pilot.bomb through the environment's owner pointer.
+        resources.delete_object(old);
     }
     actors.bomb=nullptr;
     fail();return false;
@@ -863,9 +932,10 @@ void World::destroy_bomb(Bomb*){
     for(u32 seat=0;seat<player_count;++seat){
         auto& pilot=pilots[seat];
         if(!pilot.bomb)continue;
+        auto* old=pilot.bomb;
         BombResources resources(*this,pilot);
-        GameObjectResources{resources}.shutdown(*pilot.bomb);
-        std::free(pilot.bomb);pilot.bomb=nullptr;
+        GameObjectResources{resources}.shutdown(*old);
+        resources.delete_object(old);
     }
     actors.bomb=nullptr;
 }
