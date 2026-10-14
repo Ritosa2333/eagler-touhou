@@ -49,7 +49,11 @@ public:
     bool BeginSession(const SessionConfig &session, std::uint64_t nowMs,
                       const SessionChannelConfig &config = {});
     bool Pump(SessionGate &gate, RollbackCore &core, std::uint64_t nowMs,
-              bool expectsInput);
+              bool expectsInput, bool deferOrdinaryInput = false);
+    // Optional same-callback coalescing, as used by TH09: flush before any
+    // simulation, yield or early return. Flush BEFORE a discontinuous capture
+    // can overwrite old input ring slots. Repairs/control are never deferred.
+    bool FlushDeferredInputs(const RollbackCore &core, std::uint64_t nowMs);
     // Notify only after ScheduleLocalInput succeeds. A retry never samples
     // again; the same captured frame may be sent any number of times.
     bool LocalCaptured(const RollbackCore &core, std::uint32_t captureFrame,
@@ -88,7 +92,8 @@ private:
     bool Fail(Failure failure);
     bool ObserveClock(std::uint64_t nowMs);
     bool SendSession(const SessionGate &gate);
-    bool SendInputs(const RollbackCore &core, std::uint64_t nowMs, bool force);
+    bool SendInputs(const RollbackCore &core, std::uint64_t nowMs, bool force,
+                    bool deferOrdinaryInput = false);
     bool SendRetired(std::uint64_t nowMs);
     bool Receive(SessionGate &gate, RollbackCore &core, std::uint64_t nowMs);
 
@@ -97,6 +102,7 @@ private:
     SessionConfig session_{};
     bool active_ = false, observedClock_ = false, helloSent_ = false;
     bool forceControl_ = false, forceInputs_ = false;
+    bool deferredInput_ = false;
     Failure failure_ = Failure::None;
     std::uint64_t lastClock_ = 0, beginTime_ = 0, nextControl_ = 0, nextInput_ = 0;
     std::uint64_t nextRetirementFence_ = 0;
