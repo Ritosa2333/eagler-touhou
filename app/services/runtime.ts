@@ -884,7 +884,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       // or starts the native document. Successful Close invalidates this epoch.
       if (closing) await closing;
       assertOperation(); assertCurrent(token);
-      update({ phase: 'configuring' });
+      update({ phase: 'configuring', spectator: plan.configure.options?.netplaySpectator === true });
       const wire = oggIds.length && product.musicRuntime.localOggConfigureMode === 'midi-sentinel'
         ? {...plan.configure, music: 'midi' as const} : plan.configure;
       await send('configure', wire, options.timeouts?.configure ?? 120_000);
@@ -1217,6 +1217,12 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         RUNTIME_PROTOCOL_COMMAND_BEHAVIOR[command].response !== 'optional') return false;
     return deliverRuntimeInput(context, { ...payload, protocol: HOST_PROTOCOL, game: context.game, epoch: context.epoch, command });
   }
+  function spectatorRoomState(runId: number, waiting: boolean): boolean {
+    const context = getInputContext();
+    if (!context.ready || !context.launched || !context.spectator || context.game !== 'th09') return false;
+    return deliverRuntimeInput(context, {protocol: HOST_PROTOCOL, game: context.game,
+      epoch: context.epoch, command: 'spectator-room-state', runId, waiting});
+  }
   function dispose() {
     if (disposed) return;
     if (frame.isConnected === false) { disposeDetachedFrame(); return; }
@@ -1265,7 +1271,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
-  return Object.freeze({ prepare, prepareWithReady, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
+  return Object.freeze({ prepare, prepareWithReady, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
     getSnapshot: () => snapshot, getNetworkSnapshot: () => network.snapshot(),
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     subscribeEvents: (listener: (message: RuntimeEventMessage) => void) => {eventListeners.add(listener); return () => {eventListeners.delete(listener);};},

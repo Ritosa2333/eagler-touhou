@@ -1,16 +1,13 @@
-import type {
-  GameId,
-  ProductId,
-} from "../contracts/product-catalog.mjs";
-import type { InstalledPackageGeneration } from "../contracts/package-read-models.mjs";
-import type { RuntimeResponseMessage } from "../contracts/runtime-protocol.mjs";
-import type { GameOptions, MusicMode } from "./game-preferences.mjs";
-import type { NormalizedMultiplayerLobbySnapshot } from "./multiplayer-lobby-snapshot.mjs";
+import type { GameId, ProductId } from '../contracts/product-catalog.mjs';
+import type { InstalledPackageGeneration } from '../contracts/package-read-models.mjs';
+import type { RuntimeResponseMessage } from '../contracts/runtime-protocol.mjs';
+import type { GameOptions, MusicMode } from './game-preferences.mjs';
+import type { NormalizedMultiplayerLobbySnapshot } from './multiplayer-lobby-snapshot.mjs';
 
-export type RuntimeVariant = "normal" | "multiplayer";
-export type TransferMode = "" | "runtime" | "base" | "ogg" | "language";
-export type TransferKind = "" | "game" | "music" | "language";
-export type MultiplayerConnectionState = "connecting" | "reconnecting" | "syncing" | "connected";
+export type RuntimeVariant = 'normal' | 'multiplayer';
+export type TransferMode = '' | 'runtime' | 'base' | 'ogg' | 'language';
+export type TransferKind = '' | 'game' | 'music' | 'language';
+export type MultiplayerConnectionState = 'connecting' | 'reconnecting' | 'syncing' | 'connected';
 
 export interface PendingRuntimeRequest {
   resolve(message: RuntimeResponseMessage): void;
@@ -67,7 +64,7 @@ export interface LauncherState {
 }
 
 export interface MultiplayerRoomState {
-  visibility?: "public" | "private";
+  visibility?: 'public' | 'private';
   disableCheatMovement?: boolean;
   challengeMode?: boolean;
   prankMode?: boolean;
@@ -77,16 +74,17 @@ export interface MultiplayerRoomState {
   inputDelay?: number;
   inputDelayAuto?: boolean;
   predictionReserve?: number;
-  timing?: import("../contracts/netplay-timing.mjs").MeasuredNetplayTiming | null;
+  timing?: import('../contracts/netplay-timing.mjs').MeasuredNetplayTiming | null;
   adonisMode?: number;
   predictionLimit?: number;
   settingsVersion?: number;
-  phase?: "lobby" | "starting" | "running";
+  phase?: 'lobby' | 'starting' | 'running';
   created: boolean;
   connection?: MultiplayerConnectionState;
-  seats?: NormalizedMultiplayerLobbySnapshot["seats"] | null;
-  spectators?: NormalizedMultiplayerLobbySnapshot["spectators"];
+  seats?: NormalizedMultiplayerLobbySnapshot['seats'] | null;
+  spectators?: NormalizedMultiplayerLobbySnapshot['spectators'];
   spectatorCount?: number;
+  spectatorTimeline?: boolean;
   synced?: boolean;
   [key: string]: unknown;
 }
@@ -135,7 +133,7 @@ export interface MidiSynth {
 }
 
 export interface MidiSynthConstructor {
-  new(options: { quality: number; useReverb: number; voices: number }): MidiSynth;
+  new (options: { quality: number; useReverb: number; voices: number }): MidiSynth;
 }
 
 export type LauncherWindow = Window & {
@@ -144,9 +142,17 @@ export type LauncherWindow = Window & {
   webkitAudioContext?: typeof AudioContext;
   WebAudioTinySynth?: MidiSynthConstructor;
   fflate?: {
-    unzipSync(bytes: Uint8Array, options?: {
-      filter?: (file: { name: string; size: number; originalSize: number; compression: number }) => boolean;
-    }): Record<string, Uint8Array>;
+    unzipSync(
+      bytes: Uint8Array,
+      options?: {
+        filter?: (file: {
+          name: string;
+          size: number;
+          originalSize: number;
+          compression: number;
+        }) => boolean;
+      },
+    ): Record<string, Uint8Array>;
     zipSync(entries: Record<string, Uint8Array>, options?: { level?: number }): Uint8Array;
   };
 };
@@ -188,7 +194,7 @@ export interface RuntimeDiagnosticState {
   fps: number | null;
   maxGapMs: number | null;
   minQueuedMs: number | null;
-  backend: "" | "worklet" | "script";
+  backend: '' | 'worklet' | 'script';
   underruns: number;
   robust: boolean | null;
   renderer: string;

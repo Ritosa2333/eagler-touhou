@@ -6,6 +6,7 @@ import { readFile } from "node:fs/promises";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import {
   RUNTIME_PROTOCOL_COMMANDS,
+  RUNTIME_PROTOCOL_COMMAND_BEHAVIOR,
   RUNTIME_PROTOCOL_EVENTS,
   TOUCH_SENSITIVITY_MAX,
   TOUCH_SENSITIVITY_MIN,
@@ -43,6 +44,8 @@ for (const [game, paths] of Object.entries(shellSources)) {
       `${game}: native touch sensitivity owner must not retain a hidden range below the Launcher/Runtime contract`);
   }
   for (const command of RUNTIME_PROTOCOL_COMMANDS) {
+    const games = RUNTIME_PROTOCOL_COMMAND_BEHAVIOR[command].games;
+    if (games && !games.includes(game)) continue;
     const pattern = new RegExp(`case\\s+["']${command.replaceAll("-", "\\-")}["']`);
     assert.ok(pattern.test(source), `${game}: shared command missing: ${command}`);
   }

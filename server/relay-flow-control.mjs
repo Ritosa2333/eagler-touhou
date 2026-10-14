@@ -10,17 +10,26 @@ export const RELAY_LIMITS = Object.freeze({
   historyFrames: 8192,
 });
 
-export function createRelayMessageGate({ maxBytes, messagesPerSecond, bytesPerSecond, now = () => performance.now() }) {
-  let messages = messagesPerSecond * 2, bytes = bytesPerSecond * 2, last = now();
-  return size => {
+export function createRelayMessageGate({
+  maxBytes,
+  messagesPerSecond,
+  bytesPerSecond,
+  now = () => performance.now(),
+}) {
+  let messages = messagesPerSecond * 2,
+    bytes = bytesPerSecond * 2,
+    last = now();
+  return (size) => {
     if (!Number.isSafeInteger(size) || size < 0 || size > maxBytes)
       return { code: 1009, reason: 'relay message too large' };
-    const time = now(), elapsed = Math.max(0, time - last) / 1000;
+    const time = now(),
+      elapsed = Math.max(0, time - last) / 1000;
     last = time;
     messages = Math.min(messagesPerSecond * 2, messages + elapsed * messagesPerSecond);
     bytes = Math.min(bytesPerSecond * 2, bytes + elapsed * bytesPerSecond);
     if (messages < 1 || bytes < size) return { code: 1008, reason: 'relay message rate exceeded' };
-    --messages; bytes -= size;
+    --messages;
+    bytes -= size;
     return null;
   };
 }
@@ -35,9 +44,25 @@ export function acceptRelayMessage(socket, data, gate) {
 
 // JSON objects must not reach Number/String coercion through attacker-supplied
 // valueOf/toString properties. Structured SDP/ICE/timing have their own owners.
-const numericFields = ['to', 'seat', 'loadout', 'percent', 'playerCount', 'difficulty', 'inputDelay', 'adonisMode', 'predictionLimit'];
+const numericFields = [
+  'to',
+  'seat',
+  'loadout',
+  'percent',
+  'playerCount',
+  'difficulty',
+  'inputDelay',
+  'adonisMode',
+  'predictionLimit',
+];
 export function validRelayControlMessage(message) {
-  if (!message || typeof message !== 'object' || Array.isArray(message) || typeof message.type !== 'string') return false;
+  if (
+    !message ||
+    typeof message !== 'object' ||
+    Array.isArray(message) ||
+    typeof message.type !== 'string'
+  )
+    return false;
   for (const field of numericFields) {
     const value = message[field];
     if (value != null && typeof value !== 'number' && typeof value !== 'string') return false;
@@ -58,18 +83,26 @@ export function createBoundedRelaySender({ schedule = setTimeout, cancel = clear
       pending.set(socket, state);
       socket.once('close', () => {
         for (const timer of state.timers.keys()) cancel(timer);
-        state.timers.clear(); state.bytes = 0;
+        state.timers.clear();
+        state.bytes = 0;
       });
     }
     return state;
   }
-  function send(socket, payload, { binary = false, delayMs = 0, maxBufferedBytes = RELAY_LIMITS.bufferedBytes } = {}) {
+  function send(
+    socket,
+    payload,
+    { binary = false, delayMs = 0, maxBufferedBytes = RELAY_LIMITS.bufferedBytes } = {},
+  ) {
     if (socket.readyState !== 1) return false;
     const state = stateFor(socket);
     // Include framing/timer overhead even for empty payloads.
-    const size = (typeof payload === 'string' ? Buffer.byteLength(payload) : payload.byteLength) + 16;
-    if (Number(socket.bufferedAmount || 0) + state.bytes + size > maxBufferedBytes ||
-        delayMs > 0 && state.timers.size >= RELAY_LIMITS.delayedMessages) {
+    const size =
+      (typeof payload === 'string' ? Buffer.byteLength(payload) : payload.byteLength) + 16;
+    if (
+      Number(socket.bufferedAmount || 0) + state.bytes + size > maxBufferedBytes ||
+      (delayMs > 0 && state.timers.size >= RELAY_LIMITS.delayedMessages)
+    ) {
       socket.terminate();
       return false;
     }
@@ -78,7 +111,9 @@ export function createBoundedRelaySender({ schedule = setTimeout, cancel = clear
     let retained = payload;
     if (typeof payload !== 'string') {
       retained = Buffer.allocUnsafeSlow(payload.byteLength);
-      retained.set(new Uint8Array(payload.buffer ?? payload, payload.byteOffset ?? 0, payload.byteLength));
+      retained.set(
+        new Uint8Array(payload.buffer ?? payload, payload.byteOffset ?? 0, payload.byteLength),
+      );
     }
     if (delayMs > 0) {
       state.bytes += size;
@@ -96,26 +131,51 @@ export function createBoundedRelaySender({ schedule = setTimeout, cancel = clear
 
 export function normalizeRelaySignal(message) {
   if (!message || typeof message !== 'object' || Array.isArray(message)) return null;
-  let description = null, candidate = null;
+  let description = null,
+    candidate = null;
   const value = message.description;
   if (value != null) {
-    if (!value || Array.isArray(value) || !['offer', 'answer'].includes(value.type) ||
-        typeof value.sdp !== 'string' || Buffer.byteLength(value.sdp) > 16 * 1024) return null;
+    if (
+      !value ||
+      Array.isArray(value) ||
+      !['offer', 'answer'].includes(value.type) ||
+      typeof value.sdp !== 'string' ||
+      Buffer.byteLength(value.sdp) > 16 * 1024
+    )
+      return null;
     description = { type: value.type, sdp: value.sdp };
   }
   const ice = message.candidate;
   if (ice != null) {
-    if (!ice || Array.isArray(ice) || typeof ice.candidate !== 'string' || Buffer.byteLength(ice.candidate) > 2048 ||
-        !(ice.sdpMid == null || typeof ice.sdpMid === 'string' && ice.sdpMid.length <= 32) ||
-        !(ice.sdpMLineIndex == null || Number.isInteger(ice.sdpMLineIndex) && ice.sdpMLineIndex >= 0 && ice.sdpMLineIndex <= 8) ||
-        !(ice.usernameFragment == null || typeof ice.usernameFragment === 'string' && ice.usernameFragment.length <= 256)) return null;
-    candidate = { candidate: ice.candidate, sdpMid: ice.sdpMid ?? null, sdpMLineIndex: ice.sdpMLineIndex ?? null };
+    if (
+      !ice ||
+      Array.isArray(ice) ||
+      typeof ice.candidate !== 'string' ||
+      Buffer.byteLength(ice.candidate) > 2048 ||
+      !(ice.sdpMid == null || (typeof ice.sdpMid === 'string' && ice.sdpMid.length <= 32)) ||
+      !(
+        ice.sdpMLineIndex == null ||
+        (Number.isInteger(ice.sdpMLineIndex) && ice.sdpMLineIndex >= 0 && ice.sdpMLineIndex <= 8)
+      ) ||
+      !(
+        ice.usernameFragment == null ||
+        (typeof ice.usernameFragment === 'string' && ice.usernameFragment.length <= 256)
+      )
+    )
+      return null;
+    candidate = {
+      candidate: ice.candidate,
+      sdpMid: ice.sdpMid ?? null,
+      sdpMLineIndex: ice.sdpMLineIndex ?? null,
+    };
     if (ice.usernameFragment != null) candidate.usernameFragment = ice.usernameFragment;
   }
   return description || candidate ? { description, candidate } : null;
 }
 
 export function clearSpectatorHistory(run) {
+  // Experimental TH09 viewers may join later; their prefix must remain exact.
+  if (run.spectatorTimeline && !run.spectatorStopped) return;
   run.spectatorHistory.length = 0;
   run.spectatorHistoryBytes = 0;
 }
@@ -124,6 +184,7 @@ export function stopSpectatorStream(run) {
   if (run.spectatorStopped) return;
   run.spectatorStopped = true;
   run.spectatorAdmissionOpen = false;
+  run.onSpectatorAvailabilityChange?.();
   if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
   run.spectatorGraceTimer = null;
   clearSpectatorHistory(run);
@@ -139,8 +200,10 @@ export function hasPendingSpectators(run) {
 
 export function appendSpectatorHistory(run, payload, limits = RELAY_LIMITS) {
   if (run.spectatorStopped) return false;
-  if (run.spectatorHistory.length >= limits.historyFrames ||
-      (run.spectatorHistoryBytes || 0) + payload.length > limits.historyBytes) {
+  if (
+    run.spectatorHistory.length >= limits.historyFrames ||
+    (run.spectatorHistoryBytes || 0) + payload.length > limits.historyBytes
+  ) {
     // Dropping old frames would make a new spectator start from incomplete
     // history. Stop this optional stream explicitly while players continue.
     stopSpectatorStream(run);

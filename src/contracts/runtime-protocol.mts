@@ -26,6 +26,7 @@ export const RUNTIME_PROTOCOL_OPTIONAL_COMMANDS = Object.freeze([
   "retry-music",
   "thprac-mouse",
   "network-cancel",
+  "spectator-room-state",
 ] as const);
 
 export const RUNTIME_PROTOCOL_EVENTS = Object.freeze([
@@ -106,6 +107,8 @@ export interface RuntimeConfigureOptions {
   netplaySpectator?: boolean;
   netplaySpectatorId?: string;
   netplaySpectatorCount?: number;
+  /** Opt-in TH09 forward-only historical spectator experiment. */
+  netplaySpectatorTimeline?: boolean;
   netplayIceServers?: unknown[];
   netplayLoadouts?: RuntimeNetplayLoadout[];
 }
@@ -150,6 +153,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplaySpectator: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplaySpectatorId: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer spectator session" }),
   netplaySpectatorCount: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
+  netplaySpectatorTimeline: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "experimental TH09 historical playback" }),
   netplayIceServers: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplayLoadouts: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
 } satisfies Readonly<Record<keyof RuntimeConfigureOptions, Readonly<{
@@ -208,10 +212,12 @@ export const RUNTIME_PROTOCOL_COMMAND_BEHAVIOR = Object.freeze({
   "retry-music": Object.freeze({ phase: "live", response: "required", requirement: "conditional", when: "Runtime-managed music transfer can fail before launch and advertise retry" }),
   "thprac-mouse": Object.freeze({ phase: "live", response: "optional", requirement: "profile-required", when: "thprac capability is declared" }),
   "network-cancel": Object.freeze({ phase: "live", response: "optional", requirement: "conditional", when: "TH09 game-title multiplayer dialog is dismissed" }),
+  "spectator-room-state": Object.freeze({ phase: "live", response: "optional", requirement: "conditional", games: ['th09'] as const, when: "TH09 spectator retires a completed room session" }),
 } satisfies Readonly<Record<RuntimeProtocolCommand, Readonly<{
   phase: RuntimeCommandPhase;
   response: RuntimeCommandResponseMode;
   requirement: RuntimeCommandRequirement;
+  games?: readonly GameId[];
   when?: string;
 }>>>);
 
@@ -282,6 +288,7 @@ export interface RuntimeCommandPayloads {
   "retry-music": Record<string, never>;
   "thprac-mouse": { type: "move" | "down" | "up"; x: number; y: number };
   "network-cancel": Record<string, never>;
+  "spectator-room-state": { runId: number; waiting: boolean };
 }
 
 /**

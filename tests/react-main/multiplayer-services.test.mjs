@@ -16,7 +16,7 @@ before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/room-owners-'));
   const file = resolve(work, 'owners.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
-    export {createLobbyDirectory} from './app/services/lobby-directory.ts';
+    export {createLobbyDirectory,directoryRoomCanEnter} from './app/services/lobby-directory.ts';
     export {createMultiplayerRoom} from './app/services/multiplayer-room.ts';
     export {createRoomPreparation} from './app/services/room-preparation.ts';
     export {createDecisionStore} from './app/models/decisions.ts';
@@ -159,14 +159,14 @@ function roomFixture(extra = {}) {
 test('rollback products default to D0 for both room creation and restored invites',async()=>{
   for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp']){
     const f=roomFixture();f.service.enterRoom(product,'1234',true);await flush();
-    const rollback=product!=='th11mp';assert.equal(f.service.getSnapshot().rollbackEnabled,rollback,product);
+    const rollback=true;assert.equal(f.service.getSnapshot().rollbackEnabled,rollback,product);
     const socket=f.sockets[0],id=f.identity.lobbyClientId(product);socket.open();
-    socket.message({type:'state',room:roomState(id,{predictionLimit:rollback?8:0,seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}]})});
+    socket.message({type:'state',room:roomState(id,{predictionLimit:product==='th11mp'?12:8,seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}]})});
     f.service.setTimingChoice(7);f.service.start();const started=socket.sent.findLast(m=>m.type==='start');
     assert.ok(started,product);if(['th08mp','th09mp','th10mp'].includes(product)){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,0);assert.equal(started.inputDelayAuto,false);
       f.service.setRollbackEnabled(false);f.service.start();const delay=socket.sent.findLast(m=>m.type==='start');assert.equal(delay.adonisMode,1);assert.equal(delay.inputDelay,7);
     }
-    if(product==='th11mp'){assert.equal(started.adonisMode,1);assert.equal(started.inputDelay,7);f.service.setRollbackEnabled(true);assert.equal(f.service.getSnapshot().rollbackEnabled,false);}
+    if(product==='th11mp'){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,0);assert.equal(started.predictionLimit,12);}
     f.service.dispose();
     const restored=roomFixture();assert.equal(restored.service.restoreInvite('https://launcher.invalid/?j='+fOwnerInvite(product),product),true);assert.equal(restored.service.getSnapshot().rollbackEnabled,rollback,product+' restore');restored.service.dispose();
   }
@@ -298,6 +298,8 @@ function preparationFixture({installed = true, worker = null, installError, noCa
   let generation = installed ? {game: 'th06'} : null;
   const host = {games: {th06: {multiplayerRuntime: 'runtime/th06/mp.html'}}, shared: {runtimeManifest: 'runtime-manifest.json'}};
   const acquisition = {fetchImpl: async () => {throw new Error('fixture must not fetch');}, catalogUrl: 'https://launcher.invalid/releases.json',
+    getGameVersion: () => 'original',
+    getPublication: async () => ({catalog: noCatalog ? null : {games: {th06: {}}}, catalogUrl: 'https://launcher.invalid/releases.json'}),
     getMetadata: () => ({siteManifest: host, releaseCatalog: noCatalog ? null : {games: {th06: {}}}}),
     readCurrent: async game => {events.push(['read', game]); return {generation};},
     installPublished: async (game, options) => {events.push(['install', game, options]); if (installError) throw installError; generation = {game};},
@@ -438,24 +440,65 @@ test('room Retry matches pinned handler eligibility, cleanup order and continuat
   });
 });
 
-test('TH11 owner cannot enable rollback and preserves zero prediction through 2P/3P and Extra start',async()=>{
- for(const playerCount of [2,3]){
-  const f=roomFixture(); f.service.enterRoom('th11mp','1234',true); await flush();
-  const socket=f.sockets[0]; socket.open(); const id=f.identity.lobbyClientId('th11mp');
-  const seats=Array.from({length:playerCount},(_,i)=>({clientId:i?`peer-seat${i}`:id,name:'A',loadout:i?4:0,ready:true}));
-  socket.message({type:'state',room:roomState(id,{playerCount,difficulty:4,seats,predictionLimit:0,adonisMode:1})});
-  f.service.setRollbackEnabled(true); assert.equal(f.service.getSnapshot().rollbackEnabled,false);
-  f.service.start(); const start=socket.sent.findLast(m=>m.type==='start');
-  assert.equal(start.adonisMode,1); assert.equal(start.predictionLimit,0); assert.equal(start.inputDelayAuto,true);
-  socket.message({type:'state',room:roomState(id,{playerCount,difficulty:4,seats,phase:'running',predictionLimit:0,adonisMode:1,inputDelay:3})});
-  const options=f.service.runtimeOptions(); assert.equal(options.netplayPredictionLimit,0);
-  assert.equal(options.netplayAdonisMode,1); assert.equal(options.netplayDifficulty,4);
-  assert.equal(options.netplayPlayerCount,playerCount); assert.equal(options.netplayLoadouts[1].shot,1);
-  // A stale/modified relay cannot make the React room accept a hybrid run.
-  socket.message({type:'state',room:roomState(id,{playerCount,difficulty:0,seats,phase:'running',predictionLimit:8,adonisMode:2})});
-  assert.equal(f.service.getSnapshot().room.difficulty,4);
-  assert.equal(f.service.runtimeOptions().netplayPredictionLimit,0); f.service.dispose();
- }
+test('TH11 owner switches Direct D0/P12 and pure delay while preserving 2P/3P Extra runtime options', async () => {
+  for (const playerCount of [2, 3]) {
+    const f = roomFixture();
+    f.service.enterRoom('th11mp', '1234', true);
+    await flush();
+    const socket = f.sockets[0];
+    socket.open();
+    const id = f.identity.lobbyClientId('th11mp');
+    const seats = Array.from({ length: playerCount }, (_, i) => ({
+      clientId: i ? `peer-seat${i}` : id, name: 'A', loadout: i ? 4 : 0, ready: true,
+    }));
+    socket.message({ type: 'state', room: roomState(id, {
+      playerCount, difficulty: 4, seats, predictionLimit: 12, adonisMode: 0,
+    }) });
+    f.service.setRollbackEnabled(true);
+    assert.equal(f.service.getSnapshot().rollbackEnabled, true);
+    f.service.start();
+    let start = socket.sent.findLast((m) => m.type === 'start');
+    assert.equal(start.adonisMode, 0);
+    assert.equal(start.predictionLimit, 12);
+    assert.equal(start.inputDelay, 0);
+    assert.equal(start.inputDelayAuto, false);
+    f.service.setRollbackEnabled(false);
+    f.service.setTimingChoice(9);
+    f.service.start();
+    start = socket.sent.findLast((m) => m.type === 'start');
+    assert.equal(start.adonisMode, 1);
+    assert.equal(start.predictionLimit, 12, 'room envelope advertises cap, not active pure-delay prediction');
+    assert.equal(start.inputDelay, 9);
+    assert.equal(start.inputDelayAuto, false);
+    socket.message({ type: 'state', room: roomState(id, {
+      playerCount, difficulty: 4, seats, phase: 'running', predictionLimit: 12,
+      adonisMode: 1, inputDelay: 9, inputDelayAuto: false,
+    }) });
+    let options = f.service.runtimeOptions();
+    assert.equal(options.netplayPredictionLimit, 0, 'pure delay bridge keeps legacy P0');
+    assert.equal(options.netplayAdonisMode, 1);
+    assert.equal(options.netplayInputDelay, 9);
+    assert.equal(options.netplayDifficulty, 4);
+    assert.equal(options.netplayPlayerCount, playerCount);
+    assert.equal(options.netplayLoadouts[1].shot, 1);
+    socket.message({ type: 'state', room: roomState(id, {
+      playerCount, difficulty: 4, seats, phase: 'running', predictionLimit: 12,
+      adonisMode: 0, inputDelay: 0, inputDelayAuto: false,
+    }) });
+    options = f.service.runtimeOptions();
+    assert.equal(options.netplayPredictionLimit, 12, 'real relay cap survives both typed boundaries');
+    assert.equal(options.netplayAdonisMode, 0);
+    assert.equal(options.netplayInputDelay, 0);
+    assert.equal(options.netplayInputDelayAuto, false);
+    // A relay room that requests a smaller window must not silently become a
+    // different native fixed-P12 session.
+    socket.message({ type: 'state', room: roomState(id, {
+      playerCount, difficulty: 4, seats, phase: 'running', predictionLimit: 8,
+      adonisMode: 0, inputDelay: 0, inputDelayAuto: false,
+    }) });
+    assert.throws(() => f.service.runtimeOptions(), /TH11/);
+    f.service.dispose();
+  }
 });
 
 test('rapid loadout changes ignore stale snapshots and cannot ready/start until latest socket echo',async()=>{
@@ -472,4 +515,74 @@ test('rapid loadout changes ignore stale snapshots and cannot ready/start until 
  socket.message({type:'state',room:roomState(id,{seats:[{clientId:id,name:'A',loadout:1,ready:false},{clientId:'peer_1234',name:'B',loadout:1,ready:true}]})});
  assert.equal(f.service.getSnapshot().loadoutPending,false);await f.service.toggleReady();
  assert.equal(socket.sent.at(-1).type,'set-ready');assert.equal(socket.sent.at(-1).ready,true);f.service.dispose();
+});
+
+test('TH09 spectator invite joins without seating and waits for authoritative spectator-start', async () => {
+  const f = roomFixture();
+  const invite = owner.encodeRoomInvite({g: 'th09mp', r: '1234', f: true, a: 'join', s: true});
+  assert.equal(owner.decodeRoomInvite(invite).s, true);
+  assert.equal(owner.decodeRoomInvite(owner.encodeRoomInvite({g: 'th08mp', r: '1234', a: 'join', s: true})).s, undefined);
+  f.service.restoreInvite('https://launcher.invalid/?j=' + invite, 'th09mp');
+  await flush();
+  const socket = f.sockets[0];
+  socket.open();
+  assert.equal(socket.sent.filter(m => m.type === 'spectate').length, 1);
+  const room = roomState('host', {phase: 'playing', spectatorTimeline: true, startSerial: 4});
+  socket.message({type: 'state', room});
+  await flush();
+  assert.equal(socket.sent.some(m => m.type === 'take-seat'), false);
+  assert.equal(f.events.some(e => e[0] === 'launch'), false);
+  socket.message({type: 'spectator-start', serial: 4, room});
+  await flush();
+  const launched = f.events.find(e => e[0] === 'launch');
+  assert.ok(launched);
+  assert.equal(launched[1].runtimeOptions.netplaySpectator, true);
+  f.service.dispose();
+});
+
+test('TH09 stream startup race retries the same match without a next-match warning', async () => {
+  const f=roomFixture();f.service.enterRoom('th09mp','1234',false);await flush();
+  const socket=f.sockets[0];socket.open();
+  const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4});
+  socket.message({type:'state',room});f.service.spectate();
+  const count=()=>socket.sent.filter(m=>m.type==='spectate').length;
+  assert.equal(count(),1);
+  const rejected={type:'error',error:'本局已经开始；已保留旁观席，将在下一局生效'};
+  socket.message(rejected);socket.message(rejected);
+  assert.equal(f.events.some(e=>e[0]==='notify'),false);
+  f.clock.tick(999);assert.equal(count(),1);f.clock.tick(1);assert.equal(count(),2);
+  socket.message(rejected);socket.message({type:'spectator-start',serial:4,room});await flush();
+  f.clock.tick(2000);assert.equal(count(),2);assert.ok(f.events.some(e=>e[0]==='launch'));
+  f.service.dispose();
+});
+
+test('leaving a pending TH09 spectator seat cancels admission retry', async () => {
+  const f=roomFixture();f.service.enterRoom('th09mp','1234',false);await flush();
+  const socket=f.sockets[0];socket.open();socket.message({type:'state',room:roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4})});
+  f.service.spectate();socket.message({type:'error',error:'本局已经开始；已保留旁观席，将在下一局生效'});
+  f.service.leaveSpectator();f.clock.tick(2000);
+  assert.equal(socket.sent.filter(m=>m.type==='spectate').length,1);f.service.dispose();
+});
+
+test('TH09 ordinary room entry during play neither seats nor starts the visitor', async () => {
+  const f = roomFixture();
+  const invite = owner.encodeRoomInvite({g: 'th09mp', r: '1234', f: true, a: 'join'});
+  f.service.restoreInvite('https://launcher.invalid/?j=' + invite, 'th09mp');
+  await flush();
+  const socket = f.sockets[0];socket.open();
+  const room = roomState('host', {phase:'running', spectatorTimeline:true, startSerial:4});
+  socket.message({type:'state',room});await flush();
+  socket.message({type:'spectator-start',serial:4,room});await flush();
+  assert.equal(f.service.getSnapshot().spectatorRequested,false);
+  assert.equal(socket.sent.some(m=>m.type==='take-seat'||m.type==='spectate'),false);
+  assert.equal(f.events.some(e=>e[0]==='launch'),false);
+  f.service.dispose();
+});
+
+test('TH09 directory admits full and starting rooms before spectator history is ready',()=>{
+  for(const phase of ['lobby','starting','running']){
+    assert.equal(owner.directoryRoomCanEnter({product:'th09mp',code:'1234',phase,
+      capacity:2,players:2,ready:0,difficulty:1,joinable:false,spectatable:false,
+      seats:[{initial:'A',online:true},{initial:'B',online:true}]}),true,phase);
+  }
 });

@@ -216,6 +216,36 @@ test('runtime: networked launch has no local first-frame diagnostic watchdog', a
   assert.equal(f.service.getSnapshot().phase, 'running');
 });
 
+test('runtime: spectator room retirement is epoch-bound and never sent to a player',async()=>{
+  for(const spectator of [false,true]){
+    const f=fixture();await f.prepare(managedPlan('th09',{netplayMode:'lan',netplaySpectator:spectator}));
+    assert.equal(f.service.spectatorRoomState(1,true),false,'prepared is not launched');
+    const launch=f.service.launch();f.ack('launch');await launch;
+    const before=f.outbound.length;
+    assert.equal(f.service.spectatorRoomState(1,true),spectator);
+    assert.equal(f.outbound.length,before+Number(spectator));
+    if(spectator){
+      const message=f.outbound.at(-1);
+      assert.equal(message.command,'spectator-room-state');assert.equal(message.runId,1);
+      assert.equal(message.waiting,true);assert.equal(message.epoch,f.service.getSnapshot().epoch);
+      assert.equal(f.service.postInput('keyboard',{down:true,code:'KeyZ'}),false);
+    }
+  }
+});
+
+test('runtime: native-ready continuation commits the actual spectator role before configure',async()=>{
+  const f=fixture(),initial=managedPlan('th09');
+  const preparing=f.service.prepareWithReady(initial,async()=>managedPlan('th09',{
+    netplayMode:'lan',netplaySpectator:true,
+  }));
+  await flush();assert.equal(f.service.getSnapshot().spectator,false);
+  f.event('ready');await flush();f.ack('configure');await preparing;
+  assert.equal(f.service.getSnapshot().spectator,true);
+  const launch=f.service.launch();f.ack('launch');await launch;
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
+  assert.equal(f.service.spectatorRoomState(1,true),true);
+});
+
 test('runtime: no-generation path requires exact hosted preload authority and cannot claim managed resources', async () => {
   const f = fixture();
   await assert.rejects(f.service.prepare({...directPlan(), directPreloadHost: undefined}), /validated Host authority/);
