@@ -9,6 +9,7 @@ import {StageLoader,stageMusic,bossMusic} from '/src/stage-loader.mjs';
 import {MusicPlayer} from '/src/music.mjs';
 import {readCoreSoundEvents} from '/src/sound-events.mjs';
 import {createReplaySeeker} from '/src/replay-seek.mjs';
+import {createFrameRateMeter} from '/src/fps-presentation.mjs';
 
 const $=id=>document.getElementById(id),canvas=$('screen'),inputState=new PreviewInput();
 let core,renderer,store,stageLoader,currentStage=1,post=()=>{},ready=false,running=false,paused=false,busy=false,loadingReplay=false,last=0,accumulator=0,generation=0,previous=0,activeReplay=null,replayFrame=0;
@@ -16,6 +17,7 @@ let corpus=[],custom=new Map(),renderedFrames=0,healthAt=0,maxGap=0,lastHud=[],l
 let replaySeeker,seeking=false,replayScrub=null,seekResume=true,inspectorSamples=null;
 const audio={context:null,buffers:new Map(),player:null,musicSerial:-1,enabled:true,index:null,sounds:null,effects:new Map(),timelineSerial:-1,trackStartFrame:0};
 const tickMs=1000/60;
+const frameRate=createFrameRateMeter();
 
 function message(text){$('status').textContent=text;}
 function overlay(title,description){$('overlay').hidden=false;$('overlay').querySelector('strong').textContent=title;$('overlay').querySelector('span').textContent=description;}
@@ -88,7 +90,7 @@ async function music(token=generation){
   return audio.player.play(track,()=>token===generation&&audio.enabled&&(running||busy),{offsetSeconds});
 }
 function pause(value=!paused){
-  if(!running||paused===value)return;paused=value;clear();last=performance.now();accumulator=0;
+  if(!running||paused===value)return;paused=value;clear();last=performance.now();frameRate.reset(last);accumulator=0;
   if(value)overlay('已暂停','按 Esc 或点击继续');else $('overlay').hidden=true;
   $('pause').textContent=value?'继续':'暂停';audioPause(value);
   if(!value&&audio.enabled&&!audio.player?.source){const token=generation;initializeAudio().then(()=>music(token)).catch(e=>message('音频未就绪：'+e.message));}
@@ -115,7 +117,8 @@ function afterTick(){
   if(lastHud[13])finish(lastHud[13]===2?'game-over':'stage-ended');
 }
 function present(){
-  lastHud=renderer.render(core);canvas.dataset.logicalFrame=String(lastHud[0]);canvas.dataset.sessionState=running?(paused?'paused':'running'):'ended';
+  const recordedFps=activeReplay?.recordedFps?.(currentStage,replayFrame)??null,currentFps=frameRate.value;
+  lastHud=renderer.render(core,{recordedFps,currentFps});canvas.dataset.recordedFps=recordedFps===null?'':String(recordedFps);canvas.dataset.currentFps=String(currentFps);canvas.dataset.logicalFrame=String(lastHud[0]);canvas.dataset.sessionState=running?(paused?'paused':'running'):'ended';
   for(const [name,index] of [['playerX',1],['playerY',2],['rngSeed',8],['rngCalls',9],['enemies',10],['bullets',11]])canvas.dataset[name]=String(lastHud[index]);
   $('score').textContent=Math.round(lastHud[3]).toString().padStart(9,'0');
   $('life').textContent='★'.repeat(Math.max(0,Math.min(20,Math.trunc(lastHud[5]))));$('bombs').textContent='★'.repeat(Math.max(0,Math.min(20,Math.trunc(lastHud[6]))));
@@ -153,7 +156,7 @@ async function seekReplay(target,resume=seeking?seekResume:!running||!paused){
   }catch(e){if(token===generation)fail(e);}
   finally{
     if(token===generation){
-      seeking=busy=false;last=healthAt=performance.now();accumulator=0;renderedFrames=maxGap=0;updateButtons();
+      seeking=busy=false;last=healthAt=performance.now();frameRate.reset(last);accumulator=0;renderedFrames=maxGap=0;updateButtons();
       if(ready)present();
       if(running)requestAnimationFrame(t=>loop(t,token));
     }
@@ -178,7 +181,7 @@ function loop(now,token){
         core._th12_tick(input.held,input.pressed);previous=input.held;accumulator-=tickMs;afterTick();
       }
     }else accumulator=0;
-    present();if(!activeReplay)core._th12_set_wall_time?.(performance.now());renderedFrames++;
+    frameRate.frame(now);present();if(!activeReplay)core._th12_set_wall_time?.(performance.now());renderedFrames++;
     if(!firstPresented){firstPresented=true;requestAnimationFrame(()=>{if(token===generation)post({event:'first-frame'});});}
     if(now-healthAt>1000&&running){
       const fps=renderedFrames*1000/(now-healthAt);$('fps').textContent=paused?'已暂停':(replayRate()>1?'4 倍速 · ':'')+fps.toFixed(0)+' FPS';
@@ -204,7 +207,7 @@ async function start(replay=null){
     try{await initializeAudio();await music(token);}catch(e){stopMusic();console.warn('音频未就绪：'+e.message);post({event:'notice',message:'音频未就绪，可关闭声音后继续试玩'});}
     if(token!==generation)return;
     running=true;paused=false;$('pause').textContent='暂停';$('overlay').hidden=true;
-    const now=performance.now();last=healthAt=now;renderedFrames=maxGap=0;accumulator=tickMs;
+    const now=performance.now();last=healthAt=now;frameRate.reset(now);renderedFrames=maxGap=0;accumulator=tickMs;
     message((replay?'原版录像 · ':'')+(currentStage===7?'Extra':'第 '+currentStage+' 面')+(replay?' · 按住 Ctrl 4 倍速':''));canvas.focus({preventScroll:true});
     if(document.hidden||focusLostDuringStart)pause(true);
     post({event:'runtime-info',architecture:'C++/Wasm development core',renderer:'WebGL2',version:'0.3.0-cpp'});requestAnimationFrame(t=>loop(t,token));

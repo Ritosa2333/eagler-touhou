@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import {PreviewInput,supportedReplay} from '../src/preview-input.mjs';
 import {replayInputEnded} from '../src/replay.mjs';
 import {createReplaySeeker} from '../src/replay-seek.mjs';
+import {createFrameRateMeter} from '../src/fps-presentation.mjs';
 
 // Exercise the actual preview event handlers and loop without a browser/GPU.
 // Only imports/bootstrap and presentation/audio adapters are replaced. The
@@ -17,7 +18,7 @@ function preview(inputs,{batchTicks=240,yieldTask=async()=>{},endsAt=Infinity}={
   const core={HEAPU8:heap,_th12_hud:()=>0,_th12_hud_size:()=>15,_th12_music_serial:()=>hud[0]>=3?1:0,_th12_music_track:()=>hud[0]>=3?1:0,
     _malloc:()=>64,_free(){},_th12_start_replay(){hud[0]=hud[13]=0;return 1;},
     _th12_tick(held,pressed){ticks.push([held,pressed]);hud[0]++;if(hud[0]>=endsAt)hud[13]=2;},_th12_start(){hud[0]=hud[13]=0;}};
-  const context={PreviewInput,supportedReplay,replayInputEnded,createReplaySeeker,readCoreSoundEvents:()=>[],batchTicks,yieldTask,
+  const context={PreviewInput,supportedReplay,replayInputEnded,createReplaySeeker,createFrameRateMeter,readCoreSoundEvents:()=>[],batchTicks,yieldTask,
     startReplayStage(){},console,performance:{now:()=>now},requestAnimationFrame(){},
     navigator:{getGamepads:()=>[]},window:{addEventListener:(type,listener)=>windowEvents.set(type,listener)},
     document:{hidden:false,getElementById:element,querySelectorAll:()=>[],addEventListener:(type,listener)=>documentEvents.set(type,listener)},

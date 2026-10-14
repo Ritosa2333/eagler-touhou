@@ -4,6 +4,7 @@ import {StageBackground} from './stage-background.mjs';
 import {readCoreSpell,spellTextDescriptors,bossTimerDescriptors,spellResultDescriptors} from './spell-presentation.mjs';
 import {readCoreUfo,ufoTextPoses,ufoTextRenderPriority} from './ufo-presentation.mjs';
 import {asciiGlyphs} from './ascii-presentation.mjs';
+import {fpsTextDescriptors} from './fps-presentation.mjs';
 import {readCoreDrawSchedule,orderPresentation} from './draw-scheduler.mjs';
 export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10;if(size>40)exact[40]=score*10;return exact;}
 export function readCoreBossHud(core){
@@ -297,7 +298,7 @@ export class Renderer {
     const result={texture,w:canvas.width,h:canvas.height};this.dialogueTextures.set(key,result);if(this.dialogueTextures.size>16){const oldest=this.dialogueTextures.keys().next().value,old=this.dialogueTextures.get(oldest);this.dialogueTextures.delete(oldest);g.deleteTexture(old.texture);}return result;
   }
   dialogueLine(p){if(!p.text||p.a.alpha<=0)return;const texture=this.dialogueTexture(p.text,p.record,p.metrics,p.raster);this.material(p.a.blend??0);this.texture(texture,!!p.a.point);this.primitive(this.gl.TRIANGLES);const points=p.a.mode===0||p.a.mode===1?nativeQuadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY,p.a.mode,p.screenShake):quadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY),uv=[[0,0],[1,0],[1,1],[0,1]];for(const i of [0,1,2,0,2,3])this.batch.push(...points[i],...uv[i],p.a.r??1,p.a.g??1,p.a.b??1,p.a.alpha*p.alpha,1,0);}
-  render(core){
+  render(core,fps={}){
     this.begin();const h=readCoreHud(core),frame=h[0];if(frame<this.lastFrame)this.animations=new AnimationSampler(this.atlases);this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);
@@ -311,6 +312,7 @@ export class Renderer {
     for(const text of spellTextDescriptors(spell,logicalPoses))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:45,clipped:false,order:poses.length});
     for(const text of [...bossTimerDescriptors(bossHud),...spellResultDescriptors(spell,logicalPoses)])poses.push({nativeText:text,drawPriority:44,clip:2,order:poses.length});
     for(const text of ufoTextPoses(readCoreUfo(core))){const priority=ufoTextRenderPriority(text);poses.push({nativeText:text,drawPriority:priority,clip:priority===22?2:0,order:poses.length});}
+    for(const text of fpsTextDescriptors(fps))poses.push({nativeText:text,drawPriority:text.drawPriority,clip:0,order:poses.length});
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,order:poses.length});};
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;

@@ -31,13 +31,20 @@ def anm(file):
                     else:c=(((v>>11)&31)*255//31,((v>>5)&63)*255//63,(v&31)*255//31,255)
                     pixels[i*4:i*4+4]=bytes(c)
             elif fmt==7:
-                for i,v in enumerate(raw):pixels[i*4:i*4+4]=bytes((255,255,255,v))
+                # Native format table4a2338[7] selects D3DFMT_A8 (28).
+                # Its sampled RGB is zero, not legacy OpenGL ALPHA's white.
+                # Retain the opacity mask while keeping the shadow/cloud
+                # texels black (notably stage05 scripts3/4 before frame2500).
+                for i,v in enumerate(raw):pixels[i*4:i*4+4]=bytes((0,0,0,v))
             else:raise ValueError(f'{file.name}: unsupported texture format {fmt}')
-            # D3D allocates the declared texture size. Several retail chunks
-            # contain only the used rectangle; retain transparent padding so
-            # UVs are normalized against the original logical dimensions.
+            # 45fa80 allocates the declared size and loads only the THTX rect.
+            # R5G6B5 (format3) has no alpha channel: even the unused rectangle
+            # samples A=1. Transparent padding exposes the scene fog as a
+            # repeating band when cdbg03a scrolls across the texture boundary.
+            # Alpha-bearing formats retain transparent unused texels.
             image=f'{file.stem}-{eid}.png'
-            logical=Image.new('RGBA',(max(w,u16(b,base+10)),max(h,u16(b,base+12))))
+            logical=Image.new('RGBA',(max(w,u16(b,base+10)),max(h,u16(b,base+12))),
+                              (0,0,0,255 if u16(b,base+14)==3 else 0))
             logical.paste(Image.frombytes('RGBA',(w,h),bytes(pixels)),(0,0));logical.save(dest/image)
         entries.append({'name':name,'image':image,'width':u16(b,base+10),'height':u16(b,base+12),
           'xOffset':u16(b,base+20),'yOffset':u16(b,base+22),'textureFormat':u16(b,base+14),

@@ -37,7 +37,7 @@ export function parseReplay(source) {
     if(number<1||number>7||stages.some(s=>s.number===number)||frames<1||frames>1e7||payload>size-offset-160||payload<frames*6)throw Error('录像关卡流无效');
     const fpsCount=frames>1?1+Math.floor((frames-2)/30):0;
     if(payload-frames*6<fpsCount)throw Error('录像帧率数据不完整');
-    stages.push({number,seed,frames,payload,offset,inputOffset:offset+160,
+    stages.push({number,seed,frames,payload,offset,inputOffset:offset+160,fpsOffset:offset+160+frames*6,fpsCount,
       // Native40de94/40de9b indexes the fixed21 result-time words at+4c.
       spellTimes:Array.from({length:21},(_,index)=>d.getInt32(offset+76+index*4,true)),
       initial:{score:d.getInt32(offset+12,true),power:d.getInt16(offset+16,true),pointValue:d.getInt32(offset+20,true),lives:d.getInt16(offset+24,true),lifeFragments:d.getInt16(offset+26,true),bombs:d.getInt16(offset+28,true),bombFragments:d.getInt16(offset+30,true),ufoColors:[32,36,40].map(at=>d.getInt32(offset+at,true)),rank:d.getInt32(offset+44,true),x:d.getInt32(offset+48,true),y:d.getInt32(offset+52,true),nativeGlobals:[56,60,64,68].map(at=>d.getInt32(offset+at,true))}});
@@ -45,5 +45,16 @@ export function parseReplay(source) {
   }
   if(offset!==size)throw Error('录像包含未识别的解压尾部');
   return {name:new TextDecoder('shift-jis').decode(data.subarray(0,8)).trim(),character,shot,difficulty,stages,data,
+    recordedFps(stage,cursor){return recordedReplayFps(data,stages.find(s=>s.number===stage),cursor);},
     input(stage,frame){const s=stages.find(s=>s.number===stage);if(!s||frame<0||frame>=s.frames)return null;const p=s.inputOffset+frame*6;return {held:d.getUint16(p,true),pressed:d.getUint16(p+2,true),released:d.getUint16(p+4,true)};}};
+}
+
+// Native43ba44 reads the current FPS byte before43ba7a advances its pointer
+// on cursor0,30,60... . The displayed cursor already includes that input.
+// This is a pure lookup so seeking and inspector stepping need no extra state.
+export function recordedReplayFps(data,stage,cursor) {
+  if(!stage||!Number.isSafeInteger(cursor)||cursor<0||cursor>stage.frames)return null;
+  if(cursor===0||!stage.fpsCount)return 0;
+  const index=Math.min(stage.fpsCount-1,Math.floor((cursor+28)/30));
+  return data[stage.fpsOffset+index];
 }

@@ -847,8 +847,14 @@ void configurePlayerAnimations() {
   playerBombBindHook = [](const pw::BombVisual& v) {
     const auto key = 0x700000000ull + v.id;
     bombDeliveredInterrupts.erase(key);
+    // 4077d6..4077e7 creates pl01/24 with a null position and flags0.
+    // Its children25/26 supply absolute screen XY via ANM48; adding the
+    // captured player position/playfield origin shifts both sweep beams.
+    const bool screenSweep = v.bank == 1 && v.script == 24;
     animationScene.bind(key, 0x50000000u + v.id, 4 + v.bank, v.script,
-                        anm_logic::Membership::Primary, v.x, v.y, {}, false, nullptr, 224, 16, 23);
+                        anm_logic::Membership::Primary, screenSweep ? 0 : v.x,
+                        screenSweep ? 0 : v.y, {}, false, nullptr,
+                        screenSweep ? 0 : 224, screenSweep ? 0 : 16, 23);
   };
   reimuBOrbBindHook = [](const pw::ReimuBOrb& orb) {
     const auto key = 0x700000000ull + orb.id;
@@ -935,7 +941,8 @@ void syncBombAnimations() {
       // Birth hooks own registration. A missing native461920 handle stays
       // missing; synchronizing presentation must not resurrect a deleted VM.
       if (node) {
-        animationScene.position(key, visual.x, visual.y);
+        const bool screenSweep = visual.bank == 1 && visual.script == 24;
+        animationScene.position(key, screenSweep ? 0 : visual.x, screenSweep ? 0 : visual.y);
         if (visual.interrupt && bombDeliveredInterrupts[key] != visual.interrupt &&
             !node->vm.state().ended) {
           animationScene.interrupt(key, visual.interrupt);
