@@ -87,6 +87,7 @@ export class Th075ThcrapCompiler {
     const encode=value=>{
       const bytes=[1];for(const ch of value.normalize('NFC').replaceAll('\u00a0',' ')){
         if(ch==='\n'){bytes.push(92,110);continue;}
+        if(ch.codePointAt(0)>=32&&ch.codePointAt(0)<127&&ch!=='"'&&ch!==','&&ch!=='\\'){bytes.push(ch.charCodeAt(0));continue;}
         if(ch.codePointAt(0)<32)throw Error('Unsupported localization control character');
         let code=glyphs.get(ch);if(code===undefined||['"',',','\\'].includes(ch)){
           if(code===undefined||code<256){const n=[...glyphs.values()].filter(n=>n>=256).length;if(n>=126*127)throw Error('Too many TH075 glyphs');code=((0x81+Math.floor(n/127))<<8)|(0x80+n%127);glyphs.set(ch,code);}
@@ -103,6 +104,15 @@ export class Th075ThcrapCompiler {
     for(const resource of resources){
       const picture=/^th075\/(system\/[a-z0-9_]+|character\/[a-z0-9_/]+)\/(\d+)\.png$/i.exec(resource.path);
       if(picture){const path='data/'+picture[1]+'.dat',index=Number(picture[2]);let bank=images.get(path);if(!bank){const base=await this.base.read(path);bank={base,records:bitmapRecords(base),patches:new Map()};images.set(path,bank);}if(!bank.records[index])throw Error(resource.path+': bitmap index unavailable');bank.patches.set(index,resource);continue;}
+      const quoted=/^th075\/character\/([a-z]+)\/\1\.sce\.quotes\.json$/i.exec(resource.path);
+      if(quoted){
+        const path=`data/character/${quoted[1]}/${quoted[1]}.sce`,records=th075QuotedRecords(await this.base.read(path)),patch=this.parseJson(resource);
+        for(const [index,value]of Object.entries(patch)){
+          if(!/^\d+$/.test(index)||!records[Number(index)]||typeof value!=='string')throw Error('Invalid TH075 quoted translation');
+          const row=records[Number(index)],prefix=/^\\c[0-9a-f]{6}/i.test(row.text.toString('latin1'))?row.text.subarray(0,8):Buffer.alloc(0);
+          await replacement(path,row.quote,value,prefix);
+        }continue;
+      }
       const scenario=/^th075\/character\/([a-z]+)\/scenario\.txt\.jdiff$/i.exec(resource.path);
       if(scenario){
         const path=`data/character/${scenario[1]}/${scenario[1]}.sce`,base=await this.base.read(path),records=th075QuotedRecords(base);

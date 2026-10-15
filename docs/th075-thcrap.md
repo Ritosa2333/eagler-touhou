@@ -47,3 +47,13 @@ Isolation: Launcher `eagler` base `7cf9822`, experiment
 The canonical Eagler checkout remains the accepted Runtime consumer after
 review/promotion. The delivery receipt records exact experiment/integration
 heads and rerun canonical gates. Japanese DATA and other titles remain intact.
+
+English correction (2026-10-15): thpatch/lang_en alone supplies Music Room
+and one inherited sprite image, not English Story or menu artwork.
+Use scripts/prepare-th075-english-static.mjs with the SHA-256 pinned
+IaMP English Translation v1.1 th075e.dat to add 574 image replacements and
+all eleven translated character scripts. The tool extracts only data, maps
+aliases, fits seven 512px spell names to original 256px slots, and reflows six
+ending speaker groups across original pages. It never applies DLL/EXE/PAT
+patches or changes script control flow. Full legacy layout parity and full
+ending playthrough are not established by resource/native/browser checks.
