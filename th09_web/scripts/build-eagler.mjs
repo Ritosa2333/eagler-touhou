@@ -15,7 +15,8 @@ const inputs = [
   ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
   ['shell.mjs', resolve(root, 'sdl-runtime/managed.mjs')],
   ['managed.css', resolve(root, 'sdl-runtime/managed.css')],
-  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
+  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'replay-player.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
+  ['playback-clock.mjs', resolve(process.env.EAGLER_COMMON_ROOT || resolve(root, '../third_party/eagler-common'), 'browser/playback-clock.mjs')],
   ['th09.mjs', resolve(compiled, 'th09.mjs')],
   ['th09.wasm', resolve(compiled, 'th09.wasm')],
   ['fonts/cp932.bin', resolve(native, 'cp932.bin')],
@@ -42,7 +43,7 @@ if (variant === 'multiplayer') {
     'th09_adonis_configure', 'th09_adonis_info',
     'th09_measured_begin', 'th09_startup_info',
     'th09_network_selection_begin', 'th09_network_selection_info', 'th09_spectator_prepare',
-    'th09_auto_save_replay', 'th09_auto_replay_folder_buffer',
+    'th09_auto_save_replay', 'th09_auto_replay_folder_buffer', 'th09_play_replay', 'th09_replay_view_info', 'th09_replay_view_step', 'th09_replay_view_silent',
     'th09_spectator_feed', 'th09_spectator_frame', 'th09_spectator_end',
   ];
   const missing = required.filter(name => !exports.has(name));

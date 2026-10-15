@@ -204,8 +204,9 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(!presentation.ascii.initialize()){error="ASCII initialization failed";return false;}paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};requested_transition=-1;return true;
     }
     bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
-    void sound(i32 id,i32 pan)override{if(spectator_mode&&spectator_playback.seeking)return;if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
-    void positioned_sound(i32 id,float x)override{if(spectator_mode&&spectator_playback.seeking)return;if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
+    bool replay_view_silent=false;
+    void sound(i32 id,i32 pan)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
+    void positioned_sound(i32 id,float x)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
     void music(i32 n)override{if(queue_sound(2,n))return;if(!audio.music(n))error=audio.error;else if(const auto* entry=music_track(n))if(!session||!session->is_replay)records.music_unlocked[entry->unlock]=1;}
     void fade_music()override{if(!queue_sound(3,0))audio.fade_music();}
     void encountered(i32 c)override{if(!queue_sound(5,c)&&(!session||!session->is_replay))records.count_encounter(c);}
@@ -1095,6 +1096,36 @@ TH09_EXPORT("th09_storage_revision") u32 th09_storage_revision(){return probe?pr
 std::vector<u8> file_validation_bytes;
 TH09_EXPORT("th09_file_buffer") u8* th09_file_buffer(u32 size){if(size>16*1024*1024)return nullptr;file_validation_bytes.resize(size);return file_validation_bytes.data();}
 TH09_EXPORT("th09_file_valid") u32 th09_file_valid(u32 kind,u32 size){if(!size||size!=file_validation_bytes.size())return 0;const auto* p=file_validation_bytes.data();if(kind==0){PlayerRecords records;return records.load(p,size);}if(kind==2){GameConfiguration config;return config.load(p,size);}if(kind!=1)return 0;ReplayFile file;touch::MotionTrack track;if(!file.decode(p,size)||!track.load(file.data().data(),file.data().size(),9))return 0;bool found=false;for(u32 stage=0;stage<10;++stage)if(file.stream_offset(0,stage)){ReplayPlayback playback;ReplayRoundSettings settings;if(!playback.begin(file,stage,settings))return 0;found=true;}return found;}
+// Direct file-manager playback uses the same decoder/session as the title menu.
+static u32 replay_view_offsets[10]{},replay_view_total=0;
+TH09_EXPORT("th09_play_replay") u32 th09_play_replay(u32 size){
+    if(!probe||network.active||spectator_mode||(!probe->in_title&&(!probe->session||!probe->session->is_replay)))return 0;
+    if(!th09_file_valid(1,size))return 0;
+    ReplayFile file;if(!file.decode(file_validation_bytes.data(),size)||file.data()[0x1e4]>2||file.data()[0xd7]>4)return 0;
+    u32 stage=0;while(stage<10&&!file.stream_offset(0,stage))++stage;
+    if(stage>=10){probe->error="Replay has no playable stage";return 0;}
+    replay_view_total=0;
+    for(u32 s=0;s<10;++s){replay_view_offsets[s]=replay_view_total;if(file.stream_offset(0,s)){ReplayPlayback playback;ReplayRoundSettings settings;playback.begin(file,s,settings);replay_view_total+=playback.length();}}
+    clear_inputs();probe->device={};probe->pending_action=-1;probe->error.clear();probe->state.random={0x7531,0,0};
+    probe->settings.game_flags|=8u;probe->title_play_replay(file,stage,"");
+    probe->launch_pending=false;probe->in_title=false;return probe->start();
+}
+TH09_EXPORT("th09_replay_view_info") const u32* th09_replay_view_info(){
+    static u32 values[8]{};values[0]=1;values[2]=replay_view_total;
+    const bool active=probe&&!network.active&&!spectator_mode&&!probe->in_title&&probe->session&&probe->session->is_replay&&probe->world;
+    values[3]=!active||(active&&(probe->over||probe->complete));
+    if(active){const auto& selection=probe->world->configuration.selection;const auto stage=u32(selection.stage);values[1]=(stage<10?replay_view_offsets[stage]:0)+probe->session->replay_frame();values[4]=selection.difficulty;values[5]=selection.characters[0];values[6]=selection.characters[1];values[7]=stage;}
+    return values;
+}
+TH09_EXPORT("th09_replay_view_step") u32 th09_replay_view_step(u32 render){
+    if(th09_replay_view_info()[3])return 1;
+    // One logical input tick, independent of display frequency or playback rate.
+    // TH09 Draw has native side effects. Execute it once per logical tick,
+    // omitting GPU submission for intermediate fast-forward frames.
+    const bool prior=rollback_active;rollback_active=true;
+    const auto ok=probe->tick_inputs(0,0,0,render!=0);rollback_active=prior;return ok;
+}
+TH09_EXPORT("th09_replay_view_silent") void th09_replay_view_silent(u32 on){if(probe)probe->replay_view_silent=on!=0;}
 TH09_EXPORT("th09_import_buffer") u8* th09_import_buffer(u32 size){if(!probe||size>16*1024*1024)return nullptr;probe->import_bytes.resize(size);return probe->import_bytes.data();}
 TH09_EXPORT("th09_import_file") u32 th09_import_file(u32 kind,u32 size){return probe&&probe->import_file(kind,size);}
 TH09_EXPORT("th09_save_snapshot") u32 th09_save_snapshot(){if(!probe)return 0;probe->update_clocks();auto rng=probe->state.random;const auto bytes=probe->records.save(rng);probe->save_configuration();return probe->write_file("/save/score.dat",bytes.data(),u32(bytes.size()));}

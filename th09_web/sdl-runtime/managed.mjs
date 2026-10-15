@@ -5,6 +5,7 @@ import {scanCodes} from './keyboard.mjs';
 import {SharedNetplay} from './shared-netplay.mjs';
 import {exportReplayName,importReplayName} from './motion-replay.mjs';
 import {createAutoReplay} from './auto-replay.mjs';
+import {createReplayPlayer} from './replay-player.mjs';
 const game='th09',protocol='eagler-touhou/1',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas'),$=s=>document.querySelector(s);
 // Variant identity is stamped by the builder, including offline Replay viewers.
 const runtimeVariant=document.querySelector('meta[name="eagler-runtime-variant"]')?.content;
@@ -13,7 +14,7 @@ const saveRoot=runtimeVariant==='multiplayer'?'/savesth09mp':'/savesth09';
 const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 let core,launched=false,first=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve(),revision=0,netplay,stopping=false,networkOverlayPending=false;
-let initializedReady=false,launchSettled=false,lifetime=0,stopPending=false,retired=false,configApplying=null,appliedTouchPolicy=0,autoReplay;
+let initializedReady=false,launchSettled=false,lifetime=0,stopPending=false,retired=false,configApplying=null,appliedTouchPolicy=0,autoReplay,replayPlayer;
 // Native serials survive game open/reset/pause. These four markers belong to
 // this core, not to a game frame or a gesture. Ineligible input is never replayed.
 let sourceBomb=0,sourceEscape=0,mappedBomb=0,mappedEscape=0,lastTouchFire=false;
@@ -35,7 +36,7 @@ function revokeLifetime(terminal=false){
 }
 function acceptsTouch(){
  if(!ownsDocument()){if(!retired)revokeLifetime(true);return false;}
- return initializedReady&&!!core&&launched&&launchSettled&&!stopPending&&!stopping&&!retired&&!configApplying&&!document.hidden&&!networkOverlayPending&&!!options.touchEnabled&&!options.netplaySpectator&&!netplay?.spectator;
+ return initializedReady&&!!core&&launched&&launchSettled&&!stopPending&&!stopping&&!retired&&!configApplying&&!document.hidden&&!networkOverlayPending&&!!options.touchEnabled&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;
 }
 function receiveLifetime(){return stopPending||stopping||retired||!ownsDocument()?-1:lifetime;}
 function assertLifetime(value,owner=core){
@@ -52,7 +53,7 @@ const status=()=>({title:values(core._th09_title_status,8),session:values(core._
 const err=()=>{const a=core.HEAPU8.subarray(core._th09_error());return new TextDecoder().decode(a.subarray(0,a.indexOf(0)));};
 const keyboard=createBrowserKeyboard({accept:code=>!!scanCodes[code],send:(code,down)=>core?._th09_key(scanCodes[code],+down)});
 function clearKeyboard(){keyboard.clear();core?._th09_keys_clear();}
-function acceptsKeyboard(){return launched&&!stopping&&!stopPending&&!retired&&!document.hidden&&!networkOverlayPending&&!options.netplaySpectator&&!netplay?.spectator;}
+function acceptsKeyboard(){return launched&&!stopping&&!stopPending&&!retired&&!document.hidden&&!networkOverlayPending&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;}
 const fatal=e=>{revokeLifetime(true);const message=e?.message||String(e);$('#error').textContent=message;clearKeyboard();core?._th09_loop_pause(1);emit('error',{error:message});};
 const sync=(populate=false)=>{const current=chain.then(()=>new Promise((r,j)=>core.FS.syncfs(populate,e=>e?j(e):r())));chain=current.catch(()=>{});return current;};
 function path(value){
@@ -108,7 +109,7 @@ async function installRuntimePack(pack){
  }
 }
 async function save(){if(launched&&!netplay?.spectator&&!core._th09_save_snapshot())throw Error('保存失败');await sync();}
-async function stop(){if(stopping)return;revokeLifetime();stopping=true;clearKeyboard();try{networkOverlayPending=false;netplay?.close();core._th09_loop_stop();await save();core._th09_game_close();launched=false;delete window.__th09Runtime;if(!retired)stopPending=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;revokeLifetime();stopping=true;clearKeyboard();try{networkOverlayPending=false;replayPlayer?.close();replayPlayer=null;netplay?.close();core._th09_loop_stop();await save();core._th09_game_close();launched=false;delete window.__th09Runtime;if(!retired)stopPending=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function openNetwork(){if(!launched||options.netplayMode==='lan'||!status().title[1]||networkOverlayPending)return;networkOverlayPending=true;neutralTouch();core._th09_loop_pause(1);emit('network-request');}
 async function command(m,receivedLifetime=receiveLifetime()){switch(m.command){
 case 'configure':{
@@ -157,6 +158,14 @@ case 'launch':{
  await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,owner);
  await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,owner);
  if(!core._th09_game_open(Date.now()&65535))throw Error(err());
+ if(options.replayPath!==undefined){
+  if(options.netplayMode==='lan')throw Error('不能在联机对战中打开录像');
+  const selected=path(options.replayPath);if(!selected.startsWith('replay/'))throw Error('录像路径无效');
+  const bytes=core.FS.readFile(saveRoot+'/'+selected.replace(/\.rpyx$/,'.rpy'));
+  importReplayName(selected,bytes,9);
+  const pointer=core._th09_file_buffer(bytes.length);if(!pointer)throw Error('录像为空或过大');
+  core.HEAPU8.set(bytes,pointer);if(!core._th09_play_replay(bytes.length))throw Error(err());
+ }
  await new Promise(resolve=>setTimeout(resolve,Math.max(0,2000-(performance.now()-startupImageAt))));assertLifetime(receivedLifetime,owner);
  performance.mark('eagler-startup-menu-ready');launched=true;apply();first=false;
  netplay=options.netplayMode==='lan'?new SharedNetplay(core,{
@@ -169,11 +178,22 @@ case 'launch':{
  window.__th09Runtime={core,netplay,status,save,command};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'2026.09.20-fix'});
  return {};
 }
+case 'playback':{
+ assertLifetime(receivedLifetime);
+ if(!launched||!launchSettled||!options.replayViewer||options.netplayMode==='lan')throw Error('当前游戏不支持录像控制');
+ if(m.action==='open'){
+  const selected=path(m.path);if(!selected.startsWith('replay/'))throw Error('录像路径无效');
+  const bytes=core.FS.readFile(saveRoot+'/'+selected.replace(/\.rpyx$/,'.rpy'));importReplayName(selected,bytes,9);
+  replayPlayer??=createReplayPlayer({core,onState:playback=>{if(ownsDocument()&&!retired&&!stopPending)emit('runtime-info',{playback});},onError:fatal});
+  clearKeyboard();return {playback:replayPlayer.play(selected,bytes)};
+ }
+ if(!replayPlayer)throw Error('请先选择录像');return {playback:replayPlayer.control(m.action,m.value)};
+}
 case 'sync':await save();return {};
 case 'list':{const files=[];const scan=dir=>{for(const name of core.FS.readdir(saveRoot+dir)){if(name==='.'||name==='..')continue;const n=(dir+'/'+name).replace(/^\//,''),full=saveRoot+'/'+n,s=core.FS.stat(full);if(dir==='/replay'&&core.FS.isDir(s.mode)){scan('/'+n);continue;}try{path(n);}catch{continue;}if(core.FS.isFile(s.mode)){const replayMatch=autoReplay.readMatch(full);files.push({path:exportReplayName(n,core.FS.readFile(full),9),size:s.size,...(replayMatch?{replayMatch}:{})});}}};scan('');scan('/replay');return {files};}
 case 'read':return {bytes:Array.from(core.FS.readFile(saveRoot+'/'+path(m.path).replace(/\.rpyx$/,'.rpy')))};
-case 'write':{if(!Array.isArray(m.bytes)||m.bytes.length>16*1024*1024||m.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('存档数据无效');const bytes=Uint8Array.from(m.bytes),name=importReplayName(path(m.path),bytes,9);if(launched)throw Error('请先退出游戏再导入');if(name.endsWith('.rpy')&&core.FS.analyzePath(saveRoot+'/'+name).exists)throw Error('录像文件已存在，请使用其他文件名');const kind=name.endsWith('.rpy')?1:name==='score.dat'?0:2,p=core._th09_file_buffer(bytes.length);if(!p)throw Error('文件为空或过大');core.HEAPU8.set(bytes,p);if(!core._th09_file_valid(kind,bytes.length))throw Error('文件损坏或不是花映塚 1.50a 的存档/录像');core.FS.mkdirTree((saveRoot+'/'+name).slice(0,(saveRoot+'/'+name).lastIndexOf('/')));core.FS.writeFile(saveRoot+'/'+name,bytes);autoReplay.removeMatch(saveRoot+'/'+name);if(runtimeVariant==='multiplayer')autoReplay.writeMatch(saveRoot+'/'+name,m.replayMatch);await sync();return {};}
-case 'remove':if(launched)throw Error('请先退出游戏');{const full=saveRoot+'/'+path(m.path).replace(/\.rpyx$/,'.rpy');core.FS.unlink(full);autoReplay.removeMatch(full);const parent=full.slice(0,full.lastIndexOf('/'));if(parent!==saveRoot+'/replay'&&parent.startsWith(saveRoot+'/replay/')){try{core.FS.rmdir(parent);}catch{}}}await sync();return {};
+case 'write':{if(!Array.isArray(m.bytes)||m.bytes.length>16*1024*1024||m.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('存档数据无效');const bytes=Uint8Array.from(m.bytes),name=importReplayName(path(m.path),bytes,9);if(launched&&(!options.replayViewer||options.netplayMode==='lan'||!name.startsWith('replay/')))throw Error('请先退出游戏再导入');if(name.endsWith('.rpy')&&core.FS.analyzePath(saveRoot+'/'+name).exists)throw Error('录像文件已存在，请使用其他文件名');const kind=name.endsWith('.rpy')?1:name==='score.dat'?0:2,p=core._th09_file_buffer(bytes.length);if(!p)throw Error('文件为空或过大');core.HEAPU8.set(bytes,p);if(!core._th09_file_valid(kind,bytes.length))throw Error('文件损坏或不是花映塚 1.50a 的存档/录像');core.FS.mkdirTree((saveRoot+'/'+name).slice(0,(saveRoot+'/'+name).lastIndexOf('/')));core.FS.writeFile(saveRoot+'/'+name,bytes);autoReplay.removeMatch(saveRoot+'/'+name);if(runtimeVariant==='multiplayer')autoReplay.writeMatch(saveRoot+'/'+name,m.replayMatch);await sync();return {};}
+case 'remove':if(launched&&(!options.replayViewer||options.netplayMode==='lan'||!path(m.path).startsWith('replay/')))throw Error('请先退出游戏');{const full=saveRoot+'/'+path(m.path).replace(/\.rpyx$/,'.rpy');core.FS.unlink(full);autoReplay.removeMatch(full);const parent=full.slice(0,full.lastIndexOf('/'));if(parent!==saveRoot+'/replay'&&parent.startsWith(saveRoot+'/replay/')){try{core.FS.rmdir(parent);}catch{}}}await sync();return {};
 case 'network-open':openNetwork();return {};
 case 'network-cancel':networkOverlayPending=false;clearKeyboard();neutralTouch();core._th09_loop_pause(+document.hidden);canvas.focus();return {};
 default:throw Error('不支持的操作');}}
@@ -208,7 +228,7 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
  if(e.pointerType==='mouse'||e.target.closest('button,input,dialog')||!acceptsTouch())return;
  e.preventDefault();if(type===0)document.body.setPointerCapture(e.pointerId);const b=canvas.getBoundingClientRect();core._th09_touch(type,e.pointerId,(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height);
 });
-canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();clearKeyboard();fatal(Error('图形环境失效，请退出后重新开始。'));});window.addEventListener('pagehide',()=>{revokeLifetime(true);clearKeyboard();if(launched){netplay?.close();core._th09_loop_pause(1);void save();}});
+canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();clearKeyboard();fatal(Error('图形环境失效，请退出后重新开始。'));});window.addEventListener('pagehide',()=>{revokeLifetime(true);replayPlayer?.close();clearKeyboard();if(launched){netplay?.close();core._th09_loop_pause(1);void save();}});
 const initialized=(async()=>{
  const initializingLifetime=lifetime;let last=performance.now(),lastFrames=0;
   core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:(frame,winner)=>winner<0?autoReplay?.begin(frame):autoReplay?.end(frame,winner),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:(...args)=>netplay?.endMatch(...args),onNetworkSpectatorRound:(...args)=>netplay?.roundStart(...args),onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
