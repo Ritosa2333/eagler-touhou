@@ -17,6 +17,7 @@ const runtimeURL = process.env.TH09_TOUCH_QUEUE_RUNTIME_SOURCE
   : new URL('../../sdl-runtime/managed.mjs', import.meta.url);
 const keyboardURL = new URL('./directory-keyboard.mjs', runtimeURL);
 const replayURL = new URL('./motion-replay.mjs', runtimeURL);
+const {createAutoReplay} = await import(new URL('./auto-replay.mjs', runtimeURL));
 const [{createBrowserKeyboard}, {exportReplayName, importReplayName}] =
   await Promise.all([import(keyboardURL.href), import(replayURL.href)]);
 const sourceFiles = [
@@ -169,7 +170,7 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
     requestAnimationFrame: callback => schedule(callback, 1000 / 60, 'raf'),
     setTimeout: (callback, delay) => schedule(callback, delay),
     clearTimeout: id => {const index = jobs.findIndex(job => job.id === id);if (index >= 0) jobs.splice(index, 1);},
-    createBrowserKeyboard, exportReplayName, importReplayName, scanCodes: {KeyZ: 44},
+    createBrowserKeyboard, exportReplayName, importReplayName, createAutoReplay, scanCodes: {KeyZ: 44},
     createModule: async callbacks => {moduleCallbacks = callbacks;await moduleGate.promise;return core;},
     installStartupBranding: async () => {},
     SharedNetplay: class {

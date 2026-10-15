@@ -33,6 +33,7 @@ EM_JS(void, th09_reset_browser_keyboard, (), {Module["resetBrowserKeyboard"]?.()
 Netplay::PeerTransport& th09_shared_transport();
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
+EM_JS(void, th09_network_replay_boundary, (std::uint32_t frame,int winner), { Module["onNetworkReplayBoundary"]?.(frame,winner); });
 EM_JS(void, th09_network_spectator_begin, (std::uint32_t frame,const void* bytes,std::uint32_t size), {
     Module["onNetworkSpectatorBegin"]?.(frame,HEAPU8.slice(bytes,bytes+size));
 });
@@ -259,9 +260,20 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void title_save_records()override{if(spectator_mode)return;update_clocks();auto local_random=state.random;auto bytes=records.save(network.active?local_random:state.random);if(!write_file("/save/score.dat",bytes.data(),u32(bytes.size())))error="Unable to save score.dat";}
     void title_ascii(const Vec3& p,const char* text,u32 color,const Vec2& scale)override{presentation.ascii.color=color;presentation.ascii.scale=scale;presentation.ascii.field_view=0;presentation.ascii.text(p,text);}
     i32 title_joy_button(i32 device)override{return joy_button(device);}
-    static std::string replay_path(const char* name){std::string path=name?name:"";if(path.rfind("./",0)==0)path.erase(0,2);if(path.rfind("replay/",0)!=0||path.find("..")!=std::string::npos||path.find('\\')!=std::string::npos||path.find('/',7)!=std::string::npos||path.size()>64)return {};return "/save/"+path;}
+    static std::string replay_path(const char* name){
+        std::string path=name?name:"";if(path.rfind("./",0)==0)path.erase(0,2);
+        if(path.rfind("replay/",0)!=0||path.size()>512||path.find('\\')!=std::string::npos)return {};
+        const auto relative=path.substr(7);const auto slash=relative.find('/');
+        if(relative.empty()||relative=="."||relative=="..")return {};
+        if(slash!=std::string::npos&&(slash==0||relative.substr(0,slash)=="."||relative.substr(0,slash)==".."||relative.find('/',slash+1)!=std::string::npos||relative.substr(slash+1).empty()||relative.substr(slash+1)=="."||relative.substr(slash+1)==".."))return {};
+        return "/save/"+path;
+    }
     bool title_read_replay(const char* name,std::vector<u8>& bytes)override{const auto path=replay_path(name);return !path.empty()&&read_file(path.c_str(),bytes);}
-    std::vector<std::string> title_imported_replays()override{std::vector<std::string> names;auto* dir=opendir("/save/replay");if(dir){while(auto* entry=readdir(dir)){std::string n=entry->d_name;if(n.rfind("th9_ud",0)==0&&n.size()==14)names.push_back(n);}closedir(dir);}std::sort(names.begin(),names.end());return names;}
+    std::vector<std::string> title_imported_replays()override{
+        std::vector<std::string> names;auto* dir=opendir("/save/replay");
+        if(dir){while(auto* entry=readdir(dir)){std::string n=entry->d_name;if(n.rfind("th9_ud",0)==0&&n.size()==14&&n.substr(10)==".rpy")names.push_back(n);}closedir(dir);}
+        std::sort(names.begin(),names.end());return names;
+    }
     bool title_save_replay(const char* name,const char* player)override{const auto path=replay_path(name);if(!session||path.empty())return false;auto replay=session->save_replay(player);const auto bytes=replay.encode();if(bytes.empty()){error=session->error;return false;}const bool ok=write_file(path.c_str(),bytes.data(),u32(bytes.size()));if(!ok)error="Unable to write replay";return ok;}
     bool title_replay_exists(const char* name)override{const auto path=replay_path(name);auto* file=path.empty()?nullptr:SDL_IOFromFile(path.c_str(),"rb");if(!file)return false;SDL_CloseIO(file);return true;}
     void title_play_replay(const ReplayFile& file,u32 stage,const char*)override{pending_replay=file;replay_stage=stage;replay_pending=launch_pending=true;demo_pending=false;}
@@ -308,7 +320,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
             if(action==InGameAction::retry||action==InGameAction::replay_retry||action==InGameAction::restart_extra){
                 if(network.active){const auto begin=match_initializer(false);
                     if(recording_frame){recording_frame->begin=begin;recording_frame->hasBegin=true;}
-                    else {if(network.side==0)th09_network_spectator_begin(network.frame()-1,&begin,spectator_begin_bytes);}}
+                    else {th09_network_replay_boundary(network.frame()-1,-1);if(network.side==0)th09_network_spectator_begin(network.frame()-1,&begin,spectator_begin_bytes);}}
                 presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
             else if(action==InGameAction::continue_match){pause_audio(true);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;pause_audio(false);}
             else if(action==InGameAction::title&&network_selection&&complete)return reselect_network_match();
@@ -447,7 +459,7 @@ TH09_EXPORT("th09_rollback_enable") u32 th09_rollback_enable(u32 seed,u32 side,u
     for(auto& frame:rollback_frames){frame.number=Netplay::INVALID_FRAME;frame.captured=false;frame.sounds.clear();}
     Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
     rollback_published=rollback_catchup=adonis_snapshots=adonis_waits=0;rollback_active=rollback.Begin(c,std::uint64_t(emscripten_get_now()),u8(inputDelay),adonis_mode);
-    return rollback_active;
+    if(rollback_active&&!network_selection)th09_network_replay_boundary(0,-1);return rollback_active;
 }
 TH09_EXPORT("th09_network_selection_begin") u32 th09_network_selection_begin(u32 seed,u32 side,u32 idLow,u32 idHigh,u32 abi,u32 requestedDelay,u32 reserve){
     if(rollback_active||side>1||reserve<1||reserve>2||
@@ -492,6 +504,7 @@ TH09_EXPORT("th09_measured_begin") u32 th09_measured_begin(u32 seed,u32 side,u32
     Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
     rollback_published=rollback_catchup=adonis_snapshots=adonis_waits=0;
     rollback_active=rollback.BeginMeasured(c,std::uint64_t(emscripten_get_now()),requestedDelay,adonis_mode,reserve);
+    if(rollback_active)th09_network_replay_boundary(0,-1);
     return rollback_active;
 }
 TH09_EXPORT("th09_startup_info") const u32* th09_startup_info(){
@@ -698,6 +711,9 @@ u32 rollback_tick(u32 render){
         TH09_PERF_COUNT(PublishedCommands,record.sounds.size());
         for(const auto& s:record.sounds)switch(s.kind){case 0:TH09_PERF_COUNT(PublishedSfx,1);probe->audio.effects.enqueue(s.id,i32(s.value));break;case 1:TH09_PERF_COUNT(PublishedSfx,1);probe->audio.effects.positioned(s.id,s.value);break;case 2:TH09_PERF_COUNT(PublishedMusic,1);probe->music(s.id);break;case 3:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.fade_music();break;case 4:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
         record.sounds.clear();
+        // Both players archive only reconciled full-match boundaries.
+        if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
+        if(record.hasEnd)th09_network_replay_boundary(rollback_published+1,record.winner);
         if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return 0;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
             if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
             if(!network_selection||record.gameplay)th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y);
@@ -1042,6 +1058,21 @@ TH09_EXPORT("th09_probe_rollback_step") u32 th09_probe_rollback_step(u32 left,u3
 }
 TH09_EXPORT("th09_probe_tick") u32 th09_probe_tick(u32 keys){if(!probe)return 0;return probe->tick(u16(keys));}
 #endif
+static char auto_replay_folder[512]{};
+TH09_EXPORT("th09_auto_replay_folder_buffer") char* th09_auto_replay_folder_buffer(){return auto_replay_folder;}
+TH09_EXPORT("th09_auto_save_replay") u32 th09_auto_save_replay(u32 slot){
+    if(!probe||!network.active||spectator_mode||!probe->complete||!probe->session||slot>0xffff)return 0;
+    auto_replay_folder[sizeof(auto_replay_folder)-1]=0;
+    if(!auto_replay_folder[0])return 0;
+    char name[560];std::snprintf(name,sizeof(name),"replay/%s/th9_ud%04x.rpy",auto_replay_folder,slot);
+    if(probe->title_replay_exists(name))return 0;
+    // Encoding consumes random bytes. Local saving cannot change simulation RNG
+    // or turn a storage failure into a fatal live-session error.
+    const auto random=probe->state.random;
+    const auto error=probe->error,session_error=probe->session->error;
+    const bool ok=probe->title_save_replay(name,"AUTO");
+    probe->state.random=random;probe->error=error;probe->session->error=session_error;return ok;
+}
 TH09_EXPORT("th09_session_status") const i32* th09_session_status(){static i32 values[8]{};if(probe&&probe->session){const auto& s=*probe->session;values[0]=i32(s.phase);values[1]=s.frames;values[2]=s.replay_frame();values[3]=s.replay_length();values[4]=s.continues;values[5]=s.world?s.world->configuration.selection.stage:-1;values[6]=s.is_replay;values[7]=s.recordable;}return values;}
 #if TH09_DEVELOPMENT_HARNESS
 TH09_EXPORT("th09_probe_inputs") u32 th09_probe_inputs(u32 left,u32 right,u32 menu){return probe&&probe->tick_inputs(u16(left),u16(right),u16(menu));}

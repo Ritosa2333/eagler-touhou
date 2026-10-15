@@ -5,9 +5,11 @@ import {spawnSync} from 'node:child_process';
 import {cp, mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import vm from 'node:vm';
 import {exportReplayName, importReplayName} from '../../sdl-runtime/motion-replay.mjs';
 import {createBrowserKeyboard} from '../../sdl-runtime/directory-keyboard.mjs';
+import {createAutoReplay} from '../../sdl-runtime/auto-replay.mjs';
 
 // Execute the generated shells, with persistence keyed by the actual IDBFS
 // mount point. This checks file ownership and reload ordering, not game logic.
@@ -43,14 +45,16 @@ async function openRuntime(directory, databases) {
     },
     stat(path) { return files.has(path) ? {mode: 1, size: files.get(path).length} : {mode: 0}; },
     isFile(mode) { return mode === 1; },
+    isDir(mode) { return mode === 0; },
     analyzePath(path) { return {exists: files.has(normalize(path))}; },
   };
   const core = {FS, IDBFS: {}, HEAPU8: new Uint8Array(2048),
-    _th09_file_buffer: () => 8, _th09_file_valid: () => 1};
+    _th09_file_buffer: () => 8, _th09_file_valid: () => 1,
+    _th09_keys_clear() {}, _th09_loop_pause() {}};
   const element = {addEventListener() {}, focus() {}};
   const context = {
     console, URLSearchParams, Uint8Array, ArrayBuffer, TextDecoder, performance,
-    exportReplayName, importReplayName, createBrowserKeyboard, scanCodes: {},
+    exportReplayName, importReplayName, createBrowserKeyboard, createAutoReplay, scanCodes: {},
     createModule: async () => core,
     location: {search: '?managedData=1&runtimeEpoch=1', origin: 'https://test.invalid'},
     window: {addEventListener() {}},
@@ -85,6 +89,8 @@ test('packaged normal and multiplayer shells isolate saves and Replay across rel
     for (const args of [[], ['--multiplayer']]) {
       const env = {...process.env}; delete env.TH09_OUTPUT; delete env.TH09_RUNTIME_ASSETS;
       delete env.TH09_PACKAGE_OUTPUT; delete env.EAGLER_RUNTIME_OUTPUT;
+      // This fixture copies only th09_web, without its parent submodule layout.
+      env.EAGLER_COMMON_ROOT = fileURLToPath(new URL('../../../third_party/eagler-common/', import.meta.url));
       const result = spawnSync(process.execPath, [join(temporary, 'scripts/build-eagler.mjs'), ...args],
         {encoding: 'utf8', windowsHide: true, env});
       assert.equal(result.status, 0, result.stderr);

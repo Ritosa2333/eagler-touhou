@@ -4,6 +4,7 @@ import {installStartupBranding} from './startup-branding.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {SharedNetplay} from './shared-netplay.mjs';
 import {exportReplayName,importReplayName} from './motion-replay.mjs';
+import {createAutoReplay} from './auto-replay.mjs';
 const game='th09',protocol='eagler-touhou/1',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas'),$=s=>document.querySelector(s);
 // Variant identity is stamped by the builder, including offline Replay viewers.
 const runtimeVariant=document.querySelector('meta[name="eagler-runtime-variant"]')?.content;
@@ -12,7 +13,7 @@ const saveRoot=runtimeVariant==='multiplayer'?'/savesth09mp':'/savesth09';
 const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 let core,launched=false,first=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve(),revision=0,netplay,stopping=false,networkOverlayPending=false;
-let initializedReady=false,launchSettled=false,lifetime=0,stopPending=false,retired=false,configApplying=null,appliedTouchPolicy=0;
+let initializedReady=false,launchSettled=false,lifetime=0,stopPending=false,retired=false,configApplying=null,appliedTouchPolicy=0,autoReplay;
 // Native serials survive game open/reset/pause. These four markers belong to
 // this core, not to a game frame or a gesture. Ineligible input is never replayed.
 let sourceBomb=0,sourceEscape=0,mappedBomb=0,mappedEscape=0,lastTouchFire=false;
@@ -54,7 +55,12 @@ function clearKeyboard(){keyboard.clear();core?._th09_keys_clear();}
 function acceptsKeyboard(){return launched&&!stopping&&!stopPending&&!retired&&!document.hidden&&!networkOverlayPending&&!options.netplaySpectator&&!netplay?.spectator;}
 const fatal=e=>{revokeLifetime(true);const message=e?.message||String(e);$('#error').textContent=message;clearKeyboard();core?._th09_loop_pause(1);emit('error',{error:message});};
 const sync=(populate=false)=>{const current=chain.then(()=>new Promise((r,j)=>core.FS.syncfs(populate,e=>e?j(e):r())));chain=current.catch(()=>{});return current;};
-function path(value){let name=String(value).replaceAll('\\','/').toLowerCase().replace(new RegExp('^'+saveRoot+'/'),'').replace(/^\//,'');if(!/^(?:score\.dat|th09\.cfg|replay\/th9_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
+function path(value){
+ let name=String(value).replace(new RegExp('^'+saveRoot+'/'),'').replace(/^\//,'');
+ const parts=name.split('/');parts[parts.length-1]=parts[parts.length-1].toLowerCase();name=parts.join('/');
+ const replay=parts[0]==='replay'&&(parts.length===2||(parts.length===3&&parts[1].length<=128&&!/[<>:"\\|?*\u0000-\u001f\u007f]/.test(parts[1])&&!/[. ]$/.test(parts[1])))&&/^th9_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/.test(parts.at(-1));
+ if(name.length>240||(!['score.dat','th09.cfg'].includes(name)&&!replay))throw Error('存档路径无效');return name;
+}
 function apply(){const sensitivity=Number(options.touchSensitivity??100);options.touchSensitivity=Number.isFinite(sensitivity)?Math.max(100,Math.min(300,sensitivity)):100;core.eaglerOptions=options;core._th09_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),options.touchSensitivity/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);appliedTouchPolicy=touchPolicy(options);if(launched)core._th09_music_enabled(+music);}
 async function resource(r,receivedLifetime,owner){
  assertLifetime(receivedLifetime,owner);
@@ -164,10 +170,10 @@ case 'launch':{
  return {};
 }
 case 'sync':await save();return {};
-case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of core.FS.readdir(saveRoot+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const full=saveRoot+'/'+n,s=core.FS.stat(full);if(core.FS.isFile(s.mode))files.push({path:exportReplayName(n,core.FS.readFile(full),9),size:s.size});}return {files};}
+case 'list':{const files=[];const scan=dir=>{for(const name of core.FS.readdir(saveRoot+dir)){if(name==='.'||name==='..')continue;const n=(dir+'/'+name).replace(/^\//,''),full=saveRoot+'/'+n,s=core.FS.stat(full);if(dir==='/replay'&&core.FS.isDir(s.mode)){scan('/'+n);continue;}try{path(n);}catch{continue;}if(core.FS.isFile(s.mode)){const replayMatch=autoReplay.readMatch(full);files.push({path:exportReplayName(n,core.FS.readFile(full),9),size:s.size,...(replayMatch?{replayMatch}:{})});}}};scan('');scan('/replay');return {files};}
 case 'read':return {bytes:Array.from(core.FS.readFile(saveRoot+'/'+path(m.path).replace(/\.rpyx$/,'.rpy')))};
-case 'write':{if(!Array.isArray(m.bytes)||m.bytes.length>16*1024*1024||m.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('存档数据无效');const bytes=Uint8Array.from(m.bytes),name=importReplayName(path(m.path),bytes,9);if(launched)throw Error('请先退出游戏再导入');const kind=name.endsWith('.rpy')?1:name==='score.dat'?0:2,p=core._th09_file_buffer(bytes.length);if(!p)throw Error('文件为空或过大');core.HEAPU8.set(bytes,p);if(!core._th09_file_valid(kind,bytes.length))throw Error('文件损坏或不是花映塚 1.50a 的存档/录像');core.FS.mkdirTree(saveRoot+'/replay');core.FS.writeFile(saveRoot+'/'+name,bytes);await sync();return {};}
-case 'remove':if(launched)throw Error('请先退出游戏');core.FS.unlink(saveRoot+'/'+path(m.path).replace(/\.rpyx$/,'.rpy'));await sync();return {};
+case 'write':{if(!Array.isArray(m.bytes)||m.bytes.length>16*1024*1024||m.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('存档数据无效');const bytes=Uint8Array.from(m.bytes),name=importReplayName(path(m.path),bytes,9);if(launched)throw Error('请先退出游戏再导入');if(name.endsWith('.rpy')&&core.FS.analyzePath(saveRoot+'/'+name).exists)throw Error('录像文件已存在，请使用其他文件名');const kind=name.endsWith('.rpy')?1:name==='score.dat'?0:2,p=core._th09_file_buffer(bytes.length);if(!p)throw Error('文件为空或过大');core.HEAPU8.set(bytes,p);if(!core._th09_file_valid(kind,bytes.length))throw Error('文件损坏或不是花映塚 1.50a 的存档/录像');core.FS.mkdirTree((saveRoot+'/'+name).slice(0,(saveRoot+'/'+name).lastIndexOf('/')));core.FS.writeFile(saveRoot+'/'+name,bytes);autoReplay.removeMatch(saveRoot+'/'+name);if(runtimeVariant==='multiplayer')autoReplay.writeMatch(saveRoot+'/'+name,m.replayMatch);await sync();return {};}
+case 'remove':if(launched)throw Error('请先退出游戏');{const full=saveRoot+'/'+path(m.path).replace(/\.rpyx$/,'.rpy');core.FS.unlink(full);autoReplay.removeMatch(full);const parent=full.slice(0,full.lastIndexOf('/'));if(parent!==saveRoot+'/replay'&&parent.startsWith(saveRoot+'/replay/')){try{core.FS.rmdir(parent);}catch{}}}await sync();return {};
 case 'network-open':openNetwork();return {};
 case 'network-cancel':networkOverlayPending=false;clearKeyboard();neutralTouch();core._th09_loop_pause(+document.hidden);canvas.focus();return {};
 default:throw Error('不支持的操作');}}
@@ -205,10 +211,11 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();clearKeyboard();fatal(Error('图形环境失效，请退出后重新开始。'));});window.addEventListener('pagehide',()=>{revokeLifetime(true);clearKeyboard();if(launched){netplay?.close();core._th09_loop_pause(1);void save();}});
 const initialized=(async()=>{
  const initializingLifetime=lifetime;let last=performance.now(),lastFrames=0;
-  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:(...args)=>netplay?.endMatch(...args),onNetworkSpectatorRound:(...args)=>netplay?.roundStart(...args),onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
+  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:(frame,winner)=>winner<0?autoReplay?.begin(frame):autoReplay?.end(frame,winner),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:(...args)=>netplay?.endMatch(...args),onNetworkSpectatorRound:(...args)=>netplay?.roundStart(...args),onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
  assertLifetime(initializingLifetime,core);
  window.Module=core;window.FS=core.FS;core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.IDBFS,{},saveRoot);await sync(true);assertLifetime(initializingLifetime,core);core.FS.mkdirTree(saveRoot+'/replay');core.FS.symlink(saveRoot,'/save');
+ autoReplay=createAutoReplay({core,saveRoot,options:()=>options,enabled:()=>runtimeVariant==='multiplayer'&&options.netplayMode==='lan',sync:()=>{revision=core._th09_storage_revision();return sync();},notice:message=>emit('notice',{message})});
  if(query.get('managedData')!=='1'||parent===window||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('请从 eagler-touhou 启动花映塚');
  const buffer=(await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch})).buffer;assertLifetime(initializingLifetime,core);
  if(Object.prototype.toString.call(buffer)!=='[object ArrayBuffer]'||buffer.byteLength<1000000)throw Error('花映塚资源无效');core.FS.writeFile('/th09.dat',new Uint8Array(buffer));
