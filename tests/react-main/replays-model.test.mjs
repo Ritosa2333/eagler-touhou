@@ -21,12 +21,13 @@ before(async () => {
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 function deferred() {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};}
 const tick = () => new Promise(resolve => setImmediate(resolve));
-function fixture({cold = false, launched = false, prepareGate = null, broken = false, watch = null, viewer = false} = {}) {
+function fixture({cold = false, launched = false, prepareGate = null, broken = false, watch = null, viewer = false, storage = null} = {}) {
   const files = new Map([['replay/th6_02.rpy', [2]], ['replay/th6_01.rpy', [1, 1]], ['score.dat', [9]]]);
   const events = [], toasts = [], downloads = [], confirms = [], matches = new Map();
   const state = {ready: !cold, epoch: cold ? null : 1, launched, game: 'th06'};
   let answer = null, confirmed = true;
   const model = createReplayModel({
+    ...(storage ? {storage} : {}),
     runtime: {getSnapshot: () => state, async withFileSession(game, op) {
       events.push('lock');
       try {return await op({epoch: state.epoch, async sync() {events.push('sync');if(state.failSyncAfterWrite&&state.wrote)throw Error('flush failed');}, async send(command, payload) {
@@ -239,4 +240,30 @@ test('closing a cold viewer cancels presentation before its pending resource rea
   const opening=f.model.open('th09');await tick();f.model.close();
   assert.ok(f.events.includes('closeViewer'));assert.equal(f.model.getSnapshot().open,false);
   gate.resolve();await opening;assert.equal(f.model.getSnapshot().open,false);
+});
+
+test('independent TH09 browse and downloads never prepare a Runtime; first watch starts it once',async()=>{
+  const reads=[], selected=[], match={schema:'eagler-touhou/th09-match-replay/1',names:['甲','乙'],startedAt:1000,frames:600,winner:1};
+  const stored=[{path:'replay/A/th9_ud0000.rpyx',bytes:new Uint8Array([1,2,3]),size:3,modifiedAt:2000,replayMatch:match}];
+  const f=fixture({cold:true,viewer:true,watch:async(_product,path)=>selected.push(path),storage:{async read(product,selection){reads.push({product,selection});return stored;}}});
+  f.state.game='th09';await f.model.open('th09mp');
+  assert.equal(f.state.ready,false);assert.deepEqual(f.events,['paint']);assert.equal(f.model.getSnapshot().phase,'ready');
+  assert.equal('bytes' in f.model.getSnapshot().rows[0],false,'the UI retains metadata, not whole Replay byte arrays');
+  await f.model.download(stored[0].path);await f.model.downloadFolder('replay/A');
+  assert.deepEqual(f.events,['paint']);assert.deepEqual([...new Uint8Array(f.downloads[0].bytes)],[1,2,3]);
+  const {unzipSync}=await import('fflate');const entries=unzipSync(new Uint8Array(f.downloads[1].bytes));
+  assert.deepEqual([...entries[stored[0].path]],[1,2,3]);assert.deepEqual(JSON.parse(new TextDecoder().decode(entries['replay/A/th9_ud0000.json'])),match);
+  assert.equal(reads.length,3);await f.model.watch(stored[0].path);assert.equal(f.events.filter(e=>e==='viewer').length,1);assert.deepEqual(selected,[stored[0].path]);assert.equal(f.model.isOpen(),true);
+});
+test('closing during independent listing never acquires a Runtime or publishes a late result',async()=>{
+  const gate=deferred(), f=fixture({cold:true,viewer:true,storage:{async read(){await gate.promise;return [];}}});f.state.game='th09';
+  const opening=f.model.open('th09');await tick();f.model.close();gate.resolve();await opening;await tick();
+  assert.equal(f.model.isOpen(),false);assert.equal(f.events.includes('viewer'),false);assert.equal(f.events.includes('prepare'),false);
+});
+test('closing independent manager during a committed cold rename releases its eventual file Runtime',async()=>{
+  const gate=deferred(),f=fixture({cold:true,prepareGate:gate,storage:{async read(){return [{path:'replay/th9_01.rpy',bytes:new Uint8Array([1]),size:1}];}}});
+  f.state.game='th09';f.files.clear();f.files.set('replay/th9_01.rpy',[1]);await f.model.open('th09');
+  const rename=f.model.rename('replay/th9_01.rpy','th9_02.rpy');await tick();f.model.close();gate.resolve();await rename;await tick();
+  assert.deepEqual(f.files.get('replay/th9_02.rpy'),[1]);assert.equal(f.model.isOpen(),false);
+  assert.equal(f.events.filter(event=>event==='release:th09:1').length,1);
 });

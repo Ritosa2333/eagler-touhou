@@ -214,7 +214,7 @@ async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = tru
   storage.blocked = blockStorage;
   Object.defineProperty(env.window, 'localStorage', {configurable: true, value: storage}); expose('localStorage', storage);
   Object.defineProperty(env.window, 'sessionStorage', {configurable: true, value: sessionStorage}); expose('sessionStorage', sessionStorage);
-  const idb = new IDBFactory(); expose('IDBKeyRange', IDBKeyRange); Object.defineProperty(env.window, 'indexedDB', {configurable: true, value: idb}); expose('indexedDB', idb);
+  const idb = new IDBFactory(); expose('IDBKeyRange', IDBKeyRange); Object.defineProperty(env.window, 'IDBKeyRange', {configurable: true, value: IDBKeyRange}); Object.defineProperty(env.window, 'indexedDB', {configurable: true, value: idb}); expose('indexedDB', idb);
   for (const game of seedPackages) await api.installParsedPackageZip(await api.parsePackageZip(importPackageFile(game)));
   installSocketBoundary(socketBoundary, directoryTransport);
   const fetches = [], order = [];
@@ -1160,7 +1160,17 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   // baseline-conflicted, so it is not counted as original browser acceptance.
   const f = await mountBrowser({initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game]});
   const frame = node('#gameFrame');
-  await click('#mpReplayViewer'); await until(() => commands().includes('launch'), 'actual Replay action configures and launches the multiplayer Runtime');
+  if (game === 'th09') {
+    await React.act(async () => {
+    const database = await new Promise((resolve, reject) => {const request = env.window.indexedDB.open('/savesth09mp', 21); request.onupgradeneeded = () => request.result.createObjectStore('FILE_DATA'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);});
+    await new Promise((resolve, reject) => {const transaction = database.transaction('FILE_DATA', 'readwrite'); transaction.objectStore('FILE_DATA').put({mode: 0o100666, timestamp: new Date(2000), contents: new Uint8Array([3,4,5])}, '/savesth09mp/replay/th9_01.rpy'); transaction.oncomplete = resolve; transaction.onabort = () => reject(transaction.error);});
+    database.close();
+    });
+    await click('#mpReplayViewer'); await until(() => env.document.querySelector('[data-replay-watch="replay/th9_01.rpy"]'), 'TH09 opens its independent file listing');
+    assert.equal(f.outbound.length, 0, 'browsing sends no native command'); assert.equal(f.navigations.length, 0, 'browsing leaves the game iframe empty');
+    await click('[data-replay-watch="replay/th9_01.rpy"]');
+  } else await click('#mpReplayViewer');
+  await until(() => commands().includes('launch') && (game !== 'th09' || commands().includes('playback')), 'actual Replay action configures and launches the multiplayer Runtime');
   const source = f.native.location.href, configure = f.outbound.find(message => message.command === 'configure');
   // Original test-multiplayer-replay-launcher-browser.py170–174, observing
   // the actual navigated document rather than Runtime model bookkeeping.
@@ -1170,9 +1180,15 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   assert.equal(Object.keys(configure.options).some(key => key.startsWith('netplay')), false);
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.deepEqual(f.dataReads, [[1, 2, 3]]);
   assert.equal(f.sockets.length, 0, 'Replay viewer never creates room/gameplay transport');
-  assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');
-  assert.equal(node('#playbackExit').nextElementSibling.id, 'fullscreenToggle');
-  await click('#playbackExit'); await until(() => !playerOpen(), 'toolbar exit closes through the actual Runtime owner');
+  if (game === 'th09') {
+    assert.equal(f.outbound.find(message => message.command === 'playback')?.path, 'replay/th9_01.rpy');
+    await click('.replay-back');
+  } else {
+    assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');
+    assert.equal(node('#playbackExit').nextElementSibling.id, 'fullscreenToggle');
+    await click('#playbackExit');
+  }
+  await until(() => !playerOpen(), 'Replay exit closes through the actual Runtime owner');
   assert.equal(node('#gameFrame'), frame);
 });
 

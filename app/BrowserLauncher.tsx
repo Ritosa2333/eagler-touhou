@@ -19,6 +19,7 @@ import {FirstUseNotice, SiteNotice, DonationDialog, AppleRefreshDialog, Multipla
 import {GameDataImportWindows} from './components/player/GameDataImportWindows';
 import {MultiplayerQuickChat} from './components/player/MultiplayerQuickChat';
 import {PlayerControls} from './components/player/PlayerControls';
+import {ReplayWorkspace} from './components/player/ReplayWorkspace';
 import {FullscreenTransient} from './components/FullscreenTransient';
 import {StartupError} from './components/feedback/StartupError';
 import {InitialLauncher} from './components/startup/InitialLauncher';
@@ -40,6 +41,9 @@ export function BrowserLauncher() {
 }
 function BrowserWorkspace({session}: {session: BrowserSession}) {
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
+  const replayModel = session.getReplays();
+  const replayFiles = useSyncExternalStore(replayModel?.subscribe ?? emptySubscribe, replayModel?.getSnapshot ?? noDiagnostics, replayModel?.getSnapshot ?? noDiagnostics);
+  const replayWorkspace = !!replayFiles?.open && (replayFiles.productId === 'th09' || replayFiles.productId === 'th09mp');
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   const preferences = useSyncExternalStore(session.preferences.subscribe, session.preferences.getSnapshot, session.preferences.getSnapshot);
   const firstUse = useRef<FirstUseNoticeHandle>(null), notice = useRef<SiteNoticeHandle>(null), network = useRef<NetworkDiagnosticsHandle>(null);
@@ -56,11 +60,12 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     bootTouchPreview: state.bootTouchPreview !== null, bootTouchPreviewImage: state.bootTouchPreviewImage,
     nativeTouch: session.nativeTouch, touchFireEnabled: session.touchFireState.getEnabled(), assetUrl, lobbyHref: assetUrl('lobby.html'), masthead,
     footer: <Footer donationAvailable={donationAvailable}/>, serverStatusNote: <ServerStatusNote session={session}/>, metadataRevision: state.metadataRevision,
+    replayWorkspace,
     runtimeOpen: state.playerOpen, runtimeLaunched: state.runtime?.launched, titleOverlayOpen: state.th09NetworkOverlayOpen, runtimeFrame: session.attachFrame, requestRuntimeClose: session.requestRuntimeClose, requestRoomLeave: session.requestRoomLeave,
     optionsActions: <SessionLaunchActions session={session}/>, multiplayerControls: <RoomSettingsControls session={session}/>, multiplayerDiagnostics: <InlineMultiplayerDiagnostics session={session}/>, multiplayerOnline: <LegacyMultiplayerOnline session={session}/>,
     roomSurface: <RoomComposition session={session} settingsClosing={settingsClosing}/>,
     roomDrawer: <RoomDrawer session={session} onClosingChange={setSettingsClosing}/>,
-    runtimeControls: <><PlayerControls session={session}/><MultiplayerQuickChat model={session.room.quickChat}/></>,
+    runtimeControls: <><PlayerControls session={session}/>{session.getReplays() && <ReplayWorkspace session={session}/>}<MultiplayerQuickChat model={session.room.quickChat}/></>,
     // The real directory renderer derives these slots from the live service;
     // this structural value is never rendered by BrowserWorkspace.
     lobby: {masthead, onGuide: null, onNetwork: null, roomTools: null, roomList: null, hasRooms: false, loading: true, emptyState: null, roomCount: ''},
@@ -202,7 +207,7 @@ function SessionOverlays({session, firstUse, notice, assetUrl, onDonationUnavail
     <DonationDialog open={navigation.infoDialogOpen('donationDialog')} onCloseRequest={() => navigation.closeInfoDialog('donationDialog')} closeDurationMs={navigation.context === 'lobby' ? 0 : 220} assetUrl={assetUrl} onArtworkUnavailable={onDonationUnavailable}/>
     <AppleRefreshDialog open={navigation.infoDialogOpen('appleRefreshDialog')} onCloseRequest={() => navigation.closeInfoDialog('appleRefreshDialog')}/>
     <MultiplayerGuideDialog open={navigation.infoDialogOpen('mpGuideDialog')} onCloseRequest={() => navigation.closeInfoDialog('mpGuideDialog')} gameId={guideProduct ? gameIdForProduct(guideProduct) : 'th06'} contentUrl={assetUrl('content/MULTIPLAYER.html')}/>
-    {replays && <ReplayDialog model={replays} open={navigation.infoDialogOpen('replayDialog')} onCloseRequest={() => navigation.closeInfoDialog('replayDialog')}
+    {replays && replays.getSnapshot().productId !== 'th09' && replays.getSnapshot().productId !== 'th09mp' && <ReplayDialog model={replays} open={navigation.infoDialogOpen('replayDialog')} onCloseRequest={() => navigation.closeInfoDialog('replayDialog')}
       onImportRequest={() => {const product = replays.getSnapshot().productId; if (product) void session.chooseReplayFile(product).catch(session.reportError);}}
       onDropFile={async file => {const product = replays.getSnapshot().productId; if (product) await session.importFile('replay', file, product);}}
       onImportError={error => {session.feedback.status(t('status.errorReason', {reason: errorText(error)})); session.feedback.toast(t('replay.importFailed', {reason: errorText(error)}));}}/>}

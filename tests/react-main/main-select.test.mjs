@@ -171,10 +171,13 @@ test('open-menu geometry is recomputed after committed option replacement, using
   // Controlled numerical measurements only, not a browser layout claim.
   owner.trigger.getBoundingClientRect=()=>new env.window.DOMRect(20,720,200,30);
   Object.defineProperty(owner.menu,'scrollHeight',{configurable:true,get:()=>owner.menu.children.length*40});
-  await act(()=>owner.trigger.click());const initial=owner.menu.style.cssText;
+  await act(()=>owner.trigger.click());
+  const geometry=()=>owner.menu.style.cssText.replace(/--select-font-size:\s*[^;]+;\s*/g,'');
+  const initial=geometry();
+  if(kind==='react')assert.equal(owner.menu.style.getPropertyValue('--select-font-size'),env.window.getComputedStyle(owner.trigger).fontSize,'menu inherits its shared trigger typography');
   if(owner.controller){owner.select.innerHTML='<option value="a">A</option>';owner.controller.syncCustomSelect(owner.select);}
   else await act(()=>owner.root.render(owner.render({},React.createElement('option',{value:'a'},'A'))));
-  assert.notEqual(initial,owner.menu.style.cssText);traces.push([initial,owner.menu.style.cssText]);await mounts.pop()();
+  assert.notEqual(initial,geometry());traces.push([initial,geometry()]);await mounts.pop()();
  }
  assert.deepEqual(traces[1],traces[0]);assert.deepEqual(traces[2],traces[0]);
 });

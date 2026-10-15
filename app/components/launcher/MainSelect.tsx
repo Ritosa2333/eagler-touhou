@@ -12,7 +12,7 @@ function acquire(t: Translate) {
     if (dialog) return dialog;
     const fullscreen = document.fullscreenElement || (document as Document & {webkitFullscreenElement?: Element | null}).webkitFullscreenElement;
     const player = document.getElementById('player');
-    return player && fullscreen === player ? player : document.body;
+    return player && fullscreen instanceof HTMLElement && player.contains(fullscreen) ? fullscreen : document.body;
   }}), owners: 0};
   const entry = shared; entry.owners++; entry.controller.setTranslate(t);
   return {controller: entry.controller, release() {

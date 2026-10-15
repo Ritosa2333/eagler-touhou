@@ -47,12 +47,15 @@ import {createMetadataRetry} from '../services/metadata-retry';
 import {createAppShellService, type AppShellOptions} from '../services/app-shell';
 import {createBrowserPorts} from '../services/browser-ports';
 import {createFileActions, type ImportFileKind} from '../services/files';
+import {createReplayStorageReader} from '../services/replay-storage';
 import {errorText} from '../services/error-text';
 import {launcherBaseUrl} from '../navigation/addresses';
 import type {SettingsActions} from '../components/settings/types';
 import type {InformationDialogId, HostSelection, SurfaceContext, Surface} from '../navigation/surface-navigation';
 
 export interface BrowserNavigationPorts {
+  /** Current parent selection, restored when an in-player browser changes mode. */
+  productId?: ProductId | null;
   hasSelection: boolean;
   applyHostSelection(selection: HostSelection): void;
   syncSelectionFromRoute(): ProductId | null;
@@ -364,6 +367,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   async function requestRuntimeClose({nativeExit = false}: {nativeExit?: boolean} = {}): Promise<boolean> {
     const owner = requiredRuntime();
+    const replayReturnProduct = snapshot.replayViewer ? navigation?.productId : null;
     // Pending preparation cancellation is fenced before asynchronous acquisition
     // can publish another document. A launched writer remains intact until sync.
     if (!owner.getSnapshot().launched) launchAbort?.abort(new RuntimeSessionSupersededError());
@@ -372,6 +376,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (!await owner.close({decide: closeDecision, discardUnsaved: nativeExit,
       beforeReset: () => nativeTouch.exitPlayerFullscreen().catch(() => {})})) return false;
     gameData.clear(); if (titleNetwork.getSnapshot().open) roomSession?.service.resetRoomWithoutNavigation(); titleNetwork.close(false); transfer.hide(); startupError.close(); midi?.reset(); activeSettings = null; selectedReplayPath = undefined;
+    if (replayReturnProduct && settings.getSnapshot()?.context.productId !== replayReturnProduct) settings.hydrate(settingsContext(replayReturnProduct, snapshot.locale));
     publish({playerOpen: false, touchHelpOpen: false, startupError: null, roomLaunchStage: null, replayViewer: false}); return true;
   }
   const gameData = createGameDataImportModel({acquisition, translate: t,
@@ -494,7 +499,17 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     midi = createMidiBridge({runtime, external: externalMidi, loadSynth: ports.loadSynth, webAudioAvailable: audio, translate: t,
       frame: element, window, document, playerOpen: () => snapshot.playerOpen});
     unsubscribeRuntime = runtime.subscribe(() => {const current = runtime!.getSnapshot(); if (calibration.getSnapshot().epoch !== (current.epoch ?? 0)) calibration.reset(current.epoch ?? 0); publish({runtime: current}); roomSession?.sync(); if (invalidatedSettingsEpoch !== null) queueMicrotask(retireChangedSettings);});
+    const replayStorage = createReplayStorageReader(() => ({indexedDB: window.indexedDB, keyRange: (window as Window & {IDBKeyRange: typeof IDBKeyRange}).IDBKeyRange}));
     replays = createReplayModel({runtime, prepareFiles, prepareViewer: prepareReplayWorkspace, releasePrepared, translate: stringTranslate,
+      storage: {async read(product, selection) {
+        const owner = requiredRuntime(), state = owner.getSnapshot(), variant = isMultiplayerProductId(product) ? 'multiplayer' : 'normal';
+        // Flush only an already-owned matching Runtime. Never start/replace a
+        // game to list or download, and never hydrate an active writer from IDB.
+        if (state.ready && state.game === gameIdForProduct(product) && state.runtimeVariant === variant && state.epoch !== null) {
+          await owner.withFileSession(state.game, access => access.sync(), {readOnly: true, runtimeVariant: variant, epoch: state.epoch});
+        }
+        return replayStorage.read(product, selection);
+      }},
       prompt: (message, initial) => window.prompt(message, initial), confirm: decisions.askConfirmation,
       download: ports.download, toast: feedback.toast, afterPaint: ports.afterPaint,
       closeViewer: () => {if (snapshot.replayViewer) void requestRuntimeClose().catch(reportError);},
@@ -657,7 +672,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (state.launched) return Promise.reject(new Error('请先退出当前游戏'));
     publish({playerOpen: true, replayViewer: true, touchHelpOpen: false});
     replayPreparation = configuredLaunch(product, {multiplayer: isMultiplayerProductId(product) ? {kind: 'replay'} : undefined, replayWorkspace: true, throwErrors: true}).then(() => {
-      if (!replays?.getSnapshot().open || !owner.getSnapshot().launched) throw new RuntimeSessionSupersededError();
+      if (!replays?.getSnapshot().open || replays.getSnapshot().productId !== product || !owner.getSnapshot().launched) throw new RuntimeSessionSupersededError();
+    }).catch(error => {
+      const current = owner.getSnapshot();
+      if (!current.launched && current.epoch === null && replays?.getSnapshot().productId === product) publish({playerOpen: false, replayViewer: false});
+      throw error;
     }).finally(() => {replayPreparation = null;});
     return replayPreparation;
   }
@@ -843,7 +862,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       catch {if (!disposed) feedback.toast(t('touch.orientationFailed'));}
       finally {playerOrientationPending = false; publish({});}
     },
-    async togglePlayerFullscreen() {try {if (nativeTouch.isFullscreen()) await nativeTouch.exitPlayerFullscreen(); else {const player = document.querySelector<HTMLElement>('#player'); if (player) await nativeTouch.enterFullscreen(player);}} catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}},
+    async togglePlayerFullscreen() {try {if (nativeTouch.isFullscreen()) await nativeTouch.exitPlayerFullscreen(); else {const player = document.querySelector<HTMLElement>('#player.replay-workspace .player-stage') ?? document.querySelector<HTMLElement>('#player'); if (player) await nativeTouch.enterFullscreen(player);}} catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}},
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,
     async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAccept); if (file) {if (!files) throw new Error('File service is not attached'); await activity(() => files!.importFile('replay', file, product));}},
     async warnDiscouragedBrowser(isCurrent: () => boolean = () => true): Promise<boolean> {
