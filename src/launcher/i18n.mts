@@ -42,8 +42,8 @@ const entries = [
   ],
   [
     'room.th09SpectatorHint',
-    '可中途加入，从本局开头观看，也可手动向前快进。',
-    'Join during play, watch from the start of this match, or fast-forward manually.',
+    '中途加入从当前局开头观看。已接收的内容可暂停、快进或倒退，离开后清除本地历史。',
+    'Join from the start of the current match. Pause, fast-forward or rewind received history. Leaving spectating clears it.',
   ],
   ['room.spectatorJoined', '已加入旁观', 'Joined as spectator'],
   ['room.loadingSpectator', '正在加载观战', 'Loading spectator playback'],

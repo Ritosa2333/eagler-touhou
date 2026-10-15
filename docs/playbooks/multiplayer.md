@@ -222,6 +222,18 @@ directory. Room sessions and shared room settings remain owned by the Launcher.
 - TH06MP/TH07MP title repositories: title-specific rollback inventories,
   gameplay semantics and transport acceptance evidence.
 
+## TH09 spectator local history
+
+TH09 spectators retain their own received confirmed packets locally until they
+leave. A complete v2 initializer permits restoring an earlier match in the same
+viewer and re-simulating to a fixed target without reconnecting. The timeline
+joins gameplay input counts, excluding menu gaps, and distinguishes match marks
+from round marks. Rebuilding a world does not move the visible thumb to zero.
+This does not expand late-join bootstrap: the relay still replaces its history
+at every match initializer and sends a new viewer only the current match from
+its start. Earlier local matches belong only to viewers who received them.
+`tests/test-th09-spectator-history-relay.mjs` verifies this admission boundary.
+
 ## Verification
 
 Check in this order:
