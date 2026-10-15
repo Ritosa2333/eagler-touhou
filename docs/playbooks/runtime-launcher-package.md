@@ -128,6 +128,31 @@ Blob HTML as the final carrier, hiding Runtime filesystem state inside a Service
 - Canonical title repositories — Runtime-specific implementation authority;
   historical temp/migration worktrees are provenance only.
 
+## TH09 independent Replay browsing
+
+TH09's Replay workspace lists and downloads persisted files through
+`app/services/replay-storage.ts`, a read-only compatibility adapter for the
+existing IDBFS v21 `FILE_DATA` store. It derives the ordinary root from the
+Product Catalog and preserves the Runtime's separate MP root. Missing databases
+are not created; unsupported schemas fail without migration or native fallback.
+
+Opening the workspace does not prepare a Runtime, DATA, language or music.
+The first Watch prepares the persistent viewer; subsequent files and backward
+seeks reuse that viewer. A matching already-owned Runtime must finish its normal
+save/sync before an independent read. This handshake concerns the current
+document's Runtime, not unsaved memory held by another browser tab.
+
+Native Runtime commands remain the only writer for import, rename, move and
+delete. The reader preserves Replay bytes, THMOTION export extensions and
+validated MP sidecars. ZIP code is available with the page so an offline folder
+download does not depend on fetching a module at the moment of download.
+
+Verify cold browsing with no game-resource requests, ordinary/MP root isolation,
+offline reopen/download and byte equality, save ACK before read, first Watch,
+hot file switch, and one-click return. Source gates are
+`tests/react-main/replay-storage.test.mjs`, `replays-model.test.mjs`, and the
+Replay cases in `browser-session-mounted.test.mjs`.
+
 ## Verification
 
 1. Verify catalog, descriptor, installed generation and required-file list independently.
