@@ -868,9 +868,9 @@ export class ThcrapRuntimeCompiler {
     return canonicalJson(resource, parsed);
   }
 
-  async processPack(resources) {
+  async processPack(resources, context = {}) {
     if (!Array.isArray(resources)) throw new TypeError("thcrap resources must be an array");
-    if(resources.some(resource=>resource.game==="th075")){if(!this.th075Compiler||resources.some(resource=>resource.game!=="th075"))throw Error("TH075 requires its own configured source lane");return this.th075Compiler.processPack(resources);}
+    if(resources.some(resource=>resource.game==="th075")){if(!this.th075Compiler||resources.some(resource=>resource.game!=="th075"))throw Error("TH075 requires its own configured source lane");return this.th075Compiler.processPack(resources,context);}
     const stringdefsSources = resources.filter(resource => resource?.sourceRole === "stringdefs");
     const normalResources = resources.filter(resource => resource?.sourceRole !== "stringdefs");
     const processed = [];

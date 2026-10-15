@@ -153,7 +153,7 @@ const handleThcrap = thcrapEnabled ? createThcrapHttpHandler({
   repository: process.env.EAGLER_THCRAP_REPOSITORY,
   cacheRoot: process.env.EAGLER_THCRAP_CACHE,
   maxAgeMs: Number.parseInt(process.env.EAGLER_THCRAP_MAX_AGE_MS || "900000", 10),
-  ...(runtimeCompiler ? { packProcessor: resources => runtimeCompiler.processPack(resources) } : {})
+  ...(runtimeCompiler ? { packProcessor: (resources,context) => runtimeCompiler.processPack(resources,context) } : {})
 }) : async () => false;
 
 function etag(info) {

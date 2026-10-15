@@ -4,6 +4,7 @@ import {tmpdir} from 'node:os';
 import {inflateSync} from 'node:zlib';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
+import {TH075_OPTION_DESCRIPTIONS} from './th075-menu-text.mjs';
 import {crc32} from '../integrations/thcrap.mjs';
 
 const run = promisify(execFile);
@@ -79,7 +80,7 @@ export class Th075ThcrapCompiler {
   constructor({archives=[],fontFile,fontLicense,python='python',parseJson=resource=>JSON.parse(Buffer.from(resource.bytes).toString('utf8'))}={}){
     this.base=new Th075BaseResources(archives);this.fontFile=fontFile;this.fontLicense=fontLicense;this.python=python;this.parseJson=parseJson;
   }
-  async processPack(resources){
+  async processPack(resources,{language}={}){
     const images=new Map(),text=new Map(),unsupported=[],glyphs=new Map();
     for(let c=32;c<127;c++)glyphs.set(String.fromCharCode(c),c);
     // Both bytes stay above ASCII: compiled quotes/commas cannot accidentally
@@ -136,6 +137,7 @@ export class Th075ThcrapCompiler {
       }
       if(!['themes.js','stringdefs.js','global.js','th075.js'].includes(resource.path)&&!resource.path.startsWith('th075/fonts/'))unsupported.push({path:resource.path,reason:'No TH075 data adapter'});
     }
+    const optionDescriptions=(TH075_OPTION_DESCRIPTIONS[language]||[]).map(value=>[...encode(value)]);
     if(!images.size&&!text.size)throw Error('No supported TH075 localization resources');
     if(!this.fontFile)throw Error('TH075 language compilation requires an explicit licensed font file');
     const temporary=await mkdtemp(resolve(tmpdir(),'eagler-th075-language-'));
@@ -150,7 +152,7 @@ export class Th075ThcrapCompiler {
       emit('fonts/localized-glyphs.bin',await readFile(resolve(temporary,'glyphs.bin')),'th075-glyphs/1');
       let license;if(this.fontLicense)license=await readFile(this.fontLicense);else{try{license=await readFile(new URL('../public/assets/fonts/OFL-Unifont.txt',import.meta.url));}catch{license=await readFile(new URL('../assets/fonts/OFL-Unifont.txt',import.meta.url));}}
       emit('fonts/LICENSE.txt',license,'text');
-      emit('localization/options.json',jsonBytes({schema:'th075-localization/1',imageBanks:images.size,textResources:text.size,glyphs:glyphs.size,unsupported,source:'thcrap',storyDialogue:'Japanese fallback where the selected patch has no dialogue resource'}),'json');
+      emit('localization/options.json',jsonBytes({schema:'th075-localization/1',imageBanks:images.size,textResources:text.size,glyphs:glyphs.size,optionDescriptions,unsupported,source:'thcrap',storyDialogue:'Japanese fallback where the selected patch has no dialogue resource'}),'json');
       return result;
     }finally{await rm(temporary,{recursive:true,force:true});}
   }

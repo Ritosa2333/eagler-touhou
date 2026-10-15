@@ -59,6 +59,7 @@ async function localInputFingerprint() {
     resolve(project, "integrations/thcrap.mjs"),
     resolve(project, "server/thcrap-compiler.mjs"),
     resolve(project, "server/th075-thcrap-compiler.mjs"),
+    resolve(project, "server/th075-menu-text.mjs"),
     resolve(project, "scripts/th075-language-assets.py"),
     resolve(project, "server/thcrap-ascii-contract.mjs"),
     resolve(project, "server/thcrap-string-contract.mjs"),
@@ -143,7 +144,7 @@ const sourceFetch=async(url,options)=>{
 const downloaded = await downloadThcrapPack(pack, {fetchImpl:sourceFetch,
   onProgress: ({ completed, total, path }) => process.stderr.write(`\r${completed}/${total} ${path}                    `)
 });
-const resources = await compiler.processPack(downloaded.resources);
+const resources = await compiler.processPack(downloaded.resources,{language});
 
 function collectStrings(value, output) {
   if (typeof value === "string") {

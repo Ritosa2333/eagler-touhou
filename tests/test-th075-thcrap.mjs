@@ -44,3 +44,15 @@ test('TH075 compiler emits replacements only and binds text to the original CRC'
   assert.ok(!patch.includes(Buffer.from('keep story')),'Language pack must not contain the unchanged Japanese script');
   assert.equal(result.find(r=>r.targetPath.endsWith('glyphs.bin')).bytes.subarray(0,4).toString(),'GG75');
 });
+
+test('TH075 menu descriptions use the same validated glyph bank as language text', {skip:!process.env.TH075_TEST_FONT},async()=>{
+  for(const language of ['lang_zh-hans','lang_en']){
+    const compiler=new Th075ThcrapCompiler({fontFile:process.env.TH075_TEST_FONT});
+    compiler.base={read:async()=>cryptTh075(Buffer.from('B0\nN()"\\cd0c0c0ending"\n'))};
+    const resources=await compiler.processPack([{game:'th075',path:'th075/character/reimu/scenario.txt.jdiff',bytes:Buffer.from(JSON.stringify({'1':{lines:['localized']}}))}],{language});
+    const options=JSON.parse(resources.find(r=>r.path==='localization/options.json').bytes);
+    assert.equal(options.optionDescriptions.length,7);
+    for(const bytes of options.optionDescriptions){assert.equal(bytes[0],1);assert.equal(bytes.at(-1),2);assert.ok(bytes.every(n=>Number.isInteger(n)&&n>=0&&n<=255));}
+    assert.ok(Buffer.from(options.optionDescriptions[0]).includes(Buffer.from('\\n')));
+  }
+});

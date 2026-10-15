@@ -57,3 +57,9 @@ aliases, fits seven 512px spell names to original 256px slots, and reflows six
 ending speaker groups across original pages. It never applies DLL/EXE/PAT
 patches or changes script control flow. Full legacy layout parity and full
 ending playthrough are not established by resource/native/browser checks.
+
+Option help is compiled executable text rather than option.dat artwork.
+The seven descriptions are encoded in localization/options.json using the
+pack glyph bank; lang_en follows the legacy English v1.1 DLL literals, and
+lang_zh-hans follows the development package Chinese help. Runtime validates
+all seven byte arrays and preserves Japanese when the field is missing.

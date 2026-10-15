@@ -30,7 +30,7 @@ try{
   const response=await fetch('https://srv.thpatch.net/lang_en/'+path);if(!response.ok)throw Error('Unable to read thpatch English '+path);
   adapted.resources.push({game:'th075',path,bytes:Buffer.from(await response.arrayBuffer())});
  }
- const resources=await compiler.processPack(adapted.resources);
+ const resources=await compiler.processPack(adapted.resources,{language:'lang_en'});
  const options=resources.find(r=>r.path==='localization/options.json');
  options.bytes=Buffer.from(JSON.stringify({...JSON.parse(options.bytes),source:'thcrap + IaMP English v1.1',english:{source:'IaMP English Translation v1.1 (2009-02-28)',archiveSha256:digest,homepage:'http://iamp.mizuumi.net/index.php/English_translation',mirror:'https://www.touhou.pl/?cat=7&site=download/files',credits:{translation:'Touhou Wiki, Akira, sibladeko',script:'Mefidex, TMN',graphics:'Halbarad',programming:'mauve'},reflowedSpeakerGroups:adapted.reflowed,fittedImages:fitted,scope:'Menu, selection, spell and stage artwork; Story, endings, win quotes; Music Room. Japanese controls preserved; no EXE, DLL or PAT patches.'}}));
  const pack={game:'th075',language:'lang_en',title:'English',dependencies:['IaMP English Translation v1.1','thpatch/lang_en'],assets:[{path:'IaMP-English-v1.1/th075e.dat',crc32:0},{path:digest,crc32:0},...adapted.resources.filter(r=>r.path==='themes.js'||r.path==='th075/musiccmt.js').map(r=>({path:r.path,crc32:crc32(r.bytes)}))]};
