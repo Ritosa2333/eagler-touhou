@@ -24,7 +24,7 @@ async function open(page,music,touch=false){
   const modes=await page.$$eval('#musicSelect option',nodes=>nodes.filter(n=>!n.disabled).map(n=>n.value));
   assert.ok(!modes.includes('midi'),modes);const selected=music?modes.find(v=>v.includes('ogg')):'none';assert.ok(selected,modes);
   if(touch){await page.$eval('#touchToggle',e=>{if(e.getAttribute('aria-checked')!=='true')e.click();});await page.evaluate(()=>document.querySelector('#decisionConfirm')?.click());}
-  console.log('select music',selected);await page.select('#musicSelect',selected);await page.waitForFunction(()=>{const e=document.querySelector('#launch');return e&&!e.disabled&&e.getBoundingClientRect().height>0;});await page.$eval('#launch',e=>e.click());console.log('launch requested');
+  console.log('select music',selected);if(process.env.TH075_TEST_LANGUAGE)await page.select('#languageSelect',process.env.TH075_TEST_LANGUAGE);await page.select('#musicSelect',selected);await page.waitForFunction(()=>{const e=document.querySelector('#launch');return e&&!e.disabled&&e.getBoundingClientRect().height>0;});await page.$eval('#launch',e=>e.click());console.log('launch requested');
   const deadline=Date.now()+120000;let runtime,lastLog=Date.now();
   while(Date.now()<deadline){
     await page.evaluate(()=>{if(document.querySelector('#decisionDialog[open]'))document.querySelector('#decisionConfirm')?.click();document.querySelector('#touchHelpClose')?.click();});

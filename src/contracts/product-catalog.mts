@@ -188,7 +188,7 @@ export const PRODUCT_GAMES = Object.freeze({
     package: Object.freeze({dataFileId:"game-data",dataTarget:"/th075.data",maxImportBytes:512 * 1024 * 1024,
       musicSourceDirectories:Object.freeze({ogg:"music"}),musicMounts:Object.freeze({ogg:"/music"})}),
     replay: Object.freeze({prefix:"th075",extensions:Object.freeze(["rep"]),naming:"filename"}),
-    features: Object.freeze({thprac:false,languages:false,focusHitbox:false}),
+    features: Object.freeze({thprac:false,languages:true,focusHitbox:false}),
   }),
   th08: Object.freeze({
     thpracExtraFunctionKeys: Object.freeze(["U"] as const),

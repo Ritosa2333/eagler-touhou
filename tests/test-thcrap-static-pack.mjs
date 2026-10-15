@@ -48,3 +48,5 @@ console.log(JSON.stringify({ schema: pack.manifest.schema, files: pack.manifest.
 const th15Pack = createStaticThcrapPack({pack: {game: "th15", language: "lang_zh-hans", assets: []}, resources: [{targetPath: "/thcrap/th15/st01a.msg", bytes}]});
 assert.deepEqual(Buffer.from(unzipSync(th15Pack.archive)["thcrap/th15/st01a.msg"]), bytes);
 assert.equal(th15Pack.manifest.runtimeVersion, "independent");
+const th075Pack=createStaticThcrapPack({pack:{game:'th075',language:'lang_zh-hans',assets:[]},resources:[{targetPath:'/thcrap/th075/fonts/localized-glyphs.bin',bytes}]});
+assert.equal(th075Pack.manifest.game,'th075');assert.deepEqual(Buffer.from(unzipSync(th075Pack.archive)['thcrap/th075/fonts/localized-glyphs.bin']),bytes);
