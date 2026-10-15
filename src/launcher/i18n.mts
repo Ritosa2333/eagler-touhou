@@ -6,6 +6,17 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
+  ['touch.fighting.light','轻攻击','Light attack'],
+  ['touch.fighting.heavy','重攻击','Heavy attack'],
+  ['touch.fighting.projectile','弹幕','Projectile'],
+  ['touch.fighting.dash','冲刺','Dash'],
+  ['help.fightingIntro','萃梦想采用格斗方向输入：前进、后退防御、跳跃和蹲下。A / B / C / D 对应四个动作键；组合方向可输入招式。','Use fighting directions to advance, hold back to guard, jump or crouch. A / B / C / D are the four action buttons; combine directions for special moves.'],
+  ['help.fightingMovement','移动、跳跃、蹲下和防御；菜单中选择','Move, jump, crouch and guard; select in menus'],
+  ['help.fightingA','A 轻攻击 / 确认','A light attack / confirm'],
+  ['help.fightingB','B 重攻击 / 取消','B heavy attack / cancel'],
+  ['help.fightingCD','弹幕攻击 / 冲刺','Projectile / dash'],
+  ['help.fightingNote','手机左侧轮盘输入方向，右侧 A / B / C / D 支持同时按住。菜单用轮盘选择，A 确认、B 返回，ESC 暂停。键盘和手柄可在游戏内 Option 调整。','Use the left joystick for directions. Hold the right A / B / C / D buttons together. Select menus with the joystick, confirm with A, go back with B, and pause with ESC. Configure keyboard and gamepad in Option.'],
+
   ['th09.elapsed', '已进行 {minutes} 分钟', '{minutes} min elapsed'],
   ['th09.matchInformation', '对局信息', 'Match information'],
   ['th09.watching', '有 {count} 个旁观者在观看', '{count} spectators watching'],

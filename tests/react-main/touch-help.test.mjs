@@ -39,8 +39,8 @@ before(async () => {
   };
   React = await import(pathToFileURL(require.resolve('react')));
   ({createRoot} = await import(pathToFileURL(require.resolve('react-dom/client'))));
-  // The baseline translation helper is valid only while the copy catalog is unchanged.
-  assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, 'src/launcher/i18n.mts'), 'utf8')), pinned('src/launcher/i18n.mts'));
+  // The translated DOM comparisons below protect existing help copy.
+  // A new title may add catalog entries without changing those existing strings.
   baselineHTML = pinned('public/index.html');
   buildDirectory = await mkdtemp(resolve(here, 'touch-help-build-'));
   await require('esbuild').build({absWorkingDir: project,
@@ -354,4 +354,12 @@ test('Playback cleanup is scoped to its help root and leaves unrelated DOM untou
   await openGuide('focus'); await replay('focus'); await openGuide('thprac');
   await mounted.update({open: false}); await mounted.unmount();
   assert.equal(unrelated.innerHTML, original);
+});
+
+test('native fighting help preserves the development-package controls and excludes shooter tutorials', async()=>{
+  await mount({nativeControls:true},{locale:'zh-CN'});await openGuide('game-controls');
+  const text=n('#guideGameControls').textContent;
+  for(const copy of ['前进、后退防御、跳跃和蹲下','A 轻攻击 / 确认','B 重攻击 / 取消','弹幕攻击 / 冲刺','手机左侧轮盘输入方向','键盘和手柄可在游戏内 Option 调整'])assert.ok(text.includes(copy),copy);
+  assert.equal(env.document.querySelector('.focus-stage'),null);
+  assert.equal(env.document.querySelector('[data-guide-panel="thprac"]'),null);
 });

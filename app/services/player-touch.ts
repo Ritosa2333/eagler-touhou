@@ -87,6 +87,24 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   function on<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: (event: HTMLElementEventMap[K]) => void, config?: AddEventListenerOptions) {
     element.addEventListener(type, listener, config); cleanup.push(() => element.removeEventListener(type, listener, config));
   }
+  const customOwners = new Map<string, Set<number>>();
+  const customActions = () => {const id=settings()?.gameId;if(!id)return null;const product=PRODUCT_GAMES[id];return 'touchActions' in product ? product.touchActions : null;};
+  function clearCustomActions(){customOwners.clear();if(controls.actionButtons!=null)controls.actionButtons=0;}
+  for(const [name,element] of Object.entries({fire:el.fire,bomb:el.bomb,focus:el.focus,function:el.functionKey})){
+    const change=(id:number,down:boolean)=>{
+      const declaration=customActions();if(!declaration)return;
+      const action=declaration[name as keyof typeof declaration];
+      let owners=customOwners.get(name);if(!owners){owners=new Set();customOwners.set(name,owners);}
+      if(down)owners.add(id);else owners.delete(id);
+      const bits=controls.actionButtons||0;controls.actionButtons=owners.size?bits|action.bit:bits&~action.bit;
+      publish();syncControls();
+    };
+    on(element,'pointerdown',event=>{if(ios||!customActions()||!allowed())return;event.preventDefault();event.stopImmediatePropagation();capture(element,event);change(event.pointerId,true);},{capture:true});
+    for(const type of ['pointerup','pointercancel','lostpointercapture'] as const)on(element,type,event=>{if(ios||!customActions())return;event.preventDefault();event.stopImmediatePropagation();change(event.pointerId,false);},{capture:true});
+    on(element,'touchstart',event=>{if(!ios||!customActions()||!allowed())return;event.preventDefault();event.stopImmediatePropagation();for(const touch of Array.from(event.changedTouches))change(touch.identifier,true);},{capture:true,passive:false});
+    for(const type of ['touchend','touchcancel'] as const)on(element,type,event=>{if(!ios||!customActions())return;event.preventDefault();event.stopImmediatePropagation();for(const touch of Array.from(event.changedTouches))change(touch.identifier,false);},{capture:true,passive:false});
+    on(element,'click',event=>{if(!customActions())return;event.stopImmediatePropagation();if(event.detail===0&&allowed()){change(-1,true);const timer=win.setTimeout(()=>{timers.delete(timer);change(-1,false);},70);timers.add(timer);}},{capture:true});
+  }
   function capture(element: HTMLElement, event: PointerEvent) {try {element.setPointerCapture(event.pointerId);} catch {}}
   function setFocus(value: boolean) {
     if (!context().launched || settings()?.options.touchFocusMode === 'two-finger' || controls.focusEnabled === value) return;
@@ -173,12 +191,12 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     on(button, 'click', event => {if (event.detail === 0 && allowed() && !(button === el.fire && heldMode())) activate();});
   }
   function cancelPointers() {
-    functionOwner.cancel(); direct.cancel(false); joystick.reset(false); controls.focusEnabled = false; publish();
+    clearCustomActions(); functionOwner.cancel(); direct.cancel(false); joystick.reset(false); controls.focusEnabled = false; publish();
     postTouchCancel(context()); syncControls();
   }
   function reset(notify = true) {
     const previousMuted = muted; if (!notify) muted = true;
-    releaseHeldTouchFire(); functionOwner.cancel(); direct.cancel(notify); joystick.reset(false);
+    clearCustomActions(); releaseHeldTouchFire(); functionOwner.cancel(); direct.cancel(notify); joystick.reset(false);
     if (raf !== null) win.cancelAnimationFrame(raf); raf = null;
     for (const timer of timers) win.clearTimeout(timer); timers.clear();
     controls.focusEnabled = false; controls.bombSerial = 0; controls.escapeSerial = 0; thpracMenuOpen = false;
@@ -188,7 +206,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     if (disposed) return;
     const current = runtime.getInputContext();
     if (identity.epoch !== current.epoch || identity.target !== current.target || identity.game !== current.game) {reset(false); identity = current;}
-    if (!allowed()) {releaseHeldTouchFire(); functionOwner.cancel(); direct.cancel(); joystick.reset(false);}
+    if (!allowed()) {clearCustomActions(); releaseHeldTouchFire(); functionOwner.cancel(); direct.cancel(); joystick.reset(false);}
     const next = runtime.getMidiEventContext();
     if (native?.epoch !== next?.epoch || native?.document !== next?.document || native?.target !== next?.target) {
       unbindNative?.(); unbindNative = null; native = next;

@@ -86,6 +86,10 @@
         "multiplayer": { "features": { "thcrap": true, "thprac": false }, "cache": {} }
       }
     },
+    "th075": {
+      "builder": "prebuilt", "workspaceRepository": "th075",
+      "variants": { "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} } }
+    },
     "th08": {
       "builder": "prebuilt",
       "workspaceRepository": "th08",

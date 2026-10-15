@@ -17,7 +17,9 @@ export function useTouchGuidePlayback(root: RefObject<HTMLDivElement | null>, op
     const documentObj = help.ownerDocument, windowObj = documentObj.defaultView!;
     let timer: ReturnType<typeof setTimeout> | null = null, shotTimer: ReturnType<typeof setInterval> | null = null;
     const animations = new Set<Animation>();
-    const layer = help.querySelector<HTMLElement>('.shot-stream')!;
+    const layer = help.querySelector<HTMLElement>('.shot-stream');
+    // Text-only native control guides have no shooting animation owner.
+    if(!layer)return;
     const panels = help.querySelectorAll<HTMLElement>('[data-guide-panel]');
     for (const panel of panels) panel.classList.remove('is-playing', 'is-finished');
     layer.replaceChildren();

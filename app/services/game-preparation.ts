@@ -145,7 +145,8 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
     input.onWarning?.(t('language.launchFallback', {language: entry?.title || entry?.id || t('language.fallbackName'), reason: preparationErrorText(error)}));
   }
   guard();
-  const completeOgg = input.settings.gameId === 'th09' && input.multiplayer?.kind === 'room';
+  const musicPolicy=PRODUCT_GAMES[input.settings.gameId].musicRuntime;
+  const completeOgg = ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) || input.settings.gameId === 'th09' && input.multiplayer?.kind === 'room';
   ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,
     completeSet: completeOgg,
     downloadSignal: input.musicDownloadSignal, onMusicDownloadActivity: input.onMusicDownloadActivity,

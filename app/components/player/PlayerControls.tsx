@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
+import {PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
 import type { BrowserSession } from '../../session/browser-session';
 import {
   bindPlayerInput,
@@ -275,6 +276,7 @@ function PlayerUtilities({
   return (
     <>
       <TouchHelp
+        nativeControls={'touchActions' in PRODUCT_GAMES[settings.gameId]}
         open={state.touchHelpOpen}
         onCloseRequest={session.closeTouchHelp}
         touchEnabled={settings.options.touchEnabled}

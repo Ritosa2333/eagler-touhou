@@ -1,7 +1,7 @@
 import {loadGameVersion, persistGameVersion, GAME_VERSIONS} from "../../package/game-version.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {
-  applySharedTouchPreferences, loadOrInitializeSharedTouchPreferences,
+  gamePreferenceStorageKey, applySharedTouchPreferences, loadOrInitializeSharedTouchPreferences,
   loadStoredGamePreferences, loadStoredLanguagePreference, persistSharedTouchPreferences,
   persistStoredGamePreferences, touchMovementUsesJoystick,
   type GameOptions, type GamePreferenceStorage, type MusicMode,
@@ -130,6 +130,12 @@ export function createGameSettingsModel({storage, onChange}: {
         webAudioAvailable: context.musicAvailability.audio,
         externalMidiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && context.webMidiAvailable}});
     const options = applySharedTouchPreferences(normalized.options, loadOrInitializeSharedTouchPreferences(storage, normalized.options));
+    const product=PRODUCT_GAMES[gameId];
+    if('touchMovementModes' in product){
+      if(!(product.touchMovementModes as readonly string[]).includes(options.touchMovementMode))options.touchMovementMode=product.touchMovementModes[0];
+      options.touchFocusMode='hold-button';
+      try{if(!storage?.getItem(gamePreferenceStorageKey(preferenceId)))options.touchEnabled=context.mobile;}catch{}
+    }
     if (multiplayer) options.thpracEnabled = false;
     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,

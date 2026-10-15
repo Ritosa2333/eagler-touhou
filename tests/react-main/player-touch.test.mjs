@@ -48,6 +48,23 @@ function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-
   }; active.push(f); return f;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+test('declared native actions hold A/B/C/D together without keyboard or auto-fire ownership', () => {
+  const f=fixture({game:'th075'});
+  for(const [index,name] of ['fire','bomb','focus','functionKey'].entries())f.pointer(name,'pointerdown',{pointerId:index+1});
+  assert.equal(f.sent.at(-1).actionButtons,15);
+  assert.equal(f.sent.at(-1).fireEnabled,false);
+  assert.equal(f.sent.filter(m=>m.command==='keyboard').length,0);
+  f.pointer('bomb','pointercancel',{pointerId:2});
+  assert.equal(f.sent.at(-1).actionButtons,11);
+  f.touch.cancelPointers();assert.equal(f.sent.at(-1).actionButtons,0);
+});
+test('iOS native actions retain the other finger and cancel on epoch replacement', () => {
+  const f=fixture({game:'th075',ios:true});
+  f.iosEvent('fire','touchstart',[{identifier:1},{identifier:2}]);
+  f.iosEvent('fire','touchend',[{identifier:1}]);assert.equal(f.sent.at(-1).actionButtons,1);
+  f.iosEvent('focus','touchstart',[{identifier:3}]);assert.equal(f.sent.at(-1).actionButtons,3);
+  f.epoch(2);f.touch.syncControls();assert.equal(f.sent.at(-1).actionButtons,0);
+});
 test('direct contacts preserve independent IDs and normalized iframe coordinates with gesture-cached rect', () => {
   const f = fixture(); f.pointer('directSurface', 'pointerdown'); f.pointer('directSurface', 'pointermove', {clientX: 410, clientY: 620});
   f.pointer('directSurface', 'pointerdown', {pointerId: 2, clientX: 110, clientY: 170});

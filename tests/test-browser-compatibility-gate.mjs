@@ -1,3 +1,4 @@
+import {STATIC_APP_SHELL_FILES} from "../lib/frontend-static-manifest.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -12,7 +13,7 @@ assert.ok(scripts.length >= 2, "compatibility gate and boot script should both b
 const gate = scripts[0][1];
 assert.ok(index.indexOf(scripts[0][0]) >= 0, "compatibility gate must be present in bootstrap source");
 assert.doesNotMatch(gate, /\bconst\b|\blet\b|=>|\?\.|Object\.hasOwn|URLSearchParams/, "gate must work in old browsers");
-assert.match(manifest, /\["compatibility\.html", true\]/, "compatibility page must ship and be precached");
+assert.ok(STATIC_APP_SHELL_FILES.includes("compatibility.html"), "compatibility page must ship and be precached");
 assert.doesNotMatch(guide, /<link\b|<script\s+type="module"/i, "guide must not depend on external assets or modules");
 for (const snippet of ["id=\"computer\"", "id=\"phone\"", "id=\"graphics\"", "supermium.net", "--use-angle=gl", "卓易通", "Via", "get.webgl.org/webgl2"]) {
   assert.ok(guide.includes(snippet), `missing guide content: ${snippet}`);

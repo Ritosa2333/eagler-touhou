@@ -24,6 +24,8 @@ export interface TouchRuntimeContext {
 }
 
 export interface TouchControlsSnapshot {
+  /** Held native action bits for a product-declared button profile. */
+  actionButtons?: number;
   thpracMobilePanelsEnabled?: boolean;
   thpracMobilePanelsVisible?: boolean;
   fireEnabled: boolean;

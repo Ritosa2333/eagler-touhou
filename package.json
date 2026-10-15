@@ -119,7 +119,11 @@
     "test:ui-rewrite": "node scripts/ui-rewrite/check-runtime.mjs && node --test --test-concurrency=1 tests/react-main/*.test.mjs && node tests/react-main/site-notice.run.mjs",
     "build:ui-rewrite": "react-router build",
     "dev:ui-rewrite": "react-router dev --host 127.0.0.1",
-    "typecheck:ui-rewrite:tools": "tsc -p tsconfig.ui-rewrite.tools.json"
+    "typecheck:ui-rewrite:tools": "tsc -p tsconfig.ui-rewrite.tools.json",
+    "test:th075:browser": "node tests/test-th075-launcher-browser.mjs",
+    "test:offline-game:browser": "node tests/browser/test-offline-game.mjs",
+    "test:react-shell-offline:browser": "node tests/browser/test-react-shell-offline.mjs",
+    "test:th09-panels:browser": "node tests/browser/test-th09-duel-card-browser.mjs && node tests/browser/test-th09-spectator-continuity.mjs && node tests/browser/test-th09-spectator-directory.mjs && node tests/browser/test-th09-spectator-panel.mjs && node tests/browser/test-th09-spectator-timeline.mjs"
   },
   "dependencies": {
     "fflate": "0.8.3",

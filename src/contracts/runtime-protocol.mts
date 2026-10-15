@@ -267,6 +267,8 @@ export interface RuntimeCommandPayloads {
   keyboard: { down: boolean; code: string };
   "keyboard-clear": Record<string, never>;
   "touch-controls": {
+    /** Product-declared native action bits; omitted by ordinary shooting profiles. */
+    actionButtons?: number;
     thpracMobilePanelsEnabled?: boolean;
     thpracMobilePanelsVisible?: boolean;
     fireEnabled: boolean;
