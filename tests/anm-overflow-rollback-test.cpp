@@ -26,7 +26,7 @@ namespace anm_overflow_oracle {
 using namespace th10;
 using namespace th10::browser;
 using Pool=decltype(std::declval<AnimationEngine&>().rollback_animation_overflow);
-constexpr std::size_t Capacity=2048,NativeCapacity=4096;
+constexpr std::size_t Capacity=std::extent_v<decltype(std::declval<Pool&>().occupied)>,NativeCapacity=4096;
 constexpr std::size_t Payload=sizeof(AnmVm),Stride=sizeof(Pool::Storage);
 static_assert(sizeof(void*)==4&&Stride>=Payload);
 static_assert(std::is_trivially_copyable_v<Pool>&&std::is_trivially_copyable_v<AnmManager>);

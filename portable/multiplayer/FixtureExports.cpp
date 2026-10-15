@@ -7,12 +7,61 @@
 #include "../../th10_web/cpp/game/PlayerFrame.hpp"
 #include "../../th10_web/cpp/game/Dialogue.hpp"
 #include "../../th10_web/cpp/game/HighRefresh.hpp"
+#include "../../th10_web/cpp/platform/Credits.hpp"
 
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #error Multiplayer fixtures cannot enter an ordinary build
 #endif
 
 using namespace th10;
+extern "C" __attribute__((export_name("mp_fixture_animation_counts")))
+const u32* mp_fixture_animation_counts(browser::Application* app){
+    static u32 values[3]{};values[0]=values[1]=0;values[2]=multiplayer::kAnimationOverflowCapacity;
+    if(app){for(auto used:app->engine.manager.occupied)values[0]+=used?1u:0u;
+        for(auto used:app->engine.rollback_animation_overflow.occupied)values[1]+=used?1u:0u;}
+    return values;
+}
+// Contact the actual current boss through the next native Enemy update. Only
+// the diagnostic build exports this controlled starting-position fixture.
+extern "C" __attribute__((export_name("mp_fixture_boss_contact")))
+u32 mp_fixture_boss_contact(browser::Application* app,u32 seat,u32 final_death){
+    if(!app||!app->world||app->multiplayer_frame_open)return 0;
+    auto& world=*app->world;
+    if(!world.actors.enemies||seat>=world.player_count||!world.pilots[seat].player)return 0;
+    auto* boss=world.actors.enemies->bosses[0];
+    if(!boss||(boss->state.flags&0x12)||boss->state.collision_immunity.current>0||
+       (world.actors.gui&&world.actors.gui->dialogue))return 0;
+    const auto point=boss->state.current.position;
+    if(point.x< -180||point.x>180||point.y<32||point.y>420)return 0;
+    auto& player=*world.pilots[seat].player;
+    player.position=boss->state.current.position;
+    player.fixed_position={i32(player.position.x*100),i32(player.position.y*100)};
+    player.collision_bounds.minimum={player.position.x-player.hitbox_half_size.x,player.position.y-player.hitbox_half_size.y,0};
+    player.collision_bounds.maximum={player.position.x+player.hitbox_half_size.x,player.position.y+player.hitbox_half_size.y,0};
+    player.state=1;player.invulnerability.current=0;
+    auto& economy=world.pilots[seat].game;economy.lives=final_death?0:8;
+    multiplayer::ReportNativeSeatOutcome(world.cooperation,u8(seat),multiplayer::LifeState::Alive,
+        std::int16_t(economy.lives),economy.power);
+    if(final_death)for(u32 other=0;other<world.player_count;++other)if(other!=seat){
+        auto& teammate=world.pilots[other];teammate.game.lives=8;
+        teammate.player->state=1;teammate.player->invulnerability.current=10000;
+        multiplayer::ReportNativeSeatOutcome(world.cooperation,u8(other),multiplayer::LifeState::Alive,8,teammate.game.power);
+    }
+    if(world.rollback)world.rollback->Clear();
+    return world.actors.spell&&(world.actors.spell->spell_flags&1)&&world.actors.spell->elapsed.current>59?2:1;
+}
+extern "C" __attribute__((export_name("mp_fixture_ending")))
+const i32* mp_fixture_ending(browser::Application* app,u32 enter){
+    static i32 values[8]{};std::fill(values,values+8,0);
+    if(!app)return values;
+    if(enter&&app->world&&app->world->actors.session)app->state.pending_screen=14;
+    values[0]=app->value.screen;values[1]=app->state.pending_screen;
+    const auto& input=app->input.player_profiles[0].input;
+    values[2]=input.raw;values[3]=input.raw_pressed;
+    if(app->credits&&app->credits->value){auto& ending=*app->credits->value;
+        values[4]=ending.frames;if(ending.script){values[5]=ending.script->script_time.current;values[6]=ending.script->wait.current;values[7]=ending.script->flags;}}
+    return values;
+}
 extern "C" __attribute__((export_name("mp_fixture_drop_rules")))
 const i32* mp_fixture_drop_rules(browser::Application* app,u32 kind,i32 x){
     static i32 out[8]{};std::fill(out,out+8,0);

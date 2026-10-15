@@ -308,7 +308,7 @@ AnmHashes hash_anm_parts(const browser::AnimationEngine& engine){
         result.pooled=hash_value(i,result.pooled);
         result.pooled=hash_anm_vm_authored(manager.pool[i],result.pooled);
     }
-    for(u32 i=0;i<2048;++i)if(engine.rollback_animation_overflow.active(i)){
+    for(u32 i=0;i<multiplayer::kAnimationOverflowCapacity;++i)if(engine.rollback_animation_overflow.active(i)){
         result.overflow=hash_value(i,result.overflow);
         result.overflow=hash_anm_vm_authored(*static_cast<const AnmVm*>(engine.rollback_animation_overflow.at(i)),result.overflow);
     }
@@ -475,7 +475,7 @@ u32 hash_anm_portable(const browser::AnimationEngine& engine){
     for(u32 i=0;i<4096;++i)if(manager.occupied[i]){
         hash=hash_value(i,hash);hash=hash_anm_vm_portable(manager.pool[i],hash);
     }
-    for(u32 i=0;i<2048;++i)if(engine.rollback_animation_overflow.active(i)){
+    for(u32 i=0;i<multiplayer::kAnimationOverflowCapacity;++i)if(engine.rollback_animation_overflow.active(i)){
         hash=hash_value(i,hash);
         hash=hash_anm_vm_portable(
             *static_cast<const AnmVm*>(engine.rollback_animation_overflow.at(i)),hash);
@@ -737,7 +737,7 @@ const u32* multiplayer_canonical_hashes(browser::Application* app){
     for(const auto value:manager.occupied)occupied+=value?1u:0u;
     for(auto* node=manager.registry.world_head;node;node=node->next)++worldCount;
     for(auto* node=manager.registry.ui_head;node;node=node->next)++uiCount;
-    for(u32 i=0;i<2048;++i)overflowCount+=app->engine.rollback_animation_overflow.active(i)?1u:0u;
+    for(u32 i=0;i<multiplayer::kAnimationOverflowCapacity;++i)overflowCount+=app->engine.rollback_animation_overflow.active(i)?1u:0u;
     words[20]=manager.started_scripts;words[21]=manager.processed_count;words[22]=u32(manager.cursor);words[23]=manager.last_id;
     words[24]=occupied;words[25]=worldCount;words[26]=uiCount;words[27]=overflowCount;
     const u32 enemyManager=w.actors.enemies?hash_value(*w.actors.enemies):0;

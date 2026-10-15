@@ -6,6 +6,7 @@
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <eagler/netplay/SparsePoolCapture.hpp>
 #include "RollbackPoolCapture.hpp"
+#include "AnimationCapacity.hpp"
 #include <cstddef>
 #include <cstdint>
 
@@ -68,7 +69,7 @@ private:
     Netplay::SparsePoolCapture<2000> bullet_capture_{};
     Netplay::SparsePoolCapture<150> regular_capture_{};
     Netplay::SparsePoolCapture<2048> faith_capture_{};
-    RollbackPoolCapture<2048> overflow_capture_{};
+    RollbackPoolCapture<kAnimationOverflowCapacity> overflow_capture_{};
     RollbackPoolCapture<128> geometry_capture_{};
     RollbackPoolCapture<4096> callback_capture_{};
     RollbackPoolCapture<512> enemy_capture_{};

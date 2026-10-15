@@ -32,6 +32,7 @@ const ALLOCATION_SUFFIX='\r\n#else\r\n    return static_cast<AnmVm*>(std::malloc
 
 const driver=fileURLToPath(import.meta.url);
 const root=resolve(dirname(driver),'..');
+const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'third_party/eagler-common'));
 const sdk=process.env.WASI_SDK_PATH;
 if(!sdk)throw Error('Set WASI_SDK_PATH to an installed WASI SDK directory.');
 const compiler=resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++');
@@ -115,7 +116,9 @@ function dependencyPaths(files){
     const result=new Set(explicitSources);
     for(const file of files)for(const token of parseMakeDependencies(readFileSync(file,'utf8'))){
         const path=resolve(root,token),name=relative(root,path);
-        if(name==='..'||name.startsWith('..'+sep)||isAbsolute(name))
+        const commonName=relative(commonRoot,path);
+        const inCommon=commonName!=='..'&&!commonName.startsWith('..'+sep)&&!isAbsolute(commonName);
+        if((name==='..'||name.startsWith('..'+sep)||isAbsolute(name))&&!inCommon)
             throw Error('Project dependency outside checkout: '+path);
         result.add(path);
     }
@@ -131,7 +134,7 @@ const baseFlags=[
     '--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Werror','-Wno-unused-function',
     '-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1',
     '-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-strict-aliasing',
-    '-I',resolve(root,'third_party/eagler-common/include'),'-I',platform
+    '-I',resolve(commonRoot,'include'),'-I',platform
 ];
 if(sanitized)baseFlags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
@@ -151,7 +154,7 @@ const platformNames=['AnimationResources','TransitionResources','Textures','File
 const sharedSources=[
     ...gameNames.map(name=>'th10_web/cpp/game/'+name+'.cpp'),
     ...platformNames.map(name=>'th10_web/cpp/platform/'+name+'.cpp'),
-    'third_party/eagler-common/src/netplay/RollbackJournal.cpp',
+    resolve(commonRoot,'src/netplay/RollbackJournal.cpp').replaceAll('\\','/'),
     'tests/live-motion-disabled-stub.cpp'
 ];
 const units=[
@@ -212,7 +215,7 @@ function validateCases(result,legacyMode){
         'preclearMisses','budgetCases','budgetRejections','budgetUnexpectedSuccesses','budgetPayloadChanged',
         'positiveControlFailures','engineConstructors','engineDestructors','scriptWriteChecks','assetIoCalls','gpuDrawCalls'])
         requireCondition(Number.isSafeInteger(s[field])&&s[field]>=0,'Invalid summary count: '+field);
-    requireCondition(s.capacity===2048&&s.nativeCapacity===4096&&
+    requireCondition(s.capacity===8192&&s.nativeCapacity===4096&&
         s.storageStride>=s.payloadBytes&&s.payloadBytes>0,'Unexpected ANM pool layout');
     requireCondition(s.checks>0&&s.fullPoolComparisons===20&&s.fullManagerComparisons===20&&
         s.fullManagerMismatches===0&&s.preclearObservations===6&&
