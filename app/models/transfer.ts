@@ -212,7 +212,13 @@ export function createTransferModel({translate: t, context, ports, frames,
       else if (progress.completion === 'local-music') localComplete();
       if (progress.failure?.kind === 'language') languageFailure(progress.failure.label, progress.failure.reason);
     },
-    launchAcknowledged() {if (!disposed && local?.epoch === context().epoch && local.completed >= local.files && local.files > 0) localComplete();},
+    launchAcknowledged() {
+      if (disposed || !context().launched) return;
+      // Resource mounts can report after ready; launch ACK ends their panel.
+      // hide() still yields to active downloads, and music keeps its own timer.
+      if (snapshot.kind === 'game') hide();
+      else if (local?.epoch === context().epoch && local.completed >= local.files && local.files > 0) localComplete();
+    },
     localFailure(error: unknown, epoch = context().epoch) {if (epoch !== context().epoch || disposed) return; hide(); ports.toast(t('transfer.localOggPartialFailed', {reason: preparationErrorText(error)}));},
     setCancellation(label: string | null) {publish({cancelVisible: label !== null, cancelLabel: label || t('player.cancelDownload')});},
     async cancel() {if (!disposed && snapshot.cancelVisible) {publish({cancelVisible: false}); await ports.cancelDownload();}},

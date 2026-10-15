@@ -163,6 +163,19 @@ test('authenticated Runtime ready hides game DATA only; other event kinds retain
   f.model.runtimeTransfer({kind: 'music', mode: 'ogg'}); f.model.runtimeEvent({epoch: 1, event: 'ready'}); assert.equal(f.model.getSnapshot().hidden, false);
 });
 
+test('launch ACK clears resource mounts reported after ready while retaining downloads and music', () => {
+  const f = fixture();
+  f.model.runtimeEvent({epoch: 1, event: 'ready'});
+  f.model.runtimeTransfer({kind: 'game', mode: 'runtime', loaded: 9, total: 9});
+  f.model.launchAcknowledged(); assert.equal(f.model.getSnapshot().hidden, false, 'unlaunched owner cannot finish progress');
+  f.state.launched = true; f.model.launchAcknowledged(); assert.equal(f.model.getSnapshot().hidden, true);
+  f.model.networkSnapshot(net([task()])); f.frame();
+  f.model.launchAcknowledged(); assert.equal(f.model.getSnapshot().hidden, false, 'active download retains presentation');
+  f.model.networkSnapshot(net([])); f.frame(); assert.equal(f.model.getSnapshot().hidden, true);
+  f.model.runtimeTransfer({kind: 'music', mode: 'ogg', loaded: 1, total: 2});
+  const music = f.model.getSnapshot(); f.model.launchAcknowledged(); assert.equal(f.model.getSnapshot(), music);
+});
+
 test('main 3390: DATA timeout reveals transfer without replacing its byte metrics', () => {
   const f = fixture(); f.model.runtimeTransfer({kind: 'game', loaded: MiB, total: 2 * MiB, speed: 1024}); f.model.hide();
   const before = f.model.getSnapshot(); f.model.revealGameData(); const after = f.model.getSnapshot();
