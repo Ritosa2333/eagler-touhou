@@ -33,6 +33,11 @@ int main(){
     p.Boundary(960,0);assert(p.round==0&&p.target==960&&p.Fast(960,1100)==false);
     p.ended=true;assert(p.Limit(1000)==1000&&p.Control(1,1000,600,1000));
     assert(p.Available(999,1000)==1&&p.Fast(1000,1000)==false);
-    assert(!p.Control(4,0,1000,1000));
+    assert(!p.Control(4,999,1000,1000));
+    p.ended=false;
+    assert(p.Control(4,1500,1000,1100)&&p.target==1500&&!p.following);
+    assert(p.Available(1000,1100)==10); // Never run not-yet-fed local history.
+    assert(!p.Control(4,40000,1000,1100));
+    assert(!p.Control(5,0,1000,1100));
     puts("Spectator playback: forward-only, bounded target, unlimited forward fast-forward, delay, pause, boundaries, exact end PASS");
 }

@@ -3,7 +3,8 @@
 #include <cstdint>
 
 namespace th09::multiplayer {
-// Viewer-only cursor policy. Never predicts, rewinds, or changes player pacing.
+// Viewer-only cursor policy. Native rewinds restore a complete match initializer
+// before accepting a fixed forward target. Never changes player pacing.
 struct SpectatorPlayback {
     static constexpr std::uint32_t Delay = 90;
     static constexpr std::uint32_t Capacity = 32400;
@@ -19,11 +20,12 @@ struct SpectatorPlayback {
     }
     std::uint32_t Limit(std::uint32_t received) const { return ended ? received : Edge(received); }
     bool Control(unsigned action, std::uint32_t to, std::uint32_t played, std::uint32_t received) {
-        if(action > 3) return false;
+        if(action > 4) return false;
         if(action == 0) { paused = true; return true; }
         if(action == 3) { paused = false; return true; }
         if(action == 1 && (to < played || to > Limit(received))) return false;
         if(action == 2 && to > played && to - played > Capacity) return false;
+        if(action == 4 && (to < played || to - played > Capacity)) return false;
         paused = false; following = action == 2;
         // JS may still be feeding already-received history in bounded batches.
         // Available() still limits every tick to native-validated input.

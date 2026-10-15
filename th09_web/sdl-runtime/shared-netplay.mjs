@@ -167,7 +167,7 @@ export class SharedNetplay {
             throw Error('TH09 观战初始化失败');
           globalThis.__eaglerNetplayInputDelayFrames = 0;
           this.prepared = true;
-          if (this.timelineExperiment) this.timeline = attachSpectatorTimeline(this.core, {onLive:()=>this.goLive(),onReturn:()=>this.close()});
+          if (this.timelineExperiment) this.timeline = attachSpectatorTimeline(this.core, {onLive:()=>this.goLive(),onSeek:position=>this.seekSpectator(position),history:played=>this.spectatorTape.timeline(played),onReturn:()=>this.close()});
           this.active = this.adonisMode === 0;
           this.spectatorReceiveAt = performance.now();
           globalThis.__eaglerNetplaySpectator = true;
@@ -319,8 +319,8 @@ export class SharedNetplay {
             if(this.buildBytes.some((v,i)=>bytes[12+i]!==v))throw Error('TH09 回合刻度版本不同');
             const data=new DataView(bytes.buffer,bytes.byteOffset),frame=data.getUint32(8,true),round=data.getUint32(24,true);
             this.spectatorTape.roundStart(frame,round);
-            if(this.spectatorTape.peek())this.spectatorTape.append(bytes);
-            else this.timeline?.addRound(frame,round);
+            const queued=!!this.spectatorTape.peek();this.spectatorTape.append(bytes);
+            if(!queued){this.timeline?.addRound(frame,round);this.spectatorTape.shift();}
             return;
           }
           if (this.timelineExperiment && ((bytes.length===74&&bytes[4]===1)||(bytes.length===102&&bytes[4]===2)) &&
@@ -335,8 +335,8 @@ export class SharedNetplay {
             if(this.buildBytes.some((v,i)=>bytes[12+i]!==v))throw Error('TH09 观战结束版本无效');
             const frame=new DataView(bytes.buffer,bytes.byteOffset).getUint32(8,true);
             this.spectatorTape.end(frame);
-            if(this.spectatorTape.peek())this.spectatorTape.append(bytes);
-            else this.finishSpectatorMatch(frame);
+            const queued=!!this.spectatorTape.peek();this.spectatorTape.append(bytes);
+            if(!queued){this.finishSpectatorMatch(frame);this.spectatorTape.shift();}
             this.spectatorReceiveAt=performance.now();return;
           }
           if (bytes.length===40 && bytes[0]===84 && bytes[1]===57 && bytes[2]===84 && bytes[3]===77) {
@@ -381,8 +381,10 @@ export class SharedNetplay {
             if(mode>3||!Number.isFinite(x)||!Number.isFinite(y)||Math.abs(x)>limit||Math.abs(y)>limit)
               throw Error('TH09 观战移动输入无效');
           }
-          if(this.timelineExperiment&&this.spectatorTape.peek())this.spectatorTape.append(bytes);
-          else this.feedSpectatorFrame(bytes);
+          if(this.timelineExperiment){
+            const queued=!!this.spectatorTape.peek();this.spectatorTape.append(bytes);
+            if(!queued){this.feedSpectatorFrame(bytes);this.spectatorTape.shift();}
+          }else this.feedSpectatorFrame(bytes);
           this.spectatorReceiveAt=performance.now();
           return;
         }
@@ -405,13 +407,28 @@ export class SharedNetplay {
       throw Error('TH09 观战输入无效或过于滞后');
     ++this.spectatorFrame;
   }
-  restartSpectatorMatch(packet,following) {
+  restartSpectatorMatch(packet,following,restore=false) {
     const frame=new DataView(packet.buffer,packet.byteOffset).getUint32(8,true);
     this.core.HEAPU8.set(packet.subarray(24),this.core._th09_spectator_begin_buffer());
-    if(!this.core._th09_spectator_restart(frame,packet.length-24))throw Error('TH09 新场初始化失败');
+    if(!this.core._th09_spectator_restart(frame,packet.length-24,+restore))throw Error('TH09 新场初始化失败');
     this.spectatorFrame=frame;this.spectatorEnded=false;
     this.timeline?.resetMatch(frame);
     if(following)this.core._th09_spectator_control(2,0);
+  }
+  seekSpectator(position) {
+    if(!this.connected||!this.spectator||!this.timelineExperiment)return;
+    const tape=this.spectatorTape,played=this.core._th09_spectator_frame(),view=tape.timeline(played);
+    if(!view||position<view.min||position>view.edge)return;
+    const target=tape.locate(position);if(!target)return;
+    try {
+      if(target.match!==tape.current||target.frame<played){
+        this.restartSpectatorMatch(target.match.packet,false,true);
+        tape.restore(target.match);
+      }
+      // This is a fixed local target. Incoming live frames cannot extend it.
+      if(!this.core._th09_spectator_control(4,target.frame))throw Error('TH09 观战定位失败');
+      this.drainSpectatorHistory();
+    }catch(error){this.close(String(error?.message||error));}
   }
   goLive() {
     if(!this.connected||!this.spectator||!this.timelineExperiment)return;

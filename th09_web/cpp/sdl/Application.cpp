@@ -560,8 +560,9 @@ TH09_EXPORT("th09_confirmed_frame_hash") const u32* th09_confirmed_frame_hash(u3
     static u32 data[2];const auto& record=rollback_frames[frame%rollback_frames.size()];
     data[0]=record.number==frame?frame:Netplay::INVALID_FRAME;data[1]=record.number==frame?record.hash:0;return data;
 }
-TH09_EXPORT("th09_spectator_restart") u32 th09_spectator_restart(u32 frame,u32 size){
-    if(!spectator_mode||!probe||(size!=spectator_begin_bytes&&size!=spectator_begin_legacy_bytes)||frame<spectator_next)return 0;
+TH09_EXPORT("th09_spectator_restart") u32 th09_spectator_restart(u32 frame,u32 size,u32 restore=0){
+    if(!spectator_mode||!probe||restore>1||(size!=spectator_begin_bytes&&size!=spectator_begin_legacy_bytes)||
+       (restore?size!=spectator_begin_bytes:frame<spectator_next))return 0;
     probe->presentation.renderer.flush();probe->state.random=spectator_begin_buffer.random;
     const auto& m=spectator_begin_buffer.match;const bool fresh=size==spectator_begin_bytes&&m.fresh;
     if(size==spectator_begin_bytes&&(m.fresh>1||m.difficulty>3||m.characters[0]>15||m.characters[1]>15||m.selector>17||m.extra_lives>9))return 0;
