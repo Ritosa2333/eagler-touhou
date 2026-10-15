@@ -4,7 +4,7 @@
 
 using th09::multiplayer::SpectatorSchedule;
 int main() {
-    assert(SpectatorSchedule::Plan(0,4)==0);
+    assert(SpectatorSchedule::CanStart(100,7.9,true));assert(!SpectatorSchedule::CanStart(100,8.0,true));assert(!SpectatorSchedule::CanStart(6,0.1));assert(SpectatorSchedule::Plan(0,4)==0);
     assert(SpectatorSchedule::Plan(3,1)==1);
     assert(SpectatorSchedule::Plan(6,1)==2);
     assert(SpectatorSchedule::Plan(100,1)==4);
@@ -26,5 +26,5 @@ int main() {
         }
         assert(played==100&&rendered>0);
     }
-    puts("Spectator callback: six-step/8ms start budget, visible fallback, exact queued input retention PASS");
+    puts("Spectator callback: full-speed/8ms start budget, visible fallback, exact queued input retention PASS");
 }

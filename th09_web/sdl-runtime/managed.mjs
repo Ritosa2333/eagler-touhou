@@ -109,7 +109,7 @@ async function installRuntimePack(pack){
  }
 }
 async function save(){if(launched&&!netplay?.spectator&&!core._th09_save_snapshot())throw Error('保存失败');await sync();}
-async function stop(){if(stopping)return;revokeLifetime();stopping=true;clearKeyboard();try{networkOverlayPending=false;replayPlayer?.close();replayPlayer=null;netplay?.close();core._th09_loop_stop();await save();core._th09_game_close();launched=false;delete window.__th09Runtime;if(!retired)stopPending=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;revokeLifetime();stopping=true;clearKeyboard();try{networkOverlayPending=false;replayPlayer?.close();replayPlayer=null;core._th09_loop_stop();await netplay?.finishSpectatorOutput();netplay?.close();await save();core._th09_game_close();launched=false;delete window.__th09Runtime;if(!retired)stopPending=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function openNetwork(){if(!launched||options.netplayMode==='lan'||!status().title[1]||networkOverlayPending)return;networkOverlayPending=true;neutralTouch();core._th09_loop_pause(1);emit('network-request');}
 async function command(m,receivedLifetime=receiveLifetime()){switch(m.command){
 case 'configure':{
@@ -194,9 +194,14 @@ case 'list':{const files=[];const scan=dir=>{for(const name of core.FS.readdir(s
 case 'read':return {bytes:Array.from(core.FS.readFile(saveRoot+'/'+path(m.path).replace(/\.rpyx$/,'.rpy')))};
 case 'write':{if(!Array.isArray(m.bytes)||m.bytes.length>16*1024*1024||m.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('存档数据无效');const bytes=Uint8Array.from(m.bytes),name=importReplayName(path(m.path),bytes,9);if(launched&&(!options.replayViewer||options.netplayMode==='lan'||!name.startsWith('replay/')))throw Error('请先退出游戏再导入');if(name.endsWith('.rpy')&&core.FS.analyzePath(saveRoot+'/'+name).exists)throw Error('录像文件已存在，请使用其他文件名');const kind=name.endsWith('.rpy')?1:name==='score.dat'?0:2,p=core._th09_file_buffer(bytes.length);if(!p)throw Error('文件为空或过大');core.HEAPU8.set(bytes,p);if(!core._th09_file_valid(kind,bytes.length))throw Error('文件损坏或不是花映塚 1.50a 的存档/录像');core.FS.mkdirTree((saveRoot+'/'+name).slice(0,(saveRoot+'/'+name).lastIndexOf('/')));core.FS.writeFile(saveRoot+'/'+name,bytes);autoReplay.removeMatch(saveRoot+'/'+name);if(runtimeVariant==='multiplayer')autoReplay.writeMatch(saveRoot+'/'+name,m.replayMatch);await sync();return {};}
 case 'remove':if(launched&&(!options.replayViewer||options.netplayMode==='lan'||!path(m.path).startsWith('replay/')))throw Error('请先退出游戏');{const full=saveRoot+'/'+path(m.path).replace(/\.rpyx$/,'.rpy');core.FS.unlink(full);autoReplay.removeMatch(full);const parent=full.slice(0,full.lastIndexOf('/'));if(parent!==saveRoot+'/replay'&&parent.startsWith(saveRoot+'/replay/')){try{core.FS.rmdir(parent);}catch{}}}await sync();return {};
+case 'spectator-room-state':{
+ assertLifetime(receivedLifetime);
+ if(!Number.isInteger(m.runId)||m.runId<0||m.runId>0xffffffff||typeof m.waiting!=='boolean')throw Error('TH09 观战房间状态无效');
+ netplay?.roomState(m.runId,m.waiting);return {};
+}
 case 'network-open':openNetwork();return {};
 case 'network-cancel':networkOverlayPending=false;clearKeyboard();neutralTouch();core._th09_loop_pause(+document.hidden);canvas.focus();return {};
-default:throw Error('不支持的操作');}}
+default:throw Error('不支持的操作：'+m.command);}}
 async function dispatchCommand(m,receivedLifetime=receiveLifetime(),waitForInitialized=false){
  try{if(waitForInitialized)await initialized;const result=await command(m,receivedLifetime);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}
  catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else if(!(e instanceof SupersededRuntimeCommand))fatal(e);}

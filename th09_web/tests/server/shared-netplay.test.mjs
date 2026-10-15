@@ -420,3 +420,40 @@ test('ended connections keep the native replay-save menu usable',async()=>{
   assert.equal(leftCore.calls.pauses.length,pauses);assert.equal(leftCore.calls.ends,0);
  }finally{pair?.left.close();pair?.right.close();box.restore();}
 });
+
+test('return-to-character-selection publishes the last confirmed input and end before immediate close', async () => {
+  const box = harness(true);
+  let pair;
+  try {
+    pair = await connectPair(box);
+    const {left, leftCore} = pair;
+    left.publish(0, 8, 0, 0, 0, 0, 0, 0, 0);
+    // The native result callback precedes confirmed publication of this tick.
+    left.result();
+    left.publish(1, 1, 0, 0, 0, 0, 0, 0, 0);
+    left.frame();
+    const output = leftCore.calls.spectatorOutput;
+    assert.deepEqual(output.map(p => [p.length, new DataView(p.buffer).getUint32(8, true)]),
+      [[46, 0], [46, 1], [24, 2]]);
+    assert.equal(left.spectatorEndSent, true);
+    left.frame();
+    assert.equal(output.length, 3, 'terminal output is not duplicated');
+    left.close();
+    assert.equal(output.length, 3);
+  } finally { pair?.left.close(); pair?.right.close(); box.restore(); }
+});
+
+
+test('native stop drains a bounded publisher backlog before closing its spectator stream',async()=>{
+  const box=harness(true);let pair;
+  try{
+    pair=await connectPair(box);const {left,leftCore}=pair;
+    for(let frame=0;frame<100;frame++)left.publish(frame,0,0,0,0,0,0,0,0);
+    left.result();left.frame();
+    assert.equal(left.spectatorEndSent,false,'one frame callback keeps its normal 32-packet limit');
+    await left.finishSpectatorOutput();
+    assert.equal(left.spectatorEndSent,true);
+    assert.equal(leftCore.calls.spectatorOutput.length,101);
+    assert.equal(new DataView(leftCore.calls.spectatorOutput.at(-1).buffer).getUint32(8,true),100);
+  }finally{pair?.left.close();pair?.right.close();box.restore();}
+});

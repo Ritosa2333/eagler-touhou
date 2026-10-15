@@ -183,6 +183,7 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
         note('connect-wait');await connectGate.promise;note('connect-released');
         this.active = !this.disconnected;
       }
+      async finishSpectatorOutput() {}
       close() {this.active = false;this.disconnected = true;note('transport-close');}
       frame() {}
     },

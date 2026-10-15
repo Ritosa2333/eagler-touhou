@@ -23,16 +23,20 @@ struct SpectatorPlayback {
         if(action == 0) { paused = true; return true; }
         if(action == 3) { paused = false; return true; }
         if(action == 1 && (to < played || to > Limit(received))) return false;
+        if(action == 2 && to > played && to - played > Capacity) return false;
         paused = false; following = action == 2;
-        target = following ? Limit(received) : to;
+        // JS may still be feeding already-received history in bounded batches.
+        // Available() still limits every tick to native-validated input.
+        target = following ? std::max(played, Limit(std::max(received,to))) : to;
         seeking = target > played;
         return true;
     }
-    unsigned Rate(std::uint32_t played, std::uint32_t received) {
-        // A live seek finishes once. Network jitter must not re-arm it.
+    bool Fast(std::uint32_t played, std::uint32_t received) {
+        // Live is a one-shot seek. Later network bursts must not move its
+        // target or re-arm acceleration after ordinary playback resumes.
         (void)received;
         if(played >= target) seeking = false;
-        return seeking ? 4 : 1;
+        return seeking;
     }
     std::uint32_t Available(std::uint32_t played, std::uint32_t received) const {
         if(paused || Limit(received) <= played) return 0;

@@ -94,7 +94,7 @@ export class SharedNetplay {
     this.spectatorSentFrame = 0;
     this.spectatorReceiveAt = 0;
     this.finished = false;
-    this.recovering = this.disconnected = false;
+    this.recovering = this.disconnected = this.roomSessionRetired = false;
     globalThis.__eaglerNetplayCalibrationSuspended = false;
     this.inputDelay = inputDelay;
     this.adonisMode = adonisMode;
@@ -167,7 +167,7 @@ export class SharedNetplay {
             throw Error('TH09 观战初始化失败');
           globalThis.__eaglerNetplayInputDelayFrames = 0;
           this.prepared = true;
-          if (this.timelineExperiment) this.timeline = attachSpectatorTimeline(this.core, {onLive:()=>this.goLive()});
+          if (this.timelineExperiment) this.timeline = attachSpectatorTimeline(this.core, {onLive:()=>this.goLive(),onReturn:()=>this.close()});
           this.active = this.adonisMode === 0;
           this.spectatorReceiveAt = performance.now();
           globalThis.__eaglerNetplaySpectator = true;
@@ -282,6 +282,14 @@ export class SharedNetplay {
       if(!this.connected)return true;
     }
     return false;
+  }
+  roomState(runId, waiting) {
+    if(!this.connected||!this.spectator||!this.timelineExperiment)return;
+    const currentRun=Number(new URL(this.options.netplayUrl,location.href).searchParams.get('run'));
+    if(runId<currentRun)return;
+    // Room control may arrive before the final gameplay packets. Retire only
+    // after the viewer consumes the explicit end and all queued history.
+    if(waiting||runId>currentRun)this.roomSessionRetired=true;
   }
   connectionEnded() {
     if(!this.connected||this.disconnected)return;
@@ -412,7 +420,7 @@ export class SharedNetplay {
       this.restartSpectatorMatch(tape.peek(),true);
       tape.shift();
     }
-    this.core._th09_spectator_control(2,0);
+    this.core._th09_spectator_control(2,tape.frame);
     this.drainSpectatorHistory();
   }
   drainSpectatorHistory() {
@@ -528,7 +536,11 @@ export class SharedNetplay {
     }
   }
   frame() {
-    if (!this.active) return;
+    // Publish the final confirmed tail before the native return-to-title stops the transport.
+    if (!this.active) {
+      if (this.finished && !this.spectator) this.flushSpectators();
+      return;
+    }
     if(this.spectator&&this.timelineExperiment){
       try{this.drainSpectatorHistory();}catch(error){this.close(String(error?.message||error));return;}
     }
@@ -547,10 +559,19 @@ export class SharedNetplay {
     globalThis.__eaglerNetplayLanRollback = this.spectator ? 0 : stats[2];
     globalThis.__eaglerNetplayLanResimulated = this.spectator ? 0 : stats[3];
     if (this.spectator && this.spectatorEnded && frame >= this.spectatorFrame &&
-        (!this.timelineExperiment||(this.disconnected&&!this.spectatorPaused()&&!this.spectatorTape.peek()))) {
+        (!this.timelineExperiment||((this.disconnected||this.roomSessionRetired)&&!this.spectatorPaused()&&!this.spectatorTape.peek()))) {
       this.finished = true;
       this.onResult();
       this.close();
+    }
+  }
+  async finishSpectatorOutput() {
+    if(this.spectator||!this.finished||!this.timelineExperiment||this.side!==0)return;
+    const deadline=performance.now()+1000;
+    while(this.connected&&!this.disconnected&&!this.spectatorOutputStopped&&!this.spectatorEndSent){
+      this.flushSpectators();
+      if(this.spectatorEndSent||performance.now()>=deadline)break;
+      await new Promise(resolve=>setTimeout(resolve,0));
     }
   }
   result() {

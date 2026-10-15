@@ -32,3 +32,16 @@ test('go-live restarts newest queued match even when paused in an older match',(
   assert.equal(n.spectatorTape.bytes,0);
   n.goLive();assert.equal(calls.filter(c=>c[0]==='restart').length,1);
 });
+
+test('go-live carries the complete changed-character initializer after an old queued match',()=>{
+  const memory=new ArrayBuffer(4096),calls=[];
+  const core={HEAPU8:new Uint8Array(memory),HEAPU32:new Uint32Array(memory),
+    _th09_spectator_begin_buffer:()=>1024,_th09_spectator_restart:(frame,size)=>{calls.push([frame,size]);return 1;},
+    _th09_spectator_control:()=>1,_th09_spectator_feed:()=>1};
+  const n=new SharedNetplay(core,{});n.connected=n.spectator=n.timelineExperiment=true;n.spectatorFrame=10;n.spectatorEnded=true;
+  n.spectatorTape=new SpectatorTape();n.timeline={resetMatch(){},refresh(){}};
+  n.spectatorTape.append(packet(74,100));const next=packet(102,300);next[76]=13;next[77]=15;
+  n.spectatorTape.append(next);n.spectatorTape.append(packet(46,300));n.goLive();
+  assert.deepEqual(calls,[[300,78]]);assert.deepEqual(Array.from(core.HEAPU8.subarray(1024,1102)),Array.from(next.subarray(24)));
+  assert.equal(n.spectatorTape.begins,0);assert.equal(n.spectatorFrame,301);
+});

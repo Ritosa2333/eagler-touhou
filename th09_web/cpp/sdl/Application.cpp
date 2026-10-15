@@ -731,13 +731,13 @@ u32 rollback_tick(u32 render){
 u32 spectator_tick(u32 render,u32 dueTicks=1){
         spectator_last_ticks=0;
         if(spectator_frames.empty())return 2;
-        const auto rate=spectator_playback.Rate(spectator_simulated,spectator_next);
+        const bool fast=spectator_playback.Fast(spectator_simulated,spectator_next);
         const auto available=spectator_playback.Available(spectator_simulated,spectator_next);
-        const auto count=std::min(available,std::min(Netplay::FrameBudget::MaxCatchupTicks,std::min(dueTicks,4u)*rate));
+        const auto count=fast?available:std::min(available,std::min(multiplayer::SpectatorSchedule::MaxTicks,std::min(dueTicks,4u)));
         if(!count)return 2;
         const double began=emscripten_get_now();u32 ok=1;
         for(u32 n=0;n<count&&ok&&!spectator_frames.empty();++n){
-            if(!multiplayer::SpectatorSchedule::CanStart(n,emscripten_get_now()-began)){++spectator_yields;break;}
+            if(!multiplayer::SpectatorSchedule::CanStart(n,emscripten_get_now()-began,fast)){++spectator_yields;break;}
             const auto packet=spectator_frames.front();spectator_frames.pop_front();
             if(packet.frame!=spectator_simulated)return 0;
             const bool was_title=probe->in_title;
