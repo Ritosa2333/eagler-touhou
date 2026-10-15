@@ -25,7 +25,7 @@ const initialTouch = () => undefined;
 const noNetwork = () => null;
 /** The editor and actual game use one original control markup tree. Only this
  * mounted gameplay binding can deliver native input. */
-export function PlayerControls({ session }: { session: BrowserSession }) {
+export function PlayerControls({ session, replayWorkspace = false }: { session: BrowserSession; replayWorkspace?: boolean }) {
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot),
     navigation = useSurfaceNavigation(),
     { locale, t } = useLocale();
@@ -82,7 +82,7 @@ export function PlayerControls({ session }: { session: BrowserSession }) {
         : !room.spectatorRequested && room.seat != null ? <Th09MatchStats wins={wins}
           minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
           spectators={Math.max(room.room?.spectatorCount ?? 0,room.room?.spectators?.length ?? 0)}/> : null)}
-      {diagnostics && (
+      {diagnostics && !replayWorkspace && (
         <RuntimeDiagnostics
           model={diagnostics}
           netplay={netplay}
@@ -114,14 +114,15 @@ export function PlayerControls({ session }: { session: BrowserSession }) {
       <span id="playerStatus" className="visually-hidden" role="status">
         {feedback.playerStatus}
       </span>
-      {settings && <PlayerUtilities session={session} settings={settings} canExitPlayback={state.replayViewer || room.spectatorRequested} />}
+      {settings && !replayWorkspace && <PlayerUtilities session={session} settings={settings} canExitPlayback={state.replayViewer || room.spectatorRequested} />}
       {settings &&
+        !replayWorkspace &&
         state.bootTouchPreview &&
         !session.getActiveSettings() &&
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && navigation.surface !== 'touch' && state.playerOpen && (
+      {session.getActiveSettings() && !replayWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
         <GameplayControls session={session} />
       )}
     </>

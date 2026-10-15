@@ -1158,15 +1158,23 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   host.games[game].multiplayerRuntime = `${runtimePath}?hosted=1&v=test-multiplayer`;
   // Same explicit setup boundary as above: the old home-card activation is
   // baseline-conflicted, so it is not counted as original browser acceptance.
-  const f = await mountBrowser({initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game], autoReady: game !== 'th09'});
+  const f = await mountBrowser({initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game], autoReady: game !== 'th09',
+    seedStorage(storage) {if (game === 'th09') storage.values.set('eagler-touhou-runtime-diagnostics-v1', '1');}});
   const frame = node('#gameFrame');
+  const assertPlaybackOnly = () => {
+    for (const selector of ['#touchDirectSurface', '#touchHud', '#touchEscape', '#touchRestart', '#touchThpracMenu', '.touch-utility-row', '#runtimeDiagnostics'])
+      assert.equal(env.document.querySelector(selector), null, `Replay workspace must not mount gameplay overlay ${selector}`);
+    assert.equal(node('#player').classList.contains('touch-enabled'), false);
+  };
   if (game === 'th09') {
+    await React.act(async () => {api.getTestSession().settings.setOption('touchEnabled', true);});
     await React.act(async () => {
     const database = await new Promise((resolve, reject) => {const request = env.window.indexedDB.open('/savesth09mp', 21); request.onupgradeneeded = () => request.result.createObjectStore('FILE_DATA'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);});
     await new Promise((resolve, reject) => {const transaction = database.transaction('FILE_DATA', 'readwrite'); transaction.objectStore('FILE_DATA').put({mode: 0o100666, timestamp: new Date(2000), contents: new Uint8Array([3,4,5])}, '/savesth09mp/replay/th9_01.rpy'); transaction.oncomplete = resolve; transaction.onabort = () => reject(transaction.error);});
     database.close();
     });
     await click('#mpReplayViewer'); await until(() => env.document.querySelector('[data-replay-watch="replay/th9_01.rpy"]'), 'TH09 opens its independent file listing');
+    assertPlaybackOnly();
     await until(() => f.navigations.length === 1, 'TH09 automatically starts its player without selecting a file');
     assert.equal(api.getTestSession().getRuntime().getSnapshot().ready, false, 'the file list is usable before game readiness');
     const document = f.native.document;
@@ -1196,6 +1204,11 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.deepEqual(f.dataReads, [[1, 2, 3]]);
   assert.equal(f.sockets.length, 0, 'Replay viewer never creates room/gameplay transport');
   if (game === 'th09') {
+    assert.equal(api.getTestSession().getActiveSettings().options.touchEnabled, true, 'touch preference is retained without mounting its gameplay owner');
+    assertPlaybackOnly();
+    const inputs = f.outbound.filter(message => message.command === 'keyboard').length;
+    await React.act(async () => {env.window.dispatchEvent(new env.window.KeyboardEvent('keydown', {code: 'KeyZ', key: 'z', keyCode: 90, bubbles: true, cancelable: true}));});
+    assert.equal(f.outbound.filter(message => message.command === 'keyboard').length, inputs, 'Replay workspace does not forward game keyboard input');
     assert.equal(f.outbound.find(message => message.command === 'playback')?.path, 'replay/th9_01.rpy');
     await click('.replay-transport [aria-label="切换全屏"]');
     assert.equal(f.fullscreen, node('#player'), 'Replay fullscreen includes both the stable game stage and file browser');

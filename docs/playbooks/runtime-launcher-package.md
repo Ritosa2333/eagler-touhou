@@ -162,6 +162,14 @@ retain the file browser and its menus beside the game. Portrait fullscreen uses
 the game and transport only. Keep the native iframe in place and preserve a
 visible upper-right fullscreen exit control in either layout.
 
+The Replay workspace mounts playback controls without the normal gameplay input
+owner, touch HUD/utilities or runtime diagnostics. Keep that boundary through
+preparation, launch ACK and file playback. Its iframe does not receive pointer
+input, so the native canvas cannot consume vertical page swipes. Verify phone
+scrolling with Touch enabled after the game is ready, as well as file actions
+and the workspace's own fullscreen controls. Ordinary play and live spectating
+retain their existing input owners.
+
 ## Verification
 
 1. Verify catalog, descriptor, installed generation and required-file list independently.

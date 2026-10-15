@@ -3,7 +3,8 @@
 #player.replay-workspace::before{content:"";position:fixed;inset:0;z-index:-1;background:#080807e6;pointer-events:none}
 #player.replay-workspace .player-stage{position:relative;grid-column:1;grid-row:2;display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--line);border-radius:20px;background:#111110e8;overflow:hidden}
 #player.replay-workspace .game-viewport{position:relative;inset:auto;flex:none;width:100%;height:auto;min-height:0;min-width:0;aspect-ratio:1.44;border-radius:4px;background:#000;overflow:hidden}
-#player.replay-workspace #gameFrame{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* Replay transport owns input. Swipes over the game belong to page scrolling. */
+#player.replay-workspace #gameFrame{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;touch-action:pan-y}
 .replay-workspace-idle{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#080808;color:var(--muted);font-size:16px;text-align:center;padding:20px}
 .replay-workspace-idle p{margin:0;color:var(--paper)}
 .replay-workspace-idle small{font-size:13px}
