@@ -6,7 +6,14 @@ import {motionReplayName} from '../../src/launcher/replay-motion.mts';
 export interface StoredReplay {path: string; size: number; bytes: Uint8Array; modifiedAt?: number; replayMatch?: Th09ReplayMatch}
 export interface ReplayStorageSelection {path?: string; directory?: string}
 export interface ReplayStorageReader {read(product: ProductId, selection?: ReplayStorageSelection): Promise<StoredReplay[]>}
-interface IdBfsEntry {mode: number; timestamp: Date | number; contents: Uint8Array}
+interface IdBfsEntry {mode: number; timestamp: Date | number; contents: unknown}
+
+function idbfsBytes(contents: unknown): Uint8Array | null {
+  if (contents instanceof Uint8Array) return contents;
+  // Native MEMFS files may persist signed bytes. Keep the exact byte range.
+  if (contents instanceof Int8Array) return new Uint8Array(contents.buffer, contents.byteOffset, contents.byteLength);
+  return null;
+}
 
 /** Compatibility reader for Emscripten IDBFS v21. Runtime remains the sole writer.
  * A missing database is never created; an unknown schema fails without fallback. */
@@ -58,13 +65,13 @@ export function createReplayStorageReader(environment: () => {indexedDB: IDBFact
             for (const [storedPath, entry] of records) {
               const relative = storedPath.slice(root.length + 1);
               if (!storedPath.startsWith(root + '/replay/') || !isReplayFilePath(relative) || !/^replay\/(?:[^/]+\/)?th9_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/i.test(relative) || (entry.mode & 0xf000) !== 0x8000) continue;
-              const bytes = entry.contents;
-              if (!(bytes instanceof Uint8Array) || bytes.length > 64 * 1024 * 1024) throw new Error('本地录像内容无效');
+              const bytes = idbfsBytes(entry.contents);
+              if (!bytes || bytes.length > 64 * 1024 * 1024) throw new Error('本地录像内容无效');
               const path = motionReplayName(relative, bytes, 9);
               if (selection.path && path !== selection.path || selection.directory && path.slice(0, path.lastIndexOf('/')) !== selection.directory) continue;
               let match: Th09ReplayMatch | null = null;
-              const sidecar = records.get(storedPath.replace(/\.rpyx?$/i, '.json'))?.contents;
-              if (product === 'th09mp' && sidecar instanceof Uint8Array && sidecar.length <= 16384) {try {match = parseTh09ReplayMatch(JSON.parse(new TextDecoder().decode(sidecar)));} catch {}}
+              const sidecar = idbfsBytes(records.get(storedPath.replace(/\.rpyx?$/i, '.json'))?.contents);
+              if (product === 'th09mp' && sidecar && sidecar.length <= 16384) {try {match = parseTh09ReplayMatch(JSON.parse(new TextDecoder().decode(sidecar)));} catch {}}
               const modifiedAt = Number(entry.timestamp);
               files.push({path, bytes, size: bytes.length, ...(Number.isFinite(modifiedAt) && modifiedAt > 0 && modifiedAt <= 8.64e15 ? {modifiedAt} : {}), ...(match ? {replayMatch: match} : {})});
             }
