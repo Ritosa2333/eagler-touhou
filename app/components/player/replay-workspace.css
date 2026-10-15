@@ -97,6 +97,23 @@
  .replay-workspace-file small{font-size:12px}
  .replay-transport-buttons{gap:10px}
 }
+/* Wide windows reserve room for the transport and metadata before sizing the
+   game. Only the file list scrolls; the Runtime keeps its own 4:3 letterbox. */
+@media(min-width:761px) and (orientation:landscape) and (min-height:480px){
+ #player.replay-workspace{grid-template-rows:auto minmax(0,1fr);padding-bottom:24px;overflow:hidden}
+ #player.replay-workspace .player-stage{min-height:0}
+ #player.replay-workspace .game-viewport{flex:1;aspect-ratio:auto}
+ .replay-transport,.replay-current,.replay-file-browser>header,.replay-breadcrumb,.replay-file-browser>footer,.replay-workspace-move{flex:none}
+ .replay-file-browser,.replay-workspace-files{min-height:0}
+}
+@media(min-width:761px) and (orientation:landscape) and (min-height:480px) and (max-height:700px){
+ #player.replay-workspace{padding:16px;gap:16px 10px}
+ #player.replay-workspace .player-stage{padding:16px}
+ .replay-workspace-header h1{font-size:24px}
+ .replay-workspace-header .replay-back{width:44px;height:44px;padding:10px;border-radius:14px}
+ .replay-current{padding-top:12px;gap:6px}
+ .replay-current h2{font-size:20px}
+}
 @media(orientation:portrait),(max-width:760px){
  #player.replay-workspace{display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:16px 14px 24px}
  .replay-workspace-header{flex:none;flex-wrap:wrap;gap:10px}

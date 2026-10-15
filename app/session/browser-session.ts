@@ -315,11 +315,15 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     return () => !disposed && !launchOwnedAtCapture && playerIntent === playerIntentRevision && !launchAbort;
   }
   async function prepareFiles(product: ProductId, options: {retireRunning?: boolean; ownsPresentation?: () => boolean} = {}) {
-    const owner = requiredRuntime(), before = owner.getSnapshot(), game = gameIdForProduct(product);
+    const game = gameIdForProduct(product);
     const variant = isMultiplayerProductId(product) ? 'multiplayer' : 'normal';
     // Imports retain their enqueue-time context across the Replay queue. Other
     // file tasks capture here. Progress, native UI and Cancel share this owner.
     const ownsPresentation = options.ownsPresentation ?? captureFilePresentation();
+    // A write requested during Replay startup joins that preparation instead
+    // of replacing its still-loading native document with a file-only Runtime.
+    if (game === 'th09' && replayPreparation) await replayPreparation.catch(() => {});
+    const owner = requiredRuntime(), before = owner.getSnapshot();
     if (before.ready && before.game === game && before.runtimeVariant === variant && !(options.retireRunning && before.launched)) return;
     if (before.epoch !== null && !await owner.close({decide: closeDecision})) throw new RuntimeSessionSupersededError();
     const controller = new AbortController();
@@ -518,7 +522,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     files = createFileActions({runtime, prepareFiles, releasePrepared, translate: stringTranslate, confirm: decisions.askConfirmation,
       pickFile: ports.pickFile, download: ports.download, feedback, replayMutations: replays.mutations,
       replayManager: {open: async product => {requiredNavigation().openInfoDialog('replayDialog', gameIdForProduct(product) === 'th09' ? {replace: true} : undefined); await replays!.open(product);},
-        refresh: () => replays!.refresh(), isOpen: () => replays!.getSnapshot().open, close: () => requiredNavigation().closeInfoDialog('replayDialog')},
+        refresh: () => replays!.refresh({afterMutation: true}), isOpen: () => replays!.getSnapshot().open, close: () => requiredNavigation().closeInfoDialog('replayDialog')},
       captureImportContext: product => {
         const playerIntent = playerIntentRevision;
         return {

@@ -492,3 +492,42 @@ passed. UI build and typecheck passed both in the working directory and in an
 archive of the exact staged source, excluding unrelated dirty changes. The cold
 rename/close race has its own passing regression. Functional changes are in
 launcher `06bd5fc`; Runtime listing timestamps are in TH09 `f06e6ff`.
+
+## Parallel player loading revision — 2026-10-15
+
+The user's clarification supersedes the deferred-start policy above. Entering
+TH09 Replay management now starts the persistent game viewer automatically while
+the independent storage reader publishes the file list. Browsing and downloads
+remain available before game readiness and after a resource-loading failure.
+Watch joins the pending preparation and does not create another native document.
+
+Native mutations requested during startup also join that preparation. The
+import-completion refresh reads after its writer has committed while still owning
+the mutation queue, avoiding a self-wait on that same queue. Closing the workspace
+cancels its pending viewer/Watch and suppresses obsolete failure feedback.
+
+51 focused model/storage/file-service checks and five actual BrowserLauncher
+mounted Replay cases pass. The TH09 mounted case explicitly withholds native
+readiness, downloads a listed file, queues an import and Watch, then releases
+readiness and verifies one native navigation and successful playback/import.
+These are synthetic lifecycle checks, separate from browser/engine acceptance.
+
+Local browser acceptance paused only the native shell script request. The file
+list appeared and the real fixture downloaded before readiness, with the same
+SHA-256 recorded above. Releasing the request let the automatically started game
+finish loading and play the selected file. All raw interception was removed.
+Evidence: `eager-player-browser.json` and `qa/eager-player-loading.png`.
+
+## Wide-window fit revision — 2026-10-15
+
+Wide layouts size the game from the space remaining below the header and above
+the transport/metadata, rather than deriving an oversized height from width.
+The native canvas remains proportionally letterboxed. The file list has its own
+scroll area and its header/footer remain visible. Short desktop windows use
+smaller outer spacing. Portrait and very short windows retain document scrolling.
+
+Browser geometry and screenshots at 1440×900, 1366×640 and 1920×1080 verify no
+outer vertical scroll and visible transport, metadata and file footer. Native
+canvas geometry confirms its 4:3 fit. Evidence is `viewport-fit.json` and
+`qa/viewport-fit-*.png`. Temporary viewport overrides were reset. The updated UI
+build passed; no production deployment was performed.

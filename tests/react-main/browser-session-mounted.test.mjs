@@ -1158,7 +1158,7 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   host.games[game].multiplayerRuntime = `${runtimePath}?hosted=1&v=test-multiplayer`;
   // Same explicit setup boundary as above: the old home-card activation is
   // baseline-conflicted, so it is not counted as original browser acceptance.
-  const f = await mountBrowser({initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game]});
+  const f = await mountBrowser({initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game], autoReady: game !== 'th09'});
   const frame = node('#gameFrame');
   if (game === 'th09') {
     await React.act(async () => {
@@ -1167,8 +1167,23 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
     database.close();
     });
     await click('#mpReplayViewer'); await until(() => env.document.querySelector('[data-replay-watch="replay/th9_01.rpy"]'), 'TH09 opens its independent file listing');
-    assert.equal(f.outbound.length, 0, 'browsing sends no native command'); assert.equal(f.navigations.length, 0, 'browsing leaves the game iframe empty');
+    await until(() => f.navigations.length === 1, 'TH09 automatically starts its player without selecting a file');
+    assert.equal(api.getTestSession().getRuntime().getSnapshot().ready, false, 'the file list is usable before game readiness');
+    const document = f.native.document;
+    await click('[aria-label="管理 th9_01.rpy"]');await click('.replay-file-menu [role="menuitem"]');
+    assert.equal(f.downloads[0].name, 'th9_01.rpy', 'direct download succeeds while the native ready message is withheld');
+    let imported;
+    await React.act(async () => {imported = api.getTestSession().importFile('replay', new NativeFile([new Uint8Array([8,9])], 'th9_02.rpy'), product);});
+    await tick();assert.equal(commands().includes('write'), false);assert.equal(f.native.document, document, 'a queued import does not replace the loading player');
     await click('[data-replay-watch="replay/th9_01.rpy"]');
+    assert.equal(commands().includes('playback'), false, 'selection waits for the same in-flight preparation');
+    await React.act(async () => {
+      const parsed = new URL(f.native.location.href);
+      const data = await env.window.__eaglerPrepareManagedRuntimeDataV1({game, generation: parsed.searchParams.get('gameGeneration'), epoch: f.native.envelope.epoch});
+      f.dataReads.push([...new Uint8Array(data.buffer)]);f.native.emit('ready');
+    });
+    await React.act(async () => {await imported;});
+    assert.equal(f.native.document, document);assert.equal(f.navigations.length, 1);assert.deepEqual(f.storedFiles.get('replay/th9_02.rpy'), [8,9]);
   } else await click('#mpReplayViewer');
   await until(() => commands().includes('launch') && (game !== 'th09' || commands().includes('playback')), 'actual Replay action configures and launches the multiplayer Runtime');
   const source = f.native.location.href, configure = f.outbound.find(message => message.command === 'configure');

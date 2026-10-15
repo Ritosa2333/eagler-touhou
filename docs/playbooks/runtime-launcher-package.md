@@ -136,9 +136,12 @@ existing IDBFS v21 `FILE_DATA` store. It derives the ordinary root from the
 Product Catalog and preserves the Runtime's separate MP root. Missing databases
 are not created; unsupported schemas fail without migration or native fallback.
 
-Opening the workspace does not prepare a Runtime, DATA, language or music.
-The first Watch prepares the persistent viewer; subsequent files and backward
-seeks reuse that viewer. A matching already-owned Runtime must finish its normal
+Opening the workspace starts the persistent viewer and independently reads the
+file list in parallel. Browsing and downloading must not wait for Runtime, DATA,
+language or music readiness, and remain available after a loading failure.
+Watch joins an in-flight preparation; subsequent files and backward seeks reuse
+that viewer. Native writes requested during preparation wait for the same owner.
+A matching already-owned Runtime must finish its normal
 save/sync before an independent read. This handshake concerns the current
 document's Runtime, not unsaved memory held by another browser tab.
 
@@ -147,8 +150,9 @@ delete. The reader preserves Replay bytes, THMOTION export extensions and
 validated MP sidecars. ZIP code is available with the page so an offline folder
 download does not depend on fetching a module at the moment of download.
 
-Verify cold browsing with no game-resource requests, ordinary/MP root isolation,
-offline reopen/download and byte equality, save ACK before read, first Watch,
+Verify file listing/download while game readiness is withheld, automatic player
+preparation, ordinary/MP root isolation, offline download and byte equality,
+save ACK before read, queued Watch,
 hot file switch, and one-click return. Source gates are
 `tests/react-main/replay-storage.test.mjs`, `replays-model.test.mjs`, and the
 Replay cases in `browser-session-mounted.test.mjs`.

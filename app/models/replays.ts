@@ -65,6 +65,7 @@ export function createReplayModel(options: ReplayModelOptions) {
   let snapshot: ReplaySnapshot = Object.freeze({open: false, phase: 'idle', productId: null, rows: [], animateRows: false});
   let generation = 0, readVersion = 0, disposed = false;
   let closeWork: Promise<void> = Promise.resolve(), watching = false;
+  let viewerPreparation: {product: ProductId; promise: Promise<void>} | null = null;
   type TemporaryOwner = {product: ProductId; epoch: number | null};
   let runtimeOwner: TemporaryOwner | null = null;
   let retainedOwner: TemporaryOwner | null = null;
@@ -77,6 +78,21 @@ export function createReplayModel(options: ReplayModelOptions) {
     for (const listener of listeners) listener();
   }
   function valid(token: number, product: ProductId) {return !disposed && snapshot.open && generation === token && snapshot.productId === product;}
+  function prepareViewer(product: ProductId): Promise<void> {
+    if (viewerPreparation?.product === product) return viewerPreparation.promise;
+    const preparation = {product, promise: (async () => options.prepareViewer!(product))()};
+    viewerPreparation = preparation;
+    const settled = () => {if (viewerPreparation === preparation) viewerPreparation = null;};
+    void preparation.promise.then(settled, settled);
+    return preparation.promise;
+  }
+  function preloadViewer(product: ProductId, token: number): void {
+    if (!options.storage || !options.prepareViewer || gameIdForProduct(product) !== 'th09') return;
+    // Listing and downloads stay independent of the eagerly prepared player.
+    void prepareViewer(product).catch(error => {
+      if (valid(token, product) && !watching) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));
+    });
+  }
   function responseBytes(response: RuntimeResponseMessage): number[] {
     if (!Array.isArray(response.bytes) || !response.bytes.every(value => Number.isInteger(value) && value >= 0 && value <= 255)) throw new Error(t('runtime.invalidFileContent'));
     return response.bytes as number[];
@@ -113,11 +129,13 @@ export function createReplayModel(options: ReplayModelOptions) {
     const current = runtime.getSnapshot();
     if (!current.launched && current.epoch === epoch && current.game === gameIdForProduct(product)) {await options.releasePrepared(product, epoch); if (retainedOwner === owner) retainedOwner = null;}
   }
-  async function refresh({animateRows = false}: {animateRows?: boolean} = {}): Promise<void> {
+  async function refresh({animateRows = false, afterMutation = false}: {animateRows?: boolean; afterMutation?: boolean} = {}): Promise<void> {
     const product = snapshot.productId, token = generation, version = ++readVersion;
     if (!product || !snapshot.open || disposed) return;
     const ownerAtStart = runtimeOwner;
-    const promise = options.storage && gameIdForProduct(product) === 'th09' ? mutations.idle().then(async () =>
+    // Import's committed writer still owns the mutation queue while requesting
+    // this read. Waiting for that same queue here would wait on ourselves.
+    const promise = options.storage && gameIdForProduct(product) === 'th09' ? (afterMutation ? Promise.resolve() : mutations.idle()).then(async () =>
       (await options.storage!.read(product)).map(({bytes: _bytes, ...file}) => ({...file, name: file.path.split('/').pop() || file.path}))) : withFiles(product, async access => {
       if (ownerAtStart && ownerAtStart.epoch === null) ownerAtStart.epoch = access.epoch;
       await access.sync();
@@ -138,7 +156,9 @@ export function createReplayModel(options: ReplayModelOptions) {
     publish({open: true, phase: 'loading', productId: product, rows: [], animateRows: false});
     await options.afterPaint();
     if (!valid(token, product)) return;
-    try {await refresh({animateRows: true});}
+    const listing = refresh({animateRows: true});
+    preloadViewer(product, token);
+    try {await listing;}
     catch (error) {
       if (valid(token, product)) publish({phase: 'error', rows: [], animateRows: false});
       throw error;
@@ -151,6 +171,7 @@ export function createReplayModel(options: ReplayModelOptions) {
     const current = runtime.getSnapshot();
     if (retainedOwner?.product === product && !current.launched && current.epoch === retainedOwner.epoch) runtimeOwner = retainedOwner;
     publish({open: true});
+    preloadViewer(product, token);
     if (snapshot.phase !== 'loading') return;
     // Closing before the first paint may have prevented the initial read.
     if (!read) {
@@ -190,12 +211,12 @@ export function createReplayModel(options: ReplayModelOptions) {
       if (!valid(token, product)) return;
       if (runtime.getSnapshot().launched && !options.prepareViewer) throw new Error(t('replay.stopBeforeWatch'));
       if (!snapshot.rows.some(row => row.path === path)) throw new Error(t('runtime.invalidFileEntry'));
-      if (options.prepareViewer) {await options.prepareViewer(product); if (valid(token, product)) await options.watch(product, path); return;}
+      if (options.prepareViewer) {await prepareViewer(product); if (valid(token, product)) await options.watch(product, path); return;}
       // Retire the manager's temporary native owner before playback acquires
       // its own epoch. Router Back may later reopen the retained folder view.
       close(); const closedGeneration = generation; await closeWork;
       if (!disposed && generation === closedGeneration && !snapshot.open) await options.watch(product, path);
-    } catch (error) {if (!disposed) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));}
+    } catch (error) {if (!disposed && (!options.prepareViewer || valid(token, product))) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));}
     finally {watching = false;}
   }
   async function download(path: string): Promise<void> {
