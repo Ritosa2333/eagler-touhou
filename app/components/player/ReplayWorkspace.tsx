@@ -76,7 +76,6 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
   return <>
     <header className="replay-workspace-header">
       <button type="button" className="replay-back replay-button" aria-label="返回" disabled={busy} onClick={() => {void close();}}>{icon('replay-arrow-left')}</button>
-      <h1>录像管理</h1>
     </header>
     {stage && !app.replayViewer && stage.querySelector('.game-viewport') && createPortal(<div className="replay-workspace-idle">{icon('player-play')}<p>选择录像开始播放</p><small>游戏加载期间也可浏览和下载</small></div>, stage.querySelector('.game-viewport')!)}
     {stage && createPortal(<>

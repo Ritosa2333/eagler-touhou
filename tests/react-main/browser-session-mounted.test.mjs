@@ -1197,6 +1197,10 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   assert.equal(f.sockets.length, 0, 'Replay viewer never creates room/gameplay transport');
   if (game === 'th09') {
     assert.equal(f.outbound.find(message => message.command === 'playback')?.path, 'replay/th9_01.rpy');
+    await click('.replay-transport [aria-label="切换全屏"]');
+    assert.equal(f.fullscreen, node('#player'), 'Replay fullscreen includes both the stable game stage and file browser');
+    assert.equal(f.fullscreen.contains(node('.replay-file-browser')), true);
+    await click('.replay-fullscreen-exit');assert.equal(f.fullscreen, null);
     await click('.replay-back');
   } else {
     assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');

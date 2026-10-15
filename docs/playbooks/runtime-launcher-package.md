@@ -157,6 +157,11 @@ hot file switch, and one-click return. Source gates are
 `tests/react-main/replay-storage.test.mjs`, `replays-model.test.mjs`, and the
 Replay cases in `browser-session-mounted.test.mjs`.
 
+Replay fullscreen uses the permanent `#player` workspace owner, so wide screens
+retain the file browser and its menus beside the game. Portrait fullscreen uses
+the game and transport only. Keep the native iframe in place and preserve a
+visible upper-right fullscreen exit control in either layout.
+
 ## Verification
 
 1. Verify catalog, descriptor, installed generation and required-file list independently.

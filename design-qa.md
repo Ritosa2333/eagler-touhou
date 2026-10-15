@@ -531,3 +531,26 @@ outer vertical scroll and visible transport, metadata and file footer. Native
 canvas geometry confirms its 4:3 fit. Evidence is `viewport-fit.json` and
 `qa/viewport-fit-*.png`. Temporary viewport overrides were reset. The updated UI
 build passed; no production deployment was performed.
+
+## Compact navigation and fullscreen files — 2026-10-15
+
+Removed the visible Replay workspace title. Desktop navigation is now one 36px
+Back button directly above the player; the file panel spans the full right-hand
+column. Portrait keeps the existing 44px touch target.
+
+Fullscreen now belongs to the permanent workspace/player owner, including the
+right-side file browser on wide screens. The game-stage exit button remains at
+the upper right. Portrait fullscreen uses the game and transport layout, with
+the file panel hidden. No iframe is moved or remounted for these transitions.
+
+Local browser acceptance confirms the native fullscreen owner is `#player`, the
+file column stays to the right without outer scrolling, and both file-action
+and speed menus are descendants of that fullscreen owner. A folder and another
+Replay were selected while fullscreen remained active; the upper-right exit
+button returned normally. Evidence: `fullscreen-files-browser.json`,
+`qa/fullscreen-files-wide.png`, and `qa/compact-replay-header.png` under
+`artifacts/replay-workspace-20261015`. Viewport overrides were reset.
+
+Five mounted Replay lifecycle cases and 28 shared-select/transient checks passed,
+along with UI build and typecheck. Physical-device acceptance and production
+deployment were not part of this revision.
