@@ -49,6 +49,8 @@ function harness(timeline = false) {
       _th09_network_info: () => 0,
       _th09_adonis_configure: mode => { calls.modes.push(mode); return 1; },
       _th09_rollback_begin: (...args) => { calls.begin.push(args.slice(0,9)); return 1; },
+      _th09_network_selection_begin:(...args)=>{calls.selection=args;return 1;},
+      _th09_spectator_prepare:()=>{calls.preparedForSelection=true;return 1;},
       _th09_measured_begin:(...args)=>{
         calls.begin.push(args);self.HEAPU32.set([3,4,args[8],129,120,5000,6000,0,0,1,args[8],0,0,calls.modes.at(-1),120,120,1000,8000,4000,1000,9000,5000,129,120,16000,1,0],192);return 1;
       },
@@ -75,7 +77,7 @@ function harness(timeline = false) {
   return {core, restore};
 }
 
-async function connectPair(harness, inputDelay = 0, adonisMode = 0, pending = false) {
+async function connectPair(harness, inputDelay = 0, adonisMode = 0, pending = false, inGameSelection = false) {
   globalThis.fetch = async () => ({ok: true, json: async () => ({build: 'a'.repeat(24)})});
   globalThis.location = {href: 'https://example.test/runtime/th09/th09.html'};
   globalThis.document = {hidden: false};
@@ -88,6 +90,7 @@ async function connectPair(harness, inputDelay = 0, adonisMode = 0, pending = fa
     netplayPlayer: side, netplayPlayerCount: 2, netplaySeed: 1234, netplayDifficulty: 2,
     netplayInputDelay: inputDelay,
     netplayAdonisMode: adonisMode,
+    ...(inGameSelection?{netplayInGameSelection:true}:{}),
     netplayLoadouts: [{character: 3}, {character: 10}],
   });
   await Promise.all([left.connect(options(0, inputDelay)), right.connect(options(1, inputDelay))]);
@@ -96,6 +99,30 @@ async function connectPair(harness, inputDelay = 0, adonisMode = 0, pending = fa
   assert.equal(right.active, !pending);
   return {left, right, leftCore, rightCore};
 }
+
+test('game selection starts a neutral native menu and leaves room presets outside gameplay identity',async()=>{
+  const box=harness();let pair;
+  try{
+    pair=await connectPair(box,0,0,false,true);
+    assert.equal(pair.leftCore.calls.begin.length,0);
+    assert.deepEqual(pair.leftCore.calls.selection,[1234,0,0xaaaaaaab,0xaaaaaaaa,(0xaaaaaaaa^0x09020001)>>>0,0,2]);
+    assert.notEqual(pair.leftCore.calls.selection[4],(0xaaaaaaaa^0x09010000^(3<<16))>>>0,'Easy Sakuya/Reimu fixed-loadout entry cannot share the menu ABI');
+    assert.equal(pair.left.betweenMatches,true);
+  }finally{pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('spectator waiting for human selection does not time out or build the room preset world',async()=>{
+  const box=harness(true);let pair,viewer;
+  try{
+    pair=await connectPair(box);const core=box.core();core._th09_spectator_playback_info=()=>1024;
+    viewer=new SharedNetplay(core,{onStatus(){},onClose(){},onResult(){}});
+    await viewer.connect({netplayUrl:'wss://example.test/?room=th09mp-1234&run=1&spectator=c12345678',
+      netplayPlayerCount:2,netplaySpectator:true,netplaySpectatorId:'c12345678',netplaySeed:1234,
+      netplayDifficulty:2,netplayLoadouts:[{character:3},{character:10}],netplayInGameSelection:true});
+    viewer.spectatorReceiveAt=performance.now()-20000;viewer.pump();
+    assert.equal(viewer.connected,true);assert.equal(core.calls.preparedForSelection,true);assert.deepEqual(core.calls.spectatorBegin,[]);
+  }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
+});
 
 test('launcher and in-game entries share the TH09 room through the common peer transport', async () => {
   const box = harness();
