@@ -53,10 +53,20 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   let identity = runtime.getInputContext();
   const controls: TouchControlsSnapshot = {fireEnabled: options.fireState.getEnabled(), focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0};
   let snapshot: PlayerTouchSnapshot = Object.freeze({...controls, heldFire: false, functionDown: false, thpracMenuOpen: false});
-  function publish() {
+  let actionUiFrame: number | null = null;
+  function notify() {for (const listener of listeners) listener();}
+  function publish(deferActionUi = false) {
     const next = {...controls, heldFire, functionDown, thpracMenuOpen};
-    if ((Object.keys(next) as (keyof typeof next)[]).every(key => next[key] === snapshot[key])) return;
-    snapshot = Object.freeze(next); for (const listener of listeners) listener();
+    const changed = !(Object.keys(next) as (keyof typeof next)[]).every(key => next[key] === snapshot[key]);
+    if (changed) snapshot = Object.freeze(next);
+    if (!changed && (deferActionUi || actionUiFrame === null)) return;
+    // Native edges are immediate; the decorative HUD only needs one update per frame.
+    if (deferActionUi) {
+      if (actionUiFrame === null) actionUiFrame = win.requestAnimationFrame(() => {actionUiFrame = null; if (!disposed) notify();});
+      return;
+    }
+    if (actionUiFrame !== null) {win.cancelAnimationFrame(actionUiFrame); actionUiFrame = null;}
+    notify();
   }
   const context = () => {
     const value = runtime.getInputContext();
@@ -96,8 +106,9 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
       const action=declaration[name as keyof typeof declaration];
       let owners=customOwners.get(name);if(!owners){owners=new Set();customOwners.set(name,owners);}
       if(down)owners.add(id);else owners.delete(id);
-      const bits=controls.actionButtons||0;controls.actionButtons=owners.size?bits|action.bit:bits&~action.bit;
-      publish();syncControls();
+      const bits=controls.actionButtons||0,next=owners.size?bits|action.bit:bits&~action.bit;
+      if(next===bits)return;controls.actionButtons=next;
+      publish(true);syncControls();
     };
     on(element,'pointerdown',event=>{if(ios||!customActions()||!allowed())return;event.preventDefault();event.stopImmediatePropagation();capture(element,event);change(event.pointerId,true);},{capture:true});
     for(const type of ['pointerup','pointercancel','lostpointercapture'] as const)on(element,type,event=>{if(ios||!customActions())return;event.preventDefault();event.stopImmediatePropagation();change(event.pointerId,false);},{capture:true});

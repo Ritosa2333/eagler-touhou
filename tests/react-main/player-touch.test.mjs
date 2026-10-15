@@ -168,3 +168,12 @@ test('main1874/8983: recreated Player bindings retain document fire choice acros
   assert.deepEqual(writes, [false, true], 'dispose resets transient input only');
   assert.equal(fixture().touch.getSnapshot().fireEnabled, true, 'a fresh document starts with main\'s true default');
 });
+
+test('rapid native taps preserve every edge, drop duplicate capture releases and bound HUD updates', async () => {
+ const f=fixture({game:'th075'});let updates=0;f.touch.subscribe(()=>updates++);
+ for(let i=0;i<100;i++){f.pointer('fire','pointerdown',{pointerId:i+1});f.pointer('fire','pointerup',{pointerId:i+1});f.pointer('fire','lostpointercapture',{pointerId:i+1});}
+ const packets=f.sent.filter(m=>m.command==='touch-controls');assert.equal(packets.length,200);
+ assert.deepEqual(packets.map(m=>m.actionButtons),Array.from({length:200},(_,i)=>i%2===0?1:0));
+ assert.equal(updates,0,'HUD renders are not synchronous with each input edge');
+ assert.equal(f.touch.getSnapshot().actionButtons,0);await wait(40);assert.equal(updates,1);
+});
