@@ -91,6 +91,7 @@ function RoomSettingsControls({session}: {session: BrowserSession}) {
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   if (!settings || !isMultiplayerProductId(settings.context.productId)) return null;
   return <MultiplayerSettingsControls
+    {...(settings.context.productId === 'th09mp' ? {autoReplay: {enabled: settings.replayAutoSave !== false, onChange: session.settings.setReplayAutoSave}} : {})}
     onReplayViewer={() => {void session.openReplayViewer(settings.context.productId).catch(session.reportError);}} onImport={session.gameData.openManual}/>;
 }
 function RoomDrawer({session, onClosingChange}: {session: BrowserSession; onClosingChange(value: boolean): void}) {

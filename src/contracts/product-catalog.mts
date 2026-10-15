@@ -242,7 +242,7 @@ export const PRODUCT_GAMES = Object.freeze({
     runtimeAssets: Object.freeze([
       "th09.html", "manifest.json", "version.json", "shell.mjs", "managed.css", "keyboard.mjs",
       "directory-keyboard.mjs",
-      "shared-netplay.mjs", "motion-replay.mjs", "th09.mjs", "th09.wasm",
+      "shared-netplay.mjs", "motion-replay.mjs", "auto-replay.mjs", "th09.mjs", "th09.wasm",
       "fonts/blend.bin", "fonts/cp932.bin",
     ]),
     dataProvider: "retail-memory",

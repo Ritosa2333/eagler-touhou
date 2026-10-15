@@ -110,6 +110,9 @@ export interface RuntimeConfigureOptions {
   netplaySpectatorCount?: number;
   /** Opt-in TH09 forward-only historical spectator experiment. */
   netplaySpectatorTimeline?: boolean;
+  /** TH09 local completed-match archive, independent for each player. */
+  netplayReplayAutoSave?: boolean;
+  netplayReplayNames?: string[];
   netplayIceServers?: unknown[];
   netplayLoadouts?: RuntimeNetplayLoadout[];
 }
@@ -156,6 +159,8 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplaySpectatorId: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer spectator session" }),
   netplaySpectatorCount: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplaySpectatorTimeline: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "experimental TH09 historical playback" }),
+  netplayReplayAutoSave: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "TH09 player completed-match local archive; defaults on" }),
+  netplayReplayNames: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "TH09 Replay matchup name snapshot" }),
   netplayIceServers: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplayLoadouts: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
 } satisfies Readonly<Record<keyof RuntimeConfigureOptions, Readonly<{

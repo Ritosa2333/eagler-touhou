@@ -31,6 +31,7 @@ export interface SettingsSnapshot {
   preferenceId: ProductId;
   multiplayer: boolean;
   shareSingleplayerSettings: boolean;
+  replayAutoSave?: boolean;
   options: Readonly<GameOptions>;
   music: MusicMode;
   musicPreference: MusicMode;
@@ -43,7 +44,7 @@ export interface SettingsSnapshot {
 export interface SettingsChange {
   previous: SettingsSnapshot | null;
   current: SettingsSnapshot;
-  reason: 'hydrate' | 'host-restore' | 'locale-restore' | 'context' | 'option' | 'music' | 'language' | 'sharing' | 'game-version' | 'preview' | 'presentation';
+  reason: 'hydrate' | 'host-restore' | 'locale-restore' | 'context' | 'option' | 'music' | 'language' | 'sharing' | 'game-version' | 'preview' | 'presentation' | 'replay-auto-save';
 }
 
 /** Original settings event policy, independent of Runtime/save ownership.
@@ -65,7 +66,7 @@ export function settingsChangeResetsRuntime({previous, current, reason}: Setting
       previous.options[name] !== current.options[name]
       && name !== 'touchSensitivity' && name !== 'touchControlOpacity'
       && !(current.multiplayer && name === 'frameLimit60Enabled'));
-    case 'host-restore': case 'locale-restore': case 'context': case 'preview': case 'presentation': return false;
+    case 'host-restore': case 'locale-restore': case 'context': case 'preview': case 'presentation': case 'replay-auto-save': return false;
   }
 }
 export interface GameSettingsModel {
@@ -88,6 +89,7 @@ export interface GameSettingsModel {
   setLanguage(value: string): void;
   setGameVersion(value: GameVersion): void;
   setShareSingleplayerSettings(enabled: boolean): void;
+  setReplayAutoSave(enabled: boolean): void;
   setDisclosure(name: keyof SettingsDisclosureState, open: boolean): void;
 }
 
@@ -133,6 +135,7 @@ export function createGameSettingsModel({storage, onChange}: {
     if (multiplayer) options.thpracEnabled = false;
     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,
+      ...(context.productId === 'th09mp' ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
       music: resolveEffectiveMusicMode({...context.musicAvailability, requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
       musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
       gameVersion: loadGameVersion(storage, gameId),
@@ -236,6 +239,12 @@ export function createGameSettingsModel({storage, onChange}: {
       if (!state.multiplayer || state.shareSingleplayerSettings === enabled) return;
       multiplayerPreferences.persistShareSingleplayerSettings(state.context.productId, enabled);
       read(state.context, 'sharing', enabled);
+    },
+    setReplayAutoSave(enabled: boolean) {
+      const state = required();
+      if (state.context.productId !== 'th09mp' || state.replayAutoSave === enabled) return;
+      multiplayerPreferences.persistReplayAutoSave(state.context.productId, enabled);
+      publish({...state, replayAutoSave: enabled}, 'replay-auto-save');
     },
   });
 }

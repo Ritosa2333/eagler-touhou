@@ -2,6 +2,8 @@ export const multiplayerShareSettingsStorageKey = (product: string): string =>
   `eagler-touhou-${product}-share-singleplayer-settings-v1`;
 export const multiplayerLoadoutStorageKey = (product: string): string =>
   `eagler-touhou-${product}-loadout-v1`;
+export const multiplayerReplayAutoSaveStorageKey = (product: string): string =>
+  `eagler-touhou-${product}-replay-auto-save-v1`;
 
 export interface MultiplayerPreferenceStorage {
   getItem(key: string): string | null;
@@ -17,6 +19,8 @@ export interface MultiplayerPreferenceStore {
   load(input: { product: string; multiplayer: boolean; maxLoadout: number }): MultiplayerProductPreferences;
   persistShareSingleplayerSettings(product: string, enabled: boolean): void;
   persistPreferredLoadout(product: string, loadout: number): void;
+  replayAutoSave(product: string): boolean;
+  persistReplayAutoSave(product: string, enabled: boolean): void;
 }
 
 function browserLocalStorage(): MultiplayerPreferenceStorage | null {
@@ -58,5 +62,14 @@ export function createMultiplayerPreferenceStore({
     try { storage?.setItem(multiplayerLoadoutStorageKey(product), String(loadout)); } catch {}
   };
 
-  return Object.freeze({ load, persistShareSingleplayerSettings, persistPreferredLoadout });
+  const replayAutoSave = (product: string): boolean => {
+    if (product !== 'th09mp') return false;
+    try { return storage?.getItem(multiplayerReplayAutoSaveStorageKey(product)) !== '0'; }
+    catch { return true; }
+  };
+  const persistReplayAutoSave = (product: string, enabled: boolean): void => {
+    if (product !== 'th09mp') return;
+    try { storage?.setItem(multiplayerReplayAutoSaveStorageKey(product), enabled ? '1' : '0'); } catch {}
+  };
+  return Object.freeze({ load, persistShareSingleplayerSettings, persistPreferredLoadout, replayAutoSave, persistReplayAutoSave });
 }

@@ -32,6 +32,8 @@ export interface MultiplayerRuntimeOptionInput {
   spectatorId: string;
   spectatorCount: number;
   spectatorTimeline?: boolean;
+  replayAutoSave?: boolean;
+  replayNames?: string[];
   challengeMode?: boolean;
   iceServers: unknown;
   loadouts: MultiplayerRuntimeLoadout[];
@@ -54,6 +56,8 @@ export interface MultiplayerRuntimeOptions {
   netplaySpectatorId: string;
   netplaySpectatorCount: number;
   netplaySpectatorTimeline?: boolean;
+  netplayReplayAutoSave?: boolean;
+  netplayReplayNames?: string[];
   netplayChallengeMode?: boolean;
   netplayIceServers: unknown[];
   netplayLoadouts: MultiplayerRuntimeLoadout[];
@@ -209,6 +213,10 @@ export function buildMultiplayerRuntimeOptions(
     netplaySpectatorId: spectator ? input.spectatorId : '',
     netplaySpectatorCount: Math.max(0, Number(input.spectatorCount) || 0),
     ...(input.spectatorTimeline === true ? { netplaySpectatorTimeline: true } : {}),
+    ...(roomProduct === 'th09mp' && !spectator ? {
+      netplayReplayAutoSave: input.replayAutoSave !== false,
+      netplayReplayNames: [0, 1].map(side => String(input.replayNames?.[side] || `P${side + 1}`).slice(0, 64)),
+    } : {}),
     netplayIceServers: Array.isArray(input.iceServers) ? input.iceServers : [],
     netplayLoadouts: loadouts,
   };

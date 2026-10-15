@@ -6,6 +6,8 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
+  ['th09.replayAutoSave', '自动保存每局 Replay', 'Automatically save every match Replay'],
+  ['th09.replayAutoSaveHint', '整局结束后保存在此浏览器，按双方昵称查看和下载', 'Saved in this browser after each complete match, labeled with both player names'],
   ["room.inGameSelection", "游戏内选角", "Choose in game"],
   ["room.inGameSelectionHint", "角色、难度和场景将在游戏内选择。难度和场景由 P1 操作。", "Choose characters, difficulty and stage in game. P1 controls difficulty and stage."],
   ['th09.elapsed', '已进行 {minutes} 分钟', '{minutes} min elapsed'],

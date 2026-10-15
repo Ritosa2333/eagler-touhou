@@ -42,6 +42,7 @@ export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
 };
 export interface RoomSettingsInput {
+  replayAutoSave?: boolean;
   touchMovementMode: string;
   touchEnabled: boolean;
   mobileDevice: boolean;
@@ -1033,6 +1034,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorId: spectator ? clientId : '',
         spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
         spectatorTimeline: room.spectatorTimeline === true,
+        ...(product === 'th09mp' ? {
+          replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
+          replayNames: [0, 1].map(side => room!.seats?.[side]?.name || `P${side + 1}`),
+        } : {}),
         ...(config.gameplay === 'cooperative'
           ? { challengeMode: room.challengeMode === true }
           : {}),
