@@ -6,6 +6,8 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
+  ['player.exitPlayback', '退出播放', 'Exit playback'],
+  ['player.exitSpectating', '退出旁观', 'Exit spectating'],
   ['replay.stopBeforeWatch', '请先退出当前游戏再观看录像', 'Exit the current game before watching a Replay'],
   ['replay.watch', '观看', 'Watch'],
   ['replay.watching', '正在观看 {name}', 'Watching {name}'],

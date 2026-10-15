@@ -71,6 +71,8 @@ before(async () => {
     export {touchLayoutStorageKey} from './src/launcher/touch-layout-model.mts';
     export {RUNTIME_EPOCH_QUERY_PARAMETER} from './src/contracts/runtime-protocol.mts';
   `}, outfile, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', packages: 'external', logLevel: 'silent',
+    // Synthetic DOM verifies lifecycle, not CSS asset loading/rendering.
+    loader: {'.css': 'empty'},
     plugins: [{name: 'native-acquisition-scheduling', setup(ctx) {
       // Test-only references and a storage-read scheduling edge. Both wrappers
       // delegate to the authored owners; no preparation/queue policy is replaced.
@@ -1168,7 +1170,9 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   assert.equal(Object.keys(configure.options).some(key => key.startsWith('netplay')), false);
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.deepEqual(f.dataReads, [[1, 2, 3]]);
   assert.equal(f.sockets.length, 0, 'Replay viewer never creates room/gameplay transport');
-  await back(); await until(() => !playerOpen(), 'Replay viewer closes through its actual Runtime owner');
+  assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');
+  assert.equal(node('#playbackExit').nextElementSibling.id, 'fullscreenToggle');
+  await click('#playbackExit'); await until(() => !playerOpen(), 'toolbar exit closes through the actual Runtime owner');
   assert.equal(node('#gameFrame'), frame);
 });
 
@@ -1887,4 +1891,24 @@ test('actual BrowserLauncher: direct fallback import retires its loading epoch a
   await React.act(async () => {f.native.emit('ready');}); await tick();
   assert.equal(commands().includes('launch'), false); assert.equal(commands().includes('configure'), false);
   assert.equal(f.native.location.href, 'about:blank');
+});
+
+
+test('actual BrowserLauncher: spectator toolbar exits playback into the existing room', async () => {
+  const invite = api.encodeRoomInvite({g: 'th09mp', r: '1234', f: true, a: 'join', s: true});
+  const host = subsetHost(['th09']); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({initial: '/?j=' + invite, host, socketBoundary: true, seedPackages: ['th09']});
+  await until(() => f.sockets.length > 0, 'room socket');
+  const socket = f.sockets[0];
+  const room = {code: '1234', playerCount: 2, difficulty: 1, phase: 'playing', inputDelay: 0, predictionLimit: 8,
+    startSerial: 4, spectatorTimeline: true, seats: [{clientId: 'host', name: 'A', loadout: 0, ready: true}, {clientId: 'peer', name: 'B', loadout: 1, ready: true}], spectators: []};
+  await React.act(async () => {socket.open(); socket.message({type: 'state', room}); socket.message({type: 'spectator-start', serial: 4, room});});
+  await until(() => commands().includes('launch'), 'spectator Runtime launched');
+  assert.equal(f.outbound.find(message => message.command === 'configure').options.netplaySpectator, true);
+  assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');
+  assert.equal(node('#playbackExit').nextElementSibling.id, 'fullscreenToggle');
+  await click('#playbackExit'); await until(() => !playerOpen(), 'spectator playback stopped');
+  assert.equal(node('#mpRoomCode').textContent, '1234');
+  assert.equal(socket.closes.length, 0, 'room membership survives playback exit');
+  assert.equal(env.document.querySelector('#playbackExit'), null);
 });
