@@ -185,7 +185,7 @@ export const PRODUCT_GAMES = Object.freeze({
     runtimeFileLayout: "directory", requiredShared: Object.freeze([]),
     runtimeAssets: Object.freeze(["th075.html","manifest.json","shell.mjs","managed.css","keyboard.mjs","directory-keyboard.mjs","display.mjs","content-bundle.mjs","save-sync.mjs","th075.mjs","th075.wasm"]),
     dataProvider: "retail-memory",
-    package: Object.freeze({dataFileId:"game-data",dataTarget:"/th075.data",
+    package: Object.freeze({dataFileId:"game-data",dataTarget:"/th075.data",maxImportBytes:512 * 1024 * 1024,
       musicSourceDirectories:Object.freeze({ogg:"music"}),musicMounts:Object.freeze({ogg:"/music"})}),
     replay: Object.freeze({prefix:"th075",extensions:Object.freeze(["rep"]),naming:"filename"}),
     features: Object.freeze({thprac:false,languages:false,focusHitbox:false}),

@@ -597,3 +597,20 @@ test('main 3630–3668: remaining local reads use concurrency two and stop sibli
   assert.equal(r.writes.includes('/bgm/track-3.ogg'), false); assert.equal(r.writes.includes('/bgm/track-4.ogg'), false);
   assert.equal(progress.length, before); assert.equal(progress.at(-1).completed, 2); assert.equal(progress.at(-1).phase, 'remaining');
 });
+
+// Exercise the import service's outer-file admission before ZIP parsing.
+test('TH075 imports its deployed 333.6 MiB package within a bounded per-game limit', async () => {
+  const parsed = Error('reached ZIP parser');
+  let calls=0;
+  const f=acquisitionFixture({dependencies:{parseZip:async()=>{calls++;throw parsed;}}});
+  for(const size of [349820470,512*1024*1024]) {
+    const file=new Blob(['fixture']);Object.defineProperty(file,'size',{value:size});
+    await assert.rejects(f.acquisition.importPackage({game:'th075',file}),e=>e===parsed);
+  }
+  assert.equal(calls,2);
+  for(const [game,size] of [['th075',0],['th075',512*1024*1024+1],['th06',256*1024*1024+1]]) {
+    const file=new Blob(['fixture']);Object.defineProperty(file,'size',{value:size});
+    await assert.rejects(f.acquisition.importPackage({game,file}),/游戏数据包大小无效/);
+  }
+  assert.equal(calls,2,'Rejected files never reach the ZIP parser');
+});

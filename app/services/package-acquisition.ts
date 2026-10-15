@@ -270,7 +270,9 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const version = gameVersion ?? getGameVersion(game);
     const request = {onProgress};
     checkPreparationAbort(signal);
-    if (!(file instanceof Blob) || file.size <= 0 || file.size > 256 * 1024 * 1024) throw new Error(t('package.invalidDataSize'));
+    const policy = PRODUCT_GAMES[game].package;
+    const maxImportBytes = 'maxImportBytes' in policy ? policy.maxImportBytes : 256 * 1024 * 1024;
+    if (!(file instanceof Blob) || file.size <= 0 || file.size > maxImportBytes) throw new Error(t('package.invalidDataSize'));
     if (!indexedDBAvailable()) throw new Error(t('package.indexedDbUnavailable'));
     const host = metadata.getSnapshot().siteManifest, expected = host?.games[game]?.gameData;
     function expectedData() {if (!expected) throw new Error(t('runtime.dataDescriptorMissing', {game})); return expected;}
