@@ -554,3 +554,18 @@ button returned normally. Evidence: `fullscreen-files-browser.json`,
 Five mounted Replay lifecycle cases and 28 shared-select/transient checks passed,
 along with UI build and typecheck. Physical-device acceptance and production
 deployment were not part of this revision.
+
+## Inline wide-screen transport — 2026-10-15
+
+Wide screens place play/pause, restart and the existing shared speed select to
+the left of the seek bar, with time/fullscreen on the right. Narrow screens
+retain their previous two rows: seek/time above, controls below. The 44px touch
+button height and existing icon-only restart below 360px are preserved.
+
+Browser checks cover 1440×900, 390×844, 320×700 and wide fullscreen. Geometry
+confirms horizontal controls on wide screens, separate seek/button rows on
+narrow screens and no horizontal transport overflow. Playback/pause and
+fullscreen exit remain usable. Evidence: `inline-transport-browser.json` and
+`qa/inline-transport-*.png` under `artifacts/replay-workspace-20261015`. UI build
+and typecheck passed. No new behavior tests were added for this layout-only
+change. Viewport overrides were reset; no production deployment was performed.

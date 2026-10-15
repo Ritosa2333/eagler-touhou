@@ -23,8 +23,8 @@
 .replay-workspace-header{grid-column:1;grid-row:1;display:flex;align-items:center;min-width:0}
 .replay-workspace-header .replay-back{width:36px;height:36px;padding:8px;border-radius:10px;flex:none}
 .replay-workspace-header .replay-back img{width:20px;height:20px}
-.replay-transport{padding:8px 0 16px;min-width:0}
-.replay-seek-row{display:flex;align-items:center;gap:18px;font-size:15px;font-variant-numeric:tabular-nums}
+.replay-transport{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:10px 0 14px;min-width:0}
+.replay-seek-row{grid-column:2;grid-row:1;display:flex;align-items:center;gap:12px;min-width:0;font-size:13px;font-variant-numeric:tabular-nums}
 .replay-seek-row input{appearance:none;flex:1;min-width:0;height:28px;margin:0;background:transparent;cursor:pointer}
 .replay-seek-row input::-webkit-slider-runnable-track{height:5px;border-radius:9px;background:linear-gradient(to right,var(--red-bright) var(--replay-progress),#ffffff20 var(--replay-progress))}
 .replay-seek-row input::-moz-range-track{height:5px;border-radius:9px;background:#ffffff20}
@@ -34,16 +34,18 @@
 .replay-seek-row input:disabled{cursor:default;opacity:.5}
 .replay-seek-row>span{white-space:nowrap;color:var(--muted)}
 .replay-seek-row small{font-size:inherit}
-.replay-transport-buttons{display:flex;align-items:center;gap:18px;margin-top:6px}
-.replay-transport-buttons .replay-button{height:48px;border-radius:999px;padding:10px 18px;white-space:nowrap}
-.replay-transport-buttons .replay-toggle{width:70px;flex:none;background:var(--red-bright);border-color:transparent}
+.replay-transport-buttons{grid-column:1;grid-row:1;display:flex;align-items:center;gap:10px}
+.replay-transport-buttons .replay-button{height:44px;border-radius:999px;padding:9px 12px;white-space:nowrap}
+.replay-transport-buttons .replay-toggle{width:48px;flex:none;background:var(--red-bright);border-color:transparent}
 .replay-transport-buttons .replay-toggle:hover{background:#fa7c6c}
 .replay-transport-buttons .replay-toggle img{filter:none}
-.replay-speed{width:86px;flex:none}
-.replay-speed .mizuki-select-trigger{min-height:46px;border:1px solid var(--line);border-radius:999px;background:transparent;padding:10px 16px;font-size:16px;box-shadow:none}
-.replay-speed .mizuki-select-arrow{color:var(--paper)}
-.replay-seek-status{font-size:13px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.replay-transport-buttons .replay-fullscreen{margin-left:auto;width:48px;padding:10px;border-color:transparent;border-radius:12px;flex:none}
+.replay-speed{width:78px;flex:none}
+.replay-speed .mizuki-select-trigger{min-height:44px;border:1px solid var(--line);border-radius:999px;background:transparent;padding:9px 10px;gap:6px;font-size:14px;box-shadow:none}
+.replay-speed .mizuki-select-arrow{color:var(--paper);flex:0 0 14px;width:14px;height:14px}
+.replay-speed .mizuki-select-arrow svg{width:100%;height:100%}
+.replay-seek-status{grid-column:2/-1;grid-row:2;font-size:13px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.replay-seek-status:empty{display:none}
+.replay-transport>.replay-fullscreen{grid-column:3;grid-row:1;width:40px;height:44px;padding:8px;border-color:transparent;border-radius:10px}
 .replay-fullscreen svg{display:block;width:26px;height:26px;fill:currentColor}
 .replay-fullscreen .fullscreen-exit-icon{display:none}
 .replay-fullscreen[data-fullscreen=true] .fullscreen-exit-icon{display:block}
@@ -119,14 +121,15 @@
  #player.replay-workspace .player-stage{order:1;flex:none;padding:12px;border-radius:16px;overflow:visible}
  #player.replay-workspace .game-viewport{aspect-ratio:4/3}
  #player.replay-workspace #transfer{top:140px;left:28px}
- .replay-transport{padding-bottom:12px}
- .replay-seek-row{gap:10px;font-size:12px}
- .replay-transport-buttons{gap:10px;margin-top:4px}
- .replay-transport-buttons .replay-button{height:44px;padding:9px 12px;font-size:14px}
+ .replay-transport{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:8px 0 12px}
+ .replay-seek-row{grid-column:1/-1;grid-row:1;gap:10px;font-size:12px}
+ .replay-transport-buttons{grid-column:1;grid-row:2;gap:10px}
+ .replay-transport-buttons .replay-button{padding:9px 12px;font-size:14px}
  .replay-transport-buttons .replay-toggle{width:54px}
  .replay-speed{width:78px}
- .replay-speed .mizuki-select-trigger{min-height:44px;padding:9px 12px;font-size:14px}
- .replay-transport-buttons .replay-fullscreen{width:40px;padding:8px}
+ .replay-speed .mizuki-select-trigger{min-height:44px;padding:9px 12px;gap:4px;font-size:14px}
+ .replay-speed .mizuki-select-arrow{flex-basis:12px;width:12px;height:12px}
+ .replay-transport>.replay-fullscreen{grid-column:2;grid-row:2;width:40px;padding:8px}
  .replay-seek-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
  .replay-current{gap:8px;padding-top:12px}
  .replay-current h2{font-size:19px}
@@ -152,6 +155,7 @@
 #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .game-viewport{flex:1;min-height:0;aspect-ratio:auto}
 #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) :is(.replay-transport,.replay-current,.replay-file-browser>header,.replay-breadcrumb,.replay-file-browser>footer,.replay-workspace-move){flex:none}
 #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) :is(.replay-file-browser,.replay-workspace-files){min-height:0}
+#player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-transport{grid-template-columns:auto minmax(0,1fr)}
 #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-transport .replay-fullscreen{display:none}
 #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-fullscreen-exit{position:absolute;z-index:5;display:inline-flex;top:max(24px,env(safe-area-inset-top));right:max(24px,env(safe-area-inset-right));width:40px;height:40px;padding:8px;border:1px solid #ffffff30;border-radius:10px;background:#111110a6}
 @media(orientation:portrait),(max-width:760px){
@@ -159,7 +163,7 @@
  #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) :is(.replay-workspace-header,.replay-file-browser,.replay-current){display:none}
  #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .player-stage{flex:1;min-height:0;padding:0;border:0;border-radius:0;background:#000;overflow:hidden}
  #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .game-viewport{border-radius:0}
- #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-transport{padding:8px max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:#111110}
+ #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-transport{grid-template-columns:minmax(0,1fr);padding:8px max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:#111110}
  #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-fullscreen-exit{top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:44px;height:44px;padding:9px}
 }
 @keyframes replay-panel-in{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}

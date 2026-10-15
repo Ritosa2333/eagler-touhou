@@ -81,6 +81,11 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
     {stage && createPortal(<>
     <button type="button" className="replay-fullscreen replay-fullscreen-exit replay-button" aria-label="退出全屏" onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen="true" dangerouslySetInnerHTML={{__html: playerUtilityIcons.fullscreenToggle}}/>
     <section className="replay-transport" aria-label="录像播放控制">
+      <div className="replay-transport-buttons">
+        <button type="button" className="replay-toggle replay-button" aria-label={playback?.paused || playback?.ended ? '播放' : '暂停'} disabled={!playback || busy} onClick={() => {void control(playback?.paused || playback?.ended ? 'play' : 'pause');}}>{icon(`player-${playback?.paused || playback?.ended ? 'play' : 'pause'}`)}</button>
+        <button type="button" className="replay-restart replay-button" aria-label="重播" disabled={!playback || busy} onClick={() => {void control('seek', 0);}}>{icon('replay-arrow-counter-clockwise')}<span>重播</span></button>
+        <div className="replay-speed">{speed('replaySpeedSelect')}</div>
+      </div>
       <div className="replay-seek-row">
         <input type="range" min="0" max={Math.max(1, playback?.total ?? 0)} step="1" value={frame} disabled={!playback?.total || busy}
           style={{'--replay-progress': `${Math.min(100, frame / Math.max(1, playback?.total ?? 0) * 100)}%`} as CSSProperties}
@@ -91,13 +96,8 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
           onPointerCancel={() => setPreviewFrame(null)}/>
         <span>{clock(frame)}<small> / {clock(playback?.total ?? 0)}</small></span>
       </div>
-      <div className="replay-transport-buttons">
-        <button type="button" className="replay-toggle replay-button" aria-label={playback?.paused || playback?.ended ? '播放' : '暂停'} disabled={!playback || busy} onClick={() => {void control(playback?.paused || playback?.ended ? 'play' : 'pause');}}>{icon(`player-${playback?.paused || playback?.ended ? 'play' : 'pause'}`)}</button>
-        <button type="button" className="replay-restart replay-button" aria-label="重播" disabled={!playback || busy} onClick={() => {void control('seek', 0);}}>{icon('replay-arrow-counter-clockwise')}<span>重播</span></button>
-        <div className="replay-speed">{speed('replaySpeedSelect')}</div>
-        <span className="replay-seek-status" role="status">{playback?.seeking ? `定位至 ${clock(playback.target ?? 0)}` : playback?.ended ? '录像已结束' : ''}</span>
-        <button type="button" className="replay-fullscreen replay-button" aria-label="切换全屏" onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen={session.nativeTouch.isFullscreen()} dangerouslySetInnerHTML={{__html: playerUtilityIcons.fullscreenToggle}}/>
-      </div>
+      <button type="button" className="replay-fullscreen replay-button" aria-label="切换全屏" onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen={session.nativeTouch.isFullscreen()} dangerouslySetInnerHTML={{__html: playerUtilityIcons.fullscreenToggle}}/>
+      <span className="replay-seek-status" role="status">{playback?.seeking ? `定位至 ${clock(playback.target ?? 0)}` : playback?.ended ? '录像已结束' : ''}</span>
     </section>
     <section className="replay-current" aria-label="录像信息">
       <h2 title={playback?.path}>{playback?.path.split('/').pop() || (files.phase === 'loading' ? '正在读取录像' : '选择一份录像')}</h2>
