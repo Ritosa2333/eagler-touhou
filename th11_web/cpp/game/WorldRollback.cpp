@@ -15,8 +15,7 @@ bool WorldRollback::CanCapture()const noexcept{
     const auto& s=session_;const auto* b=s.battle.get();
     if(!s.multiplayer_active||s.state.phase!=GameSessionPhase::stage||!b||!b->mp_enabled||
        b->mp_failed||b->mp_paused||b->mp_finished||b->game_over_requested||!b->initialized||
-       b->transitioning||!b->stage_active||!b->stage||b->outgoing_stage||
-       s.resources.previous_stage||b->completion.state.exit!=StageExit::None||
+       (!b->transitioning&&!b->stage_active)||!b->stage||b->completion.state.exit!=StageExit::None||
        s.pause_menu||s.ending||s.title||s.multiplayer_options.seat_count<2||
        s.multiplayer_options.seat_count>3||b->mp_options.seat_count!=s.multiplayer_options.seat_count)return false;
     for(unsigned i=0;i<s.multiplayer_options.seat_count;++i)
@@ -32,7 +31,9 @@ bool WorldRollback::ObserversIdle()const noexcept{
     if(!b||!b->stage||session_.animations.RollbackFrameActive()||b->mp_presentation.RollbackFrameActive()||
        b->hitbox_presentation.RollbackFrameActive()||b->enemies.RollbackFrameActive()||
        b->bullets.RollbackFrameActive()||b->items.RollbackFrameActive()||b->lasers.RollbackFrameActive()||
-       b->stage->RollbackFrameActive()||b->deformation_pool.RollbackFrameActive())return false;
+       b->stage->RollbackFrameActive()||
+       (b->outgoing_stage&&b->outgoing_stage->RollbackFrameActive())||
+       b->deformation_pool.RollbackFrameActive())return false;
     for(unsigned i=0;i<session_.multiplayer_options.seat_count;++i)
         if(!b->pilots[i]||!b->pilots[i]->bomb||b->pilots[i]->bomb->RollbackFrameActive())return false;
     return true;
@@ -46,6 +47,7 @@ bool WorldRollback::BeginRollbackFrame(Netplay::RollbackJournal& journal,WorldRo
     auto& s=session_;auto& b=*s.battle;
     frame.owner_=this;frame.identity_=identity_;frame.frame_=journal.OpenFrame();
     frame.battle_=&b;frame.stage_=b.stage.get();frame.resource_=s.resources.stage.get();
+    frame.outgoing_stage_=b.outgoing_stage.get();frame.previous_resource_=s.resources.previous_stage.get();
     frame.dialogue_=b.dialogue.get();frame.seat_count_=s.multiplayer_options.seat_count;
     frame.events_=b.events;frame.text_requests_=b.dialogue_text_requests;
     frame.ascii_requests_=b.ascii.requests;frame.fades_=b.fades.effects;frame.shakes_=b.shakes.effects;
@@ -105,6 +107,7 @@ bool WorldRollback::BeginRollbackFrame(Netplay::RollbackJournal& journal,WorldRo
     if(!b.items.BeginRollbackFrame(journal))ok=false;
     if(!b.lasers.BeginRollbackFrame(journal))ok=false;
     if(!b.stage->BeginRollbackFrame(journal,frame.stage_state_))ok=false;
+    if(b.outgoing_stage&&!b.outgoing_stage->BeginRollbackFrame(journal,frame.outgoing_stage_state_))ok=false;
     if(!b.deformation_pool.BeginRollbackFrame(journal,frame.deformations_))ok=false;
     for(unsigned i=0;i<frame.seat_count_;++i){
         auto& p=*b.pilots[i];frame.pilots_[i]=&p;frame.players_[i]=p.player;frame.bombs_[i]=p.bomb;
@@ -126,6 +129,7 @@ void WorldRollback::EndRollbackFrame()noexcept{
     session_.animations.EndRollbackFrame();b.mp_presentation.EndRollbackFrame();b.hitbox_presentation.EndRollbackFrame();
     b.enemies.EndRollbackFrame();b.bullets.EndRollbackFrame();b.items.EndRollbackFrame();b.lasers.EndRollbackFrame();
     frame.stage_->EndRollbackFrame();b.deformation_pool.EndRollbackFrame();
+    if(frame.outgoing_stage_)frame.outgoing_stage_->EndRollbackFrame();
     for(unsigned i=0;i<frame.seat_count_;++i)if(frame.bombs_[i])frame.bombs_[i]->EndRollbackFrame();
     active_=nullptr;
 }
@@ -134,10 +138,12 @@ bool WorldRollback::ValidateRollbackFrame(const WorldRollbackFrame& frame,u32 re
     if(active_||!frame.valid()||frame.owner_!=this||frame.identity_.lock()!=identity_||
        frame.frame_!=restored_frame||!b||frame.battle_!=b||frame.stage_!=b->stage.get()||
        frame.resource_!=s.resources.stage.get()||frame.dialogue_!=b->dialogue.get()||
-       b->outgoing_stage||s.resources.previous_stage||frame.seat_count_!=s.multiplayer_options.seat_count||
+       frame.outgoing_stage_!=b->outgoing_stage.get()||frame.previous_resource_!=s.resources.previous_stage.get()||
+       frame.seat_count_!=s.multiplayer_options.seat_count||
        !frame.animations_.valid()||!frame.presentation_.valid()||!frame.hitbox_.valid()||
        !frame.enemies_.valid()||!frame.deformations_.valid()||!ObserversIdle()||
        !b->stage->ValidateRollbackFrame(frame.stage_state_,restored_frame))return false;
+    if(b->outgoing_stage&&!b->outgoing_stage->ValidateRollbackFrame(frame.outgoing_stage_state_,restored_frame))return false;
     for(unsigned i=0;i<frame.seat_count_;++i){
         const auto* p=b->pilots[i].get();
         if(!p||frame.pilots_[i]!=p||frame.players_[i]!=p->player||frame.bombs_[i]!=p->bomb||
@@ -156,6 +162,7 @@ bool WorldRollback::RestoreRollbackFrame(const WorldRollbackFrame& frame,u32 res
        !b.enemies.RestoreRollbackFrame(frame.enemies_,restored_frame)||
        !b.stage->RestoreRollbackFrame(frame.stage_state_,restored_frame)||
        !b.deformation_pool.RestoreRollbackFrame(frame.deformations_,restored_frame))return false;
+    if(b.outgoing_stage&&!b.outgoing_stage->RestoreRollbackFrame(frame.outgoing_stage_state_,restored_frame))return false;
     for(unsigned i=0;i<frame.seat_count_;++i)
         if(!b.pilots[i]->bomb->RestoreRollbackFrame(frame.bomb_deformations_[i],restored_frame))return false;
     b.events=frame.events_;b.dialogue_text_requests=frame.text_requests_;b.ascii.requests=frame.ascii_requests_;

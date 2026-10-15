@@ -162,16 +162,16 @@ struct WorldRollbackTestAccess{
 };
 }
 namespace {
-void stage(Image& out,const Stage& s){
+void stage(Image& out,const Stage& s,const std::string& key="stage"){
     auto state=s.state;for(auto& vm:state.script_animations)vm=normalized(vm);for(auto& vm:state.effect_animations)vm=normalized(vm);
-    out.put("stage/state",state);out.vms("stage/object-vms",s.object_animations);
-    out.put("stage/owner",s.mesh,s.background_color,s.file_id,s.active_camera,s.practice_game_frame,s.practice_replay_has_stage5,
+    out.put(key+"/state",state);out.vms(key+"/object-vms",s.object_animations);
+    out.put(key+"/owner",s.mesh,s.background_color,s.file_id,s.active_camera,s.practice_game_frame,s.practice_replay_has_stage5,
         s.multiplayer_frozen_draw,s.multiplayer_tint_owner,s.multiplayer_tint_source);
-    out.text("stage/error",s.error);DeformationRollbackTestAccess::observe(out,"stage/deformations",s.deformation_pool);
-    for(std::size_t i=0;i<s.resource.objects.size();++i){const auto& o=s.resource.objects[i];out.put(index("stage/object",i),o.id,o.layer,o.flags,o.position,o.size);out.array(index("stage/primitives",i),o.primitives);}
-    out.array("stage/instances",s.resource.instances);
-    for(std::size_t i=0;i<s.resource.instructions.size();++i){const auto& p=s.resource.instructions[i];out.put(index("stage/instruction",i),p.time,p.opcode,p.length,p.offset);out.array(index("stage/arguments",i),p.arguments);}
-    out.text("stage/resource-error",s.resource.error);
+    out.text(key+"/error",s.error);DeformationRollbackTestAccess::observe(out,key+"/deformations",s.deformation_pool);
+    for(std::size_t i=0;i<s.resource.objects.size();++i){const auto& o=s.resource.objects[i];out.put(index(key+"/object",i),o.id,o.layer,o.flags,o.position,o.size);out.array(index(key+"/primitives",i),o.primitives);}
+    out.array(key+"/instances",s.resource.instances);
+    for(std::size_t i=0;i<s.resource.instructions.size();++i){const auto& p=s.resource.instructions[i];out.put(index(key+"/instruction",i),p.time,p.opcode,p.length,p.offset);out.array(index(key+"/arguments",i),p.arguments);}
+    out.text(key+"/resource-error",s.resource.error);
 }
 void resource(Image& out,const std::string& key,const AnmResource& r){
     out.array(key+"/sprites",r.sprites);
@@ -223,6 +223,8 @@ Image observe(GameSession& s){
     EnemyRollbackTestAccess::observe(out,"enemies",b.enemies);LaserRollbackTestAccess::observe(out,"lasers",b.lasers);
     AnmRollbackTestAccess::observe(out,"anm/combat",s.animations);AnmRollbackTestAccess::observe(out,"anm/presentation",b.mp_presentation);AnmRollbackTestAccess::observe(out,"anm/hitbox",b.hitbox_presentation);
     DeformationRollbackTestAccess::observe(out,"world/deformations",b.deformation_pool);stage(out,*b.stage);
+    out.put("stage/graph",b.stage.get(),b.outgoing_stage.get());
+    if(b.outgoing_stage)stage(out,*b.outgoing_stage,"outgoing-stage");
     for(unsigned i=0;i<b.mp_options.seat_count;++i){
         const auto& p=*b.pilots[i];const auto key=index("pilot",i);
         out.put(key+"/state",p.input,p.keys,p.ghost,p.life_latched,p.force_attract,p.life_hold,p.power_taps,p.power_gap,p.ghost_clock,p.ghost_dx,p.ghost_dy,
@@ -427,10 +429,44 @@ void barrier_cases(const std::vector<u8>& bytes){
         check(p->session.battle->stage.get()==stage&&p->session.resources.stage.get()==resource&&!p->session.resources.previous_stage&&!p->session.battle->outgoing_stage,"resource barrier leaves original owners intact");
         adapter.EndRollbackFrame();check(j.EndFrame(),"seal undoable resource barrier");rewind(*p,adapter,j,segment);baseline.compare(observe(p->session),"resource barrier undo");
         check(p->session.battle->next_stage(p->resources,2),"confirmed P0 resource transition executes after leases retire");
-        check(p->session.battle->stage.get()!=stage&&p->session.resources.previous_stage.get()==resource&&!adapter.CanCapture(),"stage overlap remains confirmed-only");
+        check(p->session.battle->stage.get()!=stage&&p->session.resources.previous_stage.get()==resource&&adapter.CanCapture(),"stable stage overlap supports rollback");
         ++cases;
     }
     std::puts("PASS world: Pause and stage-resource pre-action barriers, rollback of partial frame, then same confirmed P0 operation");
+}
+void transition_cases(const std::vector<u8>& bytes){
+    for(unsigned seats:{2u,3u}){
+        auto p=prepared(bytes,seats,{0,3,5});auto& s=p->session;auto& b=*s.battle;
+        for(unsigned target=2;target<=6;++target){
+        check(b.completion.complete(),"real stage-clear initializes result timer");
+        p->step({});check(b.transitioning&&b.outgoing_stage&&s.state.stage==target,"real next-stage resource handoff");
+        WorldRollback adapter(s);auto j=journal();unsigned captured=0,barriers=0;bool wait_checked=false,fade_checked=false;
+        for(unsigned tick=0;tick<260&&b.transitioning;++tick){
+            if(!wait_checked&&!b.transition_started){
+                correction(*p,motion_inputs(seats,8),motion_inputs(seats,8,true));wait_checked=true;
+            }
+            if(!fade_checked&&b.transition_started&&!b.stage_active&&b.transition_timer.current<15){
+                correction(*p,motion_inputs(seats,8),motion_inputs(seats,8,true));fade_checked=true;
+            }
+            check(adapter.CanCapture(),"transition resumes prediction between structural fences");
+            const auto baseline=observe(s);Segment segment;segment.frames.push_back(std::make_unique<WorldRollbackFrame>());
+            const auto n=s.multiplayer_frame;check(j.BeginFrame(n)&&adapter.BeginRollbackFrame(j,*segment.frames[0]),"capture both transition stages");
+            const bool updated=s.update_multiplayer({});
+            if(updated)p->draw();
+            else check(adapter.BoundaryRequested(),"transition only stops for an explicit lifecycle fence");
+            adapter.EndRollbackFrame();check(j.EndFrame(),"seal transition tick");
+            if(updated){++captured;j.DiscardBefore(n+1);segment.frames.clear();}
+            else{
+                ++barriers;rewind(*p,adapter,j,segment);baseline.compare(observe(s),"partial transition boundary undo");
+                p->step({});
+            }
+        }
+        check(!b.transitioning&&b.stage_active&&!b.outgoing_stage&&!s.resources.previous_stage,"transition retires both old owners safely");
+        check(wait_checked&&fade_checked&&captured>=140&&barriers<=4,"result and fade intervals predict instead of waiting for every input");
+        ++cases;
+        std::printf("PASS transition %uP -> stage %u: %u rollback-capable ticks, %u exact lifecycle fences\n",seats,target,captured,barriers);
+        }
+    }
 }
 void failure_and_observer_cases(const std::vector<u8>& bytes){
     auto p=prepared(bytes,2,{0,3,5});WorldRollback adapter(p->session);
@@ -475,7 +511,7 @@ int main(int argc,char** argv){
     check(argc==2,"pass existing retail archive path");
     std::ifstream file(argv[1],std::ios::binary);check(bool(file),"retail archive available");
     const std::vector<u8> bytes((std::istreambuf_iterator<char>(file)),std::istreambuf_iterator<char>());
-    contiguous_capture_cases();movement_cases(bytes);bomb_cases(bytes);rescue_case(bytes);barrier_cases(bytes);failure_and_observer_cases(bytes);
+    contiguous_capture_cases();movement_cases(bytes);bomb_cases(bytes);rescue_case(bytes);barrier_cases(bytes);transition_cases(bytes);failure_and_observer_cases(bytes);
     std::printf("TH11 retail world rollback: %u cases, %u checks, %u real Update+Draw ticks PASS; peak journal %zu bytes / %zu blocks\n",
         cases,checks,ticks,peak_bytes,peak_blocks);
     std::puts("SCOPE: stable stage real owners and authored CPU Draw command/geometry oracle. No host FontDevice textures, GPU pixels, Application/netplay, browser or performance acceptance.");

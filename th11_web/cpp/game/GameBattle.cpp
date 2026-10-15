@@ -203,14 +203,23 @@ bool GameBattle::stage_control(){
     if(!transitioning)return true;
     if(!completion.result_delay_elapsed())return true;
     if(!transition_started){
+#ifdef TH11_MULTIPLAYER
+        if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+#endif
         enemy_animations.interrupt(result_animation,1);
         completion.state.hud_flags&=~0x200u;completion.state.result_timer.set(0,&animations.rate);
         if(!stage->start_objects())return false;
         outgoing_stage->fade_out(fades);stage->resume_background();transition_started=true;
     }else if(transition_timer.current==30&&!stage_active){
+#ifdef TH11_MULTIPLAYER
+        if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+#endif
         if(!activate_stage())return false;
     }
     if(outgoing_stage&&(outgoing_stage->state.draw_flags&8)){
+#ifdef TH11_MULTIPLAYER
+        if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+#endif
         if(resources.previous_stage)animations.retire_resource(resources.previous_stage->background);
         outgoing_stage.reset();
     }
@@ -355,7 +364,12 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     // Both VM registries have now consumed resource retirement markers.
     if(transitioning&&stage_active&&!outgoing_stage){
         auto* old=resources.previous_stage.get();
-        if(!old||(!animations.references(old->background)&&!animations.references(old->logo)&&!animations.references(old->enemies))){resources.retire_previous();transitioning=false;}
+        if(!old||(!animations.references(old->background)&&!animations.references(old->logo)&&!animations.references(old->enemies))){
+#ifdef TH11_MULTIPLAYER
+            if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+#endif
+            resources.retire_previous();transitioning=false;
+        }
     }
     return true;
 }

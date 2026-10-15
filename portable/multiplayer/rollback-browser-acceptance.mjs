@@ -307,11 +307,12 @@ function analysis(data){
 
 try{
   mark('preflight');
-  const relayFile=resolve(launcher,'services/netplay/netplay-relay.mjs');
-  const catalogFile=resolve(launcher,'launcher/web/lib/contracts/product-catalog.mjs');
-  const relayUrlFile=resolve(launcher,'launcher/web/.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs');
-  const optionsFile=resolve(launcher,'launcher/web/.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs');
-  const touchHelperFile=resolve(launcher,'launcher/web/.cache/build/browser/assets/launcher/touch-runtime-protocol.mjs');
+  const web=existsSync(resolve(launcher,'server/netplay-relay.mjs'))?launcher:resolve(launcher,'launcher/web');
+  const relayFile=web===launcher?resolve(web,'server/netplay-relay.mjs'):resolve(launcher,'services/netplay/netplay-relay.mjs');
+  const catalogFile=resolve(web,'lib/contracts/product-catalog.mjs');
+  const relayUrlFile=resolve(web,'.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs');
+  const optionsFile=resolve(web,'.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs');
+  const touchHelperFile=resolve(web,'.cache/build/browser/assets/launcher/touch-runtime-protocol.mjs');
   for(const file of [relayFile,catalogFile,relayUrlFile,optionsFile,resolve(diagnostics,'node_modules/playwright/package.json')])
     if(!existsSync(file))blocked('Missing migrated dependency: '+file);
   const catalog=await import(pathToFileURL(catalogFile)),policy=catalog.PRODUCT_GAMES.th11.multiplayer;

@@ -24,7 +24,9 @@ private:
     bool ready_=false;
     GameBattle* battle_=nullptr;
     Stage* stage_=nullptr;
+    Stage* outgoing_stage_=nullptr;
     StageResources* resource_=nullptr;
+    StageResources* previous_resource_=nullptr;
     Dialogue* dialogue_=nullptr;
     std::array<MultiplayerPilot*,3> pilots_{};
     std::array<PlayerFrame*,3> players_{};
@@ -32,6 +34,7 @@ private:
     AnmRollbackFrame animations_,presentation_,hitbox_;
     EnemyRollbackFrame enemies_;
     StageRollbackFrame stage_state_;
+    StageRollbackFrame outgoing_stage_state_;
     DeformationRollbackFrame deformations_;
     std::array<DeformationRollbackFrame,3> bomb_deformations_;
     std::vector<BattleEvent> events_;
@@ -44,8 +47,9 @@ private:
 };
 
 // This title adapter covers a stable multiplayer combat resource graph.
-// Pause, ending/results and stage overlap run only after confirmed history is
-// drained. Host input, netplay, clocks, graphics and output watermarks are NOT
+// Pause, ending/results and structural stage changes require confirmed history.
+// Stable outgoing/incoming stage overlap retains both Stage owners. Host input,
+// netplay, clocks, graphics and output watermarks are NOT
 // byte-restored here. Host texture writes require their separate frame owner.
 class WorldRollback final {
 public:
