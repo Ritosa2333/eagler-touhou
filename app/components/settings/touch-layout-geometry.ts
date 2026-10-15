@@ -22,7 +22,7 @@ export function captureTouchLayoutDefaults(surface: HTMLElement, unavailable: st
       if (!rect.width || !rect.height) throw new Error(unavailable);
       controls[name] = {x: Math.max(0, Math.min(1, (rect.left + rect.width / 2 - safe.left) / safe.width)),
         y: Math.max(0, Math.min(1, (rect.top + rect.height / 2 - safe.top) / safe.height)),
-        scale: name === 'bomb' ? 1.5 : 1, priority: touchLayoutControlMeta[name].priority};
+        scale: name === 'bomb' && !surface.querySelector('.native-actions') ? 1.5 : 1, priority: touchLayoutControlMeta[name].priority};
     }
     return {controls: normalizeTouchLayoutPriorityOrder(controls), viewport: {x: 0}};
   } finally {

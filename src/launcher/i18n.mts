@@ -743,6 +743,7 @@ const entries = [
   ["touch.moreLayoutOptions", "更多布局选项", "More layout options"],
   ["touch.pickControl", "选择按键", "Choose a control"],
   ["touch.arrangeHint", "选一个按键，在画面上拖动它。", "Choose a control, then drag it on the screen."],
+  ["touch.independentLayoutHint", "萃梦想独立保存按键布局，横屏与竖屏分别保存。", "TH075 has its own layout. Portrait and landscape are saved separately."],
   ["touch.profileHint", "各作品共用布局，横屏与竖屏分别保存。", "Shared across games. Portrait and landscape are saved separately."],
   ["touch.collapsePanel", "收起面板", "Collapse panel"],
   ["touch.expandPanel", "展开面板", "Expand panel"],
