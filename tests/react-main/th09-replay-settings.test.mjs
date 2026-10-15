@@ -42,3 +42,11 @@ test('TH09 default-on switch sits above Replay viewer/import actions and persist
   const restored=api.createGameSettingsModel({storage});restored.hydrate(context('th09mp'));assert.equal(restored.getSnapshot().replayAutoSave,false);
   await act(()=>model.hydrate(context('th07mp')));assert.equal(env.document.querySelector('#mpReplayAutoSave'),null);
 });
+test('direct selection is a TH09 Replay launch option for normal and multiplayer, never room transport', () => {
+  for(const productId of ['th09','th09mp']){
+    const model=api.createGameSettingsModel({storage:{getItem:()=>null,setItem(){}}});model.hydrate(context(productId));
+    const input={productId,settings:model.getSnapshot(),replayPath:'replay/收藏/th9_ud0000.rpyx',...(productId==='th09mp'?{multiplayer:{kind:'replay'}}:{})};
+    const options=api.gameRuntimeOptions(input,'ja','none',null);assert.equal(options.replayPath,input.replayPath);assert.equal(options.netplayMode,undefined);assert.equal(options.replayViewer,productId==='th09mp'?true:undefined);
+    assert.throws(()=>api.gameRuntimeOptions({...input,replayPath:'replay/../score.dat'},'ja','none',null),/Invalid direct Replay/);
+  }
+});

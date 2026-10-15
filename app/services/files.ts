@@ -1,5 +1,6 @@
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, type ProductId} from '../../src/contracts/product-catalog.mts';
 import * as replay from '../../src/launcher/replay-files.mts';
+import {parseTh09ReplayMatch, th09ReplayImportDirectory, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
 import type {RuntimeResponseMessage} from '../../src/contracts/runtime-protocol.mts';
 import type {RuntimeService, RuntimeFileSession} from './runtime';
 import type {SettingsDecision, SettingsFileAction} from '../components/settings/types';
@@ -48,11 +49,12 @@ export function createFileActions(options: FileActionsOptions) {
     if (!Array.isArray(response.bytes) || !response.bytes.every(value => Number.isInteger(value) && value >= 0 && value <= 255)) throw new Error(t('runtime.invalidFileContent'));
     return response.bytes as number[];
   }
-  function listing(response: RuntimeResponseMessage): {path: string; size: number}[] {
+  function listing(response: RuntimeResponseMessage): {path: string; size: number; replayMatch?: Th09ReplayMatch}[] {
     if (!Array.isArray(response.files)) throw new Error(t('runtime.invalidFileList'));
     return response.files.map(value => {
       if (!value || typeof value !== 'object' || !('path' in value) || typeof value.path !== 'string' || !value.path) throw new Error(t('runtime.invalidFileEntry'));
-      return {path: value.path, size: Math.max(0, Number('size' in value ? value.size : 0) || 0)};
+      const match = 'replayMatch' in value ? parseTh09ReplayMatch(value.replayMatch) : null;
+      return {path: value.path, size: Math.max(0, Number('size' in value ? value.size : 0) || 0), ...(match ? {replayMatch: match} : {})};
     });
   }
   function hints(product: ProductId): readonly string[] {
@@ -91,7 +93,12 @@ export function createFileActions(options: FileActionsOptions) {
           const entries: Record<string, Uint8Array> = {};
           for (const path of paths) {
             const file = byPath.get(path.toLowerCase());
-            if (file) entries[file.path] = new Uint8Array(bytes(await access.send('read', {path: file.path})));
+            if (file) {
+              const match = product === 'th09mp' ? file.replayMatch : undefined;
+              const target = file.path;
+              entries[target] = new Uint8Array(bytes(await access.send('read', {path: file.path})));
+              if (match) entries[target.replace(/\.rpyx?$/, '.json')] = new TextEncoder().encode(JSON.stringify(match));
+            }
           }
           options.download(`${game}-replay-${new Date().toISOString().slice(0, 10)}.zip`, copyBuffer(zip.zipSync(entries, {level: 1})), 'application/zip');
         }
@@ -123,11 +130,13 @@ export function createFileActions(options: FileActionsOptions) {
     context.assertRuntimeOwnership();
     await options.prepareFiles(product, {retireRunning: kind !== 'replay', ...(context.ownsPresentation ? {ownsPresentation: context.ownsPresentation} : {})});
     context.assertRuntimeOwnership();
+    const keepViewer = kind === 'replay' && gameIdForProduct(product) === 'th09' && runtime.getSnapshot().launched &&
+      runtime.getLauncherControlContext?.()?.options.replayViewer === true;
     feedback.playerStatus(t('file.importing'));
     let count = 0;
     await runtime.withFileSession(gameIdForProduct(product), async initial => {
       let access: RuntimeFileSession = initial;
-      let files: {path: string; bytes: Uint8Array}[];
+      let files: {path: string; bytes: Uint8Array; replayMatch?: Th09ReplayMatch}[];
       const lowerName = file.name.toLowerCase();
       if (kind === 'save' && lowerName.endsWith('.dat')) {
         files = [{path: PRODUCT_GAMES[gameIdForProduct(product)].storage.scoreFile, bytes: new Uint8Array(await file.arrayBuffer())}];
@@ -136,12 +145,12 @@ export function createFileActions(options: FileActionsOptions) {
         files = [{path: hints(product)[0]!, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'replay' && /\.rpyx?$/.test(lowerName)) {
         const existing = listing(await access.send('list', {})).map(item => item.path);
-        const name = replay.allocateReplayName(prefix(product), existing, file.name);
+        const name = replay.allocateReplayName(prefix(product), existing, file.name, gameIdForProduct(product) === 'th09');
         if (!name) throw new Error(t('file.replaySlotsExhausted'));
         files = [{path: `replay/${name}`, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'replay' && lowerName.endsWith('.zip')) {
         const zip = await import('fflate');
-        const guard = replay.createReplayArchiveExtractionGuard({maxFileBytes: maxStoredFileBytes, maxExpandedBytes: maxReplayArchiveExpandedBytes});
+        const guard = replay.createReplayArchiveExtractionGuard({maxFileBytes: maxStoredFileBytes, maxExpandedBytes: maxReplayArchiveExpandedBytes, matchMetadata: product === 'th09mp'});
         let archive: Record<string, Uint8Array>;
         try {archive = zip.unzipSync(new Uint8Array(await file.arrayBuffer()), {filter: guard.filter});}
         catch (error) {
@@ -149,14 +158,21 @@ export function createFileActions(options: FileActionsOptions) {
           throw error;
         }
         const existing = listing(await access.send('list', {})).map(item => item.path);
-        const plan = replay.planReplayArchiveImport(prefix(product), guard.paths, existing);
+        const plan = replay.planReplayArchiveImport(prefix(product), guard.paths, existing, gameIdForProduct(product) === 'th09', gameIdForProduct(product) === 'th09' ? th09ReplayImportDirectory : undefined);
         if (!plan.ok) throw new Error(t(plan.reason === 'unsafe-path' ? 'file.zipUnsafePath' : plan.reason === 'duplicate-path' ? 'file.zipDuplicatePath' : 'file.replaySlotsExhausted'));
-        files = plan.entries.map(entry => ({path: entry.targetPath, bytes: archive[entry.sourcePath]}));
+        files = plan.entries.map(entry => {
+          let replayMatch: Th09ReplayMatch | null = null;
+          const metadata = archive[entry.sourcePath.replace(/\.rpyx?$/i, '.json')];
+          if (product === 'th09mp' && metadata) {
+            try {replayMatch = parseTh09ReplayMatch(JSON.parse(new TextDecoder().decode(metadata)));} catch {}
+          }
+          return {path: entry.targetPath, bytes: archive[entry.sourcePath], ...(replayMatch ? {replayMatch} : {})};
+        });
       } else throw new Error(t(kind === 'save' ? 'file.chooseSave' : kind === 'hint' ? 'file.chooseHint' : 'file.chooseReplay'));
       if (!files.length) throw new Error(t('file.importNoFiles'));
       if (new Set(files.map(item => item.path.toLowerCase())).size !== files.length) throw new Error(t('file.importDuplicatePaths'));
       if (files.some(item => item.bytes.length > maxStoredFileBytes)) throw new Error(t('file.importStoredTooLarge'));
-      for (const item of files) await access.send('write', {path: item.path, bytes: Array.from(item.bytes)});
+      for (const item of files) await access.send('write', {path: item.path, bytes: Array.from(item.bytes), ...(item.replayMatch ? {replayMatch: item.replayMatch} : {})});
       if (kind !== 'replay') {
         access = await access.restart({sync: false});
         const expected = files[0].bytes;
@@ -164,13 +180,15 @@ export function createFileActions(options: FileActionsOptions) {
         if (actual.length !== expected.length || actual.some((byte, index) => byte !== expected[index])) throw new Error(t('file.saveVerifyFailed'));
       }
       count = files.length;
-      await access.retire();
+      if (!keepViewer) await access.retire();
     }, {...sessionOptions(product), replayMutation: kind === 'replay'});
     if (kind === 'replay' && options.replayManager.isOpen()) await options.replayManager.refresh();
     else if (options.replayManager.isOpen()) options.replayManager.close();
     context.complete();
-    feedback.toast(t('file.importedRestart', {count}));
-    feedback.status(t('file.importedRestart', {count}));
+    const imported = keepViewer ? 'file.replayImported' : 'file.importedRestart';
+    feedback.toast(t(imported, {count}));
+    feedback.status(t(imported, {count}));
+    if (keepViewer) feedback.playerStatus('');
   }
   function importFile(kind: ImportFileKind, file: File, product: ProductId): Promise<void> {
     const context = options.captureImportContext(product);

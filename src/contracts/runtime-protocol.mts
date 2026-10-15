@@ -23,6 +23,7 @@ export const RUNTIME_PROTOCOL_COMMANDS = Object.freeze([
 // Optional commands are capability-specific and are not required of every
 // Runtime shell. They still share the same envelope and request ownership.
 export const RUNTIME_PROTOCOL_OPTIONAL_COMMANDS = Object.freeze([
+  "playback",
   "retry-music",
   "thprac-mouse",
   "network-cancel",
@@ -88,6 +89,8 @@ export interface RuntimeConfigureOptions {
   focusHitboxEnabled?: boolean;
   faithBarEnabled?: boolean;
   replayViewer?: boolean;
+  /** Direct selection from the TH09 file manager, including archive folders. */
+  replayPath?: string;
   multiplayerPreflight?: boolean;
   thpracLocale?: string;
   oggDecodeMode?: RuntimeOggDecodeMode;
@@ -137,6 +140,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   multiplayerLocalPlayerVisibility: Object.freeze({ requirement: "profile-required", capability: "multiplayer-local-player-visibility", when: "multiplayer" }),
   focusHitboxEnabled: Object.freeze({ requirement: "optional", capability: "focus-hitbox", when: "product declares focus-hitbox" }),
   faithBarEnabled: Object.freeze({ requirement: "optional", capability: "faith-bar", when: "product declares display.faithBar" }),
+  replayPath: Object.freeze({ requirement: "optional", capability: "replay-file-management", when: "TH09 selected-file playback" }),
   replayViewer: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer Replay viewer is launched" }),
   multiplayerPreflight: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer room checks its Runtime before joining gameplay" }),
   thpracLocale: Object.freeze({ requirement: "profile-required", capability: "thprac", when: "thprac" }),
@@ -216,6 +220,7 @@ export const RUNTIME_PROTOCOL_COMMAND_BEHAVIOR = Object.freeze({
   write: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
   remove: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
   sync: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
+  "playback": Object.freeze({ phase: "live", response: "required", requirement: "conditional", games: ["th09"] as const, when: "TH09 local Replay workspace" }),
   "retry-music": Object.freeze({ phase: "live", response: "required", requirement: "conditional", when: "Runtime-managed music transfer can fail before launch and advertise retry" }),
   "thprac-mouse": Object.freeze({ phase: "live", response: "optional", requirement: "profile-required", when: "thprac capability is declared" }),
   "network-cancel": Object.freeze({ phase: "live", response: "optional", requirement: "conditional", when: "TH09 game-title multiplayer dialog is dismissed" }),
@@ -289,9 +294,10 @@ export interface RuntimeCommandPayloads {
   launch: Record<string, never>;
   list: Record<string, never>;
   read: { path: string };
-  write: { path: string; bytes: number[] };
+  write: { path: string; bytes: number[]; replayMatch?: unknown };
   remove: { path: string };
   sync: Record<string, never>;
+  playback: {action: "open" | "pause" | "play" | "seek" | "rate"; path?: string; value?: number};
   "retry-music": Record<string, never>;
   "thprac-mouse": { type: "move" | "down" | "up"; x: number; y: number };
   "network-cancel": Record<string, never>;

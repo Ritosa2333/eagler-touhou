@@ -21,24 +21,26 @@ before(async () => {
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 function deferred() {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};}
 const tick = () => new Promise(resolve => setImmediate(resolve));
-function fixture({cold = false, launched = false, prepareGate = null, broken = false} = {}) {
+function fixture({cold = false, launched = false, prepareGate = null, broken = false, watch = null, viewer = false} = {}) {
   const files = new Map([['replay/th6_02.rpy', [2]], ['replay/th6_01.rpy', [1, 1]], ['score.dat', [9]]]);
-  const events = [], toasts = [], downloads = [], confirms = [];
+  const events = [], toasts = [], downloads = [], confirms = [], matches = new Map();
   const state = {ready: !cold, epoch: cold ? null : 1, launched, game: 'th06'};
   let answer = null, confirmed = true;
   const model = createReplayModel({
     runtime: {getSnapshot: () => state, async withFileSession(game, op) {
       events.push('lock');
-      try {return await op({epoch: state.epoch, async sync() {events.push('sync');}, async send(command, payload) {
+      try {return await op({epoch: state.epoch, async sync() {events.push('sync');if(state.failSyncAfterWrite&&state.wrote)throw Error('flush failed');}, async send(command, payload) {
         events.push(`${command}:${payload.path ?? ''}`);
         if (broken) throw new Error('fixture read failure');
-        if (command === 'list') return {files: [...files].map(([path, bytes]) => ({path, size: bytes.length}))};
-        if (command === 'read') return {bytes: files.get(payload.path)};
-        if (command === 'write') files.set(payload.path, payload.bytes);
-        if (command === 'remove') files.delete(payload.path);
+        if (command === 'list') return {files: [...files].map(([path, bytes]) => ({path, size: bytes.length,...(matches.has(path)?{replayMatch:matches.get(path)}:{})}))};
+        if (command === 'read') return {bytes: state.corruptRead===payload.path?[255]:files.get(payload.path)};
+        if (command === 'write') {if(state.failWrite)throw Error('write failed');state.wrote=true;files.set(payload.path, payload.bytes);if(payload.replayMatch)matches.set(payload.path,payload.replayMatch);}
+        if (command === 'remove') {files.delete(payload.path);matches.delete(payload.path);}
         return {};
       }});} finally {events.push('unlock');}
     }},
+    ...(viewer ? {prepareViewer: async () => {events.push('viewer'); if (prepareGate) await prepareGate.promise; state.ready = state.launched = true; state.epoch ??= 1;}, closeViewer: () => events.push('closeViewer')} : {}),
+    ...(watch ? {watch: async (...args) => {events.push('watch'); await watch(...args);}} : {}),
     async prepareFiles() {events.push('prepare'); if (prepareGate) await prepareGate.promise; state.ready = true; state.epoch ??= 1;},
     async releasePrepared(product, epoch) {events.push(`release:${product}:${epoch}`); state.ready = false; state.epoch = null;},
     translate: (key, params) => key + (params ? JSON.stringify(params) : ''),
@@ -47,8 +49,26 @@ function fixture({cold = false, launched = false, prepareGate = null, broken = f
     download(name, bytes, mime) {downloads.push({name, bytes: [...new Uint8Array(bytes)], mime});},
     toast(message) {toasts.push(message);}, async afterPaint() {events.push('paint');}, afterClose() {events.push('afterClose');},
   });
-  return {model, files, events, toasts, downloads, confirms, state, answer(value) {answer = value;}, confirm(value) {confirmed = value;}};
+  return {model, files, matches, events, toasts, downloads, confirms, state, answer(value) {answer = value;}, confirm(value) {confirmed = value;}};
 }
+test('TH09 archive names survive rename even when the manager switches products during the mutation', async () => {
+  const f=fixture(),path='replay/xxx vs abdjfal/th9_ud0000.rpy',target='replay/xxx vs abdjfal/th9_ud0001.rpy';
+  const match={schema:'eagler-touhou/th09-match-replay/1',names:['xxx','abdjfal'],startedAt:1792029600000,frames:7200,winner:0};
+  f.files.clear();f.files.set(path,[1,2,3]);f.matches.set(path,match);
+  await f.model.open('th09mp');assert.deepEqual(f.model.getSnapshot().rows[0].replayMatch,match);
+  const renaming=f.model.rename(path,'th9_ud0001.rpy');
+  f.model.close();const opening=f.model.open('th06');await Promise.all([renaming,opening]);
+  assert.deepEqual(f.files.get(target),[1,2,3]);assert.deepEqual(f.matches.get(target),match);
+  assert.equal(f.files.has(path),false);
+});
+test('TH09 shared rpy/rpyx file slots cannot overwrite or delete each other during rename', async () => {
+  const f=fixture(),path='replay/th9_ud0000.rpyx';f.files.clear();f.files.set(path,[1,2,3]);f.files.set('replay/th9_ud0001.rpy',[4]);
+  await f.model.open('th09mp');await f.model.rename(path,'th9_ud0000.rpy');
+  assert.deepEqual(f.files.get(path),[1,2,3]);
+  await f.model.rename(path,'th9_ud0001.rpyx');
+  assert.deepEqual(f.files.get(path),[1,2,3]);assert.deepEqual(f.files.get('replay/th9_ud0001.rpy'),[4]);
+  assert.ok(f.toasts.some(text=>text.includes('replay.nameExists')));
+});
 test('opens original loading state before paint, lists only sorted replay files, initial animation only', async () => {
   const f = fixture(); const opening = f.model.open('th06');
   assert.equal(f.model.getSnapshot().phase, 'loading'); await opening;
@@ -154,4 +174,69 @@ test('held cold read across close Forward final close releases only its eventual
  const gate=deferred(),f=fixture({cold:true,prepareGate:gate});const opening=f.model.open('th06');await tick();
  f.model.close();f.model.reopenRetained();f.model.close();gate.resolve();await opening;await tick();
  assert.equal(f.events.filter(e=>e==='release:th06:1').length,1);assert.equal(f.state.epoch,null);
+});
+
+test('TH09 moves between actual directories and root, allocating colliding shared rpy/rpyx slots without overwriting', async () => {
+  const f=fixture(), source='replay/A/th9_ud0000.rpyx';f.files.clear();f.files.set(source,[1,2,3]);f.files.set('replay/B/th9_ud0000.rpy',[9]);
+  const match={schema:'eagler-touhou/th09-match-replay/1',names:['x','a'],startedAt:1000,frames:600,winner:1};f.matches.set(source,match);
+  await f.model.open('th09mp');assert.equal(await f.model.move(source,'replay/B'),true);
+  assert.deepEqual(f.files.get('replay/B/th9_ud0000.rpy'),[9]);assert.deepEqual(f.files.get('replay/B/th9_ud0001.rpyx'),[1,2,3]);
+  assert.equal(f.files.has(source),false);assert.deepEqual(f.matches.get('replay/B/th9_ud0001.rpyx'),match);assert.equal(f.matches.has(source),false);
+  assert.equal(await f.model.move('replay/B/th9_ud0001.rpyx','replay'),true);assert.deepEqual(f.files.get('replay/th9_ud0001.rpyx'),[1,2,3]);
+  assert.deepEqual(f.matches.get('replay/th9_ud0001.rpyx'),match);
+});
+test('TH09 move rejects invalid destinations and preserves source on write, flush or verification failure', async () => {
+  for (const mode of ['failWrite','failSyncAfterWrite','corruptRead']) {
+    const f=fixture(),source='replay/th9_01.rpy';f.files.clear();f.files.set(source,[1,2,3]);await f.model.open('th09');
+    if(mode==='corruptRead')f.state.corruptRead='replay/backup/th9_01.rpy';else f.state[mode]=true;
+    assert.equal(await f.model.move(source,'replay/backup'),false);assert.deepEqual(f.files.get(source),[1,2,3]);assert.ok(f.toasts.length);
+  }
+  const f=fixture();f.files.clear();f.files.set('replay/th9_01.rpy',[1]);await f.model.open('th09');f.events.length=0;
+  for(const target of ['replay/../bad','replay/..','replay/a/b','replay/bad?','/save/replay/a','replay/a.'])assert.equal(await f.model.move('replay/th9_01.rpy',target),false);
+  assert.equal(f.events.some(e=>e.startsWith('write:')),false);
+});
+test('folder ZIP contains only that directory, original bytes and matching sidecars', async () => {
+  const {unzipSync}=await import('fflate');const f=fixture();f.files.clear();
+  const match={schema:'eagler-touhou/th09-match-replay/1',names:['x','a'],startedAt:1000,frames:600,winner:1};
+  f.files.set('replay/A/th9_ud0000.rpy',[1,2]);f.matches.set('replay/A/th9_ud0000.rpy',match);
+  f.files.set('replay/A/th9_ud0001.rpyx',[3]);f.files.set('replay/AB/th9_ud0000.rpy',[9]);f.files.set('replay/th9_01.rpy',[8]);
+  await f.model.open('th09mp');await f.model.downloadFolder('replay/A');
+  assert.equal(f.downloads[0].name,'A.zip');assert.equal(f.downloads[0].mime,'application/zip');
+  const zip=unzipSync(new Uint8Array(f.downloads[0].bytes));assert.deepEqual(Object.keys(zip).sort(),['replay/A/th9_ud0000.json','replay/A/th9_ud0000.rpy','replay/A/th9_ud0001.rpyx']);
+  assert.deepEqual([...zip['replay/A/th9_ud0000.rpy']],[1,2]);assert.deepEqual(JSON.parse(new TextDecoder().decode(zip['replay/A/th9_ud0000.json'])),match);
+});
+
+test('watch preserves selected folder path, waits for mutations and retires its cold file Runtime before playback', async () => {
+  const calls=[],f=fixture({cold:true,watch:async(product,path)=>calls.push({product,path,released:f.events.some(e=>e.startsWith('release:'))})});
+  f.state.game='th09';const path='replay/收藏/th9_ud0000.rpyx';f.files.clear();f.files.set(path,[1,2,3]);await f.model.open('th09mp');
+  const gate=deferred(),pending=f.model.mutations.run(()=>gate.promise),watching=f.model.watch(path);await tick();assert.equal(calls.length,0);gate.resolve();await pending;await watching;
+  assert.deepEqual(calls,[{product:'th09mp',path,released:true}]);assert.equal(f.model.getSnapshot().open,false);assert.deepEqual(f.files.get(path),[1,2,3]);
+  assert.equal(f.events.some(e=>e.startsWith('write:')||e.startsWith('remove:')),false);
+});
+test('watch rejects a vanished file and unsupported titles without launching or closing the manager', async () => {
+  const calls=[],f=fixture({watch:async(...args)=>calls.push(args)});f.files.clear();f.files.set('replay/th9_ud0000.rpy',[1]);await f.model.open('th09');
+  await f.model.watch('replay/missing/th9_ud0000.rpy');assert.equal(calls.length,0);assert.equal(f.model.getSnapshot().open,true);
+  await f.model.open('th06');await f.model.watch('replay/th9_ud0000.rpy');assert.equal(calls.length,0);assert.equal(f.model.getSnapshot().open,true);
+});
+
+test('watch never replaces an active game through a file-manager click', async () => {
+  const calls=[],f=fixture({launched:true,watch:async(...args)=>calls.push(args)});f.files.clear();f.files.set('replay/th9_ud0000.rpy',[1]);await f.model.open('th09mp');await f.model.watch('replay/th9_ud0000.rpy');
+  assert.equal(calls.length,0);assert.equal(f.model.getSnapshot().open,true);assert.ok(f.toasts.some(t=>t.includes('replay.stopBeforeWatch')));
+});
+
+
+test('persistent TH09 viewer switches files while keeping the manager and native epoch alive', async()=>{
+  const selected=[], f=fixture({viewer:true,watch:async(_product,path)=>selected.push(path)});
+  f.state.game='th09'; f.files.clear();for(const n of ['0000','0001'])f.files.set(`replay/th9_ud${n}.rpy`,[1]);
+  await f.model.open('th09mp');const epoch=f.state.epoch;
+  await f.model.watch('replay/th9_ud0000.rpy');await f.model.watch('replay/th9_ud0001.rpy');
+  assert.deepEqual(selected,['replay/th9_ud0000.rpy','replay/th9_ud0001.rpy']);assert.equal(f.model.getSnapshot().open,true);assert.equal(f.state.epoch,epoch);
+  assert.equal(f.events.includes('prepare'),false);assert.equal(f.events.includes('closeViewer'),false);
+  f.model.close();assert.equal(f.events.filter(e=>e==='closeViewer').length,1);
+});
+test('closing a cold viewer cancels presentation before its pending resource read resolves',async()=>{
+  const gate=deferred(),f=fixture({cold:true,viewer:true,prepareGate:gate});f.state.game='th09';
+  const opening=f.model.open('th09');await tick();f.model.close();
+  assert.ok(f.events.includes('closeViewer'));assert.equal(f.model.getSnapshot().open,false);
+  gate.resolve();await opening;assert.equal(f.model.getSnapshot().open,false);
 });

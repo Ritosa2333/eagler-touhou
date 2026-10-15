@@ -24,9 +24,11 @@ export interface ReplayArchiveFileInfo {
 export function createReplayArchiveExtractionGuard({
   maxFileBytes,
   maxExpandedBytes,
+  matchMetadata = false,
 }: {
   maxFileBytes: number;
   maxExpandedBytes: number;
+  matchMetadata?: boolean;
 }) {
   const paths: string[] = [];
   const pathSet = new Set<string>();
@@ -41,9 +43,10 @@ export function createReplayArchiveExtractionGuard({
       if (pathSet.has(lowerPath)) throw new ReplayArchiveScanError("duplicate-path");
       pathSet.add(lowerPath);
       paths.push(path);
-      if (replayExtension(basename(path)) === null) return false;
+      const metadata = matchMetadata && /\/th9_(?:\d{2}|ud[a-z0-9]{4})\.json$/i.test('/' + path);
+      if (replayExtension(basename(path)) === null && !metadata) return false;
       const size = Number(info?.originalSize);
-      if (!Number.isSafeInteger(size) || size < 0 || size > maxFileBytes) {
+      if (!Number.isSafeInteger(size) || size < 0 || size > (metadata ? 16384 : maxFileBytes)) {
         throw new ReplayArchiveScanError("file-too-large");
       }
       expandedBytes += size;
@@ -89,8 +92,13 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function normalizedPathSet(paths: Iterable<string>): Set<string> {
-  return new Set([...paths].map(path => String(path).toLowerCase()));
+export function replayStoragePathKey(path: string, sharedExtensionSlot = false): string {
+  const lower = path.toLowerCase();
+  return sharedExtensionSlot ? lower.replace(/\.rpyx$/, '.rpy') : lower;
+}
+
+function normalizedPathSet(paths: Iterable<string>, sharedExtensionSlot = false): Set<string> {
+  return new Set([...paths].map(path => replayStoragePathKey(String(path), sharedExtensionSlot)));
 }
 
 export function isSafeReplayArchivePath(value: unknown): value is string {
@@ -100,7 +108,7 @@ export function isSafeReplayArchivePath(value: unknown): value is string {
 }
 
 export function isReplayFilePath(path: unknown): path is string {
-  return typeof path === "string" && /^replay\/[^/]+\.rpyx?$/i.test(path);
+  return typeof path === "string" && isSafeReplayArchivePath(path) && /^replay\/(?:[^/]+\/)?[^/]+\.rpyx?$/i.test(path);
 }
 
 export function selectReplayExportPaths(paths: Iterable<string>): string[] {
@@ -116,30 +124,32 @@ export function sanitizeReplayImportName(name: string): string {
   return String(name).replace(/[^\w.()-]/g, "_");
 }
 
-export function isReplayTargetAvailable(existingPaths: Iterable<string>, targetPath: string): boolean {
+export function isReplayTargetAvailable(existingPaths: Iterable<string>, targetPath: string, sharedExtensionSlot = false): boolean {
   if (!isReplayFilePath(targetPath)) return false;
-  const occupied = normalizedPathSet(existingPaths);
-  return !occupied.has(targetPath.toLowerCase());
+  const occupied = normalizedPathSet(existingPaths, sharedExtensionSlot);
+  return !occupied.has(replayStoragePathKey(targetPath, sharedExtensionSlot));
 }
 
 export function allocateReplayName(
   prefix: string,
   existingPaths: Iterable<string>,
   sourceName: string,
+  sharedExtensionSlot = false,
+  directory = "replay",
 ): string | null {
   const extension = replayExtension(sourceName);
   if (!extension) return null;
   const sanitized = sanitizeReplayImportName(sourceName);
   if (isValidReplayName(prefix, sanitized)) {
-    const target = `replay/${sanitized}`;
-    if (isReplayTargetAvailable(existingPaths, target)) return sanitized;
+    const target = `${directory}/${sanitized}`;
+    if (isReplayTargetAvailable(existingPaths, target, sharedExtensionSlot)) return sanitized;
   }
 
-  const occupied = normalizedPathSet(existingPaths);
+  const occupied = normalizedPathSet(existingPaths, sharedExtensionSlot);
   for (let index = 0; index <= 0xffff; index++) {
     const name = `${prefix}_ud${index.toString(16).padStart(4, "0")}${extension}`;
-    const target = `replay/${name}`;
-    if (!occupied.has(target.toLowerCase())) return name;
+    const target = `${directory}/${name}`;
+    if (!occupied.has(replayStoragePathKey(target, sharedExtensionSlot))) return name;
   }
   return null;
 }
@@ -152,6 +162,8 @@ export function planReplayArchiveImport(
   prefix: string,
   archivePaths: Iterable<string>,
   existingPaths: Iterable<string>,
+  sharedExtensionSlot = false,
+  directoryForSource: (source: string) => string = () => "replay",
 ): ReplayArchiveImportPlan {
   const filePaths = [...archivePaths].map(String).filter(path => !path.endsWith("/"));
   if (filePaths.some(path => !isSafeReplayArchivePath(path))) return { ok: false, reason: "unsafe-path" };
@@ -170,9 +182,11 @@ export function planReplayArchiveImport(
     .sort((a, b) => a.localeCompare(b));
 
   for (const sourcePath of replaySources) {
-    const name = allocateReplayName(prefix, occupied, basename(sourcePath));
+    const directory = directoryForSource(sourcePath);
+    if (!isReplayFilePath(`${directory}/th9_ud0000.rpy`)) return {ok: false, reason: "unsafe-path"};
+    const name = allocateReplayName(prefix, occupied, basename(sourcePath), sharedExtensionSlot, directory);
     if (!name) return { ok: false, reason: "slots-exhausted" };
-    const targetPath = `replay/${name}`;
+    const targetPath = `${directory}/${name}`;
     entries.push({ sourcePath, targetPath, kind: "replay" });
     occupied.push(targetPath);
   }

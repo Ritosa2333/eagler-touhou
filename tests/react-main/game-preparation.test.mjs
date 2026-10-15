@@ -597,3 +597,29 @@ test('main 3630–3668: remaining local reads use concurrency two and stop sibli
   assert.equal(r.writes.includes('/bgm/track-3.ogg'), false); assert.equal(r.writes.includes('/bgm/track-4.ogg'), false);
   assert.equal(progress.length, before); assert.equal(progress.at(-1).completed, 2); assert.equal(progress.at(-1).phase, 'remaining');
 });
+
+
+for (const productId of ['th09', 'th09mp']) for (const mode of ['ogg-stream', 'ogg-full']) test(`${productId} direct Replay prepares and mounts every OGG before launch (${mode})`, async () => {
+  const initial = generation({ogg: ['track-1', 'track-2']}), gate = deferred(), installs = [];
+  initial.game = initial.descriptor.game = 'th09';
+  initial.descriptor.files['game-data'].source = 'th09.data'; initial.descriptor.files['game-data'].target = '/th09.data';
+  for (const id of initial.descriptor.components.ogg.files) initial.descriptor.files[id].target = `/music/${id}.ogg`;
+  const releaseCatalog = {schema: 'eagler-touhou/release-catalog/1', games: {th09: {revision: 'package-r1', descriptor: 'games/th09/package.json'}}};
+  let f;
+  f = acquisitionFixture({current: initial, catalogValue: releaseCatalog, dependencies: {installPublished: async (_game, options) => {
+    installs.push([...options.addFileIds]); await gate.promise;
+    const next = added(f.current, options.addFileIds); f.setCurrent(next); return {generation: next, installation: null};
+  }}});
+  const r = runtimeFixture(), state = settingsFixture({productId, music: mode});
+  let completed = false;
+  const pending = api.prepareGame(gameInput(f, state, {productId, replayPath: 'replay/A vs B/th9_ud0000.rpyx', runtime: r.service,
+    ...(productId === 'th09mp' ? {multiplayer: {kind: 'replay'}} : {})})).then(result => {completed = true; return result;});
+  await snapshotWhen(r.service, snapshot => snapshot.ready); await flush();
+  assert.deepEqual(installs, [['track-1', 'track-2', 'track-3', 'track-4']]);
+  assert.equal(completed, false); assert.equal(r.outbound.some(message => message.command === 'configure'), false);
+  gate.resolve(); const result = await pending;
+  assert.equal(result.music, mode); assert.equal(result.plan.configure.music, 'ogg');
+  assert.deepEqual(result.plan.localOgg.fileIds, ['track-1', 'track-2', 'track-3', 'track-4']);
+  assert.deepEqual(r.writes.filter(path => path.endsWith('.ogg')).sort(), ['track-1', 'track-2', 'track-3', 'track-4'].map(id => `/music/${id}.ogg`));
+  assert.deepEqual(result.plan.generation.files['game-data'], initial.files['game-data']);
+});

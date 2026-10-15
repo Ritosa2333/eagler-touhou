@@ -56,6 +56,9 @@ const occupied = [
 assert.equal(isReplayTargetAvailable(occupied, "replay/th6_ud0000.rpy"), true,
   "unsupported sidecar-like files must not reserve replay identities");
 assert.equal(allocateReplayName("th6", occupied, "my replay.rpy"), "th6_ud0000.rpy");
+assert.equal(allocateReplayName('th9',['replay/th9_ud0000.rpyx'],'th9_ud0000.rpy',true),'th9_ud0001.rpy');
+assert.equal(allocateReplayName('th9',['replay/th9_ud0000.rpy'],'th9_ud0000.rpyx',true),'th9_ud0001.rpyx');
+assert.deepEqual(planReplayArchiveImport('th9',['one/th9_ud0000.rpy','two/th9_ud0000.rpyx'],[],true).entries.map(entry=>entry.targetPath),['replay/th9_ud0000.rpy','replay/th9_ud0001.rpyx']);
 assert.equal(allocateReplayName("th6", occupied, "my replay.rpyx"), "th6_ud0000.rpyx",
   "collision renaming must preserve ReplayX identity");
 assert.equal(allocateReplayName("th6", occupied, "th6_02.rpyx"), "th6_02.rpyx");

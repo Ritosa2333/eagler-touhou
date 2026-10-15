@@ -27,7 +27,7 @@ before(async () => {
 });
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 function fixture({ready = true, launched = false, confirm = true, corrupt = false, keepHint = false, prepareReady = Promise.resolve(), assertImportOwnership = () => {}, capturePresentation = false} = {}) {
-  const events = [], stored = new Map(), downloads = [], feedback = [], decisions = [];
+  const events = [], stored = new Map(), storedMatches = new Map(), downloads = [], feedback = [], decisions = [];
   const state = {ready, launched};
   let picked = null, locked = false, managerOpen = false, retired = false;
   let active = 1, importContext = 'initial';
@@ -39,9 +39,9 @@ function fixture({ready = true, launched = false, confirm = true, corrupt = fals
       async sync() {assertCurrent(); events.push('sync');},
       async send(command, payload) {
         assertCurrent(); events.push(`${command}:${payload.path ?? ''}`);
-        if (command === 'write') {stored.set(payload.path, [...payload.bytes]); return {};}
+        if (command === 'write') {stored.set(payload.path, [...payload.bytes]); if(payload.replayMatch)storedMatches.set(payload.path,payload.replayMatch);return {};}
         if (command === 'remove') {if (!keepHint) stored.delete(payload.path); return {};}
-        if (command === 'list') return {files: [...stored].map(([path, bytes]) => ({path, size: bytes.length}))};
+        if (command === 'list') return {files: [...stored].map(([path, bytes]) => ({path, size: bytes.length, ...(storedMatches.has(path)?{replayMatch:storedMatches.get(path)}:{})}))};
         if (!stored.has(payload.path)) throw Object.assign(new Error('missing'), {errno: 44});
         return {bytes: corrupt && active > 1 ? [255] : stored.get(payload.path)};
       },
@@ -82,9 +82,21 @@ function fixture({ready = true, launched = false, confirm = true, corrupt = fals
       return {...(capturePresentation ? {ownsPresentation: () => context === importContext} : {}), assertRuntimeOwnership() {assertImportOwnership(context);}, complete() {completedContexts.push(context); events.push(`imported:${product}`);}};
     },
   });
-  return {actions, events, stored, downloads, feedback, decisions, state, mutations, capturedContexts, completedContexts, presentationGuards, setImportContext(value) {importContext = value;}, pick(file) {picked = file;}, managerOpen() {managerOpen = true;}};
+  return {actions, events, stored, storedMatches, downloads, feedback, decisions, state, mutations, capturedContexts, completedContexts, presentationGuards, setImportContext(value) {importContext = value;}, pick(file) {picked = file;}, managerOpen() {managerOpen = true;}};
 }
 const save = () => new File([new Uint8Array([3, 7, 9])], 'any.dat');
+test('TH09 match archive exports matchup folders and restores names from its ZIP', async () => {
+  const f = fixture(), match = {schema:'eagler-touhou/th09-match-replay/1',names:['xxx','abdjfal'],startedAt:1792029600000,frames:7200,winner:1};
+  f.stored.set('replay/xxx vs abdjfal/th9_ud0000.rpy', [84,57,82]); f.storedMatches.set('replay/xxx vs abdjfal/th9_ud0000.rpy',match);
+  await f.actions.run('export-replay','th09mp');
+  const {unzipSync}=await import('fflate');
+  const zip = new Uint8Array(f.downloads[0].bytes), entries=unzipSync(zip);
+  assert.deepEqual(Object.keys(entries).sort(),['replay/xxx vs abdjfal/th9_ud0000.json','replay/xxx vs abdjfal/th9_ud0000.rpy']);
+  assert.deepEqual(JSON.parse(new TextDecoder().decode(entries['replay/xxx vs abdjfal/th9_ud0000.json'])),match);
+  const g=fixture();await g.actions.importFile('replay',new File([zip],'match.zip'),'th09mp');
+  assert.deepEqual(g.stored.get('replay/xxx vs abdjfal/th9_ud0000.rpy'),[84,57,82]);
+  assert.deepEqual(g.storedMatches.get('replay/xxx vs abdjfal/th9_ud0000.rpy'),match);
+});
 test('save import flushes active writer then writes/reopens/verifies before success', async () => {
   const f = fixture({launched: true});
   await f.actions.importFile('save', save(), 'th10');
@@ -196,4 +208,13 @@ test('import ownership is rechecked after asynchronous preparation before acquir
   await assert.rejects(pending, /superseded after preparation/);
   assert.deepEqual(f.events, ['prepare:th06:retire=false'], 'no lock, write, read or retirement follows invalidation');
   assert.deepEqual(f.completedContexts, []); assert.deepEqual(f.feedback, []);
+});
+
+test('ordinary TH09 retains archive directories without importing multiplayer match metadata', async () => {
+  const {zipSync,unzipSync}=await import('fflate'),f=fixture();
+  const zip=zipSync({'replay/收藏/th9_ud0000.rpy':new Uint8Array([1,2,3]),'replay/收藏/th9_ud0000.json':new TextEncoder().encode('{}')});
+  await f.actions.importFile('replay',new File([zip],'folder.zip'),'th09');
+  assert.deepEqual(f.stored.get('replay/收藏/th9_ud0000.rpy'),[1,2,3]);assert.equal(f.storedMatches.size,0);
+  await f.actions.run('export-replay','th09');const entries=unzipSync(new Uint8Array(f.downloads[0].bytes));
+  assert.deepEqual(Object.keys(entries),['replay/收藏/th9_ud0000.rpy']);
 });

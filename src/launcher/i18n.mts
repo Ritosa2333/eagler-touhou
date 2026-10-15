@@ -6,6 +6,19 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
+  ['replay.stopBeforeWatch', '请先退出当前游戏再观看录像', 'Exit the current game before watching a Replay'],
+  ['replay.watch', '观看', 'Watch'],
+  ['replay.watching', '正在观看 {name}', 'Watching {name}'],
+  ['replay.parentFolder', '上一级', 'Parent folder'],
+  ['replay.rootFolder', '根目录', 'Root folder'],
+  ['replay.move', '移动', 'Move'],
+  ['replay.moveTo', '目标文件夹', 'Destination folder'],
+  ['replay.newFolder', '新文件夹', 'New folder'],
+  ['replay.folderName', '文件夹名称', 'Folder name'],
+  ['replay.folderInvalid', '文件夹名称无效，不能包含路径或特殊字符', 'Invalid folder name. Paths and special characters are not allowed'],
+  ['replay.operationCancelled', '操作已取消', 'Operation cancelled'],
+  ['replay.downloadFolder', '下载文件夹', 'Download folder'],
+  ["file.replayImported", "已导入 {count} 份录像，可直接选择播放", "Imported {count} recording(s); select one to play"],
   ['th09.replayAutoSave', '自动保存每局 Replay', 'Automatically save every match Replay'],
   ['th09.replayAutoSaveHint', '整局结束后保存在此浏览器，按双方昵称查看和下载', 'Saved in this browser after each complete match, labeled with both player names'],
   ["room.inGameSelection", "游戏内选角", "Choose in game"],
