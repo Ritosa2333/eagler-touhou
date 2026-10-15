@@ -127,7 +127,7 @@ export function RoomView(props: RoomViewProps) {
               count: room.playerCount,
             })}
           </span>
-          <span id="mpRoomDifficultyBadge">{config.difficulties[room.difficulty] || 'Normal'}</span>
+          <span id="mpRoomDifficultyBadge">{config.inGameSelection ? t('room.inGameSelection') : config.difficulties[room.difficulty] || 'Normal'}</span>
           <span
             id="mpRoomPhase"
             title={state.preparation?.status === 'failed' ? state.preparation.error : ''}

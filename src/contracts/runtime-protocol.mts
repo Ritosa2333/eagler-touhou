@@ -104,6 +104,7 @@ export interface RuntimeConfigureOptions {
   netplayPredictionReserve?: number;
   netplayAdonisMode?: number;
   netplayPredictionLimit?: number;
+  netplayInGameSelection?: boolean;
   netplaySpectator?: boolean;
   netplaySpectatorId?: string;
   netplaySpectatorCount?: number;
@@ -150,6 +151,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplayInputDelayAuto: Object.freeze({ requirement: "profile-required", capability: "multiplayer", productDeclaration: "multiplayer.inputTiming.measuredStartup", when: "measured multiplayer player session; actual-channel startup calibration" }),
   netplayPredictionReserve: Object.freeze({ requirement: "profile-required", capability: "multiplayer", productDeclaration: "multiplayer.inputTiming.measuredStartup", when: "measured multiplayer player session; reserve 1 or 2 frames without shortening rollback history" }),
   netplayPredictionLimit: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH08 multiplayer player session" }),
+  netplayInGameSelection: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "native synchronized selection" }),
   netplaySpectator: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplaySpectatorId: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer spectator session" }),
   netplaySpectatorCount: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),

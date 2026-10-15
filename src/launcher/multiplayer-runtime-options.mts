@@ -14,6 +14,7 @@ export interface MultiplayerRuntimeOptionConstraints {
   difficulties: readonly string[];
   loadouts: readonly MultiplayerRuntimeLoadout[];
   inputTiming?: Readonly<MultiplayerInputTimingConfig>;
+  inGameSelection?: boolean;
 }
 
 export interface MultiplayerRuntimeOptionInput {
@@ -48,6 +49,7 @@ export interface MultiplayerRuntimeOptions {
   netplayPredictionReserve?: number;
   netplayAdonisMode?: number;
   netplayPredictionLimit?: number;
+  netplayInGameSelection?: boolean;
   netplaySpectator: boolean;
   netplaySpectatorId: string;
   netplaySpectatorCount: number;
@@ -162,6 +164,7 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
   return {
     netplayMode: 'lan',
+    ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
     ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
     netplayUrl: url.href,
     netplayPlayer: player,

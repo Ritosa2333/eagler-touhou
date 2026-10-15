@@ -257,6 +257,7 @@ export const PRODUCT_GAMES = Object.freeze({
     multiplayer: Object.freeze({
       titleKey: "game.title.th09mp",
       gameplay: "versus",
+      inGameSelection: true,
       inputTiming: Object.freeze({ rollbackLimit: 8, measuredStartup: true, manualDelayLimit: 9 }),
       playerCounts: Object.freeze([2] as const),
       difficulties: TH09_MULTIPLAYER_DIFFICULTIES,
@@ -514,6 +515,7 @@ export interface MultiplayerInputTimingConfig {
 export interface MultiplayerProductConfig {
   titleKey: string;
   gameplay: "cooperative" | "versus";
+  inGameSelection?: boolean;
   inputTiming?: Readonly<MultiplayerInputTimingConfig>;
   playerCounts: readonly (2 | 3)[];
   difficulties: readonly string[];

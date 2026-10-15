@@ -6,6 +6,8 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
+  ["room.inGameSelection", "游戏内选角", "Choose in game"],
+  ["room.inGameSelectionHint", "角色、难度和场景将在游戏内选择。难度和场景由 P1 操作。", "Choose characters, difficulty and stage in game. P1 controls difficulty and stage."],
   ['th09.elapsed', '已进行 {minutes} 分钟', '{minutes} min elapsed'],
   ['th09.matchInformation', '对局信息', 'Match information'],
   ['th09.watching', '有 {count} 个旁观者在观看', '{count} spectators watching'],

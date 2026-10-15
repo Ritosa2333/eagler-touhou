@@ -70,6 +70,11 @@ for(const adonisMode of [-1,3,1.5,NaN])assert.throws(()=>buildMultiplayerRuntime
 for(const inputDelay of [-1,10,1.5,NaN])assert.throws(()=>buildMultiplayerRuntimeOptions({...adonisBase,inputDelay},th06),/Adonis/);
 assert.throws(()=>buildMultiplayerRuntimeOptions({...base,adonisMode:1,inputDelay:3},th06),/不支持 Adonis/);
 
+for (const spectator of [false,true]) {
+  const value = buildMultiplayerRuntimeOptions({...base, url:base.url.replace('th06mp','th09mp'), spectator, spectatorId:spectator?'viewer123456':'', difficulty:1}, th06);
+  assert.equal(value.netplayInGameSelection,true,'TH09 room policy must enable native selection for players and spectators');
+}
+assert.equal('netplayInGameSelection' in buildMultiplayerRuntimeOptions(base,th06),false);
 const spectator = buildMultiplayerRuntimeOptions({
   ...base,
   url: "ws://relay.example.test/?room=th07mp-4321&run=2&spectator=c12345678",

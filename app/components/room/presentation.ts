@@ -8,7 +8,7 @@ export function roomPresentation(state: RoomOwnerSnapshot, t: Translate) {
   const gameId = gameIdForProduct(state.product), game = PRODUCT_GAMES[gameId], config = multiplayerConfigForProduct(state.product)!;
   const normalize = (value: unknown) => {const count = config.loadouts.length; const index = Number.isInteger(Number(value)) ? Number(value) : 0; return count ? (index % count + count) % count : 0;};
   const loadout = config.loadouts[normalize(state.preferredLoadout)]!;
-  const label = (index: unknown) => t(config.loadouts[normalize(index)]!.labelKey as UiMessageKey);
+  const label = (index: unknown) => config.inGameSelection ? t('room.inGameSelection') : t(config.loadouts[normalize(index)]!.labelKey as UiMessageKey);
   return {gameId, game, config, normalize, loadout, label, room: state.room, ready: state.room.synced === true && state.connected, owner: state.room.synced === true && state.seat === 0};
 }
 export function networkMessage(state: RoomOwnerSnapshot, context: RoomViewContext, t: Translate): string {

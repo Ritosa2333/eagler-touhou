@@ -62,7 +62,8 @@ function RoomRow({
   const meta = PRODUCT_GAMES[gameIdForProduct(room.product)];
   const artwork = 'cardArtwork' in meta ? meta.cardArtwork : null;
   const title = locale === 'en' ? meta.subtitle : meta.title;
-  const difficulty = multiplayerConfigForProduct(room.product)!.difficulties[room.difficulty];
+  const policy = multiplayerConfigForProduct(room.product)!;
+  const difficulty = policy.inGameSelection ? t('room.inGameSelection') : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
   const spectating = state === 'playing' && directoryRoomCanEnter(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });

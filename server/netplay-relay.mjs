@@ -1690,16 +1690,18 @@ server.on('connection', (socket, request) => {
       if (run.spectatorStopped) return;
       if (player !== 0 || (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0)) return;
       const payload = incoming.subarray(1);
+      const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;
       const ending =
-        run.spectatorTimeline &&
+        th09Stream &&
         payload.length === 24 &&
         [84, 57, 83, 69, 1, 0, 2, 0].every((v, i) => payload[i] === v);
       const beginning =
-        run.spectatorTimeline &&
-        payload.length === 74 &&
-        [84, 57, 66, 71, 1, 0, 2, 0].every((v, i) => payload[i] === v);
+        th09Stream &&
+        ((payload.length === 74 && payload[4] === 1) || (payload.length === 102 && payload[4] === 2)) &&
+        [84, 57, 66, 71].every((v, i) => payload[i] === v) &&
+        payload[5] === 0 && payload[6] === 2 && payload[7] === 0;
       const roundStart =
-        run.spectatorTimeline &&
+        th09Stream &&
         payload.length === 28 &&
         [84, 57, 82, 68, 1, 0, 2, 0].every((v, i) => payload[i] === v);
       if (
@@ -1716,7 +1718,7 @@ server.on('connection', (socket, request) => {
           build = payload.subarray(12, 24);
         if (
           frame < (run.spectatorNextFrame || 0) ||
-          (!run.spectatorComplete && frame !== (run.spectatorNextFrame || 0)) ||
+          (run.spectatorBuild && !run.spectatorComplete && frame !== (run.spectatorNextFrame || 0)) ||
           (run.spectatorBuild && !run.spectatorBuild.equals(build))
         ) {
           stopSpectatorStream(run);
@@ -1731,7 +1733,7 @@ server.on('connection', (socket, request) => {
         run.spectatorHistory = run.spectatorTiming ? [run.spectatorTiming] : [];
         run.spectatorHistoryBytes = run.spectatorTiming?.length || 0;
       }
-      if (run.spectatorTimeline && (payload.length === 46 || ending || roundStart)) {
+      if (th09Stream && (payload.length === 46 || ending || roundStart)) {
         const frame = payload.readUInt32LE(8),
           build = payload.subarray(12, 24);
         if (
