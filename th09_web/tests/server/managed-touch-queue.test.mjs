@@ -112,6 +112,7 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
     _th09_error: () => 512, _th09_storage_revision: () => 0,
     _th09_prepare_loading: () => 1, _th09_save_snapshot: () => 1,
     _th09_game_open: () => {native('game-open', []);return 1;},
+    _th09_rollback_recovery_mode: enabled => {native('recovery-mode', [enabled]);return 1;},
     _th09_game_close: () => native('game-close', []),
   };
   core.HEAP32[7] = 1; // Keep the unrelated title-exit branch inactive.
@@ -340,6 +341,24 @@ function report(t, name, runtime, start, observed, goals) {
     sourcePaths, sourceIdentity, observed, goals, nativeCalls}));
   if (requireGoals) for (const [name, passed] of Object.entries(goals)) assert.equal(passed, true, 'candidate goal: ' + name);
 }
+
+test('launch configures post-present rollback without a URL flag before starting the loop', async t => {
+  for (const [options, enabled] of [
+    [{netplayMode: 'lan', netplayAdonisMode: 0, netplayInputDelay: 3}, 1],
+    [{netplayMode: 'lan', netplayAdonisMode: 2}, 1],
+    [{}, 0],
+    [{netplayMode: 'lan', netplaySpectator: true}, 0],
+    [{replayViewer: true}, 0],
+  ]) {
+    const runtime = openRuntime();t.after(() => runtime.close());await runtime.launch('touch', options);
+    const native = rows(runtime), recovery = native.filter(row => row.op === 'recovery-mode');
+    assert.deepEqual(shape(recovery), [{op: 'recovery-mode', args: [enabled]}]);
+    assert.ok(native.find(row => row.op === 'game-open').seq < recovery[0].seq);
+    assert.ok(recovery[0].seq < native.find(row => row.op === 'loop-start').seq);
+    if (options.netplayMode === 'lan')
+      assert.ok(recovery[0].seq < runtime.trace.find(row => row.kind === 'connect-wait').seq);
+  }
+});
 
 test('real message listener rejects foreign envelopes and invalid Runtime epoch', async t => {
   const runtime = openRuntime();t.after(() => runtime.close());await runtime.launch();

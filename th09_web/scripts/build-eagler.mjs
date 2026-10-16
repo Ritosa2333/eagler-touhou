@@ -39,7 +39,7 @@ if (variant === 'multiplayer') {
     'th09_peer_spectator_state', 'th09_peer_stop_spectators', 'th09_spectator_info',
     'th09_network_info', 'th09_network_room_begin', 'th09_network_receive',
     'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
-    'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_info',
+    'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_wake', 'th09_rollback_info',
     'th09_adonis_configure', 'th09_adonis_info',
     'th09_measured_begin', 'th09_startup_info',
     'th09_network_selection_begin', 'th09_network_selection_info', 'th09_spectator_prepare',

@@ -36,7 +36,7 @@ bool AudioDevice::initialize(ResourceReader& resources){
     TH09_PERF_SCOPE(initialize_cost,AudioInit);
     if(impl->ready)return true;if(impl->engine_ready)impl=std::make_unique<Impl>();auto& a=*impl;auto engine=ma_engine_config_init();engine.noDevice=MA_TRUE;engine.channels=2;engine.sampleRate=44100;engine.defaultVolumeSmoothTimeInPCMFrames=0;
     if(ma_engine_init(&engine,&a.engine)!=MA_SUCCESS){error="Unable to initialize audio mixer";return false;}a.engine_ready=true;
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"512");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
     if(SDL_InitSubSystem(SDL_INIT_AUDIO))a.stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
     if(!a.stream){error=SDL_GetError();return false;}
     for(u32 n=0;n<a.samples.size();++n)if(!resources.read(sound_samples[n],a.samples[n])){error=std::string("Missing sound: ")+sound_samples[n];return false;}
@@ -77,22 +77,24 @@ void AudioDevice::pump(){
     auto& a=*impl;if(!a.ready||!a.stream||a.suspended)return;i32 queued=std::max(0,SDL_GetAudioStreamQueued(a.stream))/8;
     TH09_PERF_COUNT(PumpReadyCalls,1);TH09_PERF_COUNT(QueueEmptyCalls,queued==0?1:0);
     TH09_PERF_GAUGE(QueueFramesBefore,queued);TH09_PERF_GAUGE(QueueFramesAfterEstimate,queued);
-    if(!a.refill&&queued<4096)a.refill=true;if(!a.refill)return;if(queued>=6144){a.refill=false;return;}
+    // Keep at most 46ms of PCM ahead of a fresh effect at 44100Hz. Previously
+    // the 6144-frame queue alone could defer feedback by up to 139ms.
+    if(!a.refill&&queued<1536)a.refill=true;if(!a.refill)return;if(queued>=2048){a.refill=false;return;}
     TH09_PERF_COUNT(PumpRefillCalls,1);
-    for(i32 n=0;n<6&&queued<6144;++n){
-        float pcm[2048]{};ma_uint64 frames=0;ma_result read;
-        {TH09_PERF_SCOPE(mix_cost,AudioMix);read=ma_engine_read_pcm_frames(&a.engine,pcm,1024,&frames);}
+    for(i32 n=0;n<4&&queued<2048;++n){
+        float pcm[1024]{};const i32 requested=std::min(512,2048-queued);ma_uint64 frames=0;ma_result read;
+        {TH09_PERF_SCOPE(mix_cost,AudioMix);read=ma_engine_read_pcm_frames(&a.engine,pcm,requested,&frames);}
         TH09_PERF_COUNT(PcmFramesRead,frames);
         if(read!=MA_SUCCESS){TH09_PERF_COUNT(AudioReadErrors,1);a.stats[3]=1;return;}
         for(auto& v:pcm)v=std::clamp(v,-1.f,1.f);
         bool queued_ok;
-        {TH09_PERF_SCOPE(put_cost,AudioPut);queued_ok=SDL_PutAudioStreamData(a.stream,pcm,sizeof(pcm));}
+        {TH09_PERF_SCOPE(put_cost,AudioPut);queued_ok=SDL_PutAudioStreamData(a.stream,pcm,int(frames*8));}
         if(!queued_ok){TH09_PERF_COUNT(AudioPutErrors,1);a.stats[3]=2;return;}
-        ++a.stats[1];a.stats[2]+=1024;queued+=1024;
-        TH09_PERF_COUNT(PcmChunks,1);TH09_PERF_COUNT(PcmFramesQueued,1024);
+        ++a.stats[1];a.stats[2]+=u32(frames);queued+=i32(frames);
+        TH09_PERF_COUNT(PcmChunks,1);TH09_PERF_COUNT(PcmFramesQueued,frames);
         TH09_PERF_GAUGE(QueueFramesAfterEstimate,queued);TH09_PERF_GAUGE(LastPumpChunks,n+1);
     }
-    if(queued>=6144)a.refill=false;
+    if(queued>=2048)a.refill=false;
 }
 void AudioDevice::suspend(bool paused){auto& a=*impl;a.suspended=paused;if(a.stream){if(paused)SDL_PauseAudioStreamDevice(a.stream);else SDL_ResumeAudioStreamDevice(a.stream);}}
 void AudioDevice::sound_stop(u32 n){if(auto* v=impl->voice(n))ma_sound_stop(&v->sound);}

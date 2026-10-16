@@ -23,6 +23,7 @@ function harness(timeline = false) {
         const url = new URL(new TextDecoder().decode(bytes.subarray(256, end)));
         assert.equal(Number(url.searchParams.get('player')), side);
         peers.set(side, self);
+        self.transport={};globalThis.__eaglerPeerTransport=self.transport;
         return 1;
       },
       _th09_peer_state: () => self.peerState ?? (peers.size === 2 ? 1 : 0),
@@ -99,6 +100,34 @@ async function connectPair(harness, inputDelay = 0, adonisMode = 0, pending = fa
   assert.equal(right.active, !pending);
   return {left, right, leftCore, rightCore};
 }
+
+test('active rollback processes arrivals before waking an already-due native tick',async()=>{
+  const box=harness();let pair;
+  try{
+    pair=await connectPair(box);const {left,leftCore}=pair;
+    const events=[];
+    leftCore._th09_rollback_pump=()=>{events.push('receive');return 2;};
+    leftCore._th09_rollback_wake=()=>events.push('wake');
+    const receive=left.startupTransport.onReceive;
+    assert.equal(typeof receive,'function','arrival callback survives the ready transition');
+    receive();assert.deepEqual(events,['receive','wake']);
+    events.length=0;left.pumping=true;receive();assert.deepEqual(events,[]);left.pumping=false;
+    left.finished=true;receive();assert.deepEqual(events,['receive'],'terminal ACKs continue without a live wake');
+    events.length=0;left.disconnected=true;receive();assert.deepEqual(events,[]);
+    left.disconnected=false;left.close();assert.equal(left.startupTransport.onReceive,null);
+    receive();assert.deepEqual(events,[],'a stale callback cannot wake a closed session');
+  }finally{pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('pure delay receives on arrival without invoking a rollback live tick',async()=>{
+  const box=harness();let pair;
+  try{
+    pair=await connectPair(box,2,1);const {left,leftCore}=pair;
+    let wakes=0;leftCore._th09_rollback_wake=()=>++wakes;
+    const before=leftCore.calls.pumps;left.startupTransport.onReceive();
+    assert.equal(leftCore.calls.pumps,before+1);assert.equal(wakes,0);
+  }finally{pair?.left.close();pair?.right.close();box.restore();}
+});
 
 test('game selection starts a neutral native menu and leaves room presets outside gameplay identity',async()=>{
   const box=harness();let pair;
@@ -282,14 +311,14 @@ for(const transportEnd of [-1,3]) test(`viewer drains buffered final packets acr
   }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
 });
 
-test('TH09 rollback ignores a stale nonzero launcher delay and starts at zero', async () => {
+test('TH09 rollback preserves the room manual delay at the native boundary', async () => {
   const box = harness();
   try {
     const {left, right, leftCore, rightCore} = await connectPair(box, 3);
     const baseAbi = (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0;
-    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 0]]);
-    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 0]]);
-    assert.equal(globalThis.__eaglerNetplayInputDelayFrames, 0);
+    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 3]]);
+    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 3]]);
+    assert.equal(globalThis.__eaglerNetplayInputDelayFrames, 3);
     left.close(); right.close();
   } finally { box.restore(); }
 });
@@ -302,8 +331,8 @@ test('Adonis mode and all nine delay frames reach the native session without JS 
       const effectiveMode=mode===2?0:mode;
       assert.deepEqual(leftCore.calls.modes,[effectiveMode]);
       assert.deepEqual(rightCore.calls.modes,[effectiveMode]);
-      assert.equal(leftCore.calls.begin[0][8],mode===2?0:9);
-      assert.equal(rightCore.calls.begin[0][8],mode===2?0:9);
+      assert.equal(leftCore.calls.begin[0][8],9);
+      assert.equal(rightCore.calls.begin[0][8],9);
       assert.deepEqual(leftCore.calls.receive,[]);
       assert.equal(globalThis.__eaglerNetplayAdonisMode,effectiveMode);
       left.close();right.close();

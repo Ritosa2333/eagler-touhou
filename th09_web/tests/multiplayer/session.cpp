@@ -268,13 +268,21 @@ void input_batch_scopes() {
 }
 void network_pacing() {
     {
-        PacingFixture f;f.advance(7);f.pump(0);
+        PacingFixture f;
+        for(unsigned count:{4u,1u,2u,1u}){
+            f.advance(count);f.pump(f.now+16);
+            CHECK(f.left.session.MissingRemoteInputs()==f.left.session.Frame());
+            CHECK(f.left.session.NetworkIntervalScale()==1);
+            CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
+        }
+        f.capture();CHECK(!f.left.session.Prepare().canAdvance);
+        const auto captures=f.left.session.Captures();
+        for(unsigned i=0;i<8;++i)f.pump(100);
+        CHECK(f.left.session.Captures()==captures);
+        CHECK(f.left.session.Frame()==RollbackSession::History);
         CHECK(f.left.session.IntervalScale()==1);
-        f.pump(25);const auto half=f.left.session.IntervalScale();CHECK(half>1&&half<2);
-        for(unsigned i=0;i<8;++i){f.pump(25);CHECK(f.left.session.IntervalScale()==half);}
-        f.pump(50);CHECK(f.left.session.IntervalScale()==2);
         // Preserve the channel's existing ClockReversed failure contract.
-        f.a.now=f.b.now=49;CHECK(!f.left.session.Pump(49));CHECK(f.left.session.Failed());
+        f.a.now=f.b.now=99;CHECK(!f.left.session.Pump(99));CHECK(f.left.session.Failed());
         CHECK(!f.left.session.Ready());
         CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
         f.left.session.Clear();CHECK(f.left.session.IntervalScale()==1);
@@ -293,30 +301,22 @@ void network_pacing() {
         CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
     }
     {
-        PacingFixture f;f.advance(4);f.pump(16);
-        CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
-        f.advance(1);f.pump(32);const auto first=f.left.session.IntervalScale();
-        CHECK(first>1&&first<2);
-        f.advance(2);f.pump(48);CHECK(f.left.session.IntervalScale()>first);
-        CHECK(f.left.session.IntervalScale()<2);
-        f.pump(66);CHECK(f.left.session.IntervalScale()==2);
-        f.advance(1);f.capture();CHECK(f.left.session.Frame()==RollbackSession::History);
+        // Removing pre-emptive slowdown must not admit a ninth prediction,
+        // forget an earlier input hole, or resample a held local capture.
+        PacingFixture f;f.advance(8);f.capture();
         CHECK(!f.left.session.Prepare().canAdvance); // The ninth prediction stays forbidden.
         f.pump(82);f.actual(1,7);f.pump(98);
         CHECK(f.left.session.RollbackFrame()==1);
         CHECK(f.left.session.ConfirmedThrough()==INVALID_FRAME);
-        CHECK(f.left.session.IntervalScale()==2); // Later packets did not fill frame zero.
+        CHECK(f.left.session.MissingRemoteInputs()==8); // Frame zero is still missing.
         f.restore();CHECK(f.left.session.Frame()==1);f.pump(114);
-        CHECK(f.left.session.IntervalScale()==2); // Rewinding next_ did not create room.
+        CHECK(f.left.session.MissingRemoteInputs()==8); // Rewind did not create room.
         CHECK(f.left.step(0));f.actual(0,0);f.pump(130);
         CHECK(f.left.session.RollbackFrame()==0);
-        CHECK(f.left.session.IntervalScale()>1&&f.left.session.IntervalScale()<2);
+        CHECK(f.left.session.NetworkIntervalScale()==1);
         f.restore();CHECK(f.left.session.ConfirmedThrough()==INVALID_FRAME);
-        const auto recovering=f.left.session.IntervalScale();f.pump(130);
-        CHECK(f.left.session.IntervalScale()==recovering); // Repeated pumps cannot speed recovery.
-        f.pump(180);CHECK(f.left.session.IntervalScale()<recovering);
-        CHECK(f.left.session.IntervalScale()>1);CHECK(f.left.step(0));
-        f.pump(230);CHECK(f.left.session.IntervalScale()>1);CHECK(f.left.step(0));
+        f.pump(130);f.pump(180);CHECK(f.left.step(0));
+        f.pump(230);CHECK(f.left.step(0));
         f.pump(280);CHECK(f.left.session.Frame()<8);
         CHECK(f.left.session.ConfirmedThrough()==INVALID_FRAME);
         CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
@@ -332,11 +332,11 @@ void network_pacing() {
         CHECK(next.inputs[0]==input(0,8));CHECK(f.left.session.InputDelay()==0);
     }
     {
-        PacingFixture f;f.advance(7);f.pump(50);CHECK(f.left.session.IntervalScale()==2);
+        PacingFixture f;f.advance(7);f.pump(50);
         f.pump(50,false);CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
         f.pump(1000,false);f.pump(1000);
         CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
-        f.pump(1010);CHECK(f.left.session.IntervalScale()>1&&f.left.session.IntervalScale()<2);
+        f.pump(1010);CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
     }
     for(auto mode:{AdonisMode::Delay,AdonisMode::Hybrid}){
         PacingFixture f(mode);
@@ -344,10 +344,27 @@ void network_pacing() {
         else{f.capture();CHECK(!f.left.session.Prepare().canAdvance);}
         f.pump(1000);CHECK(f.left.session.IntervalScale()==f.left.session.Channel().IntervalScale());
     }
-    std::puts("Network headroom, input holes, partial replay, recovery, clock and mode pacing contracts PASS");
+    std::puts("No shortage slowdown; hard horizon, input holes, exact replay, capture ownership and clock/mode contracts PASS");
+}
+void after_present_recovery(){
+    PacingFixture f;f.advance(3);f.actual(0,2);f.pump(20);
+    CHECK(f.left.session.RollbackFrame()==0);CHECK(!f.left.session.Prepare().canAdvance);
+    f.capture();const auto visible=f.left.session.Prepare(true);CHECK(visible.canAdvance);
+    f.left.checkpoints[3]=f.left.state;f.left.state.step(visible.inputs);
+    CHECK(f.left.session.Complete(visible,true));CHECK(f.left.session.Frame()==4);
+    CHECK(f.left.session.RollbackFrame()==0&&f.left.session.ConfirmedThrough()==INVALID_FRAME);
+    // Correct after the visible tick. Replaying must reuse all four captures.
+    f.actual(3,3);f.pump(21);f.restore();CHECK(!f.left.session.Prepare(true).canAdvance);
+    while(f.left.session.Frame()<4)CHECK(f.left.step(0));
+    State reference;for(unsigned n=0;n<4;++n){std::array<FrameInput,MAX_PLAYERS> exact{input(0,n),input(1,n),{}};reference.step(exact);CHECK(f.left.hashes[n]==reference.hash);CHECK(f.left.captureCount[n]==1);}
+    CHECK(f.left.session.ConfirmedThrough()==3);
+    // The additional visible tick must not extend an eight-frame old error.
+    PacingFixture bound;bound.advance(8);bound.actual(0,7);bound.pump(20);bound.capture();
+    CHECK(!bound.left.session.Prepare(true).canAdvance);CHECK(bound.left.session.Frame()==8);
+    std::puts("After-present visible tick: exact reference, capture once, confirmation fence and history bound PASS");
 }
 int main(){
-    contracts();network_pacing();input_batch_scopes();
+    contracts();network_pacing();input_batch_scopes();after_present_recovery();
     for(bool deferInputs:{false,true})for(unsigned mode=0;mode<5;++mode)simulation(mode,deferInputs);
     return 0;
 }

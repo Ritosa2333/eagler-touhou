@@ -14,7 +14,9 @@
 #include "../game/NetworkInput.hpp"
 #include "../multiplayer/WorldState.hpp"
 #include "../multiplayer/RollbackSession.hpp"
+#include "../multiplayer/FrameAudio.hpp"
 #include "../multiplayer/FrameSchedule.hpp"
+#include "../multiplayer/RecoverySchedule.hpp"
 #include "../multiplayer/SpectatorSchedule.hpp"
 #include "../multiplayer/SpectatorPlayback.hpp"
 #include <dirent.h>
@@ -96,8 +98,9 @@ struct RollbackFrame {
     i32 round=-1;
     u32 replayRoundFrame=0;
     SpectatorBeginState begin;
-    struct Sound {i32 kind,id;float value;};
+    using Sound=multiplayer::FrameAudio::Event;
     std::vector<Sound> sounds;
+    multiplayer::FrameAudio audio;
 };
 std::array<RollbackFrame,multiplayer::RollbackSession::History+1> rollback_frames;
 RollbackFrame* recording_frame=nullptr;
@@ -370,9 +373,18 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 };
 std::unique_ptr<Application> probe;std::string failure;
 bool running=false,suspended=false;u32 loop_epoch=0;double previous_frame=-1;multiplayer::FrameSchedule cadence;
+multiplayer::RecoverySchedule recovery_schedule;
+u32 recovery_callbacks=0,recovery_ticks=0,recovery_last_us=0;
+bool deferred_recovery_active(){
+    return recovery_schedule.Enabled()&&running&&!suspended&&rollback_active&&network.active&&
+        rollback.Ready()&&rollback.Mode()==Netplay::AdonisMode::Rollback&&probe&&!probe->in_title&&
+        probe->session&&probe->session->phase==SessionPhase::match&&!spectator_mode&&
+        !probe->paused&&!probe->over&&!probe->complete&&probe->pending_action<0;
+}
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+KeyboardInputBuffer keyboard_inputs;
 SDL_Gamepad* controllers[2]{};u32 pulse_ticks[16]{};u32 auto_fire_frame=0;
 constexpr SDL_GamepadButton gamepad_slots[]={
     SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH,
@@ -390,12 +402,14 @@ touhou::input::TouchState touch_state(){
     i32 side=network.active?network.side:w.configuration.controllers[0]?1:0;if(w.configuration.controllers[side]){s.context=0;return s;}auto& p=*w.battle->fields[side].player;s.instance=1+side+2*w.configuration.selection.stage+32*w.rules.progress.round;s.ready=(p.control.player_state==0||p.control.player_state==3)&&p.motion.health>0;
     s.x=p.motion.position.x;s.y=p.motion.position.y;s.fast=p.resource.movement.normal;s.slow=p.resource.movement.focused;const auto& limit=w.battle->state.limits;s.min_x=limit.origin.x;s.max_x=limit.origin.x+limit.extent.x;s.min_y=limit.origin.y;s.max_y=limit.origin.y+limit.extent.y;return s;
 }
-void clear_inputs(){th09_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;gestures.reset();if(probe&&probe->session)probe->session->clear_motion();std::fill(std::begin(pulse_ticks),std::end(pulse_ticks),0);}
+void clear_inputs(){th09_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;keyboard_inputs.clear();gestures.reset();if(probe&&probe->session)probe->session->clear_motion();std::fill(std::begin(pulse_ticks),std::end(pulse_ticks),0);}
 void sample_keys(u16 (&out)[3]){
     SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_EVENT_GAMEPAD_ADDED)add_controller(e.gdevice.which);else if(e.type==SDL_EVENT_GAMEPAD_REMOVED)for(auto*& p:controllers)if(p&&SDL_GetGamepadID(p)==e.gdevice.which){SDL_CloseGamepad(p);p=nullptr;}}
     bool keys[256]{};const auto* physical=th09_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.vk)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
     const int keyboardDpad=th09_keyboard_gamepad_dpad();if(keyboardDpad&1)keys[38]=true;if(keyboardDpad&2)keys[40]=true;if(keyboardDpad&4)keys[37]=true;if(keyboardDpad&8)keys[39]=true;
-    const auto state=touch_state();auto sample=gestures.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
+    const auto state=touch_state();keyboard_inputs.sample(keys,state.context==1);
+    const u16 keyboard[]={keyboard_inputs.input(keys,probe->settings.devices[0]),keyboard_inputs.input(keys,probe->settings.devices[1]),keyboard_inputs.input(keys,2)};
+    auto sample=gestures.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
     // TH09 shoots ordinary bullets on repeated presses, while holding Z charges.
     // Auto-fire therefore produces real press/release input, retained by .rpy.
     if(state.context==1&&gestures.enabled&&gestures.fire&&!keys[90])sample.keys[90]=((auto_fire_frame++%6)<3);
@@ -415,14 +429,23 @@ void sample_keys(u16 (&out)[3]){
             probe->session->motion_input[side]={true,x,y,sample.motion==2,false};
         }
     }
-    out[2]=keyboard_input(keys,2)|joy_keys(0)|joy_keys(1);for(u32 n=0;n<16;++n)if(pulse_ticks[n]){out[2]|=u16(1u<<n);--pulse_ticks[n];}
+    out[2]=keyboard[2]|keyboard_input(sample.keys,2)|joy_keys(0)|joy_keys(1);for(u32 n=0;n<16;++n)if(pulse_ticks[n]){out[2]|=u16(1u<<n);--pulse_ticks[n];}
     const bool paired=probe->in_title?(probe->settings.versus==0&&probe->title&&probe->title->state.screen==TitleScreen::versus_character):(probe->world&&probe->world->rules.mode==GameMode::versus&&!probe->world->configuration.controllers[0]&&!probe->world->configuration.controllers[1]);
-    for(i32 side=0;side<2;++side)out[side]=paired?keyboard_input(keys,probe->settings.devices[side])|joy_keys(side):out[2];
+    for(i32 side=0;side<2;++side)out[side]=paired?keyboard[side]|keyboard_input(sample.keys,probe->settings.devices[side])|joy_keys(side):out[2];
 }
 
 }
 extern "C" {
 #define TH09_EXPORT(n) __attribute__((export_name(n)))
+void queue_rollback_recovery();
+TH09_EXPORT("th09_rollback_recovery_mode") u32 th09_rollback_recovery_mode(u32 after){
+    if(after>1||running||rollback_active)return 0;
+    recovery_schedule.Configure(after!=0);recovery_callbacks=recovery_ticks=recovery_last_us=0;return 1;
+}
+TH09_EXPORT("th09_rollback_recovery_info") const u32* th09_rollback_recovery_info(){
+    static u32 data[5];data[0]=1;data[1]=recovery_schedule.Enabled();data[2]=recovery_callbacks;
+    data[3]=recovery_ticks;data[4]=recovery_last_us;return data;
+}
 TH09_EXPORT("th09_game_open") u32 th09_game_open(u32 seed){
     TH09_PERF_SCOPE(open_cost,GameOpen);
     network.end();spectator_mode=false;spectator_frames.clear();spectator_next=spectator_simulated=0;clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
@@ -492,7 +515,7 @@ u32 pump_rollback_transport(bool deferOrdinaryInput){
     if(!rollback.Pump(std::uint64_t(now),network.active,std::uint64_t(now*1000),deferOrdinaryInput)){probe->error=rollback.Error();return 0;}
     return rollback.Ready()?2:1;
 }
-// The independent timer remains a complete receive/send/repair pump.
+// Receive/ACK/repair remain independent of display and recovery scheduling.
 TH09_EXPORT("th09_rollback_pump") u32 th09_rollback_pump(){return pump_rollback_transport(false);}
 TH09_EXPORT("th09_measured_begin") u32 th09_measured_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,
                                                           u32 idLow,u32 idHigh,u32 abi,u32 requestedDelay,u32 reserve){
@@ -611,10 +634,10 @@ TH09_EXPORT("th09_network_selection_info") const i32* th09_network_selection_inf
     for(i32 s=0;s<2;++s){data[8+s]=probe->in_title?probe->settings.characters[s]:c.selection.characters[s];data[10+s]=probe->in_title?probe->settings.health[s]:c.health[s];data[12+s]=probe->in_title?probe->settings.alternate[s]:c.alternate[s];}
     data[14]=c.selection.selector;data[15]=probe->world?probe->world->configuration.selection.background:-1;return data;
 }
-TH09_EXPORT("th09_game_close") void th09_game_close(){rollback_active=false;rollback.Clear();running=false;++loop_epoch;close_controllers();clear_inputs();network.end();spectator_mode=false;spectator_frames.clear();probe.reset();}
+TH09_EXPORT("th09_game_close") void th09_game_close(){recovery_schedule.Cancel();rollback_active=false;rollback.Clear();running=false;++loop_epoch;close_controllers();clear_inputs();network.end();spectator_mode=false;spectator_frames.clear();probe.reset();}
 TH09_EXPORT("th09_music_enabled") void th09_music_enabled(u32 enabled){if(probe){probe->host_music_enabled=enabled!=0;probe->title_configuration();}}
 TH09_EXPORT("th09_game_restart") u32 th09_game_restart(){if(!probe||!probe->in_title)return 0;clear_inputs();probe->requested_transition=-1;probe->settings.game_flags=0;return probe->return_title(false);}
-u32 rollback_tick(u32 render){
+u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
     TH09_PERF_SCOPE(rollback_cost,RollbackTick);
     // Recovery and transport work consume the same callback budget as replay.
     const double start=emscripten_get_now();
@@ -622,7 +645,8 @@ u32 rollback_tick(u32 render){
 #if TH09_DEVELOPMENT_HARNESS
     deferOrdinaryInput=rollback.Frame()<rollback_test_limit;
 #endif
-    const auto pumped=pump_rollback_transport(deferOrdinaryInput);
+    bool forwardOnly=!recoveryOnly&&!forceRecovery&&deferred_recovery_active();
+    const auto pumped=pump_rollback_transport(deferOrdinaryInput&&!recoveryOnly);
     const auto flush=[](){
         if(!rollback.FlushDeferredInputs(std::uint64_t(emscripten_get_now()))){probe->error=rollback.Error();return false;}
         return true;
@@ -645,11 +669,14 @@ u32 rollback_tick(u32 render){
     // retained packets and never consume physical input or gesture edges.
     // Complete the old send obligation even when capture is rejected. All
     // deferral ends here, before Restore, Prepare, or a callback budget exit.
-    const bool captured=capture();
+    const bool captured=recoveryOnly||capture();
     const bool flushed=flush();
     if(!captured||!flushed)return 0;
     auto correction=rollback.RollbackFrame();
-    if(correction!=Netplay::INVALID_FRAME){
+    // Higan also catches up at the input point when its horizon/boundary is
+    // reached. Never draw a partially restored world or overrun our history.
+    if(forwardOnly&&!rollback.Prepare(true).canAdvance)forwardOnly=false;
+    if(correction!=Netplay::INVALID_FRAME&&!forwardOnly){
         TH09_PERF_SCOPE(restore_cost,Restore);
         rollback_catchup=std::max(rollback_catchup,rollback.Frame());
         probe->presentation.renderer.flush();probe->graphics.backend.flush();
@@ -659,11 +686,12 @@ u32 rollback_tick(u32 render){
     // One callback starts at most eight recovery ticks. Its caller also has a
     // wall-time budget; physical input is never sampled on these replay ticks.
     for(unsigned count=0;count<9;++count){
+        if(recoveryOnly&&rollback.Frame()>=rollback_catchup)break;
 #if TH09_DEVELOPMENT_HARNESS
         if(rollback.Frame()>=rollback_test_limit)break;
 #endif
-        if(!capture())return 0;
-        auto decision=rollback.Prepare();if(!decision.canAdvance){++adonis_waits;return 2;}
+        if(!recoveryOnly&&!capture())return 0;
+        auto decision=rollback.Prepare(forwardOnly);if(!decision.canAdvance){++adonis_waits;return 2;}
         const u32 f=rollback.Frame();const auto confirmed=rollback.ConfirmedThrough();
         const bool reconciled=rollback.InputsReconciledBeforeNext();
         // Menu animation and selection belong to the existing snapshot. Wait
@@ -675,8 +703,11 @@ u32 rollback_tick(u32 render){
             (probe->paused?probe->menus.pause_retires_world():
              probe->over?probe->menus.game_over_retires_world(flags,probe->session->continues):
              probe->complete&&probe->menus.match_end_retires_world(flags));
-        if(retire&&(decision.predictedMask||!reconciled))return 2;
-        auto& record=rollback_frames[f%rollback_frames.size()];record.number=f;record.sounds.clear();
+        if(retire&&(decision.predictedMask||!reconciled)){
+            if(forwardOnly&&rollback.RollbackFrame()!=Netplay::INVALID_FRAME)return rollback_tick(render,false,true);
+            return 2;
+        }
+        auto& record=rollback_frames[f%rollback_frames.size()];if(record.number!=f)record.audio.Clear();record.number=f;record.sounds.clear();
         const bool speculative=decision.predictedMask||!reconciled;
         if(rollback.Mode()==Netplay::AdonisMode::Delay&&speculative){probe->error="Lockstep attempted speculative state";return 0;}
         if(speculative)++adonis_snapshots;
@@ -698,7 +729,10 @@ u32 rollback_tick(u32 render){
         if(record.hasEnd)record.winner=probe->world->scene->winner;
         recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
         if(record.captured){if(!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}TH09_PERF_COUNT(SealedCheckpoints,1);}
-        if(!ok||!rollback.Complete(decision)){if(ok)probe->error=rollback.Error();return 0;}
+        if(!ok||!rollback.Complete(decision,forwardOnly)){if(ok)probe->error=rollback.Error();return 0;}
+        // Historical replay stays silent. Fresh forward feedback need not
+        // wait for remote confirmation; its later publication is deduplicated.
+        if(final)record.audio.Emit(record.sounds,false,[](const auto& s){if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
         if(!network.active)rollback.FinishExactBoundary();
         record.hash=th09_network_hash();
         if(final||!network.active)break;
@@ -712,7 +746,8 @@ u32 rollback_tick(u32 render){
         auto& record=rollback_frames[rollback_published%rollback_frames.size()];
         if(record.number!=rollback_published){probe->error="Confirmed output history expired";return 0;}
         TH09_PERF_COUNT(PublishedCommands,record.sounds.size());
-        for(const auto& s:record.sounds)switch(s.kind){case 0:TH09_PERF_COUNT(PublishedSfx,1);probe->audio.effects.enqueue(s.id,i32(s.value));break;case 1:TH09_PERF_COUNT(PublishedSfx,1);probe->audio.effects.positioned(s.id,s.value);break;case 2:TH09_PERF_COUNT(PublishedMusic,1);probe->music(s.id);break;case 3:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.fade_music();break;case 4:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
+        record.audio.Emit(record.sounds,true,[](const auto& s){TH09_PERF_COUNT(PublishedSfx,1);if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
+        for(const auto& s:record.sounds)switch(s.kind){case 2:TH09_PERF_COUNT(PublishedMusic,1);probe->music(s.id);break;case 3:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.fade_music();break;case 4:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
         record.sounds.clear();
         // Both players archive only reconciled full-match boundaries.
         if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
@@ -728,7 +763,40 @@ u32 rollback_tick(u32 render){
     }
     }
     probe->audio.update();probe->audio.pump();
-    return rollback.Frame()<=rollback_catchup?2:1;
+    return (recoveryOnly?rollback.Frame()<rollback_catchup:rollback.Frame()<=rollback_catchup)?2:1;
+}
+void queue_rollback_recovery(){
+    if(!deferred_recovery_active())return;
+    const auto ticket=recovery_schedule.Schedule(loop_epoch);if(!ticket)return;
+    // A timer returns control to the browser after this RAF's GL submission.
+    // This is an opportunity to present, not a physical-display acknowledgement.
+    emscripten_async_call([](void* token){
+        const auto ticket=u32(uintptr_t(token));
+        if(!recovery_schedule.Take(ticket,loop_epoch)||!deferred_recovery_active())return;
+        const double begin=emscripten_get_now();const auto before=rollback.Resimulated();
+        const auto ok=rollback_tick(0,true);
+        ++recovery_callbacks;recovery_ticks+=rollback.Resimulated()-before;
+        recovery_last_us=u32((emscripten_get_now()-begin)*1000);
+        if(!ok){running=false;probe->audio.suspend(true);th09_browser_frame(0,emscripten_get_now()-begin);}
+    },reinterpret_cast<void*>(uintptr_t(ticket)),0);
+}
+// A packet may unblock a tick whose clock credit was already spent in rAF.
+// Finish only that obligation here; packet rate cannot create fresh ticks.
+TH09_EXPORT("th09_rollback_wake") void th09_rollback_wake(){
+    if(!running||suspended||!probe||spectator_mode||!rollback_active||!network.active||
+       rollback.Mode()!=Netplay::AdonisMode::Rollback||!cadence.retry_pending())return;
+    if(rollback.RollbackFrame()==Netplay::INVALID_FRAME&&!rollback.Prepare().canAdvance)return;
+    const double begin=emscripten_get_now();const auto ok=rollback_tick(1);
+    if(ok==2)cadence.blocked(true);
+    else{
+        cadence.complete();
+        // The stalled interval earned no catch-up debt. Resume from the wake,
+        // keeping only the fractional clock credit retained by blocked().
+        previous_frame=emscripten_get_now();
+    }
+    probe->audio.pump();if(ok)queue_rollback_recovery();
+    if(!ok){running=false;probe->audio.suspend(true);}
+    th09_browser_frame(ok,emscripten_get_now()-begin);
 }
 u32 spectator_tick(u32 render,u32 dueTicks=1){
         spectator_last_ticks=0;
@@ -773,8 +841,8 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(gam
         return ok;}
     sample_keys(keys);u32 ok=1;for(u32 extra=0;extra<3&&ok;++extra){ok=probe->tick_inputs(keys[0],keys[1],keys[2],false);if(!ok||probe->in_title||probe->paused||probe->over||probe->complete||!probe->session->is_replay||probe->session->phase!=SessionPhase::match||probe->session->playback_schedule()!=6)break;}if(ok&&render)probe->draw();return ok;
 }
-TH09_EXPORT("th09_loop_pause") void th09_loop_pause(u32 on){suspended=on!=0;previous_frame=-1;cadence.reset();clear_inputs();if(probe){probe->clock_pause(suspended);probe->audio.suspend(suspended);}}
-TH09_EXPORT("th09_loop_stop") void th09_loop_stop(){running=false;++loop_epoch;if(probe){probe->clock_pause(true);probe->audio.suspend(true);}}
+TH09_EXPORT("th09_loop_pause") void th09_loop_pause(u32 on){recovery_schedule.Cancel();suspended=on!=0;previous_frame=-1;cadence.reset();clear_inputs();if(probe){probe->clock_pause(suspended);probe->audio.suspend(suspended);}}
+TH09_EXPORT("th09_loop_stop") void th09_loop_stop(){recovery_schedule.Cancel();running=false;++loop_epoch;if(probe){probe->clock_pause(true);probe->audio.suspend(true);}}
 TH09_EXPORT("th09_loop_start") void th09_loop_start(){
     if(!probe||running)return;running=true;suspended=false;previous_frame=-1;cadence.reset();probe->clock_pause(false);probe->audio.suspend(false);
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
@@ -807,11 +875,11 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
                 cadence.exhausted(n+1,ticks);break;
             }
         }
-        probe->audio.pump();TH09_PERF_STOP(callback_cost);th09_browser_frame(ok,emscripten_get_now()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running?EM_TRUE:EM_FALSE;
+        probe->audio.pump();if(ok)queue_rollback_recovery();TH09_PERF_STOP(callback_cost);th09_browser_frame(ok,emscripten_get_now()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running?EM_TRUE:EM_FALSE;
     },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 TH09_EXPORT("th09_game_draw") void th09_game_draw(){if(probe)probe->draw();}
-TH09_EXPORT("th09_key") void th09_key(u32 scan,u32 down){if(spectator_mode)return;for(auto& k:keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
+TH09_EXPORT("th09_key") void th09_key(u32 scan,u32 down){if(spectator_mode)return;for(auto& k:keyboard_map)if(k.scan==scan){k.hosted=down!=0;keyboard_inputs.event(k.vk,k.hosted);}}
 TH09_EXPORT("th09_keys_clear") void th09_keys_clear(){clear_inputs();}
 TH09_EXPORT("th09_pulse") void th09_pulse(u32 mask){for(u32 n=0;n<16;++n)if(mask&(1u<<n))pulse_ticks[n]=2;}
 TH09_EXPORT("th09_touch") void th09_touch(u32 type,i32 id,float x,float y){gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}

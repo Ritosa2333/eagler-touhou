@@ -22,8 +22,10 @@ public:
     bool FlushDeferredInputs(std::uint64_t now);
     bool NeedsCapture() const;
     bool Capture(const Netplay::FrameInput&, std::uint64_t now);
-    Netplay::FrameDecision Prepare() const;
-    bool Complete(const Netplay::FrameDecision&);
+    // The opt-in visible pass may advance once on an unreconciled base, as in
+    // Higan's live_tick. It remains speculative until post-Present recovery.
+    Netplay::FrameDecision Prepare(bool beforeRecovery=false) const;
+    bool Complete(const Netplay::FrameDecision&,bool beforeRecovery=false);
     // Call only AFTER the title restored the state before RollbackFrame().
     // Resimulation uses Prepare/Complete and cannot invoke Capture.
     bool Restored(std::uint32_t frame);
@@ -39,7 +41,9 @@ public:
     bool CanRetire() const;
     bool Retire(std::uint64_t now);
     double IntervalScale() const;
-    double NetworkIntervalScale() const { return networkIntervalScale_; }
+    // Keep the diagnostic slot stable. Missing input now uses the hard history
+    // bound without slowing every fresh local sample before that bound.
+    double NetworkIntervalScale() const { return 1; }
     std::uint32_t PredictionFrontier() const { return next_ > replayEnd_ ? next_ : replayEnd_; }
     std::uint32_t RemoteInputFrontier() const;
     std::uint32_t MissingRemoteInputs() const;
@@ -55,7 +59,6 @@ private:
     bool Configure(const Netplay::SessionConfig&,std::uint64_t now,std::uint8_t delay,
                    Netplay::AdonisMode mode,unsigned predictionReserve=0);
     bool PumpStartup(std::uint64_t now, std::uint64_t measurementNowUs);
-    void UpdateNetworkPacing(std::uint64_t now, bool expectsInput);
     Netplay::AdonisStartup startup_;
     Netplay::SessionConfig startupSession_{};
     std::uint64_t startupNowUs_=0;
@@ -72,8 +75,6 @@ private:
     Netplay::AdonisMode mode_ = Netplay::AdonisMode::Rollback;
     std::uint8_t inputDelay_ = 0;
     double phaseDebtMs_ = 0;
-    double networkIntervalScale_ = 1;
-    std::uint64_t networkPaceAt_ = 0;
     const char* error_ = "";
     bool Fail(const char* error) { failed_ = true; error_ = error; return false; }
     bool IsOpen() const override { return transport_.IsOpen(); }

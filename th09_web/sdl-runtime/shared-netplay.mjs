@@ -48,11 +48,12 @@ export class SharedNetplay {
     // The published global is telemetry, not configuration for a later match.
     const requestedMode = options.netplayAdonisMode ?? query.get('adonis') ?? 0;
     const configuredMode = Object.hasOwn(names, requestedMode) ? names[requestedMode] : Number(requestedMode);
-    // TH09 rollback uses the existing zero-delay full-rollback path.
-    const zeroDelayRollback = configuredMode === 0 || configuredMode === 2;
-    const adonisMode = zeroDelayRollback ? 0 : configuredMode;
-    const inputDelay = zeroDelayRollback ? 0 : Number(options.netplayInputDelay ?? query.get('inputDelay') ?? 4);
-    const automatic = zeroDelayRollback ? false : options.netplayInputDelayAuto ?? (options.netplayInputDelay === undefined && !query.has('inputDelay'));
+    // Rollback keeps its full history while honoring the room's manual D.
+    // The legacy hybrid selector still maps to this full-rollback policy.
+    const rollback = configuredMode === 0 || configuredMode === 2;
+    const adonisMode = rollback ? 0 : configuredMode;
+    const inputDelay = Number(options.netplayInputDelay ?? query.get('inputDelay') ?? (rollback ? 0 : 4));
+    const automatic = rollback ? false : options.netplayInputDelayAuto ?? (options.netplayInputDelay === undefined && !query.has('inputDelay'));
     const predictionReserve = options.netplayPredictionReserve ?? 2;
     if (typeof automatic !== 'boolean' || (automatic && !adonisMode) ||
         !Number.isInteger(predictionReserve) || predictionReserve < 1 || predictionReserve > 2)
@@ -125,10 +126,15 @@ export class SharedNetplay {
     this.startupNoticeAt = 0;
     this.startupTransport = globalThis.__eaglerPeerTransport;
     if(this.startupTransport)this.startupTransport.onDisconnect=()=>this.connectionEnded();
-    // Like Adonis2's receive thread, process calibration echoes on arrival.
-    // The regular timer still schedules probes; gameplay keeps its own pump.
-    if (!spectator && adonisMode && this.startupTransport)
-      this.startupTransport.onReceive = () => { if (this.prepared && !this.active && this.connected) this.pump(); };
+    // Arrival-driven receive/ACK also wakes one already-due rollback tick.
+    // The native scheduler owns that obligation; packets never earn ticks.
+    if (!spectator && this.startupTransport)
+      this.startupTransport.onReceive = () => {
+        if (!this.prepared || !this.connected || this.disconnected || this.pumping) return;
+        this.pump();
+        if (this.active && !this.finished && !this.disconnected && !this.adonisMode)
+          this.core._th09_rollback_wake?.();
+      };
     this.onStatus('正在连接 TH09 联机对手…');
     this.pump();
   }
@@ -238,7 +244,6 @@ export class SharedNetplay {
           }
           this.acknowledged = this.active = true;
           globalThis.__eaglerNetplayCalibrationSuspended=false;
-          if(this.startupTransport)this.startupTransport.onReceive=null;
           globalThis.__eaglerNetplayLanActive = true;
           this.onStatus(`对手已连接 · ${['Rollback', 'Adonis 无回滚', 'Adonis + Rollback'][this.adonisMode]} · D=${this.inputDelay}`);
           this.core._th09_loop_pause(+document.hidden);

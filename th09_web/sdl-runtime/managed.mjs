@@ -158,6 +158,10 @@ case 'launch':{
  await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,owner);
  await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,owner);
  if(!core._th09_game_open(Date.now()&65535))throw Error(err());
+ // The native driver applies this policy only during active rollback battles.
+ // Room navigation and URL parameters do not control reconciliation timing.
+ const recoveryAfterPresent=options.netplayMode==='lan'&&!options.netplaySpectator&&!options.replayViewer;
+ if(typeof core._th09_rollback_recovery_mode==='function'&&!core._th09_rollback_recovery_mode(+recoveryAfterPresent))throw Error('重算时机设置失败');
  if(options.replayPath!==undefined){
   if(options.netplayMode==='lan')throw Error('不能在联机对战中打开录像');
   const selected=path(options.replayPath);if(!selected.startsWith('replay/'))throw Error('录像路径无效');
@@ -175,7 +179,7 @@ case 'launch':{
   onResult:()=>emit('notice',{message:'对局结束，可在游戏内保存 Replay'})}):null;
  $('#loading').textContent='';core._th09_loop_start();if(netplay){core._th09_loop_pause(1);await netplay.connect(options);}
  assertLifetime(receivedLifetime,owner);launchSettled=true;
- window.__th09Runtime={core,netplay,status,save,command};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'2026.09.20-fix'});
+ window.__th09Runtime={core,netplay,status,save,command,recoveryPhase:recoveryAfterPresent?'after-present':'before-present'};emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:'2026.09.20-fix'});
  return {};
 }
 case 'playback':{
