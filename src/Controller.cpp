@@ -1,4 +1,5 @@
 #include "EaglerOptions.hpp"
+#include "browser-gamepad-input.hpp"
 #ifdef TH_ENABLE_THPRAC
 #include "PurpleRuntime.hpp"
 #endif
@@ -45,6 +46,15 @@ u16 Controller::GetJoystickCaps(void)
 
 u16 Controller::GetControllerInput(u16 buttons)
 {
+    const int mapped = eagler::input::BrowserGamepadState();
+    if (mapped >= 0)
+    {
+        g_FocusButtonConflictState = 0;
+        buttons |= static_cast<u16>(mapped & 0x1ff);
+        if ((mapped & 512) && !g_EnterSuppressed) buttons |= TH_BUTTON_ENTER;
+        if (mapped & 2048) buttons |= TH_BUTTON_R;
+        return buttons;
+    }
     // NOTE: Those names are like this to get perfect stack frame matching
     // TODO: Give meaningfull names that still match.
     //    JOYINFOEX aa;
@@ -323,6 +333,7 @@ const u8 *Controller::GetControllerState()
     //    i32 diRetryCount;
 
     memset(&g_ControllerData, 0, sizeof(g_ControllerData));
+    if (eagler::input::BrowserGamepadOwned()) return g_ControllerData;
     if (g_Supervisor.gameController != NULL)
     {
         for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; i++)

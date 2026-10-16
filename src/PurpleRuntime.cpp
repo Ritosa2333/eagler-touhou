@@ -161,6 +161,8 @@ static float bossRange = 0.5f;
 static int seed = 0, lastReplaySeed = 0;
 static eagler::thprac::PracticeInput input;
 static bool PhysicalKey(SDL_Scancode key,u16 logical=0) {
+    const int canonical = EaglerOptions::BrowserKeyboardScanState(key);
+    if (canonical >= 0) return canonical != 0;
     return SDL_GetKeyboardState(nullptr)[key] || (logical && (EaglerOptions::BrowserKeyboardBits() & logical));
 }
 static eagler::thprac::PracticeKeyMonitor monitor;

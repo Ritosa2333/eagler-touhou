@@ -8,7 +8,7 @@ const end = html.indexOf('window.addEventListener("message"', start);
 assert.ok(start >= 0 && end > start);
 function harness() {
   const handlers = {}, controls = {keyboardBits: 0, keyboardPulseBits: 0};
-  const context = vm.createContext({launched: true, Module: {eaglerControls: controls},
+  const context = vm.createContext({protocol:'eagler-touhou/1',game:'th06',epoch:1,location:{origin:'https://launcher.invalid'},document:{hidden:false},launched: true, Module: {eaglerControls: controls},
     window: {addEventListener: (kind, callback) => {handlers[kind] = callback;}}});
   vm.runInContext(html.slice(start, end), context);
   const event = (code, fields = {}) => ({code, key: 'Shift', keyCode: 16, location: 0,
