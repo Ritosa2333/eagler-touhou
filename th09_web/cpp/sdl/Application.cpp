@@ -1,3 +1,4 @@
+#include "browser-gamepad-input.hpp"
 // SDL application integration under validation. Test-only entry points are
 // compiled behind TH09_DEVELOPMENT_HARNESS; no original executable is linked.
 #include "Assets.hpp"
@@ -31,6 +32,7 @@
 // DOM keys have one owner in updated shells; preserve older-shell input.
 EM_JS(int, th09_browser_keyboard, (), {return typeof Module["resetBrowserKeyboard"]==='function';});
 EM_JS(void, th09_reset_browser_keyboard, (), {Module["resetBrowserKeyboard"]?.();});
+EM_JS(int, th09_local_keyboard, (int seat), {return globalThis.__eaglerKeyboardInputBridge?.sampleLocal?.(seat) ?? -1;});
 
 Netplay::PeerTransport& th09_shared_transport();
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
@@ -389,6 +391,7 @@ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_S
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
 KeyboardInputBuffer keyboard_inputs;
+int launcher_gamepad[2]{-1,-1};
 SDL_Gamepad* controllers[2]{};u32 pulse_ticks[16]{};u32 auto_fire_frame=0;
 constexpr SDL_GamepadButton gamepad_slots[]={
     SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH,
@@ -397,8 +400,10 @@ constexpr SDL_GamepadButton gamepad_slots[]={
 };
 void close_controllers(){for(auto*& p:controllers)if(p){SDL_CloseGamepad(p);p=nullptr;}}
 void add_controller(SDL_JoystickID id){for(const auto* p:controllers)if(p&&SDL_GetGamepadID(const_cast<SDL_Gamepad*>(p))==id)return;for(auto*& p:controllers)if(!p){p=SDL_OpenGamepad(id);break;}}
-i32 joy_button(i32 n){if(n<0||n>1||!controllers[n])return 32;for(i32 i=0;i<i32(std::size(gamepad_slots));++i)if(SDL_GetGamepadButton(controllers[n],gamepad_slots[i]))return i;return 32;}
-u16 joy_keys(i32 side){if(!probe||side<0||side>1)return 0;const u32 device=probe->settings.devices[side];if(device>1||!controllers[device])return 0;auto* p=controllers[device];u16 keys=0;for(i32 n=0;n<9;++n){const i32 button=probe->settings.bindings[side].gamepad[n];if(button>=0&&button<i32(std::size(gamepad_slots))&&SDL_GetGamepadButton(p,gamepad_slots[button]))keys|=u16(1u<<n);}const i32 x=SDL_GetGamepadAxis(p,SDL_GAMEPAD_AXIS_LEFTX),y=SDL_GetGamepadAxis(p,SDL_GAMEPAD_AXIS_LEFTY);if(x<-19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_LEFT))keys|=64;if(x>19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))keys|=128;if(y<-19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_UP))keys|=16;if(y>19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_DOWN))keys|=32;return keys;}
+i32 joy_button(i32 n){if(eagler::input::BrowserGamepadOwned()||n<0||n>1||!controllers[n])return 32;for(i32 i=0;i<i32(std::size(gamepad_slots));++i)if(SDL_GetGamepadButton(controllers[n],gamepad_slots[i]))return i;return 32;}
+u16 joy_keys(i32 side){if(!probe||side<0||side>1)return 0;
+    if(launcher_gamepad[side]>=0){bool keys[256]{};eagler::input::ApplyGamepadVirtualKeys(keys,launcher_gamepad[side]);return keyboard_input(keys,2);}
+    const u32 device=probe->settings.devices[side];if(device>1||!controllers[device])return 0;auto* p=controllers[device];u16 keys=0;for(i32 n=0;n<9;++n){const i32 button=probe->settings.bindings[side].gamepad[n];if(button>=0&&button<i32(std::size(gamepad_slots))&&SDL_GetGamepadButton(p,gamepad_slots[button]))keys|=u16(1u<<n);}const i32 x=SDL_GetGamepadAxis(p,SDL_GAMEPAD_AXIS_LEFTX),y=SDL_GetGamepadAxis(p,SDL_GAMEPAD_AXIS_LEFTY);if(x<-19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_LEFT))keys|=64;if(x>19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))keys|=128;if(y<-19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_UP))keys|=16;if(y>19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_DOWN))keys|=32;return keys;}
 touhou::input::TouchState touch_state(){
     touhou::input::TouchState s;if(!probe)return s;if(probe->in_title||probe->paused||probe->over||probe->complete||!probe->world||!probe->session)return s;
     auto& run=*probe->session;auto& w=*probe->world;if(run.is_replay){s.context=3;return s;}if(run.phase==SessionPhase::ending){s.context=2;return s;}
@@ -407,12 +412,24 @@ touhou::input::TouchState touch_state(){
     s.x=p.motion.position.x;s.y=p.motion.position.y;s.fast=p.resource.movement.normal;s.slow=p.resource.movement.focused;const auto& limit=w.battle->state.limits;s.min_x=limit.origin.x;s.max_x=limit.origin.x+limit.extent.x;s.min_y=limit.origin.y;s.max_y=limit.origin.y+limit.extent.y;return s;
 }
 void clear_inputs(){th09_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;keyboard_inputs.clear();gestures.reset();if(probe&&probe->session)probe->session->clear_motion();std::fill(std::begin(pulse_ticks),std::end(pulse_ticks),0);}
+bool local_versus_input_context(){
+    if(!probe||network.active)return false;
+    const bool local_world=probe->world&&probe->world->rules.mode==GameMode::versus&&!probe->world->configuration.controllers[0]&&!probe->world->configuration.controllers[1];
+    if(!probe->in_title)return local_world;
+    if(!probe->title||probe->settings.versus!=0)return false;
+    const auto screen=probe->title->state.screen;
+    return screen==TitleScreen::versus_difficulty||screen==TitleScreen::versus_character||screen==TitleScreen::versus_stage||(local_world&&screen==TitleScreen::replay_name);
+}
 void sample_keys(u16 (&out)[3]){
     SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_EVENT_GAMEPAD_ADDED)add_controller(e.gdevice.which);else if(e.type==SDL_EVENT_GAMEPAD_REMOVED)for(auto*& p:controllers)if(p&&SDL_GetGamepadID(p)==e.gdevice.which){SDL_CloseGamepad(p);p=nullptr;}}
+    for(unsigned seat=0;seat<2;++seat)launcher_gamepad[seat]=eagler::input::BrowserGamepadState(seat);
+    int local_keyboard[2];u16 local_keys[2]{};
+    for(unsigned seat=0;seat<2;++seat){local_keyboard[seat]=th09_local_keyboard(seat);if(local_keyboard[seat]>=0){bool mapped[256]{};eagler::input::ApplyGamepadVirtualKeys(mapped,local_keyboard[seat]);local_keys[seat]=keyboard_input(mapped,2);}}
     bool keys[256]{};const auto* physical=th09_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.vk)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
     const int keyboardDpad=th09_keyboard_gamepad_dpad();if(keyboardDpad&1)keys[38]=true;if(keyboardDpad&2)keys[40]=true;if(keyboardDpad&4)keys[37]=true;if(keyboardDpad&8)keys[39]=true;
     const auto state=touch_state();keyboard_inputs.sample(keys,state.context==1);
     const u16 keyboard[]={keyboard_inputs.input(keys,probe->settings.devices[0]),keyboard_inputs.input(keys,probe->settings.devices[1]),keyboard_inputs.input(keys,2)};
+    if(local_keyboard[0]>=0)eagler::input::ApplyGamepadVirtualKeys(keys,local_keyboard[0]|std::max(0,launcher_gamepad[0]));
     auto sample=gestures.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
     // TH09 shoots ordinary bullets on repeated presses, while holding Z charges.
     // Auto-fire therefore produces real press/release input, retained by .rpy.
@@ -433,9 +450,9 @@ void sample_keys(u16 (&out)[3]){
             probe->session->motion_input[side]={true,x,y,sample.motion==2,false};
         }
     }
-    out[2]=keyboard[2]|keyboard_input(sample.keys,2)|joy_keys(0)|joy_keys(1);for(u32 n=0;n<16;++n)if(pulse_ticks[n]){out[2]|=u16(1u<<n);--pulse_ticks[n];}
-    const bool paired=probe->in_title?(probe->settings.versus==0&&probe->title&&probe->title->state.screen==TitleScreen::versus_character):(probe->world&&probe->world->rules.mode==GameMode::versus&&!probe->world->configuration.controllers[0]&&!probe->world->configuration.controllers[1]);
-    for(i32 side=0;side<2;++side)out[side]=paired?keyboard[side]|keyboard_input(sample.keys,probe->settings.devices[side])|joy_keys(side):out[2];
+    out[2]=keyboard[2]|keyboard_input(sample.keys,2)|joy_keys(0)|joy_keys(1)|local_keys[0]|local_keys[1];for(u32 n=0;n<16;++n)if(pulse_ticks[n]){out[2]|=u16(1u<<n);--pulse_ticks[n];}
+    const bool paired=local_versus_input_context();
+    for(i32 side=0;side<2;++side)out[side]=paired?(local_keyboard[side]>=0?local_keys[side]|joy_keys(side)|(side==0?keyboard_input(sample.keys,2):0):keyboard[side]|keyboard_input(sample.keys,probe->settings.devices[side])|joy_keys(side)):out[2];
 }
 
 }
@@ -910,6 +927,12 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
 }
 TH09_EXPORT("th09_game_draw") void th09_game_draw(){if(probe)probe->draw();}
 TH09_EXPORT("th09_key") void th09_key(u32 scan,u32 down){if(spectator_mode)return;for(auto& k:keyboard_map)if(k.scan==scan){k.hosted=down!=0;keyboard_inputs.event(k.vk,k.hosted);}}
+// Local versus has two independent frontend owners. Single-player and LAN
+// retain their ordinary full-keyboard path; native local settings remain the
+// fallback until the Launcher explicitly enables its local two-player profile.
+TH09_EXPORT("th09_keyboard_profile") u32 th09_keyboard_profile(){
+    return local_versus_input_context()?5:2;
+}
 TH09_EXPORT("th09_keys_clear") void th09_keys_clear(){clear_inputs();}
 TH09_EXPORT("th09_pulse") void th09_pulse(u32 mask){for(u32 n=0;n<16;++n)if(mask&(1u<<n))pulse_ticks[n]=2;}
 TH09_EXPORT("th09_touch") void th09_touch(u32 type,i32 id,float x,float y){gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}

@@ -51,7 +51,7 @@ const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...f
 const values=(fn,n)=>Array.from(core.HEAP32.subarray(fn()/4,fn()/4+n));
 const status=()=>({title:values(core._th09_title_status,8),session:values(core._th09_session_status,8),touch:values(core._th09_touch_state,4)});
 const err=()=>{const a=core.HEAPU8.subarray(core._th09_error());return new TextDecoder().decode(a.subarray(0,a.indexOf(0)));};
-const keyboard=createBrowserKeyboard({accept:code=>!!scanCodes[code],send:(code,down)=>core?._th09_key(scanCodes[code],+down)});
+const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>acceptsKeyboard(),reset:clearKeyboard,profile:()=>{const n=core?._th09_keyboard_profile?.()??2;return n===5?'th09-local':n===3?'th09-left':n===4?'th09-right':'standard';},},accept:code=>!!scanCodes[code],send:(code,down)=>core?._th09_key(scanCodes[code],+down)});
 function clearKeyboard(){keyboard.clear();core?._th09_keys_clear();}
 function acceptsKeyboard(){return launched&&!stopping&&!stopPending&&!retired&&!document.hidden&&!networkOverlayPending&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;}
 const fatal=e=>{revokeLifetime(true);const message=e?.message||String(e);$('#error').textContent=message;clearKeyboard();core?._th09_loop_pause(1);emit('error',{error:message});};
@@ -227,6 +227,7 @@ window.addEventListener('message',event=>{
 for(const event of ['pointerdown','keydown'])window.addEventListener(event,()=>core?.SDL3?.audioContext?.resume().catch(()=>{}),{capture:true});
 for(const [event,down] of [['keydown',1],['keyup',0]])window.addEventListener(event,e=>{
  if(!core||!acceptsKeyboard())return;
+ if(keyboard.mapNative(e,down)){e.preventDefault();e.stopImmediatePropagation();return;}
  keyboard.event(e,down);
 },{capture:true});
 document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();neutralTouch();core._th09_loop_pause(+(document.hidden||networkOverlayPending||(options.netplayMode==='lan'&&(netplay?.recovering||netplay?.disconnected||(!netplay?.active&&!netplay?.finished)))));if(document.hidden)void save().catch(fatal);}});
