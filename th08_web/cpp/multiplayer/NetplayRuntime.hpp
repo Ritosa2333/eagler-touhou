@@ -1,6 +1,7 @@
 #pragma once
 #include "SessionSetup.hpp"
 #include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/ConfirmedInputClock.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
 #include <eagler/netplay/AdonisTiming.hpp>
 #include <cstddef>
@@ -31,10 +32,14 @@ public:
     std::uint32_t InputDelay()const{return setup_.input_delay;}
     Netplay::AdonisMode Mode()const{return Netplay::AdonisMode(setup_.adonis_mode);}
     bool AllowsRollback()const{return !ReadOnly()&&Mode()!=Netplay::AdonisMode::Delay;}
-    // One physical sample per forward simulation tick, including delayed
-    // sessions. Sampling again while that tick waits queues stale controls
-    // ahead of the negotiated delay and turns a transient stall into latency.
-    bool CanCapture()const{return !ReadOnly()&&CanStart()&&!Correcting()&&next_capture_==next_;}
+    // Exact UI keeps publishing NEW slots while simulation waits. Combat
+    // drains that bounded tail before returning to its ordinary capture rule.
+    void SetCapturePhase(bool exactUi,std::uint64_t nowUs){
+        if(exactUi&&!capture_ui_)capture_clock_.BeginPhase(nowUs);
+        capture_ui_=exactUi;capture_now_us_=nowUs;
+    }
+    bool CanCapture()const{return !ReadOnly()&&CanStart()&&!Correcting()&&
+        capture_clock_.CanCapture(next_capture_,next_,capture_ui_,capture_now_us_);}
     bool HasCapture(std::uint32_t frame)const{return core_.HasLocalCapture(frame);}
     bool HasLocalFrame(std::uint32_t frame)const{return core_.InputPresent(std::uint8_t(setup_.local_player),frame);}
     std::uint32_t LastFrame()const{return core_.LastSimulatedFrame();}
@@ -107,6 +112,9 @@ private:
     bool FeedAuthoritative(std::uint32_t frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&);
     Netplay::SessionGate gate_;
     Netplay::RollbackCore core_;
+    Netplay::ConfirmedInputClock capture_clock_;
+    std::uint64_t capture_now_us_=0;
+    bool capture_ui_=false;
     SessionSetup setup_{};
     std::uint64_t base_session_id_=0;
     std::uint32_t next_=0,next_capture_=0,generation_=0,correction_end_=Netplay::INVALID_FRAME;

@@ -358,6 +358,10 @@ bool RollbackDriver::Step(bool render,double callback_start_ms){
     callback_yielded=false;
     if(failed||open||session.network_frame_open||!runtime.prepared||runtime.capture_failed){FlushInputs();return false;}
     session.network_waiting=false;
+    // Resource transitions remain confirmed. Once outside the combat graph,
+    // do not let waiting for one UI frame stop the next physical input slot.
+    net.SetCapturePhase(initialized&&!generation_transition_pending&&
+        (!Stable()||!net.AllowsRollback()),u64(emscripten_get_now()*1000.));
     if(!network.PumpForCapture(Stable())){FailNetwork("network channel failed");FlushInputs();return false;}
     // Only the already initialized live frontier may keep Pump's ordinary
     // tail until the once-only capture below. Every startup/readiness/loading

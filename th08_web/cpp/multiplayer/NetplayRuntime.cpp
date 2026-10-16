@@ -38,6 +38,7 @@ bool NetplayRuntime::configure(const SessionSetup& setup) noexcept {
     const auto core=core_config(validated,std::uint8_t(validated.input_delay));
     if(!gate_.Reset(session)||!core_.Reset(core))return false;
     setup_=validated;next_=next_capture_=0;correction_end_=Netplay::INVALID_FRAME;
+    capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     configured_=true;retired_=world_ready_=false;return true;
 }
 bool NetplayRuntime::ApplyMeasuredTiming(unsigned delay,unsigned prediction){
@@ -52,6 +53,7 @@ bool NetplayRuntime::Reset(const SessionSetup& setup) noexcept {
 }
 void NetplayRuntime::Clear() noexcept {
     gate_.Clear();core_.Clear();setup_={};base_session_id_=0;
+    capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     next_=next_capture_=generation_=0;correction_end_=Netplay::INVALID_FRAME;
     configured_=retired_=world_ready_=spectator_=playback_=false;
 }
@@ -74,7 +76,7 @@ bool NetplayRuntime::CaptureLocal(std::uint32_t frame,const Netplay::FrameInput&
     // eagler-common applies the negotiated delay and owns neutral lead-in.
     // The independent capture frontier is still a physical sampling frame.
     if(!core_.ScheduleLocalInput(frame,input))return false;
-    ++next_capture_;return true;
+    ++next_capture_;capture_clock_.Captured(capture_now_us_);return true;
 }
 bool NetplayRuntime::CaptureLeadInBootstrap(const Netplay::FrameInput& input){
     return !ReadOnly()&&CanStart()&&!Correcting()&&next_==0&&setup_.local_player==0&&
