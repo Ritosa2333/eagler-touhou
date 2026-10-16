@@ -358,15 +358,22 @@ match, including repeated matches over the same connection. Individual rounds
 do not trigger a save. Encoding uses local random bytes without advancing the
 simulation RNG. Failed storage must report a notice without closing transport.
 
-Native files retain `replay/th9_udhhhh.rpy`; continuous-touch recordings export
-as `.rpyx`. A same-basename JSON sidecar snapshots both display names, start
-time, confirmed frame duration and winner. No membership credential is stored.
-The Replay manager groups matches into `name vs name` folders, falling back to
-`P1` / `P2`. Replays without matchup metadata remain at the root. Folder
-navigation is local to the existing Replay dialog; it adds no browser route.
-Bulk downloads group files under `replay/name vs name/`, with sidecars preserved
-on ZIP import, rename and deletion. Later nickname changes do not relabel old
-matches. Persistence is local browser storage, not a server upload.
+New native archives use `replay/<opponent name>/th9_udhhhh.rpy`, falling back to
+the opponent's `P1` / `P2` label. Local side and both names are captured when the
+match begins. Existing directories are not migrated. Continuous-touch recordings
+export as `.rpyx`. A same-basename JSON sidecar snapshots both display names,
+start time, confirmed frame duration and winner. Optional `roundStarts` holds
+ascending Replay input offsets starting at zero, bounded to ten rounds. The
+native driver publishes these offsets only from confirmed frames on both
+players; network/menu ticks are not used as seek positions. No membership
+credential is stored. Sidecars survive ZIP import, rename and move.
+
+The Replay seekbar marks these offsets and supports clicking them in either
+direction. Original files without JSON remain playable; native playback exposes
+the current round, allowing the viewer to learn boundaries as it plays or seeks
+and retain them across rewinds of that file. Character labels reuse the catalog's
+original TH09 character IDs. The manager preserves actual directories without
+adding a route. Persistence is local browser storage, not a server upload.
 
 Code owners: TH09 `sdl-runtime/auto-replay.mjs` and confirmed publication in
 `cpp/sdl/Application.cpp`; Launcher `MultiplayerSettingsControls`, `multiplayer-preferences`,

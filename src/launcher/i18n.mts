@@ -25,7 +25,7 @@ const entries = [
   ['th09.replayLocation', '录像文件夹', 'Replay folders'],
   ['th09.replayOpenFolder', '打开 {name}', 'Open {name}'],
   ['th09.replayAutoSave', '自动保存每局 Replay', 'Automatically save every match Replay'],
-  ['th09.replayAutoSaveHint', '整局结束后保存在此浏览器，按双方昵称查看和下载', 'Saved in this browser after each complete match, labeled with both player names'],
+  ['th09.replayAutoSaveHint', '整局结束后保存在此浏览器，按对手名字归档', 'Saved in this browser after each complete match, grouped by opponent name'],
   ['th09.elapsed', '已进行 {minutes} 分钟', '{minutes} min elapsed'],
   ['th09.matchInformation', '对局信息', 'Match information'],
   ['th09.watching', '有 {count} 个旁观者在观看', '{count} spectators watching'],
