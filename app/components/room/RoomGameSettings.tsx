@@ -11,8 +11,10 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
   const advice = service.timingRecommendation();
   const automatic = t(measured ? room.phase !== 'lobby' ? room.timing ? 'room.inputDelayMeasured' : 'room.inputDelayMeasuring' : 'room.inputDelayMeasure'
     : 'room.inputDelayAutomatic', {frames: measured ? room.inputDelay ?? 0 : advice.inputDelay, milliseconds: (advice.inputDelay * 16.67).toFixed(2)});
-  const rollback = multiplayerInputTimingPolicy(config).rollback && state.rollbackEnabled;
-  const selected = room.phase !== 'lobby' ? room.inputDelayAuto ? 'auto' : String(room.inputDelay || 0) : rollback ? '0' : String(state.timingChoice);
+  const timingPolicy = multiplayerInputTimingPolicy(config);
+  const rollback = timingPolicy.rollback && state.rollbackEnabled;
+  const fixedZero = rollback && !timingPolicy.manualRollbackDelay;
+  const selected = room.phase !== 'lobby' ? room.inputDelayAuto ? 'auto' : String(room.inputDelay || 0) : fixedZero || rollback && state.timingChoice === 'auto' ? '0' : String(state.timingChoice);
   const rule = (kind: 'cheat' | 'challenge') => {const selected = kind === 'cheat' ? !!room.disableCheatMovement : !!room.challengeMode, hintId = kind === 'cheat' ? 'mpRoomCheatHint' : 'mpRoomChallengeHint'; return <div className="mp-room-rule-setting"><button className={`mp-room-rule-tag${selected ? ' selected' : ''}`} type="button" data-room-rule={kind} aria-pressed={selected} aria-describedby={hintId} disabled={!ready || !owner || room.phase !== 'lobby'} onClick={() => service.setRoomSettings(kind === 'cheat' ? {disableCheatMovement: !selected} : {challengeMode: !selected})}><span>{t(kind === 'cheat' ? 'lobby.noCheat' : 'room.challengeMode')}</span><span className="mp-room-rule-state" data-room-rule-state="">{t(selected ? 'room.modeOn' : 'room.modeOff')}</span></button><p className="mp-room-rule-hint" id={hintId}>{t(kind === 'cheat' ? 'room.cheatHint' : 'room.challengeHint')}</p></div>;};
   return <section className="mp-room-settings" data-room-panel="game" id="mpRoomSettings" hidden={hidden}>
     <RoomChoiceGroup title={t('room.visibility')} valueAttribute="data-room-visibility" choices={(['public', 'private'] as const).map(visibility => {
@@ -22,10 +24,11 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
     {rule('cheat')}<div id="mpRoomRuleModes" hidden={config.gameplay !== 'cooperative'}>{rule('challenge')}</div>
     <section className="mp-room-rule-setting" id="mpInputDelaySetting" hidden={!policy}>
       <div className="mp-room-settings-hint"><label htmlFor="mpInputDelay">{t('room.inputDelay')}</label></div>
-      <MainSelect className="option-select" id="mpInputDelay" value={selected} disabled={rollback || !ready || !owner || room.phase !== 'lobby'} data-trigger-i18n={room.phase === 'lobby' && !owner ? 'room.inputDelayHost' : undefined} onChange={event => service.setTimingChoice(event.currentTarget.value === 'auto' ? 'auto' : Number(event.currentTarget.value))}>
-        <option value="auto">{automatic}</option>
+      <MainSelect className="option-select" id="mpInputDelay" value={selected} disabled={fixedZero || !ready || !owner || room.phase !== 'lobby'} data-trigger-i18n={room.phase === 'lobby' && !owner ? 'room.inputDelayHost' : undefined} onChange={event => service.setTimingChoice(event.currentTarget.value === 'auto' ? 'auto' : Number(event.currentTarget.value))}>
+        <option value="auto" disabled={rollback && timingPolicy.manualRollbackDelay}>{automatic}</option>
         {Array.from({length: (policy?.manualDelayLimit ?? 8) + 1}, (_, value) => <option key={value} value={value}>{value}f</option>)}
       </MainSelect>
+      {timingPolicy.manualRollbackDelay && <p className="mp-room-settings-hint">{t('room.manualDelayHint')}</p>}
     </section>
     <RoomChoiceGroup title={t('multiplayer.players')} name="playerCount" valueAttribute="data-mp-player-count" choices={([2, 3] as const).map(playerCount => {
       const supported = config.playerCounts.includes(playerCount), selected = playerCount === room.playerCount;

@@ -115,7 +115,7 @@ export function normalizeMultiplayerLobbySnapshot(
   if (!policy.rollback && (adonisMode === 2 || (phase !== 'lobby' && adonisMode !== 1)))
     return null;
   const rawDelay = Number(source.inputDelay);
-  const delayLimit = adonisMode ? (inputTiming ? policy.manualDelayLimit : 9) : 8;
+  const delayLimit = adonisMode || policy.manualRollbackDelay ? (inputTiming ? policy.manualDelayLimit : 9) : 8;
   if (adonisMode && (!Number.isInteger(rawDelay) || rawDelay < 0 || rawDelay > delayLimit))
     return null;
   const inputDelay =

@@ -66,11 +66,11 @@ for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
       assert.equal(q('#difficultySelect').disabled,native);
       assert.equal(q('#difficultySelect').closest('label').hidden,native);
       if(native){
-        const label=locale==='zh-CN'?'游戏内选角':'Choose in game';
+        const label='';
         assert.equal(q('#mpLocalRoleLabel').textContent,label);
         assert.equal(q('.lobby-difficulty').textContent,label);
-        assert.match(q('#mpRoomSettings').textContent,/P1/);
-        assert.match(q('#roomForm').textContent,/P1/);
+        assert.match(q('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
+        assert.match(q('#roomForm').textContent,locale==='zh-CN'?/双方/:/Both players/);
         assert.deepEqual(calls,[]);
       } else {
         await React.act(async()=>q('[data-mp-difficulty="3"]').click());

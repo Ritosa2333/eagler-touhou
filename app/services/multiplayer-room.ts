@@ -963,11 +963,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const automatic = !rollback && measured && state.timingChoice === 'auto';
     const selected = Number(state.timingChoice);
     const inputDelay =
-      rollback || automatic
+      rollback && !timingPolicy.manualRollbackDelay || automatic || rollback && state.timingChoice === 'auto'
         ? 0
         : Number.isInteger(selected) &&
             selected >= 0 &&
-            selected <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
+            selected <= (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8)
           ? selected
           : timingRecommendation().inputDelay;
     send({

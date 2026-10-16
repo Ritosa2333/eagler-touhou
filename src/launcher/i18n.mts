@@ -6,6 +6,8 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
+  ["room.rollbackDelayHint", "开启回滚后仍可调整输入延迟。开局后设置固定。", "Input delay remains adjustable with rollback enabled. Settings are fixed once the game starts."],
+  ["room.manualDelayHint", "每帧约 16.7 毫秒。延迟小，操作响应更快。延迟大，可减少网络波动引起的回滚。开局后固定。", "Each frame is about 16.7 ms. Lower delay responds faster; higher delay can reduce rollbacks caused by network jitter. Fixed once the game starts."],
   ['th09.replayLocation', '录像文件夹', 'Replay folders'],
   ['th09.replayOpenFolder', '打开 {name}', 'Open {name}'],
   ["settings.pixelPerfect", "启用点对点显示", "Enable pixel-perfect display"],

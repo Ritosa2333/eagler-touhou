@@ -36,7 +36,7 @@ async function menu(screen){for(const row of actors.slice(0,2))await until(row,s
 try{
   const host=await actor('host'),code=await enter(host);const guest=await actor('guest');await enter(guest,code);const viewer=await actor('viewer');await enter(viewer,code);
   await viewer.page.locator('#mpSpectatorToggle').click();await viewer.page.locator('#mpSpectatorJoin').click();
-  assert.equal(await host.page.locator('#mpRoomDifficultyBadge').innerText(),'游戏内选角');
+  assert.equal(await host.page.locator('#mpRoomDifficultyBadge').isVisible(),false);
   assert.equal(await host.page.locator('#mpLoadoutPrevSeat, #mpLoadoutNextSeat').count(),0);
   await ready(host,0);await ready(guest,1);await host.page.locator('#mpStartGame').click();await menu(7);
   stage('managed-native-selection',{code,host:await read(host)});

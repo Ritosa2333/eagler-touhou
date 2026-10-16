@@ -1335,7 +1335,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
             (message.predictionLimit !== undefined && message.predictionLimit !== 0))) ||
         !Number.isInteger(inputDelay) ||
         inputDelay < 0 ||
-        inputDelay > (adonisMode ? timingPolicy.manualDelayLimit : 8) ||
+        inputDelay > (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8) ||
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
             predictionLimit < 1 ||
@@ -1345,7 +1345,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         return;
       }
       const rollback = !!room.multiplayer && timingPolicy.rollback && adonisMode !== 1;
-      room.lobby.inputDelay = rollback ? 0 : inputDelay;
+      room.lobby.inputDelay = rollback && !timingPolicy.manualRollbackDelay ? 0 : inputDelay;
       room.lobby.adonisMode = rollback ? 0 : adonisMode;
       room.lobby.inputDelayAuto = rollback ? false : inputDelayAuto;
       room.lobby.predictionReserve = predictionReserve;

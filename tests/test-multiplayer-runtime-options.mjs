@@ -55,8 +55,13 @@ const adonisBase={...base,url:base.url.replace('th06mp-','th09mp-'),inputDelay:9
 for(const product of ['th08mp','th09mp','th10mp'])for(const adonisMode of [1,2]){
   const options=buildMultiplayerRuntimeOptions({...adonisBase,url:adonisBase.url.replace('th09mp',product),adonisMode},th06);
   assert.equal(options.netplayAdonisMode,adonisMode===2?0:1);
-  assert.equal(options.netplayInputDelay,adonisMode===2?0:9);
+  assert.equal(options.netplayInputDelay,adonisMode===2&&product!=='th09mp'?0:9);
 }
+for(const inputDelay of [0,1,3,9]) {
+  const value=buildMultiplayerRuntimeOptions({...adonisBase,adonisMode:0,inputDelay},th06);
+  assert.equal(value.netplayAdonisMode,0);assert.equal(value.netplayInputDelay,inputDelay);
+}
+for(const inputDelay of [-1,10,1.5,NaN])assert.throws(()=>buildMultiplayerRuntimeOptions({...adonisBase,adonisMode:0,inputDelay},th06),/输入延迟/);
 for(const product of ['th08mp','th10mp']) {
   const stable={...base,url:base.url.replace('th06mp',product),inputDelay:3};
   const options=buildMultiplayerRuntimeOptions(stable,th06);
