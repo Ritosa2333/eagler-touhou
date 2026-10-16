@@ -10,7 +10,7 @@ const saveRoot=runtimeBuild.multiplayer?'/savesth15mp':'/savesth15';
 let multiplayerBridge=null;
 let core,launched=false,first=false,stopping=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve();
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
-const keyboard=createBrowserKeyboard({accept:code=>!!scanCodes[code],send:(code,down)=>core?._th15_key(scanCodes[code],+down)});
+const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!stopping,reset:clearKeyboard,},accept:code=>!!scanCodes[code],send:(code,down)=>core?._th15_key(scanCodes[code],+down)});
 function clearKeyboard(){keyboard.clear();core?._th15_keys_clear();}
 const err=()=>{let p=runtimeBuild.multiplayer?core._th15_mp_error():core._th15_error();if(runtimeBuild.multiplayer&&!core.HEAPU8[p])p=core._th15_error();const end=core.HEAPU8.indexOf(0,p);return new TextDecoder().decode(core.HEAPU8.subarray(p,end<0?p+256:end));};
 const fatal=e=>{const message=e?.message||String(e);$('#error').textContent=message;core?._th15_loop_pause(1);emit('error',{error:message});};
@@ -76,7 +76,7 @@ window.addEventListener('blur',()=>{clearKeyboard();core?._th15_touch_cancel();}
 window.addEventListener('eagler-thprac-menu',e=>emit('thprac-menu',{open:!!e.detail?.open}));
 // Keyboard events in the child realm do not bubble to the launcher. SDL's
 // canvas listener alone misses keys when the child BODY owns focus.
-for(const event of ['keydown','keyup'])window.addEventListener(event,e=>{if(!launched||e.altKey||e.metaKey)return;if(keyboard.event(e,event==='keydown')){e.preventDefault();e.stopPropagation();}},{capture:true});
+for(const event of ['keydown','keyup'])window.addEventListener(event,e=>{if(!launched)return;if(keyboard.mapNative(e,event==='keydown')){e.preventDefault();e.stopImmediatePropagation();return;}if(e.altKey||e.metaKey)return;if(keyboard.event(e,event==='keydown')){e.preventDefault();e.stopPropagation();}},{capture:true});
 for(const event of ['pointerdown','keydown'])window.addEventListener(event,()=>core?.SDL3?.audioContext?.resume().catch(()=>{}),{capture:true});
 for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['pointercancel',2]])document.body.addEventListener(name,e=>{
  if(!launched||!options.touchEnabled||e.pointerType==='mouse')return;if(e.type==='pointercancel'){core._th15_touch_cancel();return;}e.preventDefault();if(type===0)document.body.setPointerCapture(e.pointerId);const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th15_touch(type,e.pointerId,(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height);

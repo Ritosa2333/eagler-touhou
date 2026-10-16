@@ -1,3 +1,4 @@
+#include "browser-gamepad-input.hpp"
 #include "ApplicationState.hpp"
 #if TH15_MULTIPLAYER
 #include "../multiplayer/NetplayRuntime.hpp"
@@ -152,11 +153,12 @@ bool sample_and_tick(){
  }
  bool keys[256]{};const auto* physical=SDL_GetKeyboardState(nullptr);const bool browser_keyboard=th15_browser_keyboard_owned();
  for(const auto& key:keyboard_map)if(key.hosted||(!browser_keyboard&&key.native!=SDL_SCANCODE_UNKNOWN&&physical[key.native])){if(key.vk<256)keys[key.vk]=true;if(key.vk>=160&&key.vk<=165)keys[16+(key.vk-160)/2]=true;if(key.scan==28||key.scan==156)keys[13]=true;if(key.scan==14)keys[8]=true;if(key.scan==15)keys[9]=true;}
+ const int mappedPad=eagler::input::BrowserGamepadState();eagler::input::ApplyGamepadVirtualKeys(keys,mappedPad);
  app->keyboard_state.format=2;for(u32 i=0;i<256;i++)app->keyboard_state.keys[i]=keys[i]?128:0;
  const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
  for(u32 i=0;i<256;i++)keys[i]=keys[i]||sample.keys[i];app->touch={sample.motion,sample.x,sample.y};
  ThpracUi::update_input(*app,keys);
- u32 buttons=0;u32 held=keyboard_keys(keys)|sample_controller(buttons);
+ u32 buttons=0;u32 held=keyboard_keys(keys)|(mappedPad<0?sample_controller(buttons):0);
  if(app->practice.enabled){
   // Map unified browser/touch/controller actions into the native keyboard
   // filter before calculating pressed/repeated edges. GUI sees raw inputs.
