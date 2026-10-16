@@ -29,6 +29,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
 
         const state = {
             relay: null, signal: null, peers: new Map(), received: [], receivedHead: 0, pendingSignals: [],
+            receivedBytes: 0, pendingReceivedBytes: 0, pendingReceivedPackets: 0,
+            maxReceivedPackets: 16384, maxReceivedBytes: 16 * 1024 * 1024,
             localPlayer, playerCount, tag, legacyGlobal,
             controlLabel: `${tag}-control`, inputLabel: `${tag}-input`,
             route: null, failed: false, disconnected: false, error: String(), closed: false,
@@ -91,16 +93,41 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 }
             },
             receiveBinary(data) {
+                if (this.closed || this.failed || this.disconnected) return;
+                const size = data instanceof Blob ? data.size : data?.byteLength;
+                if (!Number.isSafeInteger(size) || size <= 0) return;
+                // Include in-flight Blob conversions and check before copying.
+                // A suspended simulation must not accumulate unlimited input.
+                if (this.received.length - this.receivedHead + this.pendingReceivedPackets >= this.maxReceivedPackets ||
+                    size > this.maxReceivedBytes - this.receivedBytes - this.pendingReceivedBytes) {
+                    this.failed = true;
+                    this.error = 'Peer receive queue limit exceeded';
+                    this.close();
+                    this.onDisconnect?.();
+                    this.onReceive?.();
+                    return;
+                }
                 const enqueue = packet => {
-                    if (this.closed) return;
+                    if (this.closed || this.failed || this.disconnected) return;
+                    this.receivedBytes += packet.byteLength;
                     this.received.push(packet);
                     this.onReceive?.();
                 };
                 if (data instanceof ArrayBuffer) enqueue(new Uint8Array(data));
                 else if (ArrayBuffer.isView(data)) enqueue(new Uint8Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)));
-                else if (data instanceof Blob) data.arrayBuffer().then(buffer => {
-                    enqueue(new Uint8Array(buffer));
-                }).catch(() => {});
+                else if (data instanceof Blob) {
+                    ++this.pendingReceivedPackets;
+                    this.pendingReceivedBytes += size;
+                    const release = () => {
+                        if (this.closed) return false;
+                        --this.pendingReceivedPackets;
+                        this.pendingReceivedBytes -= size;
+                        return true;
+                    };
+                    data.arrayBuffer().then(buffer => {
+                        if (release()) enqueue(new Uint8Array(buffer));
+                    }, release);
+                }
             },
             setupChannel(peerId, dc, kind) {
                 const peer = this.peers.get(peerId);
@@ -472,6 +499,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 this.peers.clear();
                 this.received.length = 0;
                 this.receivedHead = 0;
+                this.receivedBytes = this.pendingReceivedBytes = this.pendingReceivedPackets = 0;
             },
         };
         globalThis.__eaglerPeerTransport = state;
@@ -716,6 +744,7 @@ EM_JS(int, eagler_peer_poll_copy, (unsigned char *out, int capacity), {
     HEAPU8.set(packet, out);
     state.received[head] = undefined;
     state.receivedHead = head + 1;
+    if (typeof state.receivedBytes === 'number') state.receivedBytes -= packet.byteLength;
     // Compact only occasionally. Normal polling is O(1), while a peer that
     // wakes from a long Restart stall no longer pays Array.shift()'s repeated
     // whole-array moves for every queued control/input packet.
