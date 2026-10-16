@@ -51,11 +51,12 @@ const shared=resolve(workspace,'portable/sdl'),numeric=resolve(workspace,'portab
 function headers(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?(e.name==='multiplayer'&&!multiplayer?[]:headers(resolve(dir,e.name))):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);}
 const capturedInputs=new Map();
 function observed(path){const bytes=readFileSync(path),digest=createHash('sha256').update(bytes).digest('hex');if(capturedInputs.has(path)&&capturedInputs.get(path)!==digest)throw Error('Source changed during build; rebuild: '+path);capturedInputs.set(path,digest);return bytes;}
+common.push('-I'+resolve(netplayRoot,'include'));
 const flags=[...common,...(thcrap?['-DTH_ENABLE_THCRAP=1']:[]),'-std=c++17','-fno-exceptions','-fno-rtti'],linkFlags=multiplayer?['-lwebsocket']:[];
 if(printPlan){console.log(JSON.stringify({game,profile,variant:multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':'normal',outputDirectory:out,flags,linkFlags,sources},null,2));process.exit(0);}
 const netplayHeaders=multiplayer?headers(resolve(netplayRoot,'include')):[];
 const fixtureHeaders=multiplayerFixtures?headers(resolve(workspace,'portable/multiplayer')):[];
-const dialogueHeaders=[resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp')];
+const dialogueHeaders=[resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp'),resolve(netplayRoot,'include/eagler/audio/WebSfx.hpp')];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...dialogueHeaders,...fixtureHeaders].sort())hash.update(path).update(observed(path));
 const prefix=JSON.stringify([flags,hash.digest('hex')]);
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
