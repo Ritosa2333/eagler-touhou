@@ -38,6 +38,15 @@ The fast, dependency-light C++ core suite is the CI entry point:
 bash scripts/run-core-tests.sh
 ```
 
+The Replay input test links the production recorder/player callbacks in both
+ordinary and multiplayer-capable configurations. It covers all stage indices,
+including Extra/Phantasm, the original one-tick recording pipeline, Z/Ctrl input
+edges, FPS records, pause/slow-mode cursor freezing and live-input isolation.
+Device/presentation effects are stubbed; this is not a full-game state oracle.
+It also exercises compressed Replay length checks and truncated headers. The
+LZSS behavior test checks round trips, independent dictionaries and rejection
+before any write beyond the declared output capacity.
+
 ## Host integration dependencies
 
 Relay/coturn/browser integration tests execute the canonical Host implementation
