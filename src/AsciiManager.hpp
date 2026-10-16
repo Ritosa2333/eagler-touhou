@@ -32,6 +32,7 @@ enum RetryMenuState
 struct PauseMenu
 {
     PauseMenu();
+    bool NeedsConfirmedInput() const;
 
     void OnDraw();
     i32 OnUpdate();

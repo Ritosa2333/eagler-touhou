@@ -728,6 +728,13 @@ void AsciiManager::CreatePopup2(ZunVec3 *pos, i32 value, u32 color)
     this->nextPopupIndex2++;
 }
 
+bool PauseMenu::NeedsConfirmedInput() const
+{
+    return curState == PAUSE_MENU_STATE_INIT ||
+        (numFrames >= 20 && (curState == PAUSE_MENU_STATE_UNPAUSING ||
+         curState == PAUSE_MENU_STATE_RETURN_TO_MENU || curState == PAUSE_MENU_STATE_RESTART_STAGE));
+}
+
 i32 PauseMenu::OnUpdate()
 {
     u32 i;

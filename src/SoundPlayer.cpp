@@ -8,6 +8,8 @@
 #include <climits>
 #include <cstdio>
 #include <SDL3/SDL_hints.h>
+#include <eagler/audio/WebSfx.hpp>
+namespace web_sfx = eagler::audio::web_sfx;
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -502,6 +504,7 @@ SoundPlayer::SoundPlayer()
 void SoundPlayer::UpdateWebAudioPlaybackState()
 {
     const bool shouldSuspend = !this->webAudioWindowActive || this->webAudioBgmTransition;
+    web_sfx::suspend(!this->webAudioWindowActive);
     if (shouldSuspend == this->webAudioPlaybackSuspended)
     {
         return;
@@ -567,12 +570,11 @@ bool SoundPlayer::PumpWebAudio()
         return true;
     }
 
-    // A/B robustness envelope paired with the configured 4096-frame Web SDL
-    // ScriptProcessor block. Vorbis/miniaudio work stays in small 1024-frame
-    // slices; only the queued safety window is deeper.
+    // Keep fresh SFX from waiting behind a deep mixed-PCM queue. Paired with
+    // the 2048-frame Web SDL callback; decode work stays in 1024-frame slices.
     constexpr ma_uint64 FRAMES_PER_CHUNK = 1024;
-    constexpr ma_uint64 LOW_WATER_FRAMES = 4096;
-    constexpr ma_uint64 HIGH_WATER_FRAMES = 6144;
+    constexpr ma_uint64 LOW_WATER_FRAMES = 2048;
+    constexpr ma_uint64 HIGH_WATER_FRAMES = 3072;
     float pcm[FRAMES_PER_CHUNK * 2];
     constexpr int BYTES_PER_FRAME = 2 * sizeof(float);
 
@@ -580,7 +582,7 @@ bool SoundPlayer::PumpWebAudio()
     const int queuedBytes = SDL_GetAudioStreamQueued(this->webAudioStream);
     if (queuedBytes < 0)
         return false;
-    const ma_uint64 queuedFrames = static_cast<ma_uint64>(queuedBytes / BYTES_PER_FRAME);
+    ma_uint64 queuedFrames = static_cast<ma_uint64>(queuedBytes / BYTES_PER_FRAME);
 
     this->webAudioMinQueuedFrames = std::min(this->webAudioMinQueuedFrames, static_cast<u32>(queuedFrames));
 
@@ -612,21 +614,22 @@ bool SoundPlayer::PumpWebAudio()
         return true;
     }
 
-    const ma_uint64 framesToRead = std::min(FRAMES_PER_CHUNK, HIGH_WATER_FRAMES - queuedFrames);
-    if (framesToRead == 0)
+    // Replenish a consumed output block in this presentation callback rather
+    // than needing several later frames to rebuild the smaller safety window.
+    for (u32 chunk = 0; chunk < 3 && queuedFrames < HIGH_WATER_FRAMES; ++chunk)
     {
-        this->webAudioRefilling = false;
-        return true;
+        const ma_uint64 framesToRead = std::min(FRAMES_PER_CHUNK, HIGH_WATER_FRAMES - queuedFrames);
+        ma_uint64 framesRead = 0;
+        if (ma_engine_read_pcm_frames(this->engine, pcm, framesToRead, &framesRead) != MA_SUCCESS)
+            return false;
+        if (framesRead == 0)
+            return true;
+        if (!SDL_PutAudioStreamData(this->webAudioStream, pcm,
+                                    static_cast<int>(framesRead * BYTES_PER_FRAME)))
+            return false;
+        queuedFrames += framesRead;
     }
-
-    ma_uint64 framesRead = 0;
-    if (ma_engine_read_pcm_frames(this->engine, pcm, framesToRead, &framesRead) != MA_SUCCESS)
-        return false;
-    if (framesRead == 0)
-        return true;
-    if (!SDL_PutAudioStreamData(this->webAudioStream, pcm,
-                                static_cast<int>(framesRead * BYTES_PER_FRAME)))
-        return false;
+    this->webAudioRefilling = queuedFrames < HIGH_WATER_FRAMES;
     return true;
 }
 #endif
@@ -671,11 +674,12 @@ ZunResult SoundPlayer::InitializeSound()
     }
 
     SDL_AudioSpec desiredAudio = {SDL_AUDIO_F32, 2, 44100};
+    web_sfx::suspend(!this->webAudioWindowActive);
     // SDL's stock Emscripten backend doubles SDL_GetDefaultSampleFramesFromFreq().
-    // Requesting 2048 therefore yields the 4096-frame ScriptProcessor block
+    // Requesting 1024 therefore yields the 2048-frame ScriptProcessor block
     // that this Runtime's Web audio queue is tuned around, without modifying
     // the vendored SDL submodule in-place.
-    SDL_SetHintWithPriority(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "2048", SDL_HINT_OVERRIDE);
+    SDL_SetHintWithPriority(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "1024", SDL_HINT_OVERRIDE);
     this->webAudioStream =
         SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desiredAudio, NULL, NULL);
     if (!this->webAudioStream)
@@ -721,6 +725,7 @@ ZunResult SoundPlayer::Release()
     {
         if (this->soundBuffers[i])
         {
+            web_sfx::erase(this->soundBuffers[i]);
             ma_sound_uninit(this->soundBuffers[i]);
             SAFE_DELETE(this->soundBuffers[i]);
         }
@@ -1226,6 +1231,10 @@ ZunResult SoundPlayer::InitSoundBuffers()
         }
 
         ma_sound_seek_to_pcm_frame(this->soundBuffers[i], 0);
+        web_sfx::upload(this->soundBuffers[i], this->sfxPCMData[bufIdx],
+                        static_cast<unsigned>(this->sfxFrameCount[bufIdx]), 2, 44100);
+        web_sfx::volume(this->soundBuffers[i],
+                        ma_volume_db_to_linear(SOUND_BUFFER_IDX_VOL[i].volume / 100.0f));
         ma_sound_set_volume(this->soundBuffers[i],
                             ma_volume_db_to_linear(SOUND_BUFFER_IDX_VOL[i].volume / 100.0f));
     }
@@ -1493,7 +1502,10 @@ loop_breakout:
 
             ma_sound_stop(this->soundBuffers[curSound]);
             ma_sound_seek_to_pcm_frame(this->soundBuffers[curSound], 0);
-            ma_sound_start(this->soundBuffers[curSound]);
+            web_sfx::stop(this->soundBuffers[curSound]);
+            web_sfx::seek(this->soundBuffers[curSound], 0, 44100);
+            if (!web_sfx::play(this->soundBuffers[curSound]))
+                ma_sound_start(this->soundBuffers[curSound]);
         }
     }
     return this->commandQueue[0].opcode;

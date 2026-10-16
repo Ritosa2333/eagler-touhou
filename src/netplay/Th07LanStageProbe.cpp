@@ -864,7 +864,8 @@ bool SessionStillOwnsStageState()
 
 bool SharedUiNeedsConfirmedInputs()
 {
-    return g_GameManager.isPaused || g_GameManager.isInPauseMenu ||
+    return (g_GameManager.isInPauseMenu && g_AsciiManager.pauseMenu.NeedsConfirmedInput()) ||
+           (g_GameManager.isPaused && !g_GameManager.isInPauseMenu) ||
            g_GameManager.isInRetryMenu ||
            (g_Gui.impl && (g_Gui.impl->finishedStage ||
                            g_Gui.impl->transitionToScoreScreen)) ||
@@ -1694,8 +1695,8 @@ bool PumpBufferedLockstepInput()
         (g_ReconcileActive || g_Core.HasRollbackRequest());
     const std::uint32_t startupLead = g_InitialFrameLagRemaining != 0
         ? g_InitialFrameLag + 1u : 1u;
-    const std::uint32_t captureLead = (reconciliationNeedsInputLead || SharedUiNeedsConfirmedInputs())
-        ? kMaxIncrementalCaptureLead : startupLead;
+    const std::uint32_t captureLead = reconciliationNeedsInputLead
+        ? kMaxIncrementalCaptureLead : SharedUiNeedsConfirmedInputs() ? 8u : startupLead;
     const std::uint32_t maxCaptureFrame =
         g_SimFrame < INVALID_FRAME - captureLead ? g_SimFrame + captureLead : g_SimFrame;
     if (g_NextInputCaptureNs == 0)
@@ -2905,11 +2906,9 @@ int RunCalcChain()
             return CHAIN_CALLBACK_RESULT_CONTINUE;
         }
 
-        // Pause/retry UI is rewindable (GameManager + AsciiManager + relevant
-        // Supervisor state are in the snapshot), but predicting menu input is
-        // needlessly risky: a late Escape can change which UI frame consumes
-        // subsequent keys. Keep the input pipeline running at 60 Hz, while
-        // executing shared UI only from every player's confirmed input.
+        // Rewind ordinary Pause navigation with the existing menu snapshot.
+        // Keep screenshot initialization, final clock/lifetime steps and
+        // unsupported Retry/Ending phases on the confirmed input pipeline.
         if (SharedUiNeedsConfirmedInputs() &&
             g_Core.ConfirmedThroughAllRemotes() < g_SimFrame)
             return CHAIN_CALLBACK_RESULT_CONTINUE;
