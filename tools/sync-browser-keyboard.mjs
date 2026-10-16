@@ -3,9 +3,9 @@ import {resolve} from 'node:path';
 
 const begin = '      // BEGIN SHARED BROWSER KEYBOARD OWNERS';
 const end = '      // END SHARED BROWSER KEYBOARD OWNERS';
-const source = (await readFile(new URL('../browser/keyboard-owners.mjs', import.meta.url), 'utf8')).replaceAll('\r\n', '\n');
+const source = (await Promise.all(['keyboard-owners.mjs','keyboard-input-bridge.mjs'].map(name=>readFile(new URL('../browser/'+name,import.meta.url),'utf8')))).join('\n').replaceAll('\r\n', '\n');
 const inline = source.replace(/^export /gm, '').trim().split('\n').map(line => line ? `      ${line}` : '').join('\n');
-const replacement = `${begin}\n      // Generated from eagler-common/browser/keyboard-owners.mjs.\n${inline}\n${end}`;
+const replacement = `${begin}\n      // Generated from eagler-common/browser/{keyboard-owners,keyboard-input-bridge}.mjs.\n${inline}\n${end}`;
 const args = process.argv.slice(2);
 const check = args.includes('--check');
 const shells = args.filter(arg => arg !== '--check');

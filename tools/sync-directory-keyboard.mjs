@@ -3,8 +3,9 @@ import {resolve} from 'node:path';
 
 // Self-contained directory module: title pins need no submodule update.
 const owners=(await readFile(new URL('../browser/keyboard-owners.mjs',import.meta.url),'utf8')).replaceAll('\r\n','\n');
-const bridge=(await readFile(new URL('../browser/directory-keyboard.mjs',import.meta.url),'utf8')).replaceAll('\r\n','\n').replace(/^import .*;\n/,'');
-const source='// Generated from eagler-common/browser/{keyboard-owners,directory-keyboard}.mjs.\n'+owners+'\n'+bridge;
+const input=(await readFile(new URL('../browser/keyboard-input-bridge.mjs',import.meta.url),'utf8')).replaceAll('\r\n','\n');
+const bridge=(await readFile(new URL('../browser/directory-keyboard.mjs',import.meta.url),'utf8')).replaceAll('\r\n','\n').replace(/^import .*;\n/gm,'');
+const source='// Generated from eagler-common/browser/{keyboard-owners,keyboard-input-bridge,directory-keyboard}.mjs.\n'+owners+'\n'+input+'\n'+bridge;
 const args=process.argv.slice(2),check=args.includes('--check'),targets=args.filter(arg=>arg!=='--check');
 if(!targets.length)throw Error('usage: node tools/sync-directory-keyboard.mjs [--check] DIRECTORY-KEYBOARD.mjs ...');
 for(const target of targets){

@@ -301,4 +301,6 @@ add_test(NAME eagler-common.confirmed-input-clock COMMAND eagler_common_confirme
 if(EAGLER_COMMON_NODE_EXECUTABLE)
     add_test(NAME eagler-common.direct-input-bridge
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/direct-input-bridge-test.mjs)
+    add_test(NAME eagler-common.keyboard-input-bridge
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/keyboard-input-bridge.test.mjs)
 endif()

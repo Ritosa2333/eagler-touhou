@@ -1,4 +1,5 @@
 import {updateKeyboardOwners} from './keyboard-owners.mjs';
+import {createKeyboardInputBridge} from './keyboard-input-bridge.mjs';
 
 // Full browser keyboard boundary; gameplay bindings remain title-owned.
 const names={escape:'Escape',esc:'Escape',backspace:'Backspace',tab:'Tab',enter:'Enter',
@@ -47,7 +48,7 @@ export function runtimeKeyboardCode(event){
   return value;
 }
 
-export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{}}){
+export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{},hostContext}){
   const sources=new Map(),published=new Set();
   let generation=0;
   function publish(){
@@ -56,9 +57,12 @@ export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{}}){
     for(const code of next)if(!published.has(code))send(code,true);
     published.clear();for(const code of next)published.add(code);
   }
-  return {
+  let input;
+  const keyboard={
     get generation(){return generation;},
+    mapNative(event,down){return input?.event(event,down)??false;},
     event(event,down,source='native'){
+      if(source==='hosted'&&input?.event(event,down,event.inputSource==='physical'?'physical':'virtual'))return true;
       const code=runtimeKeyboardCode(event);if(!code||!accept(code))return false;
       let owners=sources.get(source);if(!owners){owners=new Map();sources.set(source,owners);}
       // Match releases using the actual event evidence, never the synthesized
@@ -72,7 +76,11 @@ export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{}}){
       publish();return true;
     },
     clear(){
+      input?.clear();
       ++generation;sources.clear();publish();onClear();
     }
   };
+  if(hostContext)input=createKeyboardInputBridge({...hostContext,
+    dispatch:(event,down)=>keyboard.event(event,down,'mapped'),reset:()=>hostContext.reset?hostContext.reset():keyboard.clear()});
+  return keyboard;
 }
