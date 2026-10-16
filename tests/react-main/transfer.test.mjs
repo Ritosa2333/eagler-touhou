@@ -282,3 +282,39 @@ test('dispose clears pending frames and timers, and late completion does not rea
   f.model.musicComplete({}); f.model.midiFallback(); f.model.launchAcknowledged(); f.model.beginRuntime({game: 'th06', generation: null});
   assert.equal(f.pending.size, 0); assert.equal(f.frameQueue.size, 0); assert.deepEqual(f.statuses, []);
 });
+
+test('language browser cache persists across launches and refreshes changed or corrupt packs', async () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'caches');
+  const stored = new Map();
+  const cache = {
+    async match(request) {return stored.get(request.url)?.clone();},
+    async put(request, response) {stored.set(request.url, response.clone());},
+    async delete(request) {return stored.delete(request.url);},
+  };
+  Object.defineProperty(globalThis, 'caches', {configurable: true, value: {async open() {return cache;}}});
+  const path = 'thcrap/th06/localization/strings.etl';
+  function pack(text) {
+    const payload = strToU8(text);
+    const manifest = {schema: 'eagler-touhou/thcrap-static-pack/1', game: 'th06', language: 'lang_en', runtimeVersion: 'independent', files: [{path: `/${path}`, bytes: payload.length}]};
+    const zip = zipSync({'manifest.json': strToU8(JSON.stringify(manifest)), [path]: payload}, {level: 0});
+    return {zip, entry: {id: 'lang_en', title: 'English', pack: {url: 'en.zip', sha256: createHash('sha256').update(zip).digest('hex'), bytes: zip.length}}};
+  }
+  let current = pack('ETL1'), requests = 0;
+  const modes = [];
+  const launch = () => api.prepareLanguagePack({game: 'th06', entry: current.entry, baseUrl: 'https://launcher.invalid/', translate: t,
+    fetchImpl: async (_url, options) => {requests++; modes.push(options.cache); return new Response(current.zip);}});
+  try {
+    await launch(); await launch();
+    assert.equal(requests, 1, 'repeat launch must not fetch');
+    current = pack('ETL1 updated'); await launch();
+    assert.equal(requests, 2, 'new content at same URL must fetch');
+    const key = [...stored.keys()].find(key => key.endsWith(current.entry.pack.sha256));
+    stored.set(key, new Response('corrupted'));
+    await launch(); await launch();
+    assert.equal(requests, 3, 'corrupt cache is replaced once');
+    assert.equal(modes.at(-1), 'no-store');
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'caches', original);
+    else delete globalThis.caches;
+  }
+});

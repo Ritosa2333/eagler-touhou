@@ -13,10 +13,16 @@ export interface LanguagePackDependencies {
   hash: typeof sha256Hex;
   unzip(bytes: Uint8Array): Promise<Record<string, Uint8Array>>;
 }
+function browserCaches() {
+  try {return globalThis.caches ?? null;} catch {return null;}
+}
+function browserStorage() {
+  try {return globalThis.localStorage ?? null;} catch {return null;}
+}
 /** Main app 6061–6228: one optional launch asset, never a durable language
  * preference mutation. An invalid cached object gets one verified redownload. */
 export async function prepareLanguagePack({game, entry, baseUrl, signal, translate: t, fetchImpl = globalThis.fetch,
-  caches = null, storage = null, onProgress, onLanguageDownloadActivity, network, dependencies}: {
+  caches = browserCaches(), storage = browserStorage(), onProgress, onLanguageDownloadActivity, network, dependencies}: {
   game: GameId;
   entry: LanguageCatalogEntry | null;
   baseUrl: string;
