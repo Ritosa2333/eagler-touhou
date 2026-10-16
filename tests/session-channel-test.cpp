@@ -38,9 +38,10 @@ struct Peer {
 struct Mesh {
     std::vector<std::unique_ptr<Peer>> peers;
     std::uint64_t now=0,routed=0;
+    bool exactPhase=false;
     // True drops delivery while preserving a successful send, as loss does.
     std::function<bool(std::uint8_t,std::uint8_t,bool,const std::vector<std::uint8_t>&)> drop;
-    explicit Mesh(std::uint8_t count){
+    explicit Mesh(std::uint8_t count,bool phase=false):exactPhase(phase){
         for(std::uint8_t seat=0;seat<count;++seat)peers.emplace_back(new Peer(*this,seat));
         for(std::uint8_t seat=0;seat<count;++seat)begin(seat,100);
     }
@@ -50,7 +51,9 @@ struct Mesh {
         session.playerCount=static_cast<std::uint8_t>(peers.size());session.localPlayer=seat;
         CoreConfig core{};core.sessionId=id;core.playerCount=session.playerCount;core.localPlayer=seat;
         core.maxRollbackFrames=12;core.predictableButtons=0xf5;core.directionButtons=0xf0;core.maxDirectionPredictionFrames=3;
-        CHECK(peer.gate.Reset(session));CHECK(peer.core.Reset(core));CHECK(peer.channel.BeginSession(session,now));
+        core.allowPrediction=!exactPhase;
+        SessionChannelConfig policy;policy.adonisPhase=exactPhase;
+        CHECK(peer.gate.Reset(session));CHECK(peer.core.Reset(core));CHECK(peer.channel.BeginSession(session,now,policy));
     }
     bool route(std::uint8_t from,std::uint8_t to,bool reliable,const std::uint8_t* bytes,std::size_t size){
         CHECK(from!=to&&to<peers.size());if(!peers[from]->link.open)return false;
@@ -90,6 +93,27 @@ void reconcile(Peer& peer){
     for(auto frame=first;frame<=last;++frame){const auto d=peer.core.PrepareFrame(frame);CHECK(d.canAdvance);CHECK(peer.core.MarkSimulated(frame,d));}
 }
 bool atLeast(std::uint32_t frame,std::uint32_t target){return frame!=INVALID_FRAME&&frame>=target;}
+
+void future_capture_tail_remains_deliverable(){
+    for(unsigned count:{2u,3u})for(bool phase:{false,true}){
+        Mesh mesh(static_cast<std::uint8_t>(count),phase);mesh.barrier();
+        // Exact UI may keep its physical capture frontier moving while the
+        // authoritative simulation remains at frame zero. Use real channel
+        // encode/ACK/admission, not direct core input injection.
+        for(unsigned frame=0;frame<8;++frame){
+            for(auto& peer:mesh.peers)capture(*peer,frame,mesh.now);
+            mesh.pump(false,17);
+            for(auto& peer:mesh.peers)CHECK(next(peer->core)==0);
+        }
+        for(auto& peer:mesh.peers)for(unsigned frame=0;frame<8;++frame){
+            const auto d=peer->core.PrepareFrame(frame);CHECK(d.canAdvance&&!d.predictedMask);
+            for(unsigned seat=0;seat<count;++seat)CHECK(d.inputs[seat]==sample(seat,frame));
+            CHECK(peer->core.MarkSimulated(frame,d));
+        }
+        for(unsigned retry=0;retry<30;++retry)mesh.pump(false,17);
+        for(auto& peer:mesh.peers){CHECK(peer->captures==8);CHECK(peer->channel.CanRetire(peer->core,7));}
+    }
+}
 
 void lossy_three_peer_stream(){
     Mesh mesh(3);bool droppedReady=false;unsigned fast=0;
@@ -598,6 +622,7 @@ static void connection_recovery_keeps_captured_input(){
     for(auto& peer:mesh.peers){CHECK(!peer->gate.CanStart());CHECK(peer->channel.Error()==SessionChannel::Failure::None);}
 }
 int main(){
+    future_capture_tail_remains_deliverable();
     connection_recovery_keeps_captured_input();
     lossy_three_peer_stream();retired_final_ack_echo();reliable_tail_repairs_blackout();
     retirement_pump_retries_refused_ack_without_draining_calibration();

@@ -293,6 +293,11 @@ add_executable(eagler_common_rollback_capture_window_test rollback-capture-windo
 target_link_libraries(eagler_common_rollback_capture_window_test PRIVATE eagler::rollback)
 add_test(NAME eagler-common.rollback-capture-window COMMAND eagler_common_rollback_capture_window_test)
 
+add_executable(eagler_common_confirmed_input_clock_test confirmed-input-clock-test.cpp)
+target_link_libraries(eagler_common_confirmed_input_clock_test PRIVATE eagler::netplay_base)
+target_include_directories(eagler_common_confirmed_input_clock_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
+add_test(NAME eagler-common.confirmed-input-clock COMMAND eagler_common_confirmed_input_clock_test)
+
 if(EAGLER_COMMON_NODE_EXECUTABLE)
     add_test(NAME eagler-common.direct-input-bridge
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/direct-input-bridge-test.mjs)
