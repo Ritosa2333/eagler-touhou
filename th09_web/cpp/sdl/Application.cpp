@@ -641,6 +641,32 @@ TH09_EXPORT("th09_network_selection_info") const i32* th09_network_selection_inf
 TH09_EXPORT("th09_game_close") void th09_game_close(){recovery_schedule.Cancel();rollback_active=false;rollback.Clear();running=false;++loop_epoch;close_controllers();clear_inputs();network.end();spectator_mode=false;spectator_frames.clear();probe.reset();}
 TH09_EXPORT("th09_music_enabled") void th09_music_enabled(u32 enabled){if(probe){probe->host_music_enabled=enabled!=0;probe->title_configuration();}}
 TH09_EXPORT("th09_game_restart") u32 th09_game_restart(){if(!probe||!probe->in_title)return 0;clear_inputs();probe->requested_transition=-1;probe->settings.game_flags=0;return probe->return_title(false);}
+// Output slots also own confirmed audio, Replay boundaries and spectator data.
+// A later correction cannot make an earlier unpublished record expendable.
+bool publish_rollback_outputs(){
+    TH09_PERF_SCOPE(publish_cost,ConfirmedPublish);
+    const auto through=rollback.ConfirmedThrough();
+    while(through!=Netplay::INVALID_FRAME&&rollback_published<=through){
+        auto& record=rollback_frames[rollback_published%rollback_frames.size()];
+        if(record.number!=rollback_published){probe->error="Confirmed output history expired";return false;}
+        TH09_PERF_COUNT(PublishedCommands,record.sounds.size());
+        record.audio.Emit(record.sounds,true,[](const auto& s){TH09_PERF_COUNT(PublishedSfx,1);if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
+        for(const auto& s:record.sounds)switch(s.kind){case 2:TH09_PERF_COUNT(PublishedMusic,1);probe->music(s.id);break;case 3:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.fade_music();break;case 4:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
+        record.sounds.clear();
+        // Both players archive only reconciled full-match boundaries.
+        if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
+        if(record.hasEnd)th09_network_replay_boundary(rollback_published+1,record.winner);
+        if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return false;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
+            if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
+            if(!network_selection||record.gameplay)th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y);}
+        if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round),record.replayRoundFrame);
+        if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+1,record.winner);
+        if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return false;}
+        ++rollback_published;
+        TH09_PERF_COUNT(PublishedFrames,1);
+    }
+    return true;
+}
 u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
     TH09_PERF_SCOPE(rollback_cost,RollbackTick);
     // Recovery and transport work consume the same callback budget as replay.
@@ -676,10 +702,14 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
     const bool captured=recoveryOnly||capture();
     const bool flushed=flush();
     if(!captured||!flushed)return 0;
+    if(!publish_rollback_outputs())return 0;
     auto correction=rollback.RollbackFrame();
     // Higan also catches up at the input point when its horizon/boundary is
     // reached. Never draw a partially restored world or overrun our history.
-    if(forwardOnly&&!rollback.Prepare(true).canAdvance)forwardOnly=false;
+    // Delayed recovery must preserve the oldest unpublished OUTPUT too, even
+    // when the first prediction mismatch is several frames later.
+    if(forwardOnly&&(rollback.Frame()-rollback_published>=rollback_frames.size()||
+        !rollback.Prepare(true).canAdvance))forwardOnly=false;
     if(correction!=Netplay::INVALID_FRAME&&!forwardOnly){
         TH09_PERF_SCOPE(restore_cost,Restore);
         rollback_catchup=std::max(rollback_catchup,rollback.Frame());
@@ -723,7 +753,11 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
             if(forwardOnly&&rollback.RollbackFrame()!=Netplay::INVALID_FRAME)return rollback_tick(render,false,true);
             return 2;
         }
-        auto& record=rollback_frames[f%rollback_frames.size()];if(record.number!=f)record.audio.Clear();record.number=f;record.sounds.clear();
+        auto& record=rollback_frames[f%rollback_frames.size()];
+        if(record.number!=Netplay::INVALID_FRAME&&record.number!=f&&record.number>=rollback_published){
+            probe->error="Unpublished rollback output would be overwritten";return 0;
+        }
+        if(record.number!=f)record.audio.Clear();record.number=f;record.sounds.clear();
         const bool speculative=decision.predictedMask||!reconciled;
         if(rollback.Mode()==Netplay::AdonisMode::Delay&&speculative){probe->error="Lockstep attempted speculative state";return 0;}
         if(speculative)++adonis_snapshots;
@@ -751,33 +785,13 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         if(final)record.audio.Emit(record.sounds,false,[](const auto& s){if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
         if(!network.active)rollback.FinishExactBoundary();
         record.hash=th09_network_hash();
+        // Catch-up may reach its old frontier and continue into a fresh tick
+        // in this same call. Release reconciled output before slot reuse.
+        if(!publish_rollback_outputs())return 0;
         if(final||!network.active)break;
         if(emscripten_get_now()-start>=8)break;
     }
-    // Publish side effects and spectator input only from reconciled history.
-    {
-    TH09_PERF_SCOPE(publish_cost,ConfirmedPublish);
-    const auto through=rollback.ConfirmedThrough();
-    while(through!=Netplay::INVALID_FRAME&&rollback_published<=through){
-        auto& record=rollback_frames[rollback_published%rollback_frames.size()];
-        if(record.number!=rollback_published){probe->error="Confirmed output history expired";return 0;}
-        TH09_PERF_COUNT(PublishedCommands,record.sounds.size());
-        record.audio.Emit(record.sounds,true,[](const auto& s){TH09_PERF_COUNT(PublishedSfx,1);if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
-        for(const auto& s:record.sounds)switch(s.kind){case 2:TH09_PERF_COUNT(PublishedMusic,1);probe->music(s.id);break;case 3:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.fade_music();break;case 4:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
-        record.sounds.clear();
-        // Both players archive only reconciled full-match boundaries.
-        if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
-        if(record.hasEnd)th09_network_replay_boundary(rollback_published+1,record.winner);
-        if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return 0;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
-            if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
-            if(!network_selection||record.gameplay)th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y);}
-        if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round),record.replayRoundFrame);
-        if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+1,record.winner);
-        if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return 0;}
-        ++rollback_published;
-        TH09_PERF_COUNT(PublishedFrames,1);
-    }
-    }
+    if(!publish_rollback_outputs())return 0;
     probe->audio.update();probe->audio.pump();
     return (recoveryOnly?rollback.Frame()<rollback_catchup:rollback.Frame()<=rollback_catchup)?2:1;
 }

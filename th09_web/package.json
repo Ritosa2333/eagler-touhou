@@ -15,6 +15,7 @@
     "start": "node artifacts/sdl-release/scripts/serve.mjs --port 8096",
     "test:server": "node --test tests/server/*.test.mjs",
     "test:rollback": "node tests/multiplayer/run-tests.mjs",
+    "test:rollback-output-history": "node tests/multiplayer/output-history-browser.mjs",
     "test:web": "node tests/browser/release-check.mjs",
     "test:versus-rules": "node tests/multiplayer/versus-rules.mjs"
   },
