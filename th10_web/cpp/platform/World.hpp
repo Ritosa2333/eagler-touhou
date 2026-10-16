@@ -70,6 +70,8 @@ struct World final:HudActions,CallbackReceiver {
     bool finalize_replay_checkpoint();
     bool rollback_resimulating=false;
     u32 player_count=2,local_player=0;
+    // Presentation-only generation handles, retained through native fade-out.
+    mutable std::map<u32,u32> multiplayer_hitbox_owners;
     // Separate reserved ANM slots, after the native title's 0..32 slots.
     static constexpr i32 pilot_animation_slot(i32 character){return 33+character;}
     multiplayer::Pilot* pilot_for(Player*);
