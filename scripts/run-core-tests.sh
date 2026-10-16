@@ -7,6 +7,26 @@ CXX="${CXX:-c++}"
 OUT="$(mktemp -d "${TMPDIR:-/tmp}/th06-eagler-core-tests.XXXXXX")"
 trap 'rm -rf "$OUT"' EXIT
 
+REPLAY_SOURCES=(
+  tests/replay-input-test.cpp src/ReplayManager.cpp src/Gui.cpp src/ZunTimer.cpp
+  src/Chain.cpp src/LocalizationStub.cpp src/PracticeRuntimeStub.cpp
+)
+for replay_variant in ordinary multiplayer; do
+  replay_flags=()
+  replay_sources=("${REPLAY_SOURCES[@]}")
+  if [[ "$replay_variant" == multiplayer ]]; then
+    replay_flags+=(-DTH_ENABLE_MULTIPLAYER_GAMEPLAY -DTH_ENABLE_NETPLAY)
+    replay_sources+=(src/netplay/NetplaySideEffects.cpp
+      third_party/eagler-common/src/netplay/NetplayInput.cpp)
+  fi
+  # LTO removes unused game entry points; the test links the real Replay and
+  # dialogue owners with device/rendering effects stubbed, without SDL libs.
+  "$CXX" -std=c++20 -O2 -flto "${replay_flags[@]}" -Isrc \
+    -Ithird_party/eagler-common/include -Ivendored/SDL/include \
+    "${replay_sources[@]}" -o "$OUT/replay-input-$replay_variant"
+  "$OUT/replay-input-$replay_variant"
+done
+
 "$CXX" -std=c++20 -Isrc -Ithird_party/eagler-common/include \
   tests/netplay-core-test.cpp \
   third_party/eagler-common/src/netplay/NetplayCore.cpp \

@@ -422,6 +422,11 @@ ChainCallbackResult ReplayManager::OnUpdateDemoHighPrio(ReplayManager *mgr)
     else
     {
         g_CurFrameInput = liveNonReplayInput | mgr->replayInputs->inputKey;
+        // Supervisor sampled hardware before this callback. Ordinary Replay
+        // must replace the P1 gameplay lane too, including its previous tick,
+        // so movement and dialogue Z edges cannot depend on live input.
+        g_LastFrameGameInputs[0] = g_LastFrameInput & TH_BUTTON_REPLAY_CAPTURE;
+        g_CurFrameGameInputs[0] = mgr->replayInputs->inputKey;
         for (u8 playerId = 1; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
         {
             g_LastFrameGameInputs[playerId] = g_CurFrameGameInputs[playerId];

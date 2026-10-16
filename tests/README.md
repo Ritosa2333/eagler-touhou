@@ -13,6 +13,12 @@ The fast, dependency-light C++ core suite is the CI entry point:
 bash scripts/run-core-tests.sh
 ```
 
+The Replay input regression links the production ReplayManager and dialogue VM
+in both ordinary and multiplayer-capable configurations. It checks per-stage
+input recording/playback, Z/Ctrl dialogue input and isolation from live controls.
+Rendering, audio and touch device effects are stubbed. This does not replace a
+full-run Replay comparison of gameplay, ECL and RNG state.
+
 ## Host integration smoke tests
 
 The browser/audio netplay smoke tests exercise the production Host-owned relay,
