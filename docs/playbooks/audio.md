@@ -171,6 +171,49 @@ Runtime execution resumes. Otherwise the title-side mixer can remain correct
 while the resumed browser output stutters. This is an output-lifecycle fix; do
 not restart the BGM owner, seek the track, reset loops or replace fade state.
 
+## TH09 rollback feedback and PCM queue (2026-10-16)
+
+TH09 `a2d7652` separates fresh one-shot feedback from confirmed outcomes and
+reduces queued PCM. These are TH09 implementation choices; other titles must
+classify their own sound events and preserve their original audio semantics.
+
+### Irreversible one-shot output survives world rewind
+
+Once a sound has played, restoring a world snapshot cannot undo it. If ordinary
+fresh feedback is allowed before confirmation, keep its emission history beside
+the retained logical frame and outside the restored world. Replaying or later
+confirming that frame must not emit the same feedback again. A new logical frame
+or ring-slot owner gets fresh emission history.
+
+TH09 `cpp/multiplayer/FrameAudio.hpp` deduplicates by logical frame and sound ID
+across passes. Requests in the first batch still reach the original sound owner
+for pan averaging. Do not deduplicate that first batch in a way that changes the
+title's sound aggregation, or suppress a repeated sound across different frames.
+Hurt, critical-health and match-result feedback remain confirmation-gated in
+TH09. Historical replay itself stays silent; newly corrected historical effects
+are emitted at confirmed publication. BGM selection retains the separate
+reconciliation contract above.
+
+Anchors in `th09-eagler/th09_web/`: `cpp/multiplayer/FrameAudio.hpp`,
+`cpp/sdl/Application.cpp::rollback_tick`, and
+`tests/multiplayer/frame-audio.cpp` (fresh output, confirmed outcomes,
+correction/deduplication, pan averaging and ring reuse).
+
+### Account for PCM already ahead of the new effect
+
+An effect can be logically generated promptly and still wait behind mixed PCM.
+Compute that part of latency as queued sample frames / sample rate, then account
+separately for the browser callback, device and output path. Timing only the
+effect's enqueue call misses this queue.
+
+TH09's `cpp/sdl/AudioDevice.cpp` changed its PCM high-water target from 6144 to
+2048 frames at 44100 Hz (about 139 ms to 46 ms of queued audio), with smaller
+refill batches and a smaller requested SDL callback size. These numbers describe
+that queue's configured target, not a measured total output-latency bound or a
+universal buffer setting. When reducing them elsewhere, inspect underflows and
+audio-on rollback workload as well as feedback delay. These component/source
+checks do not establish device-level playback latency or crackle-free operation.
+
 ## Code anchors
 
 Current directory-Runtime reference anchors (in the sibling TH08/TH10 Runtime

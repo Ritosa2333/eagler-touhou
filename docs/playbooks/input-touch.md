@@ -116,6 +116,47 @@ For Replay, record the logical run-state consumed by simulation, not a picture o
 - `less motion` reduces mobile presentation motion; it does not delete functionality or gameplay.
 - Do not add unrequested D-pad, free remap or save-state features because a feedback item mentions them.
 
+## Bounded keyboard edge retention
+
+TH09 `a2d7652` (2026-10-16) retains a bounded complete keyboard stroke when
+DOWN and UP both arrive between fresh logical captures. The product contract
+is [short-press protection without extending holds](../ADAPTER_BEHAVIOR_INVARIANTS.md#短按保护不得延长长按或制造重复操作).
+
+- Retention belongs to the physical input owner, outside world snapshots.
+  Capture consumes it once; retries and historical replay reuse the captured
+  word. OS repeat is a held-state update, not a new DOWN edge.
+- Bound retained edges and coalesce excess complete strokes. A long stall must
+  not produce a long tail of old movement or shots after physical release.
+  An ordinary hold already observed by capture must release on the next fresh
+  capture; the short-stroke path must not add another held frame.
+- Map protection through the selected device's logical actions. TH09's Z and
+  right-keyboard Down are both Fire bindings; a generic movement tap may retain
+  only mapped direction bits. Do not accidentally synthesize Bomb or Focus
+  because the same physical key has another layout's meaning.
+- Scope retention to the intended gameplay context and clear it at lifecycle
+  cancellation. Preserve the title's menu, cooldown and deathbomb rules.
+- Keep active device-event delivery independent of unrelated resource/file
+  command queues. TH09's managed shell has a synchronous device-command path;
+  this does not authorize taking another logical sample or advancing a tick.
+
+For a late release, distinguish owner UP, first fresh capture with the released
+bit, the frame that applies it, and the first submitted picture containing the
+result; see [rollback input-latency decomposition](rollback.md#separate-input-latency-components).
+An already-sent held word can remain pending while UP has correctly reached the
+owner. Changing that old word would violate the shared input history.
+
+Reference anchors in `th09-eagler/th09_web/`:
+
+- `cpp/game/KeyboardInput.{cpp,hpp}` and `cpp/sdl/Application.cpp::sample_keys`;
+- `sdl-runtime/managed.mjs` and `directory-keyboard.mjs`;
+- `tests/multiplayer/keyboard-shot.cpp` and `keyboard-shot-browser.mjs`.
+
+The component gate covers hold/release, sub-capture strokes, re-press, layout
+mapping, repeat and clear. A short-shot or direction-release browser result is
+not an end-to-end long-held Z charge-release test. Check the actual control
+mode, keyboard versus touch/autofire ownership, and charge/focus state before
+attributing a late charge release to a lost key event.
+
 ## Superseded approaches
 
 Recording only raw touch graphics, fixing orientation-memory defects with CSS alone, or treating preset/preview as the four-tap copy action is superseded. The logical input owner remains the source of Replay truth.
