@@ -140,6 +140,10 @@ can join. New room codes contain eight cryptographically random digits; legacy
 4–8 digit joins remain supported.
 Host removal rejects both the removed client and anonymous browser member for
 this room's lifetime. A new browser identity can evade this anonymous ban.
+Before a match, P1 may instead move another online player to the spectator list.
+This releases the seat and invalidates readiness without closing membership or
+adding a ban. The player may take a free seat again. Both moderation actions
+bind the requested seat to its current client ID and are lobby-only.
 Removal history is bounded to 1024 entries; at capacity, fresh admissions stop
 while existing members may reconnect. Distinct room lookups are limited before
 checking existence, by source IP, to 12 per minute by default. Configure this with

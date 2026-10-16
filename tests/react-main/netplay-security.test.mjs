@@ -22,6 +22,7 @@ before(async () => {
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/components/directory/DirectoryRoomDialog.tsx';
     export * from './app/components/player/TitleNetworkOverlay.tsx';
+    export * from './app/components/room/RoomSeats.tsx';
     export * from './app/i18n.tsx';
   `}, bundle: true, format: 'esm', platform: 'node', jsx: 'automatic', outfile,
   logLevel: 'silent', plugins: [{name: 'shared-react', setup(ctx) {
@@ -45,6 +46,28 @@ afterEach(async () => {
 });
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 for (const locale of ['zh-CN', 'en']) {
+  test(`${locale}: host offers a spectator move before removal and hides moderation during play`, async () => {
+    const state={product:'th06mp',connected:true,seat:0,preferredLoadout:0,
+      localClientId:'host12345',room:{code:'12345678',synced:true,phase:'lobby',playerCount:2,
+        seats:[{clientId:'host12345',loadout:0},{clientId:'guest12345',loadout:1}],spectators:[]}};
+    const moves=[],removals=[];
+    const props={state,service:{movePlayerToSpectator:(...args)=>moves.push(args),removePlayer:i=>removals.push(i)},
+      network:{metric:()=>null},context:{touchEnabled:false,touchMovementMode:'joystick'},openPanel(){}};
+    const node=await mount(views.RoomSeats,props,locale);
+    const menu=node.querySelector('[data-mp-seat="1"] details');
+    assert.equal(menu.hidden,false);
+    const buttons=[...menu.querySelectorAll('button')];
+    assert.equal(buttons[0].textContent,locale==='en'?'Move to spectators':'移到观众席');
+    menu.open=true;
+    await React.act(async()=>buttons[0].click());
+    assert.deepEqual(moves,[[1,'guest12345']]);
+    assert.deepEqual(removals,[]);
+    assert.equal(menu.open,false);
+    const playing=await mount(views.RoomSeats,{...props,state:{...state,room:{...state.room,phase:'running'}}},locale);
+    assert.equal(playing.querySelector('[data-mp-seat="1"] details').hidden,true);
+    const guest=await mount(views.RoomSeats,{...props,state:{...state,seat:1}},locale);
+    assert.equal(guest.querySelector('[data-mp-seat="1"] details').hidden,true);
+  });
   test(`${locale}: unlisted-room limits appear before submitting entry`, async () => {
     const state = {connection: 'live', mine: null, leaving: false, products: ['th06mp'],
       form: {mode: 'create', product: 'th06mp', capacity: 2, difficulty: 1,
