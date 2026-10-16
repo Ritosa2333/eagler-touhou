@@ -38,6 +38,7 @@ import {createRoomSession, type RoomSession} from './room-session';
 import type {RoomLaunchContext, RoomOperationContext} from '../services/multiplayer-room';
 import {isGameDataAcquisitionFailure} from '../services/game-data-acquisition';
 import {createRuntimeService, RuntimeSessionSupersededError, type RuntimeService, type RuntimeSnapshot} from '../services/runtime';
+import {bindPixelPerfectDisplay} from '../services/pixel-perfect-display';
 import {createExternalMidiPort} from '../services/external-midi';
 import {createMidiBridge} from '../services/midi-bridge';
 import {createTouchNativePorts} from '../services/touch-native';
@@ -112,6 +113,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   let pendingHostSelection: HostSelection | null = null;
   let appliedHost: SiteManifest | null = null;
   let runtime: RuntimeService | null = null, frame: HTMLIFrameElement | null = null;
+  let unbindPixelPerfectDisplay: (() => void) | null = null;
   let replays: ReplayModel | null = null, files: ReturnType<typeof createFileActions> | null = null;
   let midi: ReturnType<typeof createMidiBridge> | null = null;
   let diagnostics: ReturnType<typeof createRuntimeDiagnostics> | null = null;
@@ -445,6 +447,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (!element || element === frame) return;
     if (frame) throw new Error('Launcher cannot replace its live Runtime iframe');
     frame = element;
+    unbindPixelPerfectDisplay = bindPixelPerfectDisplay(element, () => activeSettings?.options.pixelPerfectEnabled === true);
     runtime = createRuntimeService({frame: element, hostWindow: window, baseUrl, translate: t, network, worker: appShellDeployment ? appShell!.activeWorker() : null, onLocalResourceProgress: transfer.localProgress, onWarning: reportError,
       onFrameRetired() {
         // Reuse the same React-owned node, but discard the completed game's
@@ -883,6 +886,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     setLocale(locale: UiLocale) {try {storage?.setItem(UI_LOCALE_STORAGE_KEY, locale);} catch {} requiredNavigation().setLocaleAddress(locale); if (!runtime?.getSnapshot().launched) settings.restoreLocalePreferences(settingsContext(settings.getSnapshot()!.context.productId, locale)); publish({locale}); feedback.refreshLocale(); externalMidi.refreshLocale(t); document.documentElement.lang = locale; document.documentElement.dataset.uiLocale = locale; window.dispatchEvent(new CustomEvent('eagler-ui-locale-change', {detail: {locale}})); appShellOwner.refreshLocale(); diagnostics?.refresh(); gameplayNetwork?.refresh(); const canonical = document.querySelector<HTMLLinkElement>('link[rel=canonical]'); if (canonical) canonical.href = new URL(locale === 'en' ? 'en.html' : './', canonical.href).href;},
     reportError,
     async dispose() {
+      unbindPixelPerfectDisplay?.();
       if (disposed) return; disposed = true; if (telemetryTimer !== null) window.clearInterval(telemetryTimer); launchAbort?.abort(); if (roomReturnTimer !== null) window.clearTimeout(roomReturnTimer); document.body.classList.remove('mp-room-returning'); for (const type of playerGestureTypes) document.removeEventListener(type, preventPlayerBrowserGesture, true); primaryTouchPointer.removeEventListener('change', syncTouchSettingsOrder); activityObserver.disconnect(); unsubscribeTouchActivity(); unsubscribeAppShell(); metadataRetry.dispose(); localPackageMaintenance.dispose(); appShellOwner.dispose(); document.body.classList.remove('app-shell-activation-pending'); unsubscribeRoom(); room.dispose(); networkDiagnostics.dispose(); metadata.dispose(); directory.dispose(); startup.dispose(); unsubscribeMetadata(); unbindPreferences();
       document.removeEventListener('fullscreenchange', fullscreenChanged); document.removeEventListener('webkitfullscreenchange', fullscreenChanged); unsubscribeTitle(); titleNetwork.dispose(); calibration.dispose(); gameData.dispose(); transfer.dispose(); startupError.dispose(); decisions.dispose(); feedback.dispose(); replays?.dispose(); unsubscribeRuntime?.(); diagnostics?.dispose(); gameplayNetwork?.dispose(); midi?.dispose(); externalMidi.dispose();
       await nativeTouch.dispose();

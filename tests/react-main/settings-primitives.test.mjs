@@ -98,6 +98,11 @@ for (const productId of ['th06', 'th06mp']) test(`${productId}: grouped settings
   const actions = {confirm: unexpected, file: unexpected, showAppleNotice: unexpected, feedback() {}, reportError: unexpected,
     externalMidi: {subscribe: () => () => {}, getSnapshot: () => midi, setEnabled: unexpected, selectOutput: unexpected}};
   await render(React.createElement(owners.LocaleProvider, {locale: 'en'}, React.createElement(owners.SettingsBody, {model, actions, onOpenTouchLayout: unexpected})));
+  const pixelSwitch = n(productId.endsWith('mp') ? '#mpPixelPerfectToggle' : '#pixelPerfectToggle');
+  assert.equal(pixelSwitch.getAttribute('aria-label'), 'Enable pixel-perfect display');
+  assert.equal(model.getSnapshot().options.pixelPerfectEnabled, false);
+  await act(() => pixelSwitch.click());
+  assert.equal(model.getSnapshot().options.pixelPerfectEnabled, true);
   const prefix = productId.endsWith('mp') ? 'mpMobile' : 'mobile';
   const section = n(`#${prefix}Options`), toggle = n(`#${prefix}OptionsToggle`), body = n(`#${prefix}OptionsBody`);
   const groups = [...env.document.querySelectorAll('details.options-group')];
@@ -112,4 +117,9 @@ for (const productId of ['th06', 'th06mp']) test(`${productId}: grouped settings
     const siblings = [...section.parentElement.children];
     assert.equal(mobile ? siblings.indexOf(section) < siblings.indexOf(groups[0]) : siblings.indexOf(section) > siblings.indexOf(groups.at(-1)), true);
   }
+  // Replay workspaces do not mount SettingsBody. The actual Replay entry and
+  // absence of live input controls are checked by browser-session-mounted.
+  assert.equal(pixelSwitch.getAttribute('aria-checked'), 'true');
+  await act(() => pixelSwitch.click());
+  assert.equal(model.getSnapshot().options.pixelPerfectEnabled, false);
 });

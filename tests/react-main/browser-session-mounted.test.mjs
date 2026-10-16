@@ -1210,9 +1210,25 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
     await React.act(async () => {env.window.dispatchEvent(new env.window.KeyboardEvent('keydown', {code: 'KeyZ', key: 'z', keyCode: 90, bubbles: true, cancelable: true}));});
     assert.equal(f.outbound.filter(message => message.command === 'keyboard').length, inputs, 'Replay workspace does not forward game keyboard input');
     assert.equal(f.outbound.find(message => message.command === 'playback')?.path, 'replay/th9_01.rpy');
+    const labels=['Reimu','Marisa','Sakuya','Youmu','Reisen','Cirno','Lyrica','Mystia','Tewi','Yuuka','Aya','Medicine','Komachi','Shikieiki','Merlin','Lunasa'];
+    const playback={kind:'replay',path:'replay/th9_01.rpy',frame:120,total:600,paused:true,seeking:false,target:null,rate:1,ended:false,difficulty:1,stage:9,roundStarts:[0,160,400]};
+    for(let left=0;left<16;left++){
+      const right=15-left;
+      await React.act(async()=>{f.native.emit('runtime-info',{playback:{...playback,left,right}});});
+      assert.equal(node('.replay-current p span:last-child').textContent,`${labels[left]} vs ${labels[right]}`,'both native character IDs resolve through the shared catalog');
+    }
+    assert.equal(env.document.querySelectorAll('.replay-round-marker').length,3);
+    await click('.replay-round-marker[aria-label="第 2 回合，0:02"]');
+    assert.equal(f.outbound.findLast(message=>message.command==='playback').action,'seek');
+    assert.equal(f.outbound.findLast(message=>message.command==='playback').value,160);
+    await React.act(async()=>{f.native.emit('runtime-info',{playback:{...playback,left:0,right:1,roundStarts:undefined}});});
+    assert.equal(env.document.querySelectorAll('.replay-round-marker').length,0,'original files without optional markers retain a working seekbar');
+    assert.equal(node('[aria-label="录像进度"]').disabled,false);
     await click('.replay-transport [aria-label="切换全屏"]');
-    assert.equal(f.fullscreen, node('#player'), 'Replay fullscreen includes both the stable game stage and file browser');
-    assert.equal(f.fullscreen.contains(node('.replay-file-browser')), true);
+    assert.equal(f.fullscreen, node('#gameViewport'), 'Replay fullscreen owns only the stable game viewport');
+    assert.equal(f.fullscreen.contains(frame), true);
+    assert.equal(f.fullscreen.contains(node('.replay-file-browser')), false);
+    assert.equal(f.fullscreen.contains(node('.replay-transport')), false);
     await click('.replay-fullscreen-exit');assert.equal(f.fullscreen, null);
     await click('.replay-back');
   } else {
