@@ -1220,6 +1220,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       void prepareResources();
     }
   }
+  function movePlayerToSpectator(index: number, targetClientId: string) {
+    const target = room?.seats?.[index];
+    if (!Number.isInteger(index) || index <= 0 || !target || target.offline ||
+        target.clientId !== targetClientId || !ownerLocal() || !state.connected ||
+        room?.phase !== 'lobby') return;
+    send({ type: 'move-player-to-spectator', seat: index, clientId: targetClientId });
+  }
   async function removePlayer(index: number) {
     const target = room?.seats?.[index],
       ownedEpoch = epoch;
@@ -1381,6 +1388,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     changeLoadout,
     toggleReady,
     setRoomSettings,
+    movePlayerToSpectator,
     removePlayer,
     removeSpectator,
     start,

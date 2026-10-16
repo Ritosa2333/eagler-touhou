@@ -81,13 +81,18 @@ second sequencer:
   the permission prompt requires a user gesture. SysEx access is mandatory, so
   a denial fails the toggle instead of silently dropping System Exclusive
   traffic;
-- the Launcher expands running status and terminates System Exclusive messages
+- the Launcher expands running status and drops unterminated System Exclusive messages
   before `MIDIOutput.send()`, which accepts only complete, explicitly-statused
   messages. It also normalizes the Runtime's short-message record shape: TH06/TH07
   record every short message as three bytes, so a one-data-byte Program Change or
   Channel Pressure arrives zero-padded, and framing that pad as a running-status
   message would emit a phantom "program 0" after every authored program change.
   TH08 records the real two-byte length and must pass through unchanged;
+- external output accepts channel messages and exact broadcast GM System On,
+  GS Reset and XG System On only. Other SysEx, System Common and System Real Time
+  messages are blocked at the final device-send boundary. Imported music cannot
+  select arbitrary manufacturer commands. Custom SysEx effects and patches are
+  consequently unavailable on external hardware; the built-in synth is unchanged;
 - an active external device replaces the built-in synth for the audible path,
   so notes are never doubled; with no granted device the synth keeps playing;
 - only the selected output is opened at game launch, after the player has chosen

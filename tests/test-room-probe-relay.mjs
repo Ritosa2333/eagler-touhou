@@ -18,7 +18,8 @@ async function until(check) { const end=Date.now()+4000;while(!check()){if(Date.
 async function seat(client,index) {client.send({type:'take-seat',seat:index,loadout:0,name:`Player${index}`});await until(()=>client.messages.some(m=>m.room?.seats[index]?.name===`Player${index}`));}
 try {
   await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error('relay start timeout')),5000);relay.stdout.on('data',data=>{if(String(data).includes('listening')){clearTimeout(timeout);resolve();}});relay.once('exit',()=>reject(new Error('relay exited')));});
-  const a=await connect('client_alpha'), b=await connect('client_beta'), spectator=await connect('client_watcher'), outsider=await connect('client_outsider','th07mp-otherprobe');
+  const a=await connect('client_alpha'), spectator=await connect('client_watcher'), outsider=await connect('client_outsider','th07mp-otherprobe');
+  let b=await connect('client_beta');
   await seat(a,0);await seat(b,1);spectator.send({type:'spectate',name:'Watcher'});await until(()=>a.messages.some(m=>m.room?.spectators?.length));
   const state=a.messages.filter(m=>m.type==='state').at(-1).room;
   const probe={type:'room-probe',to:'client_beta',from:'spoof',lane:'relay',echo:'ping:7'};
@@ -44,6 +45,24 @@ try {
   assert.equal(latest().seats[1].resource.percent,100);
   b.send({type:'set-ready',ready:true});
   await until(()=>latest().seats[1]?.ready);
+  a.send({type:'set-ready',ready:true});
+  await until(()=>latest().seats[0]?.ready);
+  b.send({type:'move-player-to-spectator',seat:0,clientId:'client_alpha'});
+  spectator.send({type:'move-player-to-spectator',seat:1,clientId:'client_beta'});
+  outsider.send({type:'move-player-to-spectator',seat:1,clientId:'client_beta'});
+  a.send({type:'move-player-to-spectator',seat:1,clientId:'stale_client'});
+  a.send({type:'move-player-to-spectator',seat:0,clientId:'client_alpha'});
+  await delay(100);
+  assert.equal(latest().seats[1]?.clientId,'client_beta','only the host can move the exact current guest');
+  a.send({type:'move-player-to-spectator',seat:1,clientId:'client_beta'});
+  await until(()=>latest().seats[1]===null && latest().spectators.some(s=>s.clientId==='client_beta'));
+  assert.equal(b.socket.readyState,WebSocket.OPEN,'moving a player keeps membership connected');
+  assert.equal(latest().seats[0].ready,false,'moving a player invalidates readiness');
+  assert.equal(latest().spectators.find(s=>s.clientId==='client_beta').name,'Player1','the authoritative name follows the player');
+  b=await connect('client_beta');
+  assert.ok(b.messages.at(-1).room.spectators.some(s=>s.clientId==='client_beta'),'moved players may reconnect without a ban');
+  await seat(b,1);
+  await until(()=>!latest().spectators.some(s=>s.clientId==='client_beta'));
   b.send({type:'remove-player',seat:0,clientId:'client_alpha'});
   a.send({type:'remove-player',seat:1,clientId:'stale_client'});
   a.send({type:'remove-player',seat:1,clientId:'client_outsider'});
@@ -61,7 +80,18 @@ try {
   a.send({type:'remove-spectator',clientId:'client_watcher'});
   assert.equal(await spectatorClosed,4010);
   await until(()=>latest().spectators.length===0);
+  const activeGuest=await connect('client_active_guest','th07mp-otherprobe');
+  await seat(outsider,0);await seat(activeGuest,1);
+  const activeRoom=()=>outsider.messages.findLast(m=>m.room)?.room;
+  outsider.send({type:'set-ready',ready:true});activeGuest.send({type:'set-ready',ready:true});
+  await until(()=>activeRoom().seats.slice(0,2).every(s=>s?.ready));
+  outsider.send({type:'start'});await until(()=>activeRoom().phase!=='lobby');
+  outsider.send({type:'move-player-to-spectator',seat:1,clientId:'client_active_guest'});
+  await until(()=>outsider.messages.some(m=>m.type==='error'&&m.error.includes('无法将该玩家移到观众席')));
+  assert.equal(activeRoom().seats[1].clientId,'client_active_guest','starting or running players cannot be moved');
+  assert.equal(activeRoom().spectators.length,0);
+  assert.equal(activeGuest.socket.readyState,WebSocket.OPEN);
   a.send({type:'stand-up'});await until(()=>a.messages.filter(m=>m.type==='state').at(-1).room.seats[0]===null);
   b.messages.length=0;a.send(probe);await delay(100);assert.ok(!b.messages.some(m=>m.type==='room-probe'));
-  console.log('PASS real relay diagnostics, resource progress validation, host-only eviction, stale-target isolation and membership cleanup');
+  console.log('PASS real relay diagnostics, host-only spectator moves without bans, eviction, stale-target isolation and membership cleanup');
 } finally { for(const client of clients)client.socket.terminate();relay.kill(); }

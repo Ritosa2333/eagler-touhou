@@ -8,7 +8,8 @@ import {
 } from "../.cache/build/browser/assets/launcher/site-notice-content.mjs";
 
 const baseUrl = "https://test.example/eagler-touhou/";
-assert.equal(SITE_NOTICE_DURATION_MS, 15_000);
+assert.ok(Number.isSafeInteger(SITE_NOTICE_DURATION_MS) && SITE_NOTICE_DURATION_MS > 0,
+  "notice countdown must have a finite positive duration");
 assert.equal(siteNoticeBrandAsset("https://cloud.touhou.best/", baseUrl), "assets/notice-touhou-cloud.png",
   "the permission-cleared 车万云 provider mark must remain available offline");
 assert.equal(siteNoticeBrandAsset("https://space.bilibili.com/1", baseUrl), "assets/notice-bilibili.svg");

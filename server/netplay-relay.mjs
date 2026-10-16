@@ -957,6 +957,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         'settings',
         'start',
         'remove-player',
+        'move-player-to-spectator',
         'remove-spectator',
       ].includes(message.type)
     )
@@ -1172,6 +1173,25 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
 
+    if (message.type === 'move-player-to-spectator') {
+      const targetSeat = Number(message.seat);
+      const target = room.lobby.seats[targetSeat];
+      if (
+        seat !== 0 || room.lobby.phase !== 'lobby' ||
+        !Number.isInteger(targetSeat) || targetSeat < 1 ||
+        targetSeat >= room.lobby.playerCount || !target ||
+        target.clientId !== message.clientId ||
+        room.lobbyClients.get(target.clientId)?.readyState !== WebSocket.OPEN
+      ) {
+        sendLobby(socket, { type: 'error', error: '无法将该玩家移到观众席，请刷新房间状态后重试。' });
+        return;
+      }
+      clearLobbySeat(room, target.clientId);
+      room.lobby.spectators.set(target.clientId, target.name || '');
+      invalidateLobbyReady(room);
+      broadcastLobby(room);
+      return;
+    }
     if (message.type === 'remove-player') {
       const targetSeat = Number(message.seat);
       const target = room.lobby.seats[targetSeat];
@@ -1658,6 +1678,12 @@ server.on('connection', (socket, request) => {
     return;
   }
   const roomId = url.searchParams.get('room') || '';
+  if (/^[A-Za-z0-9_-]{1,64}$/.test(roomId) &&
+      !abuseGuard.allowRoomLookup(socket.relayAddress, roomId)) {
+    sendLobby(socket, { type: 'error', code: 'rate-limited', error: '房间查询过于频繁，请稍后再试。' });
+    socket.close(1008, 'room lookup rate exceeded');
+    return;
+  }
   const runId = url.searchParams.get('run') || '0';
   const lobbyClient = url.searchParams.get('lobby') || '';
   if (/^[A-Za-z0-9_-]{1,64}$/.test(roomId) && /^[A-Za-z0-9_-]{8,64}$/.test(lobbyClient)) {

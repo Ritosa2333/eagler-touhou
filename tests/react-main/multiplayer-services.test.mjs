@@ -184,6 +184,31 @@ async function joinedRoom(extra = {}) {
   return fixture;
 }
 
+test('host spectator moves bind the target, wait for relay state and preserve membership', async () => {
+  const f=await joinedRoom(), socket=f.sockets[0], id=f.identity.lobbyClientId('th06mp');
+  const seats=[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}];
+  const receive=patch=>socket.message({type:'state',room:roomState(id,{seats,...patch})});
+  receive({});
+  f.service.movePlayerToSpectator(1,'old_client');
+  f.service.movePlayerToSpectator(0,id);
+  assert.ok(!socket.sent.some(m=>m.type==='move-player-to-spectator'));
+  f.service.movePlayerToSpectator(1,'guest12345');
+  assert.deepEqual(socket.sent.at(-1),{type:'move-player-to-spectator',seat:1,clientId:'guest12345'});
+  assert.equal(f.service.getSnapshot().room.seats[1].clientId,'guest12345','only relay state changes the seat');
+  const count=socket.sent.length;
+  receive({phase:'running'});f.service.movePlayerToSpectator(1,'guest12345');
+  receive({seats:[seats[0],{...seats[1],offline:true}]});f.service.movePlayerToSpectator(1,'guest12345');
+  receive({seats:[{...seats[0],clientId:'other_host'},seats[1]]});f.service.movePlayerToSpectator(1,'guest12345');
+  assert.equal(socket.sent.length,count,'running, offline and non-host moves are rejected locally');
+  receive({seats:[seats[0],{...seats[1],clientId:id}],spectators:[]});
+  receive({seats:[{...seats[0],clientId:'other_host'},null],spectators:[{clientId:id,name:'A'}]});
+  assert.equal(f.service.getSnapshot().seat,null);
+  assert.equal(f.service.getSnapshot().spectatorRequested,true);
+  assert.equal(f.service.getSnapshot().ready,false);
+  assert.equal(f.service.getSnapshot().connected,true);
+  f.service.dispose();
+});
+
 test('legacy room wire minimizes names until the server advertises moderation and normalizes challenge/prank', async () => {
   const fixture = await joinedRoom(), {service, sockets, identity} = fixture, socket = sockets[0];
   assert.equal(socket.sent.find(message => message.type === 'take-seat').name, 'A');

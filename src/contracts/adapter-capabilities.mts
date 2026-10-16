@@ -259,6 +259,7 @@ export const GAME_OPTION_CLASSIFICATION = Object.freeze({
   thpracEnabled: { capability: "thprac", class: "optional", owner: "product" },
   thpracTouchControlsEnabled: { capability: "thprac-touch-bridge", class: "profile-required", owner: "launcher-runtime" },
   magnifierEnabled: { capability: "magnifier", class: "inherited", owner: "launcher" },
+  pixelPerfectEnabled: { capability: "pixel-perfect-display", class: "inherited", owner: "launcher" },
   focusHitboxEnabled: { capability: "focus-hitbox", class: "optional", owner: "product" },
   faithBarEnabled: { capability: "faith-bar", class: "optional", owner: "product" },
   frameLimit60Enabled: { capability: "frame-limit-control", class: "inherited", owner: "launcher" },
@@ -282,6 +283,7 @@ export const GAME_OPTION_CLASSIFICATION = Object.freeze({
 export const INHERITED_LAUNCHER_CAPABILITIES = Object.freeze([
   { id: "touch-layout-editor", class: "inherited", owner: "launcher", summary: "shared touch button layout, scale, sensitivity UI and orientation profiles" },
   { id: "magnifier", class: "inherited", owner: "launcher", summary: "host-side game viewport magnification and pinch UI" },
+  { id: "pixel-perfect-display", class: "inherited", owner: "launcher", summary: "host-side canvas image scaling without changing the drawing buffer or input coordinates" },
   { id: "fullscreen-orientation", class: "inherited", owner: "launcher", summary: "fullscreen, orientation, viewport placement and host layout controls" },
   { id: "replay-manager-ui", class: "inherited", owner: "launcher", summary: "shared Replay list/import/export/rename/delete UI over the required file protocol" },
   { id: "package-manager-ui", class: "inherited", owner: "launcher", summary: "Package Store install/update/import and transfer UI" },

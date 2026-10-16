@@ -3,6 +3,7 @@ import {useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalSt
 import {useLocation} from 'react-router';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS} from '../src/contracts/product-catalog.mts';
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
+import {generateMultiplayerRoomCode} from '../src/launcher/multiplayer-identity.mts';
 import {errorText} from './services/error-text';
 import {readReactAppShellDeployment} from './services/app-shell-deployment';
 import {siteOriginMigrationAvailable} from '../src/contracts/site-manifest.mts';
@@ -89,7 +90,7 @@ function LegacyMultiplayerOnline({session}: {session: BrowserSession}) {
   const product = settings?.context.productId;
   const enter = (code: string, created: boolean) => {if (product && isMultiplayerProductId(product)) session.room.service.enterRoom(product, code, created);};
   const configuration = metadata.siteManifest?.shared.netplayRelay ? 'ready' : metadata.siteManifest || metadata.siteManifestError ? 'missing' : 'loading';
-  return <MultiplayerOnlineFold configuration={configuration} onCreate={() => {const value = new Uint32Array(1); crypto.getRandomValues(value); enter(String(1000 + value[0] % 9000), true);}}
+  return <MultiplayerOnlineFold configuration={configuration} onCreate={() => {enter(generateMultiplayerRoomCode(), true);}}
     onJoin={code => enter(code, false)} onInvalidCode={() => session.feedback.toast(t('status.enterRoomCode'))}/>;
 }
 function RoomSettingsControls({session}: {session: BrowserSession}) {

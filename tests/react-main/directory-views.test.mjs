@@ -29,7 +29,8 @@ before(async () => {
   React = await import('react');
   ({createRoot} = await import('react-dom/client'));
   ({createMemoryRouter, RouterProvider} = await import('react-router'));
-  for (const path of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) {
+  // Room visibility copy is checked by the mounted netplay-security tests.
+  for (const path of ['src/contracts/product-catalog.mts']) {
     const acceptedMain=execFileSync('git',['show',`b667ab07cb7cf11f9220d11e3a64602cc6331792:${path}`],{cwd:project,encoding:'utf8'});
     // Dedicated TH09 Replay/room fixtures own its added vocabulary and files.
     const sharedText = source => pinnedUiAuthorityText(path.endsWith('i18n.mts')

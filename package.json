@@ -121,6 +121,7 @@
     "test:th09-spectator-directory:browser": "node tests/browser/test-th09-spectator-directory.mjs",
     "test:th09-spectator-panel:browser": "node tests/browser/test-th09-spectator-panel.mjs",
     "test:th09-spectator-timeline:browser": "node tests/browser/test-th09-spectator-timeline.mjs",
+    "test:th09-spectator-history": "node tests/test-th09-spectator-history-relay.mjs",
     "check": "node scripts/check.mjs",
     "check:workspace": "node scripts/check.mjs --workspace",
     "typecheck:ui-rewrite": "tsc -p tsconfig.ui-rewrite.json",

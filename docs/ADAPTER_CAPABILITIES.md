@@ -395,6 +395,7 @@ declare the behavior unsupported.
 | `alwaysHitbox` | Required `always-hitbox` | render hitbox without changing collision/RNG/simulation |
 | `frameLimit60Enabled` | Inherited UI + required `presentation-cadence` | honor presentation limiting without changing fixed gameplay cadence |
 | `magnifierEnabled` | Inherited `magnifier` | no game-specific implementation; Launcher owns viewport magnification |
+| `pixelPerfectEnabled` | Inherited `pixel-perfect-display` | Launcher owns canvas image scaling without changing input coordinates or the drawing buffer |
 | `focusHitboxEnabled` | Optional `focus-hitbox` | implement only for products that declare this enhancement |
 | `thpracEnabled` | Optional `thprac` | implement only when declared; then profile obligations become mandatory |
 | `thpracTouchControlsEnabled` | Inherited UI + profile-required `thprac-touch-bridge` | required whenever thprac is declared |

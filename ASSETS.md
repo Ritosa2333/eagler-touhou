@@ -14,6 +14,10 @@ host merely to support the card UI, and are not part of the resource-free
 Runtime Release. The source tree therefore contains references to stable final
 host paths without owning the original-game-derived bytes.
 
+TH11 and TH20 have no retail artwork reader here. Supply `th11-card.webp` or
+`th20-card.webp` through the Host artwork override directory. These cards remain
+local Host inputs, including when an original title image is used.
+
 The currently pinned card encoder is Pillow WebP quality 55 / method 6. The
 cards are UI presentation derivatives that are darkened and cropped by the
 Launcher, so the delivery profile favors first-load size over archival image

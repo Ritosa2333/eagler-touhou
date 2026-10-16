@@ -238,18 +238,29 @@ function RoomSeat({
         onClick={(event) => openPanel('personal', event.currentTarget)}
       />
       {index > 0 && (
-        <button
-          className="mp-seat-remove"
-          type="button"
+        <details
+          key={seat?.clientId}
+          className="mp-seat-moderation"
           hidden={!ready || !owner || room.phase !== 'lobby' || !seat}
-          aria-label={t('room.removePlayer', { seat: index + 1 })}
-          title={t('room.removePlayer', { seat: index + 1 })}
-          onClick={() => {
-            void service.removePlayer(index);
+          onBlur={event => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false;
           }}
         >
-          ×
-        </button>
+          <summary aria-label={t('room.managePlayer', { seat: index + 1 })}
+            title={t('room.managePlayer', { seat: index + 1 })}>⋯</summary>
+          <div className="mp-seat-moderation-actions">
+            <button type="button" className="mp-seat-move" disabled={seat?.offline}
+              onClick={event => {
+                event.currentTarget.closest('details')?.removeAttribute('open');
+                if (seat) service.movePlayerToSpectator(index, seat.clientId);
+              }}>{t('room.movePlayerToSpectator')}</button>
+            <button className="mp-seat-remove" type="button"
+              onClick={event => {
+                event.currentTarget.closest('details')?.removeAttribute('open');
+                void service.removePlayer(index);
+              }}>{t('room.removePlayer', { seat: index + 1 })}</button>
+          </div>
+        </details>
       )}
       <div className="mp-seat-resource" hidden={!seat || !resource} data-status={resource?.status}>
         <span className="mp-seat-resource-label">{resourceLabel}</span>

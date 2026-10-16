@@ -96,6 +96,34 @@ try {
     assert.ok(!JSON.stringify(client.messages).includes(hostMember));
     assert.ok(!JSON.stringify(client.messages).includes(viewerMember), 'membership credentials must never appear in room broadcasts');
   }
+  // Host removals bind both the tab and the browser membership for this room.
+  const kickRoom = 'th09mp-7431';
+  const moderator = connect({ room: kickRoom, lobby: 'kick_host_client', member: 'kick_host_member', intent: 'create' });
+  await moderator.wait((m) => m.type === 'state');
+  await sendAndWait(moderator, { type: 'take-seat', seat: 0, loadout: 0 }, (m) => m.room?.seats[0]);
+  const removed = connect({ room: kickRoom, lobby: 'kick_guest_client', member: 'kick_guest_member', intent: 'join' });
+  await removed.wait((m) => m.type === 'state');
+  await sendAndWait(removed, { type: 'take-seat', seat: 1, loadout: 1 }, (m) => m.room?.seats[1]);
+  const kicked = once(removed.socket, 'close');
+  await sendAndWait(moderator, { type: 'remove-player', seat: 1, clientId: 'kick_guest_client' },
+    (m) => m.type === 'state' && !m.room?.seats[1]);
+  assert.equal((await kicked)[0], 4010);
+  for (const [lobbyId, member] of [
+    ['kick_guest_client', 'kick_guest_member'],
+    ['kick_new_tab_id', 'kick_guest_member'],
+    ['kick_guest_client', 'kick_new_member'],
+  ]) await reject({ room: kickRoom, lobby: lobbyId, member, intent: 'join' }, 4010);
+  const replacement = connect({ room: kickRoom, lobby: 'other_guest_client', member: 'other_guest_member', intent: 'join' });
+  await replacement.wait((m) => m.type === 'state');
+  await sendAndWait(replacement, { type: 'spectate' }, (m) => m.room?.spectators?.some((s) => s.clientId === 'other_guest_client'));
+  const spectatorKicked = once(replacement.socket, 'close');
+  await sendAndWait(moderator, { type: 'remove-spectator', clientId: 'other_guest_client' },
+    (m) => m.type === 'state' && !m.room?.spectators?.length);
+  assert.equal((await spectatorKicked)[0], 4010);
+  await reject({ room: kickRoom, lobby: 'other_new_tab_id', member: 'other_guest_member', intent: 'join' }, 4010);
+  const elsewhere = connect({ room, lobby: 'kick_guest_client', member: 'kick_guest_member', intent: 'join' });
+  await elsewhere.wait((m) => m.type === 'state');
+  assert.equal(moderator.socket.readyState, WebSocket.OPEN, 'shared IPs are not banned');
   console.log('PASS lobby owner binding, exact-session reconnect, private run admission and spectator claim protection');
 } finally {
   for (const socket of sockets) socket.terminate();
