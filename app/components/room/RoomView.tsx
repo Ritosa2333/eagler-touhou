@@ -68,6 +68,7 @@ export function RoomView(props: RoomViewProps) {
     <section
       className="mp-room-view"
       id="mpRoomView"
+      data-public-names={state.nickname ? 'true' : undefined}
       hidden={props.visible === false}
       aria-label={`${gameId.toUpperCase()} ${t('multiplayer.roomAria')}`}
       inert={props.settingsOpen}
@@ -127,7 +128,7 @@ export function RoomView(props: RoomViewProps) {
               count: room.playerCount,
             })}
           </span>
-          <span id="mpRoomDifficultyBadge">{config.inGameSelection ? t('room.inGameSelection') : config.difficulties[room.difficulty] || 'Normal'}</span>
+          <span id="mpRoomDifficultyBadge" hidden={config.inGameSelection}>{config.inGameSelection ? '' : config.difficulties[room.difficulty] || 'Normal'}</span>
           <span
             id="mpRoomPhase"
             title={state.preparation?.status === 'failed' ? state.preparation.error : ''}
@@ -216,7 +217,7 @@ export function RoomView(props: RoomViewProps) {
               aria-checked={
                 room.phase && room.phase !== 'lobby' ? room.adonisMode !== 1 : state.rollbackEnabled
               }
-              title={t('room.rollbackHint')}
+              title={t(multiplayerInputTimingPolicy(config).manualRollbackDelay ? 'room.rollbackDelayHint' : 'room.rollbackHint')}
               hidden={rollbackHidden}
               disabled={!rollbackSupported || !ready || !owner || room.phase !== 'lobby'}
               onClick={() => service.setRollbackEnabled(!state.rollbackEnabled)}

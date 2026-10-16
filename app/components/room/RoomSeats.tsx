@@ -59,7 +59,7 @@ function RoomSeat({
     )
       return;
     for (const child of element.querySelectorAll<HTMLElement>(
-      ':scope > .mp-seat-face, :scope > .mp-seat-index, :scope > .mp-seat-name, :scope > .mp-seat-state',
+      ':scope > .mp-seat-face, :scope > .mp-seat-index, :scope > .mp-seat-name, :scope > .mp-seat-identity, :scope > .mp-seat-state',
     )) {
       if (!child.hidden && typeof child.animate === 'function') {
         const animation = child.animate([{ opacity: 0.25 }, { opacity: 1 }], {
@@ -88,6 +88,14 @@ function RoomSeat({
           ? 'cheat'
           : 'touch'
       : seat?.controlMode;
+  const controlLabel = control
+    ? t(state.nickname && control === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${control}`)
+    : '';
+  const controlCaption = (
+    <span className="mp-seat-control" hidden={!occupied || !control} data-mode={control || ''} title={state.nickname ? controlLabel : undefined}>
+      {controlLabel}
+    </span>
+  );
   const message = networkMessage(state, context, t),
     local = seat?.clientId === state.localClientId;
   const values = (['direct', 'turn'] as const).map((lane) => {
@@ -190,9 +198,23 @@ function RoomSeat({
           {local ? t('room.localDevice') : values.map((value) => <span key={value}>{value}</span>)}
         </button>
       </span>
-      <strong className="mp-seat-name" data-mp-seat-name={index}>
-        {occupied ? seatLabel : ''}
-      </strong>
+      {state.nickname && occupied ? (
+        <div className="mp-seat-identity">
+          <strong className="mp-seat-name" data-mp-seat-name={index} title={seat?.name || `P${index + 1}`}>
+            {seat?.name || `P${index + 1}`}
+          </strong>
+          <span className="mp-seat-details">
+            <span className="mp-seat-loadout" title={seatLabel}>
+              {seatLabel}
+            </span>
+            {controlCaption}
+          </span>
+        </div>
+      ) : (
+        <strong className="mp-seat-name" data-mp-seat-name={index}>
+          {occupied ? seatLabel : ''}
+        </strong>
+      )}
       <span className="mp-seat-state" data-mp-seat-state={index}>
         {!occupied
           ? ''
@@ -207,9 +229,7 @@ function RoomSeat({
       <span className="mp-seat-me" data-mp-seat-me={index} hidden={state.seat !== index}>
         {t('multiplayer.you')}
       </span>
-      <span className="mp-seat-control" hidden={!occupied || !control} data-mode={control || ''}>
-        {control ? t(`multiplayer.control.${control}`) : ''}
-      </span>
+      {(!state.nickname || !occupied) && controlCaption}
       <button
         className="mp-seat-edit"
         type="button"

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import {
   PRODUCT_GAMES,
   gameIdForProduct,
@@ -63,7 +63,7 @@ function RoomRow({
   const artwork = 'cardArtwork' in meta ? meta.cardArtwork : null;
   const title = locale === 'en' ? meta.subtitle : meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
-  const difficulty = policy.inGameSelection ? t('room.inGameSelection') : policy.difficulties[room.difficulty];
+  const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
   const spectating = state === 'playing' && directoryRoomCanEnter(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
@@ -108,7 +108,7 @@ function RoomRow({
           <span className="lobby-room-code">#{room.code}</span>
           <h2>{title}</h2>
           <span className="lobby-room-subtitle">{meta.subtitle}</span>
-          <span className="lobby-mobile-difficulty">{difficulty}</span>
+          <span className="lobby-mobile-difficulty" hidden={!difficulty}>{difficulty}</span>
           <span className="lobby-movement-rule" hidden={!room.disableCheatMovement}>
             {t('lobby.noCheat')}
           </span>
@@ -117,14 +117,14 @@ function RoomRow({
           </span>
         </div>
       </div>
-      <span className="lobby-difficulty">{difficulty}</span>
+      <span className="lobby-difficulty" hidden={!difficulty}>{difficulty}</span>
       <div className="lobby-party" aria-label={count}>
         <span className="lobby-occupancy">{count}</span>
         <div
           className={`lobby-seats${room.seats.some((seat) => !!seat?.controlMode) ? ' has-controls' : ''}`}
         >
           {room.seats.map((seat, index) => {
-            const control = seat?.controlMode ? t(`multiplayer.control.${seat.controlMode}`) : '';
+            const control = seat?.controlMode ? t(seat.name !== undefined && seat.controlMode === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${seat.controlMode}`) : '';
             const label =
               t(
                 !seat
@@ -134,11 +134,15 @@ function RoomRow({
                     : seat.ready
                       ? 'lobby.seatReady'
                       : 'lobby.seatWaiting',
-                { seat: index + 1, name: seat?.initial || '?' },
+                { seat: index + 1, name: seat?.name || seat?.initial || '?' },
               ) + (control ? ` · ${control}` : '');
-            return (
+            const controlCaption = seat?.controlMode && (
+              <span className="lobby-seat-control" data-mode={seat.controlMode} title={control}>
+                {control}
+              </span>
+            );
+            const avatar = (
               <span
-                key={index}
                 className="lobby-seat"
                 data-empty={String(!seat)}
                 data-ready={String(!!seat?.ready)}
@@ -148,13 +152,12 @@ function RoomRow({
                 role="img"
               >
                 {seat?.initial || ''}
-                {seat?.controlMode && (
-                  <span className="lobby-seat-control" data-mode={seat.controlMode}>
-                    {control}
-                  </span>
-                )}
+                {seat?.name === undefined && controlCaption}
               </span>
             );
+            return seat?.name !== undefined ? <span key={index} className="lobby-public-player">
+              {avatar}{controlCaption}<strong className="lobby-seat-name" title={seat.name || `P${index+1}`}>{seat.name || `P${index+1}`}</strong>
+            </span> : <Fragment key={index}>{avatar}</Fragment>;
           })}
         </div>
       </div>

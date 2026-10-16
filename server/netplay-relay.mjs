@@ -1,3 +1,6 @@
+import {createNicknameService} from './nickname-service.mjs';
+import {createNicknameRequestGuard} from './nickname-request-guard.mjs';
+import {normalizePublicNickname} from '../lib/contracts/public-nickname.mjs';
 import { quickChatPhrase } from '../lib/contracts/multiplayer-quick-chat.mjs';
 import { createHmac } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -31,6 +34,48 @@ import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
 } from '../lib/contracts/netplay-timing.mjs';
+
+const nicknameService = await createNicknameService();
+const nicknameProfiles = new Map(), nicknameRequests = new Map();
+const allowNicknameRequest = createNicknameRequestGuard();
+function nicknameProfile(member) {
+  return nicknameProfiles.get(member) || {name:'',status:'idle',nextChangeAt:0,retryAt:0,attemptsLeft:null};
+}
+function publishNickname(member, profile) {
+  if (nicknameProfiles.size >= 10000 && !nicknameProfiles.has(member)) nicknameProfiles.delete(nicknameProfiles.keys().next().value);
+  nicknameProfiles.set(member, profile);
+  const entry = roomDirectory.memberLocation(member), room = rooms.get(entry?.roomId);
+  if (!room) return;
+  const {clientId:client, socket} = entry;
+  let changed = false;
+  const seat = lobbySeatOf(room, client);
+  if (seat >= 0 && room.lobby.seats[seat].name !== profile.name) {room.lobby.seats[seat].name=profile.name;changed=true;}
+  if (room.lobby.spectators.has(client) && room.lobby.spectators.get(client) !== profile.name) {room.lobby.spectators.set(client,profile.name);changed=true;}
+  sendLobby(socket,{type:'nickname-status',...profile});
+  if (changed) broadcastLobby(room);
+}
+nicknameService?.onUpdate(publishNickname);
+function reviewNickname(socket, member, proposed) {
+  const old=nicknameProfile(member);
+  if (old.status === 'queued' || (old.name && normalizePublicNickname(proposed) === old.name)) {
+    sendLobby(socket,{type:'nickname-status',...old});return;
+  }
+  const retryAt = allowNicknameRequest(socket.relayAddress);
+  if (retryAt) {sendLobby(socket,{type:'nickname-status',...old,status:'rate-limited',retryAt});return;}
+  if (nicknameRequests.has(member)) {sendLobby(socket,{type:'nickname-status',...old,status:'reviewing'});return;}
+  sendLobby(socket,{type:'nickname-status',...old,status:'reviewing'});
+  const task=nicknameService.submit(member,socket.relayAddress,proposed)
+    .then(profile=>publishNickname(member,profile))
+    .catch(()=>publishNickname(member,{...old,status:'unavailable',retryAt:Date.now()+10000}))
+    .finally(()=>nicknameRequests.delete(member));
+  nicknameRequests.set(member,task);
+}
+function seatNickname(socket, member, proposed) {
+  if (!nicknameService) return normalizeDisplayName(proposed);
+  // A role message may still contain the legacy initial. Only set-name reviews
+  // a complete candidate, after the client receives nickname-status.
+  return nicknameProfile(member).name;
+}
 
 function multiplayerPolicyForRoomId(roomId) {
   const separator = roomId.indexOf('-');
@@ -808,6 +853,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     return;
   }
   if (!roomDirectory.admit(socket, roomId, clientId, memberId)) return;
+  if (nicknameService) void nicknameService.current(memberId).then(profile=>publishNickname(memberId,nicknameRequests.has(memberId) ? {...profile,status:'reviewing'} : profile)).catch(()=>sendLobby(socket,{type:'nickname-status',...nicknameProfile(memberId),status:'unavailable'}));
   const room = getRoom(roomId, socket);
   if (!room) return;
   if (!existing && intent === 'create') {
@@ -960,7 +1006,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         currentRun.admittedSpectators.delete(clientId);
       room.lobby.seats[seat] = {
         clientId,
-        name: normalizeDisplayName(message.name),
+        name: seatNickname(socket, memberId, message.name),
         loadout: Number(message.loadout),
         movementMode: message.movementMode,
         touchEnabled: typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined,
@@ -992,7 +1038,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       const seatChanged = clearLobbySeat(room, clientId);
       const spectatorChanged = !room.lobby.spectators.has(clientId);
-      room.lobby.spectators.set(clientId, normalizeDisplayName(message.name));
+      room.lobby.spectators.set(clientId, seatNickname(socket, memberId, message.name));
       if (seatChanged) invalidateLobbyReady(room);
       if (seatChanged || spectatorChanged) broadcastLobby(room);
       if (room.lobby.phase !== 'lobby') {
@@ -1019,6 +1065,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     }
 
     if (message.type === 'set-name') {
+      if (nicknameService) {reviewNickname(socket,memberId,message.name);return;}
       const name = normalizeDisplayName(message.name);
       const playerSeat = lobbySeatOf(room, clientId);
       if (playerSeat >= 0) room.lobby.seats[playerSeat].name = name;
@@ -1527,6 +1574,7 @@ const server = new WebSocketServer({
 const abuseMaintenance = setInterval(() => abuseGuard.sweep(), 60_000);
 abuseMaintenance.unref();
 const roomDirectory = createRoomDirectory({
+  publicNames: !!nicknameService,
   rooms,
   clearSeat: clearLobbySeat,
   invalidateReady: invalidateLobbyReady,
@@ -1535,6 +1583,7 @@ const roomDirectory = createRoomDirectory({
   releaseTransports: releaseMemberTransports,
 });
 server.on('close', () => {
+  void nicknameService?.close();
   roomDirectory.close();
   clearInterval(abuseMaintenance);
   for (const room of rooms.values())

@@ -29,6 +29,7 @@ before(async () => {
     let actual = readFileSync(resolve(project,file),'utf8');
     // TH09 adds translations without changing the pinned shared vocabulary.
     if (file === 'src/launcher/i18n.mts') actual = actual.replace(/const entries = \[[\s\S]*?(?=  \["touch\.tools")/, 'const entries = [\n');
+    if (file === 'src/contracts/product-catalog.mts') actual = actual.replace('"motion-replay.mjs", "auto-replay.mjs",', '"motion-replay.mjs",').replace('"replay-player.mjs", "playback-clock.mjs", ', '').replace('      inGameSelection: true,\n', '').replace('  inGameSelection?: boolean;\n', '').replace(', manualRollbackDelay: true', '').replace('  manualRollbackDelay?: boolean;\n', '').replace('    manualRollbackDelay: rollback && timing?.manualRollbackDelay === true,\n', '');
     assert.equal(pinnedUiAuthorityText(actual),pinnedUiAuthorityText(file === 'src/contracts/product-catalog.mts' ? expected.replace('rollbackLimit: 0, measuredStartup: true, manualDelayLimit: 9','rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9') : expected),`Pinned authority changed: ${file}`);
   }
   originalHTML = pinned('public/index.html'); const mainSource = execFileSync('git', ['show', '8bdf6dbf4a81032f0725cc841b86d03e1465fe07:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
@@ -120,7 +121,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true} = {}) {
     isLaunched: () => false, routes: Object.fromEntries(['restore', 'enter', 'settleInvite', 'leave'].map(kind => [kind, value => events.push([kind, value])])),
     network: {reset: reconnecting => events.push(['network-reset', reconnecting]), receive: value => events.push(['network-receive', value]), minimumRtt: () => 43},
     online: () => true, visible: () => true, random: () => 0, setTimeout: (fn, delay) => {timers.set(++timer, {fn, delay}); return timer;}, clearTimeout: id => timers.delete(id)});
-  const f = {service, network, decisions, sockets, settings, events, preparations, product, locale, timers,
+  const f = {service, network, decisions, sockets, settings, events, preparations, product, locale, timers, persistent,
     get id() {return identity.lobbyClientId(product);}, get socket() {return sockets.at(-1);},
     async enter() {await act(() => service.enterRoom(product, '1234', created)); return f;},
     async receive(patch = {}) {await act(() => f.socket.message({code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, startSerial: 0,
@@ -142,6 +143,21 @@ async function mountRoom(f, extra = {}, options = {}) {
     onOpenSettings: () => intents.push(['settings']), settingsOpen: false, panel: null, onOpenPanel: (...args) => intents.push(['panel', ...args]), onClosePanel: () => intents.push(['close']), ...extra}, {locale: f.locale, ...options}); return {m, intents};
 }
 const click = (selector, scope) => act(() => n(selector, scope).click());
+test('TH09 auto-save preference reaches only player Runtime options and survives leaving', async () => {
+  const f = await fixture({product:'th09mp'}).live();
+  // Seat identity is owned by the fixture, not the rendered nickname.
+  await f.receive({seats:[{clientId:f.id,name:'xxx',loadout:0,ready:false},{clientId:'peer12345',name:'abdjfal',loadout:1,ready:false}]});
+  const preferences=owners.createMultiplayerPreferenceStore({storage:f.persistent});
+  assert.equal(f.service.runtimeOptions().netplayReplayAutoSave,true);
+  assert.deepEqual(f.service.runtimeOptions().netplayReplayNames,['xxx','abdjfal']);
+  preferences.persistReplayAutoSave('th09mp',false);
+  assert.equal(f.service.runtimeOptions().netplayReplayAutoSave,false);
+  await act(() => f.service.leave()); await f.enter();
+  assert.equal(preferences.replayAutoSave('th09mp'),false);
+  const other=await fixture({product:'th07mp'}).live();await mountRoom(other,{panel:{kind:'personal'}});
+  assert.equal(all('#mpReplayAutoSave').length,0);
+  assert.equal('netplayReplayAutoSave' in other.service.runtimeOptions(),false);
+});
 function baseline(f, {panel = null, context = defaultContext} = {}) {
   const doc = new env.window.DOMParser().parseFromString(originalHTML, 'text/html'), snapshot = f.service.getSnapshot(), room = snapshot.room && {...snapshot.room};
   for (const el of all('[data-i18n]', doc)) el.textContent = t(f.locale, el.dataset.i18n);
@@ -182,6 +198,7 @@ function compare(f, options = {}) {
   const doc = baseline(f, options);
   if (f.service.getSnapshot().product === 'th09mp') {
     n('#mpRoomMode', doc).textContent = t(f.locale, 'room.versus', {count: f.service.getSnapshot().room.playerCount});
+    n('#mpRollbackToggle', doc).title = t(f.locale, 'room.rollbackDelayHint');
   }
   const selectors = ['#mpRoomConnection', '#mpCopyRoomCode', '#mpRoomTitle', '.mp-room-tags', '#mpRoomResourceProgress', '#mpRoomSettingsDrawer', '#mpInputTiming',
     '#mpSpectatorAvatars', '#mpSpectatorCount', '.mp-room-footer', '#mpNameEditor', '#mpUnseatedNote', '#mpLocalPlayer', '#mpCheckGame',
@@ -224,7 +241,15 @@ for (const locale of ['zh-CN', 'en']) test(`All catalog multiplayer products pre
   for (const product of owners.PRODUCT_IDS.filter(owners.isMultiplayerProductId)) {
     const f = await fixture({product, locale}).live(); const {m} = await mountRoom(f, {panel: {kind: 'game'}});
     const config = owners.multiplayerConfigForProduct(product);
-    for (const loadout of [0, config.loadouts.length - 1]) {await f.receive({difficulty: config.difficulties.length - 1, seats: [{clientId: f.id, name: 'A', loadout, ready: false}, {clientId: 'peer12345', name: 'B', loadout: -1, ready: false, controlMode: 'cheat'}]}); compare(f, {panel: {kind: 'game'}});}
+    for (const loadout of [0, config.loadouts.length - 1]) {await f.receive({difficulty: config.difficulties.length - 1, seats: [{clientId: f.id, name: 'A', loadout, ready: false}, {clientId: 'peer12345', name: 'B', loadout: -1, ready: false, controlMode: 'cheat'}]}); if (config.inGameSelection) {
+      assert.equal(n('#mpRoomDifficultyBadge').textContent,'');
+      assert.equal(all('[data-mp-difficulty]').length,0);
+      assert.equal(n('#mpRoomDifficulty').disabled,true);
+      assert.equal(all('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,0);
+      assert.equal(n('#mpLocalRoleLabel').textContent,'');
+      assert.equal(f.service.runtimeOptions().netplayInGameSelection,true);
+      assert.match(n('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
+    } else compare(f, {panel: {kind: 'game'}});}
     await m.unmount();
   }
 });
@@ -442,10 +467,12 @@ for (const locale of ['zh-CN', 'en']) test(`room game settings own ${locale} tim
     const config = owners.multiplayerConfigForProduct(product), select = n('#mpInputDelay'), original = baseline(f);
     assert.ok(n('#mpRoomSettings').contains(select));
     assert.equal(n('#mpInputDelaySetting').hidden, !config.inputTiming);
-    if (config.inputTiming) assert.deepEqual([...select.options].map(node => [node.value, node.textContent, node.disabled]), [...n('#mpInputDelay', original).options].map(node => [node.value, node.textContent, node.disabled]));
+    const manualRollback = owners.multiplayerInputTimingPolicy(config).manualRollbackDelay;
+    assert.equal(manualRollback,product==='th09mp');
+    if (config.inputTiming) assert.deepEqual([...select.options].map(node => [node.value, node.textContent, node.disabled && !(manualRollback && node.value==='auto')]), [...n('#mpInputDelay', original).options].map(node => [node.value, node.textContent, node.disabled]));
     for (const selector of ['#mpReplayViewer', '#mpGamePackageImport']) assert.deepEqual(canonical(n(selector)), canonical(n(selector, original)));
     if (config.inputTiming) {
-      if(owners.multiplayerInputTimingPolicy(config).rollback){assert.equal(select.value,'0');assert.equal(select.disabled,true);await act(()=>f.service.setRollbackEnabled(false));assert.equal(select.disabled,false);}
+      if(owners.multiplayerInputTimingPolicy(config).rollback){assert.equal(select.value,'0');assert.equal(select.disabled,!manualRollback);if(manualRollback)assert.equal(select.options[0].disabled,true);else await act(()=>f.service.setRollbackEnabled(false));assert.equal(select.disabled,false);}
       await act(() => {select.value = '5'; select.dispatchEvent(new env.window.Event('change', {bubbles: true}));}); assert.equal(f.service.getSnapshot().timingChoice, 5); assert.equal(select.value, '5');
       const trigger = select.closest('.mizuki-select').querySelector('.mizuki-select-trigger'); assert.match(trigger.textContent, /5f/);
       await f.receive({seats: [{clientId: 'host12345', name: 'H', loadout: 0}, {clientId: f.id, name: 'A', loadout: 1}]});
@@ -555,5 +582,39 @@ test('TH11 ready host can choose rollback and pure delay', async()=>{
  assert.equal(n('#mpRollbackToggle').hidden,false); assert.equal(n('#mpRollbackToggle').disabled,false);
  await act(()=>f.service.setRollbackEnabled(true)); assert.equal(f.service.getSnapshot().rollbackEnabled,true);
  await act(()=>f.service.setRollbackEnabled(false)); assert.equal(f.service.getSnapshot().rollbackEnabled,false);
+ await m.unmount();
+});
+
+test('public nickname editor waits for review and locks changes until the server deadline',async()=>{
+ const f=await fixture({product:'th09mp'}).live(),{m}=await mountRoom(f);
+ const status=value=>f.socket.emit('message',{data:JSON.stringify({type:'nickname-status',nextChangeAt:0,retryAt:0,...value})});
+ await act(()=>status({name:'Alice',status:'approved'}));
+ assert.equal(n('#mpNicknameSave').disabled,false);
+ assert.match(n('#mpNicknameStatus').textContent,/once more now/);
+  await act(()=>status({name:'Alice',status:'rejected',attemptsLeft:1}));
+  assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/One retry remaining/);
+  await act(()=>status({name:'Alice',status:'unavailable',attemptsLeft:1}));
+  assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/Unable to submit/);
+  assert.match(n('#mpNicknameStatus').textContent,/One retry remaining/);assert.doesNotMatch(n('#mpNicknameStatus').textContent,/24-hour cooldown/);
+  await act(()=>status({name:'',status:'unavailable'}));
+  assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/Unable to submit/);
+  assert.doesNotMatch(n('#mpNicknameStatus').textContent,/unchanged|24-hour cooldown/);
+  await act(()=>status({name:'',status:'reviewing'}));
+  assert.equal(n('#mpDisplayName').disabled,true);assert.equal(n('#mpNicknameSave').disabled,true);
+  await act(()=>status({name:'Alice',status:'queued',pendingName:'待审昵称'}));
+  assert.equal(n('#mpDisplayName').value,'待审昵称');assert.equal(n('#mpNicknameSave').disabled,true);
+  assert.match(n('#mpNicknameStatus').textContent,/Pending review.*Saved.*close this window/);
+  assert.equal(f.service.getSnapshot().displayName,'Alice');
+ await act(()=>status({name:'Alice',status:'approved',nextChangeAt:Date.now()+86400000}));
+ assert.equal(n('#mpDisplayName').value,'Alice');assert.equal(n('#mpDisplayName').disabled,true);
+ assert.match(n('#mpNicknameStatus').textContent,/Next change|下次可修改/);
+ await f.receive({seats:[{clientId:f.id,name:'Alice',loadout:0,ready:false},{clientId:'peer123456',name:'完整公开昵称',loadout:1,ready:false}],spectators:[{clientId:'watch123456',name:'完整观众昵称'}]});
+ assert.equal(n('[data-mp-seat-name="1"]').textContent,'完整公开昵称');
+ assert.equal(n('[data-mp-seat="1"] .mp-seat-loadout').textContent,'','TH09 native selection keeps room loadout labels empty');
+ assert.equal(n('[data-mp-seat="0"] .mp-seat-control').textContent,'Keys / stick');
+ await m.update({panel:{kind:'spectators'}});
+ assert.match(n('#mpSpectatorList').textContent,/完整观众昵称/);
+ await act(()=>status({name:'Alice',status:'cooldown',attemptsLeft:0,nextChangeAt:Date.now()+86400000}));
+ assert.equal(n('#mpNicknameSave').disabled,true);assert.match(n('#mpNicknameStatus').textContent,/No retries remaining/);
  await m.unmount();
 });

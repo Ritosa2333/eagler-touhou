@@ -1,3 +1,4 @@
+import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
 import {
   gameIdForProduct,
   isMultiplayerProductId,
@@ -5,10 +6,7 @@ import {
   multiplayerInputTimingPolicy,
   type MultiplayerProductId,
 } from '../../src/contracts/product-catalog.mts';
-import {
-  multiplayerDisplayInitial,
-  type MultiplayerIdentityStore,
-} from '../../src/launcher/multiplayer-identity.mts';
+import {multiplayerDisplayInitial, type MultiplayerIdentityStore} from '../../src/launcher/multiplayer-identity.mts';
 import {
   normalizeMultiplayerLobbySnapshot,
   type MultiplayerResourceProgress,
@@ -68,6 +66,7 @@ export interface RoomOwnerSnapshot {
   preferredLoadout: number;
   loadoutPending: boolean;
   displayName: string;
+  nickname?: Readonly<PublicNicknameState> | null;
   roomSettingsOpen: boolean;
   startSerial: number;
   preparation: Readonly<RoomPreparationProgress> | null;
@@ -199,6 +198,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     spectatorRequested: false,
     preferredLoadout: 0,
     displayName: '',
+    nickname: null as PublicNicknameState | null,
     roomSettingsOpen: false,
     startSerial: 0,
     preparation: null as RoomPreparationProgress | null,
@@ -257,10 +257,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   publish();
   function send(message: Record<string, unknown>): boolean {
     if (!state.connected || socket?.readyState !== 1) return false;
-    // Privacy is a wire contract, not merely an avatar presentation choice.
+    // Full spelling is submitted only after the server advertises moderation.
     const payload =
       typeof message.name === 'string'
-        ? { ...message, name: multiplayerDisplayInitial(message.name, '') }
+        ? { ...message, name: state.nickname ? normalizePublicNickname(message.name) : multiplayerDisplayInitial(message.name, '') }
         : message;
     socket.send(JSON.stringify(payload));
     return true;
@@ -508,6 +508,19 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         return;
       }
       if (!message) return;
+      if (message.type === 'nickname-status') {
+        const profile = parsePublicNicknameState(message);
+        if (!profile) return;
+        const migrateDraft = !state.nickname && profile.status === 'idle' && !!state.displayName;
+        state.nickname = Object.freeze(profile);
+        if (profile.name) {
+          state.displayName = profile.name;
+          ports.identity.updateDisplayName(profile.name, profile.name);
+        }
+        publish();
+        if (migrateDraft) setDisplayName(state.displayName);
+        return;
+      }
       if (message.type === 'room-probe-config' || message.type === 'room-probe') {
         void ports.network.receive(message);
         return;
@@ -630,6 +643,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
     state.preferredLoadout = preferred.preferredLoadout ?? 0;
     state.displayName = ports.identity.loadDisplayName();
+    state.nickname = null;
   }
   function restoreInvite(source: string | URL, selectedProduct?: MultiplayerProductId): boolean {
     const invite = resolveRoomInvite(source);
@@ -810,6 +824,17 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     publish();
   }
   function setDisplayName(value: string) {
+    if (state.nickname) {
+      const name = normalizePublicNickname(value);
+      if (!name || !state.connected || ['reviewing','queued'].includes(state.nickname.status)) return state.nickname.pendingName || state.displayName;
+      if (name === state.nickname.name) return name;
+      if (send({type:'set-name',name})) {
+        state.nickname = Object.freeze({...state.nickname,status:'reviewing'});
+        publish();
+        return name;
+      }
+      return state.displayName;
+    }
     const previous = state.displayName,
       result = ports.identity.updateDisplayName(value, previous);
     if (result.updated) state.displayName = result.name;

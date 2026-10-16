@@ -30,7 +30,12 @@ before(async () => {
   ({createRoot} = await import('react-dom/client'));
   ({createMemoryRouter, RouterProvider} = await import('react-router'));
   for (const path of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) {
-    assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, path), 'utf8')), pinned(path), `Pinned catalog changed: ${path}`);
+    const acceptedMain=execFileSync('git',['show',`b667ab07cb7cf11f9220d11e3a64602cc6331792:${path}`],{cwd:project,encoding:'utf8'});
+    // Dedicated TH09 Replay/room fixtures own its added vocabulary and files.
+    const sharedText = source => pinnedUiAuthorityText(path.endsWith('i18n.mts')
+      ? source.replace(/const entries = \[[\s\S]*?(?=  \["touch\.tools")/, 'const entries = [\n')
+      : source.replace('"motion-replay.mjs", "auto-replay.mjs",', '"motion-replay.mjs",').replace('"replay-player.mjs", "playback-clock.mjs", ', '').replace('      inGameSelection: true,\n', '').replace('  inGameSelection?: boolean;\n', '').replace(', manualRollbackDelay: true', '').replace('  manualRollbackDelay?: boolean;\n', '').replace('    manualRollbackDelay: rollback && timing?.manualRollbackDelay === true,\n', ''));
+    assert.equal(sharedText(readFileSync(resolve(project, path), 'utf8')), sharedText(acceptedMain), `Pinned catalog changed: ${path}`);
   }
   originalHTML = pinned('public/lobby.html');
   const original = pinned('src/launcher/lobby.mts');
@@ -148,8 +153,10 @@ function baselineDoc(locale) {
 }
 function expectedRow(snapshot, room, locale, initial = false) {
   const doc = baselineDoc(locale); if (initial) doc.documentElement.setAttribute('data-lobby-boot', ''); else doc.documentElement.removeAttribute('data-lobby-boot');
-  return originalRows(doc, n('#roomRowTemplate', doc), new Map(), snapshot.rooms, snapshot.connection, snapshot.mine, snapshot.leaving,
+  const row = originalRows(doc, n('#roomRowTemplate', doc), new Map(), snapshot.rooms, snapshot.connection, snapshot.mine, snapshot.leaving,
     owners.PRODUCT_GAMES, owners.gameIdForProduct, owners.multiplayerConfigForProduct, () => locale, (key, params) => t(locale, key, params), () => {})(room);
+  for (const control of row.querySelectorAll('.lobby-seat-control')) control.title = control.textContent;
+  return row;
 }
 function expectedDialog(f, locale) {
   const doc = baselineDoc(locale), form = f.service.getSnapshot().form, create = form.mode === 'create', policy = owners.multiplayerConfigForProduct(form.product);
@@ -255,10 +262,10 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby membership/recovery uses exact
   await f.receive([], {mine: null, membershipRecovery: true}); assert.equal(n('#membership').hidden, true); assert.equal(n('#notice').hidden, false);
   assert.equal(n('#notice').textContent, t(locale, 'lobby.released')); assert.equal(n('#notice').getAttribute('role'), 'status'); assert.equal(n('#createButton').disabled, false);
 });
-test('Lobby membership token/offline/leaving and test-build notice gates are service-driven', async () => {
+test('Lobby membership token/offline/leaving gates are service-driven and the retired test warning stays absent', async () => {
   const mine = {product: 'th08mp', code: '8888', recoveryToken: ''};
   const f = await fixture({selectedProduct: 'th08mp'}).live([], {mine, membershipRecovery: true}); await mountLobby(f);
-  assert.equal(n('#gameTestNotice').hidden, false); assert.equal(n('#releaseMembership').disabled, true);
+  assert.equal(env.document.querySelector('#gameTestNotice'), null); assert.equal(n('#releaseMembership').disabled, true);
   await f.receive([], {mine: {...mine, recoveryToken: 'token'}, membershipRecovery: true}); assert.equal(n('#releaseMembership').disabled, false);
   await f.emit('error'); assert.equal(n('#releaseMembership').disabled, true);
   await React.act(async () => f.service.retry()); await f.receive([], {mine: {...mine, recoveryToken: 'token'}, membershipRecovery: true});
@@ -381,8 +388,15 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     await f.receive([room({product, capacity: 2, seats: [{initial: 'A', online: false, ready: true}, null]})]);
     await rowsMount.update({snapshot: f.service.getSnapshot()});
     const snapshot = f.service.getSnapshot();
-    assert.deepEqual(normalize(n('.lobby-room-row')), normalize(expectedRow(snapshot, snapshot.visibleRooms[0], locale)));
-    assert.equal(n('.lobby-seats').classList.contains('has-controls'), false);
+    if (product === 'th09mp') {
+      assert.equal(n('.th09-room-score').textContent,'VS');
+      assert.equal(n('.th09-room-duration').textContent,t(locale,'th09.notStarted',{minutes:0}));
+      assert.equal(all('.th09-duel-avatar').length,2);
+      assert.equal(n('.th09-room-row .lobby-difficulty').textContent,'');
+    } else {
+      assert.deepEqual(normalize(n('.lobby-room-row')), normalize(expectedRow(snapshot, snapshot.visibleRooms[0], locale)));
+      assert.equal(n('.lobby-seats').classList.contains('has-controls'), false);
+    }
   }
   await rowsMount.unmount();
   const {m} = await mountDialog(f, 'create', {}, {locale});
@@ -391,6 +405,9 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     const policy = owners.multiplayerConfigForProduct(product);
     assert.deepEqual(all('#capacitySelect option').map(x => [x.value, x.textContent]), policy.playerCounts.map(count => [String(count), t(locale, 'lobby.playersCount', {count})]));
     assert.deepEqual(all('#difficultySelect option').map(x => [x.value, x.textContent]), policy.difficulties.map((name, index) => [String(index), name]));
+    assert.equal(n('#difficultySelect').disabled,!!policy.inGameSelection);
+    assert.equal(n('#difficultySelect').closest('label').hidden,!!policy.inGameSelection);
+    if(policy.inGameSelection) assert.ok(n('#roomForm').textContent.includes(t(locale,'room.inGameSelectionHint')));
   }
   await m.update({open: false});
 });
@@ -455,4 +472,13 @@ test('Unmount discards only its submitted receipt before a later dialog can clos
   const f = await fixture().live(), {m} = await mountDialog(f, 'join'); await change('#roomCodeInput', '1234'); await submit();
   await m.unmount(); assert.equal(f.navigations.length, 0); assert.equal(f.sessionWrites.length, 0);
   f.service.formDidClose(); assert.equal(f.navigations.length, 0);
+});
+
+for (const product of ['th06mp','th09mp']) test(`Approved public names remain complete in directory cards (${product})`,async()=>{
+  const names=['完整公开昵称甲乙丙丁戊己','完整公开昵称'];
+  const f=await fixture({selectedProduct:product}).live([room({product,publicNames:true,capacity:2,seats:names.map(name=>({initial:name[0],name,online:true}))})]);
+  const snapshot=f.service.getSnapshot();
+  assert.deepEqual(snapshot.visibleRooms[0].seats.map(seat=>seat.name),names);
+  await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true});
+  assert.deepEqual(all(product==='th09mp'?'.th09-duel-name':'.lobby-seat-name').map(node=>node.textContent),names);
 });

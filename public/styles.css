@@ -1849,6 +1849,54 @@ body:has(#touchLayoutEditor:not([hidden]))>.mizuki-select-menu .mizuki-select-it
 .th09-match-stat svg,.th09-match-stat img{width:15px;height:15px;flex:none}
 .th09-match-stat svg{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .th09-match-stat img{filter:brightness(0) invert(.78)}
+
+#mpRoomView .mp-nickname-editor{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;margin-bottom:24px}
+#mpRoomView .mp-nickname-editor .mp-name-editor{min-width:0;margin-bottom:0!important}
+#mpRoomView .mp-nickname-editor #mpNicknameSave{align-self:end;min-height:48px!important;padding:0 16px;border:0;border-radius:14px;background:var(--room-tonal);color:var(--room-accent);font:600 14px/1.4 var(--ui-font);white-space:nowrap;cursor:pointer}
+#mpRoomView .mp-nickname-editor #mpNicknameSave:disabled{opacity:.5;cursor:default}
+#mpRoomView .mp-nickname-review{grid-column:1/-1;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;line-height:1.5}
+#mpRoomView .mp-nickname-review strong{color:var(--room-text);font-size:13px;font-weight:600}
+#mpRoomView .mp-nickname-review span{color:var(--room-muted);font-size:12px;overflow-wrap:anywhere}
+#mpRoomView[data-public-names=true] .mp-seat-stage .mp-seat.occupied{--room-avatar-size:52px;--room-avatar-type:22px;grid-template-columns:var(--room-avatar-size) minmax(0,1fr)!important;grid-template-rows:minmax(20px,auto) auto auto auto auto!important;column-gap:12px!important}
+#mpRoomView[data-public-names=true] .mp-seat-stage .mp-seat.occupied .mp-seat-face{width:var(--room-avatar-size)!important;height:var(--room-avatar-size)!important}
+#mpRoomView[data-public-names=true] .mp-seat-glyph{font-size:var(--room-avatar-type)!important}
+#mpRoomView[data-public-names=true] .mp-seat-stage .mp-seat.occupied .mp-seat-owner-mark{width:18px;height:18px;padding:2px;right:-3px;bottom:-3px}
+#mpRoomView[data-public-names=true] .mp-seat-name{white-space:normal!important;overflow:visible!important;overflow-wrap:anywhere;text-overflow:clip!important}
+#mpRoomView[data-public-names=true] .mp-seat-identity{grid-column:2!important;grid-row:2/4!important;display:flex;flex-direction:column;gap:3px;align-items:stretch;align-self:center;width:100%;max-width:100%;min-width:0}
+#mpRoomView[data-public-names=true] .mp-seat-identity>.mp-seat-name{display:block}
+#mpRoomView[data-public-names=true] .mp-seat-details{display:flex;align-items:baseline;gap:7px;min-width:0;max-width:100%;font:500 11px/1.4 var(--ui-font);white-space:nowrap}
+#mpRoomView[data-public-names=true] .mp-seat-details>.mp-seat-loadout{flex:0 1 auto;min-width:0;max-width:50%!important;text-align:left;font:inherit!important;overflow:hidden;text-overflow:ellipsis}
+#mpRoomView[data-public-names=true] .mp-seat-details>.mp-seat-control{flex:0 1 auto;min-width:0;font:inherit;pointer-events:auto}
+#mpRoomView[data-public-names=true] .mp-seat-state{grid-row:4!important}
+#mpRoomView[data-public-names=true] .mp-seat-resource{grid-row:5!important}
+#mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="3"] .mp-seat.occupied{--room-avatar-size:44px;--room-avatar-type:19px}
+@media(max-width:1100px){
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="3"] .mp-seat.occupied{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:44px auto auto auto auto!important}
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="3"] .mp-seat-identity{grid-column:1!important;grid-row:3!important}
+}
+@media(max-width:780px){
+ #mpRoomView[data-public-names=true] .mp-seat-details{gap:6px;font-size:10px}
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied{--room-avatar-size:48px;--room-avatar-type:20px;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto 48px auto auto auto!important;row-gap:5px!important}
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied .mp-seat-face{grid-column:1!important;grid-row:2!important;justify-self:start}
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat-identity{grid-column:1!important;grid-row:3!important}
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat-state{grid-column:1!important;grid-row:4!important}
+}
+#mpRoomView[data-public-names=true] .mp-spectator-copy strong{overflow:visible;white-space:normal;overflow-wrap:anywhere}
+@media(orientation:portrait){
+ #mpRoomView[data-public-names=true] .mp-seat-name,#mpRoomView[data-public-names=true] .mp-seat-loadout{min-width:0;max-width:100%!important;padding-block:1px;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+}
+@media(max-width:780px) and (orientation:portrait){
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied{--room-avatar-size:40px;--room-avatar-type:18px;grid-template-columns:var(--room-avatar-size) minmax(0,1fr)!important;grid-template-rows:minmax(36px,auto) auto auto auto auto!important;gap:5px 10px!important;align-self:start}
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied .mp-seat-face{grid-column:1!important;grid-row:2/4!important}
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat-identity{grid-column:2!important;grid-row:2/4!important}
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat-state{grid-column:1/-1!important;grid-row:4!important}
+}
+@media(max-width:360px) and (orientation:portrait){
+ #mpRoomView[data-public-names=true] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied{--room-avatar-size:32px;--room-avatar-type:16px;column-gap:8px!important}
+}
+#spectatorTimeline #spectatorScore{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;max-width:100%}
+#spectatorTimeline #spectatorScore .spectator-score-player{min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:center}
+.mp-quick-chat-picker button{white-space:normal;overflow-wrap:anywhere}
 .replay-name strong,.replay-name small{display:block;overflow:hidden;text-overflow:ellipsis}
 .replay-name strong{font:inherit}
 .replay-name small{font-size:.75em;opacity:.6;margin-top:.3em}

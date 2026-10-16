@@ -13,6 +13,7 @@ export function publicControlMode(seat) {
 // Discovery never joins a room. Membership is anonymous and browser-scoped;
 // it prevents accidental multi-tab seats, not multiple accounts/devices.
 export function createRoomDirectory({
+  publicNames = false,
   rooms,
   clearSeat,
   invalidateReady,
@@ -60,6 +61,7 @@ export function createRoomDirectory({
     if (!hasGame(room) && idle > idleHideMs) return null;
     const run = room.runs.get(String(room.lobby.startSerial));
     return {
+      ...(publicNames ? {publicNames:true} : {}),
       product: match[1],
       code: match[2],
       phase: room.lobby.phase,
@@ -70,7 +72,7 @@ export function createRoomDirectory({
         (seat) => seat.ready && seat.readyVersion === room.lobby.settingsVersion,
       ).length,
       difficulty: room.lobby.difficulty,
-      host: initial(seats[0]?.name),
+      host: publicNames ? seats[0]?.name || '' : initial(seats[0]?.name),
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       challengeMode: room.lobby.challengeMode === true,
       prankMode: room.lobby.prankMode === true,
@@ -82,9 +84,10 @@ export function createRoomDirectory({
         seat
           ? {
               initial: initial(seat.name),
+              ...(publicNames ? {name:seat.name || ''} : {}),
               ...(match[1] === 'th09mp'
                 ? {
-                    ...(typeof seat.machineSign === 'string' && seat.machineSign.trim()
+                    ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {
                           machineSign: [
                             ...seat.machineSign
@@ -334,6 +337,7 @@ export function createRoomDirectory({
     evict,
     track,
     memberIdFor,
+    memberLocation: memberId => members.get(memberId),
     close() {
       clearInterval(maintenance);
       clearTimeout(updateTimer);

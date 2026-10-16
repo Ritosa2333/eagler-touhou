@@ -1,3 +1,4 @@
+import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
   PRODUCT_IDS,
   gameIdForProduct,
@@ -20,6 +21,7 @@ import { parseTh09PlayerStats, type Th09PlayerStats } from '../../src/launcher/t
 export type DirectoryConnection = 'loading' | 'live' | 'offline' | 'unsupported' | 'missing';
 export type DirectoryFormMode = 'create' | 'join';
 export interface DirectorySeat {
+  name?: string;
   machineSign?: string;
   stats?: Th09PlayerStats;
   initial: string;
@@ -274,6 +276,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         ][0] || '?';
       return Object.freeze({
         initial,
+        ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
         ...(row.product === 'th09mp'
           ? {
               machineSign:

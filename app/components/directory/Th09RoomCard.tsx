@@ -23,7 +23,7 @@ export function Th09RoomCard({ room, difficulty, state, disabled, initial,
       role="listitem" data-key={`${room.product}-${room.code}`}>
       <div className="th09-room-meta">
         <strong className="lobby-room-code">#{room.code}</strong>
-        <span className="lobby-difficulty">{difficulty}</span>
+        <span className="lobby-difficulty" hidden={!difficulty}>{difficulty}</span>
         {room.disableCheatMovement && <span className="lobby-movement-rule">{t('lobby.noCheat')}</span>}
         {room.challengeMode && <span className="lobby-movement-rule">{t('room.challengeMode')}</span>}
       </div>
@@ -33,10 +33,10 @@ export function Th09RoomCard({ room, difficulty, state, disabled, initial,
       <div className="th09-room-duel" aria-label={t('lobby.count', {players:room.players,capacity:room.capacity})}>
         {[0, 1].map(index => {
           const seat = room.seats[index];
-          const name = seat ? seat.machineSign || `P${index + 1}` : t('th09.waitingPlayer');
+          const name = seat ? (seat.name !== undefined ? seat.name : seat.machineSign) || `P${index + 1}` : t('th09.waitingPlayer');
           const hint = `${name}${seat?.online === false ? ` (${t('lobby.seatOffline', {seat:index+1,name})})` : ''}`;
           return (
-            <div key={index} className={`th09-duel-player th09-duel-p${index+1}`}
+            <div key={index} className={`th09-duel-player th09-duel-p${index+1}${seat?.name !== undefined ? ' public-name' : ''}`}
               data-empty={String(!seat)} data-offline={String(seat?.online === false)} title={hint}>
               <span className="lobby-seat th09-duel-avatar" data-empty={String(!seat)}
                 data-ready={String(!!seat?.ready)} data-offline={String(seat?.online === false)} aria-hidden="true">
