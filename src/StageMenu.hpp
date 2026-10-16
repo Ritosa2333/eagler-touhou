@@ -9,6 +9,7 @@ struct StageMenu
 
     i32 OnUpdateGameMenu();
     i32 OnUpdateRetryMenu();
+    bool NeedsConfirmedGameMenuInput() const;
 
     void OnDrawGameMenu();
     void OnDrawRetryMenu();

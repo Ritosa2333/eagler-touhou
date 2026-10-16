@@ -715,7 +715,8 @@ bool SessionStillOwnsStageState()
 
 bool SharedUiNeedsConfirmedInputs()
 {
-    return g_GameManager.isInGameMenu || g_GameManager.isInRetryMenu ||
+    return (g_GameManager.isInGameMenu && g_AsciiManager.gameMenu.NeedsConfirmedGameMenuInput()) ||
+           g_GameManager.isInRetryMenu ||
            (g_Gui.impl && g_Gui.impl->finishedStage) ||
            g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER ||
            g_Supervisor.wantedState != SUPERVISOR_STATE_GAMEMANAGER;
@@ -1615,7 +1616,7 @@ bool SendScheduledLocalFrame(std::uint32_t frame);
 bool PumpConfirmedUiInput()
 {
     constexpr std::uint64_t interval = 1000000000ull / 60ull;
-    constexpr std::uint32_t maxLead = 64;
+    constexpr std::uint32_t maxLead = 8;
     const bool sharedUi = SharedUiNeedsConfirmedInputs();
     if (!sharedUi)
     {
@@ -2522,11 +2523,9 @@ int RunCalcChain()
             return CHAIN_CALLBACK_RESULT_CONTINUE;
         }
 
-        // Pause/retry UI is rewindable (GameManager + AsciiManager + relevant
-        // Supervisor state are in the snapshot), but predicting menu input is
-        // needlessly risky: a late Escape can change which UI frame consumes
-        // subsequent keys. The wall-clock pump keeps future inputs arriving
-        // at 60 Hz; shared UI still executes only confirmed input frames.
+        // Ordinary Pause navigation/animation uses its existing snapshot.
+        // Screenshot setup, final resume/exit/restart and unsupported phases
+        // still require a contiguous actual prefix before external state moves.
         if (SharedUiNeedsConfirmedInputs() &&
             g_Core.ConfirmedThroughAllRemotes() < g_SimFrame)
             return CHAIN_CALLBACK_RESULT_CONTINUE;

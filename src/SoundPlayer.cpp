@@ -1,4 +1,6 @@
 #include "SoundPlayer.hpp"
+#include <eagler/audio/WebSfx.hpp>
+namespace web_sfx = eagler::audio::web_sfx;
 #ifdef TH_ENABLE_NETPLAY
 #include "netplay/NetplaySideEffects.hpp"
 #endif
@@ -113,6 +115,7 @@ SoundPlayer::SoundPlayer()
 void SoundPlayer::UpdateWebAudioPlaybackState()
 {
     const bool shouldSuspend = !this->webAudioWindowActive || this->webAudioBgmTransition;
+    web_sfx::suspend(!this->webAudioWindowActive);
     if (shouldSuspend == this->webAudioPlaybackSuspended)
     {
         return;
@@ -175,12 +178,13 @@ ZunResult SoundPlayer::InitializeDSound()
     desiredAudio.freq = 44100;
     desiredAudio.format = SDL_AUDIO_S16;
     desiredAudio.channels = 2;
+    web_sfx::suspend(false);
 #ifdef __EMSCRIPTEN__
     // SDL's stock Emscripten backend doubles SDL_GetDefaultSampleFramesFromFreq().
-    // Requesting 2048 therefore yields the 4096-frame ScriptProcessor block
+    // Requesting 1024 therefore yields the 2048-frame ScriptProcessor block
     // that this Runtime's Web audio queue is tuned around, without modifying
     // the vendored SDL submodule in-place.
-    SDL_SetHintWithPriority(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "2048", SDL_HINT_OVERRIDE);
+    SDL_SetHintWithPriority(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "1024", SDL_HINT_OVERRIDE);
 #endif
     this->audioDev = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desiredAudio);
 
@@ -221,6 +225,7 @@ ZunResult SoundPlayer::Release(void)
 
     for (int i = 0; i < ARRAY_SIZE_SIGNED(this->soundBuffers); i++)
     {
+        web_sfx::erase(&this->soundBuffers[i]);
         if (this->soundBuffers[i].samples != NULL)
         {
             delete[] this->soundBuffers[i].samples;
@@ -708,6 +713,8 @@ ZunResult SoundPlayer::LoadSound(i32 idx, const char *path, f32 volumeMultiplier
 
     this->soundBuffers[idx].pos = 0;
     this->soundBuffers[idx].isPlaying = false;
+    web_sfx::upload(&this->soundBuffers[idx], this->soundBuffers[idx].samples,
+                    this->soundBuffers[idx].len, 1, 44100, 1);
 
     soundBufMutex.unlock();
 
@@ -785,7 +792,9 @@ void SoundPlayer::PlaySounds()
         }
 
         this->soundBuffers[sndBufIdx].pos = 0;
-        this->soundBuffers[sndBufIdx].isPlaying = true;
+        web_sfx::stop(&this->soundBuffers[sndBufIdx]);
+        web_sfx::seek(&this->soundBuffers[sndBufIdx], 0, 44100);
+        this->soundBuffers[sndBufIdx].isPlaying = !web_sfx::play(&this->soundBuffers[sndBufIdx]);
     }
 
     soundBufMutex.unlock();
@@ -813,19 +822,18 @@ bool SoundPlayer::PumpWebAudio()
         return true;
     }
 
-    // A/B robustness envelope paired with the configured 4096-frame Web SDL
-    // ScriptProcessor block. Producer work stays in small 1024-frame slices;
-    // only the queued safety window is deeper.
+    // Bound mixed PCM ahead of fresh SFX, paired with the 2048-frame Web SDL
+    // callback. Producer work stays in 1024-frame slices.
     constexpr u32 FRAMES_PER_CHUNK = 1024;
-    constexpr u32 LOW_WATER_FRAMES = 4096;
-    constexpr u32 HIGH_WATER_FRAMES = 6144;
+    constexpr u32 LOW_WATER_FRAMES = 2048;
+    constexpr u32 HIGH_WATER_FRAMES = 3072;
     constexpr int BYTES_PER_FRAME = BACKGROUND_MUSIC_WAV_BLOCK_ALIGN;
 
     const f64 nowMs = emscripten_get_now();
     const int queuedBytes = SDL_GetAudioStreamQueued(this->audioStream);
     if (queuedBytes < 0)
         return false;
-    const u32 queuedFrames = static_cast<u32>(queuedBytes / BYTES_PER_FRAME);
+    u32 queuedFrames = static_cast<u32>(queuedBytes / BYTES_PER_FRAME);
     this->webAudioMinQueuedFrames = std::min(this->webAudioMinQueuedFrames, queuedFrames);
 
     if (this->webAudioLastDiagnosticMs == 0.0 || nowMs - this->webAudioLastDiagnosticMs >= 500.0)
@@ -854,13 +862,17 @@ bool SoundPlayer::PumpWebAudio()
         return true;
     }
 
-    const u32 framesToMix = std::min(FRAMES_PER_CHUNK, HIGH_WATER_FRAMES - queuedFrames);
-    if (framesToMix == 0)
+    // Refill the smaller safety window without waiting for several later
+    // presentation callbacks, retaining bounded mixer work per slice.
+    for (u32 chunk = 0; chunk < 3 && queuedFrames < HIGH_WATER_FRAMES; ++chunk)
     {
-        this->webAudioRefilling = false;
-        return true;
+        const u32 framesToMix = std::min(FRAMES_PER_CHUNK, HIGH_WATER_FRAMES - queuedFrames);
+        if (!this->MixAudio(framesToMix * BACKGROUND_MUSIC_WAV_NUM_CHANNELS))
+            return false;
+        queuedFrames += framesToMix;
     }
-    return this->MixAudio(framesToMix * BACKGROUND_MUSIC_WAV_NUM_CHANNELS);
+    this->webAudioRefilling = queuedFrames < HIGH_WATER_FRAMES;
+    return true;
 }
 #endif
 

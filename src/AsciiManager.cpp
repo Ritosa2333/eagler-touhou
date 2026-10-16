@@ -857,6 +857,15 @@ enum UpdateGameMenuState
 #define GAME_MENU_SPRITES_COUNT_QUIT 3
 #define GAME_MENU_SPRITES_END_QUIT (GAME_MENU_SPRITES_START_QUIT + GAME_MENU_SPRITES_COUNT_QUIT)
 
+bool StageMenu::NeedsConfirmedGameMenuInput() const
+{
+    // Initial screenshot setup and the clock/resource-changing final step
+    // remain exact. Cursor, repeat state and close animation are snapshotted.
+    return curState == GAME_MENU_PAUSE_OPENING ||
+        (numFrames >= 20 && (curState == GAME_MENU_PAUSE_SELECTED_UNPAUSE ||
+         curState == GAME_MENU_QUIT_SELECTED_YES || curState == GAME_MENU_PAUSE_SELECTED_RESTART));
+}
+
 i32 StageMenu::OnUpdateGameMenu()
 {
     i32 vmIdx;
