@@ -290,7 +290,12 @@ void cancel_pointer(){pointer_edges.clear();mouse_down=pointer_sample_down=false
 void update_input(Application& runtime){if(!initialized)return;++input_generation;auto* keys=runtime.input.keyboard_state();const u32 bits=bridge_keys();for(int i=0;i<256;i++){const bool down=keys[i]!=0||bridge_key_down(i,bits);key_pressed[i]=down&&!key_down[i];key_down[i]=down;}auto& state=runtime.state.practice;if(!state.enabled){menu_open=tracker_open=advanced_open=false;publish_menu(false);return;}if(pressed(VK_BACK)&&!ImGui::IsAnyItemActive())menu_open=!menu_open;if((pressed(VK_TAB)||pressed(119))&&!ImGui::IsAnyItemActive()&&in_game(runtime))tracker_open=!tracker_open;if(pressed(VK_F12))advanced_open=!advanced_open;if(menu_open&&in_game(runtime)&&!state.replay){for(int i=0;i<6;i++)if(pressed(VK_F1+i))toggle_cheat(runtime,i);if(pressed(VK_F7))state.everlasting_bgm=!state.everlasting_bgm;if(pressed('U'))toggle_cheat(runtime,6);}if(pressed(VK_ESCAPE)&&advanced_open)advanced_open=false;publish_menu(menu_open);}
 bool captures_game_input(){return MobileThprac::captures_advanced(advanced_open)||practice_was_open;}
 bool captures_pointer(float x,float y){
- if(!initialized)return false;if(captures_game_input())return true;
+ if(!initialized)return false;
+ // Practice blocks the underlying title's keyboard, not the whole touch
+ // surface. Outside its actual ImGui windows, taps/swipes must still reach
+ // TouchController so Z / Escape can confirm or cancel the practice menu.
+ // Keep advanced settings modal and keep ownership of widget drags below.
+ if(MobileThprac::captures_advanced(advanced_open))return true;
  if(auto* r=touhou::sdl::current();r&&r->flip_present_y)y=480-y;
  if(ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel))return true;
  for(auto* window:ImGui::GetCurrentContext()->Windows)if(window->Active&&!window->Hidden&&!(window->Flags&ImGuiWindowFlags_NoMouseInputs)&&window->OuterRectClipped.Contains({x,y}))return true;

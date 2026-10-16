@@ -21,10 +21,12 @@ try{
  const page=await browser.newPage({viewport:{width:960,height:720}});page.on('pageerror',e=>errors.push(String(e)));
  await page.goto(`http://127.0.0.1:${server.address().port}/`);const frame=page.frames().find(f=>f.url().includes('/runtime/'));
  await frame.waitForFunction(()=>window.__th10Runtime,{timeout:60000});
- await frame.evaluate(async disabled=>{const r=window.__th10Runtime;await r.command({command:'configure',language:'lang_en',music:'none',options:{thpracEnabled:!disabled,thpracLocale:'en'},sharedResources:[{path:'/unifont.otf',url:'/unifont.otf'},{path:'/msgothic.ttc',url:'/msgothic.ttc'}]});await r.launch();},disabled);
+ await frame.evaluate(async disabled=>{const r=window.__th10Runtime;await r.command({command:'configure',language:'lang_en',music:'none',options:{touchEnabled:true,thpracEnabled:!disabled,thpracLocale:'en'},sharedResources:[{path:'/unifont.otf',url:'/unifont.otf'},{path:'/msgothic.ttc',url:'/msgothic.ttc'}]});await r.launch();},disabled);
  await frame.evaluate(()=>window.__th10Runtime.core.sdl_loop_stop());
  const wait=ms=>frame.evaluate(n=>{const r=window.__th10Runtime;for(let i=0;i<n;i++){const result=r.core.sdl_loop_tick(r.app,1/60,17);if(result)throw Error('native tick '+result+' / error '+r.core.application_error(r.app));}},Math.ceil(ms*60/1000));
  await wait(3000);
+ // Startup presentation uses a steady-clock minimum, not simulated ticks.
+ await page.waitForTimeout(2100);await wait(3000);
  const status=()=>frame.evaluate(()=>window.__th10Runtime.status());
  const press=async(code)=>{await frame.evaluate(code=>window.__th10Runtime.command({command:'keyboard',code,down:true}),code);await wait(70);await frame.evaluate(code=>window.__th10Runtime.command({command:'keyboard',code,down:false}),code);await wait(70);};
  const title=()=>frame.evaluate(()=>{const r=window.__th10Runtime,p=r.core.application_title(r.app);return p?Array.from(new Int32Array(r.core.memory.buffer,p+0x1c,3)):null;});
@@ -41,16 +43,31 @@ try{
  await wait(600);assert.equal((await title())?.[0],2,'native main menu');
  for(let i=0;i<8&&(await title())[2]!==2;i++){await press((await title())[2]<2?'ArrowDown':'ArrowUp');await wait(100);}
  assert.equal((await title())[2],2,'native Practice entry');
+ await page.setViewportSize({width:430,height:932});
  await press('KeyZ');await wait(600);await press('KeyZ');await wait(600);await press('KeyZ');await wait(600);await press('KeyZ');await wait(600);
  evidence.practice=await frame.evaluate(()=>{const r=window.__th10Runtime;return Array.from(new Int32Array(r.core.memory.buffer,r.core.practice_status(r.app),7));});
  for(let i=0;i<3&&!evidence.practice[0];i++){await press('KeyZ');await wait(600);evidence.practice=await frame.evaluate(()=>{const r=window.__th10Runtime;return Array.from(new Int32Array(r.core.memory.buffer,r.core.practice_status(r.app),7));});}
  await page.screenshot({path:resolve(out,'practice-desktop.png')});
  assert.equal(evidence.practice[0],1,'original title/character/shot/stage flow must reach practice tuning');
+ // Exercise the real dispatcher, not practice_configure/practice_cancel:
+ // touching blank space inside the window remains UI-owned; outside it,
+ // two-finger cancel returns to stage select and one tap starts the run.
+ const practiceStatus=()=>frame.evaluate(()=>{const r=window.__th10Runtime;return Array.from(new Int32Array(r.core.memory.buffer,r.core.practice_status(r.app),7));});
+ await frame.evaluate(()=>{const c=window.__th10Runtime.core;c.sdl_touch(0,71,600/640,440/480);c.sdl_touch(2,71,600/640,440/480);});await wait(100);
+ assert.equal((await practiceStatus())[0],1,'UI-owned touch must not start practice');
+ await frame.evaluate(()=>{const c=window.__th10Runtime.core;c.sdl_touch(0,72,.1,.5);c.sdl_touch(0,73,.2,.5);c.sdl_touch(2,72,.1,.5);c.sdl_touch(2,73,.2,.5);});await wait(150);
+ assert.equal((await practiceStatus())[0],0,'two-finger cancel must leave practice tuning');
+ assert.notEqual((await status())[0],7,'cancel must not leak a confirm into the title');
+ for(let i=0;i<3&&!(await practiceStatus())[0];i++){await press('KeyZ');await wait(300);}
+ assert.equal((await practiceStatus())[0],1,'practice tuning must reopen after touch cancellation');
+ evidence.practiceTouch={widgetOwnership:true,twoFingerCancel:true,reentry:true};
  if(process.env.TH10_PRACTICE_SECTION){
   const {sections}=await import('../th10_web/sdl-runtime/practice-sections.mjs');const id=Number(process.env.TH10_PRACTICE_SECTION);const section=sections.find(s=>s.id===id),stage=section?.stage??Math.floor((id-10000)/100)-1;
   evidence.section=id;await frame.evaluate(({id,stage})=>{const r=window.__th10Runtime,words=[1,stage,0,id,1,0,0,0,9,100,10000,130,-1,0,1];const p=r.core.graphics_allocate(120);try{new Float64Array(r.core.memory.buffer,p,15).set(words);if(!r.core.practice_configure(r.app,p,15,true))throw Error('practice config rejected');}finally{r.core.graphics_free(p);}}, {id,stage});
  }
- await press('KeyZ');await wait(2500);evidence.game=await status();assert.equal(evidence.game[2],0,'native runtime error');
+ if(evidence.section)await press('KeyZ');
+ else {await frame.evaluate(()=>{const c=window.__th10Runtime.core;c.sdl_touch(0,74,.1,.5);c.sdl_touch(2,74,.1,.5);});await wait(150);evidence.practiceTouch.singleTapConfirm=true;}
+ await wait(2500);evidence.game=await status();assert.equal(evidence.game[2],0,'native runtime error');
  assert.equal(evidence.game[0],7,'practice session must be live');
  evidence.worldError=await frame.evaluate(()=>{const r=window.__th10Runtime;return r.core.world_error(r.core.application_world(r.app));});assert.equal(evidence.worldError,0);
  if(!evidence.section){

@@ -34,7 +34,7 @@ for(const source of ['cpp/game/PracticeConfig.cpp','cpp/game/PracticeRuntime.cpp
  if(!sources.includes(source))sources.push(source);
 const shared=resolve(workspace,'portable/sdl'),numeric=resolve(workspace,'portable/numeric'),input=resolve(workspace,'portable/input'),renderer=resolve(shared,'Renderer.cpp');
 function headers(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headers(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);}
-const dialogueHeaders=[resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp')];
+const dialogueHeaders=[resolve(commonInclude,'eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp')];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...commonThpracHeaders,...dialogueHeaders].sort())hash.update(path).update(readFileSync(path));
 const flags=[...common,'-std=c++17','-fno-exceptions','-fno-rtti'],prefix=JSON.stringify([flags,hash.digest('hex')]);
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});

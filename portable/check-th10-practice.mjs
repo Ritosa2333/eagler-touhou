@@ -34,6 +34,10 @@ assert(touchExport.includes('touch(type,id,x,y);'),'Launcher and native SDL fing
 assert(host.includes('ThpracUi::captures_pointer(x*640.f,y*480.f)')&&host.includes('ThpracUi::mouse(type==0?1:type==1?0:2'),'active thprac UI must receive touches');
 assert(host.includes('if(type==2)practice_pointers.erase(id);return;'),'captured touches must not also move the player');
 assert(host.includes('gestures.pointer(type,id,x,y'),'uncaptured touches must retain ordinary gameplay gestures');
+const pointerCapture=ui.slice(ui.indexOf('bool captures_pointer('),ui.indexOf('double simulation_interval('));
+assert(!pointerCapture.includes('if(captures_game_input())return true'),'practice keyboard capture must not swallow whole-screen confirm/cancel gestures');
+assert(pointerCapture.includes('window->OuterRectClipped.Contains({x,y})'),'practice widgets retain coordinate-based pointer ownership');
+assert(host.indexOf('ThpracUi::update_input(*app)')<host.indexOf('if(ThpracUi::captures_game_input())'),'gesture keys reach practice before being removed from the underlying title input');
 const patches=readFileSync(resolve(import.meta.dirname,'../th10_web/cpp/game/PracticePatches.inc'),'utf8');
 assert(patches.includes('Generated from thprac (MIT)'),'the th10 section patch region must stay generator-owned');
 assert(!patches.includes('__declspec'),'the generator must strip upstream __declspec annotations');

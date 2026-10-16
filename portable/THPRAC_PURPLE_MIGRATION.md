@@ -127,3 +127,25 @@ evidence, not physical Android/tablet or Windows original-game visual oracle
 evidence. The matrix verifies section startup and short live execution, not every
 attack's full duration or a full-clear Replay playback. Those long-run/device
 checks remain manual regression work and are not labeled PASS here.
+
+### Practice touch ownership correction (2026-10-15)
+
+Upstream `eagler` baseline: `5c559ed`; canonical merge/base: `db4bb9e`.
+Topic: `fix/th10-practice-touch-20261015`, isolated in
+`_scratch/th10-practice-touch-20261015` before promotion to `eagler`.
+Only TH10 ordinary Practice pointer hit-testing changes: the Practice overlay
+still blocks underlying title keyboard input, but no longer captures touches
+outside its actual ImGui windows. Those gestures feed the existing native
+single-tap Z / two-finger Escape path before game input is masked. Widget drags,
+popup ownership, advanced-settings modality and gameplay input are unchanged.
+
+Passing gates: source checks, 12 native touch lifecycle checks, purple source /
+Replay checks, full THPrac ON and ordinary OFF builds. The real retail-DATA
+browser flow in a 430x932 viewport verifies UI-owned taps, two-finger cancel,
+re-entry, single-tap launch, live world error 0, purple Replay save and SSS
+movement. Browser tests explicitly enable touch and respect the steady-clock
+startup presentation. Physical Android/tablet testing remains not run; the
+browser test injects through the production `sdl_touch` dispatcher.
+ON WASM: `a093bb822cec2219997d7d21f613fc039bcd7862dc6a09f2aadae2707e762562`.
+OFF WASM: `7fa517a1e03089c729f3029907bddcaaa253d073d9cdd9e96b44d540269e91c9`.
+No deployment, remote push, TH09/TH11 or Multiplayer changes are part of this fix.

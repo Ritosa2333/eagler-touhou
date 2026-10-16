@@ -26,6 +26,8 @@
 #include <string>
 #include <vector>
 #include "MusicLayout.hpp"
+#include <eagler/audio/WebSfx.hpp>
+namespace web_sfx = eagler::audio::web_sfx;
 
 namespace {
 using th10::u32;using th10::i32;using th10::u8;
@@ -40,7 +42,7 @@ struct Buffer {
     std::shared_ptr<std::vector<u8>> pcm;
     std::vector<std::pair<u32,u32>> notifications;
     ma_audio_buffer data{};ma_sound sound{};
-    ~Buffer(){if(sound_ready)ma_sound_uninit(&sound);if(data_ready)ma_audio_buffer_uninit(&data);}
+    ~Buffer(){web_sfx::erase(this);if(sound_ready)ma_sound_uninit(&sound);if(data_ready)ma_audio_buffer_uninit(&data);}
 };
 struct Host {
     std::map<u32,std::unique_ptr<Buffer>> objects;std::map<u32,bool> events;
@@ -48,7 +50,7 @@ struct Host {
     u32 next=1,next_event=1;uint64_t millis=1000;ma_engine engine{};
     SDL_AudioStream* stream=nullptr;bool ready=false,paused=false,refilling=true;
     // TH07's web queue policy: bounded 1024-frame work slices, hysteresis.
-    static constexpr int chunk=1024,low=4096,high=6144;
+    static constexpr int chunk=1024,low=2048,high=3072;
     u32 pumps=0,empty_checks=0,mixed_frames=0,min_queued=~0u,error=0;
     float rms=0;bool primed=false;
     bool initialize(){
@@ -58,17 +60,22 @@ struct Host {
         // short gain ramp to the game's own fades.
         cfg.defaultVolumeSmoothTimeInPCMFrames=0;
         if(ma_engine_init(&cfg,&engine)!=MA_SUCCESS){error=1;return false;}
-        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");
+        // SDL Emscripten doubles this request to a 2048-frame output block.
+        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"1024");
         SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
         if(SDL_InitSubSystem(SDL_INIT_AUDIO))stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
         if(!stream){ma_engine_uninit(&engine);error=2;return false;}
-        ready=true;paused=false;SDL_ResumeAudioStreamDevice(stream);return true;
+        ready=true;paused=false;web_sfx::suspend(false);SDL_ResumeAudioStreamDevice(stream);return true;
     }
     Buffer* get(u32 id){auto it=objects.find(id);return it==objects.end()?nullptr:it->second.get();}
     void destroy(){objects.clear();events.clear();if(stream)SDL_DestroyAudioStream(stream);stream=nullptr;if(ready)ma_engine_uninit(&engine);ready=false;}
     u32 position(Buffer& b){
         if(!b.playing)return b.cursor;
         const auto align=std::max(1u,read16(b.format.data()+12));
+        if(web_sfx::contains(&b)){
+            if(!web_sfx::playing(&b)){b.playing=false;return b.cursor=0;}
+            return u32(web_sfx::cursor(&b)*align%b.length);
+        }
         // Stream storage can be rewritten only after the mixer has consumed
         // it. Wall time and browser playback can diverge during a stall or
         // suspension; using that clock here overwrites unread music samples.
@@ -81,6 +88,9 @@ struct Host {
         if(pos>=b.length){b.playing=false;return b.cursor=0;}return u32(pos);
     }
     void controls(Buffer& b){if(!b.sound_ready)return;
+        web_sfx::volume(&b,std::pow(10.f,float(b.volume)/2000.f));
+        web_sfx::pan(&b,b.pan>=0?1.f-std::pow(10.f,-float(b.pan)/2000.f):std::pow(10.f,float(b.pan)/2000.f)-1.f);
+        web_sfx::speed(&b,float(b.frequency)/std::max(1u,read32(b.format.data()+4)));
         ma_sound_set_volume(&b.sound,std::pow(10.f,float(b.volume)/2000.f));
         ma_sound_set_pan_mode(&b.sound,ma_pan_mode_balance);
         ma_sound_set_pan(&b.sound,b.pan>=0?1.f-std::pow(10.f,-float(b.pan)/2000.f):std::pow(10.f,float(b.pan)/2000.f)-1.f);
@@ -94,7 +104,10 @@ struct Host {
         cfg.sampleRate=read32(b.format.data()+4);
         if(ma_audio_buffer_init(&cfg,&b.data)!=MA_SUCCESS)return false;b.data_ready=true;
         if(ma_sound_init_from_data_source(&engine,&b.data,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&b.sound)!=MA_SUCCESS)return false;
-        b.sound_ready=true;controls(b);return true;
+        b.sound_ready=true;
+        // Notification-backed buffers are the game's mutable music ring.
+        if(b.notifications.empty())web_sfx::upload(&b,b.pcm->data(),b.length/align,channels,cfg.sampleRate,bits==8?2:1);
+        controls(b);return true;
     }
     u32 buffer(u32 flags,u32 length,const u8* format,std::shared_ptr<std::vector<u8>> shared={}){
         auto b=std::make_unique<Buffer>();b->flags=flags;b->length=length?length:4096;
@@ -135,11 +148,12 @@ struct Host {
         if(queued>=high){refilling=false;primed=true;return;}
         for(int block=0;block<(high+chunk-1)/chunk&&queued<high;++block){
         float pcm[chunk*2]{};
-        if(render(pcm,chunk)!=chunk){error=3;return;}
-        double energy=0;for(auto& sample:pcm){sample=std::clamp(sample,-1.f,1.f);energy+=double(sample)*sample;}
-        rms=std::sqrt(energy/(chunk*2));
-        if(!SDL_PutAudioStreamData(stream,pcm,sizeof(pcm))){error=4;return;}
-        ++pumps;mixed_frames+=chunk;queued+=chunk;
+        const int frames=std::min(chunk,high-queued);
+        if(render(pcm,frames)!=frames){error=3;return;}
+        double energy=0;for(int i=0;i<frames*2;++i){auto& sample=pcm[i];sample=std::clamp(sample,-1.f,1.f);energy+=double(sample)*sample;}
+        rms=std::sqrt(energy/(frames*2));
+        if(!SDL_PutAudioStreamData(stream,pcm,frames*8)){error=4;return;}
+        ++pumps;mixed_frames+=frames;queued+=frames;
         }
         if(queued>=high){refilling=false;primed=true;}
     }
@@ -155,8 +169,9 @@ i32 audio_host_call(u32 id,u32 op,const u32* a){
     case O::Release:if(--b.refs)return b.refs;host.objects.erase(id);return 0;
     case O::CreateBuffer:{auto* desc=ptr(a[0]);*ptr(a[1])=host.buffer(desc[1],desc[2],ptr<u8>(desc[4]));break;}
     case O::Duplicate:{auto* src=host.get(a[0]);if(!src)return -1;const auto copy=host.buffer(src->flags,src->length,src->format.data(),src->pcm);auto& dest=*host.get(copy);dest.frequency=src->frequency;dest.volume=src->volume;dest.pan=src->pan;*ptr(a[1])=copy;break;}
-    case O::Cooperative:case O::Restore:case O::Unlock:break;
-    case O::Format:if(b.sound_ready){ma_sound_uninit(&b.sound);b.sound_ready=false;}if(b.data_ready){ma_audio_buffer_uninit(&b.data);b.data_ready=false;}std::memcpy(b.format.data(),ptr(a[0]),18);b.frequency=read32(b.format.data()+4);break;
+    case O::Cooperative:case O::Restore:break;
+    case O::Unlock:if(web_sfx::contains(&b)){const bool active=web_sfx::playing(&b);const auto frame=web_sfx::cursor(&b);web_sfx::upload(&b,b.pcm->data(),b.length/std::max(1u,read16(b.format.data()+12)),read16(b.format.data()+2),read32(b.format.data()+4),read16(b.format.data()+14)==8?2:1);host.controls(b);web_sfx::seek(&b,frame,read32(b.format.data()+4));if(active)web_sfx::play(&b,b.loop);}break;
+    case O::Format:web_sfx::erase(&b);if(b.sound_ready){ma_sound_uninit(&b.sound);b.sound_ready=false;}if(b.data_ready){ma_audio_buffer_uninit(&b.data);b.data_ready=false;}std::memcpy(b.format.data(),ptr(a[0]),18);b.frequency=read32(b.format.data()+4);break;
     case O::Status:host.position(b);*ptr(a[0])=b.playing?(b.loop?5:1):0;break;
     case O::Volume:b.volume=i32(a[0]);host.controls(b);break;
     case O::Pan:b.pan=i32(a[0]);host.controls(b);break;
@@ -167,16 +182,16 @@ i32 audio_host_call(u32 id,u32 op,const u32* a){
     case O::Play:
         if(!host.sound(b)){host.error=5;return -1;}
         if(b.playing)b.cursor=host.position(b);b.playing=true;b.loop=!!(a[2]&1);b.started=host.millis;b.last_cursor=b.cursor;
-        if(b.sound_ready){ma_sound_set_looping(&b.sound,b.loop);ma_sound_seek_to_pcm_frame(&b.sound,b.cursor/std::max(1u,read16(b.format.data()+12)));ma_sound_start(&b.sound);}break;
-    case O::Stop:b.cursor=host.position(b);b.playing=false;if(b.sound_ready)ma_sound_stop(&b.sound);break;
-    case O::Position:b.cursor=a[0]%b.length;b.started=host.millis;if(b.sound_ready)ma_sound_seek_to_pcm_frame(&b.sound,b.cursor/std::max(1u,read16(b.format.data()+12)));break;
+        if(b.sound_ready){ma_sound_set_looping(&b.sound,b.loop);ma_sound_seek_to_pcm_frame(&b.sound,b.cursor/std::max(1u,read16(b.format.data()+12)));web_sfx::seek(&b,b.cursor/std::max(1u,read16(b.format.data()+12)),read32(b.format.data()+4));if(!web_sfx::play(&b,b.loop))ma_sound_start(&b.sound);}break;
+    case O::Stop:b.cursor=host.position(b);b.playing=false;web_sfx::stop(&b);if(b.sound_ready)ma_sound_stop(&b.sound);break;
+    case O::Position:b.cursor=a[0]%b.length;b.started=host.millis;web_sfx::seek(&b,b.cursor/std::max(1u,read16(b.format.data()+12)),read32(b.format.data()+4));if(b.sound_ready)ma_sound_seek_to_pcm_frame(&b.sound,b.cursor/std::max(1u,read16(b.format.data()+12)));break;
     case O::CurrentPosition:{const auto pos=host.position(b);if(a[0])*ptr(a[0])=pos;if(a[1])*ptr(a[1])=(pos+2048)%b.length;break;}
     case O::Lock:{const auto offset=a[0]%b.length,len=a[6]&2?b.length:a[1],first=std::min(len,b.length-offset);if(len>b.length)return -1;
         *ptr(a[2])=address(b.pcm->data()+offset);*ptr(a[3])=first;if(a[4])*ptr(a[4])=len>first?address(b.pcm->data()):0;if(a[5])*ptr(a[5])=len-first;break;}
     // One native buffer owns both interfaces. This preserves COM reference
     // ownership without building a second browser-side object graph.
     case O::Query:++b.refs;*ptr(a[1])=id;break;
-    case O::Notifications:{auto* notes=ptr(a[1]);b.notifications.clear();for(u32 i=0;i<a[0];i++)b.notifications.emplace_back(notes[i*2],notes[i*2+1]);break;}
+    case O::Notifications:{auto* notes=ptr(a[1]);b.notifications.clear();for(u32 i=0;i<a[0];i++)b.notifications.emplace_back(notes[i*2],notes[i*2+1]);if(!b.notifications.empty())web_sfx::erase(&b);break;}
     case O::GetFormat:if(a[2])*ptr(a[2])=18;if(a[0])std::memcpy(ptr(a[0]),b.format.data(),std::min(a[1],18u));break;
     case O::Caps:{u32 caps[]{20,b.flags,b.length,0,0};std::memcpy(ptr(a[0]),caps,sizeof(caps));break;}
     default:return -1;
@@ -194,7 +209,7 @@ void audio_host_attach(th10::browser::Audio* owner,bool attach){
 }
 #define EXPORT(name) __attribute__((export_name(name)))
 EXPORT("sdl_audio_pump") void sdl_audio_pump(){host.pump();}
-EXPORT("sdl_audio_pause") void sdl_audio_pause(u32 paused){if(host.paused==(paused!=0))return;host.paused=paused!=0;if(!host.stream)return;if(paused)SDL_PauseAudioStreamDevice(host.stream);else SDL_ResumeAudioStreamDevice(host.stream);}
+EXPORT("sdl_audio_pause") void sdl_audio_pause(u32 paused){if(host.paused==(paused!=0))return;host.paused=paused!=0;web_sfx::suspend(paused!=0);if(!host.stream)return;if(paused)SDL_PauseAudioStreamDevice(host.stream);else SDL_ResumeAudioStreamDevice(host.stream);}
 EXPORT("sdl_audio_shutdown") void sdl_audio_shutdown(){host.destroy();}
 EXPORT("sdl_audio_stats") u32 sdl_audio_stats(){static u32 values[12];values[0]=host.ready;values[1]=host.objects.size();values[2]=host.events.size();values[3]=host.pumps;values[4]=host.mixed_frames;values[5]=host.stream?std::max(0,SDL_GetAudioStreamQueued(host.stream))/8:0;values[6]=host.empty_checks;values[7]=host.min_queued;values[8]=host.error;values[9]=host.paused;std::memcpy(values+10,&host.rms,4);values[11]=u32(host.millis);return address(values);}
 // Deterministic PCM/ownership probes exercise the same mixer used by SDL.
