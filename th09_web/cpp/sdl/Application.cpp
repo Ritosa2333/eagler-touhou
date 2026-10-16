@@ -38,7 +38,7 @@ EM_JS(void, th09_network_spectator_begin, (std::uint32_t frame,const void* bytes
     Module["onNetworkSpectatorBegin"]?.(frame,HEAPU8.slice(bytes,bytes+size));
 });
 EM_JS(void, th09_network_spectator_end, (std::uint32_t frame,int winner), { Module["onNetworkSpectatorEnd"]?.(frame,winner); });
-EM_JS(void, th09_network_spectator_round, (std::uint32_t frame,std::uint32_t round), { Module["onNetworkSpectatorRound"]?.(frame,round); });
+EM_JS(void, th09_network_spectator_round, (std::uint32_t frame,std::uint32_t round,std::uint32_t replayFrame), { Module["onNetworkSpectatorRound"]?.(frame,round,replayFrame); });
 EM_JS(void, th09_network_request, (), { Module["onNetworkRequest"]?.(); });
 EM_JS(void, th09_network_send, (unsigned frame,unsigned keys,int moving,float x,float y), { Module["onNetworkInput"]?.(frame,keys,moving,x,y); });
 EM_JS(void, th09_network_spectator_frame,
@@ -94,6 +94,7 @@ struct RollbackFrame {
     u32 beginFrame=0;
     i32 winner=-1;
     i32 round=-1;
+    u32 replayRoundFrame=0;
     SpectatorBeginState begin;
     struct Sound {i32 kind,id;float value;};
     std::vector<Sound> sounds;
@@ -691,8 +692,8 @@ u32 rollback_tick(u32 render){
         const bool wasComplete=probe->complete;
         const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
         const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,render&&final);
-        if(!record.hasBegin&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0)
-            record.round=probe->world->rules.progress.round;
+        if(!record.hasBegin&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0){
+            record.round=probe->world->rules.progress.round;record.replayRoundFrame=probe->session->recording.frame();}
         record.hasEnd=!wasComplete&&probe->complete;
         if(record.hasEnd)record.winner=probe->world->scene->winner;
         recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
@@ -718,9 +719,9 @@ u32 rollback_tick(u32 render){
         if(record.hasEnd)th09_network_replay_boundary(rollback_published+1,record.winner);
         if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return 0;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
             if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
-            if(!network_selection||record.gameplay)th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y);
-            if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round));
-            if(record.hasEnd)th09_network_spectator_end(rollback_published+1,record.winner);}
+            if(!network_selection||record.gameplay)th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y);}
+        if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round),record.replayRoundFrame);
+        if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+1,record.winner);
         if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return 0;}
         ++rollback_published;
         TH09_PERF_COUNT(PublishedFrames,1);
@@ -765,10 +766,10 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(gam
         const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
         const u32 ok=probe->tick_inputs(keys[0],keys[1],keys[2],render!=0);
         if(ok&&publisher){const auto mode=[](const NetworkInput::Motion& m){return !m.enabled?0:m.target?(m.unlimited?3:2):1;};
-            th09_network_spectator_frame(frame,keys[0],keys[1],mode(motion[0]),motion[0].x,motion[0].y,mode(motion[1]),motion[1].x,motion[1].y);
-            if(probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0)
-                th09_network_spectator_round(frame+1,u32(probe->world->rules.progress.round));
-            if(!wasComplete&&probe->complete)th09_network_spectator_end(frame+1,probe->world->scene->winner);}
+            th09_network_spectator_frame(frame,keys[0],keys[1],mode(motion[0]),motion[0].x,motion[0].y,mode(motion[1]),motion[1].x,motion[1].y);}
+        if(ok&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0)
+            th09_network_spectator_round(frame+1,u32(probe->world->rules.progress.round),probe->session->recording.frame());
+        if(ok&&publisher&&!wasComplete&&probe->complete)th09_network_spectator_end(frame+1,probe->world->scene->winner);
         return ok;}
     sample_keys(keys);u32 ok=1;for(u32 extra=0;extra<3&&ok;++extra){ok=probe->tick_inputs(keys[0],keys[1],keys[2],false);if(!ok||probe->in_title||probe->paused||probe->over||probe->complete||!probe->session->is_replay||probe->session->phase!=SessionPhase::match||probe->session->playback_schedule()!=6)break;}if(ok&&render)probe->draw();return ok;
 }
@@ -1112,10 +1113,10 @@ TH09_EXPORT("th09_play_replay") u32 th09_play_replay(u32 size){
     probe->launch_pending=false;probe->in_title=false;return probe->start();
 }
 TH09_EXPORT("th09_replay_view_info") const u32* th09_replay_view_info(){
-    static u32 values[8]{};values[0]=1;values[2]=replay_view_total;
+    static u32 values[9]{};values[0]=2;values[2]=replay_view_total;
     const bool active=probe&&!network.active&&!spectator_mode&&!probe->in_title&&probe->session&&probe->session->is_replay&&probe->world;
     values[3]=!active||(active&&(probe->over||probe->complete));
-    if(active){const auto& selection=probe->world->configuration.selection;const auto stage=u32(selection.stage);values[1]=(stage<10?replay_view_offsets[stage]:0)+probe->session->replay_frame();values[4]=selection.difficulty;values[5]=selection.characters[0];values[6]=selection.characters[1];values[7]=stage;}
+    if(active){const auto& selection=probe->world->configuration.selection;const auto stage=u32(selection.stage);values[1]=(stage<10?replay_view_offsets[stage]:0)+probe->session->replay_frame();values[4]=selection.difficulty;values[5]=selection.characters[0];values[6]=selection.characters[1];values[7]=stage;values[8]=u32(probe->world->rules.progress.round);}
     return values;
 }
 TH09_EXPORT("th09_replay_view_step") u32 th09_replay_view_step(u32 render){

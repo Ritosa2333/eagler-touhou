@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {createAutoReplay, parseReplayMatch} from '../../sdl-runtime/auto-replay.mjs';
 function fixture(extra = {}) {
   const files = new Map(), notices = [], writes = [];
-  let opts = {netplayReplayNames: ['晚风', 'abdjfal']}, failed = false, flushFailed = false;
-  const root = '/savesth09mp/replay/晚风 vs abdjfal/';
+  let opts = {netplayPlayer: 0, netplayReplayNames: ['晚风', 'abdjfal']}, failed = false, flushFailed = false;
+  const root = '/savesth09mp/replay/abdjfal/';
   const folders = new Set();
   const core = {HEAPU8: new Uint8Array(1024), _th09_auto_replay_folder_buffer: () => 16, FS: {
     mkdirTree: path => folders.add(path),
@@ -31,8 +31,8 @@ test('default on, snapshots names, ignores duplicate result, consecutive matches
   assert.deepEqual(f.archive.readMatch(f.root + 'th9_ud0001.rpy').names, ['晚风', 'abdjfal']);
   f.archive.begin(700); f.archive.end(1300, 1); await Promise.resolve();
   assert.deepEqual(f.writes, [1, 0]);
-  assert.ok(f.folders.has('/savesth09mp/replay/改名 vs 新名'));
-  assert.deepEqual(f.archive.readMatch('/savesth09mp/replay/改名 vs 新名/th9_ud0000.rpyx').names, ['改名', '新名']);
+  assert.ok(f.folders.has('/savesth09mp/replay/新名'));
+  assert.deepEqual(f.archive.readMatch('/savesth09mp/replay/新名/th9_ud0000.rpyx').names, ['改名', '新名']);
 });
 test('disabled setting, spectator and incomplete/invalid results never save', () => {
   const f = fixture(); f.archive.begin(0);
@@ -58,7 +58,31 @@ test('sidecar validation, rename transfer and deletion preserve archive pairing'
   assert.deepEqual([...f.files.get('/savesth09mp/score.dat')],[123]);
 });
 
-test('names form a real safe directory and separate matchups allocate independent slots', () => {
+test('opponent names form a real safe directory', () => {
   const f=fixture();f.options({netplayReplayNames:['../a:b','x/y.']});f.archive.begin(0);f.archive.end(600,0);
-  assert.ok([...f.files.keys()].every(path=>path.startsWith('/savesth09mp/replay/.._a_b vs x_y/')));
+  assert.ok([...f.files.keys()].every(path=>path.startsWith('/savesth09mp/replay/x_y/')));
+});
+
+test('P2 archives the opponent captured at match start, with safe unnamed fallbacks', () => {
+  const f=fixture();f.options({netplayPlayer:1});f.archive.begin(120);
+  f.options({netplayPlayer:0,netplayReplayNames:['另一人','自己']});f.archive.end(720,1);
+  assert.ok(f.files.has('/savesth09mp/replay/晚风/th9_ud0000.rpy'));
+  f.options({netplayPlayer:1,netplayReplayNames:['...','自己']});f.archive.begin(800);f.archive.end(1400,0);
+  assert.ok(f.files.has('/savesth09mp/replay/P1/th9_ud0000.rpy'));
+});
+
+test('sidecars retain exact Replay round offsets independently of menu/network frames', () => {
+  const f=fixture();f.archive.begin(1234);
+  for(const offset of [0,300,300,250,-1,NaN,720])f.archive.roundStart(offset);
+  f.archive.end(2234,0);
+  const path=f.root+'th9_ud0000.rpy',match=f.archive.readMatch(path);
+  assert.deepEqual(match.roundStarts,[0,300,720]);
+  f.archive.writeMatch(f.root+'th9_ud0001.rpy',match);
+  assert.deepEqual(f.archive.readMatch(f.root+'th9_ud0001.rpy').roundStarts,[0,300,720]);
+  for(const roundStarts of [undefined,[],[1,300],[0,300,300],[0,-2],[0,1000],Array.from({length:11},(_,i)=>i)]){
+    const parsed=parseReplayMatch({...match,roundStarts});assert.equal(parsed.winner,0);
+    assert.equal(parsed.roundStarts,undefined,'invalid optional markers cannot block an otherwise playable archive');
+  }
+  f.archive.begin(3000);f.archive.end(3600,1);
+  assert.deepEqual(f.archive.readMatch(f.root+'th9_ud0002.rpy').roundStarts,[0]);
 });

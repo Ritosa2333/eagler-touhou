@@ -7,7 +7,11 @@ export function parseReplayMatch(value) {
       !Number.isSafeInteger(value.frames) || value.frames < 30 ||
       ![0, 1].includes(value.winner)) return null;
   return {schema: value.schema, names: value.names.map((name, side) => name || `P${side + 1}`),
-    startedAt: value.startedAt, frames: value.frames, winner: value.winner};
+    startedAt: value.startedAt, frames: value.frames, winner: value.winner,
+    ...(Array.isArray(value.roundStarts) && value.roundStarts.length > 0 && value.roundStarts.length <= 10 &&
+      value.roundStarts[0] === 0 && value.roundStarts.every((frame, index, frames) =>
+        Number.isSafeInteger(frame) && frame >= 0 && frame < value.frames && (!index || frame > frames[index - 1]))
+      ? {roundStarts: [...value.roundStarts]} : {})};
 }
 export function createAutoReplay({core, saveRoot, options, enabled, sync, notice, now = Date.now}) {
   let match = null, lastEnd = -1;
@@ -26,16 +30,23 @@ export function createAutoReplay({core, saveRoot, options, enabled, sync, notice
     readMatch, writeMatch,
     removeMatch(path) {if (!/\.rpyx?$/.test(path)) return;try {core.FS.unlink(sidecar(path));} catch {}},
     begin(frame) {
-      const names = options().netplayReplayNames;
-      match = {frame, startedAt: now(), names: [0, 1].map(side => String(names?.[side] || `P${side + 1}`).slice(0, 64))};
+      const {netplayReplayNames: names, netplayPlayer} = options();
+      match = {frame, startedAt: now(), opponent: netplayPlayer === 1 ? 0 : 1, roundStarts: [0],
+        names: [0, 1].map(side => String(names?.[side] || `P${side + 1}`).slice(0, 64))};
       lastEnd = -1;
+    },
+    // Native supplies the next input offset in the Replay stream, not a network
+    // tick. Publish only confirmed boundaries, on both players, after rollback.
+    roundStart(frame) {
+      if (match && Number.isSafeInteger(frame) && frame > match.roundStarts.at(-1) && match.roundStarts.length < 10)
+        match.roundStarts.push(frame);
     },
     end(frame, winner) {
       if (!enabled() || options().netplaySpectator || options().netplayReplayAutoSave === false ||
           !match || frame <= match.frame || frame === lastEnd || ![0, 1].includes(winner)) return;
       lastEnd = frame;
       try {
-        const folder = match.names.join(' vs ').replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '_').slice(0, 128).replace(/[. ]+$/g, '') || 'P1 vs P2';
+        const folder = match.names[match.opponent].replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '_').slice(0, 128).replace(/[. ]+$/g, '') || `P${match.opponent + 1}`;
         const directory = `${saveRoot}/replay/${folder}`;
         const encoded = new TextEncoder().encode(folder);
         if (encoded.length >= 512) throw Error('录像目录名过长');
@@ -52,7 +63,8 @@ export function createAutoReplay({core, saveRoot, options, enabled, sync, notice
         if (!core._th09_auto_save_replay(slot)) throw Error('自动保存 Replay 失败，请在游戏内手动保存');
         const path = `${directory}/th9_ud${slot.toString(16).padStart(4, '0')}.rpy`;
         writeMatch(path, {schema: 'eagler-touhou/th09-match-replay/1', names: match.names,
-          startedAt: match.startedAt, frames: frame - match.frame, winner});
+          startedAt: match.startedAt, frames: frame - match.frame, winner,
+          roundStarts: match.roundStarts.filter(offset => offset < frame - match.frame)});
         const label = match.names.join(' vs ');
         // Capture synchronously before another match can replace the recording.
         // A flush failure must not terminate the player's connection.
