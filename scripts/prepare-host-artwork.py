@@ -35,8 +35,9 @@ ARTWORK_BY_GAME = {
     "th08": ("th08-card.webp",),
     "th09": ("th09-card.webp",),
     "th10": ("th10-card.webp",),
-    # TH20's archive has no reader in this repository; no card is declared yet.
-    "th20": (),
+    # TH20's archive has no reader here. Its card must be supplied by the host
+    # through --override-dir, like the TH11 card.
+    "th20": ("th20-card.webp",),
     # TH11's archive has no reader here. Use an explicit, locally supplied card
     # override (for example its existing Launcher th11-card.png) for publication.
     "th11": ("th11-card.webp",),
@@ -198,6 +199,8 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         return _extract_th10_title(root, thdat, thanm)
     if name == "th15-card.webp":
         return _extract_th15_title(root, thdat, thanm)
+    if name in ("th11-card.webp", "th20-card.webp"):
+        raise FileNotFoundError(f"{game}: supply {name} through --override-dir; no retail artwork reader is available")
     raise AssertionError(name)
 
 
