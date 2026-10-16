@@ -4,6 +4,7 @@ namespace th15 {
 ItemManager::ItemManager(AnmManager& a,EffectManager& e,i32 id):animations(a),effects(e),resource(id){for(u32 i=0;i<pool_size;i++)free_slots[i>=ordinary_count].push_back(i);}
 ItemManager::~ItemManager(){for(auto& slot:slots){if(slot.body)animations.registry.destroy_tree(*slot.body);if(slot.arrow)animations.registry.destroy_tree(*slot.arrow);}}
 bool ItemManager::reset(){
+    if(multiplayer_release)for(u32 index=0;index<pool_size;++index)multiplayer_release(index);
     for(auto& slot:slots){
         if((slot.body&&!animations.registry.destroy_tree(*slot.body))||(slot.arrow&&!animations.registry.destroy_tree(*slot.arrow))){error=animations.registry.error;return false;}
         slot.state={};slot.body.reset();slot.arrow.reset();slot.arrow_ended=false;
@@ -27,6 +28,6 @@ u32 ItemManager::spawn(i32 kind,const Vec3& position,float angle,float speed){
     else{state.state=1;state.position.x=state.position.x<=-192.f?-192.f:state.position.x>=192.f?192.f:state.position.x;if(kind==12){i32& counter=alternating_counter?*alternating_counter:alternating_pieces;counter=wrapping_add(counter,1);alternating_pieces=counter;kind=counter%5==0?4:6;}state.kind=kind;state.appearance=0;state.attraction_speed=0;state.delay=0;if(!piece_effect(state)||!appearance(slot,kind))return 0;slot.body->visual.color=0xffffffff;}
     free.pop_back();return index+1;
 }
-bool ItemManager::release(u32 id){auto* slot=find(id);if(!slot){error="Item slot unavailable";return false;}const u32 index=id-1;if(slot->state.state==0){error="Item slot already free";return false;}slot->state.state=0;free_slots[index>=ordinary_count].push_back(index);return true;}
+bool ItemManager::release(u32 id){auto* slot=find(id);if(!slot){error="Item slot unavailable";return false;}const u32 index=id-1;if(slot->state.state==0){error="Item slot already free";return false;}slot->state.state=0;if(multiplayer_release)multiplayer_release(index);free_slots[index>=ordinary_count].push_back(index);return true;}
 bool ItemManager::falling(u32 id){auto* slot=find(id);if(!slot){error="Item slot unavailable";return false;}slot->state.state=2;if(!slot->body)slot->body=std::make_unique<AnmVm>();constexpr i32 scripts[]={-1,112,113,114,115,116,117,118,119,120,121,122,-1,123,124,125};const i32 kind=slot->state.kind;if(kind<1||kind>15||scripts[kind]<0){error="Falling item animation unavailable";return false;}if(!animations.bind_template(*slot->body,resource,scripts[kind])||animations.tick_instance(*slot->body)<0){error=animations.error;return false;}slot->arrow_ended=true;if(slot->arrow){slot->arrow->visual.flags&=~1u;slot->arrow->instruction_offset=-1;}return true;}
 }

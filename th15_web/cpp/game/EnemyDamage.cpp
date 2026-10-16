@@ -32,6 +32,7 @@ int EnemyDamage::update(EnemyRuntime& runtime,float rate){
         if(world.game_state==1&&enemy.damage_multiplier<1){if(damage&&enemy.damage_multiplier<=0&&!host.sound(36,enemy.motion.position))return fail(runtime,"Enemy damage sound unavailable");damage=truncate_int(float(float(damage)*enemy.damage_multiplier));}
         if(damage){
             if((world.spell_flags()&33)==33)damage/=30;
+            damage=host.effective_damage(enemy,damage);
             if(!(enemy.flags&16)&&enemy.collision_timer.current<=0)enemy.apply_damage(damage);else enemy.cumulative_damage=wrapping_add(enemy.cumulative_damage,damage);
             enemy.damage_timer.set(30);
             if(const auto* name=enemy.check_interrupt(world)){const int result=interrupt(runtime,*name,rate,true);if(result)return result;}

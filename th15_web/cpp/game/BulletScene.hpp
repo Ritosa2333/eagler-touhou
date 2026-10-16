@@ -5,6 +5,10 @@
 #include <memory>
 namespace th15 {
 struct BulletSceneHost:PlayerDamageHost {
+    virtual unsigned player_count()const noexcept{return 1;}
+    virtual unsigned local_player()const noexcept{return 0;}
+    virtual void select_player(unsigned){}
+    virtual bool player_active(unsigned)const noexcept{return true;}
     virtual const PlayerCollision& player_collision()const noexcept=0;
     virtual void sound(i32 id)=0;
     virtual void cancellation_effect(i32 script,const Vec3& position,const Vec3& velocity)=0;
@@ -42,5 +46,6 @@ public:
     bool cancel_all(i32 reward);
     bool cancel_slot(u32 slot,i32 reward);
     BulletVisual* visual(u32 slot)noexcept;
+    const MultiplayerGrazeVisual* viewpoint_graze(u32 slot)const noexcept;
 };
 }

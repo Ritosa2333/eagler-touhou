@@ -29,6 +29,10 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool pump_checkpoint(u32 budget=131072);bool finish_checkpoint();
  Archive archive;std::vector<u8> archive_bytes;std::unordered_map<std::string,u32> archive_names;
  PlayerTouch touch;u32 controller_buttons=0;i32 numbered_chapter=0;
+#if TH15_MULTIPLAYER
+ MultiplayerOptions mp_options;bool multiplayer=false;
+ std::function<bool(i32,const std::array<char,9>&)> multiplayer_replay_save;
+#endif
  PracticeState practice;
  PracticeMusic practice_music;
  bool suppress_practice_music(u32 caller,i32 id);
@@ -49,7 +53,20 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool request_catalog()override;bool release_catalog()override;bool start_replay(const ReplayStartRequest&)override;bool clear_page()override;bool request_page(i32)override;bool upload_page(i32)override;
  // Purple's th15_rep_save appends PRAC metadata; assistance is not a save ban.
  // Original pause/result menu conditions still own replay availability.
- bool replay_save_available()const override{return true;}
+ bool replay_save_available()const override{
+#if TH15_MULTIPLAYER
+ return !multiplayer||(multiplayer_replay_save&&multiplayer_replay_save(-1,{}));
+#else
+ return true;
+#endif
+ }
+ bool exit_after_replay_save()const override{
+#if TH15_MULTIPLAYER
+ return multiplayer;
+#else
+ return false;
+#endif
+ }
  bool read_slot(i32,std::shared_ptr<Replay>&)override;bool prepare_live_replay(bool)override;bool save_slot(i32,const std::array<char,9>&)override;bool release_live_replay()override;
  bool release_transient_animations()override;bool clear_title_overlay()override;bool read_demo(i32,std::shared_ptr<Replay>&)override;bool begin_demo(const ReplayStartRequest&)override;bool queue_title_music(i32,i32,const std::string&)override;bool clear_current_wave()override;bool reset_replay_selection()override;bool return_practice_transition()override;bool title_exit(i32)override;bool fade_out_title_music()override;
  bool audio(i32,float,PlayerShots::SoundAction,bool)override;bool life_hud(i32,i32)override;bool bomb_hud(i32,i32)override;bool game_over()override;bool notice(i32)override;bool popup(const Vec3&,i32,u32)override;bool cancellation_effect(i32,const Vec3&,const Vec3&)override;bool graze_spark(const Vec3&)override;bool graze_flash()override;bool graze_resonance(float)override;bool shake(const ScreenShakeSpec&)override;bool nudge(const ScreenNudgeSpec&)override;

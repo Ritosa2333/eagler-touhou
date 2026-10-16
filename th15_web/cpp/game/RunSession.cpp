@@ -42,7 +42,11 @@ bool RunSession::capture_previous_background(){auto* previous=run.previous_scene
 bool RunSession::prepare_background_transition(){return entry.prepare_background_transition();}
 bool RunSession::transition_banner(){return entry.transition_banner();}
 bool RunSession::reset_bullets(){auto& b=*scene().battle.bullet_scene;b.reset();return b.error.empty()||fail(b.error);}
-bool RunSession::reset_player(){auto& p=*scene().battle.player;return p.reset_for_stage()||fail(p.error);}
+bool RunSession::reset_player(){
+#if TH15_MULTIPLAYER
+ if(scene().battle.mp_enabled){for(unsigned s=0;s<scene().battle.mp_options.seat_count;++s){auto& pilot=*scene().battle.pilots[s];if(!pilot.ghost&&!pilot.player->reset_for_stage())return fail(pilot.player->error);}return true;}
+#endif
+ auto& p=*scene().battle.player;return p.reset_for_stage()||fail(p.error);}
 bool RunSession::reset_items(){auto& i=*scene().battle.items;return i.reset()||fail(i.error);}
 bool RunSession::reset_enemies(){auto& e=*scene().battle.enemies;return e.clear()||fail(e.error);}
 bool RunSession::reset_lasers(){auto& l=scene().battle.laser_scene->manager;return l.clear()||fail(l.error);}

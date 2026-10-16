@@ -53,16 +53,28 @@ bool ApplicationState::start_replay(const ReplayStartRequest& value){
 bool ApplicationState::clear_page(){auto* bank=animations.resource(19);return bank&&graphics.clear_image(graphics.texture(*bank,1))||fail(graphics.error);}
 bool ApplicationState::request_page(i32 page){pending_page=page;return true;}
 bool ApplicationState::upload_page(i32){auto* bank=animations.resource(19);return bank&&graphics.upload_png(graphics.texture(*bank,1),pending_png.data(),pending_png.size())||fail(graphics.error);}
-bool ApplicationState::read_slot(i32 slot,std::shared_ptr<Replay>& value){return files.replay_slot(slot,value)||fail(files.error);}
+bool ApplicationState::read_slot(i32 slot,std::shared_ptr<Replay>& value){
+#if TH15_MULTIPLAYER
+ if(multiplayer){value.reset();return true;}
+#endif
+return files.replay_slot(slot,value)||fail(files.error);}
 bool ApplicationState::prepare_live_replay(bool cleared){
  if(!replay||!replay->live())return fail("No live recording to save");if(!completed_recording){replay->live()->finish(i64(std::time(nullptr)),progress.stage,cleared);completed_recording=true;}live_description=replay->live()->description();if(title)title->live=replay->live();return true;
 }
 bool ApplicationState::save_slot(i32 slot,const std::array<char,9>& name){
+#if TH15_MULTIPLAYER
+ if(multiplayer)return multiplayer_replay_save&&multiplayer_replay_save(slot,name);
+#endif
+
  if(practice.active&&replay&&replay->live()&&!replay->live()->set_practice(practice.run))return fail("Practice replay parameters unavailable");
  if(!replay||!replay->live())return fail("Replay save has no recording");ReplayCalendar date;if(!calendar(i64(std::time(nullptr)),date))return false;const auto score=scene()?scene()->battle.score.score:selection_score.score;
  const ReplayExportDetails details{score,double(frames),double(frames?frames:1),date.year,date.month,date.day,date.hour,date.minute};return files.save_replay(slot,*replay->live(),name,details)||fail(files.error);
 }
-bool ApplicationState::release_live_replay(){if(title)title->live=nullptr;return true;}
+bool ApplicationState::release_live_replay(){
+#if TH15_MULTIPLAYER
+ if(multiplayer)exiting=true;
+#endif
+ if(title)title->live=nullptr;return true;}
 bool ApplicationState::release_transient_animations(){for(i32 bank=20;bank<24;bank++)animations.unload(bank);return true;}
 bool ApplicationState::clear_title_overlay(){return animations.retire(transition_overlay)||fail(animations.error);}
 bool ApplicationState::read_demo(i32 index,std::shared_ptr<Replay>& value){std::vector<u8> bytes;if(index<0||index>=3||!read("demo"+std::to_string(index)+".rpy",bytes))return fail("Original demo unavailable");value=std::make_shared<Replay>();return value->open(bytes.data(),bytes.size())||fail(value->error());}

@@ -2,7 +2,7 @@
 #include <cmath>
 namespace th15 {
 struct LaserScene::MovingLaser final:LaserObject,LaserCancellationHost,LaserContactHost,LaserProgramHost {
-    LaserScene& scene;MovingLaserRequest request;MovingLaserMotion motion;LaserVisual visual;LaserContact contact;LaserCancellation cancellation;LaserProgram program;
+    LaserScene& scene;MovingLaserRequest request;MovingLaserMotion motion;LaserVisual visual;LaserContact contact;std::array<LaserContact,3> contacts;LaserCancellation cancellation;LaserProgram program;
     MovingLaser(LaserScene& s,const MovingLaserRequest& r):scene(s),request(r),visual(s.animations,s.visual_random,s.resource),cancellation(s.game_random,s.rewards,*this){}
     bool initialize(){
         state=2;kind=LaserKind::moving;program.index=request.transform_index;if(!visual.initialize_moving(request.type,request.color)){error=visual.error;return false;}
@@ -11,10 +11,14 @@ struct LaserScene::MovingLaser final:LaserObject,LaserCancellationHost,LaserCont
         motion.angle=request.angle;motion.maximum_length=request.maximum_length;motion.length=request.initial_length;motion.end_distance=request.end_distance;motion.width=request.width;motion.speed=request.speed;motion.traveled=motion.length>motion.maximum_length?.01f:0;motion.set_velocity();return true;
     }
     bool update(float rate,bool& finished)override{
-        const auto& player=scene.host.player_collision();LaserProgramContext context{motion,visual,id,state,outside_count,{player.position.x,player.position.y,0},*this,request.reflection_sound};if(!program.update(request.transforms,context,rate)){error=program.error;return false;}motion.outside_delay=outside_delay;finished=motion.advance(rate);request.maximum_length=motion.maximum_length;outside_delay=motion.outside_delay;if(finished)return true;
+        const auto& player=scene.host.player_collision();const Vec3 target=scene.multiplayer_target?scene.multiplayer_target(motion.position):Vec3{player.position.x,player.position.y,0};LaserProgramContext context{motion,visual,id,state,outside_count,target,*this,request.reflection_sound};if(!program.update(request.transforms,context,rate)){error=program.error;return false;}motion.outside_delay=outside_delay;finished=motion.advance(rate);request.maximum_length=motion.maximum_length;outside_delay=motion.outside_delay;if(finished)return true;
         if(!update_visual(rate,false))return false;if(!visual.update(motion.width,motion.length,motion.traveled,true)){error=visual.error;return false;}motion.finish_frame(rate);return true;
     }
-    bool update_visual(float rate,bool graze_only)override{return contact.moving(motion.position,motion.angle,motion.length,motion.width,u32(request.transform_parameter),graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+    bool update_visual(float rate,bool graze_only)override{
+        if(scene.host.player_count()==1)return contact.moving(motion.position,motion.angle,motion.length,motion.width,u32(request.transform_parameter),graze_only,rate,scene.host.player_collision(),scene.host,*this);
+        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].moving(motion.position,motion.angle,motion.length,motion.width,u32(request.transform_parameter),graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+        scene.host.select_player(0);return ok;
+    }
     bool retire()override{return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{const i32 n=cancellation.rectangle(motion,flags,request.type,request.color,outside_count,honor,p,size,angle,reward);request.maximum_length=motion.maximum_length;if(n<0)error=cancellation.error;return n;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{const i32 n=cancellation.circle(motion,flags,request.type,request.color,outside_count,honor,p,radius,reward);request.maximum_length=motion.maximum_length;if(n<0)error=cancellation.error;return n;}
@@ -35,7 +39,7 @@ struct LaserScene::MovingLaser final:LaserObject,LaserCancellationHost,LaserCont
     void graze_resonance(float value)override{scene.host.graze_resonance(value);}
 };
 struct LaserScene::StationaryLaser final:LaserObject,LaserCancellationHost,LaserContactHost {
-    LaserScene& scene;StationaryLaserRequest request;StationaryLaserMotion motion;LaserVisual visual;LaserContact contact;LaserCancellation cancellation;StationaryLaserProgram program;
+    LaserScene& scene;StationaryLaserRequest request;StationaryLaserMotion motion;LaserVisual visual;LaserContact contact;std::array<LaserContact,3> contacts;LaserCancellation cancellation;StationaryLaserProgram program;
     StationaryLaser(LaserScene& s,const StationaryLaserRequest& r):scene(s),request(r),visual(s.animations,s.visual_random,s.resource),cancellation(s.game_random,s.rewards,*this){}
     bool initialize(){
         state=3;kind=LaserKind::stationary;program.index=request.transform_index;if(!visual.initialize_stationary(request.type,request.color)){error=visual.error;return false;}
@@ -46,7 +50,11 @@ struct LaserScene::StationaryLaser final:LaserObject,LaserCancellationHost,Laser
         if(!program.update(request.transforms,visual,state,outside_count,rate)){error=program.error;return false;}motion.age=age;motion.state=state;finished=motion.advance(rate,(request.flags&1)?scene.host.stationary_laser_anchor():nullptr);state=motion.state;age=motion.age;if(finished)return true;
         if(!update_visual(rate,false))return false;if(!visual.update(motion.width,motion.length,motion.traveled,false)){error=visual.error;return false;}return true;
     }
-    bool update_visual(float rate,bool graze_only)override{return contact.stationary(motion.position,motion.angle,motion.length,motion.width,state,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+    bool update_visual(float rate,bool graze_only)override{
+        if(scene.host.player_count()==1)return contact.stationary(motion.position,motion.angle,motion.length,motion.width,state,graze_only,rate,scene.host.player_collision(),scene.host,*this);
+        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].stationary(motion.position,motion.angle,motion.length,motion.width,state,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+        scene.host.select_player(0);return ok;
+    }
     bool retire()override{return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{MovingLaserMotion partial;partial.position=motion.position;partial.angle=motion.angle;partial.length=motion.length;const i32 n=cancellation.rectangle(partial,flags,request.type,request.color,outside_count,honor,p,size,angle,reward,true);motion.length=partial.length;if(n<0)error=cancellation.error;return n;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{MovingLaserMotion partial;partial.position=motion.position;partial.angle=motion.angle;partial.length=motion.length;const i32 n=cancellation.circle(partial,flags,request.type,request.color,outside_count,honor,p,radius,reward,true);motion.length=partial.length;if(n<0)error=cancellation.error;return n;}
@@ -63,7 +71,7 @@ struct LaserScene::StationaryLaser final:LaserObject,LaserCancellationHost,Laser
     void graze_resonance(float value)override{scene.host.graze_resonance(value);}
 };
 struct LaserScene::CurveLaser final:LaserObject,CurveCancellationHost,LaserContactHost,CurveProgramHost {
-    LaserScene& scene;CurveLaserRequest request;CurveLaserMotion motion;LaserVisual visual;LaserContact contact;CurveCancellation cancellation;CurveProgram program;
+    LaserScene& scene;CurveLaserRequest request;CurveLaserMotion motion;LaserVisual visual;LaserContact contact;std::array<LaserContact,3> contacts;CurveCancellation cancellation;CurveProgram program;
     CurveLaser(LaserScene& s,const CurveLaserRequest& r):scene(s),request(r),visual(s.animations,s.visual_random,s.resource),cancellation(s.game_random,s.rewards,*this){}
     bool initialize(){
         state=2;kind=LaserKind::curved;if(!visual.initialize_curved(request.type,request.color)){error=visual.error;return false;}
@@ -76,7 +84,11 @@ struct LaserScene::CurveLaser final:LaserObject,CurveCancellationHost,LaserConta
         motion.outside_delay=outside_delay;finished=motion.advance(rate,program.flags);outside_delay=motion.outside_delay;if(finished)return true;
         if(!update_visual(rate,false))return false;if(!visual.update_curved()){error=visual.error;return false;}motion.finish_frame(rate);return true;
     }
-    bool update_visual(float rate,bool graze_only)override{return contact.curved(motion,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+    bool update_visual(float rate,bool graze_only)override{
+        if(scene.host.player_count()==1)return contact.curved(motion,graze_only,rate,scene.host.player_collision(),scene.host,*this);
+        bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].curved(motion,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
+        scene.host.select_player(0);return ok;
+    }
     bool retire()override{visual.retain_children_on_retire=true;return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{if(cancellation.rectangle(motion,flags,request.color,outside_count,honor,p,size,angle,reward,scene.rate))return 0;error=cancellation.error;return -1;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{const i32 n=cancellation.circle(motion,flags,request.color,outside_count,honor,p,radius,reward);if(n<0)error=cancellation.error;return n;}

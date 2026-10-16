@@ -14,6 +14,9 @@ i32 SessionGameplay::update_runtime(){
  const i32 action=runtime.update(input);scene.battle.active_frame().game_flags=progress.scene_flags;if(action==i32(FrameAction::Error))fail(scene.error.empty()?runtime.error:scene.error);return action;
 }
 i32 SessionGameplay::update_input(){
+#if TH15_MULTIPLAYER
+ if(scene.battle.mp_enabled){live.update(frame.scene.battle.held);scene.apply_input(live);return i32(FrameAction::Continue);}
+#endif
  scene.battle.player->motion.touch={};
  if(!input_enabled)return i32(FrameAction::Continue);
  if((recording&&recording->frame_clock()<0)||(playback&&playback->frame_clock()<0))return i32(FrameAction::Continue);

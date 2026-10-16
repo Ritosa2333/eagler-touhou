@@ -44,3 +44,5 @@ score*.dat
 **/th15_web/tools/
 **/th10_web/tools/
 tools/architecture/python/
+
+/build-eagler-multiplayer/

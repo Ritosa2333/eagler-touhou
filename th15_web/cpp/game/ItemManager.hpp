@@ -6,7 +6,7 @@
 #include "PlayerBounds.hpp"
 #include "AnmRenderer.hpp"
 namespace th15 {
-struct ItemFrameContext {PlayerMotion& player;const PlayerBounds& bounds;ItemScoreState& score;ItemCollection& collection;Rng& visual_random;i32 player_state=1,character=0,bomb_state=0,bomb_frame=0;bool hud_collect=false;u32 held=0;float attraction_speed=5,rate=1;};
+struct ItemFrameContext {PlayerMotion& player;const PlayerBounds& bounds;ItemScoreState& score;ItemCollection& collection;Rng& visual_random;i32 player_state=1,character=0,bomb_state=0,bomb_frame=0;bool hud_collect=false;u32 held=0;float attraction_speed=5,rate=1;bool directed_item=false;};
 class ItemManager {
     friend class ItemCheckpoint;
 public:
@@ -26,6 +26,8 @@ public:
     Slot* find(u32 id){return id>0&&id<=pool_size?&slots[id-1]:nullptr;}
     u32 spawn(i32 kind,const Vec3&,float angle,float speed);
     bool release(u32 id);bool falling(u32 id);
+    std::function<ItemFrameContext*(u32,const ItemState&)> multiplayer_context;
+    std::function<void(u32)> multiplayer_release;
     bool update(ItemFrameContext&);
     bool draw(AnmRenderer&);
     u32 free_head(bool cancel)const noexcept{return free_slots[cancel].empty()?0:free_slots[cancel].back()+1;}

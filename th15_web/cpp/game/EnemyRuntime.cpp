@@ -20,6 +20,7 @@ int EnemyRuntime::update(float rate,const Vec3& background_delta){
     const auto movement=state.update_movement(rate,background_delta,host.animations());
     if(movement==EnemyMovementResult::outside)return -1;
     if(movement==EnemyMovementResult::animation_unavailable){error="Enemy movement animation unavailable";return -2;}
+    if(world.multiplayer_target)world.player_position=world.multiplayer_target(state.motion.position);
     if(const int result=scripts.step(rate,rate)){if(result==-2){error=scripts.error;return -2;}return -1;}
     if(const int result=host.after_script(*this,world.current_rate(rate))){if(result==-2&&error.empty())error="Enemy callback unavailable";return result==-2?-2:-1;}
     if(const int result=host.collide_and_damage(*this,world.current_rate(rate))){if(result==-2&&error.empty())error="Enemy damage integration failed";return result==-2?-2:-1;}

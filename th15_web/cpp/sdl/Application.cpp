@@ -162,6 +162,9 @@ bool ApplicationState::begin_run(){
  if(!progress.replay&&practice.enabled&&practice.cheats)practice.assisted=true;
  run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,*this,&scheduler,&shared);
  run->practice=&practice;
+#if TH15_MULTIPLAYER
+ run->multiplayer=multiplayer;
+#endif
  if(!run->construct(progress.stage,progress.character)||!preload_run())return fail(run->error);
  // Selection carries stocks/mode; active bomb state belongs to the departing
  // bomb object (native +0x24) and cannot survive construction of a fresh one.
@@ -169,14 +172,26 @@ bool ApplicationState::begin_run(){
  session=std::make_unique<RunSession>(*run,progress,*replay,*this,*this);initialization=std::make_unique<RunInitialization>(*run,progress,records,*replay,*session,*this);
  if(!initialization->initialize(camera,current_destination,selected_replay.empty()?nullptr:selected_replay.data(),u32(selected_replay.size())))return fail(initialization->error);
  flow=std::make_unique<RunStageFlow>(*run,*session,progress,records,*initialization,*replay,*this,*this);
+#if TH15_MULTIPLAYER
+ if(multiplayer&&!scene()->battle.mp_enable(mp_options,assets()->multiplayer_shots,assets()->multiplayer_players))return fail(scene()->battle.error);
+#endif
  if(!flow->bind(camera)||!bind_run_display())return fail(flow->error);completed_recording=false;return true;
 }
 bool ApplicationState::begin_ending(){
  if(!scene())return fail("Ending requires departing run state");selection_player=scene()->battle.session;selection_score=scene()->battle.score;
- release_run();ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,0);return ending->initialize(progress,selection_player.mode_flags,selection_player.deaths)||fail(ending->error);
+ release_run();ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,0);if(!ending->initialize(progress,selection_player.mode_flags,selection_player.deaths))return fail(ending->error);
+#if TH15_MULTIPLAYER
+ // Local unlock history must not change confirmed ending timing or skipping.
+ if(multiplayer){completed_recording=true;ending->script.run.first_seen_flags=2;}
+#endif
+ return true;
 }
 bool ApplicationState::apply_destination(){
- if(pending_destination<0)return true;const auto next=pending_destination;pending_destination=-1;
+ if(pending_destination<0)return true;
+#if TH15_MULTIPLAYER
+ if(multiplayer&&pending_destination!=13&&pending_destination!=15&&pending_destination!=16){completed_recording=pending_destination==15||pending_destination==16;pending_destination=-1;exiting=true;return save_settings();}
+#endif
+ const auto next=pending_destination;pending_destination=-1;
  if(next==13||next==10||next==11){
   // Native 44e600 restores the initial selection through 44f6c0 and sets
   // the new-run flag before either ordinary or replay reconstruction.
@@ -186,7 +201,11 @@ bool ApplicationState::apply_destination(){
  // Native 44e600 sends normal completion through the ending (15);
  // Extra and the ending itself return directly to title/results (16).
  if(next==15){current_destination=next;return begin_ending();}
- if(next==16){if(!save_settings())return false;return begin_title(3);}
+ if(next==16){
+#if TH15_MULTIPLAYER
+ if(multiplayer)completed_recording=true;
+#endif
+ if(!save_settings())return false;return begin_title(3);}
  if(next==2||next==4||next==14){if(!save_settings())return false;return begin_title(next==2?4:next==14?3:progress.replay&&!(selection_player.mode_flags&0x40)?2:1);}
  if(next==3){exiting=true;return save_settings();}return fail("Unrecognized application destination: "+std::to_string(next));
 }
@@ -219,8 +238,17 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  if(scene()){
   auto& battle=scene()->battle;auto& clock=battle.spell_card.clock;
   if(clock.needs_sample(battle.spell.flags)){
-   double now=0;if(!seconds(now))return fail("Spell presentation clock unavailable");
+   double now=0;
+#if TH15_MULTIPLAYER
+   // step() advances only on confirmed frames, including replay/spectators.
+   // Wall time would include network stalls and differ between peers.
+   if(multiplayer)now=double(frames)/60.0;else
+#endif
+   if(!seconds(now))return fail("Spell presentation clock unavailable");
    if(clock.sample(battle.spell.flags,battle.spell_card.active_frames,now)==SpellPresentationClock::Event::completed&&!(battle.session.mode_flags&0x300)){
+#if TH15_MULTIPLAYER
+    if(!multiplayer)
+#endif
     if(!replay||!replay->spell_timing(clock.sequence,clock.encoded))return fail(replay?replay->error:"Spell replay owner unavailable");
     clock.sequence=wrapping_add(clock.sequence,1);
    }

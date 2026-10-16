@@ -1,6 +1,11 @@
 # TH15 Eagler adapter
 
-This is the canonical `eagler` adapter checkout. The sibling `th15` checkout
+This worktree is the isolated `experiment/th15-multiplayer` lane based on
+`09affbe`, not the canonical checkout. See
+[Legacy multiplayer implementation and evidence](portable/multiplayer/README.md)
+for the separate `th15mp` Runtime, common dependency and launcher branches.
+
+The canonical `eagler` adapter checkout is `th15-eagler`. The sibling `th15` checkout
 tracks upstream `main`; it is not a Runtime source/build owner.
 Both branches started at `fe113b6f9cbcb676b15dfd95cfd5916c4d5de95e`.
 

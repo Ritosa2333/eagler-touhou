@@ -141,7 +141,11 @@ bool ApplicationState::preserve_current_music(std::string& wave,double& position
 bool ApplicationState::start_game_over_music(){return music("th128_08.wav")&&music_command(2);}
 bool ApplicationState::read_replay_slot(i32 slot,std::shared_ptr<Replay>& value){return read_slot(slot,value);}
 bool ApplicationState::save_named_replay(i32 slot,const std::array<char,9>& name){return save_slot(slot,name);}
-bool ApplicationState::prepare_replay_save(bool cleared){return prepare_live_replay(cleared);}
+bool ApplicationState::prepare_replay_save(bool cleared){
+#if TH15_MULTIPLAYER
+ if(multiplayer)return true;
+#endif
+ return prepare_live_replay(cleared);}
 // Native PauseMenu entry 3 opens the operation manual (43ed30), not settings.
 bool ApplicationState::open_options(float offset){
  close_options();pause_manual=std::make_unique<Manual>(animations,*this,19);pause_manual->offset_x=offset;manual_update.owner=this;manual_update.enabled=true;manual_update.run=[](void* p)->i32{auto& app=*static_cast<ApplicationState*>(p);if(!app.pause_manual||app.pause_manual->update(app.manual_pressed,app.manual_repeated,app.progress.rate))return 1;app.fail(app.pause_manual->error);return 5;};return scheduler.add(manual_update,FramePass::Update,11)>=0||fail("Pause manual callback registration failed");

@@ -24,6 +24,7 @@ void BulletManager::recycle(u32 index)noexcept{
 bool BulletManager::emit(const BulletShooter& shooter,float minimum){
     if(!random){error="Bullet manager random state unavailable";return false;}
     struct DistanceScope {float& value;float previous;~DistanceScope(){value=previous;}} distance_scope{minimum_distance_squared,minimum_distance_squared};minimum_distance_squared=minimum;
+    if(multiplayer_target)context.player=multiplayer_target(shooter.position);
     const float aim=bullet_aim(shooter.position,context.player);
     for(i32 row=0;row<shooter.rows;row++){
         for(i32 column=0;column<shooter.count;column++){

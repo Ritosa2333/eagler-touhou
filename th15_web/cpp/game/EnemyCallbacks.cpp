@@ -11,17 +11,21 @@ void inherit_nearby_bullet_motion(BulletManager& bullets)noexcept{
         }
     }
 }
-void scale_bullets_near_player(BulletManager& bullets,const PlayerCollision& player,float factor,bool dialogue)noexcept{
+void scale_bullets_near_players(BulletManager& bullets,const PlayerCollision* players,u32 count,float factor,bool dialogue)noexcept{
     for(u32 index=bullets.first_active();index!=BulletManager::none;index=bullets.next_active(index)){
         auto& b=*bullets.state(index);if(b.step_limit!=1)continue;
-        const float dx=float(player.position.x-b.motion.position.x),dy=float(player.position.y-b.motion.position.y),distance=float(float(dx*dx)+float(dy*dy));
-        float radius=player.radius;if(player.enlarged)radius=float(float(player.size_multiplier*3.6f)*radius);
-        const float hitbox_squared=float(b.hitbox.x*b.hitbox.x),inner=float(float(radius*radius)+hitbox_squared);
-        if(!(distance>=inner)){if(dialogue)continue;}
-        else{float padding=float(b.hitbox.x/2.5f);if(40.f>padding)padding=40.f;const float sum=float(padding+radius),threshold=float(float(sum*sum)+hitbox_squared);if(distance>=threshold)continue;}
-        b.motion.velocity.x=float(b.motion.velocity.x*factor);b.motion.velocity.y=float(b.motion.velocity.y*factor);b.motion.velocity.z=float(b.motion.velocity.z*factor);
+        for(u32 seat=0;seat<count;++seat){const auto& player=players[seat];
+            const float dx=float(player.position.x-b.motion.position.x),dy=float(player.position.y-b.motion.position.y),distance=float(float(dx*dx)+float(dy*dy));
+            float radius=player.radius;if(player.enlarged)radius=float(float(player.size_multiplier*3.6f)*radius);
+            const float hitbox_squared=float(b.hitbox.x*b.hitbox.x),inner=float(float(radius*radius)+hitbox_squared);
+            if(!(distance>=inner)){if(dialogue)continue;}
+            else{float padding=float(b.hitbox.x/2.5f);if(40.f>padding)padding=40.f;const float sum=float(padding+radius),threshold=float(float(sum*sum)+hitbox_squared);if(distance>=threshold)continue;}
+            b.motion.velocity.x=float(b.motion.velocity.x*factor);b.motion.velocity.y=float(b.motion.velocity.y*factor);b.motion.velocity.z=float(b.motion.velocity.z*factor);
+            break; // Overlapping pilots trigger the authored rule once per bullet.
+        }
     }
 }
+void scale_bullets_near_player(BulletManager& bullets,const PlayerCollision& player,float factor,bool dialogue)noexcept{scale_bullets_near_players(bullets,&player,1,factor,dialogue);}
 bool cancel_unmarked_bullets(BulletScene& bullets,const Vec3& position,float radius){const float radius_squared=float(radius*radius);for(u32 index=bullets.manager.first_active();index!=BulletManager::none;){const u32 next=bullets.manager.next_active(index);auto& b=*bullets.manager.state(index);const float dx=float(position.x-b.motion.position.x),dy=float(position.y-b.motion.position.y),distance=float(float(dx*dx)+float(dy*dy));if(b.step_limit==0&&radius_squared>distance){b.cancellation_script=-1;if(!bullets.cancel_slot(index,0))return false;b.motion.velocity.x=float(b.motion.velocity.x*0.f);b.motion.velocity.y=float(b.motion.velocity.y*0.f);b.motion.velocity.z=float(b.motion.velocity.z*0.f);}index=next;}return true;}
 bool enemy_update_rule(EnemyState& enemy,BulletScene& bullets,LaserScene& lasers,const PlayerCollision& player,bool dialogue){
     switch(enemy.update_rule){

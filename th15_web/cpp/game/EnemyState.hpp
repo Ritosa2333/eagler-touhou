@@ -47,6 +47,9 @@ struct EnemyState {
     float slowdown=0;u32 lifecycle_flags=0;
     i32 chapter=0,chapter_contribution=0;u32 life_flags=0;
     i32 pending_damage=0,cumulative_damage=0,damage_flash_frames=0;
+#if TH15_MULTIPLAYER
+    u32 multiplayer_damage_remainder=0;
+#endif
     i32 inactive_animation=0,normal_animation=0;Vec3 last_hit_position{};
     std::array<EnemyInterrupt,8> interrupts;std::string death_script;
     std::array<i32,2> script_control{};
@@ -62,6 +65,7 @@ struct EnemyState {
 struct EnemyWorldState {
     const PracticeState* practice=nullptr;
     float* frame_rate=nullptr;float current_rate(float fallback)const noexcept{return frame_rate?*frame_rate:fallback;}
+    std::function<Vec3(const Vec3&)> multiplayer_target;
     Vec3 player_position{};EnemyState* boss=nullptr;std::vector<EnemyState*> enemies;
     std::array<u32,3> boss_ids{};u32 manager_flags=0;
     Rng* random=nullptr;

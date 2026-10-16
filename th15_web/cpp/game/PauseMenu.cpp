@@ -15,6 +15,13 @@ bool PauseMenu::restrict_replay_save(){
  // Do not append duplicate disabled entries to the original bounded cursor.
  return disable(2)&&child(123,5)&&child(132,5)&&child(144,5)&&interrupt(state.menu_animation,i32(i16(state.menu.cursor))+7);
 }
+bool PauseMenu::restrict_multiplayer_result(){
+ if(!state.multiplayer||state.screen==PauseScreen::Pause)return true;
+ // TH11 MP ends this generation: Return and Replay Save remain available.
+ for(i32 entry:{0,3,4}){bool blocked=false;for(i32 n=0;n<state.menu.disabled_count;++n)blocked|=state.menu.disabled[n]==entry;if(!blocked&&!disable(entry))return false;}
+ if(auto* root=animations.registry.find(state.menu_animation))for(i32 script:{121,130,138,124,133,125,134,140,142,145})if(auto* vm=animations.registry.find_child_script(*root,script,0)){auto handle=animations.registry.handle(*vm);if(!check(animations.retire(handle),"Multiplayer end choice retirement failed"))return false;}
+ return true;
+}
 bool PauseMenu::write_replay(i32 slot,const std::array<char,9>& name){return slot>=0&&slot<25&&check(host.save_named_replay(slot,name),"Pause named replay save failed")&&check(host.read_replay_slot(slot,replays[slot]),"Saved replay catalog refresh failed");}
 bool PauseMenu::prepare_results_menu(){
  state.select_phase(6);auto& menu=state.menu;menu.count=5;menu.wrapping=true;i32 script,selected=0;
@@ -23,7 +30,7 @@ bool PauseMenu::prepare_results_menu(){
  if(state.flags&4){if(!disable(0)||!disable(3))return false;}
  else if(!(player.mode_flags&0x300)){if(progress.continues>0&&!disable(2))return false;if(progress.continue_budget<1){if(!disable(0))return false;selected=1;}}
  else{if(!disable(2)||!disable(4))return false;}
- menu.select(selected);return interrupt(state.menu_animation,3,true)&&restrict_replay_save()&&interrupt(state.menu_animation,i32(i16(menu.cursor))+7);
+ if(state.multiplayer)selected=1;menu.select(selected);return interrupt(state.menu_animation,3,true)&&restrict_multiplayer_result()&&restrict_replay_save()&&interrupt(state.menu_animation,i32(i16(menu.cursor))+7);
 }
 bool PauseMenu::update(u32 pressed,u32 repeated){
  if(!error.empty())return false;auto& menu=state.menu;const i32 age=state.age.current;auto phase=[&](i32 next){state.select_phase(next);};auto close=[&](){return interrupt(state.snapshot_animation,1)&&interrupt(state.menu_animation,1);};
@@ -46,7 +53,7 @@ bool PauseMenu::update(u32 pressed,u32 repeated){
   if(!(player.mode_flags&0x300)){if(!check(registration.register_result(),"Result score registration failed"))return false;}else state.name_not_required=true;
   if(!state.name_not_required){phase(15);return freeze(true);}return prepare_results_menu();
  case 6:
-  if(!restrict_replay_save())return false;
+  if(!restrict_multiplayer_result()||!restrict_replay_save())return false;
   if(!navigate(pressed,repeated,7))return false;
   if(pressed&0x80001){if(!sound(7))return false;switch(menu.cursor){
    case 0:if(!close())return false;phase(16);break;
@@ -55,7 +62,7 @@ bool PauseMenu::update(u32 pressed,u32 repeated){
    case 3:if(!child(124,6)||!child(133,6))return false;phase(14);break;
    case 4:for(i32 script:{125,134,140,142,145})if(!child(script,6))return false;phase(!progress.transition&&state.screen==PauseScreen::Pause?7:16);break;
   }state.age.set(0);}
-  if(!state.retry_controls){if(pressed&0x200000){if(!sound(7)||!child(125,6)||!interrupt(state.snapshot_animation,1))return false;menu.select(4);phase(16);}if(pressed&0x100){if(!close())return false;menu.select(0);phase(16);break;}}
+  if(!state.retry_controls){if((pressed&0x200000)&&(!state.multiplayer||state.screen==PauseScreen::Pause)){if(!sound(7)||!child(125,6)||!interrupt(state.snapshot_animation,1))return false;menu.select(4);phase(16);}if(pressed&0x100){if(!close())return false;menu.select(state.multiplayer&&state.screen!=PauseScreen::Pause?1:0);phase(16);break;}}
   if(pressed&0x10000){if(!sound(7)||!child(122,6))return false;menu.select(1);phase(16);}break;
  case 7:case 9:
   if(age<20)break;if(age==20){menu.push();menu.count=2;menu.wrapping=true;menu.select(1);if(!interrupt(state.menu_animation,14))return false;}
