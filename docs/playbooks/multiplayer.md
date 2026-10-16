@@ -28,15 +28,15 @@ worktree. Promotion follows
   implementation into the ordinary branch or replace an ordinary Runtime with
   an MP build. MP topic integration targets the corresponding MP branch.
 - TH06MP and TH07MP provide the reusable architecture and test evidence for the
-  products that currently declare Multiplayer. TH09MP declares the same
-  room/loadout surface, but reuses TH09's ordered two-player lockstep input
-  protocol over the shared `eagler-common` browser transport. Products declaring
+  products that currently declare Multiplayer. TH09MP uses native two-player
+  character/difficulty selection and its title-specific rollback/delay session
+  over the shared `eagler-common` browser transport. Products declaring
   measured startup select pure delay or hybrid rollback before frame zero;
   see [Measured Multiplayer Startup](adonis-adaptation.md).
-  TH09MP publishes its confirmed two-player input frames through
-  the shared relay's admitted-spectator backlog; spectators replay from frame
-  zero without taking a player seat. Record that as TH09MP coverage, not as a new
-  per-title feature switch: the room facts stay in `product-catalog`.
+  TH09MP publishes complete match initializers and confirmed two-player input
+  through the shared relay. Spectators start at the current match's gameplay
+  frame without taking a player seat. Native menu frames stay outside that
+  history. The room facts stay in `product-catalog`.
 - TH09MP touch movement ships the gesture's absolute field target (motion modes
   2/3 of its input frame) rather than a velocity sampled on the sending machine,
   and the Launcher keeps game keys flowing from the realm that owns focus.
@@ -74,7 +74,7 @@ Use a frame-0 barrier, bounded direction prediction, confirmed frames, limited c
 
 For the current TH06/TH07 production profile, there is one player-facing timing policy: zero added local input frames with full rollback on every endpoint. The generic netplay core may retain input-delay primitives for tests and future evidence-backed designs, but the shared Launcher does not expose a title-specific buffered/stability mode. Do not reintroduce the retired TH07 mobile/desktop asymmetric policy merely for backward compatibility.
 
-Spectator is a start-only, read-only product path. It consumes confirmed history/checkpoints and cannot change seat, ready, pause, result, input, touch, THPrac or the simulation. Runtime exit must not accidentally destroy an active room that Launcher still owns.
+Spectators consume confirmed history without taking a player seat or submitting gameplay input. TH09 timeline rooms allow late join and local playback pause/seek; those controls cannot alter the players' simulation. Other rooms retain their advertised admission policy. Runtime exit must not accidentally destroy an active room that Launcher still owns.
 
 <!-- knowledge-id: K-MP-002 -->
 ## Invariants and pitfalls
@@ -148,12 +148,92 @@ publishes updates. Empty seats and legacy peers with unknown settings have no ca
 `server/room-directory.mjs` is owned by the shared netplay relay. The same relay
 URL from Site Manifest accepts `?directory=1&member=<anonymous-browser-id>` and
 sends version-1 `directory` messages. Snapshots expose room code/product,
-capacity, occupancy, difficulty, ready status, spectator count and **initials
-only**. They exclude internal client IDs and full display names. `refresh`
+capacity, occupancy, difficulty, ready status and spectator count. With public
+nickname moderation enabled, rows declare `publicNames: true` and seats include
+the complete approved `name`; otherwise they retain the legacy initials-only
+format. They always exclude internal client IDs. `refresh`
 messages optionally select a product; responses are bounded to 200 rooms.
 Snapshots echo the selected `product`. The directory shows a loading indicator
 until the requested filter's snapshot arrives, and only then shows an empty
 state when there are no rooms. Earlier filter replies cannot settle a new filter.
+
+Public nickname authority lives in `server/public-nicknames.mjs`, reached through
+`nickname-service.mjs` and a dedicated worker. SQLite and provider requests never
+run on the relay event loop. Enable `EAGLER_NETPLAY_PUBLIC_NICKNAMES=1` with a
+private absolute `EAGLER_NETPLAY_NICKNAME_STATE` and server-only
+`EAGLER_NETPLAY_NICKNAME_API_KEY`. The provider receives only the normalized
+nickname. `EAGLER_NETPLAY_NICKNAME_API_BASE` selects a server-owned HTTPS
+OpenAI-compatible base (including a `/v1` path when required); credentials,
+query parameters, fragments, HTTP and redirects are rejected. Requests disable
+thinking and cap output at two tokens. Exact normalized
+spellings share durable approval/refusal results; incomplete/provider-error
+responses never approve a nickname. Review uses the context of publicly displayed
+game nicknames in mainland China. Political figures, political propaganda and
+related disguises are refused alongside abusive/sexual/scam/official-impersonation
+names. `server/nickname-policy.mjs` owns the prompt, policy version and a small
+deterministic reserved-name guard. Changing that policy version quarantines old
+cached approvals and existing profile names until re-reviewed; a quarantined
+name cannot retain its old rename cooldown or appear in public snapshots.
+The normalization contract is
+`src/contracts/public-nickname.mts` (NFKC, no control/format characters, at most
+12 code points).
+
+`nickname-status` advertises review support and returns the existing approved
+name, status and deadlines. An owner-only `pendingName` accompanies `queued`;
+never use that private draft as a room, directory, score or chat display name.
+The client then migrates its saved draft
+using `set-name`. Role messages cannot publish their proposed names: seats and
+spectators use the server profile. While review is pending or refused, keep the
+old approved name, or an empty name rendered as P1/P2. Directory, room roster,
+spectator list, score and quick chat consume these authoritative names. Do not
+publish the unreviewed legacy machine-sign field in public-name directory rows.
+Render full names as text and allow wrapping on narrow screens.
+
+Fresh submissions are acknowledged after SQLite has durably queued them; the
+browser never waits for the provider. One pending task per anonymous member is
+idempotent across refresh and reconnect. The private queue stores HMAC member/IP
+keys, is bounded to 1,000 tasks and preserves work across service restarts.
+The worker drains one task at a time. Provider failures pause the whole provider
+queue for 30 seconds, doubling to at most one hour; the pause survives restarts.
+Each source may spend at most 30 provider attempts per day, including retries,
+within the shared 1,000-attempt daily budget. Retries never consume another IP
+submission or user refusal attempt. Commit a final verdict/profile update and
+dequeue in one SQLite transaction, then push the owner status and approved
+public name to online rooms. Offline members receive the result on reconnect.
+Jobs are claimed atomically with a one-minute lease. Completion checks the
+lease, preventing overlapping workers from charging one refusal twice. After a
+crash an unfinished claim becomes available again. An upstream request that
+completed immediately before a crash may still be repeated: remote API calls
+and the local transaction cannot provide exactly-once billing.
+The personal panel keeps input and submit together, shows a compact pending
+status, and remains closable while background review runs.
+
+The first accepted name permits one immediate change. A later accepted change
+starts a persistent 24-hour browser-member cooldown. A declined review leaves
+one final retry, tracked for 24 hours; that retry starts a 24-hour cooldown
+whether accepted or declined, including a first-ever name accepted on the final
+retry. Provider outages do not consume retries. `attemptsLeft` exposes one/zero
+remaining retries (or null when no refusal is active). SQLite schema migration
+preserves existing approved names and grants the initial immediate change.
+Default abuse limits are five
+submissions per source/hour, 20 per source/day, and at most 20 pending tasks per
+source. IPv6 addresses share a /64 source bucket; mapped IPv4 spellings share the
+IPv4 bucket. Before worker admission, nickname messages are limited to ten per
+source per ten seconds. Repeated approved names and queued submissions return
+the cached owner state without SQL or public room broadcasts. Publication uses
+the existing membership index to reach only the member's current room.
+Member and source keys use salted HMACs in SQLite.
+The anonymous member credential is not an account: clearing browser storage or
+changing devices can create another identity, so IP and global limits remain
+independent. These controls bound costs and reduce single-source abuse; they
+cannot distinguish a legitimate new anonymous browser from a distributed bot.
+Preserve the database on restart. The 50,000-entry verdict cache evicts its oldest
+entries in batches. Each approved profile retains its own policy version so
+cache eviction does not hide a public name. Profiles are capped at 500,000;
+capacity is checked before a paid request. Indexed maintenance removes expired
+quota rows and nameless refusal profiles, in batches of at most 1,000 per minute,
+even if no nickname is ever approved. Provider responses are streamed with a
+16 KiB byte limit and unwanted response bodies are cancelled immediately.
 
 - The new Launcher shares one anonymous local-storage membership ID across
   titles and tabs, while retaining per-tab client IDs. The relay rejects a
@@ -187,6 +267,49 @@ state when there are no rooms. Earlier filter replies cannot settle a new filter
 The directory's form sheets own a browser-history entry. Entering a room closes
 that entry first; both the room return action and system Back lead to the
 directory. Room sessions and shared room settings remain owned by the Launcher.
+
+### TH09 native match selection
+
+TH09 declares `inGameSelection` in the product catalog. The room owns seats,
+readiness, transport settings and spectator admission. Each player selects and
+confirms their own character in game. Both players operate difficulty and stage;
+character navigation and confirmation stay separated by player side. Native
+health and palette choices stay in the game's menus. The result menu returns to
+selection without replacing the room, run or transport.
+
+Launcher passes `netplayInGameSelection` to players and spectators and hides
+room character/difficulty controls. Spectators wait during initial selection.
+T9BG/2 carries complete scalar match settings plus RNG and menu edges in a
+102-byte packet. The first gameplay frame may be nonzero because menu input is
+excluded from the match stream. Relay retains the latest initializer for late
+join. V1/74-byte initializers remain compatible. A paused viewer retains the
+old match tail and queued next match until playback advances or go-live is
+requested. Each v2 initializer constructs a world independently, including Retry.
+
+Reversible selection frames use the normal rollback window. Their checkpoint
+includes menu state, both input histories, settings, RNG, animations and stage
+choices. Resource setup, world construction and transport departure still wait
+for reconciled input. Do not block every menu animation frame on network RTT.
+The difficulty and stage menu input combines both players; character selection
+continues to consume the two separate inputs.
+
+Main frontend acceptance: `tests/browser/test-th09-in-game-selection.mjs` runs
+the actual React room, Release managed Runtime, independent selection, natural
+match completion, character changes, a paused spectator and a late spectator.
+Its optional `TH09_SELECTION_RUNTIME_PATH` is a test Site Manifest override.
+`tests/react-main/th09-in-game-selection.test.mjs` covers room/directory controls
+in Chinese and English and retains TH06's room-selection behavior. Record local
+browser evidence separately from physical-device or public-network acceptance.
+
+TH09 spectators retain their own received confirmed packets locally until they
+leave. A complete v2 initializer permits restoring an earlier match in the same
+viewer and re-simulating to a fixed target without reconnecting. The timeline
+joins gameplay input counts, excluding menu gaps, and distinguishes match marks
+from round marks. Rebuilding a world does not move the visible thumb to zero.
+This does not expand late-join bootstrap: the relay still replaces its history
+at every match initializer and sends a new viewer only the current match from
+its start. Earlier local matches belong only to viewers who received them.
+`tests/test-th09-spectator-history-relay.mjs` verifies this admission boundary.
 
 ### Existing multiplayer anchors
 
@@ -222,17 +345,32 @@ directory. Room sessions and shared room settings remain owned by the Launcher.
 - TH06MP/TH07MP title repositories: title-specific rollback inventories,
   gameplay semantics and transport acceptance evidence.
 
-## TH09 spectator local history
+## TH09 local match Replay archive
 
-TH09 spectators retain their own received confirmed packets locally until they
-leave. A complete v2 initializer permits restoring an earlier match in the same
-viewer and re-simulating to a fixed target without reconnecting. The timeline
-joins gameplay input counts, excluding menu gaps, and distinguishes match marks
-from round marks. Rebuilding a world does not move the visible thumb to zero.
-This does not expand late-join bootstrap: the relay still replaces its history
-at every match initializer and sends a new viewer only the current match from
-its start. Earlier local matches belong only to viewers who received them.
-`tests/test-th09-spectator-history-relay.mjs` verifies this admission boundary.
+TH09MP defaults to automatically saving each completed versus match. The local
+player can disable it in the top-right local game settings, above the Replay
+viewer/import actions; the preference is stored
+per product in that browser. Spectators and unfinished/disconnected matches do
+not produce completed-match archives.
+
+The Runtime archives both players' reconciled match-end boundaries, once per
+match, including repeated matches over the same connection. Individual rounds
+do not trigger a save. Encoding uses local random bytes without advancing the
+simulation RNG. Failed storage must report a notice without closing transport.
+
+Native files retain `replay/th9_udhhhh.rpy`; continuous-touch recordings export
+as `.rpyx`. A same-basename JSON sidecar snapshots both display names, start
+time, confirmed frame duration and winner. No membership credential is stored.
+The Replay manager groups matches into `name vs name` folders, falling back to
+`P1` / `P2`. Replays without matchup metadata remain at the root. Folder
+navigation is local to the existing Replay dialog; it adds no browser route.
+Bulk downloads group files under `replay/name vs name/`, with sidecars preserved
+on ZIP import, rename and deletion. Later nickname changes do not relabel old
+matches. Persistence is local browser storage, not a server upload.
+
+Code owners: TH09 `sdl-runtime/auto-replay.mjs` and confirmed publication in
+`cpp/sdl/Application.cpp`; Launcher `MultiplayerSettingsControls`, `multiplayer-preferences`,
+`th09-replay-match`, Replay model and file actions.
 
 ## Verification
 
