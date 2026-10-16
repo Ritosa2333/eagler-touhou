@@ -80,6 +80,17 @@ try {
   a.send({type:'remove-spectator',clientId:'client_watcher'});
   assert.equal(await spectatorClosed,4010);
   await until(()=>latest().spectators.length===0);
+  const activeGuest=await connect('client_active_guest','th07mp-otherprobe');
+  await seat(outsider,0);await seat(activeGuest,1);
+  const activeRoom=()=>outsider.messages.findLast(m=>m.room)?.room;
+  outsider.send({type:'set-ready',ready:true});activeGuest.send({type:'set-ready',ready:true});
+  await until(()=>activeRoom().seats.slice(0,2).every(s=>s?.ready));
+  outsider.send({type:'start'});await until(()=>activeRoom().phase!=='lobby');
+  outsider.send({type:'move-player-to-spectator',seat:1,clientId:'client_active_guest'});
+  await until(()=>outsider.messages.some(m=>m.type==='error'&&m.error.includes('无法将该玩家移到观众席')));
+  assert.equal(activeRoom().seats[1].clientId,'client_active_guest','starting or running players cannot be moved');
+  assert.equal(activeRoom().spectators.length,0);
+  assert.equal(activeGuest.socket.readyState,WebSocket.OPEN);
   a.send({type:'stand-up'});await until(()=>a.messages.filter(m=>m.type==='state').at(-1).room.seats[0]===null);
   b.messages.length=0;a.send(probe);await delay(100);assert.ok(!b.messages.some(m=>m.type==='room-probe'));
   console.log('PASS real relay diagnostics, host-only spectator moves without bans, eviction, stale-target isolation and membership cleanup');
