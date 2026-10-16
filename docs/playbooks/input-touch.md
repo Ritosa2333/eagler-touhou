@@ -59,6 +59,14 @@ For Replay, record the logical run-state consumed by simulation, not a picture o
   normalized button slots; D-pad directions must use semantic direction input,
   not assumed raw button numbers. TH06/TH07 provide the proven SDL Gamepad
   precedent; TH08/TH10 must preserve the same invariant.
+- Launcher controller occurrence IDs must remain stable for every still-connected
+  browser index. Removing the lower-index member of an identical pair must not
+  rename the survivor, change its saved mapping or transfer it to another seat.
+  Reconnection still requires neutral input before rearming. Across a browser
+  restart, indistinguishable devices may still require reassignment.
+- Analog button/trigger activation uses its finite `value` and the configured
+  threshold. Browser `pressed` may already be true below that threshold and
+  must not bypass it; it is only a fallback when no finite value is available.
 - Mobile/external keyboards need two browser paths: ordinary keys travel over
   the hosted keyboard bridge, and Runtime-side decoding must preserve the
   `code -> key -> legacy keyCode` fallback used by TH06/TH07 because mobile
@@ -183,6 +191,25 @@ Recording only raw touch graphics, fixing orientation-memory defects with CSS al
 3. For touch, test portrait and landscape independently, including orientation change after saved layout state.
 4. For Replay, compare the input stream and first divergent logical frame; do not rely on a button screenshot.
 5. Label desktop browser, emulator/WebView and real-device manual evidence separately.
+
+Controller regression lanes:
+
+- `node --test tests/react-main/gamepad-matrix.test.mjs` covers seven synthetic
+  layouts, action learning/profile restoration, analog thresholds, identical
+  devices, sparse browser indices and four-device assignment isolation.
+- `python tests/test-gamepad-matrix-browser.py --workspace <workspace> --output <report.json>`
+  covers the same seven layout families in Chromium, Firefox and WebKit through
+  all eight actual JS input boundaries (168 basic combinations), plus hotplug,
+  lifecycle and saved-profile checks. These are input-boundary fixtures, not
+  full game or physical-controller acceptance.
+- `python tests/test-gamepad-runtime-browser.py --url <local-th09-preview> --output <report-directory>`
+  uses a current Launcher, Release TH09 and local retail DATA. Virtual standard,
+  raw-stick/axis-trigger, identical-controller and keyboard/controller pairs use
+  the real settings UI and Gamepad API path through menu navigation, independent
+  character selection, stage selection, gameplay, pause/resume and identical
+  hotplug. Its traces observe the C++ sampler callbacks without adding captures.
+  USB/Bluetooth behavior, browser device-remapping databases and physical latency
+  require separate hardware evidence.
 
 ## Deliberately omitted claims
 

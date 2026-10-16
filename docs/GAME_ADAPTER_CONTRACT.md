@@ -230,6 +230,13 @@ are not guaranteed by signed-axis learning. Devices absent from the browser's
 Gamepad API cannot be configured here. Keyboard-like Gamepad IDs remain on the
 existing D-pad fallback and are excluded from this physical controller owner.
 
+While a browser session is active, a still-connected device keeps its occurrence
+ID when an identical peer disconnects; that event cannot transfer the survivor's
+profile or seat. Analog button values obey the selected threshold even when the
+browser's own `pressed` flag has already become true. The virtual-controller
+matrix and full TH09 Runtime lane are documented in the
+[Input and Touch playbook](playbooks/input-touch.md#verification).
+
 Blur, hidden documents, pagehide, device connection changes, mapping edits and
 Runtime resets suspend the mapped controller. Neutral input is required before
 held controls can re-arm. Learning never sends game input. Disabling Launcher

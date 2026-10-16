@@ -27,7 +27,7 @@ function controlsValid(value:unknown):value is GamepadControl[] {
 export function gamepadActionBits(pad:GamepadDevice,profile:GamepadProfile):number {
   let bits=0;
   gamepadActions.forEach((action,n)=>{if(profile.bindings[action].some(c=>c.kind==='button'?
-    !!pad.buttons[c.index]&&(pad.buttons[c.index]!.pressed||pad.buttons[c.index]!.value>=profile.threshold):
+    !!pad.buttons[c.index]&&(Number.isFinite(pad.buttons[c.index]!.value)?pad.buttons[c.index]!.value>=profile.threshold:pad.buttons[c.index]!.pressed):
     Number.isFinite(pad.axes[c.index])&&(pad.axes[c.index]!-c.rest)/(c.value-c.rest)>=profile.threshold))bits|=1<<n;});
   return bits;
 }
@@ -55,10 +55,19 @@ export function createGamepadMappingModel({storage,getGamepads}: {
     }
   }catch { /* A bad profile cannot become device input. */ }
   function read(){try{return [...(getGamepads?.()??[])].filter((p):p is GamepadDevice=>!!p&&p.connected&&!/keyboard|\bkb\b/i.test(p.id));}catch{return [];}}
-  function enumerate(pads:GamepadDevice[]){const counts=new Map<string,number>();return pads.map(p=>{
-    const base=JSON.stringify([p.id,p.mapping,p.buttons.length,p.axes.length]),ordinal=counts.get(base)??0;counts.set(base,ordinal+1);
-    return {key:base+'#'+ordinal,name:p.id,index:p.index,standard:p.mapping==='standard'};
-  });}
+  // Preserve the occurrence of every still-connected index. Filtering out a
+  // disconnected twin must not rename its surviving peer and transfer a seat.
+  const connectedIdentities=new Map<number,{base:string;ordinal:number}>();
+  function enumerate(pads:GamepadDevice[]){
+    const bases=new Map(pads.map(p=>[p.index,JSON.stringify([p.id,p.mapping,p.buttons.length,p.axes.length])]));
+    for(const [index,identity] of connectedIdentities)if(bases.get(index)!==identity.base)connectedIdentities.delete(index);
+    const used=new Map<string,Set<number>>();
+    for(const {base,ordinal} of connectedIdentities.values()){if(!used.has(base))used.set(base,new Set());used.get(base)!.add(ordinal);}
+    return pads.map(p=>{const base=bases.get(p.index)!;let identity=connectedIdentities.get(p.index);
+      if(!identity){const ordinals=used.get(base)??new Set<number>();let ordinal=0;while(ordinals.has(ordinal))ordinal++;ordinals.add(ordinal);used.set(base,ordinals);identity={base,ordinal};connectedIdentities.set(p.index,identity);}
+      return {key:base+'#'+identity.ordinal,name:p.id,index:p.index,standard:p.mapping==='standard'};
+    });
+  }
   let snapshot:GamepadMappingSnapshot;
   function publish(persist=false){snapshot={enabled,seats:[...seats],profiles:{...profiles},devices,supported:!!getGamepads,learning:learning?.action??null,active,deviceActive};
     if(persist)try{storage?.setItem(storageKey,JSON.stringify({version:1,enabled,seats,profiles}));}catch{}
