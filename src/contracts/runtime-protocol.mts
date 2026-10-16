@@ -278,7 +278,7 @@ export interface RuntimeCommandPayloads {
     [key: string]: unknown;
   };
   resources: { resources: unknown[] };
-  keyboard: { down: boolean; code: string };
+  keyboard: { down: boolean; code: string; inputSource?: 'physical' | 'virtual'; repeat?: boolean; launcherOwnsFocus?: boolean };
   "keyboard-clear": Record<string, never>;
   "touch-controls": {
     thpracMobilePanelsEnabled?: boolean;

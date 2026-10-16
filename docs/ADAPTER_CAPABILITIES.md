@@ -22,9 +22,9 @@ Current required capabilities include:
   RNG, timers and native menu/state-machine semantics unless an explicit Eagler
   Touhou product contract intentionally adds or changes behavior;
 - Runtime lifecycle: `ready -> configure -> launch -> first-frame -> exit/error`;
-- keyboard input and held-key cleanup;
-- physical gamepad/controller input through the title's normal logical input
-  path;
+- keyboard input, synchronous Launcher mapping and held-key cleanup;
+- physical gamepad/controller input, with Launcher-owned per-device mapping
+  sampled synchronously through the title's normal logical input path;
 - complete touch transport: controls, direct touch, cancellation and shared
   sensitivity semantics; touch is an input source, not a separate Replay model;
 - shared Restart semantics: R restarts the current run through the title's
@@ -109,7 +109,8 @@ Several broad required capabilities also expand into machine-readable behavior
 profiles so a future adapter cannot satisfy them with a superficial checkbox:
 
 - `REQUIRED_INPUT_BEHAVIORS` - keyboard/controller logical-input equivalence,
-  independent source ownership, lifecycle/disconnect cleanup and native menu
+  synchronous Launcher-owned keyboard aliases, independent source ownership,
+  lifecycle/disconnect cleanup and native menu
   semantics;
 - `REQUIRED_STORAGE_BEHAVIORS` - declared save root, strict file allowlist,
   durable sync/restart/offline continuity and separation between Package bytes

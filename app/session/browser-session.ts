@@ -14,6 +14,9 @@ import {createNetworkDiagnosticsModel} from '../components/directory/network-dia
 import {createLobbyDirectory} from '../services/lobby-directory';
 import {translate, type Translate} from '../i18n';
 import {createGameSettingsModel, settingsChangeResetsRuntime, type SettingsSnapshot} from '../models/game-settings';
+import {createGamepadMappingModel} from '../../src/launcher/gamepad-mapping.mts';
+import {createKeyboardPreferences} from '../../src/launcher/keyboard-preferences.mts';
+import {createTh09LocalInput} from '../../src/launcher/th09-local-input.mts';
 import {createTouchLayoutModel, type TouchLayoutOrientation} from '../models/touch-layout';
 import {createDecisionStore} from '../models/decisions';
 import {createTransferModel} from '../models/transfer';
@@ -97,6 +100,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const baseUrl = configuredBaseUrl ?? launcherBaseUrl(window.location.href);
   let storage: Storage | null = null;
   try {storage = window.localStorage;} catch {}
+  const gamepad = createGamepadMappingModel({storage,getGamepads:typeof window.navigator.getGamepads==='function'?()=>window.navigator.getGamepads():undefined});
+  const keyboardPreferences = createKeyboardPreferences(storage);
+  const th09LocalInput = createTh09LocalInput(storage);
   const mobile = (window.navigator as Navigator & {userAgentData?: {mobile?: boolean}}).userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent) || window.navigator.maxTouchPoints > 1 && /Macintosh/i.test(window.navigator.userAgent);
   const primaryTouchPointer = window.matchMedia('(pointer: coarse)');
   const preferTouchSettings = () => mobile || primaryTouchPointer.matches;
@@ -438,7 +444,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const fullscreenChanged = () => {publish({}); if (nativeTouch.isFullscreen()) void nativeTouch.probeOrientation().then(() => publish({}));};
   document.addEventListener('fullscreenchange', fullscreenChanged); document.addEventListener('webkitfullscreenchange', fullscreenChanged);
   const settingsActions: SettingsActions = {
-    confirm: decisions.askConfirmation, externalMidi, reportError,
+    confirm: decisions.askConfirmation, externalMidi, gamepad, keyboard:keyboardPreferences, th09Local:th09LocalInput, reportError,
     showAppleNotice: () => requiredNavigation().openInfoDialog('appleRefreshDialog'),
     feedback(message, status) {if (message) feedback.toast(message); if (status) feedback.status(status);},
     file: (action, product) => activity(async () => {if (!files) throw new Error('File service is not attached'); await files.run(action, product);}),
@@ -827,7 +833,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     return initializationPromise;
   }
   return {
-    room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
+    room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     initialize, attachFrame, requestRuntimeClose, launch, openReplayViewer,
     restoreRoomFromUrl,

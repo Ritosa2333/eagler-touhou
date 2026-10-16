@@ -6,6 +6,7 @@ import type {GameSettingsModel} from '../../models/game-settings';
 import {useLocale} from '../../i18n';
 import {MainSelect} from '../launcher/MainSelect';
 import {OptionsGroup} from './OptionsGroup';
+import {InputSettings} from './InputSettings';
 import {OptionRow} from './OptionRow';
 import {OptionSwitch, touchWarningKey} from './TouchSettingsFields';
 import type {SettingsActions, SettingsFileAction} from './types';
@@ -79,6 +80,7 @@ export function SettingsBody({model, actions, onOpenTouchLayout, multiplayerCont
       <OptionRow className={item('option-focus-hitbox')} id={id('focusHitboxOption')} hidden={!productFeatureAvailable(state.gameId, 'focusHitbox', context.hostFeatures)} label={t('settings.focusHitbox')} control={<OptionSwitch id={id('focusHitboxToggle')} label={t('settings.focusHitbox')} checked={options.focusHitboxEnabled} onChange={switchOption('focusHitboxEnabled')}/>}/>
       <OptionRow className={item('option-focus-hitbox')} id={id('faithBarOption')} hidden={!hasFaith} label={t('settings.faithBar')} control={<OptionSwitch id={id('faithBarToggle')} label={t('settings.faithBar')} checked={options.faithBarEnabled} onChange={switchOption('faithBarEnabled')}/>}/>
     </OptionsGroup>
+    {(actions.keyboard || actions.gamepad) && <InputSettings keyboard={actions.keyboard} gamepad={actions.gamepad} th09Local={state.gameId==='th09'&&!multiplayer?actions.th09Local:undefined}/>}
     <OptionsGroup id={id('advancedOptions')} title={t('options.advanced')} open={state.disclosure.advanced} onOpenChange={open => model.setDisclosure('advanced', open)} bodyClassName="options-advanced-body">
       <section className={item('feature-section feature-language')} id={id('gameVersionOption')}><div className="itemtop"><span>{t('settings.gameVersion')}</span><small>{t('settings.version.hint')}</small></div><MainSelect className="option-select" id={id('gameVersionSelect')} aria-label={t('settings.gameVersion')} value={state.gameVersion} onChange={event => {if (event.target.value === 'original' || event.target.value === 'beauty') model.setGameVersion(event.target.value);}}><option value="original">{t('settings.version.original')}</option><option value="beauty">{t('settings.version.beauty')}</option></MainSelect></section>
       <section className={item('feature-section feature-language feature-music')} id={id('musicOption')} hidden={!multiplayer && !availability.ogg}><div className="itemtop"><span>{t('settings.music')}</span></div><MainSelect className="option-select" id={id('musicSelect')} aria-label={multiplayer ? undefined : '音乐模式'} title={availability.audio ? '' : t('settings.webAudioUnavailable')} value={state.music} onChange={event => {if (isMusicMode(event.target.value)) model.setMusic(event.target.value);}}><option value="ogg-stream" disabled={!availability.ogg}>{t('settings.music.oggStream')}</option><option value="ogg-full" disabled={!availability.ogg}>{t('settings.music.oggFull')}</option><option value="midi" disabled={!availability.midi}>midi</option><option value="none">{t('settings.music.none')}</option></MainSelect></section>
