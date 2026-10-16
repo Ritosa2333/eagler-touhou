@@ -6,6 +6,8 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
+  ['th09.replayLocation', '录像文件夹', 'Replay folders'],
+  ['th09.replayOpenFolder', '打开 {name}', 'Open {name}'],
   ["settings.pixelPerfect", "启用点对点显示", "Enable pixel-perfect display"],
   ['player.exitPlayback', '退出播放', 'Exit playback'],
   ['player.exitSpectating', '退出旁观', 'Exit spectating'],

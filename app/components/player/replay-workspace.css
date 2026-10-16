@@ -35,6 +35,12 @@
 .replay-seek-row input:disabled{cursor:default;opacity:.5}
 .replay-seek-row>span{white-space:nowrap;color:var(--muted)}
 .replay-seek-row small{font-size:inherit}
+.replay-seek-track{position:relative;display:flex;align-items:center;flex:1;min-width:0;height:44px}
+.replay-seek-track input{width:100%}
+.replay-round-marker{position:absolute;top:0;transform:translateX(-50%);width:22px;height:15px;border:0;background:transparent;padding:0;color:var(--muted);font:11px/13px var(--ui-font);font-variant-numeric:tabular-nums}
+.replay-round-marker::after{content:"";position:absolute;top:14px;left:50%;width:1px;height:5px;background:currentColor;opacity:.7;pointer-events:none}
+.replay-round-marker:hover{color:var(--paper)}
+.replay-workspace .replay-round-marker:active:not(:disabled){transform:translateX(-50%)}
 .replay-transport-buttons{grid-column:1;grid-row:1;display:flex;align-items:center;gap:10px}
 .replay-transport-buttons .replay-button{height:44px;border-radius:999px;padding:9px 12px;white-space:nowrap}
 .replay-transport-buttons .replay-toggle{width:48px;flex:none;background:var(--red-bright);border-color:transparent}
@@ -150,23 +156,10 @@
  .replay-transport-buttons .replay-restart{width:44px;flex:none;padding:10px}
  .replay-restart span{display:none}
 }
-/* One stable fullscreen owner includes the file browser on wide screens. */
-#player.replay-workspace:is(:fullscreen,:-webkit-full-screen){grid-template-rows:auto minmax(0,1fr);width:100%;height:100%;max-width:none;max-height:none;overflow:hidden}
-#player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .player-stage{min-height:0;animation:none}
-#player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .game-viewport{flex:1;min-height:0;aspect-ratio:auto}
-#player.replay-workspace:is(:fullscreen,:-webkit-full-screen) :is(.replay-transport,.replay-current,.replay-file-browser>header,.replay-breadcrumb,.replay-file-browser>footer,.replay-workspace-move){flex:none}
-#player.replay-workspace:is(:fullscreen,:-webkit-full-screen) :is(.replay-file-browser,.replay-workspace-files){min-height:0}
-#player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-transport{grid-template-columns:auto minmax(0,1fr)}
-#player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-transport .replay-fullscreen{display:none}
-#player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-fullscreen-exit{position:absolute;z-index:5;display:inline-flex;top:max(24px,env(safe-area-inset-top));right:max(24px,env(safe-area-inset-right));width:40px;height:40px;padding:8px;border:1px solid #ffffff30;border-radius:10px;background:#111110a6}
-@media(orientation:portrait),(max-width:760px){
- #player.replay-workspace:is(:fullscreen,:-webkit-full-screen){padding:0;gap:0}
- #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) :is(.replay-workspace-header,.replay-file-browser,.replay-current){display:none}
- #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .player-stage{flex:1;min-height:0;padding:0;border:0;border-radius:0;background:#000;overflow:hidden}
- #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .game-viewport{border-radius:0}
- #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-transport{grid-template-columns:minmax(0,1fr);padding:8px max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:#111110}
- #player.replay-workspace:is(:fullscreen,:-webkit-full-screen) .replay-fullscreen-exit{top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:44px;height:44px;padding:9px}
-}
+/* Fullscreen owns only the permanent game viewport, including its exit button. */
+html:has(#player.replay-workspace #gameViewport:is(:fullscreen,:-webkit-full-screen)){scrollbar-gutter:auto}
+#player.replay-workspace #gameViewport:is(:fullscreen,:-webkit-full-screen){position:fixed;inset:0;flex:none;width:100vw;height:100vh;min-height:0;max-width:none;max-height:none;aspect-ratio:auto;border:0;border-radius:0;background:#000;overflow:hidden}
+#player.replay-workspace #gameViewport:is(:fullscreen,:-webkit-full-screen) .replay-fullscreen-exit{position:absolute;z-index:5;display:inline-flex;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:44px;height:44px;padding:9px;border:1px solid #ffffff30;border-radius:10px;background:#111110a6}
 @keyframes replay-panel-in{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes replay-list-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes replay-menu-in{from{opacity:0;transform:translateY(-5px) scale(.96)}to{opacity:1;transform:none}}

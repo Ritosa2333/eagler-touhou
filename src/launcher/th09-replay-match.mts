@@ -4,6 +4,8 @@ export interface Th09ReplayMatch {
   startedAt: number;
   frames: number;
   winner: 0 | 1;
+  /** Replay input offsets, independent of network/menu ticks. Absent in older files. */
+  roundStarts?: number[];
 }
 export function parseTh09ReplayMatch(value: unknown): Th09ReplayMatch | null {
   if (!value || typeof value !== 'object') return null;
@@ -13,7 +15,11 @@ export function parseTh09ReplayMatch(value: unknown): Th09ReplayMatch | null {
       !Number.isSafeInteger(m.startedAt) || Number(m.startedAt) < 0 ||
       !Number.isSafeInteger(m.frames) || Number(m.frames) < 30 || ![0, 1].includes(Number(m.winner)) || typeof m.winner !== 'number') return null;
   return {schema: m.schema, names: m.names.map((name, side) => name || `P${side + 1}`) as [string, string],
-    startedAt: Number(m.startedAt), frames: Number(m.frames), winner: m.winner as 0 | 1};
+    startedAt: Number(m.startedAt), frames: Number(m.frames), winner: m.winner as 0 | 1,
+    ...(Array.isArray(m.roundStarts) && m.roundStarts.length > 0 && m.roundStarts.length <= 10 &&
+      m.roundStarts[0] === 0 && m.roundStarts.every((frame, index, frames) =>
+        Number.isSafeInteger(frame) && frame >= 0 && frame < Number(m.frames) && (!index || frame > frames[index - 1]))
+      ? {roundStarts: [...m.roundStarts]} : {})};
 }
 export const th09ReplayMatchLabel = (match: Th09ReplayMatch): string => match.names.join(' vs ');
 // Preserve actual archive directories; never synthesize groups from sidecars.
