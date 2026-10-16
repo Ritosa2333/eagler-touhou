@@ -24,7 +24,8 @@ const act = fn => React.act(async () => {await fn?.(); for (let i = 0; i < 12; i
 const defaultContext = {launched: false, th09NetworkOverlayOpen: false, launchStage: null, touchEnabled: false, touchMovementMode: 'joystick'};
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client')); ({MemoryRouter} = await import('react-router'));
-  for (const file of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) {
+  // Room visibility copy is checked by the mounted netplay-security tests.
+  for (const file of ['src/contracts/product-catalog.mts']) {
     const expected=execFileSync('git', ['show', 'b479f0a:'+file], {cwd: project, encoding: 'utf8'});
     let actual = readFileSync(resolve(project,file),'utf8');
     // TH09 adds translations without changing the pinned shared vocabulary.

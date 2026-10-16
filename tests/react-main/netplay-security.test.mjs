@@ -1,0 +1,78 @@
+import test, {before, after, afterEach} from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp, rm} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {build} from 'esbuild';
+import {installMountedDom} from './mounted-dom-environment.mjs';
+
+// Mounted components and synthetic DOM only. Network admission is tested with
+// real isolated WebSockets in test-relay-membership/room-lookup-security.
+const project = resolve(import.meta.dirname, '../..');
+const require = createRequire(resolve(project, 'package.json'));
+let env, work, React, createRoot, views;
+const mounts = [];
+before(async () => {
+  env = installMountedDom();
+  React = await import('react');
+  ({createRoot} = await import('react-dom/client'));
+  work = await mkdtemp(resolve(project, '.cache/netplay-security-'));
+  const outfile = resolve(work, 'views.mjs');
+  await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
+    export * from './app/components/directory/DirectoryRoomDialog.tsx';
+    export * from './app/components/player/TitleNetworkOverlay.tsx';
+    export * from './app/i18n.tsx';
+  `}, bundle: true, format: 'esm', platform: 'node', jsx: 'automatic', outfile,
+  logLevel: 'silent', plugins: [{name: 'shared-react', setup(ctx) {
+    ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+  }}]});
+  views = await import(pathToFileURL(outfile).href);
+});
+async function mount(component, props, locale) {
+  const container = env.document.createElement('div');
+  env.document.body.append(container);
+  const root = createRoot(container);
+  mounts.push(root);
+  await React.act(async () => root.render(React.createElement(views.LocaleProvider, {locale},
+    React.createElement(component, props))));
+  return container;
+}
+afterEach(async () => {
+  for (const root of mounts.splice(0)) await React.act(async () => root.unmount());
+  env.document.body.replaceChildren();
+  assert.deepEqual(env.errors.splice(0), []);
+});
+after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
+for (const locale of ['zh-CN', 'en']) {
+  test(`${locale}: unlisted-room limits appear before submitting entry`, async () => {
+    const state = {connection: 'live', mine: null, leaving: false, products: ['th06mp'],
+      form: {mode: 'create', product: 'th06mp', capacity: 2, difficulty: 1,
+        visibility: 'private', disableCheatMovement: false, code: '', validationMessage: ''}};
+    let submitted = 0;
+    const service = {getSnapshot: () => state, subscribe: () => () => {},
+      formDidClose() {}, updateForm() {}, submitForm() {++submitted; return 'unavailable';}};
+    const node = await mount(views.DirectoryRoomDialog, {service, open: true, onCloseRequest() {}}, locale);
+    assert.equal(node.querySelector('dialog').open, true);
+    assert.equal(node.querySelector('#visibilitySelect option[value="private"]').textContent,
+      locale === 'en' ? 'Unlisted' : '隐藏');
+    assert.match(node.querySelector('#formNote').textContent,
+      locale === 'en' ? /Anyone with the room code can join/ : /任何知道房间号的人都能加入/);
+    assert.equal(submitted, 0, 'showing the room rules does not submit entry');
+    await React.act(async () => node.querySelector('form').dispatchEvent(new Event('submit', {bubbles: true, cancelable: true})));
+    assert.equal(submitted, 1, 'entry remains a deliberate form action');
+  });
+  test(`${locale}: in-game entry accepts an eight-digit room code`, async () => {
+    const state = {open: true, room: false, code: '00012345', focusRequest: 1};
+    let joined = 0;
+    const model = {getSnapshot: () => state, subscribe: () => () => {},
+      create() {}, join() {++joined;}, close() {}, setCode() {}};
+    const node = await mount(views.TitleNetworkOverlay, {model}, locale);
+    assert.equal(node.querySelector('#th09NetworkDialog').hidden, false);
+    assert.equal(node.querySelector('#th09NetworkCode').maxLength, 8);
+    assert.equal(node.querySelector('#th09NetworkCode').value, '00012345');
+    assert.equal(joined, 0);
+    await React.act(async () => node.querySelector('#th09NetworkJoin').click());
+    assert.equal(joined, 1);
+  });
+}

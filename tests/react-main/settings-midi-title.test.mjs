@@ -1,12 +1,11 @@
-import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
+import {synchronizedMainAuthority} from './source-text.mjs';
 /** Original app.mts4415–4423 MIDI help/disabled presentation and
  * public/index.html447/544 music labels after original static translations.
  * Synthetic DOM and fake device availability only; no browser permission,
  * native MIDI, rendered tooltip or gameplay claim. */
 import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
-import {execFileSync} from 'node:child_process';
-import {readFile, mkdir, mkdtemp, rm} from 'node:fs/promises';
+import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
@@ -19,7 +18,8 @@ let env, React, createRoot, owners, work, root, originalHTML, originalSync;
 const step = callback => React.act(async () => {callback?.(); await Promise.resolve();});
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client'));
-  assert.equal(pinnedUiAuthorityText(await readFile(resolve(project, 'src/launcher/i18n.mts'), 'utf8')), pinned('src/launcher/i18n.mts'));
+  // Translation changes are checked through the actual
+  // settings controls below rather than a checksum of the translation source.
   originalHTML = pinned('public/index.html');
   const source = pinned('src/launcher/app.mts'), start = source.indexOf('function syncExternalMidiOptions() {');
   const code = source.slice(start, source.indexOf('// Device hotplug', start));

@@ -70,6 +70,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-multiplayer-relay-url.mjs",
   "tests/test-netplay-relay-product-policy.mjs",
   "tests/test-relay-abuse-guard.mjs",
+  "tests/test-room-lookup-security.mjs",
   "tests/test-relay-membership-security.mjs",
   "tests/test-relay-flow-control.mjs",
   "tests/test-relay-payload-security.mjs",

@@ -135,6 +135,24 @@ P1 can select public/private discovery and disallow unlimited-speed touch
 movement. Private means hidden from the directory, not password protection;
 room-code joins still work. Creation applies these rules before the first
 snapshot, including a private host whose seat is pending a movement change.
+The UI labels this setting "Unlisted" and explains that anyone with the code
+can join. New room codes contain eight cryptographically random digits; legacy
+4–8 digit joins remain supported.
+Host removal rejects both the removed client and anonymous browser member for
+this room's lifetime. A new browser identity can evade this anonymous ban.
+Removal history is bounded to 1024 entries; at capacity, fresh admissions stop
+while existing members may reconnect. Distinct room lookups are limited before
+checking existence, by source IP, to 12 per minute by default. Configure this with
+`EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE`; same-room transports share one lookup.
+
+The receive-queue and journal protections live in the shared Runtime library:
+`eagler-common` commit `d7814deca1bd94501350d74b62537e7432ab352a`.
+Player receive queues admit at most 16384 packets and 16 MiB, including in-flight
+Blob conversions. Overflow closes the transport and releases queued storage.
+Journal arena growth rejects requests beyond its per-frame byte limit.
+Rebuild the game Runtimes with this common revision (or a descendant containing
+it); updating the Launcher or relay alone does not update embedded WASM code.
+
 Changing the movement rule invalidates readiness. Restricted rooms require an
 explicit permitted movement mode at seat admission, readiness and game start;
 the Launcher offers normal touch / joystick in the shared decision dialog and

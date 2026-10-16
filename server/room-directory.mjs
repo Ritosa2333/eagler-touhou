@@ -195,6 +195,16 @@ export function createRoomDirectory({
     maybeDelete(entry.roomId, room);
   }
   function admit(socket, roomId, clientId, memberId) {
+    const room = rooms.get(roomId);
+    const ownerEntry = clients.get(clientId);
+    const sameMember = ownerEntry?.roomId === roomId && ownerEntry.memberId === memberId;
+    // A host removal lasts for this room's lifetime, including across tabs
+    // sharing the anonymous browser membership. Never ban a shared/NAT IP.
+    if (room?.removedMembers?.has(memberId) || room?.removedClients?.has(clientId) ||
+        (room?.removedMembers?.size >= 1024 && !sameMember)) {
+      socket.close(4010, 'removed by host');
+      return false;
+    }
     const owner = clients.get(clientId);
     // clientId is public in room snapshots. Only its private member may resume.
     if (owner && owner.memberId !== memberId) {
@@ -281,6 +291,16 @@ export function createRoomDirectory({
   function evict(roomId, clientId) {
     const entry = clients.get(clientId);
     if (!entry || entry.roomId !== roomId) return false;
+    const room = rooms.get(roomId);
+    if (!room) return false;
+    room.removedMembers ??= new Set();
+    room.removedClients ??= new Set();
+    // Once full, admit() refuses fresh members while existing members may
+    // reconnect. Keep host-controlled removal history bounded as well.
+    if (room.removedMembers.size < 1024) {
+      room.removedMembers.add(entry.memberId);
+      room.removedClients.add(clientId);
+    }
     releaseTransports?.(roomId, clientId);
     remove(entry);
     entry.socket.close(4010, 'removed by host');

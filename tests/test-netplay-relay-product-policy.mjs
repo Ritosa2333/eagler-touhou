@@ -329,6 +329,7 @@ const relayEnv = {
   EAGLER_NETPLAY_STUN_URLS: "",
   // This suite intentionally creates many distinct product rooms on one IP.
   EAGLER_NETPLAY_MAX_ROOMS_PER_IP: "100",
+  EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE: "100",
   EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE: "300",
 };
 for (const legacy of ["TH07_RELAY_HOST", "TH07_RELAY_PORT", "TH07_STUN_URLS"])
