@@ -27,6 +27,7 @@ public:
     void BeforeBulletAnimation(BulletVisuals&,std::size_t,std::size_t) override;
     void BeforePlayerShot(PlayerShots&,std::size_t) override;
     void BeforeBytes(void* p,std::size_t n)override{Touch(p,n);}
+    bool Begin();
     bool Save(GameSession&);
     u32 Fingerprint()const{return digest.value;}
     bool hashEnabled=false;

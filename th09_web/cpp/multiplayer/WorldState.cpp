@@ -158,9 +158,13 @@ void WorldState::Recording(ReplayArchive& x) {
         undo.emplace_back([&r,sizes=std::move(sizes)]{r.parts.resize(sizes.size());for(std::size_t i=0;i<sizes.size();++i){for(unsigned j=0;j<3;++j)r.parts[i].inputs[j].resize(sizes[i][j]);r.parts[i].rates.resize(sizes[i][3]);}});
     }
 }
-bool WorldState::Save(GameSession& s) {
+bool WorldState::Begin() {
     Unbind();hashParts.clear();digest={};if(journal.IsFrameOpen())journal.EndFrame();journal.DiscardBefore(1);undo.clear();ResetEnemyCapture();effectCount=attackCount=0;effectRangeCount=effectSlots=0;effectSaved.reset();attackSaved.reset();ownedBytes=visualFirstWriteBlocks=0;good=journal.BeginFrame(0);
     bulletRangeCount=shotRangeCount=0;
+    return good;
+}
+bool WorldState::Save(GameSession& s) {
+    if(!Begin())return false;
     // This adapter is specifically the stable live two-human versus world.
     if(!s.world||s.is_replay||s.world->rules.mode!=GameMode::versus)return good=false;
     NamedFields("s.state,s.animations.timing,s.animations.executed,s.animations.invalid,s.initial,s.current,s.inputs,s.scores,s.starting_replay_stage,s.demo,s.demo_input,s.demo_frames,s.warmed_stage,s.result,s.phase,s.continues,s.recordable,s.frames,s.timing,s.motion_input",s.state,s.animations.timing,s.animations.executed,s.animations.invalid,s.initial,s.current,s.inputs,s.scores,s.starting_replay_stage,s.demo,s.demo_input,s.demo_frames,s.warmed_stage,s.result,s.phase,s.continues,s.recordable,s.frames,s.timing,s.motion_input);Text(s.error);

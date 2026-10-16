@@ -146,7 +146,11 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     bool checkpoint(multiplayer::WorldState& out){
         TH09_PERF_SCOPE(checkpoint_cost,Checkpoint);
         presentation.renderer.flush();graphics.backend.flush();
-        if(!out.Save(*session))return false;
+        if(in_title){
+            if(!title||!out.Begin())return false;
+            out.Fields(state.random,settings,title->state,title->input,title->descriptions,title->stages,title->leaving,executor.timing,executor.executed,executor.invalid);
+            out.Vector(title->animations);out.Text(title->error);
+        }else if(!out.Save(*session))return false;
         out.Fields(device,left_device,right_device,paused,over,complete,frames,shake,pending_action,requested_transition,mode,difficulty,game_flags,continues,capture_enabled);
         out.Text(error);
         // Records and wall clocks are committed output, outside rollback.
@@ -226,7 +230,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     i32 pending_action=-1;
     bool tick_title(u16 left,u16 right,u16 keys,bool render=true){
         TH09_PERF_SCOPE(title_update_cost,Update);
-        update_clocks();device.update(network_selection?left:keys);left_device.update(left);right_device.update(right);if(!title||!error.empty())return false;
+        update_clocks();device.update(network_selection?u16(left|right):keys);left_device.update(left);right_device.update(right);if(!title||!error.empty())return false;
         if(!launch_pending)title->update(left_device,right_device,device);if(network.active&&title->state.screen==TitleScreen::versus_type){release_network();title->state={};th09_network_result();}save_configuration();if(!title->error.empty()){error=title->error;return false;}
         TH09_PERF_STOP(title_update_cost);
         if(launch_pending){
@@ -699,7 +703,19 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         // Use the current world's flags/continues, before tick_inputs refreshes
         // its cached InGameMenuServices fields.
         const u32 flags=probe->world?probe->world->battle->state.flags:0;
-        const bool retire=probe->in_title||probe->pending_action>=0||
+        // Menu navigation/animation is reversible. Only world construction,
+        // transport departure and initial resource setup require exact input.
+        bool titleRetires=false;
+        if(probe->in_title){
+            const auto& t=probe->title->state;
+            auto menu=probe->device;
+            menu.update(u16(decision.inputs[0].buttons|decision.inputs[1].buttons));
+            titleRetires=t.load_frame==0||
+                (t.screen!=TitleScreen::versus_difficulty&&t.screen!=TitleScreen::versus_character&&t.screen!=TitleScreen::versus_stage)||
+                (t.screen==TitleScreen::versus_stage&&(menu.pressed&0x1001))||
+                (t.screen==TitleScreen::versus_difficulty&&(menu.pressed&10));
+        }
+        const bool retire=titleRetires||probe->pending_action>=0||
             (probe->paused?probe->menus.pause_retires_world():
              probe->over?probe->menus.game_over_retires_world(flags,probe->session->continues):
              probe->complete&&probe->menus.match_end_retires_world(flags));

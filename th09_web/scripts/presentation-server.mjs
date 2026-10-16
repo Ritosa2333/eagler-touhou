@@ -17,7 +17,7 @@ export async function presentationServer(port=0,{release=false,artifactDirectory
   ['/',resolve(root,'tests/browser/presentation.html')],
   ['/probe.mjs',resolve(compiled,release?'th09.mjs':'th09-presentation.mjs')],
   [release?'/th09.wasm':'/th09-presentation.wasm',resolve(compiled,release?'th09.wasm':'th09-presentation.wasm')],
-  ['/th09.dat',resolve(fixtureWorkspace,'[th09] 东方花映塚 (日文版)/th09.dat')],
+  ['/th09.dat',resolve(process.env.TH09_FIXTURE_DATA||resolve(fixtureWorkspace,'[th09] 东方花映塚 (日文版)/th09.dat'))],
  ]);
  for(const name of ['th09.html','style.css','shell.mjs','keyboard.mjs','netplay.mjs','shared-netplay.mjs','spectator-tape.mjs','spectator-timeline.mjs','motion-replay.mjs'])files.set('/app/'+name,resolve(root,'sdl-runtime',name));
  for(const name of ['cp932.bin','blend.bin','msgothic.ttc'])files.set('/'+name,resolve(fixtureAssets,name));
