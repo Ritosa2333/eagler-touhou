@@ -51,6 +51,15 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& renderer){
     renderer.multiplayer_hud_background=nullptr;
     if(auto* frame=animations.find(hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index==2)renderer.multiplayer_hud_background=node->value;
     const auto& local=*pilots[mp_options.local_seat];
+    renderer.multiplayer_hidden_hitboxes.clear();
+    // Retain generation-tagged native focus ownership through fade-out. Script
+    // numbers alone are not identities: other ANM resources can reuse them.
+    for(auto it=renderer.multiplayer_hitbox_owners.begin();it!=renderer.multiplayer_hitbox_owners.end();)
+        if(!animations.find(it->first))it=renderer.multiplayer_hitbox_owners.erase(it);else ++it;
+    for(unsigned seat=0;seat<mp_options.seat_count;++seat)
+        if(auto* focus=animations.find(pilots[seat]->player->motion.focus_animation))renderer.multiplayer_hitbox_owners[focus->id]=seat;
+    for(const auto& entry:renderer.multiplayer_hitbox_owners)if(entry.second!=mp_options.local_seat)
+        if(auto* focus=animations.find(entry.first))renderer.multiplayer_hidden_hitboxes.push_back(focus);
     for(unsigned i=0;i<mp_options.seat_count;++i){const auto& p=*pilots[i];if(i==mp_options.local_seat){renderer.multiplayer_opacity[i+1]=p.ghost?112:255;continue;}const auto a=local.player->motion.state.position,b=p.player->motion.state.position;const double x=double(a.x)-b.x,y=double(a.y)-b.y;renderer.multiplayer_opacity[i+1]=p.ghost?88:x*x+y*y<2304?72:160;}
     // Rescue feedback follows the same deterministic recipient selection as
     // the transfer rule. It changes only the submitted ghost alpha.

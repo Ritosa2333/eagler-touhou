@@ -4,6 +4,9 @@
 #include "ZunGraphics.hpp"
 #include "SceneCamera.hpp"
 #include <vector>
+#ifdef TH11_MULTIPLAYER
+#include <map>
+#endif
 namespace th11 {
 #ifdef TH11_MULTIPLAYER
 class AnmManager;
@@ -22,6 +25,8 @@ public:
     const AnmManager* multiplayer_animations=nullptr;
     const AnmVm* multiplayer_hud_background=nullptr;
     std::array<u8,4> multiplayer_opacity{{255,255,255,255}};
+    std::vector<const AnmVm*> multiplayer_hidden_hitboxes;
+    std::map<u32,unsigned> multiplayer_hitbox_owners;
     u32 multiplayer_color(const AnmVm&,u32)const noexcept;
     u32 multiplayer_tint(u32,unsigned)const noexcept;
     void multiplayer_geometry(const AnmVm&,touhou::graphics::Topology,u32,const AnmVertex*);

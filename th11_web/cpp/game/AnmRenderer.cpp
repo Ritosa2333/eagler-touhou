@@ -116,6 +116,10 @@ int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
     return submit_quad(vm,positions,true);
 }
 int AnmRenderer::draw(AnmVm& vm,bool preserve_subpixel){
+#ifdef TH11_MULTIPLAYER
+    const auto* root=&vm.child;for(unsigned depth=0;root->previous&&depth<4096;++depth)root=root->previous;
+    for(const auto* hidden:multiplayer_hidden_hitboxes)if(&vm==hidden||root->value==hidden)return -1;
+#endif
     if((vm.flags&3)!=3||!(vm.color>>24))return -1;
 #ifdef TH11_MULTIPLAYER
     if(&vm==multiplayer_hud_background){
