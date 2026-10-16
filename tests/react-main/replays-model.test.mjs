@@ -54,7 +54,7 @@ function fixture({cold = false, launched = false, prepareGate = null, broken = f
 }
 test('TH09 archive names survive rename even when the manager switches products during the mutation', async () => {
   const f=fixture(),path='replay/xxx vs abdjfal/th9_ud0000.rpy',target='replay/xxx vs abdjfal/th9_ud0001.rpy';
-  const match={schema:'eagler-touhou/th09-match-replay/1',names:['xxx','abdjfal'],startedAt:1792029600000,frames:7200,winner:0};
+  const match={schema:'eagler-touhou/th09-match-replay/1',names:['xxx','abdjfal'],startedAt:1792029600000,frames:7200,winner:0,roundStarts:[0,1600,4000]};
   f.files.clear();f.files.set(path,[1,2,3]);f.matches.set(path,match);
   await f.model.open('th09mp');assert.deepEqual(f.model.getSnapshot().rows[0].replayMatch,match);
   const renaming=f.model.rename(path,'th9_ud0001.rpy');

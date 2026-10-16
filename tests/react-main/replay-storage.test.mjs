@@ -8,7 +8,7 @@ import {IDBFactory,IDBKeyRange} from 'fake-indexeddb';
 const root=fileURLToPath(new URL('../../',import.meta.url));let work,createReplayStorageReader;
 before(async()=>{await mkdir(resolve(root,'.cache'),{recursive:true});work=await mkdtemp(resolve(root,'.cache/replay-storage-'));const out=resolve(work,'reader.mjs');await build({entryPoints:[resolve(root,'app/services/replay-storage.ts')],outfile:out,bundle:true,platform:'node',format:'esm',logLevel:'silent'});({createReplayStorageReader}=await import(pathToFileURL(out).href));});
 after(async()=>{if(work)await rm(work,{recursive:true,force:true});});
-const match={schema:'eagler-touhou/th09-match-replay/1',names:['甲','乙'],startedAt:1000,frames:600,winner:1};
+const match={schema:'eagler-touhou/th09-match-replay/1',names:['甲','乙'],startedAt:1000,frames:600,winner:1,roundStarts:[0,160,400]};
 async function seed(factory,name,entries,version=21){const db=await new Promise((ok,no)=>{const r=factory.open(name,version);r.onupgradeneeded=()=>r.result.createObjectStore('FILE_DATA');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});await new Promise((ok,no)=>{const tx=db.transaction('FILE_DATA','readwrite');for(const [path,contents]of entries)tx.objectStore('FILE_DATA').put({contents,mode:0o100666,timestamp:new Date(2000)},name+'/'+path);tx.oncomplete=ok;tx.onabort=()=>no(tx.error);});db.close();}
 function signedBytes(bytes){const buffer=new ArrayBuffer(bytes.length+8);new Uint8Array(buffer,3,bytes.length).set(bytes);return new Int8Array(buffer,3,bytes.length);}
 function motionReplay(){
