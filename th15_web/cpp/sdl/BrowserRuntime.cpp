@@ -48,7 +48,7 @@ bool mp_tick(u32 held,bool physical=true){
  if(network.NeedsCapture()&&!physical)return true;
  const auto frame=network.NextFrame();
  if(mp_playback){if(frame>=mp_replay.FrameCount()){app->exiting=true;network.Finish();return true;}if(!network.FeedPlayback(frame,mp_replay.FrameAt(frame)->data(),network.Setup().player_count)){last_error=network.Error();return false;}}
- if(network.NeedsCapture()){Netplay::FrameInput sampled;if(!multiplayer::InputLanes::Capture(held,(held&0x100)!=0,app->touch.mode,app->touch.x,app->touch.y,sampled)||!network.Capture(frame,sampled)){last_error=network.Error();return false;}}
+ if(network.NeedsCapture()){Netplay::FrameInput sampled;if(!multiplayer::InputLanes::Capture(held,(held&0x100)!=0,app->touch.mode,app->touch.x,app->touch.y,sampled)||!network.Capture(network.CaptureFrame(),sampled)){last_error=network.Error();return false;}}
  if(!network.Pump(true)){last_error=network.Error();return false;}
  if(network.Spectator()){if(!network.Backlog())return true;if(!network.FeedSpectator(frame)){last_error=network.Error();return false;}}
  const auto decision=network.Prepare(frame);if(!decision.canAdvance)return true;
@@ -139,6 +139,7 @@ u32 sample_controller(u32& buttons){
 }
 bool sample_and_tick(){
 #if TH15_MULTIPLAYER
+ network.SetCapturePhase(app&&mp_started&&!mp_local_results&&!app->exiting,SDL_GetTicksNS()/1000);
  // Touch pulses and held/pressed edges are sampled exactly once per frame.
  // While a captured frame waits, only pump the confirmed-input runtime.
  if(mp_started&&!mp_local_results&&!network.NeedsCapture())return mp_tick(0,false);

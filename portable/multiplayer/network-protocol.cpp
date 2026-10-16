@@ -81,6 +81,22 @@ __attribute__((export_name("network_free"))) void network_free(void* pointer){st
 __attribute__((export_name("network_validate"))) int network_validate(const unsigned char* bytes,unsigned size){return ReplayArchive::Validate(bytes,size);}
 }
 int main(int argc,char** argv){
+ for(unsigned count:{2u,3u}){
+  std::array<NetplayRuntime,3> players;
+  for(unsigned seat=0;seat<count;++seat)CHECK(players[seat].Reset(setup(count,seat,0)));
+  link(players,count);auto& r=players[0];
+  for(unsigned frame=0;frame<Netplay::ConfirmedInputClock::MaxLead;++frame){
+   r.SetCapturePhase(true,100'000+frame*Netplay::ConfirmedInputClock::IntervalUs);
+   CHECK(r.NeedsCapture()&&r.CaptureFrame()==frame);CHECK(r.Capture(frame,input(frame,0)));
+   CHECK(!r.NeedsCapture()&&r.NextFrame()==0&&!r.Prepare(0).canAdvance);
+  }
+  r.SetCapturePhase(true,1'000'000);CHECK(!r.NeedsCapture());
+  for(unsigned frame=0;frame<Netplay::ConfirmedInputClock::MaxLead;++frame){
+   for(unsigned seat=1;seat<count;++seat)CHECK(r.SubmitRemote(seat,frame,input(frame,seat))==Netplay::RemoteInputResult::Accepted);
+   const auto d=r.Prepare(frame);CHECK(d.canAdvance&&!d.predictedMask&&d.inputs[0]==input(frame,0));CHECK(r.MarkSimulated(frame,d));
+  }
+  CHECK(r.Finish()&&r.BeginNextRun(419));CHECK(r.CaptureFrame()==0);
+ }
  for(unsigned count:{2u,3u}){auto s=setup(count,0,0);auto words=EncodeSessionSetup(s);CHECK(words[22]==(count==2?1250000u:1500000u));SessionSetup decoded;CHECK(DecodeSessionSetup(decoded,words.data(),words.size()));s.chapter_threshold=5000000;CHECK(GameplayAbi(s)!=GameplayAbi(decoded));NetplayRuntime a,b;CHECK(a.Reset(s));decoded.local_player=1;CHECK(b.Reset(decoded));CHECK(a.ApplySession(b.Hello())==Netplay::SessionPacketResult::ContractMismatch);
  for(unsigned value:{0u,250000u,500001u,5250000u}){words[22]=value;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));}}
  auto config=setup(3,2,2);auto words=EncodeSessionSetup(config);SessionSetup decoded;CHECK(DecodeSessionSetup(decoded,words.data(),words.size()));

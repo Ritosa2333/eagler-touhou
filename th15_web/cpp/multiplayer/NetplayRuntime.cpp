@@ -40,9 +40,11 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay){
     // lockstep. This is input/ACK history only, never a prediction allowance.
     core.maxRollbackFrames=12;core.predictableButtons=0;core.maxDirectionPredictionFrames=0;core.directTouchIsAbsolute=true;
     if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH15 lockstep core rejected setup");
-    setup_=setup;configured_=true;retired_=false;return true;
+    setup_=setup;configured_=true;retired_=false;
+    next_capture_=0;capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;return true;
 }
 void NetplayRuntime::Clear(){
+    next_capture_=0;capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     transport_.Close();channel_.Clear();calibration_.Clear();gate_.Clear();core_.Clear();
     configured_=network_=playback_=spectator_=retired_=false;timing_ready_=timing_sent_=publish_failed_=false;
     setup_={};base_session_=now_ms_=initial_wait_=spectator_deadline_=publish_deadline_=0;generation_=publish_frame_=receive_frame_=0;
@@ -63,10 +65,12 @@ bool NetplayRuntime::ConnectSpectator(const char* url,const char* id){
 bool NetplayRuntime::BeginPlayback(const SessionSetup& setup){Clear();if(!Configure(setup,0))return false;playback_=timing_ready_=true;return true;}
 bool NetplayRuntime::CanStart()const{return configured_&&error_.empty()&&(playback_||(spectator_?timing_ready_:!calibration_.Waiting()&&gate_.CanStart()));}
 std::uint32_t NetplayRuntime::NextFrame()const{const auto f=core_.LastSimulatedFrame();return f==Netplay::INVALID_FRAME?0:f+1;}
-bool NetplayRuntime::NeedsCapture()const{return CanStart()&&!ReadOnly()&&!retired_&&!core_.HasLocalCapture(NextFrame());}
+bool NetplayRuntime::NeedsCapture()const{return CanStart()&&!ReadOnly()&&!retired_&&
+    capture_clock_.CanCapture(next_capture_,NextFrame(),capture_ui_,capture_now_us_)&&!core_.HasLocalCapture(next_capture_);}
 bool NetplayRuntime::Capture(std::uint32_t frame,const Netplay::FrameInput& input){
-    if(!CanStart()||ReadOnly()||retired_||frame!=NextFrame()||core_.HasLocalCapture(frame)||
+    if(!NeedsCapture()||frame!=next_capture_||
        !Netplay::IsValidFrameInput(input)||!core_.ScheduleLocalInput(frame,input))return Fail("Invalid or repeated TH15 physical capture");
+    ++next_capture_;capture_clock_.Captured(capture_now_us_);
     return !network_||channel_.LocalCaptured(core_,frame,now_ms_)||Fail("TH15 input send failed");
 }
 bool NetplayRuntime::InitialInputsReady()const{
