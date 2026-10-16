@@ -2,7 +2,7 @@
 #include <cstdlib>
 namespace th10::browser {
 namespace{u32 pointer(const void* value){return static_cast<u32>(reinterpret_cast<uintptr_t>(value));}}
-AppPresentation::AppPresentation(Application& a):owner(a){application=&a.value;animations=&a.manager;pressed_keys=reinterpret_cast<const u32*>(&a.input.player_profiles[0].input.raw_pressed);reset_frames=&a.reset_frames;presentation_parameters=&a.parameters;}
+AppPresentation::AppPresentation(Application& a):owner(a){application=&a.value;animations=&a.manager;pressed_keys=&a.input.player_profiles[0].input.raw_pressed;reset_frames=&a.reset_frames;presentation_parameters=&a.parameters;}
 i32 AppPresentation::present(void*){return owner.engine.device.present_frame();}
 void AppPresentation::reset_device(void*,void* params){if(owner.engine.device.reset_presentation(params)<0)owner.error=-4;}
 void AppPresentation::release_surface(void* surface){owner.engine.device.release_resource(surface);}

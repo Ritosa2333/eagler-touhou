@@ -9,7 +9,7 @@ namespace {
 struct ResultsServices final:ResultsEnvironment {
     World& w;explicit ResultsServices(World& world):w(world){
         game=&w.state.game;gui=&w.actors.gui;scores=&w.scores.data;replay=&w.state.replay;stages=menu_data(w.state.chinese).stages;current_stage=&w.state.current_stage;
-        engine_flags=&w.state.engine_flags;display_flags=&w.state.configuration.display_flags;pending_screen=&w.state.pending_screen;pressed=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.raw_pressed);repeated=&w.input.player_profiles[0].input.raw_repeat;rate=&w.engine.speed;background_file=&w.common.value->capture;alphabet=menu_data(w.state.chinese).alphabet;active_time=&w.state.active_time;total_time=&w.state.total_time;cheat_movement_used=&w.motion.cheat_movement_used;bind_session();
+        engine_flags=&w.state.engine_flags;display_flags=&w.state.configuration.display_flags;pending_screen=&w.state.pending_screen;pressed=&w.input.player_profiles[0].input.raw_pressed;repeated=&w.input.player_profiles[0].input.raw_repeat;rate=&w.engine.speed;background_file=&w.common.value->capture;alphabet=menu_data(w.state.chinese).alphabet;active_time=&w.state.active_time;total_time=&w.state.total_time;cheat_movement_used=&w.motion.cheat_movement_used;bind_session();
     }
     void bind_session(){auto* p=w.actors.session;controller_update=p?&p->update_entry:nullptr;controller_elapsed=p?&p->elapsed:nullptr;controller_flags=p?&p->session_flags:nullptr;replay_mode=p?&p->replay_mode:nullptr;}
     void sound(i32 id) override{w.sound(id);}

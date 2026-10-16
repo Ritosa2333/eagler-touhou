@@ -55,7 +55,7 @@ struct ResultsEnvironment {
     const u32* engine_flags;
     const u32* display_flags;
     i32* pending_screen;
-    const u32* pressed;
+    const u16* pressed;
     const u16* repeated;
     float* rate;
     AnmFile** background_file;
