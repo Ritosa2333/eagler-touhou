@@ -1,6 +1,7 @@
 #pragma once
 #include "SessionSetup.hpp"
 #include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/ConfirmedInputClock.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
 #include <eagler/netplay/BrowserPeerTransport.hpp>
 #include <eagler/netplay/AdonisConnection.hpp>
@@ -22,6 +23,10 @@ public:
     bool FlushDeferredInputs();
     bool Capture(std::uint32_t,const Netplay::FrameInput&);
     bool NeedsCapture()const;
+    void SetCapturePhase(bool exactUi,std::uint64_t nowUs){
+        if(exactUi&&!capture_ui_)capture_clock_.BeginPhase(nowUs);
+        capture_ui_=exactUi;capture_now_us_=nowUs;
+    }
     std::uint32_t CaptureFrame()const{return next_capture_;}
     bool InitialInputsReady()const;
     bool CanStart()const;
@@ -96,6 +101,9 @@ private:
     SessionSetup setup_;
     Netplay::SessionGate gate_;
     Netplay::RollbackCore core_;
+    Netplay::ConfirmedInputClock capture_clock_;
+    std::uint64_t capture_now_us_=0;
+    bool capture_ui_=false;
     Netplay::BrowserPeerTransport transport_;
     Netplay::AdonisConnection calibration_{transport_};
     Netplay::SessionChannel channel_{calibration_};

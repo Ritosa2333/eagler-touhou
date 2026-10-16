@@ -184,6 +184,28 @@ void lifecycle_trim(){
  }
  VERIFY(r.NeedsCapture()&&r.CaptureFrame()==6);VERIFY(r.SetWorldReady(true));
 }
+void confirmed_ui_pipeline(){
+ ++groups;
+ for(unsigned seats:{2u,3u}){
+  Fixture f(seats);f.prime();auto& r=f.r();VERIFY(r.SetWorldReady(false));
+  constexpr auto interval=Netplay::ConfirmedInputClock::IntervalUs;
+  for(unsigned frame=1;frame<=Netplay::ConfirmedInputClock::MaxLead;++frame){
+   r.SetCapturePhase(true,100'000+(frame-1)*interval);
+   VERIFY(r.NeedsCapture()&&r.CaptureFrame()==frame);
+   VERIFY(r.Capture(frame,value(frame<4?1:0)));
+   VERIFY(!r.NeedsCapture()); // repeated callback cannot sample another slot
+   VERIFY(r.NextFrame()==1&&!r.Prepare(1).canAdvance);
+  }
+  r.SetCapturePhase(true,1'000'000);VERIFY(!r.NeedsCapture()); // bounded during blackout
+  r.SetCapturePhase(false,1'000'000); // resumed combat consumes the immutable UI tail
+  for(unsigned frame=1;frame<=Netplay::ConfirmedInputClock::MaxLead;++frame){
+   VERIFY(!r.NeedsCapture());f.actual(frame,value());
+   const auto d=f.step(false);VERIFY(d.inputs[0]==value(frame<4?1:0));VERIFY(r.SetCommitLimit(frame));
+  }
+  VERIFY(r.NeedsCapture()&&r.CaptureFrame()==r.NextFrame());
+  VERIFY(r.Finish());VERIFY(r.BeginNextRun(419));VERIFY(r.CaptureFrame()==0);
+ }
+}
 void readonly_and_hybrid(const char* direct_path,const char* hybrid_path){
  ++groups;
  for(unsigned mode:{0u,2u}){
@@ -217,6 +239,6 @@ void readonly_and_hybrid(const char* direct_path,const char* hybrid_path){
 }
 void rollback_tests(const char* direct_path,const char* hybrid_path){
  admission();held_and_depth(2,2);held_and_depth(3,3);stable_and_edges();
- correction_frontiers(2);correction_frontiers(3);confirmed_history_prefix(2);confirmed_history_prefix(3);lifecycle_trim();readonly_and_hybrid(direct_path,hybrid_path);
+ correction_frontiers(2);correction_frontiers(3);confirmed_history_prefix(2);confirmed_history_prefix(3);lifecycle_trim();confirmed_ui_pipeline();readonly_and_hybrid(direct_path,hybrid_path);
  std::printf("PASS TH11 rollback network: %u groups, %u checks; real gate/core/InputLanes/GameInput; no World or browser performance claim\n",groups,checks);
 }

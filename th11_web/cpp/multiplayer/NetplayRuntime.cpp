@@ -49,9 +49,11 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay,bool rea
     if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH11 input core rejected setup");
     setup_=setup;configured_=true;retired_=world_ready_=false;
     next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
+    capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     network_interval_scale_=1;network_pace_ms_=now_ms_;pacing_statistics_={{1,8,0,0,0,1,1,0}};return true;
 }
 void NetplayRuntime::Clear(){
+    capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     transport_.Close();channel_.Clear();calibration_.Clear();gate_.Clear();core_.Clear();
     configured_=network_=playback_=spectator_=retired_=false;timing_ready_=timing_sent_=publish_failed_=false;
     setup_={};base_session_=now_ms_=initial_wait_=spectator_deadline_=publish_deadline_=0;generation_=publish_frame_=receive_frame_=0;
@@ -78,10 +80,12 @@ bool NetplayRuntime::ConnectSpectator(const char* url,const char* id){
 }
 bool NetplayRuntime::BeginPlayback(const SessionSetup& setup){Clear();if(!Configure(setup,0,true))return false;playback_=timing_ready_=true;return true;}
 bool NetplayRuntime::CanStart()const{return configured_&&error_.empty()&&(playback_||(spectator_?timing_ready_:!calibration_.Waiting()&&gate_.CanStart()));}
-bool NetplayRuntime::NeedsCapture()const{return CanStart()&&!ReadOnly()&&!retired_&&!Correcting()&&next_capture_==next_&&!core_.HasLocalCapture(next_capture_);}
+bool NetplayRuntime::NeedsCapture()const{return CanStart()&&!ReadOnly()&&!retired_&&!Correcting()&&
+    capture_clock_.CanCapture(next_capture_,next_,capture_ui_,capture_now_us_)&&!core_.HasLocalCapture(next_capture_);}
 bool NetplayRuntime::Capture(std::uint32_t frame,const Netplay::FrameInput& input){
     if(!NeedsCapture()||frame!=next_capture_||!valid_input(input)||!core_.ScheduleLocalInput(frame,input))return Fail("Invalid or repeated TH11 physical capture");
     ++next_capture_;
+    capture_clock_.Captured(capture_now_us_);
     return !network_||channel_.LocalCaptured(core_,frame,now_ms_)||Fail("TH11 input send failed");
 }
 bool NetplayRuntime::InitialInputsReady()const{

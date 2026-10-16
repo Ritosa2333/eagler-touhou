@@ -735,11 +735,21 @@ bool sample_and_tick(bool advance=true){
 #ifdef TH11_MULTIPLAYER
     // SDL events keep pumping during a remote wait. Gesture pulses belong to
     // the next unscheduled frame and are never consumed by a retry.
-    if(!app.multiplayer_viewer&&(!app.netplay.NeedsCapture()||app.netplay.CaptureFrame()>=multiplayer::ReplayArchive::MaxFrames))return advance?app.multiplayer_tick():true;
+    const auto phase=app.session.state.phase;
+    app.netplay.SetCapturePhase(app.multiplayer_world&&!app.multiplayer_finish_pending&&
+        (!app.netplay.AllowsRollback()||phase==GameSessionPhase::paused||
+         phase==GameSessionPhase::ending||phase==GameSessionPhase::game_over),SDL_GetTicksNS()/1000);
+    if(!app.multiplayer_viewer&&(app.multiplayer_finish_pending||!app.netplay.NeedsCapture()||app.netplay.CaptureFrame()>=multiplayer::ReplayArchive::MaxFrames))return advance?app.multiplayer_tick():true;
 #endif
     bool keys[256]{};std::array<u8,256> scans{};const auto* physical=th11_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
-    if(app.session.title){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
+    // Live/recorded shared UI consumes the committed seat words below. A
+    // future physical capture must not overwrite its current title key edges.
+    bool local_title_input=true;
+#ifdef TH11_MULTIPLAYER
+    local_title_input=app.multiplayer_viewer&&!app.multiplayer_world;
+#endif
+    if(app.session.title&&local_title_input){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
     previous_scans=scans;
     const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
     for(u32 n=0;n<256;++n)keys[n]=keys[n]||sample.keys[n];

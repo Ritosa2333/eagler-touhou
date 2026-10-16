@@ -18,7 +18,7 @@ if (multiplayer && thprac) throw Error('TH11 multiplayer and THPrac are separate
 const profile = multiplayer ? 'multiplayer' : 'sdl3';
 const variant = multiplayer ? 'multiplayer' : 'normal';
 const out = resolve(root, 'artifacts', profile);
-const commonRevision = '62345858e1a4b101074cdc04720eac44a7c89cf0';
+const commonRevision = '84b5eae1de9735f8dc562f89447b9864e4986c9e';
 const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, 'third_party/eagler-common'));
 const sdk = process.env.EMSDK || [
   resolve(workspace, 'tools/emsdk'),
