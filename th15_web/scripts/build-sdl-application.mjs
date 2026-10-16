@@ -17,7 +17,15 @@ const lab=process.argv.includes('--presentation-lab');
 if(lab&&release)throw Error('Presentation Lab cannot be a production build');
 const multiplayer=process.argv.includes('--multiplayer');
 if(multiplayer&&thprac)throw Error('Multiplayer is a separate Legacy build without THPrac');
-const netplayCommon=resolve(workspace,'third_party/eagler-common-netplay');
+const netplayCommon=resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT||resolve(workspace,'third_party/eagler-common-netplay'));
+const netplayRevision=()=>{
+ try {
+  const top=execFileSync('git',['rev-parse','--show-toplevel'],{cwd:netplayCommon,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();
+  if(resolve(top).toLowerCase()===netplayCommon.toLowerCase())
+   return execFileSync('git',['rev-parse','HEAD'],{cwd:netplayCommon,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();
+ }catch{}
+ return 'unversioned';
+};
 const target=JSON.parse(readFileSync(resolve(root,'target.json'),'utf8'));
 const out=resolve(root,process.env.TH15_OUTPUT||(multiplayer?'artifacts/sdl-multiplayer':lab?'artifacts/presentation-lab':release?'artifacts/sdl-release':'artifacts/sdl-application'));
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
@@ -27,7 +35,12 @@ common.push('-I'+commonInclude);
 common.push(`-DTH15_PRESENTATION_LAB=${lab?1:0}`);
 common.push(`-DTH_ENABLE_THPRAC=${thprac?1:0}`);
 common.push(`-DTH15_MULTIPLAYER=${multiplayer?1:0}`);
-if(multiplayer)common.push('-I'+resolve(netplayCommon,'include'),'-I'+resolve(root,'cpp/multiplayer'));
+if(multiplayer){
+ // The ordinary common tree also has netplay headers. The MP source set must
+ // compile against its own dependency instead of silently shadowing that pin.
+ common.unshift('-I'+resolve(netplayCommon,'include'));
+ common.push('-I'+resolve(root,'cpp/multiplayer'));
+}
 if(thprac)common.push('-DIMGUI_DISABLE_WIN32_FUNCTIONS','-I'+resolve(root,'cpp/third_party/imgui'));
 // The full object list can exceed Windows' 32K process command limit after extraction.
 // Emscripten expands UTF-8 response files before parsing the same compiler flags.
@@ -41,7 +54,7 @@ const source=[...files('cpp/game'),...files('cpp/sdl'),...(release?[]:[resolve(r
 if(multiplayer)source.push(...files('cpp/multiplayer'),...readdirSync(resolve(netplayCommon,'src/netplay')).filter(p=>p.endsWith('.cpp')&&p!=='NetplayInput.cpp').map(p=>resolve(netplayCommon,'src/netplay',p)));
 if(thprac)source.push(...['imgui.cpp','imgui_draw.cpp','imgui_tables.cpp','imgui_widgets.cpp','imgui_freetype.cpp'].map(p=>resolve(root,'cpp/third_party/imgui',p)));
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp')].sort();
+const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp')].sort();
 if(multiplayer)headers.push(...headerFiles(resolve(netplayCommon,'include')));
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
@@ -52,4 +65,4 @@ const objectsBuilt=[];let cursor=0;await Promise.all(Array.from({length:buildJob
 const loader=resolve(out,release?'th15.mjs':'th15-application.mjs');
 const exports=['_malloc','_free',...(release?[]:["_application_initialize","_application_test_alpha_pixels","_application_render_scale","_application_pause_state","_application_test_finish_name","_application_test_game_over","_application_test_death","_application_step","_application_error","_application_state","_application_checkpoint_state","_application_manual_state","_application_title_select","_application_complete_stage","_application_transition_state","_application_music","_application_pixels","_application_graphics_stats","_application_close","_application_keyboard_key","_application_test_protection"])];
 await run([...common,...(!release&&process.argv.includes('--profile')?['--profiling-funcs']:[]),'--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAP32,HEAPU32','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0','-sEXPORTED_FUNCTIONS='+exports.join(','),...objectsBuilt,'-o',loader]);
-const wasm=readFileSync(loader.replace('.mjs','.wasm'));const report={builtAt,kind:release?'th15-sdl3-application-release':'th15-sdl3-application-integration-development',completeGame:release&&target.completeGame===true,features:{multiplayer,thprac,languages:true},bytes:wasm.length,sha256:sha(wasm),architecture:{loop:'cpp-fixed-60hz-bounded-catchup-with-display-presentation',presentation:'immutable-draw-transaction-with-owner-field-interpolation',eaglerCommon:multiplayer?execFileSync('git',['rev-parse','HEAD'],{cwd:resolve(workspace,'third_party/eagler-common-netplay'),encoding:'utf8'}).trim():commonRevision,audio:'miniaudio-sdl3',input:'cpp-sdl3-continuous-recorded-touch',files:'sdl-io-idbfs',launcher:'eagler-touhou/1',renderer:'shared portable/sdl/Renderer.cpp via SDL3/WebGL2',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',fonts:'compiled SDL3 FontDevice with original measured RGB coverage; real title/run/pause/ending application; remaining unsupported services fail explicitly'},headers:Object.fromEntries(headers.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))])),sources:Object.fromEntries(source.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]))};writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({loader,features:{multiplayer,thprac,languages:true},bytes:wasm.length,sha256:report.sha256}));
+const wasm=readFileSync(loader.replace('.mjs','.wasm'));const report={builtAt,kind:release?'th15-sdl3-application-release':'th15-sdl3-application-integration-development',completeGame:release&&target.completeGame===true,features:{multiplayer,thprac,languages:true},bytes:wasm.length,sha256:sha(wasm),architecture:{loop:'cpp-fixed-60hz-bounded-catchup-with-display-presentation',presentation:'immutable-draw-transaction-with-owner-field-interpolation',eaglerCommon:multiplayer?netplayRevision():commonRevision,audio:'miniaudio-sdl3',input:'cpp-sdl3-continuous-recorded-touch',files:'sdl-io-idbfs',launcher:'eagler-touhou/1',renderer:'shared portable/sdl/Renderer.cpp via SDL3/WebGL2',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',fonts:'compiled SDL3 FontDevice with original measured RGB coverage; real title/run/pause/ending application; remaining unsupported services fail explicitly'},headers:Object.fromEntries(headers.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))])),sources:Object.fromEntries(source.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]))};writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({loader,features:{multiplayer,thprac,languages:true},bytes:wasm.length,sha256:report.sha256}));
