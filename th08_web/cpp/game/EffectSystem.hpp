@@ -61,6 +61,7 @@ public:
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     void* player_view=nullptr;
     u8 (*player_view_alpha)(void*,i32)=nullptr;
+    bool (*player_effect_visible)(void*,const EffectState&,i32)=nullptr;
     i32 (*familiar_view_form)(void*)=nullptr;
     i32 initialize_geometry(EffectState&,EffectDraw callback,bool alternative=false);
 #endif

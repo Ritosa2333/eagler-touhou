@@ -291,7 +291,9 @@ void EffectSystem::draw_list(u32 index,float depth,bool offset_before_depth){
         u8 alpha=255;
         bool local_familiar=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        const i32 seat=effect_seat(*e);if(seat>=0&&player_view_alpha)alpha=player_view_alpha(player_view,seat);
+        const i32 seat=effect_seat(*e);
+        if(player_effect_visible&&!player_effect_visible(player_view,*e,seat))continue;
+        if(seat>=0&&player_view_alpha)alpha=player_view_alpha(player_view,seat);
         local_familiar=familiar_effect_view.contains(*e);
 #endif
         const auto fade=[alpha](EffectState& vm){vm.color1.a=std::min(vm.color1.a,alpha);vm.color2.a=std::min(vm.color2.a,alpha);};
