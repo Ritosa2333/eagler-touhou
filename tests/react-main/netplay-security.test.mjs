@@ -85,15 +85,15 @@ for (const locale of ['zh-CN', 'en']) {
     await React.act(async () => node.querySelector('form').dispatchEvent(new Event('submit', {bubbles: true, cancelable: true})));
     assert.equal(submitted, 1, 'entry remains a deliberate form action');
   });
-  test(`${locale}: in-game entry accepts an eight-digit room code`, async () => {
-    const state = {open: true, room: false, code: '00012345', focusRequest: 1};
+  test(`${locale}: in-game entry accepts a four-digit room code`, async () => {
+    const state = {open: true, room: false, code: '4345', focusRequest: 1};
     let joined = 0;
     const model = {getSnapshot: () => state, subscribe: () => () => {},
       create() {}, join() {++joined;}, close() {}, setCode() {}};
     const node = await mount(views.TitleNetworkOverlay, {model}, locale);
     assert.equal(node.querySelector('#th09NetworkDialog').hidden, false);
-    assert.equal(node.querySelector('#th09NetworkCode').maxLength, 8);
-    assert.equal(node.querySelector('#th09NetworkCode').value, '00012345');
+    assert.equal(node.querySelector('#th09NetworkCode').maxLength, 4);
+    assert.equal(node.querySelector('#th09NetworkCode').value, '4345');
     assert.equal(joined, 0);
     await React.act(async () => node.querySelector('#th09NetworkJoin').click());
     assert.equal(joined, 1);

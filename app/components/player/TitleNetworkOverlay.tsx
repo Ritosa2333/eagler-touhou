@@ -11,7 +11,7 @@ export function TitleNetworkOverlay({model, room}: {model: TitleNetworkModel; ro
       <div id="th09NetworkEntry" hidden={state.room}>
         <header><strong>{t('multiplayer.th09DialogTitle')}</strong><button type="button" id="th09NetworkClose" aria-label={t('action.close')} onClick={() => model.close(true)}>×</button></header>
         <p>{t('multiplayer.th09DialogHint')}</p>
-        <div className="th09-network-actions"><button ref={create} type="button" id="th09NetworkCreate" onClick={model.create}>{t('multiplayer.createRoom')}</button><label><span>{t('multiplayer.roomCode')}</span>{' '}<input id="th09NetworkCode" maxLength={8} inputMode="numeric" autoComplete="off" spellCheck={false} placeholder="0000" value={state.code} onChange={event => model.setCode(event.currentTarget.value)}/></label><button type="button" id="th09NetworkJoin" onClick={model.join}>{t('multiplayer.joinRoom')}</button></div>
+        <div className="th09-network-actions"><button ref={create} type="button" id="th09NetworkCreate" onClick={model.create}>{t('multiplayer.createRoom')}</button><label><span>{t('multiplayer.roomCode')}</span>{' '}<input id="th09NetworkCode" maxLength={4} inputMode="numeric" autoComplete="off" spellCheck={false} placeholder="0000" value={state.code} onChange={event => model.setCode(event.currentTarget.value)}/></label><button type="button" id="th09NetworkJoin" onClick={model.join}>{t('multiplayer.joinRoom')}</button></div>
       </div>
       <div id="th09NetworkRoom" hidden={!state.room}>{room}</div>
     </div>
