@@ -831,6 +831,34 @@ clock and its test registration to their original shared API. Three-player real 
 acceptance remain separate gates before claiming the original visible stall
 has been completely eliminated.
 
+### TH09 confirmed output retention: issue #89 (2026-10-16)
+
+The post-Present driver originally bounded its lead from the first prediction
+mismatch, while its nine-slot ring also retained older unpublished audio,
+Replay boundaries and spectator input. Eight delayed inputs can arrive with the
+first five predictions correct and only a later mismatch. If recovery has not
+run, two more fresh ticks can overwrite the oldest unpublished slot even though
+the correction itself remains inside the eight-frame rollback window. The
+later publication then fails with `Confirmed output history expired`.
+
+The repair bounds deferred advancement by the oldest unpublished output too.
+It drains reconciled output after transport/capture and after completed ticks,
+including the catch-up frontier before another fresh tick reuses a slot. The
+once-only publication cursor remains authoritative, and a slot-owner check
+rejects overwriting a different unpublished frame. This changes neither the
+rollback window nor the input protocol.
+
+`th09_web/tests/multiplayer/output-history-browser.mjs` exercises real Release
+worlds and native input packets with explicitly controlled delivery/recovery.
+The old build reproduces the error with `--expect-broken`; the repaired build
+must pass both recovery schedules, publish exact inputs once and in order, and
+match the exact peer's confirmed world hash. No observer or Replay-save call is
+required to trigger the old failure. This establishes the driver defect, not
+the reporting player's exact packet timing or its public-network frequency.
+
+The cross-title ownership rule is recorded in
+[Adapter behavior invariants](../ADAPTER_BEHAVIOR_INVARIANTS.md#未发布输出必须保留到提交完成).
+
 ## TH09 input scheduling and post-Present recovery (2026-10-16)
 
 TH09 `a2d7652` adopts arrival-driven retry of an already-due tick, removes its

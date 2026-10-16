@@ -212,6 +212,14 @@ KeyConfig 读取到的按钮编号与 Gameplay 实际消费的按钮编号必须
 
 已有完整快照覆盖的界面应把确认等待缩小到实际边界。尚不能回滚的界面可以使用有界输入管线缓解逐帧互等，但不能借此开放未覆盖状态的预测。队列帧数上限不等于网络故障期间的延迟上限。具体覆盖与验证范围见 [Rollback playbook](playbooks/rollback.md#repair-set-following-the-audit-2026-10-16)。
 
+### 未发布输出必须保留到提交完成
+
+**目的：延后纠正和分段重演不能覆盖尚未提交的音效、Replay 边界或观战输入。**
+
+复用历史槽位时，必须同时保护仍需恢复的快照和最早未发布输出。待纠正起点、远端连续确认位置与模拟位置不能替代输出提交位置。早期预测正确、只有后续某帧预测错误时，早期记录仍可能等待发布。恢复工作迟到或跨回调时，应在容量耗尽前完成必要纠正，并在重演追上旧进度后先提交，再复用槽位。
+
+**参考缺陷：** TH09 [issue #89](https://github.com/YomotsuHisami/eagler-touhou/issues/89)。`tests/multiplayer/output-history-browser.mjs` 使用真实 Release 运行体覆盖延后恢复、记录环复用、确认输入顺序及纠正后的世界哈希。
+
 ## Multiplayer presentation
 
 ### 多人初始站位必须分散
