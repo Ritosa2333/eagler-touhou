@@ -650,7 +650,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     if (created) {
       code = generateMultiplayerRoomCode(options.randomWord);
       while (snapshot.rooms.some((room) => room.product === form.product && room.code === code))
-        code = String((Number(code) + 1) % 100_000_000).padStart(8, '0');
+        code = String(1000 + ((Number(code) - 999) % 9000));
     }
     const product = form.product;
     pendingEntry = {

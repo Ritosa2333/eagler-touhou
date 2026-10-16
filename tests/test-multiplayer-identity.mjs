@@ -16,10 +16,10 @@ class MemoryStorage {
   setItem(key, value) { this.values.set(key, String(value)); }
 }
 
-assert.equal(generateMultiplayerRoomCode(() => 0), '00000000');
-assert.equal(generateMultiplayerRoomCode(() => 99_999_999), '99999999');
-const randomRoomWords = [0xffffffff, 4_200_000_000, 12345];
-assert.equal(generateMultiplayerRoomCode(() => randomRoomWords.shift()), '00012345', 'biased samples are rejected');
+assert.equal(generateMultiplayerRoomCode(() => 0), '1000');
+assert.equal(generateMultiplayerRoomCode(() => 8999), '9999');
+const randomRoomWords = [0xffffffff, 4_294_962_000, 12345];
+assert.equal(generateMultiplayerRoomCode(() => randomRoomWords.shift()), '4345', 'biased samples are rejected');
 assert.throws(() => generateMultiplayerRoomCode(() => 0xffffffff), /Unable to generate/);
 assert.throws(() => generateMultiplayerRoomCode(() => -1), /Invalid/);
 

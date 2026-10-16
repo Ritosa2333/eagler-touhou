@@ -360,7 +360,7 @@ async function mountRouter(f, {strict = false} = {}) {
     async back() {await React.act(async () => router.navigate(-1));}};
 }
 for (const mode of ['create', 'join']) test(`Actual navigation owner: ${mode} submit waits for same-URL Router close commit, then enters once`, async () => {
-  const f = await fixture().live([room({code: '00000023'})]); const h = await mountRouter(f, {strict: true}); const base = h.router.state.location;
+  const f = await fixture().live([room({code: '1023'})]); const h = await mountRouter(f, {strict: true}); const base = h.router.state.location;
   await h.open(mode); const opened = h.router.state.location; assert.notEqual(opened.key, base.key); assert.equal(opened.search, base.search); assert.equal(opened.hash, base.hash);
   assert.equal(n('#roomDialog').open, true); assert.equal(f.closeCalls, 0);
   if (mode === 'join') await change('#roomCodeInput', '5678'); else {await change('#capacitySelect', '3'); await change('#difficultySelect', '4'); await change('#visibilitySelect', 'private'); await change('#cheatSelect', '1');}
@@ -370,7 +370,7 @@ for (const mode of ['create', 'join']) test(`Actual navigation owner: ${mode} su
   assert.deepEqual(f.events, ['formDidClose', 'identity:th06mp', 'navigate']);
   const url = new URL(f.navigations[0].url); assert.equal(url.searchParams.get('keep'), '1'); assert.equal(url.hash, '#retained');
   const invite = owners.decodeRoomInvite(url.searchParams.get(owners.ROOM_INVITE_KEY));
-  assert.equal(invite.g, 'th06mp'); assert.equal(invite.r, mode === 'create' ? '00000024' : '5678'); assert.equal(invite.a, mode); assert.equal(invite.f, true);
+  assert.equal(invite.g, 'th06mp'); assert.equal(invite.r, mode === 'create' ? '1024' : '5678'); assert.equal(invite.a, mode); assert.equal(invite.f, true);
   if (mode === 'create') {assert.equal(invite.p, 3); assert.equal(invite.d, 4); assert.equal(invite.v, 'private'); assert.equal(invite.c, true); assert.equal(f.sessionWrites[0][0], 'save');}
   else assert.deepEqual(f.sessionWrites, [['clear', 'th06mp']]);
   await flush(); assert.equal(f.closeCalls, 1); assert.equal(f.navigations.length, 1);

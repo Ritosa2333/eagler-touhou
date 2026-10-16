@@ -7,8 +7,8 @@ export const multiplayerDisplayNameLockedStorageKey = "eagler-touhou-mp-display-
 export const multiplayerLobbyClientStorageKey = (product: string): string =>
   `eagler-touhou-${product}-lobby-client-v1`;
 
-// Eight digits keep code sharing usable without retaining the old 9,000-code
-// search space. Rejection sampling avoids bias from truncating a Uint32.
+// Four-digit codes remain easy to share. Room admission and lookup limits
+// protect entry; rejection sampling avoids bias from truncating a Uint32.
 export function generateMultiplayerRoomCode(
   randomWord = () => crypto.getRandomValues(new Uint32Array(1))[0]!,
 ): string {
@@ -16,7 +16,7 @@ export function generateMultiplayerRoomCode(
     const word = randomWord();
     if (!Number.isInteger(word) || word < 0 || word > 0xffffffff)
       throw new Error('Invalid room-code randomness');
-    if (word < 4_200_000_000) return String(word % 100_000_000).padStart(8, '0');
+    if (word < 4_294_962_000) return String(1000 + word % 9000);
   }
   throw new Error('Unable to generate a room code');
 }

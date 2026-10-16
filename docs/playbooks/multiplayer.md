@@ -136,7 +136,7 @@ movement. Private means hidden from the directory, not password protection;
 room-code joins still work. Creation applies these rules before the first
 snapshot, including a private host whose seat is pending a movement change.
 The UI labels this setting "Unlisted" and explains that anyone with the code
-can join. New room codes contain eight cryptographically random digits; legacy
+can join. New room codes contain four cryptographically random digits; legacy
 4–8 digit joins remain supported.
 Host removal rejects both the removed client and anonymous browser member for
 this room's lifetime. A new browser identity can evade this anonymous ban.
