@@ -609,6 +609,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 
 SDL_AppResult SDL_AppIterate(void *appstate)
 {
+#ifdef __EMSCRIPTEN__
+    extern bool g_ReplayWorkspaceDriving;
+    if (g_ReplayWorkspaceDriving) return SDL_APP_CONTINUE;
+#endif
     (void)appstate;
 #ifdef TH_ENABLE_NETPLAY
     if (g_NetplayLanProduction && !g_NetplayProductionDispatched &&

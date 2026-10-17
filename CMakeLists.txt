@@ -51,6 +51,7 @@ set(TH06_SOURCES
     src/Player.cpp
     src/ReplayExtension.cpp
     src/ReplayManager.cpp
+    src/ReplayWorkspace.cpp
     src/ResultScreen.cpp
     src/Rng.cpp
     src/ScreenEffect.cpp

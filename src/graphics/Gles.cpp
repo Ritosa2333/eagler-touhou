@@ -18,6 +18,9 @@
 #include "AnmManager.hpp"
 #include "GameWindow.hpp"
 #include "Supervisor.hpp"
+#ifdef __EMSCRIPTEN__
+#include "../../third_party/eagler-common/include/eagler/replay/Presentation.hpp"
+#endif
 
 #ifdef TH_ENABLE_THPRAC
 #include "ThpracImGui.hpp"
@@ -1447,6 +1450,9 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
 
 void GlesGraphics::SwapBuffers()
 {
+#ifdef __EMSCRIPTEN__
+    if (eagler::replay::deferred_presentation()) return;
+#endif
     i32 drawableWidth, drawableHeight;
     SDL_GetWindowSizeInPixels(g_GameWindow.window, &drawableWidth, &drawableHeight);
     if (drawableWidth <= 0 || drawableHeight <= 0)
