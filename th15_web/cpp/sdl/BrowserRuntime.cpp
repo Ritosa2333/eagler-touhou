@@ -4,6 +4,7 @@
 #include "../multiplayer/NetplayRuntime.hpp"
 #include "../multiplayer/InputLanes.hpp"
 #include "../multiplayer/ReplayArchive.hpp"
+#include "../multiplayer/SpectatorStageCheckpoint.hpp"
 #include "../game/MultiplayerPilot.hpp"
 #endif
 #include "ThpracUi.hpp"
@@ -28,6 +29,9 @@ EM_JS(int, th15_host_has_focus, (), {
 });
 EM_JS(int, th15_browser_keyboard_owned, (), { return typeof Module.resetBrowserKeyboard === "function"; });
 EM_JS(void, th15_browser_keyboard_reset, (), { Module.resetBrowserKeyboard?.(); });
+#if TH15_MULTIPLAYER
+EM_JS(int, th15_browser_read_only, (), {return Module.eaglerOptions?.netplaySpectator === true || Module.eaglerOptions?.replayViewer === true ? 1 : 0;});
+#endif
 namespace th15::sdl {
 namespace {
 std::unique_ptr<ApplicationState> app;
@@ -36,6 +40,18 @@ std::string last_error;
 multiplayer::NetplayRuntime network;multiplayer::ReplayArchive mp_replay;
 GameInput mp_menu;bool mp_started=false,mp_recording=false,mp_playback=false,mp_local_results=false;
 std::string mp_replay_path;std::string mp_saved_name="PLAYER";unsigned mp_stage=1;
+unsigned mp_spectator_stage=0;std::string mp_spectator_error;
+bool mp_apply_confirmed(const Netplay::SpectatorFramePacket& packet,bool historical){
+ if(app->loading_waiting()&&!app->complete_loading()){last_error=app->failure;return false;}
+ std::array<MultiplayerInput,3> lanes;
+ if(!multiplayer::InputLanes::Decode(packet.inputs.data(),network.Setup().player_count,lanes)){last_error="Invalid TH15 spectator inputs";return false;}
+ u32 menu=0;for(unsigned s=0;s<network.Setup().player_count;s++)menu|=(lanes[s].held&~0x100u)|(lanes[s].pause?0x100u:0);
+ if(app->title||(app->pause&&app->pause->state.screen!=PauseScreen::Inactive))menu=(lanes[0].held&~0x100u)|(lanes[0].pause?0x100u:0);
+ mp_menu.update(menu);if(app->scene())app->scene()->battle.mp_input(lanes);
+ app->audio_device.spectator_silent(historical);
+ if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
+ return true;
+}
 bool mp_tick(u32 held,bool physical=true){
  if(mp_local_results){
   if(!network.Pump(false)){last_error=network.Error();return false;}
@@ -44,6 +60,20 @@ bool mp_tick(u32 held,bool physical=true){
   if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}return true;
  }
  if(!network.Pump(true)){last_error=network.Error();return false;}
+ if(network.StagePlaybackReady()){
+  const auto begin=emscripten_get_now();auto& playback=network.StagePlayback();
+  // Following the live edge may need more than one fixed tick after a slow
+  // browser frame. Keep the bounded rebuild budget without dropping inputs.
+  const bool catching_up=playback.Seeking()||(playback.Following()&&playback.Edge()>playback.Position()+1);
+  const bool ok=playback.Step([&](const Netplay::SpectatorStageEvent& cp){
+    app->audio_device.spectator_silent(true);
+    return cp.schema==multiplayer::SpectatorStageState::Schema&&multiplayer::SpectatorStageCheckpoint::Restore(*app,network.Setup(),mp_menu,cp.frame,cp.state,last_error);
+   },[&](const auto& input,bool historical){return mp_apply_confirmed(input,historical||catching_up);},
+   [&]{return app->pending_load||emscripten_get_now()-begin>=4;},catching_up?240:1);
+  app->audio_device.spectator_silent(playback.Paused()||playback.Seeking());
+  if(!ok&&last_error.empty())last_error="TH15 native spectator restoration failed";
+  return ok;
+ }
  // Retirement can wait for the final confirmed-input fence without an error.
  if(app->exiting){if(!network.Finish()&&*network.Error()){last_error=network.Error();return false;}return true;}
  if(!network.CanStart())return true;
@@ -55,12 +85,23 @@ bool mp_tick(u32 held,bool physical=true){
  if(network.Spectator()){if(!network.Backlog())return true;if(!network.FeedSpectator(frame)){last_error=network.Error();return false;}}
  const auto decision=network.Prepare(frame);if(!decision.canAdvance)return true;
  std::array<MultiplayerInput,3> lanes;if(!multiplayer::InputLanes::Decode(decision.inputs.data(),network.Setup().player_count,lanes)){last_error="Invalid TH15 confirmed inputs";return false;}
+ const auto spectator_menu_before=mp_menu;
  u32 menu=0;for(unsigned s=0;s<network.Setup().player_count;++s)menu|=(lanes[s].held&~0x100u)|(lanes[s].pause?0x100u:0);// TH11 accepts any seat's pause edge, then P1 owns the native menus.
  if(app->title||(app->pause&&app->pause->state.screen!=PauseScreen::Inactive))menu=(lanes[0].held&~0x100u)|(lanes[0].pause?0x100u:0);mp_menu.update(menu);
  if(!mp_recording&&!mp_playback&&!network.Spectator()){if(!mp_replay.Begin(network.Setup(),std::uint64_t(std::time(nullptr)))){last_error="MP recording initialization failed";return false;}mp_recording=true;}
+ Netplay::SpectatorStagePublisher::Frame spectator;bool record_spectator=!network.ReadOnly()&&network.Setup().local_player==0;
+ if(record_spectator){
+  spectator.frame=frame;spectator.stage=mp_spectator_stage;spectator.inputs=decision.inputs;spectator.hasInputs=true;
+  if(app->scene()&&unsigned(app->progress.stage)!=mp_spectator_stage&&multiplayer::SpectatorStageCheckpoint::Boundary(*app)){
+   if(multiplayer::SpectatorStageCheckpoint::Capture(*app,network.Setup(),spectator_menu_before,frame,spectator.initializer,mp_spectator_error)){
+    spectator.schema=multiplayer::SpectatorStageState::Schema;spectator.stage=mp_spectator_stage=unsigned(app->progress.stage);
+   }
+  }
+ }
  if(app->scene()){mp_stage=unsigned(app->progress.stage);app->scene()->battle.mp_input(lanes);}const auto stage=mp_stage;
  if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
  if(mp_recording&&!mp_replay.Append(frame,stage,decision.inputs.data(),network.Setup().player_count)){last_error="MP recording capacity exhausted";return false;}
+ if(record_spectator&&mp_spectator_stage)network.RecordSpectatorFrame(std::move(spectator));
  if(!network.MarkSimulated(frame,decision)){last_error=network.Error();return false;}
  // Rankings and stored names belong to each browser, after the common ending fence.
  if(app->title){mp_local_results=true;mp_menu={};}
@@ -199,8 +240,10 @@ EMSCRIPTEN_KEEPALIVE int th15_mp_pump(){using namespace th15::sdl;return network
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_mp_status(){return th15::sdl::network.Status();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_mp_calibration_status(){return th15::sdl::network.CalibrationStatus();}
 EMSCRIPTEN_KEEPALIVE const char* th15_mp_error(){using namespace th15::sdl;return last_error.empty()?network.Error():last_error.c_str();}
+EMSCRIPTEN_KEEPALIVE const char* th15_mp_spectator_state(){return th15::sdl::network.SpectatorState();}
+EMSCRIPTEN_KEEPALIVE int th15_mp_spectator_control(const char* run,const char* action,unsigned frame){return th15::sdl::network.SpectatorControl(run,action,frame);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_start(){using namespace th15::sdl;if(running||!app||!network.Configured())return 0;const auto& s=network.Setup();app->practice.enabled=false;app->multiplayer=true;app->mp_options={s.player_count,s.local_player,s.initial_stage(),s.seed,int(s.difficulty),s.challenge,{int(s.selections[0]),int(s.selections[1]),int(s.selections[2])},int(s.chapter_threshold)};
- mp_stage=s.initial_stage();mp_saved_name="PLAYER";app->progress={};app->progress.character=s.selections[0];app->progress.difficulty=s.difficulty;app->selected_stage=s.initial_stage();app->selection_player={};app->selection_player.mode_flags=0;app->environment.game_rng={th15::u16(s.seed),0,0};app->visual={th15::u16(s.seed),0,0};
+ mp_stage=s.initial_stage();mp_spectator_stage=0;mp_spectator_error.clear();mp_saved_name="PLAYER";app->progress={};app->progress.character=s.selections[0];app->progress.difficulty=s.difficulty;app->selected_stage=s.initial_stage();app->selection_player={};app->selection_player.mode_flags=0;app->environment.game_rng={th15::u16(s.seed),0,0};app->visual={th15::u16(s.seed),0,0};
  app->multiplayer_replay_save=[](th15::i32 slot,const std::array<char,9>& name){
   // A negative slot is an availability query from the native dialogs.
   if(slot<0)return mp_recording;if(!mp_recording||slot>=25)return false;std::vector<th15::u8> bytes;const auto score=app->scene()?app->scene()->battle.score.score:app->selection_score.score;
@@ -219,7 +262,11 @@ EMSCRIPTEN_KEEPALIVE void th15_mp_close(){using namespace th15::sdl;network.Clea
 #endif
 EMSCRIPTEN_KEEPALIVE int th15_draw_startup(unsigned frames){using namespace th15::sdl;return app&&!running&&app->render_loading(true,frames);}
 EMSCRIPTEN_KEEPALIVE int th15_prepare_loading(){using namespace th15::sdl;if(running)return 0;ThpracUi::shutdown();if(app)app->scheduler.remove(fps_drawing);app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;return app->prepare_loading();}
-EMSCRIPTEN_KEEPALIVE int th15_initialize(){using namespace th15::sdl;if(running)return 1;clear_inputs();if(controller){SDL_CloseJoystick(controller);controller=nullptr;}if(!app||!app->platform_prepared||app->initialized){if(app)app->scheduler.remove(fps_drawing);app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;}if(!app->initialize(true)){last_error=app->failure;app.reset();return 0;}fps_drawing.owner=nullptr;fps_drawing.enabled=true;fps_drawing.run=draw_frame_rate;if(app->scheduler.add(fps_drawing,th15::FramePass::Draw,72)<0){app->fail("Frame-rate draw callback registration failed");return 0;}reset_presentation_clock();for(auto& key:keyboard_map)key.native=SDL_GetScancodeFromName(key.sdl);initialize_controller();window_start=0;window_ticks=0;measured_fps=60;return 1;}
+EMSCRIPTEN_KEEPALIVE int th15_initialize(){using namespace th15::sdl;if(running)return 1;clear_inputs();if(controller){SDL_CloseJoystick(controller);controller=nullptr;}if(!app||!app->platform_prepared||app->initialized){if(app)app->scheduler.remove(fps_drawing);app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;}
+#if TH15_MULTIPLAYER
+app->files.read_only=th15_browser_read_only()!=0;
+#endif
+if(!app->initialize(true)){last_error=app->failure;app.reset();return 0;}fps_drawing.owner=nullptr;fps_drawing.enabled=true;fps_drawing.run=draw_frame_rate;if(app->scheduler.add(fps_drawing,th15::FramePass::Draw,72)<0){app->fail("Frame-rate draw callback registration failed");return 0;}reset_presentation_clock();for(auto& key:keyboard_map)key.native=SDL_GetScancodeFromName(key.sdl);initialize_controller();window_start=0;window_ticks=0;measured_fps=60;return 1;}
 EMSCRIPTEN_KEEPALIVE void th15_limit_presentation(unsigned enabled){using namespace th15::sdl;if(limit_presentation_60==(enabled!=0))return;limit_presentation_60=enabled!=0;presentation.reset();if(app){app->graphics.presentation.enabled=!limit_presentation_60;app->graphics.presentation.reset();}}
 EMSCRIPTEN_KEEPALIVE void th15_render_scale(unsigned scale){if(!th15::sdl::running)th15::sdl::render_scale=scale>=2?2:1;}
 EMSCRIPTEN_KEEPALIVE const char* th15_error(){using namespace th15::sdl;return app?app->failure.c_str():last_error.c_str();}
@@ -305,12 +352,12 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
 }
 EMSCRIPTEN_KEEPALIVE void th15_touch(unsigned type,int id,float x,float y){using namespace th15::sdl;if(type>2||!std::isfinite(x)||!std::isfinite(y))return;const float px=x*640,py=y*480;if(type==0&&practice_pointers.route(1,id,false))ThpracUi::cancel_pointer();if(practice_pointers.route(type,id,type==0&&ThpracUi::captures_pointer(px,py))){ThpracUi::mouse(type==0?1:type==2?2:0,px,py);return;}if(app&&app->practice.enabled&&app->practice.flip_screen_y)y=1-y;gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}
 EMSCRIPTEN_KEEPALIVE void th15_thprac_mouse(int type,float x,float y){th15::sdl::ThpracUi::mouse(type,x,y);}
+EMSCRIPTEN_KEEPALIVE void th15_always_hitbox(unsigned on){th15::presentation::always_hitbox=on!=0;}
 EMSCRIPTEN_KEEPALIVE void th15_touch_cancel(){using namespace th15::sdl;practice_pointers.reset();gestures.cancel();ThpracUi::cancel_pointer();if(app){app->touch={};
 #if TH15_MULTIPLAYER
  if(!mp_started)
 #endif
  if(app->scene())app->scene()->battle.player->motion.touch={};}}
-EMSCRIPTEN_KEEPALIVE void th15_always_hitbox(unsigned on){th15::presentation::always_hitbox=on!=0;}
 EMSCRIPTEN_KEEPALIVE void th15_touch_options(unsigned enabled,unsigned mode,float sensitivity,unsigned two_finger,unsigned double_tap){using namespace th15::sdl;gestures.enabled=enabled!=0;gestures.mode=mode<=3?int(mode):0;gestures.unlimited=mode==1;gestures.sensitivity=std::isfinite(sensitivity)?std::clamp(sensitivity,.25f,4.f):1;gestures.two_finger=two_finger!=0;gestures.double_tap=double_tap!=0;gestures.cancel();}
 EMSCRIPTEN_KEEPALIVE void th15_touch_controls(unsigned enabled,unsigned fire,unsigned focus,unsigned bomb,unsigned escape){using namespace th15::sdl;gestures.enabled=enabled!=0;gestures.controls(fire!=0,focus!=0,bomb,escape,0,0);}
 EMSCRIPTEN_KEEPALIVE void th15_touch_stick(float x,float y){using namespace th15::sdl;gestures.stick_x=std::isfinite(x)?std::clamp(x/32767.f,-1.f,1.f):0;gestures.stick_y=std::isfinite(y)?std::clamp(y/32767.f,-1.f,1.f):0;}

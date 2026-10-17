@@ -36,5 +36,8 @@ public:
  bool input_active()const noexcept{return input_enabled;}
  void input_source(ReplayRecording* live_recording,ReplayPlayback* replay)noexcept{recording=live_recording;playback=replay;}
  const GameInput& controls()const noexcept{return playback?playback->input:live;}
+#if TH15_MULTIPLAYER
+ void spectator_input(const GameInput& value)noexcept{live=value;}
+#endif
 };
 }

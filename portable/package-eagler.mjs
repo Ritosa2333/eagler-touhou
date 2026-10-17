@@ -19,7 +19,7 @@ for(const [path,expected] of Object.entries({...build.sources,...build.headers})
 const wasm=readFileSync(resolve(buildRoot,'th15.wasm'));
 if(hash(wasm)!==build.sha256)throw Error('Wasm build identity mismatch');
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
- if(/^(?:application_|th15_probe|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);
+ if(/^(?:application_|th15_probe|th15_spectator_lab_|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);
 const fontNames=['cp932.bin'];
 const names=['th15.html','manifest.json','startup-branding.mjs','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','th15.mjs','th15.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 if(multiplayer)names.push('multiplayer.mjs','adonis-calibration.mjs');
