@@ -393,7 +393,7 @@ dirty 差异、Runtime 路径和代次、角色、人数、输入路径与证据
 大厅的“满员”只描述玩家席。所有 MP 满员且尚未开局的房间仍可通过目录进入，
 显式携带 `RoomInvite.s=true`，前端直接申请旁观席，不自动请求玩家席。进行中的
 合作房间还必须具备实际 stream 的 `spectatable`，旧 Runtime 不因此获准中途加入。
-TH09 原生 match/round 机制与面板保持原状。
+TH09 原生 match/round 机制和作品内容保留原有语义，通用面板与合作作品共用。
 
 合作作品的公共面板接收已认证、当前 game/epoch 的
 `runtime-info.spectatorPlayback`。version=1 报告包含 run、递增 revision、
@@ -453,3 +453,31 @@ TH09 继续保持原有超时策略。
 同帧canonical恢复、不中途控制的Following跨面、新观众、跨面回看和浏览器控制
 均按上表范围分别验证；server识别新包或模型PASS仍不能代替原生门禁。
 Boss刚入场节点按用户补充为可选，缺少可靠事件或恢复证据时不发布。
+
+### 2026-10-17 面板复用重构
+
+面板的唯一实现位于 `eagler-common/browser/spectator-timeline-view.mjs`。
+从 TH09 提取 DOM、样式、展开/折叠、触控、拖动冻结、节点布局和公共控制，
+通过 `tools/sync-spectator-timeline-view.mjs` 生成 TH09 Runtime 与 Launcher 的
+字节一致副本，`--check` 检查漂移。合作前端不再维护第二套 JSX 控件和样式。
+本轮共享源提交为 `eagler-common@fd9d17fd9c6627cade23c19300bfb21d12e2c89d`，
+两端生成模块的 SHA-256 均为
+`0ff849503fe61a441898a970b6739fc159789a3e5b8f76a76cd1d8b3059e351c`。
+
+TH09 adapter 继续读取原有 11-word native 状态，映射 0/3/1/2 暂停/继续/
+定位/直播动作，保留 match/round 历史、比分挂载点、Host 的已进行时间和结束
+等待弹窗。合作 adapter 把已校验报告映射为 Stage/Boss 节点并调用现行 Host
+命令。这里统一展示和交互，不改变两类 wire、原生恢复器或玩家时序。
+未升级的 TH09 Runtime 仍可使用现有 Host 面板挂载兼容路径；不为旧包额外
+强制要求新的模块文件。
+
+公共视图只在观众入口挂载，没有新增玩家端逐帧循环。拖动时冻结范围和时间
+显示，提交时按最新边界夹取；epoch/run 变化取消旧拖动和过时错误。未显式
+提供图标的 adapter 保留 Host 注入的图标 URL，避免原生刷新清空这些图标。
+
+本轮公共视图 8 项、合作挂载 8 项、TH09 adapter 6 项通过，类型检查与实际
+前端构建通过。浏览器以实际 React Host/比分挂载、TH09 JS adapter 和受控
+权威状态报告，验证桌面鼠标与手机尺寸触控下的全部播放控件、拖动和中英切换。
+TH09 单人/MP 两份 JS 包分别生成并核对 inventory，WASM 未改变。此轮 UI
+测试不替代原生 world 恢复、公网或实体手机验收。证据见工作区
+`dist/audits/spectator-shared-view-20261017/`，未提交、推送或部署。

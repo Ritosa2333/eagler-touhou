@@ -142,6 +142,24 @@ Rollback/catch-up can monopolize the browser even when each individual tick is v
 
 This is not preemption of an atomic rollback. A single expensive reconciliation can still run longer than the budget.
 
+### Preserve accumulated time during network clock correction
+
+TH06's 2026-10-17 regression came from sharing a practice-speed transition
+reset with multiplayer. `SimulationIntervalScale()` is a continuously smoothed
+network clock correction. Calling `ResetTiming()` whenever its exact floating
+point value changes discards elapsed time repeatedly, even though the intended
+correction is bounded to two percent. Keep the accumulator and performance
+counter across those updates. An explicit practice speed change can retain its
+separate reset; lifecycle resets remain owned by their existing transitions.
+
+A controlled two-player RTC test used 35 ms send delay per direction and changed
+only the advisory `frameAdvantage` field in transmitted packet copies to -8.
+Both peers passed canonical checks. Under repeated clock corrections, TH06 went
+from 41.63/41.36 logical fps to 59.08/59.06 after limiting the reset to the
+non-netplay practice build. These are desktop Edge measurements with injected
+metadata, not a claim about every public TURN route or mobile device. Evidence:
+`D:/workspace/eagler/dist/audits/th06-pacing-fog-20261017/`.
+
 ### Remove synchronous Web frame-end sleep
 
 During rollback profiling, TH07 still had a native-style `SDL_DelayNS` at the end of an Emscripten requestAnimationFrame callback under some settings. This blocked browser input/network/audio work for no logical benefit.
