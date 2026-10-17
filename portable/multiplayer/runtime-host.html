@@ -2,8 +2,16 @@
 <style>body{margin:0}#player{position:relative;width:640px;height:480px}iframe{border:0;width:640px;height:480px}</style>
 <div id="player"></div>
 <script>
-const protocol='eagler-touhou/1';let iframe,epoch=0,serial=0,ready=false,latestPlayback=null;const timeline=new Map(),rngTimeline=new Map(),trackedFrames=new Set(),canonicalByteFrames=new Set(),canonicalBytes=new Map();let autoDrive=null;
+const protocol='eagler-touhou/1';let iframe,iframeCreateCount=0,blankNavigationCount=0,epoch=0,serial=0,ready=false,latestPlayback=null;const timeline=new Map(),rngTimeline=new Map(),trackedFrames=new Set(),canonicalByteFrames=new Set(),canonicalBytes=new Map();let autoDrive=null;
 const pending=new Map(),events=[];
+function readNativePlayback(core,app){
+ if(!app||typeof core.multiplayer_spectator_playback_state!=='function')return null;
+ const p=core.multiplayer_spectator_playback_state(app),bytes=new Uint8Array(core.memory.buffer);
+ if(!p||p>=bytes.length)return null;
+ let end=p;while(end<bytes.length&&end-p<65536&&bytes[end])end++;
+ if(end===bytes.length||end-p>=65536)throw Error('Invalid native spectator state string');
+ return JSON.parse(new TextDecoder().decode(bytes.subarray(p,end)));
+}
 window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/input/th08.dat')).arrayBuffer()});
 window.addEventListener('message',e=>{
  const m=e.data;if(e.origin!==location.origin||e.source!==iframe?.contentWindow||m?.protocol!==protocol||m.epoch!==epoch)return;
@@ -12,7 +20,10 @@ window.addEventListener('message',e=>{
 });
 window.host={
  events,
- open(){iframe?.remove();ready=false;epoch++;iframe=document.createElement('iframe');iframe.src='/runtime/th08.html?managedData=1&gameGeneration=test&runtimeEpoch='+epoch+'&runtimeVariant=multiplayer&manual=1';document.querySelector('#player').append(iframe);},
+ open(){ready=false;epoch++;const next='/runtime/th08.html?managedData=1&gameGeneration=test&runtimeEpoch='+epoch+'&runtimeVariant=multiplayer&manual=1';
+  if(!iframe){iframe=document.createElement('iframe');iframeCreateCount++;document.querySelector('#player').append(iframe);iframe.src=next;}
+  else{iframe.onload=()=>{iframe.onload=null;blankNavigationCount++;iframe.src=next;};iframe.src='about:blank';}return epoch;},
+ iframeState(){return {creationCount:iframeCreateCount,blankNavigations:blankNavigationCount,epoch,src:iframe?.getAttribute('src')||''};},
  ready(){return ready;},
  request(command,fields={}){return new Promise((resolve,reject)=>{
   const request='r'+(++serial),timer=setTimeout(()=>{pending.delete(request);reject(Error('Runtime request timeout '+command));},120000);
@@ -25,7 +36,9 @@ window.host={
   // Checkpoints and playback Position identify the next input frame. LastFrame
   // is the previous input already consumed, so key source states by NextFrame.
   if(canonical&&net[3]!==0xffffffff){timeline.set(net[3],canonical);while(timeline.size>4096)timeline.delete(timeline.keys().next().value);this.captureCanonicalBytes(net[3],core,app);}
+  const spectatorPlayback=r.Module.eaglerOptions?.netplaySpectator?readNativePlayback(core,app):null;
   return {app,error,net,driver:words('multiplayer_driver_status',16),state:words('multiplayer_status',44),...(full?{canonical}:{}),
+   spectatorPlayback,
    spectator:core.multiplayer_spectator_status?words('multiplayer_spectator_status',8):null,
    replay:core.multiplayer_replay_status?words('multiplayer_replay_status',12):null,
    active:core.status(app,1),screen:core.status(app,8),cursor:core.status(app,9)};},
@@ -49,11 +62,11 @@ window.host={
  },
  observerPeer(){const t=iframe.contentWindow.__eaglerPeerTransport;
   return {route:t?.route||'',peers:t?.peers?.size||0,canSend:typeof t?.send==='function'||typeof t?.sendTo==='function'};},
+ diagnostics(){const {core,app}=iframe.contentWindow.__th08Runtime;if(!app||typeof core.diagnostics!=='function')return null;
+  const p=core.diagnostics(app);return Array.from(new Int32Array(core.memory.buffer,p,16));},
  playback(){return latestPlayback;},
  nativePlayback(){const r=iframe.contentWindow.__th08Runtime;if(!r?.app||typeof r.core.multiplayer_spectator_playback_state!=='function')return null;
-  const {core,app}=r,p=core.multiplayer_spectator_playback_state(app),bytes=new Uint8Array(core.memory.buffer);if(!p||p>=bytes.length)return null;
-  let end=p;while(end<bytes.length&&end-p<65536&&bytes[end])end++;if(end===bytes.length||end-p>=65536)throw Error('Invalid native spectator state string');
-  return JSON.parse(new TextDecoder().decode(bytes.subarray(p,end)));},
+  return readNativePlayback(r.core,r.app);},
  canonicalAt(frame){return timeline.get(frame)||null;},
  rngAt(frame){return rngTimeline.get(frame)||null;},
  timelineData(){return Array.from(timeline.entries());},
@@ -79,16 +92,36 @@ window.host={
  autoCapture(){return autoDrive?.capture||null;},
  autoStop(){if(autoDrive)autoDrive.stopped=true;autoDrive=null;},
  finishCallback(){const r=iframe.contentWindow.__th08Runtime;r.Module.runtimeFinish(0,0);},
- tickTo(target,full=true){const r=iframe.contentWindow.__th08Runtime,{core,app}=r;
+  tickTo(target,full=true){const r=iframe.contentWindow.__th08Runtime,{core,app}=r;
+   const readError=()=>{const p=core.multiplayer_network_error(app),b=new Uint8Array(core.memory.buffer);let e=p;while(b[e])e++;return new TextDecoder().decode(b.subarray(p,e));};
+   const spectator=!!r.Module.eaglerOptions?.netplaySpectator,budget=spectator?4:1;
+   for(let n=0;n<budget;n++){
+    if(!core.multiplayer_network_poll(app))throw Error('Network poll failed: '+readError());
+    const p=core.multiplayer_netplay_status(app),next=new Uint32Array(core.memory.buffer,p,15)[3];
+    if(!spectator&&next>target){if(!core.multiplayer_reconcile(app))throw Error('Reconcile failed');break;}
+    const code=core.sdl_loop_tick(app,1/60,16);if(code)throw Error('Native Runtime tick failed '+code+' '+readError());const nextFrame=new Uint32Array(core.memory.buffer,p,15)[3];if(nextFrame!==next)this.captureTracked(nextFrame,core,app);
+    if(spectator&&target!==0xfffffffe){const playback=this.nativePlayback();if(playback&&!playback.seeking&&playback.position>=target)break;}
+   }return this.snapshot(full);},
+  captureWithButtons(buttons,full=false,limit=120){const r=iframe.contentWindow.__th08Runtime,{core,app}=r;
+   const readError=()=>{const p=core.multiplayer_network_error(app),b=new Uint8Array(core.memory.buffer);let e=p;while(b[e])e++;return new TextDecoder().decode(b.subarray(p,e));};
+   for(let i=0;i<limit;i++){
+    if(!core.multiplayer_network_poll(app))throw Error('Network poll failed: '+readError());
+    const p=core.multiplayer_netplay_status(app),before=new Uint32Array(core.memory.buffer,p,15),next=before[3],frame=before[13];
+    if(!before[2])throw Error('Cannot inject input while native netplay cannot start');
+    this.buttons(buttons);const code=core.sdl_loop_tick(app,1/60,16),after=new Uint32Array(core.memory.buffer,p,15),nextFrame=after[3];
+    if(nextFrame!==next)this.captureTracked(nextFrame,core,app);const value=this.snapshot(full);
+    if(code)throw Error('Native Runtime tick '+code+' '+value.error);
+    if(after[13]>frame)return {frame,nextFrame,nextCaptureFrame:after[13],value};
+   }
+   throw Error('Input capture did not advance within the bounded native tick limit');},
+  spectatorPollOnce(){const {core,app}=iframe.contentWindow.__th08Runtime;
   const readError=()=>{const p=core.multiplayer_network_error(app),b=new Uint8Array(core.memory.buffer);let e=p;while(b[e])e++;return new TextDecoder().decode(b.subarray(p,e));};
-  const budget=r.Module.eaglerOptions?.netplaySpectator?4:1;
-  for(let n=0;n<budget;n++){
-   if(!core.multiplayer_network_poll(app))throw Error('Network poll failed: '+readError());
-   const p=core.multiplayer_netplay_status(app),next=new Uint32Array(core.memory.buffer,p,15)[3];
-   if(next>target){if(!core.multiplayer_reconcile(app))throw Error('Reconcile failed');break;}
-   const code=core.sdl_loop_tick(app,1/60,16);if(code)throw Error('Native Runtime tick failed '+code+' '+readError());const nextFrame=new Uint32Array(core.memory.buffer,p,15)[3];if(nextFrame!==next)this.captureTracked(nextFrame,core,app);
-  }return this.snapshot(full);},
+  if(!core.multiplayer_network_poll(app))throw Error('Spectator poll failed: '+readError());return this.nativePlayback();},
  spectatorTickOnce(full=false){const r=iframe.contentWindow.__th08Runtime,{core,app}=r;const code=core.sdl_loop_tick(app,1/60,16);const value=this.snapshot(full);if(code)throw Error('Native spectator tick '+code+' '+value.error);return value;},
+ spectatorAdvanceOnce(full=false){const r=iframe.contentWindow.__th08Runtime,{core,app}=r;
+  const p=core.multiplayer_network_error(app),b=new Uint8Array(core.memory.buffer);let end=p;while(b[end])end++;const error=new TextDecoder().decode(b.subarray(p,end));
+  if(!core.multiplayer_network_poll(app))throw Error('Spectator poll failed: '+error);
+  const code=core.sdl_loop_tick(app,1/60,16),value=this.snapshot(full);if(code)throw Error('Native spectator tick '+code+' '+value.error);return value;},
  physicalTick(full=true){const r=iframe.contentWindow.__th08Runtime;const code=r.core.sdl_loop_tick(r.app,1/60,16);const value=this.snapshot(full);if(code)throw Error('Native tick '+code+' '+value.error);return value;},
  async close(){
   const done=new Promise((resolve,reject)=>{const timer=setTimeout(()=>{window.removeEventListener('message',finish);reject(Error('Runtime exit event timeout'));},10000);

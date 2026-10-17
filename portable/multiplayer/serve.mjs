@@ -6,7 +6,8 @@ import {createRuntimeManifest} from '../package-eagler.mjs';
 const root=resolve(import.meta.dirname,'../..');
 const workspace=resolve(process.env.EAGLER_WORKSPACE||root+'/../..');
 const fixture=process.env.TH08_MP_FIXTURES==='1';
-const buildRoot=resolve(root,'th08_web/artifacts',fixture?'multiplayer-fixtures':'multiplayer');
+const buildRoot=resolve(process.env.TH08_MP_BUILD_ROOT||
+  resolve(root,'th08_web/artifacts',fixture?'multiplayer-fixtures':'multiplayer'));
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 if(build.variant!==(fixture?'multiplayer-fixtures':'multiplayer'))throw Error('Build the requested TH08 multiplayer variant first');
 const wasm=resolve(buildRoot,'th08-sdl.wasm');

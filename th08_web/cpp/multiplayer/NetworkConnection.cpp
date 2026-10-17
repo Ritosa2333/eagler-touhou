@@ -78,13 +78,12 @@ bool NetworkConnection::Pump(bool expects_input,bool capture_follows){
             }
             spectator_deadline=Now()+15'000;
         }
-        // Historic playback, a paused viewer, and a seek still make local
-        // progress from accepted history. Do not call that a stalled input
-        // stream; require fresh packets only once playback reaches the live
-        // edge and is actively waiting for more input.
-        if(spectator_playback.Ready()&&!spectator_playback.WaitingForLiveInput())
-            spectator_deadline=Now()+15'000;
-        if(Now()>=spectator_deadline){spectator_error="Spectator input stream stalled; players are unaffected";return false;}
+        // Before the first valid bootstrap, bound how long we wait for the
+        // spectator stream to become usable. After Ready, an idle source is a
+        // valid state (for example, the players may pause); socket close/error
+        // and malformed packets remain authoritative transport failures.
+        if(spectator_playback.Ready())spectator_deadline=0;
+        if(spectator_deadline&&Now()>=spectator_deadline){spectator_error="Spectator input stream stalled; players are unaffected";return false;}
         return !transport.Failed();
     }
     if(calibration.Waiting()&&channel.Retiring()&&!channel.Active()&&!channel.PumpRetirement(Now()))return false;
