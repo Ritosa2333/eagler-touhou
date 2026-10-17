@@ -1,0 +1,3034 @@
+{
+  "schema": "th09/desktop-gpu-vsync-comparison/1",
+  "createdAt": "2026-10-11T13:05:24.224Z",
+  "scope": "Retained desktop artificial native-ABI input runs. Both CPUs at 4. Body progress/gaps preserve the native-frontier helper's complete 180→1200 window. Independent runs share stimulus plans, not exact captured tapes, scheduling, or host load; no causal or statistical A/B inference.",
+  "inputScope": {
+    "boundary": "firstWireAtMs is the serialized local input send-intent hook before successful send/delivery, not exact native capture.",
+    "response": "Conditional latest-submitted-movement → first changed wire → next new-frontier renderer submission. No per-event gameplay effect or visible movement is proven; no hardware-input, physical phone, browser compositor completion or photon latency.",
+    "denominators": "All due/submitted/coalesced/unsubmitted/future-censored counts are retained per run. Response distributions cover only conditionally attributed presented events. Submission-to-render is calculated per event, never by adding quantiles.",
+    "comparison": "All-observed input response spans each source's own active lifetime. The capture-frame subset is explicitly conditional and does not supply an all-due body denominator."
+  },
+  "helper": {
+    "path": "th09_web/tests/multiplayer/smoothness-window.mjs",
+    "bytes": 9700,
+    "sha256": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f"
+  },
+  "inputHelper": {
+    "path": "th09_web/tests/multiplayer/touch-input-probe.mjs",
+    "bytes": 20658,
+    "sha256": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785"
+  },
+  "results": [
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-a1",
+      "variant": "Original A / GPU flag absent (A1)",
+      "scenario": "relay39 ±5 / graphics trace / both CPU4",
+      "raw": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-gpu-vsync-both4-relay39-a1-report.json",
+        "bytes": 39201425,
+        "sha256": "bf2cdc5c3def238bfb8cb150fc4660b7bf434c3d62079513c9825140103231b6"
+      },
+      "evidence": {
+        "path": "docs/multiplayer/rollback-desktop-gpu-vsync-both4-relay39-a1-evidence-v2.json",
+        "bytes": 114818,
+        "sha256": "0b4e88fbd4d744b5b5bd35a25985f043892b0cde618d3cd53aef8c9367c76b7f"
+      },
+      "gpuVsyncQualification": {
+        "expected": "0",
+        "passed": true,
+        "checks": {
+          "declaredMode": true,
+          "driver": true,
+          "helper": true,
+          "frozenWasm": true,
+          "bothCpu4": true,
+          "twoOwnedBrowsers": true,
+          "actualArgv": true,
+          "headedIdentity": true,
+          "browserExecutable": true,
+          "nativeGraphics": true,
+          "measurementEndpoints": true,
+          "completeNativeBody": true,
+          "confirmedHashes": true,
+          "relay": true,
+          "trace": true
+        },
+        "scope": "Launch/measurement/trace qualification only; not evidence of a performance fix or physical scanout."
+      },
+      "traceSummary": [
+        {
+          "side": 0,
+          "status": "stopped",
+          "collectionValid": true,
+          "clockMapped": true,
+          "activeWindowCovered": true,
+          "allThreeMarks": true,
+          "gpuObserved": true,
+          "schedulerObserved": null,
+          "compositorObserved": null,
+          "overflow": {
+            "events": 0,
+            "bytes": 0,
+            "bufferUsage": 0,
+            "marks": 0,
+            "errors": 0,
+            "names": 0,
+            "threads": 0,
+            "firstAt": null,
+            "firstTraceTs": null
+          },
+          "errors": [],
+          "artifact": {
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-a1-P1-scheduler-trace.json",
+            "bytes": 53781600,
+            "sha256": "1fa4e669bcd9cc6de8a4689834aaa9d2873c15f5c93d6ac4c431b4a054a4ab24"
+          }
+        },
+        {
+          "side": 1,
+          "status": "stopped",
+          "collectionValid": true,
+          "clockMapped": true,
+          "activeWindowCovered": true,
+          "allThreeMarks": true,
+          "gpuObserved": true,
+          "schedulerObserved": null,
+          "compositorObserved": null,
+          "overflow": {
+            "events": 0,
+            "bytes": 0,
+            "bufferUsage": 0,
+            "marks": 0,
+            "errors": 0,
+            "names": 0,
+            "threads": 0,
+            "firstAt": null,
+            "firstTraceTs": null
+          },
+          "errors": [],
+          "artifact": {
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-a1-P2-scheduler-trace.json",
+            "bytes": 54706482,
+            "sha256": "1d59fc457eba7ca68b3a81e5a91fa6e93e5a563a0a70a5c3de1b3923c213ace8"
+          }
+        }
+      ],
+      "driverPassed": true,
+      "measurementEndpointQualification": [
+        {
+          "qualified": true,
+          "native": true,
+          "workload": true,
+          "open": true,
+          "route": true,
+          "rtc": true,
+          "side": 0,
+          "captureError": null
+        },
+        {
+          "qualified": true,
+          "native": true,
+          "workload": true,
+          "open": true,
+          "route": true,
+          "rtc": true,
+          "side": 1,
+          "captureError": null
+        }
+      ],
+      "teardownClean": false,
+      "confirmedPrefix": {
+        "count": 10,
+        "lastFrame": 1200,
+        "equal": true
+      },
+      "relayValid": true,
+      "parameters": {
+        "limit": 1200,
+        "delay": 39,
+        "jitter": 5,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": true,
+        "profile": false,
+        "fallback": true,
+        "inputMode": "wall-clock",
+        "audioOutput": false,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": false,
+        "impairmentSite": "relay",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "any",
+        "liveCost": false,
+        "clientSendMode": "synchronous",
+        "burstClock": "relay-first-nonempty-input-receive",
+        "cpuThrottle": {
+          "ratesBySide": [
+            4,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        },
+        "startupTrace": false,
+        "relayInputDiagnostics": true,
+        "nativeFrontierObservation": "Release pacing ABI sampled on every retained game callback, independently of optional RAF diagnostics",
+        "graphicsIdentity": {
+          "scope": "Actual captured core/canvas/existing context after openProbe and before CPU throttling; same-owner read repeated inside the existing failure snapshot. Missing references are unavailable, never inferred from requested browser flags."
+        },
+        "renderWork": {
+          "enabled": true,
+          "columns": [
+            "sampleIndex",
+            "batches",
+            "uploadBytes",
+            "readBytes",
+            "vertexUploadBytes",
+            "programCompiles",
+            "bufferReplacements",
+            "bufferSubUpdates",
+            "rendererFrames",
+            "resamples",
+            "presentations"
+          ],
+          "source": "Same onGameFrame th09_game_metrics uint32[10] pointer as samples[11] presentations",
+          "limit": 50000,
+          "cumulative": true,
+          "observerOverheadCalibrated": false,
+          "scope": "Optional numeric copies per retained callback, not per simulated frame; uint32 wrap or regression requires separate intervals. No extra draw/tick or per-frame GPU query/readback; these counters are not GPU timings."
+        },
+        "touchInput": {
+          "enabled": true,
+          "profile": "joystick",
+          "pattern": "continuous",
+          "sourceHz": 120,
+          "durationMs": 120000,
+          "mode": 0,
+          "inputDelay": 0,
+          "scope": "Synthetic native ABI events on an independent Page clock; not a Launcher/iOS bridge or physical phone test"
+        },
+        "headedControl": true,
+        "gpuVsyncControl": {
+          "explicit": true,
+          "value": "0",
+          "mode": "explicit-0",
+          "disableGpuVsync": false,
+          "addedArgs": [],
+          "scope": "Optional single-flag browser diagnostic; addedArgs are launch intent only. Explicit 0/1 requires two verified normal Chrome processes with distinct PIDs and qualified actual argv; unset retains default launch and qualification behavior."
+        },
+        "chromeSchedulerTrace": true,
+        "chromeSchedulerTraceProfile": "graphics",
+        "rafAnomaly": false,
+        "measurementEndpoint": {
+          "scope": "stats/hash/audited/sdl/audio/memory/route aliases are frozen after workload completion, before trace drain. RTC query has separate request/completion clocks and identities. postDrain is a later live observation, not a recertification of the frozen selected route. teardownClean covers that observation before browser disposal, not disposal itself.",
+          "rtcTimeoutMs": 1500
+        },
+        "headedLaunch": {
+          "headless": false,
+          "explicitArgs": [
+            "--enable-gpu",
+            "--use-gl=angle",
+            "--use-angle=d3d11",
+            "--autoplay-policy=no-user-gesture-required",
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "preservedHeadlessAuxiliaryArgs": [
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "scope": "Window-mode environment control with the optional declared GPU-vsync diagnostic. Proxy, input, audio/context, CPU setup and GPU backend selection are unchanged; see gpuVsyncControl for added args and actual argv qualification."
+        }
+      },
+      "identity": {
+        "wasm": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
+        "harness": "d899f3cf53ab6b769ccb6df7ae86e9e1aa28b091cae8ef60ff3fddc66ad27001",
+        "loader": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3",
+        "smoothnessWindow": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+        "gpuVsyncControl": "d41c9213c38555d89d97196dac73c58b36d35ad47d76dd409c97468527bb3083",
+        "headedBrowserExecutable": {
+          "selection": "playwright.chromium.executablePath; existing normal Windows chrome.exe",
+          "basename": "chrome.exe",
+          "bytes": 4508160,
+          "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+          "launcherSha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+        },
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "touchInputProbe": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785",
+        "touchInputSchedules": [
+          "9b3bbc4d7772fdbdcc0a17399a04b5ed84464340cd652075eab566efa340b810",
+          "fc932b82b29d4d8b0d7124ffc29f0f1f96de329118381d8464b138a4875bb2ca"
+        ],
+        "hostLoadProbe": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+        "chromeSchedulerTrace": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273",
+        "relayTransportProbe": "6709dad23cbe2f8d472c69155fcd48e96d5f95df947beef3f73a506e334c31da",
+        "relayTransportFixture": "6579d8b6201c31d29517306022f24f9471866a757e018eaee9a93556331527fd",
+        "relayTransportController": "060efa1bb2fd077cbad386c28a30467d6f07528f0c1846e91811105ee5f6e1ed",
+        "relayStartupProbe": "dddd8c6cdb783372156458e134731c9b85b16a8a1ae67482872c5b40303a2d29"
+      },
+      "host": {
+        "valid": true,
+        "complete": true,
+        "logicalCpus": 24,
+        "wholeRunMeanBusyFraction": 0.3123267205444531,
+        "busyFraction": {
+          "count": 111,
+          "total": 34.273153957621446,
+          "p50": 0.30881383855024713,
+          "p99": 0.4767507227754577,
+          "max": 0.48223494538514633
+        },
+        "scope": "Whole retained run including startup; not causal attribution of individual gaps."
+      },
+      "peers": [
+        {
+          "side": 0,
+          "window": [
+            "complete"
+          ],
+          "logicHz": 34.398790916173816,
+          "newStateHz": 33.97710051289243,
+          "newStateRafGapMs": {
+            "count": 1008,
+            "total": 29667.039999999997,
+            "p50": 18.205000000001746,
+            "p95": 84.8550000000032,
+            "p99": 163.5,
+            "max": 254.51000000000204,
+            "over25ms": 248,
+            "over50ms": 124,
+            "over100ms": 31,
+            "over250ms": 1
+          },
+          "newStatePageGapMs": {
+            "count": 1008,
+            "total": 29641.27000004053,
+            "p50": 20.76500004529953,
+            "p95": 81.35999995470047,
+            "p99": 153.75,
+            "max": 246.48500001430511,
+            "over25ms": 376,
+            "over50ms": 131,
+            "over100ms": 32,
+            "over250ms": 0
+          },
+          "maximumRafGap": {
+            "fromSample": 415,
+            "toSample": 422,
+            "rafTimestampMs": 254.51000000000204,
+            "sampledAtMs": 246.48500001430511,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "maximumPageGap": {
+            "fromSample": 415,
+            "toSample": 422,
+            "rafTimestampMs": 254.51000000000204,
+            "sampledAtMs": 246.48500001430511,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "wholeNativeCallbackWallMs": {
+            "count": 2475,
+            "total": 16710.490001678467,
+            "p50": 4.259999990463257,
+            "p95": 25.14000004529953,
+            "p99": 36.40499997138977,
+            "max": 68.22000002861023,
+            "over25ms": 126,
+            "over50ms": 6,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryCallbackWallMs": {
+            "count": 373,
+            "total": 4624.470000684261,
+            "p50": 6.280000030994415,
+            "p99": 50.689999997615814,
+            "max": 60.394999980926514
+          },
+          "ordinaryWorldSaves": {
+            "count": 373,
+            "total": 346,
+            "p50": 1,
+            "p99": 1,
+            "max": 1
+          },
+          "stats": [
+            1205,
+            1202,
+            826,
+            2257,
+            1205,
+            0,
+            1,
+            1202
+          ],
+          "bodyCorrections": 733,
+          "bodyResimulated": 2057,
+          "pacing": {
+            "scope": "All chronological body callbacks; each native row indexed into the sample array.",
+            "missing": {
+              "count": 2475,
+              "total": 6541,
+              "p50": 3,
+              "p99": 5,
+              "max": 6
+            },
+            "backlog": {
+              "count": 2475,
+              "total": 266,
+              "p50": 0,
+              "p99": 2,
+              "max": 5
+            },
+            "networkScale": {
+              "count": 2475,
+              "total": 2482.976,
+              "p50": 1,
+              "p99": 1.14,
+              "max": 1.667
+            },
+            "effectiveScale": {
+              "count": 2475,
+              "total": 2482.602,
+              "p50": 1,
+              "p99": 1.14,
+              "max": 1.667
+            }
+          },
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723009026.9,
+              "startedAt": 19004.969999969006,
+              "endedAt": 58514.00499999523
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 0,
+              "startMs": 2500,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "7de9a4f639601d70048d0077210093d727bf7fabb5da2d62d0ffe5f3da18ccf2",
+            "counts": {
+              "plannedEvents": 14301,
+              "dueEvents": 4505,
+              "futureCensoredEvents": 9796,
+              "plannedNativeEvents": 14301,
+              "dueNativeEvents": 4505,
+              "submittedEvents": 1589,
+              "rawNativeCalls": 1589,
+              "coalescedMoves": 2915,
+              "notSubmitted": 1,
+              "attributedCaptures": 1048,
+              "renderProgressObservedEvents": 1048,
+              "submittedWithoutAttributableChangedWire": 541,
+              "packets": 2253,
+              "duplicates": 7796,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1205,
+              "analogActiveFrames": 1173,
+              "targetChanges": 1061,
+              "newFrontierCallbacks": 1187,
+              "newPresentedCallbacks": 1187,
+              "forwardFrames": 1203,
+              "positionChangedObservations": 1186
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 541,
+              "coalesced-before-submit": 2915,
+              "render-progress-after-conditional-wire": 1048,
+              "not-submitted": 1
+            },
+            "submissionLatenessMs": {
+              "count": 1589,
+              "total": 7916.006709734593,
+              "p50": 4.055000007152557,
+              "p95": 8.198333342868864,
+              "p99": 48.189999997615814,
+              "max": 77.93999999761581,
+              "over50ms": 14,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 1048,
+              "plannedToRenderProgressMs": {
+                "count": 1048,
+                "total": 31426.565027654175,
+                "p50": 20.7033333381014,
+                "p95": 91.65166668097118,
+                "p99": 159.9983333547898,
+                "max": 242.7816666762037,
+                "over50ms": 138,
+                "over100ms": 41
+              },
+              "submitToFirstWireMs": {
+                "count": 1048,
+                "total": 7590.279999136925,
+                "p50": 5.639999985694885,
+                "p95": 18.74500000476837,
+                "p99": 43.08499997854233,
+                "max": 94.66000002622604,
+                "over50ms": 7,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 1048,
+                "total": 19892.550000071526,
+                "p50": 10.604999959468842,
+                "p95": 68.16500002145767,
+                "p99": 133.0349999666214,
+                "max": 205.25999999046326,
+                "over50ms": 88,
+                "over100ms": 21
+              },
+              "submitToRenderProgressMs": {
+                "count": 1048,
+                "total": 27482.82999920845,
+                "p50": 16.774999976158142,
+                "p95": 86.5799999833107,
+                "p99": 158.64999997615814,
+                "max": 236.84499996900558,
+                "over50ms": 118,
+                "over100ms": 35
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 939,
+              "plannedToRenderProgressMs": {
+                "count": 939,
+                "total": 25994.956691245236,
+                "p50": 19.77000004053116,
+                "p95": 84.10500001907349,
+                "p99": 152.9650000333786,
+                "max": 213.40666667620462,
+                "over50ms": 103,
+                "over100ms": 29
+              },
+              "submitToFirstWireMs": {
+                "count": 939,
+                "total": 6513.224999368191,
+                "p50": 5.605000019073486,
+                "p95": 17.19999998807907,
+                "p99": 42.910000026226044,
+                "max": 94.66000002622604,
+                "over50ms": 6,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 939,
+                "total": 15991.894999802113,
+                "p50": 9.524999976158142,
+                "p95": 62.41500002145767,
+                "p99": 109.84500002861023,
+                "max": 205.25999999046326,
+                "over50ms": 63,
+                "over100ms": 15
+              },
+              "submitToRenderProgressMs": {
+                "count": 939,
+                "total": 22505.119999170303,
+                "p50": 15.754999995231628,
+                "p95": 78.61500000953674,
+                "p99": 148.67500001192093,
+                "max": 206.45999997854233,
+                "over50ms": 88,
+                "over100ms": 24
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 311,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 5033.333333333333,
+                "submittedAtMs": 5039.270000040531,
+                "firstWireAtMs": 5096.115000009537,
+                "presentationObservedAtMs": 5276.115000009537,
+                "captureFrame": 84,
+                "presentationFrontier": 85,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 236.84499996900558
+              },
+              {
+                "sequence": 2603,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 23883.333333333332,
+                "submittedAtMs": 23884.885000050068,
+                "firstWireAtMs": 23886.085000038147,
+                "presentationObservedAtMs": 24091.34500002861,
+                "captureFrame": 425,
+                "presentationFrontier": 426,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 206.45999997854233
+              },
+              {
+                "sequence": 2460,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 22708.333333333332,
+                "submittedAtMs": 22715.439999997616,
+                "firstWireAtMs": 22723.135000050068,
+                "presentationObservedAtMs": 22921.740000009537,
+                "captureFrame": 404,
+                "presentationFrontier": 405,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 206.30000001192093
+              },
+              {
+                "sequence": 1199,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 12333.333333333334,
+                "submittedAtMs": 12334.8900000453,
+                "firstWireAtMs": 12340.660000026226,
+                "presentationObservedAtMs": 12521.745000004768,
+                "captureFrame": 231,
+                "presentationFrontier": 232,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 186.85499995946884
+              },
+              {
+                "sequence": 2534,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 23308.333333333332,
+                "submittedAtMs": 23311.439999997616,
+                "firstWireAtMs": 23320.5,
+                "presentationObservedAtMs": 23495.585000038147,
+                "captureFrame": 415,
+                "presentationFrontier": 416,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 184.14500004053116
+              }
+            ]
+          }
+        },
+        {
+          "side": 1,
+          "window": [
+            "complete"
+          ],
+          "logicHz": 34.37080947802085,
+          "newStateHz": 34.14556866023305,
+          "newStateRafGapMs": {
+            "count": 1013,
+            "total": 29667.100000000002,
+            "p50": 18.205000000001746,
+            "p95": 84.75999999999476,
+            "p99": 151.52500000000146,
+            "max": 290.5249999999978,
+            "over25ms": 258,
+            "over50ms": 117,
+            "over100ms": 35,
+            "over250ms": 1
+          },
+          "newStatePageGapMs": {
+            "count": 1013,
+            "total": 29664.19999998808,
+            "p50": 20.22000002861023,
+            "p95": 79.81000000238419,
+            "p99": 150.9350000023842,
+            "max": 263,
+            "over25ms": 371,
+            "over50ms": 132,
+            "over100ms": 32,
+            "over250ms": 1
+          },
+          "maximumRafGap": {
+            "fromSample": 367,
+            "toSample": 374,
+            "rafTimestampMs": 290.5249999999978,
+            "sampledAtMs": 263,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "maximumPageGap": {
+            "fromSample": 367,
+            "toSample": 374,
+            "rafTimestampMs": 290.5249999999978,
+            "sampledAtMs": 263,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "wholeNativeCallbackWallMs": {
+            "count": 2473,
+            "total": 16666.205001175404,
+            "p50": 4.540000021457672,
+            "p95": 25.555000007152557,
+            "p99": 36.22000002861023,
+            "max": 57,
+            "over25ms": 128,
+            "over50ms": 2,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryCallbackWallMs": {
+            "count": 367,
+            "total": 4902.290000319481,
+            "p50": 6.915000021457672,
+            "p99": 45.860000014305115,
+            "max": 57
+          },
+          "ordinaryWorldSaves": {
+            "count": 367,
+            "total": 335,
+            "p50": 1,
+            "p99": 1,
+            "max": 1
+          },
+          "stats": [
+            1205,
+            1201,
+            861,
+            2236,
+            1205,
+            0,
+            1,
+            1201
+          ],
+          "bodyCorrections": 767,
+          "bodyResimulated": 2051,
+          "pacing": {
+            "scope": "All chronological body callbacks; each native row indexed into the sample array.",
+            "missing": {
+              "count": 2473,
+              "total": 6280,
+              "p50": 3,
+              "p99": 5,
+              "max": 7
+            },
+            "backlog": {
+              "count": 2473,
+              "total": 256,
+              "p50": 0,
+              "p99": 2,
+              "max": 6
+            },
+            "networkScale": {
+              "count": 2473,
+              "total": 2480.5469999999987,
+              "p50": 1,
+              "p99": 1.1,
+              "max": 1.667
+            },
+            "effectiveScale": {
+              "count": 2473,
+              "total": 2480.0019999999995,
+              "p50": 1,
+              "p99": 1.1,
+              "max": 1.667
+            }
+          },
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723017856.49,
+              "startedAt": 10187.030000030994,
+              "endedAt": 49667.785000026226
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 1,
+              "startMs": 2637,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "ee681df0a8390f364111c4d06da79d560a078137b316eaf936bb69e8d4a431ac",
+            "counts": {
+              "plannedEvents": 14382,
+              "dueEvents": 4515,
+              "futureCensoredEvents": 9867,
+              "plannedNativeEvents": 14382,
+              "dueNativeEvents": 4515,
+              "submittedEvents": 1602,
+              "rawNativeCalls": 1602,
+              "coalescedMoves": 2911,
+              "notSubmitted": 2,
+              "attributedCaptures": 1037,
+              "renderProgressObservedEvents": 1037,
+              "submittedWithoutAttributableChangedWire": 565,
+              "packets": 2259,
+              "duplicates": 7833,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1205,
+              "analogActiveFrames": 1167,
+              "targetChanges": 1050,
+              "newFrontierCallbacks": 1188,
+              "newPresentedCallbacks": 1188,
+              "forwardFrames": 1202,
+              "positionChangedObservations": 1181
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 565,
+              "coalesced-before-submit": 2911,
+              "render-progress-after-conditional-wire": 1037,
+              "not-submitted": 2
+            },
+            "submissionLatenessMs": {
+              "count": 1602,
+              "total": 7831.251651148012,
+              "p50": 3.9200000166893005,
+              "p95": 8.268333335719944,
+              "p99": 38.77999997138977,
+              "max": 65.08999997377396,
+              "over50ms": 11,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 1037,
+              "plannedToRenderProgressMs": {
+                "count": 1037,
+                "total": 30720.294990301085,
+                "p50": 20.07499998807907,
+                "p95": 84.98500001430511,
+                "p99": 151.1783333023377,
+                "max": 261.08999997377396,
+                "over50ms": 132,
+                "over100ms": 39
+              },
+              "submitToFirstWireMs": {
+                "count": 1037,
+                "total": 7595.639999389648,
+                "p50": 5.644999980926514,
+                "p95": 23.69999998807907,
+                "p99": 45.97000002861023,
+                "max": 70.08499997854233,
+                "over50ms": 10,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 1037,
+                "total": 19311.27500075102,
+                "p50": 10.495000004768372,
+                "p95": 57.22999995946884,
+                "p99": 124.26999998092651,
+                "max": 245.11500000953674,
+                "over50ms": 63,
+                "over100ms": 24
+              },
+              "submitToRenderProgressMs": {
+                "count": 1037,
+                "total": 26906.915000140667,
+                "p50": 16.709999978542328,
+                "p95": 81.23000001907349,
+                "p99": 146.0250000357628,
+                "max": 253.14999997615814,
+                "over50ms": 114,
+                "over100ms": 33
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 933,
+              "plannedToRenderProgressMs": {
+                "count": 933,
+                "total": 25124.054991006844,
+                "p50": 19.089999973773956,
+                "p95": 74.93333329756933,
+                "p99": 139.33333333333212,
+                "max": 261.08999997377396,
+                "over50ms": 93,
+                "over100ms": 26
+              },
+              "submitToFirstWireMs": {
+                "count": 933,
+                "total": 6367.874999523163,
+                "p50": 5.619999945163727,
+                "p95": 17.035000026226044,
+                "p99": 42.814999997615814,
+                "max": 70.08499997854233,
+                "over50ms": 6,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 933,
+                "total": 15433.825000345707,
+                "p50": 9.504999995231628,
+                "p95": 49.360000014305115,
+                "p99": 122.58499997854233,
+                "max": 245.11500000953674,
+                "over50ms": 44,
+                "over100ms": 15
+              },
+              "submitToRenderProgressMs": {
+                "count": 933,
+                "total": 21801.69999986887,
+                "p50": 15.665000021457672,
+                "p95": 68.07500004768372,
+                "p99": 134.9350000023842,
+                "max": 253.14999997615814,
+                "over50ms": 79,
+                "over100ms": 21
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 1139,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 11925,
+                "submittedAtMs": 11932.939999997616,
+                "firstWireAtMs": 11940.974999964237,
+                "presentationObservedAtMs": 12186.089999973774,
+                "captureFrame": 225,
+                "presentationFrontier": 226,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 253.14999997615814
+              },
+              {
+                "sequence": 154,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 3866.6666666666665,
+                "submittedAtMs": 3877.6800000071526,
+                "firstWireAtMs": 3934.4449999928474,
+                "presentationObservedAtMs": 4093.9549999833107,
+                "captureFrame": 61,
+                "presentationFrontier": 62,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 216.27499997615814
+              },
+              {
+                "sequence": 2090,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 19675,
+                "submittedAtMs": 19682.730000019073,
+                "firstWireAtMs": 19684.07499998808,
+                "presentationObservedAtMs": 19886.94999998808,
+                "captureFrame": 353,
+                "presentationFrontier": 354,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 204.21999996900558
+              },
+              {
+                "sequence": 1225,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 12616.666666666666,
+                "submittedAtMs": 12624.514999985695,
+                "firstWireAtMs": 12646.110000014305,
+                "presentationObservedAtMs": 12806.089999973774,
+                "captureFrame": 236,
+                "presentationFrontier": 237,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 181.57499998807907
+              },
+              {
+                "sequence": 25,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 2816.6666666666665,
+                "submittedAtMs": 2822.1200000047684,
+                "firstWireAtMs": 2830.974999964237,
+                "presentationObservedAtMs": 3000.7549999952316,
+                "captureFrame": 38,
+                "presentationFrontier": 39,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 178.63499999046326
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-b1",
+      "variant": "Original A / --disable-gpu-vsync (B1)",
+      "scenario": "relay39 ±5 / graphics trace / both CPU4",
+      "raw": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-gpu-vsync-both4-relay39-b1-report.json",
+        "bytes": 38258240,
+        "sha256": "4be42dd9d2efe666b81175b6f453c8507f69e54f685e7ca8f45de1e9163e6764"
+      },
+      "evidence": {
+        "path": "docs/multiplayer/rollback-desktop-gpu-vsync-both4-relay39-b1-evidence.json",
+        "bytes": 114266,
+        "sha256": "c46225627ca11d5453c06a0f2baf7c5bef3a6bca3fb048fbc33c077de7250160"
+      },
+      "gpuVsyncQualification": {
+        "expected": "1",
+        "passed": true,
+        "checks": {
+          "declaredMode": true,
+          "driver": true,
+          "helper": true,
+          "frozenWasm": true,
+          "bothCpu4": true,
+          "twoOwnedBrowsers": true,
+          "actualArgv": true,
+          "headedIdentity": true,
+          "browserExecutable": true,
+          "nativeGraphics": true,
+          "measurementEndpoints": true,
+          "completeNativeBody": true,
+          "confirmedHashes": true,
+          "relay": true,
+          "trace": true
+        },
+        "scope": "Launch/measurement/trace qualification only; not evidence of a performance fix or physical scanout."
+      },
+      "traceSummary": [
+        {
+          "side": 0,
+          "status": "stopped",
+          "collectionValid": true,
+          "clockMapped": true,
+          "activeWindowCovered": true,
+          "allThreeMarks": true,
+          "gpuObserved": true,
+          "schedulerObserved": null,
+          "compositorObserved": null,
+          "overflow": {
+            "events": 0,
+            "bytes": 0,
+            "bufferUsage": 0,
+            "marks": 0,
+            "errors": 0,
+            "names": 0,
+            "threads": 0,
+            "firstAt": null,
+            "firstTraceTs": null
+          },
+          "errors": [],
+          "artifact": {
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-b1-P1-scheduler-trace.json",
+            "bytes": 45327248,
+            "sha256": "b1297a7b8331e5bcbe413da4b64951690d696654fb29d43bcc8cfea357524980"
+          }
+        },
+        {
+          "side": 1,
+          "status": "stopped",
+          "collectionValid": true,
+          "clockMapped": true,
+          "activeWindowCovered": true,
+          "allThreeMarks": true,
+          "gpuObserved": true,
+          "schedulerObserved": null,
+          "compositorObserved": null,
+          "overflow": {
+            "events": 0,
+            "bytes": 0,
+            "bufferUsage": 0,
+            "marks": 0,
+            "errors": 0,
+            "names": 0,
+            "threads": 0,
+            "firstAt": null,
+            "firstTraceTs": null
+          },
+          "errors": [],
+          "artifact": {
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-b1-P2-scheduler-trace.json",
+            "bytes": 44488564,
+            "sha256": "9038639e77694ba23a63c55387260b3c79da1128bf61d3ab4acc882d531d2b77"
+          }
+        }
+      ],
+      "driverPassed": true,
+      "measurementEndpointQualification": [
+        {
+          "qualified": true,
+          "native": true,
+          "workload": true,
+          "open": true,
+          "route": true,
+          "rtc": true,
+          "side": 0,
+          "captureError": null
+        },
+        {
+          "qualified": true,
+          "native": true,
+          "workload": true,
+          "open": true,
+          "route": true,
+          "rtc": true,
+          "side": 1,
+          "captureError": null
+        }
+      ],
+      "teardownClean": false,
+      "confirmedPrefix": {
+        "count": 10,
+        "lastFrame": 1200,
+        "equal": true
+      },
+      "relayValid": true,
+      "parameters": {
+        "limit": 1200,
+        "delay": 39,
+        "jitter": 5,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": true,
+        "profile": false,
+        "fallback": true,
+        "inputMode": "wall-clock",
+        "audioOutput": false,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": false,
+        "impairmentSite": "relay",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "any",
+        "liveCost": false,
+        "clientSendMode": "synchronous",
+        "burstClock": "relay-first-nonempty-input-receive",
+        "cpuThrottle": {
+          "ratesBySide": [
+            4,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        },
+        "startupTrace": false,
+        "relayInputDiagnostics": true,
+        "nativeFrontierObservation": "Release pacing ABI sampled on every retained game callback, independently of optional RAF diagnostics",
+        "graphicsIdentity": {
+          "scope": "Actual captured core/canvas/existing context after openProbe and before CPU throttling; same-owner read repeated inside the existing failure snapshot. Missing references are unavailable, never inferred from requested browser flags."
+        },
+        "renderWork": {
+          "enabled": true,
+          "columns": [
+            "sampleIndex",
+            "batches",
+            "uploadBytes",
+            "readBytes",
+            "vertexUploadBytes",
+            "programCompiles",
+            "bufferReplacements",
+            "bufferSubUpdates",
+            "rendererFrames",
+            "resamples",
+            "presentations"
+          ],
+          "source": "Same onGameFrame th09_game_metrics uint32[10] pointer as samples[11] presentations",
+          "limit": 50000,
+          "cumulative": true,
+          "observerOverheadCalibrated": false,
+          "scope": "Optional numeric copies per retained callback, not per simulated frame; uint32 wrap or regression requires separate intervals. No extra draw/tick or per-frame GPU query/readback; these counters are not GPU timings."
+        },
+        "touchInput": {
+          "enabled": true,
+          "profile": "joystick",
+          "pattern": "continuous",
+          "sourceHz": 120,
+          "durationMs": 120000,
+          "mode": 0,
+          "inputDelay": 0,
+          "scope": "Synthetic native ABI events on an independent Page clock; not a Launcher/iOS bridge or physical phone test"
+        },
+        "headedControl": true,
+        "gpuVsyncControl": {
+          "explicit": true,
+          "value": "1",
+          "mode": "explicit-1",
+          "disableGpuVsync": true,
+          "addedArgs": [
+            "--disable-gpu-vsync"
+          ],
+          "scope": "Optional single-flag browser diagnostic; addedArgs are launch intent only. Explicit 0/1 requires two verified normal Chrome processes with distinct PIDs and qualified actual argv; unset retains default launch and qualification behavior."
+        },
+        "chromeSchedulerTrace": true,
+        "chromeSchedulerTraceProfile": "graphics",
+        "rafAnomaly": false,
+        "measurementEndpoint": {
+          "scope": "stats/hash/audited/sdl/audio/memory/route aliases are frozen after workload completion, before trace drain. RTC query has separate request/completion clocks and identities. postDrain is a later live observation, not a recertification of the frozen selected route. teardownClean covers that observation before browser disposal, not disposal itself.",
+          "rtcTimeoutMs": 1500
+        },
+        "headedLaunch": {
+          "headless": false,
+          "explicitArgs": [
+            "--enable-gpu",
+            "--use-gl=angle",
+            "--use-angle=d3d11",
+            "--autoplay-policy=no-user-gesture-required",
+            "--disable-gpu-vsync",
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "preservedHeadlessAuxiliaryArgs": [
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "scope": "Window-mode environment control with the optional declared GPU-vsync diagnostic. Proxy, input, audio/context, CPU setup and GPU backend selection are unchanged; see gpuVsyncControl for added args and actual argv qualification."
+        }
+      },
+      "identity": {
+        "wasm": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
+        "harness": "d899f3cf53ab6b769ccb6df7ae86e9e1aa28b091cae8ef60ff3fddc66ad27001",
+        "loader": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3",
+        "smoothnessWindow": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+        "gpuVsyncControl": "d41c9213c38555d89d97196dac73c58b36d35ad47d76dd409c97468527bb3083",
+        "headedBrowserExecutable": {
+          "selection": "playwright.chromium.executablePath; existing normal Windows chrome.exe",
+          "basename": "chrome.exe",
+          "bytes": 4508160,
+          "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+          "launcherSha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+        },
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "touchInputProbe": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785",
+        "touchInputSchedules": [
+          "9b3bbc4d7772fdbdcc0a17399a04b5ed84464340cd652075eab566efa340b810",
+          "fc932b82b29d4d8b0d7124ffc29f0f1f96de329118381d8464b138a4875bb2ca"
+        ],
+        "hostLoadProbe": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+        "chromeSchedulerTrace": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273",
+        "relayTransportProbe": "6709dad23cbe2f8d472c69155fcd48e96d5f95df947beef3f73a506e334c31da",
+        "relayTransportFixture": "6579d8b6201c31d29517306022f24f9471866a757e018eaee9a93556331527fd",
+        "relayTransportController": "060efa1bb2fd077cbad386c28a30467d6f07528f0c1846e91811105ee5f6e1ed",
+        "relayStartupProbe": "dddd8c6cdb783372156458e134731c9b85b16a8a1ae67482872c5b40303a2d29"
+      },
+      "host": {
+        "valid": true,
+        "complete": true,
+        "logicalCpus": 24,
+        "wholeRunMeanBusyFraction": 0.29240562209911203,
+        "busyFraction": {
+          "count": 69,
+          "total": 20.091658124065493,
+          "p50": 0.27330186743279294,
+          "p99": 0.571508873363848,
+          "max": 0.571508873363848
+        },
+        "scope": "Whole retained run including startup; not causal attribution of individual gaps."
+      },
+      "peers": [
+        {
+          "side": 0,
+          "window": [
+            "complete"
+          ],
+          "logicHz": 56.5518507008441,
+          "newStateHz": 56.54624000799085,
+          "newStateRafGapMs": {
+            "count": 1019,
+            "total": 18020.649999999994,
+            "p50": 18.169999999998254,
+            "p95": 24.31500000000233,
+            "p99": 30.61999999999898,
+            "max": 45.05999999999949,
+            "over25ms": 45,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "newStatePageGapMs": {
+            "count": 1019,
+            "total": 18026.790000021458,
+            "p50": 17.060000002384186,
+            "p95": 29.90499997138977,
+            "p99": 35.780000030994415,
+            "max": 53.7950000166893,
+            "over25ms": 128,
+            "over50ms": 1,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "maximumRafGap": {
+            "fromSample": 608,
+            "toSample": 612,
+            "rafTimestampMs": 45.05999999999949,
+            "sampledAtMs": 53.7950000166893,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "maximumPageGap": {
+            "fromSample": 608,
+            "toSample": 612,
+            "rafTimestampMs": 45.05999999999949,
+            "sampledAtMs": 53.7950000166893,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "wholeNativeCallbackWallMs": {
+            "count": 2439,
+            "total": 9398.955000698566,
+            "p50": 2.2549999952316284,
+            "p95": 11.1700000166893,
+            "p99": 14.035000026226044,
+            "max": 18.314999997615814,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryCallbackWallMs": {
+            "count": 308,
+            "total": 1611.7900002002716,
+            "p50": 4.899999976158142,
+            "p99": 11.134999990463257,
+            "max": 12.754999995231628
+          },
+          "ordinaryWorldSaves": {
+            "count": 308,
+            "total": 303,
+            "p50": 1,
+            "p99": 1,
+            "max": 1
+          },
+          "stats": [
+            1209,
+            1206,
+            892,
+            1934,
+            1209,
+            0,
+            1,
+            1206
+          ],
+          "bodyCorrections": 769,
+          "bodyResimulated": 1686,
+          "pacing": {
+            "scope": "All chronological body callbacks; each native row indexed into the sample array.",
+            "missing": {
+              "count": 2439,
+              "total": 5072,
+              "p50": 2,
+              "p99": 3,
+              "max": 4
+            },
+            "backlog": {
+              "count": 2439,
+              "total": 29,
+              "p50": 0,
+              "p99": 1,
+              "max": 2
+            },
+            "networkScale": {
+              "count": 2439,
+              "total": 2439,
+              "p50": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "effectiveScale": {
+              "count": 2439,
+              "total": 2433.1120000000624,
+              "p50": 0.998,
+              "p99": 0.998,
+              "max": 0.998
+            }
+          },
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723574872.27,
+              "startedAt": 8484.449999988079,
+              "endedAt": 29905.74500000477
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 0,
+              "startMs": 2500,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "46830845114e13d30a366165d54cee38bc691268bd5f9a52949f0b87791490fe",
+            "counts": {
+              "plannedEvents": 14301,
+              "dueEvents": 2304,
+              "futureCensoredEvents": 11997,
+              "plannedNativeEvents": 14301,
+              "dueNativeEvents": 2304,
+              "submittedEvents": 1444,
+              "rawNativeCalls": 1444,
+              "coalescedMoves": 860,
+              "notSubmitted": 0,
+              "attributedCaptures": 1014,
+              "renderProgressObservedEvents": 1014,
+              "submittedWithoutAttributableChangedWire": 430,
+              "packets": 2031,
+              "duplicates": 8412,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1209,
+              "analogActiveFrames": 1077,
+              "targetChanges": 1014,
+              "newFrontierCallbacks": 1201,
+              "newPresentedCallbacks": 1201,
+              "forwardFrames": 1202,
+              "positionChangedObservations": 1101
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 430,
+              "coalesced-before-submit": 860,
+              "render-progress-after-conditional-wire": 1014
+            },
+            "submissionLatenessMs": {
+              "count": 1444,
+              "total": 5694.664997458447,
+              "p50": 3.5783333381014018,
+              "p95": 7.896666685741366,
+              "p99": 11.699999988079071,
+              "max": 20.87000000476837,
+              "over50ms": 0,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 1014,
+              "plannedToRenderProgressMs": {
+                "count": 1014,
+                "total": 17296.561664382647,
+                "p50": 16.21166668335718,
+                "p95": 28.5333333214121,
+                "p99": 34.83666668335536,
+                "max": 44.66666666666697,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 1014,
+                "total": 4775.784999728203,
+                "p50": 4.509999990463257,
+                "p95": 10.055000007152557,
+                "p99": 13.794999957084656,
+                "max": 18.344999969005585,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 1014,
+                "total": 8948.139999985695,
+                "p50": 7.919999957084656,
+                "p95": 19.180000007152557,
+                "p99": 24.9099999666214,
+                "max": 27.82499998807907,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 1014,
+                "total": 13723.924999713898,
+                "p50": 12.625,
+                "p95": 25.0799999833107,
+                "p99": 30.25,
+                "max": 43.139999985694885,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 967,
+              "plannedToRenderProgressMs": {
+                "count": 967,
+                "total": 16530.913331051674,
+                "p50": 16.223333319028825,
+                "p95": 28.5333333214121,
+                "p99": 35.29333331187627,
+                "max": 44.66666666666697,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 967,
+                "total": 4614.949999690056,
+                "p50": 4.619999945163727,
+                "p95": 10.089999973773956,
+                "p99": 14.055000007152557,
+                "max": 18.344999969005585,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 967,
+                "total": 8527.534999907017,
+                "p50": 7.894999980926514,
+                "p95": 19.180000007152557,
+                "p99": 25.069999992847443,
+                "max": 27.82499998807907,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 967,
+                "total": 13142.484999597073,
+                "p50": 12.6700000166893,
+                "p95": 25.0799999833107,
+                "p99": 30.689999997615814,
+                "max": 43.139999985694885,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 308,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 5008.333333333333,
+                "submittedAtMs": 5009.860000014305,
+                "firstWireAtMs": 5025.175000011921,
+                "presentationObservedAtMs": 5053,
+                "captureFrame": 270,
+                "presentationFrontier": 271,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 43.139999985694885
+              },
+              {
+                "sequence": 1955,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 18550,
+                "submittedAtMs": 18552.475000023842,
+                "firstWireAtMs": 18566.560000002384,
+                "presentationObservedAtMs": 18590.889999985695,
+                "captureFrame": 1039,
+                "presentationFrontier": 1040,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 38.41499996185303
+              },
+              {
+                "sequence": 1975,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 18716.666666666668,
+                "submittedAtMs": 18716.819999992847,
+                "firstWireAtMs": 18731.560000002384,
+                "presentationObservedAtMs": 18751.25499999523,
+                "captureFrame": 1048,
+                "presentationFrontier": 1049,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 34.435000002384186
+              },
+              {
+                "sequence": 1299,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13166.666666666666,
+                "submittedAtMs": 13167.939999997616,
+                "firstWireAtMs": 13179.040000021458,
+                "presentationObservedAtMs": 13201.959999978542,
+                "captureFrame": 734,
+                "presentationFrontier": 735,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 34.019999980926514
+              },
+              {
+                "sequence": 1070,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 11275,
+                "submittedAtMs": 11278.074999988079,
+                "firstWireAtMs": 11288.430000007153,
+                "presentationObservedAtMs": 11311.180000007153,
+                "captureFrame": 627,
+                "presentationFrontier": 628,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 33.105000019073486
+              }
+            ]
+          }
+        },
+        {
+          "side": 1,
+          "window": [
+            "complete"
+          ],
+          "logicHz": 56.49213734674109,
+          "newStateHz": 56.527403447838765,
+          "newStateRafGapMs": {
+            "count": 1019,
+            "total": 18026.655000000002,
+            "p50": 18.17000000000189,
+            "p95": 24.295000000000073,
+            "p99": 29.63000000000102,
+            "max": 45.659999999999854,
+            "over25ms": 33,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "newStatePageGapMs": {
+            "count": 1019,
+            "total": 18020.37000000477,
+            "p50": 17.560000002384186,
+            "p95": 29.539999961853027,
+            "p99": 36.564999997615814,
+            "max": 47.580000042915344,
+            "over25ms": 135,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "maximumRafGap": {
+            "fromSample": 698,
+            "toSample": 703,
+            "rafTimestampMs": 45.659999999999854,
+            "sampledAtMs": 47.580000042915344,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "maximumPageGap": {
+            "fromSample": 698,
+            "toSample": 703,
+            "rafTimestampMs": 45.659999999999854,
+            "sampledAtMs": 47.580000042915344,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "wholeNativeCallbackWallMs": {
+            "count": 2716,
+            "total": 8651.539999067783,
+            "p50": 0.15999996662139893,
+            "p95": 9.870000004768372,
+            "p99": 11.129999995231628,
+            "max": 16.084999978542328,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryCallbackWallMs": {
+            "count": 256,
+            "total": 869.6350002884865,
+            "p50": 3.25,
+            "p99": 5.879999995231628,
+            "max": 6.444999992847443
+          },
+          "ordinaryWorldSaves": {
+            "count": 256,
+            "total": 256,
+            "p50": 1,
+            "p99": 1,
+            "max": 1
+          },
+          "stats": [
+            1209,
+            1206,
+            956,
+            3870,
+            1209,
+            0,
+            1,
+            1206
+          ],
+          "bodyCorrections": 824,
+          "bodyResimulated": 3316,
+          "pacing": {
+            "scope": "All chronological body callbacks; each native row indexed into the sample array.",
+            "missing": {
+              "count": 2716,
+              "total": 10594,
+              "p50": 4,
+              "p99": 5,
+              "max": 6
+            },
+            "backlog": {
+              "count": 2716,
+              "total": 25,
+              "p50": 0,
+              "p99": 0,
+              "max": 3
+            },
+            "networkScale": {
+              "count": 2716,
+              "total": 2738.4699999999903,
+              "p50": 1,
+              "p99": 1.24,
+              "max": 1.433
+            },
+            "effectiveScale": {
+              "count": 2716,
+              "total": 2740.4600000000287,
+              "p50": 1,
+              "p99": 1.24,
+              "max": 1.433
+            }
+          },
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723579439.565,
+              "startedAt": 3935.289999961853,
+              "endedAt": 25353.435000002384
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 1,
+              "startMs": 2637,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "8eab34b273269e35a3b0c5e28473115b7250c1754845377a7c70ec03a4806cc7",
+            "counts": {
+              "plannedEvents": 14382,
+              "dueEvents": 2303,
+              "futureCensoredEvents": 12079,
+              "plannedNativeEvents": 14382,
+              "dueNativeEvents": 2303,
+              "submittedEvents": 1613,
+              "rawNativeCalls": 1613,
+              "coalescedMoves": 688,
+              "notSubmitted": 2,
+              "attributedCaptures": 925,
+              "renderProgressObservedEvents": 925,
+              "submittedWithoutAttributableChangedWire": 688,
+              "packets": 2102,
+              "duplicates": 8756,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1209,
+              "analogActiveFrames": 932,
+              "targetChanges": 922,
+              "newFrontierCallbacks": 1203,
+              "newPresentedCallbacks": 1203,
+              "forwardFrames": 1203,
+              "positionChangedObservations": 1070
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 688,
+              "render-progress-after-conditional-wire": 925,
+              "coalesced-before-submit": 688,
+              "not-submitted": 2
+            },
+            "submissionLatenessMs": {
+              "count": 1613,
+              "total": 5948.828352709591,
+              "p50": 3.4033333261809275,
+              "p95": 7.748333354791612,
+              "p99": 9.850000023841858,
+              "max": 14.685000002384186,
+              "over50ms": 0,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 925,
+              "plannedToRenderProgressMs": {
+                "count": 925,
+                "total": 15442.598344286269,
+                "p50": 16.37833335002233,
+                "p95": 26.319999992847443,
+                "p99": 32.5316666762028,
+                "max": 41.285000026226044,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 925,
+                "total": 4846.6650005578995,
+                "p50": 5.2799999713897705,
+                "p95": 10.459999978542328,
+                "p99": 13.655000030994415,
+                "max": 15.614999949932098,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 925,
+                "total": 7618.200000107288,
+                "p50": 8.459999978542328,
+                "p95": 16.849999964237213,
+                "p99": 20.714999973773956,
+                "max": 32.75499999523163,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 925,
+                "total": 12464.865000665188,
+                "p50": 13.144999980926514,
+                "p95": 23.0349999666214,
+                "p99": 28.47000002861023,
+                "max": 38.75499999523163,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 886,
+              "plannedToRenderProgressMs": {
+                "count": 886,
+                "total": 14843.940010607226,
+                "p50": 16.40166668097163,
+                "p95": 26.41666666666606,
+                "p99": 33.27500003576279,
+                "max": 41.285000026226044,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 886,
+                "total": 4662.6200006604195,
+                "p50": 5.389999985694885,
+                "p95": 10.569999992847443,
+                "p99": 14.040000021457672,
+                "max": 15.614999949932098,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 886,
+                "total": 7331.850000143051,
+                "p50": 8.48499995470047,
+                "p95": 16.97000002861023,
+                "p99": 21.330000042915344,
+                "max": 32.75499999523163,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 886,
+                "total": 11994.47000080347,
+                "p50": 13.289999961853027,
+                "p95": 23.10999995470047,
+                "p99": 29.174999952316284,
+                "max": 38.75499999523163,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 242,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 4600,
+                "submittedAtMs": 4602.530000030994,
+                "firstWireAtMs": 4608.530000030994,
+                "presentationObservedAtMs": 4641.285000026226,
+                "captureFrame": 250,
+                "presentationFrontier": 251,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 38.75499999523163
+              },
+              {
+                "sequence": 1507,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 14916.666666666666,
+                "submittedAtMs": 14917.525000035763,
+                "firstWireAtMs": 14933.139999985695,
+                "presentationObservedAtMs": 14951.960000038147,
+                "captureFrame": 834,
+                "presentationFrontier": 835,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 34.435000002384186
+              },
+              {
+                "sequence": 474,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 6483.333333333333,
+                "submittedAtMs": 6483.985000014305,
+                "firstWireAtMs": 6499.129999995232,
+                "presentationObservedAtMs": 6517.954999983311,
+                "captureFrame": 356,
+                "presentationFrontier": 357,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 33.969999969005585
+              },
+              {
+                "sequence": 1337,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13525,
+                "submittedAtMs": 13527.235000014305,
+                "firstWireAtMs": 13541.275000035763,
+                "presentationObservedAtMs": 13560.004999995232,
+                "captureFrame": 755,
+                "presentationFrontier": 756,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 32.769999980926514
+              },
+              {
+                "sequence": 325,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 5266.666666666667,
+                "submittedAtMs": 5270.460000038147,
+                "firstWireAtMs": 5277.910000026226,
+                "presentationObservedAtMs": 5301.939999997616,
+                "captureFrame": 286,
+                "presentationFrontier": 287,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 31.47999995946884
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-a2",
+      "variant": "Original A / GPU flag absent (A2)",
+      "scenario": "relay39 ±5 / graphics trace / both CPU4",
+      "raw": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-gpu-vsync-both4-relay39-a2-report.json",
+        "bytes": 39168047,
+        "sha256": "3bcc7978288707e56e1603f7e2b30d4a3df942644d0b3e298dc08318affea3bf"
+      },
+      "evidence": {
+        "path": "docs/multiplayer/rollback-desktop-gpu-vsync-both4-relay39-a2-evidence.json",
+        "bytes": 114119,
+        "sha256": "cad3404053d183417c9a399920f8451f992a6f958507c40a2534ad52a754d722"
+      },
+      "gpuVsyncQualification": {
+        "expected": "0",
+        "passed": true,
+        "checks": {
+          "declaredMode": true,
+          "driver": true,
+          "helper": true,
+          "frozenWasm": true,
+          "bothCpu4": true,
+          "twoOwnedBrowsers": true,
+          "actualArgv": true,
+          "headedIdentity": true,
+          "browserExecutable": true,
+          "nativeGraphics": true,
+          "measurementEndpoints": true,
+          "completeNativeBody": true,
+          "confirmedHashes": true,
+          "relay": true,
+          "trace": true
+        },
+        "scope": "Launch/measurement/trace qualification only; not evidence of a performance fix or physical scanout."
+      },
+      "traceSummary": [
+        {
+          "side": 0,
+          "status": "stopped",
+          "collectionValid": true,
+          "clockMapped": true,
+          "activeWindowCovered": true,
+          "allThreeMarks": true,
+          "gpuObserved": true,
+          "schedulerObserved": null,
+          "compositorObserved": null,
+          "overflow": {
+            "events": 0,
+            "bytes": 0,
+            "bufferUsage": 0,
+            "marks": 0,
+            "errors": 0,
+            "names": 0,
+            "threads": 0,
+            "firstAt": null,
+            "firstTraceTs": null
+          },
+          "errors": [],
+          "artifact": {
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-a2-P1-scheduler-trace.json",
+            "bytes": 44786851,
+            "sha256": "c19ef48cdeb99963df3fd2522ca2e80b3c781942324a995d5e754d81c6814277"
+          }
+        },
+        {
+          "side": 1,
+          "status": "stopped",
+          "collectionValid": true,
+          "clockMapped": true,
+          "activeWindowCovered": true,
+          "allThreeMarks": true,
+          "gpuObserved": true,
+          "schedulerObserved": null,
+          "compositorObserved": null,
+          "overflow": {
+            "events": 0,
+            "bytes": 0,
+            "bufferUsage": 0,
+            "marks": 0,
+            "errors": 0,
+            "names": 0,
+            "threads": 0,
+            "firstAt": null,
+            "firstTraceTs": null
+          },
+          "errors": [],
+          "artifact": {
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-a2-P2-scheduler-trace.json",
+            "bytes": 43969812,
+            "sha256": "02ad10eeea4df63b6e194bd91e759fd57a6ebb12c13f3377fa7040c1fe6f218b"
+          }
+        }
+      ],
+      "driverPassed": true,
+      "measurementEndpointQualification": [
+        {
+          "qualified": true,
+          "native": true,
+          "workload": true,
+          "open": true,
+          "route": true,
+          "rtc": true,
+          "side": 0,
+          "captureError": null
+        },
+        {
+          "qualified": true,
+          "native": true,
+          "workload": true,
+          "open": true,
+          "route": true,
+          "rtc": true,
+          "side": 1,
+          "captureError": null
+        }
+      ],
+      "teardownClean": false,
+      "confirmedPrefix": {
+        "count": 10,
+        "lastFrame": 1200,
+        "equal": true
+      },
+      "relayValid": true,
+      "parameters": {
+        "limit": 1200,
+        "delay": 39,
+        "jitter": 5,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": true,
+        "profile": false,
+        "fallback": true,
+        "inputMode": "wall-clock",
+        "audioOutput": false,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": false,
+        "impairmentSite": "relay",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "any",
+        "liveCost": false,
+        "clientSendMode": "synchronous",
+        "burstClock": "relay-first-nonempty-input-receive",
+        "cpuThrottle": {
+          "ratesBySide": [
+            4,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        },
+        "startupTrace": false,
+        "relayInputDiagnostics": true,
+        "nativeFrontierObservation": "Release pacing ABI sampled on every retained game callback, independently of optional RAF diagnostics",
+        "graphicsIdentity": {
+          "scope": "Actual captured core/canvas/existing context after openProbe and before CPU throttling; same-owner read repeated inside the existing failure snapshot. Missing references are unavailable, never inferred from requested browser flags."
+        },
+        "renderWork": {
+          "enabled": true,
+          "columns": [
+            "sampleIndex",
+            "batches",
+            "uploadBytes",
+            "readBytes",
+            "vertexUploadBytes",
+            "programCompiles",
+            "bufferReplacements",
+            "bufferSubUpdates",
+            "rendererFrames",
+            "resamples",
+            "presentations"
+          ],
+          "source": "Same onGameFrame th09_game_metrics uint32[10] pointer as samples[11] presentations",
+          "limit": 50000,
+          "cumulative": true,
+          "observerOverheadCalibrated": false,
+          "scope": "Optional numeric copies per retained callback, not per simulated frame; uint32 wrap or regression requires separate intervals. No extra draw/tick or per-frame GPU query/readback; these counters are not GPU timings."
+        },
+        "touchInput": {
+          "enabled": true,
+          "profile": "joystick",
+          "pattern": "continuous",
+          "sourceHz": 120,
+          "durationMs": 120000,
+          "mode": 0,
+          "inputDelay": 0,
+          "scope": "Synthetic native ABI events on an independent Page clock; not a Launcher/iOS bridge or physical phone test"
+        },
+        "headedControl": true,
+        "gpuVsyncControl": {
+          "explicit": true,
+          "value": "0",
+          "mode": "explicit-0",
+          "disableGpuVsync": false,
+          "addedArgs": [],
+          "scope": "Optional single-flag browser diagnostic; addedArgs are launch intent only. Explicit 0/1 requires two verified normal Chrome processes with distinct PIDs and qualified actual argv; unset retains default launch and qualification behavior."
+        },
+        "chromeSchedulerTrace": true,
+        "chromeSchedulerTraceProfile": "graphics",
+        "rafAnomaly": false,
+        "measurementEndpoint": {
+          "scope": "stats/hash/audited/sdl/audio/memory/route aliases are frozen after workload completion, before trace drain. RTC query has separate request/completion clocks and identities. postDrain is a later live observation, not a recertification of the frozen selected route. teardownClean covers that observation before browser disposal, not disposal itself.",
+          "rtcTimeoutMs": 1500
+        },
+        "headedLaunch": {
+          "headless": false,
+          "explicitArgs": [
+            "--enable-gpu",
+            "--use-gl=angle",
+            "--use-angle=d3d11",
+            "--autoplay-policy=no-user-gesture-required",
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "preservedHeadlessAuxiliaryArgs": [
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "scope": "Window-mode environment control with the optional declared GPU-vsync diagnostic. Proxy, input, audio/context, CPU setup and GPU backend selection are unchanged; see gpuVsyncControl for added args and actual argv qualification."
+        }
+      },
+      "identity": {
+        "wasm": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
+        "harness": "d899f3cf53ab6b769ccb6df7ae86e9e1aa28b091cae8ef60ff3fddc66ad27001",
+        "loader": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3",
+        "smoothnessWindow": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+        "gpuVsyncControl": "d41c9213c38555d89d97196dac73c58b36d35ad47d76dd409c97468527bb3083",
+        "headedBrowserExecutable": {
+          "selection": "playwright.chromium.executablePath; existing normal Windows chrome.exe",
+          "basename": "chrome.exe",
+          "bytes": 4508160,
+          "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+          "launcherSha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+        },
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "touchInputProbe": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785",
+        "touchInputSchedules": [
+          "9b3bbc4d7772fdbdcc0a17399a04b5ed84464340cd652075eab566efa340b810",
+          "fc932b82b29d4d8b0d7124ffc29f0f1f96de329118381d8464b138a4875bb2ca"
+        ],
+        "hostLoadProbe": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+        "chromeSchedulerTrace": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273",
+        "relayTransportProbe": "6709dad23cbe2f8d472c69155fcd48e96d5f95df947beef3f73a506e334c31da",
+        "relayTransportFixture": "6579d8b6201c31d29517306022f24f9471866a757e018eaee9a93556331527fd",
+        "relayTransportController": "060efa1bb2fd077cbad386c28a30467d6f07528f0c1846e91811105ee5f6e1ed",
+        "relayStartupProbe": "dddd8c6cdb783372156458e134731c9b85b16a8a1ae67482872c5b40303a2d29"
+      },
+      "host": {
+        "valid": true,
+        "complete": true,
+        "logicalCpus": 24,
+        "wholeRunMeanBusyFraction": 0.27486907789070264,
+        "busyFraction": {
+          "count": 71,
+          "total": 19.483826214498023,
+          "p50": 0.2704804408831186,
+          "p99": 0.5223715479800048,
+          "max": 0.5223715479800048
+        },
+        "scope": "Whole retained run including startup; not causal attribution of individual gaps."
+      },
+      "peers": [
+        {
+          "side": 0,
+          "window": [
+            "complete"
+          ],
+          "logicHz": 58.0292746310966,
+          "newStateHz": 58.028290927313726,
+          "newStateRafGapMs": {
+            "count": 1019,
+            "total": 17560.4,
+            "p50": 18.165000000000873,
+            "p95": 24.229999999999563,
+            "p99": 30.294999999998254,
+            "max": 42.42499999999927,
+            "over25ms": 16,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "newStatePageGapMs": {
+            "count": 1019,
+            "total": 17559.605000019073,
+            "p50": 16.964999973773956,
+            "p95": 27.07499998807907,
+            "p99": 34.27999997138977,
+            "max": 45.62999999523163,
+            "over25ms": 74,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "maximumRafGap": {
+            "fromSample": 1986,
+            "toSample": 1991,
+            "rafTimestampMs": 42.42499999999927,
+            "sampledAtMs": 45.62999999523163,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "maximumPageGap": {
+            "fromSample": 1986,
+            "toSample": 1991,
+            "rafTimestampMs": 42.42499999999927,
+            "sampledAtMs": 45.62999999523163,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "wholeNativeCallbackWallMs": {
+            "count": 2673,
+            "total": 7590.655000090599,
+            "p50": 0.009999990463256836,
+            "p95": 10.014999985694885,
+            "p99": 12.865000009536743,
+            "max": 22.694999992847443,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryCallbackWallMs": {
+            "count": 388,
+            "total": 1735.780000090599,
+            "p50": 3.8350000381469727,
+            "p99": 10.155000030994415,
+            "max": 12.820000052452087
+          },
+          "ordinaryWorldSaves": {
+            "count": 388,
+            "total": 385,
+            "p50": 1,
+            "p99": 1,
+            "max": 1
+          },
+          "stats": [
+            1204,
+            1201,
+            797,
+            1797,
+            1204,
+            0,
+            1,
+            1201
+          ],
+          "bodyCorrections": 672,
+          "bodyResimulated": 1561,
+          "pacing": {
+            "scope": "All chronological body callbacks; each native row indexed into the sample array.",
+            "missing": {
+              "count": 2673,
+              "total": 6104,
+              "p50": 2,
+              "p99": 4,
+              "max": 5
+            },
+            "backlog": {
+              "count": 2673,
+              "total": 24,
+              "p50": 0,
+              "p99": 0,
+              "max": 2
+            },
+            "networkScale": {
+              "count": 2673,
+              "total": 2673.12,
+              "p50": 1,
+              "p99": 1,
+              "max": 1.06
+            },
+            "effectiveScale": {
+              "count": 2673,
+              "total": 2668.6250000000573,
+              "p50": 0.998,
+              "p99": 1,
+              "max": 1.06
+            }
+          },
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723698415.52,
+              "startedAt": 7678.935000002384,
+              "endedAt": 28700.764999985695
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 0,
+              "startMs": 2500,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "4aec32746befacea61496b2f94807b364e3a0745257ef11648d37e17e69e237f",
+            "counts": {
+              "plannedEvents": 14301,
+              "dueEvents": 2256,
+              "futureCensoredEvents": 12045,
+              "plannedNativeEvents": 14301,
+              "dueNativeEvents": 2256,
+              "submittedEvents": 1645,
+              "rawNativeCalls": 1645,
+              "coalescedMoves": 610,
+              "notSubmitted": 1,
+              "attributedCaptures": 1040,
+              "renderProgressObservedEvents": 1040,
+              "submittedWithoutAttributableChangedWire": 605,
+              "packets": 2029,
+              "duplicates": 8745,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1204,
+              "analogActiveFrames": 1074,
+              "targetChanges": 1042,
+              "newFrontierCallbacks": 1202,
+              "newPresentedCallbacks": 1202,
+              "forwardFrames": 1203,
+              "positionChangedObservations": 1100
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 605,
+              "render-progress-after-conditional-wire": 1040,
+              "coalesced-before-submit": 610,
+              "not-submitted": 1
+            },
+            "submissionLatenessMs": {
+              "count": 1645,
+              "total": 6281.834979295725,
+              "p50": 3.756666640440926,
+              "p95": 7.784999966621399,
+              "p99": 8.311666647593484,
+              "max": 42.11500000953674,
+              "over50ms": 0,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 1040,
+              "plannedToRenderProgressMs": {
+                "count": 1040,
+                "total": 16052.061652878938,
+                "p50": 14.881666640441836,
+                "p95": 25.430000007152557,
+                "p99": 31.803333302339524,
+                "max": 43.67666665712932,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 1040,
+                "total": 5329.610002398491,
+                "p50": 5.425000011920929,
+                "p95": 10.219999969005585,
+                "p99": 12.840000033378601,
+                "max": 18.27999997138977,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 1040,
+                "total": 7351.034997284412,
+                "p50": 6.094999969005585,
+                "p95": 16.305000007152557,
+                "p99": 23.164999961853027,
+                "max": 33.314999997615814,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 1040,
+                "total": 12680.644999682903,
+                "p50": 11.479999959468842,
+                "p95": 21.709999978542328,
+                "p99": 29.019999980926514,
+                "max": 42.69499999284744,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 990,
+              "plannedToRenderProgressMs": {
+                "count": 990,
+                "total": 15191.393320103505,
+                "p50": 14.823333342870683,
+                "p95": 25.269999980926514,
+                "p99": 31.803333302339524,
+                "max": 43.67666665712932,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 990,
+                "total": 5056.205002486706,
+                "p50": 5.4200000166893005,
+                "p95": 10.080000042915344,
+                "p99": 12.894999980926514,
+                "max": 18.27999997138977,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 990,
+                "total": 6921.824997186661,
+                "p50": 6.069999992847443,
+                "p95": 15.504999995231628,
+                "p99": 23.164999961853027,
+                "max": 33.314999997615814,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 990,
+                "total": 11978.029999673367,
+                "p50": 11.414999961853027,
+                "p95": 21.289999961853027,
+                "p99": 28.7049999833107,
+                "max": 42.69499999284744,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 1405,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 14033.333333333334,
+                "submittedAtMs": 14034.314999997616,
+                "firstWireAtMs": 14043.694999992847,
+                "presentationObservedAtMs": 14077.009999990463,
+                "captureFrame": 792,
+                "presentationFrontier": 793,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 42.69499999284744
+              },
+              {
+                "sequence": 1281,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13016.666666666666,
+                "submittedAtMs": 13016.824999988079,
+                "firstWireAtMs": 13022.245000004768,
+                "presentationObservedAtMs": 13053.560000002384,
+                "captureFrame": 735,
+                "presentationFrontier": 736,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 36.735000014305115
+              },
+              {
+                "sequence": 1871,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 17866.666666666668,
+                "submittedAtMs": 17867.54500001669,
+                "firstWireAtMs": 17876.25,
+                "presentationObservedAtMs": 17902.90499997139,
+                "captureFrame": 1017,
+                "presentationFrontier": 1018,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 35.35999995470047
+              },
+              {
+                "sequence": 2036,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 19225,
+                "submittedAtMs": 19228.769999980927,
+                "firstWireAtMs": 19233.12999999523,
+                "presentationObservedAtMs": 19262.365000009537,
+                "captureFrame": 1097,
+                "presentationFrontier": 1098,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 33.59500002861023
+              },
+              {
+                "sequence": 238,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 4441.666666666667,
+                "submittedAtMs": 4449.620000004768,
+                "firstWireAtMs": 4452.474999964237,
+                "presentationObservedAtMs": 4482.745000004768,
+                "captureFrame": 241,
+                "presentationFrontier": 242,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 33.125
+              }
+            ]
+          }
+        },
+        {
+          "side": 1,
+          "window": [
+            "complete"
+          ],
+          "logicHz": 57.982696712748755,
+          "newStateHz": 57.93129507743336,
+          "newStateRafGapMs": {
+            "count": 1018,
+            "total": 17572.539999999986,
+            "p50": 18.170000000000073,
+            "p95": 24.215000000000146,
+            "p99": 24.270000000000437,
+            "max": 34.44000000000051,
+            "over25ms": 7,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "newStatePageGapMs": {
+            "count": 1018,
+            "total": 17567.985000014305,
+            "p50": 17.530000030994415,
+            "p95": 26.759999990463257,
+            "p99": 32.33500003814697,
+            "max": 37.86999994516373,
+            "over25ms": 75,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "maximumRafGap": {
+            "fromSample": 1714,
+            "toSample": 1717,
+            "rafTimestampMs": 34.44000000000051,
+            "sampledAtMs": 36.4200000166893,
+            "frontierDelta": 2,
+            "nextDelta": 2,
+            "rendererSubmissions": 2,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "maximumPageGap": {
+            "fromSample": 1737,
+            "toSample": 1742,
+            "rafTimestampMs": 30.30000000000109,
+            "sampledAtMs": 37.86999994516373,
+            "frontierDelta": 1,
+            "nextDelta": 1,
+            "rendererSubmissions": 1,
+            "fromSessionPhase": 1,
+            "toSessionPhase": 1
+          },
+          "wholeNativeCallbackWallMs": {
+            "count": 2855,
+            "total": 7796.540000140667,
+            "p50": 0.004999995231628418,
+            "p95": 9.129999995231628,
+            "p99": 10.024999976158142,
+            "max": 16.444999992847443,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryCallbackWallMs": {
+            "count": 230,
+            "total": 684.74000030756,
+            "p50": 2.8350000381469727,
+            "p99": 5.050000011920929,
+            "max": 6.069999992847443
+          },
+          "ordinaryWorldSaves": {
+            "count": 230,
+            "total": 230,
+            "p50": 1,
+            "p99": 1,
+            "max": 1
+          },
+          "stats": [
+            1204,
+            1201,
+            955,
+            3932,
+            1204,
+            0,
+            1,
+            1201
+          ],
+          "bodyCorrections": 825,
+          "bodyResimulated": 3369,
+          "pacing": {
+            "scope": "All chronological body callbacks; each native row indexed into the sample array.",
+            "missing": {
+              "count": 2855,
+              "total": 11278,
+              "p50": 4,
+              "p99": 5,
+              "max": 6
+            },
+            "backlog": {
+              "count": 2855,
+              "total": 12,
+              "p50": 0,
+              "p99": 0,
+              "max": 2
+            },
+            "networkScale": {
+              "count": 2855,
+              "total": 2882.7569999999837,
+              "p50": 1,
+              "p99": 1.22,
+              "max": 1.413
+            },
+            "effectiveScale": {
+              "count": 2855,
+              "total": 2885.199000000025,
+              "p50": 1,
+              "p99": 1.22,
+              "max": 1.413
+            }
+          },
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723702900.12,
+              "startedAt": 3205.835000038147,
+              "endedAt": 24202.3900000453
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 1,
+              "startMs": 2637,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "86253bf66816a00d688e2e8f2a9e2909778be3f0adda5045aab7c6014a2c1483",
+            "counts": {
+              "plannedEvents": 14382,
+              "dueEvents": 2252,
+              "futureCensoredEvents": 12130,
+              "plannedNativeEvents": 14382,
+              "dueNativeEvents": 2252,
+              "submittedEvents": 1640,
+              "rawNativeCalls": 1640,
+              "coalescedMoves": 611,
+              "notSubmitted": 1,
+              "attributedCaptures": 816,
+              "renderProgressObservedEvents": 816,
+              "submittedWithoutAttributableChangedWire": 824,
+              "packets": 2067,
+              "duplicates": 8932,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1204,
+              "analogActiveFrames": 821,
+              "targetChanges": 812,
+              "newFrontierCallbacks": 1200,
+              "newPresentedCallbacks": 1200,
+              "forwardFrames": 1203,
+              "positionChangedObservations": 1063
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 824,
+              "render-progress-after-conditional-wire": 816,
+              "coalesced-before-submit": 611,
+              "not-submitted": 1
+            },
+            "submissionLatenessMs": {
+              "count": 1640,
+              "total": 5766.643306096414,
+              "p50": 3.240000009536743,
+              "p95": 7.8566666642818745,
+              "p99": 8.569999992847443,
+              "max": 16.810000002384186,
+              "over50ms": 0,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 816,
+              "plannedToRenderProgressMs": {
+                "count": 816,
+                "total": 12972.869986474525,
+                "p50": 15.936666647592574,
+                "p95": 24.044999957084656,
+                "p99": 28.58333333333303,
+                "max": 35.519999980926514,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 816,
+                "total": 4506.97999894619,
+                "p50": 5.635000050067902,
+                "p95": 10.410000026226044,
+                "p99": 11.840000033378601,
+                "max": 17.5799999833107,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 816,
+                "total": 5992.960000395775,
+                "p50": 7.694999992847443,
+                "p95": 12.944999992847443,
+                "p99": 18.930000007152557,
+                "max": 21.52999997138977,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 816,
+                "total": 10499.939999341965,
+                "p50": 12.469999969005585,
+                "p95": 20.4549999833107,
+                "p99": 26.74500000476837,
+                "max": 28.844999969005585,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 772,
+              "plannedToRenderProgressMs": {
+                "count": 772,
+                "total": 12303.784987092033,
+                "p50": 15.936666647592574,
+                "p95": 24.176666657131136,
+                "p99": 28.63333334525487,
+                "max": 35.519999980926514,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 772,
+                "total": 4257.439998984337,
+                "p50": 5.634999990463257,
+                "p95": 10.410000026226044,
+                "p99": 11.840000033378601,
+                "max": 17.5799999833107,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 772,
+                "total": 5701.220000386238,
+                "p50": 7.759999990463257,
+                "p95": 12.985000014305115,
+                "p99": 19.094999969005585,
+                "max": 21.52999997138977,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 772,
+                "total": 9958.659999370575,
+                "p50": 12.469999969005585,
+                "p95": 20.50499999523163,
+                "p99": 26.855000019073486,
+                "max": 28.844999969005585,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 1345,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13591.666666666666,
+                "submittedAtMs": 13594.745000004768,
+                "firstWireAtMs": 13605.414999961853,
+                "presentationObservedAtMs": 13623.589999973774,
+                "captureFrame": 768,
+                "presentationFrontier": 769,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.844999969005585
+              },
+              {
+                "sequence": 236,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 4550,
+                "submittedAtMs": 4556.919999957085,
+                "firstWireAtMs": 4563.990000009537,
+                "presentationObservedAtMs": 4585.5199999809265,
+                "captureFrame": 248,
+                "presentationFrontier": 249,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.600000023841858
+              },
+              {
+                "sequence": 1309,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13316.666666666666,
+                "submittedAtMs": 13316.95499998331,
+                "firstWireAtMs": 13325.974999964237,
+                "presentationObservedAtMs": 13345.300000011921,
+                "captureFrame": 754,
+                "presentationFrontier": 755,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.34500002861023
+              },
+              {
+                "sequence": 1413,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 14158.333333333334,
+                "submittedAtMs": 14158.379999995232,
+                "firstWireAtMs": 14168.169999957085,
+                "presentationObservedAtMs": 14186.629999995232,
+                "captureFrame": 800,
+                "presentationFrontier": 801,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.25
+              },
+              {
+                "sequence": 290,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 5000,
+                "submittedAtMs": 5003.305000007153,
+                "firstWireAtMs": 5012.414999961853,
+                "presentationObservedAtMs": 5031.344999969006,
+                "captureFrame": 272,
+                "presentationFrontier": 273,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.039999961853027
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

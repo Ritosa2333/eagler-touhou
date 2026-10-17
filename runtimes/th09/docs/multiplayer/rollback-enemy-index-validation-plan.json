@@ -1,0 +1,143 @@
+{
+  "schema": "th09-enemy-index-validation-plan-v1",
+  "declaredDateUtc": "2026-10-11",
+  "status": "declared-before-new-browser-runs",
+  "worktree": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+  "headAtDeclaration": "5d4b7f0a1cc047143e3f5da5ed3749ad5af9b897",
+  "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
+  "candidate": {
+    "name": "E enemy fixed-pool first-write index",
+    "wasmSha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577",
+    "artifact": "th09_web/artifacts/rollback4x-enemy-index-release",
+    "productionChanges": [
+      "th09_web/cpp/multiplayer/WorldState.cpp",
+      "th09_web/cpp/multiplayer/WorldState.hpp"
+    ]
+  },
+  "baseline": {
+    "name": "B input-send-batch scalar",
+    "wasmSha256": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97",
+    "artifact": "th09_web/artifacts/rollback4x-chain-input-batch-release"
+  },
+  "controlled": {
+    "label": "rollback4x-enemy-index-deep8-cpu4-01",
+    "artifact": "th09_web/artifacts/rollback4x-enemy-index-live",
+    "frames": 1800,
+    "fixedDelayFrames": 8,
+    "inputDelayFrames": 0,
+    "forceCorrection": true,
+    "inputTrace": "charged-strafe-alternating-focus",
+    "deliveryClock": "frontier",
+    "captureTrace": true,
+    "adonisMode": 0,
+    "cpuRate": 4,
+    "hostLoad": true,
+    "maximumIterations": 19800,
+    "harnessSha256": "a7cf46dfe2550fec3f7ebe2d5e991453dbbe23c658a602e0e69afddd7a428aa5",
+    "wasmSha256": "59364fa88a9a23913fe2d808ae6e303790dcb1c1533f5e4d4e5893d14fde4877",
+    "scope": "Three sequential worlds in one throttled renderer; manual native ticks. Correctness and recovery call pressure, not real RTC, native rAF presentation cadence or game FPS.",
+    "gates": [
+      "1800 logical frames and confirmed endpoint per peer",
+      "once-only physical input tape",
+      "sustained requested depth 8",
+      "exact-input third-world hash",
+      "48-field world audit",
+      "framebuffer equality",
+      "Replay byte equality"
+    ]
+  },
+  "releaseSeries": {
+    "sequence": [
+      {
+        "label": "rollback4x-enemy-index-relay39-b1",
+        "build": "B"
+      },
+      {
+        "label": "rollback4x-enemy-index-relay39-e1",
+        "build": "E"
+      },
+      {
+        "label": "rollback4x-enemy-index-relay39-e2",
+        "build": "E"
+      },
+      {
+        "label": "rollback4x-enemy-index-relay39-b2",
+        "build": "B"
+      }
+    ],
+    "frozenIdentity": {
+      "harness": "dde1d2e8f744b33e2eb56337ada81524083f334cd5b897c1dbb57bbf17a74fec",
+      "smoothnessWindow": "9c46c45b275b5b57912a62c58dbc309dfe3eec2bff6b788a2370ce6c214c0546",
+      "rafAnomalyProbe": "f33bf25b07b99dc2e8ae5485138f31c21eed2a54ee564899847907f891eab5f4"
+    },
+    "frames": 1800,
+    "formalFrameBoundaries": [
+      180,
+      1800
+    ],
+    "windowSchema": "continuous-prediction-frontier-v1",
+    "inputMode": "tape",
+    "inputDelayFrames": 0,
+    "cpuRatesBySide": [
+      1,
+      4
+    ],
+    "headedControl": true,
+    "nativeGpu": true,
+    "impairmentSite": "independent-relay",
+    "delayPerDirectionMs": 39,
+    "jitterPerDirectionMs": 5,
+    "dropEvery": 0,
+    "burst": false,
+    "audioOutput": true,
+    "hostLoad": true,
+    "rafDiagnostics": true,
+    "rafAnomaly": true,
+    "relayTrace": true,
+    "responsiveness": false,
+    "networkTrace": false,
+    "liveCost": false,
+    "profileCpu": false,
+    "chromeSchedulerTrace": false,
+    "startupTrace": false,
+    "scope": "Same frozen harness/helper, build flags and deterministic frame input tape. Actual correction depth and host activity remain observed variables; ABBA ordering cannot eliminate host or network variance."
+  },
+  "inputResponseFollowup": {
+    "label": "rollback4x-enemy-index-burst-response-01",
+    "build": "E",
+    "frames": 1800,
+    "inputMode": "wall-clock",
+    "responsiveness": true,
+    "delayPerDirectionMs": 39,
+    "jitterPerDirectionMs": 5,
+    "burstAtRelayClockMs": 20000,
+    "burstForMs": 500,
+    "burstDelayMs": 120,
+    "condition": "After candidate correctness gates pass. Same CPU, headed and diagnostic controls as the release series.",
+    "scope": "Independent input intent completeness plus observed capture/presentation latency; retain short held-mask misses and include startup/tail."
+  },
+  "interpretation": {
+    "primary": [
+      "Continuous new-state rate and p50/p95/p99/max intervals including terminal closure",
+      "C++ callback elapsed work distribution, correction and resimulation counts",
+      "Once-only/confirmed-state correctness",
+      "Anomaly request identity and coverage/censoring",
+      "Network gap and pacing together with host activity",
+      "Independent response cohort including missing captures"
+    ],
+    "notAcceptance": [
+      "Build/test exit 0 alone",
+      "Averages hiding long stalls",
+      "Full trace or anomaly collector success",
+      "No eligible 250 ms episode in a finite sample",
+      "A single improvement under changing host load",
+      "Manual controlled-tick throughput treated as rAF FPS"
+    ],
+    "failures": "Retain all labels and failures. A correctness regression blocks candidate adoption and is investigated before continuing dependent performance gates; infrastructure failures are recorded with any explicit protocol revision. No silent reruns or discarded noisy samples."
+  },
+  "operational": {
+    "environment": "nig only",
+    "heavyWork": "All builds, browser runs, performance and test commands serialized by root; read-only offline review may overlap.",
+    "repository": "Local reviewable commits only; no push, merge, deploy, canonical edits or unrelated process termination."
+  }
+}

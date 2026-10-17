@@ -1,0 +1,266 @@
+{
+  "schema": "th09/desktop-recovery-tail-correctness/1",
+  "createdAt": "2026-10-11T12:10:38.084Z",
+  "scope": "Desktop controlled game_tick and pure WASI correctness; no phone, RTC, independent peer renderer pacing or gameplay performance acceptance",
+  "components": [
+    {
+      "suite": "session",
+      "passed": true,
+      "identity": {
+        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/session-report.json",
+        "bytes": 26457,
+        "sha256": "8877b4f0d6c2b2ca6fa3cb84cc5ce3d345f491d4f4bbb3dfaa91df201eca8aba"
+      },
+      "wasmSha256": "bc32f59b99195b5c77eab30b7bd4aac25cdcf8e196a09e5cc14f202eb2eb5172",
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance"
+    },
+    {
+      "suite": "adonis",
+      "passed": true,
+      "identity": {
+        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/adonis-report.json",
+        "bytes": 26630,
+        "sha256": "4b0505d150bbcfbe4c5f3afa35eaf3540c573201225922873847da3527422102"
+      },
+      "wasmSha256": "1f3b085c8117879f63b7be9ae5df9839ab5459044e8b6b80e6899388d582b690",
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance"
+    },
+    {
+      "suite": "mobile-prediction",
+      "passed": true,
+      "identity": {
+        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/mobile-prediction-report.json",
+        "bytes": 26641,
+        "sha256": "73d98fff32b0d1ff2384cdfd746b6abb5c4ad13589b12bd2adc13c0ca6008390"
+      },
+      "wasmSha256": "5c4ed9029afe2e3012d00db305a8a079ed02b011416539395f4cbb908f6792b7",
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance"
+    },
+    {
+      "suite": "frame-schedule",
+      "passed": true,
+      "identity": {
+        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/frame-schedule-report.json",
+        "bytes": 25582,
+        "sha256": "152646ab9ec96aedff42d42ddcefffa83c01a13a1ebdb01012a5a18b34c15fda"
+      },
+      "wasmSha256": "35eb3f879fdb30611f134164e54baca944f15860cf355cb6f0fde13970052cc2",
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance"
+    }
+  ],
+  "oracle": {
+    "raw": {
+      "path": "th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-joystick-h8-oracle-c1-report.json",
+      "bytes": 1912992,
+      "sha256": "942aa23bd1f6635f3df74360a7e74eceed421a021c927d6ff761dbb1e1ee3c99"
+    },
+    "passed": true,
+    "identity": {
+      "harness": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+      "touchProbe": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785",
+      "fixture": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+      "build": "48d5f00676c193c98a8e1da2311f3f25465246d483ac282295c1ae7774dd5d9a",
+      "wasm": "866f8238480a8b65e96a37d765887f570257225af52c45924bbe0ef762128c9c",
+      "loader": "2bf5b47085a738be71e5a4f29a00fbbbed87085ef1bd66f41c1a3e02bbf62195",
+      "hostLoadProbe": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca"
+    },
+    "parameters": {
+      "mode": 0,
+      "delay": 0,
+      "limit": 600,
+      "hardware": true,
+      "touchProfile": "joystick",
+      "sourceHz": 120,
+      "deliveryClock": "frontier",
+      "fixedDelay": 8,
+      "cpuRate": 4,
+      "hostLoad": true,
+      "maximumIterations": 10000,
+      "inputClock": "Scheduled milliseconds converted from monotonic local capture slot / 60. This is a deterministic oracle stimulus, not independent wall-clock input.",
+      "transportClock": "Receiving peer monotonic simulated frontier; bounded delivery-only tail after DEV frame limit",
+      "cpuThrottle": {
+        "method": "CDP Emulation.setCPUThrottlingRate",
+        "rate": 4,
+        "scope": "All three same-origin worlds share this throttled renderer and execute sequentially. No per-peer CPU isolation or gameplay Hz claim."
+      }
+    },
+    "browserVersion": "153.0.8010.12",
+    "summary": [
+      [
+        600,
+        600,
+        519,
+        4132,
+        600,
+        267,
+        1,
+        600
+      ],
+      [
+        600,
+        600,
+        522,
+        4167,
+        600,
+        263,
+        1,
+        600
+      ]
+    ],
+    "hashes": [
+      1960487508,
+      1960487508,
+      1960487508
+    ],
+    "confirmedChecks": 5,
+    "confirmedHashes": [
+      [
+        [
+          120,
+          485315997
+        ],
+        [
+          240,
+          659966169
+        ],
+        [
+          360,
+          4117529842
+        ],
+        [
+          480,
+          3653979516
+        ],
+        [
+          600,
+          1960487508
+        ]
+      ],
+      [
+        [
+          120,
+          485315997
+        ],
+        [
+          240,
+          659966169
+        ],
+        [
+          360,
+          4117529842
+        ],
+        [
+          480,
+          3653979516
+        ],
+        [
+          600,
+          1960487508
+        ]
+      ]
+    ],
+    "referenceHashes": [
+      [
+        120,
+        485315997
+      ],
+      [
+        240,
+        659966169
+      ],
+      [
+        360,
+        4117529842
+      ],
+      [
+        480,
+        3653979516
+      ],
+      [
+        600,
+        1960487508
+      ]
+    ],
+    "audits": {
+      "wordCounts": [
+        48,
+        48,
+        48
+      ],
+      "sha256": [
+        "af8dc77906c57aaf8b54e82ee42b5e2b1fe9b4126623a016d1b3755c9fbf6215",
+        "af8dc77906c57aaf8b54e82ee42b5e2b1fe9b4126623a016d1b3755c9fbf6215",
+        "af8dc77906c57aaf8b54e82ee42b5e2b1fe9b4126623a016d1b3755c9fbf6215"
+      ],
+      "equal": true
+    },
+    "framebuffersEqual": true,
+    "replayBytes": 10636,
+    "replaySha256": "3ec779cbeb310057262a719e532927230943ca427f4ef3df03189fe38790653e",
+    "tapeSha256": "a63b29a756eac6ef864e7ff6fa111cda1952cb507258f53689d760a7e1ba3b19",
+    "localTapeSha256": [
+      "212409ce6105200fabf2deb6c8024aec048d9c9155ff422deacd7a477942d5d9",
+      "20c932797d632179b63e3d5999d987ff5937228c8dfe68f6c3b647389e2a13d5"
+    ],
+    "activity": [
+      {
+        "rawEvents": 738,
+        "analogActiveFrames": 400,
+        "targetChangedFrames": 354,
+        "positionChangedObservations": 395,
+        "newFrontierObservations": 600,
+        "maxRestoredDepth": 8,
+        "partialRecoveryCalls": 413,
+        "maxResimulatedInOneCall": 8
+      },
+      {
+        "rawEvents": 744,
+        "analogActiveFrames": 393,
+        "targetChangedFrames": 359,
+        "positionChangedObservations": 385,
+        "newFrontierObservations": 600,
+        "maxRestoredDepth": 8,
+        "partialRecoveryCalls": 409,
+        "maxResimulatedInOneCall": 8
+      }
+    ],
+    "measured": [
+      {
+        "allCalls": {
+          "count": 1806,
+          "p50": 11.245000004768372,
+          "p95": 33.83499997854233,
+          "p99": 46.04000002145767,
+          "max": 79.2150000333786,
+          "total": 25161.975001692772
+        },
+        "resimulated": 4132,
+        "legacyFrameFiltered": null,
+        "method": "Sequential explicit game_tick call work including all waits/recovery; not rAF or gameplay Hz. Legacy frame filters retained only for legacy profile."
+      },
+      {
+        "allCalls": {
+          "count": 1806,
+          "p50": 11.365000009536743,
+          "p95": 34.625,
+          "p99": 49.485000014305115,
+          "max": 65.53500002622604,
+          "total": 25729.42000055313
+        },
+        "resimulated": 4167,
+        "legacyFrameFiltered": null,
+        "method": "Sequential explicit game_tick call work including all waits/recovery; not rAF or gameplay Hz. Legacy frame filters retained only for legacy profile."
+      }
+    ],
+    "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "iterations": 1806,
+    "waits": [
+      1206,
+      1205
+    ],
+    "cleanup": {
+      "complete": true,
+      "errors": []
+    }
+  }
+}

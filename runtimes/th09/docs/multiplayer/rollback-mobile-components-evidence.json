@@ -1,0 +1,160 @@
+{
+  "schema": "th09/mobile-components-evidence/1",
+  "createdAt": "2026-10-11T03:57:19.735Z",
+  "passed": true,
+  "scope": "Three component suites using the actual TH09 adapter/shared input protocol and model state oracle. Not full WorldState, browser cadence, phone hardware or input-to-photon acceptance.",
+  "invocation": {
+    "startedAt": "2026-10-11T03:55:11.373Z",
+    "endedAt": "2026-10-11T03:55:29.245Z",
+    "elapsedMs": 17871.854600000002,
+    "status": 0,
+    "signal": null,
+    "args": [
+      "th09_web/tests/multiplayer/run-tests.mjs",
+      "session",
+      "adonis",
+      "mobile-prediction"
+    ],
+    "runLabel": "mobile-rollback-components-01",
+    "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
+    "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
+    "scriptSha256": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
+    "scriptAfterSha256": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
+    "identityBefore": {
+      "th09_web/tests/multiplayer/run-tests.mjs": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
+      "th09_web/tests/multiplayer/session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259",
+      "th09_web/tests/multiplayer/adonis.cpp": "550158756adc43cfbe57a46e34791ee2392802bb096c0ca096539b3403d99d35",
+      "th09_web/tests/multiplayer/mobile-prediction.cpp": "02b612bd5ceeebe5e28ecea42950fe8cefd715fca9c915b30a3461f3c4bc4272",
+      "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+      "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
+    },
+    "identityAfter": {
+      "th09_web/tests/multiplayer/run-tests.mjs": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
+      "th09_web/tests/multiplayer/session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259",
+      "th09_web/tests/multiplayer/adonis.cpp": "550158756adc43cfbe57a46e34791ee2392802bb096c0ca096539b3403d99d35",
+      "th09_web/tests/multiplayer/mobile-prediction.cpp": "02b612bd5ceeebe5e28ecea42950fe8cefd715fca9c915b30a3461f3c4bc4272",
+      "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+      "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
+    },
+    "identityError": null,
+    "build": null,
+    "reference": null,
+    "declaredParameters": {
+      "suites": [
+        "session",
+        "adonis",
+        "mobile-prediction"
+      ],
+      "scope": "Component actual adapter/wire/model oracles, not full game/mobile performance",
+      "mode": 0,
+      "inputDelay": 0,
+      "history": 8
+    },
+    "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01-process.log",
+    "logSha256": "2351c3aa7cd68f79dd1373fc8ef2d3d2f27080ac3b99a02f3dae5a89731b9729",
+    "stdoutBytes": 9079,
+    "stderrBytes": 167,
+    "artifact": {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01-invocation.json",
+      "bytes": 2702,
+      "sha256": "487bd9a4951caed0ff3b0461cbf46b55cc33b48f8f474d73ac8d7b7ed25e2cff"
+    }
+  },
+  "suites": [
+    {
+      "suite": "session",
+      "passed": true,
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance",
+      "wasmSha256": "af79605963a12e91acd8fdfca5c88cf5de97f782fc5a9f978def26791398eb23",
+      "compiler": "clang version 23.1.0-rc3 (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)\nTarget: wasm32-unknown-wasip1\nThread model: posix\nInstalledDir: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\nConfiguration file: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\\clang++.cfg",
+      "flags": [
+        "-std=c++17",
+        "-O2",
+        "-g",
+        "-ffp-contract=off",
+        "-fno-exceptions",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer"
+      ],
+      "headerCount": 141,
+      "sourceCount": 6,
+      "sources": {
+        "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259",
+        "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer\\RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplayCore.cpp": "da1ccd45031cc6ddb8702e9357b031fa2bbb38754b9382f3dadab69f963c90b0",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplayProtocol.cpp": "1a5f3ba6ed1884b83c24c6d2d558922163dc878eb18879f72059dd7688e7bfeb",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplaySession.cpp": "3481ea7c9821c28f0b96ba15fe8fb5292bd1d28116f9f904078bd50864b05ea8",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\SessionChannel.cpp": "29c6e89b7ba7a4be8bcc6bd359b7600005440bded3e6d44722e942e4407692a1"
+      },
+      "report": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01\\session-report.json",
+        "bytes": 26691,
+        "sha256": "618888a4cad800a249623b073dbfba18ae918bd42aa6797b38bd76967f9e032e"
+      }
+    },
+    {
+      "suite": "adonis",
+      "passed": true,
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance",
+      "wasmSha256": "4dc7072a51e0131242eaee0f2035ef21d7693996c88344a90d43e0898d00a237",
+      "compiler": "clang version 23.1.0-rc3 (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)\nTarget: wasm32-unknown-wasip1\nThread model: posix\nInstalledDir: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\nConfiguration file: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\\clang++.cfg",
+      "flags": [
+        "-std=c++17",
+        "-O2",
+        "-g",
+        "-ffp-contract=off",
+        "-fno-exceptions",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer"
+      ],
+      "headerCount": 141,
+      "sourceCount": 7,
+      "sources": {
+        "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\adonis.cpp": "550158756adc43cfbe57a46e34791ee2392802bb096c0ca096539b3403d99d35",
+        "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer\\RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplayCore.cpp": "da1ccd45031cc6ddb8702e9357b031fa2bbb38754b9382f3dadab69f963c90b0",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplayProtocol.cpp": "1a5f3ba6ed1884b83c24c6d2d558922163dc878eb18879f72059dd7688e7bfeb",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplaySession.cpp": "3481ea7c9821c28f0b96ba15fe8fb5292bd1d28116f9f904078bd50864b05ea8",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\SessionChannel.cpp": "29c6e89b7ba7a4be8bcc6bd359b7600005440bded3e6d44722e942e4407692a1",
+        "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259"
+      },
+      "report": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01\\adonis-report.json",
+        "bytes": 26866,
+        "sha256": "a078becc3399f58124491b8d69d56571d19fbe25c38c95ffb8109ae187bd2ced"
+      }
+    },
+    {
+      "suite": "mobile-prediction",
+      "passed": true,
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance",
+      "wasmSha256": "fe915e9d34416b3523900bb197b5774d6caa58b5a1035d677478d71a3682fae7",
+      "compiler": "clang version 23.1.0-rc3 (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)\nTarget: wasm32-unknown-wasip1\nThread model: posix\nInstalledDir: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\nConfiguration file: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\\clang++.cfg",
+      "flags": [
+        "-std=c++17",
+        "-O2",
+        "-g",
+        "-ffp-contract=off",
+        "-fno-exceptions",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer"
+      ],
+      "headerCount": 141,
+      "sourceCount": 7,
+      "sources": {
+        "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\mobile-prediction.cpp": "02b612bd5ceeebe5e28ecea42950fe8cefd715fca9c915b30a3461f3c4bc4272",
+        "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer\\RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplayCore.cpp": "da1ccd45031cc6ddb8702e9357b031fa2bbb38754b9382f3dadab69f963c90b0",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplayProtocol.cpp": "1a5f3ba6ed1884b83c24c6d2d558922163dc878eb18879f72059dd7688e7bfeb",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\NetplaySession.cpp": "3481ea7c9821c28f0b96ba15fe8fb5292bd1d28116f9f904078bd50864b05ea8",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\SessionChannel.cpp": "29c6e89b7ba7a4be8bcc6bd359b7600005440bded3e6d44722e942e4407692a1",
+        "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259"
+      },
+      "report": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01\\mobile-prediction-report.json",
+        "bytes": 26877,
+        "sha256": "9602fe102b27e5e1477d4fb961312991d53c9b89bceac61cfa7f12e5819b9bfc"
+      }
+    }
+  ]
+}

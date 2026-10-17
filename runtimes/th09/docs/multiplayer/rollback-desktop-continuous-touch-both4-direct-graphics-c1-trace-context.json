@@ -1,0 +1,2754 @@
+{
+  "schema": "th09-graphics-qualified-window-context/v1",
+  "raw": {
+    "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-failure.json",
+    "bytes": 71766293,
+    "sha256": "9c7ffe42fab18919260f6a9811d1c143e1992138957a46b667c08b7dfdc64812"
+  },
+  "timing": {
+    "path": "docs/multiplayer/rollback-desktop-continuous-touch-both4-direct-graphics-c1-timing.json",
+    "bytes": 478705,
+    "sha256": "7cb1d9db0a28880af8a31dbff9c67d7896a3783d0c790802329c002d43d910ed"
+  },
+  "general": {
+    "path": "docs/multiplayer/rollback-desktop-continuous-touch-both4-direct-graphics-c1-evidence.json",
+    "bytes": 105635,
+    "sha256": "81b624c088bfb436cfd48f773e3eacd49edd3ac0366b563628f0d5f5408f53c2"
+  },
+  "scope": "Same-run GPU/viz closed X spans with own Page clock offset uncertainty; not task/cc or hardware execution coverage. B/E and async events counted but not converted to intervals. Run failed final RTC endpoint after completed gameplay; collection and body qualified separately. No >50 ms new-state interval reproduced, so this cannot identify the earlier 150 ms stall or constitute a production repair.",
+  "traces": [
+    {
+      "side": 0,
+      "artifact": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-P1-scheduler-trace.json",
+        "bytes": 45036852,
+        "sha256": "c3c366ce355deeca3de986d075bf676af6e8ca273ebabb3034a31a8803d2b2ae"
+      },
+      "status": "stopped",
+      "profile": "graphics",
+      "collectionValid": true,
+      "clock": {
+        "traceTimestampUnit": "microseconds",
+        "pageTimestampUnit": "milliseconds",
+        "mapping": "traceTs/1000 = pagePerformanceNow + offsetMs",
+        "timeOriginIsNotTraceOrigin": true,
+        "quantizationAllowanceMs": 0.1,
+        "matches": [
+          {
+            "stage": "armed",
+            "name": "th09-sched-armed",
+            "before": 7191.110000014305,
+            "after": 7192.324999988079,
+            "timeOrigin": 1791717281873.36,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 8628,
+              "tid": 35080,
+              "ts": 276201528659
+            },
+            "offsetMs": [
+              276194336.23399997,
+              276194337.649
+            ]
+          },
+          {
+            "stage": "first-active",
+            "name": "th09-sched-first-active",
+            "before": 9952.004999995232,
+            "after": 9952.189999997616,
+            "timeOrigin": 1791717281873.36,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 8628,
+              "tid": 35080,
+              "ts": 276204288959
+            },
+            "offsetMs": [
+              276194336.66899997,
+              276194337.054
+            ]
+          },
+          {
+            "stage": "capture-stop",
+            "name": "th09-sched-capture-stop",
+            "before": 30132.150000035763,
+            "after": 30132.32499998808,
+            "timeOrigin": 1791717281873.36,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 8628,
+              "tid": 35080,
+              "ts": 276224469103
+            },
+            "offsetMs": [
+              276194336.678,
+              276194337.053
+            ]
+          }
+        ],
+        "matchedMarks": 3,
+        "sameThread": true,
+        "samePageTimeOrigin": true,
+        "clockMapped": true,
+        "offsetIntersectionMs": [
+          276194336.678,
+          276194337.053
+        ],
+        "maximumBracketWidthMs": 1.2149999737739563,
+        "distinctMarkSpanMs": 22939.825000047684,
+        "renderer": {
+          "pid": 8628,
+          "tid": 35080
+        }
+      },
+      "capture": {
+        "nodeStartedAt": 9137.3058,
+        "nodeStopRequestedAt": 32078.4586,
+        "nodeEndRequestedAt": 32083.9989,
+        "nodeCompletedAt": 47025.5231,
+        "nodeStoppedAt": 47591.8612,
+        "reason": "capture-stop",
+        "deadlineFired": false,
+        "chromeBufferFull": false,
+        "bufferHighWater": false,
+        "bufferHighWaterThreshold": 0.8,
+        "firstBufferHighWater": null,
+        "censored": false,
+        "tracingCompleteReceived": true,
+        "dataLossOccurred": false,
+        "endRequests": 1
+      },
+      "errors": [],
+      "overflow": {
+        "events": 0,
+        "bytes": 0,
+        "bufferUsage": 0,
+        "marks": 0,
+        "errors": 0,
+        "names": 0,
+        "threads": 0,
+        "firstAt": null,
+        "firstTraceTs": null
+      },
+      "counts": {
+        "batches": 1687,
+        "rawEvents": 279413,
+        "retainedEvents": 279363,
+        "droppedEvents": 50,
+        "droppedFields": 323569,
+        "malformedEvents": 0,
+        "retainedDataJsonBytes": 80527855,
+        "unknownEventNames": 264003,
+        "errors": 0
+      },
+      "sourceIdentity": {
+        "before": {
+          "helper": {
+            "bytes": 26116,
+            "sha256": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273"
+          },
+          "harness": {
+            "bytes": 70924,
+            "sha256": "2998a975240915b1ceb7a4dc015cf0471328ed9e9565cf14eea52f83986c634c"
+          }
+        },
+        "after": {
+          "helper": {
+            "bytes": 26116,
+            "sha256": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273"
+          },
+          "harness": {
+            "bytes": 70924,
+            "sha256": "2998a975240915b1ceb7a4dc015cf0471328ed9e9565cf14eea52f83986c634c"
+          }
+        },
+        "stable": true
+      },
+      "coverage": {
+        "clockMapped": true,
+        "allThreeMarks": true,
+        "marksOrdered": true,
+        "requestedCategories": [
+          "gpu",
+          "viz",
+          "blink.user_timing"
+        ],
+        "activeWindowCovered": true,
+        "categories": {
+          "gpu": 130651,
+          "viz": 148694,
+          "blink.user_timing": 3
+        },
+        "schedulerObserved": null,
+        "compositorObserved": null,
+        "gpuObserved": true,
+        "renderer": {
+          "pid": 8628,
+          "tid": 35080
+        },
+        "limitation": "No events is not evidence of idle. Match the retained complete time window to existing rAF requests; a non-reproduced stall is not a repair.",
+        "threadCount": 15,
+        "unknownNameCount": 91
+      },
+      "phaseCounts": {
+        "M": 15,
+        "I": 27901,
+        "X": 141377,
+        "s": 44206,
+        "f": 44206,
+        "C": 936,
+        "b": 8558,
+        "e": 8558,
+        "n": 3606
+      },
+      "namedCounts": [
+        [
+          "ExternalBeginFrameSource::OnBeginFrame",
+          7437
+        ],
+        [
+          "DisplayScheduler::OnBeginFrameDeadline",
+          3097
+        ],
+        [
+          "DisplayScheduler::DrawAndSwap",
+          1202
+        ],
+        [
+          "Display::DrawAndSwap",
+          1202
+        ],
+        [
+          "DirectRenderer::DrawFrame",
+          1202
+        ],
+        [
+          "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+          1202
+        ],
+        [
+          "thread_name",
+          11
+        ],
+        [
+          "process_name",
+          4
+        ],
+        [
+          "th09-sched-armed",
+          1
+        ],
+        [
+          "th09-sched-first-active",
+          1
+        ],
+        [
+          "th09-sched-capture-stop",
+          1
+        ]
+      ],
+      "activePageWindow": [
+        13046.665000021458,
+        30040.17000001669
+      ],
+      "activeClosedXCount": 117209,
+      "longestActiveClosedX": [
+        {
+          "eventIndex": 139521,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 24.118,
+          "threadDurationUs": 381,
+          "pageStartRangeMs": [
+            26538.79500001669,
+            26539.17000001669
+          ],
+          "pageEndRangeMs": [
+            26562.913000047207,
+            26563.288000047207
+          ],
+          "overlapBoundsMs": [
+            23.743000030517578,
+            24.493000030517578
+          ]
+        },
+        {
+          "eventIndex": 139525,
+          "cat": "viz",
+          "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+          "nameHash": null,
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.967,
+          "threadDurationUs": 233,
+          "pageStartRangeMs": [
+            26538.944000005722,
+            26539.319000005722
+          ],
+          "pageEndRangeMs": [
+            26562.91100001335,
+            26563.28600001335
+          ],
+          "overlapBoundsMs": [
+            23.592000007629395,
+            24.342000007629395
+          ]
+        },
+        {
+          "eventIndex": 139527,
+          "cat": "viz",
+          "name": null,
+          "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.948,
+          "threadDurationUs": 217,
+          "pageStartRangeMs": [
+            26538.950000047684,
+            26539.325000047684
+          ],
+          "pageEndRangeMs": [
+            26562.898000001907,
+            26563.273000001907
+          ],
+          "overlapBoundsMs": [
+            23.572999954223633,
+            24.322999954223633
+          ]
+        },
+        {
+          "eventIndex": 139528,
+          "cat": "viz",
+          "name": null,
+          "nameHash": "e244c78a35810c94df6342182d35345a83fe9c3f62ec3c8e0932ecf9df4a9154",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.916,
+          "threadDurationUs": 199,
+          "pageStartRangeMs": [
+            26538.952000021935,
+            26539.327000021935
+          ],
+          "pageEndRangeMs": [
+            26562.868000030518,
+            26563.243000030518
+          ],
+          "overlapBoundsMs": [
+            23.54100000858307,
+            24.29100000858307
+          ]
+        },
+        {
+          "eventIndex": 139529,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "ad7a1ba58e56bc880d8e07304c4564bb033f28235600221cc40836b3733b380e",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.907,
+          "threadDurationUs": 192,
+          "pageStartRangeMs": [
+            26538.95600003004,
+            26539.33100003004
+          ],
+          "pageEndRangeMs": [
+            26562.863000035286,
+            26563.238000035286
+          ],
+          "overlapBoundsMs": [
+            23.53200000524521,
+            24.28200000524521
+          ]
+        },
+        {
+          "eventIndex": 139531,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+          "pid": 59232,
+          "tid": 58876,
+          "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+          "process": "GPU Process",
+          "wallMs": 22.061,
+          "threadDurationUs": 94,
+          "pageStartRangeMs": [
+            26540.858000040054,
+            26541.233000040054
+          ],
+          "pageEndRangeMs": [
+            26562.919000029564,
+            26563.294000029564
+          ],
+          "overlapBoundsMs": [
+            21.685999989509583,
+            22.435999989509583
+          ]
+        },
+        {
+          "eventIndex": 142977,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+          "pid": 59232,
+          "tid": 58876,
+          "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+          "process": "GPU Process",
+          "wallMs": 10.232,
+          "threadDurationUs": 66,
+          "pageStartRangeMs": [
+            26977.160000026226,
+            26977.535000026226
+          ],
+          "pageEndRangeMs": [
+            26987.39200001955,
+            26987.76700001955
+          ],
+          "overlapBoundsMs": [
+            9.85699999332428,
+            10.60699999332428
+          ]
+        },
+        {
+          "eventIndex": 49994,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 5.07,
+          "threadDurationUs": 5007,
+          "pageStartRangeMs": [
+            15784.212000012398,
+            15784.587000012398
+          ],
+          "pageEndRangeMs": [
+            15789.282000005245,
+            15789.657000005245
+          ],
+          "overlapBoundsMs": [
+            4.694999992847443,
+            5.444999992847443
+          ]
+        },
+        {
+          "eventIndex": 49995,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 5.062,
+          "threadDurationUs": 5003,
+          "pageStartRangeMs": [
+            15784.215000033379,
+            15784.590000033379
+          ],
+          "pageEndRangeMs": [
+            15789.277000010014,
+            15789.652000010014
+          ],
+          "overlapBoundsMs": [
+            4.686999976634979,
+            5.436999976634979
+          ]
+        },
+        {
+          "eventIndex": 49996,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 5.049,
+          "threadDurationUs": 4991,
+          "pageStartRangeMs": [
+            15784.226000010967,
+            15784.601000010967
+          ],
+          "pageEndRangeMs": [
+            15789.275000035763,
+            15789.650000035763
+          ],
+          "overlapBoundsMs": [
+            4.674000024795532,
+            5.424000024795532
+          ]
+        },
+        {
+          "eventIndex": 49997,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "79a9c6e57d4cf7363dda68f141fb1bbb041f201a11fe8e96ac50ff6f85c3edad",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 5.048,
+          "threadDurationUs": 4991,
+          "pageStartRangeMs": [
+            15784.226999998093,
+            15784.601999998093
+          ],
+          "pageEndRangeMs": [
+            15789.275000035763,
+            15789.650000035763
+          ],
+          "overlapBoundsMs": [
+            4.6730000376701355,
+            5.4230000376701355
+          ]
+        },
+        {
+          "eventIndex": 49998,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "3bc53e2edc2652ed6efe3df398e3d31d27103482f9b8a34455fcd81845152ee0",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 5.039,
+          "threadDurationUs": 4983,
+          "pageStartRangeMs": [
+            15784.23600000143,
+            15784.61100000143
+          ],
+          "pageEndRangeMs": [
+            15789.275000035763,
+            15789.650000035763
+          ],
+          "overlapBoundsMs": [
+            4.664000034332275,
+            5.414000034332275
+          ]
+        },
+        {
+          "eventIndex": 49999,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "3d7e53efc61b9b1502f51b666a9a3e4dcfe9f93e776c65d58b34b79b10693ae6",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 5.032,
+          "threadDurationUs": 4977,
+          "pageStartRangeMs": [
+            15784.240000009537,
+            15784.615000009537
+          ],
+          "pageEndRangeMs": [
+            15789.272000014782,
+            15789.647000014782
+          ],
+          "overlapBoundsMs": [
+            4.657000005245209,
+            5.407000005245209
+          ]
+        },
+        {
+          "eventIndex": 32531,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 4.238,
+          "threadDurationUs": 4194,
+          "pageStartRangeMs": [
+            13681.840000033379,
+            13682.215000033379
+          ],
+          "pageEndRangeMs": [
+            13686.07800000906,
+            13686.45300000906
+          ],
+          "overlapBoundsMs": [
+            3.862999975681305,
+            4.612999975681305
+          ]
+        },
+        {
+          "eventIndex": 32532,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 4.233,
+          "threadDurationUs": 4191,
+          "pageStartRangeMs": [
+            13681.84200000763,
+            13682.21700000763
+          ],
+          "pageEndRangeMs": [
+            13686.075000047684,
+            13686.450000047684
+          ],
+          "overlapBoundsMs": [
+            3.8580000400543213,
+            4.608000040054321
+          ]
+        },
+        {
+          "eventIndex": 32533,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+          "pid": 59232,
+          "tid": 61184,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 4.225,
+          "threadDurationUs": 4185,
+          "pageStartRangeMs": [
+            13681.848000049591,
+            13682.223000049591
+          ],
+          "pageEndRangeMs": [
+            13686.073000013828,
+            13686.448000013828
+          ],
+          "overlapBoundsMs": [
+            3.849999964237213,
+            4.599999964237213
+          ]
+        }
+      ],
+      "waits": [
+        {
+          "sampleIndex": 2722,
+          "pageWaitMs": [
+            26984.560000002384,
+            27007.910000026226
+          ],
+          "waitMs": 23.350000023841858,
+          "closedXEventCount": 42,
+          "topSpans": [
+            {
+              "eventIndex": 142977,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+              "pid": 59232,
+              "tid": 58876,
+              "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+              "process": "GPU Process",
+              "wallMs": 10.232,
+              "threadDurationUs": 66,
+              "pageStartRangeMs": [
+                26977.160000026226,
+                26977.535000026226
+              ],
+              "pageEndRangeMs": [
+                26987.39200001955,
+                26987.76700001955
+              ],
+              "overlapBoundsMs": [
+                2.8320000171661377,
+                3.2070000171661377
+              ]
+            },
+            {
+              "eventIndex": 143040,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.038,
+              "threadDurationUs": 25,
+              "pageStartRangeMs": [
+                27007.462000012398,
+                27007.837000012398
+              ],
+              "pageEndRangeMs": [
+                27007.5,
+                27007.875
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.4129999876022339
+              ]
+            },
+            {
+              "eventIndex": 143041,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.032,
+              "threadDurationUs": 22,
+              "pageStartRangeMs": [
+                27007.46700000763,
+                27007.84200000763
+              ],
+              "pageEndRangeMs": [
+                27007.499000012875,
+                27007.874000012875
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.40700000524520874
+              ]
+            },
+            {
+              "eventIndex": 143043,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 8628,
+              "tid": 20332,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.029,
+              "threadDurationUs": 27,
+              "pageStartRangeMs": [
+                27007.509000003338,
+                27007.884000003338
+              ],
+              "pageEndRangeMs": [
+                27007.538000047207,
+                27007.913000047207
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.4010000228881836
+              ]
+            },
+            {
+              "eventIndex": 143039,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+              "pid": 59232,
+              "tid": 58876,
+              "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+              "process": "GPU Process",
+              "wallMs": 0.025,
+              "threadDurationUs": 23,
+              "pageStartRangeMs": [
+                27007.45800000429,
+                27007.83300000429
+              ],
+              "pageEndRangeMs": [
+                27007.483000040054,
+                27007.858000040054
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.40000003576278687
+              ]
+            },
+            {
+              "eventIndex": 143044,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 8628,
+              "tid": 20332,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.025,
+              "threadDurationUs": 25,
+              "pageStartRangeMs": [
+                27007.51200002432,
+                27007.88700002432
+              ],
+              "pageEndRangeMs": [
+                27007.537000000477,
+                27007.912000000477
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.39800000190734863
+              ]
+            },
+            {
+              "eventIndex": 143042,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "00d31a7648f0697f62535ac15896bc5e22b2e44e102bee496c2f48e9d81b532c",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.002,
+              "threadDurationUs": 2,
+              "pageStartRangeMs": [
+                27007.47000002861,
+                27007.84500002861
+              ],
+              "pageEndRangeMs": [
+                27007.47200000286,
+                27007.84700000286
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.37699997425079346
+              ]
+            },
+            {
+              "eventIndex": 143045,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 8628,
+              "tid": 20332,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.056,
+              "threadDurationUs": 53,
+              "pageStartRangeMs": [
+                27007.54800003767,
+                27007.92300003767
+              ],
+              "pageEndRangeMs": [
+                27007.604000031948,
+                27007.979000031948
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3619999885559082
+              ]
+            },
+            {
+              "eventIndex": 143046,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 8628,
+              "tid": 20332,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.024,
+              "threadDurationUs": 23,
+              "pageStartRangeMs": [
+                27007.575000047684,
+                27007.950000047684
+              ],
+              "pageEndRangeMs": [
+                27007.599000036716,
+                27007.974000036716
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3349999785423279
+              ]
+            },
+            {
+              "eventIndex": 143048,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.032,
+              "threadDurationUs": 25,
+              "pageStartRangeMs": [
+                27007.647000014782,
+                27008.022000014782
+              ],
+              "pageEndRangeMs": [
+                27007.679000020027,
+                27008.054000020027
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2630000114440918
+              ]
+            },
+            {
+              "eventIndex": 143049,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "377c849d7ae380bd5eaf9b365b4c657d7c039d7059518576f75f8e5c0f920fd5",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.022,
+              "threadDurationUs": 17,
+              "pageStartRangeMs": [
+                27007.65600001812,
+                27008.03100001812
+              ],
+              "pageEndRangeMs": [
+                27007.6780000329,
+                27008.0530000329
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2540000081062317
+              ]
+            },
+            {
+              "eventIndex": 143050,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "46e83652b8b5d1a5a10354e9f0a52d7c78c27d729b212f4e551bb4b75fdd3776",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.019,
+              "threadDurationUs": 16,
+              "pageStartRangeMs": [
+                27007.658000051975,
+                27008.033000051975
+              ],
+              "pageEndRangeMs": [
+                27007.677000045776,
+                27008.052000045776
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.25199997425079346
+              ]
+            },
+            {
+              "eventIndex": 143051,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "8fc61043fdf82e0c1b9ee861a89633634b9f54d2717fc2842399b4231c7c92fb",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.004,
+              "threadDurationUs": 3,
+              "pageStartRangeMs": [
+                27007.67000001669,
+                27008.04500001669
+              ],
+              "pageEndRangeMs": [
+                27007.674000024796,
+                27008.049000024796
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.24000000953674316
+              ]
+            },
+            {
+              "eventIndex": 143052,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "237c47ff1ee6de2f6619ed043274cab2195108328c2ab20ec77e154617ae0a7a",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.001,
+              "threadDurationUs": null,
+              "pageStartRangeMs": [
+                27007.67500001192,
+                27008.05000001192
+              ],
+              "pageEndRangeMs": [
+                27007.675999999046,
+                27008.050999999046
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.23500001430511475
+              ]
+            }
+          ],
+          "dueInputs": 3,
+          "submittedInputs": [
+            {
+              "sequence": 1771,
+              "kind": "stick",
+              "label": "continuous-leg-12",
+              "plannedAt": 17033.333333333332,
+              "submittedAt": 17033.764999985695,
+              "completedAt": 17033.780000030994
+            },
+            {
+              "sequence": 1772,
+              "kind": "stick",
+              "label": "continuous-leg-12",
+              "plannedAt": 17041.666666666668,
+              "submittedAt": 17044.615000009537,
+              "completedAt": 17044.634999990463
+            },
+            {
+              "sequence": 1773,
+              "kind": "stick",
+              "label": "continuous-leg-12",
+              "plannedAt": 17050,
+              "submittedAt": 17055.730000019073,
+              "completedAt": 17055.92000001669
+            }
+          ],
+          "cpp": 11.909999966621399,
+          "js": 0.030000030994415283
+        },
+        {
+          "sampleIndex": 2654,
+          "pageWaitMs": [
+            26542.72000002861,
+            26565.384999990463
+          ],
+          "waitMs": 22.664999961853027,
+          "closedXEventCount": 27,
+          "topSpans": [
+            {
+              "eventIndex": 139531,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+              "pid": 59232,
+              "tid": 58876,
+              "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+              "process": "GPU Process",
+              "wallMs": 22.061,
+              "threadDurationUs": 94,
+              "pageStartRangeMs": [
+                26540.858000040054,
+                26541.233000040054
+              ],
+              "pageEndRangeMs": [
+                26562.919000029564,
+                26563.294000029564
+              ],
+              "overlapBoundsMs": [
+                20.199000000953674,
+                20.574000000953674
+              ]
+            },
+            {
+              "eventIndex": 139521,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 24.118,
+              "threadDurationUs": 381,
+              "pageStartRangeMs": [
+                26538.79500001669,
+                26539.17000001669
+              ],
+              "pageEndRangeMs": [
+                26562.913000047207,
+                26563.288000047207
+              ],
+              "overlapBoundsMs": [
+                20.19300001859665,
+                20.56800001859665
+              ]
+            },
+            {
+              "eventIndex": 139525,
+              "cat": "viz",
+              "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+              "nameHash": null,
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 23.967,
+              "threadDurationUs": 233,
+              "pageStartRangeMs": [
+                26538.944000005722,
+                26539.319000005722
+              ],
+              "pageEndRangeMs": [
+                26562.91100001335,
+                26563.28600001335
+              ],
+              "overlapBoundsMs": [
+                20.19099998474121,
+                20.56599998474121
+              ]
+            },
+            {
+              "eventIndex": 139527,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 23.948,
+              "threadDurationUs": 217,
+              "pageStartRangeMs": [
+                26538.950000047684,
+                26539.325000047684
+              ],
+              "pageEndRangeMs": [
+                26562.898000001907,
+                26563.273000001907
+              ],
+              "overlapBoundsMs": [
+                20.17799997329712,
+                20.55299997329712
+              ]
+            },
+            {
+              "eventIndex": 139528,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "e244c78a35810c94df6342182d35345a83fe9c3f62ec3c8e0932ecf9df4a9154",
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 23.916,
+              "threadDurationUs": 199,
+              "pageStartRangeMs": [
+                26538.952000021935,
+                26539.327000021935
+              ],
+              "pageEndRangeMs": [
+                26562.868000030518,
+                26563.243000030518
+              ],
+              "overlapBoundsMs": [
+                20.14800000190735,
+                20.52300000190735
+              ]
+            },
+            {
+              "eventIndex": 139529,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "ad7a1ba58e56bc880d8e07304c4564bb033f28235600221cc40836b3733b380e",
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 23.907,
+              "threadDurationUs": 192,
+              "pageStartRangeMs": [
+                26538.95600003004,
+                26539.33100003004
+              ],
+              "pageEndRangeMs": [
+                26562.863000035286,
+                26563.238000035286
+              ],
+              "overlapBoundsMs": [
+                20.14300000667572,
+                20.51800000667572
+              ]
+            },
+            {
+              "eventIndex": 139551,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "4dee8816ec4c2cd670cf5daea1139e52c6c5058247315e22fe2fecfc04384854",
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 0.028,
+              "threadDurationUs": 16,
+              "pageStartRangeMs": [
+                26562.869000017643,
+                26563.244000017643
+              ],
+              "pageEndRangeMs": [
+                26562.897000014782,
+                26563.272000014782
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.40299999713897705
+              ]
+            },
+            {
+              "eventIndex": 139553,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 0.015,
+              "threadDurationUs": 5,
+              "pageStartRangeMs": [
+                26562.882000029087,
+                26563.257000029087
+              ],
+              "pageEndRangeMs": [
+                26562.897000014782,
+                26563.272000014782
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.38999998569488525
+              ]
+            },
+            {
+              "eventIndex": 139554,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.014,
+              "threadDurationUs": 12,
+              "pageStartRangeMs": [
+                26562.897000014782,
+                26563.272000014782
+              ],
+              "pageEndRangeMs": [
+                26562.91100001335,
+                26563.28600001335
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3889999985694885
+              ]
+            },
+            {
+              "eventIndex": 139558,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 0.013,
+              "threadDurationUs": 11,
+              "pageStartRangeMs": [
+                26562.91800004244,
+                26563.29300004244
+              ],
+              "pageEndRangeMs": [
+                26562.931000053883,
+                26563.306000053883
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3880000114440918
+              ]
+            },
+            {
+              "eventIndex": 139543,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 8628,
+              "tid": 20332,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.01,
+              "threadDurationUs": 9,
+              "pageStartRangeMs": [
+                26542.8560000062,
+                26543.2310000062
+              ],
+              "pageEndRangeMs": [
+                26542.866000056267,
+                26543.241000056267
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3850000500679016
+              ]
+            },
+            {
+              "eventIndex": 139552,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6d202aef7c8bd13a95bec425a3e861de4e441c2a8d7e994ff6ec6190dbb32af3",
+              "pid": 59232,
+              "tid": 61184,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 0.009,
+              "threadDurationUs": 9,
+              "pageStartRangeMs": [
+                26562.8710000515,
+                26563.2460000515
+              ],
+              "pageEndRangeMs": [
+                26562.880000054836,
+                26563.255000054836
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3840000033378601
+              ]
+            },
+            {
+              "eventIndex": 139544,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.006,
+              "threadDurationUs": 2,
+              "pageStartRangeMs": [
+                26542.885000050068,
+                26543.260000050068
+              ],
+              "pageEndRangeMs": [
+                26542.891000032425,
+                26543.266000032425
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.38099998235702515
+              ]
+            },
+            {
+              "eventIndex": 139546,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "237c47ff1ee6de2f6619ed043274cab2195108328c2ab20ec77e154617ae0a7a",
+              "pid": 59232,
+              "tid": 22952,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.002,
+              "threadDurationUs": null,
+              "pageStartRangeMs": [
+                26542.88899999857,
+                26543.26399999857
+              ],
+              "pageEndRangeMs": [
+                26542.891000032425,
+                26543.266000032425
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.37700003385543823
+              ]
+            }
+          ],
+          "dueInputs": 3,
+          "submittedInputs": [
+            {
+              "sequence": 1716,
+              "kind": "stick",
+              "label": "continuous-leg-11",
+              "plannedAt": 16591.666666666668,
+              "submittedAt": 16600.134999990463,
+              "completedAt": 16600.134999990463
+            },
+            {
+              "sequence": 1718,
+              "kind": "stick",
+              "label": "continuous-leg-11",
+              "plannedAt": 16608.333333333332,
+              "submittedAt": 16613.400000035763,
+              "completedAt": 16613.400000035763
+            }
+          ],
+          "cpp": 4.0450000166893005,
+          "js": 0.030000030994415283
+        }
+      ]
+    },
+    {
+      "side": 1,
+      "artifact": {
+        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-P2-scheduler-trace.json",
+        "bytes": 45052301,
+        "sha256": "f0a905656eaa76274d648c8f98c17c0996fadd3beb26f65ac6835fa5a4f5312a"
+      },
+      "status": "stopped",
+      "profile": "graphics",
+      "collectionValid": true,
+      "clock": {
+        "traceTimestampUnit": "microseconds",
+        "pageTimestampUnit": "milliseconds",
+        "mapping": "traceTs/1000 = pagePerformanceNow + offsetMs",
+        "timeOriginIsNotTraceOrigin": true,
+        "quantizationAllowanceMs": 0.1,
+        "matches": [
+          {
+            "stage": "armed",
+            "name": "th09-sched-armed",
+            "before": 2845.4950000047684,
+            "after": 2846.1050000190735,
+            "timeOrigin": 1791717286215.715,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 54452,
+              "tid": 20116,
+              "ts": 276201524979
+            },
+            "offsetMs": [
+              276198678.7739999,
+              276198679.584
+            ]
+          },
+          {
+            "stage": "first-active",
+            "name": "th09-sched-first-active",
+            "before": 5626.555000007153,
+            "after": 5626.745000004768,
+            "timeOrigin": 1791717286215.715,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 54452,
+              "tid": 20116,
+              "ts": 276204306027
+            },
+            "offsetMs": [
+              276198679.182,
+              276198679.572
+            ]
+          },
+          {
+            "stage": "capture-stop",
+            "name": "th09-sched-capture-stop",
+            "before": 25789.884999990463,
+            "after": 25789.915000021458,
+            "timeOrigin": 1791717286215.715,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 54452,
+              "tid": 20116,
+              "ts": 276224469202
+            },
+            "offsetMs": [
+              276198679.187,
+              276198679.41700006
+            ]
+          }
+        ],
+        "matchedMarks": 3,
+        "sameThread": true,
+        "samePageTimeOrigin": true,
+        "clockMapped": true,
+        "offsetIntersectionMs": [
+          276198679.187,
+          276198679.41700006
+        ],
+        "maximumBracketWidthMs": 0.6100000143051147,
+        "distinctMarkSpanMs": 22943.77999997139,
+        "renderer": {
+          "pid": 54452,
+          "tid": 20116
+        }
+      },
+      "capture": {
+        "nodeStartedAt": 9134.2514,
+        "nodeStopRequestedAt": 32078.564,
+        "nodeEndRequestedAt": 32085.7125,
+        "nodeCompletedAt": 47582.3919,
+        "nodeStoppedAt": 47661.8539,
+        "reason": "capture-stop",
+        "deadlineFired": false,
+        "chromeBufferFull": false,
+        "bufferHighWater": false,
+        "bufferHighWaterThreshold": 0.8,
+        "firstBufferHighWater": null,
+        "censored": false,
+        "tracingCompleteReceived": true,
+        "dataLossOccurred": false,
+        "endRequests": 1
+      },
+      "errors": [],
+      "overflow": {
+        "events": 0,
+        "bytes": 0,
+        "bufferUsage": 0,
+        "marks": 0,
+        "errors": 0,
+        "names": 0,
+        "threads": 0,
+        "firstAt": null,
+        "firstTraceTs": null
+      },
+      "counts": {
+        "batches": 1706,
+        "rawEvents": 279401,
+        "retainedEvents": 279351,
+        "droppedEvents": 50,
+        "droppedFields": 323158,
+        "malformedEvents": 0,
+        "retainedDataJsonBytes": 80542783,
+        "unknownEventNames": 263933,
+        "errors": 0
+      },
+      "sourceIdentity": {
+        "before": {
+          "helper": {
+            "bytes": 26116,
+            "sha256": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273"
+          },
+          "harness": {
+            "bytes": 70924,
+            "sha256": "2998a975240915b1ceb7a4dc015cf0471328ed9e9565cf14eea52f83986c634c"
+          }
+        },
+        "after": {
+          "helper": {
+            "bytes": 26116,
+            "sha256": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273"
+          },
+          "harness": {
+            "bytes": 70924,
+            "sha256": "2998a975240915b1ceb7a4dc015cf0471328ed9e9565cf14eea52f83986c634c"
+          }
+        },
+        "stable": true
+      },
+      "coverage": {
+        "clockMapped": true,
+        "allThreeMarks": true,
+        "marksOrdered": true,
+        "requestedCategories": [
+          "gpu",
+          "viz",
+          "blink.user_timing"
+        ],
+        "activeWindowCovered": true,
+        "categories": {
+          "gpu": 129492,
+          "viz": 149841,
+          "blink.user_timing": 3
+        },
+        "schedulerObserved": null,
+        "compositorObserved": null,
+        "gpuObserved": true,
+        "renderer": {
+          "pid": 54452,
+          "tid": 20116
+        },
+        "limitation": "No events is not evidence of idle. Match the retained complete time window to existing rAF requests; a non-reproduced stall is not a repair.",
+        "threadCount": 15,
+        "unknownNameCount": 99
+      },
+      "phaseCounts": {
+        "M": 15,
+        "I": 29708,
+        "X": 140291,
+        "s": 43807,
+        "f": 43807,
+        "C": 625,
+        "b": 8743,
+        "e": 8743,
+        "n": 3612
+      },
+      "namedCounts": [
+        [
+          "ExternalBeginFrameSource::OnBeginFrame",
+          7403
+        ],
+        [
+          "DisplayScheduler::OnBeginFrameDeadline",
+          3179
+        ],
+        [
+          "DisplayScheduler::DrawAndSwap",
+          1205
+        ],
+        [
+          "Display::DrawAndSwap",
+          1205
+        ],
+        [
+          "DirectRenderer::DrawFrame",
+          1204
+        ],
+        [
+          "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+          1204
+        ],
+        [
+          "thread_name",
+          11
+        ],
+        [
+          "process_name",
+          4
+        ],
+        [
+          "th09-sched-armed",
+          1
+        ],
+        [
+          "th09-sched-first-active",
+          1
+        ],
+        [
+          "th09-sched-capture-stop",
+          1
+        ]
+      ],
+      "activePageWindow": [
+        8699.269999980927,
+        25699.92500001192
+      ],
+      "activeClosedXCount": 116116,
+      "longestActiveClosedX": [
+        {
+          "eventIndex": 143718,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 25.257,
+          "threadDurationUs": 489,
+          "pageStartRangeMs": [
+            22635.676999926567,
+            22635.907000005245
+          ],
+          "pageEndRangeMs": [
+            22660.933999955654,
+            22661.164000034332
+          ],
+          "overlapBoundsMs": [
+            25.026999950408936,
+            25.487000107765198
+          ]
+        },
+        {
+          "eventIndex": 143724,
+          "cat": "viz",
+          "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+          "nameHash": null,
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 25.071,
+          "threadDurationUs": 308,
+          "pageStartRangeMs": [
+            22635.858999967575,
+            22636.089000046253
+          ],
+          "pageEndRangeMs": [
+            22660.929999947548,
+            22661.160000026226
+          ],
+          "overlapBoundsMs": [
+            24.84099990129471,
+            25.30100005865097
+          ]
+        },
+        {
+          "eventIndex": 143726,
+          "cat": "viz",
+          "name": null,
+          "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 25.032,
+          "threadDurationUs": 276,
+          "pageStartRangeMs": [
+            22635.865999937057,
+            22636.096000015736
+          ],
+          "pageEndRangeMs": [
+            22660.897999942303,
+            22661.12800002098
+          ],
+          "overlapBoundsMs": [
+            24.801999926567078,
+            25.26200008392334
+          ]
+        },
+        {
+          "eventIndex": 143727,
+          "cat": "viz",
+          "name": null,
+          "nameHash": "e244c78a35810c94df6342182d35345a83fe9c3f62ec3c8e0932ecf9df4a9154",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 24.998,
+          "threadDurationUs": 246,
+          "pageStartRangeMs": [
+            22635.867999970913,
+            22636.09800004959
+          ],
+          "pageEndRangeMs": [
+            22660.865999937057,
+            22661.096000015736
+          ],
+          "overlapBoundsMs": [
+            24.76799988746643,
+            25.228000044822693
+          ]
+        },
+        {
+          "eventIndex": 143728,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "ad7a1ba58e56bc880d8e07304c4564bb033f28235600221cc40836b3733b380e",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 24.984,
+          "threadDurationUs": 235,
+          "pageStartRangeMs": [
+            22635.872999966145,
+            22636.103000044823
+          ],
+          "pageEndRangeMs": [
+            22660.85699993372,
+            22661.087000012398
+          ],
+          "overlapBoundsMs": [
+            24.753999888896942,
+            25.214000046253204
+          ]
+        },
+        {
+          "eventIndex": 140129,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.363,
+          "threadDurationUs": 351,
+          "pageStartRangeMs": [
+            22197.17599993944,
+            22197.40600001812
+          ],
+          "pageEndRangeMs": [
+            22220.538999915123,
+            22220.7689999938
+          ],
+          "overlapBoundsMs": [
+            23.132999897003174,
+            23.593000054359436
+          ]
+        },
+        {
+          "eventIndex": 140133,
+          "cat": "viz",
+          "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+          "nameHash": null,
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.222,
+          "threadDurationUs": 215,
+          "pageStartRangeMs": [
+            22197.313999950886,
+            22197.544000029564
+          ],
+          "pageEndRangeMs": [
+            22220.535999953747,
+            22220.766000032425
+          ],
+          "overlapBoundsMs": [
+            22.991999924182892,
+            23.452000081539154
+          ]
+        },
+        {
+          "eventIndex": 140135,
+          "cat": "viz",
+          "name": null,
+          "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.203,
+          "threadDurationUs": 197,
+          "pageStartRangeMs": [
+            22197.319999933243,
+            22197.55000001192
+          ],
+          "pageEndRangeMs": [
+            22220.522999942303,
+            22220.75300002098
+          ],
+          "overlapBoundsMs": [
+            22.972999930381775,
+            23.433000087738037
+          ]
+        },
+        {
+          "eventIndex": 140136,
+          "cat": "viz",
+          "name": null,
+          "nameHash": "e244c78a35810c94df6342182d35345a83fe9c3f62ec3c8e0932ecf9df4a9154",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.179,
+          "threadDurationUs": 179,
+          "pageStartRangeMs": [
+            22197.3219999671,
+            22197.552000045776
+          ],
+          "pageEndRangeMs": [
+            22220.50099992752,
+            22220.7310000062
+          ],
+          "overlapBoundsMs": [
+            22.948999881744385,
+            23.409000039100647
+          ]
+        },
+        {
+          "eventIndex": 140137,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "ad7a1ba58e56bc880d8e07304c4564bb033f28235600221cc40836b3733b380e",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 23.17,
+          "threadDurationUs": 171,
+          "pageStartRangeMs": [
+            22197.32699996233,
+            22197.557000041008
+          ],
+          "pageEndRangeMs": [
+            22220.496999919415,
+            22220.726999998093
+          ],
+          "overlapBoundsMs": [
+            22.939999878406525,
+            23.400000035762787
+          ]
+        },
+        {
+          "eventIndex": 140138,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+          "pid": 49772,
+          "tid": 66704,
+          "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+          "process": "GPU Process",
+          "wallMs": 22.056,
+          "threadDurationUs": 57,
+          "pageStartRangeMs": [
+            22198.489999949932,
+            22198.72000002861
+          ],
+          "pageEndRangeMs": [
+            22220.54599994421,
+            22220.77600002289
+          ],
+          "overlapBoundsMs": [
+            21.825999915599823,
+            22.286000072956085
+          ]
+        },
+        {
+          "eventIndex": 143657,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+          "pid": 49772,
+          "tid": 66704,
+          "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+          "process": "GPU Process",
+          "wallMs": 10.255,
+          "threadDurationUs": 60,
+          "pageStartRangeMs": [
+            22634.77999997139,
+            22635.010000050068
+          ],
+          "pageEndRangeMs": [
+            22645.03499996662,
+            22645.2650000453
+          ],
+          "overlapBoundsMs": [
+            10.024999916553497,
+            10.48500007390976
+          ]
+        },
+        {
+          "eventIndex": 50291,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 4.842,
+          "threadDurationUs": 4748,
+          "pageStartRangeMs": [
+            11432.144999921322,
+            11432.375
+          ],
+          "pageEndRangeMs": [
+            11436.986999928951,
+            11437.21700000763
+          ],
+          "overlapBoundsMs": [
+            4.611999928951263,
+            5.072000086307526
+          ]
+        },
+        {
+          "eventIndex": 50292,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 4.835,
+          "threadDurationUs": 4745,
+          "pageStartRangeMs": [
+            11432.147999942303,
+            11432.37800002098
+          ],
+          "pageEndRangeMs": [
+            11436.982999920845,
+            11437.212999999523
+          ],
+          "overlapBoundsMs": [
+            4.604999899864197,
+            5.065000057220459
+          ]
+        },
+        {
+          "eventIndex": 50293,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 4.823,
+          "threadDurationUs": 4734,
+          "pageStartRangeMs": [
+            11432.158999919891,
+            11432.38899999857
+          ],
+          "pageEndRangeMs": [
+            11436.98199993372,
+            11437.212000012398
+          ],
+          "overlapBoundsMs": [
+            4.5929999351501465,
+            5.053000092506409
+          ]
+        },
+        {
+          "eventIndex": 50294,
+          "cat": "gpu",
+          "name": null,
+          "nameHash": "79a9c6e57d4cf7363dda68f141fb1bbb041f201a11fe8e96ac50ff6f85c3edad",
+          "pid": 49772,
+          "tid": 60828,
+          "thread": "CrGpuMain",
+          "process": "GPU Process",
+          "wallMs": 4.821,
+          "threadDurationUs": 4734,
+          "pageStartRangeMs": [
+            11432.159999966621,
+            11432.3900000453
+          ],
+          "pageEndRangeMs": [
+            11436.980999946594,
+            11437.211000025272
+          ],
+          "overlapBoundsMs": [
+            4.590999901294708,
+            5.0510000586509705
+          ]
+        }
+      ],
+      "waits": [
+        {
+          "sampleIndex": 2779,
+          "pageWaitMs": [
+            22636.110000014305,
+            22665.625
+          ],
+          "waitMs": 29.514999985694885,
+          "closedXEventCount": 26,
+          "topSpans": [
+            {
+              "eventIndex": 143718,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+              "pid": 49772,
+              "tid": 60828,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 25.257,
+              "threadDurationUs": 489,
+              "pageStartRangeMs": [
+                22635.676999926567,
+                22635.907000005245
+              ],
+              "pageEndRangeMs": [
+                22660.933999955654,
+                22661.164000034332
+              ],
+              "overlapBoundsMs": [
+                24.82399994134903,
+                25.05400002002716
+              ]
+            },
+            {
+              "eventIndex": 143724,
+              "cat": "viz",
+              "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+              "nameHash": null,
+              "pid": 49772,
+              "tid": 60828,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 25.071,
+              "threadDurationUs": 308,
+              "pageStartRangeMs": [
+                22635.858999967575,
+                22636.089000046253
+              ],
+              "pageEndRangeMs": [
+                22660.929999947548,
+                22661.160000026226
+              ],
+              "overlapBoundsMs": [
+                24.819999933242798,
+                25.05000001192093
+              ]
+            },
+            {
+              "eventIndex": 143726,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 49772,
+              "tid": 60828,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 25.032,
+              "threadDurationUs": 276,
+              "pageStartRangeMs": [
+                22635.865999937057,
+                22636.096000015736
+              ],
+              "pageEndRangeMs": [
+                22660.897999942303,
+                22661.12800002098
+              ],
+              "overlapBoundsMs": [
+                24.78799992799759,
+                25.01800000667572
+              ]
+            },
+            {
+              "eventIndex": 143727,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "e244c78a35810c94df6342182d35345a83fe9c3f62ec3c8e0932ecf9df4a9154",
+              "pid": 49772,
+              "tid": 60828,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 24.998,
+              "threadDurationUs": 246,
+              "pageStartRangeMs": [
+                22635.867999970913,
+                22636.09800004959
+              ],
+              "pageEndRangeMs": [
+                22660.865999937057,
+                22661.096000015736
+              ],
+              "overlapBoundsMs": [
+                24.75599992275238,
+                24.98600000143051
+              ]
+            },
+            {
+              "eventIndex": 143728,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "ad7a1ba58e56bc880d8e07304c4564bb033f28235600221cc40836b3733b380e",
+              "pid": 49772,
+              "tid": 60828,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 24.984,
+              "threadDurationUs": 235,
+              "pageStartRangeMs": [
+                22635.872999966145,
+                22636.103000044823
+              ],
+              "pageEndRangeMs": [
+                22660.85699993372,
+                22661.087000012398
+              ],
+              "overlapBoundsMs": [
+                24.74699991941452,
+                24.97699999809265
+              ]
+            },
+            {
+              "eventIndex": 143657,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+              "pid": 49772,
+              "tid": 66704,
+              "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+              "process": "GPU Process",
+              "wallMs": 10.255,
+              "threadDurationUs": 60,
+              "pageStartRangeMs": [
+                22634.77999997139,
+                22635.010000050068
+              ],
+              "pageEndRangeMs": [
+                22645.03499996662,
+                22645.2650000453
+              ],
+              "overlapBoundsMs": [
+                8.924999952316284,
+                9.155000030994415
+              ]
+            },
+            {
+              "eventIndex": 143742,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.086,
+              "threadDurationUs": 78,
+              "pageStartRangeMs": [
+                22665.112999916077,
+                22665.342999994755
+              ],
+              "pageEndRangeMs": [
+                22665.19899994135,
+                22665.429000020027
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3160001039505005
+              ]
+            },
+            {
+              "eventIndex": 143740,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+              "pid": 49772,
+              "tid": 66704,
+              "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+              "process": "GPU Process",
+              "wallMs": 0.066,
+              "threadDurationUs": 36,
+              "pageStartRangeMs": [
+                22665.083999931812,
+                22665.31400001049
+              ],
+              "pageEndRangeMs": [
+                22665.149999916553,
+                22665.37999999523
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.29600006341934204
+              ]
+            },
+            {
+              "eventIndex": 143750,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 54452,
+              "tid": 25768,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.047,
+              "threadDurationUs": 42,
+              "pageStartRangeMs": [
+                22665.199999928474,
+                22665.430000007153
+              ],
+              "pageEndRangeMs": [
+                22665.246999919415,
+                22665.476999998093
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2770000696182251
+              ]
+            },
+            {
+              "eventIndex": 143751,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 54452,
+              "tid": 25768,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.04,
+              "threadDurationUs": 39,
+              "pageStartRangeMs": [
+                22665.205999970436,
+                22665.436000049114
+              ],
+              "pageEndRangeMs": [
+                22665.24599993229,
+                22665.476000010967
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.27000004053115845
+              ]
+            },
+            {
+              "eventIndex": 143743,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.039,
+              "threadDurationUs": 38,
+              "pageStartRangeMs": [
+                22665.119999945164,
+                22665.350000023842
+              ],
+              "pageEndRangeMs": [
+                22665.15899991989,
+                22665.38899999857
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2690000534057617
+              ]
+            },
+            {
+              "eventIndex": 143745,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "8fc61043fdf82e0c1b9ee861a89633634b9f54d2717fc2842399b4231c7c92fb",
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.029,
+              "threadDurationUs": 25,
+              "pageStartRangeMs": [
+                22665.169999957085,
+                22665.400000035763
+              ],
+              "pageEndRangeMs": [
+                22665.19899994135,
+                22665.429000020027
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2590000629425049
+              ]
+            },
+            {
+              "eventIndex": 143730,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "4dee8816ec4c2cd670cf5daea1139e52c6c5058247315e22fe2fecfc04384854",
+              "pid": 49772,
+              "tid": 60828,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 0.028,
+              "threadDurationUs": 26,
+              "pageStartRangeMs": [
+                22660.86899995804,
+                22661.099000036716
+              ],
+              "pageEndRangeMs": [
+                22660.896999955177,
+                22661.127000033855
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.25800007581710815
+              ]
+            },
+            {
+              "eventIndex": 143737,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+              "pid": 49772,
+              "tid": 60828,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 0.021,
+              "threadDurationUs": 20,
+              "pageStartRangeMs": [
+                22660.940999925137,
+                22661.171000003815
+              ],
+              "pageEndRangeMs": [
+                22660.961999952793,
+                22661.19200003147
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2510001063346863
+              ]
+            }
+          ],
+          "dueInputs": 6,
+          "submittedInputs": [
+            {
+              "sequence": 1762,
+              "kind": "stick",
+              "label": "continuous-leg-11",
+              "plannedAt": 17016.666666666668,
+              "submittedAt": 17018.644999980927,
+              "completedAt": 17018.655000030994
+            },
+            {
+              "sequence": 1765,
+              "kind": "stick",
+              "label": "continuous-leg-11",
+              "plannedAt": 17037,
+              "submittedAt": 17038.110000014305,
+              "completedAt": 17038.12000000477
+            },
+            {
+              "sequence": 1766,
+              "kind": "controls",
+              "label": "fire-fast",
+              "plannedAt": 17037,
+              "submittedAt": 17038.12000000477,
+              "completedAt": 17038.12000000477
+            },
+            {
+              "sequence": 1767,
+              "kind": "stick",
+              "label": "turn",
+              "plannedAt": 17037,
+              "submittedAt": 17038.12000000477,
+              "completedAt": 17038.12000000477
+            }
+          ],
+          "cpp": 8.370000004768372,
+          "js": 0.1899999976158142
+        },
+        {
+          "sampleIndex": 676,
+          "pageWaitMs": [
+            9820.264999985695,
+            9846.839999973774
+          ],
+          "waitMs": 26.57499998807907,
+          "closedXEventCount": 55,
+          "topSpans": [
+            {
+              "eventIndex": 37142,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 54452,
+              "tid": 25768,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.081,
+              "threadDurationUs": 78,
+              "pageStartRangeMs": [
+                9825.085999965668,
+                9825.316000044346
+              ],
+              "pageEndRangeMs": [
+                9825.166999936104,
+                9825.397000014782
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3110000491142273
+              ]
+            },
+            {
+              "eventIndex": 37143,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 54452,
+              "tid": 25768,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.077,
+              "threadDurationUs": 76,
+              "pageStartRangeMs": [
+                9825.088999927044,
+                9825.319000005722
+              ],
+              "pageEndRangeMs": [
+                9825.165999948978,
+                9825.396000027657
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.3070001006126404
+              ]
+            },
+            {
+              "eventIndex": 37145,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.061,
+              "threadDurationUs": 46,
+              "pageStartRangeMs": [
+                9831.087999939919,
+                9831.318000018597
+              ],
+              "pageEndRangeMs": [
+                9831.148999929428,
+                9831.379000008106
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2910000681877136
+              ]
+            },
+            {
+              "eventIndex": 37164,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.053,
+              "threadDurationUs": 32,
+              "pageStartRangeMs": [
+                9837.143999934196,
+                9837.374000012875
+              ],
+              "pageEndRangeMs": [
+                9837.196999967098,
+                9837.427000045776
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.283000111579895
+              ]
+            },
+            {
+              "eventIndex": 37132,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.044,
+              "threadDurationUs": 36,
+              "pageStartRangeMs": [
+                9825.01299995184,
+                9825.243000030518
+              ],
+              "pageEndRangeMs": [
+                9825.056999921799,
+                9825.287000000477
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.27400004863739014
+              ]
+            },
+            {
+              "eventIndex": 37163,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+              "pid": 49772,
+              "tid": 66704,
+              "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+              "process": "GPU Process",
+              "wallMs": 0.043,
+              "threadDurationUs": 34,
+              "pageStartRangeMs": [
+                9837.12399995327,
+                9837.354000031948
+              ],
+              "pageEndRangeMs": [
+                9837.166999936104,
+                9837.397000014782
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2730000615119934
+              ]
+            },
+            {
+              "eventIndex": 37177,
+              "cat": "viz",
+              "name": "ExternalBeginFrameSource::OnBeginFrame",
+              "nameHash": null,
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.042,
+              "threadDurationUs": 37,
+              "pageStartRangeMs": [
+                9843.197999954224,
+                9843.428000032902
+              ],
+              "pageEndRangeMs": [
+                9843.239999949932,
+                9843.47000002861
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2720000743865967
+              ]
+            },
+            {
+              "eventIndex": 37176,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+              "pid": 49772,
+              "tid": 66704,
+              "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+              "process": "GPU Process",
+              "wallMs": 0.04,
+              "threadDurationUs": 40,
+              "pageStartRangeMs": [
+                9843.18699991703,
+                9843.416999995708
+              ],
+              "pageEndRangeMs": [
+                9843.226999938488,
+                9843.457000017166
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2700001001358032
+              ]
+            },
+            {
+              "eventIndex": 37146,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.037,
+              "threadDurationUs": 28,
+              "pageStartRangeMs": [
+                9831.09299993515,
+                9831.323000013828
+              ],
+              "pageEndRangeMs": [
+                9831.129999935627,
+                9831.360000014305
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.26700007915496826
+              ]
+            },
+            {
+              "eventIndex": 37165,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.034,
+              "threadDurationUs": 29,
+              "pageStartRangeMs": [
+                9837.161999940872,
+                9837.39200001955
+              ],
+              "pageEndRangeMs": [
+                9837.195999920368,
+                9837.425999999046
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2640000581741333
+              ]
+            },
+            {
+              "eventIndex": 37135,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "cb3e5a73a3fd4c2b2088934a190b25b9d3bee2a946fab0969da035b440d0957d",
+              "pid": 49772,
+              "tid": 60828,
+              "thread": "CrGpuMain",
+              "process": "GPU Process",
+              "wallMs": 0.031,
+              "threadDurationUs": 11,
+              "pageStartRangeMs": [
+                9825.030999958515,
+                9825.261000037193
+              ],
+              "pageEndRangeMs": [
+                9825.06199991703,
+                9825.291999995708
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.26100003719329834
+              ]
+            },
+            {
+              "eventIndex": 37144,
+              "cat": "gpu",
+              "name": null,
+              "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+              "pid": 49772,
+              "tid": 66704,
+              "thread": "hash:0b7cfe4db637c65850ed09ea878f0ba413e5aebba396dc36806d98de2fc87820",
+              "process": "GPU Process",
+              "wallMs": 0.03,
+              "threadDurationUs": 28,
+              "pageStartRangeMs": [
+                9831.05999994278,
+                9831.290000021458
+              ],
+              "pageEndRangeMs": [
+                9831.089999973774,
+                9831.320000052452
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2600001096725464
+              ]
+            },
+            {
+              "eventIndex": 37178,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 49772,
+              "tid": 37600,
+              "thread": "VizCompositorThread",
+              "process": "GPU Process",
+              "wallMs": 0.028,
+              "threadDurationUs": 27,
+              "pageStartRangeMs": [
+                9843.210999965668,
+                9843.441000044346
+              ],
+              "pageEndRangeMs": [
+                9843.238999962807,
+                9843.469000041485
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.25800007581710815
+              ]
+            },
+            {
+              "eventIndex": 37160,
+              "cat": "viz",
+              "name": null,
+              "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+              "pid": 54452,
+              "tid": 25768,
+              "thread": "Compositor",
+              "process": "Renderer",
+              "wallMs": 0.026,
+              "threadDurationUs": 25,
+              "pageStartRangeMs": [
+                9831.171999931335,
+                9831.402000010014
+              ],
+              "pageEndRangeMs": [
+                9831.197999954224,
+                9831.428000032902
+              ],
+              "overlapBoundsMs": [
+                0,
+                0.2560001015663147
+              ]
+            }
+          ],
+          "dueInputs": 3,
+          "submittedInputs": [],
+          "cpp": 5.319999992847443,
+          "js": 0.20499998331069946
+        }
+      ]
+    }
+  ]
+}

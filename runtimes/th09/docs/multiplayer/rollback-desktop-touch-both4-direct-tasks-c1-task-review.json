@@ -1,0 +1,684 @@
+{
+  "schema": "th09-task-context-summary-and-terminal-fence-review/v1",
+  "context": {
+    "path": "docs/multiplayer/rollback-desktop-touch-both4-direct-tasks-c1-task-context.json",
+    "bytes": 877454,
+    "sha256": "bf4294e90fb4ef23ee39edd7d6522666a6ac8baebac8c527a15a5a02e620fe19"
+  },
+  "raw": {
+    "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-report.json",
+    "bytes": 29685068,
+    "sha256": "c19307e11c86183f3d6816078814a7da6cc091874ec77990cdd16bfdc42adb54"
+  },
+  "scope": "Bounded summary of qualified intervals plus corrected terminal control-time selector; no original artifacts changed. Missing retained tasks is not proof of idle. Post-measure/pre-pause frames do not contaminate fixed formal samples.",
+  "peers": [
+    {
+      "side": 0,
+      "renderer": {
+        "pid": 67660,
+        "tid": 59936
+      },
+      "offsetIntersectionMs": [
+        274885523.067,
+        274885523.476
+      ],
+      "mainPhaseCounts": {
+        "M": 1,
+        "X": 39608,
+        "I": 5009,
+        "b": 4986,
+        "e": 4984
+      },
+      "waits": [
+        {
+          "sampleIndex": 1680,
+          "pageWaitMs": [
+            20788.875,
+            20946.87999999523
+          ],
+          "waitMs": 158.00499999523163,
+          "allClosedMainX": {
+            "events": 55,
+            "guaranteedMs": 7.164999544620514,
+            "possibleMs": 15.646000325679779,
+            "uncoveredByPossibleMs": 142.35899966955185
+          },
+          "knownRunTask": {
+            "events": 20,
+            "guaranteedMs": 7.164999544620514,
+            "possibleMs": 15.285000264644623,
+            "uncoveredByPossibleMs": 142.719999730587
+          },
+          "topRunTasks": [
+            {
+              "eventIndex": 117114,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                20810.214999973774,
+                20810.624000012875
+              ],
+              "pageEndRangeMs": [
+                20812.289999961853,
+                20812.699000000954
+              ],
+              "wallDurationMs": 2.075,
+              "threadDurationUs": 410,
+              "overlapBoundsMs": [
+                1.665999948978424,
+                2.484000027179718
+              ]
+            },
+            {
+              "eventIndex": 117306,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                20920.311999976635,
+                20920.721000015736
+              ],
+              "pageEndRangeMs": [
+                20922.3409999609,
+                20922.75
+              ],
+              "wallDurationMs": 2.029,
+              "threadDurationUs": 455,
+              "overlapBoundsMs": [
+                1.6199999451637268,
+                2.4380000233650208
+              ]
+            },
+            {
+              "eventIndex": 117221,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                20855.185000002384,
+                20855.594000041485
+              ],
+              "pageEndRangeMs": [
+                20856.62999999523,
+                20857.039000034332
+              ],
+              "wallDurationMs": 1.445,
+              "threadDurationUs": 304,
+              "overlapBoundsMs": [
+                1.0359999537467957,
+                1.8540000319480896
+              ]
+            }
+          ],
+          "longestRunTaskMs": 12.861,
+          "dueInputs": 0,
+          "submittedInputs": 0,
+          "completedInputs": 0,
+          "mainInstantCount": 9
+        },
+        {
+          "sampleIndex": 3026,
+          "pageWaitMs": [
+            29308.54500001669,
+            29329.384999990463
+          ],
+          "waitMs": 20.839999973773956,
+          "allClosedMainX": {
+            "events": 27,
+            "guaranteedMs": 0,
+            "possibleMs": 2.253000020980835,
+            "uncoveredByPossibleMs": 18.58699995279312
+          },
+          "knownRunTask": {
+            "events": 10,
+            "guaranteedMs": 0,
+            "possibleMs": 2.24700003862381,
+            "uncoveredByPossibleMs": 18.592999935150146
+          },
+          "topRunTasks": [
+            {
+              "eventIndex": 208682,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                29308.839999973774,
+                29309.249000012875
+              ],
+              "pageEndRangeMs": [
+                29309.04899996519,
+                29309.45800000429
+              ],
+              "wallDurationMs": 0.209,
+              "threadDurationUs": 56,
+              "overlapBoundsMs": [
+                0,
+                0.6180000305175781
+              ]
+            },
+            {
+              "eventIndex": 208727,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                29321.70300000906,
+                29322.11200004816
+              ],
+              "pageEndRangeMs": [
+                29321.8939999938,
+                29322.3030000329
+              ],
+              "wallDurationMs": 0.191,
+              "threadDurationUs": 38,
+              "overlapBoundsMs": [
+                0,
+                0.6000000238418579
+              ]
+            },
+            {
+              "eventIndex": 208679,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                29308.653999984264,
+                29309.063000023365
+              ],
+              "pageEndRangeMs": [
+                29308.834999978542,
+                29309.244000017643
+              ],
+              "wallDurationMs": 0.181,
+              "threadDurationUs": 27,
+              "overlapBoundsMs": [
+                0,
+                0.5900000333786011
+              ]
+            }
+          ],
+          "longestRunTaskMs": 12.715,
+          "dueInputs": 3,
+          "submittedInputs": 2,
+          "completedInputs": 2,
+          "mainInstantCount": 5
+        },
+        {
+          "sampleIndex": 2884,
+          "pageWaitMs": [
+            28394.44999998808,
+            28406.730000019073
+          ],
+          "waitMs": 12.280000030994415,
+          "allClosedMainX": {
+            "events": 15,
+            "guaranteedMs": 11.050999939441681,
+            "possibleMs": 12.280000030994415,
+            "uncoveredByPossibleMs": 0
+          },
+          "knownRunTask": {
+            "events": 6,
+            "guaranteedMs": 11.050999939441681,
+            "possibleMs": 12.280000030994415,
+            "uncoveredByPossibleMs": 0
+          },
+          "topRunTasks": [
+            {
+              "eventIndex": 193433,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                28395.131999969482,
+                28395.541000008583
+              ],
+              "pageEndRangeMs": [
+                28405.79899996519,
+                28406.20800000429
+              ],
+              "wallDurationMs": 10.667,
+              "threadDurationUs": 2425,
+              "overlapBoundsMs": [
+                10.257999956607819,
+                11.076000034809113
+              ]
+            },
+            {
+              "eventIndex": 193419,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                28393.912999987602,
+                28394.322000026703
+              ],
+              "pageEndRangeMs": [
+                28394.91699999571,
+                28395.32600003481
+              ],
+              "wallDurationMs": 1.004,
+              "threadDurationUs": 226,
+              "overlapBoundsMs": [
+                0.46700000762939453,
+                0.8760000467300415
+              ]
+            },
+            {
+              "eventIndex": 193598,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                28405.99500000477,
+                28406.40400004387
+              ],
+              "pageEndRangeMs": [
+                28418.881999969482,
+                28419.291000008583
+              ],
+              "wallDurationMs": 12.887,
+              "threadDurationUs": 2748,
+              "overlapBoundsMs": [
+                0.3259999752044678,
+                0.7350000143051147
+              ]
+            }
+          ],
+          "longestRunTaskMs": 12.887,
+          "dueInputs": 0,
+          "submittedInputs": 0,
+          "completedInputs": 0,
+          "mainInstantCount": 5
+        }
+      ],
+      "termination": {
+        "note": "Corrects task-context.json controlsAfterLastSample: the legacy selector used c.at but controls use enteredAt; source controls were retained and body/task data are unaffected.",
+        "lastSampleAt": 30583.50499999523,
+        "ended": 30583.50499999523,
+        "postMeasureControls": [
+          {
+            "name": "_th09_loop_pause",
+            "enteredAt": 30650.225000023842,
+            "exitedAt": 30650.399999976158,
+            "argument": 1,
+            "rafIndex": null,
+            "active": true,
+            "finished": false,
+            "connected": true,
+            "recovering": false,
+            "visibility": "visible",
+            "threw": false
+          }
+        ],
+        "pauseFound": true,
+        "pause": {
+          "name": "_th09_loop_pause",
+          "enteredAt": 30650.225000023842,
+          "exitedAt": 30650.399999976158,
+          "argument": 1,
+          "rafIndex": null,
+          "active": true,
+          "finished": false,
+          "connected": true,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        },
+        "controlsAfterPause": [],
+        "resumeAfterPause": [],
+        "framesAfterPause": 0,
+        "measuredSamplesAfterPause": 0,
+        "lastDiagnosticFrame": {
+          "index": 3240,
+          "rafIndex": 3269,
+          "enteredAt": 30646.37999999523,
+          "exitedAt": 30646.394999980927,
+          "cppWorkMs": 2.084999978542328,
+          "ok": 1,
+          "playEnteredAt": 30646.389999985695,
+          "playExitedAt": 30646.394999980927,
+          "sampleAt": null,
+          "afterSampleAt": null,
+          "sampleBefore": 3230,
+          "sampleAfter": 3230,
+          "activeBefore": true,
+          "activeAfter": true,
+          "endedBefore": true,
+          "endedAfter": true,
+          "threw": false
+        },
+        "diagnosticSnapshotAt": 40931.464999973774,
+        "lastPauseRequested": 1,
+        "valid": true,
+        "hookErrors": [],
+        "overflow": false
+      }
+    },
+    {
+      "side": 1,
+      "renderer": {
+        "pid": 54204,
+        "tid": 49448
+      },
+      "offsetIntersectionMs": [
+        274890190.653,
+        274890191.04300004
+      ],
+      "mainPhaseCounts": {
+        "M": 1,
+        "X": 38493,
+        "I": 6727,
+        "b": 5276,
+        "e": 5274
+      },
+      "waits": [
+        {
+          "sampleIndex": 1697,
+          "pageWaitMs": [
+            16130.625,
+            16279.144999980927
+          ],
+          "waitMs": 148.5199999809265,
+          "allClosedMainX": {
+            "events": 52,
+            "guaranteedMs": 4.779999613761902,
+            "possibleMs": 13.81600046157837,
+            "uncoveredByPossibleMs": 134.70399951934814
+          },
+          "knownRunTask": {
+            "events": 18,
+            "guaranteedMs": 4.779999613761902,
+            "possibleMs": 13.222000479698181,
+            "uncoveredByPossibleMs": 135.29799950122833
+          },
+          "topRunTasks": [
+            {
+              "eventIndex": 117286,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                16142.513999938965,
+                16142.903999984264
+              ],
+              "pageEndRangeMs": [
+                16144.35699993372,
+                16144.74699997902
+              ],
+              "wallDurationMs": 1.843,
+              "threadDurationUs": 358,
+              "overlapBoundsMs": [
+                1.4529999494552612,
+                2.2330000400543213
+              ]
+            },
+            {
+              "eventIndex": 117494,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                16253.096999943256,
+                16253.486999988556
+              ],
+              "pageEndRangeMs": [
+                16254.336999952793,
+                16254.726999998093
+              ],
+              "wallDurationMs": 1.24,
+              "threadDurationUs": 302,
+              "overlapBoundsMs": [
+                0.8499999642372131,
+                1.6300000548362732
+              ]
+            },
+            {
+              "eventIndex": 117353,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                16177.209999978542,
+                16177.600000023842
+              ],
+              "pageEndRangeMs": [
+                16178.18799996376,
+                16178.57800000906
+              ],
+              "wallDurationMs": 0.978,
+              "threadDurationUs": 187,
+              "overlapBoundsMs": [
+                0.5879999399185181,
+                1.3680000305175781
+              ]
+            }
+          ],
+          "longestRunTaskMs": 11.895,
+          "dueInputs": 0,
+          "submittedInputs": 0,
+          "completedInputs": 0,
+          "mainInstantCount": 6
+        },
+        {
+          "sampleIndex": 661,
+          "pageWaitMs": [
+            9809.995000004768,
+            9835.084999978542
+          ],
+          "waitMs": 25.089999973773956,
+          "allClosedMainX": {
+            "events": 8,
+            "guaranteedMs": 21.06499993801117,
+            "possibleMs": 22.314999997615814,
+            "uncoveredByPossibleMs": 2.774999976158142
+          },
+          "knownRunTask": {
+            "events": 4,
+            "guaranteedMs": 21.06499993801117,
+            "possibleMs": 22.31300002336502,
+            "uncoveredByPossibleMs": 2.7769999504089355
+          },
+          "topRunTasks": [
+            {
+              "eventIndex": 52771,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                9813.12199997902,
+                9813.512000024319
+              ],
+              "pageEndRangeMs": [
+                9834.57699996233,
+                9834.96700000763
+              ],
+              "wallDurationMs": 21.455,
+              "threadDurationUs": 6243,
+              "overlapBoundsMs": [
+                21.06499993801117,
+                21.84500002861023
+              ]
+            },
+            {
+              "eventIndex": 52768,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                9813.089999973774,
+                9813.480000019073
+              ],
+              "pageEndRangeMs": [
+                9813.115999937057,
+                9813.505999982357
+              ],
+              "wallDurationMs": 0.026,
+              "threadDurationUs": 25,
+              "overlapBoundsMs": [
+                0,
+                0.41600000858306885
+              ]
+            },
+            {
+              "eventIndex": 52758,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                9809.685999929905,
+                9810.075999975204
+              ],
+              "pageEndRangeMs": [
+                9809.922999978065,
+                9810.313000023365
+              ],
+              "wallDurationMs": 0.237,
+              "threadDurationUs": 86,
+              "overlapBoundsMs": [
+                0,
+                0.31800001859664917
+              ]
+            }
+          ],
+          "longestRunTaskMs": 21.455,
+          "dueInputs": 3,
+          "submittedInputs": 1,
+          "completedInputs": 1,
+          "mainInstantCount": 8
+        },
+        {
+          "sampleIndex": 1448,
+          "pageWaitMs": [
+            14597.605000019073,
+            14618.54500001669
+          ],
+          "waitMs": 20.939999997615814,
+          "allClosedMainX": {
+            "events": 24,
+            "guaranteedMs": 0.49199992418289185,
+            "possibleMs": 3.240000069141388,
+            "uncoveredByPossibleMs": 17.699999928474426
+          },
+          "knownRunTask": {
+            "events": 9,
+            "guaranteedMs": 0.49199992418289185,
+            "possibleMs": 3.2350000739097595,
+            "uncoveredByPossibleMs": 17.704999923706055
+          },
+          "topRunTasks": [
+            {
+              "eventIndex": 101752,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                14597.888999938965,
+                14598.278999984264
+              ],
+              "pageEndRangeMs": [
+                14598.49699997902,
+                14598.887000024319
+              ],
+              "wallDurationMs": 0.608,
+              "threadDurationUs": 149,
+              "overlapBoundsMs": [
+                0.21799999475479126,
+                0.9980000853538513
+              ]
+            },
+            {
+              "eventIndex": 101764,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                14598.725999951363,
+                14599.115999996662
+              ],
+              "pageEndRangeMs": [
+                14599.108999967575,
+                14599.499000012875
+              ],
+              "wallDurationMs": 0.383,
+              "threadDurationUs": 31,
+              "overlapBoundsMs": [
+                0,
+                0.7730000615119934
+              ]
+            },
+            {
+              "eventIndex": 101746,
+              "name": "ThreadControllerImpl::RunTask",
+              "nameHash": null,
+              "pageStartRangeMs": [
+                14596.897999942303,
+                14597.287999987602
+              ],
+              "pageEndRangeMs": [
+                14597.878999948502,
+                14598.268999993801
+              ],
+              "wallDurationMs": 0.981,
+              "threadDurationUs": 168,
+              "overlapBoundsMs": [
+                0.2739999294281006,
+                0.6639999747276306
+              ]
+            }
+          ],
+          "longestRunTaskMs": 5.716,
+          "dueInputs": 2,
+          "submittedInputs": 2,
+          "completedInputs": 2,
+          "mainInstantCount": 5
+        }
+      ],
+      "termination": {
+        "note": "Corrects task-context.json controlsAfterLastSample: the legacy selector used c.at but controls use enteredAt; source controls were retained and body/task data are unaffected.",
+        "lastSampleAt": 25920.25,
+        "ended": 25920.25,
+        "postMeasureControls": [
+          {
+            "name": "_th09_loop_pause",
+            "enteredAt": 25982.139999985695,
+            "exitedAt": 25982.314999997616,
+            "argument": 1,
+            "rafIndex": null,
+            "active": true,
+            "finished": false,
+            "connected": true,
+            "recovering": false,
+            "visibility": "visible",
+            "threw": false
+          }
+        ],
+        "pauseFound": true,
+        "pause": {
+          "name": "_th09_loop_pause",
+          "enteredAt": 25982.139999985695,
+          "exitedAt": 25982.314999997616,
+          "argument": 1,
+          "rafIndex": null,
+          "active": true,
+          "finished": false,
+          "connected": true,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        },
+        "controlsAfterPause": [],
+        "resumeAfterPause": [],
+        "framesAfterPause": 0,
+        "measuredSamplesAfterPause": 0,
+        "lastDiagnosticFrame": {
+          "index": 3278,
+          "rafIndex": 3398,
+          "enteredAt": 25977.29500001669,
+          "exitedAt": 25977.305000007153,
+          "cppWorkMs": 0,
+          "ok": 1,
+          "playEnteredAt": 25977.30000001192,
+          "playExitedAt": 25977.305000007153,
+          "sampleAt": null,
+          "afterSampleAt": null,
+          "sampleBefore": 3269,
+          "sampleAfter": 3269,
+          "activeBefore": true,
+          "activeAfter": true,
+          "endedBefore": true,
+          "endedAfter": true,
+          "threw": false
+        },
+        "diagnosticSnapshotAt": 36251.25,
+        "lastPauseRequested": 1,
+        "valid": true,
+        "hookErrors": [],
+        "overflow": false
+      }
+    }
+  ]
+}

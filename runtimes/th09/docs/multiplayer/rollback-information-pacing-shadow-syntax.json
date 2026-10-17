@@ -1,0 +1,15 @@
+{
+  "schema": "th09-information-pacing-shadow-command-v1",
+  "kind": "syntax",
+  "startedAt": "2026-10-11T02:51:01.9293142Z",
+  "completedAt": "2026-10-11T02:51:01.9824966Z",
+  "command": [
+    "node",
+    "--check",
+    "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs"
+  ],
+  "exitCode": 0,
+  "analyzerSha256": "d0c0cb5eea57b89b138b3f53ce8d763789a1325bea680818543fc31fb99674e9",
+  "planSha256": "3c242cc7974c9cd546a43bd6dd6c8aa70fbc0f8a8103d17e5b4bef27e3361139",
+  "outputLines": []
+}

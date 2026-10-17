@@ -1,0 +1,73 @@
+// Materialize the resource-free directory Runtime consumed by eagler-touhou.
+// Retail DAT, original font and OGG remain Host/Package resources.
+import { createHash } from 'node:crypto';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = fileURLToPath(new URL('../', import.meta.url));
+const compiled = resolve(root, process.env.TH09_OUTPUT || 'artifacts/sdl-release');
+const variant = process.argv.includes('--multiplayer') ? 'multiplayer' : 'normal';
+const output = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, process.env.TH09_PACKAGE_OUTPUT || (variant === 'multiplayer' ? 'build-eagler-multiplayer' : 'build-eagler'));
+const native = process.env.TH09_RUNTIME_ASSETS ? resolve(process.env.TH09_RUNTIME_ASSETS) : resolve(root, 'assets/sdl-native');
+const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+const inputs = [
+  ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
+  ['shell.mjs', resolve(root, 'sdl-runtime/managed.mjs')],
+  ['managed.css', resolve(root, 'sdl-runtime/managed.css')],
+  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'replay-player.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
+  ['playback-clock.mjs', resolve(process.env.EAGLER_COMMON_ROOT || resolve(root, '../third_party/eagler-common'), 'browser/playback-clock.mjs')],
+  ['th09.mjs', resolve(compiled, 'th09.mjs')],
+  ['th09.wasm', resolve(compiled, 'th09.wasm')],
+  ['fonts/cp932.bin', resolve(native, 'cp932.bin')],
+  ['fonts/blend.bin', resolve(native, 'blend.bin')],
+];
+for (const [, source] of inputs) if (!existsSync(source)) throw Error(`Missing TH09 Runtime input: ${source}`);
+const build = JSON.parse(readFileSync(resolve(compiled, 'build.json'), 'utf8'));
+const wasm = readFileSync(resolve(compiled, 'th09.wasm'));
+if (!Number.isFinite(Date.parse(build.builtAt))) throw Error('Rebuild TH09 to record its build timestamp');
+if (build.kind !== 'th09-native-web-release-candidate' || build.sha256 !== sha256(wasm)) {
+  throw Error('TH09 release WASM does not match its build attestation');
+}
+if (variant === 'multiplayer') {
+  const exports = new Set(WebAssembly.Module.exports(new WebAssembly.Module(wasm)).map(entry => entry.name));
+  const required = [
+    'th09_peer_url_buffer', 'th09_peer_spectator_id_buffer', 'th09_peer_packet_buffer',
+    'th09_peer_error', 'th09_peer_connect', 'th09_peer_connect_spectator',
+    'th09_peer_state', 'th09_peer_send', 'th09_peer_has_spectators',
+    'th09_peer_send_spectator', 'th09_peer_poll', 'th09_peer_close',
+    'th09_peer_spectator_state', 'th09_peer_stop_spectators', 'th09_spectator_info',
+    'th09_network_info', 'th09_network_room_begin', 'th09_network_receive',
+    'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
+    'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_wake', 'th09_rollback_info',
+    'th09_adonis_configure', 'th09_adonis_info',
+    'th09_measured_begin', 'th09_startup_info',
+    'th09_network_selection_begin', 'th09_network_selection_info', 'th09_spectator_prepare',
+    'th09_auto_save_replay', 'th09_auto_replay_folder_buffer', 'th09_play_replay', 'th09_replay_view_info', 'th09_replay_view_step', 'th09_replay_view_silent',
+    'th09_spectator_feed', 'th09_spectator_frame', 'th09_spectator_end',
+  ];
+  const missing = required.filter(name => !exports.has(name));
+  if (missing.length) throw Error(`TH09 multiplayer WASM is missing exports: ${missing.join(', ')}`);
+}
+mkdirSync(output, { recursive: true });
+for (const [name, source] of inputs) {
+  mkdirSync(resolve(output, name, '..'), { recursive: true });
+  if (name === 'th09.html') {
+    const marker = '<meta name="eagler-runtime-variant" content="normal">';
+    const html = readFileSync(source, 'utf8');
+    if (html.split(marker).length !== 2) throw Error('Missing or ambiguous TH09 Runtime variant marker');
+    writeFileSync(resolve(output, name), html.replace(marker, `<meta name="eagler-runtime-variant" content="${variant}">`));
+  } else copyFileSync(source, resolve(output, name));
+}
+writeFileSync(resolve(output, 'manifest.json'), JSON.stringify({
+  game: 'th09', protocol: 'eagler-touhou/1', features: { thprac: false, languages: true, focusHitbox: false },
+}, null, 2) + '\n');
+// version.json is generation-local: shared-netplay.mjs compares both peers'
+// WASM builds before starting the deterministic match.
+writeFileSync(resolve(output, 'version.json'), JSON.stringify({ game: 'th09', build: build.sha256.slice(0, 24), builtAt: build.builtAt }) + '\n');
+const files = Object.fromEntries([...inputs.map(([name]) => name), 'manifest.json', 'version.json'].map(name => {
+  const bytes = readFileSync(resolve(output, name));
+  return [name, { bytes: bytes.length, sha256: sha256(bytes) }];
+}));
+writeFileSync(resolve(output, 'runtime-files.json'), JSON.stringify({ schema: 'eagler-touhou/runtime-directory/1', files }, null, 2) + '\n');
+console.log(JSON.stringify({ output, files: Object.keys(files), wasm: files['th09.wasm'].sha256 }));

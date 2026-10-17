@@ -1,0 +1,503 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS correctness; CPU4 controlled recovery cost measured; no comparative speedup or production rAF/FPS acceptance",
+  "createdAtUtc": "2026-10-11",
+  "workspace": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+  "runLabel": "rollback4x-enemy-index-deep8-cpu4-01",
+  "conclusion": ["Controlled CPU4 depth-8/D0 correctness PASS; actual-network and native-rAF acceptance remain untested.","This single candidate does not measure enemy-index speedup. Adverse native-call tails, warmup, recovery continuations and confirmation tails are retained.","Compiler-named/Java/Node candidates consumed CPU; no individual call is attributed to them, and their task identity is unproven."],
+  "rawArtifacts": [
+    {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-cleanup.json",
+      "bytes": 38,
+      "sha256": "755e68727451536a617967592959c2b45853ec0490e947b244ef69ef2d07ad15"
+    },
+    {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-invocation.json",
+      "bytes": 3621,
+      "sha256": "751011570e6422c4b81ff77aa51921031f7ce6078f17fb2a2e0bad3a585e1228"
+    },
+    {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-process.log",
+      "bytes": 2055,
+      "sha256": "05ce7a6ef9496919fde629ba622cb6f531a7b8fa310b82b49fe11c35eaf9633b"
+    },
+    {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-report.json",
+      "bytes": 4663577,
+      "sha256": "cbc6492eb54c225eaeefa31b428ac537eff7382e348c957f368b4b8207eab77f"
+    }
+  ],
+  "invocation": {
+    "startedAt": "2026-10-11T01:55:33.444Z",
+    "endedAt": "2026-10-11T02:03:19.912Z",
+    "elapsedMs": 466466.6513,
+    "status": 0,
+    "signal": null,
+    "args": ["th09_web/tests/multiplayer/peer-browser.mjs"],
+    "head": "5d4b7f0a1cc047143e3f5da5ed3749ad5af9b897",
+    "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
+    "monitoredSourceIdentityStable": true,
+    "monitoredIdentity": {
+      "th09_web/tests/multiplayer/peer-browser.mjs": "a7cf46dfe2550fec3f7ebe2d5e991453dbbe23c658a602e0e69afddd7a428aa5",
+      "th09_web/tests/multiplayer/host-load-probe.mjs": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+      "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+      "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+      "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+      "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+      "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6"
+    },
+    "identityError": null,
+    "stderrBytes": 0,
+    "cleanup": {
+      "complete": true,
+      "errors": []
+    }
+  },
+  "artifact": {
+    "directory": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-live",
+    "kind": "th09-presentation-harness",
+    "builtAt": "2026-10-11T01:50:54.603Z",
+    "completeGame": false,
+    "audioSimd": false,
+    "compilerFlags": ["-O2","-g0","-std=c++17","-ffp-contract=off","-fno-strict-aliasing","-fno-exceptions","-fno-rtti","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\sdl","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer","-DTH_NATIVE_PLATFORM=1","-DTH_ENABLE_THCRAP=1","-DTH09_DEVELOPMENT_HARNESS=1","--use-port=sdl3","--use-port=sdl3_ttf"],
+    "sourceCompilerFlags": {},
+    "wasmBytes": 3155589,
+    "loadedIdentity": {
+      "harness": "a7cf46dfe2550fec3f7ebe2d5e991453dbbe23c658a602e0e69afddd7a428aa5",
+      "wasm": "59364fa88a9a23913fe2d808ae6e303790dcb1c1533f5e4d4e5893d14fde4877",
+      "loader": "7f7080fa2d91486b07971b0054862554dd62c632a7320512ff0bd8d72a4f808a",
+      "manifest": "be81865662f0672c3aff96c8cd5765fb895cc1fc9b7dc02244502f273c220b4c",
+      "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+      "presentationServer": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+      "browserLauncher": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+      "hostLoadProbe": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b"
+    },
+    "loadedIdentityAfterMatches": true,
+    "browserVersion": "153.0.8010.12",
+    "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "workload": {
+    "fixedDelay": 8,
+    "forceCorrection": true,
+    "limit": 1800,
+    "maximumIterations": 19800,
+    "hardware": true,
+    "pauseTrace": false,
+    "inputTrace": "charged-strafe-alternating-focus",
+    "adonisMode": 0,
+    "inputDelay": 0,
+    "captureTrace": true,
+    "deliveryClock": "frontier",
+    "cpuRate": 4,
+    "hostLoad": true,
+    "cpuThrottle": {
+      "method": "CDP Emulation.setCPUThrottlingRate",
+      "rate": 4,
+      "configuredBefore": "same-origin iframe creation and openProbe",
+      "scope": "All three sequential worlds share the throttled renderer. This is controlled recovery call cost, not real multiplayer or native rAF presentation cadence."
+    },
+    "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected frontier-delay transport; three sequential worlds in one CPU-throttled Chromium renderer, not real RTC wall-clock pacing, native rAF presentation cadence or public TURN",
+    "observedSessionPhases": [
+      [1],
+      [1]
+    ],
+    "pauseCalls": [0,0]
+  },
+  "correctness": {
+    "reportPassed": true,
+    "errors": [],
+    "logicalFrames": 1800,
+    "iterations": 11069,
+    "finalSummaryRows": [
+      [1800,1800,1798,14352,1800,2697,1,1800],
+      [1800,1800,1798,14359,1800,2655,1,1800]
+    ],
+    "adonisRows": [
+      [0,0,14352,0,0,0],
+      [0,0,14359,0,0,49]
+    ],
+    "hashes": [3545558762,3545558762,3545558762],
+    "auditFieldCount": 48,
+    "auditRowsEqual": true,
+    "finalAuditRow": [6460,14,4,-1,0,0,-1027175709,1135602830,5,4,1118830592,1129589309,20874,60,0,98,5,4,0,4,0,0,0,0,0,0,1107160913,1137970867,3,4,1118974773,1130469775,33500,60,0,132,133,4,0,0,0,0,0,0,0,0,0,0],
+    "framebuffersEqual": true,
+    "replayBytes": 1986,
+    "replayEqualityGate": "peer-browser.mjs:163-168 compares all three final PNG data URLs and every Replay byte before reportPassed",
+    "physicalCaptures": [
+      {
+        "length": 1800,
+        "first": [3,0,0,0,0,321],
+        "last": [11057,1799,1799,1791,14328,5]
+      },
+      {
+        "length": 1800,
+        "first": [3,0,0,0,0,257],
+        "last": [11012,1799,1799,1791,14328,133]
+      }
+    ],
+    "preRecoveryCaptures": [1792,1759],
+    "partialRecoveryCalls": [1786,1785],
+    "ticks": [11069,11069],
+    "waitReturnCalls": [9269,9269]
+  },
+  "clocks": {
+    "entireInvocationMs": 466466.6513,
+    "inPageObservationClock": {
+      "timeOriginMs": 1791683735836.945,
+      "startedAt": 316.3550000190735,
+      "endedAt": 456295.1750000119,
+      "includes": "iframe setup, all three worlds, oracle and readback; not a gameplay throughput timer",
+      "elapsedMs": 455978.81999999285
+    },
+    "summedPerPeerNativeCallMs": [177738.57999932766,176669.4449981749],
+    "sumAllPeerNativeCallsMs": 354408.02499750257,
+    "sampleSumsMatchRecordedTotals": [true,true],
+    "warning": "Invocation and in-page durations include iframe/setup, two manually interleaved peer worlds, third reference world, audits, readback and host work. They are not a gameplay throughput timer. No FPS is derived."
+  },
+  "costDefinitions": {
+    "sampleColumns": ["nextBefore","nextAfter","correctionsDelta","resimulatedDelta","nativeCallMs","returnCode","aliveBullets","sessionPhase","requestedRestoreDepth","aliveEnemies"],
+    "unit": "elapsed performance.now milliseconds around one _th09_game_tick call; includes descheduling and invoked platform work, not CPU process time",
+    "source": "th09_web/tests/multiplayer/peer-browser.mjs:123-139,155-170",
+    "legacy": "Filter ALL rows by nextBefore >= 180 && nextBefore < 1800. This is non-contiguous under rollback and can re-enter during the confirmation tail.",
+    "continuous": "For each peer scan rows in original call order with H=max(H,nextBefore,nextAfter). Include the first row reaching H>=180, through the first row reaching H>=1800; separately retain every later row until the harness confirms both peers at 1800. Also report the combined interval.",
+    "endpoints": "Left crossing row is included; its nextBefore<180 is not a post-left-endpoint rollback omission. Tail rows can still correct/replay below 1800 after first reaching it.",
+    "quantile": "Sort selected nativeCallMs ascending and take floor(n*q), bounded to n-1; same convention as legacy.",
+    "derivedTimeRounding": "Derived aggregate time fields are rounded to 6 decimals; legacy fields and selected raw max/boundary rows preserve source doubles.",
+    "categories": "correctionEntry includes Restore plus replay, not pure Restore. replayWithoutNewCorrection has correctionsDelta==0 and resimulatedDelta>0. Remaining has both deltas zero and may forward or wait.",
+    "exclusions": "Host load and adverse duration never filter samples. Warmup, correction continuations, endpoint and tail are all retained explicitly.",
+    "missingTiming": "Samples have no per-call wall timestamp. Absolute host CPU/process intervals cannot be aligned to individual long calls from these rows.",
+    "costRowColumns": ["calls","totalNativeCallMs","meanNativeCallMs","p50Ms","p95Ms","p99Ms","maxMs","over16p667Ms","over33p333Ms","over50Ms","over100Ms","over250Ms","correctionCalls","resimulated","requestedDepth8Calls","completeDepth8InEntryCall","frameMovedBackCalls","return1","return2"]
+  },
+  "legacyCostsUnchanged": [
+    {
+      "calls": 10030,
+      "p50": 13.169999986886978,
+      "p95": 34.38000002503395,
+      "p99": 49.03499999642372,
+      "max": 148.58499997854233,
+      "correctionCalls": 1623,
+      "requestedDeepCalls": 1620,
+      "completeDeepCalls": 4,
+      "maxRequestedDepth": 8,
+      "maxResimulatedInCall": 8
+    },
+    {
+      "calls": 10024,
+      "p50": 13.310000002384186,
+      "p95": 34.224999994039536,
+      "p99": 48.35000002384186,
+      "max": 107.13000002503395,
+      "correctionCalls": 1620,
+      "requestedDeepCalls": 1620,
+      "completeDeepCalls": 3,
+      "maxRequestedDepth": 8,
+      "maxResimulatedInCall": 8
+    }
+  ],
+  "windows": [
+    {
+      "side": 0,
+      "indices": {
+        "first180Inclusive": 1020,
+        "first1800Inclusive": 11061,
+        "lastInclusive": 11068
+      },
+      "boundarySamples": {
+        "first180": {
+          "index": 1020,
+          "row": [179,180,0,0,12.930000007152557,1,0,1,0,0]
+        },
+        "first1800": {
+          "index": 11061,
+          "row": [1799,1800,0,0,4.159999996423721,1,208,1,0,29]
+        },
+        "last": {
+          "index": 11068,
+          "row": [1800,1800,1,1,1.300000011920929,2,208,1,1,29]
+        }
+      },
+      "allCalls": [11069,177738.579999,16.057329,13.12,33.905,48.755,294.485,3399,582,91,5,1,1798,14352,1793,4,1786,1800,9269],
+      "beforeLeftEndpoint": [1020,15330.71,15.030108,12.64,27.155,39.16,294.485,272,18,5,2,1,172,1376,172,0,172,179,841],
+      "continuous180ToFirst1800": [10042,162307.41,16.162857,13.16,34.38,49.035,148.585,3124,564,86,3,0,1620,12960,1620,4,1612,1621,8421],
+      "postFirst1800ConfirmationTail": [7,100.46,14.351429,13.76,30.185,30.185,30.185,3,0,0,0,0,6,16,1,0,2,0,7],
+      "continuous180ThroughConfirmationTail": [10049,162407.87,16.161595,13.16,34.38,49.035,148.585,3127,564,86,3,0,1626,12976,1621,4,1614,1621,8428],
+      "legacyOmittedWithinCombinedWindow": {
+        "before180IncludingLeftEndpoint": {
+          "calls": 16,
+          "totalMs": 187.205
+        },
+        "leftEndpoint": {
+          "calls": 1,
+          "totalMs": 12.93
+        },
+        "postLeftEndpointRollbackBelow180": {
+          "calls": 15,
+          "totalMs": 174.275,
+          "resimulated": 32
+        },
+        "nextBeforeAtOrAbove1800": {
+          "calls": 3,
+          "totalMs": 31.795
+        },
+        "explanation": "Legacy also includes tail rows whose nextBefore falls back below 1800; therefore main-window count minus legacy count is not the under-180 omission count."
+      },
+      "categoriesInCombinedWindow": {
+        "correctionEntry": [1626,43945.9,27.026999,25.52,49.55,66.93,104.565,1266,419,79,2,0,1626,1850,1621,4,1614,4,1622],
+        "replayWithoutNewCorrection": [7469,103590.955,13.869454,12.15,26.275,36.005,148.585,1512,113,6,1,0,0,11126,0,0,0,663,6806],
+        "noCorrectionOrReplay": [954,14871.015,15.588066,14.455,31.045,43.395,66.01,349,32,1,0,0,0,0,0,0,0,954,0],
+        "replayWithoutNewCorrectionCostFraction": 0.637844
+      }
+    },
+    {
+      "side": 1,
+      "indices": {
+        "first180Inclusive": 977,
+        "first1800Inclusive": 11015,
+        "lastInclusive": 11068
+      },
+      "boundarySamples": {
+        "first180": {
+          "index": 977,
+          "row": [178,180,0,1,19.294999986886978,1,0,1,0,0]
+        },
+        "first1800": {
+          "index": 11015,
+          "row": [1799,1800,0,0,18.985000014305115,1,208,1,0,29]
+        },
+        "last": {
+          "index": 11068,
+          "row": [1800,1800,0,0,0.02000001072883606,2,208,1,0,29]
+        }
+      },
+      "allCalls": [11069,176669.444998,15.960741,13.23,33.66,47.795,107.13,3481,568,87,3,0,1798,14359,1793,8,1785,1800,9269],
+      "beforeLeftEndpoint": [977,14213.235,14.547835,12.875,26.73,34.755,84.35,257,12,2,0,0,172,1375,172,5,167,179,798],
+      "continuous180ToFirst1800": [10039,162094.479999,16.146477,13.31,34.225,48.35,107.13,3219,553,84,3,0,1620,12961,1620,3,1613,1621,8418],
+      "postFirst1800ConfirmationTail": [53,361.73,6.825094,0.66,35.985,57.905,57.905,5,3,1,0,0,6,23,1,0,5,0,53],
+      "continuous180ThroughConfirmationTail": [10092,162456.209999,16.097524,13.28,34.225,48.595,107.13,3224,556,85,3,0,1626,12984,1621,3,1618,1621,8471],
+      "legacyOmittedWithinCombinedWindow": {
+        "before180IncludingLeftEndpoint": {
+          "calls": 26,
+          "totalMs": 351.99
+        },
+        "leftEndpoint": {
+          "calls": 1,
+          "totalMs": 19.295
+        },
+        "postLeftEndpointRollbackBelow180": {
+          "calls": 25,
+          "totalMs": 332.695,
+          "resimulated": 32
+        },
+        "nextBeforeAtOrAbove1800": {
+          "calls": 42,
+          "totalMs": 251.465
+        },
+        "explanation": "Legacy also includes tail rows whose nextBefore falls back below 1800; therefore main-window count minus legacy count is not the under-180 omission count."
+      },
+      "categoriesInCombinedWindow": {
+        "correctionEntry": [1626,43194.71,26.565012,25.245,47.995,64.935,107.13,1259,399,62,2,0,1626,1811,1621,3,1618,3,1623],
+        "replayWithoutNewCorrection": [7403,103371.549999,13.963468,12.19,26.02,36.44,105.055,1561,119,18,1,0,0,11173,0,0,0,639,6764],
+        "noCorrectionOrReplay": [1063,15889.95,14.948213,14.41,30.48,43.99,64.205,404,38,5,0,0,0,0,0,0,0,979,84],
+        "replayWithoutNewCorrectionCostFraction": 0.636304
+      }
+    }
+  ],
+  "density": {
+    "peakAliveBullets": [383,383],
+    "peakAliveEnemies": [40,40],
+    "definition": "Each sample sums both playfields within that peer AFTER the native call. Two peers replicate the same world; their density values must not be added together.",
+    "limitation": "aliveEnemies is not snapshot owner count or BeforeEnemy invocation count; prototypes, sentinels, aliases and writes between samples are not represented. Peak 40 active enemies does not establish coverage of the 260-known-owner dense component fixture.",
+    "source": "Application.cpp:710-718 _th09_probe_load; peer-browser.mjs:130-139 appended column 9 while preserving prior 9 columns.",
+    "combinedWindowBands": [
+      {
+        "side": 0,
+        "bands": [
+          [0,0,120,11.624375,20.92,30.24,30,0,0],
+          [1,9,1865,14.768847,40.165,66.01,318,0,75],
+          [10,19,4241,15.992308,45.87,100.695,681,0,383],
+          [20,29,2314,16.972766,51.435,77.67,363,30,381],
+          [30,40,1509,17.475603,56.125,148.585,229,58,237]
+        ]
+      },
+      {
+        "side": 1,
+        "bands": [
+          [0,0,134,12.362239,27.2,29.98,30,0,0],
+          [1,9,1861,14.932947,41.33,92.535,319,0,75],
+          [10,19,4226,15.912166,45.835,84.16,682,0,383],
+          [20,29,2361,16.593975,52.645,107.13,361,30,381],
+          [30,40,1510,17.606798,54.08,104.015,229,58,237]
+        ]
+      }
+    ],
+    "interpretation": "Unmatched within-run bands mix frames, bullets, replay budgets and host activity. They describe this workload and are not a causal estimate of enemy lookup savings.",
+    "bandColumns": ["aliveEnemyMin","aliveEnemyMax","calls","meanNativeMs","p99NativeMs","maxNativeMs","requestedDepth8Calls","minAliveBullets","maxAliveBullets"]
+  },
+  "host": {
+    "recordStatus": {
+      "complete": true,
+      "valid": true,
+      "stopped": true,
+      "errors": [],
+      "overflow": {
+        "cpuSamples": false,
+        "processSamples": false,
+        "processRows": false,
+        "processRowsPerSample": false,
+        "stdout": false,
+        "knownProcesses": false,
+        "marks": false,
+        "errors": false
+      },
+      "counts": {
+        "cpuAttempts": 458,
+        "processMessages": 91,
+        "processRowsSeen": 2646,
+        "processRowsStored": 2646,
+        "stdoutBytes": 73129,
+        "stderrBytes": 0
+      }
+    },
+    "clock": {
+      "startedAtUtc": "2026-10-11T01:55:35.816Z",
+      "endedAtUtc": "2026-10-11T02:03:18.198Z",
+      "durationMs": 462382,
+      "snapshotAtMs": 462383.4285
+    },
+    "cpu": {
+      "logicalCpus": [24],
+      "validIntervals": 457,
+      "initialSampleWithoutDelta": 1,
+      "weightedBusyFraction": 0.373342364530701,
+      "busyFraction": {
+        "n": 457,
+        "min": 0.17219550293912111,
+        "p50": 0.3621141406697781,
+        "p95": 0.556389107638745,
+        "p99": 0.7393257517503744,
+        "max": 0.9363417849112197,
+        "mean": 0.37349528430356355
+      },
+      "intervalMs": {
+        "n": 457,
+        "min": 908.6870000000054,
+        "p50": 1006.492900000012,
+        "p95": 1014.0325999999768,
+        "p99": 1061.0210000000006,
+        "max": 2719.4185999999754,
+        "mean": 1011.7138763676146
+      },
+      "counterDiscontinuities": 0,
+      "over50PercentIntervals": 45,
+      "over75PercentIntervals": 4,
+      "over90PercentIntervals": 2
+    },
+    "processes": {
+      "method": "Sum nonnegative cumulative CPU deltas only for same PID/name in adjacent successful process snapshots. First lifetime values are excluded; PID reuse cannot be ruled out without creation times.",
+      "samples": 91,
+      "failedSamples": 0,
+      "sourceToReceiveLagMs": {
+        "n": 91,
+        "min": 35,
+        "p50": 60,
+        "p95": 122,
+        "p99": 1742,
+        "max": 1742,
+        "mean": 84.7032967032967
+      },
+      "knownProcesses": [
+        {
+          "pid": 48432,
+          "role": "harness-node",
+          "registeredAtMs": 0.09229999999979555,
+          "registeredUtcMs": 1791683735816
+        },
+        {
+          "pid": 52812,
+          "role": "host-load-sampler",
+          "registeredAtMs": 9.616099999999733,
+          "registeredUtcMs": 1791683735826
+        }
+      ],
+      "counterDiscontinuities": [],
+      "byName": [
+        ["java",8,48,261.796875,612.9348999999997,460790.7053],
+        ["node",98,1901,90.96875,612.9348999999997,460790.7053],
+        ["clang++",2,4,10.171875,612.9348999999997,15954.859099999998],
+        ["python",8,638,2.890625,612.9348999999997,460790.7053],
+        ["cmake",1,2,0.90625,454027.1477,460790.7053],
+        ["esbuild",23,46,0.03125,612.9348999999997,377626.41199999995],
+        ["ninja",3,6,0,612.9348999999997,460790.7053],
+        ["clang",1,1,0,454027.1477,454027.1477]
+      ],
+      "compilerNamedProcesses": [
+        [54320,"clang++",3,0,2,612.9348999999997,10855.1611,44.53125,54.703125,10.171875,10.329,2],
+        [27072,"cmake",2,89,90,454027.1477,460790.7053,2.125,3.03125,0.90625,5.085,1],
+        [40080,"ninja",4,0,3,612.9348999999997,15954.859099999998,3.3125,3.3125,0,15.483,3],
+        [42396,"clang++",1,3,3,15954.859099999998,15954.859099999998,0.03125,0.03125,0,0,0],
+        [42040,"clang",1,89,89,454027.1477,454027.1477,0.03125,0.03125,0,0,0],
+        [67260,"ninja",1,89,89,454027.1477,454027.1477,0,0,0,0,0],
+        [68388,"ninja",1,90,90,460790.7053,460790.7053,0,0,0,0,0]
+      ],
+      "topJavaProcesses": [
+        [45748,"java",6,15,20,77039.20640000001,102397.95420000001,2.34375,86.328125,83.984375,25.379999999999995,5],
+        [47948,"java",8,0,7,612.9348999999997,36314.332,63.078125,142.28125,79.203125,35.861,7],
+        [49076,"java",5,59,63,301012.03329999995,321300.44519999996,10.484375,74.0625,63.578125,20.289,4],
+        [36536,"java",5,86,90,438754.9497,460790.7053,5.765625,40.03125,34.265625,20.341,4]
+      ],
+      "processColumns": ["pid","name","sightings","firstSample","lastSample","firstAtMs","lastAtMs","initialLifetimeCpuSecondsExcluded","lastLifetimeCpuSeconds","adjacentCpuDeltaSeconds","adjacentObservedSeconds","adjacentPairs"],
+      "byNameColumns": ["name","distinctPids","sightings","adjacentCpuDeltaSeconds","firstSeenAtMs","lastSeenAtMs"]
+    },
+    "limitations": ["Aggregate CPU occupancy does not establish single-core availability, CPU frequency, thermal state, GPU load, or a stable benchmark environment.","Process names are candidates for contention, not proof that a process is compiling. Known harness/relay/helper PIDs are labeled separately; other node processes remain unlabeled candidates.","Process CPU is cumulative lifetime CPU seconds. A first sighting is not CPU consumed during this run; PID reuse or counter reset can break a delta.","The 5 s process snapshots miss short tasks that start and exit between snapshots. Timer delays and source/receive times are retained.","This observer has overhead. Its own PowerShell helper is intentionally not a candidate process, but its work is included in aggregate CPU counters.","Overflow and sampling failures make this evidence incomplete; they are never a reason to silently remove a game result.","Host evidence covers setup, peer execution, the reference world and final readback together. CPU interval max 2719.419 ms is a host sampling delay, not a measured game freeze.","Compiler-named sightings and nonnegative CPU deltas support concurrent activity; Java/Node process names do not establish compilation. Known harness/helper PIDs are separate, and remaining candidates cannot all be classified as unrelated load."],
+    "processSampler": {
+      "platform": "win32",
+      "ownNodePid": 48432,
+      "helperPid": 52812,
+      "status": "closed",
+      "exitCode": null,
+      "signal": "SIGTERM",
+      "stopRequested": true,
+      "stopConfirmed": true
+    }
+  },
+  "assessment": {
+    "deterministicDepth8Cpu4Gate": "PASS within controlled diagnostic fixture",
+    "comparativeEnemyIndexSpeedup": "NOT MEASURED in this single-candidate run",
+    "realNetworkOrProductionRafAcceptance": "NOT TESTED by this harness",
+    "retainedAdverseCalls": [
+      {
+        "side": 0,
+        "meaning": "First measured 0->1 native call, no correction, bullets/enemies 0; cause not assigned",
+        "sample": {
+          "index": 0,
+          "row": [0,1,0,0,294.4849999845028,1,0,1,0,0]
+        }
+      },
+      {
+        "side": 0,
+        "meaning": "Largest post-180 call has zero new correction and 3 replay ticks",
+        "sample": {
+          "index": 8968,
+          "row": [1460,1463,0,3,148.58499997854233,2,59,1,0,33]
+        }
+      },
+      {
+        "side": 1,
+        "meaning": "Largest post-180 call enters depth-8 correction and completes 1 replay tick",
+        "sample": {
+          "index": 10413,
+          "row": [1704,1697,1,1,107.13000002503395,2,128,1,8,21]
+        }
+      },
+      {
+        "side": 1,
+        "meaning": "Zero-new-correction replay can also exceed 100 ms",
+        "sample": {
+          "index": 9680,
+          "row": [1578,1586,0,7,105.05500000715256,1,139,1,0,22]
+        }
+      }
+    ],
+    "next": "Finish separately frozen release A/B runs. Evaluate pure Restore savings against the much larger cumulative continuation-replay cost before implementing the unimplemented RestoreChain proposal; do not change this run's tested source."
+  }
+}

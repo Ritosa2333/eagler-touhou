@@ -1,0 +1,121 @@
+{
+  "schema": "th09-information-pacing-shadow-plan-v1",
+  "planId": "information-budget-shadow-01",
+  "status": "predeclared-before-first-raw-execution",
+  "declaredDate": "2026-10-11",
+  "authority": "Only root may authorize execution after serialized B2/ABBA work; saving this plan does not run analysis.",
+  "priorKnowledge": "The 91.840 ms burst-response maximum and relay125 summaries were already known. This is a preregistered exploratory reanalysis, not a blinded or independent replication. No parameters will be retuned after this analyzer reads the selected raw reports.",
+  "sourceContract": {
+    "path": "docs/multiplayer/rollback-chain-network-pacing-contract-evidence.json",
+    "sha256": "8dc3220dcb592af1492b9f348937e228f9d37c4b94bafea13f8504d1f9b0d532",
+    "titleMode": "Rollback",
+    "inputDelayFrames": 0,
+    "wasmSha256": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97"
+  },
+  "inputs": [
+    {
+      "id": "relay39_burst_response",
+      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay-burst-response-01-report.json",
+      "bytes": 21525676,
+      "sha256": "09bb173bee138e05916d0557c0a42d5797c6be200e4825e97e42695063582376",
+      "identityWitness": "docs/multiplayer/rollback-chain-release-burst-response-evidence.json",
+      "identityWitnessSha256": "b254a712a15f79205c96fc0e3517e7e9e5dc9a52db7cc4ba21478c95e554bac9",
+      "expectedParameters": {
+        "limit": 1800,
+        "delay": 39,
+        "jitter": 5,
+        "slow": 4,
+        "release": true,
+        "fallback": true,
+        "inputMode": "wall-clock",
+        "rafDiagnostics": true,
+        "networkTrace": false,
+        "impairmentSite": "relay",
+        "burstAt": 20000,
+        "burstFor": 500,
+        "burstDelay": 120
+      }
+    },
+    {
+      "id": "relay125_steady",
+      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
+      "bytes": 28866220,
+      "sha256": "d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770",
+      "identityWitness": "docs/multiplayer/rollback-chain-release-relay125-transport-evidence.json",
+      "identityWitnessSha256": "57942083c992c6fbf19a09092370541e41a3cf403e9ab8a7f218bfd0ae182972",
+      "expectedParameters": {
+        "limit": 1800,
+        "delay": 125,
+        "jitter": 5,
+        "slow": 4,
+        "release": true,
+        "fallback": true,
+        "inputMode": "wall-clock",
+        "rafDiagnostics": true,
+        "networkTrace": false,
+        "impairmentSite": "relay",
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0
+      }
+    }
+  ],
+  "policy": {
+    "logicalHz": 60,
+    "historyFrames": 8,
+    "safeReserveFrames": 1,
+    "networkScaleMinimum": 1,
+    "networkScaleMaximum": 2,
+    "phaseScaleMinimum": 0.98,
+    "phaseScaleMaximum": 1.02,
+    "rampMsPerScaleUnit": 50,
+    "legacyOutstandingStart": 4,
+    "legacyOutstandingRampFrames": 3,
+    "formalStartFrontier": 180,
+    "formalEndFrontier": 1800,
+    "historyGaps": 32,
+    "minimumHistoryGaps": 16,
+    "conditionalQuantile": 0.9,
+    "minimumConditionalSurvivors": 4,
+    "sampleGapCensorMs": 50,
+    "nativeCallbackCensorMs": 10,
+    "rafRequestWaitCensorMs": 50,
+    "readBracketCensorMs": 5,
+    "clockEqualityToleranceMs": 0.00001,
+    "maxSamplesPerPeer": 16384,
+    "maxInputBytes": 41943040,
+    "maxOutputBytes": 16777216
+  },
+  "methods": {
+    "ordering": "Use every sample in its original index order. Require one version-1 F/A pacing row per sample. Do not filter by rewinding next or splice distant observations.",
+    "cohorts": "Report all samples plus prefix [0,first F>=180), body [first F>=180,first F>=1800), and tail [first F>=1800,N). Keep endpoint and all tail rows. A warning is assigned by its own index, even if its closing A event lies outside that cohort.",
+    "frontiers": "F is the raw native prediction frontier; A is the raw contiguous actual exclusive frontier; B=max(F-A,0); Q=max(0,H-B); Qfull=max(0,A+H-F); R=F-next. A>=F suppresses early warnings and retains extra actual input in Qfull.",
+    "clocks": "Use one Page performance.now domain per peer, offset by measure.started. A read is bracketed by the matching RAF frame.sampleAt and frame.afterSampleAt. A progress event lies after the previous read lower bound and by the current read upper bound. No cross-peer/Node/relay clock alignment. Missing or invalid read brackets stay unknown.",
+    "nominalTiming": "Midpoints of bounded local observation intervals are a declared nominal model only, not packet arrival times. Actual-progress evaluation uses the full interval. A batch deltaA>1 remains one observed progress event.",
+    "history": "Only completed, non-left-censored gaps with valid read brackets and no flagged local observation contamination anywhere in the entire gap, including closure, enter the FIFO of the latest 32 eligible gaps. No future gap enters its own prediction. Excluded gaps are retained with reasons.",
+    "conditionalResidual": "After at least 16 eligible completed gaps, select nominal gap durations strictly greater than current nominal age. Require at least 4 survivors, then nearest-rank p90 of gap-age. Retain possible/definite survivor counts and selected-survivor residual lower/upper bounds; these are not confidence intervals. Never use max(p90Gap-age,0).",
+    "overdue": "If conditional support is insufficient, retain unknown. With a warmed model, age above historical p90 may emit overdue-unknown; age above the historical maximum is separately marked nominal/definite. No invented arrival deadline; terminal gaps remain right-censored.",
+    "contamination": "Per-read flags include missing bracket, observation gap >50ms, native work >10ms, any R>0/resim progress/correction progress, observed requested-to-entered RAF wait >50ms, invalid RAF diagnostics, read bracket >5ms, known hidden/interrupted loop, or unavailable lifecycle/loop state. Any such flag in a completed gap excludes it from training and qualifies future opportunity classification as observationally contaminated.",
+    "offlineEvidenceQualification": "The final whole-report rafDiagnostics.valid flag and timelineContext structure/order errors are retrospective evidence qualification gates. Their use can exclude earlier points or history after a later diagnostic defect is known. Forward warning computations do not use future A gap durations, but this tool does not claim to reconstruct all diagnostic eligibility as it would have been known online.",
+    "unmeasuredBoundaries": "Per-Pump service and receive-budget exits, remaining queue per Pump, browser per-input arrival, and remote producer timing are unavailable in these raw reports. An unflagged interval is only unflagged in observed fields; information shortage is never labelled a wire/network cause.",
+    "holdBudget": "For k frames, T_hold=k*(1000/60)*observedEffectiveScale. Report Q and Qfull separately. Safe budget uses max(0,Qfull-1). CPU work and observed F/wall-time are not consumption rates.",
+    "rampBudget": "Continuous-rate model only: network(t)=min(2,observedNetworkScale+t/50), effective(t)=max(observedEffectiveScale,network(t)). Invert integral_0^T dt/((1000/60)*effective(t))=k analytically, accounting for a phase-dominated plateau. Report full and one-frame-reserve budgets. This does not reproduce future discrete Pump timing, scheduler credit, native work, or future phase advice.",
+    "originalBrake": "Keep both targetFromObservedB=1+clamp((B-4)/3,0,1) threshold crossings and observed networkScale>1 crossings. End-observed B/scale do not prove the target or scale used at callback entry. Crossings are interval observations; already-active spans are left-censored.",
+    "warningRule": "Only B>0, A<F, Q>1, targetFromObservedB==1, observedNetworkScale==1, no earlier B-threshold or network brake observed in this same gap, known current age, and no current-gap observation flags may warn. Warn predicted-bridgeable if supported p90 residual exceeds safe hold budget but fits safe ramp budget; warn predicted-beyond-ramp if it exceeds both; warn overdue-unknown if the warmed conditional tail is unsupported and nominal age exceeds historical p90.",
+    "evaluation": "Freeze warning decisions in the forward pass. In a separate closure pass compare the NEXT A-progress interval relative to decision read-upper time with the two safe budgets. Upper<=hold is unnecessary-warning-proxy; lower>hold and upper<=ramp is model-bridgeable; lower>ramp is beyond-model; overlaps are unknown. Entire-gap contamination, missing clocks, and no closing A event remain separate unknown/censored classes.",
+    "counting": "All point records survive. Primary warning counts use only the first warning per constant-A gap, avoiding counting repeated polls as independent successes. Retain later warnings and all no-warning gaps. Report observed threshold/brake lead intervals; a useful-prethreshold-model-opportunity requires a positive lower-bound lead, at least 16 eligible history gaps, no left censoring, and a closed, unflagged model-bridgeable gap. Unwarmed/left-censored gaps do not count as missed warnings.",
+    "noCounterfactualClaims": "No counterfactual FPS, input latency gain, avoided wait count, or universal-disconnect claim. A shadow warning can change future input production and arrivals if activated; old arrivals are not an exogenous trace for a closed-loop simulation."
+  },
+  "output": {
+    "path": "docs/multiplayer/rollback-information-pacing-shadow-evidence.json",
+    "createOnly": true,
+    "compactNumericRows": true,
+    "containsOriginalPlan": true
+  },
+  "execution": {
+    "analyzerPath": "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs",
+    "rawReadsAuthorizedAtDeclaration": false,
+    "inlineContractChecks": "Before raw reads, validate zero/cap/phase-plateau/ramp-inversion and interval classification contracts. These are not game tests."
+  }
+}
+
