@@ -49,8 +49,10 @@ FontDevice::~FontDevice(){
 }
 bool FontDevice::initialize(){
     if(ready)return true;
-    const char* files[]={"font0.bin","font1.bin","font2.bin","font3.bin","cp932.bin","blend4444.bin"};
-    for(u32 n=0;n<6;++n){const std::string path=std::string("/fonts/")+files[n];size_t size=0;auto* data=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));const bool valid=data&&size<=UINT32_MAX&&raster.glyphs.load(n,data,u32(size));SDL_free(data);if(!valid){error="Invalid original font data: "+path;return false;}}
+    size_t size=0;auto* data=static_cast<u8*>(SDL_LoadFile("/fonts/cp932.bin",&size));
+    const bool valid=data&&runtimeFonts.initialize(data,size);SDL_free(data);
+    if(!valid){error="Shared Gothic font or CP932 mapping unavailable";return false;}
+    raster.glyphs.renderer(&runtimeFonts,[](void* owner,TextureImage& image,i32 x,i32 y,u32 font,u32 color,const std::string& text){return static_cast<eagler::text::RuntimeFontRaster*>(owner)->draw(image,x,y,font,color,text);});
     ready=raster.glyphs.ready();
 #if defined(TH_ENABLE_THCRAP)
     const auto path=pack_font_file();

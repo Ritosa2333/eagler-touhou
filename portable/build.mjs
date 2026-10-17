@@ -8,7 +8,7 @@ import {resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {commonInclude,commonThpracHeaders} from './common-root.mjs';
-const workspace=resolve(fileURLToPath(new URL('../',import.meta.url))),root=resolve(workspace,'th11_web'),out=resolve(root,'artifacts/sdl3');mkdirSync(out,{recursive:true});
+const workspace=resolve(fileURLToPath(new URL('../',import.meta.url))),root=resolve(workspace,'th11_web'),out=resolve(root,process.env.TH11_OUTPUT||'artifacts/sdl3');mkdirSync(out,{recursive:true});
 // TH11 ships no tools/emsdk; prefer an explicit EMSDK, then the shared TH08 SDK.
 const sdk=process.env.EMSDK??(existsSync(resolve(workspace,'tools/emsdk'))?resolve(workspace,'tools/emsdk'):resolve(workspace,'../th08/tools/emsdk'));
 const emcc=[resolve(sdk,'install/emscripten/emcc.py'),resolve(sdk,'upstream/emscripten/emcc.py')].find(existsSync);
@@ -24,7 +24,7 @@ const files=dir=>readdirSync(resolve(root,dir),{withFileTypes:true}).flatMap(e=>
 const source=[...files('cpp/game'),...files('cpp/sdl'),resolve(workspace,'portable/sdl/Renderer.cpp')];
 source.push(...['imgui.cpp','imgui_draw.cpp','imgui_freetype.cpp','imgui_tables.cpp','imgui_widgets.cpp'].map(n=>resolve(imgui,n)));
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp')].sort();
+const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(commonInclude,'eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp'),resolve(commonInclude,'eagler/text/RuntimeFontRaster.hpp')].sort();
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
@@ -42,6 +42,6 @@ const sourceFiles=[...source.map(p=>resolve(workspace,relative(workspace,p))),..
 const inventory=Object.fromEntries(sourceFiles.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]));
 const sdkMetadata=resolve(sdk,'touhou-sdk.json');
 const toolchain=existsSync(sdkMetadata)?JSON.parse(readFileSync(sdkMetadata)):{emsdkRoot:relative(workspace,sdk).replaceAll('\\','/'),layout:'external'};
-const report={builtAt,game:'th11',kind:'cpp-sdl3',profile:'sdl3',diagnostic:false,version:'1.0.0-sdl3',features:{thprac,languages:true,focusHitbox:false},architecture:{loop:'cpp-fixed-60hz-bounded-catchup',audio:'cpp-miniaudio-vorbis-sdl3-stream',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'cpp-original-baked-glyphs-argb4444',input:'cpp-sdl',launcher:'eagler-touhou/1'},sdlVersion:'3.4.2',sources:source.map(p=>relative(workspace,p).replaceAll('\\','/')),sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','MotionTrack.hpp','TouchController.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(loader)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
+const report={builtAt,game:'th11',kind:'cpp-sdl3',profile:'sdl3',diagnostic:false,version:'1.0.0-sdl3',features:{thprac,languages:true,focusHitbox:false},architecture:{loop:'cpp-fixed-60hz-bounded-catchup',audio:'cpp-miniaudio-vorbis-sdl3-stream',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'cpp-shared-gothic-on-demand-argb4444',input:'cpp-sdl',launcher:'eagler-touhou/1'},sdlVersion:'3.4.2',sources:source.map(p=>relative(workspace,p).replaceAll('\\','/')),sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','MotionTrack.hpp','TouchController.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(loader)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
 writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({game:'th11',bytes:wasm.length,sha256:report.sha256,output:loader},null,2));

@@ -8,9 +8,9 @@ import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'..');
 const game='th11';
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,'build-eagler');
-const buildRoot=resolve(root,'th11_web/artifacts/sdl3');
+const buildRoot=resolve(root,'th11_web',process.env.TH11_OUTPUT||'artifacts/sdl3');
 const fonts=process.env.EAGLER_FONT_ROOT;
-if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private SDL-native font resource directory');
+if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private directory containing cp932.bin');
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'),'utf8'));
 if(!Number.isFinite(Date.parse(build.builtAt)))throw Error('Rebuild Runtime with build timestamp');
@@ -24,9 +24,8 @@ for(const [name,expected] of Object.entries(build.sourceFiles)){
  if(hash(readFileSync(resolve(root,name)))!==expected)throw Error('Rebuild modified source: '+name);
 }
 const entry='th11.html';
-// TH11 rasterizes original GDI glyph coverage; the baked tables ship as runtime
-// resources under /fonts. The shared host installs them alongside the archive.
-const fontNames=['font0.bin','font1.bin','font2.bin','font3.bin','cp932.bin','blend4444.bin'];
+// Font files are shared Host content. Only the small encoding map is code-owned.
+const fontNames=['cp932.bin'];
 const runtimeNames=['startup-branding.mjs','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','eagler-host.mjs'];
 const names=[entry,'manifest.json',...runtimeNames,'motion-replay.mjs',game+'-sdl.mjs',game+'-sdl.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 const allowed=new Set([...names,'runtime-files.json']);
