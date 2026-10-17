@@ -43,17 +43,7 @@ export function createMultiplayerBridge({core,getOptions,manifest,emit,onError,o
  }
  async function launch(){
   const options=getOptions(),checked=validateMultiplayerOptions(options);
-  if(checked.replay){
-   const files=core.FS.readdir('/save/replay').filter(n=>/^th15mp_\d{2}\.rpy$/.test(n)).sort();
-   const panel=target.document.createElement('section');panel.className='mp-replay-menu';panel.style.cssText='position:fixed;inset:20%;padding:24px;background:#171327;color:white;z-index:10';
-   const title=target.document.createElement('h2');title.textContent='绀珠传多人录像';panel.append(title);
-   if(!files.length){const empty=target.document.createElement('p');empty.textContent='暂无多人录像';panel.append(empty);}
-   for(const file of files){const button=target.document.createElement('button');button.textContent=file;button.addEventListener('click',()=>{try{
-    if(!bytes(core.FS.readFile('/save/replay/'+file),(p,n)=>bytes(new Uint8Array(new Uint32Array(buildWords).buffer),b=>core._th15_mp_replay_load(p,n,b)))||!core._th15_mp_start())throw Error(error());
-    panel.remove();active=true;target.__eaglerNetplaySpectator=true;core._th15_loop_start();
-   }catch(e){fail(e);}});panel.append(button);}
-   const exit=target.document.createElement('button');exit.textContent='返回';exit.addEventListener('click',()=>{panel.remove();onExit();});panel.append(exit);target.document.body.append(panel);return false;
-  }
+  if(checked.replay)return false;
   const {config,words}=await multiplayerSetupWords(options,buildWords);const data=new Uint32Array(words);
   if(!bytes(new Uint8Array(data.buffer),p=>core._th15_mp_configure(p,words.length)))throw Error(error());
   const connected=config.spectator?string(options.netplayUrl,url=>string(options.netplaySpectatorId,id=>core._th15_mp_spectator_connect(url,id))):string(options.netplayUrl,url=>core._th15_mp_connect(url));
@@ -64,5 +54,10 @@ export function createMultiplayerBridge({core,getOptions,manifest,emit,onError,o
  function frame(){if(!active)return;if(core._th15_phase()===0)calibration?.stop();const s=Array.from(core.HEAPU32.subarray(core._th15_mp_status()>>>2,(core._th15_mp_status()>>>2)+24));target.__eaglerNetplayLanConfirmed=s[4];target.__eaglerNetplayLanFrame=s[3];calibration?.pump();}
  function save(){if(active&&getOptions().replayViewer!==true&&!getOptions().netplaySpectator&&!core._th15_mp_replay_save())throw Error(error());}
  function close(){calibration?.stop();core._th15_mp_close();active=false;target.__eaglerNetplayLanActive=false;}
- return {launch,frame,save,close};
+ function openReplay(path,stage){
+  close();core._th15_loop_stop();if(!core._th15_initialize())throw Error(error());
+  if(!bytes(core.FS.readFile('/save/'+path),(p,n)=>bytes(new Uint8Array(new Uint32Array(buildWords).buffer),b=>core._th15_mp_replay_load(p,n,b)))||!core._th15_mp_start()||!core._eagler_replay_select_stage(stage))throw Error(error());
+  active=true;target.__eaglerNetplaySpectator=true;
+ }
+ return {launch,frame,save,close,openReplay};
 }
