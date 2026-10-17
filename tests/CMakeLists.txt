@@ -23,6 +23,24 @@ target_include_directories(eagler_common_adonis_timing_test PRIVATE "${CMAKE_CUR
 target_link_libraries(eagler_common_adonis_timing_test PRIVATE eagler::netplay_base)
 add_test(NAME eagler-common.adonis-timing COMMAND eagler_common_adonis_timing_test)
 
+add_executable(eagler_common_spectator_stage_test spectator-stage-test.cpp)
+target_include_directories(eagler_common_spectator_stage_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
+target_link_libraries(eagler_common_spectator_stage_test PRIVATE eagler::netplay_base)
+add_test(NAME eagler-common.spectator-stage COMMAND eagler_common_spectator_stage_test)
+
+add_executable(eagler_common_spectator_stage_publisher_boundary_test
+    spectator-stage-publisher-boundary-test.cpp
+)
+target_include_directories(eagler_common_spectator_stage_publisher_boundary_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include"
+)
+target_link_libraries(eagler_common_spectator_stage_publisher_boundary_test PRIVATE
+    eagler::netplay_base
+)
+add_test(NAME eagler-common.spectator-stage-publisher-boundary
+    COMMAND eagler_common_spectator_stage_publisher_boundary_test
+)
+
 add_executable(eagler_common_netplay_base_test
     netplay-base-test.cpp
 )
@@ -301,6 +319,10 @@ target_include_directories(eagler_common_confirmed_input_clock_test PRIVATE "${C
 add_test(NAME eagler-common.confirmed-input-clock COMMAND eagler_common_confirmed_input_clock_test)
 
 if(EAGLER_COMMON_NODE_EXECUTABLE)
+    add_test(NAME eagler-common.spectator-playback-bridge
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/spectator-playback-bridge.test.mjs)
+    add_test(NAME eagler-common.browser-peer-stage-history
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-stage-history.test.mjs)
     add_test(NAME eagler-common.direct-input-bridge
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/direct-input-bridge-test.mjs)
     add_test(NAME eagler-common.keyboard-input-bridge

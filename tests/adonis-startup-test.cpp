@@ -409,7 +409,7 @@ static void interrupted_mesh(unsigned count,unsigned slowSeat,AdonisMode mode,st
     }
 }
 void spectator_timing_identity(){
-    for(const unsigned game:{8u,10u,11u}){
+    for(const unsigned game:{8u,10u,11u,15u}){
         AdonisSpectatorTiming timing;
         timing.game=game;timing.mode=1;timing.delay=1;timing.fullDelay=1;
         timing.sessionId=123;timing.gameplayAbi=456;timing.rttP95Us=32000;
@@ -422,6 +422,8 @@ void spectator_timing_identity(){
         bytes[1]='9';assert(!AdonisSpectatorTiming::IsPacket(bytes.data(),bytes.size()));
         assert(!AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
         timing.prediction=1;assert(timing.Encode().empty());
+        timing.prediction=0;timing.mode=2;
+        assert((game==15)==timing.Encode().empty());
     }
 }
 int main(){

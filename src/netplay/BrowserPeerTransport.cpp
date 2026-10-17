@@ -10,7 +10,7 @@
 namespace Netplay
 {
 #ifdef __EMSCRIPTEN__
-EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, int localPlayer, int playerCount), {
+EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, int localPlayer, int playerCount, int stageSpectatorHistory), {
     const decode = ptr => {
         const end = HEAPU8.indexOf(0, ptr);
         return new TextDecoder().decode(HEAPU8.subarray(ptr, end >= 0 ? end : HEAPU8.length));
@@ -35,6 +35,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             controlLabel: `${tag}-control`, inputLabel: `${tag}-input`,
             route: null, failed: false, disconnected: false, error: String(), closed: false,
             spectatorCount: Math.max(0, Number(Module.eaglerOptions?.netplaySpectatorCount) || 0),
+            retainSpectatorHistory: !!stageSpectatorHistory && localPlayer === 0,
             rtcReadySent: false, signalReconnectTimer: null, signalReconnectDelayMs: 500,
             rtcHealthTimer: null,
             iceServers: Array.isArray(Module.eaglerOptions?.netplayIceServers)
@@ -71,7 +72,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 this.route = mode;
                 globalThis.__eaglerNetplayTransport = mode;
                 if (mode === 'rtc') {
-                    if (this.spectatorCount === 0) {
+                    if (this.spectatorCount === 0 && !this.retainSpectatorHistory) {
                         try { this.relay?.close(1000, 'RTC route selected'); } catch {}
                     }
                     this.updateRtcPath().catch(() => {});
@@ -524,7 +525,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
 });
 
 EM_JS(int, eagler_spectator_connect,
-      (const char *relayUrlPtr, const char *spectatorIdPtr, const char *tagPtr, int playerCount), {
+      (const char *relayUrlPtr, const char *spectatorIdPtr, const char *tagPtr, int playerCount, int stageSpectatorHistory), {
     const decode = ptr => {
         const end = HEAPU8.indexOf(0, ptr);
         return new TextDecoder().decode(HEAPU8.subarray(ptr, end >= 0 ? end : HEAPU8.length));
@@ -542,14 +543,44 @@ EM_JS(int, eagler_spectator_connect,
         const state = {
             relay: null, peers: new Map(), received: [], receivedHead: 0,
             playerCount, tag, legacyGlobal, route: 'spectator', failed: false, error: String(), closed: false,
-            maxReceivedPackets: 16384,
+            maxReceivedPackets: stageSpectatorHistory ? 131072 : 16384,
+            // A complete stage can exceed the legacy packet count even while
+            // remaining comfortably inside its byte budget. Keep both bounded.
+            maxReceivedBytes: stageSpectatorHistory ? 16 * 1024 * 1024 : Infinity,
+            receivedBytes: 0, pendingReceivedBytes: 0, pendingReceivedPackets: 0,
             close() {
                 this.closed = true;
                 try { this.relay?.close(1000, 'spectator close'); } catch {}
                 this.received.length = 0;
                 this.receivedHead = 0;
+                this.receivedBytes = this.pendingReceivedBytes = this.pendingReceivedPackets = 0;
             },
             receiveBinary(data) {
+                if (!stageSpectatorHistory) {
+                    // Keep the legacy lane (including TH09) on its existing
+                    // packet admission and asynchronous Blob behavior.
+                    const append = packet => {
+                        if (this.closed || this.failed) return;
+                        if (this.received.length - this.receivedHead >= this.maxReceivedPackets) {
+                            this.failed = true; this.error = 'Spectator fell too far behind';
+                            try {this.relay?.close(1008, 'spectator fell too far behind');} catch {}
+                            return;
+                        }
+                        this.received.push(packet); this.receivedBytes += packet.byteLength;
+                    };
+                    if (data instanceof ArrayBuffer) append(new Uint8Array(data));
+                    else if (data instanceof Blob) data.arrayBuffer().then(buffer => append(new Uint8Array(buffer))).catch(() => {});
+                    return;
+                }
+                if (this.closed || this.failed) return;
+                const bytes = data instanceof Blob ? data.size : data?.byteLength;
+                if (!Number.isSafeInteger(bytes) || bytes <= 0) return;
+                if (this.received.length - this.receivedHead + this.pendingReceivedPackets >= this.maxReceivedPackets ||
+                    bytes > this.maxReceivedBytes - this.receivedBytes - this.pendingReceivedBytes) {
+                    this.failed = true; this.error = 'Spectator fell too far behind';
+                    try {this.relay?.close(1008, this.error);} catch {}
+                    return;
+                }
                 const append = packet => {
                     if (this.closed || this.failed) return;
                     if (this.received.length - this.receivedHead >= this.maxReceivedPackets) {
@@ -559,11 +590,17 @@ EM_JS(int, eagler_spectator_connect,
                         return;
                     }
                     this.received.push(packet);
+                    this.receivedBytes += packet.byteLength;
                 };
                 if (data instanceof ArrayBuffer) append(new Uint8Array(data));
-                else if (data instanceof Blob) data.arrayBuffer().then(buffer => {
-                    append(new Uint8Array(buffer));
-                }).catch(() => {});
+                else if (data instanceof Blob) {
+                    ++this.pendingReceivedPackets; this.pendingReceivedBytes += bytes;
+                    const release = () => {
+                        if (this.closed) return false;
+                        --this.pendingReceivedPackets; this.pendingReceivedBytes -= bytes; return true;
+                    };
+                    data.arrayBuffer().then(buffer => {if (release()) append(new Uint8Array(buffer));}, release);
+                }
             },
         };
         globalThis.__eaglerPeerTransport = state;
@@ -789,28 +826,29 @@ EM_JS(void, eagler_peer_copy_mode, (char *out, int capacity), {
 
 BrowserPeerTransport::~BrowserPeerTransport() { Close(); }
 
-bool BrowserPeerTransport::Connect(const char *relayUrl, std::uint8_t localPlayer, std::uint8_t playerCount)
+bool BrowserPeerTransport::Connect(const char *relayUrl, std::uint8_t localPlayer, std::uint8_t playerCount,
+                                   bool stageSpectatorHistory)
 {
     Close();
 #ifdef __EMSCRIPTEN__
     return relayUrl && relayUrl[0] &&
-           eagler_peer_connect(relayUrl, TransportConfig::Tag, localPlayer, playerCount) != 0;
+           eagler_peer_connect(relayUrl, TransportConfig::Tag, localPlayer, playerCount, stageSpectatorHistory) != 0;
 #else
-    (void)relayUrl; (void)localPlayer; (void)playerCount;
+    (void)relayUrl; (void)localPlayer; (void)playerCount; (void)stageSpectatorHistory;
     lastError_ = "browser peer transport is Web-only";
     return false;
 #endif
 }
 
 bool BrowserPeerTransport::ConnectSpectator(const char *relayUrl, const char *spectatorId,
-                                            std::uint8_t playerCount)
+                                            std::uint8_t playerCount, bool stageSpectatorHistory)
 {
     Close();
 #ifdef __EMSCRIPTEN__
     return relayUrl && relayUrl[0] && spectatorId && spectatorId[0] &&
-           eagler_spectator_connect(relayUrl, spectatorId, TransportConfig::Tag, playerCount) != 0;
+           eagler_spectator_connect(relayUrl, spectatorId, TransportConfig::Tag, playerCount, stageSpectatorHistory) != 0;
 #else
-    (void)relayUrl; (void)spectatorId; (void)playerCount;
+    (void)relayUrl; (void)spectatorId; (void)playerCount; (void)stageSpectatorHistory;
     return false;
 #endif
 }
