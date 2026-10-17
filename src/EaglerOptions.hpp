@@ -197,6 +197,17 @@ inline bool BrowserKeyboardAvailable()
 #endif
 }
 
+// -1 keeps desktop/older-shell input on its existing physical owner.
+inline int BrowserKeyboardScanState(int scancode)
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return globalThis.__eaglerKeyboardInputBridge?.scancodeState($0) ?? -1; }, scancode);
+#else
+    (void)scancode;
+    return -1;
+#endif
+}
+
 inline u16 BrowserKeyboardBits()
 {
 #ifdef __EMSCRIPTEN__

@@ -14,8 +14,18 @@
   const player = Number(params.get("player") || 0);
   const playerCount = Number(params.get("players") || 2);
   const relay = String(params.get("relay") || "");
+  const stageTransition = !spectator && params.get("stage") === "1";
+  const runtimeBuild = "build-web-th07-netplay-replay-audit";
   const iframe = document.getElementById("runtime");
   const status = document.getElementById("status");
+  const wasmUrl = `/${runtimeBuild}/th07.wasm`;
+  globalThis.__spectatorRuntimeArtifact = fetch(wasmUrl, { cache: "no-store" }).then(async response => {
+    if (!response.ok) throw new Error(`WASM identity fetch failed: ${response.status}`);
+    const bytes = await response.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const wasmSha256 = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
+    return { runtimeBuild, wasmUrl, wasmSha256 };
+  }).catch(error => ({ runtimeBuild, wasmUrl, error: String(error?.message || error) }));
   const pending = new Map();
   let request = 0;
 
@@ -57,16 +67,20 @@
           netplayUrl: relay,
           netplayPlayer: player,
           netplayPlayerCount: playerCount,
-          netplayTestFrames: 600,
+          netplayTestFrames: 12000,
           netplaySeed: 19005,
+          netplaySpectatorSizeProbeFrame: 1800,
           netplayDifficulty: 1,
           netplayIceServers: [],
           netplayLoadouts: [
             { character: 0, shot: 0 },
             { character: 1, shot: 1 },
-          ],
+            { character: 0, shot: 1 },
+          ].slice(0, playerCount),
           netplayPhysicalInput: false,
           netplayScriptedInput: true,
+          netplayStageTransition: stageTransition,
+          netplayRollbackAudit: true,
           netplayTestIncrementalTouch: true,
           netplayTouchWorkload: "burst",
           netplayRollbackProbe: true,
@@ -84,6 +98,6 @@
     }
   });
 
-  iframe.src = `/build-web-th07-netplay-replay-audit/th07.html?hosted=1&runtimeVariant=multiplayer&runtimeEpoch=${epoch}`;
+  iframe.src = `/${runtimeBuild}/th07.html?hosted=1&runtimeVariant=multiplayer&runtimeEpoch=${epoch}`;
 })();
 </script>

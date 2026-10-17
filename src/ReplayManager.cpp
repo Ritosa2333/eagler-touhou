@@ -503,6 +503,8 @@ ReplayFile *ReplayManager::ValidateReplayData(ReplayFile *data, i32 size)
         return NULL;
     }
 
+    if (size < static_cast<i32>(sizeof(ReplayHeader))) goto bad;
+
     u32 magicT7RP;
     memcpy(&magicT7RP, "T7RP", 4);
 
@@ -535,10 +537,23 @@ ReplayFile *ReplayManager::ValidateReplayData(ReplayFile *data, i32 size)
         goto bad;
     }
 
+    // Declared lengths are untrusted even when the byte checksum is valid.
+    if (rawHead->compressedSize <= 0 ||
+        rawHead->compressedSize > size - static_cast<i32>(sizeof(ReplayHeader)) ||
+        rawHead->sizeWithoutHeader < static_cast<i32>(sizeof(ReplayData)) ||
+        static_cast<u32>(rawHead->sizeWithoutHeader) > sizeof(ReplayData) + 14u * sizeof(StageReplayData) ||
+        rawHead->replaySize != rawHead->sizeWithoutHeader + static_cast<i32>(sizeof(ReplayHeader)))
+        goto bad;
+
     dataDecompressed = (u8 *)malloc(rawHead->sizeWithoutHeader + sizeof(ReplayHeader));
+    if (dataDecompressed == NULL) goto bad;
     memcpy(dataDecompressed, rawHead, sizeof(ReplayHeader));
-    Lzss::Decompress(rawFile + sizeof(ReplayHeader), rawHead->compressedSize,
-                     dataDecompressed + sizeof(ReplayHeader), rawHead->sizeWithoutHeader);
+    if (Lzss::Decompress(rawFile + sizeof(ReplayHeader), rawHead->compressedSize,
+                         dataDecompressed + sizeof(ReplayHeader), rawHead->sizeWithoutHeader) == NULL)
+    {
+        free(dataDecompressed);
+        goto bad;
+    }
 
     parsed = new ReplayFile;
     parsed->head = *(ReplayHeader *)dataDecompressed;

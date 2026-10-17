@@ -1,4 +1,5 @@
 #include "PracticeRuntime.hpp"
+#include "EaglerOptions.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -1750,10 +1751,14 @@ double SimulationInterval()
 #ifdef TH_ENABLE_THPRAC
     if (Enabled()) {
         const auto* keys = SDL_GetKeyboardState(nullptr);
-        const bool fast = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL] ||
+        const auto keyDown = [keys](SDL_Scancode key) {
+            const int canonical = EaglerOptions::BrowserKeyboardScanState(key);
+            return canonical >= 0 ? canonical != 0 : keys[key];
+        };
+        const bool fast = keyDown(SDL_SCANCODE_LCTRL) || keyDown(SDL_SCANCODE_RCTRL) ||
             (g_CurFrameRawInput & TH_BUTTON_SKIP);
-        const bool slow = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
-        return g_AdvancedOptions.speed.interval(g_GameManager.replay != 0, fast, slow, keys[SDL_SCANCODE_R]);
+        const bool slow = keyDown(SDL_SCANCODE_LSHIFT) || keyDown(SDL_SCANCODE_RSHIFT);
+        return g_AdvancedOptions.speed.interval(g_GameManager.replay != 0, fast, slow, keyDown(SDL_SCANCODE_R));
     }
 #endif
     return 1.0 / 60.0;

@@ -427,6 +427,10 @@ start:
 
 SDL_AppResult SDL_AppIterate(void *appstate)
 {
+#ifdef __EMSCRIPTEN__
+    extern bool g_ReplayWorkspaceDriving;
+    if (g_ReplayWorkspaceDriving) return SDL_APP_CONTINUE;
+#endif
     if (g_OpenMusicRoomForVisualTest && !g_MusicRoomVisualTestDispatched &&
         g_MainMenuForDebug && g_MainMenuForDebug->calcChain)
     {

@@ -1,4 +1,5 @@
 #include "EaglerOptions.hpp"
+#include "browser-gamepad-input.hpp"
 #include "Controller.hpp"
 #include "PracticeRuntime.hpp"
 #ifdef TH_ENABLE_NETPLAY
@@ -47,6 +48,14 @@ u32 Controller::SetButton(u16 *outButtons, i32 controllerButton, u32 thButton)
 
 u16 Controller::GetControllerInput(u16 buttons)
 {
+    const int mapped = eagler::input::BrowserGamepadState();
+    if (mapped >= 0)
+    {
+        buttons |= static_cast<u16>(mapped & 0x1ff);
+        if ((mapped & 512) && !g_EnterSuppressed) buttons |= TH_BUTTON_ENTER;
+        if (mapped & 2048) buttons |= TH_BUTTON_RESET;
+        return buttons;
+    }
     if (!g_Supervisor.controller)
     {
         return buttons;
@@ -139,6 +148,7 @@ static u8 g_ControllerData[32 * 4];
 u8 *Controller::GetControllerState()
 {
     memset(g_ControllerData, 0, sizeof(g_ControllerData));
+    if (eagler::input::BrowserGamepadOwned()) return g_ControllerData;
 
     if (!g_Supervisor.controller)
     {
