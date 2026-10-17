@@ -15,13 +15,16 @@ const report={passed:false,wasm:build.sha256,cases:[]};let relay,server;
 const ready=(child,pattern)=>new Promise((ok,fail)=>{const timer=setTimeout(()=>fail(Error('Server timeout')),15000);child.once('error',fail);child.once('exit',c=>fail(Error('Server exit '+c)));child.stdout.on('data',b=>{process.stdout.write(b);if(pattern&&String(b).includes(pattern)){clearTimeout(timer);ok();}});child.stderr.on('data',b=>process.stderr.write(b));child.on('message',m=>{if(!pattern&&m?.type==='ready'){clearTimeout(timer);ok();}});});
 try{
  const port=await free(),relayPort=await free();
- const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../eagler-multiplayer'));
- const file=resolve(launcher,'server/netplay-relay.mjs');if(!existsSync(file))throw Error('Relay missing');
- relay=fork(file,[],{cwd:launcher,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe','ipc']});await ready(relay,'relay listening');
+ const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../worktrees/launcher-th09-spectator-main'));
+ const relayRoot=resolve(process.env.EAGLER_RELAY_ROOT||resolve(launcher,'server'));
+ const file=resolve(relayRoot,'netplay-relay.mjs');if(!existsSync(file))throw Error('Relay missing: '+file);
+ relay=fork(file,[],{cwd:relayRoot,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe','ipc']});await ready(relay,'relay listening');
  server=fork(resolve(import.meta.dirname,'serve.mjs'),[],{cwd:root,env:{...process.env,PORT:String(port),TH08_MP_FIXTURES:'1'},stdio:['ignore','pipe','pipe','ipc']});await ready(server);
  for(const players of [2,3]){
   const output=resolve(out,players+'p.json');
-  const code=await new Promise((ok,fail)=>{const c=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,'check-stage-boundary.py'),'--url','http://127.0.0.1:'+port+'/','--relay','ws://127.0.0.1:'+relayPort,'--players',String(players),'--skip-resim-visual','--skip-resim-geometry','--back-metadata-only','--output',output],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});c.stdout.on('data',b=>process.stdout.write(b));c.stderr.on('data',b=>process.stderr.write(b));c.once('error',fail);c.once('exit',ok);});
+  const pythonArgs=['-u',resolve(import.meta.dirname,'check-stage-boundary.py'),'--url','http://127.0.0.1:'+port+'/','--relay','ws://127.0.0.1:'+relayPort,'--players',String(players),'--skip-resim-visual','--skip-resim-geometry','--back-metadata-only','--output',output];
+  if(process.env.TH08_MP_RESTORE_ONLY==='1')pythonArgs.push('--restore-only');
+  const code=await new Promise((ok,fail)=>{const c=spawn(process.env.TH_PYTHON||'python',pythonArgs,{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});c.stdout.on('data',b=>process.stdout.write(b));c.stderr.on('data',b=>process.stderr.write(b));c.once('error',fail);c.once('exit',ok);});
   report.cases.push({players,code,output});if(code!==0||!JSON.parse(readFileSync(output)).passed)throw Error('Failed '+players+'P');
  }
  verify();report.passed=true;

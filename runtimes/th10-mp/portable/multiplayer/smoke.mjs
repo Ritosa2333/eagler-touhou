@@ -33,6 +33,12 @@ for(const path of ['/input/th10.dat','/fonts/msgothic.ttc','/fonts/blend.bin','/
  Module.FS.writeFile(path==='/input/th10.dat'?'/game/th10.dat':path,bytes);
 }
 function string(value,callback){const bytes=new TextEncoder().encode(value+'\0'),ptr=core.files_allocate(bytes.length);try{new Uint8Array(core.memory.buffer,ptr,bytes.length).set(bytes);return callback(ptr);}finally{core.files_free(ptr);}}
+function readCString(pointer,limit=8192){
+ if(!pointer)return null;const bytes=new Uint8Array(core.memory.buffer);
+ if(pointer<0||pointer>=bytes.length)throw Error('Native string pointer bounds');
+ const end=bytes.indexOf(0,pointer);if(end<0||end-pointer>limit)throw Error('Native string terminator/bound');
+ return new TextDecoder().decode(bytes.subarray(pointer,end));
+}
 string('#screen',core.sdl_canvas);core.sdl_music_enabled(0);
 let app=0,seatCount=0,performanceRun=null,performanceComparisonCapture=-1;
 let musicSetup=null,musicPreparing=false;
@@ -101,6 +107,21 @@ const canonical=()=>{const words=Array.from(new Uint32Array(core.memory.buffer,c
  if(words[0]!==2)throw Error('Canonical schema 2 required');return words;};
 const portableCanonical=()=>{const words=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_portable_hashes(app),12));
  if(words[0]!==1)throw Error('Portable canonical schema 1 required');return words;};
+const stageSceneCanonical=()=>{const words=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_stage_scene_hashes(app),5));
+ if(words[0]!==1)throw Error('Stage scene canonical schema 1 required');return words;};
+const stageSceneFields=()=>{
+ const pointer=core.multiplayer_stage_scene_fields(app),words=new Uint32Array(core.memory.buffer,pointer,132);
+ if(words[0]!==1||words[3]!==64)throw Error('Stage scene fields schema 1 required');
+ const names=['initialized','stage','flags','state','cameraEffect',
+  'effectTimer.previous','effectTimer.current','effectTimer.fractional','effectTimer.rate','effectTimer.flags',
+  'scriptTimer.previous','scriptTimer.current','scriptTimer.fractional','scriptTimer.rate','scriptTimer.flags','pc',
+  'targetInterp','positionInterp','fogInterp','reserved174','drawDistance','effectsEnabled','fadeColor','frameEffect','effectPosition','effectSize',
+  'drawnObjects','culledObjects','drawnPrimitives','drawFlags','fadeTimer.previous','fadeTimer.current','fadeTimer.fractional','fadeTimer.rate','fadeTimer.flags','frameCount',
+  'objectFlags','primitiveDescriptors','primitiveVMs','scriptVMs','effectVMs','camera.position','camera.targetOffset','camera.up','camera.reserved024','camera.right','camera.eyeOffset','camera.fov',
+  'camera.view','camera.projection','viewport.x','viewport.y','viewport.width','viewport.height','viewport.near','viewport.far','camera.screenSpace','camera.drawOffset','camera.animationDelta','camera.fog','resource','objectCount','primitiveCount','sourceBytes'];
+ const row=base=>Object.fromEntries(names.map((name,index)=>[name,words[base+index]]));
+ return {current:words[1]?row(4):null,previous:words[2]?row(68):null};
+};
 const memoryStatus=()=>({heap:core.memory.buffer.byteLength,words:Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_memory_status(app),12))});
 const modelQuadStats=()=>{
  if(!core.sdl_model_quad_stats)throw Error('Native model quad statistics required');
@@ -111,7 +132,38 @@ const modelQuadResidency=enabled=>{
  return core.sdl_model_quad_residency(enabled?1:0);
 };
 const enemyDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_enemy_debug(app),81));
+const eclContextDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_ecl_context_debug(app),225));
+const spectatorParityDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_parity_debug(app),96));
+const spectatorOptionsDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_options_debug(app),256));
+const spectatorEntityCounts=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_entity_counts(app),8));
+const spectatorItemDebug=()=>{const pointer=core.multiplayer_spectator_item_debug(app),header=new Uint32Array(core.memory.buffer,pointer,10);
+ return Array.from(new Uint32Array(core.memory.buffer,pointer,10+header[8]*64));};
+const spectatorBulletDebug=()=>{const pointer=core.multiplayer_spectator_bullet_debug(app),header=new Uint32Array(core.memory.buffer,pointer,10);
+ return Array.from(new Uint32Array(core.memory.buffer,pointer,10+header[8]*48));};
+const spectatorCommonDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_common_debug(app),7));
+const spectatorScoresDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_scores_debug(app),41));
+const spectatorAnmDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_anm_debug(app),1368));
+const spectatorAnmFields=()=>{
+ const pointer=core.multiplayer_spectator_anm_fields(app),header=Array.from(new Uint32Array(core.memory.buffer,pointer,4));
+ if(header[0]!==1||header[2]!==80||header[1]>header[3])throw Error('Bounded ANM fields schema required');
+ const names=['list','order','resource','script','pc','owner',
+  'rotation.x','rotation.y','rotation.z','angularVelocity.x','angularVelocity.y','angularVelocity.z',
+  'scale.x','scale.y','scaleVelocity.x','scaleVelocity.y','spriteSize.x','spriteSize.y','uvOffset.x','uvOffset.y',
+  'timer.previous','timer.current','timer.fractional','timer.rate','timer.flags',
+  'positionInterp','positionInterp.rate','colorInterp','colorInterp.rate','alphaInterp','alphaInterp.rate',
+  'rotationInterp','rotationInterp.rate','scaleInterp','scaleInterp.rate','color2Interp','color2Interp.rate','alpha2Interp','alpha2Interp.rate',
+  'uvVelocity.x','uvVelocity.y','color','secondaryColor','pendingInterrupt',
+  'integer.0','integer.1','integer.2','integer.3','float.0','float.1','float.2','float.3','extraInteger.0','extraInteger.1',
+  'scriptPosition.x','scriptPosition.y','scriptPosition.z','position.x','position.y','position.z','childPosition.x','childPosition.y','childPosition.z','flags',
+  'savedTimer.previous','savedTimer.current','savedTimer.fractional','savedTimer.rate','savedTimer.flags','savedPc',
+  'spriteFrame','spriteIndex','spriteMatrix','transformMatrix','uvMatrix','updateCallback','drawCallback','text'];
+ const words=new Uint32Array(core.memory.buffer,pointer+16,header[1]*80);
+ return Array.from({length:header[1]},(_,row)=>Object.fromEntries(names.map((name,index)=>[name,words[row*80+index]])));
+};
 const lifecycle=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_lifecycle_status(app),12));
+const spectatorLoadDebug=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_spectator_load_debug(app),29));
+const spectatorRestoreDiagnostic=()=>({prepare:core.multiplayer_spectator_prepare_phase(),scene:core.multiplayer_spectator_scene_restore_phase(),
+ detail:Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_scene_restore_diag(),8))});
 const audioStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_audio_status(app),9));
 const generationStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_generation_status(app),9));
 const calibrationStatus=()=>{
@@ -286,6 +338,7 @@ window.multiplayerSmoke={
  replayProbe(){if(!core.mp_fixture_replay_probe)throw Error('Read-only probe requires a fixture build');
   const pointer=core.mp_fixture_replay_probe(app),h=new Float32Array(core.memory.buffer,pointer,16);
   return Array.from(new Float32Array(core.memory.buffer,pointer,52+h[2]*7+h[3]*8+h[12]*4));},
+ robotInputs(){return allKeyboardInputs(this.replayProbe(),this.replayControls());},
  replaySeekBatch(){if(!core.mp_fixture_replay_seek_batch)throw Error('Seek batch test requires a fixture build');
   const result=core.mp_fixture_replay_seek_batch(app);if(result)throw Error('Native Replay seek failed '+result+' '+core.application_error(app));
   return replayObservation();},
@@ -375,11 +428,30 @@ window.multiplayerSmoke={
  },
  spectatorAdvance(target){
   if(!core.multiplayer_network_poll(app))throw Error(networkError());
-  const before=netStatus();
-  if(before[3]>=target)return {net:before,transport:transportStatus(),spectator:spectatorStatus()};
+  const before=netStatus(),playback=this.spectatorPlaybackState();
+  if(playback&&playback.position>=target)return {net:before,transport:transportStatus(),spectator:spectatorStatus(),playback};
   const result=core.sdl_loop_tick(app,1/60,16);
-  if(result||core.application_error(app))throw Error('Native spectator tick failed '+result+' '+core.application_error(app)+' '+networkError());
-  return {net:netStatus(),transport:transportStatus(),spectator:spectatorStatus()};
+  if(result||core.application_error(app))throw Error('Native spectator tick failed '+JSON.stringify({result,error:core.application_error(app),detail:errorDetail(),restore:spectatorRestoreDiagnostic(),network:networkError()}));
+  return {net:netStatus(),transport:transportStatus(),spectator:spectatorStatus(),playback:this.spectatorPlaybackState()};
+ },
+ spectatorPlaybackState(){
+  if(!core.multiplayer_spectator_playback_state)throw Error('Native spectator playback state export required');
+  const value=readCString(core.multiplayer_spectator_playback_state(app));return value?JSON.parse(value):null;
+ },
+ spectatorPlaybackControl(action,frame=0){
+  if(!core.multiplayer_spectator_playback_control)throw Error('Native spectator playback control export required');
+  const state=this.spectatorPlaybackState();if(!state)return false;
+  return !!string(state.run,run=>string(action,actionPtr=>
+   core.multiplayer_spectator_playback_control(app,run,actionPtr,frame>>>0)));
+ },
+ spectatorTick(){
+  if(!core.multiplayer_network_poll(app))throw Error(networkError());
+  const result=core.sdl_loop_tick(app,1/60,16);
+  if(result||core.application_error(app))throw Error('Native spectator tick failed '+JSON.stringify({result,error:core.application_error(app),detail:errorDetail(),restore:spectatorRestoreDiagnostic(),network:networkError()}));
+  const value={playback:this.spectatorPlaybackState(),canonical:null,portable:null,stageScene:null};
+  try{value.canonical=canonical();value.portable=portableCanonical();value.stageScene=stageSceneCanonical();}
+  catch(error){if(!String(error?.message||error).includes('Canonical schema 2 required'))throw error;}
+  return value;
  },
  spectatorWriteProbe(){
   const frame=netStatus()[2],capture=capturePeerInput(frame,1),
@@ -474,8 +546,22 @@ window.multiplayerSmoke={
  errorDetail,
  canonical,
  portableCanonical,
+ stageSceneCanonical,
+ stageSceneFields,
  enemyDebug,
+ eclContextDebug,
+ spectatorParityDebug,
+ spectatorOptionsDebug,
+ spectatorEntityCounts,
+ spectatorItemDebug,
+ spectatorBulletDebug,
+ spectatorCommonDebug,
+ spectatorScoresDebug,
+ spectatorAnmDebug,
+ spectatorAnmFields,
  lifecycle,
+ spectatorLoadDebug,
+ spectatorRestoreDiagnostic,
  audioStatus,
  generationStatus,
  calibrationStatus,
@@ -517,6 +603,8 @@ window.multiplayerSmoke={
   const result=core.sdl_loop_tick(app,1/60,16);if(result||core.application_error(app))throw Error('Native tick failed '+result+' '+core.application_error(app));
  }return status();},
  netTicks(count){for(let i=0;i<count;++i){const result=core.sdl_loop_tick(app,1/60,16);if(result||core.application_error(app))throw Error('Native net tick failed '+result+' '+core.application_error(app));}return {status:status(),net:netStatus()};},
+ fixtureTransitionTick(){if(!core.mp_fixture_prepare)throw Error('Fixture build required');
+  const result=core.sdl_loop_tick(app,1/60,16);return {result,error:core.application_error(app),status:status(),net:netStatus()};},
  ticks(count,buttons=[]){const ptr=core.files_allocate(seatCount*20);try{
   const inputs=new Uint32Array(core.memory.buffer,ptr,seatCount*5);
   inputs.fill(0);

@@ -1,16 +1,23 @@
 // Use title-owned native recording checks. TH08 records admitted real peers;
 // TH10 records native input lanes with the existing local algorithm harness.
 // All helper services bind loopback only.
-import {fork,spawn} from 'node:child_process';
+import {fork,spawn,execFileSync} from 'node:child_process';
 import {resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {mkdirSync,createWriteStream,readdirSync,copyFileSync,existsSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:net';
 import {build} from 'esbuild';
 const project=resolve(fileURLToPath(new URL('../../',import.meta.url))),workspace=resolve(project,'../..');
-const game=process.argv.includes('--th06')?'th06':process.argv.includes('--th07')?'th07':process.argv.includes('--th10')?'th10':'th08',repo=resolve(workspace,game==='th10'?'worktrees/th10-multiplayer':game+'-eagler');
+const game=process.argv.includes('--th06')?'th06':process.argv.includes('--th07')?'th07':process.argv.includes('--th10')?'th10':'th08';
+const repoOption=process.argv.find(value=>value.startsWith('--repo='));
+if(repoOption&&!['th08','th10'].includes(game))throw Error('--repo is supported by the TH08/TH10 directory Runtime checks only');
+const repo=resolve(repoOption?repoOption.slice('--repo='.length):resolve(workspace,game==='th10'?'worktrees/th10-multiplayer':game+'-eagler'));
+const ownerGit=(...args)=>execFileSync('git',['-c','safe.directory='+repo,'-C',repo,...args],{encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']}).trim();
+const ownerBranch=ownerGit('branch','--show-current');
+if(['th08','th10'].includes(game)&&ownerBranch!=='eagler-mp')throw Error(`${game} MP Replay check requires an eagler-mp checkout; ${repo} is on ${ownerBranch||'detached HEAD'}. Select the MP checkout with --repo=PATH.`);
 const laterStage=game==='th10'&&process.argv.includes('--stage2');
 const output=resolve(project,'artifacts/replay-workspace/'+game+'mp'+(laterStage?'-stage2':''));mkdirSync(output,{recursive:true});
+writeFileSync(resolve(output,'owner.json'),JSON.stringify({game,repo,branch:ownerBranch,commit:ownerGit('rev-parse','HEAD')},null,2)+'\n');
 const owned=[];
 function service(path,env,ipc){return new Promise((ok,no)=>{
  const child=fork(path,[],{cwd:resolve(path,'..'),env:{...process.env,...env},windowsHide:true,stdio:['ignore','pipe','pipe','ipc']});owned.push(child);

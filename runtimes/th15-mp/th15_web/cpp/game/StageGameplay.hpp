@@ -39,5 +39,8 @@ public:
  void retire_projectile_effect_animations()noexcept{animations.retire_resource(assets.effect);animations.retire_resource(assets.bullet);}
  void apply_input(const GameInput&)noexcept;
  FrameScheduler& frame_scheduler()noexcept{return scheduler;}
+#if TH15_MULTIPLAYER
+ bool spectator_ready()const noexcept{return started&&background_ready&&main_started&&!suspended;}
+#endif
 };
 }

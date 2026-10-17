@@ -135,6 +135,15 @@ For Replay, record the logical run-state consumed by simulation, not a picture o
 
 ## Bounded keyboard edge retention
 
+General keyboard preferences default to the original Arrow-key layout, with no
+added aliases. WASD is an explicit selectable preset; preserve saved presets and
+custom layouts across reloads. TH09 local two-player input keeps its independent
+original per-player layouts rather than inheriting the general preset. WASD
+presets use J for Fire, K for Bomb, and either L or Space for Focus in both
+general and TH09 local input. Built-in presets follow the current definition on
+reload; named/custom layouts retain their bindings. If updating a TH09 preset
+would collide with the other player's layout, retain it as a custom layout.
+
 TH09 `a2d7652` (2026-10-16) retains a bounded complete keyboard stroke when
 DOWN and UP both arrive between fresh logical captures. The product contract
 is [short-press protection without extending holds](../ADAPTER_BEHAVIOR_INVARIANTS.md#短按保护不得延长长按或制造重复操作).

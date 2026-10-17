@@ -1280,27 +1280,24 @@ for (const boundary of ['warning', 'fullscreen']) test(`actual BrowserLauncher: 
   await back(); await until(() => !playerOpen(), 'selected fallback Runtime closes normally');
 });
 
-// Main4928–4949 reads music after the touch-input confirmation, not before it.
-test('actual BrowserLauncher: late Host fallback between input warnings uses the current music warning', async () => {
+// Host fallback before Start changes the music choice; the current UI presents
+// that music warning without the retired touch-disabled input warning.
+test('actual BrowserLauncher: late Host fallback before Start uses the current music warning without a touch warning', async () => {
   env.window.AudioContext = class {};
-  Object.defineProperty(env.window.navigator, 'maxTouchPoints', {configurable: true, value: 1});
   try {
     const f = await mountBrowser({initial: '/?game=th07', holdHost: true, host: subsetHost(['th06']), seedStorage(storage) {
       storage.values.set(api.gamePreferenceStorageKey('th07'), JSON.stringify({music: 'midi', musicPreferenceExplicit: true, options: {touchEnabled: false}}));
       storage.values.set(api.gamePreferenceStorageKey('th06'), JSON.stringify({music: 'none', musicPreferenceExplicit: true, options: {touchEnabled: false}}));
     }});
     assert.equal(node('#musicSelect').value, 'midi');
-    await click('#launch');
-    assert.match(node('#decisionMessage').textContent, /touch controls.*disabled/i);
     await acceptHeldHost(f);
     assert.equal(node('#musicSelect').value, 'none');
-    await click('#decisionConfirm');
+    await click('#launch');
     assert.equal(node('#decisionDialog').open, true); assert.match(node('#decisionMessage').textContent, /without music/i);
     assert.equal(playerOpen(), false); assert.deepEqual(f.navigations, []);
     await click('#decisionCancel');
   } finally {
     delete env.window.AudioContext;
-    Object.defineProperty(env.window.navigator, 'maxTouchPoints', {configurable: true, value: 0});
   }
 });
 

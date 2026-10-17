@@ -32,7 +32,8 @@ const ordinaryHelpers = [
 ];
 const compiledContracts = ['host-manifest', 'product-catalog', 'resource-mode', 'runtime-generations'];
 const runtimeRequired = ['th09.html', 'shell.mjs', 'managed.css', 'keyboard.mjs',
-  'directory-keyboard.mjs', 'shared-netplay.mjs', 'motion-replay.mjs', 'startup-branding.mjs',
+  'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-timeline-view.mjs',
+  'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'replay-player.mjs', 'startup-branding.mjs',
   'th09.mjs', 'th09.wasm', 'fonts/cp932.bin', 'fonts/blend.bin', 'manifest.json', 'version.json'];
 
 function normalize(input) {

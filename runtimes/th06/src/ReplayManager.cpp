@@ -26,6 +26,7 @@
 #ifdef TH_ENABLE_NETPLAY
 #include <eagler/netplay/NetplayInput.hpp>
 #include "netplay/NetplaySideEffects.hpp"
+#include "netplay/Th06LanStageProbe.hpp"
 #endif
 #include "Rng.hpp"
 #include "Supervisor.hpp"
@@ -750,6 +751,10 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
     i32 stageIdx;
     std::time_t time;
     const std::tm *tm;
+    bool spectatorViewing = false;
+#ifdef TH_ENABLE_NETPLAY
+    spectatorViewing = Netplay::Th06LanStageProbe::SpectatorViewing();
+#endif
 
     time = std::time(NULL);
     tm = std::localtime(&time);
@@ -759,7 +764,7 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
         mgr = g_ReplayManager;
         if (!mgr->IsDemo())
         {
-            if (replayPath != NULL)
+            if (replayPath != NULL && !spectatorViewing)
             {
                 replayCopy = *mgr->replayData->header;
                 ReplayManager::StopRecording();

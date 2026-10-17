@@ -781,6 +781,7 @@ ZunResult Stage::DeletedCallback(Stage *arg)
     SAFE_DELETE_ARRAY(arg->objects);
     SAFE_FREE(arg->quadVms);
     SAFE_FREE(arg->stdData);
+    arg->stdDataSize = 0;
     return ZUN_SUCCESS;
 }
 
@@ -835,6 +836,7 @@ ZunResult Stage::LoadStageData(const char *stdPath)
         g_GameErrorContext.Log("ステージデータが見つかりません。データが壊れています\n");
         return ZUN_ERROR;
     }
+    this->stdDataSize = g_LastFileSize;
 
     this->objectsCount = this->stdData->objectsCount;
     this->quadCount = this->stdData->quadCount;

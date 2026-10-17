@@ -24,6 +24,16 @@ const u32* multiplayer_spectator_status(BrowserRuntime* r){
     words[4]=n.SpectatorReceived();words[5]=n.SpectatorPublished();
     words[6]=n.SpectatorPublishFailed();words[7]=n.Enabled();return words;
 }
+extern "C" __attribute__((export_name("multiplayer_spectator_playback_state")))
+const char* multiplayer_spectator_playback_state(BrowserRuntime* r){
+    if(!r||!r->app.session.netplay.Spectator()||!r->network_driver())return nullptr;
+    return r->network_driver()->Network().SpectatorState();
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_playback_control")))
+u32 multiplayer_spectator_playback_control(BrowserRuntime* r,const char* run,const char* action,u32 frame){
+    if(!r||!run||!action||!r->app.session.netplay.Spectator()||!r->network_driver())return 0;
+    return r->network_driver()->Network().SpectatorControl(run,action,frame);
+}
 extern "C" __attribute__((export_name("multiplayer_network_poll")))
 u32 multiplayer_network_poll(BrowserRuntime* r){return r&&r->pump_network();}
 extern "C" __attribute__((export_name("multiplayer_network_error")))

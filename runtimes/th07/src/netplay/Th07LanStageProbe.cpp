@@ -17,6 +17,10 @@
 #include "Th07RollbackState.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
 #include <eagler/netplay/WebSocketTransport.hpp>
+#include <eagler/netplay/SpectatorStagePlayback.hpp>
+#include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorStageScalars.hpp>
+#include <eagler/netplay/SpectatorStageView.hpp>
 
 #include "BulletManager.hpp"
 #include "AsciiManager.hpp"
@@ -28,10 +32,13 @@
 #include "Gui.hpp"
 #include "ItemManager.hpp"
 #include "Player.hpp"
+#include "EclManager.hpp"
+#include "Stage.hpp"
 #include "ReplayExtension.hpp"
 #include "ReplayManager.hpp"
 #include "Supervisor.hpp"
 #include "Touch.hpp"
+#include "pbg4/Lzss.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
 #endif
@@ -41,8 +48,10 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
-#include <deque>
+#include <cstdlib>
+#include <cstring>
 #include <filesystem>
+#include <utility>
 #include <vector>
 
 #ifdef __EMSCRIPTEN__
@@ -197,7 +206,21 @@ bool g_SpectatorMode = false;
 bool g_SpectatorRunRetired = false;
 std::uint32_t g_NextSpectatorPublishFrame = 0;
 std::uint32_t g_NextSpectatorReceiveFrame = 0;
-std::deque<SpectatorFramePacket> g_SpectatorFrames;
+Netplay::SpectatorStagePublisher g_SpectatorPublisher;
+Netplay::SpectatorStagePlayback g_SpectatorPlayback;
+Netplay::SpectatorStageView g_SpectatorView;
+Netplay::SpectatorStageEvent g_PendingSpectatorBootstrap{};
+bool g_HavePendingSpectatorBootstrap = false;
+bool g_SpectatorNativeStageReady = false;
+bool g_SpectatorPublisherReady = false;
+bool g_SpectatorPublisherEligible = false;
+bool g_SpectatorLaneStopped = false;
+// Audit-only stage marker for all source seats. Publisher checkpoint decisions
+// use the rollback-aware recorded predecessor in SpectatorStagePublisher.
+std::uint8_t g_SpectatorAuditCheckpointStage = 0;
+bool g_SpectatorSizeProbeDone = false;
+int g_SpectatorSizeProbeTarget = -1;
+std::uint8_t g_SpectatorBossSlotsThisFrame = 0;
 std::uint32_t g_PeakEnemies = 0;
 std::uint32_t g_PeakBullets = 0;
 std::uint32_t g_PeakLasers = 0;
@@ -217,6 +240,8 @@ bool UseReplayPlaybackCycle();
 bool UsePauseCycle();
 bool UseRestartCycle();
 bool UseStageTransitionTest();
+void ReportSpectatorCheckpointHash(std::uint32_t frame, std::uint64_t hash);
+void DisableSpectatorPublisher(std::uint32_t frame, const char *reason);
 
 bool AllRemoteInputsReady(std::uint32_t frame)
 {
@@ -282,6 +307,2062 @@ std::uint64_t CurrentSessionId()
     return SESSION_ID ^
            (static_cast<std::uint64_t>(g_SessionGeneration) *
             0x9e3779b97f4a7c15ull);
+}
+
+constexpr std::uint32_t SPECTATOR_CHECKPOINT_SCHEMA = 5;
+constexpr std::uint32_t SPECTATOR_CHECKPOINT_MAGIC = 0x37564353; // SCV7
+constexpr std::uint32_t SPECTATOR_CHECKPOINT_RAW_LIMIT = 2u * 1024u * 1024u;
+constexpr std::int32_t SPECTATOR_SIZE_PROBE_MAX_POWER = 128;
+
+void WriteCheckpointWord(std::vector<std::uint8_t> *out, std::uint32_t value)
+{
+    for (unsigned n = 0; n < 4; ++n) out->push_back(static_cast<std::uint8_t>(value >> (n * 8)));
+}
+
+std::uint32_t ReadCheckpointWord(const std::uint8_t *data)
+{
+    std::uint32_t value = 0;
+    for (unsigned n = 0; n < 4; ++n) value |= std::uint32_t(data[n]) << (n * 8);
+    return value;
+}
+
+std::vector<std::uint8_t> PackCheckpointSparse(const std::vector<std::uint8_t> &raw)
+{
+    std::vector<std::uint8_t> packed;
+    packed.reserve(raw.size() + ((raw.size() + 63u) / 64u) * 8u);
+    for (std::size_t at = 0; at < raw.size(); at += 64)
+    {
+        const std::size_t maskOffset = packed.size();
+        const std::size_t count = std::min<std::size_t>(64, raw.size() - at);
+        packed.resize(maskOffset + 8, 0);
+        for (std::size_t n = 0; n < count; ++n)
+        {
+            if (raw[at + n] == 0) continue;
+            packed[maskOffset + n / 8] |= static_cast<std::uint8_t>(1u << (n % 8));
+            packed.push_back(raw[at + n]);
+        }
+    }
+    return packed;
+}
+
+bool UnpackCheckpointSparse(const std::vector<std::uint8_t> &packed, std::uint32_t rawSize,
+                            std::vector<std::uint8_t> *raw)
+{
+    if (!raw || rawSize == 0 || rawSize > SPECTATOR_CHECKPOINT_RAW_LIMIT) return false;
+    std::vector<std::uint8_t> next(rawSize, 0);
+    std::size_t read = 0;
+    for (std::size_t at = 0; at < rawSize; at += 64)
+    {
+        if (packed.size() - read < 8) return false;
+        const std::size_t maskOffset = read;
+        const std::size_t count = std::min<std::size_t>(64, rawSize - at);
+        read += 8;
+        for (std::size_t n = 0; n < 64; ++n)
+        {
+            if ((packed[maskOffset + n / 8] & (1u << (n % 8))) == 0) continue;
+            if (n >= count || read >= packed.size() || packed[read] == 0) return false;
+            next[at + n] = packed[read++];
+        }
+    }
+    if (read != packed.size()) return false;
+    *raw = std::move(next);
+    return true;
+}
+
+bool CompressSpectatorCheckpoint(const std::vector<std::uint8_t> &raw,
+                                 std::vector<std::uint8_t> *capsule)
+{
+    if (!capsule || raw.empty() || raw.size() > SPECTATOR_CHECKPOINT_RAW_LIMIT) return false;
+    const auto sparse = PackCheckpointSparse(raw);
+    if (sparse.empty() || sparse.size() > 0x7fffffffu) return false;
+    i32 compressedSize = 0;
+    u8 *compressed = Lzss::Compress(const_cast<u8 *>(sparse.data()), static_cast<i32>(sparse.size()),
+                                    &compressedSize);
+    if (!compressed || compressedSize <= 0)
+    {
+        std::free(compressed);
+        return false;
+    }
+    const std::size_t capsuleSize = 12u + static_cast<std::size_t>(compressedSize);
+    if (capsuleSize > SpectatorStageMaxStateBytes)
+    {
+        std::free(compressed);
+        return false;
+    }
+    capsule->clear();
+    capsule->reserve(capsuleSize);
+    WriteCheckpointWord(capsule, SPECTATOR_CHECKPOINT_MAGIC);
+    WriteCheckpointWord(capsule, static_cast<std::uint32_t>(raw.size()));
+    WriteCheckpointWord(capsule, static_cast<std::uint32_t>(sparse.size()));
+    capsule->insert(capsule->end(), compressed, compressed + compressedSize);
+    std::free(compressed);
+    return true;
+}
+
+bool DecompressSpectatorCheckpoint(const std::vector<std::uint8_t> &capsule,
+                                   std::vector<std::uint8_t> *raw)
+{
+    if (!raw || capsule.size() < 13 || capsule.size() > SpectatorStageMaxStateBytes ||
+        ReadCheckpointWord(capsule.data()) != SPECTATOR_CHECKPOINT_MAGIC)
+        return false;
+    const std::uint32_t rawSize = ReadCheckpointWord(capsule.data() + 4);
+    const std::uint32_t sparseSize = ReadCheckpointWord(capsule.data() + 8);
+    if (rawSize == 0 || rawSize > SPECTATOR_CHECKPOINT_RAW_LIMIT) return false;
+    const std::uint32_t masks = ((rawSize + 63u) / 64u) * 8u;
+    if (sparseSize < masks || sparseSize > rawSize + masks || sparseSize > 0x7fffffffu) return false;
+    std::vector<std::uint8_t> sparse(sparseSize, 0);
+    auto compressed = capsule;
+    auto *expanded = Lzss::Decompress(compressed.data() + 12,
+                                     static_cast<i32>(compressed.size() - 12),
+                                     sparse.data(), sparseSize);
+    if (!expanded) return false;
+    // Lzss::Decompress bounds its output but tolerates zero-padded truncated
+    // streams. Re-encode to require a canonical, complete compressed payload.
+    i32 canonicalSize = 0;
+    u8 *canonical = Lzss::Compress(sparse.data(), static_cast<i32>(sparse.size()), &canonicalSize);
+    if (!canonical || canonicalSize != static_cast<i32>(capsule.size() - 12) ||
+        std::memcmp(canonical, capsule.data() + 12, capsule.size() - 12) != 0)
+    {
+        std::free(canonical);
+        return false;
+    }
+    std::free(canonical);
+    return UnpackCheckpointSparse(sparse, rawSize, raw);
+}
+
+struct SpectatorPlayerState;
+struct SpectatorPlayerBulletState;
+struct SpectatorAnmState;
+struct SpectatorCheckpoint
+{
+    std::uint32_t magic = 0x37504353; // SCP7
+    std::uint32_t stage = 0;
+    std::uint64_t expectedHash = 0;
+    std::uint64_t expectedMeta = 0, expectedStageHash = 0;
+    std::uint64_t expectedPlayer0 = 0, expectedPlayer1 = 0, expectedPlayer2 = 0;
+    std::uint64_t expectedMetaRng = 0, expectedMetaGame = 0;
+    std::uint64_t expectedMetaInput = 0, expectedMetaSupervisor = 0;
+    std::uint16_t stageRngSeed = 0, rngSeed = 0, rngSeedBackup = 0;
+    std::uint32_t rngGeneration = 0;
+    std::int32_t difficulty = 0, difficultyMask = 0, cherryMax = 0, cherry = 0;
+    std::int32_t cherryPlus = 0, subrank = 0, rank = 0, maxRank = 0, minRank = 0;
+    std::int32_t currentStage = 0, framesThisStage = 0;
+    std::uint32_t flags = 0, bulletLagTime = 0;
+    std::uint8_t isTimeStopped = 0, slowModeSlowActive = 0, isPaused = 0;
+    std::uint8_t powerItemCountForScore = 0, character = 0, shotType = 0;
+    std::uint8_t shotTypeAndCharacter = 0, isInPauseMenu = 0, isInRetryMenu = 0;
+    std::uint8_t demoIdx = 0, replayStage = 0, phantasmUnlocked = 0;
+    std::int32_t demoFrames = 0;
+    float arcadeTopX = 0, arcadeTopY = 0, arcadeSizeX = 0, arcadeSizeY = 0;
+    float movementTopX = 0, movementTopY = 0, movementSizeX = 0, movementSizeY = 0;
+    float csumFloat = 0;
+    std::uint32_t guiScore = 0, score = 0, guiScoreDifference = 0, highScore = 0;
+    std::int32_t grazeInStage = 0, grazeInTotal = 0, spellCardsCaptured = 0;
+    std::uint8_t numRetries = 0;
+    std::int32_t pointItemsThisStage = 0, pointItemsForExtend = 0;
+    std::int32_t extendsFromPointItems = 0, nextNeededPointItems = 0;
+    std::array<std::int32_t, 7> globalsRng1{};
+    float deaths = 0;
+    std::array<float, 2> globalsRngFloat1{};
+    float livesRemaining = 0;
+    std::array<float, 2> globalsRngFloat2{};
+    float bombsRemaining = 0, bombsUsed = 0;
+    std::array<float, 3> globalsRngFloat3{};
+    float currentPower = 0;
+    std::array<float, 2> globalsRngFloat4{};
+    std::int32_t cherryStart = 0;
+    std::array<std::int32_t, 8> globalsRng2{};
+    std::uint32_t curCsum = 0;
+    std::int32_t csumAsSum = 0;
+    std::array<std::int32_t, 5> csumData{};
+    MultiplayerGameplay::SessionState session{};
+    std::array<std::uint8_t, TH07_MULTI_MAX_PLAYERS> playerActive{};
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> lives{}, bombs{}, powers{};
+    std::array<std::uint32_t, TH07_MULTI_MAX_PLAYERS> kills{}, damage{}, challengeDeaths{};
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> playerState{};
+    std::array<float, TH07_MULTI_MAX_PLAYERS * 6> playerPositions{};
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> playerInvulnerabilityCurrent{};
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> playerInvulnerabilityPrevious{};
+    std::array<float, TH07_MULTI_MAX_PLAYERS> playerInvulnerabilitySubFrame{};
+    std::array<std::uint16_t, TH07_MULTI_MAX_PLAYERS> currentInputs{}, lastInputs{};
+    std::array<float, TH07_MULTI_MAX_PLAYERS * 2> directTouchXY{};
+    std::array<std::uint8_t, TH07_MULTI_MAX_PLAYERS> directTouchActive{};
+    std::uint16_t currentRawInput = 0, lastRawInput = 0;
+    std::uint16_t eighthHeld = 0, heldFrames = 0;
+    std::array<std::int32_t, 4> globalEclInts{};
+    std::array<float, 4> globalEclFloats{};
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> cherryMaxGrazeGrowth{};
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> cherryMaxBreakGrowth{};
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> powerGiveTaps{};
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> powerGiveWindow{};
+    std::int32_t teamWipeRetryFrames = 0;
+    std::int32_t bulletManagerCount = 0, bulletManagerScreenClearTime = 0;
+    std::int32_t bulletManagerTimePrevious = 0, bulletManagerTimeCurrent = 0;
+    float bulletManagerTimeSubFrame = 0;
+    std::int32_t bulletManagerUpdateCount = 0, bulletManagerItemType = 0;
+    std::int32_t stageScriptTimePrevious = 0, stageScriptTimeCurrent = 0;
+    float stageScriptTimeSubFrame = 0;
+    std::int32_t stageInstructionIndex = 0, stageFrameCounter = 0;
+    std::uint32_t stageId = 0;
+    std::array<float, 6> stagePositions{};
+    std::uint32_t stageColor = 0;
+    std::array<float, 6> stageFogPlanes{};
+    std::array<std::uint32_t, 3> stageFogColors{};
+    std::int32_t stageSkyFogInterpDuration = 0, stageSkyFogInterpPrevious = 0;
+    std::int32_t stageSkyFogInterpCurrent = 0;
+    float stageSkyFogInterpSubFrame = 0;
+    std::int32_t stageSpellCardState = 0, stageTicksSinceSpellcardStarted = 0;
+    std::uint8_t stageClearBackground = 0;
+    std::int32_t stageScriptWaitTime = 0;
+    std::array<std::int32_t, 4> stageTimersMax{}, stageEaseModes{};
+    std::array<std::int32_t, 4> stageTimerPrevious{}, stageTimerCurrent{};
+    std::array<float, 4> stageTimerSubFrame{};
+    std::array<float, 3> stagePositionStart{}, stagePositionInterpInitial{};
+    std::int32_t stagePositionInterpEndTime = 0, stagePositionInterpStartTime = 0;
+    std::uint8_t stageCameraTeleported = 0, stageIsDarkening = 0;
+    std::uint32_t stageColor2 = 0;
+    std::array<float, 96> stageCameras{};
+    std::array<std::uint8_t, 2> stageVmActive{};
+    std::vector<SpectatorAnmState> stageVms;
+    std::array<std::int32_t, 16> enemyTimelinePrevious{}, enemyTimelineCurrent{};
+    std::array<float, 16> enemyTimelineSubFrame{};
+    std::array<std::int32_t, 16> enemyTimelineFileOffsets{};
+    std::int32_t enemyTimelineTimePrevious = 0, enemyTimelineTimeCurrent = 0;
+    float enemyTimelineTimeSubFrame = 0;
+    std::int32_t supervisorWanted = 0, supervisorCurrent = 0, supervisorPrevious = 0;
+    std::int32_t supervisorFlags = 0;
+    bool supervisorEnding = false;
+    float supervisorFramerate = 1.0f;
+    std::vector<SpectatorPlayerState> detailedPlayers;
+    std::vector<SpectatorPlayerBulletState> playerBullets;
+};
+
+struct SpectatorVec3State { float x = 0, y = 0, z = 0; };
+struct SpectatorFloat2State { float x = 0, y = 0; };
+struct SpectatorTimerState { i32 previous = 0, current = 0; float subFrame = 0; };
+struct SpectatorShtReference
+{
+    bool valid = false, focusTable = false;
+    std::uint16_t level = 0, entry = 0;
+};
+struct SpectatorAnmState
+{
+    i16 anmFileIndex = -1, activeSpriteIndex = -1, baseSpriteIndex = -1;
+    i32 instructionOffset = -1, flags = 0, autoRotate = 0, pendingInterrupt = 0;
+    i32 timeOfLastSpriteSet = 0;
+    std::array<u8, 5> easeModes{};
+    std::array<i32, 4> intVars1{};
+    std::array<i32, 2> intVars2{};
+    std::array<float, 4> floatVars{};
+    SpectatorVec3State rotation{}, previousRotation{}, angleVelocity{}, position{}, previousPosition{};
+    SpectatorVec3State positionInterpInitial{}, positionInterpFinal{}, rotationInterpInitial{}, rotationInterpFinal{}, offset{};
+    SpectatorFloat2State scale{}, previousScale{}, scaleGrowth{}, uvScrollPosition{}, previousUvScrollPosition{};
+    SpectatorFloat2State uvScrollVelocity{}, scaleInterpInitial{}, scaleInterpFinal{};
+    SpectatorTimerState scriptTime{}, waitTime{};
+    std::array<SpectatorTimerState, 5> interpStartTimes{}, interpEndTimes{};
+    u32 color = 0, color2 = 0, previousColor = 0, previousColor2 = 0;
+    u32 colorInterpInitial = 0, colorInterpFinal = 0;
+    u8 fontWidth = 0, fontHeight = 0;
+};
+struct SpectatorPlayerBulletState
+{
+    u8 player = 0, slot = 0;
+    SpectatorShtReference shtEntry{};
+    SpectatorVec3State position{}, previousPosition{}, hitboxSize{};
+    std::array<SpectatorVec3State, 16> positionHistory{};
+    SpectatorFloat2State velocity{}, offset{};
+    float speed = 0, angle = 0, previousAngle = 0;
+    SpectatorTimerState timer{};
+    i16 damage = 0, bulletState = 0, bulletState2 = 0, timerIndex = 0, optionId = 0, trailLength = 0;
+    bool hasVm = false;
+    SpectatorAnmState vm{};
+};
+struct SpectatorPlayerTimerState
+{
+    SpectatorTimerState timer{};
+    i16 bulletSlot = -1;
+};
+struct SpectatorBombProjectileState
+{
+    SpectatorVec3State position{}, size{};
+    i32 lifetime = 0, damage = 0;
+};
+struct SpectatorBombClearBoxState
+{
+    SpectatorFloat2State position{}, size{};
+    float radius = 0, radiusGrowth = 0;
+    i32 lifetime = 0, itemType = 0;
+};
+struct SpectatorBombSubState
+{
+    i32 state = 0, counter = 0;
+    float custom = 0, previousCustom = 0, speed = 0, angle = 0;
+    SpectatorVec3State position{}, previousPosition{};
+    std::array<SpectatorVec3State, 32> positionHistory{};
+    SpectatorVec3State velocity{}, acceleration{};
+    SpectatorTimerState timer{};
+    std::array<bool, 8> hasVm{};
+    std::array<SpectatorAnmState, 8> vms{};
+};
+struct SpectatorPlayerState
+{
+    SpectatorVec3State position{}, previousPosition{}, hitboxTopLeft{}, hitboxBottomRight{};
+    SpectatorVec3State grazeTopLeft{}, grazeBottomRight{}, grabTopLeft{}, grabBottomRight{};
+    SpectatorVec3State hitboxSize{}, grazeSize{}, grabSize{};
+    std::array<SpectatorVec3State, 2> optionsPosition{}, previousOptionsPosition{};
+    SpectatorFloat2State velocity{};
+    i32 unused9d4 = 0;
+    std::array<SpectatorBombProjectileState, 112> bombDamageBoxes{};
+    std::array<SpectatorBombClearBoxState, 96> bombClearBoxes{};
+    i32 numActiveBombClearBoxes = 0;
+    bool dirtyBombBoxes = false, isBombing = false;
+    float horizontalSpeedDuringBomb = 0, verticalSpeedDuringBomb = 0;
+    i32 respawnTimer = 0, borderInvulnerabilityTime = 0, bulletGracePeriod = 0, itemType = 0;
+    i8 playerState = 0, optionState = 0, isFocus = 0, hasBorder = 0;
+    u8 initParam = 0, bombParticleTime = 0;
+    SpectatorTimerState focusMovementTimer{};
+    i32 playerDirection = 0;
+    float previousHorizontalSpeed = 0, previousVerticalSpeed = 0;
+    SpectatorVec3State positionOfLastEnemyHit{}, sakuyaTargetPosition{};
+    bool targetingEnemy = false;
+    std::array<SpectatorShtReference, 4> shtEntries{};
+    std::array<SpectatorPlayerTimerState, 3> timers{};
+    SpectatorTimerState fireBulletTimer{}, invulnerabilityTimer{}, borderTimer{}, teamBombProtectionTimer{};
+    i32 lifeGiveTimer = 0, lifeGiveTargetToken = 0, unused16a18 = 0, unused16a1c = 0;
+    bool bombIsInUse = false, bombIsFocus = false;
+    i32 bombDuration = 0, bombCherryDrain = 0;
+    SpectatorTimerState bombTimer{};
+    std::array<SpectatorBombSubState, 128> bombSubInfo{};
+    SpectatorVec3State bombStartPosition{};
+    float optionAngle = 0;
+};
+
+SpectatorVec3State CaptureSpectatorVec3(const ZunVec3 &source)
+{
+    return {source.x, source.y, source.z};
+}
+
+void ApplySpectatorVec3(const SpectatorVec3State &source, ZunVec3 *out)
+{
+    out->x = source.x; out->y = source.y; out->z = source.z;
+}
+
+SpectatorFloat2State CaptureSpectatorFloat2(const Float2 &source)
+{
+    return {source.x, source.y};
+}
+
+void ApplySpectatorFloat2(const SpectatorFloat2State &source, Float2 *out)
+{
+    out->x = source.x; out->y = source.y;
+}
+
+SpectatorTimerState CaptureSpectatorTimer(const ZunTimer &source)
+{
+    return {source.previous, source.current, source.subFrame};
+}
+
+void ApplySpectatorTimer(const SpectatorTimerState &source, ZunTimer *out)
+{
+    out->previous = source.previous; out->current = source.current; out->subFrame = source.subFrame;
+}
+
+bool WriteSpectatorVec3(SpectatorScalars::Writer &writer, const SpectatorVec3State &value)
+{
+    return writer.Values(value.x, value.y, value.z);
+}
+
+bool ReadSpectatorVec3(SpectatorScalars::Reader &reader, SpectatorVec3State *value)
+{
+    return reader.Values(value->x, value->y, value->z);
+}
+
+bool WriteSpectatorFloat2(SpectatorScalars::Writer &writer, const SpectatorFloat2State &value)
+{
+    return writer.Values(value.x, value.y);
+}
+
+bool ReadSpectatorFloat2(SpectatorScalars::Reader &reader, SpectatorFloat2State *value)
+{
+    return reader.Values(value->x, value->y);
+}
+
+bool WriteSpectatorTimer(SpectatorScalars::Writer &writer, const SpectatorTimerState &value)
+{
+    return writer.Values(value.previous, value.subFrame, value.current);
+}
+
+bool ReadSpectatorTimer(SpectatorScalars::Reader &reader, SpectatorTimerState *value)
+{
+    return reader.Values(value->previous, value->subFrame, value->current);
+}
+
+template<std::size_t N>
+bool WriteSpectatorVec3Array(SpectatorScalars::Writer &writer,
+                             const std::array<SpectatorVec3State, N> &values)
+{
+    for (const auto &value : values) if (!WriteSpectatorVec3(writer, value)) return false;
+    return true;
+}
+
+template<std::size_t N>
+bool ReadSpectatorVec3Array(SpectatorScalars::Reader &reader,
+                            std::array<SpectatorVec3State, N> *values)
+{
+    for (auto &value : *values) if (!ReadSpectatorVec3(reader, &value)) return false;
+    return true;
+}
+
+template<std::size_t N>
+bool WriteSpectatorTimerArray(SpectatorScalars::Writer &writer,
+                              const std::array<SpectatorTimerState, N> &values)
+{
+    for (const auto &value : values) if (!WriteSpectatorTimer(writer, value)) return false;
+    return true;
+}
+
+template<std::size_t N>
+bool ReadSpectatorTimerArray(SpectatorScalars::Reader &reader,
+                             std::array<SpectatorTimerState, N> *values)
+{
+    for (auto &value : *values) if (!ReadSpectatorTimer(reader, &value)) return false;
+    return true;
+}
+
+bool CaptureSpectatorShtReference(Player &player, const ShtEntry *entry,
+                                  SpectatorShtReference *out)
+{
+    *out = {};
+    if (!entry) return true;
+    for (bool focus : {false, true})
+    {
+        ShtData *data = focus ? player.shooterDataFocus : player.shooterData;
+        if (!data || data->numLevels > 32) continue;
+        for (std::uint16_t level = 0; level < data->numLevels; ++level)
+        {
+            ShtEntry *candidate = data->levels[level].entry;
+            if (!candidate) continue;
+            for (std::uint16_t index = 0; index < 256; ++index, ++candidate)
+            {
+                if (candidate == entry)
+                {
+                    out->valid = true; out->focusTable = focus;
+                    out->level = level; out->entry = index;
+                    return true;
+                }
+                if (candidate->fireInterval < 0) break;
+            }
+        }
+    }
+    return false;
+}
+
+bool ResolveSpectatorShtReference(Player &player, const SpectatorShtReference &source,
+                                  ShtEntry **out)
+{
+    *out = nullptr;
+    if (!source.valid) return true;
+    ShtData *data = source.focusTable ? player.shooterDataFocus : player.shooterData;
+    if (!data || source.level >= data->numLevels || data->numLevels > 32) return false;
+    ShtEntry *entry = data->levels[source.level].entry;
+    if (!entry) return false;
+    for (std::uint16_t index = 0; index <= source.entry; ++index, ++entry)
+        if (entry->fireInterval < 0) return false;
+    *out = entry;
+    return true;
+}
+
+bool CaptureSpectatorAnm(const AnmVm &source, SpectatorAnmState *out)
+{
+    out->anmFileIndex = source.anmFileIdx;
+    out->activeSpriteIndex = source.activeSpriteIdx;
+    out->baseSpriteIndex = source.baseSpriteIdx;
+    out->flags = static_cast<i32>(source.flags);
+    out->autoRotate = source.autoRotate; out->pendingInterrupt = source.pendingInterrupt;
+    out->timeOfLastSpriteSet = source.timeOfLastSpriteSet;
+    if (source.currentInstruction && source.beginningOfScript)
+    {
+        const auto current = reinterpret_cast<std::uintptr_t>(source.currentInstruction);
+        const auto begin = reinterpret_cast<std::uintptr_t>(source.beginningOfScript);
+        if (current < begin || current - begin > 1024u * 1024u) return false;
+        out->instructionOffset = static_cast<i32>(current - begin);
+    }
+    std::copy(std::begin(source.easeModes), std::end(source.easeModes), out->easeModes.begin());
+    std::copy(std::begin(source.intVars1), std::end(source.intVars1), out->intVars1.begin());
+    std::copy(std::begin(source.floatVars), std::end(source.floatVars), out->floatVars.begin());
+    std::copy(std::begin(source.intVars2), std::end(source.intVars2), out->intVars2.begin());
+    out->rotation = CaptureSpectatorVec3(source.rotation);
+    out->previousRotation = CaptureSpectatorVec3(source.prevRotation);
+    out->angleVelocity = CaptureSpectatorVec3(source.angleVel);
+    out->position = CaptureSpectatorVec3(source.pos);
+    out->previousPosition = CaptureSpectatorVec3(source.prevPos);
+    out->positionInterpInitial = CaptureSpectatorVec3(source.posInterpInitial);
+    out->positionInterpFinal = CaptureSpectatorVec3(source.posInterpFinal);
+    out->rotationInterpInitial = CaptureSpectatorVec3(source.rotateInterpInitial);
+    out->rotationInterpFinal = CaptureSpectatorVec3(source.rotateInterpFinal);
+    out->offset = CaptureSpectatorVec3(source.offset);
+    out->scale = CaptureSpectatorFloat2(source.scale);
+    out->previousScale = CaptureSpectatorFloat2(source.prevScale);
+    out->scaleGrowth = CaptureSpectatorFloat2(source.scaleGrowth);
+    out->uvScrollPosition = CaptureSpectatorFloat2(source.uvScrollPos);
+    out->previousUvScrollPosition = CaptureSpectatorFloat2(source.prevUvScrollPos);
+    out->uvScrollVelocity = CaptureSpectatorFloat2(source.uvScrollVel);
+    out->scaleInterpInitial = CaptureSpectatorFloat2(source.scaleInterpInitial);
+    out->scaleInterpFinal = CaptureSpectatorFloat2(source.scaleInterpFinal);
+    out->scriptTime = CaptureSpectatorTimer(source.currentTimeInScript);
+    out->waitTime = CaptureSpectatorTimer(source.waitTimer);
+    for (std::size_t i = 0; i < 5; ++i)
+    {
+        out->interpStartTimes[i] = CaptureSpectatorTimer(source.interpStartTimes[i]);
+        out->interpEndTimes[i] = CaptureSpectatorTimer(source.interpEndTimes[i]);
+    }
+    out->color = source.color.color; out->color2 = source.color2.color;
+    out->previousColor = source.prevColor.color; out->previousColor2 = source.prevColor2.color;
+    out->colorInterpInitial = source.colorInterpInitialColor.color;
+    out->colorInterpFinal = source.colorInterpFinalColor.color;
+    out->fontWidth = source.fontWidth; out->fontHeight = source.fontHeight;
+    return true;
+}
+
+bool ApplySpectatorAnm(const SpectatorAnmState &source, AnmVm *out)
+{
+    if (!out || source.anmFileIndex < 0 || source.anmFileIndex >= 4096) return false;
+    g_AnmManager->SetAnmIdxAndExecuteScript(out, source.anmFileIndex);
+    if (source.activeSpriteIndex >= 0 &&
+        g_AnmManager->SetActiveSprite(out, source.activeSpriteIndex) != ZUN_SUCCESS)
+        return false;
+    out->anmFileIdx = source.anmFileIndex;
+    out->activeSpriteIdx = source.activeSpriteIndex;
+    out->baseSpriteIdx = source.baseSpriteIndex;
+    out->flags = static_cast<u32>(source.flags);
+    out->autoRotate = static_cast<i16>(source.autoRotate);
+    out->pendingInterrupt = static_cast<i16>(source.pendingInterrupt);
+    out->timeOfLastSpriteSet = source.timeOfLastSpriteSet;
+    std::copy(source.easeModes.begin(), source.easeModes.end(), std::begin(out->easeModes));
+    std::copy(source.intVars1.begin(), source.intVars1.end(), std::begin(out->intVars1));
+    std::copy(source.floatVars.begin(), source.floatVars.end(), std::begin(out->floatVars));
+    std::copy(source.intVars2.begin(), source.intVars2.end(), std::begin(out->intVars2));
+    ApplySpectatorVec3(source.rotation, &out->rotation);
+    ApplySpectatorVec3(source.previousRotation, &out->prevRotation);
+    ApplySpectatorVec3(source.angleVelocity, &out->angleVel);
+    ApplySpectatorVec3(source.position, &out->pos);
+    ApplySpectatorVec3(source.previousPosition, &out->prevPos);
+    ApplySpectatorVec3(source.positionInterpInitial, &out->posInterpInitial);
+    ApplySpectatorVec3(source.positionInterpFinal, &out->posInterpFinal);
+    ApplySpectatorVec3(source.rotationInterpInitial, &out->rotateInterpInitial);
+    ApplySpectatorVec3(source.rotationInterpFinal, &out->rotateInterpFinal);
+    ApplySpectatorVec3(source.offset, &out->offset);
+    ApplySpectatorFloat2(source.scale, &out->scale);
+    ApplySpectatorFloat2(source.previousScale, &out->prevScale);
+    ApplySpectatorFloat2(source.scaleGrowth, &out->scaleGrowth);
+    ApplySpectatorFloat2(source.uvScrollPosition, &out->uvScrollPos);
+    ApplySpectatorFloat2(source.previousUvScrollPosition, &out->prevUvScrollPos);
+    ApplySpectatorFloat2(source.uvScrollVelocity, &out->uvScrollVel);
+    ApplySpectatorFloat2(source.scaleInterpInitial, &out->scaleInterpInitial);
+    ApplySpectatorFloat2(source.scaleInterpFinal, &out->scaleInterpFinal);
+    ApplySpectatorTimer(source.scriptTime, &out->currentTimeInScript);
+    ApplySpectatorTimer(source.waitTime, &out->waitTimer);
+    for (std::size_t i = 0; i < 5; ++i)
+    {
+        ApplySpectatorTimer(source.interpStartTimes[i], &out->interpStartTimes[i]);
+        ApplySpectatorTimer(source.interpEndTimes[i], &out->interpEndTimes[i]);
+    }
+    out->color.color = source.color; out->color2.color = source.color2;
+    out->prevColor.color = source.previousColor; out->prevColor2.color = source.previousColor2;
+    out->colorInterpInitialColor.color = source.colorInterpInitial;
+    out->colorInterpFinalColor.color = source.colorInterpFinal;
+    out->fontWidth = source.fontWidth; out->fontHeight = source.fontHeight;
+    if (source.instructionOffset < -1 || source.instructionOffset > 1024 * 1024) return false;
+    out->currentInstruction = source.instructionOffset < 0 ? nullptr :
+        reinterpret_cast<AnmRawInstr *>(reinterpret_cast<u8 *>(out->beginningOfScript) + source.instructionOffset);
+    return true;
+}
+
+bool WriteSpectatorShtReference(SpectatorScalars::Writer &writer,
+                                const SpectatorShtReference &value)
+{
+    return writer.Values(value.valid, value.focusTable, value.level, value.entry);
+}
+
+bool ReadSpectatorShtReference(SpectatorScalars::Reader &reader,
+                               SpectatorShtReference *value)
+{
+    return reader.Values(value->valid, value->focusTable, value->level, value->entry);
+}
+
+bool WriteSpectatorAnm(SpectatorScalars::Writer &writer, const SpectatorAnmState &value)
+{
+    if (!writer.Values(value.anmFileIndex, value.activeSpriteIndex, value.baseSpriteIndex,
+                       value.instructionOffset, value.flags, value.autoRotate,
+                       value.pendingInterrupt, value.timeOfLastSpriteSet)) return false;
+    if (!writer.Array(value.easeModes) || !writer.Array(value.intVars1) ||
+        !writer.Array(value.floatVars) || !writer.Array(value.intVars2)) return false;
+    for (const auto *v : {&value.rotation, &value.previousRotation, &value.angleVelocity,
+                          &value.position, &value.previousPosition, &value.positionInterpInitial,
+                          &value.positionInterpFinal, &value.rotationInterpInitial,
+                          &value.rotationInterpFinal, &value.offset})
+        if (!WriteSpectatorVec3(writer, *v)) return false;
+    for (const auto *v : {&value.scale, &value.previousScale, &value.scaleGrowth,
+                          &value.uvScrollPosition, &value.previousUvScrollPosition,
+                          &value.uvScrollVelocity, &value.scaleInterpInitial, &value.scaleInterpFinal})
+        if (!WriteSpectatorFloat2(writer, *v)) return false;
+    if (!WriteSpectatorTimer(writer, value.scriptTime) || !WriteSpectatorTimer(writer, value.waitTime) ||
+        !WriteSpectatorTimerArray(writer, value.interpStartTimes) ||
+        !WriteSpectatorTimerArray(writer, value.interpEndTimes)) return false;
+    return writer.Values(value.color, value.color2, value.previousColor, value.previousColor2,
+                         value.colorInterpInitial, value.colorInterpFinal,
+                         value.fontWidth, value.fontHeight);
+}
+
+bool ReadSpectatorAnm(SpectatorScalars::Reader &reader, SpectatorAnmState *value)
+{
+    if (!reader.Values(value->anmFileIndex, value->activeSpriteIndex, value->baseSpriteIndex,
+                       value->instructionOffset, value->flags, value->autoRotate,
+                       value->pendingInterrupt, value->timeOfLastSpriteSet)) return false;
+    if (!reader.Array(value->easeModes) || !reader.Array(value->intVars1) ||
+        !reader.Array(value->floatVars) || !reader.Array(value->intVars2)) return false;
+    for (auto *v : {&value->rotation, &value->previousRotation, &value->angleVelocity,
+                    &value->position, &value->previousPosition, &value->positionInterpInitial,
+                    &value->positionInterpFinal, &value->rotationInterpInitial,
+                    &value->rotationInterpFinal, &value->offset})
+        if (!ReadSpectatorVec3(reader, v)) return false;
+    for (auto *v : {&value->scale, &value->previousScale, &value->scaleGrowth,
+                    &value->uvScrollPosition, &value->previousUvScrollPosition,
+                    &value->uvScrollVelocity, &value->scaleInterpInitial, &value->scaleInterpFinal})
+        if (!ReadSpectatorFloat2(reader, v)) return false;
+    if (!ReadSpectatorTimer(reader, &value->scriptTime) || !ReadSpectatorTimer(reader, &value->waitTime) ||
+        !ReadSpectatorTimerArray(reader, &value->interpStartTimes) ||
+        !ReadSpectatorTimerArray(reader, &value->interpEndTimes)) return false;
+    return reader.Values(value->color, value->color2, value->previousColor, value->previousColor2,
+                         value->colorInterpInitial, value->colorInterpFinal,
+                         value->fontWidth, value->fontHeight);
+}
+
+bool WriteSpectatorPlayerBullet(SpectatorScalars::Writer &writer,
+                                const SpectatorPlayerBulletState &value)
+{
+    if (!writer.Values(value.player, value.slot) || !WriteSpectatorShtReference(writer, value.shtEntry) ||
+        !WriteSpectatorVec3(writer, value.position) || !WriteSpectatorVec3(writer, value.previousPosition) ||
+        !WriteSpectatorVec3Array(writer, value.positionHistory) ||
+        !WriteSpectatorVec3(writer, value.hitboxSize) ||
+        !WriteSpectatorFloat2(writer, value.velocity) || !WriteSpectatorFloat2(writer, value.offset) ||
+        !writer.Values(value.speed, value.angle, value.previousAngle) ||
+        !WriteSpectatorTimer(writer, value.timer) ||
+        !writer.Values(value.damage, value.bulletState, value.bulletState2,
+                       value.timerIndex, value.optionId, value.trailLength, value.hasVm)) return false;
+    return !value.hasVm || WriteSpectatorAnm(writer, value.vm);
+}
+
+bool ReadSpectatorPlayerBullet(SpectatorScalars::Reader &reader, SpectatorPlayerBulletState *value)
+{
+    if (!reader.Values(value->player, value->slot) || !ReadSpectatorShtReference(reader, &value->shtEntry) ||
+        !ReadSpectatorVec3(reader, &value->position) || !ReadSpectatorVec3(reader, &value->previousPosition) ||
+        !ReadSpectatorVec3Array(reader, &value->positionHistory) ||
+        !ReadSpectatorVec3(reader, &value->hitboxSize) ||
+        !ReadSpectatorFloat2(reader, &value->velocity) || !ReadSpectatorFloat2(reader, &value->offset) ||
+        !reader.Values(value->speed, value->angle, value->previousAngle) ||
+        !ReadSpectatorTimer(reader, &value->timer) ||
+        !reader.Values(value->damage, value->bulletState, value->bulletState2,
+                       value->timerIndex, value->optionId, value->trailLength, value->hasVm)) return false;
+    return !value->hasVm || ReadSpectatorAnm(reader, &value->vm);
+}
+
+bool WriteSpectatorBombSub(SpectatorScalars::Writer &writer, const SpectatorBombSubState &value)
+{
+    if (!writer.Values(value.state, value.counter, value.custom, value.previousCustom,
+                       value.speed, value.angle) ||
+        !WriteSpectatorVec3(writer, value.position) || !WriteSpectatorVec3(writer, value.previousPosition) ||
+        !WriteSpectatorVec3Array(writer, value.positionHistory) ||
+        !WriteSpectatorVec3(writer, value.velocity) || !WriteSpectatorVec3(writer, value.acceleration) ||
+        !WriteSpectatorTimer(writer, value.timer)) return false;
+    for (std::size_t i = 0; i < value.vms.size(); ++i)
+    {
+        if (!writer.Value(value.hasVm[i]) || (value.hasVm[i] && !WriteSpectatorAnm(writer, value.vms[i])))
+            return false;
+    }
+    return true;
+}
+
+bool ReadSpectatorBombSub(SpectatorScalars::Reader &reader, SpectatorBombSubState *value)
+{
+    if (!reader.Values(value->state, value->counter, value->custom, value->previousCustom,
+                       value->speed, value->angle) ||
+        !ReadSpectatorVec3(reader, &value->position) || !ReadSpectatorVec3(reader, &value->previousPosition) ||
+        !ReadSpectatorVec3Array(reader, &value->positionHistory) ||
+        !ReadSpectatorVec3(reader, &value->velocity) || !ReadSpectatorVec3(reader, &value->acceleration) ||
+        !ReadSpectatorTimer(reader, &value->timer)) return false;
+    for (std::size_t i = 0; i < value->vms.size(); ++i)
+        if (!reader.Value(value->hasVm[i]) || (value->hasVm[i] && !ReadSpectatorAnm(reader, &value->vms[i])))
+            return false;
+    return true;
+}
+
+bool WriteSpectatorPlayer(SpectatorScalars::Writer &writer, const SpectatorPlayerState &p)
+{
+    for (const auto *v : {&p.position, &p.previousPosition, &p.hitboxTopLeft, &p.hitboxBottomRight,
+                          &p.grazeTopLeft, &p.grazeBottomRight, &p.grabTopLeft, &p.grabBottomRight,
+                          &p.hitboxSize, &p.grazeSize, &p.grabSize})
+        if (!WriteSpectatorVec3(writer, *v)) return false;
+    if (!WriteSpectatorVec3Array(writer, p.optionsPosition) ||
+        !WriteSpectatorVec3Array(writer, p.previousOptionsPosition) ||
+        !WriteSpectatorFloat2(writer, p.velocity) || !writer.Value(p.unused9d4)) return false;
+    for (const auto &box : p.bombDamageBoxes)
+        if (!WriteSpectatorVec3(writer, box.position) || !WriteSpectatorVec3(writer, box.size) ||
+            !writer.Values(box.lifetime, box.damage)) return false;
+    for (const auto &box : p.bombClearBoxes)
+        if (!WriteSpectatorFloat2(writer, box.position) || !WriteSpectatorFloat2(writer, box.size) ||
+            !writer.Values(box.radius, box.radiusGrowth, box.lifetime, box.itemType)) return false;
+    if (!writer.Values(p.numActiveBombClearBoxes, p.dirtyBombBoxes, p.isBombing,
+                       p.horizontalSpeedDuringBomb, p.verticalSpeedDuringBomb, p.respawnTimer,
+                       p.borderInvulnerabilityTime, p.bulletGracePeriod, p.itemType, p.playerState,
+                       p.initParam, p.optionState, p.isFocus, p.bombParticleTime, p.hasBorder) ||
+        !WriteSpectatorTimer(writer, p.focusMovementTimer) ||
+        !writer.Values(p.playerDirection, p.previousHorizontalSpeed, p.previousVerticalSpeed) ||
+        !WriteSpectatorVec3(writer, p.positionOfLastEnemyHit) ||
+        !WriteSpectatorVec3(writer, p.sakuyaTargetPosition) || !writer.Value(p.targetingEnemy)) return false;
+    for (const auto &entry : p.shtEntries) if (!WriteSpectatorShtReference(writer, entry)) return false;
+    for (const auto &timer : p.timers)
+        if (!WriteSpectatorTimer(writer, timer.timer) || !writer.Value(timer.bulletSlot)) return false;
+    if (!WriteSpectatorTimer(writer, p.fireBulletTimer) || !WriteSpectatorTimer(writer, p.invulnerabilityTimer) ||
+        !WriteSpectatorTimer(writer, p.borderTimer) || !WriteSpectatorTimer(writer, p.teamBombProtectionTimer) ||
+        !writer.Values(p.lifeGiveTimer, p.lifeGiveTargetToken, p.unused16a18, p.unused16a1c,
+                       p.bombIsInUse, p.bombIsFocus,
+                       p.bombDuration, p.bombCherryDrain) || !WriteSpectatorTimer(writer, p.bombTimer)) return false;
+    if (p.bombIsInUse)
+        for (const auto &sub : p.bombSubInfo) if (!WriteSpectatorBombSub(writer, sub)) return false;
+    return WriteSpectatorVec3(writer, p.bombStartPosition) && writer.Value(p.optionAngle);
+}
+
+bool ReadSpectatorPlayer(SpectatorScalars::Reader &reader, SpectatorPlayerState *p)
+{
+    for (auto *v : {&p->position, &p->previousPosition, &p->hitboxTopLeft, &p->hitboxBottomRight,
+                    &p->grazeTopLeft, &p->grazeBottomRight, &p->grabTopLeft, &p->grabBottomRight,
+                    &p->hitboxSize, &p->grazeSize, &p->grabSize})
+        if (!ReadSpectatorVec3(reader, v)) return false;
+    if (!ReadSpectatorVec3Array(reader, &p->optionsPosition) ||
+        !ReadSpectatorVec3Array(reader, &p->previousOptionsPosition) ||
+        !ReadSpectatorFloat2(reader, &p->velocity) || !reader.Value(p->unused9d4)) return false;
+    for (auto &box : p->bombDamageBoxes)
+        if (!ReadSpectatorVec3(reader, &box.position) || !ReadSpectatorVec3(reader, &box.size) ||
+            !reader.Values(box.lifetime, box.damage)) return false;
+    for (auto &box : p->bombClearBoxes)
+        if (!ReadSpectatorFloat2(reader, &box.position) || !ReadSpectatorFloat2(reader, &box.size) ||
+            !reader.Values(box.radius, box.radiusGrowth, box.lifetime, box.itemType)) return false;
+    if (!reader.Values(p->numActiveBombClearBoxes, p->dirtyBombBoxes, p->isBombing,
+                       p->horizontalSpeedDuringBomb, p->verticalSpeedDuringBomb, p->respawnTimer,
+                       p->borderInvulnerabilityTime, p->bulletGracePeriod, p->itemType, p->playerState,
+                       p->initParam, p->optionState, p->isFocus, p->bombParticleTime, p->hasBorder) ||
+        !ReadSpectatorTimer(reader, &p->focusMovementTimer) ||
+        !reader.Values(p->playerDirection, p->previousHorizontalSpeed, p->previousVerticalSpeed) ||
+        !ReadSpectatorVec3(reader, &p->positionOfLastEnemyHit) ||
+        !ReadSpectatorVec3(reader, &p->sakuyaTargetPosition) || !reader.Value(p->targetingEnemy)) return false;
+    for (auto &entry : p->shtEntries) if (!ReadSpectatorShtReference(reader, &entry)) return false;
+    for (auto &timer : p->timers)
+        if (!ReadSpectatorTimer(reader, &timer.timer) || !reader.Value(timer.bulletSlot)) return false;
+    if (!ReadSpectatorTimer(reader, &p->fireBulletTimer) || !ReadSpectatorTimer(reader, &p->invulnerabilityTimer) ||
+        !ReadSpectatorTimer(reader, &p->borderTimer) || !ReadSpectatorTimer(reader, &p->teamBombProtectionTimer) ||
+        !reader.Values(p->lifeGiveTimer, p->lifeGiveTargetToken, p->unused16a18, p->unused16a1c,
+                       p->bombIsInUse, p->bombIsFocus,
+                       p->bombDuration, p->bombCherryDrain) || !ReadSpectatorTimer(reader, &p->bombTimer)) return false;
+    if (p->bombIsInUse)
+        for (auto &sub : p->bombSubInfo) if (!ReadSpectatorBombSub(reader, &sub)) return false;
+    return ReadSpectatorVec3(reader, &p->bombStartPosition) && reader.Value(p->optionAngle);
+}
+
+bool CaptureSpectatorPlayerState(Player &source, std::uint8_t playerId,
+                                 SpectatorPlayerState *out,
+                                 std::vector<SpectatorPlayerBulletState> *bullets)
+{
+    out->position = CaptureSpectatorVec3(source.pos);
+    out->previousPosition = CaptureSpectatorVec3(source.prevPos);
+    out->hitboxTopLeft = CaptureSpectatorVec3(source.hitboxTopLeft);
+    out->hitboxBottomRight = CaptureSpectatorVec3(source.hitboxBottomRight);
+    out->grazeTopLeft = CaptureSpectatorVec3(source.grazeTopLeft);
+    out->grazeBottomRight = CaptureSpectatorVec3(source.grazeBottomRight);
+    out->grabTopLeft = CaptureSpectatorVec3(source.grabItemTopLeft);
+    out->grabBottomRight = CaptureSpectatorVec3(source.grabItemBottomRight);
+    out->hitboxSize = CaptureSpectatorVec3(source.hitboxSize);
+    out->grazeSize = CaptureSpectatorVec3(source.grazeSize);
+    out->grabSize = CaptureSpectatorVec3(source.grabItemSize);
+    for (std::size_t i = 0; i < 2; ++i)
+    {
+        out->optionsPosition[i] = CaptureSpectatorVec3(source.optionsPosition[i]);
+        out->previousOptionsPosition[i] = CaptureSpectatorVec3(source.prevOptionsPosition[i]);
+    }
+    out->velocity = CaptureSpectatorFloat2(source.velocity);
+    out->unused9d4 = source.unused_9d4;
+    for (std::size_t i = 0; i < out->bombDamageBoxes.size(); ++i)
+    {
+        const auto &box = source.bombDamageBoxes[i];
+        out->bombDamageBoxes[i].position = CaptureSpectatorVec3(box.pos);
+        out->bombDamageBoxes[i].size = CaptureSpectatorVec3(box.size);
+        out->bombDamageBoxes[i].lifetime = box.lifetime;
+        out->bombDamageBoxes[i].damage = box.damage;
+    }
+    for (std::size_t i = 0; i < out->bombClearBoxes.size(); ++i)
+    {
+        const auto &box = source.bombClearBoxes[i];
+        out->bombClearBoxes[i].position = CaptureSpectatorFloat2(box.pos);
+        out->bombClearBoxes[i].size = CaptureSpectatorFloat2(box.size);
+        out->bombClearBoxes[i].radius = box.radius;
+        out->bombClearBoxes[i].radiusGrowth = box.radiusGrowth;
+        out->bombClearBoxes[i].lifetime = box.lifetime;
+        out->bombClearBoxes[i].itemType = box.itemType;
+    }
+    out->numActiveBombClearBoxes = source.numActiveBombClearBoxes;
+    out->dirtyBombBoxes = source.dirtyBombBoxes;
+    out->isBombing = source.isBombing;
+    out->horizontalSpeedDuringBomb = source.horizontalMovementSpeedMultiplierDuringBomb;
+    out->verticalSpeedDuringBomb = source.verticalMovementSpeedMultiplierDuringBomb;
+    out->respawnTimer = source.respawnTimer; out->borderInvulnerabilityTime = source.borderInvulnerabilityTime;
+    out->bulletGracePeriod = source.bulletGracePeriod; out->itemType = source.itemType;
+    out->playerState = source.playerState; out->initParam = source.initParam;
+    out->optionState = source.optionState; out->isFocus = source.isFocus;
+    out->bombParticleTime = source.bombParticleTime; out->hasBorder = source.hasBorder;
+    out->focusMovementTimer = CaptureSpectatorTimer(source.focusMovementTimer);
+    out->playerDirection = source.playerDirection;
+    out->previousHorizontalSpeed = source.previousHorizontalSpeed;
+    out->previousVerticalSpeed = source.previousVerticalSpeed;
+    out->positionOfLastEnemyHit = CaptureSpectatorVec3(source.positionOfLastEnemyHit);
+    out->sakuyaTargetPosition = CaptureSpectatorVec3(source.sakuyaTargetPosition);
+    out->targetingEnemy = source.targetingEnemy;
+    for (std::size_t i = 0; i < out->shtEntries.size(); ++i)
+        if (!CaptureSpectatorShtReference(source, source.shtEntries[i], &out->shtEntries[i])) return false;
+    for (std::size_t i = 0; i < out->timers.size(); ++i)
+    {
+        out->timers[i].timer = CaptureSpectatorTimer(source.timers[i].timer);
+        out->timers[i].bulletSlot = -1;
+        if (source.timers[i].bullet)
+        {
+            const auto base = reinterpret_cast<std::uintptr_t>(&source.bullets[0]);
+            const auto pointer = reinterpret_cast<std::uintptr_t>(source.timers[i].bullet);
+            const auto end = base + sizeof(source.bullets);
+            if (pointer < base || pointer >= end || (pointer - base) % sizeof(PlayerBullet) != 0) return false;
+            out->timers[i].bulletSlot = static_cast<i16>((pointer - base) / sizeof(PlayerBullet));
+        }
+    }
+    out->fireBulletTimer = CaptureSpectatorTimer(source.fireBulletTimer);
+    out->invulnerabilityTimer = CaptureSpectatorTimer(source.invulnerabilityTimer);
+    out->borderTimer = CaptureSpectatorTimer(source.borderTimer);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    out->teamBombProtectionTimer = CaptureSpectatorTimer(source.teamBombProtectionTimer);
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    out->lifeGiveTimer = source.lifeGiveTimer; out->lifeGiveTargetToken = source.lifeGiveTargetToken;
+#else
+    out->unused16a18 = source.unused_16a18; out->unused16a1c = source.unused_16a1c;
+#endif
+    out->bombIsInUse = source.bombInfo.isInUse; out->bombIsFocus = source.bombInfo.isFocus;
+    out->bombDuration = source.bombInfo.bombDuration; out->bombCherryDrain = source.bombInfo.cherryDrain;
+    out->bombTimer = CaptureSpectatorTimer(source.bombInfo.bombTimer);
+    if (out->bombIsInUse)
+    {
+        for (std::size_t i = 0; i < out->bombSubInfo.size(); ++i)
+        {
+            const auto &sub = source.bombInfo.subInfo[i];
+            auto &saved = out->bombSubInfo[i];
+            saved.state = sub.state; saved.counter = sub.counter;
+            saved.custom = sub.custom; saved.previousCustom = sub.prevCustom;
+            saved.speed = sub.speed; saved.angle = sub.angle;
+            saved.position = CaptureSpectatorVec3(sub.pos);
+            saved.previousPosition = CaptureSpectatorVec3(sub.prevPos);
+            for (std::size_t j = 0; j < saved.positionHistory.size(); ++j)
+                saved.positionHistory[j] = CaptureSpectatorVec3(sub.posHistory[j]);
+            saved.velocity = CaptureSpectatorVec3(sub.velocity);
+            saved.acceleration = CaptureSpectatorVec3(sub.accel);
+            saved.timer = CaptureSpectatorTimer(sub.timer);
+            for (std::size_t vm = 0; vm < saved.vms.size(); ++vm)
+            {
+                if (sub.vms[vm].beginningOfScript && sub.vms[vm].anmFileIdx >= 0)
+                {
+                    saved.hasVm[vm] = true;
+                    if (!CaptureSpectatorAnm(sub.vms[vm], &saved.vms[vm])) return false;
+                }
+            }
+        }
+    }
+    out->bombStartPosition = CaptureSpectatorVec3(source.bombStartPos);
+    out->optionAngle = source.optionAngle;
+
+    if (!bullets) return true;
+    for (std::uint8_t slot = 0; slot < std::size(source.bullets); ++slot)
+    {
+        const auto &bullet = source.bullets[slot];
+        SpectatorPlayerBulletState saved{};
+        saved.player = playerId; saved.slot = slot;
+        saved.position = CaptureSpectatorVec3(bullet.pos);
+        saved.previousPosition = CaptureSpectatorVec3(bullet.prevPos);
+        saved.hitboxSize = CaptureSpectatorVec3(bullet.hitboxSize);
+        for (std::size_t i = 0; i < saved.positionHistory.size(); ++i)
+            saved.positionHistory[i] = CaptureSpectatorVec3(bullet.posHistory[i]);
+        saved.velocity = CaptureSpectatorFloat2(bullet.velocity);
+        saved.offset = CaptureSpectatorFloat2(bullet.offset);
+        saved.speed = bullet.speed; saved.angle = bullet.angle; saved.previousAngle = bullet.prevAngle;
+        saved.timer = CaptureSpectatorTimer(bullet.timer);
+        saved.damage = bullet.damage; saved.bulletState = bullet.bulletState;
+        saved.bulletState2 = bullet.bulletState2; saved.timerIndex = bullet.timerIdx;
+        saved.optionId = bullet.optionId; saved.trailLength = bullet.trailLength;
+        if (!CaptureSpectatorShtReference(source, bullet.shtEntry, &saved.shtEntry)) return false;
+        saved.hasVm = bullet.bulletState != 0;
+        if (saved.hasVm && !CaptureSpectatorAnm(bullet.vm, &saved.vm)) return false;
+        bool used = bullet.bulletState != 0 || saved.shtEntry.valid || bullet.damage != 0 ||
+                    bullet.bulletState2 != 0 || bullet.timerIdx != 0 || bullet.optionId != 0 ||
+                    bullet.trailLength != 0 || bullet.speed != 0 || bullet.angle != 0 || bullet.prevAngle != 0 ||
+                    bullet.timer.previous != 0 || bullet.timer.current != 0 || bullet.timer.subFrame != 0 ||
+                    saved.position.x != 0 || saved.position.y != 0 || saved.position.z != 0 ||
+                    saved.previousPosition.x != 0 || saved.previousPosition.y != 0 || saved.previousPosition.z != 0 ||
+                    saved.hitboxSize.x != 0 || saved.hitboxSize.y != 0 || saved.hitboxSize.z != 0 ||
+                    saved.velocity.x != 0 || saved.velocity.y != 0 || saved.offset.x != 0 || saved.offset.y != 0;
+        for (const auto &position : saved.positionHistory)
+            used = used || position.x != 0 || position.y != 0 || position.z != 0;
+        if (used) bullets->push_back(std::move(saved));
+    }
+    return true;
+}
+
+bool ApplySpectatorPlayerState(Player &target, const SpectatorPlayerState &source,
+                               const std::vector<SpectatorPlayerBulletState> &bullets,
+                               std::uint8_t playerId)
+{
+    ApplySpectatorVec3(source.position, &target.pos);
+    ApplySpectatorVec3(source.previousPosition, &target.prevPos);
+    ApplySpectatorVec3(source.hitboxTopLeft, &target.hitboxTopLeft);
+    ApplySpectatorVec3(source.hitboxBottomRight, &target.hitboxBottomRight);
+    ApplySpectatorVec3(source.grazeTopLeft, &target.grazeTopLeft);
+    ApplySpectatorVec3(source.grazeBottomRight, &target.grazeBottomRight);
+    ApplySpectatorVec3(source.grabTopLeft, &target.grabItemTopLeft);
+    ApplySpectatorVec3(source.grabBottomRight, &target.grabItemBottomRight);
+    ApplySpectatorVec3(source.hitboxSize, &target.hitboxSize);
+    ApplySpectatorVec3(source.grazeSize, &target.grazeSize);
+    ApplySpectatorVec3(source.grabSize, &target.grabItemSize);
+    for (std::size_t i = 0; i < 2; ++i)
+    {
+        ApplySpectatorVec3(source.optionsPosition[i], &target.optionsPosition[i]);
+        ApplySpectatorVec3(source.previousOptionsPosition[i], &target.prevOptionsPosition[i]);
+    }
+    ApplySpectatorFloat2(source.velocity, &target.velocity);
+    target.unused_9d4 = source.unused9d4;
+    for (std::size_t i = 0; i < source.bombDamageBoxes.size(); ++i)
+    {
+        ApplySpectatorVec3(source.bombDamageBoxes[i].position, &target.bombDamageBoxes[i].pos);
+        ApplySpectatorVec3(source.bombDamageBoxes[i].size, &target.bombDamageBoxes[i].size);
+        target.bombDamageBoxes[i].lifetime = source.bombDamageBoxes[i].lifetime;
+        target.bombDamageBoxes[i].damage = source.bombDamageBoxes[i].damage;
+    }
+    for (std::size_t i = 0; i < source.bombClearBoxes.size(); ++i)
+    {
+        ApplySpectatorFloat2(source.bombClearBoxes[i].position, &target.bombClearBoxes[i].pos);
+        ApplySpectatorFloat2(source.bombClearBoxes[i].size, &target.bombClearBoxes[i].size);
+        target.bombClearBoxes[i].radius = source.bombClearBoxes[i].radius;
+        target.bombClearBoxes[i].radiusGrowth = source.bombClearBoxes[i].radiusGrowth;
+        target.bombClearBoxes[i].lifetime = source.bombClearBoxes[i].lifetime;
+        target.bombClearBoxes[i].itemType = source.bombClearBoxes[i].itemType;
+    }
+    target.numActiveBombClearBoxes = source.numActiveBombClearBoxes;
+    target.dirtyBombBoxes = source.dirtyBombBoxes;
+    target.isBombing = source.isBombing;
+    target.horizontalMovementSpeedMultiplierDuringBomb = source.horizontalSpeedDuringBomb;
+    target.verticalMovementSpeedMultiplierDuringBomb = source.verticalSpeedDuringBomb;
+    target.respawnTimer = source.respawnTimer; target.borderInvulnerabilityTime = source.borderInvulnerabilityTime;
+    target.bulletGracePeriod = source.bulletGracePeriod; target.itemType = source.itemType;
+    target.playerState = source.playerState; target.initParam = source.initParam;
+    target.optionState = source.optionState; target.isFocus = source.isFocus;
+    target.bombParticleTime = source.bombParticleTime; target.hasBorder = source.hasBorder;
+    ApplySpectatorTimer(source.focusMovementTimer, &target.focusMovementTimer);
+    target.playerDirection = static_cast<PlayerDirection>(source.playerDirection);
+    target.previousHorizontalSpeed = source.previousHorizontalSpeed;
+    target.previousVerticalSpeed = source.previousVerticalSpeed;
+    ApplySpectatorVec3(source.positionOfLastEnemyHit, &target.positionOfLastEnemyHit);
+    ApplySpectatorVec3(source.sakuyaTargetPosition, &target.sakuyaTargetPosition);
+    target.targetingEnemy = source.targetingEnemy;
+    for (std::size_t i = 0; i < source.shtEntries.size(); ++i)
+        if (!ResolveSpectatorShtReference(target, source.shtEntries[i], &target.shtEntries[i])) return false;
+    for (std::size_t i = 0; i < source.timers.size(); ++i)
+    {
+        ApplySpectatorTimer(source.timers[i].timer, &target.timers[i].timer);
+        if (source.timers[i].bulletSlot < -1 || source.timers[i].bulletSlot >= 96) return false;
+        target.timers[i].bullet = source.timers[i].bulletSlot < 0 ? nullptr :
+            &target.bullets[source.timers[i].bulletSlot];
+    }
+    ApplySpectatorTimer(source.fireBulletTimer, &target.fireBulletTimer);
+    ApplySpectatorTimer(source.invulnerabilityTimer, &target.invulnerabilityTimer);
+    ApplySpectatorTimer(source.borderTimer, &target.borderTimer);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    ApplySpectatorTimer(source.teamBombProtectionTimer, &target.teamBombProtectionTimer);
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    target.lifeGiveTimer = source.lifeGiveTimer; target.lifeGiveTargetToken = source.lifeGiveTargetToken;
+#else
+    target.unused_16a18 = source.unused16a18; target.unused_16a1c = source.unused16a1c;
+#endif
+    target.bombInfo.isInUse = source.bombIsInUse; target.bombInfo.isFocus = source.bombIsFocus;
+    target.bombInfo.bombDuration = source.bombDuration; target.bombInfo.cherryDrain = source.bombCherryDrain;
+    ApplySpectatorTimer(source.bombTimer, &target.bombInfo.bombTimer);
+    if (source.bombIsInUse)
+    {
+        for (std::size_t i = 0; i < source.bombSubInfo.size(); ++i)
+        {
+            auto &dest = target.bombInfo.subInfo[i];
+            const auto &saved = source.bombSubInfo[i];
+            dest.state = saved.state; dest.counter = saved.counter;
+            dest.custom = saved.custom; dest.prevCustom = saved.previousCustom;
+            dest.speed = saved.speed; dest.angle = saved.angle;
+            ApplySpectatorVec3(saved.position, &dest.pos);
+            ApplySpectatorVec3(saved.previousPosition, &dest.prevPos);
+            for (std::size_t j = 0; j < saved.positionHistory.size(); ++j)
+                ApplySpectatorVec3(saved.positionHistory[j], &dest.posHistory[j]);
+            ApplySpectatorVec3(saved.velocity, &dest.velocity);
+            ApplySpectatorVec3(saved.acceleration, &dest.accel);
+            ApplySpectatorTimer(saved.timer, &dest.timer);
+            for (std::size_t vm = 0; vm < saved.vms.size(); ++vm)
+                if (saved.hasVm[vm] && !ApplySpectatorAnm(saved.vms[vm], &dest.vms[vm])) return false;
+        }
+    }
+    ApplySpectatorVec3(source.bombStartPosition, &target.bombStartPos);
+    target.optionAngle = source.optionAngle;
+    target.RebuildBombBoxCache();
+    target.numActiveBombClearBoxes = source.numActiveBombClearBoxes;
+    target.dirtyBombBoxes = source.dirtyBombBoxes;
+
+    for (const auto &saved : bullets)
+    {
+        if (saved.player != playerId) continue;
+        if (saved.slot >= std::size(target.bullets)) return false;
+        PlayerBullet &bullet = target.bullets[saved.slot];
+        ApplySpectatorVec3(saved.position, &bullet.pos);
+        ApplySpectatorVec3(saved.previousPosition, &bullet.prevPos);
+        ApplySpectatorVec3(saved.hitboxSize, &bullet.hitboxSize);
+        for (std::size_t i = 0; i < saved.positionHistory.size(); ++i)
+            ApplySpectatorVec3(saved.positionHistory[i], &bullet.posHistory[i]);
+        ApplySpectatorFloat2(saved.velocity, &bullet.velocity);
+        ApplySpectatorFloat2(saved.offset, &bullet.offset);
+        bullet.speed = saved.speed; bullet.angle = saved.angle; bullet.prevAngle = saved.previousAngle;
+        ApplySpectatorTimer(saved.timer, &bullet.timer);
+        bullet.damage = saved.damage; bullet.bulletState = saved.bulletState;
+        bullet.bulletState2 = saved.bulletState2; bullet.timerIdx = saved.timerIndex;
+        bullet.optionId = saved.optionId; bullet.trailLength = saved.trailLength;
+        ShtEntry *entry = nullptr;
+        if (!ResolveSpectatorShtReference(target, saved.shtEntry, &entry)) return false;
+        bullet.shtEntry = entry;
+        bullet.updateCallback = entry ? entry->updateCallback : nullptr;
+        bullet.drawCallback = entry ? entry->drawCallback : nullptr;
+        bullet.hitCallback = entry ? entry->hitCallback : nullptr;
+        if (bullet.bulletState != 0 && (!entry || !saved.hasVm || !ApplySpectatorAnm(saved.vm, &bullet.vm)))
+            return false;
+    }
+    return true;
+}
+
+void LogSpectatorCheckpointCanonical(const char *phase, std::uint32_t frame,
+                                    const Th07CanonicalHash::Sample &sample)
+{
+    std::printf(
+        "netplay spectator TH07: canonical %s frame=%u composite=%016llx meta=%016llx rng=%016llx game=%016llx input=%016llx supervisor=%016llx multiplayer=%016llx stage=%016llx players=%016llx/%016llx/%016llx enemies=%016llx bullets=%016llx items=%016llx counts=%u/%u/%u/%u\n",
+        phase, frame, static_cast<unsigned long long>(sample.composite),
+        static_cast<unsigned long long>(sample.meta),
+        static_cast<unsigned long long>(sample.metaRng),
+        static_cast<unsigned long long>(sample.metaGame),
+        static_cast<unsigned long long>(sample.metaInput),
+        static_cast<unsigned long long>(sample.metaSupervisor),
+        static_cast<unsigned long long>(sample.multiplayer),
+        static_cast<unsigned long long>(sample.stage),
+        static_cast<unsigned long long>(sample.player0),
+        static_cast<unsigned long long>(sample.player1),
+        static_cast<unsigned long long>(sample.player2),
+        static_cast<unsigned long long>(sample.enemies),
+        static_cast<unsigned long long>(sample.bullets),
+        static_cast<unsigned long long>(sample.items), sample.enemyCount,
+        sample.bulletCount, sample.laserCount, sample.itemCount);
+    std::printf(
+        "netplay spectator TH07: stage fields %s frame=%u scriptTime=%d/%d/%.6f instruction=%d stageFrame=%d stage=%u pos=%.3f,%.3f,%.3f prev=%.3f,%.3f,%.3f color=%08x skyFog=%.3f/%.3f fogEnd=%.3f/%.3f fogStart=%.3f/%.3f skyInterp=%d/%d/%d/%.6f spell=%d/%d clear=%d wait=%d\n",
+        phase, frame, g_Stage.scriptTime.previous, g_Stage.scriptTime.current,
+        g_Stage.scriptTime.subFrame, g_Stage.instructionIndex, g_Stage.stageFrameCounter,
+        static_cast<unsigned>(g_Stage.stage), g_Stage.pos.x, g_Stage.pos.y, g_Stage.pos.z,
+        g_Stage.prevPos.x, g_Stage.prevPos.y, g_Stage.prevPos.z,
+        static_cast<unsigned>(g_Stage.color), g_Stage.skyFog.nearPlane,
+        g_Stage.skyFog.farPlane, g_Stage.fogEnd.nearPlane, g_Stage.fogEnd.farPlane,
+        g_Stage.fogStart.nearPlane, g_Stage.fogStart.farPlane,
+        g_Stage.skyFogInterpDuration, g_Stage.skyFogInterpTimer.previous,
+        g_Stage.skyFogInterpTimer.current, g_Stage.skyFogInterpTimer.subFrame,
+        g_Stage.spellCardState, g_Stage.ticksSinceSpellcardStarted,
+        static_cast<int>(g_Stage.clearBackground), g_Stage.scriptWaitTime);
+    std::printf("netplay spectator TH07: stage arrays %s frame=%u timersMax=", phase, frame);
+    for (i32 i = 0; i < ARRAY_SIZE_SIGNED(g_Stage.timersMax); ++i)
+        std::printf("%s%d", i ? "," : "", g_Stage.timersMax[i]);
+    std::printf(" timers=");
+    for (i32 i = 0; i < ARRAY_SIZE_SIGNED(g_Stage.timers); ++i)
+        std::printf("%s%d/%d/%.6f", i ? "," : "", g_Stage.timers[i].previous,
+                    g_Stage.timers[i].current, g_Stage.timers[i].subFrame);
+    std::printf(" ease=");
+    for (i32 i = 0; i < ARRAY_SIZE_SIGNED(g_Stage.easeModes); ++i)
+        std::printf("%s%d", i ? "," : "", g_Stage.easeModes[i]);
+    std::printf(" interp=");
+    std::printf("%.3f,%.3f,%.3f/%d/%.3f,%.3f,%.3f/%d/%d/%u/%d\n",
+                g_Stage.positionStart.x, g_Stage.positionStart.y, g_Stage.positionStart.z,
+                g_Stage.positionInterpEndTime, g_Stage.positionInterpInitial.x,
+                g_Stage.positionInterpInitial.y, g_Stage.positionInterpInitial.z,
+                g_Stage.positionInterpStartTime, static_cast<int>(g_Stage.cameraTeleported),
+                static_cast<unsigned>(g_Stage.isDarkening),
+                static_cast<int>(g_Stage.color2.color));
+    for (i32 i = 0; i < ARRAY_SIZE_SIGNED(g_EnemyManager.timelines); ++i)
+    {
+        const EclTimeline &timeline = g_EnemyManager.timelines[i];
+        const EclTimelineInstr *instr = timeline.timelineInstr;
+        std::printf(
+            "netplay spectator TH07: timeline %s frame=%u index=%d timer=%d/%d/%.6f instr=%d/%d/%d/%d args=%08x,%08x,%08x,%08x,%08x,%08x\n",
+            phase, frame, i, timeline.timelineTime.previous, timeline.timelineTime.current,
+            timeline.timelineTime.subFrame, instr ? instr->time : -1,
+            instr ? instr->arg0 : -1, instr ? instr->opcode : -1,
+            instr ? instr->size : -1, instr ? instr->args.args[0].u : 0,
+            instr ? instr->args.args[1].u : 0, instr ? instr->args.args[2].u : 0,
+            instr ? instr->args.args[3].u : 0, instr ? instr->args.args[4].u : 0,
+            instr ? instr->args.args[5].u : 0);
+    }
+    std::printf(
+        "netplay spectator TH07: multiplayer fields %s frame=%u active=%u/%u/%u cherryGraze=%d/%d/%d cherryBreak=%d/%d/%d powerTaps=%d/%d/%d powerWindow=%d/%d/%d teamWipeRetry=%d\n",
+        phase, frame, g_PlayerActive[0] ? 1u : 0u, g_PlayerActive[1] ? 1u : 0u,
+        g_PlayerActive[2] ? 1u : 0u,
+        g_cherryMaxGrazeGrowth[0], g_cherryMaxGrazeGrowth[1], g_cherryMaxGrazeGrowth[2],
+        g_cherryMaxBreakGrowth[0], g_cherryMaxBreakGrowth[1], g_cherryMaxBreakGrowth[2],
+        g_powerGiveTaps[0], g_powerGiveTaps[1], g_powerGiveTaps[2],
+        g_powerGiveWindow[0], g_powerGiveWindow[1], g_powerGiveWindow[2],
+        g_teamWipeRetryFrames);
+    std::printf(
+        "netplay spectator TH07: bullet manager %s frame=%u count=%d clear=%d time=%d/%d/%.6f updates=%d itemType=%d\n",
+        phase, frame, g_BulletManager.bulletCount, g_BulletManager.screenClearTime,
+        g_BulletManager.time.previous, g_BulletManager.time.current,
+        g_BulletManager.time.subFrame, g_BulletManager.updateCount,
+        static_cast<int>(g_BulletManager.itemType));
+    const ZunTimer &timelineTime = g_EnemyManager.timelineTime;
+    std::printf("netplay spectator TH07: enemy timeline %s frame=%u timer=%d/%d/%.6f\n",
+                phase, frame, timelineTime.previous, timelineTime.current,
+                timelineTime.subFrame);
+}
+
+bool CaptureSpectatorCheckpointValues(SpectatorCheckpoint &cp, std::uint32_t frame)
+{
+    cp.stage = static_cast<std::uint32_t>(g_GameManager.currentStage);
+    const auto canonical = Th07CanonicalHash::Capture();
+    LogSpectatorCheckpointCanonical("source-cp-preinput", frame, canonical);
+    cp.expectedHash = canonical.composite; cp.expectedMeta = canonical.meta;
+    cp.expectedStageHash = canonical.stage; cp.expectedPlayer0 = canonical.player0;
+    cp.expectedPlayer1 = canonical.player1; cp.expectedPlayer2 = canonical.player2;
+    cp.expectedMetaRng = canonical.metaRng; cp.expectedMetaGame = canonical.metaGame;
+    cp.expectedMetaInput = canonical.metaInput; cp.expectedMetaSupervisor = canonical.metaSupervisor;
+    cp.stageRngSeed = g_GameManager.stageRngSeed;
+    cp.rngSeed = g_Rng.seed; cp.rngSeedBackup = g_Rng.seedBackup;
+    cp.rngGeneration = g_Rng.generationCount;
+    cp.difficulty = g_GameManager.difficulty; cp.difficultyMask = static_cast<i32>(g_GameManager.difficultyMask);
+    cp.cherryMax = g_GameManager.cherryMax; cp.cherry = g_GameManager.cherry;
+    cp.cherryPlus = g_GameManager.cherryPlus; cp.subrank = g_GameManager.subrank;
+    cp.rank = g_GameManager.rank.rank; cp.maxRank = g_GameManager.rank.maxRank;
+    cp.minRank = g_GameManager.rank.minRank; cp.currentStage = g_GameManager.currentStage;
+    cp.framesThisStage = g_GameManager.framesThisStage; cp.flags = g_GameManager.flags;
+    cp.bulletLagTime = g_GameManager.bulletLagTime; cp.isTimeStopped = g_GameManager.isTimeStopped;
+    cp.slowModeSlowActive = g_GameManager.slowModeSlowActive; cp.isPaused = g_GameManager.isPaused;
+    cp.powerItemCountForScore = g_GameManager.powerItemCountForScore;
+    cp.character = g_GameManager.character; cp.shotType = g_GameManager.shotType;
+    cp.shotTypeAndCharacter = g_GameManager.shotTypeAndCharacter;
+    cp.isInPauseMenu = g_GameManager.isInPauseMenu; cp.isInRetryMenu = g_GameManager.isInRetryMenu;
+    cp.demoIdx = g_GameManager.demoIdx; cp.replayStage = g_GameManager.replayStage;
+    cp.demoFrames = g_GameManager.demoFrames; cp.phantasmUnlocked = g_GameManager.phantasmUnlocked;
+    cp.arcadeTopX = g_GameManager.arcadeRegionTopLeftPos.x;
+    cp.arcadeTopY = g_GameManager.arcadeRegionTopLeftPos.y;
+    cp.arcadeSizeX = g_GameManager.arcadeRegionSize.x; cp.arcadeSizeY = g_GameManager.arcadeRegionSize.y;
+    cp.movementTopX = g_GameManager.playerMovementAreaTopLeftPos.x;
+    cp.movementTopY = g_GameManager.playerMovementAreaTopLeftPos.y;
+    cp.movementSizeX = g_GameManager.playerMovementAreaSize.x;
+    cp.movementSizeY = g_GameManager.playerMovementAreaSize.y;
+    cp.csumFloat = g_GameManager.csumFloat;
+    const ZunGlobals &globals = *g_GameManager.globals;
+    cp.guiScore = globals.guiScore; cp.score = globals.score;
+    cp.guiScoreDifference = globals.guiScoreDifference; cp.highScore = globals.highScore;
+    cp.grazeInStage = globals.grazeInStage; cp.grazeInTotal = globals.grazeInTotal;
+    cp.spellCardsCaptured = globals.spellCardsCaptured; cp.numRetries = globals.numRetries;
+    cp.pointItemsThisStage = globals.pointItemsCollectedThisStage;
+    cp.pointItemsForExtend = globals.pointItemsCollectedForExtend;
+    cp.extendsFromPointItems = globals.extendsFromPointItems;
+    cp.nextNeededPointItems = globals.nextNeededPointItemsForExtend;
+    for (std::size_t i = 0; i < cp.globalsRng1.size(); ++i) cp.globalsRng1[i] = globals.rng1[i];
+    cp.deaths = globals.deaths;
+    for (std::size_t i = 0; i < cp.globalsRngFloat1.size(); ++i) cp.globalsRngFloat1[i] = globals.rngFloat1[i];
+    cp.livesRemaining = globals.livesRemaining;
+    for (std::size_t i = 0; i < cp.globalsRngFloat2.size(); ++i) cp.globalsRngFloat2[i] = globals.rngFloat2[i];
+    cp.bombsRemaining = globals.bombsRemaining; cp.bombsUsed = globals.bombsUsed;
+    for (std::size_t i = 0; i < cp.globalsRngFloat3.size(); ++i) cp.globalsRngFloat3[i] = globals.rngFloat3[i];
+    cp.currentPower = globals.currentPower;
+    for (std::size_t i = 0; i < cp.globalsRngFloat4.size(); ++i) cp.globalsRngFloat4[i] = globals.rngFloat4[i];
+    cp.cherryStart = globals.cherryStart;
+    for (std::size_t i = 0; i < cp.globalsRng2.size(); ++i) cp.globalsRng2[i] = globals.rng2[i];
+    cp.curCsum = globals.curCsum; cp.csumAsSum = globals.csumAsSum;
+    for (std::size_t i = 0; i < cp.csumData.size(); ++i) cp.csumData[i] = globals.csumData[i];
+    cp.session = MultiplayerGameplay::GetState();
+    for (std::uint8_t player = 0; player < TH07_MULTI_MAX_PLAYERS; ++player)
+    {
+        cp.playerActive[player] = g_PlayerActive[player] ? 1u : 0u;
+        cp.lives[player] = GetPlayerLives(player); cp.bombs[player] = GetPlayerBombs(player);
+        cp.powers[player] = GetPlayerPower(player);
+        cp.kills[player] = g_MultiplayerContributionStats[player].enemiesDefeated;
+        cp.damage[player] = g_MultiplayerContributionStats[player].damageDealt;
+        cp.challengeDeaths[player] = g_MultiplayerContributionStats[player].challengeDeaths;
+        cp.playerState[player] = g_Players[player].playerState;
+        const auto &p = g_Players[player];
+        cp.playerPositions[player * 6 + 0] = p.pos.x; cp.playerPositions[player * 6 + 1] = p.pos.y;
+        cp.playerPositions[player * 6 + 2] = p.pos.z; cp.playerPositions[player * 6 + 3] = p.prevPos.x;
+        cp.playerPositions[player * 6 + 4] = p.prevPos.y; cp.playerPositions[player * 6 + 5] = p.prevPos.z;
+        cp.playerInvulnerabilityCurrent[player] = p.invulnerabilityTimer.current;
+        cp.playerInvulnerabilityPrevious[player] = p.invulnerabilityTimer.previous;
+        cp.playerInvulnerabilitySubFrame[player] = p.invulnerabilityTimer.subFrame;
+        cp.currentInputs[player] = g_CurFrameGameInputs[player];
+        cp.lastInputs[player] = g_LastFrameGameInputs[player];
+        const auto &touch = Input::GetDirectTouchStates()[player];
+        cp.directTouchXY[player * 2] = touch.x;
+        cp.directTouchXY[player * 2 + 1] = touch.y;
+        cp.directTouchActive[player] = touch.active ? 1u : 0u;
+        cp.detailedPlayers.emplace_back();
+        if (!CaptureSpectatorPlayerState(g_Players[player], player, &cp.detailedPlayers.back(),
+                                         &cp.playerBullets))
+            return false;
+    }
+    cp.currentRawInput = g_CurFrameRawInput; cp.lastRawInput = g_LastFrameRawInput;
+    cp.eighthHeld = g_IsEighthFrameOfHeldInput; cp.heldFrames = g_NumOfFramesInputsWereHeld;
+    for (std::size_t i = 0; i < cp.globalEclInts.size(); ++i)
+    {
+        cp.globalEclInts[i] = g_GlobalEclVars.intVars[i];
+        cp.globalEclFloats[i] = g_GlobalEclVars.floatVars[i];
+    }
+    std::copy(std::begin(g_cherryMaxGrazeGrowth), std::end(g_cherryMaxGrazeGrowth),
+              cp.cherryMaxGrazeGrowth.begin());
+    std::copy(std::begin(g_cherryMaxBreakGrowth), std::end(g_cherryMaxBreakGrowth),
+              cp.cherryMaxBreakGrowth.begin());
+    std::copy(std::begin(g_powerGiveTaps), std::end(g_powerGiveTaps), cp.powerGiveTaps.begin());
+    std::copy(std::begin(g_powerGiveWindow), std::end(g_powerGiveWindow),
+              cp.powerGiveWindow.begin());
+    cp.teamWipeRetryFrames = g_teamWipeRetryFrames;
+    cp.bulletManagerCount = g_BulletManager.bulletCount;
+    cp.bulletManagerScreenClearTime = g_BulletManager.screenClearTime;
+    cp.bulletManagerTimePrevious = g_BulletManager.time.previous;
+    cp.bulletManagerTimeCurrent = g_BulletManager.time.current;
+    cp.bulletManagerTimeSubFrame = g_BulletManager.time.subFrame;
+    cp.bulletManagerUpdateCount = g_BulletManager.updateCount;
+    cp.bulletManagerItemType = static_cast<std::int32_t>(g_BulletManager.itemType);
+
+    if (!g_Stage.stdData || g_Stage.stdDataSize <= g_Stage.stdData->scriptOffset)
+        return false;
+    const std::uint32_t stageScriptCapacity =
+        (g_Stage.stdDataSize - g_Stage.stdData->scriptOffset) / sizeof(StdRawInstr);
+    if (g_Stage.instructionIndex < 0 ||
+        static_cast<std::uint32_t>(g_Stage.instructionIndex) >= stageScriptCapacity)
+        return false;
+    cp.stageScriptTimePrevious = g_Stage.scriptTime.previous;
+    cp.stageScriptTimeCurrent = g_Stage.scriptTime.current;
+    cp.stageScriptTimeSubFrame = g_Stage.scriptTime.subFrame;
+    cp.stageInstructionIndex = g_Stage.instructionIndex;
+    cp.stageFrameCounter = g_Stage.stageFrameCounter;
+    cp.stageId = g_Stage.stage;
+    cp.stagePositions = {g_Stage.pos.x, g_Stage.pos.y, g_Stage.pos.z,
+                         g_Stage.prevPos.x, g_Stage.prevPos.y, g_Stage.prevPos.z};
+    cp.stageColor = g_Stage.color;
+    cp.stageFogPlanes = {g_Stage.skyFog.nearPlane, g_Stage.skyFog.farPlane,
+                         g_Stage.fogEnd.nearPlane, g_Stage.fogEnd.farPlane,
+                         g_Stage.fogStart.nearPlane, g_Stage.fogStart.farPlane};
+    cp.stageFogColors = {g_Stage.skyFog.color.color, g_Stage.fogEnd.color.color,
+                         g_Stage.fogStart.color.color};
+    cp.stageSkyFogInterpDuration = g_Stage.skyFogInterpDuration;
+    cp.stageSkyFogInterpPrevious = g_Stage.skyFogInterpTimer.previous;
+    cp.stageSkyFogInterpCurrent = g_Stage.skyFogInterpTimer.current;
+    cp.stageSkyFogInterpSubFrame = g_Stage.skyFogInterpTimer.subFrame;
+    cp.stageSpellCardState = g_Stage.spellCardState;
+    cp.stageTicksSinceSpellcardStarted = g_Stage.ticksSinceSpellcardStarted;
+    cp.stageClearBackground = g_Stage.clearBackground ? 1u : 0u;
+    cp.stageScriptWaitTime = g_Stage.scriptWaitTime;
+    cp.stagePositionStart = {g_Stage.positionStart.x, g_Stage.positionStart.y,
+                             g_Stage.positionStart.z};
+    cp.stagePositionInterpInitial = {g_Stage.positionInterpInitial.x,
+                                     g_Stage.positionInterpInitial.y,
+                                     g_Stage.positionInterpInitial.z};
+    cp.stagePositionInterpEndTime = g_Stage.positionInterpEndTime;
+    cp.stagePositionInterpStartTime = g_Stage.positionInterpStartTime;
+    cp.stageCameraTeleported = g_Stage.cameraTeleported;
+    cp.stageIsDarkening = g_Stage.isDarkening ? 1u : 0u;
+    cp.stageColor2 = g_Stage.color2.color;
+    const StageCamera *stageCameras[] = {&g_Stage.camEnd, &g_Stage.camStart,
+                                         &g_Stage.camTangentEnd, &g_Stage.camTangentStart,
+                                         &g_Stage.cam, &g_Stage.prevCam};
+    std::size_t stageCameraOffset = 0;
+    for (const StageCamera *camera : stageCameras)
+    {
+        for (const ZunVec3 *value : {&camera->pos, &camera->lookAt, &camera->up,
+                                     &camera->lookAtDir, &camera->right})
+        {
+            cp.stageCameras[stageCameraOffset++] = value->x;
+            cp.stageCameras[stageCameraOffset++] = value->y;
+            cp.stageCameras[stageCameraOffset++] = value->z;
+        }
+        cp.stageCameras[stageCameraOffset++] = camera->fov;
+    }
+    cp.stageVms.resize(2);
+    const AnmVm *stageVms[] = {&g_Stage.vm1, &g_Stage.vm2};
+    for (std::size_t i = 0; i < cp.stageVms.size(); ++i)
+    {
+        if (!stageVms[i]->beginningOfScript || stageVms[i]->anmFileIdx < 0) continue;
+        cp.stageVmActive[i] = 1;
+        if (!CaptureSpectatorAnm(*stageVms[i], &cp.stageVms[i])) return false;
+    }
+    for (std::size_t i = 0; i < cp.stageTimersMax.size(); ++i)
+    {
+        cp.stageTimersMax[i] = g_Stage.timersMax[i];
+        cp.stageTimerPrevious[i] = g_Stage.timers[i].previous;
+        cp.stageTimerCurrent[i] = g_Stage.timers[i].current;
+        cp.stageTimerSubFrame[i] = g_Stage.timers[i].subFrame;
+        cp.stageEaseModes[i] = g_Stage.easeModes[i];
+    }
+
+    if (!g_EclManager.eclFile || g_EclManager.eclFileSize < sizeof(EclRawHeader) ||
+        g_EclManager.eclFile->timelineCount < 0 || g_EclManager.eclFile->timelineCount > 16)
+        return false;
+    cp.enemyTimelineFileOffsets.fill(-1);
+    for (std::size_t i = 0; i < cp.enemyTimelineFileOffsets.size(); ++i)
+    {
+        const auto &timeline = g_EnemyManager.timelines[i];
+        cp.enemyTimelinePrevious[i] = timeline.timelineTime.previous;
+        cp.enemyTimelineCurrent[i] = timeline.timelineTime.current;
+        cp.enemyTimelineSubFrame[i] = timeline.timelineTime.subFrame;
+        if (!timeline.timelineInstr)
+            continue;
+        if (i >= static_cast<std::size_t>(g_EclManager.eclFile->timelineCount))
+            return false;
+        const auto fileBegin = reinterpret_cast<std::uintptr_t>(g_EclManager.eclFile);
+        const auto current = reinterpret_cast<std::uintptr_t>(timeline.timelineInstr);
+        if (current < fileBegin || current - fileBegin >
+                g_EclManager.eclFileSize - sizeof(EclTimelineInstr))
+            return false;
+        const std::uint32_t fileOffset = static_cast<std::uint32_t>(current - fileBegin);
+        const std::uint32_t timelineStart = g_EclManager.eclFile->timelineOffsets[i];
+        if (fileOffset < timelineStart ||
+            (fileOffset - timelineStart) % sizeof(EclTimelineInstr) != 0)
+            return false;
+        cp.enemyTimelineFileOffsets[i] = static_cast<std::int32_t>(fileOffset);
+    }
+    cp.enemyTimelineTimePrevious = g_EnemyManager.timelineTime.previous;
+    cp.enemyTimelineTimeCurrent = g_EnemyManager.timelineTime.current;
+    cp.enemyTimelineTimeSubFrame = g_EnemyManager.timelineTime.subFrame;
+    cp.supervisorWanted = g_Supervisor.wantedState; cp.supervisorCurrent = g_Supervisor.curState;
+    cp.supervisorPrevious = g_Supervisor.prevState; cp.supervisorEnding = g_Supervisor.isInEnding;
+    cp.supervisorFramerate = g_Supervisor.effectiveFramerateMultiplier;
+    cp.supervisorFlags = static_cast<i32>(g_Supervisor.flags);
+    return true;
+}
+
+struct SpectatorCheckpointMetrics
+{
+    std::uint32_t rawBytes = 0, sparseBytes = 0, compressedBytes = 0, stateBytes = 0, eventBytes = 0;
+    std::uint32_t activePlayerBullets = 0, activeBombs = 0;
+    std::array<std::int32_t, TH07_MULTI_MAX_PLAYERS> playerPower{};
+    std::array<std::uint32_t, TH07_MULTI_MAX_PLAYERS> activePlayerBulletsByPlayer{};
+    std::array<std::uint32_t, TH07_MULTI_MAX_PLAYERS> activeBombSubrecordsByPlayer{};
+};
+
+bool EncodeSpectatorCheckpoint(std::vector<std::uint8_t> *bytes,
+                               SpectatorCheckpointMetrics *metrics = nullptr,
+                               std::uint32_t frame = 0)
+{
+    if (!bytes || !g_GameManager.globals || !MultiplayerGameplay::IsMultiplayer() ||
+        g_GameManager.currentStage < 1 || g_GameManager.currentStage > 6)
+        return false;
+    SpectatorCheckpoint cp;
+    if (!CaptureSpectatorCheckpointValues(cp, frame) ||
+        cp.detailedPlayers.size() != TH07_MULTI_MAX_PLAYERS ||
+        cp.playerBullets.size() > TH07_MULTI_MAX_PLAYERS * 96u)
+        return false;
+    SpectatorScalars::Writer writer(2u * 1024u * 1024u);
+    writer.Values(cp.magic, cp.stage, cp.expectedHash, cp.expectedMeta, cp.expectedStageHash,
+                  cp.expectedPlayer0, cp.expectedPlayer1, cp.expectedPlayer2,
+                  cp.expectedMetaRng, cp.expectedMetaGame, cp.expectedMetaInput,
+                  cp.expectedMetaSupervisor,
+                  cp.stageRngSeed, cp.rngSeed,
+                  cp.rngSeedBackup, cp.rngGeneration, cp.difficulty, cp.difficultyMask,
+                  cp.cherryMax, cp.cherry, cp.cherryPlus, cp.subrank, cp.rank, cp.maxRank,
+                  cp.minRank, cp.currentStage, cp.framesThisStage, cp.flags, cp.bulletLagTime,
+                  cp.isTimeStopped, cp.slowModeSlowActive, cp.isPaused, cp.powerItemCountForScore,
+                  cp.character, cp.shotType, cp.shotTypeAndCharacter, cp.isInPauseMenu,
+                  cp.isInRetryMenu, cp.demoIdx, cp.replayStage, cp.phantasmUnlocked, cp.demoFrames,
+                  cp.arcadeTopX, cp.arcadeTopY, cp.arcadeSizeX, cp.arcadeSizeY,
+                  cp.movementTopX, cp.movementTopY, cp.movementSizeX, cp.movementSizeY, cp.csumFloat,
+                  cp.guiScore, cp.score, cp.guiScoreDifference, cp.highScore, cp.grazeInStage,
+                  cp.grazeInTotal, cp.spellCardsCaptured, cp.numRetries, cp.pointItemsThisStage,
+                  cp.pointItemsForExtend, cp.extendsFromPointItems, cp.nextNeededPointItems,
+                  cp.deaths, cp.livesRemaining, cp.bombsRemaining, cp.bombsUsed, cp.currentPower,
+                  cp.cherryStart, cp.curCsum, cp.csumAsSum,
+                  cp.session.playerCount, cp.session.localPlayer, cp.session.showStagePlayerNames,
+                  cp.session.challengeMode, cp.session.stage4BossChain, cp.session.showContributionStats,
+                  cp.currentRawInput, cp.lastRawInput, cp.eighthHeld, cp.heldFrames,
+                  cp.supervisorWanted, cp.supervisorCurrent, cp.supervisorPrevious,
+                  cp.supervisorEnding, cp.supervisorFramerate, cp.supervisorFlags);
+    for (const auto &slot : cp.session.players)
+        writer.Values(slot.active, slot.temporarilyAbsent, slot.permanentlyDeparted,
+                      slot.character, slot.shot);
+    writer.Array(cp.globalsRng1); writer.Array(cp.globalsRngFloat1);
+    writer.Array(cp.globalsRngFloat2); writer.Array(cp.globalsRngFloat3);
+    writer.Array(cp.globalsRngFloat4); writer.Array(cp.globalsRng2); writer.Array(cp.csumData);
+    writer.Array(cp.playerActive); writer.Array(cp.lives); writer.Array(cp.bombs); writer.Array(cp.powers);
+    writer.Array(cp.kills); writer.Array(cp.damage); writer.Array(cp.challengeDeaths);
+    writer.Array(cp.playerState); writer.Array(cp.playerPositions);
+    writer.Array(cp.playerInvulnerabilityCurrent); writer.Array(cp.playerInvulnerabilityPrevious);
+    writer.Array(cp.playerInvulnerabilitySubFrame); writer.Array(cp.currentInputs); writer.Array(cp.lastInputs);
+    writer.Array(cp.directTouchXY); writer.Array(cp.directTouchActive);
+    writer.Array(cp.globalEclInts); writer.Array(cp.globalEclFloats);
+    writer.Values(cp.teamWipeRetryFrames, cp.bulletManagerCount,
+                  cp.bulletManagerScreenClearTime, cp.bulletManagerTimePrevious,
+                  cp.bulletManagerTimeCurrent, cp.bulletManagerTimeSubFrame,
+                  cp.bulletManagerUpdateCount, cp.bulletManagerItemType,
+                  cp.stageScriptTimePrevious, cp.stageScriptTimeCurrent,
+                  cp.stageScriptTimeSubFrame, cp.stageInstructionIndex,
+                  cp.stageFrameCounter, cp.stageId, cp.stageColor,
+                  cp.stageSkyFogInterpDuration, cp.stageSkyFogInterpPrevious,
+                  cp.stageSkyFogInterpCurrent, cp.stageSkyFogInterpSubFrame,
+                  cp.stageSpellCardState, cp.stageTicksSinceSpellcardStarted,
+                  cp.stageClearBackground, cp.stageScriptWaitTime,
+                  cp.stagePositionInterpEndTime, cp.stagePositionInterpStartTime,
+                  cp.stageCameraTeleported, cp.stageIsDarkening, cp.stageColor2,
+                  cp.enemyTimelineTimePrevious, cp.enemyTimelineTimeCurrent,
+                  cp.enemyTimelineTimeSubFrame);
+    writer.Array(cp.cherryMaxGrazeGrowth); writer.Array(cp.cherryMaxBreakGrowth);
+    writer.Array(cp.powerGiveTaps); writer.Array(cp.powerGiveWindow);
+    writer.Array(cp.stagePositions); writer.Array(cp.stageFogPlanes); writer.Array(cp.stageFogColors);
+    writer.Array(cp.stageTimersMax); writer.Array(cp.stageEaseModes);
+    writer.Array(cp.stageTimerPrevious); writer.Array(cp.stageTimerCurrent);
+    writer.Array(cp.stageTimerSubFrame); writer.Array(cp.stagePositionStart);
+    writer.Array(cp.stagePositionInterpInitial); writer.Array(cp.enemyTimelinePrevious);
+    writer.Array(cp.enemyTimelineCurrent); writer.Array(cp.enemyTimelineSubFrame);
+    writer.Array(cp.enemyTimelineFileOffsets); writer.Array(cp.stageCameras);
+    writer.Array(cp.stageVmActive);
+    for (std::size_t i = 0; i < cp.stageVmActive.size(); ++i)
+        if (cp.stageVmActive[i] &&
+            (cp.stageVms.size() != cp.stageVmActive.size() ||
+             !WriteSpectatorAnm(writer, cp.stageVms[i])))
+            return false;
+    const auto playerCount = static_cast<std::uint16_t>(cp.detailedPlayers.size());
+    const auto bulletCount = static_cast<std::uint16_t>(cp.playerBullets.size());
+    if (!writer.Value(playerCount)) return false;
+    for (const auto &player : cp.detailedPlayers)
+        if (!WriteSpectatorPlayer(writer, player)) return false;
+    if (!writer.Value(bulletCount)) return false;
+    for (const auto &bullet : cp.playerBullets)
+        if (!WriteSpectatorPlayerBullet(writer, bullet)) return false;
+    if (!writer.Good()) return false;
+    if (metrics)
+    {
+        metrics->rawBytes = static_cast<std::uint32_t>(writer.Bytes().size());
+        for (std::size_t player = 0; player < cp.playerActive.size(); ++player)
+        {
+            metrics->playerPower[player] = cp.powers[player];
+            if (player < cp.detailedPlayers.size() && cp.detailedPlayers[player].bombIsInUse)
+            {
+                const auto &bomb = cp.detailedPlayers[player];
+                ++metrics->activeBombs;
+                metrics->activeBombSubrecordsByPlayer[player] = static_cast<std::uint32_t>(
+                    std::count_if(bomb.bombSubInfo.begin(), bomb.bombSubInfo.end(),
+                                  [](const SpectatorBombSubState &sub) { return sub.state != 0; }));
+            }
+        }
+        for (const auto &bullet : cp.playerBullets)
+        {
+            if (bullet.bulletState == 0 || bullet.player >= TH07_MULTI_MAX_PLAYERS) continue;
+            ++metrics->activePlayerBullets;
+            ++metrics->activePlayerBulletsByPlayer[bullet.player];
+        }
+    }
+    if (!CompressSpectatorCheckpoint(writer.Bytes(), bytes)) return false;
+    if (metrics)
+    {
+        metrics->stateBytes = static_cast<std::uint32_t>(bytes->size());
+        metrics->sparseBytes = ReadCheckpointWord(bytes->data() + 8);
+        metrics->compressedBytes = static_cast<std::uint32_t>(bytes->size() - 12);
+    }
+    return true;
+}
+
+bool DecodeSpectatorCheckpoint(const std::vector<std::uint8_t> &bytes, SpectatorCheckpoint *cp)
+{
+    if (!cp) return false;
+    std::vector<std::uint8_t> raw;
+    if (!DecompressSpectatorCheckpoint(bytes, &raw)) return false;
+    SpectatorScalars::Reader reader(raw);
+    reader.Values(cp->magic, cp->stage, cp->expectedHash, cp->expectedMeta, cp->expectedStageHash,
+                  cp->expectedPlayer0, cp->expectedPlayer1, cp->expectedPlayer2,
+                  cp->expectedMetaRng, cp->expectedMetaGame, cp->expectedMetaInput,
+                  cp->expectedMetaSupervisor,
+                  cp->stageRngSeed, cp->rngSeed,
+                  cp->rngSeedBackup, cp->rngGeneration, cp->difficulty, cp->difficultyMask,
+                  cp->cherryMax, cp->cherry, cp->cherryPlus, cp->subrank, cp->rank, cp->maxRank,
+                  cp->minRank, cp->currentStage, cp->framesThisStage, cp->flags, cp->bulletLagTime,
+                  cp->isTimeStopped, cp->slowModeSlowActive, cp->isPaused, cp->powerItemCountForScore,
+                  cp->character, cp->shotType, cp->shotTypeAndCharacter, cp->isInPauseMenu,
+                  cp->isInRetryMenu, cp->demoIdx, cp->replayStage, cp->phantasmUnlocked, cp->demoFrames,
+                  cp->arcadeTopX, cp->arcadeTopY, cp->arcadeSizeX, cp->arcadeSizeY,
+                  cp->movementTopX, cp->movementTopY, cp->movementSizeX, cp->movementSizeY, cp->csumFloat,
+                  cp->guiScore, cp->score, cp->guiScoreDifference, cp->highScore, cp->grazeInStage,
+                  cp->grazeInTotal, cp->spellCardsCaptured, cp->numRetries, cp->pointItemsThisStage,
+                  cp->pointItemsForExtend, cp->extendsFromPointItems, cp->nextNeededPointItems,
+                  cp->deaths, cp->livesRemaining, cp->bombsRemaining, cp->bombsUsed, cp->currentPower,
+                  cp->cherryStart, cp->curCsum, cp->csumAsSum,
+                  cp->session.playerCount, cp->session.localPlayer, cp->session.showStagePlayerNames,
+                  cp->session.challengeMode, cp->session.stage4BossChain, cp->session.showContributionStats,
+                  cp->currentRawInput, cp->lastRawInput, cp->eighthHeld, cp->heldFrames,
+                  cp->supervisorWanted, cp->supervisorCurrent, cp->supervisorPrevious,
+                  cp->supervisorEnding, cp->supervisorFramerate, cp->supervisorFlags);
+    for (auto &slot : cp->session.players)
+        reader.Values(slot.active, slot.temporarilyAbsent, slot.permanentlyDeparted,
+                      slot.character, slot.shot);
+    reader.Array(cp->globalsRng1); reader.Array(cp->globalsRngFloat1);
+    reader.Array(cp->globalsRngFloat2); reader.Array(cp->globalsRngFloat3);
+    reader.Array(cp->globalsRngFloat4); reader.Array(cp->globalsRng2); reader.Array(cp->csumData);
+    reader.Array(cp->playerActive); reader.Array(cp->lives); reader.Array(cp->bombs); reader.Array(cp->powers);
+    reader.Array(cp->kills); reader.Array(cp->damage); reader.Array(cp->challengeDeaths);
+    reader.Array(cp->playerState); reader.Array(cp->playerPositions);
+    reader.Array(cp->playerInvulnerabilityCurrent); reader.Array(cp->playerInvulnerabilityPrevious);
+    reader.Array(cp->playerInvulnerabilitySubFrame); reader.Array(cp->currentInputs); reader.Array(cp->lastInputs);
+    reader.Array(cp->directTouchXY); reader.Array(cp->directTouchActive);
+    reader.Array(cp->globalEclInts); reader.Array(cp->globalEclFloats);
+    reader.Values(cp->teamWipeRetryFrames, cp->bulletManagerCount,
+                  cp->bulletManagerScreenClearTime, cp->bulletManagerTimePrevious,
+                  cp->bulletManagerTimeCurrent, cp->bulletManagerTimeSubFrame,
+                  cp->bulletManagerUpdateCount, cp->bulletManagerItemType,
+                  cp->stageScriptTimePrevious, cp->stageScriptTimeCurrent,
+                  cp->stageScriptTimeSubFrame, cp->stageInstructionIndex,
+                  cp->stageFrameCounter, cp->stageId, cp->stageColor,
+                  cp->stageSkyFogInterpDuration, cp->stageSkyFogInterpPrevious,
+                  cp->stageSkyFogInterpCurrent, cp->stageSkyFogInterpSubFrame,
+                  cp->stageSpellCardState, cp->stageTicksSinceSpellcardStarted,
+                  cp->stageClearBackground, cp->stageScriptWaitTime,
+                  cp->stagePositionInterpEndTime, cp->stagePositionInterpStartTime,
+                  cp->stageCameraTeleported, cp->stageIsDarkening, cp->stageColor2,
+                  cp->enemyTimelineTimePrevious, cp->enemyTimelineTimeCurrent,
+                  cp->enemyTimelineTimeSubFrame);
+    reader.Array(cp->cherryMaxGrazeGrowth); reader.Array(cp->cherryMaxBreakGrowth);
+    reader.Array(cp->powerGiveTaps); reader.Array(cp->powerGiveWindow);
+    reader.Array(cp->stagePositions); reader.Array(cp->stageFogPlanes); reader.Array(cp->stageFogColors);
+    reader.Array(cp->stageTimersMax); reader.Array(cp->stageEaseModes);
+    reader.Array(cp->stageTimerPrevious); reader.Array(cp->stageTimerCurrent);
+    reader.Array(cp->stageTimerSubFrame); reader.Array(cp->stagePositionStart);
+    reader.Array(cp->stagePositionInterpInitial); reader.Array(cp->enemyTimelinePrevious);
+    reader.Array(cp->enemyTimelineCurrent); reader.Array(cp->enemyTimelineSubFrame);
+    reader.Array(cp->enemyTimelineFileOffsets); reader.Array(cp->stageCameras);
+    reader.Array(cp->stageVmActive);
+    cp->stageVms.resize(cp->stageVmActive.size());
+    for (std::size_t i = 0; i < cp->stageVmActive.size(); ++i)
+        if (cp->stageVmActive[i] > 1 ||
+            (cp->stageVmActive[i] && !ReadSpectatorAnm(reader, &cp->stageVms[i])))
+            return false;
+    std::uint16_t playerCount = 0, bulletCount = 0;
+    if (!reader.Value(playerCount) || playerCount != TH07_MULTI_MAX_PLAYERS) return false;
+    cp->detailedPlayers.resize(playerCount);
+    for (auto &player : cp->detailedPlayers)
+        if (!ReadSpectatorPlayer(reader, &player)) return false;
+    if (!reader.Value(bulletCount) || bulletCount > TH07_MULTI_MAX_PLAYERS * 96u) return false;
+    cp->playerBullets.resize(bulletCount);
+    std::array<std::array<bool, 96>, TH07_MULTI_MAX_PLAYERS> seenBullets{};
+    for (auto &bullet : cp->playerBullets)
+    {
+        if (!ReadSpectatorPlayerBullet(reader, &bullet) || bullet.player >= TH07_MULTI_MAX_PLAYERS ||
+            bullet.slot >= 96 || seenBullets[bullet.player][bullet.slot] ||
+            (bullet.bulletState != 0 && (!bullet.hasVm || !bullet.shtEntry.valid)) ||
+            (bullet.hasVm && bullet.bulletState == 0))
+            return false;
+        seenBullets[bullet.player][bullet.slot] = true;
+    }
+    for (std::size_t playerIndex = 0; playerIndex < cp->detailedPlayers.size(); ++playerIndex)
+        for (const auto &timer : cp->detailedPlayers[playerIndex].timers)
+            if (timer.bulletSlot < -1 || timer.bulletSlot >= 96 ||
+                (timer.bulletSlot >= 0 && !seenBullets[playerIndex][timer.bulletSlot]))
+                return false;
+    return reader.Done() && cp->magic == 0x37504353 && cp->stage >= 1 && cp->stage <= 6 &&
+           cp->currentStage == static_cast<i32>(cp->stage) &&
+           cp->session.playerCount >= 2 && cp->session.playerCount <= TH07_MULTI_MAX_PLAYERS &&
+           cp->session.players[0].active && cp->character <= 2 && cp->shotType <= 1;
+}
+
+bool ApplySpectatorCheckpointState(const SpectatorCheckpoint &cp)
+{
+    if (cp.detailedPlayers.size() != TH07_MULTI_MAX_PLAYERS ||
+        cp.stageVms.size() != cp.stageVmActive.size() || cp.stageVmActive[0] > 1 ||
+        cp.stageVmActive[1] > 1 ||
+        cp.stageId != cp.stage || cp.stageInstructionIndex < 0 || cp.stageFrameCounter < 0 ||
+        cp.stageSpellCardState < SPELLCARD_STATE_INACTIVE ||
+        cp.stageSpellCardState > SPELLCARD_STATE_ACTIVE || cp.stageClearBackground > 1 ||
+        cp.stageCameraTeleported > 1 || cp.stageIsDarkening > 1 ||
+        cp.bulletManagerCount < 0 || cp.bulletManagerCount > MAX_BULLETS ||
+        cp.bulletManagerItemType < ITEM_POWER_SMALL ||
+        (cp.bulletManagerItemType > ITEM_STAR && cp.bulletManagerItemType != ITEM_NO_ITEM))
+        return false;
+    if (!g_Stage.stdData || g_Stage.stdDataSize <= g_Stage.stdData->scriptOffset ||
+        !g_EclManager.eclFile || g_EclManager.eclFileSize < sizeof(EclRawHeader) ||
+        g_EclManager.eclFile->timelineCount < 0 || g_EclManager.eclFile->timelineCount > 16)
+        return false;
+    const std::uint32_t stageScriptCapacity =
+        (g_Stage.stdDataSize - g_Stage.stdData->scriptOffset) / sizeof(StdRawInstr);
+    if (static_cast<std::uint32_t>(cp.stageInstructionIndex) >= stageScriptCapacity)
+        return false;
+    for (std::size_t i = 0; i < cp.enemyTimelineFileOffsets.size(); ++i)
+    {
+        const std::int32_t savedOffset = cp.enemyTimelineFileOffsets[i];
+        if (savedOffset == -1) continue;
+        if (savedOffset < 0 || i >= static_cast<std::size_t>(g_EclManager.eclFile->timelineCount))
+            return false;
+        const std::uint32_t offset = static_cast<std::uint32_t>(savedOffset);
+        const std::uint32_t timelineStart = g_EclManager.eclFile->timelineOffsets[i];
+        std::uint32_t timelineEnd = g_EclManager.eclFileSize;
+        for (std::size_t other = 0;
+             other < static_cast<std::size_t>(g_EclManager.eclFile->timelineCount); ++other)
+        {
+            const std::uint32_t otherStart = g_EclManager.eclFile->timelineOffsets[other];
+            if (otherStart > timelineStart && otherStart < timelineEnd)
+                timelineEnd = otherStart;
+        }
+        if (timelineEnd < sizeof(EclTimelineInstr) || offset < timelineStart ||
+            offset > timelineEnd - sizeof(EclTimelineInstr) ||
+            (offset - timelineStart) % sizeof(EclTimelineInstr) != 0)
+            return false;
+        const auto *instr = reinterpret_cast<const EclTimelineInstr *>(
+            reinterpret_cast<const std::uint8_t *>(g_EclManager.eclFile) + offset);
+        if (instr->time < -1 || (instr->time >= 0 && instr->size != sizeof(EclTimelineInstr)))
+            return false;
+    }
+    MultiplayerGameplay::Configure(cp.session);
+    g_GameManager.difficulty = cp.difficulty; g_GameManager.difficultyMask = static_cast<u32>(cp.difficultyMask);
+    g_GameManager.cherryMax = cp.cherryMax; g_GameManager.cherry = cp.cherry;
+    g_GameManager.cherryPlus = cp.cherryPlus; g_GameManager.subrank = cp.subrank;
+    g_GameManager.rank.rank = cp.rank; g_GameManager.rank.maxRank = cp.maxRank; g_GameManager.rank.minRank = cp.minRank;
+    g_GameManager.currentStage = cp.currentStage; g_GameManager.framesThisStage = cp.framesThisStage;
+    g_GameManager.flags = cp.flags; g_GameManager.bulletLagTime = cp.bulletLagTime;
+    g_GameManager.isTimeStopped = cp.isTimeStopped; g_GameManager.slowModeSlowActive = cp.slowModeSlowActive;
+    g_GameManager.isPaused = cp.isPaused; g_GameManager.powerItemCountForScore = cp.powerItemCountForScore;
+    g_GameManager.character = cp.character; g_GameManager.shotType = cp.shotType;
+    g_GameManager.shotTypeAndCharacter = cp.shotTypeAndCharacter;
+    g_GameManager.isInPauseMenu = cp.isInPauseMenu; g_GameManager.isInRetryMenu = cp.isInRetryMenu;
+    g_GameManager.demoIdx = cp.demoIdx; g_GameManager.replayStage = cp.replayStage;
+    g_GameManager.demoFrames = cp.demoFrames; g_GameManager.phantasmUnlocked = cp.phantasmUnlocked;
+    g_GameManager.stageRngSeed = cp.stageRngSeed;
+    g_GameManager.arcadeRegionTopLeftPos = {cp.arcadeTopX, cp.arcadeTopY};
+    g_GameManager.arcadeRegionSize = {cp.arcadeSizeX, cp.arcadeSizeY};
+    g_GameManager.playerMovementAreaTopLeftPos = {cp.movementTopX, cp.movementTopY};
+    g_GameManager.playerMovementAreaSize = {cp.movementSizeX, cp.movementSizeY};
+    g_GameManager.csumFloat = cp.csumFloat;
+    ZunGlobals &globals = *g_GameManager.globals;
+    globals.guiScore = cp.guiScore; globals.score = cp.score;
+    globals.guiScoreDifference = cp.guiScoreDifference; globals.highScore = cp.highScore;
+    globals.grazeInStage = cp.grazeInStage; globals.grazeInTotal = cp.grazeInTotal;
+    globals.spellCardsCaptured = cp.spellCardsCaptured; globals.numRetries = cp.numRetries;
+    globals.pointItemsCollectedThisStage = cp.pointItemsThisStage;
+    globals.pointItemsCollectedForExtend = cp.pointItemsForExtend;
+    globals.extendsFromPointItems = cp.extendsFromPointItems;
+    globals.nextNeededPointItemsForExtend = cp.nextNeededPointItems;
+    for (std::size_t i = 0; i < cp.globalsRng1.size(); ++i) globals.rng1[i] = cp.globalsRng1[i];
+    globals.deaths = cp.deaths;
+    for (std::size_t i = 0; i < cp.globalsRngFloat1.size(); ++i) globals.rngFloat1[i] = cp.globalsRngFloat1[i];
+    globals.livesRemaining = cp.livesRemaining;
+    for (std::size_t i = 0; i < cp.globalsRngFloat2.size(); ++i) globals.rngFloat2[i] = cp.globalsRngFloat2[i];
+    globals.bombsRemaining = cp.bombsRemaining; globals.bombsUsed = cp.bombsUsed;
+    for (std::size_t i = 0; i < cp.globalsRngFloat3.size(); ++i) globals.rngFloat3[i] = cp.globalsRngFloat3[i];
+    globals.currentPower = cp.currentPower;
+    for (std::size_t i = 0; i < cp.globalsRngFloat4.size(); ++i) globals.rngFloat4[i] = cp.globalsRngFloat4[i];
+    globals.cherryStart = cp.cherryStart;
+    for (std::size_t i = 0; i < cp.globalsRng2.size(); ++i) globals.rng2[i] = cp.globalsRng2[i];
+    globals.curCsum = cp.curCsum; globals.csumAsSum = cp.csumAsSum;
+    for (std::size_t i = 0; i < cp.csumData.size(); ++i) globals.csumData[i] = cp.csumData[i];
+    for (std::uint8_t player = 0; player < TH07_MULTI_MAX_PLAYERS; ++player)
+    {
+        g_PlayerActive[player] = cp.playerActive[player] != 0;
+        SetPlayerLives(player, cp.lives[player]); SetPlayerBombs(player, cp.bombs[player]);
+        SetPlayerPower(player, cp.powers[player]);
+        g_MultiplayerContributionStats[player].enemiesDefeated = cp.kills[player];
+        g_MultiplayerContributionStats[player].damageDealt = cp.damage[player];
+        g_MultiplayerContributionStats[player].challengeDeaths = cp.challengeDeaths[player];
+        Player &p = g_Players[player];
+        p.playerState = static_cast<i8>(cp.playerState[player]);
+        p.pos = {cp.playerPositions[player * 6], cp.playerPositions[player * 6 + 1], cp.playerPositions[player * 6 + 2]};
+        p.prevPos = {cp.playerPositions[player * 6 + 3], cp.playerPositions[player * 6 + 4], cp.playerPositions[player * 6 + 5]};
+        p.invulnerabilityTimer.current = cp.playerInvulnerabilityCurrent[player];
+        p.invulnerabilityTimer.previous = cp.playerInvulnerabilityPrevious[player];
+        p.invulnerabilityTimer.subFrame = cp.playerInvulnerabilitySubFrame[player];
+        g_CurFrameGameInputs[player] = cp.currentInputs[player];
+        g_LastFrameGameInputs[player] = cp.lastInputs[player];
+        auto &touch = Input::GetDirectTouchStates()[player];
+        touch.x = cp.directTouchXY[player * 2];
+        touch.y = cp.directTouchXY[player * 2 + 1];
+        touch.active = cp.directTouchActive[player] != 0;
+        if (!ApplySpectatorPlayerState(g_Players[player], cp.detailedPlayers[player],
+                                       cp.playerBullets, player))
+            return false;
+    }
+    // Seat-0 resource setters above update TH07's original integrity checksum.
+    // Checkpoint restore must finish by reinstating the source checksum values
+    // after those setters, or the otherwise-correct initializer hashes differ.
+    g_GameManager.csumFloat = cp.csumFloat;
+    for (std::size_t i = 0; i < cp.globalsRng1.size(); ++i) globals.rng1[i] = cp.globalsRng1[i];
+    for (std::size_t i = 0; i < cp.globalsRng2.size(); ++i) globals.rng2[i] = cp.globalsRng2[i];
+    globals.curCsum = cp.curCsum;
+    globals.csumAsSum = cp.csumAsSum;
+    g_CurFrameRawInput = cp.currentRawInput; g_LastFrameRawInput = cp.lastRawInput;
+    g_IsEighthFrameOfHeldInput = cp.eighthHeld; g_NumOfFramesInputsWereHeld = cp.heldFrames;
+    for (std::size_t i = 0; i < cp.globalEclInts.size(); ++i)
+    {
+        g_GlobalEclVars.intVars[i] = cp.globalEclInts[i];
+        g_GlobalEclVars.floatVars[i] = cp.globalEclFloats[i];
+    }
+    std::copy(cp.cherryMaxGrazeGrowth.begin(), cp.cherryMaxGrazeGrowth.end(),
+              std::begin(g_cherryMaxGrazeGrowth));
+    std::copy(cp.cherryMaxBreakGrowth.begin(), cp.cherryMaxBreakGrowth.end(),
+              std::begin(g_cherryMaxBreakGrowth));
+    std::copy(cp.powerGiveTaps.begin(), cp.powerGiveTaps.end(), std::begin(g_powerGiveTaps));
+    std::copy(cp.powerGiveWindow.begin(), cp.powerGiveWindow.end(), std::begin(g_powerGiveWindow));
+    g_teamWipeRetryFrames = cp.teamWipeRetryFrames;
+
+    g_BulletManager.bulletCount = cp.bulletManagerCount;
+    g_BulletManager.screenClearTime = cp.bulletManagerScreenClearTime;
+    g_BulletManager.time.previous = cp.bulletManagerTimePrevious;
+    g_BulletManager.time.current = cp.bulletManagerTimeCurrent;
+    g_BulletManager.time.subFrame = cp.bulletManagerTimeSubFrame;
+    g_BulletManager.updateCount = cp.bulletManagerUpdateCount;
+    g_BulletManager.itemType = static_cast<ItemType>(cp.bulletManagerItemType);
+
+    g_Stage.scriptTime.previous = cp.stageScriptTimePrevious;
+    g_Stage.scriptTime.current = cp.stageScriptTimeCurrent;
+    g_Stage.scriptTime.subFrame = cp.stageScriptTimeSubFrame;
+    g_Stage.instructionIndex = cp.stageInstructionIndex;
+    g_Stage.stageFrameCounter = cp.stageFrameCounter;
+    g_Stage.stage = cp.stageId;
+    g_Stage.pos = {cp.stagePositions[0], cp.stagePositions[1], cp.stagePositions[2]};
+    g_Stage.prevPos = {cp.stagePositions[3], cp.stagePositions[4], cp.stagePositions[5]};
+    g_Stage.color = cp.stageColor;
+    g_Stage.skyFog.nearPlane = cp.stageFogPlanes[0];
+    g_Stage.skyFog.farPlane = cp.stageFogPlanes[1];
+    g_Stage.fogEnd.nearPlane = cp.stageFogPlanes[2];
+    g_Stage.fogEnd.farPlane = cp.stageFogPlanes[3];
+    g_Stage.fogStart.nearPlane = cp.stageFogPlanes[4];
+    g_Stage.fogStart.farPlane = cp.stageFogPlanes[5];
+    g_Stage.skyFog.color.color = cp.stageFogColors[0];
+    g_Stage.fogEnd.color.color = cp.stageFogColors[1];
+    g_Stage.fogStart.color.color = cp.stageFogColors[2];
+    g_Stage.skyFogInterpDuration = cp.stageSkyFogInterpDuration;
+    g_Stage.skyFogInterpTimer.previous = cp.stageSkyFogInterpPrevious;
+    g_Stage.skyFogInterpTimer.current = cp.stageSkyFogInterpCurrent;
+    g_Stage.skyFogInterpTimer.subFrame = cp.stageSkyFogInterpSubFrame;
+    g_Stage.spellCardState = cp.stageSpellCardState;
+    g_Stage.ticksSinceSpellcardStarted = cp.stageTicksSinceSpellcardStarted;
+    g_Stage.clearBackground = cp.stageClearBackground != 0;
+    g_Stage.scriptWaitTime = cp.stageScriptWaitTime;
+    g_Stage.positionStart = {cp.stagePositionStart[0], cp.stagePositionStart[1],
+                             cp.stagePositionStart[2]};
+    g_Stage.positionInterpInitial = {cp.stagePositionInterpInitial[0],
+                                     cp.stagePositionInterpInitial[1],
+                                     cp.stagePositionInterpInitial[2]};
+    g_Stage.positionInterpEndTime = cp.stagePositionInterpEndTime;
+    g_Stage.positionInterpStartTime = cp.stagePositionInterpStartTime;
+    g_Stage.cameraTeleported = cp.stageCameraTeleported;
+    g_Stage.isDarkening = cp.stageIsDarkening != 0;
+    g_Stage.color2.color = cp.stageColor2;
+    StageCamera *stageCameras[] = {&g_Stage.camEnd, &g_Stage.camStart,
+                                   &g_Stage.camTangentEnd, &g_Stage.camTangentStart,
+                                   &g_Stage.cam, &g_Stage.prevCam};
+    std::size_t stageCameraOffset = 0;
+    for (StageCamera *camera : stageCameras)
+    {
+        for (ZunVec3 *value : {&camera->pos, &camera->lookAt, &camera->up,
+                               &camera->lookAtDir, &camera->right})
+        {
+            value->x = cp.stageCameras[stageCameraOffset++];
+            value->y = cp.stageCameras[stageCameraOffset++];
+            value->z = cp.stageCameras[stageCameraOffset++];
+        }
+        camera->fov = cp.stageCameras[stageCameraOffset++];
+    }
+    AnmVm *stageVms[] = {&g_Stage.vm1, &g_Stage.vm2};
+    for (std::size_t i = 0; i < cp.stageVmActive.size(); ++i)
+        if (cp.stageVmActive[i] && !ApplySpectatorAnm(cp.stageVms[i], stageVms[i]))
+            return false;
+    for (std::size_t i = 0; i < cp.stageTimersMax.size(); ++i)
+    {
+        g_Stage.timersMax[i] = cp.stageTimersMax[i];
+        g_Stage.timers[i].previous = cp.stageTimerPrevious[i];
+        g_Stage.timers[i].current = cp.stageTimerCurrent[i];
+        g_Stage.timers[i].subFrame = cp.stageTimerSubFrame[i];
+        g_Stage.easeModes[i] = cp.stageEaseModes[i];
+    }
+    g_EnemyManager.timelineTime.previous = cp.enemyTimelineTimePrevious;
+    g_EnemyManager.timelineTime.current = cp.enemyTimelineTimeCurrent;
+    g_EnemyManager.timelineTime.subFrame = cp.enemyTimelineTimeSubFrame;
+    for (std::size_t i = 0; i < cp.enemyTimelineFileOffsets.size(); ++i)
+    {
+        auto &timeline = g_EnemyManager.timelines[i];
+        timeline.timelineTime.previous = cp.enemyTimelinePrevious[i];
+        timeline.timelineTime.current = cp.enemyTimelineCurrent[i];
+        timeline.timelineTime.subFrame = cp.enemyTimelineSubFrame[i];
+        if (cp.enemyTimelineFileOffsets[i] < 0)
+            timeline.timelineInstr = nullptr;
+        else
+            timeline.timelineInstr = reinterpret_cast<EclTimelineInstr *>(
+                reinterpret_cast<std::uint8_t *>(g_EclManager.eclFile) +
+                static_cast<std::uint32_t>(cp.enemyTimelineFileOffsets[i]));
+    }
+    g_Supervisor.wantedState = cp.supervisorWanted; g_Supervisor.curState = cp.supervisorCurrent;
+    g_Supervisor.prevState = cp.supervisorPrevious; g_Supervisor.isInEnding = cp.supervisorEnding;
+    g_Supervisor.effectiveFramerateMultiplier = cp.supervisorFramerate;
+    g_Supervisor.flags = static_cast<u32>(cp.supervisorFlags);
+    g_Rng.seed = cp.rngSeed; g_Rng.seedBackup = cp.rngSeedBackup;
+    g_Rng.generationCount = cp.rngGeneration;
+    return true;
+}
+
+void LogSpectatorCheckpointMetaDifferences(const SpectatorCheckpoint &cp)
+{
+#define CHECK_SPECTATOR_FIELD(actual, saved, label) \
+    do { if ((actual) != (saved)) std::printf(" %s", label); } while (false)
+    std::printf("netplay spectator TH07: metaGame differing fields:");
+    CHECK_SPECTATOR_FIELD(g_GameManager.isTimeStopped, cp.isTimeStopped, "isTimeStopped");
+    CHECK_SPECTATOR_FIELD(g_GameManager.slowModeSlowActive, cp.slowModeSlowActive, "slowModeSlowActive");
+    CHECK_SPECTATOR_FIELD(g_GameManager.difficulty, cp.difficulty, "difficulty");
+    CHECK_SPECTATOR_FIELD(g_GameManager.difficultyMask, static_cast<u32>(cp.difficultyMask), "difficultyMask");
+    CHECK_SPECTATOR_FIELD(g_GameManager.isPaused, cp.isPaused, "isPaused");
+    CHECK_SPECTATOR_FIELD(g_GameManager.powerItemCountForScore, cp.powerItemCountForScore, "powerItemCountForScore");
+    CHECK_SPECTATOR_FIELD(g_GameManager.character, cp.character, "character");
+    CHECK_SPECTATOR_FIELD(g_GameManager.shotType, cp.shotType, "shotType");
+    CHECK_SPECTATOR_FIELD(g_GameManager.shotTypeAndCharacter, cp.shotTypeAndCharacter, "shotTypeAndCharacter");
+    CHECK_SPECTATOR_FIELD(g_GameManager.flags, cp.flags, "flags");
+    CHECK_SPECTATOR_FIELD(g_GameManager.isInPauseMenu, cp.isInPauseMenu, "isInPauseMenu");
+    CHECK_SPECTATOR_FIELD(g_GameManager.isInRetryMenu, cp.isInRetryMenu, "isInRetryMenu");
+    CHECK_SPECTATOR_FIELD(g_GameManager.demoIdx, cp.demoIdx, "demoIdx");
+    CHECK_SPECTATOR_FIELD(g_GameManager.replayStage, cp.replayStage, "replayStage");
+    CHECK_SPECTATOR_FIELD(g_GameManager.demoFrames, cp.demoFrames, "demoFrames");
+    CHECK_SPECTATOR_FIELD(g_GameManager.stageRngSeed, cp.stageRngSeed, "stageRngSeed");
+    CHECK_SPECTATOR_FIELD(g_GameManager.framesThisStage, cp.framesThisStage, "framesThisStage");
+    CHECK_SPECTATOR_FIELD(g_GameManager.currentStage, cp.currentStage, "currentStage");
+    CHECK_SPECTATOR_FIELD(g_GameManager.arcadeRegionTopLeftPos.x, cp.arcadeTopX, "arcadeTopX");
+    CHECK_SPECTATOR_FIELD(g_GameManager.arcadeRegionTopLeftPos.y, cp.arcadeTopY, "arcadeTopY");
+    CHECK_SPECTATOR_FIELD(g_GameManager.arcadeRegionSize.x, cp.arcadeSizeX, "arcadeSizeX");
+    CHECK_SPECTATOR_FIELD(g_GameManager.arcadeRegionSize.y, cp.arcadeSizeY, "arcadeSizeY");
+    CHECK_SPECTATOR_FIELD(g_GameManager.playerMovementAreaTopLeftPos.x, cp.movementTopX, "movementTopX");
+    CHECK_SPECTATOR_FIELD(g_GameManager.playerMovementAreaTopLeftPos.y, cp.movementTopY, "movementTopY");
+    CHECK_SPECTATOR_FIELD(g_GameManager.playerMovementAreaSize.x, cp.movementSizeX, "movementSizeX");
+    CHECK_SPECTATOR_FIELD(g_GameManager.playerMovementAreaSize.y, cp.movementSizeY, "movementSizeY");
+    CHECK_SPECTATOR_FIELD(g_GameManager.csumFloat, cp.csumFloat, "csumFloat");
+    CHECK_SPECTATOR_FIELD(g_GameManager.cherryMax, cp.cherryMax, "cherryMax");
+    CHECK_SPECTATOR_FIELD(g_GameManager.cherry, cp.cherry, "cherry");
+    CHECK_SPECTATOR_FIELD(g_GameManager.cherryPlus, cp.cherryPlus, "cherryPlus");
+    CHECK_SPECTATOR_FIELD(g_GameManager.bulletLagTime, cp.bulletLagTime, "bulletLagTime");
+    CHECK_SPECTATOR_FIELD(g_GameManager.rank.rank, cp.rank, "rank");
+    CHECK_SPECTATOR_FIELD(g_GameManager.rank.maxRank, cp.maxRank, "maxRank");
+    CHECK_SPECTATOR_FIELD(g_GameManager.rank.minRank, cp.minRank, "minRank");
+    CHECK_SPECTATOR_FIELD(g_GameManager.subrank, cp.subrank, "subrank");
+    const ZunGlobals &globals = *g_GameManager.globals;
+    CHECK_SPECTATOR_FIELD(globals.guiScore, cp.guiScore, "guiScore");
+    CHECK_SPECTATOR_FIELD(globals.score, cp.score, "score");
+    CHECK_SPECTATOR_FIELD(globals.guiScoreDifference, cp.guiScoreDifference, "guiScoreDifference");
+    CHECK_SPECTATOR_FIELD(globals.highScore, cp.highScore, "highScore");
+    CHECK_SPECTATOR_FIELD(globals.grazeInStage, cp.grazeInStage, "grazeInStage");
+    CHECK_SPECTATOR_FIELD(globals.grazeInTotal, cp.grazeInTotal, "grazeInTotal");
+    CHECK_SPECTATOR_FIELD(globals.spellCardsCaptured, cp.spellCardsCaptured, "spellCardsCaptured");
+    CHECK_SPECTATOR_FIELD(globals.numRetries, cp.numRetries, "numRetries");
+    CHECK_SPECTATOR_FIELD(globals.pointItemsCollectedThisStage, cp.pointItemsThisStage, "pointItemsThisStage");
+    CHECK_SPECTATOR_FIELD(globals.pointItemsCollectedForExtend, cp.pointItemsForExtend, "pointItemsForExtend");
+    CHECK_SPECTATOR_FIELD(globals.extendsFromPointItems, cp.extendsFromPointItems, "extendsFromPointItems");
+    CHECK_SPECTATOR_FIELD(globals.nextNeededPointItemsForExtend, cp.nextNeededPointItems, "nextNeededPointItems");
+    for (std::size_t i = 0; i < cp.globalsRng1.size(); ++i)
+        CHECK_SPECTATOR_FIELD(globals.rng1[i], cp.globalsRng1[i], "globals.rng1");
+    CHECK_SPECTATOR_FIELD(globals.deaths, cp.deaths, "deaths");
+    for (std::size_t i = 0; i < cp.globalsRngFloat1.size(); ++i)
+        CHECK_SPECTATOR_FIELD(globals.rngFloat1[i], cp.globalsRngFloat1[i], "globals.rngFloat1");
+    CHECK_SPECTATOR_FIELD(globals.livesRemaining, cp.livesRemaining, "globals.livesRemaining");
+    for (std::size_t i = 0; i < cp.globalsRngFloat2.size(); ++i)
+        CHECK_SPECTATOR_FIELD(globals.rngFloat2[i], cp.globalsRngFloat2[i], "globals.rngFloat2");
+    CHECK_SPECTATOR_FIELD(globals.bombsRemaining, cp.bombsRemaining, "globals.bombsRemaining");
+    CHECK_SPECTATOR_FIELD(globals.bombsUsed, cp.bombsUsed, "globals.bombsUsed");
+    for (std::size_t i = 0; i < cp.globalsRngFloat3.size(); ++i)
+        CHECK_SPECTATOR_FIELD(globals.rngFloat3[i], cp.globalsRngFloat3[i], "globals.rngFloat3");
+    CHECK_SPECTATOR_FIELD(globals.currentPower, cp.currentPower, "globals.currentPower");
+    for (std::size_t i = 0; i < cp.globalsRngFloat4.size(); ++i)
+        CHECK_SPECTATOR_FIELD(globals.rngFloat4[i], cp.globalsRngFloat4[i], "globals.rngFloat4");
+    CHECK_SPECTATOR_FIELD(globals.cherryStart, cp.cherryStart, "globals.cherryStart");
+    for (std::size_t i = 0; i < cp.globalsRng2.size(); ++i)
+        CHECK_SPECTATOR_FIELD(globals.rng2[i], cp.globalsRng2[i], "globals.rng2");
+    CHECK_SPECTATOR_FIELD(globals.curCsum, cp.curCsum, "globals.curCsum");
+    CHECK_SPECTATOR_FIELD(globals.csumAsSum, cp.csumAsSum, "globals.csumAsSum");
+    for (std::size_t i = 0; i < cp.csumData.size(); ++i)
+        CHECK_SPECTATOR_FIELD(globals.csumData[i], cp.csumData[i], "globals.csumData");
+    for (std::size_t i = 0; i < cp.globalEclInts.size(); ++i)
+    {
+        CHECK_SPECTATOR_FIELD(g_GlobalEclVars.intVars[i], cp.globalEclInts[i], "globalEcl.intVars");
+        CHECK_SPECTATOR_FIELD(g_GlobalEclVars.floatVars[i], cp.globalEclFloats[i], "globalEcl.floatVars");
+    }
+    std::printf("\n");
+#undef CHECK_SPECTATOR_FIELD
+}
+
+bool RestoreSpectatorCheckpoint(const SpectatorStageEvent &event)
+{
+    std::printf("netplay spectator TH07: restore begin frame=%u bytes=%u nativeReady=%d\n",
+                event.frame, static_cast<unsigned>(event.state.size()),
+                g_SpectatorNativeStageReady ? 1 : 0);
+    SpectatorCheckpoint cp;
+    if (event.game != '7' || event.schema != SPECTATOR_CHECKPOINT_SCHEMA ||
+        !DecodeSpectatorCheckpoint(event.state, &cp) || event.stage != cp.stage)
+        return false;
+    if (!g_GameManager.globals)
+        return false;
+    std::printf("netplay spectator TH07: source/rebuild target stage=%u sourcePos=(%.3f,%.3f,%.3f)/(%.3f,%.3f,%.3f) sourceBirth=%d/%d/%.3f state=%d/%d stageClock=%d/%d/%d enemyClock=%d\n",
+                cp.stage, cp.playerPositions[0], cp.playerPositions[1], cp.playerPositions[2],
+                cp.playerPositions[6], cp.playerPositions[7], cp.playerPositions[8],
+                cp.playerInvulnerabilityCurrent[0], cp.playerInvulnerabilityPrevious[0],
+                cp.playerInvulnerabilitySubFrame[0], cp.playerState[0], cp.playerState[1],
+                g_Stage.scriptTime.current, g_Stage.stageFrameCounter, g_Stage.instructionIndex,
+                g_EnemyManager.timelineTime.current);
+    if (!g_SpectatorNativeStageReady && cp.stage == 1 &&
+        g_GameManager.currentStage == static_cast<i32>(cp.stage) &&
+        g_GameManager.notInMenu)
+    {
+        // The independent viewer enters the ordinary native Stage 1 path
+        // before it can receive a relay bootstrap. Reuse that freshly
+        // constructed stage for the frame-zero initializer; later-stage
+        // checkpoints below always rebuild the native chain.
+        if (!ApplySpectatorCheckpointState(cp))
+            return false;
+        const auto actual = Th07CanonicalHash::Capture();
+        if (actual.composite != cp.expectedHash)
+        {
+            LogSpectatorCheckpointMetaDifferences(cp);
+            std::printf("netplay spectator TH07: initial checkpoint mismatch frame=%u expected=%016llx actual=%016llx expectedMeta=%016llx actualMeta=%016llx submeta=%016llx/%016llx/%016llx/%016llx actual=%016llx/%016llx/%016llx/%016llx expectedStage=%016llx actualStage=%016llx expectedPlayers=%016llx/%016llx/%016llx actualPlayers=%016llx/%016llx/%016llx\n",
+                        event.frame, static_cast<unsigned long long>(cp.expectedHash),
+                        static_cast<unsigned long long>(actual.composite),
+                        static_cast<unsigned long long>(cp.expectedMeta),
+                        static_cast<unsigned long long>(actual.meta),
+                        static_cast<unsigned long long>(cp.expectedMetaRng),
+                        static_cast<unsigned long long>(cp.expectedMetaGame),
+                        static_cast<unsigned long long>(cp.expectedMetaInput),
+                        static_cast<unsigned long long>(cp.expectedMetaSupervisor),
+                        static_cast<unsigned long long>(actual.metaRng),
+                        static_cast<unsigned long long>(actual.metaGame),
+                        static_cast<unsigned long long>(actual.metaInput),
+                        static_cast<unsigned long long>(actual.metaSupervisor),
+                        static_cast<unsigned long long>(cp.expectedStageHash),
+                        static_cast<unsigned long long>(actual.stage),
+                        static_cast<unsigned long long>(cp.expectedPlayer0),
+                        static_cast<unsigned long long>(cp.expectedPlayer1),
+                        static_cast<unsigned long long>(cp.expectedPlayer2),
+                        static_cast<unsigned long long>(actual.player0),
+                        static_cast<unsigned long long>(actual.player1),
+                        static_cast<unsigned long long>(actual.player2));
+            return false;
+        }
+        g_SpectatorNativeStageReady = true;
+        g_SimFrame = event.frame;
+        ReportSpectatorCheckpointHash(event.frame, actual.composite);
+        std::printf("netplay spectator TH07: checkpoint restored frame=%u stage=%u hash=%016llx\n",
+                    event.frame, cp.stage, static_cast<unsigned long long>(actual.composite));
+        return true;
+    }
+    SideEffects::SetSpeculative(true);
+    std::printf("netplay spectator TH07: restore cut begin stage=%u current=%d\n",
+                cp.stage, g_GameManager.currentStage);
+    // The chain's synchronous DeletedCallbacks use IsInitialStageLoad() to
+    // decide whether stage-lifetime GUI/ANM state is destroyed. Match the
+    // normal Supervisor transition path before cutting the current stage so
+    // GuiImpl and its transition resources survive into the recreated stage.
+    const i32 previousSupervisorState = g_Supervisor.curState;
+    g_Supervisor.curState = SUPERVISOR_STATE_NEXT_STAGE;
+    std::printf("netplay spectator TH07: restore cut lifecycle state %d->%d\n",
+                previousSupervisorState, g_Supervisor.curState);
+    GameManager::CutChain();
+    std::printf("netplay spectator TH07: restore cut done\n");
+    if (!MultiplayerGameplay::Configure(cp.session))
+    {
+        SideEffects::SetSpeculative(false);
+        return false;
+    }
+    for (std::uint8_t player = 0; player < TH07_MULTI_MAX_PLAYERS; ++player)
+    {
+        SetPlayerLives(player, cp.lives[player]); SetPlayerBombs(player, cp.bombs[player]);
+        SetPlayerPower(player, cp.powers[player]);
+        g_MultiplayerContributionStats[player].enemiesDefeated = cp.kills[player];
+        g_MultiplayerContributionStats[player].damageDealt = cp.damage[player];
+        g_MultiplayerContributionStats[player].challengeDeaths = cp.challengeDeaths[player];
+        g_Players[player].playerState = static_cast<i8>(cp.playerState[player]);
+    }
+    g_GameManager.difficulty = cp.difficulty; g_GameManager.character = cp.character;
+    g_GameManager.shotType = cp.shotType; g_GameManager.practice = 0; g_GameManager.demo = 0;
+    g_GameManager.SetIsReplay(0); g_GameManager.currentStage = static_cast<i32>(cp.stage) - 1;
+    g_GameManager.stageRngSeed = cp.stageRngSeed;
+    if (g_GameManager.defaultCfg)
+    {
+        g_GameManager.defaultCfg->lifeCount = 2;
+        g_GameManager.defaultCfg->slowMode = 0;
+    }
+    g_Rng.seed = cp.stageRngSeed;
+    g_Supervisor.curState = SUPERVISOR_STATE_NEXT_STAGE;
+    g_Supervisor.wantedState = SUPERVISOR_STATE_GAMEMANAGER;
+    std::printf("netplay spectator TH07: restore register begin target=%d rng=%u\n",
+                g_GameManager.currentStage, static_cast<unsigned>(g_Rng.seed));
+    const bool constructed = GameManager::RegisterChain() == ZUN_SUCCESS;
+    std::printf("netplay spectator TH07: restore register done result=%d stage=%d\n",
+                constructed ? 1 : 0, g_GameManager.currentStage);
+    SideEffects::SetSpeculative(false);
+    if (!constructed)
+        return false;
+    LogSpectatorCheckpointCanonical("restore-register-preapply", event.frame,
+                                    Th07CanonicalHash::Capture());
+    g_SpectatorNativeStageReady = true;
+    if (!ApplySpectatorCheckpointState(cp))
+        return false;
+    const auto actual = Th07CanonicalHash::Capture();
+    LogSpectatorCheckpointCanonical("restore-cp-preinput", event.frame, actual);
+    if (actual.composite != cp.expectedHash)
+    {
+        LogSpectatorCheckpointMetaDifferences(cp);
+        std::printf("netplay spectator TH07: checkpoint hash mismatch frame=%u stage=%u expected=%016llx actual=%016llx\n",
+                    event.frame, cp.stage, static_cast<unsigned long long>(cp.expectedHash),
+                    static_cast<unsigned long long>(actual.composite));
+        std::printf("netplay spectator TH07: checkpoint components expected meta=%016llx rng=%016llx game=%016llx input=%016llx supervisor=%016llx stage=%016llx players=%016llx/%016llx/%016llx; actual meta=%016llx rng=%016llx game=%016llx input=%016llx supervisor=%016llx multiplayer=%016llx stage=%016llx players=%016llx/%016llx/%016llx enemies=%016llx bullets=%016llx items=%016llx\n",
+                    static_cast<unsigned long long>(cp.expectedMeta),
+                    static_cast<unsigned long long>(cp.expectedMetaRng),
+                    static_cast<unsigned long long>(cp.expectedMetaGame),
+                    static_cast<unsigned long long>(cp.expectedMetaInput),
+                    static_cast<unsigned long long>(cp.expectedMetaSupervisor),
+                    static_cast<unsigned long long>(cp.expectedStageHash),
+                    static_cast<unsigned long long>(cp.expectedPlayer0),
+                    static_cast<unsigned long long>(cp.expectedPlayer1),
+                    static_cast<unsigned long long>(cp.expectedPlayer2),
+                    static_cast<unsigned long long>(actual.meta),
+                    static_cast<unsigned long long>(actual.metaRng),
+                    static_cast<unsigned long long>(actual.metaGame),
+                    static_cast<unsigned long long>(actual.metaInput),
+                    static_cast<unsigned long long>(actual.metaSupervisor),
+                    static_cast<unsigned long long>(actual.multiplayer),
+                    static_cast<unsigned long long>(actual.stage),
+                    static_cast<unsigned long long>(actual.player0),
+                    static_cast<unsigned long long>(actual.player1),
+                    static_cast<unsigned long long>(actual.player2),
+                    static_cast<unsigned long long>(actual.enemies),
+                    static_cast<unsigned long long>(actual.bullets),
+                    static_cast<unsigned long long>(actual.items));
+        return false;
+    }
+    g_SimFrame = event.frame;
+    ReportSpectatorCheckpointHash(event.frame, actual.composite);
+    std::printf("netplay spectator TH07: checkpoint restored frame=%u stage=%u hash=%016llx\n",
+                    event.frame, cp.stage,
+                    static_cast<unsigned long long>(actual.composite));
+    return true;
+}
+
+bool TryPendingSpectatorBootstrap()
+{
+    if (!g_HavePendingSpectatorBootstrap) return true;
+    const auto received = g_SpectatorPlayback.History().Received();
+    if (received > g_PendingSpectatorBootstrap.frame) return false;
+    if (!g_SpectatorPlayback.History().BootstrapMatches(g_PendingSpectatorBootstrap)) return true;
+    const bool accepted = g_SpectatorPlayback.Receive(g_PendingSpectatorBootstrap);
+    g_HavePendingSpectatorBootstrap = false;
+    return accepted;
 }
 
 bool UseRestartCycle()
@@ -361,7 +2442,7 @@ void RetireGameplaySession()
 bool TransportConnect(const char *url)
 {
     if (ProductionLanMode())
-        return g_BrowserPeerTransport.Connect(url, g_LocalPlayer, g_PlayerCount);
+        return g_BrowserPeerTransport.Connect(url, g_LocalPlayer, g_PlayerCount, true);
     return g_Transport.Connect(url);
 }
 
@@ -518,6 +2599,27 @@ bool UseStageTransitionTest()
 #endif
 }
 
+bool RollbackAuditEnabled()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return Module.eaglerOptions?.netplayRollbackAudit ? 1 : 0; }) != 0;
+#else
+    return false;
+#endif
+}
+
+int SpectatorSizeProbeFrame()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({
+        const value = Number(Module.eaglerOptions?.netplaySpectatorSizeProbeFrame);
+        return Number.isInteger(value) && value >= 0 && value < 0x7fffffff ? value : -1;
+    });
+#else
+    return -1;
+#endif
+}
+
 bool CaptureConfirmedReplayAuditFrames()
 {
 #if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
@@ -546,45 +2648,113 @@ bool CaptureConfirmedReplayAuditFrames()
 
 void PublishConfirmedSpectatorFrames()
 {
-    const bool hasSpectators = g_BrowserPeerTransport.HasSpectators();
 #ifdef __EMSCRIPTEN__
     if (ProductionLanMode())
         EM_ASM({
             const state = globalThis.__eaglerNetplaySpectatorPublish ||= {};
-            state.hasSpectators = !!$0;
-            state.cursor = $1 >>> 0;
-            state.simFrame = $2 >>> 0;
-            state.confirmed = $3 >>> 0;
-        }, hasSpectators ? 1 : 0, g_NextSpectatorPublishFrame, g_SimFrame,
+            state.cursor = $0 >>> 0;
+            state.simFrame = $1 >>> 0;
+            state.confirmed = $2 >>> 0;
+            state.lastAttemptFrame = $0 >>> 0;
+        }, g_NextSpectatorPublishFrame, g_SimFrame,
             g_Core.ConfirmedThroughAllRemotes());
 #endif
-    if (!hasSpectators || g_SpectatorMode || g_LocalPlayer != 0 || g_SimFrame == 0)
+    if (!g_SpectatorPublisherReady || g_SpectatorMode || g_LocalPlayer != 0 || g_SimFrame == 0)
         return;
-    const std::uint32_t lastAvailable =
-        std::min(g_Core.ConfirmedThroughAllRemotes(), g_SimFrame - 1);
-    while (g_NextSpectatorPublishFrame <= lastAvailable)
-    {
-        const FrameDecision decision = g_Core.PrepareFrame(g_NextSpectatorPublishFrame);
-        if (!decision.canAdvance || decision.predictedMask != 0)
-            return;
-        SpectatorFramePacket packet;
-        packet.sessionId = CurrentSessionId();
-        packet.frame = g_NextSpectatorPublishFrame;
-        packet.gameplayAbi = GameplayAbi();
-        packet.playerCount = g_PlayerCount;
-        packet.inputs = decision.inputs;
-        std::vector<std::uint8_t> wire;
-        if (!EncodeSpectatorFramePacket(packet, &wire) ||
-            !g_BrowserPeerTransport.SendSpectator(wire.data(), wire.size()))
-        {
+    SpectatorStagePublisher::PublishFailure failure =
+        SpectatorStagePublisher::PublishFailure::None;
+    const bool sent = g_SpectatorPublisher.Publish(
+        g_Core.ConfirmedThroughAllRemotes(), g_SimFrame - 1,
+        [](std::uint32_t frame, std::array<FrameInput, MAX_PLAYERS> &inputs) {
+            const auto decision = g_Core.PrepareFrame(frame);
+            if (!decision.canAdvance || decision.predictedMask != 0)
+                return false;
+            inputs = decision.inputs;
+            return true;
+        },
+        [](const std::vector<std::uint8_t> &wire) {
 #ifdef __EMSCRIPTEN__
-            EM_ASM({ globalThis.__eaglerNetplaySpectatorPublishFailed = $0 >>> 0; },
-                   g_NextSpectatorPublishFrame);
+            EM_ASM({
+                const state = globalThis.__eaglerNetplaySpectatorPublish ||= {};
+                state.lastWireBytes = $0 >>> 0;
+                state.maxWireBytes = Math.max(state.maxWireBytes || 0, $0 >>> 0);
+                state.lastSendSucceeded = false;
+            }, static_cast<unsigned>(wire.size()));
 #endif
-            return;
+            const bool result = g_BrowserPeerTransport.SendSpectator(wire.data(), wire.size());
+#ifdef __EMSCRIPTEN__
+            EM_ASM({
+                const state = globalThis.__eaglerNetplaySpectatorPublish ||= {};
+                state.lastSendSucceeded = !!$0;
+                state.sendAttempts = (state.sendAttempts || 0) + 1;
+                if ($0) state.sendSuccesses = (state.sendSuccesses || 0) + 1;
+            }, result ? 1 : 0);
+#endif
+            return result;
+        }, &failure);
+    g_NextSpectatorPublishFrame = g_SpectatorPublisher.Published();
+#ifdef __EMSCRIPTEN__
+    EM_ASM({
+        const state = globalThis.__eaglerNetplaySpectatorPublish ||= {};
+        state.publisherReady = !!$0;
+        state.lastPublishOk = !!$1;
+        state.lastPublishCursor = $2 >>> 0;
+        state.lastPublishFailure = UTF8ToString($3);
+        state.lastPublishFailureFrame = state.lastPublishFailure === "none" ? -1 : ($2 >>> 0);
+        state.lastPublishPermanent = !!$4;
+    }, g_SpectatorPublisherReady ? 1 : 0, sent ? 1 : 0,
+       g_NextSpectatorPublishFrame, SpectatorStagePublisher::FailureName(failure), 0);
+#endif
+    if (!sent)
+    {
+        const char *reason = SpectatorStagePublisher::FailureName(failure);
+        const bool permanent = failure == SpectatorStagePublisher::PublishFailure::InvalidPublisher ||
+            failure == SpectatorStagePublisher::PublishFailure::MissingRecord ||
+            failure == SpectatorStagePublisher::PublishFailure::StageCheckpointMissing ||
+            failure == SpectatorStagePublisher::PublishFailure::CheckpointEncode ||
+            failure == SpectatorStagePublisher::PublishFailure::InputUnavailable ||
+            failure == SpectatorStagePublisher::PublishFailure::InputEncode ||
+            failure == SpectatorStagePublisher::PublishFailure::BossNodeEncode;
+        std::printf("netplay spectator TH07: publish %s frame=%u permanent=%d cursor=%u confirmed=%u simFrame=%u\n",
+                    reason, g_NextSpectatorPublishFrame, permanent ? 1 : 0,
+                    g_NextSpectatorPublishFrame, g_Core.ConfirmedThroughAllRemotes(), g_SimFrame);
+#ifdef __EMSCRIPTEN__
+        EM_ASM({
+            const state = globalThis.__eaglerNetplaySpectatorPublish ||= {};
+            state.lastPublishFailure = UTF8ToString($1);
+            state.lastPublishFailureFrame = $0 >>> 0;
+            state.lastPublishPermanent = !!$2;
+        }, g_NextSpectatorPublishFrame, reason, permanent ? 1 : 0);
+#endif
+        if (permanent)
+        {
+            DisableSpectatorPublisher(g_NextSpectatorPublishFrame, reason);
         }
-        ++g_NextSpectatorPublishFrame;
     }
+}
+
+void DisableSpectatorPublisher(std::uint32_t frame, const char *reason)
+{
+    // This is an optional P0 publisher lane. Structural state/capture failures
+    // retire only spectator delivery; the player rollback transport continues.
+    if (!g_SpectatorPublisherEligible || g_SpectatorLaneStopped || g_SpectatorMode ||
+        g_LocalPlayer != 0 || !ProductionLanMode())
+        return;
+    g_SpectatorPublisherReady = false;
+    g_SpectatorLaneStopped = true;
+    if (!reason) reason = "unknown";
+    g_BrowserPeerTransport.StopSpectators(false);
+    std::printf("netplay spectator TH07: publisher stopped frame=%u reason=%s\n",
+                frame, reason);
+#ifdef __EMSCRIPTEN__
+    EM_ASM({
+        const state = globalThis.__eaglerNetplaySpectatorPublish ||= {};
+        state.publisherReady = false;
+        state.failureFrame = $0 >>> 0;
+        state.failureReason = UTF8ToString($1);
+        globalThis.__eaglerNetplaySpectatorPublishFailed = $0 >>> 0;
+    }, frame, reason);
+#endif
 }
 
 bool DrainSpectatorFrames()
@@ -592,16 +2762,59 @@ bool DrainSpectatorFrames()
     std::vector<std::uint8_t> wire;
     while (TransportPoll(&wire))
     {
-        SpectatorFramePacket packet;
-        if (!DecodeSpectatorFramePacket(wire.data(), wire.size(), &packet) ||
-            packet.sessionId != CurrentSessionId() || packet.gameplayAbi != GameplayAbi() ||
-            packet.playerCount != g_PlayerCount ||
-            packet.frame != g_NextSpectatorReceiveFrame)
+        if (IsSpectatorStageEvent(wire.data(), wire.size()))
+        {
+            SpectatorStageEvent event;
+            if (!DecodeSpectatorStageEvent(wire.data(), wire.size(), &event))
+                return false;
+            if (event.kind == SpectatorEventKind::Bootstrap)
+            {
+                if (g_HavePendingSpectatorBootstrap)
+                    return false;
+                g_PendingSpectatorBootstrap = std::move(event);
+                g_HavePendingSpectatorBootstrap = true;
+            }
+            else if (!g_SpectatorPlayback.Receive(event))
+                return false;
+        }
+        else
+        {
+            SpectatorFramePacket packet;
+            if (!DecodeSpectatorFramePacket(wire.data(), wire.size(), &packet) ||
+                !g_SpectatorPlayback.Receive(packet))
+                return false;
+            ++g_NextSpectatorReceiveFrame;
+        }
+        if (!TryPendingSpectatorBootstrap())
             return false;
-        g_SpectatorFrames.push_back(packet);
-        ++g_NextSpectatorReceiveFrame;
     }
     return true;
+}
+
+const char *SpectatorStageLabel(std::uint32_t stage)
+{
+    switch (stage)
+    {
+    case 1: return "Stage 1";
+    case 2: return "Stage 2";
+    case 3: return "Stage 3";
+    case 4: return "Stage 4";
+    case 5: return "Stage 5";
+    case 6: return "Stage 6";
+    case 7: return "Extra";
+    case 8: return "Phantasm";
+    default: return nullptr;
+    }
+}
+
+const char *SpectatorState()
+{
+    return g_SpectatorView.State(g_SpectatorPlayback, SpectatorStageLabel);
+}
+
+int SpectatorControl(const char *run, const char *action, std::uint32_t frame)
+{
+    return g_SpectatorView.Control(g_SpectatorPlayback, run, action, frame) ? 1 : 0;
 }
 
 void PublishPeerDiagnostics(std::uint8_t predictedMask)
@@ -973,13 +3186,15 @@ bool StartProductionTransportEarly()
     g_PlayerCount = ReadPlayerCount();
     g_SpectatorMode = SpectatorModeRequested();
     g_LocalPlayer = g_SpectatorMode ? 0 : ReadPlayer();
+    g_SpectatorSizeProbeTarget = SpectatorSizeProbeFrame();
+    g_SpectatorSizeProbeDone = false;
     char url[512] = {};
     char spectatorId[65] = {};
     if (g_LocalPlayer >= g_PlayerCount || !ReadUrl(url, sizeof(url)))
         return false;
     const bool connected = g_SpectatorMode
         ? ReadSpectatorId(spectatorId, sizeof(spectatorId)) &&
-          g_BrowserPeerTransport.ConnectSpectator(url, spectatorId, g_PlayerCount)
+          g_BrowserPeerTransport.ConnectSpectator(url, spectatorId, g_PlayerCount, true)
         : TransportConnect(url);
     if (!connected)
         return false;
@@ -1056,6 +3271,21 @@ std::uint16_t LocalScript(std::uint8_t player, std::uint32_t frame)
 void HashToHex(std::uint64_t value, char out[17])
 {
     std::snprintf(out, 17, "%016llx", static_cast<unsigned long long>(value));
+}
+
+void ReportSpectatorCheckpointHash(std::uint32_t frame, std::uint64_t hash)
+{
+#ifdef __EMSCRIPTEN__
+    char hashHex[17] = {};
+    HashToHex(hash, hashHex);
+    EM_ASM({
+        globalThis.__eaglerNetplayLanCheckpointFrame = $0 >>> 0;
+        globalThis.__eaglerNetplayLanCheckpointHash = UTF8ToString($1);
+    }, frame, hashHex);
+#else
+    (void)frame;
+    (void)hash;
+#endif
 }
 
 void PrintHash(const char *label, const Th07CanonicalHash::Sample &sample)
@@ -1334,6 +3564,8 @@ bool Initialize()
         for (std::uint8_t player = 0; player < g_PlayerCount; ++player)
         {
             SetPlayerLives(player, 8);
+            if (g_SpectatorSizeProbeTarget >= 0)
+                SetPlayerPower(player, SPECTATOR_SIZE_PROBE_MAX_POWER);
             g_Players[player].playerState = PLAYER_STATE_INVULNERABLE;
             g_Players[player].invulnerabilityTimer = 0x3fffffff;
         }
@@ -1352,7 +3584,7 @@ bool Initialize()
         char spectatorId[65] = {};
         if (!g_ProductionTransportStarted &&
             (!ReadSpectatorId(spectatorId, sizeof(spectatorId)) ||
-             !g_BrowserPeerTransport.ConnectSpectator(url, spectatorId, g_PlayerCount)))
+             !g_BrowserPeerTransport.ConnectSpectator(url, spectatorId, g_PlayerCount, true)))
             return false;
     }
     else if (!g_Session.Reset(sessionConfig) ||
@@ -1366,6 +3598,8 @@ bool Initialize()
         state = FrameAdvantageWindow{};
     g_PredictionDepth.fill(0);
     g_RollbackByPlayer.fill(0);
+    g_HighestStageObserved = 0;
+    g_StageTransitionObserved = false;
     g_RecommendedLead = 0.0;
     g_SimulationIntervalScale = 1.0;
     g_EndingSkipHistoryNormalized = false;
@@ -1373,7 +3607,19 @@ bool Initialize()
     g_NextReplayAuditFrame = 0;
     g_NextSpectatorPublishFrame = 0;
     g_NextSpectatorReceiveFrame = 0;
-    g_SpectatorFrames.clear();
+    g_SpectatorPlayback.Clear();
+    g_SpectatorView.Clear();
+    g_HavePendingSpectatorBootstrap = false;
+    g_PendingSpectatorBootstrap = {};
+    g_SpectatorNativeStageReady = false;
+    g_SpectatorAuditCheckpointStage = 0;
+    g_SpectatorSizeProbeDone = false;
+    g_SpectatorBossSlotsThisFrame = 0;
+    g_SpectatorPublisherEligible = !g_SpectatorMode && g_LocalPlayer == 0 &&
+        ProductionLanMode();
+    g_SpectatorLaneStopped = false;
+    g_SpectatorPublisherReady = g_SpectatorPublisherEligible &&
+        g_SpectatorPublisher.Reset('7', g_PlayerCount, CurrentSessionId(), GameplayAbi());
 #ifdef TH_DEV_TOOLS
     if (UseReplayPlaybackCycle())
         ReplayExtension::DebugResetMultiplayerPlaybackAudit();
@@ -1389,14 +3635,34 @@ bool Initialize()
             globalThis.__eaglerNetplayLanActive = true;
             globalThis.__eaglerNetplayLanFrame = 0;
             globalThis.__eaglerNetplayLanGeneration = $0;
+            globalThis.__eaglerNetplayLanHighestStage = 0;
+            globalThis.__eaglerNetplayLanStageTransitionObserved = false;
+            globalThis.__eaglerNetplayLanCheckpointFrame = -1;
+            globalThis.__eaglerNetplayLanCheckpointHash = "";
             globalThis.__eaglerNetplayLanHash = "";
             globalThis.__eaglerNetplayLanHashes = Object.create(null);
             globalThis.__eaglerNetplayLanPeerAdvantages = [];
             globalThis.__eaglerNetplayLanPeers = [];
             globalThis.__eaglerNetplayPerf = {};
-        }, g_SessionGeneration);
+            const spectatorPublish = globalThis.__eaglerNetplaySpectatorPublish = {};
+            spectatorPublish.cursor = 0;
+            spectatorPublish.simFrame = 0;
+            spectatorPublish.confirmed = -1;
+            spectatorPublish.publisherReady = !!$1;
+            spectatorPublish.failureFrame = -1;
+            spectatorPublish.failureReason = "";
+            spectatorPublish.lastPublishFailure = "";
+            spectatorPublish.lastPublishFailureFrame = -1;
+            spectatorPublish.lastPublishPermanent = false;
+            spectatorPublish.sendAttempts = 0;
+            spectatorPublish.sendSuccesses = 0;
+            spectatorPublish.lastSendSucceeded = false;
+            globalThis.__eaglerNetplaySpectatorPublishFailed = -1;
+        }, g_SessionGeneration, g_SpectatorPublisherReady ? 1 : 0);
     }
 #endif
+    if (g_SpectatorPublisherEligible && !g_SpectatorPublisherReady)
+        DisableSpectatorPublisher(0, "publisher-reset-failed");
     std::printf("netplay lan stage: CONNECT player=%u players=%u url=%s seed=%u rngGeneration=%u sessionGeneration=%u\n",
                 static_cast<unsigned>(g_LocalPlayer), static_cast<unsigned>(g_PlayerCount), url,
                 static_cast<unsigned>(g_Rng.seed),
@@ -1904,6 +4170,144 @@ bool SendTailKeepalive()
 
 int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resimulation)
 {
+    const std::uint32_t spectatorStage = static_cast<std::uint32_t>(g_GameManager.currentStage);
+    const std::uint32_t sizeProbeConfirmed = g_Core.ConfirmedThroughAllRemotes();
+    const bool sizeProbePrefixConfirmed = frame == 0 ||
+        (sizeProbeConfirmed != INVALID_FRAME && sizeProbeConfirmed >= frame - 1u);
+    if (!g_SpectatorSizeProbeDone && decision.predictedMask == 0 &&
+        g_SpectatorSizeProbeTarget >= 0 &&
+        frame == static_cast<std::uint32_t>(g_SpectatorSizeProbeTarget) &&
+        sizeProbePrefixConfirmed && ProductionLanMode() &&
+        !g_SpectatorMode)
+    {
+        g_SpectatorSizeProbeDone = true;
+        std::vector<std::uint8_t> stateBytes;
+        SpectatorCheckpointMetrics metrics{};
+        std::vector<std::uint8_t> wire;
+        bool encoded = EncodeSpectatorCheckpoint(&stateBytes, &metrics, frame);
+        if (encoded)
+        {
+            SpectatorStageEvent event;
+            event.game = '7'; event.playerCount = g_PlayerCount;
+            event.sessionId = CurrentSessionId(); event.gameplayAbi = GameplayAbi();
+            event.frame = frame; event.stage = spectatorStage; event.serial = 1;
+            event.schema = SPECTATOR_CHECKPOINT_SCHEMA; event.state = stateBytes;
+            encoded = EncodeSpectatorStageEvent(event, &wire);
+            if (encoded) metrics.eventBytes = static_cast<std::uint32_t>(wire.size());
+        }
+        char probeJson[768] = {};
+        const int probeJsonLength = std::snprintf(
+            probeJson, sizeof(probeJson),
+            "{\"frame\":%u,\"stage\":%u,\"ok\":%s,\"predictedMask\":%u,\"confirmedThrough\":%u,"
+            "\"rawBytes\":%u,\"sparseBytes\":%u,"
+            "\"compressedBytes\":%u,\"stateBytes\":%u,\"eventBytes\":%u,\"activePlayerBullets\":%u,"
+            "\"activeBombs\":%u,\"players\":["
+            "{\"power\":%d,\"activeShots\":%u,\"activeBombSubrecords\":%u},"
+            "{\"power\":%d,\"activeShots\":%u,\"activeBombSubrecords\":%u},"
+            "{\"power\":%d,\"activeShots\":%u,\"activeBombSubrecords\":%u}]}",
+            frame, spectatorStage, encoded ? "true" : "false",
+            static_cast<unsigned>(decision.predictedMask), sizeProbeConfirmed, metrics.rawBytes,
+            metrics.sparseBytes, metrics.compressedBytes, metrics.stateBytes,
+            static_cast<unsigned>(wire.size()), metrics.activePlayerBullets, metrics.activeBombs,
+            metrics.playerPower[0], metrics.activePlayerBulletsByPlayer[0], metrics.activeBombSubrecordsByPlayer[0],
+            metrics.playerPower[1], metrics.activePlayerBulletsByPlayer[1], metrics.activeBombSubrecordsByPlayer[1],
+            metrics.playerPower[2], metrics.activePlayerBulletsByPlayer[2], metrics.activeBombSubrecordsByPlayer[2]);
+        if (probeJsonLength <= 0 || static_cast<std::size_t>(probeJsonLength) >= sizeof(probeJson))
+            probeJson[0] = '\0';
+        std::printf("netplay spectator TH07: high-fire size probe %s\n", probeJson);
+#ifdef __EMSCRIPTEN__
+        EM_ASM({
+            const state = globalThis.__eaglerNetplaySpectatorPublish ||= {};
+            state.highFireProbe = JSON.parse(UTF8ToString($0));
+        }, probeJson);
+#endif
+    }
+    std::vector<std::uint8_t> spectatorInitializer;
+    std::uint32_t spectatorSchema = 0;
+    g_SpectatorBossSlotsThisFrame = 0;
+    // Keep the source hash audit for every player seat. This monotonic marker
+    // is diagnostic only; the publishing seat derives a checkpoint boundary
+    // from its recorded logical predecessor so rollback can recapture a stage
+    // initializer at the same frame.
+    const bool auditCheckpointDue = frame == 0 ||
+        spectatorStage != g_SpectatorAuditCheckpointStage;
+    const auto checkpointRequirement = g_SpectatorPublisherReady
+        ? g_SpectatorPublisher.NeedsCheckpoint(frame, spectatorStage)
+        : Netplay::SpectatorStagePublisher::CheckpointRequirement::NotRequired;
+    const bool publisherCheckpointDue = checkpointRequirement ==
+        Netplay::SpectatorStagePublisher::CheckpointRequirement::Required;
+    if (g_SpectatorPublisherReady && checkpointRequirement ==
+            Netplay::SpectatorStagePublisher::CheckpointRequirement::MissingPredecessor)
+    {
+        std::printf("netplay spectator TH07: publisher checkpoint predecessor unavailable frame=%u stage=%u\n",
+                    frame, spectatorStage);
+        DisableSpectatorPublisher(frame, "checkpoint-predecessor-missing");
+    }
+    if (auditCheckpointDue && !g_SpectatorMode && ProductionLanMode())
+        ReportSpectatorCheckpointHash(frame, Th07CanonicalHash::Capture().composite);
+    if (g_SpectatorPublisherReady && publisherCheckpointDue)
+    {
+        SpectatorCheckpointMetrics checkpointMetrics{};
+        if (EncodeSpectatorCheckpoint(&spectatorInitializer, &checkpointMetrics, frame))
+        {
+            spectatorSchema = SPECTATOR_CHECKPOINT_SCHEMA;
+            SpectatorStageEvent checkpointEvent;
+            checkpointEvent.game = '7'; checkpointEvent.playerCount = g_PlayerCount;
+            checkpointEvent.sessionId = CurrentSessionId(); checkpointEvent.gameplayAbi = GameplayAbi();
+            checkpointEvent.frame = frame; checkpointEvent.stage = spectatorStage;
+            checkpointEvent.serial = g_SpectatorPublisher.Serial() + 1;
+            checkpointEvent.kind = SpectatorEventKind::Checkpoint;
+            checkpointEvent.schema = SPECTATOR_CHECKPOINT_SCHEMA;
+            checkpointEvent.state = spectatorInitializer;
+            std::vector<std::uint8_t> checkpointEventWire;
+            if (EncodeSpectatorStageEvent(checkpointEvent, &checkpointEventWire))
+                checkpointMetrics.eventBytes = static_cast<std::uint32_t>(checkpointEventWire.size());
+            std::printf("netplay spectator TH07: checkpoint encoded frame=%u stage=%u rawBytes=%u sparseBytes=%u compressedBytes=%u stateBytes=%u eventBytes=%u activePlayerBullets=%u activeBombs=%u\n",
+                        frame, spectatorStage, checkpointMetrics.rawBytes, checkpointMetrics.sparseBytes,
+                        checkpointMetrics.compressedBytes, checkpointMetrics.stateBytes,
+                        checkpointMetrics.eventBytes, checkpointMetrics.activePlayerBullets,
+                        checkpointMetrics.activeBombs);
+#ifdef __EMSCRIPTEN__
+            char checkpointMetricsJson[768] = {};
+            const int checkpointMetricsLength = std::snprintf(
+                checkpointMetricsJson, sizeof(checkpointMetricsJson),
+                "{\"rawBytes\":%u,\"sparseBytes\":%u,\"compressedBytes\":%u,\"stateBytes\":%u,"
+                "\"eventBytes\":%u,\"activePlayerBullets\":%u,\"activeBombs\":%u,\"players\":["
+                "{\"power\":%d,\"activeShots\":%u,\"activeBombSubrecords\":%u},"
+                "{\"power\":%d,\"activeShots\":%u,\"activeBombSubrecords\":%u},"
+                "{\"power\":%d,\"activeShots\":%u,\"activeBombSubrecords\":%u}]}",
+                checkpointMetrics.rawBytes, checkpointMetrics.sparseBytes,
+                checkpointMetrics.compressedBytes, checkpointMetrics.stateBytes,
+                checkpointMetrics.eventBytes, checkpointMetrics.activePlayerBullets,
+                checkpointMetrics.activeBombs,
+                checkpointMetrics.playerPower[0], checkpointMetrics.activePlayerBulletsByPlayer[0], checkpointMetrics.activeBombSubrecordsByPlayer[0],
+                checkpointMetrics.playerPower[1], checkpointMetrics.activePlayerBulletsByPlayer[1], checkpointMetrics.activeBombSubrecordsByPlayer[1],
+                checkpointMetrics.playerPower[2], checkpointMetrics.activePlayerBulletsByPlayer[2], checkpointMetrics.activeBombSubrecordsByPlayer[2]);
+            if (checkpointMetricsLength <= 0 || static_cast<std::size_t>(checkpointMetricsLength) >= sizeof(checkpointMetricsJson))
+                checkpointMetricsJson[0] = '\0';
+            EM_ASM({
+                const state = globalThis.__eaglerNetplaySpectatorPublish ||= {};
+                state.checkpointFrame = $0 >>> 0;
+                state.checkpointStage = $1 >>> 0;
+                state.checkpointSchema = $3 >>> 0;
+                state.checkpointMetrics = JSON.parse(UTF8ToString($2));
+                state.checkpointRawBytes = state.checkpointMetrics.rawBytes;
+                state.checkpointStateBytes = state.checkpointMetrics.stateBytes;
+                state.checkpointActivePlayerBullets = state.checkpointMetrics.activePlayerBullets;
+                state.checkpointActiveBombs = state.checkpointMetrics.activeBombs;
+            }, frame, spectatorStage, checkpointMetricsJson, SPECTATOR_CHECKPOINT_SCHEMA);
+#endif
+        }
+        else
+        {
+            // Stage history is optional. If a native initializer cannot be
+            // represented, stop advertising a broken stream and keep the
+            // active players running.
+            DisableSpectatorPublisher(frame, "checkpoint-capture-failed");
+        }
+    }
+    if (auditCheckpointDue)
+        g_SpectatorAuditCheckpointStage = static_cast<std::uint8_t>(spectatorStage);
     const std::uint64_t costStartNs = g_PerfTelemetry ? SDL_GetTicksNS() : 0;
     if (UsePhysicalInput() && frame == 0 && !g_PhysicalLoggedFrame0Sim)
     {
@@ -1998,6 +4402,27 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
             touchTrace->players[player].applied = touchStates[player];
     }
 #endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (UseStageTransitionTest() && frame >= 3000u && g_GameManager.currentStage == 1)
+    {
+        // Stage-transition smoke fixture: once the real Stage 1 boss can take
+        // damage, deplete its remaining life and let the normal ECL death,
+        // results, Supervisor, and GameManager::RegisterChain flow advance.
+        // This never writes currentStage or the GUI completion flags.
+        for (Enemy *boss : g_EnemyManager.bosses)
+        {
+            if (!boss || !boss->active || !boss->isBoss || !boss->canBeDamaged ||
+                boss->life <= 0)
+                continue;
+            boss->life = 0;
+            std::printf(
+                "netplay lan stage: FIXTURE stage-transition frame=%u confirmed=%u predictedMask=0x%x\n",
+                frame,
+                static_cast<unsigned>(g_Core.ConfirmedThroughAllRemotes()),
+                static_cast<unsigned>(decision.predictedMask));
+        }
+    }
+#endif
     const std::uint8_t stageBeforeCalc =
         static_cast<std::uint8_t>(g_GameManager.currentStage);
     const auto calcStartNs = g_PerfTelemetry ? SDL_GetTicksNS() : 0;
@@ -2055,6 +4480,12 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
                     resimulation ? 1 : 0);
         if (g_HighestStageObserved >= 2)
             g_StageTransitionObserved = true;
+#ifdef __EMSCRIPTEN__
+        EM_ASM({
+            globalThis.__eaglerNetplayLanHighestStage = $0;
+            globalThis.__eaglerNetplayLanStageTransitionObserved = $1 !== 0;
+        }, static_cast<int>(g_HighestStageObserved), g_StageTransitionObserved ? 1 : 0);
+#endif
     }
 #endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -2168,6 +4599,21 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
         return -1;
     if (!g_SpectatorMode && !g_Core.MarkSimulated(frame, decision))
         return -1;
+    if (g_SpectatorPublisherReady)
+    {
+        SpectatorStagePublisher::Frame record;
+        record.frame = frame;
+        record.stage = spectatorStage;
+        record.schema = spectatorSchema;
+        record.initializer = std::move(spectatorInitializer);
+        record.inputs = decision.inputs;
+        record.hasInputs = true;
+        record.bossSlots = g_SpectatorBossSlotsThisFrame;
+        if (!g_SpectatorPublisher.Record(std::move(record)))
+        {
+            DisableSpectatorPublisher(frame, "record-rejected");
+        }
+    }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (replayBinding.simFrame == frame && replayBinding.stage >= 0 &&
         replayBinding.replayFrame >= 0)
@@ -2184,7 +4630,12 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     if (captureRollback)
         g_MaxSnapshotBytes = std::max(g_MaxSnapshotBytes, Th07Rollback::CapturedBytes(frame));
 #ifdef __EMSCRIPTEN__
-    if (ProductionLanMode() && ((frame + 1u) % 300u) == 0u)
+    // Rollback-audit sampling is independent of the private native transition
+    // fixture, so viewers can compare exact future frames without applying
+    // fixture-only gameplay mutations.
+    const std::uint32_t canonicalInterval =
+        (UseStageTransitionTest() || RollbackAuditEnabled()) ? 20u : 300u;
+    if (ProductionLanMode() && ((frame + 1u) % canonicalInterval) == 0u)
     {
         const auto canonicalStartNs = g_PerfTelemetry ? SDL_GetTicksNS() : 0;
         // This lives inside SimulateFrame rather than the outer driver so a
@@ -2628,30 +5079,33 @@ int RunCalcChain()
             Fail("spectator transport");
             return -1;
         }
-        if (g_SpectatorFrames.empty())
-            return CHAIN_CALLBACK_RESULT_CONTINUE;
-        const std::size_t backlog = g_SpectatorFrames.size();
-        const std::size_t framesThisTick = backlog > 8 ? 4 : backlog > 4 ? 2 : 1;
-        int result = CHAIN_CALLBACK_RESULT_CONTINUE;
-        for (std::size_t index = 0; index < framesThisTick && !g_SpectatorFrames.empty(); ++index)
+        const bool catchingUp = g_SpectatorPlayback.Seeking() ||
+            (g_SpectatorPlayback.Following() &&
+             g_SpectatorPlayback.Edge() > g_SpectatorPlayback.Position() + 1);
+        const std::uint64_t catchUpStartedNs = catchingUp ? SDL_GetTicksNS() : 0;
+        const bool stepped = g_SpectatorPlayback.Step(
+            [](const SpectatorStageEvent &checkpoint) {
+                return RestoreSpectatorCheckpoint(checkpoint);
+            },
+            [&](const SpectatorFramePacket &packet, bool seeking) {
+                if (packet.frame != g_SimFrame)
+                    return false;
+                FrameDecision decision;
+                decision.canAdvance = true;
+                decision.inputs = packet.inputs;
+                const int result = SimulateFrame(packet.frame, decision, seeking || catchingUp);
+                if (result == 0 || result == -1)
+                    return false;
+                ++g_SimFrame;
+                return true;
+            },
+            [&] {
+                return catchingUp && SDL_GetTicksNS() - catchUpStartedNs >= 4000000u;
+            }, catchingUp ? 32u : 1u);
+        if (!stepped)
         {
-            const SpectatorFramePacket packet = g_SpectatorFrames.front();
-            if (packet.frame != g_SimFrame)
-            {
-                Fail("spectator frame gap");
-                return -1;
-            }
-            FrameDecision decision;
-            decision.canAdvance = true;
-            decision.inputs = packet.inputs;
-            const i32 stageBefore = g_GameManager.currentStage;
-            result = SimulateFrame(g_SimFrame, decision, false);
-            if (result == 0 || result == -1)
-                return result;
-            g_SpectatorFrames.pop_front();
-            ++g_SimFrame;
-            if (g_GameManager.currentStage != stageBefore)
-                break;
+            Fail("spectator native restore or tick failed");
+            return -1;
         }
 #ifdef __EMSCRIPTEN__
         EM_ASM({
@@ -2659,8 +5113,8 @@ int RunCalcChain()
             globalThis.__eaglerNetplaySpectator = true;
         }, g_SimFrame);
 #endif
-        g_LastTickAdvanced = true;
-        return result;
+        g_LastTickAdvanced = g_SpectatorPlayback.Ready() && !g_SpectatorPlayback.Paused();
+        return CHAIN_CALLBACK_RESULT_CONTINUE;
     }
     if (!DrainPackets())
     {
@@ -3084,3 +5538,27 @@ int RunCalcChain()
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 } // namespace Netplay::Th07LanStageProbe
+
+#ifdef __EMSCRIPTEN__
+extern "C" EMSCRIPTEN_KEEPALIVE const char *th07_mp_spectator_state()
+{
+    return Netplay::Th07LanStageProbe::SpectatorState();
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int th07_mp_spectator_control(
+    const char *run, const char *action, std::uint32_t frame)
+{
+    return Netplay::Th07LanStageProbe::SpectatorControl(run, action, frame);
+}
+#else
+extern "C" const char *th07_mp_spectator_state()
+{
+    return Netplay::Th07LanStageProbe::SpectatorState();
+}
+
+extern "C" int th07_mp_spectator_control(
+    const char *run, const char *action, std::uint32_t frame)
+{
+    return Netplay::Th07LanStageProbe::SpectatorControl(run, action, frame);
+}
+#endif

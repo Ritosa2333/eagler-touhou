@@ -86,17 +86,182 @@ Spectators consume confirmed history without taking a player seat or submitting 
 Read [Spectator protocol and cross-title rollout](../SPECTATOR_PROTOCOL.md)
 and its [implementation status](../SPECTATOR_PROTOCOL.md#9-公共前端接入与实施状态)
 before changing spectator admission, wire history, playback or lifecycle. It
-separates current start-only products, TH09's complete local timeline and the
-cross-title migration target, including exact packet layouts and acceptance.
+separates the legacy start-only baseline, TH09's complete local timeline and
+the current cooperative implementation, including exact packets and acceptance.
 
-The cooperative E?SV candidate has common/relay/Host coverage; title-owned
-stage restoration and native playback controls are undergoing per-title native
-verification. TH06 has a real relay/browser frame-300 equality and playback
-control result; its later-stage acceptance and the other titles remain separate
-requirements. Boss entry bookmarks are optional where no reliable native hook
-or proof exists, following the user's 2026-10-16 scope update. Full
-waiting-room player seats still allow explicit observer entry through the
-directory. Neither the room flag nor a shared policy test proves native restore.
+The cooperative E?SV implementation covers the common publisher, Relay,
+Launcher controls and six title-owned stage restoration adapters. Keep current
+per-title build identities and acceptance scopes in the protocol's implementation
+status and `dist/audits/spectator-rollout-20261016/`, rather than treating an older
+manual-seek PASS as proof of uninterrupted Following on a newer build. Native
+acceptance compares every source peer with independent viewers at the same
+logical input boundary, then exercises retained history, playback controls and
+120 further source frames. TH15's browser endpoint checks and its independent
+native 600-frame trace are separate evidence scopes. Diagnostic shells retain
+their package restrictions, including TH15's `completeGame=false`.
+
+Boss entry bookmarks are optional where no reliable native hook or proof exists,
+following the user's scope update. Full waiting-room player seats still allow
+explicit observer entry through the directory. Neither the room flag nor a
+shared policy test proves native restore. Local Relay/fixture acceptance does
+not establish public deployment, physical-device behavior or natural Ending
+resource boundaries.
+
+At a native stage change, player projectiles can survive even when enemy and
+stage owners are reconstructed. TH06 and TH11 source players both retain live
+shots at Stage2 entry; recreating a fresh player silently loses them. Preserve
+named shot, timer, motion, resource-local ANM cursor and ownership state. Compare
+the source peers at the same confirmed frame before diagnosing the viewer, then
+compare future frames as well as the checkpoint itself. A private transition
+fixture must run at the same actual-input frame on every source peer. Waiting
+for the confirmation frontier alone does not prevent speculative fixture calls.
+
+A source transition's resource-retention flags are metadata, not a constructor
+contract for a fresh observer. TH08's `initial=false` path reuses player ANMs
+and skips their loading; `keep_resources=true` likewise assumes prior owners.
+Create the observer's complete native owner graph first, then apply the named
+checkpoint state and restore the source request metadata. A successful load
+still requires independent same-frame and subsequent-frame comparisons.
+
+Test the initial frame-zero checkpoint separately from later-stage checkpoints.
+TH08's later-stage restore and 713 following inputs matched while its initial
+Supervisor Init checkpoint still failed the strict canonical comparison. An old
+viewer must first restore the initial checkpoint, cross a real stage transition,
+then seek back; a viewer joining Stage2 alone cannot prove this lifecycle. Keep
+the exact failure phase and named owner diagnostics rather than treating an
+empty playback report after a failed restore as a transient loading state.
+
+TH08's initial checkpoint includes the native ready tick that closes the
+loading gate before input zero. Fresh construction alone left Player animation
+`currentTimeInScript.previous` at zero while the source had advanced it to one.
+For an initial frame-zero restore, run the original loading-gate completion
+update and semantic draw with neutral input, without opening a network input
+frame, then apply the saved scalars and the complete canonical gate. Keep the
+normal 30/80 loading thresholds and all later-stage restore paths intact.
+
+A retained checkpoint is an independent native world. During forward playback,
+restore its initializer once before consuming its first available input. Track
+the checkpoint serial actually installed in the world, rather than inferring
+it from the cursor: at a new checkpoint's exact frame the cursor can already
+locate the new segment while the native world still belongs to the old one.
+Checkpoint arrival alone must not move a paused viewer or repeatedly construct
+a segment with no input. An explicit seek to that boundary must also compare
+against the actual installed serial. Test uninterrupted Following across a
+source-only native transition before sending any new viewer seek/live command;
+require position beyond the checkpoint and strict same-frame source equality.
+Receiving a node or retaining the Following flag alone is insufficient proof.
+
+The source's boundary decision must also survive rollback. TH07's monotonic
+last-stage cache could label the first Stage2 frame once, then omit its
+initializer when that exact frame was resimulated. Replacing the pending record
+with an empty initializer leaves publication at the stage boundary. Determine
+the boundary from recorded predecessor-frame stage or a freshly rebuilt native
+activation marker, and recapture the corrected initializer on each execution.
+TH08/TH11 already use frame-indexed predecessor tags; TH10 clears its activation
+marker on every begin-frame and rebuilds it from the restored Replay state.
+Capture-time metadata does not prove a checkpoint was recorded, confirmed,
+sent or delivered. Failure reports must retain the source publisher cursor and
+transport state together with the viewer's received edge and nodes.
+
+Fixture checkpoint frames are observations, not protocol constants. TH08's
+source-only transition produced different valid boundary frames as its setup
+changed. Bind the actual node identity to all source captures at that frame.
+Also distinguish the currently selected seek target from the world being
+played: TH08's read-only checkpoint diagnostics select `Target`, which can
+still name Stage1 during uninterrupted Following. Inspecting that diagnostic
+early does not establish that a received Stage2 checkpoint is malformed.
+
+Historical Play consumes at most one available input per presentation. A relay
+can deliver the newest confirmed source input after the next presentation;
+while position equals edge, allow a zero-input pump and wait within the test
+deadline. Still reject an extra input, a skipped available input or any
+same-frame canonical mismatch, and compare every executed input boundary.
+
+Do not assume a native draw is cosmetic. TH08's active draw synchronizes player
+shots and retains enemy ANM state used by later ticks. Its observer must keep
+the source's update/draw order for every replayed input, including bounded
+catch-up batches. A paused or no-input redraw must use the native render-only
+path rather than repeating those state writes. Other titles require their own
+evidence before excluding a draw-written field from a semantic comparison.
+
+Checkpoint `frame` and playback `position` name the next input, not the last
+executed input. After replaying packet `f`, compare against the source at
+`NextFrame == f + 1`. Read each title's diagnostic schema before indexing its
+status array: TH08's adjacent NextFrame/LastFrame fields caused a one-tick test
+offset. A matching constructor hash must be followed by per-tick comparisons,
+with the first differing frame and named group retained in the failure report.
+Canonical group ordinals are title-owned too: TH08 result word 3 is Player and
+word 4 is RNG, whereas TH10 word 3 is RNG. Read the export's schema before
+assigning a failed hash to an owner.
+Source trace maps must record only actual logical advancement. A presentation
+or system tick with unchanged NextFrame can mutate a displayed/native system
+state and overwrite the sample for that input boundary. TH08's corrected trace
+matches checkpoint 187 and all subsequent boundaries through 216. The later
+217 mismatch identified an application-level loading gate omitted from the
+checkpoint. Restoring that gate and following the native loading countdown
+also matches 217; this short proof does not replace the full future-frame case.
+
+An animation script can read the engine's last drawn camera independently of
+the Stage's authored camera. TH10 captures its later-stage checkpoint during
+native activation, before the following Draw copies the new Stage camera into
+the engine. Replacing the saved engine camera with the new Stage camera changed
+script 411's coordinate variables on its first input. Preserve the named engine
+camera environment at capture time, including local active-camera rebinding;
+the corrected independent restore matches all portable and Stage/ANM groups on
+that first input. Its full future-frame and playback cases remain separate.
+
+Keep authored camera values separate from proven render caches in the oracle.
+TH10's Stage camera inherits `right` when a Stage is constructed; its only
+consumer is billboard rendering, after `configure_world` recomputes the active
+camera basis. Repeated frame-zero seeks exposed only that inherited `right`
+while every other Stage group and VM matched. Normalize this one field in the
+Stage-only comparison; retain its original value on the wire and in field
+diagnostics. This does not justify omitting the engine camera or other fields.
+
+An owner can retain a nonzero animation handle after the registry has expired
+that VM. TH10's long Stage1-to-Stage2 test exposed this in the difficulty badge;
+a short transition did not. Classify that handle with the source registry while
+capturing it. Only an explicitly recorded dead handle whose readers all resolve
+through the registry can become zero on restoration. A live handle still needs
+an exact local mapping. Other owners test the raw nonzero value, so applying the
+same conversion to boss names, life icons or borders changes native behavior.
+
+Every independent viewer must load the intended build. TH06's diagnostic runner
+passed a candidate build directory to the initial pages but omitted it for the
+late viewer, which silently loaded the older default package. Check the served
+WASM identity on every endpoint before accepting a multi-page restoration test;
+hashing only the candidate file does not establish what a new viewer executed.
+
+A spectator input deadline measures waiting for new live input, not time spent
+reading a local archive. TH08 had valid input through 990 and was rebuilding
+position 484 toward edge 900 when its 15-second packet deadline failed. After a
+valid bootstrap, pause, seek, historical Play, ended history and a playable
+backlog must refresh that wait deadline. Resume the normal grace period only
+when following at the edge. Keep the initial bootstrap deadline, transport
+failure handling and all player watchdogs independent. TH10/11/15 had the same
+unconditional check; use the common playback-state predicate for these paths.
+
+Set the native transition mode before synchronous teardown callbacks execute.
+TH07's observer must set `SUPERVISOR_STATE_NEXT_STAGE` before `CutChain`, as the
+source does: GUI deletion and registration both consult this mode. Setting it
+between the two frees the GUI implementation while registration assumes it is
+retained. The corrected order completes GUI registration; matching the complete
+checkpoint remains a separate requirement.
+
+The cooperative playback edge intentionally trails received input by 90 frames.
+Measure extra live backlog as `edge - position`; a source frontier about 90
+frames ahead of the viewer is expected. Keep native game activity alive in a
+private fixture when testing 600 future ticks, and state that fixture scope in
+the evidence. A source ending naturally must not be diagnosed as codec failure.
+
+`SpectatorScalars::Writer(localByteBudget)` permits a bounded named-scalar
+preimage before compression, up to 8 MiB. Its default stays 60 KiB and the wire
+codec still rejects states larger than 60 KiB. TH06 uses a 256 KiB local
+preimage budget and TH07 uses 2 MiB for retained shot/ANM/bomb state; these
+budgets do not prove that every real compressed checkpoint fits the wire limit.
+Titles using the older default-only scalar helper remain wire-compatible.
+Decode checks the title's expansion bound before
+allocating, and never serializes native structs, pointers or padding.
 
 <!-- knowledge-id: K-MP-002 -->
 ## Invariants and pitfalls
@@ -388,6 +553,32 @@ its start. Earlier local matches belong only to viewers who received them.
   contracts.
 - TH06MP/TH07MP title repositories: title-specific rollback inventories,
   gameplay semantics and transport acceptance evidence.
+
+### Cooperative spectator restoration anchors
+
+- `eagler-common/include/eagler/netplay/SpectatorStage{Protocol,Publisher,History,Playback,View,Scalars}.hpp`:
+  wire validation, confirmed publication, retained segments, actual-world
+  serial tracking, native report and bounded named-scalar encoding.
+  `eagler-common/tests/spectator-stage-test.cpp` exercises the real controller.
+- TH06/07 `src/netplay/Th06LanStageProbe.cpp` /
+  `Th07LanStageProbe.cpp`: native owner reconstruction and playback scheduling.
+- TH08 `th08_web/cpp/multiplayer/SpectatorStageState.hpp` and
+  `th08_web/cpp/game/GameApplication.{hpp,cpp}`: fresh owner graph, initial ready tick, loading
+  lifecycle and update/draw semantics. `portable/multiplayer/check-spectator.py`
+  keeps old-viewer automatic transition separate from the 713-input control case.
+- TH10 `th10_web/cpp/multiplayer/SpectatorStage{State,Scene,Activation}.{hpp,cpp}`
+  and `th10_web/cpp/platform/Application.cpp`: typed scene/activation state and controller
+  callbacks. `portable/multiplayer/check-spectator-stage.py` compares both
+  viewers with every source on 600 input boundaries and after a history round trip.
+- TH11 `th11_web/cpp/multiplayer/SpectatorStage{State,Schema}.hpp` and
+  `SpectatorShotState.{hpp,cpp}`: Stage, player and retained shot owners.
+- TH15 `th15_web/cpp/multiplayer/SpectatorStage{State,Checkpoint}.{hpp,cpp}`
+  and `SpectatorPilotState.cpp`: pure-delay checkpoint/owner restoration.
+  Keep its local diagnostic shell evidence separate from formal package acceptance.
+
+Select each product's active MP repository/branch through `WORKSPACE.md` before
+using these relative anchors. A fixture build or a copied common header does
+not establish which WASM a browser actually executed; retain per-endpoint identity.
 
 ## TH09 local match Replay archive
 

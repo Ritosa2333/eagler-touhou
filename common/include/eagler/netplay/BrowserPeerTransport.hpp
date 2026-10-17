@@ -23,9 +23,12 @@ public:
     BrowserPeerTransport(const BrowserPeerTransport &) = delete;
     BrowserPeerTransport &operator=(const BrowserPeerTransport &) = delete;
 
-    bool Connect(const char *relayUrl, std::uint8_t localPlayer, std::uint8_t playerCount);
+    // Set only by an adapter that publishes complete stage initializers. P1
+    // retains its optional relay lane even before the first viewer arrives.
+    bool Connect(const char *relayUrl, std::uint8_t localPlayer, std::uint8_t playerCount,
+                 bool stageSpectatorHistory = false);
     bool ConnectSpectator(const char *relayUrl, const char *spectatorId,
-                          std::uint8_t playerCount);
+                          std::uint8_t playerCount, bool stageSpectatorHistory = false);
     void Close();
     bool IsOpen() const override;
     bool Failed() const override;

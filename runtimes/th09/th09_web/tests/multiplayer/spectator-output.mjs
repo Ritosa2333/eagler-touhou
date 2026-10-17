@@ -12,7 +12,7 @@ function embedded(name,args,returnType='int') {
 }
 const send=embedded('eagler_peer_send_spectator',['data','size']);
 const status=embedded('eagler_peer_spectator_state',[]);
-const stop=embedded('eagler_peer_stop_spectators',[],'void');
+const stop=embedded('eagler_peer_stop_spectators',['graceful'],'void');
 const constants={OPEN:1,CLOSING:2};
 let now=0;
 const originalPerformance=globalThis.performance;
@@ -28,7 +28,7 @@ function fixture({ready=1,queued=0,route='rtc',sendCost=0}={}) {
   const core={HEAPU8:heap,_th09_peer_packet_buffer:()=>0,
     _th09_peer_send_spectator:n=>send(0,n,heap,g,constants),
     _th09_peer_spectator_state:()=>status(heap,g,constants),
-    _th09_peer_stop_spectators:()=>{++counts.stop;stop(heap,g,constants);},
+    _th09_peer_stop_spectators:()=>{++counts.stop;stop(0,heap,g,constants);},
     _th09_peer_state:()=>1,_th09_peer_poll:()=>0,
     _th09_peer_close:()=>++counts.playerClose,_th09_network_end:()=>++counts.worldEnd,
     _th09_spectator_end:()=>++counts.viewerEnd};

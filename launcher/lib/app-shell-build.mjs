@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getManifest, injectManifest } from "workbox-build";
+import {hostArtworkFiles} from "./host-artwork.mjs";
+import {PRODUCT_GAMES} from "./contracts/product-catalog.mjs";
 import { APP_SHELL_SOURCE_FILE, createAppShellContract } from "./app-shell-contract.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -54,6 +56,20 @@ export async function buildAppShell({
     throw new Error("Invalid App Shell publication file graph");
   }
   const resolvedGlobDirectory = resolve(globDirectory);
+  // Host assembly supplies artwork after the frontend graph is sealed. Every
+  // builder entrypoint must cache present catalog-owned covers and site icons,
+  // even when a caller supplies only the static/Vite graph. Never scan DATA or
+  // arbitrary assets, and do not require artwork in source-only distributions.
+  const hostArtwork = [];
+  for (const name of hostArtworkFiles(Object.keys(PRODUCT_GAMES))) {
+    const path = `assets/${name}`;
+    try {
+      const info = await stat(resolve(resolvedGlobDirectory, path));
+      if (!info.isFile() || !info.size) throw new Error(`Invalid App Shell artwork: ${path}`);
+      hostArtwork.push(path);
+    } catch (error) { if (error.code !== "ENOENT") throw error; }
+  }
+  additionalGlobPatterns = [...new Set([...additionalGlobPatterns, ...hostArtwork])];
   const localAppShellPatterns = [];
   const mappedManifestEntries = [];
   let mappedManifestBytes = 0;
@@ -98,6 +114,9 @@ export async function buildAppShell({
   }
   const firstPass = await getManifest(manifestConfig);
   const sourceEntries = [...firstPass.manifestEntries, ...mappedManifestEntries];
+  for (const path of hostArtwork) {
+    if (!sourceEntries.some(entry => entry.url === path)) throw new Error(`App Shell omits Host artwork: ${path}`);
+  }
   const indexEntry = sourceEntries.find(entry => entry.url === "index.html");
   if (!indexEntry?.revision) throw new Error("Workbox App Shell manifest is missing index.html");
   const navigationEntry = { url: "./", revision: indexEntry.revision };

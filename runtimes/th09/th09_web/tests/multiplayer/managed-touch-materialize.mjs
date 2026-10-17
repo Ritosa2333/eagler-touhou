@@ -13,7 +13,7 @@ const expectedManaged='830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e
 const expectedWasm='037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373';
 const sources=[
  resolve(web,'scripts/build-eagler.mjs'),resolve(web,'tests/multiplayer/managed-touch-materialize.mjs'),
- ...['managed.html','managed.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','shared-netplay.mjs','motion-replay.mjs','startup-branding.mjs'].map(n=>resolve(web,'sdl-runtime',n)),
+ ...['managed.html','managed.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','shared-netplay.mjs','spectator-timeline.mjs','spectator-timeline-view.mjs','spectator-tape.mjs','motion-replay.mjs','auto-replay.mjs','replay-player.mjs','startup-branding.mjs'].map(n=>resolve(web,'sdl-runtime',n)),
  ...['th09.wasm','th09.mjs','build.json'].map(n=>resolve(compiled,n)),
  ...['cp932.bin','blend.bin'].map(n=>resolve(assets,n)),
 ];

@@ -15,7 +15,7 @@ const inputs = [
   ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
   ['shell.mjs', resolve(root, 'sdl-runtime/managed.mjs')],
   ['managed.css', resolve(root, 'sdl-runtime/managed.css')],
-  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'replay-player.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
+  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-timeline-view.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'replay-player.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
   ['playback-clock.mjs', resolve(process.env.EAGLER_COMMON_ROOT || resolve(root, '../third_party/eagler-common'), 'browser/playback-clock.mjs')],
   ['th09.mjs', resolve(compiled, 'th09.mjs')],
   ['th09.wasm', resolve(compiled, 'th09.wasm')],

@@ -21,6 +21,20 @@ namespace th08 {
 namespace {
 u32 ptr(const void* p){return reinterpret_cast<uintptr_t>(p);}
 PixelSurface surface(TextureRecord& r){auto& i=r.image;return {i.format,i.width,i.height,i.width*TexturePixels::describe(i.format).bytes,i.pixels.data()};}
+bool spectator_silent(BrowserRuntime& runtime){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!runtime.app.session.netplay.Spectator())return false;
+    const auto* driver=runtime.network_driver();if(!driver)return true;
+    const auto& playback=driver->Network().StagePlayback();
+    // Sound effects are useful while the observer follows the live stream, but
+    // seeking and replaying a backlog should not replay hundreds of historical
+    // cues into the viewer's device. Resume once playback reaches the edge.
+    return !playback.Ready()||playback.Paused()||playback.Seeking()||
+        (playback.Following()&&playback.Edge()>playback.Position()+1);
+#else
+    (void)runtime;return false;
+#endif
+}
 }
 BrowserRuntime::BrowserRuntime():app(*this,graphics){audio=std::make_unique<GameAudioManager>(*this);text=std::make_unique<AnmText>(app.textures,fonts);app.textures.prepare_callback=[](void*,u32 handle){graphics_device().prepare_texture(handle);};}
 BrowserRuntime::~BrowserRuntime(){
@@ -337,19 +351,27 @@ i32 BrowserRuntime::status(i32 field)const{
 #endif
     switch(field){case 0:return app.supervisor.state.active;case 1:return app.active();case 2:return app.invalid()||capture_failed;case 3:return app.game.globals.stage;case 4:return app.game.faults()|(u32(capture_failed)<<9);case 5:return app.textures.live_count();case 6:return app.game.enemies.state.frames;case 7:return app.loading_game();case 8:return app.title.menus.state.currentScreen;case 9:return app.title.menus.state.cursor;case 10:return app.title.modal();default:return -1;}
 }
-void BrowserRuntime::sound(i32 i,i32 m,float x,bool p){audio->sound(i,m,x,p);}
-bool BrowserRuntime::play_music(i32 i,i32 s){return audio->play_music(i,s);}
-void BrowserRuntime::load_music(i32 i,const char* p){audio->load_music(i,p);}
-void BrowserRuntime::play_audio(const char* p,i32 s){audio->play_audio(p,s);}
-void BrowserRuntime::stop_audio(){audio->stop_audio();}
-void BrowserRuntime::fade_music(float s){audio->fade_music(s);}
-void BrowserRuntime::menu_music(MenuMusic m,float s){audio->menu_music(m,s);}
-void BrowserRuntime::midi_reset(){audio->midi_reset();}
-void BrowserRuntime::start_bgm(){audio->start_bgm();}
-void BrowserRuntime::process_sounds(){audio->process_sounds();}
-void BrowserRuntime::update_audio_fades(){audio->update_audio_fades();}
-void BrowserRuntime::apply_volume(const GameConfiguration& c){audio->apply_volume(c);}
-bool BrowserRuntime::audio_tick(u32 now){return audio->audio_tick(now);}
+void BrowserRuntime::sound(i32 i,i32 m,float x,bool p){
+    const bool silent=spectator_silent(*this);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(app.session.netplay.Spectator()){
+        ++spectator_sound_requests;if(silent)++spectator_sound_suppressed;else ++spectator_sound_forwarded;
+    }
+#endif
+    if(!silent)audio->sound(i,m,x,p);
+}
+bool BrowserRuntime::play_music(i32 i,i32 s){return spectator_silent(*this)||audio->play_music(i,s);}
+void BrowserRuntime::load_music(i32 i,const char* p){if(!spectator_silent(*this))audio->load_music(i,p);}
+void BrowserRuntime::play_audio(const char* p,i32 s){if(!spectator_silent(*this))audio->play_audio(p,s);}
+void BrowserRuntime::stop_audio(){if(!spectator_silent(*this))audio->stop_audio();}
+void BrowserRuntime::fade_music(float s){if(!spectator_silent(*this))audio->fade_music(s);}
+void BrowserRuntime::menu_music(MenuMusic m,float s){if(!spectator_silent(*this))audio->menu_music(m,s);}
+void BrowserRuntime::midi_reset(){if(!spectator_silent(*this))audio->midi_reset();}
+void BrowserRuntime::start_bgm(){if(!spectator_silent(*this))audio->start_bgm();}
+void BrowserRuntime::process_sounds(){if(!spectator_silent(*this))audio->process_sounds();}
+void BrowserRuntime::update_audio_fades(){if(!spectator_silent(*this))audio->update_audio_fades();}
+void BrowserRuntime::apply_volume(const GameConfiguration& c){if(!spectator_silent(*this))audio->apply_volume(c);}
+bool BrowserRuntime::audio_tick(u32 now){return spectator_silent(*this)||audio->audio_tick(now);}
 #ifdef TH_MULTIPLAYER_FIXTURES
 bool BrowserRuntime::diagnostic_audio_clock_independent(){
     if(!audio||!app.session.multiplayer_session.configured)return false;

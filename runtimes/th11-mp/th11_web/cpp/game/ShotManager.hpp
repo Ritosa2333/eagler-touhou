@@ -10,6 +10,9 @@
 #include "ActiveSlotIndex.hpp"
 #endif
 namespace th11 {
+#ifdef TH11_MULTIPLAYER
+namespace multiplayer {struct SpectatorShotAccess;}
+#endif
 struct ShotState {
     Timer timer;Movement movement;
     i32 state=0;u32 animation=0,extra_animation=0;
@@ -61,6 +64,9 @@ public:
     const ShotState& at(u32 index)const noexcept{return shots[index];}
 private:
     friend struct WorldRollbackTestAccess;
+#ifdef TH11_MULTIPLAYER
+    friend struct multiplayer::SpectatorShotAccess;
+#endif
     ShtResource& resource;AnmResource& animation_resource;AnmManager& animations;ShotWorld& world;u16 file_id;
     std::array<ShotState,256> shots{};
 #ifdef TH11_MULTIPLAYER

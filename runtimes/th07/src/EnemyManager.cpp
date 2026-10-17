@@ -387,6 +387,11 @@ void EnemyManager::RunEclTimeline(EclTimeline *timeline)
                 }
                 break;
             case 10:
+#ifdef TH_ENABLE_NETPLAY
+                if (!Netplay::Th07Rollback::TouchEnemy(
+                        g_EnemyManager.bosses[timeline->timelineInstr->args.args[0].i]))
+                    return;
+#endif
                 g_EnemyManager.bosses[timeline->timelineInstr->args.args[0].i]->runInterrupt =
                     timeline->timelineInstr->args.args[1].i;
                 break;

@@ -47,7 +47,7 @@ mutable user DATA / save / Replay
     → stays in explicit storage roots
 ```
 
-Service Worker caches and updates the App Shell. It does not own the Runtime filesystem or hide a package Runtime inside SW state. The Runtime uses same-origin HTML/JS/WASM and the App/Launcher manages DATA.
+Service Worker caches and updates the App Shell. Normal Launcher builds enable it by default on their own origin and mount. Only an explicit `EAGLER_REACT_APP_SHELL=disabled` build omits offline document loading. Exact-origin isolated preview builds remain supported. It does not own the Runtime filesystem or hide a package Runtime inside SW state. The Runtime uses same-origin HTML/JS/WASM and the App/Launcher manages DATA.
 
 An App Shell replacement first verifies and caches its complete required Launcher set. An idle Launcher then requests activation and reloads itself; an active game or operation defers that page's reload until it finishes. Other old tabs and Runtime iframes do not block activation. Verify both the reloaded current page and a newly opened page can load the new shell and launch a Runtime while an old page remains open.
 
@@ -215,6 +215,16 @@ retain their existing input owners.
 ## Verification
 
 ### Shared local Replay workspace
+
+Verify source ownership before building or testing Replay changes. TH06/TH07
+ordinary and MP builds are separate artifacts: inspect each CMake multiplayer
+flag and test both. For TH08 and later, inspect the actual `eagler` and
+`eagler-mp` owners and propagate shared changes to both. An ordinary build made
+with MP disabled in the MP checkout does not establish ordinary-branch coverage.
+The native browser checks bind each result to its branch, WASM identity and
+declared Replay source hashes; MP recording checks accept an explicit `--repo`
+and reject an ordinary checkout. Keep prior named-artifact evidence separate
+from a new validation of the latest branch HEAD.
 
 The non-versus workspace uses the title's native decoder for name, date,
 loadout, difficulty, score units, slowdown, special modes and recorded stage

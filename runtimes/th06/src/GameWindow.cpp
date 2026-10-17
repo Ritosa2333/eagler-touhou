@@ -129,12 +129,17 @@ RenderResult GameWindow::Render()
 #endif
 #endif
     const u64 renderStartNs = SDL_GetTicksNS();
+#if defined(TH_ENABLE_THPRAC) && !defined(TH_ENABLE_NETPLAY)
+    // Practice speed changes start a new timing interval. Netplay's smoothed
+    // clock correction changes this value continuously and must retain the
+    // elapsed time already accumulated for the next fixed simulation tick.
     static f64 previousTargetDt = targetDt;
     if (previousTargetDt != targetDt)
     {
         this->ResetTiming();
         previousTargetDt = targetDt;
     }
+#endif
     ZunViewport viewport;
 
     if (this->lastActiveAppValue == 0)

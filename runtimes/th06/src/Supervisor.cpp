@@ -47,23 +47,39 @@ static void DrawStartupBranding()
     if(!pixels)return;
     if(bytes!=1280*960*4){SDL_free(pixels);return;}
     auto* gfx=g_GfxBackend;
-    const auto texture=gfx->CreateTexture();gfx->BindTexture(texture);
+    const auto texture=gfx->CreateTexture();g_AnmManager->SetCurrentTexture(texture);
     gfx->SetTextureImage(1280,960,PIXEL_RGBA,PIXEL_UNSIGNED_BYTE,pixels);SDL_free(pixels);
     VertexTex1DiffuseXyz vertices[4]{};
     vertices[0].position={0,0,0};vertices[1].position={640,0,0};
     vertices[2].position={0,480,0};vertices[3].position={640,480,0};
     vertices[0].textureUV={0,0};vertices[1].textureUV={1,0};
     vertices[2].textureUV={0,1};vertices[3].textureUV={1,1};
+    // The copy-texture path leaves MODULATE active. White diffuse keeps the
+    // branding pixels identical without changing that shared color-op state.
+    for (auto &vertex : vertices) vertex.diffuse=ColorData(0xFFFFFFFF);
+
+    // Draw this one-off overlay through the same state owner as normal ANM
+    // quads. Leaving stack-backed pointers in the graphics backend bypasses
+    // AnmManager's cached vertex-array state and can poison later draws.
+    const bool restoreFog=g_Supervisor.DisableFog()!=0;
     g_AnmManager->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
-    gfx->ToggleVertexAttribute(VERTEX_ATTR_DIFFUSE,false);
-    gfx->ToggleVertexAttribute(VERTEX_ATTR_TEX_COORD,true);
-    gfx->SetAttributePointer(VERTEX_ARRAY_POSITION,sizeof(vertices[0]),&vertices[0].position);
-    gfx->SetAttributePointer(VERTEX_ARRAY_TEX_COORD,sizeof(vertices[0]),&vertices[0].textureUV);
-    gfx->Disable(CAPS_FOG);gfx->Disable(CAPS_DEPTH_TEST);gfx->Disable(CAPS_ALPHA_TEST);
-    gfx->Enable(CAPS_BLEND);gfx->SetBlendMode(BLEND_ALPHA);gfx->SetDepthMask(false);
-    gfx->SetColorOp(COMPONENT_RGB,COLOR_OP_REPLACE);gfx->SetColorOp(COMPONENT_ALPHA,COLOR_OP_REPLACE);
-    gfx->Draw(PRIM_TRIANGLE_STRIP,0,4);gfx->DeleteTexture(texture);
-    g_AnmManager->SetCurrentTexture(0);g_AnmManager->SetCurrentBlendMode(0xff);
+    g_AnmManager->SetVertexAttributes(VERTEX_ATTR_TEX_COORD|VERTEX_ATTR_DIFFUSE);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_POSITION,sizeof(vertices[0]),&vertices[0].position);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_TEX_COORD,sizeof(vertices[0]),&vertices[0].textureUV);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_DIFFUSE,sizeof(vertices[0]),&vertices[0].diffuse);
+    g_AnmManager->SetDepthMask(false);
+    g_AnmManager->BackendDrawCall();
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_POSITION,sizeof(g_AnmManager->vertexBuffer[0]),
+                                      &g_AnmManager->vertexBuffer[0].position);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_TEX_COORD,sizeof(g_AnmManager->vertexBuffer[0]),
+                                      &g_AnmManager->vertexBuffer[0].textureUV);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_DIFFUSE,sizeof(g_AnmManager->vertexBuffer[0]),
+                                      &g_AnmManager->vertexBuffer[0].diffuse);
+    g_AnmManager->SetVertexAttributes(VERTEX_ATTR_TEX_COORD);
+    g_AnmManager->UpdateDirtyStates();
+    g_AnmManager->SetCurrentTexture(0);gfx->DeleteTexture(texture);g_AnmManager->SetCurrentSprite(nullptr);
+    g_AnmManager->SetCurrentBlendMode(0xff);
+    if (restoreFog) g_Supervisor.EnableFog();
 }
 i32 Supervisor::DrawStartupLogo()
 {

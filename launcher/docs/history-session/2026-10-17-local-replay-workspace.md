@@ -1,5 +1,10 @@
 # Cross-title local Replay workspace
 
+Branch-coverage correction: the later audit found that some ordinary checks
+below used an MP checkout with multiplayer disabled. Those results establish
+the named artifact's behavior, not independent ordinary-branch coverage. See
+[the branch audit and repairs](2026-10-17-replay-branch-audit.md).
+
 Work stays in the existing Launcher checkout
 `worktrees/launcher-th09-spectator-main` and each title's existing source owner.
 No new worktrees, pushes or deployment were performed. Replay-only local

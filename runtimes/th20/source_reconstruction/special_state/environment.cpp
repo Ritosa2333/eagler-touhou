@@ -39,7 +39,10 @@ void initialize_entry(Entry& p,unsigned handle,int selected){
     const int index=p.level>=0&&p.level<=3?p.level:4;constexpr unsigned sprites_by_level[]{30,33,36,39,42};constexpr float sizes[]{64,80,88,96,112};
     pattern.fields_00[3]=sprites_by_level[index];pattern.fields_00[4]=sprites_by_level[index];pattern.field_a0=pattern.field_a4=sizes[index];
     if(selected>=0&&selected<4)increment(player,0x84+unsigned(selected)*4);increment(player,0x94);
-    attack.callback=[&p](gp::Enemy* enemy){collect(p,enemy,environment());};
+    // The summon Entry is retired when its gauge expires, while the attack
+    // enemy can survive and invoke this callback later. Never retain &p.
+    // Collection only needs its color; keep that value for the enemy lifetime.
+    attack.callback=[selected](gp::Enemy* enemy){Entry reward{};reward.color=selected;collect(reward,enemy,environment());};
 }
 class GameEnvironment final:public Environment {
     text::Renderer& text(){return *text::renderer;}

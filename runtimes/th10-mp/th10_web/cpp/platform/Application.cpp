@@ -14,6 +14,7 @@
 #include "../multiplayer/RecoveryBudget.hpp"
 #include "../multiplayer/LiveMotionObservation.hpp"
 #include "../multiplayer/CallbackWorkTiming.hpp"
+#include "../multiplayer/SpectatorStageState.hpp"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #else
@@ -247,6 +248,9 @@ void Application::multiplayer_fail(const char* reason){
 
 u32 Application::multiplayer_spectator_catchup_budget()const{
     if(!multiplayer_active()||!state.netplay_runtime.Spectator()||!world||world->loading)return 1;
+    const auto& playback=state.netplay_runtime.StagePlaybackController();
+    if(state.netplay_runtime.StagePlaybackReady())
+        return playback.Seeking()||(playback.Following()&&playback.Edge()>playback.Position()+1)?4:1;
     const auto backlog=state.netplay_runtime.SpectatorBacklog();
     return backlog>8?4:backlog>4?2:1;
 }
@@ -323,6 +327,13 @@ i32 Application::multiplayer_update(){
                 multiplayer_waiting=true;return 1;
             }
             const auto frame=runtime.NextFrame();
+            auto spectatorStage=world->spectator_stage_tag();
+            std::vector<u8> spectatorInitializer;
+            if(frame==0&&runtime.SpectatorCheckpointRequired(frame,spectatorStage)){
+                multiplayer::SpectatorStageState checkpoint;
+                if(world->capture_spectator_checkpoint(frame,checkpoint))
+                    multiplayer::EncodeSpectatorStageState(checkpoint,spectatorInitializer);
+            }
             const auto decision=runtime.Prepare(frame);
             const bool replayActive=state.multiplayer_replay.Recording()||
                                     state.multiplayer_replay.Playing();
@@ -347,6 +358,12 @@ i32 Application::multiplayer_update(){
                !world->end_netplay_frame()||!runtime.MarkSimulated(frame,decision)){
                 world->rollback_resimulating=false;multiplayer_fail("Finish resimulated frame");return -1;
             }
+            if(world->spectator_activation_checkpoint_frame==frame){
+                spectatorStage=world->spectator_activation_checkpoint_stage;
+                spectatorInitializer=world->spectator_activation_checkpoint_wire;
+            }
+            runtime.RecordSpectatorFrame(frame,spectatorStage,spectatorInitializer,decision.inputs,
+                                         world->spectator_boss_registration_mask);
             world->rollback_resimulating=false;
             ++multiplayer_resimulated_frames;++replayed;
         }
@@ -357,6 +374,10 @@ i32 Application::multiplayer_update(){
         // every callback repairing old work without producing a new endpoint.
     }
 
+    // Publish title metadata only after the pending rollback has been applied
+    // to the native world for this callback.
+    runtime.PublishConfirmedSpectatorHistoryAfterReconcile();
+
     {
         work_timing::PhaseScope work_phase(work_timing::state,work_timing::Phase::ConfirmedCommit);
         if(!world->commit_audio()){multiplayer_fail("Commit audio before tick");return -1;}
@@ -366,6 +387,26 @@ i32 Application::multiplayer_update(){
     // the journal as soon as confirmation arrives loses that required restore.
     // Whole resource lifetimes only cross a fully reconciled, confirmed fence.
     if(state.pending_screen!=value.screen){
+        if(runtime.Spectator()&&runtime.StagePlaybackReady()){
+            // Let the native startup and title screens finish their resource
+            // setup. The spectator never enters an ordinary game from those
+            // screens: the only gameplay transition is the checkpoint-backed
+            // title -> game transition below.
+            const bool bootScreen=value.screen==-2||value.screen==0||
+                value.screen==1||value.screen==2;
+            const bool bootTransition=bootScreen&&
+                (state.pending_screen==0||state.pending_screen==1||
+                 state.pending_screen==2||state.pending_screen==4);
+            const bool checkpointTransition=value.screen==4&&state.pending_screen==7&&
+                world&&!world->actors.session&&state.multiplayer_session.configured&&
+                state.multiplayer_session.started&&runtime.StagePlaybackReady();
+            if(bootTransition||checkpointTransition){
+                frames.transition(value);
+                if(error){multiplayer_fail("Start spectator stage");return -1;}
+                return 1;
+            }
+            multiplayer_waiting=true;return 1;
+        }
         // A screen boundary stops normal gameplay capture. Explicitly flush
         // the current input/ACK tail over the reliable lane before waiting,
         // otherwise one lost final RTC fast packet can strand both endpoints
@@ -393,7 +434,77 @@ i32 Application::multiplayer_update(){
         return result;
     }
 
+    if(runtime.Spectator()&&runtime.StagePlaybackReady()){
+        // While native startup/title screens are still alive there is no
+        // checkpoint-restored world to advance. Never consume relay frames
+        // against that screen (or accidentally start a default Stage1 run).
+        if(value.screen!=7||state.pending_screen!=7||!world||!world->actors.session){
+            multiplayer_waiting=true;return 1;
+        }
+        auto& playback=runtime.StagePlaybackController();
+        const auto restore=[&](const Netplay::SpectatorStageEvent& event){
+            if(event.kind!=Netplay::SpectatorEventKind::Checkpoint||
+               event.schema!=multiplayer::kSpectatorStageSchema||!world)return false;
+            multiplayer::SpectatorStageState checkpoint;
+            if(!multiplayer::DecodeSpectatorStageState(event.state,checkpoint)||
+               checkpoint.checkpoint.firstFrame!=event.frame||
+               (checkpoint.checkpoint.label&255u)!=event.stage||
+               !world->prepare_spectator_checkpoint(checkpoint)){
+                multiplayer_fail("Restore spectator stage checkpoint");return false;
+            }
+            return true;
+        };
+        const auto tick=[&](const Netplay::SpectatorFramePacket& packet,bool seeking){
+            // The shared controller restores a new checkpoint before its first
+            // input, including during uninterrupted live following.
+            if(!world||world->loading||state.pending_screen!=value.screen)return false;
+            const bool followingCatchup=playback.Following()&&playback.Edge()>playback.Position()+1;
+            world->suppress_spectator_audio(seeking||followingCatchup);
+            if(!world->begin_netplay_frame(packet.frame)){
+                world->suppress_spectator_audio(false);return false;
+            }
+            if(!multiplayer::InputLanes::Commit(state.input_lanes,packet.inputs.data(),
+                                                state.multiplayer_session.playerCount)){
+                world->end_netplay_frame();return false;
+            }
+            engine.snapshot_presentation();
+            const i32 result=engine.update_all();
+            // STD fades, Player body positions and authored ANM caches are
+            // written by Draw. Execute it once for every historical input,
+            // including paused seeks and multi-input catch-up batches.
+            const bool drawn=result!=0&&result!=-1&&multiplayer_resimulate_draw();
+            const bool ended=world->end_netplay_frame();
+            if(!drawn||!ended||world->error||world->backgrounds.error)return false;
+            presentation_audit::simulation_tick();
+            if(!world->commit_audio())return false;
+            multiplayer_waiting=false;
+            return true;
+        };
+        const double catchupStarted=multiplayer_work_now();
+        const bool stepped=playback.Step(restore,tick,[&]{
+            return multiplayer_work_now()-catchupStarted>=4.0;
+        },multiplayer_spectator_catchup_budget());
+        if(error)return -1;
+        if(world->error||world->backgrounds.error){
+            multiplayer_fail("Advance restored spectator stage");return -1;
+        }
+        // The packet callback already ran each authored Draw. The outer
+        // clock must only display that completed state through render-only
+        // presentation, including when no input was consumed while paused.
+        multiplayer_waiting=true;
+        (void)stepped;
+        return 1;
+    }
+
     const auto frame=runtime.NextFrame();
+    multiplayer_spectator_pending_frame=frame;
+    multiplayer_spectator_pending_stage=world->spectator_stage_tag();
+    multiplayer_spectator_pending_initializer.clear();
+    if(frame==0&&runtime.SpectatorCheckpointRequired(frame,multiplayer_spectator_pending_stage)){
+        multiplayer::SpectatorStageState checkpoint;
+        if(world->capture_spectator_checkpoint(frame,checkpoint))
+            multiplayer::EncodeSpectatorStageState(checkpoint,multiplayer_spectator_pending_initializer);
+    }
     if(runtime.Spectator()){
         if(!runtime.FeedSpectator(frame)){multiplayer_waiting=true;return 1;}
     }else if(runtime.Playback()){
@@ -433,7 +544,7 @@ i32 Application::multiplayer_update(){
 }
 
 bool Application::multiplayer_resimulate_draw(){
-    if(!world||!world->rollback_resimulating)return false;
+    if(!world||(!world->rollback_resimulating&&!state.netplay_runtime.StagePlaybackReady()))return false;
     if(engine.device.begin_scene()<0)return false;
     auto& animations=*manager;
     animations.batch_quads=0;
@@ -480,6 +591,17 @@ bool Application::multiplayer_finalize_frame(){
     if(!state.netplay_runtime.MarkSimulated(frame,decision)){
         multiplayer_fail("Finalize rollback frame: input history rejected frame");return false;
     }
+    if(multiplayer_spectator_pending_frame!=frame){
+        multiplayer_fail("Finalize spectator record: input frame mismatch");return false;
+    }
+    if(world->spectator_activation_checkpoint_frame==frame){
+        multiplayer_spectator_pending_stage=world->spectator_activation_checkpoint_stage;
+        multiplayer_spectator_pending_initializer=world->spectator_activation_checkpoint_wire;
+    }
+    state.netplay_runtime.RecordSpectatorFrame(frame,multiplayer_spectator_pending_stage,
+        multiplayer_spectator_pending_initializer,decision.inputs,world->spectator_boss_registration_mask);
+    multiplayer_spectator_pending_frame=Netplay::INVALID_FRAME;
+    multiplayer_spectator_pending_initializer.clear();
     multiplayer_forward_advanced=true;
     multiplayer_corrected_presentation_pending=false;
     if(world->error||world->backgrounds.error){multiplayer_fail("World or background state");return false;}
@@ -558,6 +680,15 @@ i32 Application::step(bool scheduled_tick,double callback_started){
        !state.netplay_runtime.CanStart())return 0;
     if(session.configured&&!session.started&&value.screen==4&&title&&!title->loading){
         if(session.sessionId&&!state.netplay_runtime.CanStart()&&!state.netplay_runtime.PreparingWorld())return 0;
+        multiplayer::SpectatorStageState spectatorCheckpoint{};
+        if(state.netplay_runtime.Spectator()){
+            const auto& segments=state.netplay_runtime.StagePlaybackController().History().Segments();
+            if(!state.netplay_runtime.StagePlaybackReady()||segments.empty())return 0;
+            const auto& first=segments.front().checkpoint;
+            if(!multiplayer::DecodeSpectatorStageState(first.state,spectatorCheckpoint)){
+                error=-6;return 2;
+            }
+        }
         if(session.sessionId&&!state.netplay_runtime.Playback()&&!state.netplay_runtime.Spectator()&&
            !state.netplay_runtime.PreparingWorld()&&!state.multiplayer_replay.Begin(session,state.configuration)){error=-6;return 2;}
         if(!ensure_world())return 2;
@@ -574,8 +705,15 @@ i32 Application::step(bool scheduled_tick,double callback_started){
             state.pilot_games[seat].shot_type=i32(session.loadouts[seat].shot);
         }
         state.game.difficulty=i32(session.difficulty);
-        state.game.stage=session.difficulty==4?7:1;
-        state.game.reserved_040=u32(state.game.stage);state.game.flags=0;
+        const bool spectator=state.netplay_runtime.Spectator();
+        state.game.stage=spectator?i32(spectatorCheckpoint.checkpoint.label&255u):
+                         session.difficulty==4?7:1;
+        state.game.reserved_040=spectator?spectatorCheckpoint.checkpoint.reservedStage:u32(state.game.stage);
+        state.game.flags=spectator?(spectatorCheckpoint.checkpoint.pilots[0].flags&~0xbu):0;
+        if(spectator){
+            world->spectator_checkpoint_pending=spectatorCheckpoint;
+            world->spectator_checkpoint_restore_pending=true;
+        }
         state.current_stage=menu_data(state.chinese).stages+state.game.stage;
         engine.script_random.seed=engine.visual_random.seed=u16(session.seed);
         engine.script_random.calls=engine.visual_random.calls=0;
@@ -606,6 +744,12 @@ i32 Application::step(bool scheduled_tick,double callback_started){
 #endif
         return 2;
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Stopped-loop callers have no browser presentation owner. Live rAF uses
+    // the matching StagePlaybackReady branch in ApplicationHost instead.
+    if(callback_started<0&&state.netplay_runtime.StagePlaybackReady())
+        presentation_draw(1.f,false,false);
+#endif
     if(writer_pending){writer_pending=false;Screenshot{screenshots}.write();}
     if(result){stopped=true;save();}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -619,6 +763,10 @@ i32 Application::step(bool scheduled_tick,double callback_started){
 bool Application::presentation_draw(float alpha,bool interpolate,bool world_interpolate){
     if(stopped||!initialized||error)return false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A received checkpoint can precede construction of its visible Stage
+    // graph. Primitive VM storage is uninitialized until restart/restore.
+    if(state.netplay_runtime.StagePlaybackReady()&&(!world||!world->backgrounds.current||
+       !world->backgrounds.current->instruction))return false;
     if(state.netplay_runtime.Correcting()||multiplayer_frame_open||
        (world&&world->rollback_resimulating))return false;
 #endif

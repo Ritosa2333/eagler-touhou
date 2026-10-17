@@ -52,11 +52,14 @@ with sync_playwright() as p:
         dialog = page.locator('.input-settings-dialog')
         assert dialog.bounding_box()['height'] <= 1000 * .89
         layout = page.locator('select[aria-label="键位布局"]')
-        layout.select_option('arrows', force=True)
+        assert layout.input_value() == 'arrows'
         assert page.evaluate("Object.keys(keyboardPreferences.getSnapshot()).length") == 0
         assert page.locator('.keyboard-settings tr[data-action="up"] kbd').all_text_contents() == ['↑']
         layout.select_option('wasd', force=True)
         assert page.locator('.keyboard-settings tr[data-action="up"] kbd').all_text_contents() == ['W', '↑']
+        assert page.locator('.keyboard-settings tr[data-action="shoot"] kbd').all_text_contents() == ['J', 'Z']
+        assert page.locator('.keyboard-settings tr[data-action="bomb"] kbd').all_text_contents() == ['K', 'X']
+        assert page.locator('.keyboard-settings tr[data-action="focus"] kbd').all_text_contents() == ['L', 'Space', 'Shift']
         row = page.locator('.keyboard-settings tr[data-action="shoot"]')
         row.locator('.input-binding-button').click()
         page.keyboard.press('q')
@@ -106,6 +109,9 @@ with sync_playwright() as p:
         page.get_by_role('checkbox', name='启用本地双人配置').check()
         local_layout = page.locator('select[aria-label="双人键位布局"]')
         local_layout.select_option('wasd', force=True)
+        assert page.locator('.th09-local-input tr[data-action="shoot"] kbd').all_text_contents() == ['J']
+        assert page.locator('.th09-local-input tr[data-action="bomb"] kbd').all_text_contents() == ['K']
+        assert page.locator('.th09-local-input tr[data-action="focus"] kbd').all_text_contents() == ['L', 'Space']
         page.get_by_role('tab', name='玩家 2', exact=True).click()
         local_layout.select_option('arrows', force=True)
         shoot = page.locator('.th09-local-input tr[data-action="shoot"]')

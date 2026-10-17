@@ -2,9 +2,9 @@ import test,{before} from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {fileURLToPath} from 'node:url';
-let createTh09LocalInput,Th09LocalKeyboard,KeyboardMapping,createGamepadMappingModel,createPlayerGamepad;
-before(async()=>{const result=await build({stdin:{resolveDir:fileURLToPath(new URL('../../',import.meta.url)),contents:`export * from './src/launcher/th09-local-input.mts';export * from './src/launcher/keyboard-mapping.mts';export * from './src/launcher/gamepad-mapping.mts';export * from './app/services/player-gamepad.ts';`},bundle:true,write:false,format:'esm',platform:'node'});
-  ({createTh09LocalInput,Th09LocalKeyboard,KeyboardMapping,createGamepadMappingModel,createPlayerGamepad}=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64')));});
+let createTh09LocalInput,Th09LocalKeyboard,KeyboardMapping,createGamepadMappingModel,createPlayerGamepad,wasdKeyboardAliases;
+before(async()=>{const result=await build({stdin:{resolveDir:fileURLToPath(new URL('../../',import.meta.url)),contents:`export * from './src/launcher/th09-local-input.mts';export * from './src/launcher/keyboard-mapping.mts';export * from './src/launcher/gamepad-mapping.mts';export * from './app/services/player-gamepad.ts';export {wasdKeyboardAliases} from './src/launcher/keyboard-preferences.mts';`},bundle:true,write:false,format:'esm',platform:'node'});
+  ({createTh09LocalInput,Th09LocalKeyboard,KeyboardMapping,createGamepadMappingModel,createPlayerGamepad,wasdKeyboardAliases}=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64')));});
 const storage=()=>{const saved=new Map();return {getItem:k=>saved.get(k)??null,setItem:(k,v)=>saved.set(k,v)};};
 const context=()=>({target:{},game:'th09',epoch:1,launched:true,ready:true,spectator:false,protocol:'eagler-touhou/1',targetOrigin:'https://local.test'});
 const key=(code,repeat=false)=>({code,key:'',keyCode:0,location:0,type:'keydown',repeat});
@@ -36,10 +36,34 @@ test('per-player presets, conflict rejection, named layouts and device assignmen
   const restored=createTh09LocalInput(saved);assert.equal(restored.getSnapshot().enabled,true);assert.equal(restored.getSnapshot().players[1].gamepad,'pad-b');assert.deepEqual(restored.getSnapshot().players[0].bindings.shoot,['KeyQ']);
 });
 test('local versus bypasses general WASD aliases and falls back to native when its own profile is disabled',()=>{
-  const model=createTh09LocalInput(null),owner=new KeyboardMapping(undefined,model),ctx=context();
+  const model=createTh09LocalInput(null),owner=new KeyboardMapping(()=>wasdKeyboardAliases,model),ctx=context();
   assert.equal(owner.map(key('KeyH'),true,'physical','th09-local',ctx),null);
   model.setEnabled(true);assert.deepEqual(owner.map(key('KeyH'),true,'physical','th09-local',ctx),[]);assert.equal(owner.sampleLocal(0,ctx),128);assert.equal(owner.sampleLocal(1,ctx),0);
   owner.clear();assert.equal(owner.map(key('KeyW'),true,'physical','standard',ctx)[0].code,'ArrowUp');
+});
+
+test('local WASD samples J/K and either Focus key without transferring input to the other player',()=>{
+  const model=createTh09LocalInput(null),owner=new Th09LocalKeyboard(model),ctx=context();model.setEnabled(true);model.selectLayout(0,'wasd');
+  for(const [code,bit]of [['KeyJ',1],['KeyK',2],['KeyL',4],['Space',4]]){
+    owner.map(key(code),true,ctx);assert.equal(owner.sample(0,ctx),bit);assert.equal(owner.sample(1,ctx),0);
+    owner.map(key(code),false,ctx);assert.equal(owner.sample(0,ctx),0);
+  }
+  owner.map(key('KeyL'),true,ctx);owner.map(key('Space'),true,ctx);owner.sample(0,ctx);
+  owner.map(key('KeyL'),false,ctx);assert.equal(owner.sample(0,ctx),4);owner.map(key('Space'),false,ctx);assert.equal(owner.sample(0,ctx),0);
+});
+
+test('local preset migration preserves saved layouts and keeps old bindings if the new keys collide',()=>{
+  for(const conflict of [false,true]){
+    const saved=storage(),model=createTh09LocalInput(saved);model.setEnabled(true);model.selectLayout(0,'wasd');
+    const key='eagler-touhou-th09-local-input-v1',value=JSON.parse(saved.getItem(key));
+    Object.assign(value.players[0].bindings,{shoot:['KeyF'],bomb:['KeyG'],focus:['ShiftLeft']});
+    value.players[0].saved=[{id:'saved-old',name:'旧布局',bindings:structuredClone(value.players[0].bindings)}];
+    if(conflict){value.players[1].selected='custom';value.players[1].bindings.shoot=['KeyJ'];}
+    saved.setItem(key,JSON.stringify(value));const restored=createTh09LocalInput(saved).getSnapshot();
+    assert.equal(restored.enabled,true);assert.equal(restored.players[0].selected,conflict?'custom':'wasd');
+    assert.deepEqual(restored.players[0].bindings.shoot,[conflict?'KeyF':'KeyJ']);
+    assert.deepEqual(restored.players[0].saved[0].bindings.shoot,['KeyF']);assert.deepEqual(restored.players[1].bindings,value.players[1].bindings);
+  }
 });
 test('two controllers and keyboard/controller pairs use local assignments without changing general controller settings',()=>{
   const pads=[0,1].map(index=>({id:'Pad '+index,index,connected:true,mapping:'standard',buttons:Array.from({length:17},()=>({pressed:false,value:0})),axes:[0,0]}));

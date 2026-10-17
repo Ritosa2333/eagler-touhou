@@ -333,7 +333,9 @@ const ReplayCheckpoint* ReplayArchive::Checkpoint(u32 stage)const{
 bool ReplayArchive::SafePath(const char* path){
     if(!path)return false;const auto size=std::strlen(path);
     if(size<12||size>=256||std::strncmp(path,"replay/",7)||std::strcmp(path+size-4,".rpy"))return false;
-    for(std::size_t i=7;i<size;++i){const char c=path[i];if(c=='/'||c=='\\'||c==':'||u8(c)<32)return false;}
+    unsigned folders=0;
+    for(std::size_t i=7;i<size;++i){const char c=path[i];if(c=='\\'||c==':'||u8(c)<32||u8(c)==127)return false;
+        if(c=='/'&&(++folders>1||i==7||i==size-1||path[i-1]=='.'||path[i-1]==' '))return false;}
     return std::strstr(path,"..")==nullptr;
 }
 bool ReplayArchive::RequestSave(const char* file,const char* name,u32 frame,i32 score,i32 units,i32 stage){

@@ -129,6 +129,7 @@ if(TH_ENABLE_NETPLAY)
         src/netplay/Th06RollbackState.cpp
         src/netplay/Th06LanStageProbe.cpp
         src/netplay/NetplaySideEffects.cpp
+        src/pbg4/Lzss.cpp
     )
 endif()
 

@@ -152,7 +152,7 @@ test('actual root/nested builds publish shared initial cards and route-specific 
   for (const [name, mountPath] of [['root', '/'], ['nested', '/preview/']]) {
     const output = resolve(work, name);
     execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {cwd: project,
-      env: {...process.env, EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath, EAGLER_REACT_APP_SHELL: '', EAGLER_REACT_APP_SHELL_ORIGIN: ''},
+      env: {...process.env, EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath, EAGLER_REACT_APP_SHELL: 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: ''},
       stdio: 'pipe', timeout: 120000});
     for (const entry of ['index.html', 'en.html', 'lobby.html']) {
       const document = parse(await readFile(resolve(output, 'client', entry), 'utf8')), lobby = entry === 'lobby.html';

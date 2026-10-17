@@ -7,6 +7,9 @@
 #include <eagler/netplay/AdonisConnection.hpp>
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
+#include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorStagePlayback.hpp>
+#include <eagler/netplay/SpectatorStageView.hpp>
 #include <deque>
 #include <string>
 namespace th11::multiplayer {
@@ -32,6 +35,38 @@ public:
     bool CanStart()const;
     bool FeedPlayback(std::uint32_t,const Netplay::FrameInput*,unsigned);
     bool FeedSpectator(std::uint32_t);
+    bool StagePlaybackReady()const{return spectator_&&spectator_stage_playback_.Ready();}
+    bool SpectatorPublisherOwner()const{return network_&&!spectator_&&!playback_&&!generation_&&setup_.local_player==0;}
+    Netplay::SpectatorStagePlayback& StagePlayback(){return spectator_stage_playback_;}
+    const Netplay::SpectatorStagePlayback& StagePlayback()const{return spectator_stage_playback_;}
+    const char* SpectatorPlaybackState(){return spectator_stage_view_.State(spectator_stage_playback_);}
+    // Read-only timeout diagnostics: publisher frontier, transport admission,
+    // receiver frontier, and native playback/restore state are distinct.
+    std::array<std::uint32_t,21> SpectatorDiagnostics()const{
+        return {{1u,std::uint32_t(SpectatorPublisherOwner()),spectator_stage_publisher_.Published(),publish_frame_,
+            std::uint32_t(publish_failed_),std::uint32_t(transport_.HasSpectators()),std::uint32_t(transport_.SpectatorState()+1),
+            std::uint32_t(transport_.Failed()),std::uint32_t(transport_.Disconnected()),std::uint32_t(timing_sent_),
+            std::uint32_t(timing_ready_),receive_frame_,std::uint32_t(spectator_frames_.size()),
+            std::uint32_t(spectator_stage_playback_.Ready()),spectator_stage_playback_.History().Received(),
+            std::uint32_t(spectator_stage_playback_.History().Segments().size()),spectator_stage_playback_.Position(),
+            spectator_stage_playback_.Target(),std::uint32_t(spectator_stage_playback_.Seeking()),
+            std::uint32_t(spectator_stage_playback_.Failed()),std::uint32_t(spectator_publisher_started_)}};
+    }
+    bool SpectatorPlaybackControl(const char* run,const char* action,std::uint32_t frame){
+        return spectator_stage_view_.Control(spectator_stage_playback_,run,action,frame);
+    }
+    bool SpectatorCheckpointRequired(std::uint32_t frame,std::uint32_t stage)const;
+    bool SpectatorRecordedStage(std::uint32_t frame,std::uint32_t& stage)const{
+        if(frame==Netplay::INVALID_FRAME)return false;
+        const auto& record=spectator_recorded_frames_[frame%spectator_recorded_frames_.size()];
+        if(record.frame!=frame)return false;stage=record.stage;return true;
+    }
+    bool RecordSpectatorFrame(std::uint32_t frame,std::uint32_t stage,
+        const std::vector<std::uint8_t>& initializer,
+        const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs);
+    void PublishConfirmedSpectatorHistoryAfterReconcile(){
+        if(!Correcting()&&!core_.HasRollbackRequest())PublishConfirmedSpectatorFrames();
+    }
     Netplay::FrameDecision Prepare(std::uint32_t)const;
     bool MarkSimulated(std::uint32_t,const Netplay::FrameDecision&);
     bool ConfirmedInputs(std::uint32_t,std::array<Netplay::FrameInput,3>&)const;
@@ -73,7 +108,7 @@ public:
     bool ReadOnly()const{return playback_||spectator_;}
     bool NetworkEnabled()const{return network_;}
     bool Retired()const{return retired_;}
-    std::uint32_t NextFrame()const{return next_;}
+    std::uint32_t NextFrame()const{return StagePlaybackReady()?spectator_stage_playback_.Position():next_;}
     std::uint32_t Confirmed()const{return core_.ConfirmedThroughAllRemotes();}
     unsigned Generation()const{return generation_;}
     unsigned Backlog()const{return unsigned(spectator_frames_.size());}
@@ -95,6 +130,8 @@ private:
     bool Feed(std::uint32_t,const Netplay::FrameInput*,unsigned);
     bool DrainSpectator();
     void Publish();
+    void PublishConfirmedSpectatorFrames();
+    bool ReceiveSpectatorWire(const std::uint8_t*,std::size_t);
     void FreezePublicationTail();
     void DrainPublicationTail();
     bool Fail(const char*);
@@ -109,7 +146,7 @@ private:
     Netplay::SessionChannel channel_{calibration_};
     std::uint64_t base_session_=0,now_ms_=0,initial_wait_=0,spectator_deadline_=0,publish_deadline_=0;
     bool configured_=false,network_=false,playback_=false,spectator_=false,retired_=false;
-    bool timing_ready_=false,timing_sent_=false,publish_failed_=false;
+    bool timing_ready_=false,timing_sent_=false,publish_failed_=false,spectator_publisher_started_=false;
     bool world_ready_=false;
     std::uint32_t generation_=0,publish_frame_=0,receive_frame_=0;
     std::uint32_t next_=0,next_capture_=0,correction_end_=Netplay::INVALID_FRAME,commit_limit_=Netplay::INVALID_FRAME;
@@ -122,6 +159,11 @@ private:
     std::uint64_t network_pace_ms_=0;
     std::string error_;
     std::deque<Netplay::SpectatorFramePacket> spectator_frames_;
+    struct SpectatorRecordedFrame {std::uint32_t frame=Netplay::INVALID_FRAME,stage=0;};
+    std::array<SpectatorRecordedFrame,Netplay::SpectatorStagePublisher::Capacity> spectator_recorded_frames_{};
+    Netplay::SpectatorStagePublisher spectator_stage_publisher_{};
+    Netplay::SpectatorStagePlayback spectator_stage_playback_{};
+    Netplay::SpectatorStageView spectator_stage_view_{};
     std::deque<std::vector<std::uint8_t>> publish_tail_;
     std::array<std::uint32_t,24> status_{};
 };

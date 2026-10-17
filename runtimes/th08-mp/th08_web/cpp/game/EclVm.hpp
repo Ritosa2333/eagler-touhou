@@ -63,6 +63,11 @@ struct EclGlobals:SpellState {
     i32 integer_arguments[4]{};float float_arguments[4]{};
     GameGlobals* values=nullptr;i32 pending_time=0,uncollected_time_items=0;const EclLiveValues* live_values=nullptr;
     TimelineActions* timeline_actions=nullptr;EclVm* boss_slots[8]{};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A per-executed-frame observer only. Reset by the MP frame driver before
+    // Update; it is never consumed by game rules or serialized as native memory.
+    u8 spectator_boss_slots=0;
+#endif
     bool gui_blocks_spawn=false,dialogue_active=false;u8 stage_completion=0;i32 stop_spawn=0,timeline_signals[4]{-1,-1,-1,-1};
     EclEvent events[256]{};u32 event_count=0;u32 bullets_created=0;u32 enemies_created=0;
     EclEnemy enemies[128]{};EclBullet bullets[1024]{};EclLaser lasers[64]{};EclItem items[256]{};

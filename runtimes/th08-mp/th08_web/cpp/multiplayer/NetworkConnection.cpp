@@ -6,6 +6,11 @@
 #include <eagler/netplay/InputRepairBudget.hpp>
 namespace th08::multiplayer {
 namespace {
+const char* spectator_stage_label(std::uint32_t encoded){
+    static constexpr const char* labels[]{"Stage 1","Stage 2","Stage 3","Stage 4A","Stage 4B",
+        "Stage 5","Final A","Final B","Extra"};
+    const auto stage=encoded&0xffu;return stage<9?labels[stage]:nullptr;
+}
 Netplay::SessionChannelConfig channel_policy(Netplay::AdonisMode mode,unsigned prediction=0){
     Netplay::SessionChannelConfig policy;
     // Match TH06/07's bounded stalled-tail repair, including each new epoch.
@@ -19,9 +24,12 @@ Netplay::SessionChannelConfig channel_policy(Netplay::AdonisMode mode,unsigned p
 }
 }
 std::uint64_t NetworkConnection::Now(){return std::uint64_t(emscripten_get_now());}
+const char* NetworkConnection::SpectatorState(){return spectator_view.State(spectator_playback,spectator_stage_label);}
 bool NetworkConnection::Connect(const char* relay){
     if(enabled||net.ReadOnly()||!relay||!*relay||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
-    if(!transport.Connect(relay,u8(net.Setup().local_player),u8(net.Setup().player_count)))return false;
+    spectator_publish_failed=false;spectator_timing_sent=false;spectator_deadline=0;spectator_error="";
+    if(!transport.Connect(relay,u8(net.Setup().local_player),u8(net.Setup().player_count),true))return false;
+    spectator_publisher_started=false;
     if(net.PreparingWorld())calibration.Prepare(net.Config(),net.Mode(),net.Setup().input_delay_auto,net.InputDelay(),net.Setup().prediction_reserve);
     else if(!channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()))){transport.Close();return false;}
     enabled=true;invalid_input=false;capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());return true;
@@ -32,10 +40,11 @@ bool NetworkConnection::ConnectSpectator(const char* relay,const char* id){
     for(std::size_t i=0;i<length;++i){const auto c=id[i];
         if(!((c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='_'||c=='-'))return false;
     }
-    if(!transport.ConnectSpectator(relay,id,u8(net.Setup().player_count)))return false;
+    spectator_publish_failed=false;spectator_timing_sent=false;spectator_deadline=0;spectator_error="";
+    if(!transport.ConnectSpectator(relay,id,u8(net.Setup().player_count),true))return false;
     if(!net.BeginSpectator()){transport.Close();return false;}
     enabled=true;invalid_input=false;capture_pump_pending=false;spectator_finished=false;spectator_error="";input_gap_pacing.Reset(Now());
-    spectator_frames.Clear();return true;
+    spectator_playback.Clear();spectator_view.Clear();return true;
 }
 bool NetworkConnection::Pump(bool expects_input,bool capture_follows){
     // A new independent pump ends an unconsumed capture promise. Only
@@ -48,21 +57,35 @@ bool NetworkConnection::Pump(bool expects_input,bool capture_follows){
         for(unsigned read=0;read<128&&transport.Poll(&bytes);++read){
             if(Netplay::AdonisSpectatorTiming::IsPacket(bytes.data(),bytes.size())){
                 Netplay::AdonisSpectatorTiming timing;
-                if(net.spectator_timing_ready_||spectator_frames.Received()||net.LastFrame()!=Netplay::INVALID_FRAME||
+                if(net.spectator_timing_ready_||spectator_playback.History().Received()||net.LastFrame()!=Netplay::INVALID_FRAME||
                    !Netplay::AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),timing)||timing.game!=8||
                    timing.sessionId!=net.Config().sessionId||timing.mode!=net.Setup().adonis_mode||timing.automatic!=net.Setup().input_delay_auto)return false;
                 if(!net.apply_spectator_timing(timing.delay,timing.prediction,timing.gameplayAbi))return false;
                 spectator_deadline=Now()+15'000;continue;
             }
+            if(Netplay::IsSpectatorStageEvent(bytes.data(),bytes.size())){
+                Netplay::SpectatorStageEvent event;
+                if(!net.spectator_timing_ready_||!Netplay::DecodeSpectatorStageEvent(bytes.data(),bytes.size(),&event)||
+                   !spectator_playback.Receive(event)){
+                    spectator_error="Invalid, out-of-order or excessive spectator stage history";return false;
+                }
+                spectator_deadline=Now()+15'000;continue;
+            }
             Netplay::SpectatorFramePacket packet;
             if(!net.spectator_timing_ready_||!Netplay::DecodeSpectatorFramePacket(bytes.data(),bytes.size(),&packet)||
-               !spectator_frames.Append(packet,net.Config())){
+               !spectator_playback.Receive(packet)){
                 spectator_error="Invalid, out-of-order or excessive spectator history";return false;
             }
             spectator_deadline=Now()+15'000;
         }
+        // Historic playback, a paused viewer, and a seek still make local
+        // progress from accepted history. Do not call that a stalled input
+        // stream; require fresh packets only once playback reaches the live
+        // edge and is actively waiting for more input.
+        if(spectator_playback.Ready()&&!spectator_playback.WaitingForLiveInput())
+            spectator_deadline=Now()+15'000;
         if(Now()>=spectator_deadline){spectator_error="Spectator input stream stalled; players are unaffected";return false;}
-        return !transport.Failed()&&!spectator_frames.Failed();
+        return !transport.Failed();
     }
     if(calibration.Waiting()&&channel.Retiring()&&!channel.Active()&&!channel.PumpRetirement(Now()))return false;
     if(!calibration.Pump(std::uint64_t(emscripten_get_now()*1000),expects_input))return false;
@@ -88,7 +111,7 @@ bool NetworkConnection::Pump(bool expects_input,bool capture_follows){
     input_gap_pacing.Update(now,net.MissingRemoteInputs(),
         net.CanStart()&&!net.ReadOnly()&&net.Mode()==Netplay::AdonisMode::Rollback&&expects_input);
     capture_pump_pending=captureFollows;
-    PublishConfirmedSpectatorFrames();return true;
+    return true;
 }
 bool NetworkConnection::PumpForCapture(bool expects_input){
     if(capture_pump_pending){
@@ -106,14 +129,27 @@ bool NetworkConnection::FlushDeferredInputs(){
     capture_pump_pending=false;
     return !enabled||net.Spectator()||channel.FlushDeferredInputs(net.core_,Now());
 }
-bool NetworkConnection::ConsumeSpectator(){
-    const auto* packet=spectator_frames.Front();if(!packet)return false;
-    if(!net.FeedSpectator(*packet)){spectator_error="Spectator native input rejected";return false;}
-    spectator_frames.Pop();return true;
+bool NetworkConnection::RecordSpectatorStage(u32 frame,u32 stage,u32 schema,const std::vector<u8>& initializer,
+        const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs,u8 boss_slots){
+    if(!enabled||net.Spectator()||net.Generation()!=0||net.Setup().local_player!=0||spectator_publish_failed)return true;
+    if(!spectator_publisher_started){
+        if(initializer.empty())return true;
+        if(!schema||!spectator_publisher.Reset('8',u8(net.Setup().player_count),
+            net.Config().sessionId,net.Config().gameplayAbi,frame)){
+            spectator_publish_failed=true;transport.StopSpectators();return true;
+        }
+        spectator_publisher_started=true;
+    }
+    Netplay::SpectatorStagePublisher::Frame record;record.frame=frame;record.stage=stage;
+    record.schema=schema;record.initializer=initializer;record.inputs=inputs;record.hasInputs=true;record.bossSlots=boss_slots;
+    if(!spectator_publisher.Record(std::move(record))){
+        spectator_publish_failed=true;transport.StopSpectators();return true;
+    }
+    return true;
 }
 void NetworkConnection::PublishConfirmedSpectatorFrames(){
-    if(!enabled||net.Spectator()||net.Generation()!=0||net.Setup().local_player!=0||
-       spectator_publish_failed||!transport.HasSpectators())return;
+    if(!enabled||net.Spectator()||net.Generation()!=0||net.Setup().local_player!=0||!spectator_publisher_started||
+       spectator_publish_failed)return;
     const auto last=net.LastFrame(),confirmed=net.ConfirmedThrough();
     if(last==Netplay::INVALID_FRAME||confirmed==Netplay::INVALID_FRAME)return;
     const auto through=std::min(last,confirmed);
@@ -123,24 +159,17 @@ void NetworkConnection::PublishConfirmedSpectatorFrames(){
         if(bytes.empty()){spectator_publish_failed=true;transport.StopSpectators();return;}
         if(!transport.SendSpectator(bytes.data(),bytes.size()))return;spectator_timing_sent=true;
     }
-    // Losing publication history must not stop or rewrite the players' run.
-    if(through>=spectator_publish&&through-spectator_publish>=Netplay::INPUT_HISTORY_SIZE){spectator_publish_failed=true;transport.StopSpectators();return;}
-    const auto began=emscripten_get_now();
-    for(unsigned sent=0;spectator_publish<=through&&sent<32;++sent){
-        if(sent&&emscripten_get_now()-began>=2)break;
-        Netplay::SpectatorFramePacket packet;
-        if(!net.ConfirmedInputs(spectator_publish,packet.inputs))return;
-        packet.sessionId=net.Config().sessionId;packet.gameplayAbi=net.Config().gameplayAbi;
-        packet.playerCount=net.Config().playerCount;packet.frame=spectator_publish;
-        std::vector<u8> bytes;
-        if(!Netplay::EncodeSpectatorFramePacket(packet,&bytes)||!transport.SendSpectator(bytes.data(),bytes.size()))return;
-        ++spectator_publish;
-    }
+    // Stage checkpoints and Boss nodes are queued only after the complete
+    // native frame has reconciled. A relay-only failure remains viewer-local.
+    const bool published=spectator_publisher.Publish(through,last,
+        [&](u32 frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){return net.ConfirmedInputs(frame,inputs);},
+        [&](const std::vector<u8>& bytes){return transport.SendSpectator(bytes.data(),bytes.size());});
+    if(!published&&transport.SpectatorState()<0){spectator_publish_failed=true;transport.StopSpectators();}
 }
 void NetworkConnection::FinishSpectator(){
     if(!net.Spectator())return;
     transport.Close();enabled=false;spectator_finished=true;
-    spectator_frames.Clear();
+    spectator_playback.Clear();spectator_view.Clear();
 }
 bool NetworkConnection::Captured(u32 frame){
     capture_pump_pending=false;
@@ -161,18 +190,23 @@ bool NetworkConnection::CanRetire()const{
     // Publication is bounded per pump. Queue the final confirmed frame before
     // replacing the input history, so viewers can consume the native Restart.
     return !enabled||net.Spectator()||net.Generation()!=0||net.Setup().local_player!=0||
-        spectator_publish_failed||!transport.HasSpectators()||spectator_publish>net.LastFrame();
+        spectator_publish_failed||transport.SpectatorState()<=0||spectator_publisher.Published()>net.LastFrame();
 }
 bool NetworkConnection::Retire(){
     if(!FlushDeferredInputs()||!CanRetire()||(enabled&&!channel.Retire(net.core_,net.LastFrame(),Now()))||!net.Retire())return false;
     retired_config=net.Config();return true;
 }
-bool NetworkConnection::BeginGeneration(){capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());if(!enabled)return true;
+bool NetworkConnection::BeginGeneration(){capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());
+    // A retry is a new native run. Never carry its prior stage identity,
+    // published sequence or viewer controls into the next generation.
+    spectator_publisher={};spectator_publisher_started=false;spectator_playback.Clear();spectator_view.Clear();
+    spectator_publish_failed=false;spectator_timing_sent=false;
+    if(!enabled)return true;
     // Keep the previous terminal ACKs alive during measurement. The shared
     // calibrator discards only valid packets from this actually retired epoch.
     if(net.PreparingWorld()){calibration.Prepare(net.Config(),net.Mode(),net.Setup().input_delay_auto,net.InputDelay(),net.Setup().prediction_reserve,&retired_config);return true;}
     return channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()));}
-void NetworkConnection::Close(){transport.Close();channel.Clear();calibration.Clear();retired_config={};enabled=false;invalid_input=false;capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(0);spectator_frames.Clear();}
+void NetworkConnection::Close(){transport.Close();channel.Clear();calibration.Clear();retired_config={};enabled=false;invalid_input=false;capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(0);spectator_playback.Clear();spectator_view.Clear();spectator_publisher={};spectator_publisher_started=false;spectator_finished=false;spectator_publish_failed=false;spectator_timing_sent=false;spectator_deadline=0;spectator_error="";}
 double NetworkConnection::IntervalScale()const{
     const auto phase=channel.IntervalScale();
     return enabled&&net.CanStart()&&!net.ReadOnly()&&net.Mode()==Netplay::AdonisMode::Rollback&&input_gap_pacing.Scale()>1

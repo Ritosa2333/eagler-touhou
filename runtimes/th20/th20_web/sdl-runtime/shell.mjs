@@ -3,6 +3,7 @@
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {installStartupBranding} from './startup-branding.mjs';
 import createModule from './th20-sdl.mjs';
+import {runtimeKeyboardCode} from './directory-keyboard.mjs';
 import {bindOutsideTouches} from './eagler-host.mjs';
 import {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,ensureSharedFontAlias,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
 const protocol='eagler-touhou/1',game='th20',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');

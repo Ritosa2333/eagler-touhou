@@ -368,6 +368,7 @@ struct EclManager
     ZunResult RunEcl(Enemy *enemy);
 
     EclRawHeader *eclFile;
+    u32 eclFileSize;
     EclTimelineInstr *timelinePtr[16];
     EclRawInstr **subTable;
 

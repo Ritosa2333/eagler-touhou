@@ -18,6 +18,7 @@ const project = fileURLToPath(new URL('../../', import.meta.url));
 const execute = promisify(execFile), json = async path => JSON.parse(await readFile(path, 'utf8'));
 const environment = {...process.env};
 for (const key of ['EAGLER_FRONTEND', 'EAGLER_REACT_BUILD_DIRECTORY', 'EAGLER_REACT_MOUNT_PATH', 'EAGLER_REACT_APP_SHELL', 'EAGLER_REACT_APP_SHELL_ORIGIN']) delete environment[key];
+environment.EAGLER_REACT_APP_SHELL = 'disabled';
 const command = (args, extra = {}) => execute(process.execPath, args, {cwd: project, env: {...environment, ...extra}, maxBuffer: 16 * 1024 * 1024});
 const writeJson = (path, value) => writeFile(path, JSON.stringify(value, null, 2) + '\n');
 async function hashes(root, directory = root, values = {}) {

@@ -11,6 +11,7 @@
     "web:build": "node scripts/build-sdl.mjs --release",
     "web:eagler": "node scripts/build-eagler.mjs",
     "web:eagler:multiplayer": "node scripts/build-eagler.mjs --multiplayer",
+    "test:spectator-timeline": "node --test tests/multiplayer/spectator-timeline-adapter.test.mjs",
     "web:package": "node scripts/package-release.mjs",
     "start": "node artifacts/sdl-release/scripts/serve.mjs --port 8096",
     "test:server": "node --test tests/server/*.test.mjs",

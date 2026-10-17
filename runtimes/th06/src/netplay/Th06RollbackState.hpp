@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
@@ -11,6 +12,25 @@ struct Laser;
 
 namespace Netplay::Th06Rollback
 {
+struct DebugStatePart
+{
+    const char *owner = nullptr;
+    std::uint64_t hash = 0;
+};
+
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+inline constexpr std::size_t DEBUG_STATE_PART_COUNT = 24;
+#else
+inline constexpr std::size_t DEBUG_STATE_PART_COUNT = 16;
+#endif
+using DebugStatePartArray = std::array<DebugStatePart, DEBUG_STATE_PART_COUNT>;
+
+struct DebugStateSnapshot
+{
+    std::uint64_t aggregate = 0;
+    DebugStatePartArray parts{};
+};
+
 struct Config
 {
     std::size_t maxFrames = 16;
@@ -41,6 +61,7 @@ std::uint64_t RestoreCopiedBytes();
 std::uint64_t RestoreSkippedBytes();
 std::uint64_t ArenaGrowths();
 std::uint64_t DebugStateHash();
+DebugStateSnapshot CaptureDebugState();
 
 // Spawn paths call these immediately before overwriting an inactive reusable
 // slot. Calls outside an open rollback frame are deliberately cheap no-ops.

@@ -1,7 +1,6 @@
 #include "overlay.hpp"
 #include "../gameplay/player_state.hpp"
 #include "../player_entity/power.hpp"
-#include "../player_entity/shots.hpp"
 #include <algorithm>
 namespace th20::source::overlay {
 namespace ps=gameplay::player_state;namespace n=recovered;
@@ -29,20 +28,9 @@ void Weapon::start_phase(){} //40e5e0
 int Weapon::update_phase(){return 0;} //412540
 int Weapon::end_phase(){
  active=0;
-#ifdef TH_SDL3
- // Red rage shots can remain in flight with their rage damage long after
- // the meter expires. Remove only the main red rage pattern at the boundary.
- if(role==0&&stone_id>=0&&stone_id<2){
-  if(auto* p=player()){
-   auto& shots=p->shots;
-   for(scheduler::Iterator it(shots.active.sentinel.next);it.current;it.advance()){
-    auto& shot=*reinterpret_cast<player_entity::Shot*>(it.current->value);
-    const auto pattern=shot.fields_b8[8]>>8;
-    if(pattern>=unsigned(stone_id*20+15)&&pattern<=unsigned(stone_id*20+19))player_entity::retire_shot(shot);
-   }
-  }
- }
-#endif
+ // 532f20 only clears the phase flag. Existing rage shots keep their authored
+ // damage and lifetime; shoot_main selects the normal pattern for new shots.
+ // Deleting in-flight shots here changes hit effects and the gameplay RNG.
  return 0;
 } //532f20
 int Weapon::cancel_phase(){return 0;} //412540

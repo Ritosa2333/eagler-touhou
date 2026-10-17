@@ -50,7 +50,7 @@ if (REACT_FRONTEND_ARTIFACT.mountPath !== "/") {
 if (!sourceDevelopmentServer) {
   throw new Error("Explicit directory serving for React must use the verified packaged static server, not the source development server");
 }
-if (REACT_FRONTEND_ARTIFACT.appShell &&
+if (REACT_FRONTEND_ARTIFACT.appShell && REACT_FRONTEND_ARTIFACT.appShell.origin !== 'same-origin' &&
     REACT_FRONTEND_ARTIFACT.appShell.origin !== `http://${host}:${port}`) {
   throw new Error("React App Shell origin does not match this development server");
 }

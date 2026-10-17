@@ -142,6 +142,24 @@ Rollback/catch-up can monopolize the browser even when each individual tick is v
 
 This is not preemption of an atomic rollback. A single expensive reconciliation can still run longer than the budget.
 
+### Preserve accumulated time during network clock correction
+
+TH06's 2026-10-17 regression came from sharing a practice-speed transition
+reset with multiplayer. `SimulationIntervalScale()` is a continuously smoothed
+network clock correction. Calling `ResetTiming()` whenever its exact floating
+point value changes discards elapsed time repeatedly, even though the intended
+correction is bounded to two percent. Keep the accumulator and performance
+counter across those updates. An explicit practice speed change can retain its
+separate reset; lifecycle resets remain owned by their existing transitions.
+
+A controlled two-player RTC test used 35 ms send delay per direction and changed
+only the advisory `frameAdvantage` field in transmitted packet copies to -8.
+Both peers passed canonical checks. Under repeated clock corrections, TH06 went
+from 41.63/41.36 logical fps to 59.08/59.06 after limiting the reset to the
+non-netplay practice build. These are desktop Edge measurements with injected
+metadata, not a claim about every public TURN route or mobile device. Evidence:
+`D:/workspace/eagler/dist/audits/th06-pacing-fog-20261017/`.
+
 ### Remove synchronous Web frame-end sleep
 
 During rollback profiling, TH07 still had a native-style `SDL_DelayNS` at the end of an Emscripten requestAnimationFrame callback under some settings. This blocked browser input/network/audio work for no logical benefit.
@@ -1205,6 +1223,38 @@ After structural rollback changes, run:
 - stage-transition/restart/Result paths when the changed state owner participates.
 
 Replay/spectator are not "extra features" for rollback validation: they exercise history ownership, capture format and confirmation semantics that ordinary live play may not expose.
+
+### Inactive slots can still have external writers
+
+TH06's 2026-10-17 spectator transition test reproduced a raw-owner rollback
+failure at frame 5355 while every canonical gameplay group still matched and
+the active enemy count was zero. A bounded byte probe, tagged to the same audit
+frame and expected owner hash, isolated four bytes in `enemies[0].runInterrupt`:
+the source held -1 and the restored slot held 0. This was named control state,
+not a reason to exclude inactive bytes or weaken the raw-owner gate.
+
+`EnemyManager::RunEclTimeline` opcode 10 writes through a retained `bosses[]`
+pointer before the active-enemy update loop. Capturing only occupied enemies
+at BeginFrame therefore misses this write after the boss becomes inactive.
+Touch that target before the assignment, with the existing journal failure
+path, rather than capturing every inactive slot. TH07 has the same static
+writer and active-only capture pattern; its applicability is established by
+source inspection, separately from TH06's dynamic byte evidence. Other title
+architectures require their own owner analysis.
+
+Retain the failing binary/log and exact offsets, then verify the corrected
+restore against the same-frame raw bytes before removing the temporary probe.
+Audit samples overwritten during resimulation must also replace their byte
+sample, so a diff cannot compare two different executions of one logical frame.
+Check the browser runner's console filter before interpreting absent output:
+this probe's original prefix lacked its required `netplay`/`spectator` marker
+and was silently filtered. The final build must be tested without the probe.
+Frozen evidence is under
+`D:\workspace\eagler\.codex-tmp\th06-rollback-manager-probe-20261017\`;
+current acceptance is recorded by the multiplayer spectator audit. The fixed
+probe replayed frame 5355 on all three source seats with aligned raw hashes and
+zero byte differences; the subsequent no-probe `1b58fc79` build passed the full
+two/three-player spectator transition/control cases. These are separate proofs.
 
 ### Browser/channel identity matters
 

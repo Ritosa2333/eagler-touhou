@@ -5,10 +5,16 @@
 #include "../player_entity/owner.hpp"
 #include "../player_entity/power.hpp"
 #include "../runtime_state/state.hpp"
+#ifdef TH_SDL3
+#include "../overlay_system/environment.hpp"
+#endif
 #include <cstring>
 #include <new>
 #include <emmintrin.h>
 namespace th20::source::replay {
+#ifdef TH_SDL3
+void verifier_stage_activation();
+#endif
 void ReplayInf::reset_stage(){
     if(mode!=0&&mode!=1)return;
     const auto index=gameplay::player_state::stage(game_session::session.player_table);
@@ -31,8 +37,29 @@ void ReplayInf::enable_callbacks(){
         player.position_614.y=_mm_cvtss_f32(_mm_div_ss(_mm_cvtsi32_ss(_mm_setzero_ps(),record.fixed_y),_mm_set_ss(128)));
         player_entity::mark_options_changed(player,1);player.focused_204c=record.field_18!=0;
         for(auto& point:player.vectors_20fc)std::memcpy(&point,&player.fixed_position,sizeof(point));
-        playback[index].rewind(true);player_entity::refresh_power(player,-1);flags&=~2u;
+        playback[index].rewind(true);
+#ifdef TH_SDL3
+        // Loading first builds options using the saved profile. A replay can
+        // select different stones while retaining the same power level, so
+        // refresh_power's level cache alone does not invalidate those offsets.
+        auto& stones=*overlay::controller();
+        overlay::refresh_selection(stones,static_cast<int>(table.players[0].fields_00[2]),overlay::environment());
+        auto& power=player_entity::power_services();
+        const int level=player_entity::power_level(*player.context->current_player);
+        for(int i=0;i<level;++i){
+            const auto normal=player_entity::fixed_coordinates(power.option_offset(*player.context,level,i,false));
+            const auto focused=player_entity::fixed_coordinates(power.option_offset(*player.context,level,i,true));
+            if(std::memcmp(&normal,&player.options[i].offsets_80[0],sizeof normal)||
+               std::memcmp(&focused,&player.options[i].offsets_80[1],sizeof focused)){
+                player.fields_674[3]=0xffffffffu;break;
+            }
+        }
+#endif
+        player_entity::refresh_power(player,-1);flags&=~2u;
     }
+#ifdef TH_SDL3
+    verifier_stage_activation();
+#endif
     frame=0;
 }
 }

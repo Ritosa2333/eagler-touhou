@@ -8,12 +8,13 @@ from playwright.sync_api import sync_playwright
 
 parser=argparse.ArgumentParser()
 parser.add_argument('--url',required=True);parser.add_argument('--relay',required=True)
-parser.add_argument('--output',type=Path,required=True);parser.add_argument('--mode',default='replay')
+parser.add_argument('--output',type=Path,required=True);parser.add_argument('--mode',choices=['replay','workspace'],default='replay')
 parser.add_argument('--players',choices=['2','3','all'],default='all')
 parser.add_argument('--frames',type=int,default=500)
 args=parser.parse_args()
 report={'passed':False,'scope':'Production all-seat Replay, native menu and fresh offline world; no fixtures',
         'cases':[],'errors':[]}
+if args.mode=='workspace':report['scope']='Live admitted all-seat recordings and shared workspace playback controls; not retail determinism'
 def save():args.output.write_text(json.dumps(report,indent=2),encoding='utf-8')
 def call(p,js,arg=None):return p.evaluate(js,arg)
 def request(p,command,**fields):return call(p,'v=>host.request(v.command,v.fields)',{'command':command,'fields':fields})
@@ -27,6 +28,27 @@ def sample(seat,gen,frame):
     if 200<=frame<215:return [buttons,4 if frame==200 else 3,24*(1 if seat%2 else -1) if frame==200 else 0,0,2]
     if frame==215:return [buttons|2,2,5,-1,6]
     return [buttons,0,0,0,0]
+
+def record_workspace(players,case):
+    # Exercise the real live driver at its normal forward cadence. Its
+    # confirmed Replay frontier can trail native simulation by a few ticks;
+    # stopping every peer at that frontier can prevent three-seat ACKs from
+    # completing. This control/storage lane does not compare world traces.
+    deadline=time.monotonic()+240
+    while True:
+        values=[]
+        for seat,page in enumerate(players):
+            before=state(page);n=before['net']
+            call(page,'buttons=>host.buttons(buttons)',sample(seat,n[10],n[13])[0])
+            values.append(call(page,'host.physicalTick()'))
+        through=min(value['replay'][4] for value in values)
+        if through>=args.frames:
+            if args.frames>260:assert all(value['net'][10]==1 for value in values)
+            case['recordedFrames']=values[-1]['replay'][4];save()
+            return [None]*values[-1]['replay'][4]
+        if through//100>case.get('recordedFrames',0)//100:case['recordedFrames']=through;save()
+        assert time.monotonic()<deadline,{'values':values}
+        players[0].wait_for_timeout(1)
 
 with sync_playwright() as pw:
     browser=pw.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader'])
@@ -44,14 +66,14 @@ with sync_playwright() as pw:
                 room='audit-'+uuid.uuid4().hex[:16]
                 started=call(players[0],'v=>host.lobby(...v)',[args.relay,room,count])
                 for seat,p in enumerate(players):
-                    options={'runtimeVariant':'multiplayer','netplayMode':'lan','netplayUrl':args.relay+'/?room='+room+'&run='+str(started['serial']),
+                    options={'runtimeVariant':'multiplayer','netplayMode':'lan','netplayUrl':args.relay+'/?room='+room+'&run='+str(started['serial'])+'&member=fixture_host_contract_p'+str(seat+1),
                              'netplayPlayer':seat,'netplayPlayerCount':count,'netplayDifficulty':1,'netplaySeed':1234,
                              'netplayLoadouts':[{'character':i,'shot':0} for i in range(count)],'netplayIceServers':[],
                              'touchEnabled':False,'thpracEnabled':False}
                     request(p,'configure',options=options,music='none');request(p,'launch')
                 case['phase']='recording';save();trace=[];deadline=time.monotonic()+240
                 assert 1<=args.frames<=500
-                for global_frame in range(args.frames):
+                for global_frame in range(args.frames if args.mode!='workspace' else 0):
                     while True:
                         values=[]
                         for seat,p in enumerate(players):
@@ -62,7 +84,11 @@ with sync_playwright() as pw:
                             if r[7]+n[3]>=global_frame+1:
                                 s=call(p,'t=>host.tickTo(t)',n[4])
                             else:
-                                if n[2]:call(p,'v=>host.nativeSample(...v)',[n[3],sample(seat,n[10],n[3])])
+                                # Use the production physical capture path. A
+                                # direct netplay capture skips P1's native
+                                # route bootstrap and SessionChannel's once-only
+                                # capture announcement.
+                                call(p,'buttons=>host.buttons(buttons)',sample(seat,n[10],n[13])[0])
                                 s=call(p,'host.physicalTick()')
                             values.append(s)
                         if all(s['replay'][4]==global_frame+1 and s['net'][6]==0xffffffff for s in values):break
@@ -72,7 +98,9 @@ with sync_playwright() as pw:
                     trace.append({'canonical':values[-1]['canonical'],'state':values[-1]['state'],
                                   'audio':values[-1]['driver'][6:9],'generation':values[-1]['net'][10]})
                     if global_frame%100==99:case['recordedFrames']=global_frame+1;save()
-                if args.frames>260:assert trace[-1]['generation']==1,trace[-1]
+                if args.mode=='workspace':
+                    trace=record_workspace(players,case);case['recordedGeneration']=state(players[-1])['net'][10]
+                elif args.frames>260:assert trace[-1]['generation']==1,trace[-1]
                 assert call(players[-1],'v=>host.saveReplay(...v)',[1,'ReplayUT'])
                 request(players[-1],'sync')
                 recording=request(players[-1],'read',path='replay/th8_01.rpyx')['bytes']
@@ -90,6 +118,29 @@ with sync_playwright() as pw:
                 request(viewer,'write',path='replay/th8_01.rpyx',bytes=recording)
                 request(viewer,'configure',options={'runtimeVariant':'multiplayer','replayViewer':True,'touchEnabled':False},music='none')
                 request(viewer,'launch');case['phase']='native-menu';save()
+                if args.mode=='workspace':
+                    case['phase']='workspace';save()
+                    metadata=request(viewer,'playback',action='inspect',path='replay/th8_01.rpyx')['description']
+                    assert metadata['stages'],metadata
+                    start=metadata['stages'][0]['id']
+                    request(viewer,'playback',action='open',path='replay/th8_01.rpyx',stage=start)
+                    latest="host.events.filter(e=>e.event==='runtime-info'&&e.playback).at(-1)?.playback"
+                    viewer.wait_for_function(f"(()=>{{const p={latest};return p?.frame>=60||p?.ended;}})()",timeout=60000)
+                    request(viewer,'playback',action='pause');paused=call(viewer,latest)['frame'];viewer.wait_for_timeout(200)
+                    assert call(viewer,latest)['frame']==paused
+                    request(viewer,'playback',action='seek',value=20)
+                    viewer.wait_for_function(f"(()=>{{const p={latest};return p&&!p.seeking&&p.frame===20;}})()",timeout=60000)
+                    request(viewer,'playback',action='rate',value=4);request(viewer,'playback',action='play')
+                    viewer.wait_for_function(f"(()=>{{const p={latest};return p?.frame>=120||p?.ended;}})()",timeout=60000)
+                    request(viewer,'playback',action='rate',value=0)
+                    viewer.wait_for_function(f"({latest})?.ended",timeout=60000)
+                    playback=call(viewer,latest);assert playback['frame']==playback['total'] and playback['total']>=args.frames,playback
+                    assert request(viewer,'read',path='score.dat')['bytes']==score
+                    assert request(viewer,'read',path='th08.cfg')['bytes']==cfg
+                    assert not any(e.get('event') in ['exit','error'] for e in call(viewer,'host.events'))
+                    case.update({'passed':True,'phase':'complete','metadata':metadata,'playback':playback,'bootFilesIsolated':True,'generation':case['recordedGeneration']});save()
+                    print('TH08 multiplayer Replay workspace',count,'players: PASS',flush=True)
+                    continue
                 def start_from_menu():
                     for i in range(420):
                         if call(viewer,'host.replayRequest()'):break

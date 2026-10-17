@@ -20,6 +20,16 @@ void construct_pooled_animation(PooledAnimation& a) noexcept {
     construct_animation(a.animation);a.free_link={};a.active=0;a.index=0;
 }
 void reset_animation_state(Animation& a) noexcept {
+#ifdef TH_SDL3
+    // Retail 4299d0 only resets selected fields. Reusing a VM can therefore
+    // retain script variables, interpolation timers, callbacks and geometry
+    // from its previous lifetime. Match thprac's AnmVM_Reset_hook: callers
+    // release the old contents before reset and rebuild links afterwards.
+    // The pool index (+4c4) belongs to the allocation, not the script lifetime.
+    const auto index=a.index;
+    std::memset(&a,0,sizeof(a));
+    a.index=index;
+#endif
     auto& b=a.base;
     b.vector_50=b.vector_58=b.vector_68={1.0f,1.0f};
     b.field_490=0xffffffffu;

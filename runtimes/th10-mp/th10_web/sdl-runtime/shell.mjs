@@ -9,6 +9,67 @@ import {createReplayFilePolicy} from './replay-file-policy.mjs';
 import {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,ensureSharedFontAlias,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
 import {initializeSaveStorage,migrateLegacySaves} from './save-storage.mjs';
 import {createSaveSync} from './save-sync.mjs';
+// BEGIN GENERATED SPECTATOR PLAYBACK
+// Generated from eagler-common/browser/spectator-playback.mjs.
+// Native playback owns every cursor and restore. The shell only transports
+// authenticated Launcher commands and publishes native reports.
+function createSpectatorPlaybackBridge({active,memory,state,control,allocate,deallocate,emit,
+  schedule=globalThis.setInterval,cancel=globalThis.clearInterval}) {
+  let timer=null,last=null;
+  const clear=()=>{if(last){last=null;emit('runtime-info',{spectatorPlayback:null});}};
+  function poll() {
+    if(!active()){clear();return null;}
+    try {
+      const pointer=state();
+      if(!pointer){clear();return null;}
+      const heap=memory();
+      if(!(heap instanceof Uint8Array)||!Number.isInteger(pointer)||pointer<1||pointer>=heap.length)
+        throw Error('Invalid native spectator report address');
+      const limit=Math.min(heap.length,pointer+131072);let end=pointer;
+      while(end<limit&&heap[end])++end;
+      if(end===limit)throw Error('Native spectator report exceeds its bound');
+      const report=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(heap.subarray(pointer,end)));
+      if(report?.version!==1||typeof report.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(report.run)||
+         !Number.isInteger(report.revision)||report.revision<1||report.revision>0xfffffffe||
+         !Array.isArray(report.nodes)||report.nodes.length>512)throw Error('Invalid native spectator report');
+      if(last?.run===report.run&&(report.revision<=last.revision||report.received<last.received))return last;
+      last=report;emit('runtime-info',{spectatorPlayback:report});return report;
+    } catch(error) {
+      clear();return null;
+    }
+  }
+  function command(message) {
+    if(!active())throw Error('Spectator playback is not active');
+    if(typeof message?.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(message.run)||
+       !['pause','play','seek','live'].includes(message.action)||
+       (message.action==='seek'&&(!Number.isInteger(message.frame)||message.frame<0||message.frame>0xfffffffe)))
+      throw Error('Invalid spectator playback command');
+    const report=poll();
+    if(!report||message.run!==report.run)throw Error('Spectator playback run has changed');
+    if(message.action==='seek'&&(message.frame<report.min||message.frame>report.edge))
+      throw Error('Spectator seek is outside received history');
+    // Keep terminators as zero bytes. The classic inline HTML optimizer can
+    // turn a JS NUL escape into a literal NUL, which HTML replaces by U+FFFD.
+    const run=new TextEncoder().encode(message.run),action=new TextEncoder().encode(message.action);
+    const actionOffset=run.length+1,bytes=new Uint8Array(actionOffset+action.length+1);
+    bytes.set(run);bytes.set(action,actionOffset);
+    const pointer=allocate(bytes.length);
+    if(!Number.isInteger(pointer)||pointer<1)throw Error('Spectator command allocation failed');
+    try {
+      const heap=memory();
+      if(pointer>heap.length-bytes.length)throw Error('Invalid spectator command allocation');
+      heap.set(bytes,pointer);
+      if(!control(pointer,pointer+actionOffset,message.action==='seek'?message.frame:0))
+        throw Error('Spectator playback command could not be applied');
+    } finally {deallocate(pointer);}
+    poll();return {};
+  }
+  return Object.freeze({poll,command,
+    start(){if(timer===null)timer=schedule(poll,250);poll();},
+    stop(){if(timer!==null)cancel(timer);timer=null;clear();},
+  });
+}
+// END GENERATED SPECTATOR PLAYBACK
 // BEGIN GENERATED LOCAL REPLAY
 // Generated from eagler-common/browser/local-replay*.mjs.
 // The native adapter owns parsing, stage bootstrap, fixed ticks and EOF.
@@ -143,6 +204,11 @@ const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
+const spectatorPlayback=createSpectatorPlaybackBridge({
+ active:()=>multiplayerRuntime&&launched&&options.netplaySpectator===true&&!closing,memory:()=>new Uint8Array(core.memory.buffer),
+ state:()=>core?.multiplayer_spectator_playback_state?.(app)||0,control:(run,action,frame)=>core?.multiplayer_spectator_playback_control?.(app,run,action,frame)||0,
+ allocate:size=>core.graphics_allocate(size),deallocate:pointer=>core.graphics_free(pointer),emit,
+});
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
 let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=false;
 // Source serials consume all authenticated snapshots, including dropped input.
@@ -335,7 +401,7 @@ async function resumeForegroundAudio(forcePause=false){
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&!!app&&launched&&!closing&&!touchRetired&&!document.hidden&&ownsTouchDocument());
 }
-async function stop(){if(closing)return;closing=true;localReplay.close();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
+async function stop(){if(closing)return;closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>root()+'/'+replayFiles.physical(storage.relativeSave(value)),replayState:()=>{const v=Array.from(new Uint32Array(core.memory.buffer,core.eagler_replay_state(),multiplayerRuntime?6:5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:v[5]??0};},stopLoop:()=>{clearKeyboard();core.sdl_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:error});
 async function launch(){
  if(launched)return;
@@ -353,6 +419,7 @@ async function launch(){
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();core.sdl_loop_start(app);
  launchSettled=touchTicket===touchLifetime&&!touchRetired&&!closing&&!!app&&ownsTouchDocument();
+ if(options.netplaySpectator)spectatorPlayback.start();
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.5.1-sdl3'});
 }
 async function command(message){
@@ -372,6 +439,7 @@ async function command(message){
   touchControls(core,options,{controls:{...controls,bombSerial:nextBomb,escapeSerial:nextEscape}});
   mappedBomb=nextBomb;mappedEscape=nextEscape;return {};
  }
+ case 'spectator-playback':return spectatorPlayback.command(message);
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(message);
  case 'launch':await launch();return {};
  case 'sync':await save();return {};

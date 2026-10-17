@@ -8,7 +8,7 @@ const start = source.indexOf('EM_JS(int, eagler_peer_connect');
 const bodyStart = source.indexOf('{', start);
 const bodyEnd = source.indexOf('\n});\n\nEM_JS(int, eagler_spectator_connect', bodyStart);
 assert(start >= 0 && bodyEnd > bodyStart);
-const connect = new Function('relayUrlPtr', 'tagPtr', 'localPlayer', 'playerCount',
+const connect = new Function('relayUrlPtr', 'tagPtr', 'localPlayer', 'playerCount', 'stageSpectatorHistory',
     source.slice(bodyStart + 1, bodyEnd));
 
 const timers = [];

@@ -89,7 +89,7 @@ def run(browser, launcher, workspace, game):
         state = frame.evaluate("getKeys()")
         return bool(state["bits"] & bit) if "bits" in state else code in state["keys"]
 
-    page.evaluate("keyboardPreferences.selectLayout('arrows')")
+    assert page.evaluate("keyboardPreferences.getLayoutSnapshot().selected") == 'arrows'
     page.keyboard.down("w")
     assert not frame.evaluate("__eaglerKeyboardInputBridge.keyDown('ArrowUp')"), (game, "Arrow keys preset still maps W")
     page.keyboard.up("w")
@@ -111,10 +111,10 @@ def run(browser, launcher, workspace, game):
     page.keyboard.up("ArrowUp")
     assert not held("ArrowUp", 16)
     page.keyboard.down("z")
-    page.keyboard.down("k")
+    page.keyboard.down("j")
     page.keyboard.up("z")
     assert held("KeyZ", 1)
-    page.keyboard.up("k")
+    page.keyboard.up("j")
     assert not held("KeyZ", 1)
     for key in ("l", "Space", "ShiftLeft"):
         page.keyboard.down(key)
@@ -123,6 +123,11 @@ def run(browser, launcher, workspace, game):
         assert held("ShiftLeft", 4)
     page.keyboard.up("Space")
     assert not held("ShiftLeft", 4)
+
+    page.keyboard.down("k")
+    assert held("KeyX", 2)
+    page.keyboard.up("k")
+    assert not held("KeyX", 2)
 
     # Touch is already canonical and must not be remapped or own a physical H.
     page.keyboard.down("h")
@@ -135,9 +140,9 @@ def run(browser, launcher, workspace, game):
     assert not held("Enter", 4096)
 
     # The actual host service must use the same synchronous Runtime receiver.
-    page.evaluate("hostKey('KeyK',true)")
+    page.evaluate("hostKey('KeyJ',true)")
     assert held("KeyZ", 1)
-    page.evaluate("hostKey('KeyK',false)")
+    page.evaluate("hostKey('KeyJ',false)")
     assert not held("KeyZ", 1)
     assert page.evaluate("messages") == 0, (game, "keyboard fell back to queued postMessage")
 

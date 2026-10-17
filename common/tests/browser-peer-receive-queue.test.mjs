@@ -10,7 +10,7 @@ function embedded(name, args) {
   assert(start >= 0 && end > body);
   return new Function(...args, source.slice(body, end));
 }
-const connect = embedded('EM_JS(int, eagler_peer_connect,', ['relayUrlPtr', 'tagPtr', 'localPlayer', 'playerCount']);
+const connect = embedded('EM_JS(int, eagler_peer_connect,', ['relayUrlPtr', 'tagPtr', 'localPlayer', 'playerCount', 'stageSpectatorHistory']);
 const copy = embedded('EM_JS(int, eagler_peer_poll_copy,', ['out', 'capacity']);
 globalThis.setInterval = () => 1;
 globalThis.clearInterval = () => {};

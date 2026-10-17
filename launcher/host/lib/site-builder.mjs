@@ -1,4 +1,5 @@
 import {assertReactFrontendEnvironment} from '../../compat/frontend-environment.mjs';
+import {reactAppShellMatchesSite} from '../../lib/react-app-shell-deployment.mjs';
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -31,12 +32,11 @@ export async function resolveHostFrontend({ projectRoot, siteUrl, environment = 
   if (selectedSite && selectedSite.pathname !== artifact.mountPath) {
     throw new Error("site URL does not match the React frontend artifact mount");
   }
-  if (artifact.appShell && (!selectedSite || selectedSite.origin !== artifact.appShell.origin ||
-      selectedSite.pathname !== artifact.appShell.mountPath)) {
+  if (!reactAppShellMatchesSite(artifact.appShell, selectedSite)) {
     throw new Error("React App Shell packaging requires --site-url matching its exact isolated origin and mount");
   }
-  if (serve && (artifact.mountPath !== "/" || artifact.appShell)) {
-    throw new Error("The built-in host server supports root-mounted React with App Shell off only; use --build-only and serve at the artifact's exact origin and mount");
+  if (serve && (artifact.mountPath !== "/" || artifact.appShell && artifact.appShell.origin !== 'same-origin')) {
+    throw new Error("The built-in host server requires root-mounted React with a same-origin App Shell or App Shell off; use --build-only for an exact isolated origin and mount");
   }
   return Object.freeze({ kind, siteUrl: url, artifact });
 }

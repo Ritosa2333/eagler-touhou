@@ -74,6 +74,13 @@ The local server is for development, LAN use and checking the generated site.
 For a public deployment, copy `dist/site/` to the Web server, object store, CDN,
 container image or hosting platform of your choice.
 
+Launcher builds enable Service Worker offline loading by default on the served
+origin and configured mount. HTTPS (or trusted loopback) is required. Once the
+Launcher and game have been installed online, they can be reopened offline.
+Use `EAGLER_REACT_APP_SHELL=disabled` only for fixtures or deployments that
+explicitly need offline loading disabled. `EAGLER_REACT_APP_SHELL=isolated` with
+`EAGLER_REACT_APP_SHELL_ORIGIN` retains exact-origin builds for isolated previews.
+
 To keep the large Package resources on a separate HTTPS origin, derive an
 External user site from the verified Hosted output:
 

@@ -1,5 +1,5 @@
 """Real Chromium/WASM local Replay adapter check, with an isolated MEMFS store."""
-import argparse, functools, hashlib, json, threading
+import argparse, functools, hashlib, json, threading, subprocess
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -12,6 +12,11 @@ p.add_argument('--fixtures',type=Path)
 p.add_argument('--late-import',action='store_true');p.add_argument('--all-stages',action='store_true')
 p.add_argument('--recorded',action='store_true',help='Fixtures are native recordings, rather than software format fixtures')
 a=p.parse_args();root=a.workspace;repo=a.repo or root/(a.game+'-eagler');web=repo/(a.game+'_web')
+def owner_git(*args):return subprocess.check_output(['git','-c','safe.directory='+repo.as_posix(),'-C',str(repo),*args],text=True).strip()
+owner={'repository':str(repo),'branch':owner_git('branch','--show-current'),'commit':owner_git('rev-parse','HEAD'),'dirty':bool(owner_git('status','--porcelain'))}
+expected_branch='eagler-mp' if a.multiplayer else 'eagler'
+if a.game in ['th08','th10','th11','th15'] and owner['branch']!=expected_branch:
+ p.error(f"{a.game} {'MP' if a.multiplayer else 'ordinary'} Replay check requires {expected_branch}; {repo} is on {owner['branch'] or 'detached HEAD'}. Select the correct checkout with --repo.")
 profile=('sdl-multiplayer' if a.game=='th15' else 'multiplayer' if a.game=='th10' else 'multiplayer-diagnostic') if a.multiplayer else 'sdl-release' if a.game=='th15' else 'sdl3'
 build=web/'artifacts'/profile;runtime=repo/'build-eagler'
 if not (runtime/'fonts').is_dir():runtime=root/(a.game+'-eagler')/'build-eagler'
@@ -20,6 +25,16 @@ fixtures=sorted((a.fixtures or ((Path(__file__).resolve().parents[2]/'artifacts/
 assert fixtures,'Extract the original built-in Demo fixtures first'
 stem=a.game if a.game=='th15' else a.game+'-sdl'
 files={'/module.mjs':build/(stem+'.mjs'),'/module.wasm':build/(stem+'.wasm'),'/game.dat':data}
+build_identity=json.loads((build/'build.json').read_text(encoding='utf-8'))
+if hashlib.sha256(files['/module.wasm'].read_bytes()).hexdigest()!=build_identity.get('sha256'):p.error(f'{build}: WASM does not match its build identity')
+declared={**build_identity.get('sourceFiles',{}),**build_identity.get('headers',{}),**(build_identity.get('sources',{}) if isinstance(build_identity.get('sources'),dict) else {})}
+native_paths=([f'{a.game}_web/cpp/sdl/GameHost.cpp',f'{a.game}_web/cpp/sdl/LocalReplay.inc'] if a.game in ['th08','th10'] else ['th11_web/cpp/sdl/Application.cpp']+(['th11_web/cpp/sdl/LocalReplay.inc'] if a.multiplayer else []) if a.game=='th11' else ['th15_web/cpp/sdl/BrowserRuntime.cpp','th15_web/cpp/sdl/LocalReplay.inc'])
+if a.game=='th08':native_paths+=['th08_web/cpp/game/GameApplication.cpp','th08_web/cpp/game/GameApplication.hpp']
+owner['nativeReplaySources']={}
+for path in native_paths:
+ actual=hashlib.sha256((repo/path).read_bytes()).hexdigest()
+ if declared.get(path)!=actual:p.error(f'{build}: rebuild {owner["branch"]}; native Replay source identity differs: {path}')
+ owner['nativeReplaySources'][path]=actual
 files.update({'/fonts/'+path.name:path for path in (runtime/'fonts').iterdir() if path.is_file()})
 files['/fonts/msgothic.ttc']=root/'games/th06/msgothic.ttc'
 files.update({'/replay/'+path.name:path for path in fixtures})
@@ -35,7 +50,7 @@ class Handler(SimpleHTTPRequestHandler):
   else:self.send_error(404);return
   self.send_response(200);self.send_header('Content-Type',kind);self.send_header('Content-Length',str(len(content)));self.end_headers();self.wfile.write(content)
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start()
-report={'game':a.game,'multiplayer':a.multiplayer,'scope':'Native codec input corpus and actual WASM playback controls; not live-room or retail determinism' if a.multiplayer else 'Original Demo files and actual WASM playback controls; not retail determinism','passed':False,'wasm':hashlib.sha256(files['/module.wasm'].read_bytes()).hexdigest(),'fixtures':[]}
+report={'game':a.game,'multiplayer':a.multiplayer,'owner':owner,'scope':'Native codec input corpus and actual WASM playback controls; not live-room or retail determinism' if a.multiplayer else 'Original Demo files and actual WASM playback controls; not retail determinism','passed':False,'wasm':hashlib.sha256(files['/module.wasm'].read_bytes()).hexdigest(),'fixtures':[]}
 if a.fixtures:report['scope']='Native recorded corpus and actual WASM entry/controls; not a retail determinism proof' if a.recorded else 'Explicit native format corpus and actual WASM entry/controls; not an authentic recorded performance or determinism proof'
 def verify_stage(page,fixture,path,metadata,stage):
  page.evaluate('async ({path,stage})=>player.command({action:"open",path,stage})',{'path':path,'stage':stage})
