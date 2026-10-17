@@ -29,7 +29,7 @@ const write=(name,bytes)=>{
   return path;
 };
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
-const common=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'));
+const common=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'));
 const inputEntries=[
   ['portable/check-raf-deadline-guard.mjs',runnerPath],
   ['portable/check-raf-deadline-guard.cpp',resolve(root,'portable/check-raf-deadline-guard.cpp')],

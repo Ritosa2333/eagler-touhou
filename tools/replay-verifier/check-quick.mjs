@@ -84,7 +84,7 @@ try{
   if(!evidence.complete||evidence.build?.wasm!==build.sha256||
      evidence.build?.runtimeInventory!==report.runtimeInventory)throw Error('Quick capture identity/completion mismatch');
   await run('compare',process.execPath,['tools/replay-verifier/run-demo-gate.mjs',
-    '--candidate',resolve(capture,'suite.json'),'--common-root','third_party/eagler-common',
+    '--candidate',resolve(capture,'suite.json'),'--common-root','../../common',
     '--report',resolve(out,'quick-result.json')],120000);
   if(!JSON.parse(readFileSync(resolve(out,'quick-result.json'))).passed)throw Error('Quick comparison did not pass');
   verifySource();report.passed=true;report.phase='completed';

@@ -42,7 +42,7 @@ for(const multiplayer of [false,true]){
     // Compile the real owner bindings as well as executing the small fixture.
     // Existing platform sources are not warning-clean, so keep errors strict
     // for fixture/game sources without upgrading legacy platform warnings.
-    const bindingFlags=[...variantFlags.filter(flag=>flag!=='-Werror'),'-I',resolve(root,'third_party/eagler-common/include')];
+    const bindingFlags=[...variantFlags.filter(flag=>flag!=='-Werror'),'-I',resolve(root,'../../common/include')];
     for(const source of ["th10_web/cpp/platform/ApplicationPresentation.cpp"])
         compile(source,variant+'-binding-'+source.split('/').at(-1).replace('.cpp',''),bindingFlags);
     const objects=[compile('tests/presentation-input-test.cpp',variant+'-test',variantFlags),
@@ -55,7 +55,7 @@ for(const multiplayer of [false,true]){
 }
 writeFileSync(metadataPath,JSON.stringify({passed:true,runtime:'wasm32-wasip1',node:process.version,
     compiler:execFileSync(compiler,['--version'],{encoding:'utf8'}).trim(),compileFlags:flags,linkFlags,sanitized,
-    bindingCompileFlags:[...flags.filter(flag=>flag!=='-Werror'),'-I','third_party/eagler-common/include'],
+    bindingCompileFlags:[...flags.filter(flag=>flag!=='-Werror'),'-I','../../common/include'],
     variants:['ordinary','multiplayer'],productionExecution:['GameInput::update_raw','Presentation::submit'],
     dependencyScope:'Clang -MMD non-system source/header closure plus this driver; SDK system headers/libraries excluded',
     sources:Object.fromEntries([...dependencies].sort().map(path=>[relative(root,path).replaceAll('\\','/'),createHash('sha256').update(readFileSync(path)).digest('hex')]))},null,2)+'\n');

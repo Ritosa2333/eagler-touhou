@@ -141,7 +141,7 @@ const baseFlags=[
     '--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Werror','-Wno-unused-function',
     '-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1',
     '-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-strict-aliasing',
-    '-I',resolve(root,'third_party/eagler-common/include'),'-I',platform
+    '-I',resolve(root,'../../common/include'),'-I',platform
 ];
 if(sanitized)baseFlags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
@@ -161,7 +161,7 @@ const platformNames=['AnimationResources','TransitionResources','Textures','File
 const sharedSources=[
     ...gameNames.map(name=>'th10_web/cpp/game/'+name+'.cpp'),
     ...platformNames.map(name=>'th10_web/cpp/platform/'+name+'.cpp'),
-    'third_party/eagler-common/src/netplay/RollbackJournal.cpp',
+    '../../common/src/netplay/RollbackJournal.cpp',
     'tests/live-motion-disabled-stub.cpp'
 ];
 const units=[
