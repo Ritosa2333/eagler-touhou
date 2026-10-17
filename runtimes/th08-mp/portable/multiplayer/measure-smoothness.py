@@ -1,0 +1,978 @@
+"""Freeze TH08 assets and measure serial RTC/rAF pairs in separate browsers.
+
+CPU throttling is a laboratory load, not a phone model. RTC impairment delays
+application sends (including repair), not wire RTT. Exact controls wait for
+remote input: compare their CPU per logical tick, not their lockstep FPS.
+"""
+import argparse, functools, hashlib, http.server, json, math, os, shutil
+import socket, subprocess, sys, threading, time, uuid
+import contextlib, faulthandler, traceback
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+
+ROOT=Path(__file__).resolve().parents[2]
+WORKSPACE=ROOT.parents[1]
+MODES={'frontier':0,'frontier-late':0,'frontier-legacy':0,
+       'frontier-target-legacy':0,'frontier-collision-legacy':0,'frontier-both-legacy':0,
+       'frontier-cache-legacy':0,'always':1,'exact':2,'exact-snapshots':3}
+
+
+# A worker may be blocked inside a synchronous CDP call, so its Python deadline
+# checks are not a process deadline. These diagnostics never add browser work.
+WORKER_REAP_SECONDS=15
+SUPERVISOR_CLEANUP_SECONDS=20
+OUTER_MARGIN_SECONDS=10
+_WORKER_DIAGNOSTICS=None
+
+def worker_timeout(args):
+    return args.worker_timeout if getattr(args,'worker_timeout',None) is not None else args.timeout*2+180
+
+class WorkerDiagnostics:
+    def __init__(self,seconds):
+        self.started=time.monotonic();self.deadline=self.started+seconds
+        self.seconds=seconds;self.events=[];self.active=[]
+        faulthandler.enable(file=sys.stderr,all_threads=True)
+    def emit(self,event,stage,**fields):
+        entry={'kind':'th08-worker-stage/1','event':event,'stage':stage,'pid':os.getpid(),
+               'epochMs':time.time()*1000,'elapsedSeconds':round(time.monotonic()-self.started,3),**fields}
+        self.events.append(entry)
+        print(json.dumps(entry,separators=(',',':')),flush=True)
+    def arm(self):
+        faulthandler.cancel_dump_traceback_later()
+        if not self.active:return
+        current=self.active[-1]
+        # A dump is a long-stage diagnostic, not evidence that the browser hung.
+        # It also precedes the supervisor deadline, including during teardown.
+        deadline=min(self.deadline-10,current['started']+current['watchdogSeconds'])
+        faulthandler.dump_traceback_later(max(.1,deadline-time.monotonic()),repeat=False,file=sys.stderr)
+    def begin(self,stage,seat=None,watchdog_seconds=60):
+        current={'stage':stage,'seat':seat,'started':time.monotonic(),'watchdogSeconds':watchdog_seconds}
+        self.active.append(current)
+        self.emit('begin',stage,seat=seat,watchdogSeconds=watchdog_seconds)
+        self.arm();return current
+    def end(self,current):
+        if current is None:return
+        self.emit('end',current['stage'],seat=current['seat'],durationSeconds=round(time.monotonic()-current['started'],3))
+        self.active.remove(current);self.arm()
+    def exception(self,error):
+        current=self.active[-1] if self.active else {'stage':'worker','seat':None}
+        self.emit('exception',current['stage'],seat=current['seat'],exceptionType=type(error).__name__)
+        traceback.print_exception(type(error),error,error.__traceback__,file=sys.stderr)
+        sys.stderr.flush()
+    def snapshot(self):
+        return {'schema':'th08-worker-diagnostics/1','pid':os.getpid(),'timeoutSeconds':self.seconds,
+                'scope':'Host-side stage boundaries and Python watchdog stacks only; no additional CDP or rAF work. Watchdog dumps indicate a long stage, not a proven browser hang.',
+                'events':list(self.events),'unfinishedStages':[{'stage':p['stage'],'seat':p['seat']} for p in self.active]}
+
+def stage_begin(name,seat=None,watchdog_seconds=60):
+    return _WORKER_DIAGNOSTICS.begin(name,seat,watchdog_seconds) if _WORKER_DIAGNOSTICS else None
+
+def stage_end(current):
+    if _WORKER_DIAGNOSTICS:_WORKER_DIAGNOSTICS.end(current)
+
+@contextlib.contextmanager
+def worker_stage(name,seat=None,watchdog_seconds=60):
+    current=stage_begin(name,seat,watchdog_seconds)
+    try:yield
+    except BaseException as error:
+        if _WORKER_DIAGNOSTICS:_WORKER_DIAGNOSTICS.exception(error)
+        raise
+    finally:stage_end(current)
+
+def staged(name,operation,*args,seat=None,**kwargs):
+    with worker_stage(name,seat):return operation(*args,**kwargs)
+
+def reap_worker_tree(process,log):
+    """Terminate this worker's own tree; never discover or kill unrelated PIDs."""
+    cleanup={'workerPid':process.pid,'treeKillSucceeded':False,'workerReaped':False,'errors':[],
+             'budgetSeconds':WORKER_REAP_SECONDS}
+    started=time.monotonic()
+    try:
+        if os.name=='nt':
+            result=subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],
+                                  stdout=log,stderr=subprocess.STDOUT,timeout=10)
+            cleanup['taskkillExitCode']=result.returncode
+            cleanup['treeKillSucceeded']=result.returncode==0
+        else:
+            import signal
+            try:os.killpg(process.pid,signal.SIGKILL)
+            except ProcessLookupError:pass
+            cleanup['treeKillSucceeded']=True
+    except Exception as error:cleanup['errors'].append(type(error).__name__+': '+str(error))
+    try:
+        # If tree termination itself failed, still reap the owned direct child.
+        # Record the incomplete tree cleanup instead of claiming it succeeded.
+        if process.poll() is None and not cleanup['treeKillSucceeded']:process.kill()
+        process.wait(timeout=min(5,max(.1,WORKER_REAP_SECONDS-(time.monotonic()-started))))
+        cleanup['workerReaped']=True
+    except Exception as error:cleanup['errors'].append(type(error).__name__+': '+str(error))
+    cleanup['returnCode']=process.returncode
+    cleanup['elapsedSeconds']=round(time.monotonic()-started,3)
+    print(json.dumps({'kind':'th08-worker-stage/1','event':'cleanup','stage':'worker-tree',**cleanup}),file=log,flush=True)
+    return cleanup
+
+# Test-only, bounded observations. No timers, focus/visibility emulation or
+# per-frame work; phase marks run inside evaluations already used by the test.
+BROWSER_EVIDENCE_INIT=r"""(() => {
+  if (window !== window.top) return;
+  const limits={stages:16,events:64,errors:16,connections:128,sockets:16,peers:8,controlChars:16384,
+    peerConnections:8,pcOperations:128};
+  const data={limits,stages:[],events:[],connections:[],errors:[],droppedStages:0,droppedEvents:0,droppedErrors:0,
+    droppedConnections:0,droppedSockets:0,oversizedControlMessages:0,webSocketObserverInstalled:false,
+    pcObservationRevision:1,pcOperations:[],peerConnectionCount:0,droppedPcOperations:0,
+    droppedPeerConnectionCalls:0,pcObserverInstalled:false,pcObserverMethods:[]};
+  // Keep only a bounded word prefix, never an address, SDP/ICE line or URL
+  // embedded in an exception. Colons are allowed only after an error class.
+  const safeDetail=value=>{
+    if(typeof value!=='string')return value==null?'':'[non-text detail omitted]';
+    const text=value.trim();
+    const prefix=text.match(/^(?:(?:[A-Za-z]{1,40}Error|Error|Exception): ?)?[A-Za-z _'()/-]{0,160}/)?.[0]||'';
+    return prefix===text?prefix:(prefix.trimEnd()?prefix.trimEnd()+' ':'')+'[details omitted]';
+  };
+  const failed=(where,error)=>{
+    let detail='[unavailable]';try{detail=safeDetail(String(error));}catch{}
+    if(data.errors.length<limits.errors)data.errors.push({where,error:detail});
+    else ++data.droppedErrors;
+  };
+  const clock=()=>({epochMs:Date.now(),timeMs:performance.now(),timeOrigin:performance.timeOrigin});
+  const integer=value=>Number.isSafeInteger(value)?value:null;
+  const choice=(value,allowed)=>allowed.includes(value)?value:null;
+  const socketState=socket=>socket?integer(socket.readyState):null;
+  const transportSnapshot=()=>{
+    try{
+      const state=globalThis.__eaglerPeerTransport;
+      if(!state)return {available:false};
+      const peers=[],map=state.peers instanceof Map?state.peers:null;
+      if(map)for(const [id,peer] of map){
+        if(peers.length>=limits.peers)break;
+        peers.push({player:integer(id),inputOpen:!!peer.inputOpen,controlOpen:!!peer.controlOpen,
+          connectionState:choice(peer.pc?.connectionState,['new','connecting','connected','disconnected','failed','closed']),
+          iceConnectionState:choice(peer.pc?.iceConnectionState,['new','checking','connected','completed','disconnected','failed','closed']),
+          iceGatheringState:choice(peer.pc?.iceGatheringState,['new','gathering','complete']),
+          signalingState:choice(peer.pc?.signalingState,['stable','have-local-offer','have-remote-offer','have-local-pranswer','have-remote-pranswer','closed']),
+          inputState:choice(peer.inputDc?.readyState,['connecting','open','closing','closed']),
+          controlState:choice(peer.controlDc?.readyState,['connecting','open','closing','closed'])});
+      }
+      return {available:true,localPlayer:integer(state.localPlayer),playerCount:integer(state.playerCount),
+        route:choice(state.route,['rtc','relay','spectator']),failed:!!state.failed,disconnected:!!state.disconnected,
+        closed:!!state.closed,error:safeDetail(state.error),rtcReadySent:!!state.rtcReadySent,
+        signalState:socketState(state.signal),relayState:socketState(state.relay),
+        peerCount:map?map.size:null,peers,omittedPeers:map?Math.max(0,map.size-peers.length):0};
+    }catch(error){failed('transport-snapshot',error);return {available:false,readError:true};}
+  };
+  const snapshot=()=>({...clock(),
+    visibilityState:document.visibilityState,hidden:document.hidden,hasFocus:document.hasFocus(),
+    geometry:{screenX:window.screenX,screenY:window.screenY,innerWidth:innerWidth,innerHeight:innerHeight,
+      outerWidth:outerWidth,outerHeight:outerHeight,devicePixelRatio:devicePixelRatio,
+      screenWidth:screen.width,screenHeight:screen.height,availWidth:screen.availWidth,availHeight:screen.availHeight},
+    transport:transportSnapshot()});
+  const marked=new Set();
+  const mark=stage=>{
+    if(marked.has(stage))return;
+    marked.add(stage);
+    try{if(data.stages.length<limits.stages)data.stages.push({stage,...snapshot()});else ++data.droppedStages;}
+    catch(error){failed(stage,error);}
+  };
+  const changed=event=>{
+    try{if(data.events.length<limits.events)data.events.push({event:event.type,...snapshot()});else ++data.droppedEvents;}
+    catch(error){failed(event.type,error);}
+  };
+  const sockets=new WeakMap();let socketCount=0;
+  const connectionEvent=(socket,event,fields={})=>{
+    try{
+      const identity=sockets.get(socket);if(!identity)return;
+      if(data.connections.length>=limits.connections){++data.droppedConnections;return;}
+      const entry={...identity,event,...clock(),readyState:socketState(socket),...fields};
+      // These listeners precede the transport's own handlers. Preserve its
+      // state before a route message/error can close and discard every peer.
+      if(event!=='message'||['route','rtc-ready','rtc-failed'].includes(fields.type))entry.transport=transportSnapshot();
+      data.connections.push(entry);
+    }catch(error){failed('socket-'+event,error);}
+  };
+  const messageTypes=new Set(['peers','peer-join','signal','rtc-ready','rtc-failed','route','ice-restart-request','peer-disconnected']);
+  const controlMessage=(socket,direction,payload)=>{
+    try{
+      if(!sockets.has(socket)||typeof payload!=='string')return; // Never inspect binary payloads.
+      if(data.connections.length>=limits.connections){++data.droppedConnections;return;}
+      if(payload.length>limits.controlChars){++data.oversizedControlMessages;return;}
+      let message;try{message=JSON.parse(payload);}catch{return;}
+      if(!message||typeof message!=='object'||!messageTypes.has(message.type))return;
+      const fields={direction,type:message.type};
+      if(message.type==='route')fields.mode=choice(message.mode,['rtc','relay']);
+      if(message.type==='rtc-failed'){
+        if(typeof message.reason==='string')fields.reason=safeDetail(message.reason);
+        if(typeof message.error==='string')fields.error=safeDetail(message.error);
+      }
+      connectionEvent(socket,'message',fields);
+    }catch(error){failed('socket-control-observation',error);}
+  };
+  const observeSocket=socket=>{
+    const query=new URL(socket.url).searchParams;
+    if(query.has('lobby')||!query.has('player')||!query.has('players'))return;
+    if(socketCount>=limits.sockets){++data.droppedSockets;return;}
+    const player=query.get('player');
+    sockets.set(socket,{socketId:++socketCount,lane:query.get('signal')==='1'?'signal':'gameplay',
+      player:/^[0-2]$/.test(player)?Number(player):null});
+    connectionEvent(socket,'create');
+    socket.addEventListener('open',()=>connectionEvent(socket,'open'));
+    socket.addEventListener('error',()=>connectionEvent(socket,'error'));
+    socket.addEventListener('close',event=>connectionEvent(socket,'close',
+      {code:event.code,wasClean:event.wasClean,reason:safeDetail(event.reason)}));
+    socket.addEventListener('message',event=>controlMessage(socket,'receive',event.data));
+    const originalSend=socket.send;
+    Object.defineProperty(socket,'send',{configurable:true,writable:true,value:new Proxy(originalSend,{
+      apply(target,thisArg,args){
+        // The original call executes once, with its original receiver/args.
+        // Throws pass through unchanged; observations cannot replace returns.
+        const result=Reflect.apply(target,thisArg,args);
+        controlMessage(thisArg,'send',args[0]);
+        return result;
+      }
+    })});
+  };
+  // Observe the original Promise through a separate reaction; never substitute
+  // it, await it here, or inspect SDP/ICE arguments and fulfillment values.
+  // PC identity storage and operation records both have independent bounds.
+  const observedPcs=new Map();
+  const pcObservationFailed=(where,error)=>{try{failed(where,error);}catch{}};
+  const pcSnapshot=pc=>{
+    try{
+      const transport=globalThis.__eaglerPeerTransport;
+      let player=null,visited=0;
+      if(transport?.peers instanceof Map)for(const [id,peer] of transport.peers){
+        if(++visited>limits.peers)break;
+        if(peer.pc===pc){player=integer(id);break;}
+      }
+      return {player,route:choice(transport?.route,['rtc','relay','spectator']),
+        signalState:socketState(transport?.signal),
+        connectionState:choice(pc.connectionState,['new','connecting','connected','disconnected','failed','closed']),
+        iceConnectionState:choice(pc.iceConnectionState,['new','checking','connected','completed','disconnected','failed','closed']),
+        iceGatheringState:choice(pc.iceGatheringState,['new','gathering','complete']),
+        signalingState:choice(pc.signalingState,['stable','have-local-offer','have-remote-offer','have-local-pranswer','have-remote-pranswer','closed']),
+        localDescriptionType:choice(pc.localDescription?.type,['offer','answer','pranswer','rollback']),
+        remoteDescriptionType:choice(pc.remoteDescription?.type,['offer','answer','pranswer','rollback'])};
+    }catch(error){pcObservationFailed('pc-snapshot',error);return {readError:true};}
+  };
+  const beginPcOperation=(method,pc)=>{
+    try{
+      if(data.pcOperations.length>=limits.pcOperations){++data.droppedPcOperations;return null;}
+      if(pc===null||(typeof pc!=='object'&&typeof pc!=='function'))return null;
+      let pcId=observedPcs.get(pc);
+      if(!pcId){
+        if(observedPcs.size>=limits.peerConnections){++data.droppedPeerConnectionCalls;return null;}
+        pcId=observedPcs.size+1;observedPcs.set(pc,pcId);data.peerConnectionCount=observedPcs.size;
+      }
+      const entry={operationId:data.pcOperations.length+1,pcId,method,
+        call:{...clock(),state:pcSnapshot(pc)},outcome:'pending',settled:null};
+      data.pcOperations.push(entry);return entry;
+    }catch(error){pcObservationFailed('pc-operation-call',error);return null;}
+  };
+  const endPcOperation=(entry,pc,outcome,error)=>{
+    if(!entry)return;
+    try{
+      entry.outcome=outcome;entry.settled={...clock(),state:pcSnapshot(pc)};
+      if(outcome==='rejected'||outcome==='threw'){
+        let detail='[unavailable]';try{detail=safeDetail(String(error));}catch{}
+        entry.error=detail;
+      }
+    }catch(observerError){pcObservationFailed('pc-operation-settled',observerError);}
+  };
+  globalThis.__th08BrowserEvidence={mark,read:()=>data};
+  try{
+    const NativeWebSocket=globalThis.WebSocket;
+    const ObservedWebSocket=new Proxy(NativeWebSocket,{construct(target,args,newTarget){
+      const socket=Reflect.construct(target,args,newTarget);
+      try{observeSocket(socket);}catch(error){failed('socket-observer-install',error);}
+      return socket;
+    }});
+    globalThis.WebSocket=ObservedWebSocket;
+    if(globalThis.WebSocket!==ObservedWebSocket)throw Error('WebSocket observer installation failed');
+    data.webSocketObserverInstalled=true;
+  }catch(error){failed('websocket-install',error);}
+  try{
+    const prototype=globalThis.RTCPeerConnection?.prototype;
+    const nativeThen=Promise.prototype.then;
+    if(!prototype)throw Error('RTCPeerConnection unavailable');
+    for(const method of ['createOffer','createAnswer','setLocalDescription','setRemoteDescription']){
+      const descriptor=Object.getOwnPropertyDescriptor(prototype,method);
+      if(!descriptor||typeof descriptor.value!=='function')throw Error('RTC operation unavailable: '+method);
+      const observed=new Proxy(descriptor.value,{apply(target,thisArg,args){
+        const entry=beginPcOperation(method,thisArg);
+        let result;
+        try{result=Reflect.apply(target,thisArg,args);}
+        catch(error){endPcOperation(entry,thisArg,'threw',error);throw error;}
+        if(entry)try{
+          const observer=Reflect.apply(nativeThen,result,[
+            ()=>endPcOperation(entry,thisArg,'fulfilled'),
+            error=>endPcOperation(entry,thisArg,'rejected',error)
+          ]);
+          // Catch failures of either diagnostic reaction on its own branch.
+          // The caller receives precisely the native result/rejection object.
+          Reflect.apply(nativeThen,observer,[undefined,error=>pcObservationFailed('pc-promise-observer',error)]);
+        }catch(error){
+          try{entry.outcome='unobserved';}catch{}
+          pcObservationFailed('pc-promise-observe',error);
+        }
+        return result;
+      }});
+      Object.defineProperty(prototype,method,{...descriptor,value:observed});
+      if(prototype[method]!==observed)throw Error('RTC operation observer installation failed');
+      data.pcObserverMethods.push(method);
+    }
+    data.pcObserverInstalled=true;
+  }catch(error){pcObservationFailed('pc-observer-install',error);}
+  try{
+    document.addEventListener('visibilitychange',changed);
+    window.addEventListener('focus',changed);
+    window.addEventListener('blur',changed);
+    mark('installed');
+  }catch(error){failed('install',error);}
+})();"""
+
+def rtc_timeout_evidence():
+    names=('EAGLER_NETPLAY_RTC_TIMEOUT_MS','TH07_RTC_TIMEOUT_MS','TH07_DIRECT_TIMEOUT_MS')
+    values={name:os.environ.get(name) for name in names}
+    configured=[name for name in names if values[name] is not None]
+    conflict=len({values[name] for name in configured})>1
+    return {'variables':values,'conflictingValues':conflict,
+      'selectedSource':None if conflict else configured[0] if configured else 'relay default',
+      'selectedRaw':None if conflict else values[configured[0]] if configured else '4500',
+      'defaultMs':4500,'minimumMs':1000,
+      'resolution':'Unequal configured aliases are rejected; otherwise Math.max(1000, Number.parseInt(selectedRaw, 10) || 4500)',
+      'scope':'Only inherited RTC timeout environment variables; relay timer start/expiry is not directly observed'}
+
+def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
+def logical_frame(row):
+    value=row.get('logicalFrame')
+    return row['net'][3] if value is None else value
+def progress(row):
+    value=row.get('progress')
+    return value if isinstance(value,list) and len(value)==6 else None
+def valid_progress(row):
+    value=row.get('progress')
+    return value is None or (isinstance(value,list) and len(value)==6 and
+      all(type(v) is int and 0<=v<=0xffffffff for v in value) and value[2] in (0,1) and value[3] in (0,1) and
+      value[0]==logical_frame(row) and value[1]==row['net'][3])
+def correcting(row):
+    value=progress(row)
+    return value is not None and bool(value[2])
+def epoch(row):return (row.get('stage'),row['net'][10])
+def logical_rate(rows):
+    if len(rows)<2 or any(not valid_progress(r) for r in rows):return None
+    if any(b['time']<=a['time'] or epoch(a)!=epoch(b) or logical_frame(b)<logical_frame(a)
+           for a,b in zip(rows,rows[1:])):return None
+    return (logical_frame(rows[-1])-logical_frame(rows[0]))*1000/(rows[-1]['time']-rows[0]['time'])
+def unconfirmed_frames(row):
+    confirmed=row['net'][5]
+    remote=0 if confirmed in (-1,0xffffffff) else confirmed+1
+    return max(0,logical_frame(row)-remote)
+def progress_summary(rows,first=None):
+    if not rows:return {'samples':0}
+    first=rows[0] if first is None else first
+    observed=rows[1:];available=[r for r in observed if progress(r) is not None]
+    start,end=progress(first),progress(rows[-1])
+    cursor_deltas=[b['net'][3]-a['net'][3] for a,b in zip(rows,rows[1:])]
+    return {'source':sorted({'logicalFrame' if r.get('logicalFrame') is not None else 'legacy net[3]' for r in rows}),
+      'samples':len(observed),'availableSamples':len(available),'invalidSamples':sum(not valid_progress(r) for r in rows),
+      'correctingCallbacks':sum(correcting(r) for r in available) if available else None,
+      'budgetYieldCallbacks':sum(bool(progress(r)[3]) for r in available) if available else None,
+      'correctionYields':end[4]-start[4] if start is not None and end is not None and end[4]>=start[4] and epoch(first)==epoch(rows[-1]) else None,
+      'correctingCallbackMs':distribution([r['ms'] for r in available if correcting(r)]),
+      'budgetYieldCallbackMs':distribution([r['ms'] for r in available if progress(r)[3]]),
+      'cursorRegressions':sum(n<0 for n in cursor_deltas),'cursorRegressedFrames':sum(-n for n in cursor_deltas if n<0),
+      'logicalRegressions':sum(logical_frame(b)<logical_frame(a) for a,b in zip(rows,rows[1:])),
+      'epochChanges':sum(epoch(a)!=epoch(b) for a,b in zip(rows,rows[1:])),
+      'scope':'Post-callback flags; all callback costs remain in the body, including partial correction. Missing legacy flags are unknown.'}
+def distribution(values):
+    values=sorted(values)
+    if not values:return {'count':0}
+    return {'count':len(values),'mean':sum(values)/len(values),'p95':values[math.ceil(len(values)*.95)-1],
+            'p99':values[math.ceil(len(values)*.99)-1],'max':values[-1],'over50':sum(v>50 for v in values),
+            'over100':sum(v>100 for v in values),'over250':sum(v>250 for v in values)}
+def summarize(peer):
+    rows=peer['rows'];first=peer['before'];last=rows[-1]
+    # Keep scene retirement/menu lockstep separate from gameplay throughput.
+    # A historical cursor/Enemy counter during correction is not forward
+    # progress. Stable endpoints still include every intervening callback.
+    scenes=[];group=[];previous_scene=anchor=None
+    def finish_scene():
+        anchors=[i for i,row in enumerate(group) if not correcting(row) and valid_progress(row)]
+        if not anchors:return
+        selected=group[anchors[0]:anchors[-1]+1];start,end=selected[0],selected[-1]
+        scenes.append({'scene':start.get('scene'),'stage':start.get('stage'),'generation':start['net'][10],
+          'firstFrame':logical_frame(start),'lastFrame':logical_frame(end),'elapsedMs':end['time']-start['time'],
+          'logicalFps':logical_rate(selected),'samples':len(selected),
+          'correctingSamples':sum(correcting(r) for r in selected)})
+    for row in rows:
+        if previous_scene is not None and (row.get('scene')!=previous_scene.get('scene') or
+          row.get('loading')!=previous_scene.get('loading') or epoch(row)!=epoch(previous_scene) or
+          row['time']<=previous_scene['time'] or logical_frame(row)<logical_frame(previous_scene) or
+          (not correcting(row) and anchor is not None and row.get('enemyFrame',0)<anchor.get('enemyFrame',0))):
+            finish_scene();group=[];anchor=None
+        group.append(row)
+        if not correcting(row):anchor=row
+        previous_scene=row
+    finish_scene()
+    gaps=[];advances=[];ticks=[];last_present=last_advance=None;previous=None
+    for row in rows:
+        if previous:
+            if row['graphics'][5]!=previous['graphics'][5]:
+                if last_present is not None:gaps.append(row['time']-last_present)
+                last_present=row['time']
+            advance=logical_frame(row)-logical_frame(previous)
+            if advance<0 or epoch(row)!=epoch(previous) or row['time']<=previous['time']:
+                last_advance=None
+            else:
+                ticks.append(advance)
+                if advance>0:
+                    if last_advance is not None:advances.append(row['time']-last_advance)
+                    last_advance=row['time']
+        previous=row
+    rate=logical_rate([first]+rows[1:]);elapsed=last['time']-first['time']
+    frames=logical_frame(last)-logical_frame(first) if rate is not None else None
+    profile=[a-b for a,b in zip(last['profile'],first['profile'])]
+    chain=[a-b for a,b in zip(last['chain'],first['chain'])]
+    bullet=[a-b for a,b in zip(last['bullet'],first['bullet'])]
+    bullet_update=[a-b for a,b in zip(last['bulletUpdate'],first['bulletUpdate'])]
+    collision=[a-b for a,b in zip(last['collision'],first['collision'])]
+    owners=[a-b for a,b in zip(last['snapshotOwners'],first['snapshotOwners'])]
+    imp=peer['impairment'];sent=imp['sent'];start_imp=first['impairment']
+    measured_sent=sent-start_imp['sent']
+    executed=frames+last['driver'][4]-first['driver'][4] if frames is not None else None
+    result={'logicalFps':rate,'frames':frames,'elapsedMs':elapsed,'sceneSpans':scenes,
+      'logicalCounterValid':rate is not None,'logicalFrame':{'first':logical_frame(first),'last':logical_frame(last)},
+      'netCursor':{'first':first['net'][3],'last':last['net'][3]},'progress':progress_summary(rows,first),
+      'predictionBacklogFrames':distribution([unconfirmed_frames(r) for r in rows]),
+      'maxLogicalTicksPerCallback':max(ticks,default=None),'multiTickCallbacks':sum(n>1 for n in ticks),
+      'audioServicesPerSecond':(last['audioServices']-first['audioServices'])*1000/elapsed if last.get('audioServices') is not None else None,
+      'audioClockSecondsPerSecond':(last['audioClock']-first['audioClock'])*1000/elapsed if 'audioClock' in last else None,
+      'presentGapMs':distribution(gaps),'advanceGapMs':distribution(advances),
+      'callbackMs':distribution([x['ms'] for x in rows]),'receiveAgeMs':distribution([x['receiveAge'] for x in rows]),
+      'corrections':last['driver'][3]-first['driver'][3],'resimulated':last['driver'][4]-first['driver'][4],
+      'captureMs':profile[4],'restoreMs':profile[5],'updateMs':profile[6],'resimDrawMs':profile[7],
+      'chainMs':chain,
+      'bulletMs':bullet,
+      'bulletUpdateSampleMs':bullet_update,
+      'collisionChecks':collision,
+      'snapshots':profile[2],'skipped':profile[3],'snapshotBytes':profile[8],
+      'snapshotOwnerBytes':owners[:6],'snapshotOwnerBeginMs':owners[6:],
+      'actualSnapshotModes':last['snapshotModes'],
+      'correctionMs':last['costs'][2]-first['costs'][2],'maxCorrectionMs':last['costs'][3],
+      'callbackMsPerLogicalTick':sum(x['ms'] for x in rows[1:])/frames if frames and frames>0 else None,
+      'updateMsPerExecutedTick':profile[6]/executed if executed and executed>0 else None,
+      'activeBullets':last['profile'][9],'peakBullets':max(x['profile'][9] for x in rows),
+      'heapGrowthBytes':last['heap']-first['heap'],'canonical':peer['canonical'],
+      'confirmedThrough':peer['after']['net'][5],
+      'deliveredMeanMs':(imp['deliveredDelayTotalMs']-start_imp['deliveredDelayTotalMs'])/measured_sent if measured_sent else None,
+      'deliveredMaxMs':imp['maxDeliveredDelayMs'],'maxTimerOverrunMs':imp['maxTimerOverrunMs']}
+    result['profileAvailable']=peer.get('profileAvailable',True)
+    if not result['profileAvailable']:
+        for key in ('captureMs','restoreMs','updateMs','resimDrawMs','chainMs','bulletMs',
+                    'bulletUpdateSampleMs','collisionChecks','snapshots','skipped','snapshotBytes',
+                    'correctionMs','maxCorrectionMs','updateMsPerExecutedTick','activeBullets','peakBullets',
+                    'snapshotOwnerBytes','snapshotOwnerBeginMs','actualSnapshotModes'):
+            result[key]=None
+    return result
+
+def freeze(args):
+    dest=args.output/'frozen';dest.mkdir(parents=True,exist_ok=False)
+    profile='multiplayer' if args.production else 'multiplayer-fixtures'
+    runtime_root=args.runtime_root.resolve() if args.runtime_root else ROOT
+    build=runtime_root/'th08_web/artifacts'/profile
+    info=json.loads((build/'build.json').read_text())
+    if bool(info['diagnostic'])==args.production or info['variant']!=profile or digest(build/'th08-sdl.wasm')!=info['sha256']:raise ValueError('Wrong measurement build')
+    if digest(build/'th08-sdl.mjs')!=info['loaderSha256']:raise ValueError('Stale fixture loader')
+    for name,expected in info['sourceFiles'].items():
+        if digest(runtime_root/name)!=expected:raise ValueError('Stale fixture source '+name)
+    source={ROOT/'portable/multiplayer/smoke.html':'index.html',ROOT/'portable/multiplayer/smoke.mjs':'smoke-source.mjs',
+      ROOT/'portable/multiplayer/performance-hook.mjs':'performance-hook.mjs',Path(__file__):'measure-smoothness.py',
+      ROOT/'portable/multiplayer/performance-lobby.mjs':'performance-lobby.mjs',
+      runtime_root/'th08_web/sdl-runtime/multiplayer-host.mjs':'multiplayer-host.mjs',
+      runtime_root/'third_party/eagler-common/browser/adonis-calibration.mjs':'adonis-calibration.mjs',
+      build/'th08-sdl.mjs':'th08-sdl.mjs',build/'th08-sdl.wasm':'th08-sdl.wasm',build/'build.json':'runtime-build.json',
+      ROOT/'third_party/eagler-common/testkit/rtc-input-impairment.cjs':'rtc-input-impairment.cjs',
+      args.data:'input/th08.dat',WORKSPACE/'th06-eagler/assets/msgothic.ttc':'fonts/msgothic.ttc',
+      WORKSPACE/'th08-eagler/build-eagler/fonts/blend.bin':'fonts/blend.bin',
+      WORKSPACE/'th08-eagler/build-eagler/fonts/cp932.bin':'fonts/cp932.bin'}
+    symbols=build/'th08-sdl.mjs.symbols'
+    if symbols.exists():source[symbols]='th08-sdl.mjs.symbols'
+    launcher=WORKSPACE/'eagler-touhou'
+    # Freeze the real relay's complete local module graph, including its
+    # packaged-contract loader. A stale hand-maintained list missed imports.
+    graph_script="""const [moduleUrl,root]=process.argv.slice(1);
+const {localModuleClosure}=await import(moduleUrl);
+console.log(JSON.stringify(await localModuleClosure({root,entries:['server/netplay-relay.mjs'],allowBareImports:true,allowDynamicImports:true})));"""
+    closure=json.loads(subprocess.check_output(['node','--input-type=module','-e',graph_script,
+      (launcher/'lib/browser-module-graph.mjs').as_uri(),str(launcher)],text=True))
+    for name in closure:source[launcher/name]='relay/'+name
+    compiled=launcher/'.cache/build/browser/assets/contracts'
+    if not compiled.exists():compiled=launcher/'assets/contracts'
+    for path in compiled.rglob('*'):
+        if path.is_file() and path.suffix in ('.mjs','.js'):source[path]='relay/assets/contracts/'+path.relative_to(compiled).as_posix()
+    for package in ('ws','acorn'):
+        package_root=launcher/'node_modules'/package
+        if not (package_root/'package.json').is_file():raise ValueError('Missing relay dependency '+package)
+        for path in package_root.rglob('*'):
+            if path.is_file():source[path]='relay/node_modules/'+package+'/'+path.relative_to(package_root).as_posix()
+    for origin,name in source.items():
+        target=dest/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(origin,target)
+    (dest/'smoke.mjs').write_bytes((dest/'smoke-source.mjs').read_bytes()+b'\n'+(dest/'performance-hook.mjs').read_bytes())
+    (dest/'build.json').write_text(json.dumps({'game':'th08','variant':profile,'wasm':info['sha256']}))
+    manifest={p.relative_to(dest).as_posix():digest(p) for p in dest.rglob('*') if p.is_file()}
+    (args.output/'manifest.json').write_text(json.dumps(manifest,indent=2))
+    return dest,manifest
+
+def verify(dest,manifest):
+    for name,expected in manifest.items():
+        if digest(dest/name)!=expected:raise ValueError('Frozen experiment changed: '+name)
+
+class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self,*args):pass
+
+def run(args,origin,relay,dest,mode):
+    report={'passed':False,'mode':mode,'production':args.production,'cpuRate':args.cpu_rate,'players':args.players,'runtimeTiming':args.runtime_timing,
+      'denseBullets':args.bullets,'difficulty':args.difficulty,'limit60':args.cap60,'wallClockTouch':args.wall_clock_touch,'idleInput':args.idle_input,'frames':args.frames,'oneWayMs':args.one_way_ms,'jitterMs':args.jitter_ms,
+      'slowSeats':args.slow_seats,'touchSeats':args.touch_seats,'checkpointSpan':args.checkpoint_span,'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'titleSpellsLazy':args.title_spells_lazy,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'backMetadataOnly':args.back_metadata_only,'scope':'separate Chromium processes; native rAF; RTC application-send impairment; CPU throttle is not a phone model',
+      'headed':args.headed,'nativeGpu':args.native_gpu,'touchHz':args.touch_hz,'browserChannel':args.browser_channel,
+      'measuredBodyStartsAtLogicalFrame':240,'activePhaseScope':'active-phase-start includes the lead-in from warmup frontier 180; measured body begins at logical frame 240',
+      'browsers':[],'peers':[],'errors':[],'teardown':{'browsersClosed':0,'errors':[]}}
+    report['browserEvidence']={'schema':'th08-browser-evidence/2','pages':[None]*args.players,'throttleApplications':[],'errors':[],
+      'rtcTimeoutEnvironment':rtc_timeout_evidence(),
+      'scope':'Bounded phase, visibility/focus and signal/gameplay WebSocket observations; connection overflow counts omitted lifecycle/string observations. No SDP, ICE addresses or binary payloads. CPU rate is a requested CDP setting with ACK, not an independent effective-rate measurement'}
+    playwright_phase=stage_begin('playwright-start')
+    with sync_playwright() as pw:
+        stage_end(playwright_phase)
+        browsers=[];pages=[];cpu_sessions=[]
+        profile_id=uuid.uuid4().hex[:12]
+        report['cpuSampling']={'intervalUs':args.cpu_profile_us,'profiles':[],
+          'scope':'CDP sampling across the active phase, including setup and frames before the measured body starts at logical frame 240; diagnostic timings, not performance acceptance' if args.cpu_profile_us else 'disabled'}
+        def finish_cpu_profiles():
+            while cpu_sessions:
+                seat,session=cpu_sessions.pop(0)
+                profile=staged('cpu-profile-stop',session.send,'Profiler.stop',seat=seat)['profile']
+                output=Path(args.output)/f'{mode}-{profile_id}-seat{seat}.cpuprofile'
+                output.write_text(json.dumps(profile,separators=(',',':')),encoding='utf-8')
+                report['cpuSampling']['profiles'].append({'seat':seat,'path':output.name,'sha256':digest(output),
+                  'samples':len(profile.get('samples',[])),'startTime':profile.get('startTime'),'endTime':profile.get('endTime')})
+                staged('cpu-profile-disable',session.send,'Profiler.disable',seat=seat)
+        def read_peer_report(page,seat):
+            # Collect even if the native report fails during startup. This
+            # replaces the existing report evaluation, not another CDP poll.
+            value=staged('peer-report',page.evaluate,"""()=>{
+              const value={report:null,error:null,browserEvidence:null};
+              try{value.report=th08Performance.report();}catch(error){value.error=String(error);}
+              try{
+                const evidence=globalThis.__th08BrowserEvidence;
+                if(!evidence)throw Error('Browser evidence was not installed');
+                evidence.mark('report-collected');value.browserEvidence=evidence.read();
+              }catch(error){value.browserEvidence={errors:[{where:'collect',error:String(error)}]};}
+              return value;
+            }""",seat=seat)
+            report['browserEvidence']['pages'][seat]={'seat':seat,**value['browserEvidence']}
+            if value['error'] is not None:raise RuntimeError(value['error'])
+            return value['report']
+        try:
+            host_timing=args.runtime_timing=='launcher-rollback'
+            room=('th08mp-' if host_timing else 'smooth-')+uuid.uuid4().hex[:12]
+            admission=None
+            for seat in range(args.players):
+                seat_phase=stage_begin('seat-setup',seat=seat,watchdog_seconds=120)
+                browser_args=['--disable-background-timer-throttling','--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding']
+                if args.native_gpu:
+                    browser_args+=['--ignore-gpu-blocklist']
+                    if os.name=='nt':browser_args+=['--use-gl=angle','--use-angle=d3d11']
+                else:browser_args+=['--enable-unsafe-swiftshader']
+                browser=staged('browser-launch',pw.chromium.launch,headless=not args.headed,channel=None if args.browser_channel=='default' else args.browser_channel,args=browser_args,seat=seat)
+                browsers.append(browser)
+                gpu=staged('browser-gpu',lambda:browser.new_browser_cdp_session().send('SystemInfo.getInfo')['gpu'],seat=seat)
+                identity={'seat':seat,'version':browser.version,'gpu':gpu,'launchArgs':browser_args}
+                report['browsers'].append(identity)
+                if seat==0:report['browser']=identity
+                context=browser.new_context(viewport={'width':800,'height':600},service_workers='block')
+                options={'oneWayMs':args.one_way_ms,'jitterMs':args.jitter_ms,'inputLabel':'th08-input','controlLabel':'th08-control','seed':7135+seat}
+                if seat==args.spike_seat:
+                    options.update(spikeFrame=args.spike_frame,spikeMs=args.spike_ms,spikeDelayMs=args.spike_delay_ms)
+                context.add_init_script((dest/'rtc-input-impairment.cjs').read_text()+'\nglobalThis.__th08Impairment=installRtcInputImpairment('+json.dumps(options)+');\n'+BROWSER_EVIDENCE_INIT)
+                page=context.new_page();pages.append(page)
+                page.on('pageerror',lambda e,seat=seat:report['errors'].append({'seat':seat,'error':str(e)}))
+                staged('page-navigation',page.goto,origin,seat=seat)
+                staged('page-ready',page.wait_for_function,"()=>{if(window.th08Performance===undefined)return false;globalThis.__th08BrowserEvidence?.mark('page-ready');return true;}",timeout=90000,seat=seat)
+                if host_timing and seat==0:
+                    admission=staged('lobby-admission',page.evaluate,'async o=>{const m=await import("/performance-lobby.mjs");return m.admitPerformanceRoom(o.relay,o.room,o.count,o.difficulty,o.timing)}',
+                      {'relay':relay,'room':room,'count':args.players,'difficulty':args.difficulty,
+                       'timing':{'adonisMode':2,'inputDelay':0,'inputDelayAuto':True,'predictionLimit':8,'predictionReserve':2}},seat=seat)
+                    report['admission']=admission['admission']
+                timing=None
+                if admission:
+                    settings=admission['admission']['room']
+                    timing={key:settings[key] for key in ('adonisMode','inputDelay','inputDelayAuto','predictionLimit','predictionReserve')}
+                    timing['url']=admission['urls'][seat]
+                staged('runtime-start',page.evaluate,"""async o=>{
+                  globalThis.__th08BrowserEvidence?.mark('runtime-start-call');
+                  try{
+                    const value=await multiplayerSmoke.start(1234,Array.from({length:o.players},(_,i)=>i),o.seat,[12345,67890],null,o.difficulty,o.timing);
+                    globalThis.__th08BrowserEvidence?.mark('runtime-start-return');return value;
+                  }catch(error){globalThis.__th08BrowserEvidence?.mark('runtime-start-error');throw error;}
+                }""",
+                  {'seat':seat,'players':args.players,'difficulty':args.difficulty,'timing':timing},seat=seat)
+                identity['actualGL']=staged('game-gl',page.evaluate,"""()=>{
+                  const canvas=document.querySelector('canvas'),gl=canvas?.getContext('webgl2');
+                  if(!gl)return null;
+                  const ext=gl.getExtension('WEBGL_debug_renderer_info');
+                  return {unmasked:!!ext,renderer:gl.getParameter(ext?ext.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
+                    vendor:gl.getParameter(ext?ext.UNMASKED_VENDOR_WEBGL:gl.VENDOR),version:gl.getParameter(gl.VERSION)};
+                }""",seat=seat)
+                actual=identity['actualGL']
+                renderer=(actual or {}).get('renderer','').lower()
+                identity['nativeGpuVerified']=bool(actual and actual['unmasked'] and renderer and
+                  not any(name in renderer for name in ('swiftshader','llvmpipe','software','basic render','warp')))
+                if args.native_gpu and not identity['nativeGpuVerified']:raise AssertionError('Native game WebGL renderer not verified')
+                stage_end(seat_phase)
+            if host_timing:
+                # Measured startup loads the native world before its commit.
+                # Polling alone cannot provide that readiness; run the same
+                # native rAF path used in gameplay, with ordinary input capture.
+                for seat,page in enumerate(pages):staged('warmup-start',page.evaluate,'(seat)=>th08Performance.start(180,999999,seat)',seat,seat=seat)
+            else:
+                for page in pages:
+                    if not staged('legacy-connect',page.evaluate,'(url)=>multiplayerSmoke.connect(url)',relay+'/?room='+room):raise AssertionError('connect')
+            with worker_stage('rtc-barrier',watchdog_seconds=65):
+                deadline=time.monotonic()+60
+                while True:
+                    states=[page.evaluate('()=>{multiplayerSmoke.pollNetwork();return multiplayerSmoke.netStatus()}') for page in pages]
+                    if all(s[2] for s in states):break
+                    if time.monotonic()>deadline:raise TimeoutError('RTC barrier '+json.dumps([page.evaluate('multiplayerSmoke.timingStatus()') for page in pages]))
+                    time.sleep(.05)
+            if not all(page.evaluate('multiplayerSmoke.driverStatus()[12]===1') for page in pages):raise AssertionError('Not RTC')
+            for page in pages:
+                if page.evaluate('(span)=>th08Performance.checkpointSpan(span)',args.checkpoint_span)!=args.checkpoint_span:raise AssertionError('Checkpoint span rejected')
+            def wait_phase(expected_phase):
+                with worker_stage('warmup-await' if expected_phase==1 else 'active-phase-await',watchdog_seconds=args.timeout+5):
+                    deadline=time.monotonic()+args.timeout
+                    while True:
+                        states=[page.evaluate('th08Performance.status()') for page in pages]
+                        if report['errors'] or any(s['issues'] for s in states):raise AssertionError({'states':states,'errors':report['errors']})
+                        if all(s['phase']==expected_phase and s['done'] for s in states):break
+                        if time.monotonic()>deadline:raise TimeoutError(json.dumps(states))
+                        time.sleep(.5)
+                    for page in pages:page.evaluate("phase=>{th08Performance.stop();globalThis.__th08BrowserEvidence?.mark(phase===1?'warmup-complete':'body-complete');}",expected_phase)
+            if not host_timing:
+                for seat,page in enumerate(pages):staged('warmup-start',page.evaluate,'(seat)=>th08Performance.start(180,999999,seat)',seat,seat=seat)
+            wait_phase(1)
+            startup_validation=stage_begin('warmup-validation')
+            report['startupTiming']=[page.evaluate('multiplayerSmoke.timingStatus()') for page in pages]
+            for timing in report['startupTiming']:
+                if args.expected_native_mode is not None and timing['native']['mode']!=args.expected_native_mode:raise AssertionError('Unexpected baseline/candidate native mode')
+                if timing['host']:
+                    effective=timing['host']['effective']
+                    if timing['host']['errors'] or timing['native']['mode']!=effective['mode']:raise AssertionError('Actual host timing mode mismatch')
+                    if effective['automatic']:
+                        if timing['calibration'][1]!=5 or timing['native']['delay']!=timing['calibration'][8]:raise AssertionError('Measured timing was not committed')
+                    elif timing['native']['delay']!=effective['delay']:raise AssertionError('Actual host delay mismatch')
+            report['startupImpairment']=[page.evaluate('({...__th08Impairment.stats})') for page in pages]
+            for timing,imp in zip(report['startupTiming'],report['startupImpairment']):
+                if timing['host'] and timing['host']['effective']['automatic']:
+                    if imp.get('calibrationProbes',0)<129 or imp.get('calibrationEchoes',0)<129:raise AssertionError('Actual calibration probes/echoes were not impaired')
+            if len({json.dumps(p.evaluate('multiplayerSmoke.canonical()')) for p in pages})!=1:raise AssertionError('Warmup divergence')
+            stage_end(startup_validation)
+            for seat,page in enumerate(pages):
+                configuration_phase=stage_begin('active-phase-configure',seat=seat)
+                page.evaluate('(o)=>th08Performance.configure(o.mode,o.bullets,o.cap60,o.wallTouch,o.earlyInput,o.liveBullets,o.targetFilter,o.broadphase,o.cache,o.idleInput,o.backgroundIndex,o.bombLazy,o.shotSparse,o.recordSparse,o.worldInstancing,o.textureCoalesce,o.skipResimVisual,o.skipResimGeometry,o.titleSpellsLazy,o.backMetadataOnly,o.touchHz)',{'mode':MODES[mode],'bullets':args.bullets,'cap60':args.cap60,'wallTouch':args.wall_clock_touch and seat in args.touch_seats,'earlyInput':mode!='frontier-late','liveBullets':mode!='frontier-legacy','targetFilter':mode not in ('frontier-target-legacy','frontier-both-legacy'),'broadphase':mode not in ('frontier-collision-legacy','frontier-both-legacy'),'cache':mode not in ('frontier-cache-legacy','frontier-both-legacy'),'idleInput':args.idle_input or (args.wall_clock_touch and seat not in args.touch_seats),'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'titleSpellsLazy':args.title_spells_lazy,'backMetadataOnly':args.back_metadata_only,'touchHz':args.touch_hz})
+                if seat in args.slow_seats:
+                    context=page.context;session=context.new_cdp_session(page)
+                    throttle={'seat':seat,'rate':args.cpu_rate,'requestedAt':time.time()*1000,'acknowledgedAt':None,'acknowledged':False,'target':None}
+                    report['browserEvidence']['throttleApplications'].append(throttle)
+                    try:
+                        session.send('Emulation.setCPUThrottlingRate',{'rate':args.cpu_rate})
+                    except Exception as error:
+                        throttle['error']=str(error);raise
+                    throttle['acknowledged']=True;throttle['acknowledgedAt']=time.time()*1000
+                    try:
+                        target=session.send('Target.getTargetInfo').get('targetInfo',{})
+                        if not target.get('targetId'):raise RuntimeError('Missing attached page target identity')
+                        throttle['target']={key:target[key] for key in ('targetId','type','browserContextId') if key in target}
+                    except Exception as error:
+                        report['browserEvidence']['errors'].append({'seat':seat,'where':'throttle-target','error':str(error)})
+                if args.cpu_profile_us:
+                    sampler=page.context.new_cdp_session(page)
+                    sampler.send('Profiler.enable')
+                    sampler.send('Profiler.setSamplingInterval',{'interval':args.cpu_profile_us})
+                    sampler.send('Profiler.start')
+                    cpu_sessions.append((seat,sampler))
+                stage_end(configuration_phase)
+            # Arm against the same wall deadline, instead of starting P1 while
+            # synchronous CDP setup is still blocking the other processes.
+            active_arm=stage_begin('active-phase-arm')
+            start_at=time.time()*1000+600
+            for seat,page in enumerate(pages):page.evaluate("""o=>{
+              globalThis.__th08BrowserEvidence?.mark('body-armed');
+              setTimeout(()=>{th08Performance.start(o.frames,240,o.seat,o.at);globalThis.__th08BrowserEvidence?.mark('active-phase-start');},Math.max(0,o.at-Date.now()));
+            }""",{'at':start_at,'frames':args.frames,'seat':seat})
+            stage_end(active_arm)
+            # Only accept completion of the newly started phase, even if its
+            # timer runs late and the warmup done flag is still visible.
+            wait_phase(2)
+            staged('finish-cpu-profiles',finish_cpu_profiles)
+            report['peers']=[read_peer_report(page,seat) for seat,page in enumerate(pages)]
+            for seat,peer in enumerate(report['peers']):
+                imp=peer['impairment']
+                if not imp['matched'] or not imp['sent'] or imp['errors'] or imp['overflow']:raise AssertionError('RTC impairment not applied cleanly')
+                if not peer['rows'] or logical_frame(peer['after'])!=args.frames or correcting(peer['after']):
+                    raise AssertionError('Incomplete forward run or correction at stop')
+                if any(not valid_progress(row) for row in [peer['before'],*peer['rows'],peer['after']]):
+                    raise AssertionError('Inconsistent multiplayer progress sample')
+                # Warmup RTC traffic alone cannot qualify the measured body:
+                # reject a later relay fallback or an idle impairment seam.
+                if peer['after']['driver'][12]!=1 or any(row['driver'][12]!=1 for row in peer['rows']):
+                    raise AssertionError('Measured body left the RTC route')
+                if imp['sent']-peer['before']['impairment']['sent']<=0:
+                    raise AssertionError('No impaired RTC sends during the measured body')
+                if peer['limit60']!=args.cap60:raise AssertionError('Presentation limit not applied')
+                if peer['wallClockTouch']!=(args.wall_clock_touch and seat in args.touch_seats):raise AssertionError('Touch workload not applied')
+                if peer['earlyInput']!=(mode!='frontier-late'):raise AssertionError('Input send order not applied')
+                if peer['liveBullets']!=(mode!='frontier-legacy'):raise AssertionError('Bullet backend not applied')
+                if peer['targetFilter']!=(mode not in ('frontier-target-legacy','frontier-both-legacy')):raise AssertionError('Target filter not applied')
+                if peer['broadphase']!=(mode not in ('frontier-collision-legacy','frontier-both-legacy')):raise AssertionError('Collision broadphase not applied')
+                if peer['barrierCache']!=(mode not in ('frontier-cache-legacy','frontier-both-legacy')):raise AssertionError('Barrier cache mode not applied')
+                if peer['identity']['fixtureBuild']==args.production or peer['profileAvailable']==args.production:raise AssertionError('Wrong production/fixture lane')
+                if peer['wallClockTouch'] and (peer['touch']['events']<30 or peer['touch']['pathPixels']<10 or peer['touch']['maxX']-peer['touch']['minX']<1):raise AssertionError('Native touch did not move the player')
+                touch=peer['touch']
+                touch['tapeSha256']=hashlib.sha256(json.dumps(touch['tape'],separators=(',',':')).encode()).hexdigest()
+                if peer['wallClockTouch'] and (touch['sourceHz']!=args.touch_hz or touch['timerActive'] or touch['scheduled']!=touch['events']+touch['coalesced']):raise AssertionError('Touch source accounting or cleanup failed')
+                if peer['after']['driver'][2] or peer['after']['driver'][15]:raise AssertionError('Driver/channel failure')
+                if mode in ('exact','exact-snapshots') and peer['after']['driver'][3]:raise AssertionError('Exact control rolled back')
+            if len({json.dumps(p['canonical']) for p in report['peers']})!=1:raise AssertionError('Canonical divergence')
+            report['summary']=[summarize(p) for p in report['peers']]
+            if args.spike_ms:
+                source=report['peers'][args.spike_seat];imp=source['impairment']
+                if imp['spikeEndMs'] is None or not imp['spikeDelayed']:raise AssertionError('Spike not applied')
+                end=source['timeOrigin']+imp['spikeEndMs']
+                report['spike']={'seat':args.spike_seat,'frame':args.spike_frame,'durationMs':args.spike_ms,
+                  'extraDelayMs':args.spike_delay_ms,'endEpochMs':end,'delayed':imp['spikeDelayed'],
+                  'controlDelayed':imp['spikeControlDelayed']}
+                for peer,summary in zip(report['peers'],report['summary']):
+                    rows=peer['rows'];origin=peer['timeOrigin'];windows=[]
+                    pre_end=end-args.spike_ms
+                    pre=[r for r in rows if pre_end-1500<=origin+r['time']<pre_end]
+                    pre_fps=logical_rate(pre)
+                    summary['preSpikeLogicalFps']=pre_fps
+                    # Fixed wall windows after network recovery, not frame windows
+                    # that hide stalls. Keep confirmed progress separate from receive.
+                    for index in range(10):
+                        selected=[r for r in rows if end+index*1000<=origin+r['time']<end+(index+1)*1000]
+                        if len(selected)<2:continue
+                        a,b=selected[0],selected[-1];dt=b['time']-a['time']
+                        windows.append({'second':index,'logicalFps':logical_rate(selected),
+                          'maxConfirmedAgeMs':max(r['confirmedAge'] for r in selected),
+                          'maxUnconfirmed':max(unconfirmed_frames(r) for r in selected),
+                          'callbackMs':distribution([r['ms'] for r in selected]),'progress':progress_summary(selected)})
+                    summary['recoveryWindows']=windows
+                    summary['sustainedRecoveryMs']=next((w['second']*1000 for i,w in enumerate(windows[:-1])
+                      if w['logicalFps'] is not None and windows[i+1]['logicalFps'] is not None and
+                         w['logicalFps']>=57 and windows[i+1]['logicalFps']>=57 and
+                         w['maxConfirmedAgeMs']<200 and windows[i+1]['maxConfirmedAgeMs']<200),None)
+                    summary['settledRecoveryMs']=next((w['second']*1000 for i,w in enumerate(windows[:-2])
+                      if all(v['logicalFps'] is not None and v['logicalFps']>=57 and v['maxConfirmedAgeMs']<200 for v in windows[i:])),None)
+                    summary['recoveryToPreSpikeMs']=next((w['second']*1000 for i,w in enumerate(windows[:-1])
+                      if pre_fps and all(v['logicalFps'] is not None and v['logicalFps']>=pre_fps*.95 and v['maxConfirmedAgeMs']<200 for v in windows[i:i+2])),None)
+            if mode not in ('exact','exact-snapshots'):
+                changing=set(args.touch_seats if args.wall_clock_touch else ([] if args.idle_input else range(args.players)))
+                if any(changing-{seat} and peer['corrections']==0 for seat,peer in enumerate(report['summary'])):raise AssertionError('No measured remote-input rollback')
+            report['passed']=True
+        except Exception as error:
+            if _WORKER_DIAGNOSTICS:_WORKER_DIAGNOSTICS.exception(error)
+            report['error']=str(error)
+            if not report['peers']:
+                for seat,page in enumerate(pages):
+                    try:report['peers'].append(read_peer_report(page,seat))
+                    except Exception as report_error:report['browserEvidence']['errors'].append({'seat':seat,'where':'peer-report','error':str(report_error)})
+        finally:
+            try:staged('finish-cpu-profiles',finish_cpu_profiles)
+            except Exception as error:report['teardown']['errors'].append('CPU profile: '+str(error))
+            for seat,browser in reversed(list(enumerate(browsers))):
+                try:
+                    staged('browser-close',browser.close,seat=seat)
+                    if browser.is_connected():raise RuntimeError('Browser still connected after close')
+                    report['teardown']['browsersClosed']+=1
+                except Exception as error:report['teardown']['errors'].append(str(error))
+            if report['teardown']['errors']:report['passed']=False
+            playwright_phase=stage_begin('playwright-stop')
+    stage_end(playwright_phase)
+    return report
+
+def supervised_run(args,origin,relay,dest,mode,name):
+    """Bound even a stuck CDP evaluate; reap the owned tree before returning."""
+    output=args.output/name;limit=worker_timeout(args);log_path=args.output/(name+'.log')
+    job={'args':{key:str(value) if isinstance(value,Path) else value for key,value in vars(args).items()},
+         'origin':origin,'relay':relay,'dest':str(dest),'mode':mode,'output':str(output),
+         'workerTimeoutSeconds':limit,'workerReapBudgetSeconds':WORKER_REAP_SECONDS}
+    spec=args.output/(name+'.job');spec.write_text(json.dumps(job))
+    timed_out=False;cleanup=None;started=time.monotonic()
+    with log_path.open('w',encoding='utf-8') as log:
+        print(json.dumps({'kind':'th08-worker-stage/1','event':'begin','stage':'worker-spawn',
+              'timeoutSeconds':limit,'reapBudgetSeconds':WORKER_REAP_SECONDS}),file=log,flush=True)
+        process=subprocess.Popen([sys.executable,'-u',str(dest/'measure-smoothness.py'),'--worker',str(spec)],
+                                 stdout=log,stderr=subprocess.STDOUT,start_new_session=os.name!='nt')
+        try:process.wait(timeout=limit)
+        except subprocess.TimeoutExpired:timed_out=True
+        finally:
+            # Also runs for a Python exception/interruption in the supervisor.
+            # An external OS hard kill cannot execute this finally; callers
+            # must honor timeout-budget.json before choosing their outer limit.
+            if process.poll() is None:cleanup=reap_worker_tree(process,log)
+    supervisor={'workerPid':process.pid,'timeoutSeconds':limit,'timedOut':timed_out,
+                'elapsedSeconds':round(time.monotonic()-started,3),'log':log_path.name,
+                'exitCode':process.returncode,'cleanup':cleanup}
+    if timed_out or not output.exists():
+        reason='Worker hard timeout' if timed_out else 'Worker exited without report'
+        report={'passed':False,'mode':mode,'error':reason,'supervisor':supervisor}
+        output.write_text(json.dumps(report,indent=2))
+    else:report=json.loads(output.read_text())
+    if cleanup and (not cleanup['workerReaped'] or not cleanup['treeKillSucceeded']):
+        report.update(passed=False,error='Worker tree cleanup incomplete; inspect supervisor cleanup',supervisor=supervisor)
+        output.write_text(json.dumps(report,indent=2))
+    return report
+
+def main():
+    invocation_started=time.monotonic()
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--output',type=Path,required=True);p.add_argument('--data',type=Path,required=True)
+    p.add_argument('--frames',type=int,default=780);p.add_argument('--players',type=int,choices=(2,3),default=2)
+    p.add_argument('--cpu-rate',type=float,default=4);p.add_argument('--bullets',type=int,default=1000)
+    p.add_argument('--checkpoint-span',type=int,choices=(1,2,3),default=1)
+    p.add_argument('--background-index',action='store_true')
+    p.add_argument('--no-world-instancing',dest='world_instancing',action='store_false',default=True)
+    p.add_argument('--no-texture-coalesce',dest='texture_coalesce',action='store_false',default=True)
+    p.add_argument('--skip-resim-visual',action='store_true')
+    p.add_argument('--skip-resim-geometry',action='store_true')
+    p.add_argument('--no-title-spells-lazy',dest='title_spells_lazy',action='store_false',default=True)
+    p.add_argument('--back-metadata-only',action='store_true')
+    p.add_argument('--slow-seats',default='',help='Comma-separated CPU throttled seats; default is the last seat')
+    p.add_argument('--difficulty',type=int,choices=range(4),default=1)
+    p.add_argument('--one-way-ms',type=float,default=38.5);p.add_argument('--jitter-ms',type=float,default=5)
+    p.add_argument('--spike-frame',type=int,default=450);p.add_argument('--spike-ms',type=float,default=0)
+    p.add_argument('--spike-delay-ms',type=float,default=800);p.add_argument('--spike-seat',type=int,default=1)
+    p.add_argument('--modes',default='always,frontier');p.add_argument('--rounds',type=int,default=2)
+    p.add_argument('--timeout',type=float,default=150);p.add_argument('--freeze-only',action='store_true')
+    p.add_argument('--worker-timeout',type=float,help='Whole worker hard deadline; default is timeout*2+180. The outer launcher must additionally allow tree reaping, relay cleanup and freeze time.')
+    p.add_argument('--reuse-freeze',type=Path,help='Rerun an existing immutable experiment without rebuilding the old source')
+    p.add_argument('--runtime-root',type=Path,help='Freeze a separately identified Runtime tree with this same measurement harness')
+    p.add_argument('--runtime-timing',choices=('legacy-d0','launcher-rollback'),default='legacy-d0',help='Use actual host validation/configuration and room admission for the Launcher rollback request')
+    p.add_argument('--expected-native-mode',type=int,choices=(0,1,2),help='Require the observed native mode independently of its own host validator')
+    p.add_argument('--browser-channel',choices=('default','chromium','chrome','msedge'),default='chromium')
+    p.add_argument('--headed',action='store_true',help='Use visible desktop browser windows')
+    p.add_argument('--native-gpu',action='store_true',help='Require the actual game WebGL context to expose a non-software renderer')
+    p.add_argument('--cpu-profile-us',type=int,default=0,help='Opt-in CDP CPU sampling interval; timings from this run are diagnostic only')
+    p.add_argument('--cap60',action='store_true')
+    p.add_argument('--wall-clock-touch',action='store_true')
+    p.add_argument('--touch-hz',type=float,default=0,help='Independent Page timer rate for touch; zero preserves the old rAF source')
+    p.add_argument('--touch-seats',default='',help='Comma-separated wall-clock touch seats; default is all seats')
+    p.add_argument('--idle-input',action='store_true',help='Hold both players still after admission; excludes touch stimulus')
+    p.add_argument('--bomb-lazy',action='store_true',help='Fixture-only deferred Bomb snapshot diagnostic')
+    p.add_argument('--shot-sparse',action='store_true',help='Fixture-only sparse PlayerShot snapshot diagnostic')
+    p.add_argument('--record-sparse',action='store_true',help='Fixture-only sparse spell-record snapshot diagnostic')
+    p.add_argument('--production',action='store_true',help='Formal WASM without native fixture/profiling exports; requires --bullets 0 --modes frontier')
+    args=p.parse_args();args.output=args.output.resolve()
+    args.slow_seats=([args.players-1] if not args.slow_seats else [int(s) for s in args.slow_seats.split(',')])
+    args.touch_seats=(list(range(args.players)) if not args.touch_seats else [int(s) for s in args.touch_seats.split(',')])
+    modes=args.modes.split(',')
+    if not math.isfinite(args.timeout) or args.timeout<=0:raise ValueError('Invalid phase timeout')
+    if not math.isfinite(worker_timeout(args)) or worker_timeout(args)<=15:raise ValueError('Worker timeout must exceed 15 seconds')
+    if len(set(args.slow_seats))!=len(args.slow_seats) or any(s<0 or s>=args.players for s in args.slow_seats):raise ValueError('Invalid slow seats')
+    if len(set(args.touch_seats))!=len(args.touch_seats) or any(s<0 or s>=args.players for s in args.touch_seats):raise ValueError('Invalid touch seats')
+    if args.frames<=300 or not all(m in MODES for m in modes) or args.cpu_rate<1:raise ValueError('Invalid settings')
+    if args.touch_hz<0 or args.touch_hz>240 or (args.touch_hz and not args.wall_clock_touch):raise ValueError('Invalid touch source rate')
+    if args.cpu_profile_us and not 100<=args.cpu_profile_us<=100000:raise ValueError('Invalid CPU sampling interval')
+    if not 0<=args.spike_seat<args.players or (args.spike_ms and not 240<args.spike_frame<args.frames-180):raise ValueError('Invalid spike settings')
+    if args.production and (args.bullets or modes!=['frontier']):raise ValueError('Production lane requires authored bullets and unchanged frontier policy')
+    if args.production and args.checkpoint_span!=1:raise ValueError('Production lane cannot alter checkpoint span')
+    if args.production and args.background_index:raise ValueError('Production lane cannot enable fixture index')
+    if args.production and not (args.wall_clock_touch or args.idle_input):
+        raise ValueError('Production stimulus must use native wall-clock touch or explicit idle input')
+    if args.reuse_freeze and args.runtime_root:raise ValueError('runtime-root cannot be combined with reuse-freeze')
+    if args.reuse_freeze:
+        origin=args.reuse_freeze.resolve();dest=origin/'frozen'
+        manifest=json.loads((origin/'manifest.json').read_text());verify(dest,manifest)
+        args.output.mkdir(parents=True,exist_ok=False)
+        (args.output/'manifest.json').write_text(json.dumps(manifest,indent=2))
+        (args.output/'frozen-source.json').write_text(json.dumps({'directory':str(dest)},indent=2))
+    else:dest,manifest=freeze(args)
+    if args.freeze_only:return 0
+    server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(dest)))
+    server_thread=threading.Thread(target=server.serve_forever,daemon=True);server_thread.start()
+    with socket.socket() as probe:probe.bind(('127.0.0.1',0));relay_port=probe.getsockname()[1]
+    env={**os.environ,'EAGLER_NETPLAY_RELAY_HOST':'127.0.0.1','EAGLER_NETPLAY_RELAY_PORT':str(relay_port),'EAGLER_NETPLAY_STUN_URLS':''}
+    summaries=[];reference_hashes=None
+    with (args.output/'relay.log').open('w') as log:
+        relay=subprocess.Popen(['node',str(dest/'relay/server/netplay-relay.mjs')],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            time.sleep(1)
+            if relay.poll() is not None:raise RuntimeError('Relay startup failed')
+            elapsed_before_workers=time.monotonic()-invocation_started
+            budget={'schema':'th08-timeout-budget/1','elapsedBeforeWorkersSeconds':round(elapsed_before_workers,3),
+                    'workers':args.rounds*len(modes),'phaseTimeoutSeconds':args.timeout,'workerTimeoutSeconds':worker_timeout(args),
+                    'workerReapSeconds':WORKER_REAP_SECONDS,'relayServerCleanupSeconds':SUPERVISOR_CLEANUP_SECONDS,
+                    'outerMarginSeconds':OUTER_MARGIN_SECONDS,
+                    'recommendedOuterTimeoutSeconds':math.ceil(elapsed_before_workers+args.rounds*len(modes)*(worker_timeout(args)+WORKER_REAP_SECONDS)+SUPERVISOR_CLEANUP_SECONDS+OUTER_MARGIN_SECONDS),
+                    'scope':'Outer limit is measured from script invocation and must exceed the worker, owned-tree reaping and relay/server cleanup budgets. OS termination failure or an external hard kill cannot be guaranteed recoverable.'}
+            (args.output/'timeout-budget.json').write_text(json.dumps(budget,indent=2))
+            print(json.dumps({'kind':'th08-timeout-budget/1',**budget}),flush=True)
+            for round_id in range(args.rounds):
+                for mode in modes if round_id%2==0 else list(reversed(modes)):
+                    verify(dest,manifest)
+                    name=f'{round_id+1}-{mode}.json'
+                    report=supervised_run(args,'http://127.0.0.1:'+str(server.server_port),'ws://127.0.0.1:'+str(relay_port),dest,mode,name)
+                    verify(dest,manifest)
+                    if report['passed'] and args.cpu_profile_us:
+                        sampling=report.get('cpuSampling',{})
+                        profiles=sampling.get('profiles',[])
+                        if sampling.get('intervalUs')!=args.cpu_profile_us or len(profiles)!=args.players or any(not v.get('samples') or digest(args.output/v['path'])!=v['sha256'] for v in profiles):
+                            report['passed']=False;report['error']='Requested CPU sampling was not completed by the frozen harness'
+                            (args.output/name).write_text(json.dumps(report,indent=2))
+                    if report['passed'] and args.runtime_timing=='launcher-rollback':
+                        if report.get('runtimeTiming')!=args.runtime_timing or not report.get('admission') or not report.get('peers') or any(not peer.get('timing',{}).get('host') for peer in report['peers']):
+                            report['passed']=False;report['error']='Frozen harness did not execute the requested host timing path'
+                            (args.output/name).write_text(json.dumps(report,indent=2))
+                    if report['passed']:
+                        hashes=report['peers'][0]['canonical']
+                        if not args.wall_clock_touch and reference_hashes is not None and hashes!=reference_hashes:
+                            report['passed']=False;report['error']='Cross-policy final canonical divergence'
+                            (args.output/name).write_text(json.dumps(report,indent=2))
+                        reference_hashes=hashes
+                    summary={k:report[k] for k in ('passed','mode','summary','error') if k in report};summary['file']=name
+                    summaries.append(summary)
+                    print(json.dumps({'file':name,'passed':report['passed'],'error':report.get('error'),
+                      'peers':[{key:peer[key] for key in ('logicalFps','presentGapMs','advanceGapMs','corrections','resimulated')}
+                               for peer in report.get('summary',[])]}),flush=True)
+                    (args.output/'summary.json').write_text(json.dumps(summaries,indent=2))
+                    if not report['passed']:return 1
+        finally:
+            cleanup={'relayPid':relay.pid,'relayForced':False}
+            try:
+                if relay.poll() is None:relay.terminate()
+                try:relay.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    cleanup['relayForced']=True;relay.kill();relay.wait(timeout=5)
+                cleanup['relayExitCode']=relay.returncode
+            finally:
+                server.shutdown();server.server_close();server_thread.join(timeout=3)
+                cleanup['serverThreadStopped']=not server_thread.is_alive()
+                (args.output/'teardown.json').write_text(json.dumps(cleanup,indent=2))
+    return 0
+if __name__=='__main__':
+    if len(sys.argv)>1 and sys.argv[1]=='--worker':
+        job=json.loads(Path(sys.argv[2]).read_text())
+        worker_args=argparse.Namespace(**job['args'])
+        _WORKER_DIAGNOSTICS=WorkerDiagnostics(job.get('workerTimeoutSeconds',worker_timeout(worker_args)))
+        try:
+            with worker_stage('worker-run',watchdog_seconds=_WORKER_DIAGNOSTICS.seconds+1):
+                report=run(worker_args,job['origin'],job['relay'],Path(job['dest']),job['mode'])
+        except BaseException as error:
+            report={'passed':False,'mode':job['mode'],'error':'Worker exception: '+str(error)}
+        try:
+            report['workerDiagnostics']=_WORKER_DIAGNOSTICS.snapshot()
+            with worker_stage('report-write'):
+                Path(job['output']).write_text(json.dumps(report,indent=2))
+        finally:faulthandler.cancel_dump_traceback_later()
+        sys.exit(0 if report['passed'] else 1)
+    sys.exit(main())

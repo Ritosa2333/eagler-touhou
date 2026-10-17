@@ -1,0 +1,11 @@
+{
+  "id": "./",
+  "name": "东方风神录网页版",
+  "short_name": "风神录",
+  "description": "东方风神录，支持触控与离线游玩。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0d0c",
+  "theme_color": "#10100f"
+}
