@@ -109,12 +109,13 @@ bool RollbackState::InitialCaptureBatchEnabled(){return initial_capture_batch;}
 bool RollbackState::Reset(){
     Clear();
     configured_=journal_.Reset(Netplay::RollbackJournalConfig{
-        14,20u*1024u*1024u,24000,true,true});
+        HitboxOwnershipHistory::MaxFrames,20u*1024u*1024u,24000,true,true});
     return configured_;
 }
 
 void RollbackState::Clear(){
     journal_.Clear();configured_=false;
+    hitbox_ownership_.Clear();world_=nullptr;
     frame_open_=false;open_frame_=elided_frames_=0;
     animation_pool_=nullptr;bullet_pool_=nullptr;regular_pool_=faith_pool_=nullptr;
     ClearPoolCaptures();
@@ -167,6 +168,8 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
     frame_open_=true;open_frame_=frame;
     if(!capture)return true;
     if(!journal_.BeginFrame(frame))return false;
+    world_=&world;
+    hitbox_ownership_.Capture(frame,world.multiplayer_hitbox_owners);
     ClearPoolCaptures();
     const bool batched=initial_capture_batch;
     if(batched&&!journal_.BeginReadOnlyCapture())return false;
@@ -295,7 +298,12 @@ bool RollbackState::RestoreTo(std::uint32_t frame,std::uint32_t* replayFrom){
     if(!configured_||frame_open_)return false;
     callback_work_timing::PhaseScope work_phase(callback_work_timing::state,
                                                callback_work_timing::Phase::Restore);
-    return journal_.UndoTo(frame,replayFrom);
+    if(!world_)return false;
+    std::uint32_t from=frame;
+    if(!journal_.UndoTo(frame,&from)||
+       !hitbox_ownership_.Restore(from,world_->multiplayer_hitbox_owners))return false;
+    if(replayFrom)*replayFrom=from;
+    return true;
 }
 
 } // namespace th10::multiplayer

@@ -46,6 +46,8 @@ for (const [name, sources, flags = []] of [
     resolve(common,'src/netplay/NetplayCore.cpp'),resolve(common,'src/netplay/NetplayProtocol.cpp')]],
   ['common-session-pacing', [resolve(common,'tests/session-pacing-test.cpp')]],
   ['cooperative-rules', [resolve(root, 'tests/cooperative-rules-test.cpp')]],
+  ['hitbox-ownership', [resolve(root,'tests/hitbox-ownership-test.cpp'),
+    resolve(common,'src/netplay/RollbackJournal.cpp')]],
   ['multiplayer-balance', [
     resolve(root,'tests/multiplayer-balance-test.cpp'),
     resolve(root,'th10_web/cpp/game/Arithmetic.cpp'),softfloat,
