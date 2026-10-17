@@ -490,3 +490,12 @@ const i32* mp_fixture_rules_probe(browser::Application* app){
     }
     return words;
 }
+
+// Native output-only probes for audio-output.test.mjs. Fixture builds alone
+// link this file, so Replay control and arbitrary buffer calls stay diagnostic.
+extern "C" void sdl_audio_replay_seek_output(u32);
+extern "C" th10::i32 audio_host_call(u32,u32,const u32*);
+extern "C" __attribute__((export_name("mp_fixture_audio_seek")))
+void mp_fixture_audio_seek(u32 seeking){sdl_audio_replay_seek_output(seeking);}
+extern "C" __attribute__((export_name("mp_fixture_audio_call")))
+th10::i32 mp_fixture_audio_call(u32 handle,u32 op,const u32* args){return audio_host_call(handle,op,args);}
