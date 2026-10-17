@@ -1,6 +1,6 @@
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {createPresentationLabServer,sha256} from '../../third_party/eagler-common/testkit/presentation-lab/server-core.mjs';
+import {createPresentationLabServer,sha256} from '../../../../common/testkit/presentation-lab/server-core.mjs';
 import {createRuntimeManifest} from '../package-eagler.mjs';
 
 const root=resolve(import.meta.dirname,'../..');

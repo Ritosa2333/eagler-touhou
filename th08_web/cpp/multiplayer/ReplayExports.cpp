@@ -28,7 +28,7 @@ extern "C" __attribute__((export_name("multiplayer_replay_export_size")))
 u32 replay_export_size(){return u32(exported.size());}
 }
 
-#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+#include <eagler/replay/Workspace.hpp>
 namespace {std::string local_replay_description;}
 extern "C" __attribute__((export_name("eagler_replay_inspect"))) const char* eagler_replay_inspect(const th08::u8* data,th08::u32 size){
     Netplay::InputReplayInfo info;th08::multiplayer::ReplayDescription m;
