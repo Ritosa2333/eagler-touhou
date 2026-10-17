@@ -1,0 +1,307 @@
+#pragma once
+
+#include "AnmManager.hpp"
+#include "AnmVm.hpp"
+#include "BulletManager.hpp"
+#include "Chain.hpp"
+#include "GameManager.hpp"
+#include "ZunMath.hpp"
+#include "ZunResult.hpp"
+#include "inttypes.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "Multiplayer.hpp"
+#endif
+
+struct Player;
+
+enum PlayerDirection
+{
+    MOVEMENT_NONE,
+    MOVEMENT_UP,
+    MOVEMENT_DOWN,
+    MOVEMENT_LEFT,
+    MOVEMENT_RIGHT,
+    MOVEMENT_UP_LEFT,
+    MOVEMENT_UP_RIGHT,
+    MOVEMENT_DOWN_LEFT,
+    MOVEMENT_DOWN_RIGHT
+};
+
+enum Character
+{
+    CHARA_REIMU,
+    CHARA_MARISA,
+};
+
+enum ShotType
+{
+    SHOT_TYPE_A,
+    SHOT_TYPE_B,
+};
+
+enum BulletType
+{
+    BULLET_TYPE_0,
+    BULLET_TYPE_1,
+    BULLET_TYPE_2,
+    BULLET_TYPE_LASER
+};
+
+enum PlayerState
+{
+    PLAYER_STATE_ALIVE,
+    PLAYER_STATE_SPAWNING,
+    PLAYER_STATE_DEAD,
+    PLAYER_STATE_INVULNERABLE,
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    PLAYER_STATE_ELIMINATED,
+    // TH06-native co-op terminal state. The original game has no TH07-style
+    // Spirit system; this state exists only in the multiplayer binary so a
+    // zero-stock player can remain visible/non-colliding while a teammate is
+    // still able to donate a life.
+    PLAYER_STATE_REVIVABLE,
+#endif
+};
+
+enum OrbState
+{
+    ORB_HIDDEN,
+    ORB_UNFOCUSED,
+    ORB_FOCUSING,
+    ORB_FOCUSED,
+    ORB_UNFOCUSING,
+};
+
+enum PlayerBulletState
+{
+    PLAYER_BULLET_STATE_UNUSED,
+    PLAYER_BULLET_STATE_FIRED,
+    PLAYER_BULLET_STATE_COLLIDED,
+};
+
+struct PlayerRect
+{
+    f32 posX;
+    f32 posY;
+    f32 sizeX;
+    f32 sizeY;
+};
+
+struct PlayerBullet
+{
+    AnmVm sprite;
+    ZunVec3 position;
+    ZunVec3 prevPosition;
+    ZunVec3 size;
+    ZunVec2 velocity;
+    f32 sidewaysMotion;
+    ZunVec3 unk_134;
+    ZunTimer unk_140;
+    i16 damage;
+    i16 bulletState;
+    i16 bulletType;
+    i16 unk_152;
+    i16 spawnPositionIdx;
+
+    void MoveHorizontal(f32 *position)
+    {
+        *position += this->velocity.x * g_Supervisor.effectiveFramerateMultiplier;
+        this->sprite.pos.x = *position;
+    }
+
+    void MoveVertical(f32 *position)
+    {
+        *position += this->velocity.y * g_Supervisor.effectiveFramerateMultiplier;
+        this->sprite.pos.y = *position;
+    }
+};
+
+struct PlayerBombInfo
+{
+    void UpdatePrev()
+    {
+        for (i32 i = 0; i < 8; ++i)
+        {
+            prevBombRegionPositions[i] = bombRegionPositions[i];
+            for (AnmVm &vm : sprites[i])
+            {
+                vm.UpdatePrev();
+            }
+        }
+    }
+
+    u32 isInUse;
+    i32 duration;
+    ZunTimer timer;
+    void (*calc)(Player *p);
+    void (*draw)(Player *p);
+    i32 reimuABombProjectilesState[8];
+    f32 reimuABombProjectilesRelated[8];
+    ZunVec3 bombRegionPositions[8];
+    ZunVec3 prevBombRegionPositions[8];
+    ZunVec3 bombRegionVelocities[8];
+    AnmVm sprites[8][4];
+};
+
+typedef i32 FireBulletResult;
+#define FBR_STOP_SPAWNING (-2)
+#define FBR_SPAWN_MORE (-1)
+
+typedef FireBulletResult (*FireBulletCallback)(Player *, PlayerBullet *, u32, u32);
+struct CharacterData
+{
+    f32 orthogonalMovementSpeed;
+    f32 orthogonalMovementSpeedFocus;
+    f32 diagonalMovementSpeed;
+    f32 diagonalMovementSpeedFocus;
+    FireBulletCallback fireBulletCallback;
+    FireBulletCallback fireBulletFocusCallback;
+};
+
+struct CharacterPowerBulletData
+{
+    i16 waitBetweenBullets;
+    i16 bulletFrame;
+    ZunVec2 motion;
+    ZunVec2 size;
+    f32 direction;
+    f32 velocity;
+    u16 damage;
+    u8 spawnPositionIdx;
+    u8 bulletType;
+    i16 anmFileIdx;
+    i16 bulletSoundIdx;
+};
+
+struct CharacterPowerData
+{
+    i32 numBullets;
+    i32 power;
+    const CharacterPowerBulletData *bullets;
+};
+
+struct Player
+{
+    Player();
+
+    static ZunResult RegisterChain(u8 unk);
+    static void CutChain();
+    static ChainCallbackResult OnUpdate(Player *p);
+    static ChainCallbackResult OnDrawHighPrio(Player *p);
+    static ChainCallbackResult OnDrawLowPrio(Player *p);
+    static ZunResult AddedCallback(Player *p);
+    static ZunResult DeletedCallback(Player *p);
+    static void SyncRenderState(Player *p);
+
+    static FireBulletResult FireSingleBullet(Player *, PlayerBullet *bullet, i32 bullet_idx, i32 framesSinceLastBullet,
+                                             const CharacterPowerData *powerData);
+
+    static FireBulletResult FireBulletReimuA(Player *, PlayerBullet *, u32, u32);
+    static FireBulletResult FireBulletReimuB(Player *, PlayerBullet *, u32, u32);
+    static FireBulletResult FireBulletMarisaA(Player *, PlayerBullet *, u32, u32);
+    static FireBulletResult FireBulletMarisaB(Player *, PlayerBullet *, u32, u32);
+
+    static void StartFireBulletTimer(Player *);
+    ZunResult HandlePlayerInputs();
+    static void UpdatePlayerBullets(Player *);
+    static ZunResult UpdateFireBulletsTimer(Player *);
+
+    static void SpawnBullets(Player *, u32 timer);
+    static void DrawBullets(Player *p);
+    static void DrawBulletExplosions(Player *p);
+
+    f32 AngleFromPlayer(const ZunVec3 *pos) const;
+    f32 AngleToPlayer(const ZunVec3 *pos) const;
+    i32 CheckGraze(const ZunVec3 *center, const ZunVec3 *size) const;
+    i32 CalcKillBoxCollision(const ZunVec3 *bulletCenter, const ZunVec3 *bulletSize);
+    i32 CalcLaserHitbox(const ZunVec3 *laserCenter, const ZunVec3 *laserSize, const ZunVec3 *rotation, f32 angle,
+                        i32 canGraze);
+    i32 CalcDamageToEnemy(const ZunVec3 *enemyPos, const ZunVec3 *enemySize, bool *unk);
+    i32 CalcItemBoxCollision(const ZunVec3 *center, const ZunVec3 *size) const;
+    void ScoreGraze(const ZunVec3 *center) const;
+    void Die();
+
+    AnmVm playerSprite;
+    AnmVm orbsSprite[3];
+    ZunVec3 positionCenter;
+    ZunVec3 prevPositionCenter;
+    ZunVec3 unk_44c;
+    ZunVec3 hitboxTopLeft;
+    ZunVec3 hitboxBottomRight;
+    ZunVec3 grabItemTopLeft;
+    ZunVec3 grabItemBottomRight;
+    ZunVec3 hitboxSize;
+    ZunVec3 grabItemSize;
+    ZunVec3 orbsPosition[2];
+    ZunVec3 prevOrbsPosition[2];
+    ZunVec3 bombRegionPositions[32];
+    ZunVec3 bombRegionSizes[32];
+    i32 bombRegionDamages[32];
+    i32 unk_838[32];
+    PlayerRect bombProjectiles[16];
+    ZunTimer laserTimer[2];
+    f32 horizontalMovementSpeedMultiplierDuringBomb;
+    f32 verticalMovementSpeedMultiplierDuringBomb;
+    i32 respawnTimer;
+    i32 bulletGracePeriod;
+    i8 playerState;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u8 initParam;
+#else
+    u8 unk_9e1;
+#endif
+    i8 orbState;
+    i8 isFocus;
+    u8 unk_9e4;
+    ZunTimer focusMovementTimer;
+    CharacterData characterData;
+    PlayerDirection playerDirection;
+    f32 previousHorizontalSpeed;
+    f32 previousVerticalSpeed;
+    i16 previousFrameInput;
+    ZunVec3 positionOfLastEnemyHit;
+    PlayerBullet bullets[80];
+    ZunTimer fireBulletTimer;
+    ZunTimer invulnerabilityTimer;
+    FireBulletCallback fireBulletCallback;
+    FireBulletCallback fireBulletFocusCallback;
+    PlayerBombInfo bombInfo;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Multiplayer-only interaction state. Keeping these on the Player makes
+    // rollback capture them with the rest of the authoritative player object.
+    i32 lifeGiveTimer;
+    i32 lifeGiveTargetToken;
+    i32 powerGiveTaps;
+    i32 powerGiveWindow;
+    ZunTimer teamBombProtectionTimer;
+#endif
+    ChainElem *chainCalc;
+    ChainElem *chainDraw1;
+    ChainElem *chainDraw2;
+
+    inline void SetToTopLeftPos(AnmVm *sprite) const
+    {
+        sprite->pos.x += g_GameManager.arcadeRegionTopLeftPos.x;
+        sprite->pos.y += g_GameManager.arcadeRegionTopLeftPos.y;
+        sprite->pos.z = 0.0;
+    };
+};
+
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+extern Player g_Players[TH06_MULTI_MAX_PLAYERS];
+extern bool g_PlayerActive[TH06_MULTI_MAX_PLAYERS];
+extern i32 g_teamWipeRetryFrames;
+#define g_Player (g_Players[0])
+Player *GetPlayerById(u8 playerId);
+const Player *GetPlayerByIdConst(u8 playerId);
+bool IsPlayerActive(u8 playerId);
+bool IsPlayerGameplayActive(u8 playerId);
+i32 GetActivePlayerCount();
+i32 GetBossParticipantCount();
+bool IsPlayerTerminal(u8 playerId);
+Player *GetClosestActivePlayer(const ZunVec3 *position);
+i32 GetPlayerAnmScript(const Player *player, i32 script);
+void UpdateTeamWipeRetryCountdown();
+#else
+extern Player g_Player;
+#endif

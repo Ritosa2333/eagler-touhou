@@ -1,0 +1,500 @@
+#pragma once
+
+#include "ItemManager.hpp"
+#include "SoundPlayer.hpp"
+#include "ZunColor.hpp"
+#include "ZunEndian.hpp"
+#include "ZunMath.hpp"
+#include "ZunResult.hpp"
+#include "inttypes.hpp"
+// #include <Windows.h>
+// #include <d3dx8math.h>
+
+// Forward declaration to avoid include loop.
+struct Enemy;
+struct EnemyEclContext;
+struct EnemyManager;
+
+enum EclVarId : i32
+{
+    ECL_VAR_I32_0 = -10001,
+    ECL_VAR_I32_1 = -10002,
+    ECL_VAR_I32_2 = -10003,
+    ECL_VAR_I32_3 = -10004,
+    ECL_VAR_F32_0 = -10005,
+    ECL_VAR_F32_1 = -10006,
+    ECL_VAR_F32_2 = -10007,
+    ECL_VAR_F32_3 = -10008,
+    ECL_VAR_I32_4 = -10009,
+    ECL_VAR_I32_5 = -10010,
+    ECL_VAR_I32_6 = -10011,
+    ECL_VAR_I32_7 = -10012,
+    ECL_VAR_DIFFICULTY = -10013,
+    ECL_VAR_RANK = -10014,
+    ECL_VAR_ENEMY_POS_X = -10015,
+    ECL_VAR_ENEMY_POS_Y = -10016,
+    ECL_VAR_ENEMY_POS_Z = -10017,
+    ECL_VAR_PLAYER_POS_X = -10018,
+    ECL_VAR_PLAYER_POS_Y = -10019,
+    ECL_VAR_PLAYER_POS_Z = -10020,
+    ECL_VAR_PLAYER_ANGLE = -10021,
+    ECL_VAR_ENEMY_TIMER = -10022,
+    ECL_VAR_PLAYER_DISTANCE = -10023,
+    ECL_VAR_ENEMY_LIFE = -10024,
+    ECL_VAR_PLAYER_SHOT = -10025,
+};
+
+struct EclTimelineInstrArgs
+{
+    LE<u32> uintVar1;
+    LE<u32> uintVar2;
+    LE<u32> uintVar3;
+    LE<u16> ushortVar1;
+    LE<u16> ushortVar2;
+    LE<u32> uintVar4;
+
+    const ZunVec3Raw *Var1AsVec() const
+    {
+        return (const ZunVec3Raw *)&this->uintVar1;
+    }
+};
+
+struct EclTimelineInstr
+{
+    LE<i16> time;
+    LE<i16> arg0;
+    LE<i16> opCode;
+    LE<i16> size;
+    EclTimelineInstrArgs args;
+};
+
+union EclRawInstrArg {
+    struct
+    {
+        i8 a;
+        i8 b;
+        i8 c;
+        i8 d;
+    } by;
+    struct
+    {
+        LE<i16> lo;
+        LE<i16> hi;
+    } sh;
+    LE<f32> f32Param;
+    LE<i32> i32Param;
+    LE<EclVarId> id;
+};
+
+struct EclRawInstrAluArgs
+{
+    LE<EclVarId> res;
+    EclRawInstrArg arg1;
+    EclRawInstrArg arg2;
+    EclRawInstrArg arg3;
+    EclRawInstrArg arg4;
+};
+
+struct EclRawInstrJumpArgs
+{
+    LE<i32> time;
+    LE<i32> offset;
+    LE<EclVarId> var;
+};
+
+struct EclRawInstrCallArgs
+{
+    LE<i32> eclSub;
+    LE<i32> var0;
+    LE<f32> float0;
+    LE<EclVarId> cmpLhs;
+    LE<i32> cmpRhs;
+};
+
+struct EclRawInstrCmpArgs
+{
+    EclRawInstrArg lhs;
+    EclRawInstrArg rhs;
+};
+
+struct EclRawInstrMoveArgs
+{
+    ZunVec3Raw pos;
+};
+
+struct EclRawInstrAnmSetMainArgs
+{
+    LE<i32> scriptIdx;
+};
+
+struct EclRawInstrAnmSetSlotArgs
+{
+    LE<i32> vmIdx;
+    LE<i32> scriptIdx;
+};
+
+struct EclRawInstrAnmSetDeathArgs
+{
+    i8 deathAnm1;
+    i8 deathAnm2;
+    i8 deathAnm3;
+};
+
+struct EclRawInstrBulletArgs
+{
+    LE<i16> sprite;
+    LE<i16> color;
+    LE<EclVarId> count1;
+    LE<EclVarId> count2;
+    LE<f32> speed1;
+    LE<f32> speed2;
+    LE<f32> angle1;
+    LE<f32> angle2;
+    LE<i32> flags;
+};
+
+struct EclRawInstrLaserArgs
+{
+    LE<i16> sprite;
+    LE<i16> color;
+    LE<f32> angle;
+    LE<f32> speed;
+    LE<f32> startOffset;
+    LE<f32> endOffset;
+    LE<f32> startLength;
+    LE<f32> width;
+    LE<i32> startTime;
+    LE<i32> duration;
+    // The final three timing fields are distinct: despawn duration controls
+    // the visual shrink, hitbox start controls collision onset, and hitbox
+    // end delay keeps grazing active during despawn.
+    LE<i32> despawnDuration;
+    LE<i32> hitboxStartTime;
+    LE<i32> hitboxEndDelay;
+    LE<i32> flags;
+};
+
+struct EclRawInstrLaserOpArgs
+{
+    LE<i32> laserIdx;
+    ZunVec3Raw arg1;
+};
+
+struct EclRawInstrBulletEffectsArgs
+{
+    LE<EclVarId> ivar1;
+    LE<EclVarId> ivar2;
+    LE<EclVarId> ivar3;
+    LE<EclVarId> ivar4;
+    LE<f32> fvar1;
+    LE<f32> fvar2;
+    LE<f32> fvar3;
+    LE<f32> fvar4;
+};
+
+struct EclRawInstrSetInt
+{
+    LE<i32> i32Param;
+};
+
+struct EclRawInstrSpellcardEffectArgs
+{
+    LE<i32> effectColorId;
+    ZunVec3Raw pos;
+    LE<f32> effectDistance;
+};
+
+struct EclRawInstrMoveBoundSetArgs
+{
+    ZunVec2Raw lowerMoveLimit;
+    ZunVec2Raw upperMoveLimit;
+};
+
+struct EclRawInstrAnmSetPosesArgs
+{
+    LE<i16> anmExDefault;
+    LE<i16> anmExFarLeft;
+    LE<i16> anmExFarRight;
+    LE<i16> anmExLeft;
+    LE<i16> anmExRight;
+};
+
+struct EclRawInstrSetInterruptArgs
+{
+    LE<i32> interruptSub;
+    LE<i32> interruptId;
+};
+
+struct EclRawInstrSpellcardStartArgs
+{
+    LE<i16> spellcardSprite;
+    LE<i16> spellcardId;
+    char spellcardName[1];
+};
+
+struct EclRawInstrEffectParticleArgs
+{
+    LE<i32> effectId;
+    LE<i32> numParticles;
+    LE<ZunColor> particleColor;
+};
+
+struct EclRawInstrTimeSetArgs
+{
+    LE<EclVarId> timeToSet;
+};
+
+struct EclRawInstrDropItemArgs
+{
+    LE<ItemType> itemId;
+};
+
+struct EclRawInstrEnemyCreateArgs
+{
+    LE<i32> subId;
+    ZunVec3Raw pos;
+    LE<i16> life;
+    LE<i16> itemDrop;
+    LE<i32> score;
+};
+
+struct EclRawInstrAnmInterruptSlotArgs
+{
+    LE<i32> vmId;
+    LE<i32> interruptId;
+};
+
+struct EclRawInstrBulletSoundArgs
+{
+    LE<SoundIdx> bulletSfx;
+};
+
+struct EclRawInstrBulletRankInfluenceArgs
+{
+    LE<f32> bulletRankSpeedLow;
+    LE<f32> bulletRankSpeedHigh;
+    LE<i32> bulletRankAmount1Low;
+    LE<i32> bulletRankAmount1High;
+    LE<i32> bulletRankAmount2Low;
+    LE<i32> bulletRankAmount2High;
+};
+
+struct EclRawInstrExInstrArgs
+{
+    LE<u32> exInstrIndex;
+    union {
+        LE<i32> i32Param;
+        u8 u8Param;
+    };
+};
+
+union EclRawInstrArgs {
+    EclRawInstrAluArgs alu;
+    EclRawInstrCmpArgs cmp;
+    EclRawInstrJumpArgs jump;
+    EclRawInstrCallArgs call;
+    EclRawInstrAnmSetMainArgs anmSetMain;
+    EclRawInstrAnmSetPosesArgs anmSetPoses;
+    EclRawInstrAnmSetSlotArgs anmSetSlot;
+    EclRawInstrAnmSetDeathArgs anmSetDeath;
+    EclRawInstrMoveArgs move;
+    EclRawInstrBulletArgs bullet;
+    EclRawInstrLaserArgs laser;
+    EclRawInstrLaserOpArgs laserOp;
+    EclRawInstrBulletEffectsArgs bulletEffects;
+    EclRawInstrSpellcardEffectArgs spellcardEffect;
+    EclRawInstrMoveBoundSetArgs moveBoundSet;
+    EclRawInstrSetInterruptArgs setInterrupt;
+    EclRawInstrSpellcardStartArgs spellcardStart;
+    EclRawInstrEffectParticleArgs effectParticle;
+    EclRawInstrTimeSetArgs timeSet;
+    EclRawInstrDropItemArgs dropItem;
+    EclRawInstrEnemyCreateArgs enemyCreate;
+    EclRawInstrAnmInterruptSlotArgs anmInterruptSlot;
+    EclRawInstrBulletSoundArgs bulletSound;
+    EclRawInstrBulletRankInfluenceArgs bulletRankInfluence;
+    EclRawInstrExInstrArgs exInstr;
+    LE<i32> setInt;
+
+    i32 GetBossLifeCount() const
+    {
+        return this->setInt;
+    }
+};
+
+struct EclRawInstr
+{
+    LE<i32> time;
+    LE<i16> opCode;
+    LE<i16> offsetToNext;
+    u8 unk_8;
+    // Bitfield where each bit tells us whether we should skip this instruction
+    // on that difficulty (1) or run it (0).
+    u8 skipForDifficulty;
+    u8 unk_a;
+    u8 unk_b;
+    EclRawInstrArgs args;
+};
+
+struct EclRawHeader
+{
+    LE<i16> subCount;
+    LE<i16> mainCount;
+    LE<u32> timelineOffsets[3];
+    LE<u32> subOffsets[0];
+};
+
+enum EclRawInstrOpcode
+{
+    ECL_OPCODE_NOP,
+    ECL_OPCODE_UNIMP,
+    ECL_OPCODE_JUMP,
+    ECL_OPCODE_JUMPDEC,
+    ECL_OPCODE_SETINT,
+    ECL_OPCODE_SETFLOAT,
+    ECL_OPCODE_SETINTRAND,
+    ECL_OPCODE_SETINTRANDMIN,
+    ECL_OPCODE_SETFLOATRAND,
+    ECL_OPCODE_SETFLOATRANDMIN,
+    ECL_OPCODE_SETVARSELFX,
+    ECL_OPCODE_SETVARSELFY,
+    ECL_OPCODE_SETVARSELFZ,
+    ECL_OPCODE_MATHINTADD,
+    ECL_OPCODE_MATHINTSUB,
+    ECL_OPCODE_MATHINTMUL,
+    ECL_OPCODE_MATHINTDIV,
+    ECL_OPCODE_MATHINTMOD,
+    ECL_OPCODE_MATHINC,
+    ECL_OPCODE_MATHDEC,
+    ECL_OPCODE_MATHFLOATADD,
+    ECL_OPCODE_MATHFLOATSUB,
+    ECL_OPCODE_MATHFLOATMUL,
+    ECL_OPCODE_MATHFLOATDIV,
+    ECL_OPCODE_MATHFLOATMOD,
+    ECL_OPCODE_MATHATAN2,
+    ECL_OPCODE_MATHNORMANGLE,
+    ECL_OPCODE_CMPINT,
+    ECL_OPCODE_CMPFLOAT,
+    ECL_OPCODE_JUMPLSS,
+    ECL_OPCODE_JUMPLEQ,
+    ECL_OPCODE_JUMPEQU,
+    ECL_OPCODE_JUMPGRE,
+    ECL_OPCODE_JUMPGEQ,
+    ECL_OPCODE_JUMPNEQ,
+    ECL_OPCODE_CALL,
+    ECL_OPCODE_RET,
+    ECL_OPCODE_CALLLSS,
+    ECL_OPCODE_CALLLEQ,
+    ECL_OPCODE_CALLEQU,
+    ECL_OPCODE_CALLGRE,
+    ECL_OPCODE_CALLGEQ,
+    ECL_OPCODE_CALLNEQ,
+    ECL_OPCODE_MOVEPOSITION,
+    ECL_OPCODE_MOVEAXISVELOCITY,
+    ECL_OPCODE_MOVEVELOCITY,
+    ECL_OPCODE_MOVEANGULARVELOCITY,
+    ECL_OPCODE_MOVESPEED,
+    ECL_OPCODE_MOVEACCELERATION,
+    ECL_OPCODE_MOVERAND,
+    ECL_OPCODE_MOVERANDINBOUND,
+    ECL_OPCODE_MOVEATPLAYER,
+    ECL_OPCODE_MOVEDIRTIMEDECELERATE, // 0x34 / 52
+    ECL_OPCODE_MOVEDIRTIMEDECELERATEFAST,
+    ECL_OPCODE_MOVEDIRTIMEACCELERATE,
+    ECL_OPCODE_MOVEDIRTIMEACCELERATEFAST,
+    ECL_OPCODE_MOVEPOSITIONTIMELINEAR,
+    ECL_OPCODE_MOVEPOSITIONTIMEDECELERATE,
+    ECL_OPCODE_MOVEPOSITIONTIMEDECELERATEFAST,
+    ECL_OPCODE_MOVEPOSITIONTIMEACCELERATE,
+    ECL_OPCODE_MOVEPOSITIONTIMEACCELERATEFAST,
+    ECL_OPCODE_MOVETIMEDECELERATE,
+    ECL_OPCODE_MOVETIMEDECELERATEFAST,
+    ECL_OPCODE_MOVETIMEACCELERATE,
+    ECL_OPCODE_MOVETIMEACCELERATEFAST,
+    ECL_OPCODE_MOVEBOUNDSSET,
+    ECL_OPCODE_MOVEBOUNDSDISABLE,
+    ECL_OPCODE_BULLETFANAIMED,          // 0x43 / 67
+    ECL_OPCODE_BULLETFAN,               // 0x44 / 68
+    ECL_OPCODE_BULLETCIRCLEAIMED,       // 0x45 / 69
+    ECL_OPCODE_BULLETCIRCLE,            // 0x46 / 70
+    ECL_OPCODE_BULLETOFFSETCIRCLEAIMED, // 0x47 / 71
+    ECL_OPCODE_BULLETOFFSETCIRCLE,      // 0x48 / 72
+    ECL_OPCODE_BULLETRANDOMANGLE,       // 0x49 / 73
+    ECL_OPCODE_BULLETRANDOMSPEED,       // 0x4a / 74
+    ECL_OPCODE_BULLETRANDOM,            // 0x4b / 75
+    ECL_OPCODE_SHOOTINTERVAL,           // 0x4c / 76
+    ECL_OPCODE_SHOOTINTERVALDELAYED,    // 0x4d / 77
+    ECL_OPCODE_SHOOTDISABLED,           // 0x4e / 78
+    ECL_OPCODE_SHOOTENABLED,            // 0x4f / 79
+    ECL_OPCODE_SHOOTNOW,                // 0x50 / 80
+    ECL_OPCODE_SHOOTOFFSET,             // 0x51 / 81
+    ECL_OPCODE_BULLETEFFECTS,           // 0x52 / 82
+    ECL_OPCODE_BULLETCANCEL,
+    ECL_OPCODE_BULLETSOUND,
+    ECL_OPCODE_LASERCREATE,           // 0x55 / 85
+    ECL_OPCODE_LASERCREATEAIMED,      // 0x56 / 86
+    ECL_OPCODE_LASERINDEX,            // 0x57 / 87
+    ECL_OPCODE_LASERROTATE,           // 0x58 / 88
+    ECL_OPCODE_LASERROTATEFROMPLAYER, // 0x59 / 89
+    ECL_OPCODE_LASEROFFSET,           // 0x5a / 90
+    ECL_OPCODE_LASERTEST,             // 0x5b / 91
+    ECL_OPCODE_LASERCANCEL,           // 0x5c / 92
+    ECL_OPCODE_SPELLCARDSTART,        // 0x5d / 93
+    ECL_OPCODE_SPELLCARDEND,          // 0x5e / 94
+    ECL_OPCODE_ENEMYCREATE,
+    ECL_OPCODE_ENEMYKILLALL,
+    ECL_OPCODE_ANMSETMAIN,             // 0x61 / 97
+    ECL_OPCODE_ANMSETPOSES,            // 0x62 / 98
+    ECL_OPCODE_ANMSETSLOT,             // 0x63 / 99
+    ECL_OPCODE_ANMSETDEATH,            // 0x64 / 100
+    ECL_OPCODE_BOSSSET,                // 0x65 / 101
+    ECL_OPCODE_SPELLCARDEFFECT,        // 0x66 / 102
+    ECL_OPCODE_ENEMYSETHITBOX,         // 0x67 / 103
+    ECL_OPCODE_ENEMYFLAGCOLLISION,     // 0x68 / 104
+    ECL_OPCODE_ENEMYFLAGCANTAKEDAMAGE, // 0x69 / 105
+    ECL_OPCODE_EFFECTSOUND,            // 0x6a / 106
+    ECL_OPCODE_ENEMYFLAGDEATH,         // 0x6b / 107
+    ECL_OPCODE_DEATHCALLBACKSUB,       // 0x6c / 108
+    ECL_OPCODE_ENEMYINTERRUPTSET,      // 0x6d / 109
+    ECL_OPCODE_ENEMYINTERRUPT,         // 0x6e / 110
+    ECL_OPCODE_ENEMYLIFESET,           // 0x6f / 111
+    ECL_OPCODE_BOSSTIMERSET,           // 0x70 / 112
+    ECL_OPCODE_LIFECALLBACKTHRESHOLD,
+    ECL_OPCODE_LIFECALLBACKSUB,
+    ECL_OPCODE_TIMERCALLBACKTHRESHOLD,
+    ECL_OPCODE_TIMERCALLBACKSUB,
+    ECL_OPCODE_ENEMYFLAGINTERACTABLE,
+    ECL_OPCODE_EFFECTPARTICLE,
+    ECL_OPCODE_DROPITEMS,
+    ECL_OPCODE_ANMFLAGROTATION,
+    ECL_OPCODE_EXINSCALL,
+    ECL_OPCODE_EXINSREPEAT,
+    ECL_OPCODE_TIMESET,
+    ECL_OPCODE_DROPITEMID,
+    ECL_OPCODE_STDUNPAUSE,
+    ECL_OPCODE_BOSSSETLIFECOUNT,
+    ECL_OPCODE_DEBUGWATCH,
+    ECL_OPCODE_ANMINTERRUPTMAIN,
+    ECL_OPCODE_ANMINTERRUPTSLOT,
+    ECL_OPCODE_ENEMYFLAGDISABLECALLSTACK,
+    ECL_OPCODE_BULLETRANKINFLUENCE,
+    ECL_OPCODE_ENEMYFLAGINVISIBLE,
+    ECL_OPCODE_BOSSTIMERCLEAR,
+    ECL_OPCODE_LASERCLEARALL,
+    ECL_OPCODE_SPELLCARDFLAGTIMEOUT,
+};
+
+struct EclManager
+{
+    ZunResult Load(const char *ecl);
+    void Unload();
+    ZunResult RunEcl(Enemy *enemy);
+    ZunResult CallEclSub(EnemyEclContext *enemyEcl, i16 subId) const;
+
+    const EclRawHeader *eclFile;
+    const EclTimelineInstr *timelinePtrs[3];
+    EclRawInstr **subTable;
+    const EclTimelineInstr *timeline;
+};
+
+extern EclManager g_EclManager;

@@ -1,0 +1,63 @@
+#pragma once
+
+#include "Enemy.hpp"
+
+namespace EnemyEclInstr
+{
+// A small part of TH06's ECL implementation keeps state outside Enemy itself.
+// ExInsShootStarPattern snapshots the enemy/player positions and a generated
+// star-angle table on its first frame, then reuses them for later frames. That
+// makes these values simulation-authoritative and therefore rollback-owned.
+struct RollbackState
+{
+    f32 starAngleTable[6]{};
+    ZunVec3 enemyPosVector{};
+    ZunVec3 playerPosVector{};
+};
+
+RollbackState *GetRollbackState();
+
+i32 *GetVar(Enemy *enemy, EclVarId *varId, EclValueType *valueType);
+f32 *GetVarFloat(Enemy *enemy, f32 *varId, EclValueType *valueType);
+
+inline i32 GetVarValue(Enemy *enemy, EclVarId varId, EclValueType *valueType)
+{
+    return *GetVar(enemy, &varId, valueType);
+}
+
+inline f32 GetVarFloatValue(Enemy *enemy, f32 varId, EclValueType *valueType)
+{
+    return *GetVarFloat(enemy, &varId, valueType);
+}
+
+void SetVar(Enemy *enemy, EclVarId lhs, const void *rhs);
+
+void MathAdd(Enemy *enemy, EclVarId out, EclVarId *lhs, EclVarId *rhs);
+void MathSub(Enemy *enemy, EclVarId out, EclVarId *lhs, EclVarId *rhs);
+void MathMul(Enemy *enemy, EclVarId out, EclVarId *lhs, EclVarId *rhs);
+void MathDiv(Enemy *enemy, EclVarId out, EclVarId *lhs, EclVarId *rhs);
+void MathMod(Enemy *enemy, EclVarId out, EclVarId *lhs, EclVarId *rhs);
+void MathAtan2(Enemy *enemy, EclVarId out, f32 x1, f32 y1, f32 y2, f32 x2);
+
+void MoveDirTime(Enemy *enemy, EclRawInstr *instr);
+void MovePosTime(Enemy *enemy, EclRawInstr *instr);
+void MoveTime(Enemy *enemy, const EclRawInstr *instr);
+
+void ExInsCirnoRainbowBallJank(Enemy *enemy, EclRawInstr *instr);
+void ExInsShootAtRandomArea(Enemy *enemy, EclRawInstr *instr);
+void ExInsShootStarPattern(Enemy *enemy, EclRawInstr *instr);
+void ExInsPatchouliShottypeSetVars(Enemy *enemy, EclRawInstr *instr);
+void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr);
+void ExInsStage5Func5(Enemy *enemy, EclRawInstr *instr);
+void ExInsBatWingEffect(Enemy *enemy, EclRawInstr *instr);
+void ExInsStage6Func7(Enemy *enemy, EclRawInstr *instr);
+void ExInsStage6Func8(Enemy *enemy, EclRawInstr *instr);
+void ExInsStage6Func9(Enemy *enemy, EclRawInstr *instr);
+void ExInsStage6Func11(Enemy *enemy, EclRawInstr *instr);
+void ExInsHandleBatTransformation(Enemy *enemy, EclRawInstr *instr);
+void ExInsStage4Func12(Enemy *enemy, EclRawInstr *instr);
+void ExInsStageXFunc13(Enemy *enemy, EclRawInstr *instr);
+void ExInsStageXFunc14(Enemy *enemy, EclRawInstr *instr);
+void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr);
+void ExInsFlandreFinalContextUpdate(Enemy *enemy, EclRawInstr *instr);
+}; // namespace EnemyEclInstr
