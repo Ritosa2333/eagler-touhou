@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { prepareRuntimeLaunch } from "../.cache/build/browser/assets/launcher/runtime-launch.mjs";
 import { canonicalRuntimePayload, RUNTIME_MANIFEST_SCHEMA, RUNTIME_PROTOCOL,
-  RUNTIME_CACHE_PROTOCOL, RUNTIME_CAPABILITIES, RUNTIME_PREPARE } from "../lib/contracts/runtime-generations.mjs";
+  RUNTIME_CACHE_PROTOCOL, RUNTIME_CAPABILITIES, RUNTIME_PREPARE, RUNTIME_PROGRESS, RUNTIME_IMPORT,
+  validateRuntimeImportRequest } from "../lib/contracts/runtime-generations.mjs";
 const hash = text => createHash("sha256").update(text).digest("hex");
 function generation(version) {
   const bodies={"game.html":`<script src="game.js"></script>${version}`,"game.js":`// ${version}`,"game.wasm":`wasm ${version}`};
@@ -11,6 +12,12 @@ function generation(version) {
 }
 const A=generation("a"),B=generation("b"),root="runtime/th08/",baseUrl="https://example.test/mount/";
 const manifest={schema:RUNTIME_MANIFEST_SCHEMA,protocol:RUNTIME_PROTOCOL,groups:[{root,current:B.descriptor,previous:[A.descriptor]}]};
+const supplied=Object.entries(B.bodies).map(([path,body])=>({path,buffer:new TextEncoder().encode(body).buffer}));
+const importRequest={type:RUNTIME_IMPORT,root,descriptor:B.descriptor,files:supplied};
+assert.equal(validateRuntimeImportRequest(importRequest).files.length,3);
+assert.throws(()=>validateRuntimeImportRequest({...importRequest,files:supplied.slice(1)}),/Incomplete/);
+assert.throws(()=>validateRuntimeImportRequest({...importRequest,files:[supplied[0],supplied[0],supplied[2]]}),/Invalid Runtime import file/);
+assert.throws(()=>validateRuntimeImportRequest({...importRequest,files:[{...supplied[0],buffer:new ArrayBuffer(1)},...supplied.slice(1)]}),/size mismatch/);
 const requests=[];
 let bad=false,offline=false;
 const fetchImpl=async(input,options)=>{
@@ -30,7 +37,8 @@ resolveWorker(null);
 const first=await pending;
 assert.equal(first.generation,B.descriptor.generation);assert.equal(first.cached,false);
 assert.equal(new URL(first.url).searchParams.get("gameGeneration"),"package-id","code generation must not replace game DATA identity");
-assert.ok(requests.every(request=>request.cache==="no-store" && request.redirect==="error"));
+assert.equal(requests[0].cache,'no-store','the mutable manifest must bypass HTTP caches');
+assert.ok(requests.slice(1).every(request=>request.cache==='reload' && request.redirect==='error'),'verified fallback populates the immutable HTTP cache');
 assert.ok(requests.slice(1).every(request=>request.url.startsWith(baseUrl+root+B.descriptor.generation+"/")));
 bad=true;
 const rollback=await prepareRuntimeLaunch(root+"game.html",{baseUrl,fetchImpl,worker:null});
@@ -46,6 +54,18 @@ offline=true;
 const cached=await prepareRuntimeLaunch(root+B.descriptor.generation+"/game.html",{baseUrl,fetchImpl,worker});
 assert.equal(cached.generation,A.descriptor.generation);assert.equal(cached.cached,true);
 assert.equal(messages[1].type,RUNTIME_PREPARE);assert.equal(messages[1].catalog,undefined,"failed pointer does not inject a fake current catalog");
+const progressEvents = [];
+const progressPath = root+A.descriptor.generation+'/game.wasm';
+const progressWorker = {postMessage(data, ports) {
+  if(data.type===RUNTIME_CAPABILITIES) {ports[0].postMessage({ok:true,protocol:RUNTIME_CACHE_PROTOCOL});return;}
+  assert.equal(data.progress,true);
+  for(const phase of ['requesting','receiving']) ports[0].postMessage({type:RUNTIME_PROGRESS,protocol:RUNTIME_CACHE_PROTOCOL,path:progressPath,phase,loaded:phase==='receiving'?2:0,total:6});
+  ports[0].postMessage({type:RUNTIME_PROGRESS,protocol:RUNTIME_CACHE_PROTOCOL,path:progressPath,phase:'receiving',loaded:-1,total:6});
+  ports[0].postMessage({ok:true,protocol:RUNTIME_CACHE_PROTOCOL,cached:true,generation:A.descriptor.generation,entry:root+A.descriptor.generation+'/game.html'});
+}};
+const progressed=await prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl,worker:progressWorker,onProgress:value=>progressEvents.push(value)});
+assert.equal(progressed.generation,A.descriptor.generation,'intermediate progress is not a final preparation response');
+assert.deepEqual(progressEvents.map(value=>value.phase),['requesting','receiving','failed'],'invalid progress is ignored and a final response releases unfinished tasks');
 await assert.rejects(prepareRuntimeLaunch("https://other.test/runtime/a.html",{baseUrl,fetchImpl,worker:null}),/outside/);
 await assert.rejects(prepareRuntimeLaunch(root+"game.html",{baseUrl,fetchImpl,worker:null}),/unavailable/);
 offline=false;

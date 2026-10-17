@@ -28,6 +28,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     return generation;
   }
   async function checked(response, file, progress) {
+    const mismatch = () => Object.assign(new Error(`Runtime integrity mismatch: ${file.path}`), {name: 'RuntimeIntegrityError'});
     if (!response?.ok) throw new Error(`Runtime file unavailable: ${file.path}`);
     const copy = response.clone();
     let bytes;
@@ -39,9 +40,9 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          if (value.byteLength) progress();
+          if (value.byteLength) progress(value.byteLength);
           length += value.byteLength;
-          if (length > file.bytes) throw new Error(`Runtime integrity mismatch: ${file.path}`);
+          if (length > file.bytes) throw mismatch();
           chunks.push(value);
         }
       } finally { reader.cancel().catch(() => {}); reader.releaseLock(); }
@@ -50,31 +51,45 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       for (const chunk of chunks) { combined.set(chunk, offset); offset += chunk.byteLength; }
       bytes = combined.buffer;
     }
-    if (bytes.byteLength !== file.bytes || await sha256(bytes) !== file.sha256) throw new Error(`Runtime integrity mismatch: ${file.path}`);
+    if (bytes.byteLength !== file.bytes || await sha256(bytes) !== file.sha256) throw mismatch();
     return response;
   }
-  async function network(url, read) {
+  async function network(url, read, {cache = 'no-store', file, onProgress} = {}) {
     const controller = new AbortController();
-    let timeout;
-    const progress = () => {
+    let timeout, loaded = 0, success = false;
+    const report = phase => onProgress?.({type: C.RUNTIME_PROGRESS, protocol: C.RUNTIME_CACHE_PROTOCOL,
+      path: new URL(url).pathname.slice(scopeUrl.pathname.length), phase, loaded, total: file?.bytes || 0});
+    const progress = (bytes = 0) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => controller.abort(new Error(`Runtime download stalled for ${fetchTimeoutMs} ms: ${url}`)), fetchTimeoutMs);
+      if (bytes) {loaded += bytes; report('receiving');}
     };
+    report('requesting');
     progress();
     try {
       const font = /\/fonts\/[^/]+\.(?:bin|ttf|ttc|otf|woff2?)$/.test(new URL(url).pathname);
-      const response = await fetch(new Request(url, { cache: "no-store", redirect: font ? "follow" : "error", signal: controller.signal }));
+      const response = await fetch(new Request(url, { cache, redirect: font ? "follow" : "error", signal: controller.signal }));
       if (!response.ok) throw new Error(`Runtime HTTP ${response.status}: ${url}`);
       progress();
-      return await read(response, progress);
-    } finally { clearTimeout(timeout); }
+      const result = await read(response, progress); success = true; return result;
+    } finally { clearTimeout(timeout); report(success ? 'complete' : 'failed'); }
   }
-  async function latest() {
+  async function runtimeFile(url, file, onProgress) {
+    const read = (response, progress) => checked(response, file, progress);
+    // Immutable URLs can reuse bytes already verified by the HTTP fallback.
+    // A corrupt HTTP cache entry gets one fresh verified attempt.
+    try {return await network(url, read, {cache: 'default', file, onProgress});}
+    catch (error) {
+      if (error.name !== 'RuntimeIntegrityError') throw error;
+      return network(url, read, {cache: 'reload', file, onProgress});
+    }
+  }
+  async function latest(onProgress) {
     return network(absolute(C.RUNTIME_MANIFEST_FILE), async response => {
       const text = await response.text();
       if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest too large");
       return C.validateRuntimeManifest(JSON.parse(text));
-    });
+    }, {onProgress});
   }
   async function snapshots(root) {
     const result = [];
@@ -97,7 +112,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       return true;
     } catch { return false; }
   }
-  async function stageBytes(root, raw, { localOnly = false, observedAt = 0, supplied } = {}) {
+  async function stageBytes(root, raw, { localOnly = false, observedAt = 0, supplied, onProgress } = {}) {
     const descriptor = await verifyGeneration(raw);
     const existing = await snapshots(root);
     for (const snapshot of existing) {
@@ -138,7 +153,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
               catch { /* Not a matching legacy byte sequence. */ }
             }
             if (!response && localOnly) throw new Error(`Runtime is not locally complete: ${file.path}`);
-            response ||= await network(absolute(base + file.path), (response, progress) => checked(response, file, progress));
+            response ||= await runtimeFile(absolute(base + file.path), file, onProgress);
             await cache.put(absolute(base + file.path), response);
           } catch (error) { stopped = true; throw error; }
         }
@@ -161,11 +176,20 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     // Coalesce byte preparation of the SAME generation. Local launches bypass
     // network selection; explicit update checks supply their own current pointer.
     if (!inFlight.has(key)) {
-      const task = stageBytes(root, descriptor, options);
+      const listeners = new Set(), active = new Map();
+      const task = {listeners, active};
+      task.promise = stageBytes(root, descriptor, {...options, onProgress(progress) {
+        if (['complete', 'failed'].includes(progress.phase)) active.delete(progress.path);
+        else active.set(progress.path, progress);
+        for (const listener of listeners) listener(progress);
+      }});
       inFlight.set(key, task);
-      task.finally(() => { if (inFlight.get(key) === task) inFlight.delete(key); }).catch(() => {});
+      task.promise.finally(() => { if (inFlight.get(key) === task) inFlight.delete(key); }).catch(() => {});
     }
-    return inFlight.get(key);
+    const task = inFlight.get(key);
+    if (options.onProgress) {task.listeners.add(options.onProgress);for (const progress of task.active.values()) options.onProgress(progress);}
+    try {return await task.promise;}
+    finally {task.listeners.delete(options.onProgress);}
   }
   async function select(path, options = {}) {
     let group, error;
@@ -182,10 +206,10 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     }
     try {
       const manifest = Object.hasOwn(options, "catalog")
-        ? C.validateRuntimeManifest(options.catalog) : await latest();
+        ? C.validateRuntimeManifest(options.catalog) : await latest(options.onProgress);
       group = C.findRuntimeGroup(manifest, path);
       if (!group) throw new Error("Runtime is not published");
-      if (!excluded.has(group.current.generation)) return await stage(group.root, group.current, { observedAt: Date.now() });
+      if (!excluded.has(group.current.generation)) return await stage(group.root, group.current, { observedAt: Date.now(), onProgress: options.onProgress });
     } catch (cause) { error = cause; }
     group ||= C.findRuntimeGroup(known, path);
     if (group) {
@@ -200,7 +224,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       // recover a first visit when the current release is only partially present.
       for (const descriptor of group.previous) {
         if (excluded.has(descriptor.generation)) continue;
-        try { return await stage(group.root, descriptor); } catch (cause) { error = cause; }
+        try { return await stage(group.root, descriptor, {onProgress: options.onProgress}); } catch (cause) { error = cause; }
       }
       // Legacy per-file bytes can be reused only against a known whole set.
       if (!excluded.has(group.current.generation)) {
@@ -211,8 +235,8 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     // A publication might have completed during the first failed transaction.
     if (!options.noRetry) {
       try {
-        const fresh = C.findRuntimeGroup(await latest(), path);
-        if (fresh && !excluded.has(fresh.current.generation)) return await stage(fresh.root, fresh.current, { observedAt: Date.now() });
+        const fresh = C.findRuntimeGroup(await latest(options.onProgress), path);
+        if (fresh && !excluded.has(fresh.current.generation)) return await stage(fresh.root, fresh.current, { observedAt: Date.now(), onProgress: options.onProgress });
       } catch (cause) { error = cause; }
     }
     throw error || new Error("No complete Runtime is available");
@@ -260,7 +284,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       if (cached) {
         try { return deliver(await checked(cached, file)); } catch { /* Repair this exact immutable address. */ }
       }
-      const fetched = await network(absolute(path), response => checked(response, file));
+      const fetched = await runtimeFile(absolute(path), file);
       await cache.put(absolute(path), fetched.clone()).catch(() => {});
       return deliver(fetched);
     }
@@ -280,10 +304,13 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     if (parsed.file === C.RUNTIME_GENERATION_FILE) return deliver(json({ schema: C.RUNTIME_GENERATION_SCHEMA,
       protocol: C.RUNTIME_PROTOCOL, root: parsed.root, ...descriptor }));
     if (!file) return new Response("Unknown Runtime resource", { status: 404 });
-    return deliver(await network(absolute(path), response => checked(response, file)));
+    return deliver(await runtimeFile(absolute(path), file));
   }
   async function selectForLaunch(path, options) {
     const snapshot = await prepare(path, options);
+    return markSelected(snapshot);
+  }
+  async function markSelected(snapshot) {
     // A prior snapshot may be selected long after creation. Protect the gap
     // between replying to the Launcher and its new document becoming a client.
     snapshot.selectedAt = Date.now();
@@ -310,6 +337,19 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
   }
   async function prepareLaunch(path, options) {
     const snapshot = await selectForLaunch(path, options);
+    return preparedSnapshot(snapshot);
+  }
+  async function importLaunch(root, descriptor, files) {
+    const supplied = new Map(files.map(file => {
+      const path = file.path;
+      const type = /\.m?js$/.test(path) ? 'text/javascript' : /\.wasm$/.test(path) ? 'application/wasm'
+        : /\.html$/.test(path) ? 'text/html' : /\.json$/.test(path) ? 'application/json' : 'application/octet-stream';
+      return [path, new Response(file.buffer, {headers:{'Content-Type':type}})];
+    }));
+    const snapshot = await stage(root, descriptor, {localOnly:true, supplied, observedAt:Date.now()});
+    return preparedSnapshot(await markSelected(snapshot));
+  }
+  async function preparedSnapshot(snapshot) {
     protectedCaches.add(snapshot.name);
     try { await collect(snapshot.root); } catch { /* Optional cleanup. */ }
     finally { protectedCaches.delete(snapshot.name); }
@@ -332,5 +372,5 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     }
     return [...ready].sort();
   }
-  return { handle, prepareLaunch, preparePaths, readyGroups };
+  return { handle, prepareLaunch, importLaunch, preparePaths, readyGroups };
 }

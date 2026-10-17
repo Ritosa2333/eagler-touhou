@@ -96,6 +96,34 @@ background update cannot overwrite a newer import from another tab.
 Missing/corrupt local programs retain whole-generation recovery and verified
 HTTP fallback; first installation still needs its required resources. The
 runtime-only worker does not provide an offline Launcher document reload.
+
+Program download accounting follows body consumption, not response headers.
+Native stream readers use `consumeNetworkBody` to keep the existing document
+tracker active through EOF, cancellation or failure, without rebuilding the
+browser's stream. The reader retains its inactivity deadline. Worker preparation
+can opt into additive `RUNTIME_GENERATION_PROGRESS` messages on its existing
+reply port; only the final preparation reply acknowledges a complete program.
+Coalesced preparations receive the same byte progress, and a retired Runtime's
+callbacks cannot revive its network tasks. This is a shared Launcher invariant
+for ordinary and MP products, not a TH10-specific path.
+
+Verified HTTP fallback retains only program bytes until it can transfer them
+to a compatible worker through `IMPORT_RUNTIME_GENERATION`. A worker that
+became ready during verification rechecks the complete set and atomically
+commits the supplied bytes before iframe navigation. This avoids depending on
+cross-context HTTP-cache reuse. The temporary buffers are transferred and
+released after handoff. No DATA, music or mutable saves enter this channel.
+
+Without a compatible worker or writable storage, ordinary HTTP startup remains
+available. The verifier uses `reload` for immutable program files, allowing
+best-effort reuse by the browser or worker. Workers still verify each file;
+invalid HTTP-cache bytes get one fresh `reload` attempt. Mutable manifests
+remain `no-store`. Whole-generation verification, atomic commit and current
+MP generation checks remain mandatory. The real browser test
+`tests/test-runtime-download-browser.mjs` covers held native streams, iframe
+and late-worker reuse, SW byte progress and corrupt HTTP-cache repair, with
+`AbortSignal.any` absent. It uses synthetic program files, not native gameplay.
+
 Validate with `tests/test-runtime-offline-first-browser.mjs`,
 `tests/test-runtime-launch.mjs`, `tests/runtime-cache-cases.mjs` and the
 preparation/runtime service tests. `tests/test-game-update-dialog-browser.mjs`

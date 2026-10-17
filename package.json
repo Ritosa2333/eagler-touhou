@@ -35,6 +35,7 @@
     "test:local-replay-workspace:browser": "node tests/browser/test-local-replay-workspace.mjs",
     "test:runtime-shared-font-upgrade:browser": "node tests/test-runtime-shared-font-upgrade-browser.mjs",
     "test:runtime-offline-first:browser": "node tests/test-runtime-offline-first-browser.mjs",
+    "test:runtime-download:browser": "node tests/test-runtime-download-browser.mjs",
     "start": "node scripts/serve.mjs",
     "build:launcher": "node scripts/build-launcher.mjs --force",
     "build:content": "node scripts/build-content-pages.mjs",

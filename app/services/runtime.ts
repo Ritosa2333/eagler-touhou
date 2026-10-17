@@ -29,6 +29,8 @@ import { createRuntimeSessionOwner, type RuntimeSessionToken } from '../../src/l
 import { createManagedRuntimeGenerationLease } from '../../src/launcher/runtime-generation-lease.mts';
 import { managedRuntimeUrl, readManagedRuntimeData, readManagedRuntimeResource } from '../../src/launcher/runtime-preparation.mts';
 import { prepareRuntimeLaunch } from '../../src/launcher/runtime-launch.mts';
+import type {RuntimeDownloadProgress} from '../../src/contracts/runtime-generations.mts';
+import {packageNetworkMetadata} from './preparation-network';
 import { createNetworkActivityTracker, type NetworkActivitySnapshot } from '../../src/launcher/network-activity.mts';
 import { confirmRuntimeClose, type RuntimeCloseDecision } from '../../src/launcher/launcher-lifecycle.mts';
 import { deliverRuntimeInput, type HostedKeySpec, type TouchRuntimeContext, type RuntimeMessageTarget } from '../../src/launcher/touch-runtime-protocol.mts';
@@ -258,6 +260,23 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     readResource: readManagedRuntimeResource, retainGeneration: retainPackageGeneration,
     releaseGeneration: releasePackageGeneration, ...options.dependencies };
   const network = options.network ?? createNetworkActivityTracker({ fetchImpl: options.fetchImpl ?? globalThis.fetch.bind(globalThis), onChange: options.onNetworkChange });
+  const programTransfers = new Map<string, {id: string; epoch: number}>();
+  function finishProgramTransfers(epoch?: number) {
+    for (const [key, task] of programTransfers) if (epoch === undefined || task.epoch === epoch) {
+      network.finish(task.id); programTransfers.delete(key);
+    }
+  }
+  function programProgress(token: RuntimeSessionToken, progress: RuntimeDownloadProgress) {
+    if (disposed || !sessions.isCurrent(token) || !isGameId(token.game)) {finishProgramTransfers(token.id); return;}
+    const key = `${token.id}:${progress.path}`, current = programTransfers.get(key);
+    if (progress.phase === 'complete' || progress.phase === 'failed') {
+      if (current) {network.finish(current.id); programTransfers.delete(key);} return;
+    }
+    const id = current?.id ?? network.begin({...packageNetworkMetadata(token.game, new URL(progress.path, baseUrl), baseUrl, options.translate),
+      url: new URL(progress.path, baseUrl).href, phase: progress.phase, loaded: progress.loaded, total: progress.total});
+    programTransfers.set(key, {id, epoch: token.id});
+    if (current) network.update(id, {phase: progress.phase, loaded: progress.loaded, total: progress.total});
+  }
   const sessions = createRuntimeSessionOwner();
   const generations = createManagedRuntimeGenerationLease();
   const listeners = new Set<() => void>();
@@ -411,7 +430,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     }
     if (!fileOwner) invalidateFileSession();
     operation++;
-    sessions.clear(); generations.clear(); releaseLease();
+    finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
     runtimeDocument = null; preparedPlan = null; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
@@ -818,7 +837,10 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           if (plan.generation && (plan.publishedRuntime || plan.localCatalogRuntime || offlineWorker)) {
             // Keep current main's complete-generation verification + idle-based
             // download helper. No replacement timeout or latest-file fallback.
-            const prepared = await deps.prepareCode(entry, { baseUrl, fetchImpl: network.fetch as typeof fetch,
+            const progressToken = token;
+            const prepared = await deps.prepareCode(entry, { baseUrl,
+              fetchImpl: (input, init) => network.fetch(input, init, packageNetworkMetadata(plan.game, input, baseUrl, options.translate)),
+              onProgress: progress => programProgress(progressToken, progress),
               exclude: excluded, worker: offlineWorker || options.worker });
             assertOperation(); assertCurrent(token);
             entry = prepared.url; codeGeneration = prepared.generation;
@@ -838,7 +860,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           if (!codeGeneration || attempt === 2) throw error;
           excluded.push(codeGeneration);
           replaceFrameLocation('about:blank', token);
-          sessions.clear(); generations.clear(); releaseLease(); rejectPending(error);
+          finishProgramTransfers(token.id); sessions.clear(); generations.clear(); releaseLease(); rejectPending(error);
           runtimeDocument = null;
           warn(error);
         }
@@ -1270,7 +1292,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       : 'Runtime iframe was removed while its session was active');
     detachedFrameLost = hadSession;
     invalidateFileSession();
-    operation++; sessions.clear(); generations.clear(); releaseLease();
+    operation++; finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(failure); takeTelemetry();
     runtimeDocument = null; preparedPlan = null; launchRequested = false;
     preflightEpoch = null;

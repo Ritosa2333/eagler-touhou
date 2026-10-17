@@ -6,6 +6,8 @@ export const RUNTIME_GENERATION_FILE = "runtime-generation.json";
 export const RUNTIME_PROTOCOL = "eagler-touhou/1";
 export const RUNTIME_PREPARE = "PREPARE_RUNTIME_GENERATION";
 export const RUNTIME_CAPABILITIES = "GET_RUNTIME_GENERATION_CAPABILITIES";
+export const RUNTIME_PROGRESS = "RUNTIME_GENERATION_PROGRESS";
+export const RUNTIME_IMPORT = "IMPORT_RUNTIME_GENERATION";
 export const RUNTIME_CACHE_PROTOCOL = "eagler-touhou/runtime-cache/2";
 export const RUNTIME_CACHE_MAX_PREVIOUS = 2;
 export interface RuntimeFile { path: string; bytes: number; sha256: string; }
@@ -104,17 +106,52 @@ export interface RuntimePrepareRequest {
   catalog?: RuntimeManifest;
   exclude: string[];
   localOnly?: boolean;
+  progress?: boolean;
+}
+export interface RuntimeDownloadProgress {
+  type: typeof RUNTIME_PROGRESS;
+  protocol: typeof RUNTIME_CACHE_PROTOCOL;
+  path: string;
+  phase: 'requesting' | 'receiving' | 'complete' | 'failed';
+  loaded: number;
+  total: number;
+}
+export interface RuntimeImportFile {path: string; buffer: ArrayBuffer;}
+export function validateRuntimeImportRequest(value: unknown): {root: string; descriptor: RuntimeGeneration; files: RuntimeImportFile[]} {
+  if (!record(value) || value.type !== RUNTIME_IMPORT || !isRuntimeRoot(value.root)) throw new Error('Invalid Runtime import');
+  const descriptor = validateRuntimeGeneration(value.descriptor);
+  if (!Array.isArray(value.files) || value.files.length !== descriptor.files.length) throw new Error('Incomplete Runtime import');
+  const seen = new Set<string>();
+  const files = value.files.map(raw => {
+    if (!record(raw) || typeof raw.path !== 'string' || seen.has(raw.path) ||
+        Object.prototype.toString.call(raw.buffer) !== '[object ArrayBuffer]') throw new Error('Invalid Runtime import file');
+    const file = descriptor.files.find(file => file.path === raw.path);
+    if (!file || (raw.buffer as ArrayBuffer).byteLength !== file.bytes) throw new Error('Runtime import size mismatch');
+    seen.add(raw.path); return {path: raw.path, buffer: raw.buffer as ArrayBuffer};
+  });
+  return {root: value.root, descriptor, files};
+}
+export function parseRuntimeDownloadProgress(value: unknown): RuntimeDownloadProgress | null {
+  if (!record(value) || value.type !== RUNTIME_PROGRESS || value.protocol !== RUNTIME_CACHE_PROTOCOL ||
+      typeof value.path !== 'string' || !isRuntimePath(value.path) ||
+      !['requesting', 'receiving', 'complete', 'failed'].includes(String(value.phase)) ||
+      !Number.isSafeInteger(value.loaded) || Number(value.loaded) < 0 ||
+      !Number.isSafeInteger(value.total) || Number(value.total) < 0 ||
+      (Number(value.total) > 0 && Number(value.loaded) > Number(value.total))) return null;
+  return value as unknown as RuntimeDownloadProgress;
 }
 export function validateRuntimePrepareRequest(value: unknown): RuntimePrepareRequest {
   if (!record(value) || value.type !== RUNTIME_PREPARE || !isRuntimePath(value.entry) ||
       !value.entry.startsWith("runtime/") || !value.entry.endsWith(".html")) throw new Error("Invalid Runtime preparation entry");
   const exclude = value.exclude ?? [];
   if (value.localOnly !== undefined && typeof value.localOnly !== 'boolean') throw new Error('Invalid Runtime local-only mode');
+  if (value.progress !== undefined && typeof value.progress !== 'boolean') throw new Error('Invalid Runtime progress mode');
   if (!Array.isArray(exclude) || exclude.length > RUNTIME_CACHE_MAX_PREVIOUS + 1 ||
       exclude.some(id => typeof id !== "string" || !SHA256.test(id)) || new Set(exclude).size !== exclude.length) {
     throw new Error("Invalid Runtime preparation exclusions");
   }
   return { type: RUNTIME_PREPARE, entry: value.entry, exclude: [...exclude] as string[],
     ...(value.localOnly === undefined ? {} : {localOnly: value.localOnly}),
+    ...(value.progress === undefined ? {} : {progress: value.progress}),
     ...(value.catalog === undefined ? {} : { catalog: validateRuntimeManifest(value.catalog) }) };
 }

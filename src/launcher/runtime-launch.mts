@@ -1,9 +1,10 @@
 import {
-  RUNTIME_MANIFEST_FILE, RUNTIME_CAPABILITIES, RUNTIME_PREPARE, RUNTIME_CACHE_PROTOCOL,
+  RUNTIME_MANIFEST_FILE, RUNTIME_CAPABILITIES, RUNTIME_PREPARE, RUNTIME_PROGRESS, RUNTIME_IMPORT, RUNTIME_CACHE_PROTOCOL,
   RUNTIME_CACHE_MAX_PREVIOUS, canonicalRuntimePayload, findRuntimeGroup,
   runtimeGenerationBase, runtimeGenerationEntry, validateRuntimeManifest, parseRuntimeGenerationPath,
-  type RuntimeManifest,
+  parseRuntimeDownloadProgress, type RuntimeDownloadProgress, type RuntimeManifest,
 } from "../contracts/runtime-generations.mjs";
+import {consumeNetworkBody} from './network-activity.mjs';
 
 export interface PreparedRuntime {
   url: string;
@@ -19,6 +20,7 @@ interface LaunchOptions {
   worker?: WorkerLike | null | PromiseLike<WorkerLike | null>;
   exclude?: readonly string[];
   timeoutMs?: number;
+  onProgress?: (progress: RuntimeDownloadProgress) => void;
 }
 async function digest(bytes: ArrayBuffer): Promise<string> {
   return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
@@ -32,14 +34,27 @@ async function bounded<T>(task: PromiseLike<T>, timeout: number, fallback: T): P
     })]);
   } finally { clearTimeout(timer); }
 }
-async function message(worker: WorkerLike, data: unknown, timeout: number): Promise<Record<string, unknown> | null> {
+async function message(worker: WorkerLike, data: unknown, timeout: number, onProgress?: LaunchOptions['onProgress'], transfer: Transferable[] = []): Promise<Record<string, unknown> | null> {
   const channel = new MessageChannel();
+  const active = new Map<string, RuntimeDownloadProgress>();
   try {
     return await bounded(new Promise<Record<string, unknown> | null>(resolve => {
-      channel.port1.onmessage = event => resolve(event.data as Record<string, unknown>);
-      worker.postMessage(data, [channel.port2]);
+      channel.port1.onmessage = event => {
+        if (event.data?.type === RUNTIME_PROGRESS) {
+          const progress = parseRuntimeDownloadProgress(event.data);
+          if (!progress) return;
+          if (progress.phase === 'complete' || progress.phase === 'failed') active.delete(progress.path);
+          else active.set(progress.path, progress);
+          onProgress?.(progress); return;
+        }
+        resolve(event.data as Record<string, unknown>);
+      };
+      worker.postMessage({...data as object, ...(onProgress ? {progress: true} : {})}, [channel.port2, ...transfer]);
     }), timeout, null);
-  } finally { channel.port1.close(); channel.port2.close(); }
+  } finally {
+    channel.port1.close(); channel.port2.close();
+    for (const progress of active.values()) onProgress?.({...progress, phase: 'failed'});
+  }
 }
 export async function runtimeProgramWorker(base: string): Promise<WorkerLike | null> {
   try {
@@ -68,6 +83,7 @@ export async function runtimeProgramWorker(base: string): Promise<WorkerLike | n
 export async function prepareRuntimeLaunch(runtime: string, {
   baseUrl = new URL("./", globalThis.location.href).href,
   fetchImpl = globalThis.fetch.bind(globalThis), worker, exclude = [], timeoutMs = 8000,
+  onProgress,
 }: LaunchOptions = {}): Promise<PreparedRuntime> {
   const base = new URL("./", baseUrl);
   const requested = new URL(runtime, base);
@@ -78,7 +94,7 @@ export async function prepareRuntimeLaunch(runtime: string, {
   if (exclude.length > RUNTIME_CACHE_MAX_PREVIOUS + 1 || exclude.some(id => !/^[a-f0-9]{64}$/.test(id))) {
     throw new Error("Invalid Runtime fallback exclusions");
   }
-  async function network<T>(url: string, read: (response: Response, progress: () => void) => Promise<T>, retries = 0): Promise<T> {
+  async function network<T>(url: string, read: (response: Response, progress: () => void) => Promise<T>, retries = 0, cache: RequestCache = 'no-store'): Promise<T> {
     let lastError: unknown;
     for (let attempt = 0; attempt <= retries; attempt++) {
       const controller = new AbortController();
@@ -92,7 +108,7 @@ export async function prepareRuntimeLaunch(runtime: string, {
         // Data-only fonts may live on resource nodes. Every byte is still
         // checked against the generation's declared size and SHA-256 below.
         const font = /\/fonts\/[^/]+\.(?:bin|ttf|ttc|otf|woff2?)$/.test(new URL(url).pathname);
-        const response = await fetchImpl(url, { cache: "no-store", redirect: font ? "follow" : "error", signal: controller.signal });
+        const response = await fetchImpl(url, { cache, redirect: font ? "follow" : "error", signal: controller.signal });
         if (!response.ok) throw new Error(`Runtime HTTP ${response.status}: ${url}`);
         progress();
         return await read(response, progress);
@@ -110,7 +126,12 @@ export async function prepareRuntimeLaunch(runtime: string, {
     if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest exceeds size limit");
     return validateRuntimeManifest(JSON.parse(text));
   }).catch(() => null);
-  const target = await bounded(Promise.resolve(worker === undefined ? runtimeProgramWorker(base.href) : worker), 5000, null);
+  const workerTask = Promise.resolve(worker === undefined ? runtimeProgramWorker(base.href) : worker);
+  const target = await bounded(workerTask, 5000, null);
+  const requestedRoot = parseRuntimeGenerationPath(path)?.root || path.slice(0, path.lastIndexOf('/') + 1);
+  const reportProgress: LaunchOptions['onProgress'] = onProgress ? progress => {
+    if (progress.path === RUNTIME_MANIFEST_FILE || parseRuntimeGenerationPath(progress.path)?.root === requestedRoot) onProgress(progress);
+  } : undefined;
   function prepared(result: Record<string, unknown> | null, manifest: RuntimeManifest | null): PreparedRuntime | null {
     if (!result?.ok || result.protocol !== RUNTIME_CACHE_PROTOCOL || typeof result.entry !== 'string' || typeof result.generation !== 'string') return null;
     const selected = new URL(result.entry, base);
@@ -123,17 +144,19 @@ export async function prepareRuntimeLaunch(runtime: string, {
     return {url:selected.href, generation:result.generation, cached:result.cached === true};
   }
   let capable = false;
+  let importCapable = false;
   if (target) {
     const capability = await message(target, { type: RUNTIME_CAPABILITIES }, 2000);
     capable = capability?.ok === true && capability.protocol === RUNTIME_CACHE_PROTOCOL;
+    importCapable = capable && capability?.importFiles === true;
     if (capable && capability?.localOnly === true) {
-      const local = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,localOnly:true,exclude:[...exclude]}, 120000), null);
+      const local = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,localOnly:true,exclude:[...exclude]}, 120000, reportProgress), null);
       if (local) {
         let checking: Promise<RuntimeUpdate | null> | undefined;
         local.checkForUpdate = () => checking ??= (async () => {
           const manifest = await latest(), group = manifest && findRuntimeGroup(manifest, path);
           if (!group || group.current.generation === local.generation || exclude.includes(group.current.generation)) return null;
-          const update = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,catalog:manifest,exclude:[...exclude]},120000),manifest);
+          const update = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,catalog:manifest,exclude:[...exclude]},120000,reportProgress),manifest);
           return update?.cached && update.generation === group.current.generation ? {url:update.url,generation:update.generation} : null;
         })().catch(() => null);
         return local;
@@ -143,7 +166,7 @@ export async function prepareRuntimeLaunch(runtime: string, {
   const manifest = await latest();
   if (target && capable) {
     const result = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,
-      ...(manifest ? {catalog:manifest} : {}),exclude:[...exclude]},120000),manifest);
+      ...(manifest ? {catalog:manifest} : {}),exclude:[...exclude]},120000,reportProgress),manifest);
     if (result) return result;
     // Storage restrictions must not prevent a verified ordinary HTTP launch.
   }
@@ -156,9 +179,11 @@ export async function prepareRuntimeLaunch(runtime: string, {
       const actual = await digest(new TextEncoder().encode(canonicalRuntimePayload(descriptor.entry, descriptor.files)).buffer);
       if (actual !== descriptor.generation) throw new Error("Runtime generation identity mismatch");
       const directory = runtimeGenerationBase(group.root, descriptor.generation);
-      // No cache authority is available. Verify this complete set first; normal
-      // subsequent HTTP requests still address immutable, never latest, files.
-      for (const file of descriptor.files) await network(new URL(directory + file.path, base).href, async (response, progress) => {
+      const verified: {path: string; buffer: ArrayBuffer}[] = [];
+      // Verify the complete set, and populate the ordinary HTTP cache for the
+      // subsequent immutable iframe requests (including a late-starting SW).
+      for (const file of descriptor.files) await network(new URL(directory + file.path, base).href, (response, progress) => consumeNetworkBody(response, async received => {
+        received(0, file.bytes);
         // Bound inactivity, not the total transfer time of a large WASM.
         const reader = response.body?.getReader();
         let bytes: ArrayBuffer;
@@ -172,6 +197,7 @@ export async function prepareRuntimeLaunch(runtime: string, {
               if (done) break;
               if (value.byteLength) progress();
               length += value.byteLength;
+              received(length, file.bytes);
               if (length > file.bytes) throw new Error(`Runtime integrity mismatch: ${file.path}`);
               chunks.push(value);
             }
@@ -182,7 +208,25 @@ export async function prepareRuntimeLaunch(runtime: string, {
           bytes = combined.buffer;
         }
         if (bytes.byteLength !== file.bytes || await digest(bytes) !== file.sha256) throw new Error(`Runtime integrity mismatch: ${file.path}`);
-      }, 2);
+        verified.push({path: file.path, buffer: bytes});
+      }), 2, 'reload');
+      // The App Shell may finish installing while HTTP verification runs.
+      // Transfer the checked bytes into the canonical atomic cache rather than
+      // asking that worker/iframe to download them again. HTTP caching remains
+      // a best-effort fallback when no cache authority/storage is available.
+      const lateWorker = target ?? await bounded(workerTask, 1000, null);
+      let canImport = importCapable;
+      if (lateWorker && lateWorker !== target) {
+        const capability = await message(lateWorker, {type: RUNTIME_CAPABILITIES}, 2000);
+        canImport = capability?.ok === true && capability.protocol === RUNTIME_CACHE_PROTOCOL && capability.importFiles === true;
+      }
+      if (lateWorker && canImport) {
+        try {
+          const imported = prepared(await message(lateWorker, {type:RUNTIME_IMPORT,root:group.root,descriptor,files:verified},120000,
+            undefined,verified.map(file=>file.buffer)),manifest);
+          if (imported?.cached && imported.generation === descriptor.generation) return imported;
+        } catch { /* Optional cache handoff must not prevent the verified HTTP launch. */ }
+      }
       const selected = new URL(runtimeGenerationEntry(group.root, descriptor), base);
       selected.search = requested.search; selected.searchParams.delete("v"); selected.hash = requested.hash;
       return { url: selected.href, generation: descriptor.generation, cached: false };
