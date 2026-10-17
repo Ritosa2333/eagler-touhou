@@ -1280,11 +1280,10 @@ for (const boundary of ['warning', 'fullscreen']) test(`actual BrowserLauncher: 
   await back(); await until(() => !playerOpen(), 'selected fallback Runtime closes normally');
 });
 
-// Host fallback can replace the selected music before Start. Touch-disabled
-// devices retain the music confirmation without restoring the retired input warning.
+// Host fallback before Start changes the music choice; the current UI presents
+// that music warning without the retired touch-disabled input warning.
 test('actual BrowserLauncher: late Host fallback before Start uses the current music warning without a touch warning', async () => {
   env.window.AudioContext = class {};
-  Object.defineProperty(env.window.navigator, 'maxTouchPoints', {configurable: true, value: 1});
   try {
     const f = await mountBrowser({initial: '/?game=th07', holdHost: true, host: subsetHost(['th06']), seedStorage(storage) {
       storage.values.set(api.gamePreferenceStorageKey('th07'), JSON.stringify({music: 'midi', musicPreferenceExplicit: true, options: {touchEnabled: false}}));
@@ -1299,7 +1298,6 @@ test('actual BrowserLauncher: late Host fallback before Start uses the current m
     await click('#decisionCancel');
   } finally {
     delete env.window.AudioContext;
-    Object.defineProperty(env.window.navigator, 'maxTouchPoints', {configurable: true, value: 0});
   }
 });
 

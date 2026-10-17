@@ -38,10 +38,10 @@ before(async () => {
   await symlink(resolve('node_modules'), resolve(coldSource, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
   assert.equal(await exists(resolve(coldSource, '.cache/build/browser')), false);
   assert.equal(await exists(resolve(coldSource, 'assets/contracts')), false);
-  for (const [name, mountPath, enabled] of [['default', '/', false], ['root', '/', true], ['nested', '/nested/', true]]) {
+  for (const [name, mountPath, enabled] of [['default', '/', true], ['disabled', '/', false], ['root', '/', true], ['nested', '/nested/', true]]) {
     const output = resolve(work, name);
     const env = {...process.env, EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath,
-      EAGLER_REACT_APP_SHELL: enabled ? 'isolated' : '', EAGLER_REACT_APP_SHELL_ORIGIN: enabled ? origin : ''};
+      EAGLER_REACT_APP_SHELL: name === 'default' ? '' : enabled ? 'isolated' : 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: name !== 'default' && enabled ? origin : '', EAGLER_REACT_APP_SHELL_ISOLATED_ORIGIN: ''};
     try {execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {cwd: coldSource, env, encoding: 'utf8', stdio: 'pipe', timeout: 120000});}
     catch (error) {throw new Error(`React ${name} build failed:\n${error.stdout ?? ''}\n${error.stderr ?? ''}`, {cause: error});}
     outputs.set(name, {directory: resolve(output, 'client'), mountPath, enabled});
@@ -55,8 +55,19 @@ function nodes(html) {
   const result = []; const visit = node => {if (node.tagName) result.push(node); for (const child of node.childNodes ?? []) visit(child);};
   visit(parse(html)); return result;
 }
-test('default actual build publishes the retirement worker without App Shell metadata', async () => {
+test('default actual build publishes an enabled same-origin offline worker', async () => {
   const {directory} = outputs.get('default');
+  const worker = await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8');
+  assert.notEqual(worker, APP_SHELL_RETIREMENT_WORKER);
+  assert.match(worker, /App Shell integrity mismatch/);
+  for (const file of ['index.html', 'en.html', 'lobby.html']) {
+    const html = await readFile(resolve(directory, file), 'utf8');
+    assert.match(html, /name="eagler-react-app-shell"/);
+    assert.match(html, /same-origin/);
+  }
+});
+test('explicitly disabled actual build publishes the retirement worker', async () => {
+  const {directory} = outputs.get('disabled');
   assert.equal(await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8'), APP_SHELL_RETIREMENT_WORKER);
   for (const file of ['index.html', 'en.html', 'lobby.html']) assert.doesNotMatch(await readFile(resolve(directory, file), 'utf8'), /name="eagler-react-app-shell"/);
 });
@@ -184,7 +195,7 @@ test('standalone App Shell command respects selected React permission and graph'
   const environment = name => ({...process.env, EAGLER_FRONTEND: 'react',
     EAGLER_REACT_BUILD_DIRECTORY: resolve(outputs.get(name).directory, '..'),
     EAGLER_REACT_MOUNT_PATH: outputs.get(name).mountPath});
-  assert.throws(() => execFileSync(process.execPath, command, {cwd: coldSource, env: environment('default'), stdio: 'pipe'}), /disabled/);
+  assert.throws(() => execFileSync(process.execPath, command, {cwd: coldSource, env: environment('disabled'), stdio: 'pipe'}), /disabled/);
   assert.equal(await readFile(output, 'utf8'), 'unchanged-output');
   execFileSync(process.execPath, command, {cwd: coldSource, env: environment('nested'), stdio: 'pipe'});
   const worker = await readFile(output, 'utf8');

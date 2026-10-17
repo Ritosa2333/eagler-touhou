@@ -1,4 +1,5 @@
 import {normalizeSiteManifestArguments, readCompatibleSiteManifest, writeLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
+import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
@@ -60,9 +61,7 @@ if (REACT_FRONTEND_ARTIFACT) {
   if (selectedSite && selectedSite.pathname !== REACT_FRONTEND_ARTIFACT.mountPath) {
     throw new Error("site URL does not match the React frontend artifact mount");
   }
-  if (REACT_FRONTEND_ARTIFACT.appShell && (!selectedSite ||
-      selectedSite.origin !== REACT_FRONTEND_ARTIFACT.appShell.origin ||
-      selectedSite.pathname !== REACT_FRONTEND_ARTIFACT.appShell.mountPath)) {
+  if (!reactAppShellMatchesSite(REACT_FRONTEND_ARTIFACT.appShell, selectedSite)) {
     throw new Error("React App Shell packaging requires --site-url matching its exact isolated origin and mount");
   }
 }

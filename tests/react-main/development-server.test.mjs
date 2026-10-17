@@ -13,7 +13,7 @@ before(async () => {
   work = await mkdtemp(resolve('.cache/react-development-server-'));
   const output = resolve(work, 'build');
   environment = {...process.env, EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: output,
-    EAGLER_REACT_MOUNT_PATH: '/', EAGLER_REACT_APP_SHELL: '', EAGLER_REACT_APP_SHELL_ORIGIN: '',
+    EAGLER_REACT_MOUNT_PATH: '/', EAGLER_REACT_APP_SHELL: 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: '',
     EAGLER_DEVELOPMENT_GAMES: 'th10', EAGLER_TH10_CONTENT_DIR: '', EAGLER_TOUHOU_HOST: '127.0.0.1', EAGLER_ENABLE_THCRAP: '0'};
   execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {env: environment, encoding: 'utf8', stdio: 'pipe', timeout: 120000});
   artifact = await readReactFrontendArtifact({directory: resolve(output, 'client')});

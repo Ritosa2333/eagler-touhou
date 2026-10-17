@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -64,8 +65,7 @@ const siteUrl = normalizeSiteUrl(args["site-url"] ?? (sourceFrontend ? sourceDep
 if (sourceFrontend) {
   const destination = siteUrl ? new URL(siteUrl) : null;
   if (destination && destination.pathname !== sourceFrontend.mountPath) throw new Error("React external destination does not match the source frontend mount");
-  if (sourceFrontend.appShell && (!destination || destination.origin !== sourceFrontend.appShell.origin ||
-      destination.pathname !== sourceFrontend.appShell.mountPath)) {
+  if (!reactAppShellMatchesSite(sourceFrontend.appShell, destination)) {
     throw new Error("React external relocation requires a separately built artifact for the exact isolated origin and mount");
   }
 }

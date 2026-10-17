@@ -1206,6 +1206,38 @@ After structural rollback changes, run:
 
 Replay/spectator are not "extra features" for rollback validation: they exercise history ownership, capture format and confirmation semantics that ordinary live play may not expose.
 
+### Inactive slots can still have external writers
+
+TH06's 2026-10-17 spectator transition test reproduced a raw-owner rollback
+failure at frame 5355 while every canonical gameplay group still matched and
+the active enemy count was zero. A bounded byte probe, tagged to the same audit
+frame and expected owner hash, isolated four bytes in `enemies[0].runInterrupt`:
+the source held -1 and the restored slot held 0. This was named control state,
+not a reason to exclude inactive bytes or weaken the raw-owner gate.
+
+`EnemyManager::RunEclTimeline` opcode 10 writes through a retained `bosses[]`
+pointer before the active-enemy update loop. Capturing only occupied enemies
+at BeginFrame therefore misses this write after the boss becomes inactive.
+Touch that target before the assignment, with the existing journal failure
+path, rather than capturing every inactive slot. TH07 has the same static
+writer and active-only capture pattern; its applicability is established by
+source inspection, separately from TH06's dynamic byte evidence. Other title
+architectures require their own owner analysis.
+
+Retain the failing binary/log and exact offsets, then verify the corrected
+restore against the same-frame raw bytes before removing the temporary probe.
+Audit samples overwritten during resimulation must also replace their byte
+sample, so a diff cannot compare two different executions of one logical frame.
+Check the browser runner's console filter before interpreting absent output:
+this probe's original prefix lacked its required `netplay`/`spectator` marker
+and was silently filtered. The final build must be tested without the probe.
+Frozen evidence is under
+`D:\workspace\eagler\.codex-tmp\th06-rollback-manager-probe-20261017\`;
+current acceptance is recorded by the multiplayer spectator audit. The fixed
+probe replayed frame 5355 on all three source seats with aligned raw hashes and
+zero byte differences; the subsequent no-probe `1b58fc79` build passed the full
+two/three-player spectator transition/control cases. These are separate proofs.
+
 ### Browser/channel identity matters
 
 TH07 encountered runs that failed or behaved differently in bundled Chromium while the Edge channel used for performance completed correctly. Record browser channel/version and renderer identity in the raw report.

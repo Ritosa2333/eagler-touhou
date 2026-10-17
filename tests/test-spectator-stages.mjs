@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {COOPERATIVE_SPECTATOR_MARKERS, SPECTATOR_STAGE_LIMITS, parseSpectatorStageEvent, SpectatorStageRelay} from '../server/spectator-stages.mjs';
+import {isSpectatorFrameForRoom} from '../server/spectator-frame.mjs';
 
 function event(marker, count, {kind = 1, frame = 600, stage = 4, serial = 1, checkpoint = 1, node = 2, slots = 1} = {}) {
   const b = Buffer.alloc(kind === 1 ? 44 : kind === 2 ? 40 : 32);
@@ -61,4 +62,14 @@ test('portable object stage initializers fit inside the bounded relay envelope',
   const stream=new SpectatorStageRelay(70,3);assert.equal(stream.accept(large),'checkpoint');
   const oversized=Buffer.concat([large,Buffer.from([1])]);oversized.writeUInt32LE(oversized.length-40,36);
   assert.equal(parseSpectatorStageEvent(oversized,70,3),null);
+});
+
+test('TH15 measured pure-delay timing remains before a nonzero stage bootstrap',()=>{
+  const stream=new SpectatorStageRelay(70,3),timing=Buffer.alloc(40);
+  timing.set([69,70,84,77,1,1,2,0]);timing.writeUInt32LE(1,8);
+  timing.writeBigUInt64LE(0x123456789abcdef0n,12);timing.writeUInt32LE(0x10203040,20);
+  timing.writeUInt32LE(32000,24);timing.writeUInt32LE(120,36);
+  assert.equal(stream.accept(timing),'timing');stream.accept(event(70,3));
+  stream.accept(input(70,3,600));assert.deepEqual(stream.history.map(p=>[p[2],p[3]]),[[84,77],[83,86],[78,80]]);
+  const hybrid=Buffer.from(timing);hybrid[5]=2;assert.equal(isSpectatorFrameForRoom('th15mp-7403',hybrid,3),false);
 });
