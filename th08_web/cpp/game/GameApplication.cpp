@@ -173,3 +173,17 @@ void GameApplication::shutdown(){
     finish_effect();screen.clear();chain.release();renderer.flush();platform.discard_graphics();for(i32 i=0;i<256;i++)library.release(i);platform.release_surface(8);platform.stop_audio();if(session.display_config.music==2)platform.midi_reset();game.recording.reset();initialized=running=false;
 }
 }
+
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace th08 {
+bool GameApplication::begin_local_replay(const char* path,i32 stage){
+    const auto bytes=platform.read(path);ReplayPlayback candidate;
+    if(!candidate.load(bytes.data(),u32(bytes.size()))||!candidate.has_stage(stage))return false;
+    const auto metadata=candidate.metadata();if(std::strlen(path)>=sizeof(title.context.replayFilename))return false;
+    if(game_attached)leave_game();music.detach();results.detach();ending.detach();title.detach();
+    failed=false;animations.invalid=false;running=true;supervisor.state.close_requested=false;
+    auto& c=title.context;c.SetIsReplayWeird(true);std::strcpy(c.replayFilename,path);c.currentStage=stage;c.difficulty=metadata.difficulty;c.character=metadata.shot_type;c.flags.isSpellPractice=metadata.spell_number>=0;c.currentSpellCardNumber=metadata.spell_number;c.replayMode=0;c.supervisor_state=2;
+    supervisor.state.active=1;supervisor.state.target=2;supervisor.state.previous=1;supervisor.state.keep_resources=false;return true;
+}
+}
+#endif

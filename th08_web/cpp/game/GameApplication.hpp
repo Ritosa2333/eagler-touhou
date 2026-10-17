@@ -179,6 +179,7 @@ public:
     GameApplication(ApplicationPlatform&,SpriteBackend&);
     ~GameApplication(){shutdown();}
     bool initialize(u32 performance_frequency=0);
+    bool begin_local_replay(const char* path,i32 stage);
     bool update();bool draw(float presentation_alpha=1.0f,bool presentation_active=false,bool presentation_only=false,bool world_interpolate=true);
     void shutdown();bool save_score();
     bool finalize_replay(i32 slot,const char* name){if(!game.recording.ready()||(game.globals.game_flags&8)||slot<1||slot>15||!name)return false;last_game=result_context();save_replay(slot,name);return !invalid();}
