@@ -1,4 +1,4 @@
-import {readFileSync} from 'node:fs';
+import {readFileSync,realpathSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8').replaceAll('\r','');
@@ -27,17 +27,19 @@ const labServer=read('portable/presentation-lab/serve.mjs');
 const labStart=read('portable/presentation-lab/start-lab.ps1');
 const buildScript=read('portable/build.mjs');
 const packageScript=read('portable/package-eagler.mjs');
-const commonController=read('third_party/eagler-common/testkit/presentation-lab/controller-core.mjs');
+const commonController=read('../../common/testkit/presentation-lab/controller-core.mjs');
 
-// Diagnostic orchestration is a pinned common testkit dependency. The
+// Diagnostic orchestration uses the workspace common testkit. The
 // production shell must not know Lab hotkeys or expose a runtime toggle.
 assert.match(labController,/import \{PresentationLabControllerCore\}/);
-assert.match(labController,/third_party\/eagler-common\/testkit\/presentation-lab\/controller-core\.mjs/);
-assert.match(labServer,/third_party\/eagler-common\/testkit\/presentation-lab/);
+const controllerImport=labController.match(/from ['"]([^'"]*controller-core\.mjs)['"]/);
+assert(controllerImport, 'Lab controller must import the shared controller');
+assert.equal(realpathSync(new URL(controllerImport[1],new URL('presentation-lab/controller.mjs',import.meta.url))),
+ realpathSync(new URL('../../../common/testkit/presentation-lab/controller-core.mjs',import.meta.url)));
 assert.match(labServer,/commonCommit:execFileSync\('git',\['rev-parse','HEAD'\]/);
 assert.match(commonController,/class PresentationLabControllerCore/);
 assert.doesNotMatch(shell,/presentation-mark|gameGeneration.*presentation-lab/);
-assert.match(buildScript,/profile=presentationLab\?'presentation-lab':'sdl3'/);
+assert.match(buildScript,/presentationLab\?'presentation-lab':'sdl3'/);
 assert.match(buildScript,/diagnostic:presentationLab/);
 assert.match(packageScript,/build\.diagnostic.*presentationLab/);
 assert.match(packageScript,/Production build contains diagnostic export/);
