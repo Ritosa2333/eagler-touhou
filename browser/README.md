@@ -1,5 +1,37 @@
 # Browser keyboard ownership
 
+## Shared spectator timeline
+
+`spectator-timeline-view.mjs` owns the title-neutral timeline DOM, scoped visual
+rules, range editing, node-marker layout, touch-compatible expand/collapse, and
+pause/play/live/seek actions. TH09 keeps its historical default IDs and supplies
+its native adapter and score portal; cooperative Runtime supplies its own
+labels, nodes, and playback bridge. `stage` markers use the match appearance and
+`boss` markers use the round appearance. The view does not own playback state or
+invent title-specific round/score behavior.
+
+Create it with `createSpectatorTimelineView({document?, mount?, idPrefix?,
+onAction, labels?, icons?})`. The returned `slots.summary` and
+`slots.duration` retain the default IDs `spectatorScore` and
+`spectatorMatchDuration`; leaving `summaryText` unset preserves a React portal
+or other adapter-owned summary. `updateLabels(labels, icons?)` supports locale
+changes. Model updates never optimistically change playback state. A drag keeps
+its original visible bounds and thumb while native state advances, then clamps
+its seek against the latest edge. Pointer cancellation does not seek. Rejected
+actions remain visible for the current run until another action or run replaces
+them.
+
+The module injects one ref-counted style element per document. Every selector is
+scoped by `.spectator-timeline` and uses classes rather than fixed IDs, so an
+adapter may choose another `idPrefix` without breaking layout. Generated Runtime
+copies are byte-for-byte copies of the common module:
+
+```powershell
+node tools/sync-spectator-timeline-view.mjs --target PATH/TO/sdl-runtime/spectator-timeline-view.mjs
+node tools/sync-spectator-timeline-view.mjs --check PATH/TO/sdl-runtime/spectator-timeline-view.mjs
+node --test browser/spectator-timeline-view.test.mjs
+```
+
 ## Startup branding
 
 `startup-branding.mjs` and `startup-wordmark.svg` own the TH06–TH09 startup
