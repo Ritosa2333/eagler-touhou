@@ -1,5 +1,5 @@
-import {defaultSeverity,groupFindings as groupFindingsCore,compactReport,mergeIssueGroups as mergeIssueGroupsCore} from '../../third_party/eagler-common/testkit/presentation-lab/report-core.mjs';
-import {compareStateEvidence} from '../../third_party/eagler-common/testkit/presentation-lab/analyzer.mjs';
+import {defaultSeverity,groupFindings as groupFindingsCore,compactReport,mergeIssueGroups as mergeIssueGroupsCore} from '../../../../common/testkit/presentation-lab/report-core.mjs';
+import {compareStateEvidence} from '../../../../common/testkit/presentation-lab/analyzer.mjs';
 import {OWNERS,STATE_GROUPS,WORLD_OWNER_IDS,MOTION_OWNER_IDS} from './owners.mjs';
 export {OWNERS,STATE_GROUPS} from './owners.mjs';
 

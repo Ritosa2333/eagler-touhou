@@ -1,4 +1,4 @@
-import {PresentationLabControllerCore} from '../../third_party/eagler-common/testkit/presentation-lab/controller-core.mjs';
+import {PresentationLabControllerCore} from '../../../../common/testkit/presentation-lab/controller-core.mjs';
 import {Th08RuntimeDriver,Th08ObservationAdapter} from './adapter.mjs';
 
 export class LabController extends PresentationLabControllerCore{
