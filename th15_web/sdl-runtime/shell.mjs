@@ -25,7 +25,7 @@ async function stop(){if(stopping)return;stopping=true;try{core._th15_loop_stop(
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth15\//,'').replace(/^\//,'');if(!/^(?:scoreth15\.dat|th15\.cfg|replay\/th15_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?|autosave\/save[0-3]_[0-4]\.dat)$/.test(name))throw Error('存档路径无效');return name;}
 function apply(){core.eaglerOptions=options;core._th15_limit_presentation(+!!options.limitPresentationTo60);core._th15_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th15_music_enabled(+music);}
 async function resource(r){
- if(r.path!=='/unifont.otf'&&!/^\/music\/(?:th15_\d{2}|th128_08)\.ogg$/.test(r.path)&&!/^\/fonts\/(?:font[0-7]|cp932|blend4444)\.bin$/.test(r.path))throw Error('资源路径无效');
+ if(!['/msgothic.ttc','/unifont.otf','/fonts/cp932.bin'].includes(r.path)&&!/^\/music\/(?:th15_\d{2}|th128_08)\.ogg$/.test(r.path))throw Error('资源路径无效');
  const u=new URL(r.url,location.href);if(u.origin!==location.origin||!['http:','https:','blob:'].includes(u.protocol))throw Error('资源来源无效');
  const response=await fetch(u);if(!response.ok)throw Error('资源读取失败');const bytes=new Uint8Array(await response.arrayBuffer());
  const expected=r.bytes??r.size;if(bytes.length>64*1024*1024||(expected!=null&&bytes.length!==expected))throw Error('资源大小错误');
@@ -95,7 +95,7 @@ const initialized=(async()=>{
  if(buffer.byteLength<16||buffer.byteLength>128*1024*1024)throw Error('游戏资源大小错误');
  core.FS.writeFile('/th15.dat',new Uint8Array(buffer),{canOwn:true});
  const response=await fetch('./resources.json');if(!response.ok)throw Error('资源清单加载失败');const manifest=await response.json();
- if(manifest.schema!=='eagler-sdl-resources/1'||manifest.game!==game||!Array.isArray(manifest.resources)||manifest.resources.length!==10)throw Error('资源清单无效');
+ if(manifest.schema!=='eagler-sdl-resources/1'||manifest.game!==game||!Array.isArray(manifest.resources)||manifest.resources.length!==1||manifest.resources[0]?.path!=='/fonts/cp932.bin')throw Error('资源清单无效');
  for(const r of manifest.resources)await resource(r);
  emit('ready');
 })().catch(e=>{if(e?.name==='AbortError'&&e?.message==='EAGLER_RUNTIME_SESSION_SUPERSEDED')return false;fatal(e);throw e;});
