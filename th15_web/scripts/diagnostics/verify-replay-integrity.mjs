@@ -6,9 +6,9 @@ import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
 import {launchBrowser} from '../../../th10_web/scripts/native/browser-launch.mjs';
-import {digestCanonicalJson,recordsFromSegments} from '../../../third_party/eagler-common/testkit/replay-verifier/adapter.mjs';
-import {writeTraceJsonLines,readTraceJsonLines} from '../../../third_party/eagler-common/testkit/replay-verifier/trace-jsonl.mjs';
-import {compareTraces} from '../../../third_party/eagler-common/testkit/replay-verifier/compare.mjs';
+import {digestCanonicalJson,recordsFromSegments} from '../../../../../common/testkit/replay-verifier/adapter.mjs';
+import {writeTraceJsonLines,readTraceJsonLines} from '../../../../../common/testkit/replay-verifier/trace-jsonl.mjs';
+import {compareTraces} from '../../../../../common/testkit/replay-verifier/compare.mjs';
 
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const dat=process.env.TH15_ORIGINAL_DAT,replay=process.env.TH15_VERIFY_REPLAY;
