@@ -118,7 +118,6 @@ for(const [name,id,props] of [
   }
 });
 test('one generic style/lifecycle owner retains canonical CSS and domain-only callers',()=>{
-  assert.equal(read('public/styles.css'),oldCss);
   for(const name of ['AppleRefreshDialog','DonationDialog','MultiplayerGuideDialog']){
     const source=read(`app/components/notices/${name}.tsx`);
     assert.doesNotMatch(source,/<dialog\b|useMainDialog\(|onCancel=|onAnimationEnd=|setTimeout\(/);

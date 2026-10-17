@@ -1,8 +1,7 @@
 import fs from 'node:fs';
-import path from 'node:path';
+import { workspacePath } from "../lib/workspace-layout.mjs";
 
-const root = path.resolve(import.meta.dirname, '..', '..');
-const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
+const read = rel => { const [repository, ...segments] = rel.split("/"); return fs.readFileSync(workspacePath(repository.replace(/-eagler$/, ""), ...segments), "utf8").replaceAll("\r\n", "\n"); };
 
 for (const game of ['th06', 'th07']) {
   const source = read(`${game}-eagler/src/graphics/Gles.cpp`);

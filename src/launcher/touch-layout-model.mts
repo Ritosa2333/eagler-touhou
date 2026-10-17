@@ -14,7 +14,7 @@ export const touchLayoutControlMeta = Object.freeze({
 });
 
 export const touchLayoutScaleMin = 0.6;
-export const touchLayoutScaleMax = 1.8;
+export const touchLayoutScaleMax = 3;
 export const touchLayoutOrientations = Object.freeze(["landscape", "portrait"] as const);
 
 export type TouchLayoutControlName = keyof typeof touchLayoutControlMeta;

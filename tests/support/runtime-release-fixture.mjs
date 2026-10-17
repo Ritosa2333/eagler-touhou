@@ -6,6 +6,8 @@ import { resolve } from "node:path";
 import { PRODUCT_CONTENT } from "../../lib/content-definition.mjs";
 import { PRODUCT_GAMES } from "../../lib/contracts/product-catalog.mjs";
 import { RUNTIME_RELEASE_SCHEMA, runtimeStem, validateRuntimeReleaseManifest } from "../../lib/runtime-release.mjs";
+import { readFile } from "node:fs/promises";
+import { extractGameDataLayout } from "../../lib/runtime-data-layout.mjs";
 
 const identity = bytes => ({
   bytes: bytes.length,
@@ -46,12 +48,16 @@ return parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:"fixtur
 }`;
 }
 
-export async function writeSyntheticRuntimeRelease(root) {
+// Workspace Host integration may substitute real preload programs. Other
+// registered products remain synthetic and are never presented as game proof.
+export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = {}) {
   const games = {};
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     const stem = runtimeStem(game);
     const preload = product.dataProvider === "emscripten-preload" ? preloadFixture(game) : null;
-    const dataLayout = preload?.layout || PRODUCT_CONTENT[game].dataLayout;
+    const dataLayout = preloadBuilds[game]
+      ? extractGameDataLayout(await readFile(resolve(preloadBuilds[game].runtime, `${stem}.js`), "utf8"), game).layout
+      : preload?.layout || PRODUCT_CONTENT[game].dataLayout;
     const variants = [["runtime", `runtime/${game}`, "normal"]];
     if (product.multiplayerRuntime) variants.push(["multiplayerRuntime", `runtime/${game}/multiplayer`, "multiplayer"]);
     const entry = {
@@ -59,6 +65,10 @@ export async function writeSyntheticRuntimeRelease(root) {
       dataLayout,
       features: { thprac: false, languages: false, focusHitbox: false },
     };
+    if (preloadBuilds[game] && product.features.focusHitbox) {
+      const layout = extractGameDataLayout(await readFile(resolve(preloadBuilds[game].runtime, `${stem}.js`), "utf8"), game);
+      entry.features.focusHitbox = layout.files.some(([path]) => path === '/eagler-hitbox.png');
+    }
     for (const [key, runtimeRoot, variant] of variants) {
       const target = resolve(root, runtimeRoot);
       await mkdir(target, { recursive: true });
@@ -78,6 +88,14 @@ export async function writeSyntheticRuntimeRelease(root) {
             [`${stem}.js`]: js,
             [`${stem}.wasm`]: wasm,
           };
+      if (preloadBuilds[game]) {
+        assertPreload(product, game);
+        const build = preloadBuilds[game][key];
+        if (!build) throw new Error(`${game}: real fixture build missing for ${key}`);
+        for (const name of Object.keys(payloads)) payloads[name] = await readFile(resolve(build, name));
+        if (extractGameDataLayout(payloads[`${stem}.js`].toString("utf8"), game).layout !== dataLayout)
+          throw new Error(`${game}: real fixture variants have different DATA layouts`);
+      }
       for (const [name, bytes] of Object.entries(payloads)) {
         await mkdir(resolve(target, name, ".."), { recursive: true });
         await writeFile(resolve(target, name), bytes);
@@ -100,4 +118,9 @@ export async function writeSyntheticRuntimeRelease(root) {
   });
   await writeFile(resolve(root, "runtime-release.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
+}
+
+function assertPreload(product, game) {
+  if (product.runtimeFileLayout !== "preload" && product.dataProvider !== "emscripten-preload")
+    throw new Error(`${game}: real fixture substitution only accepts preload programs`);
 }

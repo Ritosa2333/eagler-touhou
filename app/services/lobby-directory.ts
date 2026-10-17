@@ -116,8 +116,12 @@ export function directoryRoomState(room: DirectoryRoom): 'recruiting' | 'full' |
 export function directoryRoomCanEnter(room: DirectoryRoom): boolean {
   return (
     (directoryRoomState(room) === 'recruiting' && room.joinable) ||
+    directoryRoomState(room) === 'full' || (room.phase !== 'lobby' && room.spectatable === true) ||
     room.product === 'th09mp'
   );
+}
+export function directoryRoomSpectatorEntry(room: DirectoryRoom): boolean {
+  return directoryRoomState(room) !== 'recruiting' && directoryRoomCanEnter(room);
 }
 /** Source authority: main src/launcher/lobby.mts. No DOM, history, gameplay or
  * new form fields. Starting this owner is explicit; construction performs no I/O. */
@@ -314,7 +318,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       difficulty: bounded(row.difficulty, policy.difficulties.length - 1),
       phase: row.phase === 'lobby' ? 'lobby' : 'playing',
       joinable: row.joinable === true,
-      spectatable: row.product === 'th09mp' && row.phase !== 'lobby' && row.spectatable === true,
+      spectatable: row.phase !== 'lobby' && row.spectatable === true,
     });
   }
   function connect() {
@@ -687,7 +691,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       1,
       'public',
       false,
-      false,
+      directoryRoomSpectatorEntry(current),
     );
   }
   function releaseMembership() {

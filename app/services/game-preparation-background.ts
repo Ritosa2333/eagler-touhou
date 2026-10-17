@@ -25,6 +25,7 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
   const currentOgg = () => current() && runtime.getSnapshot().music === 'ogg';
   const backgroundUpdate = deferredUpdate ? acquisition.startBackgroundUpdate(deferredUpdate, {
     productId: input.productId, gameVersion: input.settings.gameVersion, music: prepared.music, language: input.settings.language,
+    onUpdateReady: () => input.onUpdateReady?.(epoch),
   }).catch(error => {input.onBackgroundError?.(error, `${game}: background Package update failed${deferredUpdate.installation?.source === 'local' ? ' for local install' : ''}`);}) : Promise.resolve();
   if (!loaded || !resources || !oggMusic(prepared.music) || !currentOgg()) {await backgroundUpdate; return;}
   const initial = new Set(prepared.plan.localOgg?.fileIds ?? []);

@@ -21,8 +21,8 @@ async function renamePublicationDirectory(source, target) {
   for (let attempt = 0; ; attempt++) {
     try {return await rename(source, target);}
     catch (error) {
-      if (process.platform !== "win32" || !["EPERM", "EBUSY"].includes(error.code) || attempt >= 4) throw error;
-      await new Promise(resolveWait => setTimeout(resolveWait, 75 * (attempt + 1)));
+      if (process.platform !== "win32" || !["EPERM", "EBUSY"].includes(error.code) || attempt >= 20) throw error;
+      await new Promise(resolveWait => setTimeout(resolveWait, 100 * Math.min(attempt + 1, 5)));
     }
   }
 }

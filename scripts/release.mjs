@@ -18,6 +18,7 @@ import {
 import { verifyRuntimeRelease } from "../lib/runtime-release.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { sourceIdentity, writeReleaseManifest } from "../lib/release-manifest.mjs";
+import { sourceProjectRoot } from "../lib/source-layout.mjs";
 import { SITE_MANIFEST_FILE } from "../lib/contracts/site-manifest.mjs";
 import { verifyReleaseBundle } from "../lib/release-bundle-verifier.mjs";
 
@@ -76,6 +77,8 @@ async function identifySources() {
   for (const owner of formalReleaseSourceOwners()) {
     result[WORKSPACE_REPOSITORIES[owner]] = await sourceIdentity(workspacePath(owner));
   }
+  const sourceProject = sourceProjectRoot(project);
+  if (sourceProject !== project) result.project = await sourceIdentity(sourceProject);
   return result;
 }
 

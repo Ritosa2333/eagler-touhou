@@ -42,6 +42,12 @@ Each language ZIP includes the licensed Unicode subset named by its own
 implementation with TH15 font heights and its original point-copy raster
 path. Missing tables/files fall back to the Japanese archive.
 
+Original Japanese text now uses the shared Gothic font and a bounded on-demand
+glyph cache, retaining TextRaster's style sizes, outlines and point-copy layout.
+Runtime publication includes only `fonts/cp932.bin`; pre-expanded `font*.bin`
+and their coverage-class blend table are no longer launch dependencies. The
+language ZIP remains the owner of translated text and its subset font.
+
 PNG patches are applied to matching sprites using the existing TH11 patch
 rules, not by replacing unrelated atlas regions. Fixed-slot ASCII atlases
 are deliberately excluded: TH15's ASCII text sites and `front.anm.jdiff`

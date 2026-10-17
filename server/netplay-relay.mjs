@@ -33,6 +33,7 @@ import {
   multiplayerInputTimingPolicy,
 } from '../lib/contracts/product-catalog.mjs';
 import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
+import { COOPERATIVE_SPECTATOR_MARKERS, SpectatorStageRelay } from './spectator-stages.mjs';
 import { th09PlayerStats, acceptTh09MatchStats } from './th09-room-stats.mjs';
 import {
   parseMeasuredNetplayTiming,
@@ -473,6 +474,58 @@ function sendSpectatorPayload(socket, payload, roomId, runId, spectatorId) {
   return true;
 }
 
+function acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload) {
+  const marker = COOPERATIVE_SPECTATOR_MARKERS[roomId.split('-')[0]];
+  if (marker === undefined) return false;
+  const extension = payload[0] === 69 && payload[1] === marker && payload[2] === 83 && payload[3] === 86;
+  if (!run.spectatorStages && !extension) {
+    if (payload.length === 40 && isSpectatorFrameForRoom(roomId, payload, run.playerCount))
+      run.spectatorStageTiming = Buffer.from(payload);
+    return false;
+  }
+  try {
+    if (payload.length === 40 && payload[2] === 84 && payload[3] === 77 &&
+        !isSpectatorFrameForRoom(roomId, payload, run.playerCount)) throw Error('invalid spectator timing');
+    const first = !run.spectatorStages;
+    const stream = run.spectatorStages || new SpectatorStageRelay(marker, run.playerCount);
+    if (first && run.spectatorStageTiming) stream.accept(run.spectatorStageTiming);
+    const kind = stream.accept(payload);
+    if (kind === 'duplicate-timing') return true;
+    run.spectatorStages = stream;
+    run.spectatorTimeline = true;
+    run.spectatorAdmissionOpen = !stream.ended;
+    run.spectatorComplete = stream.ended;
+    run.spectatorHistory = stream.history;
+    run.spectatorHistoryBytes = stream.bytes;
+    if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
+    run.spectatorGraceTimer = null;
+    run.onSpectatorAvailabilityChange = () => roomDirectory.changed();
+    for (const [id, target] of run.spectatorClients)
+      if (!target.spectatorReplaying) {
+        if (sendSpectatorPayload(target, payload, roomId, runId, id) && first)
+          sendSpectatorPayload(target, stream.bootstrap(), roomId, runId, id);
+      }
+      else if (kind === 'checkpoint') {
+        // Retain every intervening stage for a viewer still downloading its
+        // first prefix. Jumping to the newest array would leave an input gap.
+        const queue = target.spectatorQueuedStages ||= [];
+        queue.push(stream.history);
+        if (queue.length > 32 || queue.reduce((sum, rows) => sum + rows.reduce((n, row) => n + row.length, 0), 0) > 16 * 1024 * 1024)
+          target.close(1013, 'spectator stage history too slow');
+      }
+    if (first || stream.ended) { broadcastLobby(room); roomDirectory.changed(); }
+    if (kind === 'checkpoint')
+      for (const id of room.lobby.spectators.keys()) {
+        const lobby = room.lobbyClients.get(id);
+        if (lobby) sendLobby(lobby, {type: 'spectator-start', serial: room.lobby.startSerial, room: lobbySnapshot(room)});
+      }
+  } catch (error) {
+    console.log(`SPECTATOR STAGE STOP room=${roomId} run=${runId} ${error.message}`);
+    stopSpectatorStream(run);
+  }
+  return true;
+}
+
 function maybeDeleteRoom(roomId, room) {
   if (
     room.clients.size === 0 &&
@@ -738,7 +791,8 @@ function lobbySnapshot(room) {
     startSerial: room.lobby.startSerial,
     spectators,
     spectatorCount: spectators.length,
-    ...(process.env.EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE === '1' && room.id.startsWith('th09mp-')
+    ...((process.env.EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE === '1' && room.id.startsWith('th09mp-')) ||
+        room.runs.get(String(room.lobby.startSerial))?.spectatorStages
       ? { spectatorTimeline: true }
       : {}),
     seats: room.lobby.seats.map((seat) =>
@@ -1073,7 +1127,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       if (seatChanged || spectatorChanged) broadcastLobby(room);
       if (room.lobby.phase !== 'lobby') {
         const run = room.runs.get(String(room.lobby.startSerial));
-        if (run?.spectatorTimeline && !run.ended && !run.spectatorStopped) {
+        if (run?.spectatorTimeline && (!run.spectatorStages || run.spectatorAdmissionOpen) && !run.ended && !run.spectatorStopped) {
           run.admittedSpectators.add(clientId);
           run.memberIds.set(clientId, roomDirectory.memberIdFor(roomId, clientId));
           sendLobby(socket, {
@@ -1572,12 +1626,22 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
       }
       blockedAt = 0;
       if (index >= history.length && history !== run.spectatorHistory) {
-        history = run.spectatorHistory;
+        history = run.spectatorStages ? socket.spectatorQueuedStages?.shift() : run.spectatorHistory;
+        if (!history) {socket.close(1011, 'spectator stage history gap'); return;}
         index = 0;
       }
       const first = history[index];
       if (!first) {
+        if (run.spectatorStages && !sendSpectatorPayload(socket, run.spectatorStages.bootstrap(), roomId, runId, spectatorId)) return;
         socket.spectatorReplaying = false;
+        return;
+      }
+      if (run.spectatorStages) {
+        // Keep legacy input packets individually decodable by native peers.
+        // Yield after a bounded burst instead of one timer per logical frame.
+        for (let sent = 0; sent < 64 && history[index] && socket.bufferedAmount <= 64 * 1024; ++sent)
+          if (!sendSpectatorPayload(socket, history[index++], roomId, runId, spectatorId)) return;
+        socket.spectatorReplayTimer = setTimeout(replay, 0);
         return;
       }
       const batch = [first];
@@ -1796,8 +1860,19 @@ server.on('connection', (socket, request) => {
     messagesPerSecond: 600,
     bytesPerSecond: 512 * 1024,
   });
+  // Sparse cooperative stage owners can exceed the ordinary 16 KiB input
+  // packet cap. Their optional lane has its own bounded byte/message budget.
+  const acceptStageInitializer = createRelayMessageGate({
+    maxBytes: RELAY_LIMITS.messageBytes,
+    messagesPerSecond: 10,
+    bytesPerSecond: 256 * 1024,
+  });
   socket.on('message', (data, isBinary) => {
-    if (!acceptRelayMessage(socket, data, acceptGameplay)) return;
+    const marker = COOPERATIVE_SPECTATOR_MARKERS[roomId.split('-')[0]];
+    const stageInitializer = isBinary && player === 0 && marker !== undefined &&
+      data.length >= 9 && data[0] === 0xe8 && data[1] === 69 && data[2] === marker &&
+      data[3] === 83 && data[4] === 86 && data[5] === 1 && data[6] === 1;
+    if (!acceptRelayMessage(socket, data, stageInitializer ? acceptStageInitializer : acceptGameplay)) return;
     if (!isBinary) {
       socket.close(1003, 'binary frames only');
       return;
@@ -1813,8 +1888,10 @@ server.on('connection', (socket, request) => {
         return;
       }
       if (run.spectatorStopped) return;
-      if (player !== 0 || (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0)) return;
+      if (player !== 0) return;
       const payload = incoming.subarray(1);
+      if (acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload)) return;
+      if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0) return;
       const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;
       const ending =
         th09Stream &&

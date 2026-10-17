@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
+import { runNativeCpp } from "./support/native-cpp.mjs";
 
 // Gamepad is a required adapter capability. Physical device button indices are
 // not a stable product contract, so every Runtime must normalize controllers
@@ -21,7 +22,10 @@ const runtimeShells = {
   th09: await readFile(workspacePath("th09", "th09_web", "sdl-runtime", "managed.mjs"), "utf8"),
   th10: await readFile(workspacePath("th10", "th10_web", "sdl-runtime", "shell.mjs"), "utf8"),
 };
-assert.deepEqual(Object.keys(sources).sort(), Object.keys(PRODUCT_GAMES).sort(),
+for (const game of ['th08','th09','th10'])
+  runtimeShells[game] += '\n' + await readFile(workspacePath(game, `${game}_web/sdl-runtime/directory-keyboard.mjs`), 'utf8');
+const browserGames = ['th11', 'th15', 'th20'];
+assert.deepEqual([...Object.keys(sources), ...browserGames].sort(), Object.keys(PRODUCT_GAMES).sort(),
   "required gamepad verification must be updated when a formal game adapter is registered");
 
 for (const game of Object.keys(sources)) {
@@ -75,9 +79,9 @@ for (const game of ["th08", "th09", "th10"]) {
     `${game}: Gamepad D-pad fallback must be restricted to keyboard-like devices`);
   assert.match(sources[game], /pad\.buttons\[12\].*pad\.buttons\[13\].*pad\.buttons\[14\].*pad\.buttons\[15\]/s,
     `${game}: keyboard-like Gamepad fallback must use the standard D-pad buttons only`);
-  assert.match(runtimeShells[game], /function runtimeKeyboardCode\(message\)/,
+  assert.match(runtimeShells[game], /function runtimeKeyboardCode\(\w+\)/,
     `${game}: hosted mobile keyboard messages need Runtime-side normalization`);
-  assert.match(runtimeShells[game], /message\.key.*message\.keyCode/s,
+  assert.match(runtimeShells[game], /(?:message|event)\.key.*(?:message|event)\.keyCode/s,
     `${game}: Runtime keyboard normalization must preserve key/keyCode fallback`);
   assert.match(runtimeShells[game], /Unidentified/,
     `${game}: Runtime keyboard normalization must handle mobile Unidentified code events`);
@@ -90,4 +94,31 @@ for (const game of ["th06", "th07"]) {
     `${game}: hosted keyboard normalization must preserve key/keyCode fallback`);
 }
 
-console.log(`All-game normalized gamepad/KeyConfig contract: PASS (${Object.keys(PRODUCT_GAMES).map(game => game.toUpperCase()).join("/")})`);
+for (const game of browserGames) {
+  const hostPath = game === 'th11' ? 'Application.cpp' : game === 'th15' ? 'BrowserRuntime.cpp' : 'InputHost.cpp';
+  const directory = workspacePath(game, `${game}_web/cpp/sdl`);
+  const host = await readFile(workspacePath(game, `${game}_web/cpp/sdl`, hostPath), 'utf8');
+  assert.match(host, /BrowserGamepadState\(/, `${game}: sample the Launcher-owned normalized controller`);
+  assert.match(host, /ApplyGamepadVirtualKeys\(/, `${game}: deliver logical actions to gameplay`);
+  await runNativeCpp(`#include "browser-gamepad-input.hpp"
+#include <array>
+#include <cassert>
+using namespace eagler::input;
+int main(){
+  constexpr unsigned vk[]={90,88,16,27,38,40,37,39,17,13,67,82};
+  constexpr unsigned scans[]={44,45,42,1,200,208,203,205,29,28,46,19};
+  for(unsigned bit=0;bit<12;++bit){
+    std::array<unsigned char,256> keys{}, scan{};
+    ApplyGamepadVirtualKeys(keys,1<<bit); ApplyGamepadScanKeys(scan,1<<bit);
+    for(unsigned i=0;i<256;++i){
+      const bool alias=(bit==2&&i==160)||(bit==8&&i==162);
+      assert(bool(keys[i])==(i==vk[bit]||alias));
+      assert(bool(scan[i])==(i==scans[bit]));
+    }
+  }
+  std::array<unsigned char,256> keys{};keys[90]=128;
+  ApplyGamepadVirtualKeys(keys,-1);assert(keys[90]==128);
+  ApplyGamepadVirtualKeys(keys,0);assert(keys[90]==128);
+}`, {includes:[directory]});
+}
+console.log(`All-game normalized gamepad/KeyConfig contract: PASS (SDL slots: ${Object.keys(sources).join('/')}; native browser ABI: ${browserGames.join('/')})`);

@@ -44,7 +44,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const replayModel = session.getReplays();
   const replayFiles = useSyncExternalStore(replayModel?.subscribe ?? emptySubscribe, replayModel?.getSnapshot ?? noDiagnostics, replayModel?.getSnapshot ?? noDiagnostics);
-  const replayWorkspace = !!replayFiles?.open && (replayFiles.productId === 'th09' || replayFiles.productId === 'th09mp');
+  const replayWorkspace = !!replayFiles?.open;
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   const preferences = useSyncExternalStore(session.preferences.subscribe, session.preferences.getSnapshot, session.preferences.getSnapshot);
   const firstUse = useRef<FirstUseNoticeHandle>(null), notice = useRef<SiteNoticeHandle>(null), network = useRef<NetworkDiagnosticsHandle>(null);
@@ -208,9 +208,6 @@ function SessionOverlays({session, firstUse, notice, assetUrl, onDonationUnavail
     <DonationDialog open={navigation.infoDialogOpen('donationDialog')} onCloseRequest={() => navigation.closeInfoDialog('donationDialog')} closeDurationMs={navigation.context === 'lobby' ? 0 : 220} assetUrl={assetUrl} onArtworkUnavailable={onDonationUnavailable}/>
     <AppleRefreshDialog open={navigation.infoDialogOpen('appleRefreshDialog')} onCloseRequest={() => navigation.closeInfoDialog('appleRefreshDialog')}/>
     <MultiplayerGuideDialog open={navigation.infoDialogOpen('mpGuideDialog')} onCloseRequest={() => navigation.closeInfoDialog('mpGuideDialog')} gameId={guideProduct ? gameIdForProduct(guideProduct) : 'th06'} contentUrl={assetUrl('content/MULTIPLAYER.html')}/>
-    {replays && replays.getSnapshot().productId !== 'th09' && replays.getSnapshot().productId !== 'th09mp' && <ReplayDialog model={replays} open={navigation.infoDialogOpen('replayDialog')} onCloseRequest={() => navigation.closeInfoDialog('replayDialog')}
-      onImportRequest={() => {const product = replays.getSnapshot().productId; if (product) void session.chooseReplayFile(product).catch(session.reportError);}}
-      onDropFile={async file => {const product = replays.getSnapshot().productId; if (product) await session.importFile('replay', file, product);}}
-      onImportError={error => {session.feedback.status(t('status.errorReason', {reason: errorText(error)})); session.feedback.toast(t('replay.importFailed', {reason: errorText(error)}));}}/>}
+
   </>;
 }

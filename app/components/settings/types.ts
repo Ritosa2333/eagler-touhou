@@ -1,4 +1,7 @@
 import type {ProductId} from '../../../src/contracts/product-catalog.mts';
+import type {GamepadMappingModel} from '../../../src/launcher/gamepad-mapping.mts';
+import type {KeyboardPreferences} from '../../../src/launcher/keyboard-preferences.mts';
+import type {Th09LocalInput} from '../../../src/launcher/th09-local-input.mts';
 import type {TouchLayoutOrientation, TouchLayoutProfile} from '../../models/touch-layout';
 export type SettingsFileAction = 'export-save' | 'import-save' | 'export-replay' | 'manage-replay' | 'import-hint' | 'delete-hint';
 export interface SettingsDecision {message: string; confirmText: string; tone?: 'danger'}
@@ -27,6 +30,9 @@ export interface SettingsActions {
   feedback(message: string, status?: string): void;
   reportError(error: unknown): void;
   externalMidi: ExternalMidiPort;
+  gamepad?: GamepadMappingModel;
+  keyboard?: KeyboardPreferences;
+  th09Local?:Th09LocalInput;
 }
 export interface TouchEditorNativePorts {
   enterFullscreen(element: HTMLElement): Promise<boolean>;

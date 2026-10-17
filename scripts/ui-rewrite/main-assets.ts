@@ -3,7 +3,7 @@ import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import type {Plugin} from 'vite';
-import {launcherStyleSources, buildLauncherStyleOutputs} from '../../lib/frontend-assets.mjs';
+import {launcherStyleSources, buildLauncherStyleOutputs, buildRuntimeProgramWorkerSource} from '../../lib/frontend-assets.mjs';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {resolvePublicOrRepositorySource} from '../../lib/public-source.mjs';
@@ -21,6 +21,14 @@ export function mainAssets(): Plugin {
   let wroteAssets = false;
   const output = resolve(root, deployment.outputDirectory, 'client');
   return {
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url?.split('?')[0] !== deployment.mountPath + 'runtime-program-sw.js') {next();return;}
+        try {res.setHeader('Content-Type', 'application/javascript');res.setHeader('Cache-Control', 'no-cache');
+          res.end(await buildRuntimeProgramWorkerSource({project:root}));}
+        catch (error) {next(error);}
+      });
+    },
     name: 'main-visual-assets', enforce: 'pre',
     load(id) {
       const sourceId = id.split('?')[0].replaceAll('\\', '/');
@@ -59,7 +67,7 @@ export function mainAssets(): Plugin {
       mkdirSync(output, {recursive: true});
       // Consume the same public-file contract as main. Route documents and
       // generated CSS belong to their respective builders, not raw copying.
-      const generated = new Set(['index.html', 'en.html', 'lobby.html', 'styles.css', 'features.css', 'touch-guide.css']);
+      const generated = new Set(['index.html', 'en.html', 'lobby.html', 'styles.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js']);
       for (const path of STATIC_FRONTEND_PACKAGE_FILES) {
         if (generated.has(path) || path.startsWith('legacy/')) continue;
         const source = resolvePublicOrRepositorySource(path);

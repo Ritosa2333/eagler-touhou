@@ -1,6 +1,10 @@
 export interface RuntimeMessageTarget {
   postMessage(message: unknown, targetOrigin: string): void;
   readonly __eaglerDirectInputBridge?: unknown;
+  readonly __eaglerKeyboardInputBridge?: unknown;
+  readonly __eaglerGamepadInputBridge?: unknown;
+  __eaglerKeyboardMapping?: unknown;
+  __eaglerGamepadMapping?: unknown;
 }
 
 interface ImmediateInputBridge {
@@ -10,6 +14,24 @@ interface ImmediateInputBridge {
   epoch: number;
   origin: string;
   submit(message: unknown): boolean;
+}
+
+export interface KeyboardInputBridge {
+  schema: 'eagler-touhou/keyboard-input/1';
+  protocol: string;
+  game: string;
+  epoch: number;
+  origin: string;
+  submit(message: unknown): boolean;
+}
+
+export function keyboardInputBridge(context: Pick<TouchRuntimeContext, 'target' | 'targetOrigin' | 'protocol' | 'game' | 'epoch'>): KeyboardInputBridge | null {
+  try {
+    const bridge = context.target?.__eaglerKeyboardInputBridge as Partial<KeyboardInputBridge> | undefined;
+    return bridge?.schema === 'eagler-touhou/keyboard-input/1' && bridge.protocol === context.protocol &&
+      bridge.game === context.game && bridge.epoch === context.epoch && bridge.origin === context.targetOrigin &&
+      typeof bridge.submit === 'function' ? bridge as KeyboardInputBridge : null;
+  } catch { return null; }
 }
 
 export interface TouchRuntimeContext {
@@ -59,6 +81,15 @@ export function deliverRuntimeInput(
   message: unknown,
 ): boolean {
   if (!context.target || !Number.isSafeInteger(context.epoch) || context.epoch <= 0) return false;
+  if (message && typeof message === 'object' && 'command' in message &&
+      (message.command === 'keyboard' || message.command === 'keyboard-clear')) {
+    const keyboard = keyboardInputBridge(context);
+    if (keyboard) {
+      const accepted = keyboard.submit(message);
+      if (accepted === true) return true;
+      if (accepted !== false) throw new Error('invalid keyboard-input acknowledgement');
+    }
+  }
   let candidate: unknown;
   try { candidate = context.target.__eaglerDirectInputBridge; }
   catch { /* Cross-origin Window lookup: preserve postMessage transport. */ }

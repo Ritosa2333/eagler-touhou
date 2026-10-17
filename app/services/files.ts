@@ -1,5 +1,6 @@
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, type ProductId} from '../../src/contracts/product-catalog.mts';
 import * as replay from '../../src/launcher/replay-files.mts';
+import {replayFilePolicy} from '../../src/launcher/replay-storage-policy.mts';
 import {parseTh09ReplayMatch, th09ReplayImportDirectory, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
 import type {RuntimeResponseMessage} from '../../src/contracts/runtime-protocol.mts';
 import type {RuntimeService, RuntimeFileSession} from './runtime';
@@ -62,7 +63,7 @@ export function createFileActions(options: FileActionsOptions) {
     return 'hintFiles' in storage ? storage.hintFiles : [];
   }
   function prefix(product: ProductId): string {
-    const value = PRODUCT_GAMES[gameIdForProduct(product)].replay?.prefix;
+    const value = replayFilePolicy(product).prefix;
     if (!value) throw new Error(t('replay.unsupported'));
     return value;
   }
@@ -130,7 +131,7 @@ export function createFileActions(options: FileActionsOptions) {
     context.assertRuntimeOwnership();
     await options.prepareFiles(product, {retireRunning: kind !== 'replay', ...(context.ownsPresentation ? {ownsPresentation: context.ownsPresentation} : {})});
     context.assertRuntimeOwnership();
-    const keepViewer = kind === 'replay' && gameIdForProduct(product) === 'th09' && runtime.getSnapshot().launched &&
+    const keepViewer = kind === 'replay' && runtime.getSnapshot().launched &&
       runtime.getLauncherControlContext?.()?.options.replayViewer === true;
     feedback.playerStatus(t('file.importing'));
     let count = 0;
@@ -145,7 +146,7 @@ export function createFileActions(options: FileActionsOptions) {
         files = [{path: hints(product)[0]!, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'replay' && /\.rpyx?$/.test(lowerName)) {
         const existing = listing(await access.send('list', {})).map(item => item.path);
-        const name = replay.allocateReplayName(prefix(product), existing, file.name, gameIdForProduct(product) === 'th09');
+        const name = replay.allocateReplayName(prefix(product), existing, file.name, replayFilePolicy(product).sharedExtensionSlot);
         if (!name) throw new Error(t('file.replaySlotsExhausted'));
         files = [{path: `replay/${name}`, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'replay' && lowerName.endsWith('.zip')) {
@@ -158,7 +159,7 @@ export function createFileActions(options: FileActionsOptions) {
           throw error;
         }
         const existing = listing(await access.send('list', {})).map(item => item.path);
-        const plan = replay.planReplayArchiveImport(prefix(product), guard.paths, existing, gameIdForProduct(product) === 'th09', gameIdForProduct(product) === 'th09' ? th09ReplayImportDirectory : undefined);
+        const plan = replay.planReplayArchiveImport(prefix(product), guard.paths, existing, replayFilePolicy(product).sharedExtensionSlot, th09ReplayImportDirectory);
         if (!plan.ok) throw new Error(t(plan.reason === 'unsafe-path' ? 'file.zipUnsafePath' : plan.reason === 'duplicate-path' ? 'file.zipDuplicatePath' : 'file.replaySlotsExhausted'));
         files = plan.entries.map(entry => {
           let replayMatch: Th09ReplayMatch | null = null;

@@ -37,7 +37,7 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   frameLimit60Enabled: true,
   pixelPerfectEnabled: false,
   touchEnabled: false,
-  touchMovementMode: "touch",
+  touchMovementMode: "touch-unlimited",
   touchSensitivity: 150,
   touchControlOpacity: 100,
   touchFocusMode: "hold-button",
@@ -222,7 +222,8 @@ export function normalizeStoredGamePreferences(
   const migratedMovement: TouchMovementMode = typeof movementCandidate === "string" &&
     TOUCH_MOVEMENT_MODES.has(movementCandidate as TouchMovementMode)
     ? movementCandidate as TouchMovementMode
-    : rawOptions?.unlimitedTouch === true ? "touch-unlimited" : "touch";
+    : rawOptions?.unlimitedTouch === true ? "touch-unlimited"
+    : rawOptions?.unlimitedTouch === false ? "touch" : DEFAULT_GAME_OPTIONS.touchMovementMode;
 
   const focusCandidate = rawOptions?.touchFocusMode;
   let focusMode: TouchFocusMode = typeof focusCandidate === "string" &&

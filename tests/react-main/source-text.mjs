@@ -11,6 +11,11 @@ export function synchronizedMainAuthority(path, project, fallbackRevision) {
   const domain = ['src/contracts/product-catalog.mts', 'src/launcher/i18n.mts', 'src/launcher/multiplayer-guide.mts', 'public/content/MULTIPLAYER.html'].includes(path);
   const revision = domain ? '8bdf6dbf4a81032f0725cc841b86d03e1465fe07' : fallbackRevision;
   let source = execFileSync('git', ['show', `${revision}:${path}`], {cwd: project, encoding: 'utf8'});
+  // TH15 was added after this committed controller. Extend only its declared
+  // title catalog; parsing, sanitization and interaction remain the old oracle.
+  if (path === 'src/launcher/multiplayer-guide.mts') source = source.replace(
+    '  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),\n',
+    '  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),\n  Object.freeze({ id: "th15", short: "TH15", title: "绀珠传" }),\n');
   if (path === 'src/launcher/i18n.mts') source = source.replace(
     '  ["multiplayer.nameOneTimeHint", "昵称只能设置一次，保存后不可修改", "Your nickname can be saved only once and cannot be changed later"],',
     '  ["multiplayer.nameEditableHint", "昵称可随时修改，保存后立即生效", "You can change your nickname at any time; changes take effect immediately"],');

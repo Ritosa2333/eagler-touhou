@@ -73,8 +73,9 @@ stripping tags during MSG compilation. Tabstops persist across lines;
 `<t$Suika >` prints the name and defines its width, and `<l$>` on the next
 line advances to that tabstop. Bold/italic/underline commands select a
 temporary font style. Both ASCII English and UTF-8 Chinese use this path
-when a language pack is mounted; Japanese without a pack keeps the original
-baked-font path. This is a Runtime fix, not a change to the language ZIP.
+when a language pack is mounted; Japanese without a pack is rasterized on demand
+from the shared Gothic font. Title-owned outlines and resampling remain in
+TextRaster. This is a Runtime fix, not a change to the language ZIP.
 
 After `node portable/build.mjs` in the TH11 repository, run
 `node th11_web/tests/browser/thcrap-dialogue.mjs` there. It checks the pure

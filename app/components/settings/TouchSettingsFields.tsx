@@ -1,14 +1,11 @@
 import {PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
 import {useEffect, useRef, useState, useSyncExternalStore, type CSSProperties} from 'react';
-import {isTouchFocusMode, isTouchMovementMode, touchMovementUsesJoystick, type TouchMovementMode} from '../../../src/launcher/game-preferences.mts';
+import {isTouchFocusMode, isTouchMovementMode, touchMovementUsesJoystick} from '../../../src/launcher/game-preferences.mts';
 import type {GameSettingsModel} from '../../models/game-settings';
 import {useLocale} from '../../i18n';
 import {MainSelect} from '../launcher/MainSelect';
 import type {SettingsActions} from './types';
 
-export function touchWarningKey(mode: TouchMovementMode) {
-  return mode === 'touch' ? 'touch.replayWarning' : mode === 'touch-unlimited' ? 'touch.unlimitedWarning' : mode === 'joystick-free' ? 'touch.freeStickWarning' : null;
-}
 export function OptionSwitch({id, checked, onChange, label, describedBy, title, disabled = false}: {
   id: string; checked: boolean; onChange(): void; label?: string; describedBy?: string; title?: string; disabled?: boolean;
 }) {
@@ -20,24 +17,21 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
 }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const {t} = useLocale(), [customOpen, setCustomOpen] = useState(false);
-  const sensitivity = useRef<HTMLInputElement>(null), changeEpoch = useRef(0);
+  const sensitivity = useRef<HTMLInputElement>(null);
   useEffect(() => {
     // Native change is the original commit boundary. React onChange for range
     // fires on each input and would persist every preview sample instead.
     const input = sensitivity.current;
     const commit = () => model.commitPreferences();
     input?.addEventListener('change', commit);
-    return () => {input?.removeEventListener('change', commit); changeEpoch.current++;};
+    return () => {input?.removeEventListener('change', commit);};
   }, [model]);
   if (!state) return null;
   const options = state.options, wheel = touchMovementUsesJoystick(options.touchMovementMode);
   const nativeActions = 'touchActions' in PRODUCT_GAMES[state.gameId];
   const custom = customOpen || ![100, 150, 200].includes(options.touchSensitivity);
-  async function setMovement(value: string) {
+  function setMovement(value: string) {
     if (!isTouchMovementMode(value) || value === options.touchMovementMode) return;
-    const epoch = ++changeEpoch.current, key = touchWarningKey(value);
-    if (key && !await actions.confirm({message: t(key), confirmText: t('touch.enableConfirm')})) return;
-    if (epoch !== changeEpoch.current || model.getSnapshot()?.context.productId !== state!.context.productId) return;
     try {model.setOption('touchMovementMode', value);} catch (error) {
       if (error instanceof Error && error.message === 'room.movementRequired') actions.feedback(t('room.movementRequired'));
       else actions.reportError(error);
@@ -46,7 +40,7 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
   const rowSwitch = (id: string, name: 'doubleTapBombEnabled' | 'restartButtonEnabled' | 'thpracTouchControlsEnabled', title: string, hint: string) =>
     <div className="touch-layout-setting-row"><span><span>{title}</span><small>{hint}</small></span><OptionSwitch id={id} checked={options[name]} label={title} onChange={() => model.setOption(name, !options[name])}/></div>;
   return <section className="touch-layout-settings" id="touchLayoutSettingsPanel" aria-label={t('touch.settingsAria')}><div className="touch-layout-settings-list">
-    <div className="touch-layout-setting-row"><label htmlFor="touchMovementMode">{t('touch.movement')}</label><MainSelect className="option-select" id="touchMovementMode" value={options.touchMovementMode} aria-label={t('touch.movement')} onChange={event => {void setMovement(event.target.value).catch(actions.reportError);}}>
+    <div className="touch-layout-setting-row"><label htmlFor="touchMovementMode">{t('touch.movement')}</label><MainSelect className="option-select" id="touchMovementMode" value={options.touchMovementMode} aria-label={t('touch.movement')} onChange={event => setMovement(event.target.value)}>
       <option value="touch" hidden={nativeActions}>{t('touch.movement.touch')}</option><option value="touch-unlimited" hidden={nativeActions}>{t('touch.movement.unlimited')}</option><option value="joystick">{t('touch.movement.joystick')}</option><option value="joystick-free">{t('touch.movement.joystickFree')}</option>
     </MainSelect></div>
     <div className="touch-layout-setting-row" hidden={nativeActions}><label htmlFor="touchFocusMode">{t('touch.focusMethod')}</label><MainSelect className="option-select" id="touchFocusMode" value={options.touchFocusMode} aria-label={t('touch.focusMethod')} onChange={event => {if (isTouchFocusMode(event.target.value)) model.setOption('touchFocusMode', event.target.value);}}>

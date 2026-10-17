@@ -83,6 +83,21 @@ For the current TH06/TH07 production profile, there is one player-facing timing 
 
 Spectators consume confirmed history without taking a player seat or submitting gameplay input. TH09 timeline rooms allow late join and local playback pause/seek; those controls cannot alter the players' simulation. Other rooms retain their advertised admission policy. Runtime exit must not accidentally destroy an active room that Launcher still owns.
 
+Read [Spectator protocol and cross-title rollout](../SPECTATOR_PROTOCOL.md)
+and its [implementation status](../SPECTATOR_PROTOCOL.md#9-公共前端接入与实施状态)
+before changing spectator admission, wire history, playback or lifecycle. It
+separates current start-only products, TH09's complete local timeline and the
+cross-title migration target, including exact packet layouts and acceptance.
+
+The cooperative E?SV candidate has common/relay/Host coverage; title-owned
+stage restoration and native playback controls are undergoing per-title native
+verification. TH06 has a real relay/browser frame-300 equality and playback
+control result; its later-stage acceptance and the other titles remain separate
+requirements. Boss entry bookmarks are optional where no reliable native hook
+or proof exists, following the user's 2026-10-16 scope update. Full
+waiting-room player seats still allow explicit observer entry through the
+directory. Neither the room flag nor a shared policy test proves native restore.
+
 <!-- knowledge-id: K-MP-002 -->
 ## Invariants and pitfalls
 

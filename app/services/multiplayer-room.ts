@@ -573,7 +573,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         publish();
         if (state.spectatorRequested && !ports.isLaunched()) void launch();
       } else if (message.type === 'error' && message.error) {
-        if (product === 'th09mp' && room?.spectatorTimeline && state.spectatorRequested &&
+        if (room?.spectatorTimeline && state.spectatorRequested &&
             message.error === '本局已经开始；已保留旁观席，将在下一局生效') {
           // Older relay admission can race the player's stream startup. TH09
           // supports late join, so retain the seat and retry this same run.
@@ -678,7 +678,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     stopped = false;
     intent = invite.a || '';
     state.fromDirectory = invite.f === true;
-    const spectatorEntry = restoredProduct === 'th09mp' && intent === 'join' && invite.s === true;
+    const spectatorEntry = intent === 'join' && invite.s === true;
     autoSeat = state.fromDirectory && intent === 'join' && !spectatorEntry;
     const created = state.fromDirectory && intent === 'create';
     const requestedCount = invite.p;

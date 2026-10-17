@@ -80,6 +80,37 @@ Runtime-side arbitrary THCRAP fetching, fixed-buffer long-text binding, temporar
 
 ## Verification
 
+### Runtime glyph resources
+
+TH11 and TH15 now use `eagler-common/include/eagler/text/RuntimeFontRaster.hpp`
+for original Japanese text. It decodes CP932 and rasterizes used glyphs from
+the installed shared Gothic font, caching at most 256 glyphs / 1 MiB per size
+and weight profile. The game keeps ownership of spacing, outlines, resampling
+and text-region copies. Language packs retain their own translated font owner.
+
+Only `fonts/cp932.bin` is required inside these two Runtime generations. Do not
+reintroduce expanded `font*.bin` as code-generation dependencies. A selected
+translation still needs the shared Gothic font for untranslated original text;
+the Launcher must install it before native initialization. Missing fonts fail
+preparation explicitly. A font name passed to Windows does not establish that
+the named face was installed; record the actual selected face when discussing
+older generated glyph resources.
+
+When a new Runtime introduces a shared font requirement, update the Package
+base as well. `ensureRequiredSharedResources` upgrades an older installation
+through the published descriptor only when its installed DATA and optional
+content identities are unchanged and the new base adds only required shared
+files. Preserve Package Store ownership and recheck the generation inside the
+mutation queue. The browser test `tests/test-runtime-shared-font-upgrade-browser.mjs`
+checks that DATA/music are reused and the upgrade does not repeat on launch.
+
+Local evidence: the shared raster test covers Japanese decoding, glyphs,
+sizes, repeated drawing, clipping and bounded cache. The Launcher integration
+test `tests/test-runtime-fonts-browser.mjs` uses real packaged ordinary Runtime
+shells and private game DATA, visits Music Room and Stage entry, and rejects
+any request for expanded glyph tables. This does not establish GDI-identical
+pixels, public-network speed or mobile/device acceptance.
+
 1. Validate source/compile/static catalog/ZIP identity and Site Manifest/Package
    publication.
 2. Check TH06/TH07 path isolation and feature allowlist.

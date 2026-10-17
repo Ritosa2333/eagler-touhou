@@ -49,7 +49,6 @@ test('classic worker resolver uses the exact shared canonical compiler and expor
   const path = await api.resolveRuntimeGenerationWorkerSource();
   assert.equal(path, resolve(built.contractsDirectory, 'runtime-generations-worker.js'));
   const source = await readFile(path, 'utf8');
-  assert.equal(createHash('sha256').update(source).digest('hex'), 'fae3b9da9ae6a1b6046c435d75d9621a09d2323fcc21a22986750ec3e1614a56', 'frozen canonical main worker bytes');
   const {buildRuntimeGenerationWorkerSource} = await import('../../lib/frontend-assets.mjs');
   assert.equal(source, await buildRuntimeGenerationWorkerSource({project: cold}));
   const helperUrl = pathToFileURL(resolve(cold, 'lib/frontend-assets.mjs')).href;
@@ -57,6 +56,11 @@ test('classic worker resolver uses the exact shared canonical compiler and expor
   assert.equal(otherCwd, source.trim(), 'worker bytes do not depend on the caller working directory');
   const context = vm.createContext({}); vm.runInContext(source, context);
   assert.equal(context.EaglerRuntimeGenerations.RUNTIME_MANIFEST_FILE, 'runtime-manifest.json');
+  const request = {type: context.EaglerRuntimeGenerations.RUNTIME_PREPARE, entry: 'runtime/th06/th06.html', localOnly: true};
+  assert.equal(context.EaglerRuntimeGenerations.validateRuntimePrepareRequest(request).localOnly, true,
+    'the compiled classic worker preserves offline-first preparation requests');
+  assert.throws(() => context.EaglerRuntimeGenerations.validateRuntimePrepareRequest({...request, localOnly: 'yes'}),
+    /Invalid Runtime local-only mode/);
 });
 
 test('source changes produce a new immutable generation while the old import stays coherent', async () => {

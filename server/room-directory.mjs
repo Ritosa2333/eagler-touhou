@@ -115,7 +115,7 @@ export function createRoomDirectory({
       // A full/playing room has no player seat to join. This separate
       // capability admits observers only through the normal room authority.
       spectatable:
-        match[1] === 'th09mp' &&
+        (match[1] === 'th09mp' || !!run?.spectatorStages) &&
         room.lobby.phase === 'running' &&
         run?.spectatorTimeline === true &&
         run.spectatorAdmissionOpen &&

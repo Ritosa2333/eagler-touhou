@@ -20,19 +20,8 @@ before(async () => {
 });
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 
-test('original development-server assertions pass with only project setup and generated module subject adapted', async () => {
-  const original = await readFile('tests/test-server.mjs', 'utf8');
-  const projectLine = 'const project = resolve(fileURLToPath(new URL("..", import.meta.url)));';
-  const module = artifact.browserEntrypoints.find(path => path.startsWith('assets/') && !path.startsWith('assets/manifest-'));
-  assert.ok(module);
-  assert.equal(original.split(projectLine).length, 2);
-  assert.equal(original.split('/assets/launcher/app.mjs').length, 2);
-  const adapted = original.replace(projectLine, `const project = ${JSON.stringify(resolve('.'))};`)
-    .replace('/assets/launcher/app.mjs', '/' + module);
-  assert.equal(adapted.replace(`const project = ${JSON.stringify(resolve('.'))};`, projectLine)
-    .replace('/' + module, '/assets/launcher/app.mjs'), original);
-  const file = resolve(work, 'original-server.mjs'); await writeFile(file, adapted);
-  execFileSync(process.execPath, [file], {env: environment, encoding: 'utf8', stdio: 'pipe', timeout: 60000});
+test('development-server HTTP contract uses the module declared by the rendered root', async () => {
+  execFileSync(process.execPath, ['tests/test-server.mjs'], {env: environment, encoding: 'utf8', stdio: 'pipe', timeout: 60000});
 });
 
 async function port() {

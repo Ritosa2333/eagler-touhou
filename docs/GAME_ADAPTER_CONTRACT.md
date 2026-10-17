@@ -110,6 +110,158 @@ to the same epoch rather than bypassing the protocol's session boundary.
 User-file commands expose only the product's allowlisted save/Replay surface,
 never arbitrary Runtime FS access.
 
+### Synchronous keyboard mapping
+
+New adapters expose `window.__eaglerKeyboardInputBridge` with schema
+`eagler-touhou/keyboard-input/1`, the host protocol, game, epoch and origin.
+Launcher binds a matching `__eaglerKeyboardMapping` to the current Runtime
+document. The mapping table and physical/virtual key ownership live in
+`src/launcher/keyboard-mapping.mts`; adapters do not copy the alias table.
+
+The native Runtime listener calls the mapper before publishing any raw key.
+The callback returns canonical key transitions synchronously, or `null` to
+leave an unrelated key on its original path. An empty array consumes an event
+without producing another edge. A consumed native event must stop propagation
+so SDL or a second listener cannot restore the raw key. `keyboard` and
+`keyboard-clear` commands use the same synchronous receiver. Physical commands
+carry `inputSource: physical`; existing touch key controls remain canonical
+virtual input. A true return means consumed once; a throw must never cause a
+retry through another carrier.
+
+Direction keys/WASD, Z/K, X/J, Shift/L/Space and C/H coexist by default. New
+aliases take priority over the original use of the physical key, including in
+practice menus. HTML text editing and operating-system/browser modifier chords
+retain their existing ownership. Multiple physical keys and touch controls
+are merged before an UP is emitted. Runtime resets must clear the frontend
+mapping and pending touch-key pulses as well as native state; repeats and late
+releases cannot re-arm the cancelled owners.
+
+TH09 advertises `th09-local` only during local human-versus-human difficulty,
+character/stage selection, gameplay and its match UI. Its two-player profiles
+are opt-in and stored independently in `eagler-touhou-th09-local-input-v1`.
+The dialog offers per-player keyboard layouts or controller assignment. Native
+LEFT/RIGHT movement (including diagonals) and action presets, WASD, arrow keys,
+custom capture and named layouts are available. A physical key cannot control
+different actions on both players; Pause/Confirm/Skip/Retry can be shared.
+The same controller cannot own both seats. WASD uses F/G/left Shift for actions;
+arrow keys use Numpad 1/2/3, allowing these two presets to coexist. Retry defaults
+to Backspace in these explicit local layouts so R remains a left-zone diagonal.
+
+The synchronous keyboard port optionally implements `sampleLocal(seat)`.
+The Runtime bridge returns `-1` outside this context or when local mapping is
+off, otherwise one independent 12-bit semantic word per player. TH09 converts
+those words at its original input sample boundary, alongside separately latched
+controller words; it does not merge physical keyboard halves back into both
+players. Unseen short Fire/movement strokes survive one capture; observed holds
+release on the next capture without a tail. Profile, epoch and lifecycle changes
+clear ownership. Single-player/LAN use the general layout; disabling local
+profiles restores original in-game device settings. Touch remains independent,
+with the local touch lane targeting the first player. Shared Runtime reset,
+Replay and network sampling retain their existing ownership.
+
+TH06/TH07 physical-only practice helpers query the bridge's canonical SDL
+scancode state without consuming gameplay pulses.
+
+An older Runtime without this schema keeps its original keys. Deploying only
+Launcher does not enable aliases in those older Runtime packages. The bridge
+is a backward-compatible input extension, not a replacement of the core
+`eagler-touhou/1` protocol. Source integration covers TH06/07/08/09/10/11/15/20.
+`tests/test-keyboard-mapping-browser.py --workspace <workspace>` checks the
+production Launcher and all eight JS input boundaries in Chromium. Its game
+sinks are observed fixtures; complete-game, Replay and real-device acceptance
+remain separate evidence.
+
+### Launcher input settings and gamepad mapping
+
+The default-expanded **Input settings** group precedes Advanced settings. Its
+two compact entries open a bounded dialog. Its Keyboard and Gamepad tabs share
+action names, but use distinct capture flows. Details scroll inside the dialog
+rather than expanding the options rail.
+The shared editor uses a compact action/binding table for both devices. Keyboard
+presets are **Arrow keys** (`arrows`, UI: 上下左右) and **WASD** (`wasd`). The
+Arrow keys preset clears aliases and restores the original physical key roles.
+WASD enables the shared aliases while retaining the original controls. Editing
+creates a custom layout; switching presets preserves the custom draft. Named
+layouts are immutable snapshots until explicitly saved with the same name.
+Preset selection, the draft and named layouts survive reload in
+`eagler-touhou-keyboard-layouts-v2`. Existing v1 preferences migrate without
+changing their bindings. The active aliases are also written to the v1 key for
+downgrade compatibility; named layout metadata never enters Runtime messages.
+This is one Launcher feature shared by all titles, with no title-local presets.
+A user alias
+wins over the original function of its physical key; other original controls
+remain available. Editing aliases clears held ownership before they change.
+
+Adapters expose `__eaglerGamepadInputBridge` with schema
+`eagler-touhou/gamepad-input/1` and the same protocol/game/epoch/origin identity.
+Launcher binds `__eaglerGamepadMapping`, whose synchronous `sample(seat)` returns
+`-1` for native ownership or a 12-bit semantic action snapshot. Bit order is
+Shoot, Bomb, Focus, Pause, Up, Down, Left, Right, Skip, Confirm, C action, Retry.
+`0` is a valid neutral Launcher snapshot, including disconnect and suspension.
+The matching port also exposes `enabled()`; Runtime queries `owned()` to
+suppress native KeyConfig capture while Launcher mapping owns the device.
+Do not mistake it for absence and fall back to SDL. A Runtime must disable its
+native controller contribution while this owner is active, merge the semantic
+snapshot with independent keyboard/touch state, and retain its existing logical
+input / recording / network sample boundary. TH09 has an independent local
+two-player editor; general settings select one controller, and other titles
+sample seat 0 without fixed 1P/2P labels. Native local-multiplayer configurations
+remain available with the local profile off. TH20 resolves its first eight configured keyboard
+actions through current native bindings instead of assuming unchanged Z/X keys.
+
+`eagler-common/browser/browser-gamepad-input.hpp` is the shared adapter helper.
+`tools/sync-gamepad-input.mjs [--check]` maintains self-contained copies in the
+eight Runtime repositories. JS input modules use the existing keyboard sync
+tools. Configuration and UI stay in Launcher, with no copied device policy in
+Runtime. Gameplay does not use the editor's 50 ms discovery/capture timer: it
+reads a fresh Gamepad snapshot synchronously when Runtime samples input. This
+adds no message queue or deliberate frame delay; it is not an end-to-end
+physical latency measurement.
+
+Gamepad mapping is opt-in so existing native configurations keep working.
+Profiles and the two seat assignments are stored separately from game saves in
+`eagler-touhou-gamepad-mapping-v1`. Standard layouts have semantic defaults.
+Unrecognized layouts start unbound and learn physical buttons or signed axis
+travel, including triggers resting at -1. Raw indices never become cross-device
+bindings: profiles are scoped by browser device ID, layout mapping, button/axis
+counts and occurrence. A different browser, driver/layout or indistinguishable
+identical device may need reassignment or relearning. Arbitrary encoded hat axes
+are not guaranteed by signed-axis learning. Devices absent from the browser's
+Gamepad API cannot be configured here. Keyboard-like Gamepad IDs remain on the
+existing D-pad fallback and are excluded from this physical controller owner.
+
+While a browser session is active, a still-connected device keeps its occurrence
+ID when an identical peer disconnects; that event cannot transfer the survivor's
+profile or seat. Analog button values obey the selected threshold even when the
+browser's own `pressed` flag has already become true. The virtual-controller
+matrix and full TH09 Runtime lane are documented in the
+[Input and Touch playbook](playbooks/input-touch.md#verification).
+
+Blur, hidden documents, pagehide, device connection changes, mapping edits and
+Runtime resets suspend the mapped controller. Neutral input is required before
+held controls can re-arm. Learning never sends game input. Disabling Launcher
+mapping returns control to the original native settings without rewriting the
+game's configuration file. C-key features and Retry semantics remain title-owned.
+Older Runtime packages require an update before either mapping editor applies.
+
+The two browser scripts verify real production React/mapping/JS boundaries with
+synthetic device snapshots. Eight input translation units also pass Emscripten
+syntax compilation, including practice-enabled variants where available. These
+checks do not replace full game builds, Replay roundtrips, real-controller
+compatibility or device latency acceptance.
+
+### Multiplayer spectator boundary
+
+Declared Multiplayer adapters follow the [Spectator protocol](SPECTATOR_PROTOCOL.md)
+for explicit admission, read-only confirmed input, session/build validation,
+history ownership, bounded failure and final-tail lifecycle. The document also
+specifies the timeline rollout target without advertising it on older Runtimes.
+Late join requires an independently reconstructible match initializer and an
+ordered complete prefix. Local pause/seek never affects player pacing or room
+authority. A room update or socket close cannot replace a logical end marker.
+The existing TH09-only `spectator-room-state` command must not be generalized
+without updating and validating its actual consumers.
+
 ## DATA ownership
 
 `lib/runtime-data-provider.mjs` owns provider classes.

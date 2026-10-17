@@ -22,10 +22,13 @@ async function select(product,language='ja',practice=false,installed=[]){
  const generation=installed.length?{descriptor:{base:{files:Object.keys(files)},files},files:Object.fromEntries(Object.keys(files).map(k=>[k,{objectId:'installed'}]))}:null;
  return sharedResources({game:'fixture',language,thprac:practice,generation,host:{shared:{vanillaFont:'shared/msgothic.ttc',unicodeFont:'shared/unifont.otf'}},baseUrl:'https://mirror.invalid/',translate:x=>x}).map(x=>x.path);
 }
-assert.deepEqual(await select({requiredShared:['/unifont.otf']}),[],'TH11 Japanese baked fonts must not request msgothic');
+assert.deepEqual(await select({requiredShared:['/unifont.otf']}),[],'Legacy baked-font packages remain supported');
 assert.deepEqual(await select({requiredShared:['/unifont.otf']},'ja',true),['/unifont.otf']);
 assert.deepEqual(await select({requiredShared:['/unifont.otf']},'lang_zh-hans'),['/unifont.otf']);
 assert.deepEqual(await select({requiredShared:['/msgothic.ttc','/unifont.otf']},'ja',true),['/msgothic.ttc','/unifont.otf']);
+assert.deepEqual(await select({requiredShared:['/msgothic.ttc','/unifont.otf']},'ja'),['/msgothic.ttc']);
+assert.deepEqual(await select({requiredShared:['/msgothic.ttc','/unifont.otf']},'lang_zh-hans'),['/msgothic.ttc','/unifont.otf'],'Localized games still need their original-text fallback font');
+assert.deepEqual(await select({requiredShared:['/msgothic.ttc','/unifont.otf']},'lang_en',true,['/msgothic.ttc','/unifont.otf']),[],'Installed shared fonts must not download twice');
 assert.deepEqual(await select({},'ja'),['/msgothic.ttc'],'Legacy Runtime selection remains supported');
 assert.deepEqual(await select({requiredShared:[]}),[]);
 assert.deepEqual(await select({requiredShared:['/unifont.otf']},'ja',true,['/unifont.otf']),[],'Installed font must not download twice');

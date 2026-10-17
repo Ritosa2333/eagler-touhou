@@ -21,7 +21,7 @@ before(async () => {
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 function deferred() {let resolve, reject; const promise = new Promise((r, j) => {resolve = r; reject = j;}); return {promise, resolve, reject};}
 const tick = () => new Promise(resolve => setImmediate(resolve));
-function fixture({cold = false, launched = false, prepareGate = null, broken = false, watch = null, viewer = false, storage = null} = {}) {
+function fixture({cold = false, launched = false, prepareGate = null, broken = false, watch = null, inspect = null, viewer = false, storage = null} = {}) {
   const files = new Map([['replay/th6_02.rpy', [2]], ['replay/th6_01.rpy', [1, 1]], ['score.dat', [9]]]);
   const events = [], toasts = [], downloads = [], confirms = [], matches = new Map();
   const state = {ready: !cold, epoch: cold ? null : 1, launched, game: 'th06'};
@@ -42,6 +42,7 @@ function fixture({cold = false, launched = false, prepareGate = null, broken = f
     }},
     ...(viewer ? {prepareViewer: async () => {events.push('viewer'); if (prepareGate) await prepareGate.promise; state.ready = state.launched = true; state.epoch ??= 1;}, closeViewer: () => events.push('closeViewer')} : {}),
     ...(watch ? {watch: async (...args) => {events.push('watch'); await watch(...args);}} : {}),
+    ...(inspect ? {inspect} : {}),
     async prepareFiles() {events.push('prepare'); if (prepareGate) await prepareGate.promise; state.ready = true; state.epoch ??= 1;},
     async releasePrepared(product, epoch) {events.push(`release:${product}:${epoch}`); state.ready = false; state.epoch = null;},
     translate: (key, params) => key + (params ? JSON.stringify(params) : ''),
@@ -283,4 +284,21 @@ test('closing independent manager during a committed cold rename releases its ev
   const rename=f.model.rename('replay/th9_01.rpy','th9_02.rpy');await tick();f.model.close();gate.resolve();await rename;await tick();
   assert.deepEqual(f.files.get('replay/th9_02.rpy'),[1]);assert.equal(f.model.isOpen(),false);
   assert.equal(f.events.filter(event=>event==='release:th09:1').length,1);
+});
+
+
+test('non-versus inspection caches native metadata without starting playback and only native stages can launch', async () => {
+  const calls=[],f=fixture({viewer:true,inspect:async(_product,path)=>({nameBytes:[65],character:0,difficulty:1,score:123456,stages:[{id:4,label:'STAGE 4',score:123456}]}),watch:async(...args)=>calls.push(args)});
+  await f.model.open('th06');await f.model.inspect('replay/th6_01.rpy');
+  assert.equal(calls.length,0);assert.equal(f.model.getSnapshot().descriptions['replay/th6_01.rpy'].name,'A');
+  await f.model.watch('replay/th6_01.rpy',1);assert.equal(calls.length,0);
+  await f.model.watch('replay/th6_01.rpy',4);assert.deepEqual(calls,[['th06','replay/th6_01.rpy',4]]);
+  assert.equal(f.model.getSnapshot().open,true);
+});
+
+test('late native inspection cannot repopulate a renamed, deleted or replaced file list', async () => {
+  const gate=deferred(),f=fixture({viewer:true,inspect:()=>gate.promise});
+  await f.model.open('th06');const pending=f.model.inspect('replay/th6_01.rpy');
+  await f.model.refresh();gate.resolve({character:0,difficulty:1,stages:[{id:1,score:0}]});await pending;
+  assert.equal(f.model.getSnapshot().descriptions['replay/th6_01.rpy'],undefined);
 });

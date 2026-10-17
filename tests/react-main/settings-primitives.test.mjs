@@ -98,6 +98,12 @@ for (const productId of ['th06', 'th06mp']) test(`${productId}: grouped settings
   const actions = {confirm: unexpected, file: unexpected, showAppleNotice: unexpected, feedback() {}, reportError: unexpected,
     externalMidi: {subscribe: () => () => {}, getSnapshot: () => midi, setEnabled: unexpected, selectOutput: unexpected}};
   await render(React.createElement(owners.LocaleProvider, {locale: 'en'}, React.createElement(owners.SettingsBody, {model, actions, onOpenTouchLayout: unexpected})));
+  assert.equal(model.getSnapshot().options.touchMovementMode, 'touch-unlimited');
+  const touchSwitch = n(productId.endsWith('mp') ? '#mpTouchToggle' : '#touchToggle');
+  await act(() => touchSwitch.click());
+  assert.equal(model.getSnapshot().options.touchEnabled, true, 'enabling unlimited touch applies directly without a warning decision');
+  await act(() => touchSwitch.click());
+  assert.equal(model.getSnapshot().options.touchEnabled, false);
   const pixelSwitch = n(productId.endsWith('mp') ? '#mpPixelPerfectToggle' : '#pixelPerfectToggle');
   assert.equal(pixelSwitch.getAttribute('aria-label'), 'Enable pixel-perfect display');
   assert.equal(model.getSnapshot().options.pixelPerfectEnabled, false);

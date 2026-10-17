@@ -20,6 +20,7 @@ export interface InstallPublishedPackageOptions extends Omit<PublishedPackageFil
   catalog: unknown;
   catalogUrl: string;
   preserveLocalSource?: boolean;
+  expectedGenerationId?: string | null;
   fetchImpl?: typeof fetch;
   onProgress?: ((progress: PackageInstallProgress) => void) | null;
   signal?: AbortSignal | null;
@@ -34,6 +35,13 @@ export function desiredFilesForPublishedPackage(
   descriptor: PackageDescriptor,
   options?: PublishedPackageFileSelection,
 ): string[];
+
+export function fetchPublishedPackage(game: string, options: {
+  catalog: unknown;
+  catalogUrl: string;
+  fetchImpl?: typeof fetch;
+  signal?: AbortSignal | null;
+}): Promise<{entry: unknown; descriptor: PackageDescriptor; descriptorUrl: string} | null>;
 
 export function installedComponentIds(generation: InstalledPackageGeneration | null): string[];
 

@@ -2,13 +2,15 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash, webcrypto } from "node:crypto";
 import vm from "node:vm";
+import {resolveRuntimeGenerationWorkerSource} from "../lib/contracts-build.mjs";
 import { runtimeGenerationId } from "../lib/runtime-generations.mjs";
 import { RUNTIME_MANIFEST_SCHEMA, RUNTIME_PROTOCOL, RUNTIME_GENERATION_SCHEMA,
   runtimeGenerationBase, runtimeGenerationEntry } from "../lib/contracts/runtime-generations.mjs";
 const source = (await Promise.all([
-  "../.cache/build/browser/assets/contracts/runtime-generations-worker.js",
-  "../compat/runtime-generation-reader.js", "../src/runtime-cache-sw.js",
-].map(path => readFile(new URL(path, import.meta.url), "utf8")))).join("\n");
+  readFile(await resolveRuntimeGenerationWorkerSource(), "utf8"),
+  ...["../compat/runtime-generation-reader.js", "../src/runtime-cache-sw.js"]
+    .map(path => readFile(new URL(path, import.meta.url), "utf8")),
+])).join("\n");
 const sha = text => createHash("sha256").update(text).digest("hex");
 class MemoryCache {
   entries = new Map();
@@ -100,6 +102,11 @@ assert.equal(streamed.generation,streaming.a.generation,"cache preparation accep
 assert.equal(await(await streaming.resource(streaming.worker(),streamed,"game.wasm")).text(),"wasm a");
 const h=harness();let sw=h.worker();
 const A=await h.launch(sw,"a");assert.match(A.body,/a$/);
+const beforeLocal=h.requests.length;
+const noEmbeddedCatalog=h.worker({schema:RUNTIME_MANIFEST_SCHEMA,protocol:RUNTIME_PROTOCOL,groups:[]});
+assert.equal((await noEmbeddedCatalog.prepareLaunch(root+'game.html',{localOnly:true})).generation,A.generation);
+assert.equal(h.requests.length,beforeLocal,'local selection with no embedded catalog never consults the network');
+await assert.rejects(noEmbeddedCatalog.prepareLaunch(root+'game.html',{localOnly:true,exclude:[A.generation]}),/No complete local/);
 assert.equal(await(await h.resource(sw,A,"game.wasm")).text(),"wasm a");
 const before=h.requests.length;await h.launch(sw,"a2");
 assert.equal(h.requests.length,before+1,"every launch revalidates pointer, matching bytes are reused");
