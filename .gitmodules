@@ -1,6 +1,0 @@
-[submodule "third_party/eagler-common"]
-	path = third_party/eagler-common
-	url = https://github.com/YomotsuHisami/eagler-common.git
-[submodule "third_party/eagler-common-netplay"]
-	path = third_party/eagler-common-netplay
-	url = https://github.com/YomotsuHisami/eagler-common

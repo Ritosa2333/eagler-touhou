@@ -1,5 +1,5 @@
-import {PresentationLabControllerCore} from '../../third_party/eagler-common/testkit/presentation-lab/controller-core.mjs';
-import {analyzeNormalizedWindow,compactReport,mergeIssueGroups} from '../../third_party/eagler-common/testkit/presentation-lab/analyzer.mjs';
+import {PresentationLabControllerCore} from '../../../../common/testkit/presentation-lab/controller-core.mjs';
+import {analyzeNormalizedWindow,compactReport,mergeIssueGroups} from '../../../../common/testkit/presentation-lab/analyzer.mjs';
 export const requiredExports=['th15_lab_freeze','th15_lab_resume','th15_lab_tick','th15_lab_draw','th15_lab_reference_clock','th15_lab_world_frozen'];
 const words=(core,name,n)=>Array.from(new Uint32Array(core.HEAPU8.buffer,core[name](),n));
 const missing=['all non-player visual owners','complete Replay/input and host-clock state','complete ANM pools and rollback state','audio device and queues'];
