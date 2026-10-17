@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SharedNetplay} from '../../sdl-runtime/shared-netplay.mjs';
+import {SpectatorTape} from '../../sdl-runtime/spectator-tape.mjs';
 
 // The two entries (Launcher card and the in-game title dialog) share one room
 // and one gameplay transport; these tests cover the transport contract itself.
@@ -151,6 +152,33 @@ test('spectator waiting for human selection does not time out or build the room 
     viewer.spectatorReceiveAt=performance.now()-20000;viewer.pump();
     assert.equal(viewer.connected,true);assert.equal(core.calls.preparedForSelection,true);assert.deepEqual(core.calls.spectatorBegin,[]);
   }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('spectator only applies the startup deadline before its first valid match checkpoint',()=>{
+  const box=harness(true),performanceDescriptor=Object.getOwnPropertyDescriptor(globalThis,'performance');
+  let now=0;Object.defineProperty(globalThis,'performance',{configurable:true,value:{now:()=>now}});
+  const makeViewer=started=>{
+    const core=box.core();core.peerState=1;let closed='';
+    const viewer=new SharedNetplay(core,{onStatus(){},onClose:reason=>{closed=reason;},onResult(){}});
+    Object.assign(viewer,{connected:true,spectator:true,timelineExperiment:true,prepared:true,routeReady:true,
+      active:true,spectatorTape:new SpectatorTape(),spectatorReceiveAt:0});
+    viewer.spectatorTape.started=started;
+    return {viewer,get closed(){return closed;}};
+  };
+  let startup,idle;
+  try{
+    startup=makeViewer(false);
+    now=14999;startup.viewer.pump();assert.equal(startup.viewer.connected,true,'initial admission remains within its deadline');
+    now=15000;startup.viewer.pump();assert.equal(startup.viewer.connected,false,'no first checkpoint still fails closed');
+    assert.match(startup.closed,/首个对局帧等待超时/);
+
+    idle=makeViewer(true);now=30000;idle.viewer.pump();
+    assert.equal(idle.viewer.connected,true,'a started match may intentionally have no new frames while its source is paused');
+    idle.viewer.close();
+  }finally{
+    startup?.viewer.close();idle?.viewer.close();box.restore();
+    if(performanceDescriptor)Object.defineProperty(globalThis,'performance',performanceDescriptor);
+  }
 });
 
 test('launcher and in-game entries share the TH09 room through the common peer transport', async () => {

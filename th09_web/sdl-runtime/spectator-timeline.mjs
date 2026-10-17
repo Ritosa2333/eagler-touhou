@@ -14,9 +14,12 @@ export function createTh09SpectatorTimelineModel({words, historyView, matchStart
   const [, played, received, nativeEdge, nativeTarget, paused, seeking, following, start, , ended] = words;
   const min = historyView?.min ?? played;
   const edge = historyView?.edge ?? nativeEdge;
-  const position = historyView && seeking
+  const seekTarget = historyView && seeking
     ? clamp(historyView.position + nativeTarget - played, min, edge)
-    : historyView?.position ?? played;
+    : null;
+  // Keep the thumb on the actual native cursor during fast seeking. The
+  // destination is a separate target so pause can hold visible progress.
+  const position = historyView?.position ?? played;
   const marks = (historyView?.marks ?? []).map((mark, index) => {
     const frame = mark.position;
     return {
@@ -31,7 +34,7 @@ export function createTh09SpectatorTimelineModel({words, historyView, matchStart
   });
   const total = historyView?.total ?? received;
   const statusText = paused ? '已暂停'
-    : seeking ? `满速定位 → ${historyView ? clock(position) : clock(Math.max(0, nativeTarget - start))}`
+    : seeking ? `满速定位 → ${clock(seekTarget ?? Math.max(0, nativeTarget - start))}`
     : edge <= position
       ? ended ? '本局已结束，等待下一局'
         : selectionWaiting && !received ? '等待双方在游戏内选角'
@@ -45,7 +48,7 @@ export function createTh09SpectatorTimelineModel({words, historyView, matchStart
     position,
     edge,
     received: total,
-    target: historyView && seeking ? position : Math.max(0, nativeTarget - start),
+    target: seekTarget ?? Math.max(0, nativeTarget - start),
     paused: paused === 1,
     seeking: seeking === 1,
     following: following === 1,

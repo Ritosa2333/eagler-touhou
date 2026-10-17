@@ -15,16 +15,16 @@ test('history view translates TH09 seeking frames and round/match marks into sha
     ]},
   });
   assert.equal(model.key, 'th09:3');
-  assert.equal(model.position, 545);
+  assert.equal(model.position, 500, 'seek progress follows the native playback cursor');
   assert.equal(model.min, 20);
   assert.equal(model.edge, 650);
   assert.equal(model.received, 700);
-  assert.equal(model.target, 545);
+  assert.equal(model.target, 545, 'the selected destination remains independently visible');
   assert.equal(model.timeOrigin, 0);
   assert.equal(model.statusText, '满速定位 → 0:09 · 2 局待播放');
   assert.deepEqual(model.marks.map(({frame, kind, disabled, current}) => ({frame, kind, disabled, current})), [
     {frame: 20, kind: 'match', disabled: false, current: false},
-    {frame: 545, kind: 'round', disabled: true, current: true},
+    {frame: 545, kind: 'round', disabled: false, current: false},
   ]);
 });
 
