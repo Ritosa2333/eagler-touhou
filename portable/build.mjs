@@ -10,7 +10,7 @@ const presentationLab=process.argv.includes('--presentation-lab'),multiplayer=pr
 const fixtures=process.argv.includes('--multiplayer-fixtures');
 if(fixtures&&(!multiplayer||game!=='th10'))throw Error('TH10 fixture builds require --multiplayer.');
 if(presentationLab&&multiplayer)throw Error('Presentation Lab and multiplayer are separate build variants.');
-const profile=fixtures?'multiplayer-fixtures':multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,'artifacts',profile);
+const profile=fixtures?'multiplayer-fixtures':multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,process.env.TH10_OUTPUT??('artifacts/'+profile));
 if(!printPlan)mkdirSync(out,{recursive:true});
 const netplayRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'third_party/eagler-common'));
 const sdk=process.env.EMSDK??(existsSync(resolve(workspace,'tools/emsdk'))?resolve(workspace,'tools/emsdk'):resolve(workspace,'../toolchains/emsdk'));

@@ -14,6 +14,7 @@ parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--mode',choices=['rtc','relay'],default='rtc')
 parser.add_argument('--players',type=int,choices=[2,3],default=2)
 parser.add_argument('--stage2-only',action='store_true',help='diagnose a fresh Stage2 viewer without the Stage1 control/future-frame prelude')
+parser.add_argument('--lifecycle-only',action='store_true',help='focused reentry, seek cancellation, idle and normal playback budget checks')
 args=parser.parse_args()
 SPECTATOR_BUFFER_FRAMES=90
 report={'passed':False,'scope':'TH10 independent native stage restore and live spectator playback over real relay',
@@ -23,6 +24,9 @@ player_timeline={}
 live_player_history=None
 
 class Stage2OnlyComplete(Exception):
+    pass
+
+class LifecycleComplete(Exception):
     pass
 
 def call(page,expression,arg=None):
@@ -556,6 +560,14 @@ with sync_playwright() as p:
         host_at_89=[snapshot(page) for page in pages]
         assert_sources_equal(at_44,'players frame 44')
         assert_sources_equal(host_at_89,'players frame 89')
+
+        if args.lifecycle_only:
+            from spectator_lifecycle import run as run_lifecycle
+            phase='focused-lifecycle'
+            run_lifecycle(pages=pages,viewer=spectator,setup=setup,call=call,
+                advance_sources=advance_sources,url=args.url,spectator_url=spectator_url,
+                spectator_id=spectator_id,loadouts=loadouts,session=(session_low,session_high),report=report)
+            raise LifecycleComplete()
 
         phase='spectator-connect'
         assert call(spectator,'v=>multiplayerSmoke.spectatorConnect(...v)',[spectator_url,spectator_id])
@@ -1140,6 +1152,8 @@ with sync_playwright() as p:
                        'canonicalDiagnosticFieldNames':canonical_field_names})
         print(f"TH10 spectator {args.mode}: {'PASS' if passed else 'CONTROL PASS, HASH DIVERGENCE'} restored=90 seek=45 live={edge} hash={portable[0][1]}",flush=True)
     except Stage2OnlyComplete:
+        pass
+    except LifecycleComplete:
         pass
     except BaseException as error:
         report['failure']=str(error)
