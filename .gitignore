@@ -31,3 +31,5 @@ score*.dat
 *.log
 .env
 .npmrc
+**/__pycache__/
+*.py[cod]
