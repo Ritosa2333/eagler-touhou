@@ -20,6 +20,15 @@ u32 multiplayer_spectator_connect(browser::Application* app,const char* relay,
     if(!app||app->stopped||app->world||app->state.multiplayer_session.started)return 0;
     return app->state.netplay_runtime.ConnectSpectator(relay,spectatorId)?1:0;
 }
+extern "C" __attribute__((export_name("multiplayer_spectator_playback_state")))
+const char* multiplayer_spectator_playback_state(browser::Application* app){
+    return app&&!app->stopped?app->state.netplay_runtime.SpectatorPlaybackState():nullptr;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_playback_control")))
+i32 multiplayer_spectator_playback_control(browser::Application* app,const char* run,
+                                            const char* action,u32 frame){
+    return app&&!app->stopped&&app->state.netplay_runtime.SpectatorPlaybackControl(run,action,frame)?1:0;
+}
 extern "C" __attribute__((export_name("multiplayer_network_poll")))
 u32 multiplayer_network_poll(browser::Application* app){
     return app&&!app->stopped&&app->multiplayer_pump_network()?1:0;

@@ -131,6 +131,11 @@ void World::advance_loading_step(){if(!loading)return;
             pilots[seat].game.lives=state.game.lives;
             pilots[seat].game.power=state.game.power;
         }
+        // A fresh observer of a later stage still needs new-run resource
+        // construction. Its default Stage2 power (80) must not overwrite the
+        // checkpoint before Player resources and cooperation are created.
+        if(state.netplay_runtime.Spectator()&&spectator_checkpoint_restore_pending&&
+           !restore_spectator_checkpoint_bootstrap())fail();
     }
 #endif
 #ifdef TH_ENABLE_THPRAC

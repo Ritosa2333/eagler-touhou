@@ -13,8 +13,12 @@
 #include <eagler/netplay/AdonisConnection.hpp>
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
 #include <eagler/netplay/InputGapPacing.hpp>
+#include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorStagePlayback.hpp>
+#include <eagler/netplay/SpectatorStageView.hpp>
 
 #include <cstdint>
+#include <array>
 #include <deque>
 #include <string>
 #include <vector>
@@ -33,7 +37,32 @@ public:
     bool Playback()const{return playback_;}
     bool Spectator()const{return spectator_;}
     bool SpectatorRetired()const{return spectator_retired_;}
-    std::size_t SpectatorBacklog()const{return spectator_frames_.size();}
+    std::size_t SpectatorBacklog()const{
+        if(!spectator_stage_playback_.History().Segments().empty()){
+            const auto received=spectator_stage_playback_.History().Received();
+            const auto position=spectator_stage_playback_.Position();
+            return received>position?received-position:0;
+        }
+        return spectator_frames_.size();
+    }
+    bool StagePlaybackReady()const{return spectator_&&spectator_stage_playback_.Ready();}
+    Netplay::SpectatorStagePlayback& StagePlaybackController(){return spectator_stage_playback_;}
+    const Netplay::SpectatorStagePlayback& StagePlaybackController()const{return spectator_stage_playback_;}
+    const char* SpectatorPlaybackState();
+    bool SpectatorPlaybackControl(const char* run,const char* action,std::uint32_t frame);
+    bool SpectatorCheckpointRequired(std::uint32_t frame,std::uint32_t stage)const;
+    void StopSpectatorPublication(){
+        if(!spectator_&&!playback_&&setup_.localPlayer==0){
+            spectator_publish_failed_=true;transport_.StopSpectators();
+        }
+    }
+    bool RecordSpectatorFrame(std::uint32_t frame,std::uint32_t stage,
+                              const std::vector<std::uint8_t>& initializer,
+                              const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs,
+                              std::uint8_t bossMask);
+    void PublishConfirmedSpectatorHistoryAfterReconcile(){
+        if(!Correcting()&&!HasRollbackRequest())PublishConfirmedSpectatorFrames();
+    }
     bool FeedSpectator(std::uint32_t frame);
     void Clear() noexcept;
     // The title must have reconciled/confirmed the restart fence. A real
@@ -167,6 +196,7 @@ private:
                            std::size_t count);
     bool DrainSpectatorFrames();
     void PublishConfirmedSpectatorFrames();
+    bool ReceiveSpectatorStageWire(const std::uint8_t*,std::size_t);
     Netplay::SessionGate gate_{};
     Netplay::RollbackCore core_{};
     SessionSetup setup_{};
@@ -193,6 +223,11 @@ private:
     std::uint64_t spectator_deadline_=0;
     std::uint32_t spectator_publish_frame_=0,spectator_receive_frame_=0;
     std::deque<Netplay::SpectatorFramePacket> spectator_frames_{};
+    Netplay::SpectatorStagePublisher spectator_stage_publisher_{};
+    Netplay::SpectatorStagePlayback spectator_stage_playback_{};
+    Netplay::SpectatorStageView spectator_stage_view_{};
+    struct SpectatorRecordedFrame {std::uint32_t frame=Netplay::INVALID_FRAME,stage=0;};
+    std::array<SpectatorRecordedFrame,Netplay::SpectatorStagePublisher::Capacity> spectator_recorded_frames_{};
     std::string spectator_error_{};
 };
 

@@ -7,6 +7,7 @@
 #include "../game/FrameStatistics.hpp"
 #include "../game/Presentation.hpp"
 #include "../game/Screenshot.hpp"
+#include <vector>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/TouchInputFrontier.hpp"
 #include "../multiplayer/RemotePlayerPresentation.hpp"
@@ -103,6 +104,8 @@ struct Application final:CallbackReceiver {
     bool multiplayer_generation_pending=false;
     bool multiplayer_replay_scope=false,multiplayer_replay_escape=false;
     u32 multiplayer_replay_seek_target=0,multiplayer_replay_seek_stage=0;
+    std::vector<u8> multiplayer_spectator_pending_initializer{};
+    u32 multiplayer_spectator_pending_stage=0,multiplayer_spectator_pending_frame=Netplay::INVALID_FRAME;
     ApplicationConfig multiplayer_replay_saved_config{};
     u32 multiplayer_rollbacks=0,multiplayer_resimulated_frames=0;
     u32 multiplayer_recovery_yields=0;

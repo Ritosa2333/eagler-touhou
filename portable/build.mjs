@@ -65,7 +65,7 @@ const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 function observed(path){const bytes=readFileSync(path),value=digest(bytes);if(capturedInputs.has(path)&&capturedInputs.get(path)!==value)throw Error('Source changed during build: '+path);capturedInputs.set(path,value);return bytes;}
 observed(fileURLToPath(import.meta.url));
 observed(resolve(workspace,'portable/response-file.mjs'));
-const dialogueHeaders=[resolve(netplayRoot,'include/eagler/input/DialogueGesture.hpp')];
+const dialogueHeaders=[resolve(netplayRoot,'include/eagler/input/DialogueGesture.hpp'),resolve(netplayRoot,'include/eagler/audio/WebSfx.hpp')];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...dialogueHeaders].sort())hash.update(path).update(observed(path));
 const prefix=JSON.stringify([flags,hash.digest('hex')]);
 // Same flags/native translation units; share the object cache, never the

@@ -21,6 +21,7 @@
 #include "../multiplayer/SceneOwnerPools.hpp"
 #include "../multiplayer/RollbackState.hpp"
 #include "../multiplayer/AudioEvents.hpp"
+#include "../multiplayer/SpectatorStageState.hpp"
 #endif
 namespace th10::browser {
 // The gameplay owner persists across sessions, including transitions that keep
@@ -53,6 +54,13 @@ struct World final:HudActions,CallbackReceiver {
     multiplayer::AudioEvents audio_events{};
     multiplayer::ReplayCheckpoint replay_checkpoint_pending{};
     multiplayer::ReplayCheckpoint replay_checkpoint_commit_pending{};
+    multiplayer::SpectatorStageState spectator_checkpoint_pending{};
+    bool spectator_checkpoint_restore_pending=false;
+    u32 spectator_activation_checkpoint_frame=Netplay::INVALID_FRAME;
+    u32 spectator_activation_checkpoint_stage=0;
+    std::vector<u8> spectator_activation_checkpoint_wire;
+    bool spectator_suppress_audio=false;
+    u8 spectator_boss_registration_mask=0;
     multiplayer::InputLanes::State replay_checkpoint_precommit_lanes{};
     u32 replay_checkpoint_precommit_frame=Netplay::INVALID_FRAME;
     u32 replay_checkpoint_commit_frame=Netplay::INVALID_FRAME;
@@ -68,6 +76,12 @@ struct World final:HudActions,CallbackReceiver {
     void clear_replay_checkpoint_precommit();
     bool restore_replay_checkpoint_bootstrap();
     bool finalize_replay_checkpoint();
+    bool capture_spectator_checkpoint(u32 frame,multiplayer::SpectatorStageState&);
+    u32 spectator_stage_tag()const;
+    bool prepare_spectator_checkpoint(const multiplayer::SpectatorStageState&);
+    bool restore_spectator_checkpoint_active();
+    bool restore_spectator_checkpoint_bootstrap();
+    void suppress_spectator_audio(bool suppress);
     bool rollback_resimulating=false;
     u32 player_count=2,local_player=0;
     // Presentation-only generation handles, retained through native fade-out.
@@ -86,6 +100,7 @@ struct World final:HudActions,CallbackReceiver {
     i32 spawn_single_item(const Vec3&,i32,u32,float,float);
     bool spawn_directed_power(u32 donor,u32 recipient,i32 amount);
     u32 boss_participant_count()const;
+    void spectator_boss_registered(i32 slot){if(slot>=0&&slot<8)spectator_boss_registration_mask|=u8(1u<<slot);}
     const Vec3& target_player(const Vec3& origin) const;
     void publish_player_targets(EnemyState&);
     void award_team_life() override;
