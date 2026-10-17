@@ -4,6 +4,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 p=argparse.ArgumentParser();p.add_argument('--url',required=True);p.add_argument('--relay',required=True)
 p.add_argument('--players',type=int,choices=(2,3),default=2);p.add_argument('--output',type=Path,required=True)
+p.add_argument('--restore-only',action='store_true')
 p.add_argument('--skip-resim-visual',action='store_true')
 p.add_argument('--skip-resim-geometry',action='store_true')
 p.add_argument('--back-metadata-only',action='store_true')
@@ -34,22 +35,32 @@ with sync_playwright() as pw:
             for(const w of worlds)w.pollNetwork();if(performance.now()>end)throw Error('barrier');await wait(2);
           }
           if(!worlds.every(w=>w.driverStatus()[12]===1))throw Error('Expected real RTC');
+          worlds[0].requestSpectatorRestoreProbe();
           async function advance(target,shoot){
-            const end=performance.now()+20000;
-            while(!worlds.every(w=>w.netStatus()[3]>target)){
-              for(let seat=0;seat<worlds.length;++seat){
-                const w=worlds[seat];if(!w.pollNetwork())throw Error(w.networkError());
-                const n=w.netStatus();if(n[3]<=target){
-                  // Existing captures are immutable. The exporter rejects an
-                  // accidental second sample, while the driver reuses it.
-                  if(n[3]===0&&seat===0)w.captureInput(0,0,2,8188,-8192,0);
-                  else w.capture(n[3],seat===0&&shoot?1:0);
-                  w.ticks(1);
-                }else if(!w.reconcile())throw Error(w.networkError());
+            try{
+              const end=performance.now()+20000;
+              while(!worlds.every(w=>w.netStatus()[3]>target)){
+                for(let seat=0;seat<worlds.length;++seat){
+                  const w=worlds[seat];if(!w.pollNetwork())throw Error(w.networkError());
+                  const n=w.netStatus();if(n[3]<=target){
+                    // Existing captures are immutable. The exporter rejects an
+                    // accidental second sample, while the driver reuses it.
+                    if(n[3]===0&&seat===0)w.captureInput(0,0,2,8188,-8192,0);
+                    else w.capture(n[3],seat===0&&shoot?1:0);
+                    w.ticks(1);
+                  }else if(!w.reconcile())throw Error(w.networkError());
+                }
+                if(performance.now()>end)throw Error('advance '+target+' '+JSON.stringify(observe()));await wait(1);
               }
-              if(performance.now()>end)throw Error('advance '+target+' '+JSON.stringify(observe()));await wait(1);
-            }
+            }catch(error){throw Error(String(error)+' restoreProbe='+JSON.stringify(worlds[0].spectatorRestoreProbe()));}
           }
+          try{await advance(0,false);}catch(error){throw Error(String(error)+' spectatorRestore='+JSON.stringify(worlds[0].spectatorRestoreProbe()));}
+          let restoreProbe=worlds[0].spectatorRestoreProbe();
+          try{for(let target=1;target<30&&!restoreProbe.attempted;++target){await advance(target,false);restoreProbe=worlds[0].spectatorRestoreProbe();}}
+          catch(error){throw Error(String(error)+' spectatorRestore='+JSON.stringify(worlds[0].spectatorRestoreProbe()));}
+          if(!restoreProbe.attempted||!restoreProbe.restored||JSON.stringify(restoreProbe.before)!==JSON.stringify(restoreProbe.after))
+            throw Error('Native stage checkpoint restore hash mismatch '+JSON.stringify(restoreProbe));
+          if(o.restoreOnly)return {passed:true,restoreProbe};
           await advance(179,false);
           for(let count=0;;++count){
             for(const w of worlds){w.pollNetwork();w.reconcile();}
@@ -83,8 +94,8 @@ with sync_playwright() as pw:
           if(after.some(x=>JSON.stringify(x.rng)!==JSON.stringify(after[0].rng)))throw Error('RNG mismatch '+JSON.stringify(after));
           if(o.skipResimVisual&&after.every(x=>x.boundaryVisualRedraws===0))throw Error('Visual boundary redraw branch not exercised '+JSON.stringify(after));
           if(after.some(x=>x.state[6]!==1))throw Error('Did not reach stage two '+JSON.stringify(after));
-          return {passed:true,heldPackets:held.length,before,shortened,after};
-        }""",{'url':args.url,'relay':args.relay,'players':args.players,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'backMetadataOnly':args.back_metadata_only,'room':'stage-'+uuid.uuid4().hex[:12]})
+          return {passed:true,restoreProbe,heldPackets:held.length,before,shortened,after};
+        }""",{'url':args.url,'relay':args.relay,'players':args.players,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'backMetadataOnly':args.back_metadata_only,'restoreOnly':args.restore_only,'room':'stage-'+uuid.uuid4().hex[:12]})
         report.update(result)
     except BaseException as error:report['error']=str(error);raise
     finally:

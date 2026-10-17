@@ -75,7 +75,7 @@ class GameApplication {
         bool capture_texture(const TextureCaptureRequest& r)override{return a.platform.capture_texture(r);}
         void menu_music(MenuMusic m,float s)override{a.platform.menu_music(m,s);}
         void release_loading_surface()override{a.loading.phase=0;a.platform.release_surface(8);}
-        void save_score()override{a.failed|=!a.save_score();}
+        void save_score()override{if(!a.restoring_multiplayer_stage)a.failed|=!a.save_score();}
         u32 milliseconds()override{return a.platform.milliseconds();}
         std::vector<u8> read_score()override{return a.platform.read("score.dat");}
         void preload_music(i32 i,const char* p)override{a.platform.load_music(i,p);}
@@ -164,7 +164,7 @@ class GameApplication {
         void animate_loading()override{a.loading.update();}
         bool service_animations()override{return a.library.service()&&(!a.title.active()||a.title.service());}
         void update_audio_fades()override{a.platform.update_audio_fades();}
-        u16 poll_input()override{return a.platform.poll_input();}
+        u16 poll_input()override{return a.spectator_playback?a.spectator_buttons:a.platform.poll_input();}
         void discard_graphics()override{a.platform.discard_graphics();}
         bool title(bool replay_finished)override{return a.enter_title(replay_finished);}
         bool game()override{return a.enter_game();}
@@ -179,8 +179,9 @@ class GameApplication {
     ChainElement supervisor_job,ascii_calc,ascii_draw,background_draw,loading_draw,fps_draw;
     ScreenEffectState* transition_effect=nullptr;std::vector<u8> version;
     Vec2 presentation_shake{};bool presentation_shake_valid=false;
-    bool initialized=false,running=false,failed=false,stopping=false,game_attached=false,loading_gate=false,loading_hidden=false;
+    bool initialized=false,running=false,failed=false,stopping=false,game_attached=false,loading_gate=false,loading_hidden=false,restoring_multiplayer_stage=false;
     FrameTiming timing;ResultContext last_game;
+    bool spectator_playback=false;u16 spectator_buttons=0;
     AnmLoaded* load_animation(i32,const char*);bool enter_title(bool);bool enter_game();void leave_game();
     bool enter_results(bool);bool enter_music();bool enter_ending();
     void bind_jobs();JobResult update_supervisor();void publish_scene();void synchronize();void finish_loading();
@@ -200,6 +201,13 @@ public:
     bool begin_local_replay(const char* path,i32 stage);
     bool update();bool draw(float presentation_alpha=1.0f,bool presentation_active=false,bool presentation_only=false,bool world_interpolate=true);
     void shutdown();bool save_score();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool restore_multiplayer_stage(const GameplayLoad&,bool initial_ready_boundary,u32* failure=nullptr);
+    void set_spectator_playback_input(u16 buttons){spectator_playback=true;spectator_buttons=buttons;}
+    void clear_spectator_playback_input(){spectator_playback=false;spectator_buttons=0;}
+    void spectator_loading_state(bool& gate,bool& hidden)const{gate=loading_gate;hidden=loading_hidden;}
+    void restore_spectator_loading_state(bool gate,bool hidden){loading_gate=gate;loading_hidden=hidden;}
+#endif
     bool finalize_replay(i32 slot,const char* name){if(!game.recording.ready()||(game.globals.game_flags&8)||slot<1||slot>15||!name)return false;last_game=result_context();save_replay(slot,name);return !invalid();}
     bool active()const{return running;}
     bool invalid()const{return failed||animations.invalid||title.invalid()||results.invalid()||(game_attached&&game.invalid())

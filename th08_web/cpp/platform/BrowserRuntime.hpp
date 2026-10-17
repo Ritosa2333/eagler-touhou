@@ -62,6 +62,9 @@ class BrowserRuntime:public ApplicationPlatform {
     struct PendingCapture {u32 target=0;TextureRect source{},destination{};bool triangle=false;} pending_capture;
     bool capture_failed=false;void finish_capture();
     bool visual_suppressed=false;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    u32 spectator_sound_requests=0,spectator_sound_suppressed=0,spectator_sound_forwarded=0;
+#endif
 public:
     GameApplication app;
     touhou::input::MotionTrack motion;
@@ -83,6 +86,9 @@ public:
 #ifdef TH_MULTIPLAYER_FIXTURES
     bool diagnostic_audio_clock_independent();
     bool diagnostic_audio_routing();
+    void diagnostic_spectator_audio(u32 out[4])const{
+        out[0]=1;out[1]=spectator_sound_requests;out[2]=spectator_sound_suppressed;out[3]=spectator_sound_forwarded;
+    }
 #endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     multiplayer::ReplayArchive replay_archive;

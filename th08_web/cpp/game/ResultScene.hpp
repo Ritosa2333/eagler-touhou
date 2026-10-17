@@ -17,7 +17,8 @@ public:
     ResultScene(GameplaySession& s,AnmLibrary& l,AnmRenderer& r,AsciiManager& a,TextWriter& t,ResultPlatform& p):session(s),library(l),renderer(r),platform(p),animations(s.random),scores(s),controls(s,scores,animations,t,p),view(controls,a,r){}
     ~ResultScene(){detach();}
     bool attach(Chain&,ResultScreenAction,const ResultContext&);
-    void detach();bool invalid()const{return failed||animations.invalid;}
+    void detach();void clear_inactive_failure_for_restore(){if(!loaded&&!chain){failed=false;animations.invalid=false;}}
+    bool invalid()const{return failed||animations.invalid;}
     bool active()const{return loaded;}
     void input(const InputFrame& value,const FrameTiming& timing){controls.context.input=value;animations.timing=timing;}
 };

@@ -25,7 +25,14 @@ bool EclVm::execute_lifecycle(const EclInstruction& instruction){
             for(i32 i=0;i<effect_count;++i)if(effects[i]){effects[i]->dying=1;effects[i]=nullptr;}effect_count=0;
             if(globals.ascii&&index<4)globals.ascii->boss_markers[index].pos={-999,-999,0};
         }else{
-            const i32 index=n(0);if(!boss_index(index))return false;globals.boss_slots[index]=this;
+            const i32 index=n(0);if(!boss_index(index))return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            // A new registration is observed exactly at the opcode boundary.
+            // Rollback re-executes this branch from the restored slot table,
+            // so the per-frame mask is deterministic and needs no side log.
+            if(globals.boss_slots[index]!=this)globals.spectator_boss_slots|=u8(1u<<index);
+#endif
+            globals.boss_slots[index]=this;
             if(n(0)==0){globals.gui_blocks_spawn=true;if(globals.gui){globals.gui->boss_present=true;globals.gui->boss_life_max=1;}}
             flags|=2;boss_id=u8(n(0));
             if(globals.ascii&&u32(boss_id)<4)globals.ascii->boss_markers[boss_id].pendingInterrupt=1;
