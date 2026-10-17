@@ -3,6 +3,8 @@
 // Renderer, link a raw-exported ESM loader, and write an attested build.json.
 const builtAt=new Date().toISOString();
 import {spawn} from 'node:child_process';
+import {compilerArguments} from '../../../tools/build/compiler-arguments.mjs';
+const compilerArgumentsSource=fileURLToPath(new URL('../../../tools/build/compiler-arguments.mjs',import.meta.url));
 import {readFileSync,writeFileSync,readdirSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -15,7 +17,7 @@ const emcc=[resolve(sdk,'install/emscripten/emcc.py'),resolve(sdk,'upstream/emsc
 if(!emcc)throw Error('TH11 build needs an Emscripten SDK (set EMSDK or provide th08/tools/emsdk).');
 const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:process.env.EMCC_CORES??'4'};
 const python=process.env.TH_PYTHON??'python';
-const run=args=>new Promise((done,reject)=>{const p=spawn(python,[emcc,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';p.stdout.on('data',x=>{log+=x;process.stdout.write(x);});p.stderr.on('data',x=>{log+=x;process.stderr.write(x);});p.on('error',reject);p.on('exit',code=>code?reject(Error('emcc failed '+code+'\n'+log)):done());});
+const run=args=>new Promise((done,reject)=>{const p=spawn(python,[emcc,...compilerArguments(args,{compiler:emcc,output:out})],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';p.stdout.on('data',x=>{log+=x;process.stdout.write(x);});p.stderr.on('data',x=>{log+=x;process.stderr.write(x);});p.on('error',reject);p.on('exit',code=>code?reject(Error('emcc failed '+code+'\n'+log)):done());});
 const thprac=process.env.TH_ENABLE_THPRAC==='1'||process.argv.includes('--thprac');
 const imgui=resolve(root,'cpp/third_party/imgui');
 const common=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1','-DTH11_DEVELOPMENT_HARNESS=0','-DIMGUI_DISABLE_WIN32_FUNCTIONS','-I'+imgui,...(thprac?['-DTH_ENABLE_THPRAC=1']:[]),'--use-port=sdl3','--use-port=sdl3_ttf'];
@@ -38,7 +40,7 @@ const exported=['_malloc','_free','_th11_validate_file','_th11_save_scores','_th
 if(thprac)exported.push('_th11_practice_configure');
 await run([...common,'--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0','-sEXPORTED_FUNCTIONS='+exported.join(','),...objectsBuilt,'-o',loader]);
 const wasm=readFileSync(loader.replace('.mjs','.wasm')),module=new WebAssembly.Module(wasm);
-const sourceFiles=[...source.map(p=>resolve(workspace,relative(workspace,p))),...headers,fileURLToPath(import.meta.url)].sort();
+const sourceFiles=[...source.map(p=>resolve(workspace,relative(workspace,p))),...headers,fileURLToPath(import.meta.url),compilerArgumentsSource].sort();
 const inventory=Object.fromEntries(sourceFiles.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]));
 const sdkMetadata=resolve(sdk,'touhou-sdk.json');
 const toolchain=existsSync(sdkMetadata)?JSON.parse(readFileSync(sdkMetadata)):{emsdkRoot:relative(workspace,sdk).replaceAll('\\','/'),layout:'external'};
