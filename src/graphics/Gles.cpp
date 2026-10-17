@@ -1,4 +1,7 @@
 #include "Gles.hpp"
+#ifdef __EMSCRIPTEN__
+#include "../../third_party/eagler-common/include/eagler/replay/Presentation.hpp"
+#endif
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_timer.h>
@@ -1324,6 +1327,9 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
 
 void GlesGraphics::SwapBuffers()
 {
+#ifdef __EMSCRIPTEN__
+    if (eagler::replay::deferred_presentation()) return;
+#endif
     i32 drawableWidth, drawableHeight;
     SDL_GetWindowSizeInPixels(g_GameWindow.window, &drawableWidth, &drawableHeight);
 
