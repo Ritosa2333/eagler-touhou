@@ -8,6 +8,133 @@ import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {createDirectInputBridge} from './direct-input-bridge.mjs';
 import {validateMotionReplay} from './motion-replay.mjs';
 import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
+// BEGIN GENERATED LOCAL REPLAY
+// Generated from eagler-common/browser/local-replay*.mjs.
+// The native adapter owns parsing, stage bootstrap, fixed ticks and EOF.
+// This host owns only asynchronous command ordering and presentation pacing.
+function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
+  let selected=null,path='',paused=false,rate=1,target=null,startFrame=0,last=null,credit=0,animation=0,continuation=0,closed=false,lastReport=-Infinity;
+  let channel=null,pendingTask=null,taskSerial=0;
+  function soon(fn){
+    if(defer)return defer(fn);
+    // Seeking is CPU work, independent of the display refresh rate. Message
+    // tasks yield to input/painting between bounded slices without the nested
+    // setTimeout clamp, or waiting a whole RAF interval after every slice.
+    if(!channel){channel=new MessageChannel();channel.port1.onmessage=event=>{const task=pendingTask;if(task?.id!==event.data)return;pendingTask=null;task.fn(now());};channel.port1.unref?.();channel.port2.unref?.();}
+    const id=++taskSerial;pendingTask={id,fn};channel.port2.postMessage(id);return id;
+  }
+  function cancelScheduled(){if(animation)cancel(animation);if(continuation){if(cancelDeferred)cancelDeferred(continuation);else pendingTask=null;}animation=continuation=0;}
+  function report(){if(!selected)return;const native=state();onState({kind:'replay',path,difficulty:selected.difficulty,...native,startFrame,paused,rate,seeking:target!==null,target,description:selected});}
+  function schedule(){if(animation||continuation||closed)return;if(target!==null&&!hidden())continuation=soon(draw);else animation=raf(draw);}
+  function draw(time){animation=continuation=0;if(closed||!selected)return;
+    try {
+      if(hidden()){last=null;schedule();return;}
+      const delta=last===null?0:Math.min(.25,Math.max(0,(time-last)/1000));last=time;
+      const unlimited=target!==null||rate===0;
+      credit=Math.min(240,credit+delta*60*rate);
+      const deferred=unlimited&&deferPresentation();
+      const allowed=paused&&target===null?0:unlimited?4096:Math.floor(credit+1e-9),start=now();let count=0,shown=true,current=state();
+      while(count<allowed&&!current.ended&&(count===0||now()-start<8)) {
+        if(target!==null&&current.frame>=target&&!current.preparing)break;
+        shown=!deferred&&(count===0||count+1===allowed||target!==null&&!current.preparing&&current.frame+1>=target);
+        if(step(shown)===false)throw Error('录像原生执行失败');
+        count++;current=state();
+      }
+      // Adapters may defer only the window swap, while keeping every native
+      // Calc/Draw and capture operation. Publish the latest complete frame.
+      if(count&&!shown)present();
+      if(!unlimited)credit=Math.max(0,credit-count);
+      if(target!==null&&!current.preparing&&(current.frame>=target||current.ended)){target=null;last=null;credit=0;report();}
+      if(time-lastReport>=100){lastReport=time;report();}schedule();
+    }catch(error){paused=true;target=null;report();onError(error);}
+  }
+  const reset=()=>{last=null;credit=0;target=null;};
+  async function restart(nextPath,stage){
+    // Keep the title's startup loop alive until native menu initialization is
+    // complete. The startup picture's first-frame notification is too early.
+    await prepare();if(closed)throw Error('录像播放器已关闭');
+    cancelScheduled();stopLoop();
+    try{await open(nextPath,stage);}catch(error){selected=null;reset();onState(null);throw error;}
+    if(closed)throw Error('录像播放器已关闭');
+    reset();startFrame=state().bootstrapTarget??0;target=startFrame||state().preparing?startFrame:null;
+  }
+  return {
+    async command(message){
+      if(closed)throw Error('录像播放器已关闭');
+      const {action,value}=message;
+      if(action==='inspect')return {description:await inspect(message.path)};
+      if(action==='open'){
+        const next=await inspect(message.path),stage=message.stage??next.stages[0]?.id;
+        if(!next.stages.some(item=>item.id===stage))throw Error('录像没有此关卡');
+        await restart(message.path,stage);path=message.path;selected=next;paused=false;schedule();
+      }else {
+        if(!selected)throw Error('请先选择录像关卡');
+        if(action==='pause')paused=true;
+        else if(action==='play'){if(state().ended)await restart(path,state().startStage);paused=false;}
+        else if(action==='rate'){if(![0,.5,1,2,4,8].includes(value))throw Error('播放速度无效');rate=value;}
+        else if(action==='seek'){
+          const current=state();if(!Number.isSafeInteger(value)||value<startFrame||value>current.total)throw Error('录像位置无效');
+          if(value<current.frame||current.ended)await restart(path,current.startStage);
+          reset();target=value;
+        }else throw Error('不支持的录像操作');
+        last=null;credit=0;cancelScheduled();schedule();
+      }
+      report();return {};
+    },
+    close(){closed=true;cancelScheduled();channel?.port1.close();channel?.port2.close();selected=null;},
+    get active(){return !!selected&&!closed;},
+  };
+}
+
+
+// Replay workspaces expose one optional folder level. Keep native IDBFS as the
+// writer and do not walk arbitrary save/resource subdirectories.
+function listLocalReplayFiles(fs,root,validate,describe=(path)=>({path})) {
+  const directories=['','/replay','/hint','/autosave'],files=[];
+  if(fs.analyzePath(root+'/replay').exists)for(const name of fs.readdir(root+'/replay')){
+    if(name==='.'||name==='..'||/[\\/\x00-\x1f]/.test(name))continue;
+    if(fs.isDir(fs.stat(root+'/replay/'+name).mode))directories.push('/replay/'+name);
+  }
+  for(const directory of directories){const full=root+directory;if(!fs.analyzePath(full).exists)continue;
+    for(const name of fs.readdir(full)){const path=(directory+'/'+name).replace(/^\//,'');try{validate(path);}catch{continue;}
+      const stat=fs.stat(root+'/'+path);if(fs.isFile(stat.mode))files.push({...describe(path),size:stat.size,modifiedAt:stat.mtime?.getTime()});
+    }
+  }
+  return files;
+}
+// Adapt the small native ABI without teaching the host any Replay file format.
+function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,onState,onError}) {
+  const api=key=>{const c=getCore();return c[key]??c['_'+key];};
+  const heap=()=>getModule().HEAPU8??new Uint8Array(getCore().memory.buffer);
+  const text=p=>{if(!p)throw Error('录像无法解析');const b=heap(),end=b.indexOf(0,p);if(end<0||end-p>65536)throw Error('录像信息无效');return new TextDecoder().decode(b.subarray(p,end));};
+  // Do not put a NUL escape in an inline shell string. HTML optimizers may
+  // materialize it and the HTML parser replaces that byte with U+FFFD.
+  const cbytes=value=>{const text=new TextEncoder().encode(value),bytes=new Uint8Array(text.length+1);bytes.set(text);return bytes;};
+  function bytesCall(bytes,fn){
+    const c=getCore(),alloc=api('eagler_replay_allocate')??api('malloc')??c.allocate??c.graphics_allocate,free=api('eagler_replay_free')??api('free')??c.deallocate??c.release??c.graphics_free;
+    const p=alloc(bytes.length);if(!p)throw Error('录像内存不足');
+    try{heap().set(bytes,p);return fn(p,bytes.length);}finally{free(p);}
+  }
+  const bridge=createLocalReplay({
+    async prepare(){const ready=api('eagler_replay_ready');if(!ready)return;const deadline=performance.now()+30000;
+      while(!ready()){if(performance.now()>deadline)throw Error('录像播放器初始化超时');await new Promise(requestAnimationFrame);}},
+    inspect(path){const p=physical(path),fn=api('eagler_replay_inspect');if(!fn)throw Error('此 Runtime 需要更新后才能解析录像');
+      const bytes=getModule().FS.readFile(p);if(!bytes.length||bytes.length>64*1024*1024)throw Error('录像大小无效');
+      return bytesCall(bytes,(ptr,size)=>bytesCall(cbytes(p),name=>{const d=JSON.parse(text(fn(ptr,size,name)));
+        if(Array.isArray(d.nameBytes))d.name=new TextDecoder('shift_jis').decode(new Uint8Array(d.nameBytes)).replace(/\0.*$/,'').trim();return d;}));},
+    open(path,stage){if(openReplay)return openReplay(path,stage);const bytes=cbytes(physical(path));
+      if(bytesCall(bytes,p=>api('eagler_replay_open')(p,stage))!==1)throw Error(api('eagler_replay_error')?text(api('eagler_replay_error')()):'录像原生启动失败');},
+    step(render){const ok=stepReplay?stepReplay(render):api('eagler_replay_step')?.(+render)===1;
+      if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));return ok;},
+    present(){api('eagler_replay_present')?.();},
+    deferPresentation(){return typeof api('eagler_replay_present')==='function';},
+    state(){const preparing=api('eagler_replay_preparing'),extra=preparing?{preparing:!!preparing()}:{};
+      if(replayState)return {...replayState(),...extra};const p=api('eagler_replay_state')(),v=Array.from(new Uint32Array(heap().buffer,p,5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],...extra};},
+    stopLoop,onState,onError,
+  });
+  return bridge;
+}
+// END GENERATED LOCAL REPLAY
 const runtimeBuild=/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false,multiplayer:false};
 const multiplayerRuntime=runtimeBuild.multiplayer===true,saveRoot=multiplayerRuntime?'/savesth11mp':'/savesth11';
 const createMultiplayerRuntime=/*TH11_MULTIPLAYER_FACTORY*/multiplayerRuntime?(await import('./multiplayer.mjs')).createMultiplayerRuntime:null;
@@ -113,8 +240,9 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop({returnToMenu=false}={}){if(stopping)return;invalidateTouches();stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
-function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(multiplayerRuntime?/^\/savesth11(?:mp)?\//:/^\/savesth11\//,'').replace(/^\//,'');const valid=multiplayerRuntime?/^replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/:/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;if(!valid.test(name))throw Error('存档路径无效');return name;}
+async function stop({returnToMenu=false}={}){if(stopping)return;localReplay.close();invalidateTouches();stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
+function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(multiplayerRuntime?/^\/savesth11(?:mp)?\//:/^\/savesth11\//,'').replace(/^\//,'');const valid=multiplayerRuntime?/^replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th11_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/:/^(?:scoreth11\.dat|th11\.cfg|replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;if(!valid.test(name))throw Error('存档路径无效');return name;}
+const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>saveRoot+'/'+path(value),replayState:()=>{const p=core.eagler_replay_state(),v=Array.from(new Uint32Array(core.memory.buffer,p,5));const u=multiplayerRuntime?new Uint32Array(core.memory.buffer,core.th11_mp_replay_ui_status(),12):null;return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:u?.[4]??0};},stopLoop:()=>{clearKeyboard();core.th11_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:error});
 async function launch(receivedTouchLifetime=touchLifetime){
  assertTouchLifetime(receivedTouchLifetime);
  if(launched){if(!launchSettled)throw Error('Runtime launch did not complete');return;}
@@ -156,19 +284,21 @@ async function command(m,receivedTouchLifetime=touchLifetime){
  case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);if(multiplayerRuntime)multiplayer.validateOptions(options);else if(options.netplayMode==='lan'||options.netplaySpectator)throw Error('此 Runtime 不支持多人游戏');music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
  case 'resources':await installResources(m.resources);return {};
  case 'thprac-mouse':{if(!options.thpracEnabled||!core.sdl_thprac_mouse)return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);core.sdl_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(Number(m.x)-r.left-(r.width-640*scale)/2)/scale,(Number(m.y)-r.top-(r.height-480*scale)/2)/scale);return {};}
+ case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(m);
  case 'launch':await launch(receivedTouchLifetime);return {};
  case 'sync':await save();return {};
- case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir(saveRoot+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat(saveRoot+'/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
+ case 'list':return {files:listLocalReplayFiles(Module.FS,saveRoot,path)};
  case 'read':return {bytes:Array.from(Module.FS.readFile(saveRoot+'/'+path(m.path)))};
  case 'write':{
-  if(launched)throw Error('请先退出游戏');if(multiplayerRuntime&&(!Array.isArray(m.bytes)||m.bytes.some(value=>!Number.isInteger(value)||value<0||value>255)))throw Error('录像数据无效');const target=path(m.path),bytes=new Uint8Array(m.bytes||[]);
+  if(launched&&!options.replayViewer)throw Error('请先退出游戏');if(multiplayerRuntime&&(!Array.isArray(m.bytes)||m.bytes.some(value=>!Number.isInteger(value)||value<0||value>255)))throw Error('录像数据无效');const target=path(m.path),bytes=new Uint8Array(m.bytes||[]);
   if(!bytes.length||bytes.length>64*1024*1024)throw Error('文件大小无效');
   if(multiplayerRuntime)multiplayer.inspect(bytes);
   else{const p=core.malloc(bytes.length);if(!p)throw Error('文件导入内存不足');let valid=false;try{Module.HEAPU8.set(bytes,p);valid=!!core.th11_validate_file(target==='scoreth11.dat'?0:target==='th11.cfg'?2:1,p,bytes.length);}finally{core.free(p);}if(!valid)throw Error('文件不是有效的地灵殿存档或录像');if(target.startsWith('replay/')&&!validateMotionReplay(bytes))throw Error('录像数据无效');}
+  Module.FS.mkdirTree((saveRoot+'/'+target).slice(0,(saveRoot+'/'+target).lastIndexOf('/')));
   if(multiplayerRuntime){const file=saveRoot+'/'+target,temporary=file+'.pending';try{Module.FS.writeFile(temporary,bytes);Module.FS.rename(temporary,file);}catch(error){try{Module.FS.unlink(temporary);}catch{}throw error;}}
   else Module.FS.writeFile(saveRoot+'/'+target,bytes);await sync(false);return {};
  }
- case 'remove':{if(launched)throw Error('请先退出游戏');Module.FS.unlink(saveRoot+'/'+path(m.path));await sync(false);return {};}
+ case 'remove':{if(launched&&!options.replayViewer)throw Error('请先退出游戏');Module.FS.unlink(saveRoot+'/'+path(m.path));await sync(false);return {};}
  default:throw Error('不支持的操作');}}
 let queue=Promise.resolve();
 if(validEpoch)Object.defineProperty(window,'__eaglerDirectInputBridge',{configurable:true,

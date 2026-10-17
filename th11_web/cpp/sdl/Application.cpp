@@ -1159,3 +1159,5 @@ __attribute__((export_name("sdl_touch_controls"))) void sdl_touch_controls(unsig
 __attribute__((export_name("sdl_loop_pause"))) void sdl_loop_pause(unsigned on){th11_loop_pause(on);}
 __attribute__((export_name("sdl_music_resource_changed"))) void sdl_music_resource_changed(){th11::sdl::app.audio.resource_changed();}
 }
+
+#include "LocalReplay.inc"
