@@ -14,7 +14,7 @@ export const localInputActions=gamepadActions.filter(action=>action!=='action');
 export function localKeyboardPreset(seat:number,preset:LocalKeyboardPreset):LocalKeyboardBindings {
   const b=Object.fromEntries(gamepadActions.map(a=>[a,[]])) as unknown as LocalKeyboardBindings;
   Object.assign(b,{pause:['Escape'],confirm:['Enter','NumpadEnter'],skip:['ControlLeft','ControlRight'],restart:['Backspace']});
-  if(preset==='wasd')Object.assign(b,{up:['KeyW'],down:['KeyS'],left:['KeyA'],right:['KeyD'],shoot:['KeyF'],bomb:['KeyG'],focus:['ShiftLeft']});
+  if(preset==='wasd')Object.assign(b,{up:['KeyW'],down:['KeyS'],left:['KeyA'],right:['KeyD'],shoot:['KeyJ'],bomb:['KeyK'],focus:['KeyL','Space']});
   else if(preset==='arrows')Object.assign(b,{up:['ArrowUp'],down:['ArrowDown'],left:['ArrowLeft'],right:['ArrowRight'],shoot:['Numpad1'],bomb:['Numpad2'],focus:['Numpad3']});
   else if(seat===0)Object.assign(b,{up:['KeyT','KeyR','KeyY'],down:['KeyB','KeyV','KeyN'],left:['KeyF','KeyR','KeyV'],right:['KeyH','KeyY','KeyN'],shoot:['KeyZ'],bomb:['KeyX'],focus:['ShiftLeft','ShiftRight']});
   else Object.assign(b,{up:['Numpad8','Numpad7','Numpad9'],down:['Numpad2','Numpad1','Numpad3'],left:['Numpad4','Numpad7','Numpad1'],right:['Numpad6','Numpad9','Numpad3'],shoot:['ArrowDown'],bomb:['ArrowRight'],focus:['ArrowLeft']});
@@ -38,6 +38,13 @@ export function createTh09LocalInput(storage:Pick<Storage,'getItem'|'setItem'>|n
   try{const saved=JSON.parse(storage?.getItem(storageKey)||'null');
     if(saved?.version===1&&Array.isArray(saved.players)&&saved.players.length===2){
       const next=saved.players.map((p:LocalInputPlayer,seat:number)=>({device:p?.device==='gamepad'?'gamepad':'keyboard',gamepad:typeof p?.gamepad==='string'?p.gamepad.slice(0,1024):'',selected:typeof p?.selected==='string'?p.selected:'original',bindings:validBindings(p?.bindings)?copy(p.bindings):localKeyboardPreset(seat,'original'),saved:Array.isArray(p?.saved)?p.saved.slice(0,32).filter(s=>s&&typeof s.id==='string'&&s.id.startsWith('saved-')&&typeof s.name==='string'&&s.name.trim()&&s.name.length<=32&&validBindings(s.bindings)).map(s=>({...s,bindings:copy(s.bindings)})):[]})) as LocalInputPlayer[];
+      for(const seat of [0,1])if(next[seat]!.selected==='wasd'){
+        const previous=next[seat]!;
+        next[seat]={...previous,bindings:localKeyboardPreset(seat,'wasd')};
+        // An updated built-in must not take keys from the other player's saved
+        // layout. Keep the old bindings as custom when migration would collide.
+        if(collision(next[0]!,next[1]!))next[seat]={...previous,selected:'custom'};
+      }
       if(!collision(next[0]!,next[1]!)&&!(next[0]!.device==='gamepad'&&next[1]!.device==='gamepad'&&next[0]!.gamepad&&next[0]!.gamepad===next[1]!.gamepad)){players=next;enabled=saved.enabled===true;}
     }
   }catch{persisted=false;}

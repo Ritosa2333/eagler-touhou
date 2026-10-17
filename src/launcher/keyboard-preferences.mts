@@ -1,6 +1,6 @@
 export const keyboardActionCodes={shoot:'KeyZ',bomb:'KeyX',focus:'ShiftLeft',pause:'Escape',up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight',skip:'ControlLeft',confirm:'Enter',action:'KeyC',restart:'KeyR'} as const;
 export const defaultKeyboardAliases:Readonly<Record<string,string>>=Object.freeze({});
-export const wasdKeyboardAliases:Readonly<Record<string,string>>=Object.freeze({KeyW:'ArrowUp',KeyA:'ArrowLeft',KeyS:'ArrowDown',KeyD:'ArrowRight',KeyK:'KeyZ',KeyJ:'KeyX',KeyL:'ShiftLeft',Space:'ShiftLeft',KeyH:'KeyC'});
+export const wasdKeyboardAliases:Readonly<Record<string,string>>=Object.freeze({KeyW:'ArrowUp',KeyA:'ArrowLeft',KeyS:'ArrowDown',KeyD:'ArrowRight',KeyJ:'KeyZ',KeyK:'KeyX',KeyL:'ShiftLeft',Space:'ShiftLeft',KeyH:'KeyC'});
 export function configurableKeyboardCode(code:string){return /^(Key[A-Z]|Digit[0-9]|F(?:[1-9]|1[0-2])|Space|Enter|NumpadEnter|Escape|Tab|Backspace|Home|Arrow(?:Up|Down|Left|Right)|(?:Shift|Control)(?:Left|Right)|Numpad[1-9])$/.test(code);}
 const legacyStorageKey='eagler-touhou-keyboard-mapping-v1';
 const storageKey='eagler-touhou-keyboard-layouts-v2';
@@ -37,6 +37,9 @@ export function createKeyboardPreferences(storage:Pick<Storage,'getItem'|'setIte
       const named=saved.find(item=>item.id===value.selected);
       selected=named?.id??(value.selected==='custom'?'custom':identify(aliases));
       if(named){aliases=named.aliases;base=named.base;}
+      else if(value.selected==='arrows'||value.selected==='wasd'){
+        selected=value.selected;base=value.selected;aliases=presetAliases(base);
+      }
     }else{
       const legacy=JSON.parse(storage?.getItem(legacyStorageKey)||'null');
       if(legacy?.version===1&&validAliases(legacy.aliases)){aliases=Object.freeze({...legacy.aliases});custom=aliases;selected=identify(aliases);base=selected==='arrows'?'arrows':'wasd';customBase=base;}
