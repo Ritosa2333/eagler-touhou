@@ -13,7 +13,7 @@ if(presentationLab&&multiplayer)throw Error('Presentation Lab and multiplayer ar
 if(multiplayerFixtures&&game!=='th08')throw Error('TH08 owns these multiplayer fixtures.');
 const profile=multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,'artifacts',profile);
 if(!printPlan)mkdirSync(out,{recursive:true});
-const netplayRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'third_party/eagler-common'));
+const netplayRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'../../common'));
 const sdk=process.env.EMSDK??(existsSync(resolve(workspace,'tools/emsdk'))?resolve(workspace,'tools/emsdk'):resolve(workspace,'../toolchains/emsdk'));
 const emcc=[resolve(sdk,'install/emscripten/emcc.py'),resolve(sdk,'upstream/emscripten/emcc.py')].find(existsSync);
 if(!emcc&&!printPlan)throw Error('Install the pinned Emscripten SDK first (tools/download-emscripten.py).');

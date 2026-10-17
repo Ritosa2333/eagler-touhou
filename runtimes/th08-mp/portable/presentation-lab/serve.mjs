@@ -1,12 +1,12 @@
 import {readFileSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
-import {createPresentationLabServer,sha256 as sha,verifyRuntimeInventory} from '../../third_party/eagler-common/testkit/presentation-lab/server-core.mjs';
+import {createPresentationLabServer,sha256 as sha,verifyRuntimeInventory} from '../../../../common/testkit/presentation-lab/server-core.mjs';
 import {TH08_PRESENTATION_LAB_EXPORTS} from './native-abi.mjs';
 const lab=import.meta.dirname,root=resolve(lab,'../..'),workspace=resolve(root,'..');
-const common=resolve(root,'third_party/eagler-common/testkit/presentation-lab');
+const common=resolve(root,'../../common/testkit/presentation-lab');
 const commonModules=['controller-core.mjs','contracts.mjs','report-core.mjs','server-core.mjs','analyzer.mjs'];
-for(const name of commonModules)if(!existsSync(resolve(common,name)))throw Error('Initialize the pinned eagler-common submodule: missing '+name);
+for(const name of commonModules)if(!existsSync(resolve(common,name)))throw Error('Shared common testkit is missing '+name);
 const snapshot=process.env.TH08_LAB_SNAPSHOT||'';
 if(snapshot&&!/^[a-z0-9-]{1,40}$/.test(snapshot))throw Error('Invalid snapshot');
 const runtime=snapshot?resolve(root,'artifacts/presentation-lab/builds',snapshot):resolve(root,'artifacts/presentation-lab/runtime'),input=resolve(root,'artifacts/presentation-lab/input');
@@ -19,7 +19,7 @@ const inventory=JSON.parse(readFileSync(resolve(runtime,'runtime-files.json'),'u
 verifyRuntimeInventory(runtime,inventory);
 if(!snapshot)for(const [name,digest] of Object.entries(build.sourceFiles))if(sha(readFileSync(resolve(root,name)))!==digest)throw Error('Rebuild modified instrumented source: '+name);
 const files=new Map([['/','index.html'],['/index.html','index.html'],['/app.mjs','app.mjs'],['/controller.mjs','controller.mjs'],['/adapter.mjs','adapter.mjs'],['/native-abi.mjs','native-abi.mjs'],['/analyzer.mjs','analyzer.mjs'],['/owners.mjs','owners.mjs'],['/timing.mjs','timing.mjs'],['/style.css','style.css'],['/fullscreen.css','fullscreen.css']].map(([url,file])=>[url,resolve(lab,file)]));
-for(const name of commonModules)files.set('/third_party/eagler-common/testkit/presentation-lab/'+name,resolve(common,name));
+for(const name of commonModules)files.set('/common/testkit/presentation-lab/'+name,resolve(common,name));
 for(const file of Object.keys(inventory))files.set('/runtime/'+file,resolve(runtime,file));
 const font=process.env.TH08_LAB_FONT||resolve(workspace,'th06-eagler/assets/msgothic.ttc');
 if(!existsSync(font))throw Error('Set TH08_LAB_FONT to your local MS Gothic font');
@@ -39,7 +39,7 @@ if(existsSync(campaignManifest)){
  }
 }
 const identity={schema:'th08/presentation-lab-build/1',commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),wasm:build.sha256,loader:build.loaderSha256,
-  commonCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:resolve(root,'third_party/eagler-common'),encoding:'utf8'}).trim(),
+  commonCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:resolve(root,'../../common'),encoding:'utf8'}).trim(),
   sourceDigest:sha(JSON.stringify(build.sourceFiles)),snapshot:snapshot||null,instrumented:true,dataAvailable:files.has('/input/th08.dat'),fixtureManifest:existsSync(resolve(input,'manifest.json'))?JSON.parse(readFileSync(resolve(input,'manifest.json'),'utf8')):{},
   evidence:'diagnostic runtime, not production deployment',sampling:'authoritative Draw endpoints + frozen alpha sweep'};
 function currentIdentity(){

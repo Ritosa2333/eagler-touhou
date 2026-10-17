@@ -55,7 +55,7 @@ assert.match(multiplayerCadence,/if\(runtime\.LastSimulatedFrame\(\)!=before\+1u
 assert.doesNotMatch(multiplayerCadence,/cadence\.debt\s*(?:=|\+=)/);
 // END CADENCE SOURCE CONTRACT
 // Keep the host call paired with the API of the actually pinned dependency.
-const channelHeader=read('third_party/eagler-common/include/eagler/netplay/SessionChannel.hpp');
+const channelHeader=read('../../common/include/eagler/netplay/SessionChannel.hpp');
 const networkExports=read('th10_web/cpp/multiplayer/NetworkExports.cpp');
 for(const method of ['IntervalScale','FrameLead']){
  assert(channelHeader.includes(`double ${method}() const`),'Missing pinned channel API: '+method);

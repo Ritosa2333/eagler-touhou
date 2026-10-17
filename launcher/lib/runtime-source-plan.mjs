@@ -39,11 +39,8 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
   if (options.emscriptenVersion && version?.replace(/-git$/, "") !== options.emscriptenVersion) {
     throw new Error(`Emscripten version mismatch: expected ${options.emscriptenVersion}, found ${version}`);
   }
-  const mono = layout.projectRoot !== layout.webRoot;
-  const pinned = resolve(source, "third_party/eagler-common");
   const commonMarker = recipe.commonMarker ?? "include/eagler/input/DialogueGesture.hpp";
-  const common = resolve(options.common ?? environment.EAGLER_COMMON_ROOT ??
-    (existsSync(pinned) || !mono ? pinned : layout.path("common")));
+  const common = resolve(options.common ?? environment.EAGLER_COMMON_ROOT ?? layout.path("common"));
   requireDirectoryInput(common, commonMarker, "common dependency");
   for (const input of recipe.commonInputs ?? []) requireDirectoryInput(common, input, "common dependency");
   const python = options.python ?? environment.TH_PYTHON ?? environment.PYTHON ?? (process.platform === "win32" ? "python" : "python3");
@@ -51,13 +48,10 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
   const thprac = feature(definition.features.thprac, options.thprac, `${game}/${variant} thprac`);
   const env = { EMSDK: sdk, TH09_EMSDK: sdk, TH15_EMSDK: sdk, EM_CONFIG: resolve(sdk, ".emscripten"),
     PYTHON: python, TH_PYTHON: python, EMCC_CORES: String(jobs), TH_BUILD_JOBS: String(jobs),
-    EAGLER_COMMON_ROOT: common, TH_ENABLE_THCRAP: thcrap ? "1" : "0", TH_ENABLE_THPRAC: thprac ? "1" : "0" };
-  if (recipe.netplayCommonDirectory) {
-    const netplay = resolve(options.netplayCommon ?? environment.EAGLER_COMMON_NETPLAY_ROOT ??
-      (mono && !existsSync(resolve(source, recipe.netplayCommonDirectory)) ? common : resolve(source, recipe.netplayCommonDirectory)));
-    requireDirectoryInput(netplay, "include/eagler/netplay/SessionChannel.hpp", "netplay common dependency");
-    env.EAGLER_COMMON_NETPLAY_ROOT = netplay;
-  }
+    EAGLER_COMMON_ROOT: common, EAGLER_COMMON_NETPLAY_ROOT: resolve(options.netplayCommon ?? environment.EAGLER_COMMON_NETPLAY_ROOT ?? common),
+    TH_ENABLE_THCRAP: thcrap ? "1" : "0", TH_ENABLE_THPRAC: thprac ? "1" : "0" };
+  if (variant === "multiplayer") requireDirectoryInput(env.EAGLER_COMMON_NETPLAY_ROOT,
+    "include/eagler/netplay/SessionChannel.hpp", "netplay common dependency");
   const steps = [];
   if (recipe.kind === "cmake") {
     const build = resolve(options.buildDirectory ?? resolve(source, "build/web", variant));

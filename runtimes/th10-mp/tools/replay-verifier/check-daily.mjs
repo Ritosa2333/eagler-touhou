@@ -90,7 +90,7 @@ try{
        evidence.build?.runtimeInventory!==report.runtimeInventory)throw Error(name+' capture identity/completion mismatch');
   }
   await run('compare',['tools/replay-verifier/run-daily-gate.mjs','--capture-root',out,
-    '--common-root','third_party/eagler-common','--report',resolve(out,'daily-result.json')],120000);
+    '--common-root','../../common','--report',resolve(out,'daily-result.json')],120000);
   if(!JSON.parse(readFileSync(resolve(out,'daily-result.json'))).passed)throw Error('Daily comparison did not pass');
   if(hash(resolve(runtime,'th10-sdl.wasm'))!==build.sha256||
      hash(resolve(runtime,'runtime-files.json'))!==report.runtimeInventory)throw Error('Runtime changed during daily suite');

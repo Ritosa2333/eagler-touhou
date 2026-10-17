@@ -1,5 +1,5 @@
-import {DRIVER_API_VERSION,OBSERVATION_API_VERSION,TICK_STATUS} from '../../third_party/eagler-common/testkit/presentation-lab/contracts.mjs';
-import {analyzeNormalizedWindow,compactReport,mergeIssueGroups} from '../../third_party/eagler-common/testkit/presentation-lab/analyzer.mjs';
+import {DRIVER_API_VERSION,OBSERVATION_API_VERSION,TICK_STATUS} from '../../../../common/testkit/presentation-lab/contracts.mjs';
+import {analyzeNormalizedWindow,compactReport,mergeIssueGroups} from '../../../../common/testkit/presentation-lab/analyzer.mjs';
 import {ownerLabel} from './owners.mjs';
 import {TH10_PRESENTATION_LAB_ABI,TH10_PRESENTATION_LAB_EXPORTS} from './native-abi.mjs';
 

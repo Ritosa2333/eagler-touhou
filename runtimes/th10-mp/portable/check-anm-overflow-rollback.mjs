@@ -32,7 +32,7 @@ const ALLOCATION_SUFFIX='\r\n#else\r\n    return static_cast<AnmVm*>(std::malloc
 
 const driver=fileURLToPath(import.meta.url);
 const root=resolve(dirname(driver),'..');
-const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'third_party/eagler-common'));
+const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'../../common'));
 const sdk=process.env.WASI_SDK_PATH;
 if(!sdk)throw Error('Set WASI_SDK_PATH to an installed WASI SDK directory.');
 const compiler=resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++');

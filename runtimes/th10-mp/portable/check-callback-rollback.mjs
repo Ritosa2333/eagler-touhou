@@ -116,14 +116,14 @@ const baseFlags=[
     '--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Werror',
     '-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1',
     '-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-strict-aliasing',
-    '-I',resolve(root,'third_party/eagler-common/include')
+    '-I',resolve(root,'../../common/include')
 ];
 if(sanitized)baseFlags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
 const testSource=resolve(root,'tests/callback-rollback-test.cpp');
 const units=[
     {name:'shared-update-chain',source:resolve(root,'th10_web/cpp/game/UpdateChain.cpp'),flags:baseFlags},
-    {name:'shared-journal',source:resolve(root,'third_party/eagler-common/src/netplay/RollbackJournal.cpp'),flags:baseFlags},
+    {name:'shared-journal',source:resolve(root,'../../common/src/netplay/RollbackJournal.cpp'),flags:baseFlags},
     {name:'candidate-test',source:testSource,flags:[...baseFlags,'-I',platform]},
     {name:'candidate-callbacks',source:resolve(platform,'Callbacks.cpp'),flags:[...baseFlags,'-I',platform]},
     {name:'legacy-test',source:testSource,flags:[...baseFlags,'-DTH10_CALLBACK_ROLLBACK_LEGACY=1','-I',legacy,'-I',platform]},

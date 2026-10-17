@@ -17,11 +17,9 @@ const lab=process.argv.includes('--presentation-lab');
 if(lab&&release)throw Error('Presentation Lab cannot be a production build');
 const multiplayer=process.argv.includes('--multiplayer');
 if(multiplayer&&thprac)throw Error('Multiplayer is a separate Legacy build without THPrac');
-const netplayCommon=resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT||resolve(workspace,'third_party/eagler-common-netplay'));
+const netplayCommon=resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT||resolve(workspace,'../../common'));
 const netplayRevision=()=>{
  try {
-  const top=execFileSync('git',['rev-parse','--show-toplevel'],{cwd:netplayCommon,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();
-  if(resolve(top).toLowerCase()===netplayCommon.toLowerCase())
    return execFileSync('git',['rev-parse','HEAD'],{cwd:netplayCommon,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();
  }catch{}
  return 'unversioned';

@@ -2,7 +2,7 @@ import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {WASI} from 'node:wasi';
-const root=resolve(import.meta.dirname,'..'),common=resolve(root,'third_party/eagler-common');
+const root=resolve(import.meta.dirname,'..'),common=resolve(root,'../../common');
 const sdk=process.env.WASI_SDK_PATH??resolve(root,'../../toolchains/wasi-sdk-34.0-x86_64-windows');
 const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:true});
 const title=resolve(root,'th08_web/cpp/multiplayer');

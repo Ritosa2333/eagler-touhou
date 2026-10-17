@@ -69,10 +69,19 @@ function isHostGeneratedOriginalAsset(path) {
 }
 const failures = [];
 let workspaceChecked = null;
+function isGitWorkingTree(root) {
+  try {
+    return execFileSync('git', ['-C', root, 'rev-parse', '--is-inside-work-tree'],
+      {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']}).trim() === 'true';
+  } catch { return false; }
+}
 if (workspaceAudit) {
-  const { PRODUCT_GAMES } = await import("../lib/contracts/product-catalog.mjs");
+  const { loadRuntimeBuildConfig } = await import("../lib/runtime-build-profiles.mjs");
   const { WORKSPACE_REPOSITORIES, workspacePath } = await import("../lib/workspace-layout.mjs");
-  const gameOwners = Object.keys(PRODUCT_GAMES);
+  const config = await loadRuntimeBuildConfig();
+  const gameOwners = [...new Set(Object.values(config.games).flatMap(entry =>
+    Object.values(entry.variants).map(variant => variant.workspaceRepository ?? entry.workspaceRepository)))];
+  gameOwners.push('common');
   workspaceChecked = [
     WORKSPACE_REPOSITORIES.launcher,
     ...gameOwners.map(owner => `${WORKSPACE_REPOSITORIES[owner]} tracked files`),
@@ -80,7 +89,7 @@ if (workspaceAudit) {
   for (const owner of gameOwners) {
     const repo = WORKSPACE_REPOSITORIES[owner];
     const root = workspacePath(owner);
-    if (!existsSync(resolve(root, ".git"))) throw new Error(`workspace publication audit requires sibling repository: ${repo}`);
+    if (!isGitWorkingTree(root)) throw new Error(`workspace publication audit requires a Git-owned source component: ${repo}`);
     const tracked = execFileSync("git", ["-C", root, "ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
     for (const file of tracked) {
       if (forbiddenExtensions.has(extname(file).toLowerCase()) || /(^|\/)assets(?:-ogg)?\//i.test(file)) failures.push(`${repo}/${file}`);
@@ -103,7 +112,7 @@ async function walk(directory) {
     else await inspect(path);
   }
 }
-if (!directoryArgument && existsSync(resolve(project, ".git"))) {
+if (!directoryArgument && isGitWorkingTree(project)) {
   // Source publication candidates are tracked + nonignored new source, not
   // private local validation outputs. Force-added ignored assets remain tracked
   // and therefore still fail. A concrete export is audited with --directory.

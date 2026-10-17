@@ -100,6 +100,7 @@
           "cache": {}
         },
         "multiplayer": {
+          "workspaceRepository": "th08mp",
           "sourceBuild": { "build": ["portable/build.mjs", "--th08", "--multiplayer"] },
           "features": { "thcrap": true, "thprac": true },
           "cache": {}
@@ -128,7 +129,7 @@
         "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
         "multiplayer": {
           "workspaceRepository": "th15mp",
-          "sourceBuild": { "build": ["th15_web/scripts/build-sdl-application.mjs", "--release", "--multiplayer"], "netplayCommonDirectory": "third_party/eagler-common-netplay" },
+          "sourceBuild": { "build": ["th15_web/scripts/build-sdl-application.mjs", "--release", "--multiplayer"] },
           "features": { "thcrap": true, "thprac": false },
           "cache": {}
         }

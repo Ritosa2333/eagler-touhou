@@ -36,7 +36,7 @@ if(!shell.includes(marker))throw Error('Missing build-info marker');
 put('shell.mjs',shell.replace(marker,JSON.stringify({version,completeGame:true,multiplayer})));
 for(const name of ['startup-branding.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs'])put(name,readFileSync(resolve(shellRoot,name)));
 if(multiplayer){
- const commonRoot=process.env.EAGLER_COMMON_NETPLAY_ROOT?resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT):resolve(root,'third_party/eagler-common-netplay');
+ const commonRoot=process.env.EAGLER_COMMON_NETPLAY_ROOT?resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT):resolve(root,'../../common');
  put('multiplayer.mjs',readFileSync(resolve(shellRoot,'multiplayer.mjs')));
  put('adonis-calibration.mjs',readFileSync(resolve(commonRoot,'browser/adonis-calibration.mjs')));
 }

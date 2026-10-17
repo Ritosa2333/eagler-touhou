@@ -25,7 +25,7 @@ const flags=[
     '--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Werror',
     '-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1',
     '-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-strict-aliasing',
-    '-I',resolve(root,'third_party/eagler-common/include')
+    '-I',resolve(root,'../../common/include')
 ];
 if(sanitized) flags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];

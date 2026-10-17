@@ -145,7 +145,7 @@ export function packageEagler({
   const html = readFileSync(resolve(shellRoot, game + '.html'), 'utf8')
     .replace('<head>', '<head><meta name="eagler-data-provider" content="retail-memory">');
   const shellFiles = Object.fromEntries(runtimeNames.map(name => [name, readFileSync(resolve(shellRoot, name))]));
-  shellFiles['adonis-calibration.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'browser/adonis-calibration.mjs'));
+  shellFiles['adonis-calibration.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'browser/adonis-calibration.mjs'));
   const replayHelper = readFileSync(resolve(root, 'portable/browser/motion-replay.mjs'));
   const loader = readFileSync(resolve(buildRoot, game + '-sdl.mjs'));
   if (hash(wasm) !== build.sha256 || hash(loader) !== build.loaderSha256) {

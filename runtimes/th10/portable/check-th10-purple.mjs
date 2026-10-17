@@ -39,7 +39,7 @@ assert(read('th10_web/cpp/game/EnemySceneCommands.cpp').includes('env.reset_prac
 const sdk=resolve(process.env.EMSDK||'../../th08/tools/emsdk');
 const emcc=['upstream/emscripten/emcc.py','install/emscripten/emcc.py'].map(p=>resolve(sdk,p)).find(existsSync);
 assert(emcc,'Set EMSDK to the pinned SDK');
-run(process.env.TH_PYTHON||'python',[emcc,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','-I'+resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'third_party/eagler-common'),'include'),'portable/check-th10-thprac.cpp','th10_web/cpp/game/PracticeConfig.cpp','-sENVIRONMENT=node','-sEXIT_RUNTIME=1','-o',resolve(out,'replay.cjs')]);
+run(process.env.TH_PYTHON||'python',[emcc,'-O2','-std=c++17','-sDEFAULT_TO_CXX=1','-I'+resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'../../common'),'include'),'portable/check-th10-thprac.cpp','th10_web/cpp/game/PracticeConfig.cpp','-sENVIRONMENT=node','-sEXIT_RUNTIME=1','-o',resolve(out,'replay.cjs')]);
 run(process.execPath,[resolve(out,'replay.cjs')]);
 const report={passed:true,sourceBoundary:true,sections:68,replayRoundTrip:true,touchReplayCoexistence:true,inputFiltersAndRetry:true,menuCaptureAndCancellationGuards:true,ordinaryDamageGuard:true,browser:'separate-check-purple-browser-and-matrix',device:'not-run',fullPurpleF12:'implemented-see-migration-evidence'};
 writeFileSync(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));

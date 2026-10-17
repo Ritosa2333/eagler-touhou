@@ -10,7 +10,7 @@ const builtAt=new Date().toISOString();
 const profiling=process.env.TH09_PROFILE==='1';
 const audioSimd=process.env.TH09_AUDIO_SIMD==='1';
 if(release&&profiling)throw Error('Profiling symbols are diagnostic-only');
-const root=fileURLToPath(new URL('../',import.meta.url)),workspace=resolve(root,'..'),commonRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'third_party/eagler-common'));
+const root=fileURLToPath(new URL('../',import.meta.url)),workspace=resolve(root,'..'),commonRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'../../common'));
 if(!existsSync(resolve(commonRoot,'include/eagler/netplay/SessionChannel.hpp')))throw Error('Initialize the pinned eagler-common submodule before building TH09');
 const sdkCandidates=[process.env.TH09_EMSDK,resolve(workspace,'tools/emsdk'),resolve(workspace,'../th08-eagler/tools/emsdk'),resolve(workspace,'../th08/tools/emsdk')].filter(Boolean);
 const sdk=sdkCandidates.find(path=>existsSync(resolve(path,'.emscripten'))&&['install','upstream'].some(layout=>existsSync(resolve(path,layout,'emscripten/emcc.py'))&&existsSync(resolve(path,layout,'emscripten/tools'))));

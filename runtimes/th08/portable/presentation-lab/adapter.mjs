@@ -1,4 +1,4 @@
-import {DRIVER_API_VERSION,OBSERVATION_API_VERSION,TICK_STATUS} from '../../third_party/eagler-common/testkit/presentation-lab/contracts.mjs';
+import {DRIVER_API_VERSION,OBSERVATION_API_VERSION,TICK_STATUS} from '../../../../common/testkit/presentation-lab/contracts.mjs';
 import {decodeRecords,analyzeWindow,compactReport,mergeIssueGroups,keyOf,STATE_GROUPS} from './analyzer.mjs';
 import {TH08_PRESENTATION_LAB_ABI,TH08_PRESENTATION_LAB_EXPORTS} from './native-abi.mjs';
 import {decodeTimingRing} from './timing.mjs';

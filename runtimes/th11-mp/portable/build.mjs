@@ -5,7 +5,7 @@ import {resolve, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {responseFileContents} from './response-file.mjs';
-import {COMMON_REVISION as commonRevision} from './common-revision.mjs';
+import {COMMON_REVISION as commonRevision, COMMON_COMMIT, COMMON_SOURCE_PATH, COMMON_SOURCE} from './common-revision.mjs';
 
 const builtAt = new Date().toISOString();
 const workspace = resolve(fileURLToPath(new URL('../', import.meta.url)));
@@ -23,7 +23,7 @@ const profile = multiplayer ? 'multiplayer' : 'sdl3';
 const variant = multiplayer ? 'multiplayer' : 'normal';
 const out = resolve(root, 'artifacts', profile + (diagnostic ? '-diagnostic' : ''));
 
-const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, 'third_party/eagler-common'));
+const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, '../../common'));
 const sdk = process.env.EMSDK || [
   resolve(workspace, 'tools/emsdk'),
   resolve(workspace, '../toolchains/emsdk'),
@@ -84,10 +84,8 @@ if (printPlan) {
 }
 let observedCommonRevision = null;
 if (multiplayer) {
-  const actual = execFileSync('git', ['-C', netplayRoot, 'rev-parse', 'HEAD'], {encoding: 'utf8', windowsHide: true}).trim();
-  observedCommonRevision = actual;
-  if (actual !== commonRevision && !diagnostic) throw Error('TH11 MP requires eagler-common ' + commonRevision + ', found ' + actual);
-  if (!diagnostic) execFileSync('git', ['-C', netplayRoot, 'diff', '--quiet', 'HEAD', '--'], {windowsHide: true});
+  observedCommonRevision = commonRevision;
+  if (!diagnostic && COMMON_SOURCE.dirty) throw Error('Formal TH11 MP build requires a clean shared source; use --diagnostic for local changes.');
 }
 mkdirSync(out, {recursive: true});
 const env = {...process.env, EM_CONFIG: process.env.EM_CONFIG || resolve(sdk, '.emscripten'),
@@ -185,7 +183,7 @@ const report = {
   version: multiplayer ? '1.0.0-mp2-rollback-sdl3' : '1.0.0-sdl3',
   features: {thprac, languages: true, focusHitbox: false, ...(multiplayer ? {multiplayer: true} : {})},
   runtimeSourceFiles,
-  ...(multiplayer ? {commonRevision: observedCommonRevision,
+  ...(multiplayer ? {commonRevision: observedCommonRevision, commonCommit: COMMON_COMMIT, commonSourcePath: COMMON_SOURCE_PATH,
     netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true}} : {}),
   architecture: {loop: multiplayer ? 'cpp-fixed-60hz-bounded-rollback' : 'cpp-fixed-60hz-bounded-catchup',
     audio: 'cpp-miniaudio-vorbis-sdl3-stream', renderer: 'cpp-gles-semantic-batched',

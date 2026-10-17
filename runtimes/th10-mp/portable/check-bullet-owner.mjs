@@ -20,11 +20,11 @@ const out=resolve(root,'artifacts/bullet-owner-check'+(sanitized?'-ubsan':''));m
 const metadataPath=resolve(out,'build.json');rmSync(metadataPath,{force:true});
 const sha256=data=>createHash('sha256').update(data).digest('hex');
 const inputBytes=readFileSync(input),inputHash=sha256(inputBytes);
-const common=resolve(root,'third_party/eagler-common');
+const common=resolve(root,'../../common');
 const flags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Werror','-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-strict-aliasing','-I'+resolve(common,'include')];
 if(sanitized)flags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const names=['ResourceArchive','ArchiveLifecycle','ResourceCodec','ResourceFiles','AnmResources','AnmTexture','TexturePlatform','AnmFile','AnmScript','AnmVm','AnmInterpreter','AnmVariables','AnmRenderer','BulletEmitter','BulletCommands','BulletFeatures','BulletFrame','Arithmetic','GameMath','Timer','Interpolation','Rng'];
-const sources=['tests/bullet-owner-check.cpp','third_party/eagler-common/src/netplay/RollbackJournal.cpp','th10_web/cpp/platform/FileSystem.cpp',...names.map(n=>`th10_web/cpp/game/${n}.cpp`)];
+const sources=['tests/bullet-owner-check.cpp','../../common/src/netplay/RollbackJournal.cpp','th10_web/cpp/platform/FileSystem.cpp',...names.map(n=>`th10_web/cpp/game/${n}.cpp`)];
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
 const dependencies=new Set([resolve(root,'portable/check-bullet-owner.mjs')]);

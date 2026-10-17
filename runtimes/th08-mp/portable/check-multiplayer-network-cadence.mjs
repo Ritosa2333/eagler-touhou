@@ -8,7 +8,7 @@ const root=resolve(import.meta.dirname,'..');
 const sdk=process.env.WASI_SDK_PATH??resolve(root,'../../toolchains/wasi-sdk-34.0-x86_64-windows');
 const compiler=resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++');
 if(!existsSync(compiler))throw Error('WASI SDK not found: '+compiler);
-const common=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'));
+const common=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'));
 const out=resolve(root,'artifacts/network-cadence-tests');mkdirSync(out,{recursive:true});
 const result={passed:false,scope:'WASI correctness of scheduling and input-gap pacing; not a frame-time benchmark',cases:[]};
 for(const name of ['network-frame-schedule','input-gap-pacing']){

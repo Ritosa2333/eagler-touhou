@@ -12,7 +12,7 @@ const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscrip
 const python=process.env.TH_PYTHON??'python';
 const run=(args)=>new Promise((done,reject)=>{const p=spawn(python,[emcc,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';p.stdout.on('data',x=>{log+=x;process.stdout.write(x);});p.stderr.on('data',x=>{log+=x;process.stderr.write(x);});p.on('error',reject);p.on('exit',code=>code?reject(Error('emcc failed '+code+'\n'+log)):done());});
 const thcrap=process.env.TH_ENABLE_THCRAP!=='0';
-const audioInclude=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'third_party/eagler-common'),'include');
+const audioInclude=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'../../common'),'include');
 // Phase A ships the ImGui/thprac infrastructure only. Phase D activates the
 // practice runtime/overlay call sites; without the flag every guarded call site
 // compiles out and the build is the vanilla baseline.

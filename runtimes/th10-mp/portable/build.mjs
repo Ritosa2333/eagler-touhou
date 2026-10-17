@@ -12,7 +12,7 @@ if(fixtures&&(!multiplayer||game!=='th10'))throw Error('TH10 fixture builds requ
 if(presentationLab&&multiplayer)throw Error('Presentation Lab and multiplayer are separate build variants.');
 const profile=fixtures?'multiplayer-fixtures':multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,'artifacts',profile);
 if(!printPlan)mkdirSync(out,{recursive:true});
-const netplayRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'third_party/eagler-common'));
+const netplayRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'../../common'));
 const sdk=process.env.EMSDK??(existsSync(resolve(workspace,'tools/emsdk'))?resolve(workspace,'tools/emsdk'):resolve(workspace,'../toolchains/emsdk'));
 const emcc=[resolve(sdk,'install/emscripten/emcc.py'),resolve(sdk,'upstream/emscripten/emcc.py')].find(existsSync);
 if(!emcc&&!printPlan)throw Error('Install the pinned Emscripten SDK first (tools/download-emscripten.py).');

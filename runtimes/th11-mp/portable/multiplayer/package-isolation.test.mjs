@@ -69,7 +69,8 @@ function withFixture(multiplayer, body) {
     put('private-fonts/' + name, Buffer.from([0]));
   try {
     return body({root, plan, build, binary, put,
-      package: () => packageEagler({root, args: multiplayer ? ['--multiplayer'] : [], fonts: resolve(root, 'private-fonts')})});
+      package: () => packageEagler({root, args: multiplayer ? ['--multiplayer'] : [], fonts: resolve(root, 'private-fonts'),
+        commonRoot: resolve(root, 'third_party/eagler-common')})});
   } finally { rmSync(root, {recursive: true, force: true}); }
 }
 
@@ -82,7 +83,7 @@ test('ordinary and MP plans use separate binary, object-profile and package dire
   assert.throws(() => resolvePackagePlan('/workspace/title', ['--multiplayer-fixtures']), /Diagnostic/);
 });
 
-test('MP attestation requires bounded rollback, the correct common pin and an isolated variant', () => {
+test('MP attestation requires bounded rollback, the recorded common source and an isolated variant', () => {
   const plan = resolvePackagePlan('/workspace/title', ['--multiplayer']);
   const build = buildFor(wasm(MULTIPLAYER_EXPORTS), true);
   validateBuildManifest(build, plan);
@@ -90,7 +91,7 @@ test('MP attestation requires bounded rollback, the correct common pin and an is
     {...build.netplay, prediction: false}, {...build.netplay, rollback: false}, {...build.netplay, predictionLimit: 8},
     {...build.netplay, measuredStartup: false},
   ]) assert.throws(() => validateBuildManifest({...build, netplay}, plan), /12-frame rollback/);
-  assert.throws(() => validateBuildManifest({...build, commonRevision: '0'.repeat(40)}, plan), /pinned/);
+  assert.throws(() => validateBuildManifest({...build, commonRevision: '0'.repeat(40)}, plan), /recorded shared source/);
   assert.throws(() => validateBuildManifest({...build, variant: 'normal'}, plan), /variant/);
   assert.throws(() => validateBuildManifest({...build, sourceDigest: '0'.repeat(64)}, plan), /inventory/);
 });

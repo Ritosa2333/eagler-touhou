@@ -56,10 +56,10 @@ try {
     }
   }
   assert.equal(plans.length, 15);
-  assert(plans.find(plan => plan.game === "th10" && plan.variant === "multiplayer").source.endsWith("th10-multiplayer"));
+  assert.equal(plans.find(plan => plan.game === "th10" && plan.variant === "multiplayer").source, layout.path("th10mp"));
   assert(plans.find(plan => plan.game === "th11" && plan.variant === "multiplayer").steps[0].args.includes("--multiplayer"));
   const th15 = plans.find(plan => plan.game === "th15" && plan.variant === "multiplayer");
-  assert.equal(th15.source, layout.path("th15"));
+  assert.equal(th15.source, layout.path("th15mp"));
   assert(th15.steps[0].args.includes("--multiplayer"));
   assert.equal(th15.environment.EAGLER_COMMON_NETPLAY_ROOT, layout.path("common"));
   const th20 = plans.find(plan => plan.game === "th20");
@@ -67,8 +67,8 @@ try {
   assert.equal(th20.features.thprac, false);
   const pinned = resolve(layout.path("th09"), "third_party/eagler-common");
   await put(resolve(pinned, "include/eagler/input/DialogueGesture.hpp"));
-  assert.equal((await planRuntimeSourceBuild({ game: "th09", emsdk: sdk }, context)).common, pinned,
-    "an existing pin wins over a shared checkout until explicitly overridden");
+  assert.equal((await planRuntimeSourceBuild({ game: "th09", emsdk: sdk }, context)).common, layout.path("common"),
+    "a stale per-title copy must not override the single workspace common source");
   const overridden = await planRuntimeSourceBuild({ game: "th09", emsdk: sdk, common: layout.path("common"), jobs: 2, python: "custom-python" }, context);
   assert.equal(overridden.common, layout.path("common"));
   assert.equal(overridden.environment.TH_PYTHON, "custom-python");

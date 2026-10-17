@@ -17,22 +17,12 @@ import {
   workspaceRoot,
 } from "../lib/workspace-layout.mjs";
 
-assert.deepEqual(Object.keys(WORKSPACE_REPOSITORIES), [
-  "launcher", ...Object.keys(PRODUCT_GAMES), "thprac", "dependencies", "toolchains", "th11mp", "th15mp", "th10mp", "common",
-]);
-assert.deepEqual(workspaceRepositoryNames(["launcher", "th06", "th08", "th09"]), [
-  "eagler-touhou", "th06-eagler", "th08-eagler", "th09-eagler",
-]);
-assert.equal(WORKSPACE_REPOSITORIES.th08, "th08-eagler");
-assert.equal(WORKSPACE_REPOSITORIES.th10, "th10-eagler");
-assert.equal(WORKSPACE_REPOSITORIES.th09, "th09-eagler");
-assert.equal(WORKSPACE_REPOSITORIES.th11, "th11-eagler");
-assert.equal(WORKSPACE_REPOSITORIES.th11mp, "worktrees/th11-multiplayer");
-assert.equal(WORKSPACE_REPOSITORIES.th15, "th15-eagler");
-assert.equal(WORKSPACE_REPOSITORIES.th15mp, "th15-eagler");
-assert.equal(WORKSPACE_REPOSITORIES.th10mp, "worktrees/th10-multiplayer");
-assert.equal(WORKSPACE_REPOSITORIES.common, "eagler-common");
-assert.equal(WORKSPACE_REPOSITORIES.th20, "th20-eagler");
+const configuration = JSON.parse(readFileSync(new URL('../config/workspace.json', import.meta.url), 'utf8'));
+assert.deepEqual(WORKSPACE_REPOSITORIES, configuration.repositories);
+assert.deepEqual(workspaceRepositoryNames(['launcher', 'th06', 'th08', 'th09']),
+  ['launcher', 'th06', 'th08', 'th09'].map(key => configuration.repositories[key]));
+assert.notEqual(workspacePath('th08'), workspacePath('th08mp'));
+assert.notEqual(workspacePath('th15'), workspacePath('th15mp'));
 assert.ok(isAbsolute(workspacePath("th07", "resources", "shell.html")));
 assert.equal(workspacePath("launcher"), launcherRoot());
 for (const [game, directory, suffix] of [
@@ -42,7 +32,7 @@ for (const [game, directory, suffix] of [
   ["th09", "th09-eagler", ["th09_web", "build-eagler"]],
 ]) {
   assert.equal(resolve(launcherRoot(), projectRelativeWorkspacePath(game, ...suffix)),
-    resolve(workspaceRoot(), directory, ...suffix));
+    resolve(workspaceRoot(), configuration.repositories[game], ...suffix));
 }
 assert.throws(() => workspacePath("missing"), /unknown workspace repository/);
 const listedProducts = JSON.parse(execFileSync(process.execPath, ["scripts/list-product-games.mjs"], {

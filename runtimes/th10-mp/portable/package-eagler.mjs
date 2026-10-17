@@ -142,8 +142,8 @@ export function packageEagler({
   const html = readFileSync(resolve(shellRoot, game + '.html'), 'utf8')
     .replace('<head>', '<head><meta name="eagler-data-provider" content="retail-memory">');
   const shellFiles = Object.fromEntries(runtimeNames.map(name => [name, readFileSync(resolve(shellRoot, name))]));
-  shellFiles['save-sync.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'browser/save-sync.mjs'));
-  if(multiplayer)shellFiles['adonis-calibration.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'browser/adonis-calibration.mjs'));
+  shellFiles['save-sync.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'browser/save-sync.mjs'));
+  if(multiplayer)shellFiles['adonis-calibration.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'browser/adonis-calibration.mjs'));
   const replayHelper = readFileSync(resolve(root, 'portable/browser/motion-replay.mjs'));
   const replayPolicy = game==='th10'?{'replay-file-policy.mjs':readFileSync(resolve(root,'portable/browser/replay-file-policy.mjs'))}:{};
   const binaries = {};

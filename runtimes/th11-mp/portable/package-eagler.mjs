@@ -47,7 +47,7 @@ export function validateBuildManifest(build, plan) {
     if (build.features?.multiplayer !== true || build.features?.thprac !== false ||
         build.netplay?.prediction !== true || build.netplay?.rollback !== true || build.netplay?.predictionLimit !== 12 ||
         build.netplay?.measuredStartup !== true || build.commonRevision !== COMMON_REVISION)
-      throw Error('TH11 MP requires the pinned shared protocol, measured startup and bounded 12-frame rollback.');
+      throw Error('TH11 MP requires the recorded shared source, measured startup and bounded 12-frame rollback.');
   } else if (build.features?.multiplayer === true || build.commonRevision || build.netplay) {
     throw Error('Ordinary TH11 cannot package a multiplayer build.');
   }
@@ -98,7 +98,7 @@ export function createRuntimeManifest(build, plan) {
 export function packageEagler({
   root = resolve(import.meta.dirname, '..'), args = process.argv.slice(2),
   fonts = process.env.EAGLER_FONT_ROOT,
-  commonRoot = process.env.EAGLER_COMMON_ROOT || resolve(root, 'third_party/eagler-common'),
+  commonRoot = process.env.EAGLER_COMMON_ROOT || resolve(root, '../../common'),
 } = {}) {
   const plan = resolvePackagePlan(root, args), {multiplayer, buildRoot, out} = plan;
   if (args.includes('--print-plan')) { console.log(JSON.stringify(plan, null, 2)); return plan; }

@@ -16,7 +16,7 @@ if(!sdk)throw new Error('Set WASI_SDK_PATH to an installed WASI SDK directory.')
 const compiler=resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++');
 if(!existsSync(compiler))throw new Error(`WASI compiler not found: ${compiler}`);
 const out=resolve(root,'artifacts/anm-dense-engine');mkdirSync(out,{recursive:true});
-const common=resolve(root,'third_party/eagler-common');
+const common=resolve(root,'../../common');
 const compileFlags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Werror',
   '-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-fno-exceptions','-fno-rtti',
   '-ffp-contract=off','-fno-strict-aliasing','-I'+resolve(common,'include')];
@@ -51,7 +51,7 @@ const engineSources=['AnmVm','AnmInterpreter','AnmVariables','AnmFile','Timer','
 for(const [name,sources] of [
   ['subpixel-check',['portable/subpixel-check.cpp',...gameSources]],
   ['anm-dense-engine',['tests/anm-dense-engine-benchmark.cpp',...gameSources,...engineSources,
-    'third_party/eagler-common/src/netplay/RollbackJournal.cpp']],
+    '../../common/src/netplay/RollbackJournal.cpp']],
 ]){
   const wasm=resolve(out,name+'.wasm');
   execFileSync(compiler,[...linkFlags,...sources.map(source=>compile(source)),observerStub,softfloat,'-o',wasm],

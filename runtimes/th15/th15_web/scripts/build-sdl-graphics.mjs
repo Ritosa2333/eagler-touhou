@@ -21,7 +21,7 @@ const run=args=>new Promise((resolveRun,reject)=>{const p=spawn('python',[emcc,.
 const files=dir=>readdirSync(resolve(root,dir),{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(dir+'/'+e.name):e.name.endsWith('.cpp')?[resolve(root,dir,e.name)]:[]);
 const source=[...files('cpp/game'),resolve(root,'cpp/sdl/GraphicsDevice.cpp'),resolve(root,'cpp/sdl/FontDevice.cpp'),resolve(root,'cpp/sdl/GraphicsImages.cpp'),resolve(root,'cpp/sdl/PresentationFrame.cpp'),resolve(root,'tests/sdl/graphics-exports.cpp'),resolve(workspace,'portable/sdl/Renderer.cpp')];
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp')].sort();
+const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(process.env.EAGLER_COMMON_ROOT||resolve(workspace,'../../common'),'include/eagler/input/DialogueGesture.hpp')].sort();
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
 const settings=JSON.stringify([common,headerHash]);
