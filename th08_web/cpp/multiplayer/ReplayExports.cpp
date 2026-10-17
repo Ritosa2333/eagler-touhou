@@ -27,3 +27,15 @@ const u8* replay_export(BrowserRuntime* r){exported.clear();return r&&r->export_
 extern "C" __attribute__((export_name("multiplayer_replay_export_size")))
 u32 replay_export_size(){return u32(exported.size());}
 }
+
+#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+namespace {std::string local_replay_description;}
+extern "C" __attribute__((export_name("eagler_replay_inspect"))) const char* eagler_replay_inspect(const th08::u8* data,th08::u32 size){
+    Netplay::InputReplayInfo info;th08::multiplayer::ReplayDescription m;
+    if(!th08::multiplayer::ReplayArchive::Inspect(data,size,info,m))return nullptr;
+    eagler::replay::Description d;d.encoded_name(m.name,8);d.number("character",m.setup.characters[0]);d.number("difficulty",m.setup.difficulty);d.number("score",double(m.score)*10);d.text("date",std::string(m.date,6));d.number("lastStage",m.last_stage);
+    bool seen[9]{};const char* labels[]={"STAGE 1","STAGE 2","STAGE 3","STAGE 4A","STAGE 4B","STAGE 5","FINAL A","FINAL B","EXTRA"};
+    for(unsigned i=0;i<info.chapterCount;i++){const unsigned stage=(info.chapters[i].label&15)-1;if(stage>8||seen[stage])continue;seen[stage]=true;
+        d.stage(stage,double(m.stage_scores[stage])*10,0,labels[stage]);}
+    local_replay_description=d.finish();return local_replay_description.c_str();
+}

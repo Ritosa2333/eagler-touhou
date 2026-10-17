@@ -572,3 +572,5 @@ EX("sdl_game_status") const i32* sdl_game_status(){static i32 out[10]{};if(runti
 }
 }
 #endif
+
+#include "LocalReplay.inc"
