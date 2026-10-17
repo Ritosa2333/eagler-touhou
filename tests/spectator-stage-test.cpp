@@ -447,6 +447,127 @@ int main() {
         assert(!playback.WaitingForLiveInput()); // Ended at the edge is terminal, not a stalled live stream.
     }
     {
+        // Bootstrap reconstructs the newest retained entry at a bounded
+        // background rate. The adapter keeps this hidden until ready; later
+        // passive Following never re-arms acceleration.
+        SpectatorStagePlayback playback;
+        SpectatorStageEvent cp; cp.game = '6'; cp.playerCount = 2;
+        cp.sessionId = cp.gameplayAbi = cp.schema = cp.serial = 1;
+        cp.frame = 0; cp.stage = 1; cp.state = {1};
+        assert(playback.Receive(cp));
+        SpectatorStageEvent node = cp; node.kind = SpectatorEventKind::Node;
+        node.state.clear(); node.serial = 2; node.frame = 100; node.checkpoint = 1;
+        node.node = SpectatorNodeKind::Boss; node.bossSlots = 1;
+        SpectatorFramePacket input; input.sessionId = input.gameplayAbi = 1; input.playerCount = 2;
+        for (std::uint32_t frame = 0; frame < 200; ++frame) {
+            if (frame == node.frame) assert(playback.Receive(node));
+            input.frame = frame; assert(playback.Receive(input));
+        }
+        auto ready = cp; ready.kind = SpectatorEventKind::Bootstrap;
+        ready.state.clear(); ready.frame = 200; ready.serial = 2;
+        assert(playback.Receive(ready));
+        assert(playback.Seeking() && playback.FastForwarding() && playback.Target() == 100);
+
+        unsigned ticks = 0;
+        auto restore = [](const auto&) { return true; };
+        auto tick = [&](const auto&, bool) { ++ticks; return true; };
+        auto yield = [] { return false; };
+        while (playback.Seeking()) {
+            assert(playback.FastForwarding());
+            assert(playback.Step(restore, tick, yield, 32));
+        }
+        assert(ticks == 100 && playback.Position() == 100 && !playback.Seeking());
+        assert(!playback.Following() && !playback.FastForwarding());
+
+        // An active seek can be interrupted at the actual partially restored
+        // world position. It must not finish the obsolete destination later.
+        assert(playback.Control(SpectatorStagePlayback::Action::Seek, 50));
+        assert(playback.FastForwarding() && playback.Target() == 50);
+        assert(playback.Step(restore, tick, yield, 8));
+        assert(playback.Position() == 8 && playback.Seeking());
+        assert(playback.Control(SpectatorStagePlayback::Action::Pause));
+        assert(playback.Paused() && !playback.Seeking() && !playback.FastForwarding());
+        assert(playback.Target() == playback.Position() && !playback.Following());
+        const auto pausedPosition = playback.Position();
+        assert(playback.Step(restore, tick, yield, 32));
+        assert(playback.Position() == pausedPosition);
+
+        // A seek explicitly issued from an already paused state still gets to
+        // finish the checkpoint rebuild, then holds the requested position.
+        assert(playback.Control(SpectatorStagePlayback::Action::Seek, 50));
+        assert(playback.Paused() && playback.Seeking() && playback.FastForwarding());
+        assert(playback.Step(restore, tick, yield, 32));
+        assert(playback.Paused() && playback.Position() == 40 && playback.Seeking());
+        assert(playback.Step(restore, tick, yield, 32));
+        assert(playback.Paused() && playback.Position() == 50 && !playback.Seeking());
+        assert(!playback.FastForwarding() && playback.Target() == 50);
+
+        // A later Pause can also cancel a paused background seek at the
+        // cursor reached so far; issuing a new Seek while paused still works.
+        assert(playback.Control(SpectatorStagePlayback::Action::Seek, 45));
+        assert(playback.Paused() && playback.Seeking());
+        assert(playback.Step(restore, tick, yield, 1));
+        assert(playback.Position() == 1 && playback.Seeking() && playback.Paused());
+        assert(playback.Control(SpectatorStagePlayback::Action::Pause));
+        assert(playback.Position() == 1 && playback.Target() == 1 && !playback.Seeking() && playback.Paused());
+        assert(playback.Step(restore, tick, yield, 32));
+        assert(playback.Position() == 1 && playback.Paused());
+        assert(playback.Control(SpectatorStagePlayback::Action::Seek, 50));
+        assert(playback.Paused() && playback.Seeking());
+        assert(playback.Step(restore, tick, yield, 64));
+        assert(playback.Paused() && playback.Position() == 50 && !playback.Seeking());
+        assert(playback.Control(SpectatorStagePlayback::Action::Play));
+
+        assert(playback.Control(SpectatorStagePlayback::Action::Live));
+        const auto fixedTarget = playback.Target();
+        assert(playback.Seeking() && playback.FastForwarding());
+        for (std::uint32_t frame = 200; frame < 240; ++frame) {
+            input.frame = frame; assert(playback.Receive(input));
+        }
+        assert(playback.Target() == fixedTarget);
+        assert(playback.Step(restore, tick, yield, 512));
+        assert(playback.Position() == fixedTarget && playback.Following());
+        assert(!playback.Seeking() && !playback.FastForwarding());
+
+        // Once the fixed Live destination is reached, even a persistent edge
+        // backlog advances one normal tick per presentation callback.
+        const auto start = playback.Position();
+        const auto targetBeforeFollow = playback.Target();
+        for (std::uint32_t frame = 240; frame < 300; ++frame) {
+            input.frame = frame; assert(playback.Receive(input));
+            assert(!playback.FastForwarding());
+            assert(playback.Step(restore, tick, yield, playback.FastForwarding() ? 32 : 1));
+            assert(playback.Position() == start + frame - 239);
+            assert(playback.Target() == targetBeforeFollow);
+            assert(playback.Following() && !playback.Seeking());
+        }
+    }
+    {
+        // Pausing before the first Step cancels playback, but still installs
+        // the mandatory native checkpoint so the viewer never remains in an
+        // uninitialized world or silently loses its restore request.
+        SpectatorStagePlayback playback;
+        SpectatorStageEvent cp; cp.game = '6'; cp.playerCount = 2;
+        cp.sessionId = cp.gameplayAbi = cp.schema = cp.serial = 1;
+        cp.frame = 0; cp.stage = 1; cp.state = {1};
+        assert(playback.Receive(cp));
+        SpectatorFramePacket input; input.sessionId = input.gameplayAbi = 1; input.playerCount = 2;
+        for (std::uint32_t frame = 0; frame < 100; ++frame) {
+            input.frame = frame; assert(playback.Receive(input));
+        }
+        assert(playback.Edge() == 10);
+        SpectatorStageEvent bootstrap = cp; bootstrap.kind = SpectatorEventKind::Bootstrap;
+        bootstrap.state.clear(); bootstrap.frame = 100;
+        assert(playback.Receive(bootstrap));
+        assert(playback.Control(SpectatorStagePlayback::Action::Pause));
+        assert(playback.Paused() && !playback.Seeking() && playback.Position() == 0);
+        unsigned restores = 0, ticks = 0;
+        assert(playback.Step([&](const auto&) { ++restores; return true; },
+            [&](const auto&, bool) { ++ticks; return true; }, [] { return false; }, 8));
+        assert(restores == 1 && ticks == 0);
+        assert(playback.Paused() && !playback.Seeking() && playback.Position() == 0);
+    }
+    {
         SpectatorStagePublisher publisher; assert(publisher.Reset('6', 3, 1, 2));
         SpectatorStagePublisher::Frame frame; frame.frame = 0; frame.stage = 1; frame.schema = 1; frame.initializer = {10}; frame.bossSlots = 1;
         assert(publisher.Record(frame));
