@@ -5,6 +5,9 @@
 #include "AnmManager.hpp"
 #include "AnmRenderer.hpp"
 namespace th15 {
+#if TH15_MULTIPLAYER
+namespace multiplayer {class SpectatorStageCheckpoint;}
+#endif
 struct StageSceneServices {
     virtual ~StageSceneServices()=default;
     virtual bool begin_deformation(i32 mode,i32 script)=0;
@@ -13,6 +16,9 @@ struct StageSceneServices {
 struct StageSceneFrame {float rate=1;u32 flags=0;i32 transition_age=0;};
 class StageScene final:public StageScriptWorld {
     friend class StageCheckpoint;
+#if TH15_MULTIPLAYER
+    friend class multiplayer::SpectatorStageCheckpoint;
+#endif
     const StageResource& file;AnmManager& animations;AnmEnvironment& environment;StageSceneServices& services;i32 bank;
     std::vector<AnmVm> primitives;std::array<AnmVm,8> embedded;std::vector<u8> object_flags;std::vector<i16> instance_flags;
     bool initialized=false,deforming=false;float rate=1;Vec3 view_direction{};

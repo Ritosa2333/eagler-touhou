@@ -18,6 +18,9 @@ struct AudioDevice::Impl final:MusicCommandOutput {
  AudioDevice& owner;explicit Impl(AudioDevice& o):owner(o),commands(layout,*this){}
  struct Voice {ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false;~Voice(){web_sfx::erase(&sound);if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
  ma_engine engine{};SDL_AudioStream* stream=nullptr;bool engine_ready=false,ready=false,suspended=false,refill=true,music_paused=false;
+#if TH15_MULTIPLAYER
+ bool spectator_silent=false;
+#endif
  std::array<std::unique_ptr<Voice>,77> sounds;std::array<std::vector<u8>,66> samples;std::vector<std::unique_ptr<Voice>> music_cache;MusicLayout layout;MusicCommands commands;i32 selected_track=0,track=-1,fade=0,fade_total=0;bool command_ready=true;mutable u32 stats[11]{};
  ~Impl(){music_cache.clear();for(auto& voice:sounds)voice.reset();if(stream)SDL_DestroyAudioStream(stream);if(engine_ready)ma_engine_uninit(&engine);}
  bool attach(Voice& v){if(ma_sound_init_from_data_source(&engine,&v.decoder,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&v.sound)!=MA_SUCCESS)return false;v.attached=true;return true;}
@@ -93,6 +96,19 @@ void AudioDevice::sound_stop(u32 id){if(auto* voice=impl->voice(id)){web_sfx::st
 void AudioDevice::sound_position(u32 id,u32 frame){if(auto* voice=impl->voice(id)){web_sfx::seek(&voice->sound,frame,44100);ma_sound_seek_to_pcm_frame(&voice->sound,frame);}}
 void AudioDevice::sound_pan(u32 id,i32 value){if(auto* voice=impl->voice(id)){const float pan=value>=0?1.f-std::pow(10.f,-float(value)/2000.f):std::pow(10.f,float(value)/2000.f)-1.f;web_sfx::pan(&voice->sound,pan);ma_sound_set_pan_mode(&voice->sound,ma_pan_mode_balance);ma_sound_set_pan(&voice->sound,pan);}}
 void AudioDevice::sound_volume(u32 id,i32 value){if(auto* voice=impl->voice(id)){web_sfx::volume(&voice->sound,amplitude(value));ma_sound_set_volume(&voice->sound,amplitude(value));}}
-void AudioDevice::sound_play(u32 id,u32 flags){if(auto* voice=impl->voice(id)){ma_sound_set_looping(&voice->sound,(flags&1)?MA_TRUE:MA_FALSE);if(!web_sfx::play(&voice->sound,flags&1))ma_sound_start(&voice->sound);}}
+void AudioDevice::sound_play(u32 id,u32 flags){
+#if TH15_MULTIPLAYER
+ if(impl->spectator_silent)return;
+#endif
+ if(auto* voice=impl->voice(id)){ma_sound_set_looping(&voice->sound,(flags&1)?MA_TRUE:MA_FALSE);if(!web_sfx::play(&voice->sound,flags&1))ma_sound_start(&voice->sound);}}
+#if TH15_MULTIPLAYER
+void AudioDevice::spectator_silent(bool value){
+ auto& a=*impl;if(a.spectator_silent==value)return;a.spectator_silent=value;
+ if(value){for(u32 n=0;n<a.sounds.size();n++)sound_stop(n);if(a.stream)SDL_ClearAudioStream(a.stream);}
+ // Music uses the SDL mixer while effects have an independent browser lane.
+ // Suppress only this viewer's output during restore/seek/pause.
+ if(a.engine_ready)ma_engine_set_volume(&a.engine,value?0.f:1.f);
+}
+#endif
 const u32* AudioDevice::statistics()const{auto& a=*impl;a.stats[0]=a.ready;a.stats[4]=a.stream?std::max(0,SDL_GetAudioStreamQueued(a.stream))/8:0;a.stats[5]=u32(a.track);a.stats[6]=a.fade;a.stats[7]=a.current()?u32(std::round(ma_sound_get_volume(&a.current()->sound)*1000000.f)):0;a.stats[8]=a.music_paused;ma_uint64 cursor=0;if(a.current())ma_sound_get_cursor_in_pcm_frames(&a.current()->sound,&cursor);a.stats[9]=u32(cursor);a.stats[10]=a.layout.count();return a.stats;}
 }

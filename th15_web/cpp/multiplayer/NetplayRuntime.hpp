@@ -7,6 +7,8 @@
 #include <eagler/netplay/AdonisConnection.hpp>
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
+#include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorStageView.hpp>
 #include <deque>
 #include <string>
 namespace th15::multiplayer {
@@ -35,6 +37,11 @@ public:
     Netplay::FrameDecision Prepare(std::uint32_t)const;
     bool MarkSimulated(std::uint32_t,const Netplay::FrameDecision&);
     bool ConfirmedInputs(std::uint32_t,std::array<Netplay::FrameInput,3>&)const;
+    void RecordSpectatorFrame(Netplay::SpectatorStagePublisher::Frame);
+    bool StagePlaybackReady()const{return spectator_&&stage_received_&&stage_playback_.Ready();}
+    Netplay::SpectatorStagePlayback& StagePlayback(){return stage_playback_;}
+    const char* SpectatorState(){return StagePlaybackReady()?stage_view_.State(stage_playback_):nullptr;}
+    bool SpectatorControl(const char* run,const char* action,std::uint32_t frame){return StagePlaybackReady()&&stage_view_.Control(stage_playback_,run,action,frame);}
     bool Finish();
     bool BeginNextRun(std::uint32_t seed);
     double PacedElapsed(double);
@@ -87,5 +94,9 @@ private:
     std::deque<Netplay::SpectatorFramePacket> spectator_frames_;
     std::deque<std::vector<std::uint8_t>> publish_tail_;
     std::array<std::uint32_t,24> status_{};
+    Netplay::SpectatorStagePublisher stage_publisher_;
+    Netplay::SpectatorStagePlayback stage_playback_;
+    Netplay::SpectatorStageView stage_view_;
+    bool stage_publication_=false,stage_received_=false;
 };
 }

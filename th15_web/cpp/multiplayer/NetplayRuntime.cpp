@@ -2,6 +2,7 @@
 #include "InputLanes.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #else
@@ -44,6 +45,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay){
     next_capture_=0;capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;return true;
 }
 void NetplayRuntime::Clear(){
+    stage_publisher_={};stage_playback_.Clear();stage_view_.Clear();stage_publication_=stage_received_=false;
     next_capture_=0;capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     transport_.Close();channel_.Clear();calibration_.Clear();gate_.Clear();core_.Clear();
     configured_=network_=playback_=spectator_=retired_=false;timing_ready_=timing_sent_=publish_failed_=false;
@@ -53,18 +55,18 @@ void NetplayRuntime::Clear(){
 bool NetplayRuntime::Reset(const SessionSetup& setup){Clear();base_session_=setup.session_id;return Configure(setup,setup.input_delay);}
 bool NetplayRuntime::Connect(const char* url){
     if(!configured_||network_||ReadOnly()||!url||!*url)return Fail("Invalid TH15 player connection");
-    if(!transport_.Connect(url,std::uint8_t(setup_.local_player),std::uint8_t(setup_.player_count)))return Fail("TH15 transport could not connect");
+    if(!transport_.Connect(url,std::uint8_t(setup_.local_player),std::uint8_t(setup_.player_count),true))return Fail("TH15 transport could not connect");
     now_ms_=clock_us()/1000;network_=true;
     calibration_.Prepare(gate_.Config(),Netplay::AdonisMode::Delay,setup_.automatic,setup_.requested_delay,setup_.prediction_reserve);return true;
 }
 bool NetplayRuntime::ConnectSpectator(const char* url,const char* id){
     if(!configured_||network_||!url||!*url||!id||!*id)return Fail("Invalid TH15 spectator admission");
-    if(!transport_.ConnectSpectator(url,id,std::uint8_t(setup_.player_count)))return Fail("TH15 spectator could not connect");
+    if(!transport_.ConnectSpectator(url,id,std::uint8_t(setup_.player_count),true))return Fail("TH15 spectator could not connect");
     spectator_=network_=true;now_ms_=clock_us()/1000;spectator_deadline_=now_ms_+90'000;return true;
 }
 bool NetplayRuntime::BeginPlayback(const SessionSetup& setup){Clear();if(!Configure(setup,0))return false;playback_=timing_ready_=true;return true;}
 bool NetplayRuntime::CanStart()const{return configured_&&error_.empty()&&(playback_||(spectator_?timing_ready_:!calibration_.Waiting()&&gate_.CanStart()));}
-std::uint32_t NetplayRuntime::NextFrame()const{const auto f=core_.LastSimulatedFrame();return f==Netplay::INVALID_FRAME?0:f+1;}
+std::uint32_t NetplayRuntime::NextFrame()const{if(spectator_&&stage_received_)return stage_playback_.Position();const auto f=core_.LastSimulatedFrame();return f==Netplay::INVALID_FRAME?0:f+1;}
 bool NetplayRuntime::NeedsCapture()const{return CanStart()&&!ReadOnly()&&!retired_&&
     capture_clock_.CanCapture(next_capture_,NextFrame(),capture_ui_,capture_now_us_)&&!core_.HasLocalCapture(next_capture_);}
 bool NetplayRuntime::Capture(std::uint32_t frame,const Netplay::FrameInput& input){
@@ -129,11 +131,32 @@ bool NetplayRuntime::DrainSpectator(){
             if(GameplayAbi(setup)!=timing.gameplayAbi||!Configure(setup,0))return Fail("TH15 spectator contract mismatch");
             timing_ready_=true;spectator_deadline_=now_ms_+15'000;continue;
         }
+        if(Netplay::IsSpectatorStageEvent(bytes.data(),bytes.size())){
+            Netplay::SpectatorStageEvent event;
+            if(!timing_ready_||!Netplay::DecodeSpectatorStageEvent(bytes.data(),bytes.size(),&event)||
+               event.game!='F'||event.sessionId!=setup_.session_id||event.gameplayAbi!=GameplayAbi(setup_)||
+               event.playerCount!=setup_.player_count||!stage_playback_.Receive(event))return Fail("Invalid TH15 spectator stage event");
+            stage_received_=true;spectator_frames_.clear();spectator_deadline_=now_ms_+15'000;continue;
+        }
+        if(stage_received_){
+            Netplay::SpectatorFramePacket packet;
+            if(!timing_ready_||!Netplay::DecodeSpectatorFramePacket(bytes.data(),bytes.size(),&packet)||
+               !stage_playback_.Receive(packet))return Fail("Invalid TH15 spectator stage inputs");
+            spectator_deadline_=now_ms_+15'000;continue;
+        }
         Netplay::SpectatorFramePacket packet;
         if(!timing_ready_||spectator_frames_.size()>=8192||!Netplay::DecodeSpectatorFramePacket(bytes.data(),bytes.size(),&packet)||
            packet.sessionId!=setup_.session_id||packet.gameplayAbi!=GameplayAbi(setup_)||packet.playerCount!=setup_.player_count||packet.frame!=receive_frame_)
             return Fail("Invalid TH15 spectator input stream");
         spectator_frames_.push_back(packet);++receive_frame_;spectator_deadline_=now_ms_+15'000;
+    }
+    if(stage_received_){
+        if(stage_playback_.History().Ended())return true;
+        if(transport_.Failed())return Fail(transport_.LastError().c_str());
+        if(stage_playback_.Ready()&&!stage_playback_.WaitingForLiveInput())
+            spectator_deadline_=now_ms_+15'000;
+        if(now_ms_>=spectator_deadline_)return Fail("TH15 spectator stage stream stalled; players are unaffected");
+        return true;
     }
     if(spectator_frames_.empty()){
         if(transport_.Failed())return Fail(transport_.LastError().c_str());
@@ -145,13 +168,37 @@ bool NetplayRuntime::FeedSpectator(std::uint32_t frame){
     const auto& packet=spectator_frames_.front();if(packet.frame!=frame||!Feed(frame,packet.inputs.data(),packet.playerCount))return false;
     spectator_frames_.pop_front();return true;
 }
+void NetplayRuntime::RecordSpectatorFrame(Netplay::SpectatorStagePublisher::Frame frame){
+    if(ReadOnly()||setup_.local_player||publish_failed_)return;
+    if(!stage_publication_){
+        if(frame.initializer.empty())return;
+        if(!stage_publisher_.Reset('F',std::uint8_t(setup_.player_count),setup_.session_id,GameplayAbi(setup_),frame.frame))return;
+        stage_publication_=true;
+    }
+    const auto recorded_frame=frame.frame;
+    if(!stage_publisher_.Record(std::move(frame))){std::fprintf(stderr,"TH15 spectator journal rejected frame %u after %u\n",recorded_frame,stage_publisher_.Published());publish_failed_=true;transport_.StopSpectators();}
+}
 void NetplayRuntime::Publish(){
+    if(stage_publication_){
+        if(!network_||ReadOnly()||setup_.local_player||publish_failed_)return;
+        if(transport_.SpectatorState()<0){publish_failed_=true;transport_.StopSpectators();return;}
+        if(!timing_sent_){
+            auto timing=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.automatic).Encode();
+            if(timing.empty()){std::fprintf(stderr,"TH15 spectator timing could not be encoded\n");publish_failed_=true;transport_.StopSpectators();return;}
+            if(!transport_.SendSpectator(timing.data(),timing.size()))return;timing_sent_=true;
+        }
+        const auto begin=clock_us();
+        stage_publisher_.Publish(core_.ConfirmedThroughAllRemotes(),core_.LastSimulatedFrame(),
+          [&](auto frame,auto& inputs){return core_.ConfirmedInputs(frame,&inputs);},
+          [&](const auto& wire){return clock_us()-begin<2000&&transport_.SendSpectator(wire.data(),wire.size());});
+        return;
+    }
     if(!network_||ReadOnly()||generation_||setup_.local_player||publish_failed_||!transport_.HasSpectators())return;
     const auto through=core_.LastSimulatedFrame();if(through==Netplay::INVALID_FRAME)return;
     if(transport_.SpectatorState()<0||(through>=publish_frame_&&through-publish_frame_>=Netplay::INPUT_HISTORY_SIZE)){publish_failed_=true;transport_.StopSpectators();return;}
     if(!timing_sent_){
         auto bytes=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.automatic).Encode();
-        if(bytes.empty()){publish_failed_=true;transport_.StopSpectators();return;}
+        if(bytes.empty()){std::fprintf(stderr,"TH15 legacy spectator timing could not be encoded\n");publish_failed_=true;transport_.StopSpectators();return;}
         if(!transport_.SendSpectator(bytes.data(),bytes.size()))return;timing_sent_=true;
     }
     const auto start=clock_us();
@@ -163,6 +210,15 @@ void NetplayRuntime::Publish(){
     }
 }
 void NetplayRuntime::FreezePublicationTail(){
+    if(stage_publication_){
+        if(ReadOnly()||setup_.local_player||publish_failed_)return;
+        const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return;
+        const auto retain=[&](const auto& wire){publish_tail_.push_back(wire);return true;};
+        const bool complete=stage_publisher_.Publish(core_.ConfirmedThroughAllRemotes(),last,
+          [&](auto frame,auto& inputs){return core_.ConfirmedInputs(frame,&inputs);},retain);
+        if(!complete||!stage_publisher_.Finish(last+1,retain)){publish_failed_=true;publish_tail_.clear();transport_.StopSpectators();return;}
+        publish_deadline_=now_ms_+15'000;DrainPublicationTail();return;
+    }
     if(ReadOnly()||generation_||setup_.local_player||publish_failed_||!transport_.HasSpectators())return;
     const auto through=core_.LastSimulatedFrame();if(through==Netplay::INVALID_FRAME)return;
     const auto fail=[&](){publish_failed_=true;publish_tail_.clear();publish_deadline_=0;transport_.StopSpectators();};
@@ -196,7 +252,11 @@ void NetplayRuntime::DrainPublicationTail(){
     if(publish_tail_.empty()){transport_.StopSpectators(true);publish_deadline_=0;}
 }
 bool NetplayRuntime::Finish(){
-    if(retired_)return true;const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return false;
+    if(retired_)return true;
+    if(spectator_&&stage_received_){
+        if(!stage_playback_.History().Ended()||stage_playback_.Paused()||stage_playback_.Position()<stage_playback_.History().Received())return false;
+        retired_=true;return true;
+    }const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return false;
     if(ReadOnly()){retired_=true;return true;}
     if(network_){if(!channel_.FlushRetirementFence(core_,last,now_ms_))return Fail("TH15 retirement input flush failed");
         if(!channel_.CanRetire(core_,last))return false;

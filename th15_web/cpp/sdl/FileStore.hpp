@@ -12,6 +12,7 @@ class FileStore {
  bool read(const std::string&,std::vector<u8>&,u32 limit,bool& present);bool write(const std::string&,const u8*,u32);
  static bool filename(const std::string&)noexcept;
 public:
+ bool read_only=false;
  std::string error;explicit FileStore(std::string root="/save"):directory(std::move(root)){}
  bool initialize(RecordStore&,GameConfig&,Rng&);bool save(RecordStore&,const GameConfig&);
  bool replay(const std::string&,std::shared_ptr<Replay>&);bool replay_slot(i32,std::shared_ptr<Replay>&);

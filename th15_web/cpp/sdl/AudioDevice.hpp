@@ -20,6 +20,9 @@ public:
  bool queue_music(i32 code,i32 value,const std::string& text="");bool finish_music_requests();const MusicCommands& music_commands()const;
  bool queue_music_track(i32 slot,const std::string& stem);void clear_current_wave();
  void refresh_volume();void update();void pump();void suspend(bool);bool mix(float*,u32 frames);
+#if TH15_MULTIPLAYER
+ void spectator_silent(bool);
+#endif
  bool sound_available(u32)const override;bool sound_playing(u32)override;
  void sound_stop(u32)override;void sound_position(u32,u32)override;void sound_pan(u32,i32)override;void sound_volume(u32,i32)override;void sound_play(u32,u32)override;
  const u32* statistics()const;

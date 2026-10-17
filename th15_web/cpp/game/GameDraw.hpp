@@ -11,6 +11,9 @@ class MultiplayerHud;
 // Scene owners draw in the same stable scheduler as registered ANM layers and
 // the shared compositor. Their individual gameplay/update ownership is retained.
 class GameDraw final:private PopupDrawServices {
+#if TH15_MULTIPLAYER
+ friend class multiplayer::SpectatorStageCheckpoint;
+#endif
  struct Callback {FrameCallback frame;GameDraw* owner=nullptr;u32 index=0;};
 #if TH15_MULTIPLAYER
  std::array<Callback,10> callbacks;std::unique_ptr<MultiplayerHud> multiplayer_hud;
