@@ -89,7 +89,7 @@ def run(browser, launcher, workspace, game):
         state = frame.evaluate("getKeys()")
         return bool(state["bits"] & bit) if "bits" in state else code in state["keys"]
 
-    page.evaluate("keyboardPreferences.selectLayout('arrows')")
+    assert page.evaluate("keyboardPreferences.getLayoutSnapshot().selected") == 'arrows'
     page.keyboard.down("w")
     assert not frame.evaluate("__eaglerKeyboardInputBridge.keyDown('ArrowUp')"), (game, "Arrow keys preset still maps W")
     page.keyboard.up("w")

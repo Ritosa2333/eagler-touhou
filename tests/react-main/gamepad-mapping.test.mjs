@@ -60,15 +60,16 @@ test('custom keyboard source overrides original function and survives reload',()
   const saved=new Map(),storage={getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)},preferences=createKeyboardPreferences(storage);
   preferences.bind('bomb','KeyZ');const restored=createKeyboardPreferences(storage),mapper=new KeyboardMapping(restored.getSnapshot),ctx={target:{},game:'th06',epoch:1,launched:true,spectator:false};
   const changes=mapper.map({type:'keydown',code:'KeyZ',key:'z',keyCode:90},true,'physical','standard',ctx);
-  assert.deepEqual(changes.map(e=>e.code),['KeyX']);preferences.reset();assert.equal(preferences.getSnapshot().KeyK,'KeyZ');
+  assert.deepEqual(changes.map(e=>e.code),['KeyX']);preferences.reset();assert.deepEqual(preferences.getSnapshot(),{});
 });
 test('Arrow keys and WASD presets preserve a custom layout across switching and reload',()=>{
   const saved=new Map(),storage={getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)};
   const model=createKeyboardPreferences(storage);
-  assert.equal(model.getLayoutSnapshot().selected,'wasd');
+  assert.equal(model.getLayoutSnapshot().selected,'arrows');
   model.selectLayout('arrows');assert.deepEqual(model.getSnapshot(),{});
   model.bind('shoot','KeyF');const id=model.saveLayout('我的键位');assert.ok(id);
   model.selectLayout('wasd');assert.equal(model.getSnapshot().KeyK,'KeyZ');
+  assert.equal(createKeyboardPreferences(storage).getLayoutSnapshot().selected,'wasd','an explicitly saved WASD choice survives reload');
   model.selectLayout(id);assert.equal(model.getSnapshot().KeyF,'KeyZ');assert.equal(model.getSnapshot().KeyK,undefined);
   const reloaded=createKeyboardPreferences(storage);assert.equal(reloaded.getLayoutSnapshot().selected,id);assert.equal(reloaded.getSnapshot().KeyF,'KeyZ');
   reloaded.selectLayout('arrows');reloaded.selectLayout('custom');assert.equal(reloaded.getSnapshot().KeyF,'KeyZ');

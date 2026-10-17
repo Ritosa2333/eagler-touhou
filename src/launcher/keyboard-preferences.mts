@@ -1,5 +1,6 @@
 export const keyboardActionCodes={shoot:'KeyZ',bomb:'KeyX',focus:'ShiftLeft',pause:'Escape',up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight',skip:'ControlLeft',confirm:'Enter',action:'KeyC',restart:'KeyR'} as const;
-export const defaultKeyboardAliases:Readonly<Record<string,string>>=Object.freeze({KeyW:'ArrowUp',KeyA:'ArrowLeft',KeyS:'ArrowDown',KeyD:'ArrowRight',KeyK:'KeyZ',KeyJ:'KeyX',KeyL:'ShiftLeft',Space:'ShiftLeft',KeyH:'KeyC'});
+export const defaultKeyboardAliases:Readonly<Record<string,string>>=Object.freeze({});
+export const wasdKeyboardAliases:Readonly<Record<string,string>>=Object.freeze({KeyW:'ArrowUp',KeyA:'ArrowLeft',KeyS:'ArrowDown',KeyD:'ArrowRight',KeyK:'KeyZ',KeyJ:'KeyX',KeyL:'ShiftLeft',Space:'ShiftLeft',KeyH:'KeyC'});
 export function configurableKeyboardCode(code:string){return /^(Key[A-Z]|Digit[0-9]|F(?:[1-9]|1[0-2])|Space|Enter|NumpadEnter|Escape|Tab|Backspace|Home|Arrow(?:Up|Down|Left|Right)|(?:Shift|Control)(?:Left|Right)|Numpad[1-9])$/.test(code);}
 const legacyStorageKey='eagler-touhou-keyboard-mapping-v1';
 const storageKey='eagler-touhou-keyboard-layouts-v2';
@@ -11,16 +12,16 @@ function validAliases(value:unknown):value is Record<string,string>{
   return !!value&&typeof value==='object'&&!Array.isArray(value)&&Object.entries(value).every(([source,target])=>
     configurableKeyboardCode(source)&&Object.values(keyboardActionCodes).some(code=>code===target));
 }
-function presetAliases(preset:KeyboardPreset):Aliases{return preset==='arrows'?Object.freeze({}):defaultKeyboardAliases;}
+function presetAliases(preset:KeyboardPreset):Aliases{return preset==='arrows'?defaultKeyboardAliases:wasdKeyboardAliases;}
 function identify(aliases:Aliases):'arrows'|'wasd'|'custom'{
   if(!Object.keys(aliases).length)return 'arrows';
-  return Object.keys(aliases).length===Object.keys(defaultKeyboardAliases).length&&Object.entries(defaultKeyboardAliases).every(([key,value])=>aliases[key]===value)?'wasd':'custom';
+  return Object.keys(aliases).length===Object.keys(wasdKeyboardAliases).length&&Object.entries(wasdKeyboardAliases).every(([key,value])=>aliases[key]===value)?'wasd':'custom';
 }
 /** Runtime retains its aliases-only read port. The editor owns preset/named
  * layout metadata separately, so saved layouts never enter the input protocol. */
 export function createKeyboardPreferences(storage:Pick<Storage,'getItem'|'setItem'>|null){
   let aliases:Aliases=defaultKeyboardAliases,custom:Aliases=defaultKeyboardAliases;
-  let selected='wasd',base:KeyboardPreset='wasd',customBase:KeyboardPreset='wasd',saved:SavedKeyboardLayout[]=[],serial=0,persisted=!!storage;
+  let selected='arrows',base:KeyboardPreset='arrows',customBase:KeyboardPreset='arrows',saved:SavedKeyboardLayout[]=[],serial=0,persisted=!!storage;
   const listeners=new Set<()=>void>();
   try{
     const value=JSON.parse(storage?.getItem(storageKey)||'null');
