@@ -6,6 +6,7 @@
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <eagler/netplay/SparsePoolCapture.hpp>
 #include "RollbackPoolCapture.hpp"
+#include "HitboxOwnershipHistory.hpp"
 #include <cstddef>
 #include <cstdint>
 
@@ -59,6 +60,8 @@ public:
 private:
     void ClearPoolCaptures();
     Netplay::RollbackJournal journal_{};
+    browser::World* world_=nullptr;
+    HitboxOwnershipHistory hitbox_ownership_{};
     bool configured_=false;
     bool frame_open_=false;
     std::uint32_t open_frame_=0,elided_frames_=0;

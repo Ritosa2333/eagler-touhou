@@ -10,13 +10,13 @@ const check=new Function('assert','host',contract);
 
 test('current source keeps ordinary single-tick and multiplayer waiting paths separate',()=>check(assert,host));
 test('a stale shared-channel pacing API cannot pass the source contract',()=>{
- const changed=host.replace('runtime.Channel().IntervalScale()',
-  'runtime.Channel().SimulationIntervalScale()');
+ const changed=host.replace('runtime.IntervalScale()',
+  'runtime.SimulationIntervalScale()');
  assert.notEqual(changed,host);assert.throws(()=>check(assert,changed));
 });
 test('an ordinary catch-up loop cannot pass the source contract',()=>{
- const changed=host.replace('if(tick_due){',
-  'for(unsigned extra=0;extra<2;++extra) if(tick_due){');
+ const changed=host.replace('const unsigned offered=cadence.advance(simulation_delta);',
+  'const unsigned offered=2*cadence.advance(simulation_delta);');
  assert.notEqual(changed,host);assert.throws(()=>check(assert,changed));
 });
 test('unbounded multiplayer catch-up and charging stalled debt are rejected',()=>{
@@ -31,4 +31,10 @@ test('unbounded multiplayer catch-up and charging stalled debt are rejected',()=
 test('a nested preprocessor guard fails closed rather than hiding ordinary work',()=>{
  const changed=host.replace('if(live&&!cadence.retry_pending())','#ifdef UNKNOWN_FEATURE\n    if(live&&!cadence.retry_pending())');
  assert.notEqual(changed,host);assert.throws(()=>check(assert,changed));
+});
+
+test('extra multiplayer instrumentation does not change the ordinary cadence contract',()=>{
+ const changed=host.replace('double simulation_delta=delta;',
+  'double simulation_delta=delta;\n#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY\n    observe_multiplayer_cadence();\n#endif');
+ assert.notEqual(changed,host);check(assert,changed);
 });
