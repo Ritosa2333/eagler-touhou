@@ -8,7 +8,7 @@ const emcc=resolve(sdk,'install/emscripten/emcc.py');
 const out=resolve(root,game+'_web/artifacts/touch');mkdirSync(out,{recursive:true});
 const file=resolve(out,'eagler-touch-check.wasm');
 const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk};
-execFileSync(process.env.TH_PYTHON??'python',[emcc,'-O2','-std=c++17',resolve(root,'portable/eagler-touch-check.cpp'),'-sDEFAULT_TO_CXX=1','-sSTANDALONE_WASM=1','-sSTACK_SIZE=1048576','-o',file],{env,windowsHide:true,stdio:'inherit'});
+execFileSync(process.env.TH_PYTHON??'python',[emcc,'-I'+resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'include'),'-O2','-std=c++17',resolve(root,'portable/eagler-touch-check.cpp'),'-sDEFAULT_TO_CXX=1','-sSTANDALONE_WASM=1','-sSTACK_SIZE=1048576','-o',file],{env,windowsHide:true,stdio:'inherit'});
 const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
 const module=await WebAssembly.compile(readFileSync(file));
 const instance=await WebAssembly.instantiate(module,{wasi_snapshot_preview1:wasi.wasiImport});
