@@ -1144,6 +1144,15 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
 
     if (message.type === 'leave-spectator') {
       const changed = room.lobby.spectators.delete(clientId);
+      for (const run of room.runs.values()) {
+        // Retire this membership's receiver before a new admission can claim
+        // it. The old socket's delayed close must not release its successor.
+        run.admittedSpectators.delete(clientId);
+        run.claimedSpectators.delete(clientId);
+        const receiver = run.spectatorClients.get(clientId);
+        run.spectatorClients.delete(clientId);
+        receiver?.close(1000, 'spectator left');
+      }
       if (changed) broadcastLobby(room);
       return;
     }
@@ -1164,8 +1173,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
 
     const seat = lobbySeatOf(room, clientId);
     if (message.type === 'quick-chat') {
-      const spectator =
-        roomId.startsWith('th09mp-') && seat < 0 && room.lobby.spectators.has(clientId);
+      const spectator = seat < 0 && room.lobby.spectators.has(clientId);
       if (
         (seat < 0 && !spectator) ||
         (room.lobby.phase === 'lobby' && !roomId.startsWith('th09mp-')) ||

@@ -232,14 +232,25 @@ late viewer, which silently loaded the older default package. Check the served
 WASM identity on every endpoint before accepting a multi-page restoration test;
 hashing only the candidate file does not establish what a new viewer executed.
 
-A spectator input deadline measures waiting for new live input, not time spent
-reading a local archive. TH08 had valid input through 990 and was rebuilding
-position 484 toward edge 900 when its 15-second packet deadline failed. After a
-valid bootstrap, pause, seek, historical Play, ended history and a playable
-backlog must refresh that wait deadline. Resume the normal grace period only
-when following at the edge. Keep the initial bootstrap deadline, transport
-failure handling and all player watchdogs independent. TH10/11/15 had the same
-unconditional check; use the common playback-state predicate for these paths.
+A spectator input deadline bounds the first valid bootstrap. TH08 had valid
+input through 990 and was rebuilding position 484 toward edge 900 when its
+15-second packet deadline failed. Once bootstrapped, missing new game frames
+does not establish transport failure: local pause, seek, historical Play,
+completed history and a paused source may all last indefinitely, including
+Following at the edge. Keep the initial bootstrap deadline, actual socket
+failure/invalid-packet handling and all player watchdogs independent.
+TH09/10/11/15 had the same idle-input assumption; check their native owners too.
+`WaitingForLiveInput()` is a playback-state query, not evidence of a dead stream.
+
+Normal historical playback and passive Following consume at most one input per
+simulation presentation. Only fixed-target Seek/Live and the initial hidden
+checkpoint-to-node reconstruction use bounded multi-input batches; receiving
+more history cannot reactivate acceleration. The cooperative Launcher keeps
+its loading cover until a valid native report has `seeking=false`. Seek progress
+uses the actual native position. Pause during reconstruction cancels at that
+position, preserving the required first checkpoint installation if none has
+been restored yet. Test repeated entry, both local and source idle periods
+longer than 15 seconds, and pacing after the fixed live target is reached.
 
 Set the native transition mode before synchronous teardown callbacks execute.
 TH07's observer must set `SUPERVISOR_STATE_NEXT_STAGE` before `CutChain`, as the

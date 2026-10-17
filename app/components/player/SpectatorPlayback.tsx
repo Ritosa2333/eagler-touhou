@@ -37,14 +37,17 @@ export function SpectatorPlayback({session}: {session: BrowserSession}) {
       : node.stage > 255
         ? t(node.kind === 'boss' ? 'spectator.bossNodeUnknown' : 'spectator.stageNodeUnknown')
         : t(node.kind === 'boss' ? 'spectator.bossNode' : 'spectator.stageNode', {stage: node.stage});
-    const position = state.seeking ? state.target : state.position;
+    const position = state.position;
+    // A paused seek still rebuilds in the background. Keep Pause available
+    // until reconstruction stops, then show Play for the retained pause intent.
+    const paused = state.paused && !state.seeking;
     let currentNode: typeof state.nodes[number] | undefined;
     for (const node of state.nodes) if (node.frame <= position && node.frame <= state.edge) currentNode = node;
-    const statusKey = state.paused ? 'spectator.paused' : state.seeking ? 'spectator.seeking'
+    const statusKey = state.seeking ? 'spectator.seeking' : paused ? 'spectator.paused'
       : state.ended && position >= state.edge ? 'spectator.ended' : state.following ? 'spectator.live'
         : position >= state.edge ? 'spectator.waiting' : 'spectator.playing';
     view.current.update({key: keyFor(state.run), min: state.min, position, edge: state.edge,
-      received: state.received, target: state.target, paused: state.paused, seeking: state.seeking,
+      received: state.received, target: state.target, paused, seeking: state.seeking,
       following: state.following, ended: state.ended, timeOrigin: state.min,
       summaryText: currentNode ? labelFor(currentNode) : t('spectator.controls'),
       durationText: `${clock(Math.max(0, position - state.min))} / ${clock(state.edge - state.min)}`,

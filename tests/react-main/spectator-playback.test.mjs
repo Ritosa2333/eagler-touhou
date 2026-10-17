@@ -41,7 +41,7 @@ for(const locale of ['zh-CN','en'])test(locale+': cooperative data and commands 
  const f=await fixture(locale);assert.equal(f.container.textContent,'');await f.update(report());
  const panel=f.container.querySelector('section.spectator-timeline');assert.ok(panel);
  assert.equal(panel.dataset.collapsed,'true');
- assert.equal(panel.querySelector('[id$="Score"]').textContent,locale==='en'?'Stage 4 Boss':'第 4 面 Boss');
+ assert.equal(panel.querySelector('[id$="Score"]').textContent,locale==='en'?'Stage 4':'第 4 面');
  assert.equal(panel.querySelector('[data-icon="toggle"]').getAttribute('src'),'https://example.test/assets/room-caret-right.svg');
  await f.click('[id$="Toggle"]');assert.equal(panel.dataset.collapsed,'false');
  const nodes=[...panel.querySelectorAll('[id$="RoundMarks"] button')];assert.equal(nodes.length,2);
@@ -50,10 +50,26 @@ for(const locale of ['zh-CN','en'])test(locale+': cooperative data and commands 
  await React.act(async()=>nodes[1].click());assert.deepEqual(f.calls.pop(),['seek',1200,'session_1']);
  await f.click('[id$="Pause"]');assert.deepEqual(f.calls.pop(),['pause',undefined,'session_1']);
  assert.ok(panel.textContent.includes(locale==='en'?'Seeking':'正在定位'),'commands wait for authoritative native reports');
- await f.update(report({revision:2,paused:true}));await f.click('[id$="Pause"]');assert.equal(f.calls.pop()[0],'play');
+ await f.update(report({revision:2,paused:true,seeking:false}));await f.click('[id$="Pause"]');assert.equal(f.calls.pop()[0],'play');
  await f.click('[id$="Live"]');assert.equal(f.calls.pop()[0],'live');
  await f.update(null,{...owner,epoch:4,game:'th09'});assert.equal(f.container.textContent,'');
 });
+test('seeking displays actual progress and keeps pause available before reaching the target',async()=>{
+ const f=await fixture('en');await f.update(report());
+ const range=f.container.querySelector('input'),panel=f.container.querySelector('.spectator-timeline');
+ assert.equal(range.value,'600');assert.equal(range.getAttribute('aria-valuetext'),'0:00');
+ assert.equal(panel.querySelector('[id$="Score"]').textContent,'Stage 4');
+ await f.update(report({revision:2,position:900}));
+ assert.equal(range.value,'900');assert.equal(range.getAttribute('aria-valuetext'),'0:05');
+ assert.ok(panel.textContent.includes('Seeking'));
+ await f.click('[id$="Pause"]');assert.deepEqual(f.calls.pop(),['pause',undefined,'session_1']);
+ await f.update(report({revision:3,position:900,target:900,paused:true,seeking:false}));
+ assert.equal(range.value,'900');assert.ok(panel.textContent.includes('Paused'));
+ await f.update(report({revision:4,position:1200,target:1200,paused:false,seeking:false}));
+ assert.equal(range.value,'1200');assert.equal(range.getAttribute('aria-valuetext'),'0:10');
+ assert.equal(panel.querySelector('[id$="Score"]').textContent,'Stage 4 Boss');
+});
+
 test('shared touch release expands once and suppresses the compatibility click',async()=>{
  const f=await fixture();await f.update(report());const panel=f.container.querySelector('.spectator-timeline');
  const bar=panel.querySelector('.spectator-bar'),toggle=panel.querySelector('[id$="Toggle"]');
@@ -61,6 +77,15 @@ test('shared touch release expands once and suppresses the compatibility click',
  assert.equal(panel.dataset.collapsed,'false');
  await React.act(async()=>toggle.dispatchEvent(new env.window.MouseEvent('click',{bubbles:true,detail:1})));
  assert.equal(panel.dataset.collapsed,'false');
+});
+
+test('a paused background seek can be stopped through the shared pause button',async()=>{
+ const f=await fixture('en');await f.update(report({position:800,paused:true,seeking:true}));
+ assert.equal(f.container.querySelector('[id$="Pause"]').getAttribute('aria-label'),'Pause');
+ await f.click('[id$="Pause"]');assert.deepEqual(f.calls.pop(),['pause',undefined,'session_1']);
+ await f.update(report({revision:2,position:800,target:800,paused:true,seeking:false}));
+ assert.equal(f.container.querySelector('[id$="Pause"]').getAttribute('aria-label'),'Resume');
+ assert.equal(f.container.querySelector('input').value,'800');
 });
 test('encoded route keys remain seek identities without becoming visible stage numbers',async()=>{
  const f=await fixture('en');await f.update(report({position:1300,target:1300,nodes:[
@@ -80,7 +105,7 @@ test('shared dragging freezes bounds and displayed time, then clamps against the
  assert.equal(range.min,'600');assert.equal(range.max,'1510');assert.equal(range.value,'1300');assert.equal(range.getAttribute('aria-valuetext'),'0:11');
  await React.act(async()=>range.dispatchEvent(new env.window.Event('change',{bubbles:true})));
  assert.deepEqual(f.calls.pop(),['seek',1300,'session_1']);assert.equal(range.max,'1610');
- assert.equal(range.value,'1250','the command does not change native position optimistically');
+ assert.equal(range.value,'600','the command does not change native position optimistically');
 });
 test('keyboard range change dispatches once, pointer cancel dispatches nothing',async()=>{
  const f=await fixture();await f.update(report());const range=f.container.querySelector('input');

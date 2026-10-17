@@ -543,7 +543,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
               ready: true,
             },
           ],
-          spectators: [],
+          spectators: [{clientId: 'viewer123456', name: 'Viewer'}],
         },
       });
     });
@@ -564,6 +564,15 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
     });
     assert.equal(query('.mp-quick-chat-log').children.length, 1);
     assert.equal(voices.length, 1);
+    await act(() => socket.message(message({
+      seat: -1,
+      spectator: true,
+      clientId: 'viewer123456',
+      phrase: 'thanks',
+    })));
+    assert.equal(query('.mp-quick-chat-log').children.length, 2);
+    assert.match(query('.mp-quick-chat-log').children[1].textContent, /观众\(Viewer\).*Thanks for the games/);
+    assert.equal(voices.length, 1, 'players see spectator messages without playing spectator voice');
     await act(() => query('[data-phrase="1"]').click());
     assert.deepEqual(socket.sent.at(-1), {
       type: 'quick-chat',
@@ -581,7 +590,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
         }),
       ),
     );
-    assert.equal(session.quickChat.getSnapshot().entries.length, 1);
+    assert.equal(session.quickChat.getSnapshot().entries.length, 2);
     replay = false;
     launched = false;
     await act(() => session.sync());
@@ -590,6 +599,26 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
   } finally {
     globalThis.Audio = previousAudio;
   }
+});
+
+test('non-TH09 spectator quick chat mounts, sends through the shared model, and renders the observer identity', async () => {
+  const {model, calls} = fixture();
+  model.update({...context(), room: 'th07mp-5678', localSeat: null, localSpectator: true,
+    localClientId: 'viewer123456',
+    spectators: [
+      {clientId: 'viewer123456', name: 'Local viewer'},
+      {clientId: 'viewer654321', name: 'Remote viewer'},
+    ]});
+  await mount(model);
+  assert.equal(query('.mp-quick-chat').hidden, false);
+  assert.equal(query('[data-phrase="thanks"]').disabled, false);
+  await act(() => query('[data-phrase="thanks"]').click());
+  assert.deepEqual(calls.at(-1), ['send', {type: 'quick-chat', phrase: 'thanks', serial: 7}]);
+  await act(() => model.receive({
+    type: 'quick-chat', room: 'th07mp-5678', serial: 7, seat: -1,
+    spectator: true, clientId: 'viewer654321', phrase: 'thanks',
+  }));
+  assert.match(query('.mp-quick-chat-log').textContent, /观众\(Remote viewer\).*谢谢指教/);
 });
 
 test('model disposal while React remains mounted cancels active fade and leaves no rows or timers', async () => {

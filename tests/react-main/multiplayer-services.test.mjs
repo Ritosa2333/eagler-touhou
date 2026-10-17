@@ -565,6 +565,52 @@ test('TH09 spectator invite joins without seating and waits for authoritative sp
   f.service.dispose();
 });
 
+for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th15mp'])
+test(`${product} resumes an admitted spectator launch after explicit resource recovery`,async()=>{
+ let installed=false;
+ const f=roomFixture({prepareResources:async()=>{if(!installed)throw Error('DATA missing');}});
+ f.service.enterRoom(product,'1234',false);await flush();const socket=f.sockets[0];socket.open();
+ const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4,
+  predictionLimit:product==='th11mp'?12:product==='th15mp'?0:8,adonisMode:product==='th15mp'?1:0,
+  seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}]});
+ socket.message({type:'state',room});f.service.spectate();
+ socket.message({type:'spectator-start',serial:4,room});await flush();
+ assert.equal(f.events.filter(e=>e[0]==='launch').length,0);assert.equal(f.service.getSnapshot().preparation.status,'failed');
+ installed=true;f.service.retryPreparation();await flush();
+ const launched=f.events.filter(e=>e[0]==='launch');assert.equal(launched.length,1,'resource recovery continues the already admitted launch');
+ assert.equal(launched[0][1].runtimeOptions.netplaySpectator,true);
+ f.service.setImporting(true);f.service.cancelImport();f.service.retryPreparation();await flush();
+ assert.equal(f.events.filter(e=>e[0]==='launch').length,1,'a completed/exited same-run viewer is not restarted by another resource retry');
+ f.service.dispose();
+});
+
+test('spectator resource recovery requires a pending authorized launch and current observer role',async()=>{
+ for(const mode of ['not-admitted','left-role','left-room','failed-again']){
+  let installed=false;const f=roomFixture({prepareResources:async()=>{if(!installed)throw Error('DATA missing');}});
+  f.service.enterRoom('th09mp','1234',false);await flush();const socket=f.sockets[0];socket.open();
+  const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4});
+  socket.message({type:'state',room});f.service.spectate();
+  if(mode!=='not-admitted'){socket.message({type:'spectator-start',serial:4,room});await flush();}
+  if(mode==='left-role')f.service.leaveSpectator();
+  if(mode==='left-room')f.service.leave();
+  installed=mode!=='failed-again';f.service.retryPreparation();await flush();
+  assert.equal(f.events.filter(e=>e[0]==='launch').length,0,mode);f.service.dispose();
+ }
+});
+
+test('an in-flight spectator resource retry cannot launch after role departure or owner disposal',async()=>{
+ for(const action of ['leave-role','dispose']){
+  let recovering=false,finish;
+  const f=roomFixture({prepareResources:async()=>{if(!recovering)throw Error('DATA missing');await new Promise(resolve=>finish=resolve);}});
+  f.service.enterRoom('th09mp','1234',false);await flush();const socket=f.sockets[0];socket.open();
+  const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4});
+  socket.message({type:'state',room});f.service.spectate();socket.message({type:'spectator-start',serial:4,room});await flush();
+  recovering=true;f.service.retryPreparation();await flush();assert.equal(typeof finish,'function');
+  if(action==='leave-role')f.service.leaveSpectator();else f.service.dispose();
+  finish();await flush();assert.equal(f.events.filter(e=>e[0]==='launch').length,0,action);f.service.dispose();
+ }
+});
+
 test('TH09 stream startup race retries the same match without a next-match warning', async () => {
   const f=roomFixture();f.service.enterRoom('th09mp','1234',false);await flush();
   const socket=f.sockets[0];socket.open();

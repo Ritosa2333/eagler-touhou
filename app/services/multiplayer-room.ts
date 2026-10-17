@@ -170,6 +170,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let ownerController = new AbortController();
   let launchedSpectatorSerial = 0,
     spectatorResumeSerial = 0;
+  let resourceRetrySpectatorSerial = 0;
   let spectatorRetryTimer: ReturnType<typeof setTimeout> | null = null;
   function cancelSpectatorRetry() {
     if (spectatorRetryTimer !== null) cancel(spectatorRetryTimer);
@@ -643,7 +644,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.spectatorRequested = false;
     state.roomSettingsOpen = false;
     state.startSerial = 0;
-    launchedSpectatorSerial = spectatorResumeSerial = 0;
+    launchedSpectatorSerial = spectatorResumeSerial = resourceRetrySpectatorSerial = 0;
     state.launchBusy = false;
     state.checkBusy = false;
   }
@@ -827,6 +828,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function leaveSpectator() {
     cancelSpectatorRetry();
+    resourceRetrySpectatorSerial = 0;
     if (
       !room?.synced ||
       !state.connected ||
@@ -1120,11 +1122,15 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     publish();
     try {
       await prepareResources();
-      if (
-        !owned.isCurrent() ||
-        ['cancelled', 'importing'].includes(state.preparation?.status || '')
-      )
+      if (!owned.isCurrent()) return;
+      if (state.preparation?.status !== 'ready') {
+        // Remember only a real launch that was stopped by missing resources.
+        // Room state alone does not authorize starting a spectator Runtime.
+        if (state.spectatorRequested && state.seat == null)
+          resourceRetrySpectatorSerial = state.startSerial;
         return;
+      }
+      resourceRetrySpectatorSerial = 0;
       if (state.seat != null && !(await ensureMovementAllowed())) return;
       if (!owned.isCurrent()) return;
       const options = runtimeOptions();
@@ -1202,9 +1208,16 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function retryPreparation() {
     if (!room || !['cancelled', 'failed'].includes(state.preparation?.status || '')) return;
+    const owned = context(), spectatorSerial = resourceRetrySpectatorSerial;
     ports.beforePreparationRetry?.();
     preparation = null;
-    void prepareResources();
+    void prepareResources().then(() => {
+      if (!owned.isCurrent() || !spectatorSerial || resourceRetrySpectatorSerial !== spectatorSerial ||
+          state.startSerial !== spectatorSerial || !state.spectatorRequested || state.seat != null ||
+          room?.phase === 'lobby' || state.preparation?.status !== 'ready' || state.launchBusy || ports.isLaunched()) return;
+      resourceRetrySpectatorSerial = 0;
+      void launch();
+    });
   }
   function cancelImport() {
     // Main app9720–9723: failed import returns this existing preparation to
