@@ -62,14 +62,14 @@ bool mp_tick(u32 held,bool physical=true){
  if(!network.Pump(true)){last_error=network.Error();return false;}
  if(network.StagePlaybackReady()){
   const auto begin=emscripten_get_now();auto& playback=network.StagePlayback();
-  // Following the live edge may need more than one fixed tick after a slow
-  // browser frame. Keep the bounded rebuild budget without dropping inputs.
-  const bool catching_up=playback.Seeking()||(playback.Following()&&playback.Edge()>playback.Position()+1);
+  // Bootstrap reconstruction and explicit, fixed-target seek/live requests
+  // may use a bounded rebuild budget. Passive live following stays at 1x.
+  const bool fast_forwarding=playback.FastForwarding();
   const bool ok=playback.Step([&](const Netplay::SpectatorStageEvent& cp){
     app->audio_device.spectator_silent(true);
     return cp.schema==multiplayer::SpectatorStageState::Schema&&multiplayer::SpectatorStageCheckpoint::Restore(*app,network.Setup(),mp_menu,cp.frame,cp.state,last_error);
-   },[&](const auto& input,bool historical){return mp_apply_confirmed(input,historical||catching_up);},
-   [&]{return app->pending_load||emscripten_get_now()-begin>=4;},catching_up?240:1);
+   },[&](const auto& input,bool historical){return mp_apply_confirmed(input,historical||fast_forwarding);},
+   [&]{return app->pending_load||emscripten_get_now()-begin>=4;},fast_forwarding?240:1);
   app->audio_device.spectator_silent(playback.Paused()||playback.Seeking());
   if(!ok&&last_error.empty())last_error="TH15 native spectator restoration failed";
   return ok;

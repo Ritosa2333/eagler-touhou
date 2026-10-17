@@ -13,9 +13,12 @@ const dependency=resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT);
 const build=JSON.parse(readFileSync(resolve(out,'build.json')));
 const objects=Object.keys(build.sources).filter(p=>p!=='th15_web/cpp/sdl/BrowserRuntime.cpp').map(p=>resolve(out,'objects',p.replaceAll('/','_')+'.o'));
 let source=readFileSync(resolve(root,'th15_web/cpp/sdl/BrowserRuntime.cpp'),'utf8');
-source=source.replace('const bool catching_up=','const auto spectator_lab_position=playback.Position();\n  const bool catching_up=');
+const fastForwardAnchor='const bool fast_forwarding=playback.FastForwarding();';
+if(!source.includes(fastForwardAnchor))throw Error('Missing passive-follow pacing anchor');
+source=source.replace(fastForwardAnchor,()=>
+ 'const auto spectator_lab_position=playback.Position();\n  '+fastForwardAnchor);
 source=source.replace('app->audio_device.spectator_silent(playback.Paused()||playback.Seeking());',
- 'EM_ASM({Module.spectatorLabPlayback=({ticks:$0,elapsed:$1,catchingUp:!!$2,position:$3,edge:$4});},playback.Position()-spectator_lab_position,emscripten_get_now()-begin,catching_up,playback.Position(),playback.Edge());\n  app->audio_device.spectator_silent(playback.Paused()||playback.Seeking());');
+ 'EM_ASM({Module.spectatorLabPlayback=({ticks:$0,elapsed:$1,fastForwarding:!!$2,position:$3,edge:$4});},playback.Position()-spectator_lab_position,emscripten_get_now()-begin,fast_forwarding,playback.Position(),playback.Edge());\n  app->audio_device.spectator_silent(playback.Paused()||playback.Seeking());');
 source=source.replace('// Rankings and stored names belong to each browser, after the common ending fence.',
  'EM_ASM({Module.spectatorLabTrace?.($0);},frame+1);\n // Rankings and stored names belong to each browser, after the common ending fence.');
 source+='\n'+readFileSync(resolve(import.meta.dirname,'spectator-stage-lab.inc'),'utf8');

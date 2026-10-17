@@ -12,6 +12,7 @@ const root=resolve(import.meta.dirname,'../..'),launcher=resolve(process.env.TH1
 const puppeteer=createRequire(resolve(launcher,'package.json'))('puppeteer-core');
 const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/chromium-executable.mjs')));
 const runtime=resolve(process.env.TH15_TEST_RUNTIME),fixtures=process.argv.includes('--fixtures');
+const lifecycleOnly=process.argv.includes('--lifecycle-only')||process.env.TH15_TEST_LIFECYCLE_ONLY==='1';
 const buildRoot=resolve(root,'th15_web',process.env.TH15_OUTPUT||'artifacts/sdl-multiplayer');
 const probes=resolve(buildRoot,'spectator-stage');
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -35,7 +36,7 @@ if(fixtures){
 const buildIdentity={productionWasm:productionBuild.sha256,productionLoader:productionLoaderSha,
  productionManifestWasm:productionManifest.execution.sha256,productionManifestLoader:productionManifest.execution.loaderSha256,
  fixtureWasm:fixtureBuild?.sha256??null,fixtureProductionWasm:fixtureBuild?.productionWasm??null};
-const out=resolve(probes,process.env.TH15_TEST_EVIDENCE_NAME||(fixtures?'relay-fixture':'relay-production'));await mkdir(out,{recursive:true});
+const out=resolve(probes,process.env.TH15_TEST_EVIDENCE_NAME||(fixtures?'relay-fixture':'relay-production'));await mkdir(out,{recursive:true});let passReport=null;
 const archive=await readFile(process.env.TH15_TEST_ARCHIVE);let options=[],relayLog='',browser;
 const sharedFonts=resolve(process.env.TH15_TEST_SHARED_FONTS||resolve(root,'../dist/ui-rewrite-fixed-20261010/shared'));
 const relay=spawn(process.execPath,[resolve(launcher,'server/netplay-relay.mjs')],{cwd:launcher,windowsHide:true,
@@ -45,8 +46,8 @@ const relayPort=await new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error
 const html=`<!doctype html><meta charset="utf-8"><style>body{margin:0}iframe{width:640px;height:480px;border:0}</style><script>
 window.events=[];window.ready=new Set();window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/data')).arrayBuffer()});
 addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1'){events.push(e.data);if(e.data.event==='ready')ready.add(e.data.epoch);}});
-window.addRuntime=seat=>{const f=document.createElement('iframe');f.id='p'+seat;f.src='/runtime/th15.html?managedData=1&hosted=1&runtimeEpoch='+(seat+1);document.body.append(f);};
-window.rpc=(seat,command,fields={})=>new Promise((yes,no)=>{const f=document.querySelector('#p'+seat),request=crypto.randomUUID();const timer=setTimeout(()=>{removeEventListener('message',listen);no(Error('RPC '+command+' timeout'));},60000);function listen(e){if(e.source===f.contentWindow&&e.data?.request===request){clearTimeout(timer);removeEventListener('message',listen);e.data.ok?yes(e.data):no(Error(e.data.error));}}addEventListener('message',listen);f.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th15',epoch:seat+1,request,command,...fields},location.origin);});
+window.runtimeEpochs={};window.addRuntime=(seat,epoch=seat+1)=>{const f=document.createElement('iframe');f.id='p'+seat;runtimeEpochs[seat]=epoch;f.src='/runtime/th15.html?managedData=1&hosted=1&runtimeEpoch='+epoch;document.body.append(f);};
+window.rpc=(seat,command,fields={})=>new Promise((yes,no)=>{const f=document.querySelector('#p'+seat),request=crypto.randomUUID();const timer=setTimeout(()=>{removeEventListener('message',listen);no(Error('RPC '+command+' timeout'));},60000);function listen(e){if(e.source===f.contentWindow&&e.data?.request===request){clearTimeout(timer);removeEventListener('message',listen);e.data.ok?yes(e.data):no(Error(e.data.error));}}addEventListener('message',listen);f.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th15',epoch:runtimeEpochs[seat]??seat+1,request,command,...fields},location.origin);});
 window.launchRuntime=async seat=>{const o=await(await fetch('/options')).json();await rpc(seat,'configure',{music:'none',options:o[seat],sharedResources:['msgothic.ttc','unifont.otf'].map(name=>({path:'/'+name,url:'/shared/'+name}))});await rpc(seat,'launch');};
 </script>`;
 const httpFailures=[];
@@ -61,8 +62,8 @@ const server=createServer(async(req,res)=>{let path='/';try{path=new URL(req.url
  if(!file.startsWith(runtime+'\\')&&!file.startsWith(probes+'\\')&&!file.startsWith(runtime+'/')&&!file.startsWith(probes+'/'))throw Error('Unsafe path');
  res.setHeader('Content-Type',({'.mjs':'application/javascript','.wasm':'application/wasm','.json':'application/json','.html':'text/html','.css':'text/css'})[extname(file)]||'application/octet-stream');res.end(await readFile(file));
  }catch(e){httpFailures.push({path,status:404,reason:String(e)});res.writeHead(404).end(String(e));}});
-await new Promise(yes=>server.listen(0,'127.0.0.1',yes));const base='http://127.0.0.1:'+server.address().port,sockets=[],reports=[],endpointIdentity=[];
-async function wait(check,label,ms=15000){const until=Date.now()+ms;for(;;){if(await check())return;if(Date.now()>until)throw Error(label+' timeout '+relayLog);await new Promise(r=>setTimeout(r,20));}}
+await new Promise(yes=>server.listen(0,'127.0.0.1',yes));const base='http://127.0.0.1:'+server.address().port,sockets=[],reports=[],endpointIdentity=[],ownedContexts=new Set(),cleanupWarnings=[];
+ async function wait(check,label,ms=15000){const until=Date.now()+ms;for(;;){const value=await check();if(value)return value;if(Date.now()>until)throw Error(label+' timeout '+relayLog);await new Promise(r=>setTimeout(r,20));}}
 async function open(query){const ws=new WebSocket('ws://127.0.0.1:'+relayPort+'/?'+query),r={ws,messages:[],closed:false};sockets.push(ws);ws.addEventListener('message',e=>{if(typeof e.data==='string')r.messages.push(JSON.parse(e.data));});ws.addEventListener('close',()=>r.closed=true);await wait(()=>ws.readyState===1||r.closed,'lobby connect');assert.equal(ws.readyState,1);return r;}
 const latest=r=>r.messages.findLast(m=>m.room)?.room;
 async function send(r,message,predicate){const at=r.messages.length;r.ws.send(JSON.stringify(message));await wait(()=>r.messages.slice(at).some(m=>m.type==='error'||predicate(m)),'lobby '+message.type);const error=r.messages.slice(at).find(m=>m.type==='error');if(error)throw Error(error.error);return r.messages.slice(at).find(predicate);}
@@ -89,10 +90,11 @@ try{
   options=Array.from({length:count+1},(_,seat)=>({netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(started.serial),member:seat<count?members[seat].member:viewerMember}),netplayPlayer:seat<count?seat:null,netplayPlayerCount:count,netplayDifficulty:1,netplaySeed:417,netplayLoadouts:Array.from({length:count},(_,character)=>({character,shot:0})),netplayInputDelay:2,netplayInputDelayAuto:false,netplayAdonisMode:1,netplayPredictionLimit:0,netplayPredictionReserve:2,netplaySpectator:seat===count,netplaySpectatorId:seat===count?viewerId:'',netplaySpectatorCount:1,netplayChallengeMode:false,thpracEnabled:false,renderScale:1}));
   // Each participant has its own browser context and renderer. Loading a new
   // WASM/font set must not block the existing players' or viewer's event loop.
-  const contexts=[],pages=new Map(),errors=[],endpoints=[];
-  const frame=seat=>pages.get(seat).frames().find(f=>f.url().includes('runtimeEpoch='+(seat+1)));
-  const add=async seat=>{console.log('TH15 '+count+'p loading seat '+seat);const context=await browser.createBrowserContext();contexts.push(context);const page=await context.newPage();pages.set(seat,page);
-   const endpoint={count,seat,productionManifestWasm:productionBuild.sha256,productionManifestLoader:productionLoaderSha,
+  const contexts=[],pages=new Map(),epochs=new Map(),errors=[],endpoints=[];
+  const closeContexts=async()=>{for(const context of contexts.splice(0)){ownedContexts.delete(context);try{await context.close();}catch(error){cleanupWarnings.push('browser context close: '+String(error));}}};
+  const frame=seat=>pages.get(seat).frames().find(f=>f.url().includes('runtimeEpoch='+epochs.get(seat)));
+  const add=async (seat,epoch=seat+1)=>{console.log('TH15 '+count+'p loading seat '+seat+' epoch '+epoch);epochs.set(seat,epoch);const context=await browser.createBrowserContext();contexts.push(context);ownedContexts.add(context);const page=await context.newPage();pages.set(seat,page);
+   const endpoint={count,seat,runtimeEpoch:epoch,productionManifestWasm:productionBuild.sha256,productionManifestLoader:productionLoaderSha,
     expectedWasm:fixtures?fixtureBuild.sha256:productionBuild.sha256,expectedLoader:fixtures?fixtureBuild.loaderSha256:productionLoaderSha};endpoints.push(endpoint);endpointIdentity.push(endpoint);
    page.on('response',response=>{const path=new URL(response.url()).pathname;
     if(path==='/runtime/th15-application.wasm'||path==='/runtime/th15.wasm'){
@@ -101,7 +103,7 @@ try{
     }
     if(path==='/runtime/th15.mjs'){endpoint.loaderStatus=response.status();void response.buffer().then(bytes=>{endpoint.loaderBytes=bytes.length;endpoint.loader=sha256(bytes);}).catch(error=>{endpoint.responseError=String(error);});}
    });
-   page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')console.log('browser:',m.text());});await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});await page.evaluate(s=>addRuntime(s),seat);await page.waitForFunction(s=>ready.has(s+1),{timeout:120000},seat);
+   page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')console.log('browser:',m.text());});await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});await page.evaluate(({seat,epoch})=>addRuntime(seat,epoch),{seat,epoch});await page.waitForFunction(e=>ready.has(e),{timeout:120000},epoch);
    const f=frame(seat),endpointManifest=await f.evaluate(async()=>{const r=await fetch('./manifest.json');return r.ok?await r.json():null;});
    assert.equal(endpointManifest?.execution?.sha256,productionBuild.sha256,'seat '+seat+' served production manifest identity');
    assert.equal(endpointManifest?.execution?.loaderSha256,productionLoaderSha,'seat '+seat+' served production loader identity');
@@ -123,15 +125,93 @@ try{
   await wait(async()=>{const s=await read(viewer);return s&&s.position>=150;},'late native restore',60000);
   const initialViewerState=await read(viewer);
   let playbackControlCount=0,controlsAtSourceTransition=null;
-  const control=async(action,target)=>{playbackControlCount++;const state=await read(viewer);return pages.get(count).evaluate(({count,state,action,target})=>rpc(count,'spectator-playback',{run:state.run,action,...(target===undefined?{}:{frame:target})}),{count,state,action,target});};
+  const control=async(action,target,activeFrame=frame(count))=>{playbackControlCount++;const state=await read(activeFrame);return pages.get(count).evaluate(({count,state,action,target})=>rpc(count,'spectator-playback',{run:state.run,action,...(target===undefined?{}:{frame:target})}),{count,state,action,target});};
   assert.ok(initialViewerState&&!initialViewerState.paused&&!initialViewerState.seeking,'late viewer must start in playable history state');
   await new Promise(r=>setTimeout(r,350));const entryProgress=await read(viewer);
   assert.equal(entryProgress.paused,false,'late viewer history playback remains unpaused');assert.equal(entryProgress.seeking,false,'late viewer history playback is not seeking');
   assert.ok(entryProgress.received>initialViewerState.received,'late viewer keeps receiving confirmed history');
   assert.ok(entryProgress.position>initialViewerState.position,'late viewer advances through its initial history target');
-  await control('live');await wait(async()=>{const s=await read(viewer);return s.following&&!s.paused&&!s.seeking&&s.position>=s.edge-4;},'Stage1 Live setup before controls or source transition',30000);
+   await control('live');const liveSetupRequest=await read(viewer);assert.ok(liveSetupRequest,'Stage1 Live request did not produce playback state');
+   const fixedSetupTarget=liveSetupRequest.target;await wait(async()=>{const s=await read(viewer);return s.following&&!s.paused&&!s.seeking&&s.position>=fixedSetupTarget;},'Stage1 fixed Live target before controls or source transition',30000);
   const stageOneLiveSetup={initialFollowing:initialViewerState.following,initialTarget:initialViewerState.target,initialPosition:initialViewerState.position,
    initialReceived:initialViewerState.received,historyAdvancedTo:entryProgress.position,followingAfterLive:true};
+  if(lifecycleOnly){
+   assert.equal(fixtures,false,'focused lifecycle requires the final production Runtime, not the fixture build');
+   const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+   const status=async seat=>frame(seat).evaluate(()=>Array.from(Module.HEAPU32.subarray(Module._th15_mp_status()>>>2,(Module._th15_mp_status()>>>2)+24)));
+   const healthy=async seat=>{const result=await frame(seat).evaluate(()=>{const p=Module._th15_mp_status()>>>2,e=Module._th15_mp_error(),end=Module.HEAPU8.indexOf(0,e);return {status:Array.from(Module.HEAPU32.subarray(p,p+24)),error:document.querySelector('#error')?.textContent||'',nativeError:new TextDecoder().decode(Module.HEAPU8.subarray(e,end<0?e+256:end)),failed:!!globalThis.__eaglerNetplayFailed};});
+    assert.equal(result.error,'','seat '+seat+' shell error');assert.equal(result.nativeError,'','seat '+seat+' native error');assert.equal(result.failed,false,'seat '+seat+' host reports a failure');
+    assert.equal(result.status[19],1,'seat '+seat+' transport remains open');assert.equal(result.status[23],0,'seat '+seat+' native status has no error');return result.status;};
+   const sampleOneX=async label=>{const before=await read(frame(count)),sourceBefore=await Promise.all(Array.from({length:count},async(_,seat)=>(await status(seat))[3])),startedAt=Date.now();
+    assert.ok(before&&!before.paused&&!before.seeking,label+' must begin in normal playback');await delay(1200);
+    const elapsed=(Date.now()-startedAt)/1000,after=await read(frame(count)),sourceAfter=await Promise.all(Array.from({length:count},async(_,seat)=>(await status(seat))[3]));
+    const sourceDelta=Math.max(...sourceAfter.map((value,index)=>value-sourceBefore[index])),viewerDelta=after.position-before.position;
+    assert.ok(after&&!after.paused&&!after.seeking,label+' must remain normal playback');assert.ok(sourceDelta>=20,label+' source did not advance enough to measure pacing');
+    assert.ok(viewerDelta>0,label+' native viewer did not advance');assert.ok(viewerDelta<=sourceDelta+Math.max(10,Math.ceil(sourceDelta*.3)),label+' advanced faster than source: '+JSON.stringify({viewerDelta,sourceDelta,elapsed}));
+    for(let seat=0;seat<count;seat++)await healthy(seat);await healthy(count);
+    return {elapsedSeconds:elapsed,sourceFrames:sourceDelta,viewerFrames:viewerDelta,viewerToSourceRatio:Number((viewerDelta/sourceDelta).toFixed(3)),initialPosition:before.position,finalPosition:after.position,
+     initialEdge:before.edge,finalEdge:after.edge,initialTarget:before.target,finalTarget:after.target,following:after.following,paused:after.paused,seeking:after.seeking};};
+   const initialOneX=await sampleOneX('initial history playback');
+   const liveCompleted=await read(frame(count)),liveOneX=await sampleOneX('passive playback after explicit Live');
+   assert.equal(liveOneX.initialTarget,liveCompleted.target,'new source frames moved the fixed Live target');
+   const sourceBeforeLocalPause=await Promise.all(Array.from({length:count},async(_,seat)=>(await status(seat))[3]));
+   await control('pause');const localPaused=await read(frame(count));await delay(17050);const localPausedAfter=await read(frame(count));
+   assert.equal(localPausedAfter.position,localPaused.position,'local pause advanced the native cursor');assert.ok(localPausedAfter.paused&&!localPausedAfter.seeking,'local pause state changed during the 17-second hold');
+   const sourceDuringLocalPause=await Promise.all(Array.from({length:count},async(_,seat)=>(await status(seat))[3]));
+   assert.ok(sourceDuringLocalPause.some((value,index)=>value>sourceBeforeLocalPause[index]),'source did not keep publishing during the local pause');
+   for(let seat=0;seat<count;seat++)await healthy(seat);await healthy(count);
+   const localPause={durationMs:17050,positionBefore:localPaused.position,positionAfter:localPausedAfter.position,
+    receivedBefore:localPaused.received,receivedAfter:localPausedAfter.received,sourceAdvanced:true,healthy:true};
+   await control('play');await wait(async()=>{const s=await read(frame(count));return s&&!s.paused&&!s.seeking&&s.position>s.min+1100;},'history playback resumes before seek-pause test',120000);
+   const readyToSeek=await read(frame(count)),seekTarget=readyToSeek.min+600;
+   assert.ok(readyToSeek.position-seekTarget>500,'not enough retained native ticks for a visible in-flight seek');
+   await control('seek',seekTarget);const seekStart=await wait(async()=>{const s=await read(frame(count));return s?.seeking?s:null;},'native backward seek becomes active',10000);
+   const seekProgress=await wait(async()=>{const s=await read(frame(count));return s?.seeking&&s.position>readyToSeek.min?s:null;},'native seek progresses before Pause',10000);
+   await control('pause');await wait(async()=>{const s=await read(frame(count));return s?.paused&&!s.seeking;},'Pause cancels active native seek',10000);
+   const seekPaused=await read(frame(count));await delay(450);const seekPausedAfter=await read(frame(count));assert.equal(seekPausedAfter.position,seekPaused.position,'cursor moved after Pause canceled seek');
+   assert.ok(seekPaused.position<=readyToSeek.position&&seekPaused.position>=readyToSeek.min,'Pause did not retain the reached native seek position');
+   const seekPause={target:seekTarget,positionBeforeSeek:seekStart.position,positionAtPauseRequest:seekProgress.position,
+    positionAfterPause:seekPaused.position,seekingBeforePause:true,seekingAfterPause:seekPaused.seeking,pausedAfterPause:seekPaused.paused};
+   for(let seat=0;seat<count;seat++)await healthy(seat);await healthy(count);
+    await control('live');const returnLiveRequest=await read(frame(count));assert.ok(returnLiveRequest,'return-to-Live request did not produce playback state');
+    const returnLiveTarget=returnLiveRequest.target;await wait(async()=>{const s=await read(frame(count));return s?.following&&!s.seeking&&!s.paused&&s.position>=returnLiveTarget;},'return to fixed Live target before source idle',30000);
+    const identity={clientId:viewerId,memberId:viewerMember,run:String(liveCompleted.run),lobbySerial:String(started.serial)};
+   const reentries=[];let activeViewer=frame(count),activeEpoch=epochs.get(count);
+   for(let cycle=1;cycle<=2;cycle++){
+    const previousEpoch=activeEpoch,before=await read(activeViewer);assert.equal(String(before.run),identity.run,'active receiver run changed before re-entry');
+    await activeViewer.evaluate(()=>{Module._th15_loop_stop();Module._th15_mp_close();});
+     const oldContext=pages.get(count).browserContext();const oldContextIndex=contexts.indexOf(oldContext);if(oldContextIndex>=0)contexts.splice(oldContextIndex,1);ownedContexts.delete(oldContext);
+     try{await oldContext.close();}catch(error){cleanupWarnings.push('re-entry context close: '+String(error));}
+    await send(observer,{type:'leave-spectator'},m=>m.room?.spectatorCount===0);assert.equal(latest(observer)?.spectatorCount,0,'leave-spectator did not release the existing lobby claim');
+    await send(observer,{type:'spectate'},m=>m.room?.spectatorCount===1);
+    const epoch=2000+cycle;activeEpoch=epoch;
+    await add(count,epoch);activeViewer=frame(count);
+    await wait(async()=>{const s=await read(activeViewer);return s&&String(s.run)===identity.run&&!s.paused&&!s.seeking&&s.position>=150;},'same-identity native receiver re-entry '+cycle,120000);
+    const restored=await read(activeViewer);assert.equal(String(restored.run),identity.run);assert.ok(restored.position>=restored.min);
+    const pacing=await sampleOneX('same-identity re-entry '+cycle);
+     reentries.push({cycle,clientId:viewerId,memberId:viewerMember,run:identity.run,previousEpoch,runtimeEpoch:epoch,
+      position:restored.position,min:restored.min,following:restored.following,pacing,leaveSpectatorCount:0,spectatorCount:latest(observer)?.spectatorCount});
+    }
+    for(let seat=0;seat<count;seat++)await frame(seat).evaluate(()=>Module._th15_loop_stop());
+    const sourceIdleStart=await Promise.all(Array.from({length:count},async(_,seat)=>(await status(seat))[3]));await delay(17050);
+    const sourceIdleEnd=await Promise.all(Array.from({length:count},async(_,seat)=>(await status(seat))[3]));
+    assert.deepEqual(sourceIdleEnd,sourceIdleStart,'TH15 test-scheduler hold should stop source gameplay frames');
+    for(let seat=0;seat<count;seat++)await healthy(seat);await healthy(count);const idleViewer=await read(frame(count));
+    assert.ok(idleViewer&&!idleViewer.paused&&!idleViewer.seeking,'source idle caused spectator playback failure');
+    const sourceIdle={durationMs:17050,method:'native RAF stop test-scheduler hold; netplay instance/socket retained; no pause-key or external-network claim',returnLiveTarget,
+     sourceFramesBefore:sourceIdleStart,sourceFramesDuring:sourceIdleEnd,sourceStayedFixed:true,viewerPosition:idleViewer.position,
+     viewerTransportOpen:(await status(count))[19]===1,allSourcesHealthy:true};
+   assert.deepEqual(errors,[]);
+   const lifecycle={count,fixtures:false,lifecycleOnly:true,identity,firstRuntimeEpoch:count+1,initialHistoryOneX:initialOneX,
+    explicitLive:{target:liveCompleted.target,position:liveCompleted.position,edge:liveCompleted.edge,following:liveCompleted.following,passiveOneX:liveOneX},
+    localPause,seekPause,sourceIdle,reentryCount:reentries.length,reentries,endpoints:endpoints.filter(e=>e.count===count),
+    shellErrorCount:errors.length,allNativeTransportsOpen:true};
+   reports.push(lifecycle);console.log(JSON.stringify(lifecycle));
+   for(let seat=0;seat<=count;seat++)try{await frame(seat).evaluate(()=>{Module._th15_loop_stop();Module._th15_mp_close();});}catch(error){cleanupWarnings.push('native runtime close seat '+seat+': '+String(error));}
+   await closeContexts();for(const socket of sockets.splice(0))try{socket.close();}catch(error){cleanupWarnings.push('lobby socket close: '+String(error));}
+   passReport={status:'PASS',buildIdentity,reports,httpFailures,cleanupWarnings};await writeFile(resolve(out,'report.json'),JSON.stringify(passReport,null,2)+'\n');
+   continue;
+  }
   const compare=async(f,target)=>{const sample=await f.evaluate(()=>{const p=Module._th15_mp_spectator_state(),state=JSON.parse(new TextDecoder().decode(Module.HEAPU8.subarray(p,Module.HEAPU8.indexOf(0,p)))),at=state.position,q=Module._th15_spectator_lab_network_state(at)>>>2;return {frame:at,state,actual:Array.from(Module.HEAPU32.subarray(q,q+16))};});
    if(target!==undefined)assert.equal(sample.frame,target,'canonical snapshot position');
    assert.equal(sample.actual[3],sample.frame,'canonical native frame must match captured playback position');
@@ -173,13 +253,24 @@ try{
   }
   assert.deepEqual(errors,[]);const row={count,fixtures,fullWaitingRoomObserver:true,lateJoin:true,pause:true,backwardSeek:true,stageTwoFuture600:fixtures,lateStageTwoFuture600:fixtures,automaticStageTwo,stageOneLiveSetup,play:true,live:true,followSamples,maxFollowLag,canonicalEquality:fixtures,endpoints,state:await read(viewer)};
   row.independentBrowserContexts=contexts.length;await pages.get(count).screenshot({path:resolve(out,count+'p.png'),fullPage:true});reports.push(row);console.log(JSON.stringify(row));
-  for(let seat=0;seat<options.length;seat++)await frame(seat).evaluate(()=>{Module._th15_loop_stop();Module._th15_mp_close();});for(const context of contexts)await context.close();for(const socket of sockets.splice(0))socket.close();
+  for(let seat=0;seat<options.length;seat++)try{await frame(seat).evaluate(()=>{Module._th15_loop_stop();Module._th15_mp_close();});}catch(error){cleanupWarnings.push('native runtime close seat '+seat+': '+String(error));}
+  await closeContexts();for(const socket of sockets.splice(0))try{socket.close();}catch(error){cleanupWarnings.push('lobby socket close: '+String(error));}
  }
- await writeFile(resolve(out,'report.json'),JSON.stringify({status:'PASS',buildIdentity,reports,httpFailures},null,2)+'\n');
+ passReport={status:'PASS',buildIdentity,reports,httpFailures,cleanupWarnings};await writeFile(resolve(out,'report.json'),JSON.stringify(passReport,null,2)+'\n');
 }catch(e){
  const snapshots=[];for(const page of browser?await browser.pages():[])for(const frame of page.frames()){
   try{snapshots.push({url:frame.url(),state:await frame.evaluate(()=>{if(!globalThis.Module)return null;const status=Module._th15_mp_status?.()>>>2,p=Module._th15_mp_spectator_state?.();return {status:Array.from(Module.HEAPU32.subarray(status,status+24)),state:p?JSON.parse(new TextDecoder().decode(Module.HEAPU8.subarray(p,Module.HEAPU8.indexOf(0,p)))):null,probe:Module.spectatorLabPlayback,error:document.querySelector('#error')?.textContent};})});}catch(error){snapshots.push({url:frame.url(),error:String(error)});}
  }
  await writeFile(resolve(out,'failure.json'),JSON.stringify({buildIdentity,endpointIdentity,httpFailures,error:String(e.stack||e),snapshots},null,2)+'\n');await writeFile(resolve(out,'failure.txt'),String(e.stack||e));throw e;
 }
-finally{await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.close();await writeFile(resolve(out,'relay.log'),relayLog);}
+finally{
+ const settle=async(label,action)=>{try{await action();}catch(error){cleanupWarnings.push(label+': '+String(error));}};
+ const pendingContexts=[...ownedContexts];ownedContexts.clear();
+ for(const context of pendingContexts)await settle('owned browser context close',()=>context.close());
+ await settle('browser close',async()=>{const active=browser;browser=null;await active?.close();});
+ for(const socket of sockets.splice(0))await settle('lobby socket close',()=>{if(socket.readyState<2)socket.close();});
+ await settle('relay stop',async()=>{if(relay.exitCode!==null||relay.signalCode!==null)return;await new Promise(resolve=>{const timer=setTimeout(resolve,2000);relay.once('exit',()=>{clearTimeout(timer);resolve();});try{relay.kill();}catch(error){clearTimeout(timer);cleanupWarnings.push('relay kill: '+String(error));resolve();}});if(relay.exitCode===null&&relay.signalCode===null)cleanupWarnings.push('relay stop timeout after 2000 ms');});
+ await settle('HTTP server close',()=>server.listening?new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve())):Promise.resolve());
+ await settle('relay log write',()=>writeFile(resolve(out,'relay.log'),relayLog));
+ if(passReport){passReport.cleanupWarnings=cleanupWarnings;await settle('final report update',()=>writeFile(resolve(out,'report.json'),JSON.stringify(passReport,null,2)+'\n'));}
+}
