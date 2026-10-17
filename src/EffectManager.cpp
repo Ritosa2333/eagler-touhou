@@ -741,6 +741,15 @@ u32 EffectManager::OnDraw(EffectManager *arg)
 
         for (i32 i = 0; i < count; i++)
         {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            bool remoteHitbox = false;
+            if (MultiplayerGameplay::IsMultiplayer())
+                for (u8 seat = 0; seat < TH07_MULTI_MAX_PLAYERS; ++seat)
+                    if (seat != MultiplayerGameplay::GetLocalPlayerSlot() &&
+                        active[i] == g_Players[seat].focusEffect && active[i]->effectId == 24)
+                        remoteHitbox = true;
+            if (remoteHitbox) continue;
+#endif
             active[i]->vm.pos = active[i]->prevPos.Lerp(active[i]->pos, g_RenderAlpha);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
             const ZunColor originalColor = active[i]->vm.color;
@@ -816,6 +825,15 @@ i32 EffectManager::DrawLayer1Effects()
 
     while (effect)
     {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bool remoteHitbox = false;
+        if (MultiplayerGameplay::IsMultiplayer())
+            for (u8 seat = 0; seat < TH07_MULTI_MAX_PLAYERS; ++seat)
+                if (seat != MultiplayerGameplay::GetLocalPlayerSlot() &&
+                    effect == g_Players[seat].focusEffect && effect->effectId == 24)
+                    remoteHitbox = true;
+        if (remoteHitbox) { effect = effect->next; continue; }
+#endif
         counter++;
         if (g_Supervisor.cfg.effectQuality == QUALITY_MEDIUM)
         {

@@ -229,6 +229,10 @@ void RestartEaglerHitboxVm()
 
 void UpdateEaglerHitboxVm(const Player *player)
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() &&
+        player->initParam != MultiplayerGameplay::GetLocalPlayerSlot()) return;
+#endif
     const bool nativeFocusEffect = player->focusEffect && player->focusEffect->inUseFlag &&
                                    player->focusEffect->effectId == 24;
     if (!EaglerOptions::AlwaysShowHitbox() || nativeFocusEffect)
@@ -253,6 +257,10 @@ void UpdateEaglerHitboxVm(const Player *player)
 
 void DrawEaglerHitboxVm(const Player *player)
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() &&
+        player->initParam != MultiplayerGameplay::GetLocalPlayerSlot()) return;
+#endif
     if (!g_EaglerHitboxVmActive || !EaglerOptions::AlwaysShowHitbox() ||
         g_GameManager.isInRetryMenu)
         return;
