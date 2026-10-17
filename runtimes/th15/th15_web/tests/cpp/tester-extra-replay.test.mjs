@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';import{resolve}from'node:path';import{core,memory,string,root,report,sha,target}from'./helpers.mjs';import{preloadStage}from'./stage-assets-fixture.mjs';
+test('Supplied Sanae Extra replay matches original stocks, drops, deaths and all boss phases',async()=>{
+ const bytes=readFileSync(resolve(root,'reference/replays/tester-extra-sanae.rpy')),raw=readFileSync(resolve(root,'reference/native/tester-extra-sanae-frames.bin'));
+ assert.equal(sha(bytes),'a0a6a00e3ed8a42eecc6de8722358ccb2633570cf942ae18a646e5fdde2d0d5c');assert.equal(sha(raw),'a8b1be7e174f52f524ff0c058d71c851fbac5e1d0d25ab599d1548c0bf14082c');assert.equal(target.sha256,'67a642357c8777089f468aab9c7a0ae346ebdb62849d842a7b7b18d1e6910364');
+ const samples=new Map();for(let at=0;at<raw.length;at+=80){const row=Array.from({length:20},(_,i)=>raw.readUInt32LE(at+i*4));assert.equal(row[0],7);samples.set(row[1],row);}
+ const c=await core(),p=c.allocate(bytes.length),out=c.allocate(64),asset=preloadStage(c,7,2),run=c.run_session_create(asset.fixture);memory(c,p,bytes.length).set(bytes);let checks=0;const milestones=[];
+ try{c.stage_assets_viewport(asset.fixture,128,16,320,16);assert.equal(c.run_session_load(run,7,2,p,bytes.length),1,string(c,c.run_session_error(run)));
+ for(let frame=1;frame<=Math.max(...samples.keys());frame++){
+  assert.equal(c.run_session_step_world(run),1,string(c,c.run_session_error(run)));const native=samples.get(frame);assert.ok(native,'no missing original frame '+frame);if(native[15]&0x800)continue;
+  c.run_session_world_state(run,out);const actual=Array.from(new Uint32Array(c.memory.buffer,out,14));assert.deepEqual(actual,native.slice(1,15),'Extra frame '+frame+' input/player/score/Miss/stocks/power/RNG/enemies/bullets');
+  const state=c.run_gameplay_field(run,1),score=c.run_gameplay_field(run,2),v=new DataView(c.memory.buffer),pieces=[v.getInt32(state+4,true),v.getInt32(state+40,true),v.getInt32(score+40,true)];assert.deepEqual(pieces,native.slice(17,20),'Extra frame '+frame+' life/Bomb pieces and extend tier');checks++;
+  if(frame===10405||native[6]===3014003&&!milestones.some(s=>s.displayedScore===30140030))milestones.push({frame,displayedScore:native[6]*10,lives:actual[7],bombs:actual[9],pieces});
+ }assert.equal(checks,40860);report('tester-extra-replay',{passed:true,coreWasmSha256:sha(readFileSync(resolve(root,'artifacts/cpp/game-core-test.wasm'))),replaySha256:sha(bytes),traceSha256:sha(raw),originalExecutableSha256:target.sha256,checks,milestones,firstPreviouslyFailingFrame:10405,scope:'Actual supplied th15_01.rpy, Sanae/Extra/Legacy, with natural life and no invulnerability. Atomic original-process captures retain original update/draw callbacks; only window presentation/wait outputs are suppressed. Every active frame through the input stream compares 14 gameplay fields plus life pieces, Bomb pieces and extend tier. Includes the screenshot score and post-midboss reward. Terminal input marker and browser presentation are separate checks.'});
+ }finally{c.run_session_delete(run);asset.close();c.release(out);c.release(p);}
+});

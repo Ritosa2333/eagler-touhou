@@ -1,0 +1,47 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';import {core,oracle,memory,string,root,report,enableNativeMath} from './helpers.mjs';import {resourceLoader,nativePool,nativeInstances,prepareBank,compareAnm} from './anm-oracle.mjs';
+test('TH15 complete HUD frame logic preserves original countdown, boss rings, markers, stars, indicators and timers',async()=>{
+ const c=await core(),m=await oracle();enableNativeMath(m);const loader=resourceLoader(m),base=m.heap;let checks=0,frames=0;
+ try{for(let sample=0;sample<12;sample++){
+ m.heap=base;m.view(m.heap,0x1caf980).fill(0);const am=c.anm_manager_create(),nm=nativePool(m),owner=m.allocate(0x2d4),manager=m.allocate(0x190),player=m.allocate(0x2c048),scene=m.allocate(0xc0),spell=m.allocate(0x90),definition=m.allocate(0xd4),text=m.allocate(0x19270),entities=[m.allocate(0x5780),m.allocate(0x5780)],nodes=[m.allocate(12),m.allocate(12)],dialogue=m.allocate(0x30),f=c.game_hud_create(am,5,2,6);let sounds=[];
+ try{
+ for(const[p,n]of[[owner,0x2d4],[manager,0x190],[player,0x2c048],[scene,0xc0],[spell,0x90],[definition,0xd4],[text,0x19270],...entities.map(p=>[p,0x5780]),...nodes.map(p=>[p,12]),[dialogue,0x30]])m.view(p,n).fill(0);
+ for(const[address,p]of[[0x4e9a8c,owner],[0x4e9a94,scene],[0x4e9bb8,player],[0x4e9a70,spell],[0x4e9bd8,definition],[0x4e9a58,text],[0x4ca620,0x4e73e8]])m.u32(address,p);m.f32(0x4e73e8,1);m.view(0x4e73f0,0x400).fill(0);m.u32(0x4e9a40,0);m.u32(0x4e9a44,0);
+ m.replace(0x476360,'observe HUD queued sounds',()=>{sounds.push(m.u32(m.reg('ESP')+4));return 0;},2);m.replace(0x437ef0,'separately verified dialogue update boundary',()=>1);m.replace(0x433810,'separately verified dialogue cleanup boundary',()=>0);
+ for(const[name,id]of[['ascii.anm',2],['front.anm',5],['st01logo.anm',6]]){const b=readFileSync(resolve(root,'reference/assets',name)),p=c.allocate(b.length);memory(c,p,b.length).set(b);assert.equal(c.anm_manager_load(am,id,p,b.length),1,string(c,c.anm_manager_error(am)));c.release(p);const bank=prepareBank(m,loader,name,b,nm,id);if(id===2){c.anm_manager_fallback(am,id);m.u32(text+0x19258,bank);}else m.u32(owner+(id===5?0x2c8:0x168),bank);}
+ const field=id=>c.game_hud_frame_field(f,id),dv=()=>new DataView(c.memory.buffer);const integer=(p,np,value)=>{dv().setInt32(p,value,true);m.i32(np,value);},floating=(p,np,value)=>{dv().setFloat32(p,value,true);m.f32(np,value);};
+ integer(c.game_hud_field(f,0),0x4e73f0,1);integer(c.game_hud_field(f,0)+24,0x4e7410,1);m.i32(0x4e7ecc,8);m.u32(0x4e7ed8,1);for(const[off,np]of[[0,0x4e7450],[4,0x4e7454],[24,0x4e7794],[36,0x4e745c],[40,0x4e7460]])m.u32(np,dv().getUint32(c.game_hud_field(f,1)+off,true));assert.equal(c.game_hud_initialize(f,8),1,string(c,c.game_hud_error(f)));m.call(0x4340d0);integer(field(0),owner+0x1c8,-1);m.i32(owner+0x1c0,-1);m.write(owner+0x144,memory(c,field(5),20));
+ m.u32(manager+0x180,nodes[0]);for(let i=0;i<2;i++){m.u32(nodes[i],entities[i]);m.u32(nodes[i]+4,i?0:nodes[1]);}
+ // Seed the same declared health markers; no game logic is substituted.
+ for(let i=0;i<3;i++)for(let j=2;j<6;j++){const value=Math.fround([.95,.7,.4,.1][j-2]);floating(field(1)+i*84+j*8,owner+0x1cc+i*84+j*8,value);}
+ const initialFlags=sample%3===0?0x900:sample%3===1?0x800:0;integer(c.game_hud_field(f,11),owner+0x19c,initialFlags);const timer=c.game_hud_field(f,12);const age=Buffer.alloc(20);age.writeInt32LE(87);age.writeInt32LE(88,4);age.writeFloatLE(88,8);age.writeUInt32LE(1,16);memory(c,timer,20).set(age);m.write(owner+0x1a0,age);
+ const result=Buffer.alloc(24);result.writeFloatLE(3.5);result.writeFloatLE(17.5,4);result.writeInt32LE(12000,8);result.writeInt32LE(1000,12);result.writeInt32LE(375,16);result.writeInt32LE(108,20);memory(c,field(6),24).set(result);m.write(owner+0x124,result.subarray(0,20));m.i32(owner+0x1b4,108);integer(field(9),owner+0x13c,1);
+ const compare=label=>{
+ for(const[cp,np,n,what]of[[c.game_hud_draw_field(f,8),owner+0x110,4,'stage clear notice'],[c.game_hud_draw_field(f,2),owner+0x2cc,4,'clear bonus'],[c.game_hud_field(f,2),0x4e740c,4,'score'],[c.game_hud_field(f,11),owner+0x19c,4,'flags'],[c.game_hud_field(f,12),owner+0x1a0,20,'intro timer'],[field(0),owner+0x1c8,4,'previous countdown'],[field(3),owner+0xdc,40,'stars'],[field(4),owner+0xd8,4,'name banner'],[field(5),owner+0x144,20,'frame age'],[field(6),owner+0x124,20,'result'],[field(8),owner+0x118,4,'tutorial'],[field(9),owner+0x13c,4,'tutorial state']]){assert.deepEqual(Buffer.from(memory(c,cp,n)),Buffer.from(m.bytes(np,n)),label+' '+what);checks++;}
+ for(let i=0;i<3;i++){assert.deepEqual(Buffer.from(memory(c,field(1)+i*84,48)),Buffer.from(m.bytes(owner+0x1cc+i*84,48)),label+' health track '+i);checks++;}
+ for(let i=0;i<2;i++){const p=field(2)+i*36;for(const[offset,no,n]of[[0,0x1fc,28],[28,0x218,4],[32,0x21c,4]])assert.deepEqual(Buffer.from(memory(c,p+offset,n)),Buffer.from(m.bytes(owner+i*84+no,n)),label+' ring '+i+'/'+offset);checks+=3;}
+ for(let alt=0;alt<2;alt++){const list=nativeInstances(m,nm,alt);assert.equal(c.anm_manager_count(am,alt),list.length,label+' queue '+alt);list.forEach((np,i)=>{const h=m.u32(np+0x544);assert.equal(c.anm_manager_order(am,alt,i)>>>0,h,label+' order');const vm=c.anm_manager_find(am,h);compareAnm(c,m,vm,np,label+' VM '+i);assert.deepEqual(Buffer.from(memory(c,c.anm_vm_translation(vm),12)),Buffer.from(m.bytes(np+0x5ec,12)),label+' translation '+i);assert.equal(c.anm_vm_pending_interrupt(vm),m.i32(np+0x49c),label+' label '+i);assert.deepEqual(Buffer.from(memory(c,c.anm_vm_age(vm),20)),Buffer.from(m.bytes(np+0x560,20)),label+' ANM age '+i);checks++;});}
+ assert.deepEqual(Buffer.from(memory(c,c.anm_manager_random(am),8)),Buffer.from(m.bytes(0x4e9a40,8)),label+' RNG');
+ };
+ for(let frame=0;frame<96;frame++){
+ const rate=[1,.5,1.25,.25][sample%4],hasManager=!(frame<3&&sample%2===0),bossFlags=frame%17===0?0x21:frame%19===0?1:0,managerFlags=frame%23===0?1:0,dialogueActive=frame%13===0,seconds=[99,40,10,9,5,4,3,2,1,0,-1][frame%11],chapter=frame<32?20:43;const spellFlags=(sample%2?1:0)|((frame%16<8)?0:0x100);
+ m.u32(0x4e9a80,hasManager?manager:0);integer(field(11),manager+0x88,managerFlags);integer(field(12),owner+0x1c0,seconds);integer(c.game_hud_field(f,0)+4,0x4e73f8,chapter);integer(c.game_hud_field(f,0)+96,scene+0x90,frame%31===0?0x10000:0);integer(field(14),spell+0x78,spellFlags);dv().setUint8(field(15),dialogueActive?1:0);m.u32(owner+0x1b8,dialogueActive?dialogue:0);
+ const point=[Math.fround(frame%16<8?-80:0),Math.fround(frame%12<6?410:380),0];for(let i=0;i<3;i++)floating(field(13)+i*4,player+0x618+i*4,point[i]);integer(field(16),definition+0x58,sample%7);integer(field(16)+4,definition+0x80,-1);
+ integer(field(10),owner+0x178,[0,2,10,1,3,2][Math.floor(frame/8)%6]);
+ for(let i=0;i<2;i++){
+ const id=(i===0&&frame>=70)||(i===1&&frame<10)?0:i+1,x=Math.fround(i?-120+(frame%21)*4:-96+(frame%49)*4),y=Math.fround(100+i*32),z=Math.fround(i*.125),life=frame%29===0?150000:Math.max(1,(i?6000:4000)-frame*50),initial=6000,phase=[2500,1500,800,300,100,800][Math.floor(frame/3)%6],collision=frame%37===0?1:0;
+ c.game_hud_frame_enemy(f,i,id,x,y,z,life,initial,phase,bossFlags,collision);m.u32(manager+0x48+i*4,id);m.u32(entities[i]+0x5740,id);for(const[off,v]of[[0x1250,x],[0x1254,y],[0x1258,z]])m.f32(entities[i]+off,v);for(const[off,v]of[[0x5180,life],[0x5184,initial],[0x5188,phase],[0x526c,bossFlags],[0x5208,collision]])m.i32(entities[i]+off,v);
+ }
+ m.f32(0x4e73e8,rate);sounds=[];
+ if(frame%13===0){assert.equal(c.game_hud_name_banner(f),1,string(c,c.game_hud_error(f)));m.call(0x43aa60,{ecx:owner});compare(sample+'/'+frame+' dialogue name banner');}
+
+ if(frame===4||frame===5){assert.equal(c.game_hud_prepare_spell(f,frame===4?1:0),1,string(c,c.game_hud_error(f)));m.call(frame===4?0x41f920:0x41f9a0);}
+ if(frame===14){integer(c.game_hud_field(f,2),0x4e740c,sample%2?999999999:sample*123456);assert.equal(c.game_hud_stage_clear(f),1,string(c,c.game_hud_error(f)));m.call(0x43a590);}
+ if(frame===26){assert.equal(c.game_hud_clear_intro(f),1,string(c,c.game_hud_error(f)));m.call(0x43a6f0);}
+ if(frame===86){assert.equal(c.game_hud_reset(f),1,string(c,c.game_hud_error(f)));m.call(0x434bd0);}
+ assert.equal(c.game_hud_frame_update(f,hasManager,1,rate),1,sample+'/'+frame+' '+string(c,c.game_hud_error(f)));assert.equal(m.call(0x435370,{ecx:owner}),1);assert.deepEqual(Array.from(new Int32Array(c.memory.buffer,c.game_hud_frame_sounds(f),c.game_hud_frame_sound_count(f))),sounds,sample+'/'+frame+' sound order');compare(sample+'/'+frame+' update');for(let alt=0;alt<2;alt++){assert.equal(c.anm_manager_update(am,alt,rate),1,string(c,c.anm_manager_error(am)));m.call(alt?0x487890:0x487740,{ecx:nm});}compare(sample+'/'+frame+' animation');frames++;
+ }
+ }finally{c.game_hud_delete(f);c.anm_manager_delete(am);}
+ }
+ report('game-hud-frame',{passed:true,scenarios:12,frames,checks,originalFunctions:['0x435370','0x43aa60','0x43b0f0','0x43b490','0x43b4c0','0x43b4f0','0x41f920','0x41f9a0','0x43a590','0x43a6f0','0x434bd0'],scope:'Original full HUD callback with actual front/ascii/logo ANM, countdown digits/labels/sound order/hysteresis, two boss ring objects and health markers, dim proximity, stars/name banner, point-device position/alpha/life cues, intro/result counters and timers, actual spell countdown transitions, stage-clear score/notice/cap and retry retirement. Dialogue update/free remains a separately verified component boundary. GPU drawing and complete session remain separate.'});
+ }finally{m.close();}
+});

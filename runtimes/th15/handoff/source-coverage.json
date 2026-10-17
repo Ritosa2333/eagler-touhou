@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "missing": [],
+  "scope": "All TH15 C++ / runtime / launcher / scripts / tests; shared SDL3/input; source hashes match published build"
+}
