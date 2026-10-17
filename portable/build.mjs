@@ -35,7 +35,7 @@ const shared=resolve(workspace,'portable/sdl'),numeric=resolve(workspace,'portab
 function headers(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headers(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);}
 const capturedInputs=new Map();
 function observed(path){const bytes=readFileSync(path),digest=createHash('sha256').update(bytes).digest('hex');if(capturedInputs.has(path)&&capturedInputs.get(path)!==digest)throw Error('Source changed during build; rebuild: '+path);capturedInputs.set(path,digest);return bytes;}
-const dialogueHeaders=[resolve(process.env.EAGLER_COMMON_ROOT||resolve(workspace,'../../common'),'include/eagler/input/DialogueGesture.hpp')];
+const dialogueHeaders=[resolve(process.env.EAGLER_COMMON_ROOT||resolve(workspace,'../../common'),'include/eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp')];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...commonThpracHeaders,...dialogueHeaders].sort())hash.update(path).update(observed(path));
 const flags=[...common,...(thcrap?['-DTH_ENABLE_THCRAP=1']:[]),'-std=c++17','-fno-exceptions','-fno-rtti'],prefix=JSON.stringify([flags,hash.digest('hex')]);
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
