@@ -22,7 +22,7 @@ APP_EXPORT("application_ending") Ending* application_ending(browser::Application
 APP_EXPORT("application_startup") StartupScreen* application_startup(browser::Application* app){return app->startup_view;}
 APP_EXPORT("application_stop") void application_stop(browser::Application* app){app->state.pending_screen=3;}
 APP_EXPORT("application_touch_target") void application_touch_target(browser::Application* app,i32 mode,float x,float y){if(app&&app->world)app->world->motion.target(mode,x,y);}
-APP_EXPORT("application_touch_display") void application_touch_display(browser::Application* app,i32 hitbox){if(app&&app->world)app->world->always_hitbox=hitbox!=0;}
+APP_EXPORT("application_touch_display") void application_touch_display(browser::Application* app,i32 hitbox){if(!app)return;app->always_hitbox=hitbox!=0;if(app->world)app->world->always_hitbox=app->always_hitbox;}
 APP_EXPORT("application_original_options") void application_original_options(browser::Application* app,i32 faith_bar,i32 hints){
     if(!app)return;
     // custom.exe's overhead gauge is bit 7 of the original display flags.

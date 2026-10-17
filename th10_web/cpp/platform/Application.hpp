@@ -82,6 +82,7 @@ struct Application final:CallbackReceiver {
     double presentation_origin=0;u32 presentation_frames=0;float presentation_fps=0;
     i32 reset_frames=0,loading_pause=0,disable_vsync=0,error=0,notice_code=-1,screenshot_error=0;
     bool stopped=false,writer_pending=false,initialized=false;
+    bool always_hitbox=false;
     AppScreens screens;AppFrames frames;AppLoop loop;AppStatistics rates;AppPresentation presentation;AppScreenshot screenshots;AppConfiguration config;
     Application(FileSystem&,Input&,GameState&,AnimationEngine&,Fonts&,Audio&,ScreenEffects&);
     ~Application();bool initialize();i32 step(bool scheduled_tick=false);bool presentation_draw(float alpha,bool interpolate,bool world_interpolate=true);void presentation_frame();void save();void shutdown();
