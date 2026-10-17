@@ -14,7 +14,7 @@ from rollback_testkit import barrier, call, fixture, net, submit, tick
 parser = argparse.ArgumentParser()
 parser.add_argument('--url', default='http://127.0.0.1:8140/')
 parser.add_argument('--output', default='artifacts/multiplayer-tests/replay-native.json')
-parser.add_argument('--cases', choices=('roundtrip', 'lifecycle', 'all'), default='all')
+parser.add_argument('--cases', choices=('record', 'roundtrip', 'lifecycle', 'all'), default='all')
 parser.add_argument('--input-profile', choices=('keyboard', 'analog'), default='keyboard')
 parser.add_argument('--players', choices=('2', '3', 'all'), default='all')
 parser.add_argument('--lags', choices=('0', '4', 'all'), default='all')
@@ -233,7 +233,7 @@ def record_retry(test, players):
 with fixture(args.url, report, args.output) as test:
     selected_players = (2, 3) if args.players == 'all' else (int(args.players),)
     selected_lags = (0, 4) if args.lags == 'all' else (int(args.lags),)
-    for players in (selected_players if args.cases in ('roundtrip', 'all') else ()):
+    for players in (selected_players if args.cases in ('record', 'roundtrip', 'all') else ()):
         data, trace, final = record(test, players=players)
         for lag in selected_lags:
             if lag:
@@ -247,7 +247,8 @@ with fixture(args.url, report, args.output) as test:
             path.write_bytes(bytes(data))
             case['replayFile'] = str(path)
             report['cases'].append(case)
-            case.update(viewer(test, data, trace))
+            if args.cases=='record':case['recordingOnly']=True
+            else:case.update(viewer(test, data, trace))
             case['passed'] = True
             print(json.dumps(case), flush=True)
         test.close_contexts()
