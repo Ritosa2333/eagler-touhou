@@ -1,10 +1,10 @@
 """Exercise selected-file Replay through the real TH06/TH07 shell protocol."""
-import argparse, hashlib, json, threading
+import argparse, hashlib, json, threading, time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-p=argparse.ArgumentParser();p.add_argument('--game',choices=['th06','th07'],required=True);p.add_argument('--variant',default='normal');p.add_argument('--fixture');p.add_argument('--fixtures',type=Path);p.add_argument('--eof',action='store_true');p.add_argument('--workspace',type=Path,default=Path('D:/workspace/eagler'));p.add_argument('--output',type=Path,required=True)
-a=p.parse_args();root=a.workspace;build=root/(a.game+'-eagler')/('build-web-release-'+a.variant)
+p=argparse.ArgumentParser();p.add_argument('--game',choices=['th06','th07'],required=True);p.add_argument('--variant',default='normal');p.add_argument('--fixture');p.add_argument('--fixtures',type=Path);p.add_argument('--eof',action='store_true');p.add_argument('--seek-benchmark',type=int,default=0);p.add_argument('--runtime-dir',type=Path);p.add_argument('--workspace',type=Path,default=Path('D:/workspace/eagler'));p.add_argument('--output',type=Path,required=True)
+a=p.parse_args();root=a.workspace;build=a.runtime_dir or root/(a.game+'-eagler')/('build-web-release-'+a.variant)
 host='''<!doctype html><iframe id="runtime" width="640" height="480"></iframe><script>
 const game=GAME,frame=document.querySelector('iframe'),pending=new Map();let serial=0;window.errors=[];
 window.send=(command,payload={})=>new Promise((resolve,reject)=>{const request=String(++serial);pending.set(request,{resolve,reject});setTimeout(()=>{if(pending.delete(request))reject(Error(command+' timeout'));},30000);frame.contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:1,command,request,...payload},location.origin);});
@@ -50,10 +50,30 @@ with sync_playwright() as pw:
    print(a.game+' rewind',flush=True)
    page.evaluate('send("playback",{action:"seek",value:20})');page.wait_for_function('!playback.seeking&&playback.frame===20||errors.length',timeout=60000);assert page.evaluate('!errors.length'),page.evaluate('errors')
    page.evaluate('send("playback",{action:"rate",value:4})');page.evaluate('send("playback",{action:"play"})');page.wait_for_function('playback.frame>=120',timeout=60000)
+   benchmark=None
+   if a.seek_benchmark:
+    page.evaluate('send("playback",{action:"pause"})');page.evaluate('send("playback",{action:"seek",value:20})');page.wait_for_function('!playback.preparing&&!playback.seeking&&playback.frame===20',timeout=60000)
+    native.evaluate('''() => {
+     window.seekProfile={steps:0,renderedSteps:0,stepMs:0,presents:0,presentMs:0};
+     const originals=[];window.restoreSeekProfile=()=>{for(const [key,fn] of originals)Module[key]=fn;};
+     for(const [name,count,duration] of [['eagler_replay_step','steps','stepMs'],['eagler_replay_present','presents','presentMs']]) {
+      const key='_'+name,original=Module[key];if(!original)continue;originals.push([key,original]);
+      Module[key]=(...args)=>{const start=performance.now();try{return original(...args);}finally{seekProfile[count]++;seekProfile[duration]+=performance.now()-start;if(name==='eagler_replay_step'&&args[0])seekProfile.renderedSteps++;}};
+     }
+    }''')
+    start=time.perf_counter();page.evaluate('value=>send("playback",{action:"seek",value})',a.seek_benchmark);page.wait_for_function('value=>!playback.preparing&&!playback.seeking&&playback.frame===value||errors.length',arg=a.seek_benchmark,timeout=180000)
+    assert page.evaluate('!errors.length'),page.evaluate('errors');elapsed=(time.perf_counter()-start)*1000
+    # Compare the actual paused playfield, excluding wall-clock FPS/HUD text.
+    screenshot=native.locator('#canvas').screenshot();image_path=a.output.with_name(a.output.stem+'-'+fixture_path.stem+'.png');image_path.parent.mkdir(parents=True,exist_ok=True);image_path.write_bytes(screenshot)
+    from PIL import Image
+    import io
+    image=Image.open(io.BytesIO(screenshot)).convert('RGBA');pixels=image.crop((32,16,416,464)).tobytes()
+    benchmark={'start':20,'target':a.seek_benchmark,'elapsedMs':round(elapsed,2),'playfieldSha256':hashlib.sha256(pixels).hexdigest(),'paused':page.evaluate('playback.paused'),'native':native.evaluate('() => {const result=seekProfile;restoreSeekProfile();return result;}')}
+    print(a.game+' seek benchmark '+json.dumps(benchmark),flush=True)
    if a.eof:
     deadline=max(60000,page.evaluate('playback.total')*50+15000)
-    page.evaluate('send("playback",{action:"rate",value:0})');page.wait_for_function('playback.ended||errors.length',timeout=deadline);assert page.evaluate('!errors.length'),page.evaluate('errors');assert page.evaluate('playback.frame===playback.total&&playback.total>0'),page.evaluate('playback')
-   report['files'].append({'fixture':fixture,'description':description,'playback':page.evaluate('playback')})
+    page.evaluate('send("playback",{action:"rate",value:0})');page.evaluate('send("playback",{action:"play"})');page.wait_for_function('playback.ended||errors.length',timeout=deadline);assert page.evaluate('!errors.length'),page.evaluate('errors');assert page.evaluate('playback.frame===playback.total&&playback.total>0'),page.evaluate('playback')
+   report['files'].append({'fixture':fixture,'description':description,'playback':page.evaluate('playback'),**({'seekBenchmark':benchmark} if benchmark else {})})
   assert not page_errors,page_errors;report['passed']=True
  except Exception as e:
   report['failure']=str(e);report['nativeError']=native.evaluate('typeof Module._eagler_replay_error==="function"?UTF8ToString(Module._eagler_replay_error()):"no native error export"');report['state']=page.evaluate('({playback:window.playback,errors})');report['pageErrors']=page_errors;raise

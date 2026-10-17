@@ -232,6 +232,16 @@ event, before retiring the original loop. A paused seek to zero must finish
 native initialization before clearing its seek target. MP stages may have a
 nonzero native input offset; keep transport time relative to that start.
 
+Seek reconstruction uses bounded message tasks instead of waiting for another
+display refresh after every batch. Keep each native fixed tick and authored
+Draw, including offscreen rendering and capture requests. TH06/TH07 optionally
+coalesce only backend window swaps through `eagler_replay_present`; do not skip
+their native `GameWindow::Present`, which also owns capture and game state.
+Present the completed target before clearing the seek status, preserving the
+user's pause/rate. Hidden viewers yield and closing cancels queued work.
+Measure the actual browser/device: software GPU rendering can dominate even
+when JavaScript/native execution no longer waits for RAF.
+
 TH06/TH07 external native file reads require the full absolute preference path.
 Their workspace adapter must also stop at the native recorded-input boundary:
 a partial run can exhaust its recording while gameplay still remains active.

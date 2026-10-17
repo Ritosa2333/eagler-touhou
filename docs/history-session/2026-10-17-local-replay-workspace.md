@@ -2,7 +2,8 @@
 
 Work stays in the existing Launcher checkout
 `worktrees/launcher-th09-spectator-main` and each title's existing source owner.
-No new worktrees, commits, pushes or deployment were requested or performed.
+No new worktrees, pushes or deployment were performed. Replay-only local
+commits were subsequently requested and are recorded below.
 Concurrent spectator, font and monorepo work is retained.
 
 ## Behavior
@@ -149,3 +150,113 @@ were not rewritten as part of this task.
 
 This shared loading/storage/presentation experience belongs in the common
 playbook; the precise per-build PASS and remaining gaps stay in this record.
+
+## Seek reconstruction follow-up
+
+The requested speed concerns reconstructing a chosen position, independently
+of the user's playback rate. The previous controller already ran unthrottled
+native work within each 8 ms batch, but waited for RAF before every next batch.
+The shared controller now continues seeks through bounded MessageChannel tasks,
+cancels queued work on commands/close, and preserves the pause/rate at the
+completed target. Hidden viewers still yield. All eight generated carriers
+pass the explicit path-based synchronization check. All eight common bridge
+tests pass, including exact paused target presentation, bounded work without
+RAF, and cancellation of a queued seek.
+
+TH06/TH07 additionally defer only backend window swaps during accelerated
+batches, then expose the complete latest framebuffer through the optional
+`eagler_replay_present` ABI. `include/eagler/replay/Presentation.hpp` owns the
+scoped flag. Native Calc, authored Draw, offscreen rendering, capture requests
+and `GameWindow::Present` side effects still execute on every native tick.
+Skipping the Draw chain is unsafe: it can advance authored state and request
+screenshots. Normal 1x playback retains its original presentation cadence.
+
+Final rebuilt binaries and focused checks:
+
+| Product | Observed check | WASM SHA-256 |
+| --- | --- | --- |
+| TH06 ordinary | Original Stage 4 Demo, pause, backward seek 20 and exact paused target 3600; cropped target pixels equal the old build | `1cb5f684afc46e3a7c1e4b5b59a20ce7fefb9537d9c7ba4d606949b977bcb5b6` |
+| TH07 ordinary | Original Stage 3 Demo, pause, backward seek 20 and exact paused target 3600 | `fde5c6391ae7f9a6745f6963ff938bd8d63a2a1038a7279cae3fc29d169f3f60` |
+| TH06 MP | Real native 2P/3P recordings, pause, backward seek 20, rate and EOF | `9c7c038f5f003dcf10e415550d80954df1ce48aa275886638b99758d22d850f8` |
+| TH07 MP | Real native 2P/3P recordings, pause, backward seek 20, rate and EOF | `842db874782637485fa7125190c6b97f09cfaf25360725bee6ad5aa530ceca05` |
+
+Reports are `seek-profile-th06.json`, `seek-after-th07.json`,
+`seek-th06mp-native.json` and `seek-th07mp-native.json` under the ignored
+`artifacts/replay-workspace/` directory. TH11 also passes all four original
+Demos with the new shared controller and its existing production WASM
+(`seek-th11-native.json`), exercising an adapter without the optional swap ABI.
+
+Performance measurements are device-specific. The TH06 software-rendered
+baseline took 37400.11 ms from frame 20 to 3600. New runs took 57958.19 ms and
+29382.73 ms, so these samples do not establish a stable headless speedup ratio.
+The profiled new run consumed exactly 3580 native ticks, with 1093.1 ms inside
+native step calls and 137 explicit presentations (5.3 ms inside those calls);
+asynchronous browser/software GPU work remains outside those call timings.
+The old and both new target playfields have SHA-256
+`e704e17eff9cc79b0e858cd4d44d5f92599d70cbf308f947253a6b36f1978540`
+for RGBA pixels cropped to `(32,16,416,464)`, excluding wall-clock FPS/HUD.
+This is target visual equality, not a full world-state determinism proof.
+The benchmark starts at native frame 20: TH06 initialization can consume its
+first input tick, so it does not establish a paused initialized frame-0 stop.
+
+The real full React/native preview at `http://127.0.0.1:28134/?game=th06`
+was refreshed with these binaries. In the Codex in-app browser, a user-control
+seek from frame 20 to 3600 took 2375 ms including UI dispatch/completion wait.
+It remained paused at 1x. Seeking to the real EOF 4856 stopped correctly, and
+backward reconstruction from EOF reached 3600 again. The preserved screenshot
+is `artifacts/replay-preview/seek-preview.jpg`. This local browser observation
+does not promise the same speed on other devices or software renderers.
+
+## Local commit record
+
+The existing Launcher history already contains the main Replay UI, protocol,
+storage, metadata and browser test integration. This follow-up commits the
+remaining native adapters, shared controller, seek optimization and evidence.
+Concurrent spectator, hitbox, font and other source edits remain in the working
+trees. Native carriers were selected without their spectator additions. The
+TH11 MP import path creates its destination folder before the existing atomic
+write/rename, avoiding a second write after the rename.
+
+| Repository | Replay commit |
+| --- | --- |
+| eagler-common main | `2277494` |
+| th06-eagler | `5a54951` |
+| th07-eagler | `efc3bb0` |
+| th08-eagler | `e429a9d` |
+| th10-eagler | `a816a02` |
+| worktrees/th10-multiplayer | `6618860` |
+| th11-eagler | `1f48d2a` |
+| worktrees/th11-multiplayer | `b06dfb3` |
+| th15-eagler | `3bdcb40` |
+
+Each title keeps its previous committed shared-dependency baseline. The
+compatibility commits add exactly the same six Replay files, without importing
+other pending dependency upgrades:
+
+| Previous common pin | Replay pin | Local common ref |
+| --- | --- | --- |
+| `edcd08e` | `2277494` | `refs/heads/main` |
+| `295e54e` | `6d0fc4c` | `refs/heads/replay-workspace-295e54e` |
+| `858e4c2` | `525332b` | `refs/heads/replay-workspace-858e4c2` |
+| `6234585` | `6b71f7e` | `refs/heads/replay-workspace-6234585` |
+| `84b5eae` | `6e6b626` | `refs/heads/replay-workspace-84b5eae` |
+
+The compatibility refs are retained in `eagler-common`; their objects were
+fetched into the relevant submodule repositories before committing parent
+pins. Existing submodule checkouts were preserved for parallel work, so their
+dirty state can remain. Future push work must include the referenced common
+commits/refs. No push was requested.
+
+Final checks cover all eight committed carrier blocks, their script syntax,
+the common bridge's eight passing tests, and the focused native/browser
+evidence above. These control checks do not establish retail golden acceptance.
+TH15's existing CRLF convention was preserved in the committed BrowserRuntime
+and MP bridge to keep unrelated line-ending changes out.
+
+The local TH10 preview was added using the canonical packager, which verified
+native source/build identities before packaging WASM
+`91ab999fb2b1029a607e34221ca142c772268d4d34bf1041e6c567373cdd7ab5`.
+The real React/native page imported the original `demo0.rpy`, displayed
+ZUN / Reimu B / Lunatic / STAGE 5, and paused at native frame 3600. A UI seek
+from frame 312 to 3600 took 1734 ms in the in-app browser. The preview's private
+DATA, Demo files and screenshots remain ignored local artifacts.
