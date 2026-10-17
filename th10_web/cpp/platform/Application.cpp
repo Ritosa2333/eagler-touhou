@@ -122,7 +122,7 @@ void Application::sync_views(){
 }
 bool Application::ensure_world(){
     if(world)return true;if(!startup||!startup->shared||!startup->scores){error=-2;return false;}
-    world=create<World>(state,engine,*startup->shared,fonts,input,audio,*startup->scores,effects);if(!world)error=-1;return world!=nullptr;
+    world=create<World>(state,engine,*startup->shared,fonts,input,audio,*startup->scores,effects);if(!world)error=-1;else world->always_hitbox=always_hitbox;return world!=nullptr;
 }
 void Application::advance_loading(){
     if(startup)startup->advance_loading();sync_views();
