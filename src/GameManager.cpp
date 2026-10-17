@@ -323,6 +323,7 @@ ZunResult GameManager::RegisterChain()
 
 ZunResult GameManager::AddedCallback(GameManager *mgr)
 {
+    std::printf("spectator-debug GM added begin cur=%d wanted=%d stage=%d rng=%u\n", g_Supervisor.curState, g_Supervisor.wantedState, mgr->currentStage, static_cast<unsigned>(g_Rng.seed));
     ScoreDat *scoredat;
     u32 clrdIdx;
     u32 catkCursor;
@@ -462,7 +463,9 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         }
     }
     g_Supervisor.LoadPbg3(CM_PBG3_INDEX, TH_CM_DAT_FILE);
+    std::printf("spectator-debug GM cm loaded stage=%d\n", mgr->currentStage);
     g_Supervisor.LoadPbg3(ST_PBG3_INDEX, TH_ST_DAT_FILE);
+    std::printf("spectator-debug GM st loaded stage=%d\n", mgr->currentStage);
     if (g_GameManager.isInReplay == 1)
     {
         if (ReplayManager::RegisterChain(1, (char *)g_GameManager.replayFile) != ZUN_SUCCESS)
@@ -534,12 +537,14 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_STAGE);
         return ZUN_ERROR;
     }
+    std::printf("spectator-debug GM stage registered stage=%d\n", mgr->currentStage);
 
     if (Player::RegisterChain(0) != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_PLAYER);
         return ZUN_ERROR;
     }
+    std::printf("spectator-debug GM p0 registered stage=%d\n", mgr->currentStage);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::IsMultiplayer())
     {
@@ -560,27 +565,32 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_BULLETMANAGER);
         return ZUN_ERROR;
     }
+    std::printf("spectator-debug GM bullets registered\n");
     if (EnemyManager::RegisterChain(g_AnmStageFiles[mgr->currentStage].file1,
                                     g_AnmStageFiles[mgr->currentStage].file2) != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_ENEMYMANAGER);
         return ZUN_ERROR;
     }
+    std::printf("spectator-debug GM enemies registered\n");
     if (g_EclManager.Load(g_EclFiles[mgr->currentStage]) != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_ECLMANAGER);
         return ZUN_ERROR;
     }
+    std::printf("spectator-debug GM ECL loaded\n");
     if (EffectManager::RegisterChain() != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_EFFECTMANAGER);
         return ZUN_ERROR;
     }
+    std::printf("spectator-debug GM effects registered\n");
     if (Gui::RegisterChain() != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_GUI);
         return ZUN_ERROR;
     }
+    std::printf("spectator-debug GM GUI registered\n");
     if (g_GameManager.isInReplay == 0)
     {
         ReplayManager::RegisterChain(0, "replay/th6_00.rpy");

@@ -232,6 +232,9 @@ static ChainCallbackResult StartNetplayGame(MainMenu *menu)
     g_GameManager.demoFrames = 0;
 
     g_Rng.Initialize(static_cast<u16>(requestedSeed));
+#ifdef TH_ENABLE_NETPLAY
+    Netplay::Th06LanStageProbe::SetGameplayStartSeed(static_cast<std::uint16_t>(requestedSeed));
+#endif
 
     // Match MainMenu's real start boundary, but force canonical 1x logical
     // time rather than carrying the original refresh-rate compensation into

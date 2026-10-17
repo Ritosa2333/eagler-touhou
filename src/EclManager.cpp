@@ -16,6 +16,9 @@
 #include "RuntimeExtension.hpp"
 #include "Stage.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/Th06LanStageProbe.hpp"
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
 #endif
@@ -578,11 +581,20 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
 #endif
                 if (instruction->args.setInt >= 0)
                 {
+                    Enemy *const previousBoss =
+                        instruction->args.setInt < ARRAY_SIZE(g_EnemyManager.bosses)
+                            ? g_EnemyManager.bosses[instruction->args.setInt]
+                            : NULL;
                     g_EnemyManager.bosses[instruction->args.setInt] = enemy;
                     g_Gui.bossPresent = 1;
                     g_Gui.SetBossHealthBar(1.0f);
                     enemy->flags.isBoss = 1;
                     enemy->bossId = instruction->args.setInt;
+#ifdef TH_ENABLE_NETPLAY
+                    if (previousBoss != enemy && instruction->args.setInt < 8)
+                        Netplay::Th06LanStageProbe::RecordBossRegistration(
+                            static_cast<std::uint8_t>(instruction->args.setInt));
+#endif
                 }
                 else
                 {

@@ -624,40 +624,71 @@ std::uint64_t DebugStateHash()
     // Same-runtime debug hash only. Pointer-bearing owners are intentionally
     // included here because this is for local restore/resim equivalence, not a
     // cross-browser canonical determinism proof.
-    std::uint64_t hash = 1469598103934665603ull;
-    HashObject(hash, g_GameManager);
-    HashObject(hash, g_Rng);
+    return CaptureDebugState().aggregate;
+}
+
+DebugStateSnapshot CaptureDebugState()
+{
+    DebugStateSnapshot result{};
+    result.aggregate = 1469598103934665603ull;
+    std::size_t index = 0;
+    auto appendBytes = [&](const char *owner, const void *data, std::size_t size) {
+        std::uint64_t partHash = 1469598103934665603ull;
+        const auto *bytes = static_cast<const std::uint8_t *>(data);
+        for (std::size_t i = 0; i < size; ++i)
+        {
+            result.aggregate ^= bytes[i];
+            result.aggregate *= 1099511628211ull;
+            partHash ^= bytes[i];
+            partHash *= 1099511628211ull;
+        }
+        result.parts[index++] = {owner, partHash};
+    };
+    auto appendObject = [&](const char *owner, const auto &object) {
+        appendBytes(owner, &object, sizeof(object));
+    };
+
+    appendObject("g_GameManager", g_GameManager);
+    appendObject("g_Rng", g_Rng);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    HashObject(hash, g_PlayerActive);
-    HashObject(hash, g_MultiplayerPlayerResources);
-    HashObject(hash, g_MultiplayerContributionStats);
-    HashObject(hash, g_teamWipeRetryFrames);
+    appendObject("g_PlayerActive", g_PlayerActive);
+    appendObject("g_MultiplayerPlayerResources", g_MultiplayerPlayerResources);
+    appendObject("g_MultiplayerContributionStats", g_MultiplayerContributionStats);
+    appendObject("g_teamWipeRetryFrames", g_teamWipeRetryFrames);
+    static constexpr const char *playerOwners[] = {
+        "g_Players[0]", "g_Players[1]", "g_Players[2]"};
     for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
         if (g_PlayerActive[playerId])
-            HashObject(hash, g_Players[playerId]);
+            appendObject(playerOwners[playerId], g_Players[playerId]);
+        else
+            appendBytes(playerOwners[playerId], nullptr, 0);
 #else
-    HashObject(hash, g_Player);
+    appendObject("g_Player", g_Player);
 #endif
-    HashObject(hash, g_EnemyManager);
-    HashObject(hash, g_BulletManager);
-    HashObject(hash, g_ItemManager);
-    HashObject(hash, g_EffectManager);
-    HashObject(hash, g_Gui);
+    appendObject("g_EnemyManager", g_EnemyManager);
+    appendObject("g_BulletManager", g_BulletManager);
+    appendObject("g_ItemManager", g_ItemManager);
+    appendObject("g_EffectManager", g_EffectManager);
+    appendObject("g_Gui", g_Gui);
     if (g_Gui.impl)
-        HashObject(hash, *g_Gui.impl);
-    HashObject(hash, g_AsciiManager);
-    HashObject(hash, g_Stage);
+        appendObject("g_Gui.impl", *g_Gui.impl);
+    else
+        appendBytes("g_Gui.impl", nullptr, 0);
+    appendObject("g_AsciiManager", g_AsciiManager);
+    appendObject("g_Stage", g_Stage);
     if (g_Stage.quadVms && g_Stage.quadCount > 0)
-        HashBytes(hash, g_Stage.quadVms,
+        appendBytes("g_Stage.quadVms", g_Stage.quadVms,
                   sizeof(*g_Stage.quadVms) * static_cast<std::size_t>(g_Stage.quadCount));
-    HashObject(hash, g_CurFrameInput);
-    HashObject(hash, g_LastFrameInput);
+    else
+        appendBytes("g_Stage.quadVms", nullptr, 0);
+    appendObject("g_CurFrameInput", g_CurFrameInput);
+    appendObject("g_LastFrameInput", g_LastFrameInput);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    HashObject(hash, g_CurFrameGameInputs);
-    HashObject(hash, g_LastFrameGameInputs);
+    appendObject("g_CurFrameGameInputs", g_CurFrameGameInputs);
+    appendObject("g_LastFrameGameInputs", g_LastFrameGameInputs);
 #endif
-    HashObject(hash, g_IsEigthFrameOfHeldInput);
-    HashObject(hash, g_NumOfFramesInputsWereHeld);
-    return hash;
+    appendObject("g_IsEigthFrameOfHeldInput", g_IsEigthFrameOfHeldInput);
+    appendObject("g_NumOfFramesInputsWereHeld", g_NumOfFramesInputsWereHeld);
+    return result;
 }
 } // namespace Netplay::Th06Rollback
