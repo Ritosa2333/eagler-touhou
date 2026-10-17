@@ -1,10 +1,11 @@
 import {execFileSync} from 'node:child_process';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {WASI} from 'node:wasi';
 const root=resolve(import.meta.dirname,'..'),game='th10';
 const sdk=process.env.EMSDK??resolve(root,'tools/emsdk');
-const emcc=resolve(sdk,'install/emscripten/emcc.py');
+const emcc=['install','upstream'].map(layout=>resolve(sdk,layout,'emscripten/emcc.py')).find(existsSync);
+if(!emcc)throw Error('Set EMSDK to an installed Emscripten SDK');
 const out=resolve(root,game+'_web/artifacts/touch');mkdirSync(out,{recursive:true});
 const file=resolve(out,'eagler-touch-check.wasm');
 const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk};
