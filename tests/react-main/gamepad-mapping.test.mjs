@@ -68,9 +68,9 @@ test('Arrow keys and WASD presets preserve a custom layout across switching and 
   assert.equal(model.getLayoutSnapshot().selected,'arrows');
   model.selectLayout('arrows');assert.deepEqual(model.getSnapshot(),{});
   model.bind('shoot','KeyF');const id=model.saveLayout('我的键位');assert.ok(id);
-  model.selectLayout('wasd');assert.equal(model.getSnapshot().KeyK,'KeyZ');
+  model.selectLayout('wasd');assert.equal(model.getSnapshot().KeyJ,'KeyZ');
   assert.equal(createKeyboardPreferences(storage).getLayoutSnapshot().selected,'wasd','an explicitly saved WASD choice survives reload');
-  model.selectLayout(id);assert.equal(model.getSnapshot().KeyF,'KeyZ');assert.equal(model.getSnapshot().KeyK,undefined);
+  model.selectLayout(id);assert.equal(model.getSnapshot().KeyF,'KeyZ');assert.equal(model.getSnapshot().KeyJ,undefined);
   const reloaded=createKeyboardPreferences(storage);assert.equal(reloaded.getLayoutSnapshot().selected,id);assert.equal(reloaded.getSnapshot().KeyF,'KeyZ');
   reloaded.selectLayout('arrows');reloaded.selectLayout('custom');assert.equal(reloaded.getSnapshot().KeyF,'KeyZ');
   reloaded.reset();assert.deepEqual(reloaded.getSnapshot(),{},'reset follows the Arrow keys preset used as the custom layout base');
@@ -82,6 +82,19 @@ test('saved layouts are snapshots and legacy keyboard preferences migrate withou
   model.deleteLayout(id);assert.equal(model.getLayoutSnapshot().saved.length,0);assert.equal(model.getSnapshot().KeyF,'KeyZ');
   assert.equal(model.selectLayout('missing'),false);
   model.selectLayout('arrows');assert.deepEqual(JSON.parse(saved.get('eagler-touhou-keyboard-mapping-v1')).aliases,{});
+});
+
+test('a saved built-in WASD choice follows the corrected preset while named snapshots keep their keys',()=>{
+  const saved=new Map(),storage={getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)};
+  createKeyboardPreferences(storage).selectLayout('wasd');
+  const key='eagler-touhou-keyboard-layouts-v2',value=JSON.parse(saved.get(key));
+  value.aliases.KeyJ='KeyX';value.aliases.KeyK='KeyZ';
+  value.saved=[{id:'saved-old',name:'旧布局',aliases:{...value.aliases},base:'wasd'}];
+  saved.set(key,JSON.stringify(value));
+  const model=createKeyboardPreferences(storage);
+  assert.equal(model.getLayoutSnapshot().selected,'wasd');assert.equal(model.getSnapshot().KeyJ,'KeyZ');assert.equal(model.getSnapshot().KeyK,'KeyX');
+  model.selectLayout('saved-old');const restored=createKeyboardPreferences(storage);
+  assert.equal(restored.getLayoutSnapshot().selected,'saved-old');assert.equal(restored.getSnapshot().KeyJ,'KeyX');assert.equal(restored.getSnapshot().KeyK,'KeyZ');
 });
 test('a failed layout write is explicit while the current page remains usable',()=>{
   const model=createKeyboardPreferences({getItem:()=>null,setItem(){throw Error('quota');}});
