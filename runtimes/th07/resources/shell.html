@@ -1,0 +1,1271 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <link rel="icon" href="data:,">
+  <title>東方妖々夢 〜 Perfect Cherry Blossom</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}html{--touhou-canvas-width:640px;--touhou-canvas-height:480px}body{display:grid;place-items:center;touch-action:none}
+    canvas{display:block;width:var(--touhou-canvas-width)!important;height:var(--touhou-canvas-height)!important;max-width:none;max-height:none;aspect-ratio:4/3;outline:0;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+    #status{position:fixed;inset:auto 0 1rem;text-align:center;color:#ddd;font:14px sans-serif;pointer-events:none}
+  </style>
+</head>
+<body>
+  <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+  <div id="status">Loading…</div>
+  <script>
+    (() => {
+      "use strict";
+      const protocol = "eagler-touhou/1";
+      const game = "th07";
+      const params = new URLSearchParams(location.search);
+      const epoch = Number(params.get("runtimeEpoch"));
+      const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
+      window.__eaglerRuntimeEpochV1 = validEpoch ? epoch : 0;
+      const saveRoot = params.get("runtimeVariant") === "multiplayer" ? "/savesth07-multiplayer" : "/savesth07";
+      const hosted = params.get("hosted") === "1" && window.parent !== window;
+      window.__eaglerManagedDataState = {
+        enabled: params.get("managedData") === "1" && hosted,
+        game,
+        generation: params.get("gameGeneration") || ""
+      };
+      const assetVersion = params.get("v") || "";
+      const gameDataVersion = params.get("asset") || "";
+      const oggAssetVersion = params.get("oggAsset") || "";
+      const nativeFetch = globalThis.fetch.bind(globalThis);
+      const localGameDataUrl = gameDataVersion
+        ? new URL(`/.eagler-local/game-data/${game}/${encodeURIComponent(gameDataVersion)}/${game}.data`, location.origin).href
+        : "";
+      globalThis.fetch = async (input, init) => {
+        try {
+          const requestUrl = new URL(input instanceof Request ? input.url : String(input), location.href);
+          const method = String(input instanceof Request ? input.method : (init?.method || "GET")).toUpperCase();
+          if (localGameDataUrl && method === "GET" && requestUrl.origin === location.origin &&
+              requestUrl.pathname.endsWith(`/${game}.data`) && globalThis.caches?.match) {
+            const local = await caches.match(localGameDataUrl);
+            if (local) return local.clone();
+          }
+          if (oggAssetVersion && method === "GET" && requestUrl.origin === location.origin &&
+              /\/[^/]+\.ogg$/i.test(requestUrl.pathname) && globalThis.caches?.match) {
+            const filename = decodeURIComponent(requestUrl.pathname.slice(requestUrl.pathname.lastIndexOf("/") + 1));
+            if (/^[A-Za-z0-9_.-]+\.ogg$/.test(filename)) {
+              const localOgg = new URL(`/.eagler-local/ogg/${game}/${encodeURIComponent(oggAssetVersion)}/${encodeURIComponent(filename)}`, location.origin).href;
+              const local = await caches.match(localOgg);
+              if (local) return local.clone();
+            }
+          }
+        } catch {}
+        return nativeFetch(input, init);
+      };
+      const mobileDevice = navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+      const status = document.getElementById("status");
+      const containCanvasSize = (width, height) => {
+        const safeWidth = Math.max(1, Math.floor(Number(width) || 0));
+        const safeHeight = Math.max(1, Math.floor(Number(height) || 0));
+        let cssWidth = safeWidth;
+        let cssHeight = Math.floor(cssWidth * 3 / 4);
+        if (cssHeight > safeHeight) {
+          cssHeight = safeHeight;
+          cssWidth = Math.floor(cssHeight * 4 / 3);
+        }
+        return { width: cssWidth, height: cssHeight };
+      };
+      const fitCanvasToViewport = () => {
+        const root = document.documentElement;
+        if (!root) return;
+        const size = containCanvasSize(root.clientWidth, root.clientHeight);
+        root.style.setProperty("--touhou-canvas-width", `${size.width}px`);
+        root.style.setProperty("--touhou-canvas-height", `${size.height}px`);
+      };
+      fitCanvasToViewport();
+      window.addEventListener("resize", fitCanvasToViewport, { passive: true });
+      window.visualViewport?.addEventListener("resize", fitCanvasToViewport, { passive: true });
+      let launched = false;
+      let loadedMusicFiles = [];
+      let loadedRuntimeFiles = [];
+      let thpracCatalog = [];
+      const failedMusicResources = new Map();
+      let transfer = null;
+      let baseTransfer = null;
+      const reply = (request, ok, payload = {}) => {
+        if (hosted) window.parent.postMessage({ protocol, game, epoch, request, ok, ...payload }, location.origin);
+      };
+      const emit = (event, payload = {}) => {
+        if (hosted) window.parent.postMessage({ protocol, game, epoch, event, ...payload }, location.origin);
+      };
+      globalThis.EaglerTouhouGameExited = result => {
+        const finish = () => emit("exit", { status: result === 1 ? "success" : "failure" });
+        // Flush IDBFS while the Runtime is still alive. The parent must not
+        // wait for a post-mortem sync RPC after it receives exit, because the
+        // main loop may already be gone and that RPC can sit until timeout.
+        return sync().then(finish, error => {
+          console.error("final save sync failed", error);
+          finish();
+        });
+      };
+      let runtimeInfoSent = false;
+      const emitRuntimeInfo = () => {
+        if (runtimeInfoSent || !hosted) return;
+        runtimeInfoSent = true;
+        let renderer = "WebGL";
+        try {
+          const sdl = Module && Module.SDL3;
+          const gl = globalThis.GLctx || Module.ctx || (sdl && sdl.ctx) ||
+            (Module.canvas && (Module.canvas.getContext("webgl2") || Module.canvas.getContext("webgl")));
+          if (gl && typeof gl.getParameter === "function") {
+            const ext = gl.getExtension("WEBGL_debug_renderer_info");
+            renderer = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || renderer);
+          }
+        } catch {}
+        emit("runtime-info", { renderer });
+      };
+      globalThis.EaglerTouhouFirstFrame = () => { emit("first-frame"); emitRuntimeInfo(); };
+      globalThis.EaglerTouhouFrameHealth = (fps, maxGapMs) => emit("frame-health", { fps, maxGapMs });
+      globalThis.EaglerTouhouAudioHealth = (queuedMs, minQueuedMs, robust) => {
+        emit("audio-health", {
+          queuedMs, minQueuedMs, robust: !!robust,
+          backend: "script",
+          underruns: 0
+        });
+      };
+      const sync = () => new Promise((resolve, reject) => FS.syncfs(false, error => error ? reject(error) : resolve()));
+      const failHostedStartup = error => {
+        const message = String(error?.message || error || "Runtime startup failed");
+        console.error(error);
+        status.textContent = message;
+        emit("error", { error: message });
+      };
+      const safePath = value => {
+        if (typeof value !== "string" || !value || value.includes("\\")) throw new Error("invalid path");
+        const parts = value.split("/");
+        if (parts.some(part => !part || part === "." || part === "..")) throw new Error("invalid path");
+        return `${saveRoot}/${parts.join("/")}`;
+      };
+      const ensureDir = path => { const slash = path.lastIndexOf("/"); if (slash > 0) FS.mkdirTree(path.slice(0, slash)); };
+      const clearMusic = () => {
+        for (const path of loadedMusicFiles) { try { FS.unlink(path); } catch {} }
+        loadedMusicFiles = [];
+      };
+      const clearRuntime = () => {
+        for (const path of loadedRuntimeFiles) { try { FS.unlink(path); } catch {} }
+        loadedRuntimeFiles = [];
+      };
+      const assertStaticPackManifest = (manifest, expected) => {
+        if (manifest?.schema !== "eagler-touhou/thcrap-static-pack/1" || manifest.game !== "th07" ||
+            manifest.language !== expected.language || typeof manifest.runtimeVersion !== "string" ||
+            !Array.isArray(manifest.files) || manifest.files.length > 256) throw new Error("invalid TH07 language pack manifest");
+        for (const file of manifest.files) {
+          if (typeof file?.path !== "string" || !file.path.startsWith("/thcrap/th07/") || file.path.includes("\\") || file.path.includes("..") ||
+              !Number.isInteger(file.bytes) || file.bytes < 0) throw new Error("invalid TH07 language pack file");
+        }
+      };
+      const installStaticPack = async pack => {
+        if (launched) throw new Error("runtime resources cannot be changed after launch");
+        if (typeof pack?.url !== "string" || typeof pack.language !== "string" ||
+            !Number.isInteger(pack.bytes) || pack.bytes <= 0 ||
+            !pack.manifest || !Array.isArray(pack.files)) throw new Error("invalid TH07 language pack");
+        const url = new URL(pack.url, location.href);
+        if (url.origin !== location.origin) throw new Error("cross-origin TH07 language pack");
+        assertStaticPackManifest(pack.manifest, pack);
+        const expected = new Map(pack.manifest.files.map(file => [file.path, file]));
+        if (pack.files.length !== expected.size) throw new Error("TH07 language pack file count mismatch");
+        const verified = [];
+        for (const file of pack.files) {
+          if (typeof file?.path !== "string" || !file.path.startsWith("/thcrap/th07/") || file.path.includes("\\") || file.path.includes("..") ||
+              !(file.bytes instanceof Uint8Array)) throw new Error("invalid TH07 language pack path");
+          const declaration = expected.get(file.path);
+          if (!declaration || file.bytes.length !== declaration.bytes) throw new Error(`${file.path}: size mismatch`);
+          verified.push({ path: file.path, bytes: file.bytes });
+        }
+        clearRuntime();
+        for (const file of verified) {
+          ensureDir(file.path); FS.writeFile(file.path, file.bytes, { canOwn: true }); loadedRuntimeFiles.push(file.path);
+        }
+      };
+      const fetchResourceBytes = async (url, init = {}, callbacks = {}) => {
+        const controller = new AbortController();
+        const timeoutMs = 15000;
+        let timer = null;
+        let timedOut = false;
+        const arm = () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+        };
+        arm();
+        try {
+          const response = await fetch(url, { ...init, signal: controller.signal });
+          if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
+          callbacks.onResponse?.(response);
+          arm();
+          const chunks = [];
+          let received = 0;
+          if (response.body?.getReader) {
+            const reader = response.body.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              arm();
+              chunks.push(value); received += value.length;
+              callbacks.onChunk?.(value, received);
+            }
+          } else {
+            const value = new Uint8Array(await response.arrayBuffer());
+            arm();
+            chunks.push(value); received = value.length;
+            callbacks.onChunk?.(value, received);
+          }
+          const bytes = new Uint8Array(received);
+          let offset = 0;
+          for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+          return { response, bytes };
+        } catch (error) {
+          if (timedOut || error?.name === "AbortError") throw new Error(`${url.pathname}: 15 秒内没有继续收到数据（网络 / CDN 超时）`);
+          throw error;
+        } finally {
+          clearTimeout(timer);
+        }
+      };
+      const installRuntime = async message => {
+        if (launched) throw new Error("runtime resources cannot be changed after launch");
+        if (message.runtimePack) { await installStaticPack(message.runtimePack); return; }
+        const resources = message.runtimeResources ?? [];
+        if (!Array.isArray(resources) || resources.length > 256) throw new Error("invalid runtime resources");
+        clearRuntime();
+        for (const resource of resources) {
+          if (typeof resource?.url !== "string" || typeof resource.path !== "string" || !resource.path.startsWith("/thcrap/th07/") || resource.path.includes("\\") || resource.path.includes("..")) throw new Error("invalid runtime resource");
+          const url = new URL(resource.url, location.href);
+          if (url.origin !== location.origin) throw new Error("cross-origin runtime resource");
+          const { bytes } = await fetchResourceBytes(url, { cache: "force-cache" });
+          if (Number.isFinite(Number(resource.size)) && bytes.length !== Number(resource.size)) throw new Error(`${resource.path}: size mismatch`);
+          ensureDir(resource.path); FS.writeFile(resource.path, bytes, { canOwn: true }); loadedRuntimeFiles.push(resource.path);
+        }
+      };
+      const installShared = async message => {
+        if (!Array.isArray(message.sharedResources) || message.sharedResources.length > 4) throw new Error("invalid shared resources");
+        await Promise.all(message.sharedResources.map(async resource => {
+          if (typeof resource?.url !== "string" || !["/msgothic.ttc", "/unifont.otf"].includes(resource.path)) throw new Error("invalid shared resource");
+          const url = new URL(resource.url, location.href);
+          if (url.origin !== location.origin) throw new Error("cross-origin shared resource");
+          const { bytes } = await fetchResourceBytes(url, { cache: "force-cache" });
+          FS.writeFile(resource.path, bytes, { canOwn: true });
+        }));
+      };
+      const installPackageResources = async resources => {
+        if (launched) throw new Error("resources cannot be changed after launch");
+        if (!Array.isArray(resources) || resources.length > 512) throw new Error("invalid package resources");
+        for (const resource of resources) {
+          if (typeof resource?.url !== "string" || typeof resource?.path !== "string" || !resource.path.startsWith("/") ||
+              resource.path.includes("\\") || resource.path.includes("\0") ||
+              resource.path.split("/").some((part, index) => index > 0 && (!part || part === "." || part === ".."))) {
+            throw new Error("invalid package resource");
+          }
+          const url = new URL(resource.url, location.href);
+          if (url.origin !== location.origin) throw new Error("cross-origin package resource");
+          const { bytes } = await fetchResourceBytes(url, { cache: "no-store" });
+          ensureDir(resource.path);
+          FS.writeFile(resource.path, bytes, { canOwn: true });
+        }
+      };
+      const emitTransfer = force => {
+        if (!transfer) return;
+        const now = performance.now();
+        if (!force && now - transfer.lastEmit < 200) return;
+        transfer.lastEmit = now;
+        const seconds = Math.max((now - transfer.startedAt) / 1000, 0.1);
+        emit("transfer", { kind: "music", mode: transfer.mode, loaded: transfer.loaded, total: transfer.total,
+          speed: transfer.loaded / seconds, completed: transfer.completed, files: transfer.files });
+      };
+      const downloadMusicResource = async resource => {
+        if (typeof resource?.url !== "string" || typeof resource?.path !== "string" ||
+            !(/^(\/bgm-ogg\/[A-Za-z0-9_.-]+|\/thbgm\.dat)$/.test(resource.path))) throw new Error("invalid music resource");
+        const url = new URL(resource.url, location.href);
+        if (url.origin !== location.origin) throw new Error("cross-origin music resource");
+        const previous = transfer.byPath.get(resource.path) || 0;
+        transfer.loaded = Math.max(0, transfer.loaded - previous);
+        transfer.byPath.set(resource.path, 0);
+        let received = 0;
+        const { bytes } = await fetchResourceBytes(url, { cache: "force-cache" }, {
+          onResponse(response) {
+            const declared = Number(resource.size) || Number(response.headers.get("content-length")) || 0;
+            if (!Number(resource.size) && declared) transfer.total += declared;
+          },
+          onChunk(value, totalReceived) {
+            received = totalReceived;
+            transfer.loaded += value.length;
+            transfer.byPath.set(resource.path, received);
+            emitTransfer(false);
+          }
+        });
+        ensureDir(resource.path); FS.writeFile(resource.path, bytes, { canOwn: true });
+        loadedMusicFiles.push(resource.path); failedMusicResources.delete(resource.path);
+        transfer.completed++; emitTransfer(true);
+      };
+      const recordMusicFailure = (resource, error) => {
+        failedMusicResources.set(resource.path, resource);
+        emit("music-error", { path: resource.path, error: String(error?.message || error), failed: failedMusicResources.size });
+      };
+      const runMusicQueue = async resources => {
+        let next = 0;
+        const worker = async () => {
+          while (next < resources.length) {
+            const resource = resources[next++];
+            try { await downloadMusicResource(resource); } catch (error) { recordMusicFailure(resource, error); }
+          }
+        };
+        await Promise.all(Array.from({ length: Math.min(4, resources.length) }, worker));
+      };
+      const retryMusic = async () => {
+        const resources = [...failedMusicResources.values()]; failedMusicResources.clear();
+        await runMusicQueue(resources);
+        if (!failedMusicResources.size) emit("music-complete", { loaded: transfer?.loaded || 0, total: transfer?.total || 0 });
+      };
+      // BEGIN NETPLAY PERFORMANCE PROFILE (pure function; unit tested)
+      function resolveNetplayPerformanceProfile(options, coarsePointer = false) {
+        const multiplayer = options.netplayMode === "lan";
+        const diagnostics = options.debugHarness === "netplay-lan-stage1";
+        const manual = diagnostics && options.netplayPerformanceProfile === "manual";
+        const inputDelay = diagnostics ? (options.netplayInputDelayFrames ?? 0) : 0;
+        const rollbackPolicy = diagnostics ? (options.netplayRollbackPolicy || "full") : "full";
+        const responsive = multiplayer && inputDelay === 0 && rollbackPolicy === "full" &&
+          !options.netplaySpectator && !options.replayViewer;
+        const optimized = responsive && !manual;
+        return {
+          netplayPerformanceProfile: manual ? "manual" : "responsive",
+          netplayInputDelayFrames: inputDelay,
+          netplayRollbackPolicy: rollbackPolicy,
+          netplayTouchDeltaPredictionFrames: options.netplayTouchDeltaPredictionFrames ?? 0,
+          netplayTouchQuantization: options.netplayTouchQuantization ?? 0,
+          netplayTouchEquivalentAbsorb: !!options.netplayTouchEquivalentAbsorb,
+          netplayIncrementalReconcile: !!options.netplayIncrementalReconcile,
+          netplayReliableInputRepair: diagnostics && options.netplayReliableInputRepair != null
+            ? options.netplayReliableInputRepair : optimized,
+          netplayDormantBulletElision: options.netplayDormantBulletElision === true,
+          netplayInitialFrameLag: options.netplayInitialFrameLag ?? 0,
+          netplayDisableTimeSyncPacing: !!options.netplayDisableTimeSyncPacing,
+          netplaySnapshotPolicy: diagnostics && options.netplaySnapshotPolicy
+            ? options.netplaySnapshotPolicy : (optimized ? "frontier" : "always"),
+          netplaySnapshotLayout: diagnostics && options.netplaySnapshotLayout
+            ? options.netplaySnapshotLayout : (optimized ? "runs" : "objects"),
+          netplaySnapshotCopy: diagnostics && options.netplaySnapshotCopy
+            ? options.netplaySnapshotCopy : (optimized ? "bulk" : "wasm"),
+          netplaySnapshotRestore: diagnostics && options.netplaySnapshotRestore
+            ? options.netplaySnapshotRestore : (optimized ? "coalesced" : "sequential"),
+          // Checkpoint spacing is undo storage, NOT input buffering. The
+          // repeated zero-delay 3P tests favor three ticks per checkpoint.
+          netplaySnapshotCheckpointFrames: options.netplaySnapshotCheckpointFrames ?? (optimized ? 3 : 2),
+          netplayBulletSnapshot: options.netplayBulletSnapshot || (optimized ? "live" : "journal"),
+          // Presentation cadence is a player preference, not a netplay safety
+          // mechanism. The 60 Hz simulation remains authoritative either way;
+          // high-refresh displays may present interpolated frames unless the
+          // shared Launcher "Lock to 60 FPS" option is explicitly enabled.
+          limitPresentationTo60: !!options.limitPresentationTo60
+        };
+      }
+      // END NETPLAY PERFORMANCE PROFILE
+      const installMusic = async message => {
+        if (launched) throw new Error("music cannot be changed after launch");
+        const options = message.options || {};
+        const netplayDiagnostics = options.debugHarness === "netplay-lan-stage1";
+        if (options.netplayPerformanceProfile != null && !["responsive", "manual"].includes(options.netplayPerformanceProfile)) throw new Error("invalid netplay performance profile");
+        if (!netplayDiagnostics && options.netplayPerformanceProfile === "manual") throw new Error("manual netplay profile requires the test harness");
+        if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
+        thpracCatalog = message.thpracCatalog ?? [];
+        Module.eaglerThpracCatalog = thpracCatalog;
+        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "doubleTapBombEnabled", "alwaysHitbox", "enhanceLocalPlayerVisibility", "focusHitboxEnabled", "th06FocusHitbox", "replayViewer", "netplayRollbackProbe", "netplayScriptedInput", "netplayReplayPlaybackCycle", "netplayPauseCycle", "netplayRestartCycle", "netplayStageTransition", "netplayStage4BossChain", "netplaySpectator", "netplayChallengeMode", "netplayTestNoRollback", "netplayTestKeepRollbackSnapshots", "netplayIncrementalReconcile", "netplayDisableTimeSyncPacing", "netplayReliableInputRepair"]) {
+          if (options[key] != null && typeof options[key] !== "boolean") throw new Error("invalid eagler-touhou option");
+        }
+        if (options.touchSensitivity != null && (!Number.isFinite(options.touchSensitivity) || options.touchSensitivity < 100 || options.touchSensitivity > 300)) throw new Error("invalid touch sensitivity");
+        if (options.touchMovementMode != null && !["joystick", "joystick-free", "touch", "touch-unlimited"].includes(options.touchMovementMode)) throw new Error("invalid touch movement mode");
+        if (options.touchFocusMode != null && !["two-finger", "hold-button", "toggle-button"].includes(options.touchFocusMode)) throw new Error("invalid touch focus mode");
+        if (options.thpracLocale != null && !["zh-CN", "ja-JP", "en-US"].includes(options.thpracLocale)) throw new Error("invalid thprac locale");
+        if (options.oggDecodeMode != null && !["stream", "full"].includes(options.oggDecodeMode)) throw new Error("invalid OGG decode mode");
+        if (options.netplayUrl != null && (typeof options.netplayUrl !== "string" || options.netplayUrl.length > 511 || !/^wss?:\/\//.test(options.netplayUrl))) throw new Error("invalid netplay URL");
+        if (options.netplayPlayer != null && (!Number.isInteger(options.netplayPlayer) || options.netplayPlayer < 0 || options.netplayPlayer > 2)) throw new Error("invalid netplay player");
+        if (options.netplayPlayerCount != null && (!Number.isInteger(options.netplayPlayerCount) || options.netplayPlayerCount < 2 || options.netplayPlayerCount > 3)) throw new Error("invalid netplay player count");
+        if (options.netplaySpectatorId != null && (typeof options.netplaySpectatorId !== "string" || !/^[A-Za-z0-9_-]{0,64}$/.test(options.netplaySpectatorId))) throw new Error("invalid spectator id");
+        if (options.netplaySpectatorCount != null && (!Number.isInteger(options.netplaySpectatorCount) || options.netplaySpectatorCount < 0 || options.netplaySpectatorCount > 64)) throw new Error("invalid spectator count");
+        if (options.netplayMode != null && options.netplayMode !== "lan") throw new Error("invalid netplay mode");
+        if (options.netplayInputDelayFrames != null && (!Number.isInteger(options.netplayInputDelayFrames) || options.netplayInputDelayFrames < 0 || options.netplayInputDelayFrames > 12)) throw new Error("invalid netplay input delay");
+        if (options.netplayRollbackPolicy != null && !["full", "buffered"].includes(options.netplayRollbackPolicy)) throw new Error("invalid netplay rollback policy");
+        if (!netplayDiagnostics && options.netplayInputDelayFrames != null && options.netplayInputDelayFrames !== 0) throw new Error("input delay is diagnostic-only");
+        if (!netplayDiagnostics && options.netplayRollbackPolicy != null && options.netplayRollbackPolicy !== "full") throw new Error("buffered rollback is diagnostic-only");
+        if (options.netplayMaxPredictionFrames != null && (!Number.isInteger(options.netplayMaxPredictionFrames) || options.netplayMaxPredictionFrames < 1 || options.netplayMaxPredictionFrames > 12)) throw new Error("invalid netplay prediction window");
+        if (options.netplayTouchDeltaPredictionFrames != null && (!Number.isInteger(options.netplayTouchDeltaPredictionFrames) || options.netplayTouchDeltaPredictionFrames < 0 || options.netplayTouchDeltaPredictionFrames > 6)) throw new Error("invalid netplay touch delta prediction window");
+        if (options.netplayTouchQuantization != null && (!Number.isFinite(options.netplayTouchQuantization) || options.netplayTouchQuantization < 0 || options.netplayTouchQuantization > 2)) throw new Error("invalid netplay touch quantization");
+        if (options.netplayTouchEquivalentAbsorb != null && typeof options.netplayTouchEquivalentAbsorb !== "boolean") throw new Error("invalid netplay touch equivalence flag");
+        if (options.netplayInitialFrameLag != null && (!Number.isInteger(options.netplayInitialFrameLag) || options.netplayInitialFrameLag < 0 || options.netplayInitialFrameLag > 8)) throw new Error("invalid initial frame lag");
+        if (options.netplaySnapshotPolicy != null && !["always", "demand", "frontier"].includes(options.netplaySnapshotPolicy)) throw new Error("invalid netplay snapshot policy");
+        if (options.netplaySnapshotRestore != null && !["sequential", "coalesced"].includes(options.netplaySnapshotRestore)) throw new Error("invalid netplay restore policy");
+        if (options.netplaySnapshotCheckpointFrames != null && (!Number.isInteger(options.netplaySnapshotCheckpointFrames) || options.netplaySnapshotCheckpointFrames < 1 || options.netplaySnapshotCheckpointFrames > 8)) throw new Error("invalid netplay checkpoint span");
+        if (options.netplayBulletSnapshot != null && !["journal", "compact", "live"].includes(options.netplayBulletSnapshot)) throw new Error("invalid netplay bullet snapshot mode");
+        if (options.netplaySnapshotLayout != null && !["objects", "runs"].includes(options.netplaySnapshotLayout)) throw new Error("invalid snapshot layout");
+        if (options.netplaySnapshotCopy != null && !["wasm", "bulk"].includes(options.netplaySnapshotCopy)) throw new Error("invalid snapshot copy");
+        if (options.netplayPerfTelemetry != null && typeof options.netplayPerfTelemetry !== "boolean") throw new Error("invalid netplay telemetry");
+        if (options.netplayReliableInputRepair != null && typeof options.netplayReliableInputRepair !== "boolean") throw new Error("invalid reliable input repair");
+        if (options.netplayDormantBulletElision != null && typeof options.netplayDormantBulletElision !== "boolean") throw new Error("invalid dormant bullet elision");
+        if (options.netplayTestIncrementalTouch != null && typeof options.netplayTestIncrementalTouch !== "boolean") throw new Error("invalid touch test stream");
+        if (options.netplayTestDenseBullets != null && (!Number.isInteger(options.netplayTestDenseBullets) || options.netplayTestDenseBullets < 0 || options.netplayTestDenseBullets > 960)) throw new Error("invalid dense bullet test load");
+        if (options.netplayTestDenseCurved != null && typeof options.netplayTestDenseCurved !== "boolean") throw new Error("invalid curved bullet fixture");
+        if (options.netplayTestStage != null && (!Number.isInteger(options.netplayTestStage) || options.netplayTestStage < 1 || options.netplayTestStage > 6 || options.debugHarness !== "netplay-lan-stage1")) throw new Error("invalid real-stage fixture");
+        if (options.netplayTestDenseCurved && (options.debugHarness !== "netplay-lan-stage1" || !options.netplayTestDenseBullets)) throw new Error("curved bullets require the dense test harness");
+        if ((options.netplayTestNoRollback || options.netplayTestKeepRollbackSnapshots || options.netplayTestDenseBullets) && options.debugHarness !== "netplay-lan-stage1") throw new Error("netplay performance experiments require the test harness");
+        if (options.netplayTestKeepRollbackSnapshots && !options.netplayTestNoRollback) throw new Error("snapshot-only experiment requires no-rollback lockstep");
+        if (options.netplayTouchWorkload != null && !["default", "steady", "variable", "stop", "reverse", "burst"].includes(options.netplayTouchWorkload)) throw new Error("invalid netplay touch workload");
+        if (options.netplayTouchWorkload && options.netplayTouchWorkload !== "default" && options.debugHarness !== "netplay-lan-stage1") throw new Error("touch workloads require the test harness");
+        if (options.netplaySeed != null && (!Number.isInteger(options.netplaySeed) || options.netplaySeed < 0 || options.netplaySeed > 65535)) throw new Error("invalid netplay seed");
+        if (options.netplayDifficulty != null && (!Number.isInteger(options.netplayDifficulty) || options.netplayDifficulty < 0 || options.netplayDifficulty > 5)) throw new Error("invalid netplay difficulty");
+        if (options.netplayIceServers != null) {
+          if (!Array.isArray(options.netplayIceServers) || options.netplayIceServers.length > 8) throw new Error("invalid netplay ICE servers");
+          for (const server of options.netplayIceServers) {
+            if (!server || typeof server !== "object" || Array.isArray(server)) throw new Error("invalid netplay ICE server");
+            const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+            if (!urls.length || urls.length > 8 || urls.some(url => typeof url !== "string" || url.length > 511 || !/^(?:stun|stuns|turn|turns):/i.test(url))) {
+              throw new Error("invalid netplay ICE server URL");
+            }
+            if (server.username != null && (typeof server.username !== "string" || server.username.length > 255)) throw new Error("invalid netplay ICE username");
+            if (server.credential != null && (typeof server.credential !== "string" || server.credential.length > 255)) throw new Error("invalid netplay ICE credential");
+          }
+        }
+        if (options.netplayLoadouts != null) {
+          if (!Array.isArray(options.netplayLoadouts) || options.netplayLoadouts.length < 2 || options.netplayLoadouts.length > 3 ||
+              options.netplayLoadouts.some(entry => !entry || typeof entry !== "object" || Array.isArray(entry) ||
+                !Number.isInteger(entry.character) || entry.character < 0 || entry.character > 2 ||
+                !Number.isInteger(entry.shot) || entry.shot < 0 || entry.shot > 1)) throw new Error("invalid netplay loadouts");
+        }
+        if (options.netplayMode === "lan") {
+          if (!options.netplayUrl || !Number.isInteger(options.netplayPlayer) || !Number.isInteger(options.netplayPlayerCount) ||
+              options.netplayPlayer >= options.netplayPlayerCount || !Number.isInteger(options.netplaySeed) ||
+              !Number.isInteger(options.netplayDifficulty) ||
+              !Array.isArray(options.netplayLoadouts) || options.netplayLoadouts.length !== options.netplayPlayerCount) {
+            throw new Error("incomplete LAN netplay session");
+          }
+        }
+        const netplayTestFrameLimit = options.netplayStageTransition ? 24000 : 12000;
+        if (options.netplayTestFrames != null && (!Number.isInteger(options.netplayTestFrames) || options.netplayTestFrames < 60 || options.netplayTestFrames > netplayTestFrameLimit)) throw new Error("invalid netplay test frame count");
+        if (options.demoDeterminismIndex != null &&
+            (!Number.isInteger(options.demoDeterminismIndex) || options.demoDeterminismIndex < 0 || options.demoDeterminismIndex > 2 ||
+             options.debugHarness !== "demo-determinism")) throw new Error("invalid demo determinism index");
+        const session = options.thpracSession;
+        if (options.debugHarness != null && ![
+          "thprac-menu", "music-room", "netplay-stage1", "netplay-dual-stage1", "netplay-lan-core", "netplay-lan-stage1", "demo-determinism",
+          "replay-extension", "result-stats-phantasm", "stage1-visual", "stage4-visual",
+          "ending-reimu-a", "ending-reimu-b", "ending-marisa-a", "ending-marisa-b",
+          "ending-sakuya-a", "ending-sakuya-b",
+          "ending-reimu-bad", "ending-marisa-bad", "ending-sakuya-bad"
+        ].includes(options.debugHarness)) throw new Error("invalid debug harness");
+        if (session != null && (session.schema !== "eagler-touhou/thprac-session/1" || session.game !== "th07" || typeof session.params !== "object" || !session.params)) throw new Error("invalid thprac session");
+        Module.eaglerOptions = {
+          thpracEnabled: !!options.thpracEnabled,
+          ...resolveNetplayPerformanceProfile(options,
+            typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches),
+          touchEnabled: !!options.touchEnabled,
+          touchMovementMode: options.touchMovementMode || "touch",
+          touchSensitivity: options.touchSensitivity ?? 100,
+          touchFocusMode: options.touchFocusMode || "two-finger",
+          unlimitedTouch: !!options.touchEnabled && (options.touchMovementMode === "touch-unlimited" || !!options.unlimitedTouch),
+          touchBombZoneEnabled: options.touchBombZoneEnabled === true,
+          doubleTapBombEnabled: !!options.touchEnabled && !!options.doubleTapBombEnabled,
+          alwaysHitbox: !!options.alwaysHitbox,
+          // Canonical Launcher name first; keep the old runtime option only as
+          // read compatibility for older hosts/saved launch payloads.
+          enhanceLocalPlayerVisibility: !!(options.multiplayerLocalPlayerVisibility ?? options.enhanceLocalPlayerVisibility),
+          focusHitboxEnabled: false,
+          replayViewer: !!options.replayViewer,
+          netplayRollbackProbe: !!options.netplayRollbackProbe,
+          netplayReplayPlaybackCycle: !!options.netplayReplayPlaybackCycle,
+          thpracLocale: options.thpracLocale || "en-US",
+          oggDecodeMode: options.oggDecodeMode || "stream",
+          debugHarness: options.debugHarness || null,
+          demoDeterminismIndex: options.debugHarness === "demo-determinism" ? (options.demoDeterminismIndex ?? 0) : undefined,
+          netplayMode: options.netplayMode || null,
+          netplayMaxPredictionFrames: options.netplayMaxPredictionFrames ?? 12,
+          netplayPerfTelemetry: !!options.netplayPerfTelemetry,
+          netplayTestIncrementalTouch: options.debugHarness === "netplay-lan-stage1" && !!options.netplayTestIncrementalTouch,
+          netplayTestNoRollback: options.debugHarness === "netplay-lan-stage1" && !!options.netplayTestNoRollback,
+          netplayTestKeepRollbackSnapshots: options.debugHarness === "netplay-lan-stage1" && !!options.netplayTestKeepRollbackSnapshots,
+          netplayTestDenseBullets: options.debugHarness === "netplay-lan-stage1" ? (options.netplayTestDenseBullets ?? 0) : 0,
+          netplayTestDenseCurved: options.debugHarness === "netplay-lan-stage1" && !!options.netplayTestDenseCurved,
+          netplayTestStage: options.debugHarness === "netplay-lan-stage1" ? options.netplayTestStage : undefined,
+          netplayLiveBulletAudit: options.debugHarness === "netplay-lan-stage1" && options.netplayLiveBulletAudit === true,
+          netplayTouchWorkload: options.netplayTouchWorkload || "default",
+          netplayUrl: options.netplayUrl || "",
+          netplayPlayer: options.netplayPlayer ?? -1,
+          netplayPlayerCount: options.netplayPlayerCount ?? 2,
+          netplayChallengeMode: options.netplayChallengeMode === true,
+          netplaySpectator: !!options.netplaySpectator,
+          netplaySpectatorId: options.netplaySpectatorId || "",
+          netplaySpectatorCount: options.netplaySpectatorCount ?? 0,
+          netplayReliableInputRepair: options.netplayReliableInputRepair ??
+            (options.netplayMode === "lan" && !options.netplaySpectator && !options.replayViewer),
+          netplaySeed: options.netplaySeed ?? 0x4a3d,
+          netplayDifficulty: options.netplayDifficulty ?? 1,
+          netplayIceServers: Array.isArray(options.netplayIceServers) ? options.netplayIceServers.map(server => ({
+            urls: Array.isArray(server.urls) ? [...server.urls] : server.urls,
+            ...(server.username != null ? { username: server.username } : {}),
+            ...(server.credential != null ? { credential: server.credential } : {})
+          })) : [],
+          netplayLoadouts: Array.isArray(options.netplayLoadouts) ? options.netplayLoadouts.map(entry => ({ character: entry.character, shot: entry.shot })) : null,
+          netplayStage4BossChain: !!options.netplayStage4BossChain,
+          netplayPhysicalInput: !!options.netplayPhysicalInput,
+          netplayScriptedInput: !!options.netplayScriptedInput,
+          netplayPauseCycle: !!options.netplayPauseCycle,
+          netplayRestartCycle: !!options.netplayRestartCycle,
+          netplayStageTransition: !!options.netplayStageTransition,
+          netplayTestFrames: options.netplayTestFrames ?? 300,
+          thpracSession: session || null
+        };
+        if (!["midi", "wav", "ogg", "none"].includes(message.music)) throw new Error("invalid music mode");
+        if (!Array.isArray(message.resources) || message.resources.length > 64) throw new Error("invalid music resources");
+        clearMusic(); failedMusicResources.clear(); Module.touhouMusicMode = message.music;
+        if (message.music === "midi" || message.music === "none") return;
+        transfer = { mode: message.music, loaded: 0,
+          total: message.resources.reduce((sum, resource) => sum + (Number(resource.size) || 0), 0),
+          completed: 0, files: message.resources.length, startedAt: performance.now(), lastEmit: 0,
+          byPath: new Map() };
+        emitTransfer(true);
+        if (message.music === "ogg") {
+          await runMusicQueue(message.resources.slice(0, 2));
+          runMusicQueue(message.resources.slice(2)).then(() => {
+            emit(failedMusicResources.size ? "music-incomplete" : "music-complete",
+              { loaded: transfer.loaded, total: transfer.total, failed: failedMusicResources.size });
+          });
+        } else {
+          await runMusicQueue(message.resources);
+          if (failedMusicResources.size) {
+            clearMusic(); Module.touhouMusicMode = "";
+            throw new Error(`${failedMusicResources.size} music resources failed`);
+          }
+          emit("music-complete", { loaded: transfer.loaded, total: transfer.total });
+        }
+        status.textContent = "Ready";
+      };
+      const walk = (path, output = []) => {
+        for (const name of FS.readdir(path)) {
+          if (name === "." || name === "..") continue;
+          const child = `${path}/${name}`; const stat = FS.stat(child);
+          if (FS.isDir(stat.mode)) walk(child, output); else output.push({ path: child.slice(saveRoot.length + 1), size: stat.size });
+        }
+        return output;
+      };
+      // BEGIN GENERATED STARTUP BRANDING
+// Generated from eagler-common/browser/startup-branding.mjs and startup-wordmark.svg.
+const STARTUP_WORDMARK="<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 224 32\" role=\"img\" aria-labelledby=\"title\">\n  <title id=\"title\">EAGLER TOUHOU</title>\n  <defs>\n    <filter id=\"wordmark-shadow\" x=\"-8%\" y=\"-60%\" width=\"116%\" height=\"230%\">\n      <feDropShadow in=\"SourceGraphic\" dx=\"1.6\" dy=\"-1.6\" stdDeviation=\"0.6\" flood-color=\"#291426\" flood-opacity=\"1\"/>\n    </filter>\n  </defs>\n  <g fill=\"#29203f\" filter=\"url(#wordmark-shadow)\" transform=\"translate(8 24) scale(1 -1)\">\n    <path d=\"M3 9H6V6H3ZM9 16H14V14H9ZM5 15H9V13H5ZM8 3H12V1H8ZM9 9H12V7H9ZM2 3H5V1H2ZM12 2H14V0H12ZM4 12H5V9H4ZM5 2H8V1H5ZM5 13H6V11H5ZM6 9H7V7H6ZM3 6H5V5H3ZM2 1H4V0H2ZM14 16H15V15H14ZM4 15H5V14H4ZM5 10H6V9H5ZM11 10H12V9H11ZM12 9H13V8H12ZM8 8H9V7H8ZM3 4H4V3H3Z\"/>\n    <path transform=\"translate(16)\" d=\"M12 15H14V6H12ZM2 7H6V5H2ZM11 6H13V3H11ZM0 6H2V4H0ZM10 3H12V1H10ZM0 2H2V0H0ZM8 8H12V7H8ZM6 7H9V6H6ZM11 15H12V13H11ZM10 14H11V12H10ZM8 12H9V10H8ZM7 11H8V9H7ZM5 9H6V7H5ZM14 8H15V6H14ZM2 5H4V4H2ZM1 4H3V3H1ZM9 1H11V0H9ZM12 16H13V15H12ZM6 10H7V9H6ZM4 8H5V7H4ZM11 7H12V6H11ZM1 3H2V2H1Z\"/>\n    <path transform=\"translate(32)\" d=\"M11 7H14V4H11ZM8 16H12V14H8ZM2 9H4V6H2ZM11 4H13V1H11ZM6 15H8V13H6ZM4 13H6V11H4ZM3 11H5V9H3ZM10 10H12V8H10ZM8 7H10V5H8ZM5 2H7V0H5ZM12 15H13V13H12ZM13 12H14V10H13ZM12 11H13V9H12ZM2 6H3V4H2ZM3 4H4V2H3ZM9 4H11V3H9ZM4 3H5V1H4ZM8 3H10V2H8ZM5 14H6V13H5ZM13 14H14V13H13ZM10 7H11V6H10ZM14 7H15V6H14ZM7 6H8V5H7ZM7 2H8V1H7ZM12 1H13V0H12Z\"/>\n    <path transform=\"translate(48)\" d=\"M6 2H13V0H6ZM7 16H9V12H7ZM3 5H5V1H3ZM5 14H7V12H5ZM3 13H5V11H3ZM6 12H8V10H6ZM0 3H2V1H0ZM5 7H6V4H5ZM9 16H11V15H9ZM5 11H6V9H5ZM6 10H7V8H6ZM2 5H3V3H2ZM5 3H6V1H5ZM13 3H14V1H13ZM1 1H3V0H1ZM9 15H10V14H9ZM2 12H3V11H2ZM4 6H5V5H4ZM1 4H2V3H1Z\"/>\n    <path transform=\"translate(64)\" d=\"M3 9H6V6H3ZM9 16H14V14H9ZM5 15H9V13H5ZM8 3H12V1H8ZM9 9H12V7H9ZM2 3H5V1H2ZM12 2H14V0H12ZM4 12H5V9H4ZM5 2H8V1H5ZM5 13H6V11H5ZM6 9H7V7H6ZM3 6H5V5H3ZM2 1H4V0H2ZM14 16H15V15H14ZM4 15H5V14H4ZM5 10H6V9H5ZM11 10H12V9H11ZM12 9H13V8H12ZM8 8H9V7H8ZM3 4H4V3H3Z\"/>\n    <path transform=\"translate(80)\" d=\"M5 16H11V14H5ZM11 14H13V9H11ZM5 7H9V5H5ZM3 15H5V13H3ZM5 14H7V12H5ZM3 2H5V0H3ZM11 2H13V0H11ZM2 14H3V12H2ZM5 12H6V10H5ZM5 9H6V7H5ZM10 9H12V8H10ZM9 8H11V7H9ZM4 6H5V4H4ZM7 5H9V4H7ZM8 4H10V3H8ZM9 3H11V2H9ZM11 15H12V14H11ZM6 8H7V7H6ZM9 7H10V6H9ZM5 5H6V4H5ZM4 3H5V2H4ZM10 2H11V1H10ZM13 1H14V0H13Z\"/>\n    <path transform=\"translate(96)\" d=\"M8 13H13V7H8ZM10 7H14V3H10ZM6 15H10V13H6ZM4 12H6V9H4ZM6 10H8V7H6ZM13 10H15V7H13ZM9 3H12V1H9ZM6 5H8V3H6ZM0 10H1V5H0ZM5 1H10V0H5ZM5 13H8V12H5ZM3 14H5V13H3ZM10 14H12V13H10ZM1 12H2V10H1ZM13 12H14V10H13ZM14 7H15V5H14ZM1 5H2V3H1ZM3 2H5V1H3ZM5 15H6V14H5ZM2 13H3V12H2ZM5 9H6V8H5ZM9 7H10V6H9ZM2 3H3V2H2ZM12 3H13V2H12ZM8 2H9V1H8Z\"/>\n    <path transform=\"translate(112)\" d=\"M8 16H14V14H8ZM9 13H11V8H9ZM6 2H9V0H6ZM2 14H4V12H2ZM9 5H10V1H9ZM6 16H8V15H6ZM3 15H5V14H3ZM14 15H15V13H14ZM10 14H12V13H10ZM9 8H10V6H9ZM5 3H6V1H5ZM3 12H4V11H3ZM4 11H5V10H4ZM8 3H9V2H8ZM4 2H5V1H4Z\"/>\n    <path transform=\"translate(128)\" d=\"M6 16H11V14H6ZM12 12H14V7H12ZM3 2H8V0H3ZM11 14H13V12H11ZM11 7H13V5H11ZM10 5H12V3H10ZM1 7H2V3H1ZM2 4H3V1H2ZM4 15H6V14H4ZM5 13H7V12H5ZM4 12H6V11H4ZM3 11H5V10H3ZM11 15H12V14H11ZM3 10H4V9H3ZM2 9H3V8H2ZM3 3H4V2H3ZM10 3H11V2H10ZM8 2H9V1H8Z\"/>\n    <path transform=\"translate(144)\" d=\"M10 15H13V12H10ZM3 15H5V11H3ZM2 11H4V8H2ZM4 2H7V0H4ZM10 12H12V10H10ZM14 12H16V10H14ZM8 6H10V4H8ZM2 4H4V2H2ZM7 4H9V2H7ZM4 16H6V15H4ZM13 13H14V11H13ZM2 8H3V6H2ZM9 8H10V6H9ZM11 16H12V15H11ZM10 10H11V9H10ZM2 5H3V4H2ZM3 2H4V1H3ZM7 2H8V1H7Z\"/>\n    <path transform=\"translate(160)\" d=\"M3 8H6V5H3ZM11 9H13V4H11ZM5 16H7V13H5ZM13 16H15V13H13ZM4 10H6V8H4ZM13 10H15V8H13ZM6 9H8V7H6ZM2 2H4V0H2ZM10 2H12V0H10ZM8 9H11V8H8ZM12 13H14V12H12ZM2 8H3V6H2ZM4 5H5V3H4ZM3 4H4V2H3ZM15 16H16V15H15ZM5 13H6V12H5ZM12 12H13V11H12ZM5 11H6V10H5ZM13 11H14V10H13ZM12 10H13V9H12ZM1 7H2V6H1ZM12 4H13V3H12ZM11 3H12V2H11Z\"/>\n    <path transform=\"translate(176)\" d=\"M6 16H11V14H6ZM12 12H14V7H12ZM3 2H8V0H3ZM11 14H13V12H11ZM11 7H13V5H11ZM10 5H12V3H10ZM1 7H2V3H1ZM2 4H3V1H2ZM4 15H6V14H4ZM5 13H7V12H5ZM4 12H6V11H4ZM3 11H5V10H3ZM11 15H12V14H11ZM3 10H4V9H3ZM2 9H3V8H2ZM3 3H4V2H3ZM10 3H11V2H10ZM8 2H9V1H8Z\"/>\n    <path transform=\"translate(192)\" d=\"M10 15H13V12H10ZM3 15H5V11H3ZM2 11H4V8H2ZM4 2H7V0H4ZM10 12H12V10H10ZM14 12H16V10H14ZM8 6H10V4H8ZM2 4H4V2H2ZM7 4H9V2H7ZM4 16H6V15H4ZM13 13H14V11H13ZM2 8H3V6H2ZM9 8H10V6H9ZM11 16H12V15H11ZM10 10H11V9H10ZM2 5H3V4H2ZM3 2H4V1H3ZM7 2H8V1H7Z\"/>\n  </g>\n</svg>\n";
+// Own artwork only: the original startup picture is never read or rewritten.
+async function installStartupBranding(core, {game, builtAt, fs = core.FS} = {}) {
+  const themes = {
+    th06: {ink:'#fff0d5',shadow:'#493326'},
+    th07: {ink:'#e9e9ff',shadow:'#302942'},
+    th08: {ink:'#eaddff',shadow:'#24103e'},
+    th09: {ink:'#ffe4ee',shadow:'#492339'},
+  };
+  const theme=themes[game];
+  if(!theme)throw Error('Unsupported startup branding theme');
+  const date=new Date(builtAt);
+  if(!Number.isFinite(date.getTime()))throw Error('Missing Runtime build timestamp');
+  const stamp=new Date(date.getTime()+8*3600000).toISOString();
+  const text=`build ${stamp.slice(0,10).replaceAll('-','.')} ${stamp.slice(11,16)} UTC+8`;
+  const svg=STARTUP_WORDMARK.replaceAll('#29203f',theme.ink).replaceAll('#291426',theme.shadow);
+  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+  try{
+    const logo=new Image();logo.src=url;await logo.decode();
+    const canvas=document.createElement('canvas');canvas.width=1280;canvas.height=960;
+    const context=canvas.getContext('2d');context.scale(2,2);
+    // Original glyph bounds: x=8..215, y=8..24. Optical right edge 628.
+    const scale=226/207;
+    context.drawImage(logo,402-8*scale,112-8*scale,224*scale,32*scale);
+    context.font='8px Georgia, "Times New Roman", serif';
+    context.textAlign='right';context.textBaseline='bottom';context.fillStyle=theme.ink;
+    context.shadowColor=theme.shadow;context.shadowBlur=2;context.shadowOffsetX=1;context.shadowOffsetY=1;
+    context.fillText(text,628,141);
+    // Raw pixels suit the older renderers; PNG suits directory image decoders.
+    fs.writeFile('/eagler-startup.rgba',context.getImageData(0,0,1280,960).data);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    if(!blob)throw Error('Startup branding texture unavailable');
+    fs.writeFile('/eagler-startup.png',new Uint8Array(await blob.arrayBuffer()));
+  }finally{URL.revokeObjectURL(url);}
+}
+      // END GENERATED STARTUP BRANDING
+// BEGIN GENERATED LOCAL REPLAY
+// Generated from eagler-common/browser/local-replay*.mjs.
+// The native adapter owns parsing, stage bootstrap, fixed ticks and EOF.
+// This host owns only asynchronous command ordering and presentation pacing.
+function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
+  let selected=null,path='',paused=false,rate=1,target=null,startFrame=0,last=null,credit=0,animation=0,continuation=0,closed=false,lastReport=-Infinity;
+  let channel=null,pendingTask=null,taskSerial=0;
+  function soon(fn){
+    if(defer)return defer(fn);
+    // Seeking is CPU work, independent of the display refresh rate. Message
+    // tasks yield to input/painting between bounded slices without the nested
+    // setTimeout clamp, or waiting a whole RAF interval after every slice.
+    if(!channel){channel=new MessageChannel();channel.port1.onmessage=event=>{const task=pendingTask;if(task?.id!==event.data)return;pendingTask=null;task.fn(now());};channel.port1.unref?.();channel.port2.unref?.();}
+    const id=++taskSerial;pendingTask={id,fn};channel.port2.postMessage(id);return id;
+  }
+  function cancelScheduled(){if(animation)cancel(animation);if(continuation){if(cancelDeferred)cancelDeferred(continuation);else pendingTask=null;}animation=continuation=0;}
+  function report(){if(!selected)return;const native=state();onState({kind:'replay',path,difficulty:selected.difficulty,...native,startFrame,paused,rate,seeking:target!==null,target,description:selected});}
+  function schedule(){if(animation||continuation||closed)return;if(target!==null&&!hidden())continuation=soon(draw);else animation=raf(draw);}
+  function draw(time){animation=continuation=0;if(closed||!selected)return;
+    try {
+      if(hidden()){last=null;schedule();return;}
+      const delta=last===null?0:Math.min(.25,Math.max(0,(time-last)/1000));last=time;
+      const unlimited=target!==null||rate===0;
+      credit=Math.min(240,credit+delta*60*rate);
+      const deferred=unlimited&&deferPresentation();
+      const allowed=paused&&target===null?0:unlimited?4096:Math.floor(credit+1e-9),start=now();let count=0,shown=true,current=state();
+      while(count<allowed&&!current.ended&&(count===0||now()-start<8)) {
+        if(target!==null&&current.frame>=target&&!current.preparing)break;
+        shown=!deferred&&(count===0||count+1===allowed||target!==null&&!current.preparing&&current.frame+1>=target);
+        if(step(shown)===false)throw Error('录像原生执行失败');
+        count++;current=state();
+      }
+      // Adapters may defer only the window swap, while keeping every native
+      // Calc/Draw and capture operation. Publish the latest complete frame.
+      if(count&&!shown)present();
+      if(!unlimited)credit=Math.max(0,credit-count);
+      if(target!==null&&!current.preparing&&(current.frame>=target||current.ended)){target=null;last=null;credit=0;report();}
+      if(time-lastReport>=100){lastReport=time;report();}schedule();
+    }catch(error){paused=true;target=null;report();onError(error);}
+  }
+  const reset=()=>{last=null;credit=0;target=null;};
+  async function restart(nextPath,stage){
+    // Keep the title's startup loop alive until native menu initialization is
+    // complete. The startup picture's first-frame notification is too early.
+    await prepare();if(closed)throw Error('录像播放器已关闭');
+    cancelScheduled();stopLoop();
+    try{await open(nextPath,stage);}catch(error){selected=null;reset();onState(null);throw error;}
+    if(closed)throw Error('录像播放器已关闭');
+    reset();startFrame=state().bootstrapTarget??0;target=startFrame||state().preparing?startFrame:null;
+  }
+  return {
+    async command(message){
+      if(closed)throw Error('录像播放器已关闭');
+      const {action,value}=message;
+      if(action==='inspect')return {description:await inspect(message.path)};
+      if(action==='open'){
+        const next=await inspect(message.path),stage=message.stage??next.stages[0]?.id;
+        if(!next.stages.some(item=>item.id===stage))throw Error('录像没有此关卡');
+        await restart(message.path,stage);path=message.path;selected=next;paused=false;schedule();
+      }else {
+        if(!selected)throw Error('请先选择录像关卡');
+        if(action==='pause')paused=true;
+        else if(action==='play'){if(state().ended)await restart(path,state().startStage);paused=false;}
+        else if(action==='rate'){if(![0,.5,1,2,4,8].includes(value))throw Error('播放速度无效');rate=value;}
+        else if(action==='seek'){
+          const current=state();if(!Number.isSafeInteger(value)||value<startFrame||value>current.total)throw Error('录像位置无效');
+          if(value<current.frame||current.ended)await restart(path,current.startStage);
+          reset();target=value;
+        }else throw Error('不支持的录像操作');
+        last=null;credit=0;cancelScheduled();schedule();
+      }
+      report();return {};
+    },
+    close(){closed=true;cancelScheduled();channel?.port1.close();channel?.port2.close();selected=null;},
+    get active(){return !!selected&&!closed;},
+  };
+}
+
+
+// Replay workspaces expose one optional folder level. Keep native IDBFS as the
+// writer and do not walk arbitrary save/resource subdirectories.
+function listLocalReplayFiles(fs,root,validate,describe=(path)=>({path})) {
+  const directories=['','/replay','/hint','/autosave'],files=[];
+  if(fs.analyzePath(root+'/replay').exists)for(const name of fs.readdir(root+'/replay')){
+    if(name==='.'||name==='..'||/[\\/\x00-\x1f]/.test(name))continue;
+    if(fs.isDir(fs.stat(root+'/replay/'+name).mode))directories.push('/replay/'+name);
+  }
+  for(const directory of directories){const full=root+directory;if(!fs.analyzePath(full).exists)continue;
+    for(const name of fs.readdir(full)){const path=(directory+'/'+name).replace(/^\//,'');try{validate(path);}catch{continue;}
+      const stat=fs.stat(root+'/'+path);if(fs.isFile(stat.mode))files.push({...describe(path),size:stat.size,modifiedAt:stat.mtime?.getTime()});
+    }
+  }
+  return files;
+}
+// Adapt the small native ABI without teaching the host any Replay file format.
+function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,onState,onError}) {
+  const api=key=>{const c=getCore();return c[key]??c['_'+key];};
+  const heap=()=>getModule().HEAPU8??new Uint8Array(getCore().memory.buffer);
+  const text=p=>{if(!p)throw Error('录像无法解析');const b=heap(),end=b.indexOf(0,p);if(end<0||end-p>65536)throw Error('录像信息无效');return new TextDecoder().decode(b.subarray(p,end));};
+  // Do not put a NUL escape in an inline shell string. HTML optimizers may
+  // materialize it and the HTML parser replaces that byte with U+FFFD.
+  const cbytes=value=>{const text=new TextEncoder().encode(value),bytes=new Uint8Array(text.length+1);bytes.set(text);return bytes;};
+  function bytesCall(bytes,fn){
+    const c=getCore(),alloc=api('eagler_replay_allocate')??api('malloc')??c.allocate??c.graphics_allocate,free=api('eagler_replay_free')??api('free')??c.deallocate??c.release??c.graphics_free;
+    const p=alloc(bytes.length);if(!p)throw Error('录像内存不足');
+    try{heap().set(bytes,p);return fn(p,bytes.length);}finally{free(p);}
+  }
+  const bridge=createLocalReplay({
+    async prepare(){const ready=api('eagler_replay_ready');if(!ready)return;const deadline=performance.now()+30000;
+      while(!ready()){if(performance.now()>deadline)throw Error('录像播放器初始化超时');await new Promise(requestAnimationFrame);}},
+    inspect(path){const p=physical(path),fn=api('eagler_replay_inspect');if(!fn)throw Error('此 Runtime 需要更新后才能解析录像');
+      const bytes=getModule().FS.readFile(p);if(!bytes.length||bytes.length>64*1024*1024)throw Error('录像大小无效');
+      return bytesCall(bytes,(ptr,size)=>bytesCall(cbytes(p),name=>{const d=JSON.parse(text(fn(ptr,size,name)));
+        if(Array.isArray(d.nameBytes))d.name=new TextDecoder('shift_jis').decode(new Uint8Array(d.nameBytes)).replace(/\0.*$/,'').trim();return d;}));},
+    open(path,stage){if(openReplay)return openReplay(path,stage);const bytes=cbytes(physical(path));
+      if(bytesCall(bytes,p=>api('eagler_replay_open')(p,stage))!==1)throw Error(api('eagler_replay_error')?text(api('eagler_replay_error')()):'录像原生启动失败');},
+    step(render){const ok=stepReplay?stepReplay(render):api('eagler_replay_step')?.(+render)===1;
+      if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));return ok;},
+    present(){api('eagler_replay_present')?.();},
+    deferPresentation(){return typeof api('eagler_replay_present')==='function';},
+    state(){const preparing=api('eagler_replay_preparing'),extra=preparing?{preparing:!!preparing()}:{};
+      if(replayState)return {...replayState(),...extra};const p=api('eagler_replay_state')(),v=Array.from(new Uint32Array(heap().buffer,p,5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],...extra};},
+    stopLoop,onState,onError,
+  });
+  return bridge;
+}
+// END GENERATED LOCAL REPLAY
+      const localReplay=createNativeLocalReplay({core:()=>Module,module:()=>({FS,get HEAPU8(){return typeof HEAPU8!=='undefined'?HEAPU8:Module.HEAPU8;}}),physical:safePath,
+        stopLoop:()=>{clearBrowserKeyboard();Module._eagler_replay_stop_loop();},onState:playback=>emit('runtime-info',{playback}),onError:error=>emit('notice',{message:String(error)})});
+      const launch = async () => {
+        if (launched) return;
+        await installStartupBranding(Module, {game:'th07', builtAt:Module.eaglerBuiltAt, fs:FS});
+        const start = session => {
+          if (launched) return;
+          Module.eaglerOptions.thpracSession = session;
+          if (session) emit("thprac-session", { session });
+          launched = true; status.textContent = "";
+          // Keep the canvas itself focusable before entering the main loop.
+          // Android browsing-context focus is owned by the Launcher/Player
+          // iframe chain; shell-level repeated element.focus() cannot move
+          // focus across iframe boundaries on Via/WebView.
+          document.getElementById("canvas").focus({ preventScroll: true });
+          Module.callMain([]);
+          document.getElementById("canvas").focus({ preventScroll: true });
+        };
+        start(Module.eaglerOptions.thpracSession || null);
+      };
+      // The shell owns recognized Web keys; Controller uses SDL keyboard only
+      // on desktop or with an older shell. Other input sources stay independent.
+      const browserKeyboardDown = new Map();
+      const thpracKeyboardDown = new Map();
+      const thpracKeyboardBitForEvent = event => {
+        switch (event.code || "") {
+        case "Backspace": return 1 << 0;
+        case "F1": return 1 << 1;
+        case "F2": return 1 << 2;
+        case "F3": return 1 << 3;
+        case "F4": return 1 << 4;
+        case "F5": return 1 << 5;
+        case "F6": return 1 << 6;
+        case "F7": return 1 << 7;
+        case "Tab": return 1 << 8;
+        case "F12": return 1 << 9;
+        case "KeyU": return 1 << 10;
+        case "F8": return 1 << 11;
+        }
+        const key = String(event.key || "").toLowerCase();
+        if (key === "backspace") return 1 << 0;
+        if (key === "tab") return 1 << 8;
+        if (key === "f12") return 1 << 9;
+        if (key === "u") return 1 << 10;
+        if (key === "f8") return 1 << 11;
+        if (/^f[1-7]$/.test(key)) return 1 << Number(key.slice(1));
+        const keyCode = Number(event.keyCode) || 0;
+        if (keyCode === 8) return 1 << 0;
+        if (keyCode === 9) return 1 << 8;
+        if (keyCode === 123) return 1 << 9;
+        if (keyCode === 85) return 1 << 10;
+        if (keyCode === 119) return 1 << 11;
+        if (keyCode >= 112 && keyCode <= 118) return 1 << (keyCode - 111);
+        return 0;
+      };
+      const keyboardBitForEvent = event => {
+        switch (event.code || "") {
+        case "KeyZ": return 1 << 0;
+        case "KeyX": return 1 << 1;
+        case "ShiftLeft": case "ShiftRight": return 1 << 2;
+        case "Escape": return 1 << 3;
+        case "ArrowUp": case "Numpad8": return 1 << 4;
+        case "ArrowDown": case "Numpad2": return 1 << 5;
+        case "ArrowLeft": case "Numpad4": return 1 << 6;
+        case "ArrowRight": case "Numpad6": return 1 << 7;
+        case "Numpad7": return (1 << 4) | (1 << 6);
+        case "Numpad9": return (1 << 4) | (1 << 7);
+        case "Numpad1": return (1 << 5) | (1 << 6);
+        case "Numpad3": return (1 << 5) | (1 << 7);
+        case "ControlLeft": case "ControlRight": return 1 << 8;
+        case "KeyQ": return 1 << 9;
+        case "KeyS": return 1 << 10;
+        case "Home": return 1 << 11;
+        case "Enter": case "NumpadEnter": return 1 << 12;
+        case "KeyD": return 1 << 13;
+        case "KeyR": return 1 << 14;
+        }
+        const key = String(event.key || "").toLowerCase();
+        if (key === "z") return 1 << 0;
+        if (key === "x") return 1 << 1;
+        if (key === "shift") return 1 << 2;
+        if (key === "escape" || key === "esc") return 1 << 3;
+        if (key === "arrowup") return 1 << 4;
+        if (key === "arrowdown") return 1 << 5;
+        if (key === "arrowleft") return 1 << 6;
+        if (key === "arrowright") return 1 << 7;
+        if (key === "control") return 1 << 8;
+        if (key === "q") return 1 << 9;
+        if (key === "s") return 1 << 10;
+        if (key === "home") return 1 << 11;
+        if (key === "enter") return 1 << 12;
+        if (key === "d") return 1 << 13;
+        if (key === "r") return 1 << 14;
+        // Legacy DOM keyCode fallback for older/vendor Android WebViews. Raw
+        // Android KEYCODE_DPAD_* 19..22 are converted by Chromium to DOM
+        // Arrow*; mapping 19/20 directly here would collide with old Web keys.
+        switch (Number(event.keyCode) || 0) {
+        case 90: return 1 << 0;  // Z
+        case 88: return 1 << 1;  // X
+        case 16: return 1 << 2;  // Shift
+        case 27: return 1 << 3;  // Escape
+        case 38: return 1 << 4;  // Up
+        case 40: return 1 << 5;  // Down
+        case 37: return 1 << 6;  // Left
+        case 39: return 1 << 7;  // Right
+        case 17: return 1 << 8;  // Control
+        case 81: return 1 << 9;  // Q
+        case 83: return 1 << 10; // S
+        case 36: return 1 << 11; // Home
+        case 13: return 1 << 12; // Enter
+        case 68: return 1 << 13; // D
+        case 82: return 1 << 14; // R
+        }
+        return 0;
+      };
+      // BEGIN SHARED BROWSER KEYBOARD OWNERS
+      // Generated from eagler-common/browser/{keyboard-owners,keyboard-input-bridge}.mjs.
+      // Generic browser ownership only. The adapter maps DOM events to logical bits.
+      function keyboardLocation(event) {
+        const code = event.code || "";
+        if (/^(Shift|Control)(Left|Right)$/.test(code)) return code.endsWith("Left") ? 1 : 2;
+        if (code.startsWith("Numpad")) return 3;
+        return Number.isInteger(event.location) ? event.location : 0;
+      }
+
+      function updateKeyboardOwners(owners, event, bit, down) {
+        if (!bit) return false;
+        const location = keyboardLocation(event);
+        const code = event.code && event.code !== "Unidentified" ? event.code : "";
+        const id = code ? `code:${code}` : `${bit}:${location}`;
+        const candidates = [...owners.entries()].filter(([, owner]) => owner.bit === bit);
+        const sameSide = candidates.filter(([, owner]) => owner.location === location);
+        if (down) {
+          const existing = owners.get(id) || (!code && sameSide.length === 1 ? sameSide[0][1]
+            : !code && !location && candidates.length === 1 ? candidates[0][1] : null);
+          // Lifecycle cancellation must not be undone by an old auto-repeat event.
+          if (event.repeat && !existing) return false;
+          if (!existing) owners.set(id, {bit, location, code});
+          return true;
+        }
+        let released = owners.has(id) ? [[id, owners.get(id)]] : sameSide;
+        if (!released.length) released = candidates.filter(([, owner]) => !owner.code && !owner.location);
+        // With no physical evidence, release all candidates rather than arbitrarily
+        // removing one and permanently stranding the other. Known sides stay distinct.
+        if (!released.length && !code && !location) released = candidates;
+        for (const [owner] of released) owners.delete(owner);
+        return released.length > 0;
+      }
+
+      // The Launcher owns remapping. Runtime adapters synchronously consume the
+      // resulting canonical key transitions before their next simulation sample.
+      function createKeyboardInputBridge({target=globalThis,protocol,game,epoch,origin,ready,dispatch,reset,profile=()=> 'standard'}) {
+        const schema='eagler-touhou/keyboard-input/1',held=new Set();
+        function gamepadMapper(){
+          const value=target.__eaglerGamepadMapping;
+          return value&&value.schema==='eagler-touhou/gamepad-input/1'&&value.protocol===protocol&&value.game===game&&
+            value.epoch===epoch&&value.origin===origin&&typeof value.sample==='function'&&typeof value.clear==='function'&&typeof value.enabled==='function'?value:null;
+        }
+        target.__eaglerGamepadInputBridge=Object.freeze({schema:'eagler-touhou/gamepad-input/1',protocol,game,epoch,origin,
+          owned:()=>gamepadMapper()?.enabled()===true,
+          sample(seat){const owner=gamepadMapper();if(!owner)return -1;
+            if(!ready()){owner.clear();return 0;}
+            const bits=owner.sample(seat);return Number.isInteger(bits)&&bits>=-1&&bits<=4095?bits:0;
+          }});
+        function mapper() {
+          const value=target.__eaglerKeyboardMapping;
+          return value&&value.schema===schema&&value.protocol===protocol&&value.game===game&&
+            value.epoch===epoch&&value.origin===origin&&typeof value.map==='function'&&typeof value.clear==='function'&&typeof value.supports==='function'?value:null;
+        }
+        function apply(events) {
+          if(!Array.isArray(events)||events.some(e=>!e||typeof e.code!=='string'||!e.code||typeof e.down!=='boolean'||typeof e.key!=='string'||!Number.isInteger(e.keyCode)||!Number.isInteger(e.location)))
+            throw Error('Invalid canonical keyboard transitions');
+          for(const event of events){if(event.down)held.add(event.code);else held.delete(event.code);dispatch(event,event.down);}
+        }
+        let lastProfile;
+        function currentProfile(){const next=profile();if(lastProfile!==undefined&&lastProfile!==next){const owner=mapper();if(owner)apply(owner.clear());gamepadMapper()?.clear();}lastProfile=next;return next;}
+        function event(raw,down,source='physical') {
+          const owner=mapper();if(!owner||!ready())return false;
+          const editing=!!raw.launcherOwnsFocus||!!raw.target?.closest?.('input,textarea,select,[contenteditable="true"]');
+          if(source==='physical'&&down&&(raw.isComposing||editing))return false;
+          const events=owner.map({code:String(raw.code||''),key:String(raw.key||''),keyCode:Number(raw.keyCode)||0,
+            location:Number(raw.location)||0,repeat:!!raw.repeat,altKey:!!raw.altKey,metaKey:!!raw.metaKey,ctrlKey:!!raw.ctrlKey,
+            launcherOwnsFocus:editing},!!down,source,currentProfile());
+          if(events===null)return false;
+          apply(events);return true;
+        }
+        const bridge=Object.freeze({schema,protocol,game,epoch,origin,event,
+          profile:currentProfile,
+          sampleLocal(seat){const mode=currentProfile(),owner=mapper();if(mode!=='th09-local'||typeof owner?.sampleLocal!=='function')return -1;
+            if(!ready()){apply(owner.clear());return 0;}const bits=owner.sampleLocal(seat);return Number.isInteger(bits)&&bits>=-1&&bits<=4095?bits:0;},
+          active:()=>!!mapper(),keyDown:code=>held.has(code),
+          // SDL uses USB HID scancodes. Keep physical-only THPrac helpers on the
+          // same canonical keyboard without sampling or consuming gameplay pulses.
+          scancodeState(scan){
+            const owner=mapper();if(!owner)return -1;
+            const special={40:'Enter',41:'Escape',42:'Backspace',43:'Tab',44:'Space',74:'Home',
+              79:'ArrowRight',80:'ArrowLeft',81:'ArrowDown',82:'ArrowUp',88:'NumpadEnter',
+              224:'ControlLeft',225:'ShiftLeft',228:'ControlRight',229:'ShiftRight'};
+            const code=scan>=4&&scan<=29?'Key'+String.fromCharCode(65+scan-4):scan>=30&&scan<=38?'Digit'+(scan-29):scan===39?'Digit0':
+              scan>=58&&scan<=69?'F'+(scan-57):scan>=89&&scan<=97?'Numpad'+(scan-88):special[scan];
+            return code&&owner.supports?.(code)?Number(held.has(code)):-1;
+          },
+          clear(){const owner=mapper();if(owner)apply(owner.clear());held.clear();gamepadMapper()?.clear();},
+          submit(message){
+            if(!mapper()||!message||message.protocol!==protocol||message.game!==game||message.epoch!==epoch||message.request!=null)return false;
+            if(message.command==='keyboard-clear'){reset();return true;}
+            if(message.command!=='keyboard'||!ready()||typeof message.down!=='boolean'||typeof message.code!=='string')return false;
+            return event(message,message.down,message.inputSource==='physical'?'physical':'virtual');
+          }
+        });
+        target.__eaglerKeyboardInputBridge=bridge;
+        return bridge;
+      }
+      // END SHARED BROWSER KEYBOARD OWNERS
+      let cancelledKeyboardBits = 0;
+      const publishBrowserKeyboard = () => {
+        let bits = 0;
+        for (const owner of browserKeyboardDown.values()) bits |= owner.bit;
+        let thpracBits = 0;
+        for (const owner of thpracKeyboardDown.values()) thpracBits |= owner.bit;
+        if (Module.eaglerControls) {
+          Module.eaglerControls.keyboardBits = bits;
+          Module.eaglerControls.thpracKeyboardBits = thpracBits;
+        }
+      };
+      const applyBrowserKeyboardEvent = (event, down) => {
+        const bit = keyboardBitForEvent(event);
+        const thpracBit = thpracKeyboardBitForEvent(event);
+        if (!bit && !thpracBit) return false;
+        const hadOwner = updateKeyboardOwners(browserKeyboardDown, event, bit, down);
+        updateKeyboardOwners(thpracKeyboardDown, event, thpracBit, down);
+        if (down && hadOwner) cancelledKeyboardBits &= ~bit;
+        if (!down) {
+          // Vendor release-only taps remain supported, but never synthesize
+          // Focus, duplicate observed releases, or cancelled-lifecycle pulses.
+          if (!hadOwner && bit !== (1 << 2) && !(cancelledKeyboardBits & bit) && Module.eaglerControls)
+            Module.eaglerControls.keyboardPulseBits = (Module.eaglerControls.keyboardPulseBits | 0) | bit;
+          if (hadOwner) cancelledKeyboardBits |= bit;
+        }
+        publishBrowserKeyboard();
+        return true;
+      };
+      let keyboardInput;
+      const clearBrowserKeyboard = () => {
+        keyboardInput?.clear();
+        // Cancel only observed input. An empty startup reset must not disable
+        // keyboards that report every tap as a release-only event.
+        for (const owner of browserKeyboardDown.values()) cancelledKeyboardBits |= owner.bit;
+        if (Module.eaglerControls) cancelledKeyboardBits |= Module.eaglerControls.keyboardPulseBits | 0;
+        browserKeyboardDown.clear();
+        thpracKeyboardDown.clear();
+        if (Module.eaglerControls) {
+          Module.eaglerControls.keyboardBits = 0;
+          Module.eaglerControls.keyboardPulseBits = 0;
+          Module.eaglerControls.thpracKeyboardBits = 0;
+        }
+      };
+      keyboardInput = createKeyboardInputBridge({protocol,game,epoch,origin:location.origin,
+        ready:()=>launched&&!document.hidden&&!Module.eaglerOptions?.netplaySpectator,
+        dispatch:(event,down)=>applyBrowserKeyboardEvent(event,down),reset:clearBrowserKeyboard});
+      window.addEventListener("keydown", event => {
+        if (!launched) return;
+        if (keyboardInput.event(event,true)) {event.preventDefault();event.stopImmediatePropagation();return;}
+        if (event.metaKey || event.altKey) return;
+        if (applyBrowserKeyboardEvent(event, true)) event.preventDefault();
+      }, true);
+      window.addEventListener("keyup", event => {
+        if (!launched) return;
+        if (keyboardInput.event(event,false)) {event.preventDefault();event.stopImmediatePropagation();return;}
+        if (applyBrowserKeyboardEvent(event, false)) event.preventDefault();
+      }, true);
+      // BEGIN IMMEDIATE INPUT BRIDGE (same validator as queued input)
+      function applyRuntimeInputEvent(message) {
+        switch (message.command) {
+        case "touch-controls":
+          if (typeof message.fireEnabled !== "boolean" || typeof message.focusEnabled !== "boolean" || !Number.isInteger(message.bombSerial) || !Number.isInteger(message.escapeSerial) ||
+              !Number.isInteger(message.joystickX) || !Number.isInteger(message.joystickY) || message.joystickX < -32768 || message.joystickX > 32767 || message.joystickY < -32768 || message.joystickY > 32767 ||
+              !Number.isFinite(message.touchSensitivity) || message.touchSensitivity < 100 || message.touchSensitivity > 300) throw new Error("invalid touch controls");
+          Module.eaglerControls.thpracMobilePanelsEnabled = message.thpracMobilePanelsEnabled === true;
+          Module.eaglerControls.thpracMobilePanelsVisible = message.thpracMobilePanelsVisible === true;
+          Module.eaglerControls.fireEnabled = message.fireEnabled; Module.eaglerControls.focusEnabled = message.focusEnabled;
+          Module.eaglerControls.bombSerial = message.bombSerial; Module.eaglerControls.escapeSerial = message.escapeSerial;
+          Module.eaglerControls.joystickX = message.joystickX; Module.eaglerControls.joystickY = message.joystickY;
+          Module.eaglerOptions.touchSensitivity = message.touchSensitivity;
+          break;
+        case "keyboard":
+          if (typeof message.down !== "boolean" || typeof message.code !== "string" || typeof message.key !== "string" || !Number.isInteger(message.keyCode) || !Number.isInteger(message.location)) throw new Error("invalid keyboard bridge event");
+          if (!keyboardInput.event(message,message.down,message.inputSource==='physical'?'physical':'virtual')) applyBrowserKeyboardEvent(message, message.down);
+          break;
+        case "keyboard-clear": clearBrowserKeyboard(); break;
+        case "touch-cancel": cancelAllTouches(); break;
+        case "direct-touch": {
+          if (!["down", "move", "up"].includes(message.type) || !Number.isInteger(message.id) ||
+              !Number.isFinite(message.x) || !Number.isFinite(message.y))
+            throw new Error("invalid direct touch bridge event");
+          const rect = Module.canvas.getBoundingClientRect();
+          if (!(rect.width > 0) || !(rect.height > 0)) break;
+          const x = (message.x * window.innerWidth - rect.left) / rect.width;
+          const y = (message.y * window.innerHeight - rect.top) / rect.height;
+          if (message.type === "down") Module.canvas.focus({ preventScroll: true });
+          if (message.type === "down" && typeof Module._TouhouAuxTouchDown === "function") Module._TouhouAuxTouchDown(message.id, x, y);
+          else if (message.type === "move" && typeof Module._TouhouAuxTouchMotion === "function") Module._TouhouAuxTouchMotion(message.id, x, y);
+          else if (message.type === "up" && typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(message.id, x, y);
+          if (Module.eaglerOptions.netplayPerfTelemetry) globalThis.__th07InputLatencyProbe?.receive(message);
+          break;
+        }
+        }
+      }
+      const immediateInputCommands = new Set(["direct-touch", "touch-controls", "touch-cancel", "keyboard", "keyboard-clear"]);
+      // Same-origin Window access is enforced by the browser. No raw game-state
+      // changes here: feed the existing once-only physical-input capture lane.
+      globalThis.__eaglerDirectInputBridge = Object.freeze({
+        schema: "eagler-touhou/direct-input/1", protocol, game, epoch, origin: location.origin,
+        submit(message) {
+          if (!hosted || !launched || !message || typeof message !== "object" ||
+              Module.eaglerOptions.netplayMode !== "lan" || Module.eaglerOptions.netplayInputDelayFrames !== 0 ||
+              Module.eaglerOptions.netplayRollbackPolicy !== "full" || Module.eaglerOptions.replayViewer ||
+              Module.eaglerOptions.netplaySpectator ||
+              !validEpoch || message.protocol !== protocol || message.game !== game || message.epoch !== epoch || message.request != null ||
+              !immediateInputCommands.has(message.command)) return false;
+          applyRuntimeInputEvent(message);
+          return true;
+        }
+      });
+      // END IMMEDIATE INPUT BRIDGE
+      window.addEventListener("message", async event => {
+        if (!hosted || event.source !== window.parent || event.origin !== location.origin) return;
+        const message = event.data || {};
+        if (!validEpoch || message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
+        try {
+          switch (message.command) {
+          case "configure": await installShared(message); await installRuntime(message); await installMusic(message); reply(message.request, true); break;
+          case "resources": await installPackageResources(message.resources ?? []); reply(message.request, true); break;
+          case "playback":
+            if (!launched || Module.eaglerOptions?.replayViewer !== true) throw Error("请先打开录像管理器");
+            reply(message.request, true, await localReplay.command(message));
+            break;
+          case "launch": await launch(); reply(message.request, true); break;
+          case "touch-controls":
+            applyRuntimeInputEvent(message);
+            if (message.request) reply(message.request, true); break;
+          case "keyboard":
+          case "keyboard-clear": applyRuntimeInputEvent(message); break;
+          case "touch-cancel": applyRuntimeInputEvent(message); reply(message.request, true); break;
+          case "direct-touch": {
+            applyRuntimeInputEvent(message);
+            break;
+          }
+          case "thprac-mouse":
+            if (!["move", "down", "up"].includes(message.type) || !Number.isFinite(message.x) || !Number.isFinite(message.y)) throw new Error("invalid thprac mouse bridge event");
+            const mouseRect = Module.canvas.getBoundingClientRect();
+            if (!(mouseRect.width > 0) || !(mouseRect.height > 0)) break;
+            const mouseX = (message.x - mouseRect.left) * 640 / mouseRect.width;
+            const mouseY = (message.y - mouseRect.top) * 480 / mouseRect.height;
+            Module.canvas.focus({ preventScroll: true });
+            if (typeof Module._TouhouThpracMouseEvent === "function") Module._TouhouThpracMouseEvent(message.type === "move" ? 0 : message.type === "down" ? 1 : 2, mouseX, mouseY);
+            break;
+          case "list": reply(message.request, true, { files: walk(saveRoot) }); break;
+          case "read": { const bytes = FS.readFile(safePath(message.path)); reply(message.request, true, { path: message.path, bytes: Array.from(bytes) }); break; }
+          case "write": { const path = safePath(message.path); ensureDir(path); FS.writeFile(path, new Uint8Array(message.bytes)); await sync(); reply(message.request, true); break; }
+          case "remove": FS.unlink(safePath(message.path)); await sync(); reply(message.request, true); break;
+          case "sync": await sync(); reply(message.request, true); break;
+          case "retry-music": await retryMusic(); reply(message.request, true); break;
+          default: reply(message.request, false, { error: "unknown command" });
+          }
+        } catch (error) {
+          if (message.request) {
+            const detail = typeof error?.message === "string" && error.message ? error.message
+              : Number.isInteger(error?.errno) ? `Filesystem error (errno ${error.errno})`
+              : String(error);
+            reply(message.request, false, { error: detail, errno: Number.isInteger(error?.errno) ? error.errno : null });
+          }
+        }
+      });
+      window.Module = {
+        canvas: document.getElementById("canvas"),
+        locateFile: path => assetVersion ? `${path}?v=${encodeURIComponent(assetVersion)}` : path,
+        touhouMusicMode: "",
+      eaglerOptions: { thpracEnabled: false, limitPresentationTo60: false, touchEnabled: false, touchMovementMode: "touch", touchSensitivity: 100, touchFocusMode: "hold-button", unlimitedTouch: false, touchBombZoneEnabled: true, doubleTapBombEnabled: false, alwaysHitbox: false, enhanceLocalPlayerVisibility: false, focusHitboxEnabled: false, netplayRollbackProbe: new URLSearchParams(location.search).get("netplayProbe") === "1", thpracLocale: "en-US", oggDecodeMode: "stream", debugHarness: new URLSearchParams(location.search).get("debugHarness") || null, netplayUrl: new URLSearchParams(location.search).get("netplayUrl") || "", netplayPlayer: Number.parseInt(new URLSearchParams(location.search).get("netplayPlayer") || "-1", 10), netplayPlayerCount: Number.parseInt(new URLSearchParams(location.search).get("netplayPlayerCount") || "2", 10), netplayStage4BossChain: new URLSearchParams(location.search).get("netplayStage4BossChain") === "1", netplayPhysicalInput: new URLSearchParams(location.search).get("netplayPhysicalInput") === "1", netplayPauseCycle: new URLSearchParams(location.search).get("netplayPauseCycle") === "1", netplayStageTransition: new URLSearchParams(location.search).get("netplayStageTransition") === "1", netplayTestFrames: Number.parseInt(new URLSearchParams(location.search).get("netplayTestFrames") || "300", 10), thpracSession: null },
+        // C++ resets retire the browser owners as well as their output bits.
+        eaglerResetBrowserKeyboard: clearBrowserKeyboard,
+        eaglerControls: { fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0, keyboardBits: 0, keyboardPulseBits: 0, thpracKeyboardBits: 0 },
+        preRun: [() => {
+          addRunDependency("savesth07-sync");
+          try { FS.mkdir(saveRoot); } catch (error) { if (!String(error).includes("File exists")) console.error(error); }
+          const saveMountRoot = FS.mount(IDBFS, { autoPersist: true }, saveRoot);
+          const saveMount = saveMountRoot?.mount;
+          // Suppress autoPersist writes created by populate itself. Otherwise
+          // a nested restore can queue a partial memory tree back to IndexedDB
+          // and delete entries that WebKit has not restored yet.
+          if (saveMount) saveMount.idbPersistState = "restore";
+          let settled = false;
+          const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            failHostedStartup(new Error("Local save restore timed out; reload the page before retrying"));
+            // Keep the run dependency held. Starting with an empty save tree
+            // after an IndexedDB stall could let autoPersist overwrite a real
+            // save that WebKit merely failed to return in time.
+          }, 15000);
+          FS.syncfs(true, error => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            if (error) {
+              failHostedStartup(new Error(`Local save restore failed: ${error?.message || error}`));
+              return;
+            }
+            if (saveMount) saveMount.idbPersistState = 0;
+            removeRunDependency("savesth07-sync");
+          });
+        }],
+        onRuntimeInitialized: () => {
+          setWebAudioActive(document.visibilityState !== "hidden");
+          if (hosted) { status.textContent = "Ready"; emit("ready", { saveRoot }); }
+          else launch();
+        },
+        setStatus: text => {
+          status.textContent = text || "";
+          const match = /^Downloading data\.\.\. \((\d+)\/(\d+)\)$/.exec(text || "");
+          if (match) {
+            const now = performance.now();
+            const loaded = Number(match[1]); const total = Number(match[2]);
+            if (!baseTransfer) baseTransfer = { startedAt: now, lastEmit: 0 };
+            if (now - baseTransfer.lastEmit >= 200 || loaded >= total) {
+              baseTransfer.lastEmit = now;
+              emit("transfer", { kind: "game", mode: "base", loaded, total,
+                speed: loaded / Math.max((now - baseTransfer.startedAt) / 1000, 0.1) });
+            }
+          }
+        }
+      };
+      Module.canvas.addEventListener("pointerdown", () => Module.canvas.focus());
+      const auxiliaryTouches = new Map();
+      const nativeCanvasTouches = new Map();
+      let nextAuxiliaryTouchId = -1;
+      const auxiliaryCoordinates = event => {
+        const rect = Module.canvas.getBoundingClientRect();
+        return [(event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height];
+      };
+      document.addEventListener("pointerdown", event => {
+        if (event.pointerType !== "touch" || !Module.eaglerOptions.touchEnabled) return;
+        const [x, y] = auxiliaryCoordinates(event);
+        if (event.target === Module.canvas) {
+          nativeCanvasTouches.set(event.pointerId, { id: event.pointerId + 1, x, y });
+          return;
+        }
+        if (typeof Module._TouhouAuxTouchDown !== "function") return;
+        const touch = { id: nextAuxiliaryTouchId--, x, y };
+        auxiliaryTouches.set(event.pointerId, touch);
+        Module._TouhouAuxTouchDown(touch.id, x, y);
+        try { event.target.setPointerCapture?.(event.pointerId); } catch {}
+        event.preventDefault();
+      }, { capture: true, passive: false });
+      document.addEventListener("pointermove", event => {
+        if (event.pointerType !== "touch") return;
+        const nativeTouch = nativeCanvasTouches.get(event.pointerId);
+        if (nativeTouch) {
+          const [x, y] = auxiliaryCoordinates(event);
+          nativeTouch.x = x;
+          nativeTouch.y = y;
+          return;
+        }
+        if (!auxiliaryTouches.has(event.pointerId)) return;
+        const [x, y] = auxiliaryCoordinates(event);
+        const touch = auxiliaryTouches.get(event.pointerId);
+        touch.x = x;
+        touch.y = y;
+        if (typeof Module._TouhouAuxTouchMotion === "function") Module._TouhouAuxTouchMotion(touch.id, x, y);
+        event.preventDefault();
+      }, { capture: true, passive: false });
+      const releaseTouch = event => {
+        if (event.pointerType !== "touch") return;
+        const auxiliaryTouch = auxiliaryTouches.get(event.pointerId);
+        if (auxiliaryTouch) {
+          auxiliaryTouches.delete(event.pointerId);
+          const [x, y] = Number.isFinite(event.clientX) ? auxiliaryCoordinates(event) : [auxiliaryTouch.x, auxiliaryTouch.y];
+          if (typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(auxiliaryTouch.id, x, y);
+          event.preventDefault();
+          return;
+        }
+
+        const nativeTouch = nativeCanvasTouches.get(event.pointerId);
+        if (!nativeTouch) return;
+        nativeCanvasTouches.delete(event.pointerId);
+        const [x, y] = Number.isFinite(event.clientX) ? auxiliaryCoordinates(event) : [nativeTouch.x, nativeTouch.y];
+        if (typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(nativeTouch.id, x, y);
+      };
+      document.addEventListener("pointerup", releaseTouch, { capture: true, passive: false });
+      document.addEventListener("pointercancel", releaseTouch, { capture: true, passive: false });
+      document.addEventListener("lostpointercapture", releaseTouch, { capture: true, passive: false });
+      const cancelAllTouches = () => {
+        auxiliaryTouches.clear();
+        nativeCanvasTouches.clear();
+        if (typeof Module._TouhouAuxTouchCancelAll === "function") Module._TouhouAuxTouchCancelAll();
+      };
+      const setWebAudioActive = active => {
+        if (typeof Module._TouhouWebSetAudioActive === "function") Module._TouhouWebSetAudioActive(active ? 1 : 0);
+      };
+      const preventGameGesture = event => event.preventDefault();
+      for (const type of ["contextmenu", "selectstart", "dragstart", "gesturestart", "gesturechange", "gestureend"])
+        document.addEventListener(type, preventGameGesture, { capture: true, passive: false });
+      document.addEventListener("visibilitychange", () => {
+        const active = document.visibilityState !== "hidden";
+        setWebAudioActive(active);
+        if (!active) { cancelAllTouches(); clearBrowserKeyboard(); }
+      });
+      window.addEventListener("blur", () => { cancelAllTouches(); clearBrowserKeyboard(); });
+      window.addEventListener("pagehide", () => { setWebAudioActive(false); cancelAllTouches(); clearBrowserKeyboard(); });
+      window.addEventListener("pageshow", () => setWebAudioActive(true));
+      Module.canvas.addEventListener("webglcontextlost", event => { event.preventDefault(); status.textContent = "WebGL context lost. Reload the page."; });
+    })();
+  </script>
+  <template id="eagler-runtime-script-template">{{{ SCRIPT }}}</template>
+  <script>
+    (async () => {
+      const template = document.getElementById("eagler-runtime-script-template");
+      const generated = template.content.querySelector("script");
+      if (!generated) throw new Error("missing Emscripten runtime script");
+      const runtime = document.createElement("script");
+      for (const attr of generated.attributes) runtime.setAttribute(attr.name, attr.value);
+      const src = generated.getAttribute("src");
+      const managedData = window.__eaglerManagedDataState;
+      if (managedData?.enabled) {
+        const prepare = window.parent.__eaglerPrepareManagedRuntimeDataV1;
+        if (typeof prepare !== "function") throw new Error("Managed DATA provider is unavailable");
+        const runtimeEpoch = Number(window.__eaglerRuntimeEpochV1);
+        if (!Number.isSafeInteger(runtimeEpoch) || runtimeEpoch <= 0) throw new Error("Managed DATA Runtime epoch is unavailable");
+        const payload = await prepare({ game: managedData.game, generation: managedData.generation, epoch: runtimeEpoch });
+        if (!payload?.buffer || typeof payload.buffer.byteLength !== "number" || payload.buffer.byteLength !== Number(payload.bytes)) {
+          throw new Error("Managed DATA payload is invalid");
+        }
+        const preparedData = new Uint8Array(payload.buffer).slice().buffer;
+        Module.getPreloadedPackage = (_name, expectedBytes) => {
+          if (Number(expectedBytes) > 0 && preparedData.byteLength !== Number(expectedBytes)) {
+            throw new Error(`Managed DATA size mismatch: ${preparedData.byteLength}/${expectedBytes}`);
+          }
+          return preparedData;
+        };
+      }
+      if (src) {
+        const version = new URLSearchParams(location.search).get("v") || "";
+        runtime.setAttribute("src", !version ? src : `${src}${src.includes("?") ? "&" : "?"}v=${encodeURIComponent(version)}`);
+      } else {
+        runtime.textContent = generated.textContent;
+      }
+      template.replaceWith(runtime);
+    })().catch(error => {
+      console.error(error);
+      const status = document.getElementById("status");
+      if (status) status.textContent = `Runtime bootstrap failed: ${error?.message || error}`;
+    });
+  </script>
+</body>
+</html>

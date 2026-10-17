@@ -1,0 +1,4 @@
+BasedOnStyle: Microsoft
+ColumnLimit: 100
+InsertBraces: true
+RemoveParentheses: MultipleParentheses
