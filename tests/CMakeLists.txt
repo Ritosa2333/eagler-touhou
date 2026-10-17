@@ -255,6 +255,8 @@ add_test(NAME eagler-common.adonis-startup COMMAND eagler_common_adonis_startup_
 if(EAGLER_COMMON_NODE_EXECUTABLE)
     add_test(NAME eagler-common.web-sfx-output
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/web-sfx-output.test.mjs)
+    add_test(NAME eagler-common.browser-peer-receive-queue
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-receive-queue.test.mjs)
     add_test(NAME eagler-common.browser-peer-spectator-tail
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-tail.test.mjs)
     add_test(NAME eagler-common.browser-peer-recovery

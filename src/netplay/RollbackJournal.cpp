@@ -203,10 +203,17 @@ void RollbackJournal::FlushReadOnlyCapture()
     pendingReadOnlyCaptureBlocks_ = pendingReadOnlyCaptureBytes_ = 0;
 }
 
-void RollbackJournal::EnsureByteCapacity(FrameRecord &record, std::size_t required)
+bool RollbackJournal::EnsureByteCapacity(FrameRecord &record, std::size_t required)
 {
+    // Keep the growth loop bounded even if a future caller misses Touch's check.
+    if (required > config_.maxBytesPerFrame)
+    {
+        failed_ = true;
+        FlushReadOnlyCapture();
+        return false;
+    }
     if (required <= record.byteCapacity)
-        return;
+        return true;
     // The relocation copy must see every accepted byte in the old arena.
     // Queued targets use offsets, and never outlive this drain and relocation.
     FlushReadOnlyCapture();
@@ -221,6 +228,7 @@ void RollbackJournal::EnsureByteCapacity(FrameRecord &record, std::size_t requir
         CopyBytes(bytes.get(), record.bytes.get(), record.byteSize);
     record.bytes = std::move(bytes);
     record.byteCapacity = capacity;
+    return true;
 }
 
 int RollbackJournal::Height(const FrameRecord &record, std::uint32_t index)
@@ -342,7 +350,8 @@ bool RollbackJournal::Touch(void *address, std::size_t size)
     }
 
     const std::size_t offset = record->byteSize;
-    EnsureByteCapacity(*record, offset + size);
+    if (!EnsureByteCapacity(*record, offset + size))
+        return false;
     bool defer = readOnlyCaptureOpen_ && size >= 1024;
 #if defined(__wasm__)
     if (readOnlyCaptureOpen_ && (defer || pendingReadOnlyCaptureBlocks_ != 0))

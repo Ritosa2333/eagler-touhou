@@ -376,6 +376,27 @@ static void TestRandomizedHistoryAgainstFullCopyReference()
     }
 }
 
+static void TestByteCapacityBoundaries()
+{
+    std::array<unsigned char, 17> bytes{};
+    auto oversized = MakeJournal(2, 16, 4);
+    assert(oversized.BeginFrame(1));
+    assert(!oversized.Touch(bytes.data(), bytes.size()));
+    assert(oversized.Failed());
+    assert(oversized.BytesForFrame(1) == 0);
+    assert(oversized.ArenaGrowths() == 0);
+
+    auto exact = MakeJournal(2, 16, 4);
+    assert(exact.BeginFrame(1));
+    assert(exact.Touch(bytes.data(), 8));
+    assert(exact.Touch(bytes.data() + 8, 8));
+    assert(exact.BytesForFrame(1) == 16);
+    assert(exact.Touch(bytes.data(), 8)); // Duplicates consume no capacity.
+    assert(!exact.Touch(bytes.data() + 16, 1));
+    assert(exact.Failed());
+    assert(exact.BytesForFrame(1) == 16);
+}
+
 int main()
 {
     TestFirstWriteWins();
@@ -385,6 +406,7 @@ int main()
     TestSlotReuseInOneFrame();
     TestRejectsPartialOverlap();
     TestBoundsAndEviction();
+    TestByteCapacityBoundaries();
     TestAllOverlapDirectionsAndAdjacency();
     TestAddressOverflowIsRejectedBeforeCopy();
     TestOrderedAndScatteredIndex();
