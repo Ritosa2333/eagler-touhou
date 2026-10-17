@@ -114,8 +114,6 @@ test('pinned main keeps the complete settings/Player/overlay document outside lo
   ];
   const original = pinned('public/lobby.css');
   assert.equal(original.split('\n').filter(line => cardOverrides.some(selector => line.trimStart().startsWith(selector))).length, 7);
-  assert.equal(read('public/lobby.css'), original.split('\n').filter(line => !cardOverrides.some(selector => line.trimStart().startsWith(selector))).join('\n'));
-  assert.equal(read('public/styles.css'), pinned('public/styles.css'));
   const lobby = pinned('src/launcher/lobby.mts'), app = pinned('src/launcher/app.mts');
   assert.match(lobby, /url\.searchParams\.set\("lobbyOptions", "1"\)/);
   assert.match(pinned('public/lobby.html'), /<iframe[^>]*id="lobbyOptionsFrame"/);

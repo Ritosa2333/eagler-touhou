@@ -1,4 +1,4 @@
-import {useEffect, useRef, useSyncExternalStore, type ReactNode} from 'react';
+import {useEffect, useSyncExternalStore, type ReactNode} from 'react';
 import {PRODUCT_GAMES, productFeatureAvailable} from '../../../src/contracts/product-catalog.mts';
 import {isMusicMode} from '../../../src/launcher/game-preferences.mts';
 import {resolveMusicAvailability} from '../../../src/launcher/music-availability.mts';
@@ -8,7 +8,7 @@ import {MainSelect} from '../launcher/MainSelect';
 import {OptionsGroup} from './OptionsGroup';
 import {InputSettings} from './InputSettings';
 import {OptionRow} from './OptionRow';
-import {OptionSwitch, touchWarningKey} from './TouchSettingsFields';
+import {OptionSwitch} from './TouchSettingsFields';
 import type {SettingsActions, SettingsFileAction} from './types';
 
 const downloadPath = 'M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 3v11m-4-4 4 4 4-4';
@@ -23,9 +23,7 @@ export function SettingsBody({model, actions, onOpenTouchLayout, multiplayerCont
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const midi = useSyncExternalStore(actions.externalMidi.subscribe, actions.externalMidi.getSnapshot, actions.externalMidi.getSnapshot);
   const {t} = useLocale();
-  const warningEpoch = useRef(0);
   const midiVisible = !!state && PRODUCT_GAMES[state.gameId].musicCapabilities.midi && state.music === 'midi';
-  useEffect(() => () => {warningEpoch.current++;}, []);
   useEffect(() => {
     if (!midiVisible && midi.enabled) void actions.externalMidi.setEnabled(false).catch(actions.reportError);
   }, [midiVisible, midi.enabled, actions]);
@@ -37,15 +35,6 @@ export function SettingsBody({model, actions, onOpenTouchLayout, multiplayerCont
   const hasFaith = 'display' in product && product.display.faithBar;
   const hasHints = 'hintFiles' in product.storage && product.storage.hintFiles.length > 0;
   const switchOption = (name: 'alwaysHitbox' | 'magnifierEnabled' | 'focusHitboxEnabled' | 'faithBarEnabled' | 'thpracEnabled' | 'multiplayerLocalPlayerVisibility' | 'pixelPerfectEnabled') => () => model.setOption(name, !options[name]);
-  async function toggleTouch() {
-    const enabling = !options.touchEnabled, ticket = ++warningEpoch.current;
-    const key = touchWarningKey(options.touchMovementMode);
-    // Main's multiplayer enable switch intentionally does not show the SP
-    // replay-mode warning. Changing movement in the shared editor still does.
-    if (!multiplayer && enabling && key && !await actions.confirm({message: t(key), confirmText: t('touch.enableConfirm')})) return;
-    if (ticket !== warningEpoch.current || model.getSnapshot()?.context.productId !== context.productId) return;
-    model.setOption('touchEnabled', enabling);
-  }
   function actionButton(action: SettingsFileAction, title: string, path: string) {
     return <button type="button" data-action={action} onClick={() => {void actions.file(action, context.productId).catch(actions.reportError);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={path}/></svg><span>{title}</span></button>;
   }
@@ -59,10 +48,10 @@ export function SettingsBody({model, actions, onOpenTouchLayout, multiplayerCont
   const touch = (<section key="touch-options" className={`item mobile-options options-group${mobileOpen ? ' open' : ''}`} id={id('mobileOptions')}>
       <button className="mobile-options-head" id={id('mobileOptionsToggle')} type="button" aria-expanded={mobileOpen} aria-controls={id('mobileOptionsBody')} onClick={() => model.setDisclosure('touch', !mobileOpen)}><span>{t('options.touch')}</span><i aria-hidden="true">⌄</i></button>
       <div className="mobile-options-body" id={id('mobileOptionsBody')} inert={!mobileOpen}>
-        <div className="mobile-option"><span>{t('settings.touchEnabled')}</span><OptionSwitch id={id('touchToggle')} label={t('settings.touchEnabled')} checked={options.touchEnabled} onChange={() => {void toggleTouch().catch(actions.reportError);}}/></div>
+        <div className="mobile-option"><span>{t('settings.touchEnabled')}</span><OptionSwitch id={id('touchToggle')} label={t('settings.touchEnabled')} checked={options.touchEnabled} onChange={() => model.setOption('touchEnabled', !options.touchEnabled)}/></div>
         <div className="mobile-option touch-layout-option"><span><span>{t('settings.touchLayout')}</span><small className="visually-hidden" id={id('touchLayoutDescription')}>{t('settings.touchLayoutShared')}</small></span><button className="option-action" id={id('touchLayoutEdit')} aria-describedby={id('touchLayoutDescription')} type="button" aria-label={t('settings.touchLayout')} onClick={onOpenTouchLayout}><span aria-hidden="true">›</span></button></div>
         <div className="mobile-option"><span>{t('settings.alwaysHitbox')}</span><OptionSwitch id={id('alwaysHitboxToggle')} label={t('settings.alwaysHitbox')} checked={options.alwaysHitbox} onChange={switchOption('alwaysHitbox')}/></div>
-        <div className="mobile-option" id={id('magnifierOption')}><span><span>{t('settings.magnifier')}</span><small id={id('magnifierHint')}><span className="visually-hidden">{t('settings.magnifierHint')}</span><em className="option-warning" id={id('magnifierConflict')} hidden={options.touchFocusMode !== 'two-finger'}>{t('settings.magnifierConflict')}</em></small></span><OptionSwitch id={id('magnifierToggle')} describedBy={id('magnifierHint')} label={t('settings.magnifier')} checked={options.magnifierEnabled} onChange={switchOption('magnifierEnabled')}/></div>
+        <div className="mobile-option" id={id('magnifierOption')}><span><span>{t('settings.magnifier')}</span><small className="visually-hidden" id={id('magnifierHint')}>{t('settings.magnifierHint')}</small></span><OptionSwitch id={id('magnifierToggle')} describedBy={id('magnifierHint')} label={t('settings.magnifier')} checked={options.magnifierEnabled} onChange={switchOption('magnifierEnabled')}/></div>
       </div>
     </section>);
   return <div className={multiplayer ? 'mp-settings-body options-settings' : 'options-singleplayer options-settings'}>

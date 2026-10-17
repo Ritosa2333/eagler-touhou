@@ -7,14 +7,13 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const root = resolve(project, "..");
 const port = await allocateLoopbackPort();
 const fixtureName = `.server-policy-${randomUUID()}.data`;
 const fixturePath = resolve(project, "tests", fixtureName);
 const artworkDirectory = await mkdtemp(resolve(tmpdir(), "eagler-server-artwork-"));
 const artworkFixture = Buffer.from("host-owned-card-artwork");
 await writeFile(resolve(artworkDirectory, "th06-card.webp"), artworkFixture);
-const child = spawn(process.execPath, [resolve(project, "scripts", "serve.mjs"), String(port), root], {
+const child = spawn(process.execPath, [resolve(project, "scripts", "serve.mjs"), String(port)], {
   cwd: project,
   env: { ...process.env, EAGLER_TOUHOU_ARTWORK_DIR: artworkDirectory },
   stdio: ["ignore", "pipe", "pipe"],
@@ -55,7 +54,10 @@ try {
   if (!moduleResponse.ok || !/^text\/javascript\b/i.test(moduleResponse.headers.get("content-type") || "")) {
     throw new Error(`ES module MIME is invalid: ${moduleResponse.status} ${moduleResponse.headers.get("content-type")}`);
   }
-  const generatedModuleResponse = await fetch(`http://127.0.0.1:${port}/assets/launcher/app.mjs`, { method: "HEAD" });
+  const rootHtml = await rootResponse.text();
+  const modulePath = rootHtml.match(/(?:"|')((?:\/)?assets\/[^"'<>]+\.js)(?:"|')/)?.[1];
+  if (!modulePath) throw new Error("root application does not declare a generated module");
+  const generatedModuleResponse = await fetch(new URL(modulePath, rootResponse.url), { method: "HEAD" });
   if (!generatedModuleResponse.ok || !/^text\/javascript\b/i.test(generatedModuleResponse.headers.get("content-type") || "")) {
     throw new Error(`generated ES module mapping is invalid: ${generatedModuleResponse.status} ${generatedModuleResponse.headers.get("content-type")}`);
   }

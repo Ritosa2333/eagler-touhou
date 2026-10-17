@@ -1,5 +1,6 @@
 import {PRODUCT_GAMES, multiplayerProductIdForGame, isMultiplayerProductId, type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import {normalizeRoomCode} from '../../src/launcher/route-state.mts';
+import {generateMultiplayerRoomCode} from '../../src/launcher/multiplayer-identity.mts';
 import {errorText} from '../services/error-text';
 export interface TitleNetworkSnapshot {open: boolean; room: boolean; code: string; focusRequest: number}
 export interface TitleNetworkOptions {
@@ -39,7 +40,7 @@ export function createTitleNetwork(options: TitleNetworkOptions) {
       publish({open: true, room: false, code: '', focusRequest: snapshot.focusRequest + 1});
     },
     setCode(value: string) {publish({code: normalizeRoomCode(value)});},
-    create() {if (disposed) return; const value = options.randomValues(new Uint32Array(1)); enter(String(1000 + (value[0] ?? 0) % 9000), true);},
+    create() {if (disposed) return; enter(generateMultiplayerRoomCode(() => options.randomValues(new Uint32Array(1))[0]!), true);},
     join() {if (disposed) return; const code = normalizeRoomCode(snapshot.code); if (!code) {options.toast(options.translate('status.enterRoomCode')); return;} enter(code, false);},
     close,
     leave() {if (!snapshot.open || disposed) return; options.leaveRoom(); close(true);},

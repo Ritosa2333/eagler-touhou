@@ -24,7 +24,7 @@ before(async () => {
   // Exercise the supported build from authored inputs, never a warm ignored
   // launcher cache. Keep dependency installation shared; copy no build output.
   for (const path of ['app', 'src', 'lib', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
-    'content', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
+    'content', 'favicon.ico', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
     'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
     'tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json', 'vite.config.ts', 'react-router.config.ts']) {
     await cp(resolve(path), resolve(coldSource, path), {recursive: true});

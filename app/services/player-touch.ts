@@ -1,4 +1,5 @@
 import {PRODUCT_GAMES} from '../../src/contracts/product-catalog.mts';
+import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {postHostedKey, postTouchControls, postTouchCancel, type HostedKeySpec, type TouchControlsSnapshot} from '../../src/launcher/touch-runtime-protocol.mts';
 import {createFunctionKeyOwner, functionKeySpec} from '../../src/launcher/touch-function-key.mts';
 import type {SettingsSnapshot} from '../models/game-settings';
@@ -80,7 +81,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   }
   const direct = bindPlayerDirectTouch({surface: el.directSurface, frame: el.frame, ios, zoom: options.zoom, context, allowed});
   const joystick = bindPlayerJoystick({element: el.joystick, knob: el.joystickKnob, allowed,
-    movement: () => settings()?.options.touchMovementMode ?? 'touch',
+    movement: () => settings()?.options.touchMovementMode ?? DEFAULT_GAME_OPTIONS.touchMovementMode,
     axes(x, y) {controls.joystickX = x; controls.joystickY = y;}, schedule: queueControls});
   function refocus() {if (!(ios && direct.hasPointers())) options.refocus();}
   const functionOwner = createFunctionKeyOwner(down => {functionDown = down; publish(); key(functionKeySpec, down);});

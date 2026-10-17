@@ -48,7 +48,7 @@ before(async () => {
     export * from './app/components/startup/InitialLauncher.tsx';
     export * from './src/contracts/product-catalog.mts';
     export {translate} from './app/i18n.tsx';
-  `}, outfile, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', packages: 'external', logLevel: 'silent', plugins: [authoredSourcesPlugin(project)]});
+  `}, outfile, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', packages: 'external', loader: {'.css': 'empty'}, logLevel: 'silent', plugins: [authoredSourcesPlugin(project)]});
   api = await import(pathToFileURL(outfile).href);
   originalLibrary = parse(pinned('public/index.html')); originalLobby = parse(pinned('public/lobby.html'));
   // Execute the pinned compiler's pure card generator, not a copied template

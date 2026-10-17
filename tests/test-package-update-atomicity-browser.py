@@ -400,6 +400,33 @@ def main() -> int:
           });
           const afterSelectedLanguageUpdate = await store.readCurrentPackageGeneration('th06');
 
+          // A background update may finish fetching its descriptor after a new
+          // import commits. Its expected-generation guard belongs inside the
+          // canonical mutation queue, before any payload request or commit.
+          let releaseStaleDescriptor, descriptorStarted;
+          const staleStarted = new Promise(resolve => {descriptorStarted = resolve;});
+          const staleRequests = [];
+          const staleUpdate = launcher.installPublishedPackage('th06', {
+            catalog: selectedLanguageCatalog,
+            catalogUrl: new URL('./release-catalog.json', location.href).href,
+            expectedGenerationId: afterSelectedLanguageUpdate.generation.id,
+            fetchImpl: async url => {
+              staleRequests.push(new URL(url).pathname);
+              descriptorStarted();
+              await new Promise(resolve => {releaseStaleDescriptor = resolve;});
+              return new Response(JSON.stringify(selectedLanguageUpdate));
+            },
+          }).then(() => null, error => String(error.message));
+          await staleStarted;
+          const laterImport = await installer.installPackageFromAcquisition({
+            descriptor: makeLanguageDescriptor('r10-later-import', 'r2'),
+            desiredFileIds: ['data', 'zh'], source: 'local', reuseCurrent: true,
+            acquire: async () => {throw new Error('Unchanged import must reuse its objects');},
+          });
+          releaseStaleDescriptor();
+          const staleUpdateError = await staleUpdate;
+          const afterStaleUpdate = await store.readCurrentPackageGeneration('th06');
+
           const missingObjectDescriptor = makeLanguageDescriptor('r11-missing-object', 'r2');
           const missingObjectId = afterSelectedLanguageUpdate.generation.files.data.objectId;
           await new Promise((resolve, reject) => {
@@ -549,6 +576,9 @@ def main() -> int:
             concurrentRevision: afterConcurrentMutations.generation.descriptor.revision,
             concurrentPending: afterConcurrentMutations.installation.pendingGeneration,
             selectedLanguageRequests,
+            staleRequests,
+            staleUpdateError,
+            staleUpdatePreservedImport: afterStaleUpdate.generation.id === laterImport.generation.id,
             selectedLanguageFiles: Object.keys(afterSelectedLanguageUpdate.generation.files).sort(),
             selectedLanguageSource: afterSelectedLanguageUpdate.installation.source,
             legacyUpgradeFetches,
@@ -624,6 +654,9 @@ def main() -> int:
         assert result["selectedLanguageRequests"] == ["/th06.package.json", "/language/zh.zip"], result
         assert result["selectedLanguageFiles"] == ["data", "zh"], result
         assert result["selectedLanguageSource"] == "local", result
+        assert result["staleRequests"] == ["/th06.package.json"], result
+        assert result["staleUpdateError"] == "Package changed before background update", result
+        assert result["staleUpdatePreservedImport"] is True, result
         assert result["legacyUpgradeFetches"] == 0, result
         assert result["legacyUpgradeObjectReused"] is True, result
         assert result["legacyUpgradeAttestedSha256"] == "9fcddc31b255e23ec66fc550aefc3b127be6d3e05a3438279cf9d3afe5abf251", result

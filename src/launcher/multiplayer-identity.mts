@@ -7,6 +7,20 @@ export const multiplayerDisplayNameLockedStorageKey = "eagler-touhou-mp-display-
 export const multiplayerLobbyClientStorageKey = (product: string): string =>
   `eagler-touhou-${product}-lobby-client-v1`;
 
+// Four-digit codes remain easy to share. Room admission and lookup limits
+// protect entry; rejection sampling avoids bias from truncating a Uint32.
+export function generateMultiplayerRoomCode(
+  randomWord = () => crypto.getRandomValues(new Uint32Array(1))[0]!,
+): string {
+  for (let attempt = 0; attempt < 128; ++attempt) {
+    const word = randomWord();
+    if (!Number.isInteger(word) || word < 0 || word > 0xffffffff)
+      throw new Error('Invalid room-code randomness');
+    if (word < 4_294_962_000) return String(1000 + word % 9000);
+  }
+  throw new Error('Unable to generate a room code');
+}
+
 // A browser membership spans titles and tabs; the existing client id still
 // belongs to a single tab. No name or account information is used here.
 let rememberedMemberId = "";

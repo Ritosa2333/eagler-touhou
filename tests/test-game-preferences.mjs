@@ -19,6 +19,14 @@ assert.equal(languagePreferenceStorageKey("th07mp"), "eagler-touhou-language-v1-
 assert.equal(sharedTouchPreferenceStorageKey, "eagler-touhou-touch-options-v1");
 assert.equal(DEFAULT_GAME_OPTIONS.restartButtonEnabled, false, "R must be hidden by default");
 assert.equal(DEFAULT_GAME_OPTIONS.touchSensitivity, 150, "new touch settings default to 150%");
+assert.equal(DEFAULT_GAME_OPTIONS.touchMovementMode, "touch-unlimited");
+for (const saved of [null, {}, {options: {}}, {options: {touchMovementMode: 'invalid'}}]) {
+  assert.equal(normalizeStoredGamePreferences(saved, {thpracAvailable:true,webAudioAvailable:true}).options.touchMovementMode, 'touch-unlimited');
+}
+for (const mode of ['touch','touch-unlimited','joystick','joystick-free']) {
+  assert.equal(normalizeStoredGamePreferences({options:{touchMovementMode:mode}}, {thpracAvailable:true,webAudioAvailable:true}).options.touchMovementMode, mode, 'explicit movement choices survive the new default');
+}
+assert.equal(normalizeStoredGamePreferences({options:{unlimitedTouch:false}}, {thpracAvailable:true,webAudioAvailable:true}).options.touchMovementMode, 'touch', 'legacy explicit limited touch stays limited');
 for (const [input, expected] of [[undefined, 100], [NaN, 100], [0, 20], [63, 65], [200, 100]]) {
   const normalized = normalizeStoredGamePreferences({ options: { touchControlOpacity: input } }, { thpracAvailable: true, webAudioAvailable: true });
   assert.equal(normalized.options.touchControlOpacity, expected);

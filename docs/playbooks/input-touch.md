@@ -45,6 +45,15 @@ menu/dialogue navigation, mixed-input isolation and lifecycle cancellation.
 The layout editor, magnifier and touch Restart button are Launcher-owned; a new
 Runtime reuses them rather than inventing per-game UI/protocol commands.
 
+Unset Launcher preferences default to unlimited direct touch. Preserve explicit
+saved movement choices, including legacy `unlimitedTouch: false` as rate-limited
+direct touch. Enabling touch and changing movement modes apply immediately,
+without touch/Replay/unlimited warning confirmations. Starting with touch disabled
+also has no input warning. The magnifier/two-finger conflict warning is not
+displayed; the ordinary accessible control description remains. This shared
+frontend policy applies to all products;
+room movement restrictions and native Replay/result semantics still apply.
+
 Bind layout state to orientation: direction, portrait/landscape, viewport editor settings, runtime apply and window-position memory must use the same orientation owner. Focus controls should remain visible; magnifier is opt-in. Dialogue, StageClear, menus, help and fullscreen each need an explicit touch path rather than assuming gameplay controls cover them.
 
 For Replay, record the logical run-state consumed by simulation, not a picture of touch buttons or an unbounded stream of raw browser events. Pause, restart and focus loss must have explicit lifecycle behavior.
@@ -216,3 +225,24 @@ Controller regression lanes:
 The static/workspace contracts do not claim iOS/Android real-device orientation,
 long-duration mobile stability, or visual feel. Those require the corresponding
 browser/device acceptance lane.
+
+## 常显判定点的原版视觉验收
+
+`options.alwaysHitbox` 是全作品必需显示能力。配置必须在启动前生效，并在场景重建后保留，不能只检查 shell 出现了开关。它不应改变原生低速输入、速度或碰撞范围。
+
+沿用每作原版判定圈的素材、尺寸、混合、父子变换、动画曲线和绘制层。重复绘制不能多推进动画，暂停和半速应跟随该作逻辑时间。原生低速判定圈（含退场动画）仍存在时，不能再叠画一份。仅加载原版图片不能替代完整动画核对。
+
+| 作品 | 视觉来源与本次检查范围 |
+| --- | --- |
+| TH06 | 原版没有可见判定圈。保留现有 TH07 etama2 素材的扩展显示，不能宣称原版 TH06 同款。 |
+| TH07 | 原版效果 24 / ANM 0x2c2，独立显示 VM，运行动画时保存和恢复 RNG。 |
+| TH08 | 原版 fixed effect 22，原生动画更新路径。 |
+| TH09 | 原版 etama.anm 脚本 63，两个场地分别拥有私有 VM/RNG，在原生特效层绘制。 |
+| TH10 | 原版 effect 脚本 0x160，修复配置先于 World 创建时丢失的问题，normal/mp 分别覆盖。 |
+| TH11 | 原版 bullet 脚本 74，独立 presentation manager，绘制副本。 |
+| TH15 | 原版 effect.anm 25/26，由私有 VM/子对象宿主执行，在原生层 14/18 的时机绘制。 |
+| TH20 | 原版 effect.anm 18/19 的模板及原生插值/运动函数，原生层 18 绘制。原始脚本在时间 18 设置角速度，需保留该时序。 |
+
+跨作品接线和 TH10 创建时序：`tests/test-always-hitbox-contract.mjs`。TH09/15/20 的原版资源和原生动画组件对照：`npm run test:hitbox-visuals:workspace`，显式提供 `EAGLER_TH09_HITBOX_ANM`、`EAGLER_TH15_HITBOX_ANM`、`EAGLER_TH20_HITBOX_ANM`。这些私有素材不可提交。组件对照包括普通/半速、倍率、旋转、缩放、透明度、顶点（TH15）、重复绘制和共享 RNG/注册表边界，不等于完整浏览器逐像素或整局 Replay 验收。
+
+`npm run test:always-hitbox:browser` 用显式私有 Runtime/数据路径运行正式包，留下未低速、原生低速和松开后的截图。必须检查进入实际游戏，不能用标题计时器改变作为进入关卡的证明。增加新作品时同时更新覆盖检查和本表，不能通过产品开关退出必需能力。

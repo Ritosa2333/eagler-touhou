@@ -82,7 +82,8 @@ export class Th09LocalKeyboard {
   private physical=new HostedKeyboard(keyCodes);
   private held=new Map<HostedKeySpec,readonly number[]>();
   private pending=[0,0];private revision=-1;private identity='';
-  constructor(private model:Th09LocalInput){}
+  private model:Th09LocalInput;
+  constructor(model:Th09LocalInput){this.model=model;}
   clear(){this.physical.clear();this.held.clear();this.pending=[0,0];}
   private sync(context:TouchRuntimeContext){const state=this.model.getSnapshot(),identity=context.game+':'+context.epoch;
     if(state.revision!==this.revision||identity!==this.identity){this.clear();this.revision=state.revision;this.identity=identity;}return state;}

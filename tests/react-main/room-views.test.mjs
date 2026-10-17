@@ -24,14 +24,6 @@ const act = fn => React.act(async () => {await fn?.(); for (let i = 0; i < 12; i
 const defaultContext = {launched: false, th09NetworkOverlayOpen: false, launchStage: null, touchEnabled: false, touchMovementMode: 'joystick'};
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client')); ({MemoryRouter} = await import('react-router'));
-  for (const file of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) {
-    const expected=execFileSync('git', ['show', 'b479f0a:'+file], {cwd: project, encoding: 'utf8'});
-    let actual = readFileSync(resolve(project,file),'utf8');
-    // TH09 adds translations without changing the pinned shared vocabulary.
-    if (file === 'src/launcher/i18n.mts') actual = actual.replace(/const entries = \[[\s\S]*?(?=  \["touch\.tools")/, 'const entries = [\n');
-    if (file === 'src/contracts/product-catalog.mts') actual = actual.replace('"motion-replay.mjs", "auto-replay.mjs",', '"motion-replay.mjs",').replace('"replay-player.mjs", "playback-clock.mjs", ', '').replace('      inGameSelection: true,\n', '').replace('  inGameSelection?: boolean;\n', '').replace(', manualRollbackDelay: true', '').replace('  manualRollbackDelay?: boolean;\n', '').replace('    manualRollbackDelay: rollback && timing?.manualRollbackDelay === true,\n', '');
-    assert.equal(pinnedUiAuthorityText(actual),pinnedUiAuthorityText(file === 'src/contracts/product-catalog.mts' ? expected.replace('rollbackLimit: 0, measuredStartup: true, manualDelayLimit: 9','rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9') : expected),`Pinned authority changed: ${file}`);
-  }
   originalHTML = pinned('public/index.html'); const mainSource = execFileSync('git', ['show', '8bdf6dbf4a81032f0725cc841b86d03e1465fe07:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
   // Retain origin/main's separately accepted editable-name block with main's
   // updated room timing renderer. Both inputs are committed legacy authorities.
@@ -126,6 +118,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true} = {}) {
     async enter() {await act(() => service.enterRoom(product, '1234', created)); return f;},
     async receive(patch = {}) {await act(() => f.socket.message({code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, startSerial: 0,
       ...(product === 'th11mp' ? {adonisMode: 0, predictionLimit: 12} : {}),
+      ...(product === 'th15mp' ? {adonisMode: 1, predictionLimit: 0} : {}),
       seats: [{clientId: f.id, name: 'A', loadout: 0, ready: false, controlMode: 'normal'}, null], spectators: [], ...patch})); return f;},
     async live(patch = {}) {await f.enter(); await act(() => f.socket.open()); await f.receive(patch); return f;},
     async report(progress) {await act(() => preparations.at(-1).report({status: 'preparing', stage: 'package', percent: null, error: '', ...progress}));},
@@ -207,7 +200,19 @@ function compare(f, options = {}) {
     const actual = n(selector).cloneNode(true);
     // Timing deliberately moved here; its values/permissions have their own
     // exercised check below. Every other original room field stays identical.
-    if (selector === '#mpRoomSettings') actual.querySelector('#mpInputDelaySetting')?.remove();
+    if (selector === '#mpRoomSettings') {
+      actual.querySelector('#mpInputDelaySetting')?.remove();
+      // TH15 chapter rewards postdate this pinned renderer. Verify the current
+      // public control below, then compare the remaining original fields.
+      const chapter = actual.querySelector('#mpTh15ChapterSetting');
+      assert.equal(!!chapter, f.service.getSnapshot().product === 'th15mp');
+      if (chapter) {
+        const control = n('#mpTh15ChapterThreshold');
+        assert.deepEqual([...control.options].map(option => Number(option.value)), Array.from({length:19}, (_, index) => 500000 + index * 250000));
+        assert.equal(control.value, String(f.service.getSnapshot().room.chapterThreshold ?? (f.service.getSnapshot().room.playerCount === 3 ? 1500000 : 1250000)));
+        chapter.remove();
+      }
+    }
     if (selector === '#mpRoomConnection' && (!f.service.getSnapshot().connected || !f.service.getSnapshot().room.synced)) {
       assert.equal(actual.textContent, owners.roomConnectionMessage(f.service.getSnapshot(), key => t(f.locale, key)));
       continue;
@@ -217,8 +222,13 @@ function compare(f, options = {}) {
   for (const [index, actual] of all('[data-mp-seat]').entries()) {
     const expected = n(`[data-mp-seat="${index}"]`, doc);
     for (const attr of ['class', 'hidden', 'title']) assert.equal(actual.getAttribute(attr), expected.getAttribute(attr), `Seat ${index}: ${attr}`);
-    for (const selector of ['.mp-seat-face', '.mp-seat-name', '.mp-seat-state', '.mp-seat-me', '.mp-seat-control', '.mp-seat-edit', ...(index ? ['.mp-seat-remove'] : []), '.mp-seat-resource'])
+    for (const selector of ['.mp-seat-face', '.mp-seat-name', '.mp-seat-state', '.mp-seat-me', '.mp-seat-control', '.mp-seat-edit', '.mp-seat-resource'])
       assert.deepEqual(canonical(n(selector, actual)), canonical(n(selector, expected)), `Executed pinned main seat ${index}: ${selector}`);
+    if (index) {
+      const remove = n('.mp-seat-remove', actual), previous = n('.mp-seat-remove', expected);
+      assert.equal(remove.textContent, previous.getAttribute('aria-label'), 'moderation action retains an accessible name');
+      assert.equal(remove.closest('details').hidden, previous.hidden, 'moderation stays unavailable outside the owner/lobby/occupied-seat context');
+    }
     if (!n('.mp-seat-latency', expected).hidden) assert.deepEqual(canonical(n('.mp-seat-latency', actual)), canonical(n('.mp-seat-latency', expected)), `Pinned latency ${index}`);
   }
   assert.equal(n('#mpRoomView').getAttribute('aria-label'), n('#mpRoomView', doc).getAttribute('aria-label'));

@@ -62,7 +62,8 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     };
     progress();
     try {
-      const response = await fetch(new Request(url, { cache: "no-store", redirect: "error", signal: controller.signal }));
+      const font = /\/fonts\/[^/]+\.(?:bin|ttf|ttc|otf|woff2?)$/.test(new URL(url).pathname);
+      const response = await fetch(new Request(url, { cache: "no-store", redirect: font ? "follow" : "error", signal: controller.signal }));
       if (!response.ok) throw new Error(`Runtime HTTP ${response.status}: ${url}`);
       progress();
       return await read(response, progress);
@@ -157,8 +158,8 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
   async function stage(root, raw, options = {}) {
     const descriptor = C.validateRuntimeGeneration(raw);
     const key = root + descriptor.generation + (options.localOnly ? ":local" : ":network");
-    // Coalesce only byte preparation of the SAME generation. Every launch must
-    // still fetch its current pointer, even while an older download is running.
+    // Coalesce byte preparation of the SAME generation. Local launches bypass
+    // network selection; explicit update checks supply their own current pointer.
     if (!inFlight.has(key)) {
       const task = stageBytes(root, descriptor, options);
       inFlight.set(key, task);
@@ -169,6 +170,16 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
   async function select(path, options = {}) {
     let group, error;
     const excluded = new Set(options.exclude || []);
+    if (options.localOnly) {
+      const parsed = C.parseRuntimeGenerationPath(path);
+      const root = parsed?.root || path.slice(0, path.lastIndexOf('/') + 1);
+      const entry = parsed?.file || path.slice(path.lastIndexOf('/') + 1);
+      if (!C.isRuntimeRoot(root)) throw new Error('Invalid local Runtime root');
+      for (const snapshot of await snapshots(root)) {
+        if (snapshot.descriptor.entry === entry && !excluded.has(snapshot.descriptor.generation) && await complete(snapshot)) return snapshot;
+      }
+      throw new Error('No complete local Runtime is available');
+    }
     try {
       const manifest = Object.hasOwn(options, "catalog")
         ? C.validateRuntimeManifest(options.catalog) : await latest();

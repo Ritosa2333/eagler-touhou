@@ -4,18 +4,18 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { assemblePreloadData } from "../lib/preload-data-assembler.mjs";
+import {workspacePath} from "../lib/workspace-layout.mjs";
 
-const workspace = resolve(new URL("../..", import.meta.url).pathname.replace(/^\/(?:([A-Za-z]:))/, "$1"));
 for (const test of [
-  { game: "th06", build: "th06-eagler/build-web-eagler-thprac-test", assets: "th06-eagler/assets" },
-  { game: "th07", build: "th07-eagler/build-web-eagler-thprac", assets: "th07-eagler/assets" },
+  { game: "th06", build: "build-web-eagler-thprac-test" },
+  { game: "th07", build: "build-web-eagler-thprac" },
 ]) {
-  const runtime = resolve(workspace, test.build, `${test.game}.js`);
-  const expected = await readFile(resolve(workspace, test.build, `${test.game}.data`));
+  const runtime = workspacePath(test.game, test.build, `${test.game}.js`);
+  const expected = await readFile(workspacePath(test.game, test.build, `${test.game}.data`));
   const { data, layout } = await assemblePreloadData({
     game: test.game,
     runtimeScript: runtime,
-    sourceDirectory: resolve(workspace, test.assets),
+    sourceDirectory: workspacePath(test.game, 'assets'),
   });
   assert.deepEqual(data, expected, `${test.game}: assembled DATA must exactly match the Emscripten build artifact`);
   assert.equal(data.length, layout.bytes);

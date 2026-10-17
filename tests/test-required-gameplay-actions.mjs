@@ -64,6 +64,14 @@ assert.match(th11Pause, /pressed\s*&\s*0x200000[\s\S]{0,80}cursor\.select\(3\)/,
   "th11: Pause restart must consume the restart input bit");
 coveredGames.add("th11");
 
+const th15Input = await readFile(workspacePath("th15", "th15_web", "cpp", "sdl", "BrowserRuntime.cpp"), "utf8");
+const th15Pause = await readFile(workspacePath("th15", "th15_web", "cpp", "game", "PauseMenu.cpp"), "utf8");
+assert.match(th15Input, /\{0x200000\s*,\s*82\}/,
+  "th15: R must map to the native restart input bit");
+assert.match(th15Pause, /pressed\s*&\s*0x200000[\s\S]{0,240}menu\.select\(4\);phase\(16\)/,
+  "th15: Pause restart must consume the restart input bit");
+coveredGames.add("th15");
+
 assert.deepEqual([...coveredGames].sort(), Object.keys(PRODUCT_GAMES).sort(),
   "required restart-action verification must be updated when a formal game adapter is registered");
 console.log(`Required gameplay actions: PASS (R -> pause restart for ${Object.keys(PRODUCT_GAMES).map(game => game.toUpperCase()).join("/")})`);

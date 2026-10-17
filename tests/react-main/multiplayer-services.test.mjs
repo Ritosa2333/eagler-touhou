@@ -184,6 +184,31 @@ async function joinedRoom(extra = {}) {
   return fixture;
 }
 
+test('host spectator moves bind the target, wait for relay state and preserve membership', async () => {
+  const f=await joinedRoom(), socket=f.sockets[0], id=f.identity.lobbyClientId('th06mp');
+  const seats=[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}];
+  const receive=patch=>socket.message({type:'state',room:roomState(id,{seats,...patch})});
+  receive({});
+  f.service.movePlayerToSpectator(1,'old_client');
+  f.service.movePlayerToSpectator(0,id);
+  assert.ok(!socket.sent.some(m=>m.type==='move-player-to-spectator'));
+  f.service.movePlayerToSpectator(1,'guest12345');
+  assert.deepEqual(socket.sent.at(-1),{type:'move-player-to-spectator',seat:1,clientId:'guest12345'});
+  assert.equal(f.service.getSnapshot().room.seats[1].clientId,'guest12345','only relay state changes the seat');
+  const count=socket.sent.length;
+  receive({phase:'running'});f.service.movePlayerToSpectator(1,'guest12345');
+  receive({seats:[seats[0],{...seats[1],offline:true}]});f.service.movePlayerToSpectator(1,'guest12345');
+  receive({seats:[{...seats[0],clientId:'other_host'},seats[1]]});f.service.movePlayerToSpectator(1,'guest12345');
+  assert.equal(socket.sent.length,count,'running, offline and non-host moves are rejected locally');
+  receive({seats:[seats[0],{...seats[1],clientId:id}],spectators:[]});
+  receive({seats:[{...seats[0],clientId:'other_host'},null],spectators:[{clientId:id,name:'A'}]});
+  assert.equal(f.service.getSnapshot().seat,null);
+  assert.equal(f.service.getSnapshot().spectatorRequested,true);
+  assert.equal(f.service.getSnapshot().ready,false);
+  assert.equal(f.service.getSnapshot().connected,true);
+  f.service.dispose();
+});
+
 test('legacy room wire minimizes names until the server advertises moderation and normalizes challenge/prank', async () => {
   const fixture = await joinedRoom(), {service, sockets, identity} = fixture, socket = sockets[0];
   assert.equal(socket.sent.find(message => message.type === 'take-seat').name, 'A');
@@ -521,7 +546,7 @@ test('TH09 spectator invite joins without seating and waits for authoritative sp
   const f = roomFixture();
   const invite = owner.encodeRoomInvite({g: 'th09mp', r: '1234', f: true, a: 'join', s: true});
   assert.equal(owner.decodeRoomInvite(invite).s, true);
-  assert.equal(owner.decodeRoomInvite(owner.encodeRoomInvite({g: 'th08mp', r: '1234', a: 'join', s: true})).s, undefined);
+  assert.equal(owner.decodeRoomInvite(owner.encodeRoomInvite({g: 'th08mp', r: '1234', a: 'join', s: true})).s, true);
   f.service.restoreInvite('https://launcher.invalid/?j=' + invite, 'th09mp');
   await flush();
   const socket = f.sockets[0];
@@ -585,6 +610,16 @@ test('TH09 directory admits full and starting rooms before spectator history is 
       capacity:2,players:2,ready:0,difficulty:1,joinable:false,spectatable:false,
       seats:[{initial:'A',online:true},{initial:'B',online:true}]}),true,phase);
   }
+});
+
+for(const product of ['th06mp','th07mp','th08mp','th10mp','th11mp','th15mp'])test(`Directory observer intent never auto-reserves a player seat: ${product}`,async()=>{
+  const f=roomFixture();
+  assert.equal(f.service.restoreInvite('https://launcher.invalid/?j='+owner.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true}),product),true);
+  await flush();const socket=f.sockets.at(-1);socket.open();
+  socket.message({type:'state',room:roomState('other_host',{seats:[{clientId:'other_host',name:'A',loadout:0,ready:true},{clientId:'other_guest',name:'B',loadout:1,ready:true}]})});
+  await flush();assert.equal(socket.sent.some(m=>m.type==='take-seat'),false);
+  assert.equal(socket.sent.some(m=>m.type==='spectate'),true);
+  assert.equal(f.service.getSnapshot().spectatorRequested,true);f.service.dispose();
 });
 
 test('public nickname commits only an authoritative approval and ignores stale connection replies',async()=>{

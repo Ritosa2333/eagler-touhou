@@ -6,6 +6,7 @@ import { createRelayAbuseGuard, relayAbuseConfig, relayClientAddress } from '../
 
 const defaults = relayAbuseConfig({});
 assert.equal(defaults.maxRoomsPerIp, 2);
+assert.equal(defaults.roomLookupsPerMinute, 12);
 const request = (peer, forwarded) => ({ socket: { remoteAddress: peer }, headers: { 'x-real-ip': forwarded } });
 assert.equal(relayClientAddress(request('::ffff:127.0.0.1', '203.0.113.7')), '127.0.0.1');
 assert.equal(relayClientAddress(request('127.0.0.1', '203.0.113.7'), new Set(['127.0.0.1'])), '203.0.113.7');
@@ -45,6 +46,17 @@ assert(totalGuard.trackSocket('a', new EventEmitter()));
 assert(!totalGuard.allowHandshake('b'));
 
 // Reproduce the supplied script locally. Never contact the public deployment.
+let lookupTime = 0;
+const lookupGuard = createRelayAbuseGuard({ ...defaults, now: () => lookupTime, roomLookupsPerMinute: 2 });
+assert(lookupGuard.allowRoomLookup('a', 'th09mp-11111111'));
+assert(lookupGuard.allowRoomLookup('a', 'th09mp-22222222'));
+for (let i = 0; i < 100; ++i)
+  assert(lookupGuard.allowRoomLookup('a', 'th09mp-11111111'), 'same-room transports/reconnects share a lookup');
+assert(!lookupGuard.allowRoomLookup('a', 'th09mp-33333333'));
+assert(lookupGuard.allowRoomLookup('b', 'th09mp-33333333'), 'client IPs have separate room lookup quotas');
+lookupTime = 60_001;
+assert(lookupGuard.allowRoomLookup('a', 'th09mp-33333333'), 'lookup quota expires');
+
 const env = { ...process.env, EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: '0',
   EAGLER_NETPLAY_STUN_URLS: '', EAGLER_NETPLAY_TRUSTED_PROXIES: '',
   EAGLER_NETPLAY_MAX_ROOMS_PER_IP: '2', EAGLER_NETPLAY_LOBBY_RECONNECT_GRACE_MS: '100',

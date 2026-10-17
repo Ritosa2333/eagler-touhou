@@ -120,7 +120,7 @@ export interface RuntimePlan {
 }
 export type RuntimeReadyContinuation = (epoch: number) => Promise<RuntimePlan>;
 export type RuntimePhase = 'idle' | 'loading' | 'configuring' | 'prepared' | 'launching' | 'running' | 'saving' | 'exited' | 'error';
-export type RuntimeRequestCommand = 'playback' | 'list' | 'read' | 'write' | 'remove' | 'resources' | 'retry-music';
+export type RuntimeRequestCommand = 'playback' | 'spectator-playback' | 'list' | 'read' | 'write' | 'remove' | 'resources' | 'retry-music';
 export type RuntimeFileCommand = 'list' | 'read' | 'write' | 'remove';
 /** Exclusive access to the existing prepared Runtime filesystem, never another writer. */
 export interface RuntimeFileSession {
@@ -216,6 +216,7 @@ export interface RuntimeServiceOptions {
   network?: ReturnType<typeof createNetworkActivityTracker>;
   onLocalResourceProgress?: (progress: RuntimeLocalResourceProgress) => void;
   onWarning?: (error: unknown) => void;
+  onUpdateReady?: (game: GameId, epoch: number) => void;
   /** Discard the retired child browsing context while retaining its host node. */
   onFrameRetired?: () => void;
 }
@@ -272,6 +273,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   let lease: { id: string; timer: Timer } | null = null;
   let runtimeDocument: object | null = null;
   let preparedPlan: RuntimePlan | null = null;
+  let codeUpdate: {epoch:number; check:NonNullable<Awaited<ReturnType<typeof prepareRuntimeLaunch>>['checkForUpdate']>} | null = null;
+  const updateNotices = new Set<string>();
   let oggExtensionTail: Promise<void> = Promise.resolve();
   let launcherControlContext: RuntimeLauncherControlContext | null = null;
   let launchRequested = false;
@@ -410,7 +413,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     operation++;
     sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
-    runtimeDocument = null; preparedPlan = null; launchRequested = false;
+    runtimeDocument = null; preparedPlan = null; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
     takeTelemetry(); // A display tick from an old epoch cannot repopulate reset state.
     if (!hasTerminalSaveLoss) terminalLossEpoch = null;
@@ -812,13 +815,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           // cannot satisfy this owner's exact document/epoch binding.
           const offlineWorker = plan.localCatalogRuntime ? await options.worker : null;
           assertOperation(); assertCurrent(token);
-          if (plan.generation && (plan.publishedRuntime || offlineWorker)) {
+          if (plan.generation && (plan.publishedRuntime || plan.localCatalogRuntime || offlineWorker)) {
             // Keep current main's complete-generation verification + idle-based
             // download helper. No replacement timeout or latest-file fallback.
             const prepared = await deps.prepareCode(entry, { baseUrl, fetchImpl: network.fetch as typeof fetch,
               exclude: excluded, worker: offlineWorker || options.worker });
             assertOperation(); assertCurrent(token);
             entry = prepared.url; codeGeneration = prepared.generation;
+            codeUpdate = prepared.checkForUpdate ? {epoch:token.id,check:prepared.checkForUpdate} : null;
           }
           const url = plan.generation ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
           if (url.origin !== origin) throw new Error('Runtime must share the Launcher origin');
@@ -948,6 +952,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       assertCurrent(token);
       if (directory && !networked && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
       update({ launched: true, phase: 'running' });
+      const pendingUpdate = codeUpdate;
+      if (!snapshot.multiplayerPreflight && pendingUpdate?.epoch === token.id) {
+        codeUpdate = null;
+        void pendingUpdate.check().then(ready => {
+          if (!ready || disposed || updateNotices.has(ready.url)) return;
+          updateNotices.add(ready.url);options.onUpdateReady?.(plan.game, token.id);
+        }).catch(() => {});
+      }
       if (presented) {await presented; assertCurrent(token);}
       return snapshot;
     } catch (error) {
@@ -1025,11 +1037,13 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     await send('network-cancel', {}); assertCurrent(token);
   }
   function request<C extends RuntimeRequestCommand>(command: C, payload: RuntimeCommandPayloads[C], timeout?: number) {
-    if (!['playback', 'list', 'read', 'write', 'remove', 'resources', 'retry-music'].includes(command)) {
+    if (!['playback', 'spectator-playback', 'list', 'read', 'write', 'remove', 'resources', 'retry-music'].includes(command)) {
       return Promise.reject(new Error('Lifecycle commands must use prepare, launch or sync'));
     }
     if (preflightEpoch !== null) return Promise.reject(new Error('Game-check files are owned by its Runtime preparation'));
     if (fileSession || fileClosing) return Promise.reject(new Error('Runtime file access is already in progress'));
+    if (command === 'spectator-playback' && (!snapshot.launched || !snapshot.spectator || snapshot.game === 'th09'))
+      return Promise.reject(new Error('Spectator playback is unavailable for this Runtime'));
     return send(command, payload, timeout);
   }
   /** Acquire synchronously so a same-tick Start cannot race file decoding or writes.

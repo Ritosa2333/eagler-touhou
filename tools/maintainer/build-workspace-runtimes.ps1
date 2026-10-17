@@ -15,7 +15,7 @@ $project = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Import-Module (Join-Path $PSScriptRoot 'lib\workspace-layout.psm1') -Force
 $workspaceLayout = Get-EaglerWorkspaceLayout -ProjectRoot $project
 $workspace = $workspaceLayout.Root
-$runtimeBuildConfigPath = Join-Path $project 'config\runtime-builds.json'
+$runtimeBuildConfigPath = Join-Path $workspaceLayout.ConfigurationRoot 'config\runtime-builds.json'
 $runtimeBuildConfig = Get-Content -LiteralPath $runtimeBuildConfigPath -Raw | ConvertFrom-Json
 if ($runtimeBuildConfig.schema -ne 'eagler-touhou/runtime-builds/1' -or -not $runtimeBuildConfig.games) {
     throw "Invalid Runtime build config: $runtimeBuildConfigPath"

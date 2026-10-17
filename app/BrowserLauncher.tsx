@@ -3,6 +3,7 @@ import {useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalSt
 import {useLocation} from 'react-router';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS} from '../src/contracts/product-catalog.mts';
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
+import {generateMultiplayerRoomCode} from '../src/launcher/multiplayer-identity.mts';
 import {errorText} from './services/error-text';
 import {readReactAppShellDeployment} from './services/app-shell-deployment';
 import {siteOriginMigrationAvailable} from '../src/contracts/site-manifest.mts';
@@ -43,7 +44,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const replayModel = session.getReplays();
   const replayFiles = useSyncExternalStore(replayModel?.subscribe ?? emptySubscribe, replayModel?.getSnapshot ?? noDiagnostics, replayModel?.getSnapshot ?? noDiagnostics);
-  const replayWorkspace = !!replayFiles?.open && (replayFiles.productId === 'th09' || replayFiles.productId === 'th09mp');
+  const replayWorkspace = !!replayFiles?.open;
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   const preferences = useSyncExternalStore(session.preferences.subscribe, session.preferences.getSnapshot, session.preferences.getSnapshot);
   const firstUse = useRef<FirstUseNoticeHandle>(null), notice = useRef<SiteNoticeHandle>(null), network = useRef<NetworkDiagnosticsHandle>(null);
@@ -89,7 +90,7 @@ function LegacyMultiplayerOnline({session}: {session: BrowserSession}) {
   const product = settings?.context.productId;
   const enter = (code: string, created: boolean) => {if (product && isMultiplayerProductId(product)) session.room.service.enterRoom(product, code, created);};
   const configuration = metadata.siteManifest?.shared.netplayRelay ? 'ready' : metadata.siteManifest || metadata.siteManifestError ? 'missing' : 'loading';
-  return <MultiplayerOnlineFold configuration={configuration} onCreate={() => {const value = new Uint32Array(1); crypto.getRandomValues(value); enter(String(1000 + value[0] % 9000), true);}}
+  return <MultiplayerOnlineFold configuration={configuration} onCreate={() => {enter(generateMultiplayerRoomCode(), true);}}
     onJoin={code => enter(code, false)} onInvalidCode={() => session.feedback.toast(t('status.enterRoomCode'))}/>;
 }
 function RoomSettingsControls({session}: {session: BrowserSession}) {
@@ -207,9 +208,6 @@ function SessionOverlays({session, firstUse, notice, assetUrl, onDonationUnavail
     <DonationDialog open={navigation.infoDialogOpen('donationDialog')} onCloseRequest={() => navigation.closeInfoDialog('donationDialog')} closeDurationMs={navigation.context === 'lobby' ? 0 : 220} assetUrl={assetUrl} onArtworkUnavailable={onDonationUnavailable}/>
     <AppleRefreshDialog open={navigation.infoDialogOpen('appleRefreshDialog')} onCloseRequest={() => navigation.closeInfoDialog('appleRefreshDialog')}/>
     <MultiplayerGuideDialog open={navigation.infoDialogOpen('mpGuideDialog')} onCloseRequest={() => navigation.closeInfoDialog('mpGuideDialog')} gameId={guideProduct ? gameIdForProduct(guideProduct) : 'th06'} contentUrl={assetUrl('content/MULTIPLAYER.html')}/>
-    {replays && replays.getSnapshot().productId !== 'th09' && replays.getSnapshot().productId !== 'th09mp' && <ReplayDialog model={replays} open={navigation.infoDialogOpen('replayDialog')} onCloseRequest={() => navigation.closeInfoDialog('replayDialog')}
-      onImportRequest={() => {const product = replays.getSnapshot().productId; if (product) void session.chooseReplayFile(product).catch(session.reportError);}}
-      onDropFile={async file => {const product = replays.getSnapshot().productId; if (product) await session.importFile('replay', file, product);}}
-      onImportError={error => {session.feedback.status(t('status.errorReason', {reason: errorText(error)})); session.feedback.toast(t('replay.importFailed', {reason: errorText(error)}));}}/>}
+
   </>;
 }

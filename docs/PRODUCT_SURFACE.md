@@ -169,9 +169,12 @@ hard-coded site promise.
 
 ### Deliberate limitations
 
-- Spectators must enter the spectator seat before match start. The short
-  post-start connection grace applies only to spectators already admitted at
-  start; a newly requested spectator joins the next match instead.
+- Start-only rooms require the spectator role before match start. Their
+  post-start connection grace applies only to already admitted spectators.
+  TH09 timeline rooms can admit viewers during play and support local playback
+  controls over confirmed history. New connections receive the current match;
+  older local matches belong only to viewers who received them. See the
+  [Spectator protocol](SPECTATOR_PROTOCOL.md) for activation and rollout scope.
 - TURN availability is server-managed and not guaranteed by a static self-host site/bundle.
 - A Host without WebSocket Relay configuration remains valid, but loses that
   fallback path and should report it as a warning rather than a build failure.

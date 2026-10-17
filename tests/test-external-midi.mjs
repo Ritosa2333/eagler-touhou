@@ -8,6 +8,7 @@ import {
   ExternalMidiDevice,
   externalMidiOffered,
   externalMidiPanicMessages,
+  externalMidiMessageAllowed,
   midiStatusDataLength,
   navigatorMidiAccessRequest,
   normalizeRuntimeMidiRecord,
@@ -72,8 +73,7 @@ assert.deepEqual(splitMidiMessages([0x90, 60, 0x7f, 61, 0x7f]),
 const sysex = [0xf0, 0x7e, 0x7f, 0x09, 0x01, 0xf7];
 assert.deepEqual(splitMidiMessages(sysex), [sysex], "a terminated System Exclusive message must pass through");
 assert.deepEqual(splitMidiMessages([0xf0, 0x7e, 0x7f, 0x09, 0x01]),
-  [[0xf0, 0x7e, 0x7f, 0x09, 0x01, 0xf7]],
-  "an unterminated Runtime System Exclusive message must be terminated before send()");
+  [], "an unterminated System Exclusive message must be dropped without completing it");
 assert.deepEqual(splitMidiMessages([...sysex, 0x90, 60, 0x7f]),
   [sysex, [0x90, 60, 0x7f]],
   "a System Exclusive message must not swallow the channel message after it");
@@ -86,11 +86,25 @@ assert.deepEqual(splitMidiMessages([0x90, 60]), [], "a truncated channel message
 assert.deepEqual(splitMidiMessages([0x7f]), [], "a stray data byte must be dropped");
 assert.deepEqual(splitMidiMessages([0xf4]), [], "an invalid status byte must be dropped");
 assert.deepEqual(splitMidiMessages([0xf0, 0x7e, 0x01, 0x90, 60, 0x7f]),
-  [[0xf0, 0x7e, 0x01, 0xf7], [0x90, 60, 0x7f]],
+  [[0x90, 60, 0x7f]],
   "an unterminated System Exclusive message must not consume later message bytes");
 assert.deepEqual(splitMidiMessages([0xf0, 0x7e, 0xf8, 0x01, 0xf7]),
   [[0xf0, 0x7e, 0x01, 0xf7]],
   "an interleaved System Real Time byte is not System Exclusive payload");
+
+for (const message of [sysex,
+  [0xf0, 0x41, 0x10, 0x42, 0x12, 0x40, 0, 0x7f, 0, 0x41, 0xf7],
+  [0xf0, 0x43, 0x10, 0x4c, 0, 0, 0x7e, 0, 0xf7],
+  [0x90, 60, 127], [0xc0, 25], [0xb0, 7, 100]]) {
+  assert(externalMidiMessageAllowed(message));
+}
+for (const message of [
+  [0xf0, 0x41, 0x10, 0x42, 0x12, 0x40, 0, 0x7f, 1, 0x40, 0xf7],
+  [0xf0, 0x43, 0x10, 0x4c, 0, 0, 0x7f, 0, 0xf7],
+  [0xf0, 0x7d, 1, 2, 0xf7], [0xf0, 0x7e, 0x7f, 6, 1, 0xf7],
+  [0xff], [0xf6], [0xfa], [0x90, 60, 256], [0xc0, -1], [0xc0, 1, 0], [],
+  Object.assign(new Array(6), {0: 0xf0, 1: 0x7e}),
+]) assert(!externalMidiMessageAllowed(message), `blocked hardware message ${message}`);
 
 // --- Runtime record normalization -----------------------------------------
 
@@ -246,6 +260,13 @@ device.setSelectedId("b");
 
 device.send(sysex);
 assert.deepEqual(secondPort.sent.at(-1), sysex, "System Exclusive bytes reach the selected device unchanged");
+const allowedCount = secondPort.sent.length;
+assert.equal(device.send([0xf0, 0x7d, 1, 2, 0xf7]), 0);
+assert.equal(device.send(sysex.slice(0, -1)), 0);
+assert.equal(device.send([0xff]), 0);
+assert.equal(device.sendMessage([0xf0, 0x7d, 1, 2, 0xf7]), false,
+  'direct framed-message calls cannot bypass the hardware filter');
+assert.equal(secondPort.sent.length, allowedCount, 'blocked messages never reach a port');
 
 const firstBeforePanic = firstPort.sent.length;
 const secondBeforePanic = secondPort.sent.length;

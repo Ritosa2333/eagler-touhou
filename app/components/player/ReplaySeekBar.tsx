@@ -22,6 +22,6 @@ export function ReplaySeekBar({frame, total, roundStarts = [], disabled, onSeek}
         title={`第 ${index + 1} 回合 · ${replayClock(start)}`} aria-label={`第 ${index + 1} 回合，${replayClock(start)}`}
         onClick={() => seek(start)}>{index + 1}</button>)}
     </div>
-    <span>{replayClock(shown)}<small> / {replayClock(total)}</small></span>
+    <span>{replayClock(shown)}<small> / {total ? replayClock(total) : '--:--'}</small></span>
   </div>;
 }

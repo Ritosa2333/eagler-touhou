@@ -348,8 +348,8 @@ export const PRODUCT_GAMES = Object.freeze({
       adaptationNotice: "early-test",
     }),
     runtimeFileLayout: "directory",
-    // Original glyphs use baked tables; localization and native thprac use Unifont.
-    requiredShared: Object.freeze(["/unifont.otf"]),
+    // Original glyphs are rasterized on demand from the shared Gothic font.
+    requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
     runtimeAssets: Object.freeze([
       "th11.html",
       "manifest.json",
@@ -362,12 +362,7 @@ export const PRODUCT_GAMES = Object.freeze({
       "th11-sdl.mjs",
       "th11-sdl.wasm",
       "resources.json",
-      "fonts/font0.bin",
-      "fonts/font1.bin",
-      "fonts/font2.bin",
-      "fonts/font3.bin",
       "fonts/cp932.bin",
-      "fonts/blend4444.bin",
     ]),
     dataProvider: "retail-memory",
     package: Object.freeze({
@@ -412,8 +407,8 @@ export const PRODUCT_GAMES = Object.freeze({
       adaptationNotice: "early-test",
     }),
     runtimeFileLayout: "directory",
-    // Purple THPrac and localization use the shared Unicode font.
-    requiredShared: Object.freeze(["/unifont.otf"]),
+    // Original glyphs are rasterized on demand; localization uses Unicode fonts.
+    requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
     runtimeAssets: Object.freeze([
       "th15.html",
       "manifest.json",
@@ -424,16 +419,7 @@ export const PRODUCT_GAMES = Object.freeze({
       "th15.mjs",
       "th15.wasm",
       "resources.json",
-      "fonts/font0.bin",
-      "fonts/font1.bin",
-      "fonts/font2.bin",
-      "fonts/font3.bin",
-      "fonts/font4.bin",
-      "fonts/font5.bin",
-      "fonts/font6.bin",
-      "fonts/font7.bin",
       "fonts/cp932.bin",
-      "fonts/blend4444.bin",
     ]),
     dataProvider: "retail-memory",
     package: Object.freeze({

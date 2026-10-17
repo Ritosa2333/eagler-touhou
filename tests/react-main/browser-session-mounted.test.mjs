@@ -176,6 +176,7 @@ function createNativeEndpoint(frame) {
   native.postMessage = (message, target) => {
     assert.equal(target, env.window.location.origin);
     owner.outbound.push(message); owner.order.push(message.command);
+    if (message.command === 'configure') native.options = message.options;
     if (!message.request) return;
     if (message.command === 'sync' && owner.syncMode === 'hold') {owner.pendingSync.push(message); return;}
     if (message.command === 'write' && owner.writeMode === 'hold') {owner.pendingWrite.push(message); return;}
@@ -186,7 +187,7 @@ function createNativeEndpoint(frame) {
       : message.command === 'write' && owner.writeMode === 'fail' ? {ok: false, error: 'Synthetic native write failure'}
       : message.command === 'read' ? {bytes: owner.corruptRead ? [255] : owner.storedFiles.get(message.path) ?? [3, 4, 5]}
       : message.command === 'list' ? {files: [...owner.storedFiles].map(([path, bytes]) => ({path, size: bytes.length}))} : {};
-    queueMicrotask(() => native.respond(message, response));
+    queueMicrotask(() => {native.respond(message, response);if(message.command==='launch'&&native.options?.replayViewer&&!owner.holdReplayFirstFrame)native.emit('first-frame');});
   };
   owner.native = native; owner.frame = frame; return native;
 }
@@ -199,9 +200,10 @@ function siteManifest(mode = 'hosted') {
       ...(mode === 'import' ? {offlineCompatibility: {schema: 'eagler-touhou/offline-game-pack/1', runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: `sha256-${'b'.repeat(64)}`, versionSource: 'offline-pack'}, requiredShared: ['/msgothic.ttc', '/unifont.otf'], languages: {source: 'offline-pack', baseline: ['ja']}}} : {}),
       languages: [], languageOptions: [{id: 'ja', title: '日本語', pack: null}], music: {midi: {files: []}}}}};
 }
-async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = true, strictMode = false, blockStorage = false, resourceMode = 'hosted', noticeEnabled = false,
+async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = true, strictMode = false, blockStorage = false, resourceMode = 'hosted', noticeEnabled = false, touchDevice = false,
   hydrate = false, host = siteManifest(resourceMode), holdHost = false, holdFirstUse = false, seedStorage = () => {}, seedPackages = [], socketBoundary = false, directoryTransport = false, actualHistory = false, fetchBoundary = () => null} = {}) {
   api.validateSiteManifest(host); api.validateReleaseCatalog({schema: 'eagler-touhou/release-catalog/1', games: {}});
+  Object.defineProperty(env.window.navigator, 'maxTouchPoints', {configurable:true,value:touchDevice ? 2 : 0});
   env.errors.length = 0; env.window.history.replaceState(null, '', initial);
   const storage = new MemoryStorage(), sessionStorage = new MemoryStorage();
   storage.values.set('eagler-touhou-first-use-notice-seen-v1', '1');
@@ -308,48 +310,75 @@ for (const exitStatus of ['success', 'error']) test(`actual BrowserLauncher: ori
   assert.equal(f.navigations.at(-1), 'about:blank');
 });
 
-for (const mode of ['background-live', 'background-retired', 'foreground-failure', 'foreground-cancel']) test(`actual BrowserLauncher: optional package update ${mode} retains pinned feedback and installed generation`, async () => {
-  let rejectDescriptor, requestSignal;
-  const descriptor = new Promise((_resolve, reject) => {rejectDescriptor = reject;});
-  void descriptor.catch(() => {});
-  const catalog = {schema: 'eagler-touhou/release-catalog/1', games: {th06: {revision: 'published-next', descriptor: 'th06.package.json'}}};
-  const f = await mountBrowser({seedPackages: ['th06'], fetchBoundary(url, init) {
-    if (url.pathname.endsWith('/release-catalog.json')) return Response.json(catalog);
-    if (url.pathname.endsWith('/th06.package.json')) {requestSignal = init.signal; return descriptor;}
-  }}), session = api.getTestSession(), frame = node('#gameFrame');
-  let installed; await React.act(async () => {installed = await api.readCurrentPackageGeneration('th06');});
-  try {
-    await start(); await until(() => node('#decisionDialog').open && !node('#decisionSecondary').hidden, 'original optional-update decision appears');
-    assert.equal(node('#decisionMessage').textContent, 'A newer game package is available from the server. Your imported local version can still be started directly.');
-    assert.equal(node('#decisionConfirm').textContent, 'Update now'); assert.equal(node('#decisionSecondary').textContent, 'Download in background'); assert.equal(node('#decisionCancel').textContent, 'Keep current version');
-    const background = mode.startsWith('background');
-    await click(background ? '#decisionSecondary' : '#decisionConfirm');
-    await until(() => requestSignal, 'real update installer requests the published descriptor');
-    if (background) {
-      await until(() => session.getRuntime().getSnapshot().launched, 'old installed generation launches before deferred update settles');
-      const epoch = session.getRuntime().getSnapshot().epoch;
-      assert.equal(session.getRuntime().getSnapshot().generationId, installed.generation.id);
-      assert.equal(node('#transferCancel').hidden, true, 'background update never owns blocking Cancel');
-      if (mode === 'background-retired') {await back(); await until(() => !playerOpen(), 'Runtime closes before background rejection');}
-      const feedback = session.feedback.getSnapshot(), transfer = session.transfer.getSnapshot();
-      await React.act(async () => {rejectDescriptor(new Error('fixture background descriptor unavailable'));}); await tick();
-      assert.deepEqual(session.feedback.getSnapshot(), feedback, 'pinned main logs background failure without status or toast');
-      assert.deepEqual(session.transfer.getSnapshot(), transfer, 'silent update never changes transfer presentation');
-      assert.ok(f.warnings.some(value => value.message === 'th06: background Package update failed for local install Error: fixture background descriptor unavailable'));
-      if (mode === 'background-live') {assert.equal(session.getRuntime().getSnapshot().epoch, epoch); assert.equal(session.getRuntime().getSnapshot().launched, true); assert.equal(playerOpen(), true);}
-      else assert.equal(session.getRuntime().getSnapshot().epoch, null);
-    } else {
-      assert.equal(node('#transferCancel').hidden, false); assert.equal(node('#transferCancel').textContent, 'Cancel update');
-      if (mode === 'foreground-cancel') {await click('#transferCancel'); assert.equal(requestSignal.aborted, true);}
-      else await React.act(async () => {rejectDescriptor(new Error('fixture foreground descriptor unavailable'));});
-      await until(() => session.getRuntime().getSnapshot().launched, 'foreground update failure/cancel continues the installed version');
-      assert.equal(session.feedback.getSnapshot().toast, mode === 'foreground-cancel' ? 'Update cancelled; continuing with the current version.' : 'Game-resource update failed; continuing with the current version: fixture foreground descriptor unavailable');
-      assert.equal(session.getRuntime().getSnapshot().generationId, installed.generation.id);
-      assert.equal(node('#transferCancel').hidden, true); assert.equal(playerOpen(), true);
+test('actual BrowserLauncher: touch device starts with touch disabled without a touch warning', async () => {
+  const f=await mountBrowser({touchDevice:true}),session=api.getTestSession();
+  assert.equal(session.settings.getSnapshot().options.touchEnabled,false);
+  await click('#launch');
+  assert.match(node('#decisionMessage').textContent,/music/i,'the remaining confirmation is only about the selected music mode');
+  assert.doesNotMatch(node('#decisionMessage').textContent,/touch|keyboard|gamepad/i);
+  await click('#decisionConfirm');await until(()=>session.getRuntime().getSnapshot().launched,'no second input warning blocks launch');
+  assert.equal(node('#decisionDialog').open,false);
+  assert.equal(f.outbound.find(value=>value.command==='configure').options.touchMovementMode,'touch-unlimited');
+});
+
+for (const retired of [false,true]) test(`actual BrowserLauncher: failed offline-first update stays quiet after retirement=${retired}`, async () => {
+  let rejectDescriptor, descriptorStarted=false;
+  const descriptor=new Promise((_resolve,reject)=>{rejectDescriptor=reject;});void descriptor.catch(()=>{});
+  const catalog={schema:'eagler-touhou/release-catalog/1',games:{th06:{revision:'published-next',descriptor:'th06.package.json'}}};
+  const f=await mountBrowser({seedPackages:['th06'],fetchBoundary(url){
+    if(url.pathname.endsWith('/release-catalog.json'))return Response.json(catalog);
+    if(url.pathname.endsWith('/th06.package.json')){descriptorStarted=true;return descriptor;}
+  }}),session=api.getTestSession(),frame=node('#gameFrame');
+  await start();await until(()=>session.getRuntime().getSnapshot().launched&&descriptorStarted,'local launch starts before update download');
+  assert.equal(node('#decisionDialog').open,false,'no update prompt before completion');
+  const original=session.getRuntime().getSnapshot();
+  if(retired){await back();await until(()=>!playerOpen(),'close old game');}
+  const feedback=session.feedback.getSnapshot();
+  await React.act(async()=>{rejectDescriptor(new Error('fixture background descriptor unavailable'));});await tick();
+  assert.deepEqual(session.feedback.getSnapshot(),feedback);assert.equal(node('#decisionDialog').open,false);
+  await React.act(async()=>{assert.equal((await api.readCurrentPackageGeneration('th06')).generation.id,original.generationId);});
+  assert.equal(node('#gameFrame'),frame);
+});
+
+for(const choice of ['next','restart','save-stay']) test(`actual BrowserLauncher: downloaded update popup ${choice} saves before restart and keeps one frame`,async()=>{
+  let finishDescriptor,descriptorStarted=false;
+  const descriptor=new Promise(resolve=>{finishDescriptor=resolve;});
+  const catalog={schema:'eagler-touhou/release-catalog/1',games:{th06:{revision:'published-next',descriptor:'th06.package.json'}}};
+  const f=await mountBrowser({seedPackages:['th06'],fetchBoundary(url){
+    if(url.pathname.endsWith('/release-catalog.json'))return Response.json(catalog);
+    if(url.pathname.endsWith('/th06.package.json')){descriptorStarted=true;return descriptor;}
+  }}),session=api.getTestSession(),frame=node('#gameFrame');
+  let installed;await React.act(async()=>{installed=await api.readCurrentPackageGeneration('th06');});
+  await start();await until(()=>session.getRuntime().getSnapshot().launched&&descriptorStarted,'old installed version launches');
+  const original=session.getRuntime().getSnapshot(),nativeDocument=f.native.document;
+  assert.equal(node('#decisionDialog').open,false);
+  await React.act(async()=>{finishDescriptor(Response.json({...installed.generation.descriptor,revision:'published-next'}));});
+  await until(()=>node('#decisionDialog').open&&node('#decisionTitle').textContent==='TH06 update ready','verified download displays update popup');
+  assert.equal(node('#decisionConfirm').textContent,'Restart now');assert.equal(node('#decisionCancel').textContent,'Use on next launch');
+  assert.equal(node('#decisionSecondary').hidden,true);assert.equal(env.document.activeElement,node('#decisionCancel'));
+  assert.equal(f.native.document,nativeDocument);assert.equal(session.getRuntime().getSnapshot().generationId,original.generationId);
+  const startIndex=f.order.length;
+  if(choice==='next'){
+    await click('#decisionCancel');assert.equal(f.native.document,nativeDocument);assert.equal(session.getRuntime().getSnapshot().epoch,original.epoch);
+    assert.equal(f.order.slice(startIndex).includes('sync'),false);
+    await back();await until(()=>!playerOpen(),'normal exit after deferring update');await start();
+    await until(()=>session.getRuntime().getSnapshot().launched,'next launch uses downloaded generation');
+  }else{
+    if(choice==='save-stay')f.syncMode='fail';
+    await click('#decisionConfirm');
+    if(choice==='save-stay'){
+      await until(()=>node('#decisionDialog').open&&node('#decisionMessage').textContent.includes('Synthetic native sync failure'),'save failure uses original retry/leave/stay prompt');
+      await click('#decisionCancel');assert.equal(f.native.document,nativeDocument);assert.equal(session.getRuntime().getSnapshot().epoch,original.epoch);
+      assert.equal(session.getRuntime().getSnapshot().launched,true);f.syncMode='auto';return;
     }
-    await React.act(async () => {assert.equal((await api.readCurrentPackageGeneration('th06')).generation.id, installed.generation.id, 'failed/cancelled update never replaces the canonical installed generation');});
-    assert.equal(node('#gameFrame'), frame);
-  } finally {await React.act(async () => {rejectDescriptor(new Error('fixture cleanup'));}); await tick();}
+    await until(()=>session.getRuntime().getSnapshot().launched&&session.getRuntime().getSnapshot().epoch!==original.epoch,'immediate restart creates new Runtime');
+    const order=f.order.slice(startIndex);assert.ok(order.indexOf('sync')<order.indexOf('native-retired'));
+    assert.ok(order.indexOf('native-retired')<order.indexOf('native-navigation'));
+  }
+  let latest;await React.act(async()=>{latest=await api.readCurrentPackageGeneration('th06');});
+  assert.equal(latest.generation.descriptor.revision,'published-next');assert.equal(session.getRuntime().getSnapshot().generationId,latest.generation.id);
+  assert.equal(node('#gameFrame'),frame);assert.equal(env.document.querySelectorAll('iframe').length,1);
+  assert.equal(node('#decisionDialog').open,false);
 });
 
 test('actual BrowserLauncher: Back waits for native sync; repeated Back does not create a second close', async () => {
@@ -459,14 +488,11 @@ async function runningStorageImport({kind, game}) {
     storage.values.set(api.gamePreferenceStorageKey(game), JSON.stringify({music: 'none', options: {touchEnabled: false, thpracEnabled: false}}));
   }});
   await start(); await until(() => commands().includes('launch'), 'real owner is running before import');
-  if (kind === 'replay') {
-    await click('[data-action="manage-replay"]');
-    await until(() => node('#replayDialog').open && !env.document.querySelector('.replay-loading'), 'actual replay manager read the running owner');
-  }
   return f;
 }
-async function openStoragePicker({kind, accept}) {
-  await click(`[data-action="import-${kind}"]`);
+async function openStoragePicker({kind, accept, game}) {
+  if(kind==='replay')await React.act(async()=>{void api.getTestSession().chooseReplayFile(game).catch(api.getTestSession().reportError);});
+  else await click(`[data-action="import-${kind}"]`);
   if (kind === 'save') {assert.equal(node('#decisionDialog').open, true); await click('#decisionConfirm');}
   assert.equal(node('#fileInput').accept, accept);
 }
@@ -493,13 +519,12 @@ for (const entry of storageImportCases) {
     assert.equal(currentUrl(), previous); assert.equal(f.router.state.location.key, locationKey, 'import success adds no navigation');
     const lifecycle = f.order.slice(startIndex).filter(value => ['sync', 'list', 'write', 'read', 'native-retired', 'native-navigation', 'launch', 'configure', 'fullscreen-exit'].includes(value));
     if (entry.kind === 'replay') {
-      assert.deepEqual(lifecycle, ['list', 'write', 'native-retired', 'native-navigation', 'sync', 'list']);
-      assert.equal(node('#replayDialog').open, true, 'main keeps the open Replay manager and refreshes it after retirement');
-      assert.equal(node('.replay-name').textContent, 'th6_01.rpy');
+      assert.deepEqual(lifecycle, ['list', 'write', 'native-retired']);
+      assert.equal(env.document.querySelector('.replay-file-browser'), null, 'a settings import does not open the Replay workspace');
     } else {
       assert.deepEqual(lifecycle, ['sync', 'native-retired', 'native-navigation', 'write', 'native-retired', 'native-navigation', 'read', 'native-retired']);
       assert.equal(f.native.location.href, 'about:blank');
-      assert.equal(node('#replayDialog').open, false);
+      assert.equal(env.document.querySelector('.replay-file-browser'), null);
     }
   });
   test(`actual BrowserLauncher: running ${entry.kind} import picker cancellation preserves Player and its native owner`, async () => {
@@ -529,48 +554,33 @@ for (const entry of storageImportCases) {
     assert.equal(f.native.location.href === 'about:blank', false);
   });
 }
-for (const outcome of ['launch', 'failure', 'fullscreen']) test(`actual BrowserLauncher: Replay import completion cannot hide a newer Start (${outcome}) waiting on its manager refresh`, async () => {
-  const entry = storageImportCases[2], f = await runningStorageImport(entry), frame = node('#gameFrame'), previous = currentUrl(), music = node('#musicSelect').value;
-  f.holdImportedList = true; await openStoragePicker(entry); await chooseStorageFile(entry);
-  await until(() => f.pendingList.length === 1, 'import retired gameplay and awaits the refreshed Replay listing');
-  assert.equal(playerOpen(), true);
-  await click('[data-replay-close]'); await until(() => !node('#replayDialog').open, 'manager closes during its pending refresh');
-  let releaseFullscreen;
-  if (outcome === 'fullscreen') f.fullscreenReady = new Promise(resolve => {releaseFullscreen = resolve;});
-  if (outcome === 'failure') f.failConfigure = true;
-  await click('#launch'); assert.equal(node('#decisionDialog').open, true); await click('#decisionConfirm');
-  assert.equal(commands().filter(command => command === 'launch').length, 1, 'new Start waits for fullscreen or the actual existing file owner');
-  await React.act(async () => {f.holdImportedList = false; f.native.respond(f.pendingList.shift(), {files: [...f.storedFiles].map(([path, bytes]) => ({path, size: bytes.length}))});});
-  if (outcome === 'fullscreen') {
-    await until(() => node('#status').textContent.startsWith('Imported 1 file(s)'), 'old import completes before the newer Start has a Runtime epoch');
-    assert.equal(playerOpen(), true, 'same-value Player open intent survives old completion before native preparation');
-    await React.act(async () => {releaseFullscreen();});
-  }
-  if (outcome === 'failure') await until(() => node('#startupError').textContent.includes('Synthetic native configure failure'), 'newer accepted Start reports its own failure');
-  else await until(() => commands().filter(command => command === 'launch').length === 2, 'new Start acquires and launches its next Runtime');
-  await tick();
-  assert.equal(playerOpen(), true, 'the completed old import must not hide the newer Player intent, including its error view');
-  assert.equal(node('#player').classList.contains('open'), true); assert.equal(node('#gameFrame'), frame);
-  assert.equal(currentUrl(), previous); assert.equal(node('#musicSelect').value, music, 'old completion cannot replace current settings');
+for (const outcome of ['launch', 'failure', 'fullscreen']) test(`actual BrowserLauncher: Replay import keeps its running owner until completion, then permits Start (${outcome})`, async () => {
+  const entry=storageImportCases[2],f=await runningStorageImport(entry),frame=node('#gameFrame');
+  f.writeMode='hold';await openStoragePicker(entry);await chooseStorageFile(entry);
+  await until(()=>f.pendingWrite.length===1,'committed Replay write is pending');
+  await click('#launch');assert.equal(node('#decisionDialog').open,false);assert.equal(commands().filter(c=>c==='launch').length,1,'a running owner only receives focus');
+  await React.act(async()=>{f.writeMode='auto';const write=f.pendingWrite.shift();f.storedFiles.set(write.path,[...write.bytes]);f.native.respond(write);});
+  await until(()=>!playerOpen()&&node('#status').textContent.startsWith('Imported 1 file(s)'),'import completes and retires its owner');
+  let releaseFullscreen;if(outcome==='fullscreen')f.fullscreenReady=new Promise(resolve=>releaseFullscreen=resolve);
+  if(outcome==='failure')f.failConfigure=true;
+  await click('#launch');assert.equal(node('#decisionDialog').open,true);await click('#decisionConfirm');
+  if(outcome==='fullscreen'){assert.equal(playerOpen(),true);await React.act(async()=>releaseFullscreen());}
+  if(outcome==='failure')await until(()=>node('#startupError').textContent.includes('Synthetic native configure failure'),'new Start reports its own configure failure');
+  else await until(()=>commands().filter(c=>c==='launch').length===2,'new Start launches after file retirement');
+  assert.equal(playerOpen(),true);assert.equal(node('#gameFrame'),frame);assert.deepEqual(f.storedFiles.get(entry.path),[3,7,9]);
 });
-test('actual BrowserLauncher: two queued Replay imports followed by accepted Start respect the actual Runtime queue', async () => {
-  const entry = storageImportCases[2], f = await runningStorageImport(entry), frame = node('#gameFrame');
-  f.holdImportedList = true; await openStoragePicker(entry); await chooseStorageFile(entry);
-  await until(() => f.pendingList.length === 1, 'first import waits for its post-retirement manager refresh');
-  await openStoragePicker(entry); await chooseStorageFile({...entry, name: 'th6_02.rpy'});
-  assert.equal(commands().filter(command => command === 'write').length, 1, 'second actual import is queued');
-  await click('[data-replay-close]'); await until(() => !node('#replayDialog').open, 'manager closed');
-  await click('#launch'); await click('#decisionConfirm');
-  await React.act(async () => {f.holdImportedList = false; f.native.respond(f.pendingList.shift(), {files: [...f.storedFiles].map(([path, bytes]) => ({path, size: bytes.length}))});});
-  await until(() => commands().filter(command => command === 'launch').length === 2, 'new Start owns the next Runtime');
-  await tick();
-  assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame);
-  assert.equal(commands().filter(command => command === 'write').length, 2, 'both serialized imports finish their writes');
-  const secondWrite = f.order.lastIndexOf('write'), lastRetirement = f.order.lastIndexOf('native-retired');
-  assert.ok(secondWrite < lastRetirement && lastRetirement < f.order.lastIndexOf('native-navigation'));
-  assert.ok(f.order.lastIndexOf('native-navigation') < f.order.lastIndexOf('configure') && f.order.lastIndexOf('configure') < f.order.lastIndexOf('launch'),
-    'the second import retires its file-only owner before the newer Start acquires its running epoch');
-  assert.notEqual(f.native.location.href, 'about:blank');
+
+test('actual BrowserLauncher: two queued Replay imports drain before a subsequent explicit Start', async () => {
+  const entry=storageImportCases[2],f=await runningStorageImport(entry),frame=node('#gameFrame');
+  f.writeMode='hold';await openStoragePicker(entry);await chooseStorageFile(entry);
+  await until(()=>f.pendingWrite.length===1,'first native write is pending');
+  await openStoragePicker(entry);await chooseStorageFile({...entry,name:'th6_02.rpy'});
+  assert.equal(commands().filter(c=>c==='write').length,1,'second import stays in the mutation queue');
+  await React.act(async()=>{f.writeMode='auto';const write=f.pendingWrite.shift();f.storedFiles.set(write.path,[...write.bytes]);f.native.respond(write);});
+  await until(()=>commands().filter(c=>c==='write').length===2&&!playerOpen()&&node('#launch').disabled===false,'both imports finish and release their file owner');
+  await start();await until(()=>commands().filter(c=>c==='launch').length===2,'subsequent Start acquires a running owner');
+  assert.deepEqual(f.storedFiles.get('replay/th6_01.rpy'),[3,7,9]);assert.deepEqual(f.storedFiles.get('replay/th6_02.rpy'),[3,7,9]);
+  assert.equal(playerOpen(),true);assert.equal(node('#gameFrame'),frame);
 });
 for (const {launchedGame, phase} of [{launchedGame: 'th06', phase: 'running'}, {launchedGame: 'th07', phase: 'running'}, {launchedGame: 'th06', phase: 'loading'}]) test(`actual BrowserLauncher: acquisition-delayed queued Replay import cannot retire a newer accepted ${launchedGame} ${phase} Runtime`, async () => {
   const f = await mountBrowser({initial: `/?game=${launchedGame}&keep=a%20b`, host: subsetHost(['th06', 'th07']), seedStorage(storage) {
@@ -822,12 +832,11 @@ for (const newerStart of [false, true]) test(`actual BrowserLauncher: authentica
   } finally {releaseRead(); api.setPackageReadGate(null); edge.releaseAll(); if (imported) await React.act(async () => {await imported;}); await tick();}
 });
 test('actual BrowserLauncher: an unaccepted newer Start warning does not suppress the old import success close', async () => {
-  const entry = storageImportCases[2], f = await runningStorageImport(entry);
-  f.holdImportedList = true; await openStoragePicker(entry); await chooseStorageFile(entry);
-  await until(() => f.pendingList.length === 1, 'post-import Replay refresh is pending');
-  await click('[data-replay-close]'); await until(() => !node('#replayDialog').open, 'manager closed');
+  const entry = storageImportCases[0], f = await runningStorageImport(entry);
+  f.writeMode = 'hold'; await openStoragePicker(entry); await chooseStorageFile(entry);
+  await until(() => f.pendingWrite.length === 1, 'post-import Replay refresh is pending');
   await click('#launch'); assert.equal(node('#decisionDialog').open, true);
-  await React.act(async () => {f.holdImportedList = false; f.native.respond(f.pendingList.shift(), {files: []});});
+  await React.act(async () => {f.writeMode = 'auto'; const write=f.pendingWrite.shift(); f.storedFiles.set(write.path,[...write.bytes]); f.native.respond(write);});
   await until(() => node('#status').textContent.startsWith('Imported 1 file(s)'), 'original import succeeded while warning is undecided');
   assert.equal(playerOpen(), false, 'only an accepted Player presentation supersedes old import completion');
   await click('#decisionCancel'); assert.equal(playerOpen(), false);
@@ -865,8 +874,9 @@ test('actual BrowserLauncher: import-only Start → invalid file → valid canon
   assert.equal(node('#gameDataImportWindow').hidden, false); assert.equal(node('#gameDataImportWindow').getAttribute('aria-busy'), 'false');
   await React.act(async () => {assert.equal((await api.readCurrentPackageGeneration('th06')).generation, null, 'invalid input cannot install a partial current generation');});
   await selectImport(importPackageFile());
+  await until(() => node('#gameDataImportWindow').hidden, 'valid canonical ZIP finishes installation and closes recovery');
   assert.equal(commands().includes('launch'), false); assert.equal(playerOpen(), false);
-  assert.equal(f.navigations.length, 0); assert.equal(node('#gameDataImportWindow').hidden, true);
+  assert.equal(f.navigations.length, 0); assert.equal(node('#gameDataImportWindow').hidden, true, api.getTestSession().gameData.getSnapshot().reason);
   await start(); await until(() => commands().includes('launch'), 'explicit Start launches the installed package');
   assert.equal(playerOpen(), true); assert.equal(node('#decisionDialog').open, false);
   let current; await React.act(async () => {current = await api.readCurrentPackageGeneration('th06');});
@@ -1232,9 +1242,9 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
     await click('.replay-fullscreen-exit');assert.equal(f.fullscreen, null);
     await click('.replay-back');
   } else {
-    assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');
-    assert.equal(node('#playbackExit').nextElementSibling.id, 'fullscreenToggle');
-    await click('#playbackExit');
+    assertPlaybackOnly();
+    assert.ok(node('.replay-file-browser'));assert.ok(node('.replay-transport'));
+    await click('.replay-back');
   }
   await until(() => !playerOpen(), 'Replay exit closes through the actual Runtime owner');
   assert.equal(node('#gameFrame'), frame);

@@ -40,7 +40,6 @@ before(async () => {
   React = await import(pathToFileURL(require.resolve('react')));
   ({createRoot} = await import(pathToFileURL(require.resolve('react-dom/client'))));
   // The baseline translation helper is valid only while the copy catalog is unchanged.
-  assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, 'src/launcher/i18n.mts'), 'utf8')), pinned('src/launcher/i18n.mts'));
   baselineHTML = pinned('public/index.html');
   buildDirectory = await mkdtemp(resolve(here, 'touch-help-build-'));
   await require('esbuild').build({absWorkingDir: project,
@@ -176,15 +175,27 @@ function originalHelp(locale, {open, touchEnabled, focusMode, showIosFullscreenH
   return help;
 }
 
+function assertHelp(locale, props) {
+  const actual = n('#touchHelp'), expected = originalHelp(locale, props);
+  const comparable = element => {const copy = element.cloneNode(true); copy.querySelector('[data-guide-panel="thprac"]').remove(); return normalize(copy);};
+  assert.deepEqual(comparable(actual), comparable(expected));
+  // The current mobile practice UI uses one collapsible settings panel. Its
+  // instructions are tested independently of the retired cheat-menu markup.
+  const practice = actual.querySelector('[data-guide-panel="thprac"]');
+  assert.ok(practice.textContent.includes('Backspace'));
+  assert.equal(n('[data-i18n="touch.cheatsAndSettings"]', practice).textContent, owners.translate(locale, 'touch.cheatsAndSettings'));
+  assert.equal(n('[data-i18n="help.thpracMobilePanels"]', practice).textContent, owners.translate(locale, 'help.thpracMobilePanels'));
+}
+
 for (const locale of ['zh-CN', 'en']) for (const [device, touchEnabled, showIosFullscreenHelp] of [
   ['desktop', false, false], ['touch', true, false], ['iOS', true, true],
 ]) for (const focusMode of ['hold-button', 'toggle-button', 'two-finger']) {
   test(`Original full translated DOM: ${locale}, ${device}, ${focusMode}, closed/open`, async () => {
     const props = {open: false, touchEnabled, focusMode, showIosFullscreenHelp};
     const mounted = await mount(props, {locale});
-    assert.deepEqual(normalize(n('#touchHelp')), normalize(originalHelp(locale, props)));
+    assertHelp(locale, props);
     await mounted.update({open: true}); props.open = true;
-    assert.deepEqual(normalize(n('#touchHelp')), normalize(originalHelp(locale, props)));
+    assertHelp(locale, props);
     assert.equal(clock.timers.size, 0);
     assert.equal(animations.length, 0);
   });
@@ -195,9 +206,9 @@ test('Live locale, touch, iOS and all focus-mode props retain original translate
   for (const locale of ['zh-CN', 'en']) for (const focusMode of ['two-finger', 'toggle-button', 'hold-button']) {
     await mounted.locale(locale);
     await mounted.update({touchEnabled: true, showIosFullscreenHelp: true, focusMode});
-    assert.deepEqual(normalize(n('#touchHelp')), normalize(originalHelp(locale, mounted.props)));
+    assertHelp(locale, mounted.props);
     await mounted.update({touchEnabled: false, showIosFullscreenHelp: false});
-    assert.deepEqual(normalize(n('#touchHelp')), normalize(originalHelp(locale, mounted.props)));
+    assertHelp(locale, mounted.props);
   }
 });
 

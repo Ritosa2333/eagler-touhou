@@ -10,6 +10,7 @@ import {
 import { validateSiteManifest, type SiteManifest } from '../../src/contracts/site-manifest.mts';
 import {
   multiplayerControlMode,
+  generateMultiplayerRoomCode,
   type MultiplayerIdentityStore,
 } from '../../src/launcher/multiplayer-identity.mts';
 import { buildMultiplayerDirectoryRelayUrl } from '../../src/launcher/multiplayer-relay-url.mts';
@@ -115,8 +116,12 @@ export function directoryRoomState(room: DirectoryRoom): 'recruiting' | 'full' |
 export function directoryRoomCanEnter(room: DirectoryRoom): boolean {
   return (
     (directoryRoomState(room) === 'recruiting' && room.joinable) ||
+    directoryRoomState(room) === 'full' || (room.phase !== 'lobby' && room.spectatable === true) ||
     room.product === 'th09mp'
   );
+}
+export function directoryRoomSpectatorEntry(room: DirectoryRoom): boolean {
+  return directoryRoomState(room) !== 'recruiting' && directoryRoomCanEnter(room);
 }
 /** Source authority: main src/launcher/lobby.mts. No DOM, history, gameplay or
  * new form fields. Starting this owner is explicit; construction performs no I/O. */
@@ -313,7 +318,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       difficulty: bounded(row.difficulty, policy.difficulties.length - 1),
       phase: row.phase === 'lobby' ? 'lobby' : 'playing',
       joinable: row.joinable === true,
-      spectatable: row.product === 'th09mp' && row.phase !== 'lobby' && row.spectatable === true,
+      spectatable: row.phase !== 'lobby' && row.spectatable === true,
     });
   }
   function connect() {
@@ -647,10 +652,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     }
     const created = form.mode === 'create';
     if (created) {
-      const word = options.randomWord
-        ? options.randomWord()
-        : crypto.getRandomValues(new Uint32Array(1))[0];
-      code = String(1000 + (word % 9000));
+      code = generateMultiplayerRoomCode(options.randomWord);
       while (snapshot.rooms.some((room) => room.product === form.product && room.code === code))
         code = String(1000 + ((Number(code) - 999) % 9000));
     }
@@ -689,7 +691,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       1,
       'public',
       false,
-      false,
+      directoryRoomSpectatorEntry(current),
     );
   }
   function releaseMembership() {

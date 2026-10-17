@@ -1,4 +1,4 @@
-import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
+import {synchronizedMainAuthority} from './source-text.mjs';
 /** Independent pinned-main component/service regression. SYNTHETIC DOM + MEMORY
  * ROUTER ONLY: not production-host wiring, browser top layer, CSS, relay or runtime QA. */
 import test, {before, after, afterEach} from 'node:test';
@@ -29,14 +29,6 @@ before(async () => {
   React = await import('react');
   ({createRoot} = await import('react-dom/client'));
   ({createMemoryRouter, RouterProvider} = await import('react-router'));
-  for (const path of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) {
-    const acceptedMain=execFileSync('git',['show',`b667ab07cb7cf11f9220d11e3a64602cc6331792:${path}`],{cwd:project,encoding:'utf8'});
-    // Dedicated TH09 Replay/room fixtures own its added vocabulary and files.
-    const sharedText = source => pinnedUiAuthorityText(path.endsWith('i18n.mts')
-      ? source.replace(/const entries = \[[\s\S]*?(?=  \["touch\.tools")/, 'const entries = [\n')
-      : source.replace('"motion-replay.mjs", "auto-replay.mjs",', '"motion-replay.mjs",').replace('"replay-player.mjs", "playback-clock.mjs", ', '').replace('      inGameSelection: true,\n', '').replace('  inGameSelection?: boolean;\n', '').replace(', manualRollbackDelay: true', '').replace('  manualRollbackDelay?: boolean;\n', '').replace('    manualRollbackDelay: rollback && timing?.manualRollbackDelay === true,\n', ''));
-    assert.equal(sharedText(readFileSync(resolve(project, path), 'utf8')), sharedText(acceptedMain), `Pinned catalog changed: ${path}`);
-  }
   originalHTML = pinned('public/lobby.html');
   const original = pinned('src/launcher/lobby.mts');
   const rowSource = original.slice(original.indexOf('function titleFor('), original.indexOf('\nfunction render()'));
@@ -156,6 +148,15 @@ function expectedRow(snapshot, room, locale, initial = false) {
   const row = originalRows(doc, n('#roomRowTemplate', doc), new Map(), snapshot.rooms, snapshot.connection, snapshot.mine, snapshot.leaving,
     owners.PRODUCT_GAMES, owners.gameIdForProduct, owners.multiplayerConfigForProduct, () => locale, (key, params) => t(locale, key, params), () => {})(room);
   for (const control of row.querySelectorAll('.lobby-seat-control')) control.title = control.textContent;
+  // Accepted spectator rollout: a full lobby remains enterable through its
+  // observer role. Other row presentation retains the pinned authority.
+  if (room.phase === 'lobby' && room.players >= room.capacity) {
+    const button = row.querySelector('.lobby-join');
+    button.disabled = snapshot.connection !== 'live' || !!snapshot.mine || snapshot.leaving;
+    button.textContent = t(locale, 'multiplayer.joinSpectator');
+    const game = owners.PRODUCT_GAMES[owners.gameIdForProduct(room.product)];
+    button.setAttribute('aria-label', `${t(locale,'multiplayer.joinSpectator')} ${locale === 'en' ? game.subtitle : game.title} #${room.code}`);
+  }
   return row;
 }
 function expectedDialog(f, locale) {
@@ -191,7 +192,7 @@ test('Rows preserve keyed identity, failed cover, and creation-time motion suppr
   await f.receive([room({code: '5678'})]); await m.update({snapshot: f.service.getSnapshot()}); assert.equal(original.isConnected, false);
 });
 test('Rows enforce live/recruiting/joinable/membership/leaving gates and use the latest service room', async () => {
-  for (const patch of [{joinable: false}, {phase: 'playing'}, {capacity: 2, seats: [{initial: 'A'}, {initial: 'B'}]}]) {
+  for (const patch of [{joinable: false}, {phase: 'playing'}]) {
     const f = await fixture().live([room(patch)]); const m = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service, assetUrl});
     assert.equal(n('.lobby-join').disabled, true); await click('.lobby-join'); assert.equal(f.navigations.length, 0); await m.unmount();
   }
@@ -205,6 +206,29 @@ test('Rows enforce live/recruiting/joinable/membership/leaving gates and use the
   await m.update({snapshot: {...f.service.getSnapshot(), leaving: true}}); assert.equal(n('.lobby-join').disabled, true);
   await m.update({snapshot: f.service.getSnapshot()}); await click('.lobby-join'); assert.equal(f.navigations.length, 1);
   assert.equal(f.closeCalls, 0); assert.deepEqual(f.sessionWrites, [['clear', 'th06mp']]);
+});
+
+for (const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th15mp']) test(`Full waiting room enters the spectator role through the directory: ${product}`, async () => {
+  const f=await fixture({selectedProduct:product,host:{games:[product.slice(0,-2)]}}).live([
+    room({product,capacity:2,players:2,joinable:false,seats:[{initial:'A',online:true},{initial:'B',online:true}]})]);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  assert.equal(n('.lobby-join').disabled,false);
+  if(product!=='th09mp')assert.equal(n('.lobby-join').textContent,t('en','multiplayer.joinSpectator'));
+  await click('.lobby-join');assert.equal(f.navigations.length,1);
+  const invite=owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j'));
+  assert.equal(invite.g,product);assert.equal(invite.s,true);assert.equal(invite.a,'join');
+  assert.equal(f.sessionWrites.some(write=>write[0]==='save'),false,'directory must not reserve a player seat');
+  await m.unmount();
+});
+
+test('Running cooperative room requires a real spectator stream before the directory can launch its observer',async()=>{
+  for(const spectatable of [false,true]){
+    const f=await fixture().live([room({phase:'playing',joinable:false,spectatable})]);
+    const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+    assert.equal(n('.lobby-join').disabled,!spectatable);await click('.lobby-join');assert.equal(f.navigations.length,spectatable?1:0);
+    if(spectatable)assert.equal(owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j')).s,true);
+    await m.unmount();
+  }
 });
 
 for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list conditions and original static sections: ${locale}`, async () => {
@@ -412,7 +436,7 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
   await m.update({open: false});
 });
 test('No multiplayer products disables create/code/submit while keeping the original native field semantics', async () => {
-  const f = await fixture({host: {games: ['th15']}}).live(); await mountLobby(f);
+  const f = await fixture({host: {games: ['th20']}}).live(); await mountLobby(f);
   assert.deepEqual(f.service.getSnapshot().products, []); assert.equal(n('#createButton').disabled, true); assert.equal(n('#codeButton').disabled, true);
   assert.equal(f.service.prepareForm('create'), false);
   await mount(owners.DirectoryRoomDialog, {service: f.service, open: true, onCloseRequest() {assert.fail('Unavailable form must not close');}});

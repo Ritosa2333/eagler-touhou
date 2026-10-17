@@ -2,7 +2,6 @@ import {normalizeGameVersion} from "../../package/game-version.mjs";
 import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
-import {linkAbortSignals} from './abort-signals';
 import {componentFileIds} from '../../package/package-generation.mjs';
 import {installPublishedPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
@@ -61,6 +60,7 @@ export interface AcquisitionRequest {
   onAcquisitionActivity?(active: boolean): void;
   onProgress?(progress: PreparationProgress): void;
   onWarning?(message: string): void;
+  onUpdateReady?(): void;
   decideUpdate?(input: {message: string; confirmText: string; secondaryText: string; cancelText: string}): Promise<'confirm' | 'secondary' | 'cancel'>;
 }
 export type PackageAcquisitionResult =
@@ -170,30 +170,6 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       checkPreparationAbort(request.signal); await installedChanged(game); return result;
     } finally {request.onAcquisitionActivity?.(false);}
   }
-  async function maybeUpdate(game: GameId, installed: CurrentPackageGeneration, request: AcquisitionRequest) {
-    const catalog = metadata.getSnapshot().releaseCatalog, current = installed.generation, publication = catalog?.games[game];
-    if (!current || !publication || current.descriptor.revision === publication.revision || !request.decideUpdate) return 'none' as const;
-    const local = installed.installation?.source === 'local';
-    const choice = await request.decideUpdate({message: t(local ? 'package.updateAvailableLocal' : 'package.updateAvailableRemote'),
-      confirmText: t('package.updateNow'), secondaryText: t('action.backgroundDownload'), cancelText: t('package.keepCurrent')});
-    checkPreparationAbort(request.signal);
-    if (choice === 'cancel') return 'none' as const;
-    if (choice === 'secondary') return 'background' as const;
-    const linked = linkAbortSignals(request.signal, request.updateSignal);
-    try {
-      request.onUpdateActivity?.(true);
-      progress(request, local ? 'package.updatingLocal' : 'package.updatingRemote');
-      await deps.installPublished(game, {catalog, catalogUrl, gameVersion: request.gameVersion ?? "original", addComponents: [],
-        selectedComponentEntries: selectedLanguages(game, request.language), preserveLocalSource: true, fetchImpl: getPackageFetch(game),
-        signal: linked.signal,
-        onProgress: value => progress(request, local ? 'package.updatingLocalProgress' : 'package.updatingRemoteProgress', {...value})});
-      checkPreparationAbort(request.signal); await installedChanged(game); request.onWarning?.(t('package.updated')); return 'updated' as const;
-    } catch (error) {
-      checkPreparationAbort(request.signal);
-      request.onWarning?.(t(request.updateSignal?.aborted || (error instanceof Error && error.name === 'AbortError') ? 'package.updateCancelled' : 'package.updateFailed', {reason: preparationErrorText(error)}));
-      return 'none' as const;
-    } finally {linked.dispose(); request.onUpdateActivity?.(false);}
-  }
   async function acquire(request: AcquisitionRequest): Promise<PackageAcquisitionResult> {
     checkPreparationAbort(request.signal);
     const game = gameIdForProduct(request.productId);
@@ -205,7 +181,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       // Keep both committed installations. Cached beauty launches are offline
       // and never consult or install an original publication.
       const local = await deps.readCurrent(game, {gameVersion}); checkPreparationAbort(request.signal);
-      if (local.generation) return {kind: 'managed', generation: local.generation, deferredUpdate: null};
+      if (local.generation) return {kind: 'managed', generation: local.generation, deferredUpdate: local};
       try {
         request.onAcquisitionActivity?.(true);
         const publication = await getPublication(gameVersion, request.signal);
@@ -224,11 +200,11 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     // Development materializes the currently selected OGG before reusing current,
     // exactly as main does. Ordinary installed launches never await metadata.
     if (metadataSnapshot.siteManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.siteManifest, request);
-    let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
+    const installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
-      const mode = await maybeUpdate(game, installed, request); checkPreparationAbort(request.signal);
-      if (mode === 'updated') installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"});
-      if (installed.generation) return {kind: 'managed', generation: installed.generation, deferredUpdate: mode === 'background' ? installed : null};
+      const published = metadataSnapshot.releaseCatalog?.games[game];
+      return {kind:'managed', generation:installed.generation,
+        deferredUpdate: published?.revision === installed.generation.descriptor.revision ? null : installed};
     }
     if (!metadataSnapshot.releaseCatalog) {try {await metadata.initialize();} catch {} checkPreparationAbort(request.signal); metadataSnapshot = metadata.getSnapshot();}
     const {siteManifest: host, releaseCatalog: catalog} = metadataSnapshot;
@@ -336,11 +312,22 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
   function startBackgroundUpdate(installed: CurrentPackageGeneration, request: AcquisitionRequest): Promise<void> {
     const game = gameIdForProduct(request.productId);
     const existing = background.get(game); if (existing) return existing;
-    const catalog = metadata.getSnapshot().releaseCatalog;
-    if (!catalog || !installed.generation) return Promise.resolve();
-    const task = deps.installPublished(game, {catalog, catalogUrl, gameVersion: request.gameVersion ?? "original", addComponents: [], preserveLocalSource: true, fetchImpl: network?.backgroundFetch ?? fetchImpl,
-      selectedComponentEntries: selectedLanguages(game, request.language)})
-      .then(async () => {await installedChanged(game);})
+    if (!installed.generation) return Promise.resolve();
+    const task = (async () => {
+      if (!metadata.getSnapshot().releaseCatalog) await metadata.initialize();
+      const {catalog, catalogUrl: publicationUrl} = await getPublication(request.gameVersion ?? 'original');
+      const published = catalog?.games[game];
+      if (!published || published.revision === installed.generation!.descriptor.revision) return;
+      const current = await readCurrent(game, {gameVersion:request.gameVersion ?? 'original'});
+      // Another tab/import may have changed current after this launch pinned it.
+      if (current.generation?.id !== installed.generation!.id) return;
+      const result = await deps.installPublished(game, {catalog, catalogUrl:publicationUrl, gameVersion:request.gameVersion ?? 'original', addComponents:[], preserveLocalSource:true,
+        expectedGenerationId:installed.generation!.id,
+        fetchImpl:network?.backgroundFetch ?? fetchImpl, selectedComponentEntries:selectedLanguages(game, request.language)});
+      if (result.generation.descriptor.revision !== published.revision) throw new Error('Downloaded Package does not match its publication');
+      await installedChanged(game);
+      request.onUpdateReady?.();
+    })()
       .finally(() => {if (background.get(game) === task) background.delete(game);});
     background.set(game, task); return task;
   }

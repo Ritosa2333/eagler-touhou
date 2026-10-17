@@ -28,6 +28,7 @@ export const RUNTIME_PROTOCOL_OPTIONAL_COMMANDS = Object.freeze([
   "thprac-mouse",
   "network-cancel",
   "spectator-room-state",
+  "spectator-playback",
 ] as const);
 
 export const RUNTIME_PROTOCOL_EVENTS = Object.freeze([
@@ -112,7 +113,7 @@ export interface RuntimeConfigureOptions {
   netplaySpectator?: boolean;
   netplaySpectatorId?: string;
   netplaySpectatorCount?: number;
-  /** Opt-in TH09 forward-only historical spectator experiment. */
+  /** TH09 room timeline hint; local rewind requires a complete v2 initializer. */
   netplaySpectatorTimeline?: boolean;
   /** TH09 local completed-match archive, independent for each player. */
   netplayReplayAutoSave?: boolean;
@@ -141,7 +142,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   multiplayerLocalPlayerVisibility: Object.freeze({ requirement: "profile-required", capability: "multiplayer-local-player-visibility", when: "multiplayer" }),
   focusHitboxEnabled: Object.freeze({ requirement: "optional", capability: "focus-hitbox", when: "product declares focus-hitbox" }),
   faithBarEnabled: Object.freeze({ requirement: "optional", capability: "faith-bar", when: "product declares display.faithBar" }),
-  replayPath: Object.freeze({ requirement: "optional", capability: "replay-file-management", when: "TH09 selected-file playback" }),
+  replayPath: Object.freeze({ requirement: "required", capability: "replay-file-management", when: "selected-file Replay playback" }),
   replayViewer: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer Replay viewer is launched" }),
   multiplayerPreflight: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer room checks its Runtime before joining gameplay" }),
   thpracLocale: Object.freeze({ requirement: "profile-required", capability: "thprac", when: "thprac" }),
@@ -164,9 +165,9 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplaySpectator: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplaySpectatorId: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer spectator session" }),
   netplaySpectatorCount: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
-  netplaySpectatorTimeline: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "experimental TH09 historical playback" }),
-  netplayReplayAutoSave: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "TH09 player completed-match local archive; defaults on" }),
-  netplayReplayNames: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "TH09 Replay matchup name snapshot" }),
+  netplaySpectatorTimeline: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "TH09 room timeline; late admission and local playback require compatible relay and Runtime" }),
+  netplayReplayAutoSave: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH09 player completed-match local archive; defaults on" }),
+  netplayReplayNames: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH09 Replay matchup name snapshot" }),
   netplayIceServers: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplayLoadouts: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
 } satisfies Readonly<Record<keyof RuntimeConfigureOptions, Readonly<{
@@ -222,11 +223,12 @@ export const RUNTIME_PROTOCOL_COMMAND_BEHAVIOR = Object.freeze({
   write: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
   remove: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
   sync: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
-  "playback": Object.freeze({ phase: "live", response: "required", requirement: "conditional", games: ["th09"] as const, when: "TH09 local Replay workspace" }),
+  "playback": Object.freeze({ phase: "live", response: "required", requirement: "conditional", when: "local Replay workspace" }),
   "retry-music": Object.freeze({ phase: "live", response: "required", requirement: "conditional", when: "Runtime-managed music transfer can fail before launch and advertise retry" }),
   "thprac-mouse": Object.freeze({ phase: "live", response: "optional", requirement: "profile-required", when: "thprac capability is declared" }),
   "network-cancel": Object.freeze({ phase: "live", response: "optional", requirement: "conditional", when: "TH09 game-title multiplayer dialog is dismissed" }),
   "spectator-room-state": Object.freeze({ phase: "live", response: "optional", requirement: "conditional", games: ['th09'] as const, when: "TH09 spectator retires a completed room session" }),
+  "spectator-playback": Object.freeze({ phase: "live", response: "required", requirement: "conditional", when: "receive-only cooperative Runtime reports spectatorPlayback version 1" }),
 } satisfies Readonly<Record<RuntimeProtocolCommand, Readonly<{
   phase: RuntimeCommandPhase;
   response: RuntimeCommandResponseMode;
@@ -299,11 +301,12 @@ export interface RuntimeCommandPayloads {
   write: { path: string; bytes: number[]; replayMatch?: unknown };
   remove: { path: string };
   sync: Record<string, never>;
-  playback: {action: "open" | "pause" | "play" | "seek" | "rate"; path?: string; value?: number};
+  playback: {action: "inspect" | "open" | "pause" | "play" | "seek" | "rate"; path?: string; stage?: number; value?: number};
   "retry-music": Record<string, never>;
   "thprac-mouse": { type: "move" | "down" | "up"; x: number; y: number };
   "network-cancel": Record<string, never>;
   "spectator-room-state": { runId: number; waiting: boolean };
+  "spectator-playback": {run: string; action: "pause" | "play" | "seek" | "live"; frame?: number};
 }
 
 /**

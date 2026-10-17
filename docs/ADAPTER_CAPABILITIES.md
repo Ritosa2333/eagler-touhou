@@ -225,7 +225,8 @@ machine-readable behavior lists:
 
 - `REQUIRED_MULTIPLAYER_BEHAVIORS` - dedicated Runtime variant, declared room
   bounds, ready/start synchronization, deterministic peer authority, seat/input
-  ownership, spectator policy, pause/restart, Replay, transport/relay fallback,
+  ownership, spectator admission, confirmed history, failure isolation and
+  final-tail lifecycle, pause/restart, Replay, transport/relay fallback,
   local-player visibility, diagnostics and room-exit lifecycle;
 - `REQUIRED_THPRAC_BEHAVIORS` - Runtime attestation, prelaunch session config,
   the supported practice parameter surface, Replay PRAC metadata, touch/mouse
@@ -239,6 +240,12 @@ machine-readable behavior lists:
 `adapter:inspect` reports each profile as `active: true/false` for the selected
 product and includes the whole behavior list. An inactive profile is not missing
 work; an active profile with an unimplemented behavior is incomplete support.
+
+The [Spectator protocol](SPECTATOR_PROTOCOL.md) defines the shared spectator
+obligations and the timeline migration target separately. Existing start-only
+admission does not imply late join, local pause/seek or cross-match rewind.
+TH09 provides the current complete-initializer reference; each remaining MP
+adapter must prove its own deterministic reconstruction before activation.
 
 ## 4. Optional product capabilities
 
@@ -396,6 +403,7 @@ declare the behavior unsupported.
 | `alwaysHitbox` | Required `always-hitbox` | render hitbox without changing collision/RNG/simulation |
 | `frameLimit60Enabled` | Inherited UI + required `presentation-cadence` | honor presentation limiting without changing fixed gameplay cadence |
 | `magnifierEnabled` | Inherited `magnifier` | no game-specific implementation; Launcher owns viewport magnification |
+| `pixelPerfectEnabled` | Inherited `pixel-perfect-display` | Launcher owns canvas image scaling without changing input coordinates or the drawing buffer |
 | `focusHitboxEnabled` | Optional `focus-hitbox` | implement only for products that declare this enhancement |
 | `thpracEnabled` | Optional `thprac` | implement only when declared; then profile obligations become mandatory |
 | `thpracTouchControlsEnabled` | Inherited UI + profile-required `thprac-touch-bridge` | required whenever thprac is declared |

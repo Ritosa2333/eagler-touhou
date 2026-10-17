@@ -250,6 +250,18 @@ syntax compilation, including practice-enabled variants where available. These
 checks do not replace full game builds, Replay roundtrips, real-controller
 compatibility or device latency acceptance.
 
+### Multiplayer spectator boundary
+
+Declared Multiplayer adapters follow the [Spectator protocol](SPECTATOR_PROTOCOL.md)
+for explicit admission, read-only confirmed input, session/build validation,
+history ownership, bounded failure and final-tail lifecycle. The document also
+specifies the timeline rollout target without advertising it on older Runtimes.
+Late join requires an independently reconstructible match initializer and an
+ordered complete prefix. Local pause/seek never affects player pacing or room
+authority. A room update or socket close cannot replace a logical end marker.
+The existing TH09-only `spectator-room-state` command must not be generalized
+without updating and validating its actual consumers.
+
 ## DATA ownership
 
 `lib/runtime-data-provider.mjs` owns provider classes.

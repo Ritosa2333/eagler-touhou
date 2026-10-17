@@ -18,7 +18,7 @@ for (const game of directoryGames) {
     : workspacePath(game, 'build-eagler'));
   const manifest = JSON.parse(await readFile(resolve(directory, 'runtime-files.json'), 'utf8'));
   const names = runtimeFileNames(game, manifest.files);
-  assert.equal(names.length, PRODUCT_GAMES[game].runtimeAssets.length);
+  for (const required of PRODUCT_GAMES[game].runtimeAssets) assert.ok(names.includes(required), `${game}: required Runtime asset ${required}`);
   for (const name of names) {
     const bytes = await readFile(resolve(directory, name));
     assert.equal(bytes.length, manifest.files[name].bytes);

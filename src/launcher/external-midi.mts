@@ -8,8 +8,8 @@
 //
 //   1. the `requestMIDIAccess({ sysex: true })` permission request, which must
 //      run from a user gesture;
-//   2. MIDI message framing, because `MIDIOutput.send()` requires complete,
-//      explicitly-statused messages (running status is not allowed on output),
+//   2. MIDI message framing and hardware-output filtering. `MIDIOutput.send()`
+//      requires complete, explicitly-statused messages (no running status),
 //      and because the two Runtime families disagree about how a short message
 //      is recorded (see normalizeRuntimeMidiRecord);
 //   3. panic/all-notes-off on teardown so a hardware synth cannot keep notes
@@ -128,8 +128,8 @@ export function normalizeRuntimeMidiRecord(bytes: ArrayLike<number>): ArrayLike<
 // Split a Runtime MIDI byte stream into discrete, sendable messages:
 //   - running status is expanded, because Web MIDI output forbids it;
 //   - System Real Time bytes (0xF8-0xFF) pass through as one-byte messages;
-//   - a System Exclusive message is terminated with 0xF7 when the Runtime
-//     omitted it, because Web MIDI validates SysEx as `F0 ... F7`;
+//   - a System Exclusive message must already end in 0xF7; incomplete
+//     messages are dropped rather than converted into device instructions;
 //   - invalid status bytes and truncated messages are dropped rather than
 //     forwarded, so one malformed event cannot poison a device port.
 export function splitMidiMessages(bytes: ArrayLike<number>): number[][] {
@@ -147,11 +147,13 @@ export function splitMidiMessages(bytes: ArrayLike<number>): number[][] {
     }
     if (byte === 0xf0) {
       const message = [0xf0];
+      let terminated = false;
       index += 1;
       while (index < length) {
         const payload = at(index);
         if (payload === 0xf7) {
           index += 1;
+          terminated = true;
           break;
         }
         // System Real Time bytes may legally appear inside a System Exclusive
@@ -161,13 +163,15 @@ export function splitMidiMessages(bytes: ArrayLike<number>): number[][] {
           continue;
         }
         // A non-realtime status byte means the Runtime never terminated this
-        // message; end it here and let the next iteration frame the status.
+        // message; discard it and let the next iteration frame the status.
         if (payload >= 0x80) break;
         message.push(payload);
         index += 1;
       }
-      message.push(0xf7);
-      messages.push(message);
+      if (terminated) {
+        message.push(0xf7);
+        messages.push(message);
+      }
       runningStatus = 0;
       continue;
     }
@@ -211,6 +215,31 @@ export function splitMidiMessages(bytes: ArrayLike<number>): number[][] {
     if (taken === dataLength) messages.push(message);
   }
   return messages;
+}
+
+// Imported music is not trusted to program attached hardware. Only ordinary
+// channel messages and these exact playback initialization messages may leave
+// the browser. Do not broaden this to manufacturer/address prefixes: those
+// also cover device configuration, bulk dumps and firmware commands.
+// GS Reset: https://static.roland.com/assets/media/pdf/FP-50_MI.pdf
+// XG System On: https://usa.yamaha.com/files/download/other_assets/9/318059/CS1xE2.pdf
+export function externalMidiMessageAllowed(message: readonly number[]): boolean {
+  if (!message.length || message.length > 11) return false;
+  for (const byte of message)
+    if (!Number.isInteger(byte) || byte < 0 || byte > 255) return false;
+  const status = message[0]!;
+  if (status >= 0x80 && status <= 0xef)
+    return (
+      message.length === midiStatusDataLength(status) + 1 &&
+      message.slice(1).every((byte) => byte < 0x80)
+    );
+  const matches = (expected: readonly number[]) =>
+    message.length === expected.length && message.every((byte, index) => byte === expected[index]);
+  return (
+    matches([0xf0, 0x7e, 0x7f, 0x09, 0x01, 0xf7]) || // General MIDI System On
+    matches([0xf0, 0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7f, 0x00, 0x41, 0xf7]) || // GS Reset
+    matches([0xf0, 0x43, 0x10, 0x4c, 0x00, 0x00, 0x7e, 0x00, 0xf7]) // XG System On
+  );
 }
 
 export function externalMidiPanicMessages(): number[][] {
@@ -354,7 +383,7 @@ export class ExternalMidiDevice {
   // Queue one already-framed message to the selected output. Returns false when
   // there is no usable port or the port rejects the message.
   sendMessage(message: readonly number[]): boolean {
-    if (!this.granted || !message.length) return false;
+    if (!this.granted || !externalMidiMessageAllowed(message)) return false;
     const output = this.effectiveOutput();
     if (!output) return false;
     try {
