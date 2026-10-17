@@ -154,7 +154,7 @@ async function stop(){if(stopping)return;stopping=true;localReplay.close();try{c
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth15(?:mp)?\//,'').replace(/^\//,'');if(!/^(?:scoreth15\.dat|th15\.cfg|replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th15(?:mp)?_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?|autosave\/save[0-3]_[0-4]\.dat)$/.test(name))throw Error('存档路径无效');return name;}
 function apply(){core.eaglerOptions=options;core._th15_always_hitbox(+(options.alwaysHitbox===true));core._th15_limit_presentation(+!!options.limitPresentationTo60);core._th15_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(runtimeBuild.multiplayer&&options.touchMovementMode==='joystick-free'?'joystick':options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th15_music_enabled(+music);}
 async function resource(r){
- if(r.path!=='/unifont.otf'&&!/^\/music\/(?:th15_\d{2}|th128_08)\.ogg$/.test(r.path)&&!/^\/fonts\/(?:font[0-7]|cp932|blend4444)\.bin$/.test(r.path))throw Error('资源路径无效');
+ if(!['/msgothic.ttc','/unifont.otf','/fonts/cp932.bin'].includes(r.path)&&!/^\/music\/(?:th15_\d{2}|th128_08)\.ogg$/.test(r.path))throw Error('资源路径无效');
  const u=new URL(r.url,location.href);if(u.origin!==location.origin||!['http:','https:','blob:'].includes(u.protocol))throw Error('资源来源无效');
  const response=await fetch(u);if(!response.ok)throw Error('资源读取失败');const bytes=new Uint8Array(await response.arrayBuffer());
  const expected=r.bytes??r.size;if(bytes.length>64*1024*1024||(expected!=null&&bytes.length!==expected))throw Error('资源大小错误');

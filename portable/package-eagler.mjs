@@ -1,4 +1,4 @@
-// Freeze only code and measured font tables. Retail DATA/music stay in Package Store.
+// Freeze code and the small encoding map. Font files are shared Host content.
 import {readFileSync,writeFileSync,mkdirSync,existsSync,readdirSync} from 'node:fs';
 import {resolve,dirname,relative} from 'node:path';
 import {createHash} from 'node:crypto';
@@ -7,7 +7,7 @@ const multiplayer=process.argv.includes('--multiplayer');
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,multiplayer?'build-eagler-multiplayer':'build-eagler');
 const buildRoot=resolve(root,'th15_web',process.env.TH15_OUTPUT||(multiplayer?'artifacts/sdl-multiplayer':'artifacts/sdl-release'));
 const fonts=process.env.EAGLER_FONT_ROOT;
-if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the measured TH15 font directory');
+if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private directory containing cp932.bin');
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'),'utf8'));
 if(!Number.isFinite(Date.parse(build.builtAt)))throw Error('Rebuild Runtime with build timestamp');
@@ -20,7 +20,7 @@ const wasm=readFileSync(resolve(buildRoot,'th15.wasm'));
 if(hash(wasm)!==build.sha256)throw Error('Wasm build identity mismatch');
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
  if(/^(?:application_|th15_probe|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);
-const fontNames=[...Array.from({length:8},(_,i)=>`font${i}.bin`),'cp932.bin','blend4444.bin'];
+const fontNames=['cp932.bin'];
 const names=['th15.html','manifest.json','startup-branding.mjs','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','th15.mjs','th15.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 if(multiplayer)names.push('multiplayer.mjs','adonis-calibration.mjs');
 const allowed=new Set([...names,'runtime-files.json']);
@@ -35,7 +35,11 @@ const shell=readFileSync(resolve(shellRoot,'shell.mjs'),'utf8');
 if(!shell.includes(marker))throw Error('Missing build-info marker');
 put('shell.mjs',shell.replace(marker,JSON.stringify({version,completeGame:true,multiplayer})));
 for(const name of ['startup-branding.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs'])put(name,readFileSync(resolve(shellRoot,name)));
-if(multiplayer){put('multiplayer.mjs',readFileSync(resolve(shellRoot,'multiplayer.mjs')));put('adonis-calibration.mjs',readFileSync(resolve(root,'third_party/eagler-common-netplay/browser/adonis-calibration.mjs')));}
+if(multiplayer){
+ const commonRoot=process.env.EAGLER_COMMON_NETPLAY_ROOT?resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT):resolve(root,'third_party/eagler-common-netplay');
+ put('multiplayer.mjs',readFileSync(resolve(shellRoot,'multiplayer.mjs')));
+ put('adonis-calibration.mjs',readFileSync(resolve(commonRoot,'browser/adonis-calibration.mjs')));
+}
 const loader=readFileSync(resolve(buildRoot,'th15.mjs'));
 put('th15.mjs',loader);put('th15.wasm',wasm);
 const resources=fontNames.map(name=>{const bytes=readFileSync(resolve(fonts,name));put('fonts/'+name,bytes);return {path:'/fonts/'+name,url:'./fonts/'+name,bytes:bytes.length};});
