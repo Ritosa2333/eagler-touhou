@@ -21,7 +21,9 @@ const thprac = process.env.TH_ENABLE_THPRAC === '1' || process.argv.includes('--
 if (multiplayer && thprac) throw Error('TH11 multiplayer and THPrac are separate runtime variants.');
 const profile = multiplayer ? 'multiplayer' : 'sdl3';
 const variant = multiplayer ? 'multiplayer' : 'normal';
-const out = resolve(root, 'artifacts', profile + (diagnostic ? '-diagnostic' : ''));
+const out = process.env.TH11_OUTPUT
+  ? resolve(root, process.env.TH11_OUTPUT)
+  : resolve(root, 'artifacts', profile + (diagnostic ? '-diagnostic' : ''));
 
 const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, 'third_party/eagler-common'));
 const sdk = process.env.EMSDK || [

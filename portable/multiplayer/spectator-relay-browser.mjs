@@ -32,6 +32,7 @@ assert.equal(sha256(loadedLoader),build.loaderSha256,'TH11 endpoint loader must 
 if(fixtures)assert.equal(build.productionWasm,productionBuild.sha256,'spectator fixture must link to the adjacent production build');
 const playerCount=Number(process.env.TH11_TEST_PLAYER_COUNT||2);
 const stageOneOnly=process.env.TH11_TEST_STAGE_ONE_ONLY==='1';
+const lifecycleOnly=process.argv.includes('--lifecycle-only')||process.env.TH11_TEST_LIFECYCLE_ONLY==='1';
 const softwareRenderer=process.env.TH11_TEST_SOFTWARE_RENDERER==='1';
 assert.ok(playerCount===2||playerCount===3);
 const seats=Array.from({length:playerCount},(_,i)=>i),viewerSeat=playerCount,lateSeat=playerCount+1;
@@ -92,11 +93,11 @@ const relayPort=await new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error
 const pageHtml=`<!doctype html><meta charset="utf-8"><style>body{margin:0}iframe{width:640px;height:480px;border:0}</style><script>
 window.events=[];window.ready=new Set();window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/data')).arrayBuffer()});
 addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1'){events.push(e.data);if(e.data.event==='ready')ready.add(e.data.epoch);}});
-window.addRuntime=seat=>{const f=document.createElement('iframe');f.id='p'+seat;f.src='/runtime/th11.html?managedData=1&hosted=1&runtimeEpoch='+(seat+1);document.body.append(f);};
+window.runtimeEpochs={};window.addRuntime=(seat,epoch=seat+1)=>{const f=document.createElement('iframe');f.id='p'+seat;runtimeEpochs[seat]=epoch;f.src='/runtime/th11.html?managedData=1&hosted=1&runtimeEpoch='+epoch;document.body.append(f);};
 window.rpc=(seat,command,fields={})=>new Promise((yes,no)=>{const f=document.querySelector('#p'+seat),request=crypto.randomUUID();
  const timer=setTimeout(()=>{removeEventListener('message',listen);no(Error('RPC '+command+' timeout'));},60000);
  function listen(e){if(e.source===f.contentWindow&&e.data?.request===request){clearTimeout(timer);removeEventListener('message',listen);e.data.ok?yes(e.data):no(Error(e.data.error));}}
- addEventListener('message',listen);f.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th11',epoch:seat+1,request,command,...fields},location.origin);});
+ addEventListener('message',listen);f.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th11',epoch:runtimeEpochs[seat]??seat+1,request,command,...fields},location.origin);});
 window.launchRuntime=async seat=>{const o=await(await fetch('/options')).json();await rpc(seat,'configure',{music:'none',options:o[seat],sharedResources:[
  {path:'/msgothic.ttc',url:'/shared/msgothic.ttc',bytes:${(await readFile(resolve(sharedFonts,'msgothic.ttc'))).length}},
  {path:'/unifont.otf',url:'/shared/unifont.otf',bytes:${(await readFile(resolve(sharedFonts,'unifont.otf'))).length}}]});await rpc(seat,'launch');};
@@ -118,7 +119,7 @@ const base='http://127.0.0.1:'+server.address().port,sockets=[],report={passed:f
   productionSha256:productionBuild.sha256,fixtureProductionWasm:build.productionWasm||null,endpointWasmMatchesBuild:true,endpointLoaderMatchesBuild:true,
   runtimeManifestWasm:runtimeManifest.execution.sha256,runtimeManifestLoader:runtimeManifest.execution.loaderSha256},endpoints:[],
   data:{sha256:createHash('sha256').update(await readFile(archivePath)).digest('hex')},players:playerCount,relayPort,output:out,phases:[]};
-const wait=async(check,label,ms=15000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,25));}throw Error(label+' timeout');};
+ const wait=async(check,label,ms=15000)=>{const end=Date.now()+ms;while(Date.now()<end){const value=await check();if(value)return value;await new Promise(r=>setTimeout(r,25));}throw Error(label+' timeout');};
 async function open(query){const ws=new WebSocket('ws://127.0.0.1:'+relayPort+'/?'+query),r={ws,messages:[]};sockets.push(ws);
  ws.addEventListener('message',e=>{if(typeof e.data==='string')r.messages.push(JSON.parse(e.data));});await wait(()=>ws.readyState===1,'lobby connect');assert.equal(ws.readyState,1);return r;}
 const latest=r=>r.messages.findLast(m=>m.room)?.room;
@@ -147,8 +148,8 @@ try{
   netplayPlayer:seat<playerCount?seat:0,netplayPlayerCount:playerCount,netplayDifficulty:0,netplaySeed:417,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0},{character:0,shot:2}].slice(0,playerCount),
   netplayInputDelay:2,netplayInputDelayAuto:false,netplayAdonisMode:1,netplayPredictionLimit:0,netplayPredictionReserve:2,netplaySpectator:seat===viewerSeat,
   netplaySpectatorId:seat===viewerSeat?viewerId:'',netplaySpectatorCount:1,netplayChallengeMode:false,thpracEnabled:false,renderScale:1}));
- const contexts=[],pages=new Map(),errors=[];
- const frame=seat=>pages.get(seat).frames().find(f=>f.url().includes('runtimeEpoch='+(seat+1)));
+ const contexts=[],pages=new Map(),epochs=new Map(),errors=[];
+ const frame=seat=>pages.get(seat).frames().find(f=>f.url().includes('runtimeEpoch='+epochs.get(seat)));
  const readGame=f=>f.evaluate(()=>{const p=core.th11_mp_game_status();return Array.from(new Uint32Array(core.memory.buffer,p,56));});
  const readRollback=f=>f.evaluate(()=>{const p=core.th11_mp_rollback_status();return Array.from(new Uint32Array(core.memory.buffer,p,24));});
  const readSpectatorDiagnostics=f=>f.evaluate(()=>{const p=core.th11_mp_spectator_diagnostics();const a=Array.from(new Uint32Array(core.memory.buffer,p,34));return {
@@ -170,13 +171,14 @@ try{
   return {error:document.querySelector('#error')?.textContent||'',failed:!!globalThis.__eaglerNetplayFailed,
    reason:globalThis.__eaglerNetplayError||'',nativeError};});
  collectFailure=async()=>{const all=[];for(const [seat] of pages){const f=frame(seat);if(f)all.push({seat,health:await health(f),game:await readGame(f),spectator:await readSpectatorDiagnostics(f),playback:await readPlayback(f)});}return all;};
- const add=async seat=>{
+ const add=async (seat,epoch=seat+1)=>{
+  epochs.set(seat,epoch);
   const context=await browser.createBrowserContext();contexts.push(context);const page=await context.newPage();pages.set(seat,page);
-  const endpoint={seat,expectedWasm:build.sha256,expectedLoader:build.loaderSha256,productionWasm:productionBuild.sha256};report.endpoints.push(endpoint);
+  const endpoint={seat,runtimeEpoch:epoch,expectedWasm:build.sha256,expectedLoader:build.loaderSha256,productionWasm:productionBuild.sha256};report.endpoints.push(endpoint);
   page.on('response',response=>{const path=new URL(response.url()).pathname;if(path==='/runtime/th11-sdl.wasm')void response.buffer().then(bytes=>{endpoint.wasm=sha256(bytes);}).catch(error=>{endpoint.responseError=String(error);});
    if(path==='/runtime/th11-sdl.mjs')void response.buffer().then(bytes=>{endpoint.loader=sha256(bytes);}).catch(error=>{endpoint.responseError=String(error);});});
   page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')console.log('browser:',m.text());});await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});
-  await page.evaluate(s=>addRuntime(s),seat);await page.waitForFunction(s=>ready.has(s+1),{timeout:120000},seat);
+  await page.evaluate(({seat,epoch})=>addRuntime(seat,epoch),{seat,epoch});await page.waitForFunction(e=>ready.has(e),{timeout:120000},epoch);
   const f=frame(seat);instances.push(f);
   const endpointManifest=await f.evaluate(async()=>{const r=await fetch('./manifest.json');return r.ok?await r.json():null;});
   assert.equal(endpointManifest?.execution?.sha256,build.sha256,'seat '+seat+' served Runtime manifest WASM identity');
@@ -206,9 +208,89 @@ try{
  report.hostSpectatorAtFirstViewerAdmission=await readSpectatorDiagnostics(frame(0));
  phase('first-late-viewer');
  const firstViewer=await add(viewerSeat);
- await waitPosition(viewerSeat,s=>s.position>=180,'first independent native restore',Number(process.env.TH11_FIRST_VIEWER_TIMEOUT_MS||120000));
+ await waitPosition(viewerSeat,s=>s.position>=180&&!s.paused&&!s.seeking,'first independent native restore',Number(process.env.TH11_FIRST_VIEWER_TIMEOUT_MS||120000));
  await recordGraphics(viewerSeat);
  const firstState=await readPlayback(firstViewer);assert.ok(firstState.min>=0&&firstState.position>=180,firstState);
+ if(lifecycleOnly){
+  assert.equal(fixtures,false,'focused lifecycle requires the final production Runtime, not the fixture build');
+  const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  const status=async seat=>frame(seat).evaluate(()=>Array.from(new Uint32Array(core.memory.buffer,core.th11_mp_status(),24)));
+  const healthy=async seat=>{const f=frame(seat),h=await health(f),s=await status(seat);assert.equal(h.failed,false,'seat '+seat+' host reports a network failure');assert.equal(h.error,'','seat '+seat+' shell error');assert.equal(h.nativeError,'','seat '+seat+' native error');assert.equal(s[19],1,'seat '+seat+' native transport remains open');assert.equal(s[23],0,'seat '+seat+' native status has no error');return s;};
+  const sampleOneX=async(label)=>{
+   const before=await readPlayback(frame(viewerSeat)),sourceBefore=await Promise.all(seats.map(async seat=>(await readGame(frame(seat)))[4])),startedAt=Date.now();
+   assert.ok(before&&!before.paused&&!before.seeking,label+' must begin in normal playback');await delay(1200);
+   const elapsed=(Date.now()-startedAt)/1000,after=await readPlayback(frame(viewerSeat)),sourceAfter=await Promise.all(seats.map(async seat=>(await readGame(frame(seat)))[4]));
+   const sourceDelta=Math.max(...sourceAfter.map((value,index)=>value-sourceBefore[index])),viewerDelta=after.position-before.position;
+   assert.ok(after&&!after.paused&&!after.seeking,label+' must remain normal playback');assert.ok(sourceDelta>=20,label+' source did not advance enough to measure pacing');
+   assert.ok(viewerDelta>0,label+' native viewer did not advance');assert.ok(viewerDelta<=sourceDelta+Math.max(10,Math.ceil(sourceDelta*.3)),label+' advanced faster than source: '+JSON.stringify({viewerDelta,sourceDelta,elapsed}));
+   await Promise.all(seats.map(seat=>healthy(seat)));await healthy(viewerSeat);
+   return {elapsedSeconds:elapsed,sourceFrames:sourceDelta,viewerFrames:viewerDelta,viewerToSourceRatio:Number((viewerDelta/sourceDelta).toFixed(3)),initialPosition:before.position,finalPosition:after.position,
+    initialEdge:before.edge,finalEdge:after.edge,initialTarget:before.target,finalTarget:after.target,following:after.following,paused:after.paused,seeking:after.seeking};
+  };
+  const initialOneX=await sampleOneX('initial history playback');
+   await control(viewerSeat,'live');const liveRequested=await readPlayback(frame(viewerSeat));assert.ok(liveRequested,'Live request did not produce playback state');
+   const fixedLiveTarget=liveRequested.target;await waitPosition(viewerSeat,s=>s.following&&!s.paused&&!s.seeking&&s.position>=fixedLiveTarget,'explicit Stage1 Live target completes',30000);
+  const liveCompleted=await readPlayback(frame(viewerSeat)),liveOneX=await sampleOneX('passive playback after explicit Live');
+  assert.equal(liveOneX.initialTarget,liveCompleted.target,'new source frames moved the fixed Live target');
+  const sourceBeforePause=await Promise.all(seats.map(async seat=>(await readGame(frame(seat)))[4]));
+  await control(viewerSeat,'pause');const localPaused=await readPlayback(frame(viewerSeat));await delay(17050);
+  const localPausedAfter=await readPlayback(frame(viewerSeat));assert.equal(localPausedAfter.position,localPaused.position,'local pause advanced the native cursor');
+  assert.ok(localPausedAfter.paused&&!localPausedAfter.seeking,'local pause state changed during the 17-second hold');
+  const sourceDuringLocalPause=await Promise.all(seats.map(async seat=>(await readGame(frame(seat)))[4]));
+  assert.ok(sourceDuringLocalPause.some((value,index)=>value>sourceBeforePause[index]),'source did not keep publishing during the local pause');
+  await Promise.all(seats.map(seat=>healthy(seat)));await healthy(viewerSeat);
+  report.localPause={durationMs:17050,positionBefore:localPaused.position,positionAfter:localPausedAfter.position,
+   receivedBefore:localPaused.received,receivedAfter:localPausedAfter.received,sourceAdvanced:true,healthy:true};
+  await control(viewerSeat,'play');
+  await waitPosition(viewerSeat,s=>!s.paused&&!s.seeking&&s.position>localPausedAfter.position+120,'resume after local pause',120000);
+  const readyToSeek=await readPlayback(frame(viewerSeat));assert.ok(readyToSeek.position>readyToSeek.min+620,'not enough retained history to observe an in-flight native seek');
+  const seekTarget=readyToSeek.min+300;await control(viewerSeat,'seek',seekTarget);
+  const seekStart=await wait(async()=>{const s=await readPlayback(frame(viewerSeat));return s?.seeking&&s.position<seekTarget?s:null;},'native backward seek becomes active',10000);
+  const seekProgress=await wait(async()=>{const s=await readPlayback(frame(viewerSeat));return s?.seeking&&s.position>seekStart.position?s:null;},'native seek advances before Pause',10000);
+  await control(viewerSeat,'pause');
+  await waitPosition(viewerSeat,s=>s.paused&&!s.seeking,'Pause cancels active native seek',10000);
+  const seekPaused=await readPlayback(frame(viewerSeat));await delay(450);
+  const seekPausedAfter=await readPlayback(frame(viewerSeat));assert.equal(seekPausedAfter.position,seekPaused.position,'cursor moved after Pause canceled seek');
+  assert.ok(seekPaused.position>=readyToSeek.min&&seekPaused.position<=readyToSeek.position,'Pause did not retain the reached native seek position');
+  report.seekPause={target:seekTarget,positionBeforeSeek:seekStart.position,positionAtPauseRequest:seekProgress.position,
+   positionAfterPause:seekPaused.position,seekingBeforePause:true,seekingAfterPause:seekPaused.seeking,pausedAfterPause:seekPaused.paused};
+  await Promise.all(seats.map(seat=>healthy(seat)));await healthy(viewerSeat);
+  await control(viewerSeat,'live');const returnLiveRequested=await readPlayback(frame(viewerSeat));assert.ok(returnLiveRequested,'return-to-Live request did not produce playback state');
+  const returnLiveTarget=returnLiveRequested.target;await waitPosition(viewerSeat,s=>s.following&&!s.seeking&&!s.paused&&s.position>=returnLiveTarget,'return to live before source idle',30000);
+   const beforeReentry=await readPlayback(frame(viewerSeat));assert.ok(beforeReentry?.run,'active viewer has no native run identity');
+   const identity={clientId:viewerId,memberId:viewerMember,run:String(beforeReentry.run),lobbySerial:String(started.serial)};
+  const reentries=[];let currentViewer=frame(viewerSeat),currentEpoch=epochs.get(viewerSeat);
+  for(let cycle=1;cycle<=2;cycle++){
+   const previousEpoch=currentEpoch;
+   const before=await readPlayback(currentViewer);assert.equal(String(before.run),identity.run,'active receiver run changed before re-entry');
+   await currentViewer.evaluate(()=>{clearInterval(globalThis.spectatorLabPoll);core.th11_loop_stop();core.th11_mp_stop();});
+    const oldContext=pages.get(viewerSeat).browserContext();await oldContext.close();const oldContextIndex=contexts.indexOf(oldContext);if(oldContextIndex>=0)contexts.splice(oldContextIndex,1);
+   await send(observerLobby,{type:'leave-spectator'},m=>m.room?.spectatorCount===0);
+   const afterLeave=latest(observerLobby);assert.equal(afterLeave?.spectatorCount,0,'leave-spectator did not release the existing lobby claim');
+   await send(observerLobby,{type:'spectate'},m=>m.room?.spectatorCount===1);
+   const epoch=1000+cycle;currentEpoch=epoch;currentViewer=await add(viewerSeat,epoch);
+   await waitPosition(viewerSeat,s=>String(s.run)===identity.run&&!s.paused&&!s.seeking&&s.position>=180,'same-identity native receiver re-entry '+cycle,120000);
+   const restored=await readPlayback(currentViewer);assert.equal(String(restored.run),identity.run);assert.ok(restored.position>=restored.min);
+   const pacing=await sampleOneX('same-identity re-entry '+cycle);
+    reentries.push({cycle,clientId:viewerId,memberId:viewerMember,run:identity.run,previousEpoch,
+     runtimeEpoch:epoch,position:restored.position,min:restored.min,following:restored.following,pacing,
+     leaveSpectatorCount:0,spectatorCount:latest(observerLobby)?.spectatorCount});
+   }
+   for(const seat of seats)await frame(seat).evaluate(()=>core.th11_loop_stop());
+   const sourceIdleStart=await Promise.all(seats.map(async seat=>(await readGame(frame(seat)))[4]));
+   await delay(17050);
+   const sourceIdleEnd=await Promise.all(seats.map(async seat=>(await readGame(frame(seat)))[4]));
+   assert.deepEqual(sourceIdleEnd,sourceIdleStart,'TH11 test-scheduler hold should stop source gameplay frames');
+   for(const seat of seats)await healthy(seat);await healthy(viewerSeat);
+   const idleViewer=await readPlayback(frame(viewerSeat));assert.ok(idleViewer&&!idleViewer.paused&&!idleViewer.seeking,'source idle caused spectator playback failure');
+   report.sourceIdle={durationMs:17050,method:'native RAF stop test-scheduler hold; netplay instance/socket retained; no pause-key or external-network claim',returnLiveTarget,
+    sourceFramesBefore:sourceIdleStart,sourceFramesDuring:sourceIdleEnd,sourceStayedFixed:true,viewerPosition:idleViewer.position,
+    viewerTransportOpen:(await status(viewerSeat))[19]===1,allSourcesHealthy:true};
+  report.lifecycleOnly=true;report.passed=true;report.playerCount=playerCount;report.identity=identity;report.firstRuntimeEpoch=viewerSeat+1;
+  report.initialHistoryOneX=initialOneX;report.explicitLive={target:liveCompleted.target,position:liveCompleted.position,edge:liveCompleted.edge,following:liveCompleted.following,passiveOneX:liveOneX};
+  report.reentryCycles=reentries;report.reentryCount=reentries.length;report.testSchedulerHold=true;
+  await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({passed:true,lifecycleOnly:true,output:out,identity,reentries:reentries.length}));
+ }else{
  if(fixtures&&!stageOneOnly){await control(viewerSeat,'live');await waitPosition(viewerSeat,s=>s.following&&!s.paused&&!s.seeking&&s.position>=s.edge-4,'Stage1 Live setup before source transition',30000);report.stageOneLiveSetup={following:true};}
  let firstTarget=Math.max(firstState.min+5,firstState.position-40);
  const verifyHash=async(seat,viewer,target,label)=>{
@@ -284,5 +366,6 @@ try{
  console.log(JSON.stringify({passed:true,output:out,stageTwoNode:node,wasm:build.sha256}));
  for(const f of instances)try{await f.evaluate(()=>{clearInterval(globalThis.spectatorLabPoll);core.th11_loop_stop();core.th11_mp_stop();});}catch{}
  for(const context of contexts)await context.close();
+ }
 }catch(error){try{report.failureInstances=await collectFailure?.();}catch{}report.error=String(error.stack||error);await writeFile(resolve(out,'failure.txt'),report.error);await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');throw error;
 }finally{for(const socket of sockets)socket.close();await browser?.close();server.close();relay.kill();await writeFile(resolve(out,'relay.log'),relayLog);}
