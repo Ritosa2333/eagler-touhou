@@ -1,6 +1,6 @@
 import {readFileSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {createPresentationLabServer,sha256} from '../../third_party/eagler-common/testkit/presentation-lab/server-core.mjs';
+import {createPresentationLabServer,sha256} from '../../../../common/testkit/presentation-lab/server-core.mjs';
 const root=resolve(import.meta.dirname,'../..');
 const workspace=resolve(process.env.EAGLER_WORKSPACE||root+'/../..');
 const profile=process.env.TH10_MP_PROFILE||'multiplayer';

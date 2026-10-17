@@ -9,16 +9,13 @@ p.add_argument('--game',default='th11');p.add_argument('--output',type=Path,requ
 p.add_argument('--data',type=Path)
 p.add_argument('--multiplayer',action='store_true');p.add_argument('--repo',type=Path)
 p.add_argument('--fixtures',type=Path)
+p.add_argument('--runtime',type=Path,help='Explicit packaged Runtime supplying the measured font tables')
 p.add_argument('--late-import',action='store_true');p.add_argument('--all-stages',action='store_true')
 p.add_argument('--recorded',action='store_true',help='Fixtures are native recordings, rather than software format fixtures')
 a=p.parse_args();root=a.workspace;repo=a.repo or root/(a.game+'-eagler');web=repo/(a.game+'_web')
-def owner_git(*args):return subprocess.check_output(['git','-c','safe.directory='+repo.as_posix(),'-C',str(repo),*args],text=True).strip()
-owner={'repository':str(repo),'branch':owner_git('branch','--show-current'),'commit':owner_git('rev-parse','HEAD'),'dirty':bool(owner_git('status','--porcelain'))}
-expected_branch='eagler-mp' if a.multiplayer else 'eagler'
-if a.game in ['th08','th10','th11','th15'] and owner['branch']!=expected_branch:
- p.error(f"{a.game} {'MP' if a.multiplayer else 'ordinary'} Replay check requires {expected_branch}; {repo} is on {owner['branch'] or 'detached HEAD'}. Select the correct checkout with --repo.")
+owner=json.loads(subprocess.check_output(['node',str(Path(__file__).resolve().parents[1]/'support/runtime-source-owner.mjs'),'--source='+str(repo),'--game='+a.game,'--variant='+('multiplayer' if a.multiplayer else 'normal')],text=True))
 profile=('sdl-multiplayer' if a.game=='th15' else 'multiplayer' if a.game=='th10' else 'multiplayer-diagnostic') if a.multiplayer else 'sdl-release' if a.game=='th15' else 'sdl3'
-build=web/'artifacts'/profile;runtime=repo/'build-eagler'
+build=web/'artifacts'/profile;runtime=a.runtime or repo/'build-eagler'
 if not (runtime/'fonts').is_dir():runtime=root/(a.game+'-eagler')/'build-eagler'
 data=a.data or (root/'games/web-content/th10/th10.data' if a.game=='th10' else next(path for path in (root/(a.game+'-eagler')).glob('*/'+a.game+'.dat') if path.is_file()))
 fixtures=sorted((a.fixtures or ((Path(__file__).resolve().parents[2]/'artifacts/replay-workspace/fixtures'/(a.game+('mp' if a.multiplayer else ''))) if a.multiplayer or a.game in ['th08','th10'] else (web/'reference/assets'))).glob('demo*.rpy'))
@@ -38,8 +35,9 @@ for path in native_paths:
 files.update({'/fonts/'+path.name:path for path in (runtime/'fonts').iterdir() if path.is_file()})
 files['/fonts/msgothic.ttc']=root/'games/th06/msgothic.ttc'
 files.update({'/replay/'+path.name:path for path in fixtures})
-files['/local-replay.mjs']=root/'eagler-common/browser/local-replay.mjs'
-files['/local-replay-native.mjs']=root/'eagler-common/browser/local-replay-native.mjs'
+common=Path(owner['common']) if owner.get('common') else root/'eagler-common'
+files['/local-replay.mjs']=common/'browser/local-replay.mjs'
+files['/local-replay-native.mjs']=common/'browser/local-replay-native.mjs'
 class Handler(SimpleHTTPRequestHandler):
  def log_message(self,*args):pass
  def do_GET(self):

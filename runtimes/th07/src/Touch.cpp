@@ -3,7 +3,7 @@
 #include <SDL3/SDL_events.h>
 #include <algorithm>
 #include <cmath>
-#include "../third_party/eagler-common/include/eagler/input/DialogueGesture.hpp"
+#include <eagler/input/DialogueGesture.hpp>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>

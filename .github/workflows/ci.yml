@@ -52,6 +52,16 @@ jobs:
     defaults:
       run:
         working-directory: launcher
+  source-publication:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: node launcher/scripts/audit-publication.mjs --workspace
   source-contracts:
     needs: scope
     if: ${{ needs.scope.outputs.affected != '["launcher"]' }}
@@ -66,6 +76,7 @@ jobs:
     - run: node tools/ci/validate-source-entries.mjs
       env:
         EAGLER_CI_AFFECTED: ${{ needs.scope.outputs.affected }}
+    - run: node --test tools/build/compiler-arguments.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
   common_ci_native:
     strategy:
       matrix:
@@ -79,7 +90,7 @@ jobs:
         submodules: false
         sparse-checkout: 'common
 
-          common'
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -112,7 +123,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th06
 
-          common'
+          common
+
+          tools/build'
     - name: Prepare selected SDL dependencies
       working-directory: .
       run: git submodule update --init --recursive -- runtimes/th06/vendored/SDL runtimes/th06/vendored/SDL_image runtimes/th06/vendored/SDL_ttf
@@ -143,7 +156,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th06
 
-          common'
+          common
+
+          tools/build'
     - name: Prepare selected SDL dependencies
       working-directory: .
       run: git submodule update --init --recursive -- runtimes/th06/vendored/SDL runtimes/th06/vendored/SDL_image runtimes/th06/vendored/SDL_ttf
@@ -181,7 +196,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th07
 
-          common'
+          common
+
+          tools/build'
     - name: Prepare selected SDL dependencies
       working-directory: .
       run: git submodule update --init --recursive -- runtimes/th07/vendored/SDL runtimes/th07/vendored/SDL_image runtimes/th07/vendored/SDL_ttf
@@ -216,7 +233,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th07
 
-          common'
+          common
+
+          tools/build'
     - name: Prepare selected SDL dependencies
       working-directory: .
       run: git submodule update --init --recursive -- runtimes/th07/vendored/SDL runtimes/th07/vendored/SDL_image runtimes/th07/vendored/SDL_ttf
@@ -251,7 +270,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th08
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -279,7 +300,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th08
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -303,7 +326,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th08-mp
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -331,7 +356,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th08-mp
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -355,7 +382,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th10
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -404,7 +433,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th10
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -431,7 +462,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th10
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -455,7 +488,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th10-mp
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -519,7 +554,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th10-mp
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -600,7 +637,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th10-mp
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -627,7 +666,9 @@ jobs:
         submodules: false
         sparse-checkout: 'runtimes/th10-mp
 
-          common'
+          common
+
+          tools/build'
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -650,6 +691,7 @@ jobs:
     - scope
     - check
     - source-contracts
+    - source-publication
     - common_ci_native
     - runtimes_th06_eagler_ci_core-tests
     - runtimes_th06_eagler_ci_web-build

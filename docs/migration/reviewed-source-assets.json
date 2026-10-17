@@ -1,0 +1,2668 @@
+{
+  "schema": "eagler-touhou/reviewed-source-assets/1",
+  "review": "publication-review-20261018.json",
+  "policy": "Closed list of reviewed paths, exact content identities and notice evidence. Unknown paths, changed bytes/evidence and retail files stay blocked.",
+  "entries": [
+    {
+      "path": "runtimes/th08-mp/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th08_web/assets/native/vendor/spessasynth.mjs",
+      "hashMode": "lf-text",
+      "sha256": "190d4158802da57cf4cb2157a13466f739ff2a1ecad41a51fd3ced79f0e16265",
+      "classification": "vendored-midi-synthesizer",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "runtimes/th08-mp/portable/package-architecture.mjs",
+          "hashMode": "lf-text",
+          "sha256": "219578162ce4f2622358f71d39895ef9ec80f5ac9f09c3f40121a0ca2d2e270f"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th08_web/assets/native/vendor/spessasynth.mjs",
+      "hashMode": "lf-text",
+      "sha256": "190d4158802da57cf4cb2157a13466f739ff2a1ecad41a51fd3ced79f0e16265",
+      "classification": "vendored-midi-synthesizer",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "runtimes/th08-mp/portable/package-architecture.mjs",
+          "hashMode": "lf-text",
+          "sha256": "219578162ce4f2622358f71d39895ef9ec80f5ac9f09c3f40121a0ca2d2e270f"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.mjs",
+      "hashMode": "lf-text",
+      "sha256": "f2c9612be9718c3e93cbee86a5b7c25a901b786ba5542e82e9cb8dad3b11637b",
+      "classification": "vendored-compiled-vorbis-decoder",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "docs/migration/stb-vorbis-provenance.json",
+          "hashMode": "lf-text",
+          "sha256": "e35157ef7af10f4f78bc16fd3913272839b892584af5e852fb9062a34ae70d25"
+        },
+        {
+          "path": "runtimes/th08-mp/portable/package-architecture.mjs",
+          "hashMode": "lf-text",
+          "sha256": "219578162ce4f2622358f71d39895ef9ec80f5ac9f09c3f40121a0ca2d2e270f"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th08_web/assets/native/vendor/stb-vorbis.mjs",
+      "hashMode": "lf-text",
+      "sha256": "f2c9612be9718c3e93cbee86a5b7c25a901b786ba5542e82e9cb8dad3b11637b",
+      "classification": "vendored-compiled-vorbis-decoder",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "docs/migration/stb-vorbis-provenance.json",
+          "hashMode": "lf-text",
+          "sha256": "e35157ef7af10f4f78bc16fd3913272839b892584af5e852fb9062a34ae70d25"
+        },
+        {
+          "path": "runtimes/th08-mp/portable/package-architecture.mjs",
+          "hashMode": "lf-text",
+          "sha256": "219578162ce4f2622358f71d39895ef9ec80f5ac9f09c3f40121a0ca2d2e270f"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th08_web/assets/sdl-native/music-layout.json",
+      "hashMode": "lf-text",
+      "sha256": "bbaae686c580c2933cdcdee177128eba4de733e72933d382c87131431f1dc5c2",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/sdl-native/music-layout.json",
+          "hashMode": "lf-text",
+          "sha256": "bbaae686c580c2933cdcdee177128eba4de733e72933d382c87131431f1dc5c2"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th08_web/assets/sdl-native/music-layout.json",
+      "hashMode": "lf-text",
+      "sha256": "bbaae686c580c2933cdcdee177128eba4de733e72933d382c87131431f1dc5c2",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/sdl-native/music-layout.json",
+          "hashMode": "lf-text",
+          "sha256": "bbaae686c580c2933cdcdee177128eba4de733e72933d382c87131431f1dc5c2"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+      "hashMode": "lf-text",
+      "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+      "hashMode": "lf-text",
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+      "hashMode": "lf-text",
+      "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+      "hashMode": "bytes",
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+      "hashMode": "bytes",
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+      "hashMode": "bytes",
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "hashMode": "lf-text",
+          "sha256": "ca5917526cee797a8eb698da3e10f355671c19aafd43e3cf44ced0425355c391"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/touhou98.woff2",
+      "hashMode": "bytes",
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/unifont-site.woff2",
+      "hashMode": "bytes",
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "hashMode": "lf-text",
+          "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+      "hashMode": "bytes",
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "classification": "legacy-ui-font",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "hashMode": "lf-text",
+          "sha256": "f9f84b02bf8dabffb0244ae8736f8309b90c8f1c5e429cfbda6ce41a404f0df9"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/notice-bilibili.svg",
+      "hashMode": "bytes",
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/notice-github.svg",
+      "hashMode": "bytes",
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/notice-qq.svg",
+      "hashMode": "bytes",
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/notice-touhou-cloud.png",
+      "hashMode": "bytes",
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08-mp/th10_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th08/th10_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/touch-rotate-landscape.webp",
+      "hashMode": "bytes",
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "classification": "legacy-ui-image",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "hashMode": "bytes",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "hashMode": "bytes",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th09/th09_web/assets/sdl-native/music-verification.json",
+      "hashMode": "lf-text",
+      "sha256": "c342ad3d591a952de783518feaf0da3edee4d20cbef44105e46bcc233556f2b6",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th09/th09_web/assets/sdl-native/music-verification.json",
+          "hashMode": "lf-text",
+          "sha256": "c342ad3d591a952de783518feaf0da3edee4d20cbef44105e46bcc233556f2b6"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10-mp/th10_web/assets/sdl-native/music-layout.json",
+      "hashMode": "lf-text",
+      "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th10-mp/th10_web/assets/sdl-native/music-layout.json",
+          "hashMode": "lf-text",
+          "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th10/th10_web/assets/sdl-native/music-layout.json",
+      "hashMode": "lf-text",
+      "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th10-mp/th10_web/assets/sdl-native/music-layout.json",
+          "hashMode": "lf-text",
+          "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/assets/music/manifest.json",
+      "hashMode": "lf-text",
+      "sha256": "9abd7e3b6e6ac6962c9206ded38c79f575f71478599af48cafcb4c463a40ec97",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th15-mp/th15_web/assets/music/manifest.json",
+          "hashMode": "lf-text",
+          "sha256": "9abd7e3b6e6ac6962c9206ded38c79f575f71478599af48cafcb4c463a40ec97"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/assets/music/manifest.json",
+      "hashMode": "lf-text",
+      "sha256": "9abd7e3b6e6ac6962c9206ded38c79f575f71478599af48cafcb4c463a40ec97",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th15-mp/th15_web/assets/music/manifest.json",
+          "hashMode": "lf-text",
+          "sha256": "9abd7e3b6e6ac6962c9206ded38c79f575f71478599af48cafcb4c463a40ec97"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/assets/sdl-native/fonts/manifest.json",
+      "hashMode": "lf-text",
+      "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th15-mp/th15_web/assets/sdl-native/fonts/manifest.json",
+          "hashMode": "lf-text",
+          "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80"
+        }
+      ]
+    },
+    {
+      "path": "runtimes/th15/th15_web/assets/sdl-native/fonts/manifest.json",
+      "hashMode": "lf-text",
+      "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th15-mp/th15_web/assets/sdl-native/fonts/manifest.json",
+          "hashMode": "lf-text",
+          "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80"
+        }
+      ]
+    }
+  ]
+}

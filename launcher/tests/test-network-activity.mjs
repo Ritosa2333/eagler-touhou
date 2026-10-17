@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createNetworkActivityTracker } from "../.cache/build/browser/assets/launcher/network-activity.mjs";
+import { createNetworkActivityTracker, consumeNetworkBody } from "../.cache/build/browser/assets/launcher/network-activity.mjs";
 
 const events = [];
 let tick = 0;
@@ -40,6 +40,29 @@ while (true) {
   directBytes.push(...value);
 }
 assert.deepEqual(directBytes, [1, 2, 3, 4, 5]);
+
+let streamController;
+const ownedEvents = [], ownedTracker = createNetworkActivityTracker({fetchImpl: async () => new Response(new ReadableStream({
+  start(controller) {streamController = controller;},
+}), {headers: {'content-length': '5'}}), onChange: state => ownedEvents.push(state)});
+const ownedResponse = await ownedTracker.fetch('https://example.test/owned-stream');
+let ownedDone = false;
+const consuming = consumeNetworkBody(ownedResponse, async received => {
+  const body = ownedResponse.body, reader = body.getReader(); let loaded = 0;
+  try {while (true) {const {done, value} = await reader.read(); if (done) break; received(loaded += value.byteLength);}}
+  finally {reader.releaseLock();}
+}).then(() => {ownedDone = true;});
+assert.equal(ownedTracker.activeCount, 1, 'native reader handoff does not end an explicitly owned download');
+streamController.enqueue(new Uint8Array([1, 2])); await delay(0);
+assert.equal(ownedDone, false);assert.equal(ownedTracker.snapshot().loaded, 2);
+assert.equal(ownedTracker.activeCount, 1, 'partial body remains active');
+streamController.enqueue(new Uint8Array([3, 4, 5])); streamController.close(); await consuming;
+assert.equal(ownedTracker.activeCount, 0);
+assert.ok(ownedEvents.some(state => state.active[0]?.loaded === 5));
+const failedBody = await ownedTracker.fetch('https://example.test/failed-owned-stream');
+const failedRead = consumeNetworkBody(failedBody, async () => {await failedBody.body.getReader().read();});
+streamController.error(new Error('stream failed'));
+await assert.rejects(failedRead, /stream failed/); assert.equal(ownedTracker.activeCount, 0, 'failed reader releases its task');
 
 const directAbort = new AbortController();
 const directAbortTracker = createNetworkActivityTracker({

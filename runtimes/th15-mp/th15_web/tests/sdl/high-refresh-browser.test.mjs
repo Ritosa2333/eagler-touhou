@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {readFile,readdir,mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {analyzeNormalizedWindow} from '../../../third_party/eagler-common/testkit/presentation-lab/analyzer.mjs';
+import {analyzeNormalizedWindow} from '../../../../../common/testkit/presentation-lab/analyzer.mjs';
 import {launchBrowser} from '../../../th10_web/scripts/native/browser-launch.mjs';
 const root=fileURLToPath(new URL('../../',import.meta.url));
 test('60/120/144/165/240 Hz RAF retains fixed logical ticks and interpolated presentation submissions', {timeout:600000}, async()=>{

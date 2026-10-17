@@ -1,5 +1,5 @@
 
-#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+#include <eagler/replay/Workspace.hpp>
 namespace {std::string local_description;unsigned local_start=1,local_target=0,local_lengths[8]{};bool local_started=false;
 unsigned local_word(const th15::u8* p){unsigned n;std::memcpy(&n,p,4);return n;}}
 extern "C" {

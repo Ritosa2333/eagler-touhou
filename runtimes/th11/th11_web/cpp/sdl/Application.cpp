@@ -537,7 +537,7 @@ __attribute__((export_name("sdl_music_resource_changed"))) void sdl_music_resour
 }
 
 // Selected local Replay API. Uses the same decoder and session as the title menu.
-#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+#include <eagler/replay/Workspace.hpp>
 namespace {
 std::string local_replay_description;unsigned local_replay_start=0;
 std::uint32_t local_u32(const th11::u8* p){std::uint32_t v;std::memcpy(&v,p,4);return v;}

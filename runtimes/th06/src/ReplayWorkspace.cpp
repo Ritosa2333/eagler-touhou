@@ -7,8 +7,8 @@
 #include "PracticeRuntime.hpp"
 #include "Supervisor.hpp"
 #include "AnmManager.hpp"
-#include "../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
-#include "../third_party/eagler-common/include/eagler/replay/Presentation.hpp"
+#include <eagler/replay/Workspace.hpp>
+#include <eagler/replay/Presentation.hpp>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
 #endif

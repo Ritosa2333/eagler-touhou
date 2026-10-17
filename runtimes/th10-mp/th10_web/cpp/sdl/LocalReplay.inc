@@ -1,6 +1,6 @@
 
 // Shared local viewer contract, implemented over TH10's original Application.
-#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+#include <eagler/replay/Workspace.hpp>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/ReplayFiles.hpp"
 #endif

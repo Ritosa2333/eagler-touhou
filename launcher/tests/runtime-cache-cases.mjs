@@ -22,7 +22,7 @@ class MemoryCache {
 }
 const root="runtime/th08/";
 function harness() {
-  const stores=new Map(), clients=new Map(), requests=[];
+  const stores=new Map(), clients=new Map(), requests=[], cacheModes=[];
   const state={files:{},catalog:null,outage:false,corrupt:false,slow:false,quota:false,allWritesFail:false};
   const scopeUrl=new URL("https://example.test/game/");
   const caches={
@@ -61,9 +61,11 @@ function harness() {
       AbortController,setTimeout,clearTimeout,console,
       fetch:async request=>{
         requests.push(request.url);
+        cacheModes.push({url:request.url,cache:request.cache});
         if(state.outage)throw new Error("Offline");
         if(state.slow)return new Promise((_,reject)=>request.signal.addEventListener("abort",()=>reject(new Error("Timeout"))));
         const path=new URL(request.url).pathname.slice(scopeUrl.pathname.length);
+        if(state.httpPoison && request.cache==='default' && path.endsWith('game.wasm'))return new Response('damaged HTTP-cache bytes');
         if(path==="runtime-manifest.json")return new Response(JSON.stringify(state.catalog));
         const current=runtimeGenerationBase(root,state.catalog.groups[0].current.generation);
         const body=state.corrupt && path===current+"game.wasm"?"bad wasm":state.files[path];
@@ -94,12 +96,37 @@ function harness() {
     const path=runtimeGenerationBase(root,selected.generation)+name;
     return sw.handle({request:new Request(new URL(path,scopeUrl))});
   }
-  return{stores,clients,requests,state,publish,worker,launch,resource,scopeUrl,caches,a};
+  return{stores,clients,requests,cacheModes,state,publish,worker,launch,resource,scopeUrl,caches,a};
 }
 const streaming=harness(); streaming.state.streaming=true;
 const streamed=await streaming.launch(streaming.worker(undefined,100),"streaming");
 assert.equal(streamed.generation,streaming.a.generation,"cache preparation accepts continuous transfers longer than the idle timeout");
 assert.equal(await(await streaming.resource(streaming.worker(),streamed,"game.wasm")).text(),"wasm a");
+const observed=harness(); observed.state.streaming=true;
+const progressA=[],progressB=[],observedWorker=observed.worker(undefined,100);
+await Promise.all([observedWorker.prepareLaunch(root+'game.html',{onProgress:value=>progressA.push(value)}),
+  observedWorker.prepareLaunch(root+'game.html',{onProgress:value=>progressB.push(value)})]);
+assert.equal(observed.requests.filter(url=>url.endsWith('game.wasm')).length,1,'coalesced preparations share one download');
+for(const progress of [progressA,progressB]) {
+  const wasm=progress.filter(value=>value.path.endsWith('game.wasm'));
+  assert.equal(wasm[0].phase,'requesting');assert.equal(wasm.at(-1).phase,'complete');
+  assert.ok(wasm.some(value=>value.phase==='receiving' && value.loaded>0 && value.loaded<value.total),'each observer sees real partial byte progress');
+}
+const handoff=harness(),handoffWorker=handoff.worker(),handoffBase=runtimeGenerationBase(root,handoff.a.generation);
+const importedFiles=handoff.a.files.map(file=>({path:file.path,buffer:new TextEncoder().encode(handoff.state.files[handoffBase+file.path]).buffer}));
+handoff.state.outage=true;
+const imported=await handoffWorker.importLaunch(root,handoff.a,importedFiles);
+assert.equal(imported.generation,handoff.a.generation);assert.equal(handoff.requests.length,0,'verified buffers commit without network');
+assert.equal(await(await handoff.resource(handoffWorker,imported,'game.wasm')).text(),'wasm a');
+const broken=harness(),brokenWorker=broken.worker();broken.state.outage=true;
+const damagedFiles=importedFiles.map(file=>file.path==='game.wasm'?{...file,buffer:new TextEncoder().encode('bad').buffer}:file);
+await assert.rejects(brokenWorker.importLaunch(root,broken.a,damagedFiles),/integrity mismatch/);
+await assert.rejects(brokenWorker.prepareLaunch(root+'game.html',{localOnly:true}),/No complete local Runtime/,'partial import must not become launchable');
+const httpRepair=harness(),repairProgress=[];httpRepair.state.httpPoison=true;
+const repairedHttp=await httpRepair.worker().prepareLaunch(root+'game.html',{onProgress:value=>repairProgress.push(value)});
+assert.equal(repairedHttp.generation,httpRepair.a.generation);
+assert.deepEqual(httpRepair.cacheModes.filter(value=>value.url.endsWith('game.wasm')).map(value=>value.cache),['default','reload']);
+assert.ok(repairProgress.some(value=>value.path.endsWith('game.wasm')&&value.phase==='failed'),'invalid HTTP-cache bytes are rejected before a fresh attempt');
 const h=harness();let sw=h.worker();
 const A=await h.launch(sw,"a");assert.match(A.body,/a$/);
 const beforeLocal=h.requests.length;

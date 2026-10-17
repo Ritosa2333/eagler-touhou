@@ -1,5 +1,5 @@
 
-#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+#include <eagler/replay/Workspace.hpp>
 #ifdef TH11_MULTIPLAYER
 namespace {std::string local_description;unsigned local_start=1;}
 extern "C" {

@@ -223,7 +223,7 @@ self.addEventListener("message", event => {
   const type = event.data?.type;
   const protocol = typeof EaglerRuntimeGenerations !== "undefined" ? EaglerRuntimeGenerations : null;
   if (!["CACHE_APP_SHELL_PATHS", "GET_APP_SHELL_STATUS", "CHECK_APP_SHELL_ACTIVATION", "ACTIVATE_APP_SHELL",
-    protocol?.RUNTIME_CAPABILITIES, protocol?.RUNTIME_PREPARE].includes(type)) return;
+    protocol?.RUNTIME_CAPABILITIES, protocol?.RUNTIME_PREPARE, protocol?.RUNTIME_IMPORT].includes(type)) return;
   const port = event.ports?.[0];
   event.waitUntil((async () => {
     try {
@@ -238,8 +238,13 @@ self.addEventListener("message", event => {
         return;
       }
       if (protocol && type === protocol.RUNTIME_CAPABILITIES) {
-        port?.postMessage({ ok: !!runtimeCache, protocol: protocol.RUNTIME_CACHE_PROTOCOL, localOnly: true });
+        port?.postMessage({ ok: !!runtimeCache, protocol: protocol.RUNTIME_CACHE_PROTOCOL, localOnly: true, importFiles: true });
         return;
+      }
+      if (protocol && type === protocol.RUNTIME_IMPORT) {
+        if (!runtimeCache) throw new Error('Immutable Runtime cache unavailable');
+        const request = protocol.validateRuntimeImportRequest(event.data);
+        port?.postMessage(await runtimeCache.importLaunch(request.root, request.descriptor, request.files));return;
       }
       if (protocol && type === protocol.RUNTIME_PREPARE) {
         if (!runtimeCache) throw new Error("Immutable Runtime cache unavailable");
@@ -247,6 +252,7 @@ self.addEventListener("message", event => {
         port?.postMessage(await runtimeCache.prepareLaunch(request.entry, {
           exclude: request.exclude, ...(request.catalog ? { catalog: request.catalog } : {}),
           ...(request.localOnly ? {localOnly: true} : {}),
+          ...(request.progress ? {onProgress: progress => port?.postMessage(progress)} : {}),
         }));
         return;
       }

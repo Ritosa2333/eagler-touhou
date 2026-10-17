@@ -57,7 +57,7 @@ function managedPlan(game = 'th10', options = {}) {
       base: {files: ['data']}, components: {}}, files: {data: {objectId: `obj-${game}-data`, revision: 'data-r1'}}},
     configure: {music: 'none', options}};
 }
-function fixture({onFrameRetired, onUpdateReady, worker, ...overrides} = {}) {
+function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...overrides} = {}) {
   const messageListeners = new Set(), loadListeners = new Set(), eventContexts = [], outbound = [], navigations = [], retained = [], released = [], codeCalls = [], dataReads = [];
   const timers = deterministicTimers();
   const host = {location: {origin, href: `${baseUrl}?game=th06`},
@@ -71,7 +71,7 @@ function fixture({onFrameRetired, onUpdateReady, worker, ...overrides} = {}) {
     removeAttribute(name) {assert.equal(name, 'src'); runtime.location.replace('about:blank');},
     addEventListener(type, listener) {assert.equal(type, 'load'); loadListeners.add(listener);}, removeEventListener(_type, listener) {loadListeners.delete(listener);}};
   const service = owners.createRuntimeService({translate: key => key, frame, hostWindow: host, baseUrl, timers,
-    onFrameRetired, onUpdateReady, worker,
+    onFrameRetired, onUpdateReady, onNetworkChange, worker,
     fetchImpl: async () => {throw new Error('Unexpected network in deterministic service fixture');},
     onEvent: (message, context) => eventContexts.push({message, context, snapshot: service.getSnapshot()}),
     dependencies: {
@@ -96,6 +96,24 @@ function fixture({onFrameRetired, onUpdateReady, worker, ...overrides} = {}) {
   const result = {service, host, frame, runtime, timers, eventContexts, outbound, navigations, retained, released, codeCalls, dataReads, emit, event, ack, prepare, loadListeners};
   fixtures.push(result); return result;
 }
+
+test('runtime: worker downloads share document network accounting and cannot survive cancellation', async () => {
+  const states=[];let report,release;
+  const f=fixture({onNetworkChange:value=>states.push(value),async prepareCode(_entry,options){
+    report=options.onProgress;
+    report({path:'runtime/th10/'+hash+'/game.wasm',phase:'requesting',loaded:0,total:5});
+    await new Promise(resolve=>{release=resolve;});
+    return {url:baseUrl+'runtime/th10/'+hash+'/game.html',generation:hash};
+  }});
+  const preparing=f.service.prepare(managedPlan());await flush();
+  assert.equal(states.at(-1).count,1);assert.equal(states.at(-1).active[0].kind,'runtime');
+  report({path:'runtime/th10/'+hash+'/game.wasm',phase:'receiving',loaded:2,total:5});
+  assert.equal(states.at(-1).loaded,2);assert.equal(states.at(-1).count,1);
+  f.service.cancel();assert.equal(states.at(-1).count,0);
+  report({path:'runtime/th10/'+hash+'/game.wasm',phase:'receiving',loaded:4,total:5});
+  assert.equal(states.at(-1).count,0,'late progress cannot revive the retired Runtime');
+  release();await assert.rejects(preparing,/SUPERSEDED/);
+});
 
 test('runtime: validated direct preload uses original asset URL, one frame and ACK-based ordinary launch', async () => {
   const f = fixture(), frame = f.frame; assert.equal(f.service.getSnapshot().fileOnly, false); const plan = directPlan(); await f.prepare(plan);

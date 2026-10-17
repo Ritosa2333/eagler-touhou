@@ -36,9 +36,15 @@ TH06/TH07 所需 SDL 等外部依赖仍按根 `.gitmodules` 初始化当前作�
 
 common 改动需要验证全部实际消费者。根 CI 汇总保留的适配检查，但来源计划、编译、打包和游戏行为是不同层次的证据，不能互相代替。
 
+完整源码检出后可运行 `node launcher/scripts/audit-publication.mjs --workspace`。已审阅资源的精确内容和许可证据由 `docs/migration/reviewed-source-assets.json` 约束，新增或变化的资源需要单独核对。游戏画面和原版数据通过显式外部 Host 输入提供。
+
+原生浏览器检查按 `runtime-builds.json` 的源码目录绑定普通版和 MP，不要求 monorepo 的开发分支叫作旧的 `eagler` 或 `eagler-mp`。跨作品共用的编译器参数处理保留在根 `tools/build/`，相关 CI 检出该目录。
+
 ## 迁移候选限制
 
 当前导入点不包含原工作区尚未提交的旁观修改。需要在其完成后按来源提交刷新，并逐处保留本仓库的路径适配。不要用整目录覆盖或在原工作区改依赖来同步。
+
+最新本地验收及具体阻塞见 [迁移候选验收记录](migration/acceptance-20261018.md)。
 
 旧上游分支不能直接合并到整个 monorepo。先核对上游提交范围，再按对应组件形成候选补丁或执行有明确前缀的导入，并复核普通版/MP 行为。
 

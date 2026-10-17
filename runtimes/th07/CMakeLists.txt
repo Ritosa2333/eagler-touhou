@@ -92,10 +92,10 @@ else()
     list(APPEND SOURCES src/LocalizationStub.cpp)
 endif()
 
-set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/third_party/eagler-common"
-    CACHE PATH "Pinned eagler-common checkout; override explicitly for development only")
+set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/../../common"
+    CACHE PATH "Shared monorepo common source")
 if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
-    message(FATAL_ERROR "TH07 requires the pinned eagler-common checkout at ${EAGLER_COMMON_ROOT}")
+    message(FATAL_ERROR "TH07 requires common source at ${EAGLER_COMMON_ROOT}")
 endif()
 include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
 

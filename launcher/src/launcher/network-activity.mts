@@ -5,6 +5,15 @@ function nowMs() {
 type FetchInput = RequestInfo | URL;
 type FetchLike = (input: FetchInput, init?: RequestInit) => Promise<Response>;
 
+interface BodyActivity {
+  consume<T>(read: (progress: (loaded: number, total?: number) => void) => Promise<T>): Promise<T>;
+}
+const bodyActivities = new WeakMap<Response, BodyActivity>();
+/** Track a caller-owned native reader without replacing Response.body. */
+export function consumeNetworkBody<T>(response: Response, read: (progress: (loaded: number, total?: number) => void) => Promise<T>): Promise<T> {
+  return bodyActivities.get(response)?.consume(read) ?? read(() => {});
+}
+
 interface XhrLike {
   responseType: XMLHttpRequestResponseType;
   withCredentials: boolean;
@@ -182,6 +191,7 @@ export function createNetworkActivityTracker({
     let userAborted = false;
     let settled = false;
     let bodyHandedOff = false;
+    let bodyOwned = false;
     const controller = typeof AbortController === "function" ? new AbortController() : null;
     const signal = init.signal ?? (typeof Request !== "undefined" && input instanceof Request ? input.signal : null);
     const fetchInit = controller ? { ...init, signal: controller.signal } : init;
@@ -200,7 +210,7 @@ export function createNetworkActivityTracker({
       abortReject = reject;
     });
     const onAbort = () => {
-      if (bodyHandedOff) {
+      if (bodyHandedOff && !bodyOwned) {
         // The caller owns the native stream now; keep its original signal
         // connected even though generic progress/deadline ownership ended.
         signal?.removeEventListener?.("abort", onAbort);
@@ -219,7 +229,7 @@ export function createNetworkActivityTracker({
         clearTimeout(timeoutHandle);
         timeoutHandle = null;
       }
-      if (!bodyHandedOff) signal?.removeEventListener?.("abort", onAbort);
+      if (!bodyHandedOff || bodyOwned) signal?.removeEventListener?.("abort", onAbort);
     };
     const finishTracked = (loaded?: unknown) => {
       if (settled) return;
@@ -261,14 +271,19 @@ export function createNetworkActivityTracker({
       // instead; direct body consumers receive the original stream unchanged.
       const settle = (loaded: unknown) => finishTracked(loaded);
       const consumptionMethods = new Set<PropertyKey>(["arrayBuffer", "blob", "formData", "json", "text", "bytes"]);
-      return new Proxy(response, {
+      const tracked = new Proxy(response, {
         get(target, property) {
           if (property === "body") {
             // Preserve the native body identity. Direct stream consumers do
             // not expose a completion callback, so retain the historical
             // ownership boundary when the body is handed to the caller.
             bodyHandedOff = true;
-            settle(responseTotal);
+            if (bodyOwned) {
+              // The stream consumer owns its inactivity deadline. Keep byte
+              // accounting until that consumer actually finishes or fails.
+              if (timeoutHandle !== null) clearTimeout(timeoutHandle);
+              timeoutHandle = null;
+            } else settle(responseTotal);
             return Reflect.get(target, property, target);
           }
           const value = Reflect.get(target, property, target) as unknown;
@@ -296,6 +311,15 @@ export function createNetworkActivityTracker({
           };
         },
       });
+      bodyActivities.set(tracked, {
+        async consume(read) {
+          bodyOwned = true;
+          try {
+            return await read((loaded, total) => update(id, {phase: 'receiving', loaded, ...(total !== undefined ? {total} : {})}));
+          } finally {finishTracked(); bodyActivities.delete(tracked);}
+        },
+      });
+      return tracked;
     } catch (error) {
       finishTracked();
       if (timedOut) throw timeoutError(url, `native fetch timed out after ${fetchTimeout} ms`);

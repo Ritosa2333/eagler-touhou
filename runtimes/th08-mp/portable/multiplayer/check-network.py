@@ -157,7 +157,10 @@ with sync_playwright() as pw:
                     queue=[]
                     end=900 if args.bomb_lifecycle else 380
                     for frame in range(end):
-                        for seat,page in enumerate(pages):assert capture(page,seat,frame)
+                        for seat,page in enumerate(pages):
+                            if not capture(page,seat,frame):
+                                case['captureRejected']={'seat':seat,'frame':frame,'state':observe(page),'error':call(page,'multiplayerSmoke.networkError()')};save()
+                                raise AssertionError(f'Input capture rejected at frame {frame}, seat {seat}')
                         for exact in oracles:
                             assert capture(exact,0,frame)
                             for seat in range(1,count):apply(exact,call(pages[seat],'v=>multiplayerSmoke.inputPacket(...v)',[0,frame,frame+1]))

@@ -1,6 +1,6 @@
 
 // Shared local viewer contract, implemented over TH10's original Application.
-#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+#include <eagler/replay/Workspace.hpp>
 namespace {
 std::string local_description;u32 local_start=1,local_lengths[8]{};bool local_started=false,local_ready=false;
 const char* local_filename(const char* path){const char* p=std::strstr(path,"/replay/");return p?p+8:nullptr;}

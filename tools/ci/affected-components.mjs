@@ -33,7 +33,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const affected = affectedComponents(files, workspace, builds);
   const result = JSON.stringify(affected);
   if (process.env.GITHUB_OUTPUT) {
-    const checkout = [...new Set(['tools/ci', 'launcher/config', 'common', ...affected])].join('\n');
+    const checkout = [...new Set(['tools', 'launcher/config', 'common', ...affected])].join('\n');
     await appendFile(process.env.GITHUB_OUTPUT, `affected=${result}\ncheckout<<EAGLER_SCOPE\n${checkout}\nEAGLER_SCOPE\n`);
   }
   console.log(result);

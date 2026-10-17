@@ -12,12 +12,13 @@
       "source": "D:\\workspace\\eagler\\worktrees\\launcher-th09-spectator-main",
       "ref": "main",
       "previousImport": "d43283b801c2e65a113facef51e3f2bb76801031",
-      "head": "b612e5c389ff19fe1c93b8664b527cfc573f72bf",
-      "sourceTree": "7de7ebd5f3452cd2d42db33093d7a43a61fffb09",
+      "head": "c78ea059ead106a67d33548f0d71e2c4fc022ad5",
+      "sourceTree": "8f2f92b13217d99d9adc02f9bee038413d7fac54",
       "previousImportIsAncestor": false,
       "mergeBase": "f133d9c108ad7e123b2edf7fd3a2859e5001a362",
       "uncommittedNotImported": "M app/components/player/SpectatorPlayback.tsx\n M app/models/gameplay-network.ts\n M app/services/game-preparation.ts\n M app/services/multiplayer-room.ts\n M app/services/preparation-network.ts\n M app/services/room-preparation.ts\n M app/services/runtime.ts\n M app/session/room-session.ts\n M docs/RELEASE.md\n M docs/SPECTATOR_PROTOCOL.md\n M docs/playbooks/multiplayer.md\n M docs/playbooks/runtime-launcher-package.md\n M lib/contracts/runtime-generations.mjs\n M scripts/serve.mjs\n M server/netplay-relay.mjs\n M src/app-shell-sw.js\n M src/contracts/runtime-generations.mts\n M src/launcher/app-types.mts\n M src/launcher/i18n.mts\n M src/launcher/multiplayer-lobby-snapshot.mts\n M src/launcher/multiplayer-relay-url.mts\n M src/launcher/network-activity.mts\n M src/launcher/runtime-launch.mts\n M src/runtime-cache-sw.js\n M src/runtime-program-sw.js\n M tests/browser/test-th09-spectator-panel.mjs\n M tests/react-main/browser-session-mounted.test.mjs\n M tests/react-main/development-server.test.mjs\n M tests/react-main/game-preparation.test.mjs\n M tests/react-main/gameplay-network.test.mjs\n M tests/react-main/multiplayer-services.test.mjs\n M tests/react-main/quick-chat-mounted.test.mjs\n M tests/react-main/runtime-service.test.mjs\n M tests/react-main/spectator-playback.test.mjs\n M tests/runtime-cache-cases.mjs\n M tests/support/playwright-loader.mjs\n M tests/test-network-activity.mjs\n M tests/test-plan.mjs\n M tests/test-runtime-launch.mjs\n M tests/test-runtime-offline-first-browser.mjs\n M tests/test-runtime-shared-font-upgrade-browser.mjs\n M tests/test-spectator-stage-relay.mjs\n M tests/test-th09-spectator-history-relay.mjs\n?? docs/history-session/2026-10-17-multiplayer-runtime-version.md\n?? tests/test-relay-runtime-version.mjs\n?? tests/test-runtime-download-browser.mjs\n?? tests/test-spectator-quick-chat-relay.mjs",
-      "excludedChanges": []
+      "excludedChanges": [],
+      "previousRefreshHead": "b612e5c389ff19fe1c93b8664b527cfc573f72bf"
     },
     {
       "target": "common",
@@ -197,5 +198,11 @@
     "TH11 MP retains actual root common tree provenance instead of restoring a fixed source SHA.",
     "TH15 normal builder retains root common path and adds upstream font/audio inputs."
   ],
-  "evidence": "../../../../../refresh-20261018/tree-verification.json"
+  "evidence": "../../../refresh-20261018/tree-verification.json",
+  "followup": {
+    "recordedAt": "2026-10-17T17:36:45.614Z",
+    "from": "b612e5c389ff19fe1c93b8664b527cfc573f72bf",
+    "head": "c78ea059ead106a67d33548f0d71e2c4fc022ad5",
+    "reason": "Original Launcher main advanced during validation. Import only the committed main delta."
+  }
 }

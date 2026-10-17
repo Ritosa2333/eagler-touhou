@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
+import { readdir, stat, readFile } from "node:fs/promises";
 import { extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -76,9 +76,15 @@ function isGitWorkingTree(root) {
   } catch { return false; }
 }
 if (workspaceAudit) {
-  const { loadRuntimeBuildConfig } = await import("../lib/runtime-build-profiles.mjs");
-  const { WORKSPACE_REPOSITORIES, workspacePath } = await import("../lib/workspace-layout.mjs");
-  const config = await loadRuntimeBuildConfig();
+  const {loadSourceLayout,projectConfigurationPath}=await import('../lib/source-layout.mjs');
+  const {loadReviewedPublicationAssets}=await import('../lib/reviewed-publication-assets.mjs');
+  const layout=loadSourceLayout(project),root=layout.root;
+  const WORKSPACE_REPOSITORIES=layout.repositories,workspacePath=(...args)=>layout.path(...args);
+  const reviewed=await loadReviewedPublicationAssets(root,resolve(root,'docs/migration/reviewed-source-assets.json'));
+  // Source publication must also run in a clean checkout before contracts or
+  // frontend dependencies have been generated.
+  const config=JSON.parse(await readFile(projectConfigurationPath('runtime-builds.json',project),'utf8'));
+  if(config.schema!=='eagler-touhou/runtime-builds/1'||!config.games)throw Error('Invalid Runtime build ownership');
   const gameOwners = [...new Set(Object.values(config.games).flatMap(entry =>
     Object.values(entry.variants).map(variant => variant.workspaceRepository ?? entry.workspaceRepository)))];
   gameOwners.push('common');
@@ -92,7 +98,8 @@ if (workspaceAudit) {
     if (!isGitWorkingTree(root)) throw new Error(`workspace publication audit requires a Git-owned source component: ${repo}`);
     const tracked = execFileSync("git", ["-C", root, "ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
     for (const file of tracked) {
-      if (forbiddenExtensions.has(extname(file).toLowerCase()) || /(^|\/)assets(?:-ogg)?\//i.test(file)) failures.push(`${repo}/${file}`);
+      if (forbiddenExtensions.has(extname(file).toLowerCase())) failures.push(`${repo}/${file}`);
+      else if (/(^|\/)assets(?:-ogg)?\//i.test(file)&&!await reviewed(`${repo}/${file}`)) failures.push(`${repo}/${file} (unreviewed or changed source asset/evidence)`);
     }
   }
 }

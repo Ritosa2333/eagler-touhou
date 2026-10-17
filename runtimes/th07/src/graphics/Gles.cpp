@@ -1,6 +1,6 @@
 #include "Gles.hpp"
 #ifdef __EMSCRIPTEN__
-#include "../../third_party/eagler-common/include/eagler/replay/Presentation.hpp"
+#include <eagler/replay/Presentation.hpp>
 #endif
 
 #include <SDL3/SDL_error.h>

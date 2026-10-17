@@ -19,7 +19,7 @@
 #include "GameWindow.hpp"
 #include "Supervisor.hpp"
 #ifdef __EMSCRIPTEN__
-#include "../../third_party/eagler-common/include/eagler/replay/Presentation.hpp"
+#include <eagler/replay/Presentation.hpp>
 #endif
 
 #ifdef TH_ENABLE_THPRAC
