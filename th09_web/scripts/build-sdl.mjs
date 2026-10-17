@@ -19,7 +19,7 @@ const emcc=['install','upstream'].map(layout=>resolve(sdk,layout,'emscripten/emc
 const out=resolve(root,process.env.TH09_OUTPUT||(release?'artifacts/sdl-release':'artifacts/sdl3')),objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
 const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:process.env.EMCC_CORES??'4'};
 const common=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-I'+resolve(commonRoot,'include'),'-I'+resolve(root,'cpp/sdl'),'-I'+resolve(root,'cpp/multiplayer'),'-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1','-DTH09_DEVELOPMENT_HARNESS='+Number(!release),'--use-port=sdl3','--use-port=sdl3_ttf'];
-const run=args=>new Promise((accept,reject)=>{const child=spawn('python',[emcc,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{log+=b;process.stdout.write(b);});child.on('error',reject);child.on('exit',code=>code?reject(Error('TH09 Emscripten build failed '+code+'\n'+log)):accept());});
+const run=args=>new Promise((accept,reject)=>{const child=spawn(process.env.TH_PYTHON??process.env.PYTHON??'python',[emcc,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{log+=b;process.stdout.write(b);});child.on('error',reject);child.on('exit',code=>code?reject(Error('TH09 Emscripten build failed '+code+'\n'+log)):accept());});
 const source=[];for(const dir of ['cpp/game','cpp/sdl','cpp/multiplayer'])for(const name of readdirSync(resolve(root,dir)).filter(n=>n.endsWith('.cpp')).sort())source.push(resolve(root,dir,name));for(const name of ['BrowserPeerTransport','NetplayCore','NetplayProtocol','NetplaySession','SessionChannel','RollbackJournal'])source.push(resolve(commonRoot,'src/netplay',name+'.cpp'));source.push(resolve(workspace,'portable/sdl/Renderer.cpp'));
 const allHeaders=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?allHeaders(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
 const headers=[...allHeaders(resolve(root,'cpp')),...allHeaders(resolve(workspace,'portable/sdl')),...allHeaders(resolve(workspace,'portable/input')),...allHeaders(resolve(commonRoot,'include'))].sort();
@@ -31,7 +31,9 @@ const sourceFlags=file=>audioSimd&&file===audioSource?['-msimd128']:[];
 async function compile(file){const flags=sourceFlags(file),name=relative(workspace,file).replaceAll('\\','_').replaceAll('/','_'),object=resolve(objects,name+'.o'),key=sha(settings+(flags.length?JSON.stringify(flags):'')+sha(readFileSync(file)));if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;await run([...common,...flags,'-c',file,'-o',object]);writeFileSync(object+'.key',key);return object;}
 // The shared unit warms SDL's cached ports before independent compilations.
 const shared=await compile(source.pop()),outputs=new Array(source.length);let cursor=0,done=0;
-const buildJobs=Number(process.env.TH09_BUILD_JOBS||4);
+const requestedJobs=Number(process.env.TH09_BUILD_JOBS||process.env.TH_BUILD_JOBS||4);
+if(!Number.isInteger(requestedJobs)||requestedJobs<1)throw Error('TH_BUILD_JOBS must be a positive integer');
+const buildJobs=Math.min(4,requestedJobs);
 if(!Number.isInteger(buildJobs)||buildJobs<1||buildJobs>4)throw Error('TH09_BUILD_JOBS must be 1..4');
 await Promise.all(Array.from({length:buildJobs},async()=>{while(cursor<source.length){const index=cursor++;outputs[index]=await compile(source[index]);if(++done%25===0)console.log(done+'/'+source.length+' source files');}}));
 const loader=resolve(out,release?'th09.mjs':'th09-presentation.mjs');
