@@ -535,3 +535,36 @@ __attribute__((export_name("sdl_touch_controls"))) void sdl_touch_controls(unsig
 __attribute__((export_name("sdl_loop_pause"))) void sdl_loop_pause(unsigned on){th11_loop_pause(on);}
 __attribute__((export_name("sdl_music_resource_changed"))) void sdl_music_resource_changed(){th11::sdl::app.audio.resource_changed();}
 }
+
+// Selected local Replay API. Uses the same decoder and session as the title menu.
+#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+namespace {
+std::string local_replay_description;unsigned local_replay_start=0;
+std::uint32_t local_u32(const th11::u8* p){std::uint32_t v;std::memcpy(&v,p,4);return v;}
+}
+extern "C" {
+EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_inspect"))) const char* eagler_replay_inspect(const th11::u8* data,unsigned size){
+    th11::Replay r;if(!r.open(data,size))return nullptr;const auto* h=r.decoded().data();eagler::replay::Description d;
+    d.encoded_name(reinterpret_cast<const char*>(h),8);d.number("character",r.character());d.number("shot",r.subtype());d.number("difficulty",r.difficulty());
+    d.number("score",double(local_u32(h+20))*10+local_u32(h+108));float slow;std::memcpy(&slow,h+84,4);d.number("slowdown",slow);d.number("timestamp",double(local_u32(h+12))+double(local_u32(h+16))*4294967296.);d.number("lastStage",local_u32(h+104));
+    for(unsigned n=1;n<=7;n++)if(const auto* st=r.stage(n)){
+        const auto* next=n<6?r.header(n+1):nullptr;
+        d.stage(n,double(next?local_u32(next+12):local_u32(h+20))*10+local_u32(next?next+40:h+108),st->frames,n==7?"EXTRA":"STAGE "+std::to_string(n));
+    }
+    local_replay_description=d.finish();return local_replay_description.c_str();
+}
+EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_open"))) int eagler_replay_open(const char* path,unsigned stage){
+    auto& a=th11::sdl::app;std::vector<th11::u8> bytes;
+    if(!a.read_file(path,bytes,64*1024*1024))return 0;
+    a.renderer.flush();a.renderer.invalidate();a.error.clear();
+    if(!a.session.begin_replay(a.resources,bytes.data(),unsigned(bytes.size()),stage))return 0;
+    local_replay_start=stage;a.audio.suspend(false);return a.tick(0);
+}
+EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_state"))) const unsigned* eagler_replay_state(){
+    static unsigned v[5];auto& a=th11::sdl::app;auto& r=a.session.playback;v[0]=v[1]=0;
+    for(unsigned n=local_replay_start;n<=7;n++)if(const auto* st=r.stage(n)){v[1]+=st->frames;if(n<a.session.state.stage)v[0]+=st->frames;}
+    v[0]+=r.frame();v[0]=std::min(v[0],v[1]);v[2]=!a.session.state.replay||a.session.state.phase==th11::GameSessionPhase::title||a.session.state.phase==th11::GameSessionPhase::finished;
+    v[3]=a.session.state.stage;v[4]=local_replay_start;return v;
+}
+EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_step"))) int eagler_replay_step(unsigned){return th11::sdl::app.tick(0);}
+}
