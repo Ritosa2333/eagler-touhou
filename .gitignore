@@ -1,0 +1,6 @@
+/artifacts/
+/toolchains/
+/dependencies/
+/games/
+/node_modules/
+/.local/
