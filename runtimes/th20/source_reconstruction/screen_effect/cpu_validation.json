@@ -1,0 +1,9 @@
+{
+"status":"passed",
+"checks":124288,
+"failed":0,
+"source_hashes":{"update.cpp":"ae6d073e828127ad8f4a7a8c076900f581758a8faed6652cc6bbdcf35459d4a0","environment.cpp":"89a1b3e2363764005c6aef5fe25c2197637afb10987359d45265524b8a6ac31a","effect.hpp":"5d9d8ef97be3ba6035dcef0bc484c775679370b7f4a1d15f3aa03705b008d771","native_core.hpp":"c146169dedd6f2d59b90962307f0ce4db991514116938d52b9f69f127c49902d","runtime_state.cpp":"6b1280d5771a8d6abbf648148f6cdb2704b0bb23c0149bca0d62b95c018b7f91","lifecycle.cpp":"0e104b66a287ec41b25baabcf2bd62f8dcabd9427d1662af014aaafec7bfcd5a","draw.cpp":"f2d62546c3c7e1f50b6a2f9ac88639fc748083f76c557b5c0e05146e1241a360"},
+"scope":"4096 cases for each of seven original update callbacks, whole44-byte owner state, return codes, entire de8-byte graphics state and RNG28 including draw-direction call counts. Production environment.cpp used directly, three viewport indexes and fractional/null timer rates;640 constructor/initialize/destructor cases across10 modes with node/vtable identity normalization, scheduler metadata/unlink checks;320 cases each of rectangle core and4 draw callbacks compare COM order,all vertex bytes,touched controller state,entire graphics and returns",
+"limitations":["Original executable entry point is never called; DrawPrimitiveUP is a COM recording boundary, not a GPU pixel comparison;allocation-failure factory paths and full-game scene transitions are outside this oracle"],
+"failure_examples":[]
+}

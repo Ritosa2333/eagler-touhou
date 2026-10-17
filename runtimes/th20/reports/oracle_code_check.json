@@ -1,0 +1,14 @@
+{
+  "exe": "C:\\Program Files (x86)\\\u4e0a\u6d77\u30a2\u30ea\u30b9\u5e7b\u6a02\u56e3\\\u6771\u65b9\u9326\u4e0a\u4eac\\th20.exe",
+  "image_base": "0x400000",
+  "file_sha256": "e6c4371e214c95dd4dbcaaf6818c79c5e89881270f65b62b8c3c965b65851e2d",
+  "manifest_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "whole_file_matches_manifest": false,
+  "code_range": [
+    "0x401000",
+    "0x56b47a"
+  ],
+  "code_bytes_compared": 1483899,
+  "code_bytes_differing": 0,
+  "first_code_difference": null
+}

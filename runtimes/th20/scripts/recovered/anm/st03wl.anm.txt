@@ -1,0 +1,166 @@
+entry entry0 {
+    version: 8,
+    name: "background/stage03/st03a00.png",
+    filename: "background/stage03/st03a00@st03wl@0.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 11,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite0: { x: 256, y: 0, w: 2048, h: 512 }
+    }
+}
+
+script script0 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_403(255);
++60: // 60
+    ins_5(7);
+    ins_3();
+}
+
+
+entry entry1 {
+    version: 8,
+    name: "background/stage03/st03b00.png",
+    filename: "background/stage03/st03b00@st03wl@1.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite1: { x: 256, y: 0, w: 2048, h: 512 }
+    }
+}
+
+script script1 {
+    ins_302(8);
+    ins_300(sprite1);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_403(255);
++60: // 60
+    ins_5(7);
+    ins_3();
+}
+
+
+entry entry2 {
+    version: 8,
+    name: "background/stage03/st03c00.png",
+    filename: "background/stage03/st03c00@st03wl@2.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite2: { x: 256, y: 0, w: 2048, h: 512 }
+    }
+}
+
+script script2 {
+    ins_302(8);
+    ins_300(sprite2);
+    ins_401(3.1415927f, 0.0f, 0.0f);
+    ins_403(255);
++60: // 60
+    ins_5(7);
+    ins_3();
+}
+
+
+entry entry3 {
+    version: 8,
+    name: "background/stage03/st03d00.png",
+    filename: "background/stage03/st03d00@st03wl@3.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite3: { x: 0, y: 0, w: 800, h: 800 }
+    }
+}
+
+script script3 {
+    ins_634(512.0f);
+    ins_300(sprite3);
+    ins_402(1.114f, 1.0f);
+    ins_401(0.87266463f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++60: // 60
+    ins_5(7);
+    ins_3();
+}
+
+script script4 {
+    ins_634(512.0f);
+    ins_300(sprite3);
+    ins_401(0.87266463f, 0.0f, 1.5707964f);
+    ins_402(1.114f, 1.0f);
+    ins_403(255);
+    ins_404(128, 128, 128);
++60: // 60
+    ins_5(7);
+    ins_3();
+}
+
+script script5 {
+    ins_634(512.0f);
+    ins_300(sprite3);
+    ins_401(0.87266463f, 0.0f, 3.1415927f);
+    ins_402(1.114f, 1.0f);
+    ins_403(255);
+    ins_404(255, 255, 255);
++60: // 60
+    ins_5(7);
+    ins_3();
+}
+
+script script6 {
+    ins_634(512.0f);
+    ins_300(sprite3);
+    ins_401(0.87266463f, 0.0f, -1.5707964f);
+    ins_402(1.114f, 1.0f);
+    ins_403(255);
+    ins_404(128, 128, 128);
++60: // 60
+    ins_5(7);
+    ins_3();
+}
+
+

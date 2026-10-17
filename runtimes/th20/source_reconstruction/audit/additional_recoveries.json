@@ -1,0 +1,1460 @@
+{
+  "scope": "Separate recovery evidence classes. Algorithm mappings identify source routines whose algorithms were independently implemented; they do not prove original object/vtable/allocator/ABI equivalence.",
+  "recoveries": [
+    {
+      "entry_va": "0x004100e0",
+      "name": "archive_decrypt",
+      "source": "source_reconstruction/archive/archive.cpp",
+      "status": "compiled_algorithm_recovery_resource_validated",
+      "evidence": [
+        "source_reconstruction/archive/archive.hpp",
+        "source_reconstruction/archive/archive_validation.json"
+      ],
+      "limitations": "Independent owning C++ API and algorithms; 285 archive records / 152040763 decoded bytes match independent extraction. Original object/vtable/allocator/calling-convention ABI is not claimed. This is not game integration.",
+      "module_id": "archive",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/archive/archive.cpp": "fa62d990dc6c99c7cf1580767fe4b4736fd1b08ffd2054699ecdf99caad7dc83",
+        "source_reconstruction/archive/archive.hpp": "0bcfaa4365c70e8e507fc1287283c471b582d8196e9f7fa2ba80dca6c7d30dbc"
+      },
+      "evidence_hash_bindings": {
+        "source_reconstruction/archive/archive_validation.json": "c6b0bda5c9d5e9d7b6913b320da7d1e973047c84363e598317975bd7e794f75c"
+      },
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing resource validation report"
+    },
+    {
+      "entry_va": "0x00456270",
+      "name": "archive_filename_parameters",
+      "source": "source_reconstruction/archive/archive.cpp",
+      "status": "compiled_algorithm_recovery_resource_validated",
+      "evidence": [
+        "source_reconstruction/archive/archive.hpp",
+        "source_reconstruction/archive/archive_validation.json"
+      ],
+      "limitations": "Independent owning C++ API and algorithms; 285 archive records / 152040763 decoded bytes match independent extraction. Original object/vtable/allocator/calling-convention ABI is not claimed. This is not game integration.",
+      "module_id": "archive",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/archive/archive.cpp": "fa62d990dc6c99c7cf1580767fe4b4736fd1b08ffd2054699ecdf99caad7dc83",
+        "source_reconstruction/archive/archive.hpp": "0bcfaa4365c70e8e507fc1287283c471b582d8196e9f7fa2ba80dca6c7d30dbc"
+      },
+      "evidence_hash_bindings": {
+        "source_reconstruction/archive/archive_validation.json": "c6b0bda5c9d5e9d7b6913b320da7d1e973047c84363e598317975bd7e794f75c"
+      },
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing resource validation report"
+    },
+    {
+      "entry_va": "0x005391f0",
+      "name": "stateful_lzss_decode",
+      "source": "source_reconstruction/archive/archive.cpp",
+      "status": "compiled_algorithm_recovery_resource_validated",
+      "evidence": [
+        "source_reconstruction/archive/archive.hpp",
+        "source_reconstruction/archive/archive_validation.json"
+      ],
+      "limitations": "Independent owning C++ API and algorithms; 285 archive records / 152040763 decoded bytes match independent extraction. Original object/vtable/allocator/calling-convention ABI is not claimed. This is not game integration.",
+      "module_id": "archive",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/archive/archive.cpp": "fa62d990dc6c99c7cf1580767fe4b4736fd1b08ffd2054699ecdf99caad7dc83",
+        "source_reconstruction/archive/archive.hpp": "0bcfaa4365c70e8e507fc1287283c471b582d8196e9f7fa2ba80dca6c7d30dbc"
+      },
+      "evidence_hash_bindings": {
+        "source_reconstruction/archive/archive_validation.json": "c6b0bda5c9d5e9d7b6913b320da7d1e973047c84363e598317975bd7e794f75c"
+      },
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing resource validation report"
+    },
+    {
+      "entry_va": "0x00539ed0",
+      "name": "archive_open_algorithm",
+      "source": "source_reconstruction/archive/archive.cpp",
+      "status": "compiled_algorithm_recovery_resource_validated",
+      "evidence": [
+        "source_reconstruction/archive/archive.hpp",
+        "source_reconstruction/archive/archive_validation.json"
+      ],
+      "limitations": "Independent owning C++ API and algorithms; 285 archive records / 152040763 decoded bytes match independent extraction. Original object/vtable/allocator/calling-convention ABI is not claimed. This is not game integration.",
+      "module_id": "archive",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/archive/archive.cpp": "fa62d990dc6c99c7cf1580767fe4b4736fd1b08ffd2054699ecdf99caad7dc83",
+        "source_reconstruction/archive/archive.hpp": "0bcfaa4365c70e8e507fc1287283c471b582d8196e9f7fa2ba80dca6c7d30dbc"
+      },
+      "evidence_hash_bindings": {
+        "source_reconstruction/archive/archive_validation.json": "c6b0bda5c9d5e9d7b6913b320da7d1e973047c84363e598317975bd7e794f75c"
+      },
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing resource validation report"
+    },
+    {
+      "entry_va": "0x0053a210",
+      "name": "archive_directory_algorithm",
+      "source": "source_reconstruction/archive/archive.cpp",
+      "status": "compiled_algorithm_recovery_resource_validated",
+      "evidence": [
+        "source_reconstruction/archive/archive.hpp",
+        "source_reconstruction/archive/archive_validation.json"
+      ],
+      "limitations": "Independent owning C++ API and algorithms; 285 archive records / 152040763 decoded bytes match independent extraction. Original object/vtable/allocator/calling-convention ABI is not claimed. This is not game integration.",
+      "module_id": "archive",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/archive/archive.cpp": "fa62d990dc6c99c7cf1580767fe4b4736fd1b08ffd2054699ecdf99caad7dc83",
+        "source_reconstruction/archive/archive.hpp": "0bcfaa4365c70e8e507fc1287283c471b582d8196e9f7fa2ba80dca6c7d30dbc"
+      },
+      "evidence_hash_bindings": {
+        "source_reconstruction/archive/archive_validation.json": "c6b0bda5c9d5e9d7b6913b320da7d1e973047c84363e598317975bd7e794f75c"
+      },
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing resource validation report"
+    },
+    {
+      "entry_va": "0x0053a350",
+      "name": "archive_lookup_algorithm",
+      "source": "source_reconstruction/archive/archive.cpp",
+      "status": "compiled_algorithm_recovery_resource_validated",
+      "evidence": [
+        "source_reconstruction/archive/archive.hpp",
+        "source_reconstruction/archive/archive_validation.json"
+      ],
+      "limitations": "Independent owning C++ API and algorithms; 285 archive records / 152040763 decoded bytes match independent extraction. Original object/vtable/allocator/calling-convention ABI is not claimed. This is not game integration.",
+      "module_id": "archive",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/archive/archive.cpp": "fa62d990dc6c99c7cf1580767fe4b4736fd1b08ffd2054699ecdf99caad7dc83",
+        "source_reconstruction/archive/archive.hpp": "0bcfaa4365c70e8e507fc1287283c471b582d8196e9f7fa2ba80dca6c7d30dbc"
+      },
+      "evidence_hash_bindings": {
+        "source_reconstruction/archive/archive_validation.json": "c6b0bda5c9d5e9d7b6913b320da7d1e973047c84363e598317975bd7e794f75c"
+      },
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing resource validation report"
+    },
+    {
+      "entry_va": "0x0053a3c0",
+      "name": "archive_read_algorithm",
+      "source": "source_reconstruction/archive/archive.cpp",
+      "status": "compiled_algorithm_recovery_resource_validated",
+      "evidence": [
+        "source_reconstruction/archive/archive.hpp",
+        "source_reconstruction/archive/archive_validation.json"
+      ],
+      "limitations": "Independent owning C++ API and algorithms; 285 archive records / 152040763 decoded bytes match independent extraction. Original object/vtable/allocator/calling-convention ABI is not claimed. This is not game integration.",
+      "module_id": "archive",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/archive/archive.cpp": "fa62d990dc6c99c7cf1580767fe4b4736fd1b08ffd2054699ecdf99caad7dc83",
+        "source_reconstruction/archive/archive.hpp": "0bcfaa4365c70e8e507fc1287283c471b582d8196e9f7fa2ba80dca6c7d30dbc"
+      },
+      "evidence_hash_bindings": {
+        "source_reconstruction/archive/archive_validation.json": "c6b0bda5c9d5e9d7b6913b320da7d1e973047c84363e598317975bd7e794f75c"
+      },
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing resource validation report"
+    },
+    {
+      "entry_va": "0x00411910",
+      "module_id": "core_scheduler",
+      "name": "allocate_node",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_partial_or_composed",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "Standard C++ allocation replaces original allocation metadata and error behavior. No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411970",
+      "module_id": "core_scheduler",
+      "name": "initialize_link",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x004119b0",
+      "module_id": "core_scheduler",
+      "name": "iterator_begin",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411a70",
+      "module_id": "core_scheduler",
+      "name": "initialize_node",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411b00",
+      "module_id": "core_scheduler",
+      "name": "iterator_destroy",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411b80",
+      "module_id": "core_scheduler",
+      "name": "clear_callbacks",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411c30",
+      "module_id": "core_scheduler",
+      "name": "iterator_advance",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411ce0",
+      "module_id": "core_scheduler",
+      "name": "unlink_observer_repair",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411d20",
+      "module_id": "core_scheduler",
+      "name": "unlink_owner_tail_repair",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411d50",
+      "module_id": "core_scheduler",
+      "name": "unlink_raw",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411e30",
+      "module_id": "core_scheduler",
+      "name": "list_lookup_helper",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411e70",
+      "module_id": "core_scheduler",
+      "name": "list_find",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411ea0",
+      "module_id": "core_scheduler",
+      "name": "append",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411ee0",
+      "module_id": "core_scheduler",
+      "name": "insert_after",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411f30",
+      "module_id": "core_scheduler",
+      "name": "insert_before",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00411f80",
+      "module_id": "core_scheduler",
+      "name": "ordered_update_insert",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412100",
+      "module_id": "core_scheduler",
+      "name": "ordered_draw_insert",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x004122c0",
+      "module_id": "core_scheduler",
+      "name": "register_update_enabled",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_partial_or_composed",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "Composed wrapper; original global manager becomes explicit State argument. No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412310",
+      "module_id": "core_scheduler",
+      "name": "register_update_disabled",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_partial_or_composed",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "Composed wrapper; original global manager becomes explicit State argument. No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412360",
+      "module_id": "core_scheduler",
+      "name": "register_draw_enabled",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_partial_or_composed",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "Composed wrapper; original global manager becomes explicit State argument. No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x004123b0",
+      "module_id": "core_scheduler",
+      "name": "register_draw_disabled",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_partial_or_composed",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "Composed wrapper; original global manager becomes explicit State argument. No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412400",
+      "module_id": "core_scheduler",
+      "name": "remove_unlocked",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x004124b0",
+      "module_id": "core_scheduler",
+      "name": "remove_locked",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_partial_or_composed",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "Real C++ mutex replaces original CRT lock layout; full lock integration is unverified. No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x004125b0",
+      "module_id": "core_scheduler",
+      "name": "shutdown_chains_scheduling_portion",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_partial_or_composed",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "Leading renderer flush at 0x004d9e30 remains an explicit external dependency. No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x004127b0",
+      "module_id": "core_scheduler",
+      "name": "create_owned_node",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_partial_or_composed",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "Composes recovered initialization using standard allocation; original allocator is not recovered. No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x004127f0",
+      "module_id": "core_scheduler",
+      "name": "disable",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412810",
+      "module_id": "core_scheduler",
+      "name": "dispatch_update",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412aa0",
+      "module_id": "core_scheduler",
+      "name": "dispatch_draw",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412d10",
+      "module_id": "core_scheduler",
+      "name": "set_userdata",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412d30",
+      "module_id": "core_scheduler",
+      "name": "set_owned",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412d50",
+      "module_id": "core_scheduler",
+      "name": "set_callback",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412d80",
+      "module_id": "core_scheduler",
+      "name": "enable",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412da0",
+      "module_id": "core_scheduler",
+      "name": "set_shutdown_callback",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412dc0",
+      "module_id": "core_scheduler",
+      "name": "set_before_insert",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00418a10",
+      "module_id": "core_scheduler",
+      "name": "initialize_sentinel_link",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00418a50",
+      "module_id": "core_scheduler",
+      "name": "initialize_list",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00418a80",
+      "module_id": "core_scheduler",
+      "name": "initialize_state",
+      "source": "source_reconstruction/core_scheduler/scheduler.cpp",
+      "status": "compiled_scheduler_component_cpu_validated",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/core_scheduler/scheduler.cpp": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+        "source_reconstruction/core_scheduler/scheduler.hpp": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36"
+      },
+      "evidence": [
+        "source_reconstruction/core_scheduler/cpu_validation.json",
+        "source_reconstruction/core_scheduler/README.md"
+      ],
+      "hash_binding_origin": "Matching source SHA256 fields embedded in the passing CPU validation report",
+      "evidence_hash_bindings": {
+        "source_reconstruction/core_scheduler/cpu_validation.json": "3ca7f7105f5875995d7d61e0f08d1018e27108e220ec92e98f50699661ceb74b"
+      },
+      "validation_scope": "Module-level 13767 original CPU comparisons plus 1 source-owned allocation/removal execution; selected functions covered directly or through composed operations. See README address table.",
+      "limitations": "No complete-engine linkage. Original allocator, renderer flush, multithread scheduling and callback exception unwinding are outside validation; corresponding object pointers are normalized in comparisons."
+    },
+    {
+      "entry_va": "0x00412730",
+      "name": "device",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Field operation; no original CPU comparison. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x00415800",
+      "name": "is_windowed",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Field operation; no original CPU comparison. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x00419c20",
+      "name": "run_unlimited_frame",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_control_flow_with_unrecovered_dependencies",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Unthrottled frame control flow; real clock, renderer and callbacks remain unresolved. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x00419de0",
+      "name": "run_timed_frame",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_control_flow_with_unrecovered_dependencies",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Software-paced frame control flow; timing/floating environment has no original CPU comparison. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041a030",
+      "name": "run_present_paced_frame",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_control_flow_with_unrecovered_dependencies",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Present-paced control flow; original device and timing behavior are not verified. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041a200",
+      "name": "release_direct3d",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "COM call and field operation; no live COM equivalence test. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041a240",
+      "name": "release_device",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "COM call and field operation; no live COM equivalence test. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041b480",
+      "name": "SetForegroundWindow statement in recovered_win_main",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/program_entry.cpp",
+      "status": "compiled_inline_or_helper_coverage_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Original wrapper represented by an inline source statement; not a separate ABI replacement. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041b490",
+      "name": "restore_system_settings",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/program_entry.cpp",
+      "status": "compiled_inline_or_helper_coverage_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Original Windows API call sequence; system settings behavior has not been tested. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041cc70",
+      "name": "display_mode",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Field operation; no original CPU comparison. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041d080",
+      "name": "needs_device_reset",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Field operation; no original CPU comparison. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041dcc0",
+      "name": "set_draw_counter",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Field operation; no original CPU comparison. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041de00",
+      "name": "set_device_reset",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Field operation; no original CPU comparison. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041de30",
+      "name": "set_reset_delay",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/frame_schedulers.cpp",
+      "status": "compiled_field_or_com_operation_unvalidated",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Field operation; no original CPU comparison. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    },
+    {
+      "entry_va": "0x0041e7d0",
+      "name": "recovered_win_main",
+      "module_id": "program_entry",
+      "source": "source_reconstruction/program_entry/program_entry.cpp",
+      "status": "compiled_control_flow_with_unrecovered_dependencies",
+      "validation_kind": "compile_and_symbol_audit_only",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {
+        "source_reconstruction/program_entry/frame_schedulers.cpp": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+        "source_reconstruction/program_entry/program_entry.cpp": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+        "source_reconstruction/program_entry/program_entry.hpp": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+        "source_reconstruction/program_entry/text_constants.hpp": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+        "source_reconstruction/program_entry/unrecovered_dependencies.hpp": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+        "source_reconstruction/program_entry/winmain.cpp": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d"
+      },
+      "hash_binding_origin": "Source snapshot and library hash recorded together by the compiled module symbol audit; no CPU equivalence validation",
+      "evidence_hash_bindings": {
+        "source_reconstruction/program_entry/module_status.json": "8158740322a8068ad015e4192f926a37ef9a036630f08b7147e0545c5b17e9af"
+      },
+      "evidence": [
+        "source_reconstruction/program_entry/module_status.json",
+        "source_reconstruction/program_entry/README.md",
+        "source_reconstruction/program_entry/entry_call_graph.json"
+      ],
+      "unresolved_function_count": 50,
+      "unresolved_global_count": 13,
+      "limitations": "Control flow with unresolved engine calls and globals. Module has 50 unresolved engine functions and 13 undefined global/environment symbols. Existing core_scheduler tests do not validate this entry module; no independently linked game or original-CPU/gameplay/COM equivalence is claimed."
+    }
+  ]
+}

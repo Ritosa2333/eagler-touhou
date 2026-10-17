@@ -1,0 +1,596 @@
+
+void BossItem(var A, var B, var C);
+
+void EffChargePoint2(var A, var B, var C, var D, var E);
+
+void MBoss()
+{
+    var A;
+    ins_512(0);
+    [-9949] = 0;
+    [-9948] = 0;
+    [-9947] = 1;
+    ins_573();
+    ins_513();
+    ins_300("Ecl_EtBreak_ni", 0.0f, 0.0f, 9999, 0, 0);
+    [-9926] = 0;
+    ins_1003(150);
+    ins_502(79);
+    ins_500(72.0f, 72.0f);
+    ins_501(64.0f, 64.0f);
+    ins_511(22000);
+    ins_527(0, 22000.0f, -8355585);
+    ins_514(1, 0, 1200, "MBossDead");
+    ins_521(1, "MBossEscape");
+    ins_621(128.0f, 8421631);
+    ins_400(0.0f, 128.0f);
+    @EffChargePoint2(1.5707964f, -1.5707964f, 8, 2, 6);
+    @EffChargePoint2(1.5707964f, 1.5707964f, 10, 7, 3);
+    ins_504(0.0f, 128.0f, 280.0f, 256.0f);
+    ins_23(110);
+    ins_302(1);
+    ins_303(1, 99);
+    ins_302(4);
+    ins_303(0, 48);
+    ins_503(3);
+    ins_23(20);
+    ins_516(52);
+    @MBoss1();
+    goto MBoss_992 @ 0;
+MBoss_972:
+    ins_23(1000);
+MBoss_992:
+    if (1) goto MBoss_972 @ 0;
+    ins_1();
+}
+
+void MBoss1()
+{
+    var A;
+    ins_506();
+    ins_567(2, 15);
+    ins_568(600);
+    ins_513();
+    ins_514(0, 0, 1200, "MBossDead");
+    ins_521(1, "MBossEscape");
+    ins_534(0);
+    ins_23(100);
+    $A = 6;
+    @MBoss1_atR() async;
+    @MBoss1_atB() async;
+    @MBoss1_atY() async;
+    @MBoss1_atG() async;
+    goto MBoss1_464 @ 0;
+MBoss1_424:
+    ins_23(80);
+    ins_23(30);
+MBoss1_464:
+    if (1) goto MBoss1_424 @ 0;
+    return;
+}
+
+void MBoss1_atB()
+{
+    var A, B, C, D;
+    ins_600(1);
+    ins_607(1, 10);
+    ins_602(1, 20, 3);
+!E67
+    3;
+!N67
+    5;
+!H67
+    7;
+!L67
+    9;
+!E67
+    5;
+!N67
+    10;
+!H67
+    10;
+!L67
+    10;
+!*
+    ins_606(1, [-1], [-2]);
+    ins_604(1, 0.0f, 0.0f);
+    ins_605(1, 2.0f, 1.0f);
+    ins_608(1, 21, -1);
+    ins_611(1, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+!E67
+    4.0f;
+!N67
+    6.0f;
+!H67
+    7.0f;
+!L67
+    8.0f;
+!*
+    ins_611(1, 0, 21, 80, -9999994, [-1.0f], -9999994.0f);
+    $A = 3000;
+    goto MBoss1_atB_1012 @ 0;
+MBoss1_atB_612:
+    %B = _f(16);
+    %C = [-9998.0f];
+    ins_23(60);
+    $D = 8;
+    goto MBoss1_atB_948 @ 0;
+MBoss1_atB_776:
+    ins_618(1, %C, 32.0f);
+    ins_604(1, %C, 0.017453292f);
+    %C = %C + 0.349066f;
+    ins_601(1);
+    ins_23(8);
+MBoss1_atB_948:
+    if ($D--) goto MBoss1_atB_776 @ 0;
+    ins_23(116);
+MBoss1_atB_1012:
+    if ($A--) goto MBoss1_atB_612 @ 0;
+    return;
+}
+
+void MBoss1_atG()
+{
+    var A, B, C, D, E;
+    ins_600(3);
+    ins_607(3, 8);
+    ins_602(3, 18, 5);
+    ins_606(3, 1, 1);
+    ins_604(3, -3.1415927f, 3.1415927f);
+    ins_605(3, 1.0f, 2.0f);
+    ins_608(3, 21, -1);
+    ins_611(3, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_611(3, 0, 2, 80, -9999994, 0.05f, -9999994.0f);
+    $A = 3000;
+    goto MBoss1_atG_872 @ 0;
+MBoss1_atG_372:
+    %B = _f(16);
+    %C = [-9998.0f];
+    $D = 1;
+    ins_23(180);
+    $E = 10;
+    goto MBoss1_atG_808 @ 0;
+MBoss1_atG_576:
+    ins_618(3, [-9998.0f], [-9999.0f] * _f(64));
+!E67
+    5;
+!N67
+    13;
+!H67
+    18;
+!L67
+    25;
+!*
+    ins_606(3, [-1], 1);
+    ins_601(3);
+    ins_23(6);
+MBoss1_atG_808:
+    if ($E--) goto MBoss1_atG_576 @ 0;
+    ins_23(0);
+MBoss1_atG_872:
+    if ($A--) goto MBoss1_atG_372 @ 0;
+    return;
+}
+
+void MBoss1_atR()
+{
+    var A, B, C, D;
+    ins_600(0);
+    ins_607(0, 1);
+    ins_602(0, 25, 0);
+    ins_606(0, 1, 1);
+    ins_604(0, 0.0f, 0.0f);
+    ins_605(0, 2.0f, 1.0f);
+    ins_608(0, 21, -1);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+!E67
+    5.0f;
+!N67
+    8.0f;
+!H67
+    8.0f;
+!L67
+    8.0f;
+!*
+    ins_611(0, 0, 21, 80, -9999994, [-1.0f], -9999994.0f);
+    %A = _f(16);
+    ins_619(0, 32.0f);
+    $B = 3000;
+    goto MBoss1_atR_836 @ 0;
+MBoss1_atR_516:
+    ins_23(0);
+    $C = 80;
+    goto MBoss1_atR_772 @ 0;
+MBoss1_atR_600:
+    ins_529($D, 1, 3, 5, 7);
+    goto MBoss1_atR_708 @ 0;
+MBoss1_atR_660:
+    ins_604(0, [-9998.0f], 0.0f);
+    ins_601(0);
+MBoss1_atR_708:
+    if ($D--) goto MBoss1_atR_660 @ 0;
+    ins_23(1);
+MBoss1_atR_772:
+    if ($C--) goto MBoss1_atR_600 @ 0;
+    ins_23(160);
+MBoss1_atR_836:
+    if ($B--) goto MBoss1_atR_516 @ 0;
+    return;
+}
+
+void MBoss1_atY()
+{
+    var A, B, C, D, E;
+    ins_600(2);
+    ins_607(2, 10);
+    ins_602(2, 29, 6);
+!E67
+    6;
+!N67
+    10;
+!H67
+    10;
+!L67
+    10;
+!*
+    ins_606(2, [-1], 1);
+    ins_604(2, 0.0f, 0.0f);
+    ins_605(2, 2.0f, 2.0f);
+    ins_608(0, 21, -1);
+    ins_611(2, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+!E67
+    4.0f;
+!N67
+    6.0f;
+!H67
+    7.0f;
+!L67
+    8.0f;
+!*
+    ins_611(2, 0, 21, 80, -9999994, [-1.0f], -9999994.0f);
+    $A = 3000;
+    goto MBoss1_atY_1284 @ 0;
+MBoss1_atY_532:
+    %B = _f(16);
+    %C = [-9998.0f];
+    $D = 4;
+!E67
+    0.349066f;
+!N67
+    0.226893f;
+!H67
+    0.226893f;
+!L67
+    0.226893f;
+!*
+    ins_604(2, -1.5707964f, [-1.0f]);
+    ins_23(120);
+    $E = 4;
+    goto MBoss1_atY_1220 @ 0;
+MBoss1_atY_844:
+    ins_606(2, 7, $D);
+    %C = %C + 0.349066f;
+    $D = $D + 1;
+    unless ($D > 7) goto MBoss1_atY_1180 @ 0;
+    $D = $D - 2;
+MBoss1_atY_1180:
+    ins_601(2);
+    ins_23(15);
+MBoss1_atY_1220:
+    if ($E--) goto MBoss1_atY_844 @ 0;
+    ins_23(60);
+MBoss1_atY_1284:
+    if ($A--) goto MBoss1_atY_532 @ 0;
+    return;
+}
+
+void MBoss2()
+{
+    var A, B;
+    ins_515(120);
+    ins_511(8000);
+    unless ([-9986] == 0) goto MBoss2_200 @ 0;
+    ins_615(640.0f);
+    goto MBoss2_220 @ 0;
+MBoss2_200:
+    ins_616(640.0f);
+MBoss2_220:
+    ins_534(2);
+    ins_504(0.0f, 128.0f, 280.0f, 96.0f);
+    @BossItem(0, 15, 15);
+    ins_513();
+    ins_21();
+    ins_573();
+    unless ([-9986] == 0) goto MBoss2_500 @ 0;
+    ins_615(640.0f);
+    goto MBoss2_520 @ 0;
+MBoss2_500:
+    ins_616(640.0f);
+MBoss2_520:
+    ins_523();
+    ins_624(0);
+    ins_539();
+    ins_516(27);
+    ins_526(0.0f);
+    ins_404(0.0f, 0.0f);
+    ins_405(0, 0, 0.0f, 0.0f);
+    ins_401(0, 0, 0.0f, 0.0f);
+    [-9949] = 0;
+    [-9948] = 0;
+    [-9947] = 1;
+    ins_302(4);
+    ins_46($A, [-9880], 0, 12, 24, 36);
+    ins_306(0, $A);
+    ins_514(0, 0, 480, "MBossDead");
+    ins_521(1, "MBossEscape");
+    ins_534(0);
+    ins_23(100);
+    $B = 6;
+    unless ([-9880] == 0) goto MBoss2_1236 @ 0;
+    @MBoss2_atR() async;
+    goto MBoss2_1692 @ 0;
+    goto MBoss2_1316 @ 0;
+MBoss2_1236:
+    unless ([-9880] == 1) goto MBoss2_1396 @ 0;
+MBoss2_1316:
+    @MBoss2_atB() async;
+    goto MBoss2_1692 @ 0;
+    goto MBoss2_1476 @ 0;
+MBoss2_1396:
+    unless ([-9880] == 2) goto MBoss2_1556 @ 0;
+MBoss2_1476:
+    @MBoss2_atY() async;
+    goto MBoss2_1692 @ 0;
+    goto MBoss2_1636 @ 0;
+MBoss2_1556:
+    unless ([-9880] == 3) goto MBoss2_1692 @ 0;
+MBoss2_1636:
+    @MBoss2_atG() async;
+    goto MBoss2_1692 @ 0;
+MBoss2_1692:
+    goto MBoss2_1756 @ 0;
+MBoss2_1716:
+    ins_23(80);
+    ins_23(80);
+MBoss2_1756:
+    if (1) goto MBoss2_1716 @ 0;
+    return;
+}
+
+void MBoss2_atB()
+{
+    var A, B, C;
+    ins_600(0);
+    ins_607(0, 10);
+    ins_602(0, 20, 3);
+    ins_606(0, 10, 5);
+    ins_604(0, 0.0f, 0.0f);
+    ins_605(0, 2.0f, 1.0f);
+    ins_608(0, 21, -1);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_611(0, 0, 21, 80, -9999994, 6.0f, -9999994.0f);
+    %A = _f(16);
+    %B = [-9998.0f];
+    $C = 3000;
+    goto MBoss2_atB_624 @ 0;
+MBoss2_atB_452:
+    ins_618(0, %B, 32.0f);
+    ins_604(0, %B, 0.017453292f);
+    %B = %B + 0.349066f;
+    ins_601(0);
+    ins_23(7);
+MBoss2_atB_624:
+    if ($C--) goto MBoss2_atB_452 @ 0;
+    return;
+}
+
+void MBoss2_atG()
+{
+    var A, B, C, D;
+    ins_600(0);
+    ins_607(0, 8);
+    ins_602(0, 18, 5);
+    ins_606(0, 10, 1);
+    ins_604(0, -3.1415927f, 3.1415927f);
+    ins_605(0, 1.0f, 2.0f);
+    ins_608(0, 21, -1);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_611(0, 0, 2, 80, -9999994, 0.05f, -9999994.0f);
+    %A = _f(16);
+    %B = [-9998.0f];
+    $C = 1;
+    $D = 3000;
+    goto MBoss2_atG_644 @ 0;
+MBoss2_atG_492:
+    ins_618(0, [-9998.0f], [-9999.0f] * _f(64));
+    ins_606(0, 13, 1);
+    ins_601(0);
+    ins_23(5);
+MBoss2_atG_644:
+    if ($D--) goto MBoss2_atG_492 @ 0;
+    return;
+}
+
+void MBoss2_atR()
+{
+    var A, B, C;
+    ins_600(0);
+    ins_607(0, 1);
+    ins_602(0, 25, 0);
+    ins_606(0, 1, 1);
+    ins_604(0, 0.0f, 0.0f);
+    ins_605(0, 2.0f, 1.0f);
+    ins_608(0, 21, -1);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_611(0, 0, 21, 80, -9999994, 8.0f, -9999994.0f);
+    %A = _f(16);
+    ins_619(0, 32.0f);
+    $B = 3000;
+    goto MBoss2_atR_612 @ 0;
+MBoss2_atR_436:
+    $C = 3;
+    goto MBoss2_atR_548 @ 0;
+MBoss2_atR_500:
+    ins_604(0, [-9998.0f], 0.0f);
+    ins_601(0);
+MBoss2_atR_548:
+    if ($C--) goto MBoss2_atR_500 @ 0;
+    ins_23(1);
+MBoss2_atR_612:
+    if ($B--) goto MBoss2_atR_436 @ 0;
+    return;
+}
+
+void MBoss2_atY()
+{
+    var A, B, C, D;
+    ins_600(0);
+    ins_607(0, 10);
+    ins_602(0, 29, 6);
+    ins_606(0, 10, 1);
+    ins_604(0, 0.0f, 0.0f);
+    ins_605(0, 2.0f, 2.0f);
+    ins_608(0, 21, -1);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_611(0, 0, 21, 80, -9999994, 6.0f, -9999994.0f);
+    %A = _f(16);
+    %B = [-9998.0f];
+    $C = 1;
+    ins_604(0, -1.5707964f, 0.2268928f);
+    $D = 3000;
+    goto MBoss2_atY_896 @ 0;
+MBoss2_atY_520:
+    ins_606(0, 7, $C);
+    %B = %B + 0.349066f;
+    $C = $C + 1;
+    unless ($C > 7) goto MBoss2_atY_856 @ 0;
+    $C = $C - 2;
+MBoss2_atY_856:
+    ins_601(0);
+    ins_23(12);
+MBoss2_atY_896:
+    if ($D--) goto MBoss2_atY_520 @ 0;
+    return;
+}
+
+void MBoss3()
+{
+    var A;
+    ins_515(120);
+    ins_511(20000);
+    unless ([-9986] == 0) goto MBoss3_200 @ 0;
+    ins_615(640.0f);
+    goto MBoss3_220 @ 0;
+MBoss3_200:
+    ins_616(640.0f);
+MBoss3_220:
+    ins_534(2);
+    ins_504(0.0f, 128.0f, 280.0f, 96.0f);
+    @BossItem(0, 15, 15);
+    ins_513();
+    ins_21();
+    ins_573();
+    unless ([-9986] == 0) goto MBoss3_500 @ 0;
+    ins_615(640.0f);
+    goto MBoss3_520 @ 0;
+MBoss3_500:
+    ins_616(640.0f);
+MBoss3_520:
+    ins_523();
+    ins_624(0);
+    ins_539();
+    ins_516(27);
+    ins_526(0.0f);
+    ins_404(0.0f, 0.0f);
+    ins_405(0, 0, 0.0f, 0.0f);
+    ins_401(0, 0, 0.0f, 0.0f);
+    [-9949] = 0;
+    [-9948] = 0;
+    [-9947] = 1;
+    ins_302(4);
+    ins_306(0, 0);
+    ins_514(0, 0, 1200, "MBossDead");
+    ins_521(1, "MBossEscape");
+    ins_534(0);
+    ins_23(100);
+    $A = 6;
+    goto MBoss3_1120 @ 0;
+MBoss3_1048:
+    @MBoss3_at();
+    ins_23(80);
+    ins_23(80);
+MBoss3_1120:
+    if (1) goto MBoss3_1048 @ 0;
+    return;
+}
+
+void MBoss3_at()
+{
+    var A, B;
+    ins_600(0);
+    ins_607(0, 3);
+    ins_602(0, 18, 2);
+    ins_606(0, 16, 1);
+    ins_604(0, 0.0f, 0.0f);
+    ins_605(0, 0.4f, 1.0f);
+    ins_608(0, 21, -1);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_609(0, 1, 0, 30, 120, -9999994, -9999994.0f, -9999994.0f);
+    %A = _f(32);
+    $B = 16;
+    goto MBoss3_at_632 @ 0;
+MBoss3_at_416:
+    ins_609(0, 2, 0, 21, 120, -9999994, -4.0f, -9999994.0f);
+    ins_619(0, %A);
+    ins_604(0, [-9998.0f], 0.0f);
+    %A = %A + _f(16);
+    ins_601(0);
+    ins_23(10);
+MBoss3_at_632:
+    if ($B--) goto MBoss3_at_416 @ 0;
+    return;
+}
+
+void MBossDead()
+{
+    ins_1002(0);
+    ins_502(156);
+    ins_516(5);
+    ins_404([-9998.0f], 0.4f);
+    ins_300("Ecl_EtBreak2_ni", 0.0f, 0.0f, 9999, 0, 0);
+    ins_525();
++60: //60
+    ins_613();
+    ins_523();
+    ins_517(30, 12, 0);
+    ins_307(1, 25);
+    ins_307(1, 57);
+    ins_516(5);
+    @BossItem(5, 50, 50);
+    ins_512(-1);
+    ins_1();
+    ins_1();
+}
+
+void MBossEscape()
+{
+    ins_514(0, -1, 0, "");
+    ins_514(1, -1, 0, "");
+    ins_523();
+    ins_505();
+    unless ([-9986] == 0) goto MBossEscape_264 @ 0;
+    ins_615(640.0f);
+    goto MBossEscape_284 @ 0;
+MBossEscape_264:
+    ins_616(640.0f);
+MBossEscape_284:
+    ins_511(100000);
+    ins_524(2);
+    ins_502(16);
+    ins_401(60, 4, 0.0f, -32.0f);
+    ins_23(10);
+    ins_512(-1);
+    ins_23(50);
+    ins_1();
+    ins_1();
+}

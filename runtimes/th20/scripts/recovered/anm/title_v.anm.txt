@@ -1,0 +1,49 @@
+entry entry0 {
+    version: 8,
+    name: "title/title_ver.png",
+    filename: "title/title_ver@title_v@0.png",
+    format: 5,
+    width: 256,
+    height: 32,
+    memoryPriority: 10,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 32,
+    THTXZero: 0,
+    w_max: 256,
+    h_max: 32,
+    sprites: {
+        sprite0: { x: 1, y: 1, w: 254, h: 30 }
+    }
+}
+
+script script0 {
+    ins_300(sprite0);
+    ins_431(1);
+    ins_307(1);
+    ins_400(480.0f, 880.0f, 0.0f);
+    ins_421(1, 1);
+    ins_304(35);
+    ins_313(2);
+    ins_403(0);
++30: // 30
+    ins_409(30, 0, 255);
+    ins_3();
+    ins_5(3);
+    ins_409(60, 0, 64);
++60: // 90
+    ins_304(35);
+    ins_3();
+    ins_5(2);
+    ins_304(35);
+    ins_409(60, 0, 255);
+    ins_3();
+    ins_5(1);
+    ins_409(10, 0, 0);
++10: // 100
+    ins_1();
+}
+
+

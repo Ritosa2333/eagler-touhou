@@ -1,0 +1,10 @@
+{
+"status":"passed",
+"checks":43080,
+"failed":0,
+"source_hashes":{"vm.cpp":"1a456abf04121da0fe352560c47eaa272f1865c87b60ca58b5782236eacdda5b","camera_motion.cpp":"57d45ffbcd1da587dd6f4cc1bfa76ac72255f9b25f7ba5da77f095da7f84f256","fog.cpp":"ee8ed3c14de876d6b3dafecfef22445c0c0d50867ce0993038f6b3e1418cc012","background.hpp":"cae8d3be98adf27be2bf27302d9f0837638b91bcfb60f060c2f70ca412601d49","anm_vm.cpp":"ccc11276eec4792103be3041ba27eb89e9c8c997be7f0728d1e8c83aa118ab23","math.cpp":"6c3adba17d8eb1fe8a15cbf00b4346d839706ee120c010dde19e817aea794d4b","native_core.hpp":"c146169dedd6f2d59b90962307f0ce4db991514116938d52b9f69f127c49902d"},
+"groups":{"camera_motion_0":480,"camera_motion_1":480,"camera_motion_10":480,"camera_motion_11":480,"camera_motion_12":480,"camera_motion_13":480,"camera_motion_14":480,"camera_motion_15":480,"camera_motion_2":480,"camera_motion_3":480,"camera_motion_4":480,"camera_motion_5":480,"camera_motion_6":480,"camera_motion_7":480,"camera_motion_8":480,"camera_motion_9":480,"future_instruction_interpolation":9000,"opcode_-1":1200,"opcode_1":1200,"opcode_10":1200,"opcode_11":1200,"opcode_12":1200,"opcode_13":1200,"opcode_14":1200,"opcode_15":1200,"opcode_16":1200,"opcode_18":1200,"opcode_2":1200,"opcode_20":1200,"opcode_21":1200,"opcode_22":1200,"opcode_23":1200,"opcode_3":1200,"opcode_4":1200,"opcode_5":1200,"opcode_6":1200,"opcode_7":1200,"opcode_8":1200,"opcode_9":1200},
+"scope":"Unmodified4751b0, whole0x3310 state at identical address, camera modes0..15, timer boundaries and fractional rates, all five interpolation states, opcode0/1..16/18/20..22 and unknown opcodes.13 and22 compare original global state.14 covers negative script variants",
+"limitations":["Positive ANM binding,mesh opcode17,animation interrupt19 and complete stage rendering are outside this state oracle","Transcendental camera inputs are finite; original CRT exception delivery is not compared"],
+"failure_examples":[]
+}

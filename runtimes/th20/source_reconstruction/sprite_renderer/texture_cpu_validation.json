@@ -1,0 +1,15 @@
+{
+  "status":"passed",
+  "cases":2181,
+  "failed":0,
+  "embedded":1980,
+  "dynamic":15,
+  "render_targets":6,
+  "external_png_cases":180,
+  "compared_pixels":469066224,
+  "postload_entry_cpp_sha256":"8cdf607f014fc5e8e86a46d4c06a4bd56c8bb0c0dd092ea738a7993484666a4c",
+  "texture_load_cpp_sha256":"899be8666311f0af7c83ed48895c3f69edbcf537becc1338769e60e0703fe660",
+  "scope":"Original 44e350 and reconstructed C++ on real Direct3D9 HAL textures: all asset entries at 1/1.5/2 screen scales; all sprite bytes, script offsets, mutable file bytes, descriptors and embedded texture RGBA pixels; original44e8f0 external PNG crops, low-resolution scaling and transparent-edge pixels",
+  "limitations":["No frame rendering or device-loss comparison","Dynamic and render-target uninitialized pixel contents not compared"],
+  "failure_examples":[]
+}

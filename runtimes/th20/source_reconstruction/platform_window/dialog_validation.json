@@ -1,0 +1,22 @@
+{
+  "specimen_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "status": "passed",
+  "resources": [
+    {
+      "id": 203,
+      "language": 1041,
+      "bytes": 914,
+      "equal": true,
+      "original_sha256": "c293e31ba5af021fdacb158f7acfdd65d7780d95c8637163a64eb152276c19bf",
+      "compiled_sha256": "c293e31ba5af021fdacb158f7acfdd65d7780d95c8637163a64eb152276c19bf"
+    },
+    {
+      "id": 204,
+      "language": 1041,
+      "bytes": 1012,
+      "equal": true,
+      "original_sha256": "142f926b7b8b972c133fb9e5100cc5f7443c7724ce51967737cd7510e20ff270",
+      "compiled_sha256": "142f926b7b8b972c133fb9e5100cc5f7443c7724ce51967737cd7510e20ff270"
+    }
+  ]
+}

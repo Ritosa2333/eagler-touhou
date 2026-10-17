@@ -1,0 +1,11 @@
+{
+"status":"passed",
+"checks":62048,
+"failed":0,
+"state_cpp_sha256":"5b8b7b388da100c86d7acd5eb9bf28384582c21cd15fc1622af364e3fe75826b",
+"background_hpp_sha256":"cae8d3be98adf27be2bf27302d9f0837638b91bcfb60f060c2f70ca412601d49",
+"fog_cpp_sha256":"ee8ed3c14de876d6b3dafecfef22445c0c0d50867ce0993038f6b3e1418cc012",
+"scope":"Unmodified original4715c0 ScriptState and471790 camera constructors,1024 randomized full-storage inputs each, exact return and bytes;12000 cases each of fog color pack,scale,subtract,add and full164-byte interpolation across32 modes",
+"limitations":["Background factory, archive loader, STD VM and rendering are not exercised here"],
+"failure_examples":[]
+}

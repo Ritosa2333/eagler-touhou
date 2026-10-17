@@ -1,0 +1,48 @@
+{
+  "status": "compiled_source_module",
+  "full_game_equivalence": false,
+  "source_hashes": {
+    "source_reconstruction/help_system/help.hpp": "ddb9314cd6df3416ead88be47f8b358fa7f95ea08e8a31cf562180fdfb235568",
+    "source_reconstruction/help_system/help.cpp": "98f5e4b54571b0e11e73752c801201752cf15c903472766a49efe3eccc66c34e",
+    "source_reconstruction/help_system/texture.cpp": "f405cff0e9ae6c62abf26663c6a979212817425cb5de35e006c964f8bab7f056",
+    "source_reconstruction/help_system/CMakeLists.txt": "805825f985f973ad962e61ff0a9e04cd858d3f25597853836ea7d59c7bdd577c",
+    "source_reconstruction/text_renderer/menu_style.hpp": "2ae32e34e3bc8131cc9baeaecfd1da5944ad4941150352212db6265ea8cc37e1",
+    "source_reconstruction/text_renderer/menu_style.cpp": "be9413cdd6ac87933c44c291b114b002bef3f41a867da57f573561860a25e7a2",
+    "source_reconstruction/text_renderer/oracle/menu_compare.inl": "16611f8aab8dd4c03b62830b637fea6acab6b7d7f03dd5b1e06bddbb74441687",
+    "source_reconstruction/input/input.hpp": "fd36f455da92d8e3874cc5f50aa72fb95b0c487a70ce860a83393aeb00c9c5f6"
+  },
+  "original_va": [
+    "0x004bee70",
+    "0x004bef80",
+    "0x004bf990",
+    "0x004bfc70",
+    "0x004bf0a0",
+    "0x004bfc20",
+    "0x004bf930",
+    "0x004bf8d0",
+    "0x0044dc20",
+    "0x00449d80"
+  ],
+  "evidence_map": {
+    "help.cpp": [
+      "0x004bee70",
+      "0x004bef80",
+      "0x004bf990",
+      "0x004bfc70",
+      "0x004bf0a0",
+      "0x004bfc20",
+      "0x004bf930",
+      "0x004bf8d0"
+    ],
+    "texture.cpp": [
+      "0x0044dc20",
+      "0x00449d80"
+    ]
+  },
+  "unrecovered_game_symbols": [],
+  "validation_scope": "Win32 compilation only. Original CPU frame/lifecycle and real D3D image replacement/upload remain unverified.",
+  "limitations": [
+    "Owning constructor/destructor/factory not full original CPU compared",
+    "New source-only GDI/D3D upload paths are not validated by cached-text draw comparison"
+  ]
+}

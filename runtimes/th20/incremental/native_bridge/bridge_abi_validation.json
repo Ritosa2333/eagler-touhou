@@ -1,0 +1,26 @@
+{
+  "status":"passed",
+  "scope":"Shipped x86 bridge DLL exports versus verified original CPU code, invoked with original ABI; original game entry point never executed",
+  "source_sha256":"a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "bridge_sha256":"611fc3be4ef2de58db309f98bba580e45c6edc59a85ce84db87df75ac5795464",
+  "native_core_sha256":"c146169dedd6f2d59b90962307f0ce4db991514116938d52b9f69f127c49902d",
+  "total":100116,
+  "failures":0,
+  "abi_failures":0,
+  "fp_control_failures":0,
+  "counter_matches_calls":true,
+  "preserved_registers_checked":["EBX","ESI","EDI","EBP"],
+  "stack_balance_checked":true,
+  "timer_self_returns_checked":true,
+  "floating_control":{"mxcsr":"0x1f80","x87":"0x037f","status_flags_compared":false},
+  "comparisons":{
+    "th20_lcg_step":4104,
+    "th20_lcg_next":4104,
+    "th20_timer_reset":4131,
+    "th20_timer_mode":4306,
+    "th20_timer_set":4131,
+    "th20_timer_add":72010,
+    "th20_timer_tick":7330
+  },
+  "failure_examples":[]
+}

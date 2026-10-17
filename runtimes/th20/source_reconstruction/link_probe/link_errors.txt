@@ -1,0 +1,92 @@
+CMake is re-running because D:/AIWorkspace/Touhou20Reconstruction/build_sources/title_system/CMakeFiles/generate.stamp is out-of-date.
+  the file 'D:/AIWorkspace/Touhou20Reconstruction/source_reconstruction/title_system/CMakeLists.txt'
+  is newer than 'D:/AIWorkspace/Touhou20Reconstruction/build_sources/title_system/CMakeFiles/generate.stamp.depend'
+  result='-1'
+-- Selecting Windows SDK version 10.0.19041.0 to target Windows 10.0.22631.
+-- Configuring done
+-- Generating done
+-- Build files have been written to: D:/AIWorkspace/Touhou20Reconstruction/build_sources
+用于 .NET Framework 的 Microsoft (R) 生成引擎版本 16.11.2+f32259642
+版权所有(C) Microsoft Corporation。保留所有权利。
+
+  th20_ecl_binary.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\ecl_vm\Release\th20_ecl_binary.lib
+  th20_core_scheduler.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\core_scheduler\Release\th20_core_scheduler.lib
+  th20_game_session.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\game_session\Release\th20_game_session.lib
+  th20_source_archive.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\archive\Release\th20_source_archive.lib
+  th20_runtime_core.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\runtime_core\Release\th20_runtime_core.lib
+  th20_ecl_vm.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\ecl_vm\Release\th20_ecl_vm.lib
+  th20_audio_runtime.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\audio_runtime\Release\th20_audio_runtime.lib
+  th20_platform_services.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\platform_services\Release\th20_platform_services.lib
+  th20_program_entry_source.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\program_entry\Release\th20_program_entry_source.lib
+  th20_runtime_entry_adapter.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\runtime_core\Release\th20_runtime_entry_adapter.lib
+  th20_platform_entry_adapter.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\platform_services\Release\th20_platform_entry_adapter.lib
+  th20_input.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\input\Release\th20_input.lib
+  th20_runtime_state.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\runtime_state\Release\th20_runtime_state.lib
+  th20_input_entry_adapter.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\input\Release\th20_input_entry_adapter.lib
+  th20_resource_manager.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\Release\th20_resource_manager.lib
+  th20_platform_window.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\platform_window\Release\th20_platform_window.lib
+  th20_sprite_renderer.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\sprite_renderer\Release\th20_sprite_renderer.lib
+  th20_audio_entry_adapter.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\audio_runtime\Release\th20_audio_entry_adapter.lib
+  th20_damage_regions.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\damage_regions\Release\th20_damage_regions.lib
+  th20_progress_state.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\progress_state\Release\th20_progress_state.lib
+  th20_item_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\item_system\Release\th20_item_system.lib
+  th20_sprite_platform_adapter.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\sprite_renderer\Release\th20_sprite_platform_adapter.lib
+  th20_sprite_entry_adapter.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\sprite_renderer\Release\th20_sprite_entry_adapter.lib
+  th20_effect_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\effect_system\Release\th20_effect_system.lib
+  th20_hud_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\hud_system\Release\th20_hud_system.lib
+  th20_player_entity.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\player_entity\Release\th20_player_entity.lib
+  th20_gameplay.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\gameplay\Release\th20_gameplay.lib
+  th20_overlay_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\overlay_system\Release\th20_overlay_system.lib
+  th20_screen_effect.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\screen_effect\Release\th20_screen_effect.lib
+  th20_laser_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\laser_system\Release\th20_laser_system.lib
+  th20_text_renderer.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\text_renderer\Release\th20_text_renderer.lib
+  Building Custom Rule D:/AIWorkspace/Touhou20Reconstruction/source_reconstruction/gameplay/CMakeLists.txt
+  th20_bullet_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\bullet_system\Release\th20_bullet_system.lib
+  th20_stage_background.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\stage_background\Release\th20_stage_background.lib
+  th20_startup_scene.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\startup_scene\Release\th20_startup_scene.lib
+  th20_trophy_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\trophy_system\Release\th20_trophy_system.lib
+  th20_replay_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\replay_system\Release\th20_replay_system.lib
+  th20_ending_scene.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\ending_scene\Release\th20_ending_scene.lib
+  th20_stage_completion.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\stage_completion\Release\th20_stage_completion.lib
+  th20_small_score.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\small_score\Release\th20_small_score.lib
+  enemy_mesh.cpp
+  th20_stage_clear.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\stage_clear\Release\th20_stage_clear.lib
+  th20_card_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\card_system\Release\th20_card_system.lib
+  th20_special_state.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\special_state\Release\th20_special_state.lib
+  th20_stone_menu.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\stone_menu\Release\th20_stone_menu.lib
+  th20_options_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\options_system\Release\th20_options_system.lib
+  th20_help_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\help_system\Release\th20_help_system.lib
+  th20_notice_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\notice_system\Release\th20_notice_system.lib
+  cursor_history.cpp
+  stones.cpp
+  draw.cpp
+  enemy_defeat.cpp
+  stones_draw.cpp
+  stones_adapter.cpp
+  draw_entries.cpp
+  正在生成代码...
+  th20_enemy.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\gameplay\Release\th20_enemy.lib
+  Building Custom Rule D:/AIWorkspace/Touhou20Reconstruction/source_reconstruction/gameplay/CMakeLists.txt
+  th20_bomb_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\bomb_system\Release\th20_bomb_system.lib
+D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\pause_system\draw_entries.cpp(22,78): warning C4310: 类型强制转换截断常量值 [D:\AIWorkspace\Touhou20Reconstruction\build_sources\pause_system\th20_pause_system.vcxproj]
+D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\pause_system\draw_entries.cpp(22,111): warning C4310: 类型强制转换截断常量值 [D:\AIWorkspace\Touhou20Reconstruction\build_sources\pause_system\th20_pause_system.vcxproj]
+  enemy_opcode_dispatch.cpp
+  player_data_environment.cpp
+  menu.cpp
+  enemy_mesh_adapter.cpp
+  正在生成代码...
+  menu_queries.cpp
+  th20_title_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\title_system\Release\th20_title_system.lib
+  enemy_defeat_adapter.cpp
+  ranking.cpp
+  正在生成代码...
+  resume.cpp
+  th20_gameplay_entry_adapter.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\gameplay\Release\th20_gameplay_entry_adapter.lib
+  正在生成代码...
+  th20_pause_system.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\pause_system\Release\th20_pause_system.lib
+  update.cpp
+  th20_key_config.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\key_config\Release\th20_key_config.lib
+th20_title_system.lib(frame.obj) : error LNK2019: 无法解析的外部符号 "void __cdecl th20::source::title::unrecovered::draw_replay_005240d0(struct th20::source::title::TitleInf &)" (?draw_replay_005240d0@unrecovered@title@source@th20@@YAXAAUTitleInf@234@@Z)，函数 "int __cdecl th20::source::title::draw(struct th20::source::title::TitleInf &)" (?draw@title@source@th20@@YAHAAUTitleInf@123@@Z) 中引用了该符号 [D:\AIWorkspace\Touhou20Reconstruction\build_sources\link_probe\th20_source_link_probe.vcxproj]
+th20_title_system.lib(frame.obj) : error LNK2019: 无法解析的外部符号 "void __cdecl th20::source::title::unrecovered::draw_spell_00522e20(struct th20::source::title::TitleInf &)" (?draw_spell_00522e20@unrecovered@title@source@th20@@YAXAAUTitleInf@234@@Z)，函数 "int __cdecl th20::source::title::draw(struct th20::source::title::TitleInf &)" (?draw@title@source@th20@@YAHAAUTitleInf@123@@Z) 中引用了该符号 [D:\AIWorkspace\Touhou20Reconstruction\build_sources\link_probe\th20_source_link_probe.vcxproj]
+th20_title_system.lib(frame.obj) : error LNK2019: 无法解析的外部符号 "void __cdecl th20::source::title::unrecovered::draw_data_page_005277f0(struct th20::source::title::TitleInf &)" (?draw_data_page_005277f0@unrecovered@title@source@th20@@YAXAAUTitleInf@234@@Z)，函数 "int __cdecl th20::source::title::draw(struct th20::source::title::TitleInf &)" (?draw@title@source@th20@@YAHAAUTitleInf@123@@Z) 中引用了该符号 [D:\AIWorkspace\Touhou20Reconstruction\build_sources\link_probe\th20_source_link_probe.vcxproj]
+D:\AIWorkspace\Touhou20Reconstruction\build_sources\link_probe\Release\th20_source_link_probe.exe : fatal error LNK1120: 3 个无法解析的外部命令 [D:\AIWorkspace\Touhou20Reconstruction\build_sources\link_probe\th20_source_link_probe.vcxproj]

@@ -1,0 +1,25 @@
+{
+  "status":"passed",
+  "source_sha256":"a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "configuration_cpp_sha256":"bcb8ab516a9691fc710c6b77f07c8601587263b01bc5ca18bcebb6abd4a8d263",
+  "configuration_hpp_sha256":"f9af91ea320ca96b157cdff6f981665734115135b0780f9c7eef5f819f918bd1",
+  "clock_cpp_sha256":"52d57f32c467b642e167dafecdd371528e8b59cc61c9f49ba31efa5a279852a9",
+  "clock_hpp_sha256":"036d5d71a9fe721a20a02e670a528cf7f4573a2c9fa1877e7d0c24ce1800e4dd",
+  "total":66270,
+  "failed":0,
+  "scope":"Original constructors compare all bytes including retained padding; original clock compares 64-bit result and updated offset using deterministic Win32 import samples in all four rounding modes. Original lock is recursively held on the test thread.",
+  "limitations":["Clock conversion selects original SSE2 branch; AVX512 and subnormal/NaN offsets not covered","File/path APIs and complete game are not tested by this executable","Configuration validation/truncation cases are source contract tests, not original load function execution"],
+  "comparisons":{
+"configuration_all_176_bytes":2048,
+"configuration_decode_default":1,
+"configuration_signed_display_bound":8,
+"configuration_truncation_rejected":5,
+"flags_preserve_high_bits":2048,
+"key_bindings_all_48_bytes":2048,
+"multimedia_clock_result_and_offset":20000,
+"performance_clock_result_and_offset":20000,
+"rounding_control_registers_and_result":112,
+"signed_counter_conversion":20000
+  },
+  "failure_examples":[]
+}

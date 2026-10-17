@@ -1,0 +1,9 @@
+import pathlib,json,hashlib
+module=pathlib.Path(__file__).resolve().parent;root=module.parents[1]
+mapping={'lifecycle.cpp':[0x4e1ce0,0x4e1e90,0x4e5980,0x4e6b80],'transitions.cpp':[0x4e6a90,0x4e69a0,0x4e5d60,0x4e5bd0,0x4e59e0,0x4e5f30,0x4e58f0,0x4e58a0,0x4e20d0],'capture.cpp':[0x44be40,0x4e60c0,0x4e6600,0x4e6530,0x44fa70],'cursor_history.cpp':[0x4c60b0,0x4c6010,0x4e1ab0,0x4c5160,0x4c59c0],'ranking.cpp':[0x4e6250,0x50f170,0x50f2f0],'menu.cpp':[0x4e2260],'draw.cpp':[0x4e4d50],'draw_entries.cpp':[0x4e5020,0x4e5240,0x4e5390,0x4e54c0],'draw_ranking.cpp':[0x4e5620]}
+sources=list(module.glob('*.cpp'))+list(module.glob('*.hpp'))+[module/'CMakeLists.txt',module/'oracle/compare.cpp',module/'oracle/CMakeLists.txt']
+hashes={p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()for p in sources}
+report=json.loads((module/'cpu_validation.json').read_text());report['source_hashes']=hashes;report['validation_scope']='114688 original CPU comparisons: four opening/finishing entries, two restore entries and update gating; renderer, audio, ranking, menu actions observed as external boundaries. Full menu/capture/cursor-history/lifecycle equivalence not yet validated.'
+(module/'cpu_validation.json').write_text(json.dumps(report,indent=2)+'\n')
+status=dict(status='compiled_source_module_with_explicit_owner_dependencies',full_game_equivalence=False,source_hashes=hashes,evidence_map={n:[f'0x{v:08x}'for v in a]for n,a in mapping.items()},original_va=[f'0x{v:08x}'for a in mapping.values()for v in a],cpu_validation='cpu_validation.json',unrecovered_game_symbols=[],limitations=['Menu state machine and owning lifecycle compile but lack whole-body CPU comparison','Capture noise preserves original transposed width/height traversal; original COM comparison pending','Draw routines have separate validation by shared Sprite oracle; inspect that report'])
+(module/'module_status.json').write_text(json.dumps(status,indent=2)+'\n')

@@ -1,0 +1,1480 @@
+
+void BossDead2()
+{
+    ins_40(0);
+    ins_1002(0);
+    ins_502(156);
+    ins_516(5);
+    ins_404([-9998.0f], 0.4f);
+    ins_300("Ecl_EtBreak2_ni", 0.0f, 0.0f, 9999, 0, 0);
+    ins_525();
++60: //60
+    ins_613();
+    ins_523();
+    ins_517(30, 12, 0);
+    ins_307(1, 25);
+    ins_307(1, 57);
+    ins_516(5);
+    ins_512(-1);
+    ins_1();
+    ins_10();
+}
+
+void BossEscapeNoDead()
+{
+    ins_40(0);
+    ins_502(156);
+    ins_1002(1);
+    ins_523();
+    ins_505();
+    ins_511(100000);
+    ins_303(1, -1);
+    ins_303(2, -1);
+    ins_621(0.0f, 15732608);
+    ins_512(-1);
+    ins_502(16);
+    ins_401(60, 4, -224.0f, -80.0f);
+    ins_23(60);
+    ins_1();
+    ins_10();
+}
+
+void BossEscapeSpell()
+{
+    ins_40(0);
+    ins_514(0, -1, 0, "");
+    ins_514(1, -1, 0, "");
+    ins_502(156);
+    ins_1002(1);
+    ins_523();
+    ins_505();
+    ins_525();
+    ins_511(100000);
+    ins_303(1, -1);
+    ins_303(2, -1);
+    ins_512(-1);
+    ins_502(16);
+    ins_401(60, 4, -224.0f, -80.0f);
+    ins_23(60);
+    ins_1();
+    ins_10();
+}
+
+void BossInterval()
+{
+    ins_40(0);
+    ins_513();
+    ins_21();
+    ins_573();
+    ins_42([-9986]);
+    ins_42(0);
+    ins_59();
+    ins_13(BossInterval_208, 0);
+    ins_615(640.0f);
+    ins_12(BossInterval_228, 0);
+BossInterval_208:
+    ins_616(640.0f);
+BossInterval_228:
+    ins_523();
+    ins_624(0);
+    ins_539();
+    ins_516(27);
+    ins_526(0.0f);
+    ins_404(0.0f, 0.0f);
+    ins_405(0, 0, 0.0f, 0.0f);
+    ins_401(0, 0, 0.0f, 0.0f);
+    ins_42(0);
+    ins_43([-9949]);
+    ins_42(0);
+    ins_43([-9948]);
+    ins_42(1);
+    ins_43([-9947]);
+    ins_516(27);
+    ins_515(90);
+    ins_42([-9986]);
+    ins_42(0);
+    ins_59();
+    ins_13(BossInterval_692, 0);
+    ins_615(640.0f);
+    ins_12(BossInterval_712, 0);
+BossInterval_692:
+    ins_616(640.0f);
+BossInterval_712:
+    ins_23(90);
+    ins_505();
+    ins_10();
+}
+
+void BossItem()
+{
+    ins_40(12);
+    ins_42([-9986]);
+    ins_42(0);
+    ins_59();
+    ins_13(BossItem_240, 0);
+    ins_506();
+    ins_507(1, [4]);
+    ins_507(2, [8]);
+    ins_508(64.0f, 64.0f);
+    ins_510([0]);
+    ins_509();
+BossItem_240:
+    ins_10();
+}
+
+void BossItemPhase()
+{
+    ins_40(16);
+    ins_42([-9986]);
+    ins_42(0);
+    ins_59();
+    ins_13(BossItemPhase_240, 0);
+    ins_506();
+    ins_510([8]);
+    ins_507(1, [0]);
+    ins_507(2, [4]);
+    ins_508([12.0f], [12.0f]);
+    ins_509();
+BossItemPhase_240:
+    ins_10();
+}
+
+void BossItemPhase2()
+{
+    ins_40(16);
+    ins_42([-9986]);
+    ins_42(0);
+    ins_59();
+    ins_13(BossItemPhase2_220, 0);
+    ins_506();
+    ins_507(1, [4]);
+    ins_507(2, [8]);
+    ins_508([12.0f], [12.0f]);
+    ins_509();
+BossItemPhase2_220:
+    ins_10();
+}
+
+void BossItemPhase3()
+{
+    ins_40(12);
+    ins_42([-9986]);
+    ins_42(0);
+    ins_59();
+    ins_13(BossItemPhase3_240, 0);
+    ins_506();
+    ins_510(6);
+    ins_507(1, [0]);
+    ins_507(2, [4]);
+    ins_508([8.0f], [8.0f]);
+    ins_509();
+BossItemPhase3_240:
+    ins_10();
+}
+
+void DeadAttack1()
+{
+    ins_40(0);
+    ins_44(3.0f);
+    ins_45([-9981.0f]);
+    ins_42(3);
+    ins_43([-9985]);
+    ins_42(5);
+    ins_43([-9984]);
+    ins_424(0);
+    ins_300("DeadAttackEt1", 0.0f, 0.0f, 10, 10, 0);
+    ins_10();
+}
+
+void DeadAttack2()
+{
+    ins_40(0);
+    ins_44(3.0f);
+    ins_45([-9981.0f]);
+    ins_42(5);
+    ins_43([-9985]);
+    ins_42(4);
+    ins_43([-9984]);
+    ins_424(0);
+    ins_300("DeadAttackEt1", 0.0f, 0.0f, 10, 10, 0);
+    ins_10();
+}
+
+void DeadAttackEt1()
+{
+    ins_40(4);
+    ins_502(32);
+    ins_600(0);
+    ins_607(0, 0);
+    ins_602(0, 7, 2);
+    ins_606(0, 1, 1);
+    ins_604(0, 0.0f, 0.05235988f);
+    ins_605(0, [-9981.0f], 1.0f);
+    ins_609(0, 0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_42([-9985]);
+    ins_43([0]);
+    ins_12(DeadAttackEt1_364, 0);
+DeadAttackEt1_324:
+    ins_601(0);
+    ins_23([-9984]);
+DeadAttackEt1_364:
+    ins_78([0]);
+    ins_14(DeadAttackEt1_324, 0);
+    ins_1();
+}
+
+void DebugSkipFunc()
+{
+    ins_40(0);
+    ins_901();
+    ins_10();
+}
+
+void DebugSkipStopFunc()
+{
+    ins_40(0);
+    ins_902();
+    ins_10();
+}
+
+void Ecl_EtBreak()
+{
+    ins_40(4);
+    ins_44(16.0f);
+    ins_45([0.0f]);
+    ins_502(32);
+    ins_12(Ecl_EtBreak_216, 1);
+Ecl_EtBreak_120:
+    ins_615([0.0f]);
+    ins_44([0.0f]);
++1: //1
+    ins_42(10);
+    ins_51();
+    ins_45([0.0f]);
+Ecl_EtBreak_216:
+    ins_44([0.0f]);
+    ins_44(640.0f);
+    ins_64();
+    ins_14(Ecl_EtBreak_120, 0);
+    ins_1();
+}
+
+void Ecl_EtBreak2()
+{
+    ins_40(4);
+    ins_44(16.0f);
+    ins_45([0.0f]);
+    ins_502(32);
+    ins_12(Ecl_EtBreak2_216, 1);
+Ecl_EtBreak2_120:
+    ins_615([0.0f]);
+    ins_44([0.0f]);
++1: //1
+    ins_42(6);
+    ins_51();
+    ins_45([0.0f]);
+Ecl_EtBreak2_216:
+    ins_44([0.0f]);
+    ins_44(640.0f);
+    ins_64();
+    ins_14(Ecl_EtBreak2_120, 0);
+    ins_1();
+}
+
+void Ecl_EtBreak2_ni()
+{
+    ins_40(4);
+    ins_44(16.0f);
+    ins_45([0.0f]);
+    ins_502(32);
+    ins_12(Ecl_EtBreak2_ni_216, 1);
+Ecl_EtBreak2_ni_120:
+    ins_616([0.0f]);
+    ins_44([0.0f]);
++1: //1
+    ins_42(6);
+    ins_51();
+    ins_45([0.0f]);
+Ecl_EtBreak2_ni_216:
+    ins_44([0.0f]);
+    ins_44(640.0f);
+    ins_64();
+    ins_14(Ecl_EtBreak2_ni_120, 0);
+    ins_1();
+}
+
+void Ecl_EtBreak_ni()
+{
+    ins_40(4);
+    ins_44(16.0f);
+    ins_45([0.0f]);
+    ins_502(32);
+    ins_12(Ecl_EtBreak_ni_216, 1);
+Ecl_EtBreak_ni_120:
+    ins_616([0.0f]);
+    ins_44([0.0f]);
++1: //1
+    ins_42(10);
+    ins_51();
+    ins_45([0.0f]);
+Ecl_EtBreak_ni_216:
+    ins_44([0.0f]);
+    ins_44(640.0f);
+    ins_64();
+    ins_14(Ecl_EtBreak_ni_120, 0);
+    ins_1();
+}
+
+void EffChargePoint()
+{
+    ins_40(12);
+    ins_302(1);
+    ins_42(151);
+    ins_42([8]);
+    ins_50();
+    ins_303([4], [-1]);
+    ins_319([4], [0.0f]);
+    ins_516(54);
+    ins_10();
+}
+
+void EffChargePoint2()
+{
+    ins_40(20);
+    ins_302(1);
+    ins_42(151);
+    ins_42([12]);
+    ins_50();
+    ins_303([8], [-1]);
+    ins_319([8], [0.0f]);
+    ins_42(151);
+    ins_42([16]);
+    ins_50();
+    ins_42([8]);
+    ins_42(1);
+    ins_50();
+    ins_303([-1], [-2]);
+    ins_44([0.0f]);
+    ins_44([4.0f]);
+    ins_51();
+    ins_42([8]);
+    ins_42(1);
+    ins_50();
+    ins_319([-1], [-2.0f]);
+    ins_516(54);
+    ins_10();
+}
+
+void EffChargePoint3()
+{
+    ins_40(24);
+    ins_302(1);
+    ins_42(151);
+    ins_42([12]);
+    ins_50();
+    ins_303([8], [-1]);
+    ins_44([0.0f]);
+    ins_44([4.0f]);
+    ins_51();
+    ins_319([8], [-1.0f]);
+    ins_42(151);
+    ins_42([16]);
+    ins_50();
+    ins_42([8]);
+    ins_42(1);
+    ins_50();
+    ins_303([-1], [-2]);
+    ins_42([8]);
+    ins_42(1);
+    ins_50();
+    ins_319([-1], [0.0f]);
+    ins_42(151);
+    ins_42([20]);
+    ins_50();
+    ins_42([8]);
+    ins_42(2);
+    ins_50();
+    ins_303([-1], [-2]);
+    ins_44([0.0f]);
+    ins_44([4.0f]);
+    ins_53();
+    ins_42([8]);
+    ins_42(2);
+    ins_50();
+    ins_319([-1], [-2.0f]);
+    ins_516(54);
+    ins_10();
+}
+
+void MainBossSpell()
+{
+    ins_40(0);
+    ins_524(43);
+    ins_622(1);
++10: //10
+    ins_518(-1);
++1: //11
+    ins_301("Boss", 144.0f, -16.0f, 40, 1000, 1);
+    ins_520();
+    ins_524(81);
+    ins_23(170);
+    ins_518(-2);
+    ins_519();
+    ins_10();
+}
+
+void MainBossSpell2()
+{
+    ins_40(0);
+    ins_524(43);
+    ins_622(1);
++10: //10
+    ins_518(-1);
++1: //11
+    ins_301("BossSpell", 144.0f, -16.0f, 40, 1000, 1);
+    ins_520();
+    ins_524(81);
+    ins_23(170);
+    ins_518(-2);
+    ins_519();
+    ins_10();
+}
+
+void MainMBossSpell()
+{
+    ins_40(0);
+    ins_524(22);
++10: //10
+    ins_518(-3);
++1: //11
+    ins_301("MBoss", 144.0f, -16.0f, 40, 1000, 1);
+    ins_520();
+    ins_524(81);
+    ins_23(100);
+    ins_518(-2);
+    ins_519();
+    ins_10();
+}
+
+void NoEnemyDebug()
+{
+    ins_40(0);
+    ins_12(NoEnemyDebug_80, 0);
+NoEnemyDebug_60:
+    ins_23(1000);
+NoEnemyDebug_80:
+    ins_42(1);
+    ins_14(NoEnemyDebug_60, 0);
+    ins_10();
+}
+
+void StoneAttackLevel_B1()
+{
+    ins_40(0);
+!E67
+    ins_44(2.0f);
+!N67
+    ins_44(2.5f);
+!H67
+    ins_44(2.5f);
+!L67
+    ins_44(2.5f);
+!E67
+    ins_42(4);
+!N67
+    ins_42(8);
+!H67
+    ins_42(8);
+!L67
+    ins_42(8);
+!*
+    ins_11("StoneAttackLevel_B_func", _SS [-1], _SS 1, _ff [-2.0f], _ff 2.5f, _SS 160);
+    ins_1();
+}
+
+void StoneAttackLevel_B2()
+{
+    ins_40(0);
+!E67
+    ins_44(2.0f);
+!N67
+    ins_44(2.5f);
+!H67
+    ins_44(2.5f);
+!L67
+    ins_44(2.5f);
+!E67
+    ins_42(6);
+!N67
+    ins_42(12);
+!H67
+    ins_42(12);
+!L67
+    ins_42(12);
+!*
+    ins_11("StoneAttackLevel_B_func", _SS [-1], _SS 1, _ff [-2.0f], _ff 2.5f, _SS 150);
+    ins_1();
+}
+
+void StoneAttackLevel_B3()
+{
+    ins_40(0);
+!E67
+    ins_44(2.0f);
+!N67
+    ins_44(2.5f);
+!H67
+    ins_44(2.5f);
+!L67
+    ins_44(2.5f);
+!E67
+    ins_42(8);
+!N67
+    ins_42(16);
+!H67
+    ins_42(16);
+!L67
+    ins_42(16);
+!*
+    ins_11("StoneAttackLevel_B_func", _SS [-1], _SS 1, _ff [-2.0f], _ff 2.5f, _SS 140);
+    ins_1();
+}
+
+void StoneAttackLevel_B4()
+{
+    ins_40(0);
+!E67
+    ins_44(2.5f);
+!N67
+    ins_44(3.0f);
+!H67
+    ins_44(3.0f);
+!L67
+    ins_44(3.0f);
+!E67
+    ins_42(10);
+!N67
+    ins_42(24);
+!H67
+    ins_42(24);
+!L67
+    ins_42(24);
+!*
+    ins_11("StoneAttackLevel_B_func", _SS [-1], _SS 1, _ff [-2.0f], _ff 3.0f, _SS 130);
+    ins_1();
+}
+
+void StoneAttackLevel_B5()
+{
+    ins_40(0);
+!E67
+    ins_44(3.0f);
+!N67
+    ins_44(3.3f);
+!H67
+    ins_44(3.3f);
+!L67
+    ins_44(3.3f);
+!E67
+    ins_42(12);
+!N67
+    ins_42(32);
+!H67
+    ins_42(32);
+!L67
+    ins_42(32);
+!*
+    ins_11("StoneAttackLevel_B_func", _SS [-1], _SS 1, _ff [-2.0f], _ff 3.3f, _SS 130);
+    ins_1();
+}
+
+void StoneAttackLevel_B_func()
+{
+    ins_40(20);
+    ins_502(35);
+    ins_343(1);
+    ins_23(60);
+    ins_12(StoneAttackLevel_B_func_524, 0);
+StoneAttackLevel_B_func_120:
+    ins_600(0);
+    ins_607(0, 3);
+    ins_602(0, 7, 5);
+    ins_606(0, [0], [4]);
+    ins_604(0, [-9998.0f], 0.34906584f);
+    ins_605(0, [8.0f], [12.0f]);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_44([-9987.0f]);
+    ins_44(32.0f);
+    ins_55();
+    ins_603(0, [-1.0f], 0.0f);
+    ins_42([-9875]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneAttackLevel_B_func_504, 0);
+    ins_601(0);
+StoneAttackLevel_B_func_504:
+    ins_23([16]);
+StoneAttackLevel_B_func_524:
+    ins_42(1);
+    ins_14(StoneAttackLevel_B_func_120, 0);
+    ins_10();
+}
+
+void StoneAttackLevel_G1()
+{
+    ins_40(0);
+!E67
+    ins_42(30);
+!N67
+    ins_42(16);
+!H67
+    ins_42(16);
+!L67
+    ins_42(16);
+!*
+    ins_11("StoneAttackLevel_G_func", _SS 1, _SS 1, _ff 2.0f, _ff 2.0f, _SS [-1]);
+    ins_1();
+}
+
+void StoneAttackLevel_G2()
+{
+    ins_40(0);
+!E67
+    ins_42(22);
+!N67
+    ins_42(15);
+!H67
+    ins_42(15);
+!L67
+    ins_42(15);
+!*
+    ins_11("StoneAttackLevel_G_func", _SS 1, _SS 1, _ff 2.0f, _ff 2.0f, _SS [-1]);
+    ins_1();
+}
+
+void StoneAttackLevel_G3()
+{
+    ins_40(0);
+!E67
+    ins_42(20);
+!N67
+    ins_42(14);
+!H67
+    ins_42(14);
+!L67
+    ins_42(14);
+!*
+    ins_11("StoneAttackLevel_G_func", _SS 1, _SS 1, _ff 2.0f, _ff 3.0f, _SS [-1]);
+    ins_1();
+}
+
+void StoneAttackLevel_G4()
+{
+    ins_40(0);
+!E67
+    ins_42(18);
+!N67
+    ins_42(13);
+!H67
+    ins_42(13);
+!L67
+    ins_42(13);
+!*
+    ins_11("StoneAttackLevel_G_func", _SS 1, _SS 1, _ff 2.0f, _ff 3.0f, _SS [-1]);
+    ins_1();
+}
+
+void StoneAttackLevel_G5()
+{
+    ins_40(0);
+!E67
+    ins_42(16);
+!N67
+    ins_42(14);
+!H67
+    ins_42(14);
+!L67
+    ins_42(14);
+!E67
+    ins_42(1);
+!N67
+    ins_42(2);
+!H67
+    ins_42(2);
+!L67
+    ins_42(2);
+!*
+    ins_11("StoneAttackLevel_G_func", _SS [-1], _SS 1, _ff 2.0f, _ff 3.5f, _SS [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_G_func()
+{
+    ins_40(20);
+    ins_502(35);
+    ins_343(1);
+    ins_23(60);
+    ins_12(StoneAttackLevel_G_func_524, 0);
+StoneAttackLevel_G_func_120:
+    ins_600(0);
+    ins_607(0, 8);
+    ins_602(0, 7, 12);
+    ins_606(0, [0], [4]);
+    ins_604(0, 0.0f, 3.1415927f);
+    ins_605(0, [8.0f], [12.0f]);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_44([-9987.0f]);
+    ins_44(32.0f);
+    ins_55();
+    ins_603(0, [-1.0f], 0.0f);
+    ins_42([-9875]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneAttackLevel_G_func_504, 0);
+    ins_601(0);
+StoneAttackLevel_G_func_504:
+    ins_23([16]);
+StoneAttackLevel_G_func_524:
+    ins_42(1);
+    ins_14(StoneAttackLevel_G_func_120, 0);
+    ins_10();
+}
+
+void StoneAttackLevel_R1()
+{
+    ins_40(0);
+!E67
+    ins_44(2.8f);
+!N67
+    ins_44(3.3f);
+!H67
+    ins_44(3.3f);
+!L67
+    ins_44(3.3f);
+!E67
+    ins_42(2);
+!N67
+    ins_42(4);
+!H67
+    ins_42(4);
+!L67
+    ins_42(4);
+!*
+    ins_11("StoneAttackLevel_R_func", _SS 1, _SS [-1], _ff [-2.0f], _ff 2.0f, _SS 120);
+    ins_1();
+}
+
+void StoneAttackLevel_R2()
+{
+    ins_40(0);
+!E67
+    ins_44(2.8f);
+!N67
+    ins_44(3.3f);
+!H67
+    ins_44(3.3f);
+!L67
+    ins_44(3.3f);
+!E67
+    ins_42(2);
+!N67
+    ins_42(4);
+!H67
+    ins_42(4);
+!L67
+    ins_42(4);
+!*
+    ins_11("StoneAttackLevel_R_func", _SS 1, _SS [-1], _ff [-2.0f], _ff 2.0f, _SS 100);
+    ins_1();
+}
+
+void StoneAttackLevel_R3()
+{
+    ins_40(0);
+!E67
+    ins_44(2.8f);
+!N67
+    ins_44(3.3f);
+!H67
+    ins_44(3.3f);
+!L67
+    ins_44(3.3f);
+!E67
+    ins_42(2);
+!N67
+    ins_42(4);
+!H67
+    ins_42(4);
+!L67
+    ins_42(4);
+!*
+    ins_11("StoneAttackLevel_R_func", _SS 1, _SS [-1], _ff [-2.0f], _ff 2.0f, _SS 80);
+    ins_1();
+}
+
+void StoneAttackLevel_R4()
+{
+    ins_40(0);
+!E67
+    ins_44(3.0f);
+!N67
+    ins_44(3.5f);
+!H67
+    ins_44(3.5f);
+!L67
+    ins_44(3.5f);
+!E67
+    ins_42(2);
+!N67
+    ins_42(4);
+!H67
+    ins_42(4);
+!L67
+    ins_42(4);
+!*
+    ins_11("StoneAttackLevel_R_func", _SS 1, _SS [-1], _ff [-2.0f], _ff 2.0f, _SS 60);
+    ins_1();
+}
+
+void StoneAttackLevel_R5()
+{
+    ins_40(0);
+!E67
+    ins_44(3.0f);
+!N67
+    ins_44(3.5f);
+!H67
+    ins_44(3.5f);
+!L67
+    ins_44(3.5f);
+!E67
+    ins_42(4);
+!N67
+    ins_42(4);
+!H67
+    ins_42(4);
+!L67
+    ins_42(4);
+!E67
+    ins_42(1);
+!N67
+    ins_42(3);
+!H67
+    ins_42(3);
+!L67
+    ins_42(3);
+!*
+    ins_11("StoneAttackLevel_R_func", _SS [-1], _SS [-2], _ff [-3.0f], _ff 2.0f, _SS 70);
+    ins_1();
+}
+
+void StoneAttackLevel_R_func()
+{
+    ins_40(20);
+    ins_502(35);
+    ins_343(1);
+    ins_23(60);
+    ins_600(0);
+    ins_607(0, 1);
+    ins_602(0, 7, 1);
+    ins_606(0, [0], [4]);
+    ins_604(0, 1.5707964f, 0.34906584f);
+    ins_605(0, [8.0f], [12.0f]);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_12(StoneAttackLevel_R_func_524, 0);
+StoneAttackLevel_R_func_320:
+    ins_44([-9987.0f]);
+    ins_44(32.0f);
+    ins_55();
+    ins_603(0, [-1.0f], 0.0f);
+    ins_42([-9875]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneAttackLevel_R_func_504, 0);
+    ins_601(0);
+StoneAttackLevel_R_func_504:
+    ins_23([16]);
+StoneAttackLevel_R_func_524:
+    ins_42(1);
+    ins_14(StoneAttackLevel_R_func_320, 0);
+    ins_10();
+}
+
+void StoneAttackLevel_Y1()
+{
+    ins_40(0);
+!E67
+    ins_42(320);
+!N67
+    ins_42(160);
+!H67
+    ins_42(160);
+!L67
+    ins_42(160);
+!E67
+    ins_42(2);
+!N67
+    ins_42(4);
+!H67
+    ins_42(4);
+!L67
+    ins_42(4);
+!*
+    ins_11("StoneAttackLevel_Y_func", _SS [-1], _SS 1, _ff 3.3f, _ff 2.0f, _SS [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y2()
+{
+    ins_40(0);
+!E67
+    ins_42(300);
+!N67
+    ins_42(150);
+!H67
+    ins_42(150);
+!L67
+    ins_42(150);
+!E67
+    ins_42(2);
+!N67
+    ins_42(4);
+!H67
+    ins_42(4);
+!L67
+    ins_42(4);
+!*
+    ins_11("StoneAttackLevel_Y_func", _SS [-1], _SS 1, _ff 3.3f, _ff 2.0f, _SS [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y3()
+{
+    ins_40(0);
+!E67
+    ins_42(180);
+!N67
+    ins_42(140);
+!H67
+    ins_42(140);
+!L67
+    ins_42(140);
+!E67
+    ins_42(2);
+!N67
+    ins_42(4);
+!H67
+    ins_42(4);
+!L67
+    ins_42(4);
+!*
+    ins_11("StoneAttackLevel_Y_func", _SS [-1], _SS 1, _ff 3.3f, _ff 3.0f, _SS [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y4()
+{
+    ins_40(0);
+!E67
+    ins_42(170);
+!N67
+    ins_42(130);
+!H67
+    ins_42(130);
+!L67
+    ins_42(130);
+!E67
+    ins_42(4);
+!N67
+    ins_42(6);
+!H67
+    ins_42(6);
+!L67
+    ins_42(6);
+!*
+    ins_11("StoneAttackLevel_Y_func", _SS [-1], _SS 1, _ff 3.4f, _ff 3.0f, _SS [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y5()
+{
+    ins_40(0);
+!E67
+    ins_42(160);
+!N67
+    ins_42(130);
+!H67
+    ins_42(130);
+!L67
+    ins_42(130);
+!E67
+    ins_42(4);
+!N67
+    ins_42(8);
+!H67
+    ins_42(8);
+!L67
+    ins_42(8);
+!*
+    ins_11("StoneAttackLevel_Y_func", _SS [-1], _SS 1, _ff 3.5f, _ff 3.5f, _SS [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y_func()
+{
+    ins_40(20);
+    ins_502(35);
+    ins_343(1);
+    ins_23(60);
+    ins_12(StoneAttackLevel_Y_func_984, 0);
+StoneAttackLevel_Y_func_120:
+    ins_600(0);
+    ins_607(0, 0);
+    ins_602(0, 7, 12);
+    ins_606(0, [0], [4]);
+    ins_604(0, 0.0f, 0.34906584f);
+    ins_605(0, [8.0f], [12.0f]);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_44([-9987.0f]);
+    ins_44(32.0f);
+    ins_55();
+    ins_603(0, [-1.0f], 0.0f);
+    ins_42([-9875]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneAttackLevel_Y_func_504, 0);
+    ins_601(0);
+StoneAttackLevel_Y_func_504:
+    ins_23([16]);
+    ins_600(0);
+    ins_607(0, 0);
+    ins_602(0, 7, 12);
+    ins_42([0]);
+    ins_42(1);
+    ins_52();
+    ins_606(0, [-1], [4]);
+    ins_604(0, 0.0f, 0.34906584f);
+    ins_605(0, [8.0f], [12.0f]);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_44([-9987.0f]);
+    ins_44(32.0f);
+    ins_55();
+    ins_603(0, [-1.0f], 0.0f);
+    ins_42([-9875]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneAttackLevel_Y_func_964, 0);
+    ins_601(0);
+StoneAttackLevel_Y_func_964:
+    ins_23([16]);
+StoneAttackLevel_Y_func_984:
+    ins_42(1);
+    ins_14(StoneAttackLevel_Y_func_120, 0);
+    ins_10();
+}
+
+void StoneB()
+{
+    ins_40(16);
+    ins_502(3);
+    ins_302(2);
+    ins_306(0, 283);
+    ins_329(0, 0.0f, 0.0f);
+    ins_330(0, 60, 3, 1.0f, 1.0f);
+    ins_516(53);
+    ins_23(1);
+    ins_1001(1);
+    ins_500(48.0f, 48.0f);
+    ins_501(32.0f, 32.0f);
+    ins_23(60);
+    ins_503(3);
+    ins_504(0.0f, 128.0f, 300.0f, 100.0f);
+    ins_42(0);
+    ins_45([0.0f]);
+    ins_42(2000000);
+    ins_43([8]);
+    ins_12(StoneB_1392, 0);
+StoneB_448:
+    ins_42(180);
+    ins_43([12]);
+    ins_12(StoneB_892, 0);
+StoneB_512:
+    ins_42(0);
+    ins_45([0.0f]);
+    ins_42([-9881]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneB_656, 0);
+    ins_12(StoneB_936, 0);
+StoneB_656:
+    ins_44([-9874.0f]);
+    ins_42(0);
+    ins_70();
+    ins_44([-9874.0f]);
+    ins_42(64);
+    ins_64();
+    ins_74();
+    ins_13(StoneB_872, 0);
+    ins_42(1);
+    ins_45([0.0f]);
+    ins_12(StoneB_936, 0);
+StoneB_872:
+    ins_23(1);
+StoneB_892:
+    ins_78([12]);
+    ins_14(StoneB_512, 0);
+StoneB_936:
+    ins_42([-9881]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneB_1040, 0);
+    ins_12(StoneB_1436, 0);
+StoneB_1040:
+    ins_44([0.0f]);
+    ins_42(0);
+    ins_60();
+    ins_13(StoneB_1192, 0);
+    ins_412(60, 4, 2.0f);
+    ins_23(1);
+    ins_12(StoneB_1392, 0);
+StoneB_1192:
+    ins_87([4.0f], [-9963.0f], [-9962.0f], [-9997.0f], [-9996.0f]);
+    ins_44([4.0f]);
+    ins_44([-9987.0f]);
+    ins_44(1.5707964f);
+    ins_55();
+    ins_51();
+    ins_404([-1.0f], 2.0f);
+    ins_445(60, 4, 0.0f);
+    ins_23(60);
+StoneB_1392:
+    ins_78([8]);
+    ins_14(StoneB_448, 0);
+StoneB_1436:
+    ins_505();
+    ins_401(300, 1, [-9997.0f], -64.0f);
+    ins_12(StoneB_1528, 0);
+StoneB_1508:
+    ins_23(1000);
+StoneB_1528:
+    ins_42(1);
+    ins_14(StoneB_1508, 0);
+    ins_1();
+}
+
+void StoneG()
+{
+    ins_40(16);
+    ins_502(3);
+    ins_302(2);
+    ins_306(0, 305);
+    ins_329(0, 0.0f, 0.0f);
+    ins_330(0, 60, 3, 1.0f, 1.0f);
+    ins_516(53);
+    ins_23(1);
+    ins_1001(3);
+    ins_500(48.0f, 48.0f);
+    ins_501(32.0f, 32.0f);
+    ins_23(60);
+    ins_503(3);
+    ins_504(0.0f, 128.0f, 300.0f, 100.0f);
+    ins_42(0);
+    ins_45([0.0f]);
+    ins_42(2000000);
+    ins_43([8]);
+    ins_12(StoneG_1392, 0);
+StoneG_448:
+    ins_42(180);
+    ins_43([12]);
+    ins_12(StoneG_892, 0);
+StoneG_512:
+    ins_42(0);
+    ins_45([0.0f]);
+    ins_42([-9881]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneG_656, 0);
+    ins_12(StoneG_936, 0);
+StoneG_656:
+    ins_44([-9874.0f]);
+    ins_42(0);
+    ins_70();
+    ins_44([-9874.0f]);
+    ins_42(64);
+    ins_64();
+    ins_74();
+    ins_13(StoneG_872, 0);
+    ins_42(1);
+    ins_45([0.0f]);
+    ins_12(StoneG_936, 0);
+StoneG_872:
+    ins_23(1);
+StoneG_892:
+    ins_78([12]);
+    ins_14(StoneG_512, 0);
+StoneG_936:
+    ins_42([-9881]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneG_1040, 0);
+    ins_12(StoneG_1436, 0);
+StoneG_1040:
+    ins_44([0.0f]);
+    ins_42(0);
+    ins_60();
+    ins_13(StoneG_1192, 0);
+    ins_412(60, 4, 2.0f);
+    ins_23(1);
+    ins_12(StoneG_1392, 0);
+StoneG_1192:
+    ins_87([4.0f], [-9963.0f], [-9962.0f], [-9997.0f], [-9996.0f]);
+    ins_44([4.0f]);
+    ins_44([-9987.0f]);
+    ins_44(1.5707964f);
+    ins_55();
+    ins_51();
+    ins_404([-1.0f], 2.0f);
+    ins_445(60, 4, 0.0f);
+    ins_23(60);
+StoneG_1392:
+    ins_78([8]);
+    ins_14(StoneG_448, 0);
+StoneG_1436:
+    ins_505();
+    ins_401(300, 1, [-9997.0f], -64.0f);
+    ins_12(StoneG_1528, 0);
+StoneG_1508:
+    ins_23(1000);
+StoneG_1528:
+    ins_42(1);
+    ins_14(StoneG_1508, 0);
+    ins_1();
+}
+
+void StoneR()
+{
+    ins_40(16);
+    ins_502(3);
+    ins_302(2);
+    ins_306(0, 272);
+    ins_329(0, 0.0f, 0.0f);
+    ins_330(0, 60, 3, 1.0f, 1.0f);
+    ins_516(53);
+    ins_23(1);
+    ins_1001(0);
+    ins_500(48.0f, 48.0f);
+    ins_501(32.0f, 32.0f);
+    ins_23(60);
+    ins_503(3);
+    ins_504(0.0f, 128.0f, 300.0f, 100.0f);
+    ins_42(0);
+    ins_45([0.0f]);
+    ins_42(2000000);
+    ins_43([8]);
+    ins_12(StoneR_1392, 0);
+StoneR_448:
+    ins_42(180);
+    ins_43([12]);
+    ins_12(StoneR_892, 0);
+StoneR_512:
+    ins_42(0);
+    ins_45([0.0f]);
+    ins_42([-9881]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneR_656, 0);
+    ins_12(StoneR_936, 0);
+StoneR_656:
+    ins_44([-9874.0f]);
+    ins_42(0);
+    ins_70();
+    ins_44([-9874.0f]);
+    ins_42(64);
+    ins_64();
+    ins_74();
+    ins_13(StoneR_872, 0);
+    ins_42(1);
+    ins_45([0.0f]);
+    ins_12(StoneR_936, 0);
+StoneR_872:
+    ins_23(1);
+StoneR_892:
+    ins_78([12]);
+    ins_14(StoneR_512, 0);
+StoneR_936:
+    ins_42([-9881]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneR_1040, 0);
+    ins_12(StoneR_1436, 0);
+StoneR_1040:
+    ins_44([0.0f]);
+    ins_42(0);
+    ins_60();
+    ins_13(StoneR_1192, 0);
+    ins_412(60, 4, 2.0f);
+    ins_23(1);
+    ins_12(StoneR_1392, 0);
+StoneR_1192:
+    ins_87([4.0f], [-9963.0f], [-9962.0f], [-9997.0f], [-9996.0f]);
+    ins_44([4.0f]);
+    ins_44([-9987.0f]);
+    ins_44(1.5707964f);
+    ins_55();
+    ins_51();
+    ins_404([-1.0f], 2.0f);
+    ins_445(60, 4, 0.0f);
+    ins_23(60);
+StoneR_1392:
+    ins_78([8]);
+    ins_14(StoneR_448, 0);
+StoneR_1436:
+    ins_505();
+    ins_401(300, 1, [-9997.0f], -64.0f);
+    ins_12(StoneR_1528, 0);
+StoneR_1508:
+    ins_23(1000);
+StoneR_1528:
+    ins_42(1);
+    ins_14(StoneR_1508, 0);
+    ins_1();
+}
+
+void StoneY()
+{
+    ins_40(16);
+    ins_502(3);
+    ins_302(2);
+    ins_306(0, 294);
+    ins_329(0, 0.0f, 0.0f);
+    ins_330(0, 60, 3, 1.0f, 1.0f);
+    ins_516(53);
+    ins_23(1);
+    ins_1001(2);
+    ins_500(48.0f, 48.0f);
+    ins_501(32.0f, 32.0f);
+    ins_23(60);
+    ins_503(3);
+    ins_504(0.0f, 128.0f, 300.0f, 100.0f);
+    ins_42(0);
+    ins_45([0.0f]);
+    ins_42(2000000);
+    ins_43([8]);
+    ins_12(StoneY_1392, 0);
+StoneY_448:
+    ins_42(180);
+    ins_43([12]);
+    ins_12(StoneY_892, 0);
+StoneY_512:
+    ins_42(0);
+    ins_45([0.0f]);
+    ins_42([-9881]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneY_656, 0);
+    ins_12(StoneY_936, 0);
+StoneY_656:
+    ins_44([-9874.0f]);
+    ins_42(0);
+    ins_70();
+    ins_44([-9874.0f]);
+    ins_42(64);
+    ins_64();
+    ins_74();
+    ins_13(StoneY_872, 0);
+    ins_42(1);
+    ins_45([0.0f]);
+    ins_12(StoneY_936, 0);
+StoneY_872:
+    ins_23(1);
+StoneY_892:
+    ins_78([12]);
+    ins_14(StoneY_512, 0);
+StoneY_936:
+    ins_42([-9881]);
+    ins_42(0);
+    ins_59();
+    ins_13(StoneY_1040, 0);
+    ins_12(StoneY_1436, 0);
+StoneY_1040:
+    ins_44([0.0f]);
+    ins_42(0);
+    ins_60();
+    ins_13(StoneY_1192, 0);
+    ins_412(60, 4, 2.0f);
+    ins_23(1);
+    ins_12(StoneY_1392, 0);
+StoneY_1192:
+    ins_87([4.0f], [-9963.0f], [-9962.0f], [-9997.0f], [-9996.0f]);
+    ins_44([4.0f]);
+    ins_44([-9987.0f]);
+    ins_44(1.5707964f);
+    ins_55();
+    ins_51();
+    ins_404([-1.0f], 2.0f);
+    ins_445(60, 4, 0.0f);
+    ins_23(60);
+StoneY_1392:
+    ins_78([8]);
+    ins_14(StoneY_448, 0);
+StoneY_1436:
+    ins_505();
+    ins_401(300, 1, [-9997.0f], -64.0f);
+    ins_12(StoneY_1528, 0);
+StoneY_1508:
+    ins_23(1000);
+StoneY_1528:
+    ins_42(1);
+    ins_14(StoneY_1508, 0);
+    ins_1();
+}
+
+void et_ofs_r()
+{
+    ins_40(16);
+    ins_44([4.0f]);
+    ins_44([-9999.0f]);
+    ins_55();
+    ins_81([8.0f], [12.0f], [-9998.0f], [-1.0f]);
+    ins_603([0], [8.0f], [12.0f]);
+    ins_10();
+}
+
+void test()
+{
+    ins_40(8);
+!HL67
+    ins_44([4.0f]);
+    ins_84();
+    ins_44([-9996.0f]);
+    ins_42(40);
+    ins_53();
+    ins_44([-9997.0f]);
+    ins_42(16);
+    ins_51();
+    ins_87([0.0f], [-1.0f], [-2.0f], [-3.0f], 448.0f);
+!NHL67
+    ins_404([-9989.0f], 0.0f);
+    ins_44([-9989.0f]);
+    ins_44([-9987.0f]);
+    ins_44(0.5235988f);
+    ins_55();
+    ins_51();
+    ins_405(60, 0, [-1.0f], 2.0f);
+!E67
+    ins_44([-9981.0f]);
+    ins_44([-9987.0f]);
+    ins_44(0.5235988f);
+    ins_55();
+    ins_51();
+    ins_404([-1.0f], 0.0f);
+    ins_405(60, 0, -9999994.0f, 2.0f);
+!*
+    ins_10();
+}
+
+void test2()
+{
+    ins_40(8);
+    ins_10();
+}

@@ -1,0 +1,10 @@
+{
+  "status":"passed",
+  "checks":872,
+  "unique_members":283,
+  "decoded_bytes":151792802,
+  "manager_cpp_sha256":"e9be491caaa9fe3af7d7448503a793bbdc8d372faf10a45cbcb0479bdff3e35b",
+  "scope":"Source-owned manager lifecycle, all unique first-match archive members compared with independent extraction, case-insensitive names, original path quirk and explicit loose-only selection",
+  "original_exe_executed":false,
+  "limitations":["Manager ownership API replaces original stream/allocator ABI","Malformed archive failure behavior is defined by the source decoder, not original unchecked memory accesses"]
+}

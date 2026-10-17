@@ -1,0 +1,5 @@
+GameSession is actual source storage replacing original global `0x5ba568`, size `0x2c0`. Its static constructor is the recovered `0x401180 → 0x422e40`, including both `0x30` contexts, both `0xf0` player records and the `0x228` player table. The source preserves padding that the original constructors do not write.
+
+`session.hpp` exposes the actual shared flags, mode, context owners, player binding and clamped continue counter. Consumers must use these references instead of defining additional globals. Uninterpreted fields remain labeled by offset; their default constructor values come from the original instructions.
+
+`cpu_validation.json`: 14,337 original CPU comparisons plus five source alias checks pass. Coverage includes all constructor bytes with randomized initial padding, original global default storage, flag setters and signed-overflow wrapping before continue-count clamping. It does not prove the remaining gameplay code. `evidence/` is documentary disassembly, excluded from compilation.

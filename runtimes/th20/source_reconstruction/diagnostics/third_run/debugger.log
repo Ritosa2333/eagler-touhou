@@ -1,0 +1,37 @@
+source_pid=22108
+debug: HEAP[th20_source.exe]: 
+debug: HEAP: Free Heap block 23CF1730 modified at 23CF17BC after it was freed
+
+debug: Critical error detected c0000374
+
+unhandled exception=0xc0000374 at=77F1E62F thread=24912
+  parameter[0]=0x77f5c920
+  0x77f1e62f
+  0x77f1e62f
+  0x77f1e601
+  0x77f27863
+  0x77f2e192
+  0x77f25370
+  0x77e7fc54
+  0x77ec146d
+  0x77e7f7e6
+  0x77f171f8
+  0x77e7f926
+  0x77ec146d
+  0x77e7f7e6
+  0x4a6d2c
+  0x48d71a
+  0x53aa26
+  0x506aa8
+  0x5a544b
+  0x508a45
+  0x5a56c1
+  0x507dc2
+  0x53b2c0
+  0x4c6ba7
+  0x4c5ed6
+  0x47a709
+  0x77677ba9
+  0x77e9c3ab
+  0x77e9c32f
+exit_code=0xc0000374

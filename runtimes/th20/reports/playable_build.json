@@ -1,0 +1,132 @@
+{
+  "format": "incremental-native-reconstruction-v1",
+  "full_cpp_port": false,
+  "source_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "output_sha256": "c54f4c4f905e07ab4f0220f56a53784322c67f88fc2622d66de3e3bd68d0d6fe",
+  "bridge_sha256": "611fc3be4ef2de58db309f98bba580e45c6edc59a85ce84db87df75ac5795464",
+  "original_entry_rva": "0x1435e0",
+  "original_imports_preserved": 211,
+  "original_relocations_preserved": 29196,
+  "added_relocations": 7,
+  "new_section_rva": "0x1f9000",
+  "changed_bytes_within_original_file": 70,
+  "unchanged_original_bytes": 1858490,
+  "only_expected_headers_and_function_entries_changed": true,
+  "patches": [
+    {
+      "name": "th20_lcg_step",
+      "rva": "0x22cb0",
+      "iat_rva": "0x1f9150",
+      "original": "558bec83ec10",
+      "replacement": "ff2550915f00"
+    },
+    {
+      "name": "th20_lcg_next",
+      "rva": "0x235f0",
+      "iat_rva": "0x1f9154",
+      "original": "558bec51894d",
+      "replacement": "ff2554915f00"
+    },
+    {
+      "name": "th20_timer_reset",
+      "rva": "0x23f50",
+      "iat_rva": "0x1f9158",
+      "original": "558bec51894d",
+      "replacement": "ff2558915f00"
+    },
+    {
+      "name": "th20_timer_mode",
+      "rva": "0x23fe0",
+      "iat_rva": "0x1f915c",
+      "original": "558bec51894d",
+      "replacement": "ff255c915f00"
+    },
+    {
+      "name": "th20_timer_set",
+      "rva": "0x23f80",
+      "iat_rva": "0x1f9160",
+      "original": "558bec51894d",
+      "replacement": "ff2560915f00"
+    },
+    {
+      "name": "th20_timer_add",
+      "rva": "0x530f0",
+      "iat_rva": "0x1f9164",
+      "original": "558bec83ec18",
+      "replacement": "ff2564915f00"
+    },
+    {
+      "name": "th20_timer_tick",
+      "rva": "0x533b0",
+      "iat_rva": "0x1f9168",
+      "original": "558bec83ec18",
+      "replacement": "ff2568915f00"
+    }
+  ],
+  "preserved_engine_machine_code": true,
+  "starts_original_executable": false,
+  "structural_verification": "passed",
+  "package": [
+    {
+      "name": "th20_rebuilt.exe",
+      "size": 1921536,
+      "sha256": "c54f4c4f905e07ab4f0220f56a53784322c67f88fc2622d66de3e3bd68d0d6fe"
+    },
+    {
+      "name": "th20_native_bridge.dll",
+      "size": 72704,
+      "sha256": "611fc3be4ef2de58db309f98bba580e45c6edc59a85ce84db87df75ac5795464"
+    },
+    {
+      "name": "th20.dat",
+      "size": 150943726,
+      "sha256": "9db8d7c43fbacec95614163d4c3e1d254e82169f8550177ee849831130590494"
+    },
+    {
+      "name": "thbgm.dat",
+      "size": 429790784,
+      "sha256": "a067fe223e7c51c50c9fd5356c0521742762ce951f53ff99f8abbcc9b8e9cff0"
+    },
+    {
+      "name": "custom.exe",
+      "size": 141312,
+      "sha256": "261fb74f64b8a9908b128d30d59af64c59e2c37f6f917ee6646f4c3e42d50f33"
+    },
+    {
+      "name": "Play.cmd",
+      "size": 164,
+      "sha256": "87fc5c8168dc62fbe688dbe3820fe310ab7b74a933799ea264130cf0777b59b4"
+    },
+    {
+      "name": "Configure.cmd",
+      "size": 158,
+      "sha256": "cc9f1c3311a87619d8b4f9c2af683760ebd17504b592e89e8f57c263c1d5c467"
+    },
+    {
+      "name": "README.txt",
+      "size": 733,
+      "sha256": "9a6d6fafdad620b1e59efe457340af89a5f48dfc504922815275b4e1346fb976"
+    }
+  ],
+  "abi_validation": {
+    "report": "incremental\\native_bridge\\bridge_abi_validation.json",
+    "sha256": "9a4426492ca47f3b9881206ab7d1da009524d08a5dd05ad78faf6e674e654a93",
+    "comparisons": 100116,
+    "matched_shipped_dll": true
+  },
+  "cpp_source_snapshot": [
+    {
+      "path": "native_recovered\\native_core.hpp",
+      "sha256": "c146169dedd6f2d59b90962307f0ce4db991514116938d52b9f69f127c49902d"
+    },
+    {
+      "path": "incremental\\native_bridge\\bridge.cpp",
+      "sha256": "55f4855fb07d2db1a6846e06ccfa7af739f8056b33464d4ded76c0990e93a920"
+    },
+    {
+      "path": "incremental\\native_bridge\\bridge.hpp",
+      "sha256": "fd801ebff7f4be7e3af97963e71e5939df0a75aff189a8518fd55442e37f61f1"
+    }
+  ],
+  "source_snapshot_note": "Current source snapshot; build_playable.ps1 compiles this project before ABI validation and linking."
+}

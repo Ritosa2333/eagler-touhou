@@ -1,0 +1,16 @@
+{
+  "function_rows": 6928,
+  "pseudocode_success": 6928,
+  "nonexternal_failed": 0,
+  "failed_entries": [],
+  "export_complete_for_discovered_functions": true,
+  "pseudocode_bytes": 7299082,
+  "files_with_decompiler_warnings": 693,
+  "files_with_bad_or_unimplemented_data_markers": 0,
+  "source_diagnostic_references": 155,
+  "retained_source_paths_with_references": 80,
+  "source_references_with_function": 153,
+  "machine_code_validated_function_links": 7,
+  "missing_pseudocode_files": [],
+  "status": "Pseudocode exported for every discovered function. Automatic analysis can miss or misidentify functions. C-like pseudocode is not compilable C++ and not proof of gameplay equivalence."
+}

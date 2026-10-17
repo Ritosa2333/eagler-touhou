@@ -1,0 +1,157 @@
+{
+  "schema": "th20.cpp-thtk.crosscheck.v1",
+  "comparison": "Independent C++ parser versus thtk raw decompilation: ordered names and opcode IDs",
+  "file_count": 21,
+  "subroutine_count": 730.0,
+  "instruction_count": 23760.0,
+  "all_match": true,
+  "files": [
+    {
+      "file": "common.ecl",
+      "subroutine_count": 2,
+      "instruction_count": 76,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "default.ecl",
+      "subroutine_count": 55,
+      "instruction_count": 996,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st01.ecl",
+      "subroutine_count": 67,
+      "instruction_count": 1416,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st01bs.ecl",
+      "subroutine_count": 17,
+      "instruction_count": 837,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st01mbs.ecl",
+      "subroutine_count": 6,
+      "instruction_count": 215,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st02.ecl",
+      "subroutine_count": 75,
+      "instruction_count": 1835,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st02bs.ecl",
+      "subroutine_count": 17,
+      "instruction_count": 821,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st02mbs.ecl",
+      "subroutine_count": 6,
+      "instruction_count": 225,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st03.ecl",
+      "subroutine_count": 85,
+      "instruction_count": 1983,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st03bs.ecl",
+      "subroutine_count": 27,
+      "instruction_count": 1403,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st04.ecl",
+      "subroutine_count": 60,
+      "instruction_count": 1809,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st04bs.ecl",
+      "subroutine_count": 23,
+      "instruction_count": 1343,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st04mbs.ecl",
+      "subroutine_count": 12,
+      "instruction_count": 509,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st05.ecl",
+      "subroutine_count": 40,
+      "instruction_count": 879,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st05bs.ecl",
+      "subroutine_count": 24,
+      "instruction_count": 1249,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st05mbs.ecl",
+      "subroutine_count": 15,
+      "instruction_count": 568,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st06.ecl",
+      "subroutine_count": 45,
+      "instruction_count": 838,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st06bs.ecl",
+      "subroutine_count": 41,
+      "instruction_count": 2141,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st07.ecl",
+      "subroutine_count": 48,
+      "instruction_count": 1229,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st07bs.ecl",
+      "subroutine_count": 52,
+      "instruction_count": 2790,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    },
+    {
+      "file": "st07mbs.ecl",
+      "subroutine_count": 13,
+      "instruction_count": 598,
+      "ordered_subroutine_names_match": true,
+      "ordered_opcodes_match": true
+    }
+  ]
+}

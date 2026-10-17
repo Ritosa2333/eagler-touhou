@@ -1,0 +1,8 @@
+{
+  "status": "not_compared",
+  "group": "quiet NaN inputs to original CRT-backed sin/cos/sqrt wrappers",
+  "original_test_process_exit": "0xc0000005",
+  "observation": "Adding these cases faults the isolated mapped-image oracle before its report; removing only these cases permits the full suite to finish.",
+  "attribution": "Original CRT state/error handling was not initialized; the precise failing instruction was not traced, so this is a test limitation, not evidence of semantic equality or inequality.",
+  "source_only_followup": "source_tests.cpp checks new CRT NaN result classification. These checks are not original CPU comparisons."
+}

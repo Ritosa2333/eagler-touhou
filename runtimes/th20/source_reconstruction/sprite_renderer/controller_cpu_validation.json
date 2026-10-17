@@ -1,0 +1,11 @@
+{
+"status":"passed",
+"checks":14,
+"failed":0,
+"controller_bytes":131337876,
+"controller_cpp_sha256":"e554efb1802ce6f0b3190901e5b3e9f329c7590c23f080fd52028921528415df",
+"scope":"Unmodified original447e00 full constructor and449260 destructor versus source; zero and A5 object/global inputs, exact whole-object bytes,52 scheduler registrations, SetVertexShader(null), empty/32 active pooled-animation teardown",
+"limitations":["No active scripts or callbacks are dispatched","No active worker/geometry destruction in this report"],
+"failure_examples":[],
+"source_hashes":{"controller.cpp":"e554efb1802ce6f0b3190901e5b3e9f329c7590c23f080fd52028921528415df","controller.hpp":"09469d82754b362a867813561b627796f5435b341256b9a4987280a7b03d3f57","controller_callbacks.inc":"7f83770249eb28d7bc942bffe6b81dedb624dd67af45b35485fa7e327dc22713","sprite.hpp":"dd1fc730234fccf9ec8281e671113bbece0070960ea489d28b4ee4265685c920","controller_cpu_compare.cpp":"b69f58933ba3e66798e0cb406e5a72f8a1a3aabe4dbd5da20d4d1c7f2a86d596","animation.cpp":"5344cd68c179add4bd9deea6e146896433693170841cd6ebbe88bb3ded5f063a","animation.hpp":"910482cefa2da6a09296b5eb889984e9a55e74dba5d64ffb9462930e46b3a002","pool.cpp":"1f30dbc6543812f0088648225c616a79be567c110ac31dcfbdbde3828879cb08","pool.hpp":"ed906e6692a87504e61d54e5dfcc9ee2c82894b2db9e99c527ae08ef18456981","buffers.cpp":"36e7a5d3f482689efc31f30a6d2d1abe3f6a4d2d952846cb01fa17398079b8b7","../runtime_core/worker.cpp":"dd31126ed1ff9505e7a175bae802f2337f0df0f5335879a9f5d4dbaac83cafdf","../runtime_core/worker.hpp":"f9501687a4ca7b19f6bb757b3be5e350885be54c8edc1479279e75e5d840f667","../core_scheduler/scheduler.cpp":"2cd241acce16c15991b528516f66da75a08df72f1f99a1b32e1333f5ef8e405e","../core_scheduler/scheduler.hpp":"105099fe7356e7bb28188c9e110fa6525cba2b0812431a3e7203133bf147a20a"}
+}

@@ -1,0 +1,64 @@
+{
+  "status": "passed",
+  "scope": "Seven isolated recovered routines, not complete gameplay; default SSE/x87 environment only",
+  "time_utc": "2026-09-14T12:33:05.805937+00:00",
+  "source_exe": "E:\\BaiduNetdiskDownload\\PCGAME-Touhou.Kinjoukyou.Fossilized.Wonders-P2P\\Touhou.Kinjoukyou.Fossilized.Wonders\\th20.exe",
+  "source_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "dll": "D:\\AIWorkspace\\Touhou20Reconstruction\\build\\native_recovered\\Release\\th20_native_recovered.dll",
+  "dll_sha256": "0c3fef35899dad0899e9cd3317a4d0e7e106d49229cf7fc04236a51683843f42",
+  "emulator": "Unicorn x86-32, actual PE machine instructions; no instruction replacement/hooks",
+  "fp_environment": {
+    "mxcsr_initial_control": "0x1f80",
+    "host_saved_mxcsr": "0x1fa0",
+    "status_flags_compared": false,
+    "host_restored_on_exit": true
+  },
+  "comparisons": {
+    "lcg_step": 10008,
+    "lcg_next": 10008,
+    "timer_reset": 256,
+    "timer_mode": 1536,
+    "timer_set": 2048,
+    "timer_add": 12288,
+    "timer_tick": 3072
+  },
+  "total": 39216,
+  "failures": [],
+  "evidence": {
+    "lcg_step": {
+      "va": "0x422cb0",
+      "end_exclusive": "0x422d35",
+      "machine_code_sha256": "2b8ad32862e3264553c576da676f0088b59cd8c2efa8b9f6663ebc15391e92d8"
+    },
+    "lcg_next": {
+      "va": "0x4235f0",
+      "end_exclusive": "0x423613",
+      "machine_code_sha256": "c8cd0b83a17587f3b4c339ad5db7778ba12acea24cd8888294ab1b3c3436e2a4"
+    },
+    "timer_reset": {
+      "va": "0x423f50",
+      "end_exclusive": "0x423f79",
+      "machine_code_sha256": "cefb177a3de925c8da8e2664832901bef75cad7679b89f9cb6af0ee12e797136"
+    },
+    "timer_mode": {
+      "va": "0x423fe0",
+      "end_exclusive": "0x424006",
+      "machine_code_sha256": "9cbac2a0d0146a643a283f43b801f77aa7d029b818647f32580e0669361a100e"
+    },
+    "timer_set": {
+      "va": "0x423f80",
+      "end_exclusive": "0x423fda",
+      "machine_code_sha256": "cc1769ae0726d8785630ac934080d199b656e0ba048a7f68eb86f51baa1e4b92"
+    },
+    "timer_add": {
+      "va": "0x4530f0",
+      "end_exclusive": "0x453217",
+      "machine_code_sha256": "2e3d44e080f495eead43f25795dafa04ac7e2e2237ff4d245811090e79d290d4"
+    },
+    "timer_tick": {
+      "va": "0x4533b0",
+      "end_exclusive": "0x4534f4",
+      "machine_code_sha256": "28f74fb15e395fb351401951912f9dcd6ac7a31fb4f50904d75657f66ac5447f"
+    }
+  }
+}

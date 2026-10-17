@@ -1,0 +1,50 @@
+entry entry0 {
+    version: 8,
+    name: "ending/ebg06.png",
+    filename: "ending/ebg06@ebg06@0.png",
+    format: 1,
+    width: 2048,
+    height: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 70,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1280,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite0: { x: 0, y: 0, w: 1280, h: 960 }
+    }
+}
+
+script -4 script0 {
+    ins_300(sprite0);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+script script1 {
+    ins_304(30);
+    ins_313(2);
+    ins_500(script0);
++60: // 60
+    ins_3();
+    ins_5(1);
++60: // 120
+    ins_1();
+}
+
+

@@ -1,0 +1,20 @@
+{
+  "directory": "C:\\Users\\oracat\\AppData\\Roaming\\ShanghaiAlice\\th20",
+  "files": [
+    {
+      "path": "scoreth20.dat",
+      "size": 81738,
+      "sha256": "631f297830b4bfe2af9ce76e1835ae5c965ba4735169c3079c11ce2ca22bbdd3"
+    },
+    {
+      "path": "scoreth20bak.dat",
+      "size": 81738,
+      "sha256": "631f297830b4bfe2af9ce76e1835ae5c965ba4735169c3079c11ce2ca22bbdd3"
+    },
+    {
+      "path": "th20.cfg",
+      "size": 176,
+      "sha256": "22196dc830f5d6fe74e0501e3fb17518a83d310965b92b94655458c5708cea8d"
+    }
+  ]
+}

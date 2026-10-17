@@ -1,0 +1,20 @@
+{
+  "status": "compiled_source_module",
+  "full_game_equivalence": false,
+  "original_va": [
+    "0x00450c70",
+    "0x00450cb0",
+    "0x00446de0",
+    "0x0040c6b0",
+    "0x0044c8a0",
+    "0x0044c8c0",
+    "0x00449490"
+  ],
+  "source_hashes": {
+    "source_reconstruction/sprite_renderer/named_spawn.hpp": "4f1f115a0dedf04075916c3843265d461148e112d6f59f5051b257edf7a0dde1",
+    "source_reconstruction/sprite_renderer/named_spawn.cpp": "c41a41f9e210294486f6622be0585353e0cc886eaad977ba4c27640e7e5cefd9",
+    "source_reconstruction/startup_scene/named_spawn_tests/compare.cpp": "6609fe4c49cc99319f2acbf1d5ab0816a2cb3cfe05005af7745f272521b78d55",
+    "source_reconstruction/startup_scene/named_spawn_tests/CMakeLists.txt": "c64932d34f715bce81b07eb62d21899f2b8e61bc7aa487751d8345fb15d91411"
+  },
+  "cpu_validation": "cpu_validation.json"
+}

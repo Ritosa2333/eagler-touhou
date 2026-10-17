@@ -1,0 +1,1208 @@
+{
+  "source_executable_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "scope": "All 6928 entries discovered by the existing Ghidra analysis; missed or misidentified functions may exist.",
+  "inventory_entries": 6928,
+  "combined_file_entries": 6928,
+  "unique_combined_entries": 6928,
+  "missing_from_combined": [],
+  "extra_combined_entries": [],
+  "missing_pseudocode_files": [],
+  "orphan_pseudocode_files": [],
+  "ghidra_defined_machine_bytes_union": 1357144,
+  "original_text_virtual_size": 1483899,
+  "roles": {
+    "unclassified_application_or_library": 6308,
+    "possible_crt_stl_or_library_function": 396,
+    "recovered_algorithm_with_new_cpp_api": 7,
+    "game_or_engine_source_diagnostic": 117,
+    "partial_recovered_scheduler_composition": 8,
+    "recovered_scheduler_library_component": 29,
+    "compiled_field_or_com_operation": 9,
+    "partial_recovered_control_flow": 4,
+    "compiled_inline_or_helper_coverage": 2,
+    "recovered_engine_component": 7,
+    "verified_import_jump_thunk": 31,
+    "internal_or_unresolved_thunk": 10
+  },
+  "recovery_status_counts": {
+    "pseudocode_only_not_recovered_cpp": 6862,
+    "compiled_algorithm_recovery_resource_validated": 7,
+    "compiled_scheduler_partial_or_composed": 8,
+    "compiled_scheduler_component_cpu_validated": 29,
+    "compiled_field_or_com_operation_unvalidated": 9,
+    "compiled_control_flow_with_unrecovered_dependencies": 4,
+    "compiled_inline_or_helper_coverage_unvalidated": 2,
+    "validated_compilable_cpp_component": 7
+  },
+  "build_integration_status_counts": {
+    "not_compiled_from_recovered_cpp": 6862,
+    "compiled_but_unlinked": 59,
+    "linked_to_retained_original_engine_only": 7
+  },
+  "recovered_module_registry": [
+    {
+      "module_id": "archive",
+      "registered_original_address_mappings": 7,
+      "recovery_status_counts": {
+        "compiled_algorithm_recovery_resource_validated": 7
+      },
+      "build_integration_status_counts": {
+        "compiled_but_unlinked": 7
+      },
+      "complete_original_function_equivalence_claimed": false,
+      "source_binding_current": true
+    },
+    {
+      "module_id": "core_scheduler",
+      "registered_original_address_mappings": 37,
+      "recovery_status_counts": {
+        "compiled_scheduler_partial_or_composed": 8,
+        "compiled_scheduler_component_cpu_validated": 29
+      },
+      "build_integration_status_counts": {
+        "compiled_but_unlinked": 37
+      },
+      "complete_original_function_equivalence_claimed": false,
+      "source_binding_current": true
+    },
+    {
+      "module_id": "native_core",
+      "registered_original_address_mappings": 7,
+      "recovery_status_counts": {
+        "validated_compilable_cpp_component": 7
+      },
+      "build_integration_status_counts": {
+        "linked_to_retained_original_engine_only": 7
+      },
+      "complete_original_function_equivalence_claimed": false,
+      "source_binding_current": true
+    },
+    {
+      "module_id": "program_entry",
+      "registered_original_address_mappings": 15,
+      "recovery_status_counts": {
+        "compiled_field_or_com_operation_unvalidated": 9,
+        "compiled_control_flow_with_unrecovered_dependencies": 4,
+        "compiled_inline_or_helper_coverage_unvalidated": 2
+      },
+      "build_integration_status_counts": {
+        "compiled_but_unlinked": 15
+      },
+      "complete_original_function_equivalence_claimed": false,
+      "source_binding_current": true
+    }
+  ],
+  "registry_issues": [],
+  "complete_independent_game_executable_available": false,
+  "ghidra_fid_conflict_names": 75,
+  "native_core_evidence": {
+    "source_sha256": "c146169dedd6f2d59b90962307f0ce4db991514116938d52b9f69f127c49902d",
+    "cpu_validation_matches_current_source": true
+  },
+  "additional_recovery_registry": "source_reconstruction/audit/additional_recoveries.json",
+  "registered_entries_not_in_ghidra": [],
+  "validated_component_entries": [
+    "0x00422cb0",
+    "0x004235f0",
+    "0x00423f50",
+    "0x00423f80",
+    "0x00423fe0",
+    "0x004530f0",
+    "0x004533b0"
+  ],
+  "independent_algorithm_recovery_entries": [
+    "0x004100e0",
+    "0x00456270",
+    "0x005391f0",
+    "0x00539ed0",
+    "0x0053a210",
+    "0x0053a350",
+    "0x0053a3c0"
+  ],
+  "scheduler_component_cpu_covered_entries": [
+    "0x00411970",
+    "0x004119b0",
+    "0x00411a70",
+    "0x00411b00",
+    "0x00411b80",
+    "0x00411c30",
+    "0x00411ce0",
+    "0x00411d20",
+    "0x00411d50",
+    "0x00411e30",
+    "0x00411e70",
+    "0x00411ea0",
+    "0x00411ee0",
+    "0x00411f30",
+    "0x00411f80",
+    "0x00412100",
+    "0x00412400",
+    "0x004127f0",
+    "0x00412810",
+    "0x00412aa0",
+    "0x00412d10",
+    "0x00412d30",
+    "0x00412d50",
+    "0x00412d80",
+    "0x00412da0",
+    "0x00412dc0",
+    "0x00418a10",
+    "0x00418a50",
+    "0x00418a80"
+  ],
+  "partial_or_composed_scheduler_entries": [
+    "0x00411910",
+    "0x004122c0",
+    "0x00412310",
+    "0x00412360",
+    "0x004123b0",
+    "0x004124b0",
+    "0x004125b0",
+    "0x004127b0"
+  ],
+  "control_flow_compilation_only_entries": [
+    "0x00419c20",
+    "0x00419de0",
+    "0x0041a030",
+    "0x0041e7d0"
+  ],
+  "field_or_com_compilation_only_entries": [
+    "0x00412730",
+    "0x00415800",
+    "0x0041a200",
+    "0x0041a240",
+    "0x0041cc70",
+    "0x0041d080",
+    "0x0041dcc0",
+    "0x0041de00",
+    "0x0041de30"
+  ],
+  "inline_or_helper_compilation_only_entries": [
+    "0x0041b480",
+    "0x0041b490"
+  ],
+  "recovered_component_machine_bytes_union": 956,
+  "warning_files": 693,
+  "warning_occurrences": 890,
+  "common_warnings": [
+    {
+      "warning": "Load size is inaccurate",
+      "count": 330
+    },
+    {
+      "warning": "Globals starting with '_' overlap smaller symbols at the same address",
+      "count": 233
+    },
+    {
+      "warning": "Subroutine does not return",
+      "count": 85
+    },
+    {
+      "warning": "Treating indirect jump as call",
+      "count": 44
+    },
+    {
+      "warning": "Function: __SEH_prolog4 replaced with injection: SEH_prolog4",
+      "count": 43
+    },
+    {
+      "warning": "Type propagation algorithm not settling",
+      "count": 13
+    },
+    {
+      "warning": "Function: __alloca_probe replaced with injection: alloca_probe",
+      "count": 10
+    },
+    {
+      "warning": "This is an inlined function",
+      "count": 8
+    },
+    {
+      "warning": "Function: __EH_epilog3 replaced with injection: EH_epilog3",
+      "count": 7
+    },
+    {
+      "warning": "Unable to track spacebase fully for stack",
+      "count": 7
+    },
+    {
+      "warning": "Function: __EH_prolog3 replaced with injection: EH_prolog3",
+      "count": 6
+    },
+    {
+      "warning": "Function: __alloca_probe_16 replaced with injection: alloca_probe",
+      "count": 4
+    },
+    {
+      "warning": "Variable defined which should be unmapped: param_1",
+      "count": 3
+    },
+    {
+      "warning": "Ignoring partial resolution of indirect",
+      "count": 2
+    },
+    {
+      "warning": "Variable defined which should be unmapped: param_2",
+      "count": 2
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x00415e89)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x00415da1)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x00446f76)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x00450ee4)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x0045b8eb)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x004d2f30)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x004f023b)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x004f0c3f)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x004f16b1)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x004f602d)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x004f665b)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x004f6c9c)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x0050a25e)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x0051c1ff)",
+      "count": 1
+    },
+    {
+      "warning": "Removing unreachable block (ram,0x0051cb3f)",
+      "count": 1
+    }
+  ],
+  "lexical_markers": {
+    "undefined_width_type": {
+      "functions": 4685,
+      "occurrences": 25541,
+      "distinct_identifiers": 7,
+      "most_common_identifiers": [
+        [
+          "undefined4",
+          20445
+        ],
+        [
+          "undefined1",
+          3706
+        ],
+        [
+          "undefined",
+          470
+        ],
+        [
+          "undefined8",
+          398
+        ],
+        [
+          "undefined2",
+          271
+        ],
+        [
+          "undefined3",
+          249
+        ],
+        [
+          "undefined6",
+          2
+        ]
+      ]
+    },
+    "extended_float_type": {
+      "functions": 429,
+      "occurrences": 1167,
+      "distinct_identifiers": 1,
+      "most_common_identifiers": [
+        [
+          "float10",
+          1167
+        ]
+      ]
+    },
+    "width_or_vector_type": {
+      "functions": 2548,
+      "occurrences": 17033,
+      "distinct_identifiers": 8,
+      "most_common_identifiers": [
+        [
+          "uint",
+          13316
+        ],
+        [
+          "byte",
+          1728
+        ],
+        [
+          "ushort",
+          1192
+        ],
+        [
+          "ulonglong",
+          615
+        ],
+        [
+          "longlong",
+          88
+        ],
+        [
+          "int3",
+          72
+        ],
+        [
+          "uint3",
+          14
+        ],
+        [
+          "unkbyte10",
+          8
+        ]
+      ]
+    },
+    "ghidra_code_type": {
+      "functions": 393,
+      "occurrences": 1166,
+      "distinct_identifiers": 1,
+      "most_common_identifiers": [
+        [
+          "code",
+          1166
+        ]
+      ]
+    },
+    "generated_global": {
+      "functions": 1856,
+      "occurrences": 15502,
+      "distinct_identifiers": 4938,
+      "most_common_identifiers": [
+        [
+          "DAT_005b25c0",
+          957
+        ],
+        [
+          "DAT_0056c8d0",
+          660
+        ],
+        [
+          "DAT_0056c8cc",
+          573
+        ],
+        [
+          "DAT_005c0698",
+          564
+        ],
+        [
+          "DAT_005b889c",
+          430
+        ],
+        [
+          "DAT_005c0028",
+          334
+        ],
+        [
+          "DAT_005ba830",
+          224
+        ],
+        [
+          "DAT_005c6108",
+          203
+        ],
+        [
+          "DAT_0056e0f0",
+          194
+        ],
+        [
+          "DAT_0056cd90",
+          160
+        ],
+        [
+          "DAT_005ba568",
+          159
+        ],
+        [
+          "DAT_005c0240",
+          145
+        ],
+        [
+          "DAT_005ba828",
+          136
+        ],
+        [
+          "DAT_005b8818",
+          127
+        ],
+        [
+          "_DAT_0056d7d0",
+          122
+        ],
+        [
+          "DAT_005c4d40",
+          116
+        ],
+        [
+          "DAT_005b6758",
+          112
+        ],
+        [
+          "DAT_0056cdd0",
+          101
+        ],
+        [
+          "DAT_005aefe4",
+          89
+        ],
+        [
+          "DAT_0056e0ec",
+          87
+        ]
+      ]
+    },
+    "unresolved_register_value": {
+      "functions": 1150,
+      "occurrences": 4905,
+      "distinct_identifiers": 113,
+      "most_common_identifiers": [
+        [
+          "unaff_FS_OFFSET",
+          3054
+        ],
+        [
+          "extraout_var",
+          286
+        ],
+        [
+          "unaff_EBP",
+          172
+        ],
+        [
+          "in_EAX",
+          103
+        ],
+        [
+          "extraout_ECX",
+          97
+        ],
+        [
+          "extraout_var_00",
+          75
+        ],
+        [
+          "in_ST0",
+          64
+        ],
+        [
+          "in_FPUStatusWord",
+          63
+        ],
+        [
+          "unaff_retaddr",
+          55
+        ],
+        [
+          "in_FPUControlWord",
+          53
+        ],
+        [
+          "unaff_ESI",
+          48
+        ],
+        [
+          "extraout_EDX",
+          43
+        ],
+        [
+          "extraout_ECX_00",
+          42
+        ],
+        [
+          "extraout_EAX",
+          39
+        ],
+        [
+          "in_XMM0_Qa",
+          38
+        ],
+        [
+          "extraout_var_01",
+          38
+        ],
+        [
+          "extraout_ST0",
+          34
+        ],
+        [
+          "unaff_EDI",
+          31
+        ],
+        [
+          "in_stack_00000020",
+          31
+        ],
+        [
+          "in_stack_0000001c",
+          28
+        ]
+      ]
+    },
+    "concat_subpiece_helper": {
+      "functions": 376,
+      "occurrences": 1218,
+      "distinct_identifiers": 26,
+      "most_common_identifiers": [
+        [
+          "CONCAT31(",
+          371
+        ],
+        [
+          "SUB161(",
+          194
+        ],
+        [
+          "CONCAT44(",
+          184
+        ],
+        [
+          "SUB321(",
+          161
+        ],
+        [
+          "ZEXT48(",
+          67
+        ],
+        [
+          "SUB84(",
+          43
+        ],
+        [
+          "CONCAT11(",
+          42
+        ],
+        [
+          "CONCAT22(",
+          41
+        ],
+        [
+          "SUB41(",
+          24
+        ],
+        [
+          "CONCAT13(",
+          19
+        ],
+        [
+          "CONCAT12(",
+          16
+        ],
+        [
+          "ZEXT216(",
+          9
+        ],
+        [
+          "ZEXT816(",
+          7
+        ],
+        [
+          "ZEXT416(",
+          6
+        ],
+        [
+          "CONCAT26(",
+          6
+        ],
+        [
+          "CONCAT24(",
+          4
+        ],
+        [
+          "SUB82(",
+          4
+        ],
+        [
+          "SUB6432(",
+          3
+        ],
+        [
+          "ZEXT1664(",
+          3
+        ],
+        [
+          "CONCAT14(",
+          3
+        ]
+      ]
+    },
+    "partial_variable_access": {
+      "functions": 128,
+      "occurrences": 878,
+      "distinct_identifiers": 224,
+      "most_common_identifiers": [
+        [
+          "local_8._0_1_",
+          120
+        ],
+        [
+          "local_8._1_3_",
+          62
+        ],
+        [
+          "local_60._4_4_",
+          52
+        ],
+        [
+          "param_3._4_4_",
+          27
+        ],
+        [
+          "local_c._1_1_",
+          25
+        ],
+        [
+          "local_c._2_1_",
+          24
+        ],
+        [
+          "local_c._3_1_",
+          23
+        ],
+        [
+          "local_c._0_2_",
+          17
+        ],
+        [
+          "local_60._0_4_",
+          14
+        ],
+        [
+          "local_10._2_1_",
+          13
+        ],
+        [
+          "local_10._1_1_",
+          13
+        ],
+        [
+          "param_1._4_4_",
+          13
+        ],
+        [
+          "local_10._3_1_",
+          12
+        ],
+        [
+          "local_c._1_3_",
+          11
+        ],
+        [
+          "local_28._4_4_",
+          11
+        ],
+        [
+          "local_30._4_4_",
+          11
+        ],
+        [
+          "local_14._1_3_",
+          10
+        ],
+        [
+          "local_14._0_1_",
+          9
+        ],
+        [
+          "local_24._4_4_",
+          9
+        ],
+        [
+          "local_1c._4_4_",
+          9
+        ]
+      ]
+    },
+    "synthetic_stack_symbol": {
+      "functions": 1014,
+      "occurrences": 2187,
+      "distinct_identifiers": 62,
+      "most_common_identifiers": [
+        [
+          "stack0xfffffffc",
+          1680
+        ],
+        [
+          "stack0x00000008",
+          100
+        ],
+        [
+          "stack0x00000004",
+          89
+        ],
+        [
+          "stack0xfffffff0",
+          63
+        ],
+        [
+          "stack0x0000000c",
+          50
+        ],
+        [
+          "stack0x00000010",
+          27
+        ],
+        [
+          "stack0x00000018",
+          12
+        ],
+        [
+          "stack0xfffffee8",
+          11
+        ],
+        [
+          "stack0x00000014",
+          9
+        ],
+        [
+          "stack0xffffffe0",
+          8
+        ],
+        [
+          "stack0x00000000",
+          8
+        ],
+        [
+          "stack0xffffffe8",
+          7
+        ],
+        [
+          "stack0xffffff48",
+          7
+        ],
+        [
+          "stack0xfffffe8c",
+          6
+        ],
+        [
+          "stack0xffffffb8",
+          5
+        ],
+        [
+          "stack0xfffffe80",
+          5
+        ],
+        [
+          "stack0x00000024",
+          4
+        ],
+        [
+          "stack0x00000034",
+          4
+        ],
+        [
+          "stack0xfffffee0",
+          4
+        ],
+        [
+          "stack0xffffffbc",
+          4
+        ]
+      ]
+    },
+    "global_label_address": {
+      "functions": 1013,
+      "occurrences": 2835,
+      "distinct_identifiers": 1019,
+      "most_common_identifiers": [
+        [
+          "LAB_00567600",
+          148
+        ],
+        [
+          "LAB_00567750",
+          62
+        ],
+        [
+          "LAB_00567c8d",
+          54
+        ],
+        [
+          "LAB_0053df44",
+          32
+        ],
+        [
+          "LAB_005679a0",
+          27
+        ],
+        [
+          "LAB_0056808d",
+          19
+        ],
+        [
+          "LAB_0047dd36",
+          19
+        ],
+        [
+          "LAB_005507c7",
+          18
+        ],
+        [
+          "LAB_0054b278",
+          17
+        ],
+        [
+          "LAB_0054addd",
+          17
+        ],
+        [
+          "LAB_0054b091",
+          17
+        ],
+        [
+          "LAB_0054bd2d",
+          17
+        ],
+        [
+          "LAB_0054f5e5",
+          17
+        ],
+        [
+          "LAB_005509c3",
+          17
+        ],
+        [
+          "LAB_00550f52",
+          17
+        ],
+        [
+          "LAB_004a03c1",
+          13
+        ],
+        [
+          "LAB_005674f0",
+          12
+        ],
+        [
+          "LAB_00434d6a",
+          12
+        ],
+        [
+          "LAB_004d149f",
+          12
+        ],
+        [
+          "LAB_0056863d",
+          11
+        ]
+      ]
+    },
+    "encoded_template_type": {
+      "functions": 823,
+      "occurrences": 7498,
+      "distinct_identifiers": 31,
+      "most_common_identifiers": [
+        [
+          "class_std::_Facet_base",
+          3992
+        ],
+        [
+          "struct_std::default_delete",
+          1761
+        ],
+        [
+          "struct_std::char_traits",
+          233
+        ],
+        [
+          "struct__EXCEPTION_RECORD_const_",
+          175
+        ],
+        [
+          "class_Concurrency::ordered_message_processor",
+          146
+        ],
+        [
+          "class__protected:_void___thiscall_Concurrency::target_block",
+          144
+        ],
+        [
+          "class_Concurrency::multi_link_registry",
+          144
+        ],
+        [
+          "class_Concurrency::ISource",
+          144
+        ],
+        [
+          "class_Concurrency::Scheduler",
+          144
+        ],
+        [
+          "class_Concurrency::ScheduleGroup",
+          144
+        ],
+        [
+          "class_std::allocator",
+          140
+        ],
+        [
+          "class_Concurrency::message",
+          72
+        ],
+        [
+          "class___crt_stdio_input::string_input_adapter",
+          52
+        ],
+        [
+          "class___ExceptionPtr",
+          36
+        ],
+        [
+          "struct_std::_Container_proxy",
+          32
+        ],
+        [
+          "struct_std::_Simple_types",
+          29
+        ],
+        [
+          "class_std::_DebugHeapAllocator",
+          23
+        ],
+        [
+          "struct___crt_win32_buffer_internal_dynamic_resizing",
+          23
+        ],
+        [
+          "class_std::_String_val",
+          15
+        ],
+        [
+          "enum_Concurrency::agent_status_const",
+          11
+        ]
+      ]
+    },
+    "fid_conflict_symbol": {
+      "functions": 0,
+      "occurrences": 0,
+      "distinct_identifiers": 0,
+      "most_common_identifiers": []
+    },
+    "bad_or_unimplemented_marker": {
+      "functions": 0,
+      "occurrences": 0,
+      "distinct_identifiers": 0,
+      "most_common_identifiers": []
+    }
+  },
+  "functions_with_unresolved_indirect_calls": 344,
+  "unresolved_indirect_machine_call_sites": 892,
+  "call_sites_not_owned_by_discovered_function": 2027,
+  "module_inventory": [
+    {
+      "directory": "native_recovered",
+      "role": "manually_recovered_game_components",
+      "files": [
+        {
+          "path": "native_recovered/native_core.hpp",
+          "sha256": "c146169dedd6f2d59b90962307f0ce4db991514116938d52b9f69f127c49902d",
+          "lines": 92
+        },
+        {
+          "path": "native_recovered/native_exports.cpp",
+          "sha256": "b5e855884475157c41c3608e1729749602dcb05e13483a07a24a34c252c4d6e4",
+          "lines": 23
+        }
+      ]
+    },
+    {
+      "directory": "src",
+      "role": "new_analysis_parsers_not_recovered_runtime",
+      "files": [
+        {
+          "path": "src/binary.cpp",
+          "sha256": "5741685dd32dd6235f134a43c60cf466d0e6f7a8ff34754242ab67e1d798eb06",
+          "lines": 82
+        },
+        {
+          "path": "src/ecl.cpp",
+          "sha256": "e981e68dd46cd63976c3f3150742fd0062ed47a361e2ec3d77d5940d1e57af8d",
+          "lines": 168
+        },
+        {
+          "path": "src/main.cpp",
+          "sha256": "5190c9ec670d340ce60194a2290a030e8baa8ab6825a34c420b95faa40ee136a",
+          "lines": 98
+        },
+        {
+          "path": "src/pe.cpp",
+          "sha256": "36730088f9b1cb5803d8907cd8dd53ddf503b51ee94d08762e10adf2b3c62155",
+          "lines": 135
+        }
+      ]
+    },
+    {
+      "directory": "incremental/native_bridge",
+      "role": "abi_adapters_for_retained_original_engine",
+      "files": [
+        {
+          "path": "incremental/native_bridge/abi_check.cpp",
+          "sha256": "350f3ec22bc8e2c3b27eb5706717065f32500f7192608429b5bcc3252b56b1d6",
+          "lines": 239
+        },
+        {
+          "path": "incremental/native_bridge/bridge.cpp",
+          "sha256": "55f4855fb07d2db1a6846e06ccfa7af739f8056b33464d4ded76c0990e93a920",
+          "lines": 70
+        },
+        {
+          "path": "incremental/native_bridge/bridge.hpp",
+          "sha256": "fd801ebff7f4be7e3af97963e71e5939df0a75aff189a8518fd55442e37f61f1",
+          "lines": 17
+        }
+      ]
+    },
+    {
+      "directory": "source_reconstruction",
+      "role": "ongoing_source_reconstruction_requires_explicit_evidence",
+      "files": [
+        {
+          "path": "source_reconstruction/archive/archive.cpp",
+          "sha256": "fa62d990dc6c99c7cf1580767fe4b4736fd1b08ffd2054699ecdf99caad7dc83",
+          "lines": 188
+        },
+        {
+          "path": "source_reconstruction/archive/archive.hpp",
+          "sha256": "0bcfaa4365c70e8e507fc1287283c471b582d8196e9f7fa2ba80dca6c7d30dbc",
+          "lines": 56
+        },
+        {
+          "path": "source_reconstruction/archive/archive_tests.cpp",
+          "sha256": "7a6fca32cb80084dd970a720a54d636ae52523b9e16083d79efe54c1c422740a",
+          "lines": 76
+        },
+        {
+          "path": "source_reconstruction/archive/verify.cpp",
+          "sha256": "035ed9f8376edcbfdcf57c185396702ddc4711266d8dffbcd0ef3ac6aefb99cd",
+          "lines": 83
+        },
+        {
+          "path": "source_reconstruction/core_scheduler/cpu_compare.cpp",
+          "sha256": "eefc61e6ed73d9c4c27a059616f61c93bc99d6a5c9383ceddad0a79934676125",
+          "lines": 250
+        },
+        {
+          "path": "source_reconstruction/core_scheduler/scheduler.cpp",
+          "sha256": "4e15ced69b8dd16d6df6733f4465f9a8616c56035fdbe979a71c642ba49c936b",
+          "lines": 188
+        },
+        {
+          "path": "source_reconstruction/core_scheduler/scheduler.hpp",
+          "sha256": "a172323518586d43140a4f4db9be8e0bafb0b9e257bb01bd7a97d3fde3ac3e36",
+          "lines": 97
+        },
+        {
+          "path": "source_reconstruction/program_entry/frame_schedulers.cpp",
+          "sha256": "aaa3f2ae2c045666f3937dec82044d0dc966c7e0a2b3823cc09eb1a27b1b34c6",
+          "lines": 111
+        },
+        {
+          "path": "source_reconstruction/program_entry/program_entry.cpp",
+          "sha256": "3785701377180fe38c18db5f11b375eb341cee8f63c0ec32fc8cc9c43e6a6351",
+          "lines": 233
+        },
+        {
+          "path": "source_reconstruction/program_entry/program_entry.hpp",
+          "sha256": "4cfcd1be0fd5a060622c1d84690e17654d5f5659b4c04c5c0dee16c3a8327a31",
+          "lines": 135
+        },
+        {
+          "path": "source_reconstruction/program_entry/text_constants.hpp",
+          "sha256": "9d72a64c0c201f11edd6bccfbbdd5b988fc3d649be06b9702ee403e6488111c2",
+          "lines": 10
+        },
+        {
+          "path": "source_reconstruction/program_entry/unrecovered_dependencies.hpp",
+          "sha256": "c2e106af18f421cf3a81cc8ec934656cce34a3b0f4ef7610d3976ea433881c9f",
+          "lines": 62
+        },
+        {
+          "path": "source_reconstruction/program_entry/winmain.cpp",
+          "sha256": "844c133430fd4f18824ea31fd70ddce8b415911db287f25614c6348266c9583d",
+          "lines": 9
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Function and byte counts are inventory measures, not a percentage of game completion.",
+    "compiled_but_unlinked means a standalone library was compiled but is not linked into a complete independently rebuilt game.",
+    "Address mappings, algorithm tests, scoped original-CPU comparisons and original function ABI equivalence are separate claims; none establishes full-game equivalence.",
+    "Retained source paths are diagnostic strings, not recovered source files.",
+    "Library candidate classification can be wrong; Ghidra FID names are not authoritative.",
+    "Call-site evidence uses existing linear disassembly inside discovered function ranges; original analysis can misidentify data as code.",
+    "Lexical unknown-type markers can overcount aliases, and do not enumerate every semantic problem.",
+    "Analysis parsers, original machine-code bridges and script DSL exports are not complete C++ engine recovery."
+  ],
+  "raw_pseudocode_compile_probe": {
+    "command": [
+      "D:\\VS2019\\IDE\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x86\\cl.exe",
+      "/nologo",
+      "/TP",
+      "/std:c++17",
+      "/Zs",
+      "/utf-8",
+      "/diagnostics:column",
+      "D:\\AIWorkspace\\Touhou20Reconstruction\\source_reconstruction\\audit\\compile_probe\\th20_pseudocode_unmodified.cpp"
+    ],
+    "compiler": "D:\\VS2019\\IDE\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x86\\cl.exe",
+    "exit_code": 2,
+    "original_source_sha256": "5d93fde38f3f32d4249689433454895b4bbca56874e2494bc7230de17d172174",
+    "copied_source_sha256": "5d93fde38f3f32d4249689433454895b4bbca56874e2494bc7230de17d172174",
+    "copied_bytes_unchanged": true,
+    "no_shims_or_stub_definitions_added": true,
+    "syntax_only": true,
+    "generated_binary": false,
+    "diagnostic_codes": {
+      "C2065": 68,
+      "C3861": 23,
+      "C2059": 7,
+      "C2653": 3,
+      "C1003": 1
+    },
+    "decoded_encoding": "utf-8",
+    "diagnostics_file": "source_reconstruction/audit/compile_probe/compiler_output.txt",
+    "limitation": "Compiler error limit can stop parsing early; diagnostics are representative, not a complete count of blockers.",
+    "matches_current_pseudocode": true
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "status": "compiled_source_module",
+  "full_game_equivalence": false,
+  "source_hashes": {
+    "source_reconstruction/key_config/data.hpp": "c36d7e874fcd1a89dbd73af1510646666aa8ba0a0f3e5d8ce78f1d18f81ce7c6",
+    "source_reconstruction/key_config/key_config.hpp": "66c154a5d1bd5b144156186982f268de2fd1159ef65cb486b1de104b2f09809a",
+    "source_reconstruction/key_config/draw.cpp": "5ce627c30814c2f02485bac843e37da863478b0c1dc49c58b597c9c5088b7cea",
+    "source_reconstruction/key_config/lifecycle.cpp": "958723b3ea6d162c359013671c48ac008de50d0c1775f23ae0b846e216b21e1f",
+    "source_reconstruction/key_config/update.cpp": "351dba0a0182873c226b57970d1ed09d03cc182c6fcdca091c41bd38766b70c4",
+    "source_reconstruction/key_config/CMakeLists.txt": "8c18b22ed2c794a09808e608bb4ec76119e771187185b185a76580150e3b3151",
+    "source_reconstruction/key_config/oracle/compare.cpp": "c80997dacc6cc213dd58434d2a0aa6eb4b8fcf844c17a2f8d8cfe01f59ccdf8e",
+    "source_reconstruction/key_config/oracle/CMakeLists.txt": "6011dc25d053e32eaf7cfdcc621cb377e787ca34fb478da5151ff61990683806",
+    "source_reconstruction/text_renderer/menu_style.hpp": "2ae32e34e3bc8131cc9baeaecfd1da5944ad4941150352212db6265ea8cc37e1",
+    "source_reconstruction/text_renderer/menu_style.cpp": "be9413cdd6ac87933c44c291b114b002bef3f41a867da57f573561860a25e7a2",
+    "source_reconstruction/text_renderer/oracle/menu_compare.inl": "16611f8aab8dd4c03b62830b637fea6acab6b7d7f03dd5b1e06bddbb74441687",
+    "source_reconstruction/input/input.hpp": "fd36f455da92d8e3874cc5f50aa72fb95b0c487a70ce860a83393aeb00c9c5f6"
+  },
+  "original_va": [
+    "0x004c5530",
+    "0x004c56b0",
+    "0x004c58d0",
+    "0x004c7cb0",
+    "0x004010f0",
+    "0x004c61d0",
+    "0x004c61a0",
+    "0x004c5790",
+    "0x004c7160",
+    "0x004c6230",
+    "0x004c7dd0",
+    "0x004c5ee0",
+    "0x004c7d10",
+    "0x004c5e20",
+    "0x004c6130",
+    "0x004c6210",
+    "0x004c5870",
+    "0x004c7770",
+    "0x004c6b30",
+    "0x00421890"
+  ],
+  "evidence_map": {
+    "lifecycle.cpp": [
+      "0x004c5530",
+      "0x004c56b0",
+      "0x004c58d0",
+      "0x004c7cb0",
+      "0x004010f0"
+    ],
+    "update.cpp": [
+      "0x004c61d0",
+      "0x004c61a0",
+      "0x004c5790",
+      "0x004c7160",
+      "0x004c6230",
+      "0x004c7dd0",
+      "0x004c5ee0",
+      "0x004c7d10",
+      "0x004c5e20",
+      "0x004c6130",
+      "0x004c6210"
+    ],
+    "draw.cpp": [
+      "0x004c5870",
+      "0x004c7770",
+      "0x004c6b30",
+      "0x00421890"
+    ]
+  },
+  "unrecovered_game_symbols": [],
+  "validation_scope": "229376 CPU assertions over32768 full update cases, including real Cursor history save/restore with preallocated deque blocks. Audio/device rebuild/retire boundaries. Separate shared draw_validation includes both KeyConfig pages.",
+  "limitations": [
+    "Owning constructor/destructor/factory not full original CPU compared",
+    "New source-only GDI/D3D upload paths are not validated by cached-text draw comparison"
+  ],
+  "cpu_validation": "cpu_validation.json"
+}

@@ -1,0 +1,306 @@
+{
+  "original_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "count": 50,
+  "entries": [
+    {
+      "priority": 5,
+      "original_callback_va": "0x004508d0",
+      "layer": 0,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 7,
+      "original_callback_va": "0x004508e0",
+      "layer": 1,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 9,
+      "original_callback_va": "0x00450910",
+      "layer": 2,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 11,
+      "original_callback_va": "0x004508f0",
+      "layer": 4,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 10,
+      "original_callback_va": "0x00450a50",
+      "layer": 3,
+      "reset_global_layer": true
+    },
+    {
+      "priority": 13,
+      "original_callback_va": "0x00450a70",
+      "layer": 5,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 16,
+      "original_callback_va": "0x00450a90",
+      "layer": 6,
+      "reset_global_layer": true
+    },
+    {
+      "priority": 18,
+      "original_callback_va": "0x00450930",
+      "layer": 7,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 20,
+      "original_callback_va": "0x00450940",
+      "layer": 8,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 21,
+      "original_callback_va": "0x00450950",
+      "layer": 9,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 22,
+      "original_callback_va": "0x00450960",
+      "layer": 10,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 24,
+      "original_callback_va": "0x00450a80",
+      "layer": 11,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 27,
+      "original_callback_va": "0x00450ac0",
+      "layer": 12,
+      "reset_global_layer": true
+    },
+    {
+      "priority": 28,
+      "original_callback_va": "0x00450c60",
+      "layer": 13,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 33,
+      "original_callback_va": "0x00450c50",
+      "layer": 14,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 34,
+      "original_callback_va": "0x00450900",
+      "layer": 15,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 37,
+      "original_callback_va": "0x00450970",
+      "layer": 16,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 40,
+      "original_callback_va": "0x00450980",
+      "layer": 17,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 43,
+      "original_callback_va": "0x00450920",
+      "layer": 18,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 46,
+      "original_callback_va": "0x00450ab0",
+      "layer": 19,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 49,
+      "original_callback_va": "0x00450b40",
+      "layer": 20,
+      "reset_global_layer": true
+    },
+    {
+      "priority": 50,
+      "original_callback_va": "0x00450b30",
+      "layer": 21,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 60,
+      "original_callback_va": "0x00450b10",
+      "layer": 22,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 62,
+      "original_callback_va": "0x00450b20",
+      "layer": 23,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 64,
+      "original_callback_va": "0x00450af0",
+      "layer": 24,
+      "reset_global_layer": true
+    },
+    {
+      "priority": 65,
+      "original_callback_va": "0x00450ae0",
+      "layer": 25,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 68,
+      "original_callback_va": "0x00450b70",
+      "layer": 27,
+      "reset_global_layer": true
+    },
+    {
+      "priority": 69,
+      "original_callback_va": "0x00450b60",
+      "layer": 28,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 76,
+      "original_callback_va": "0x00450a30",
+      "layer": 30,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 78,
+      "original_callback_va": "0x00450a40",
+      "layer": 31,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 98,
+      "original_callback_va": "0x004509d0",
+      "layer": 34,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 100,
+      "original_callback_va": "0x004509e0",
+      "layer": 35,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 103,
+      "original_callback_va": "0x004509f0",
+      "layer": 36,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 105,
+      "original_callback_va": "0x004509b0",
+      "layer": 37,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 107,
+      "original_callback_va": "0x004509c0",
+      "layer": 38,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 73,
+      "original_callback_va": "0x00450a00",
+      "layer": 29,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 72,
+      "original_callback_va": "0x00450a10",
+      "layer": 26,
+      "reset_global_layer": true
+    },
+    {
+      "priority": 81,
+      "original_callback_va": "0x00450990",
+      "layer": 32,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 83,
+      "original_callback_va": "0x004509a0",
+      "layer": 33,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 63,
+      "original_callback_va": "0x00450c10",
+      "layer": 45,
+      "reset_global_layer": true
+    },
+    {
+      "priority": 74,
+      "original_callback_va": "0x00450c00",
+      "layer": 46,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 77,
+      "original_callback_va": "0x00450c30",
+      "layer": 47,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 79,
+      "original_callback_va": "0x00450c40",
+      "layer": 48,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 80,
+      "original_callback_va": "0x00450b90",
+      "layer": 49,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 82,
+      "original_callback_va": "0x00450ba0",
+      "layer": 50,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 99,
+      "original_callback_va": "0x00450bd0",
+      "layer": 51,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 101,
+      "original_callback_va": "0x00450be0",
+      "layer": 52,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 104,
+      "original_callback_va": "0x00450bf0",
+      "layer": 53,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 106,
+      "original_callback_va": "0x00450bb0",
+      "layer": 54,
+      "reset_global_layer": false
+    },
+    {
+      "priority": 108,
+      "original_callback_va": "0x00450bc0",
+      "layer": 55,
+      "reset_global_layer": false
+    }
+  ]
+}

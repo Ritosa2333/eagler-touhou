@@ -1,0 +1,683 @@
+{
+  "pid": 68036,
+  "executable": {
+    "name": "th20.exe",
+    "path": "D:\\AIWorkspace\\Touhou20Reconstruction\\dist\\baseline\\th20.exe",
+    "base": 14745600,
+    "size": 2068480
+  },
+  "modules": [
+    {
+      "name": "th20.exe",
+      "path": "D:\\AIWorkspace\\Touhou20Reconstruction\\dist\\baseline\\th20.exe",
+      "base": 14745600,
+      "size": 2068480
+    },
+    {
+      "name": "ntdll.dll",
+      "path": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+      "base": 140712860516352,
+      "size": 2195456
+    },
+    {
+      "name": "wow64.dll",
+      "path": "C:\\WINDOWS\\System32\\wow64.dll",
+      "base": 140712832008192,
+      "size": 356352
+    },
+    {
+      "name": "wow64base.dll",
+      "path": "C:\\WINDOWS\\System32\\wow64base.dll",
+      "base": 140712842625024,
+      "size": 36864
+    },
+    {
+      "name": "wow64win.dll",
+      "path": "C:\\WINDOWS\\System32\\wow64win.dll",
+      "base": 140712852586496,
+      "size": 569344
+    },
+    {
+      "name": "wow64con.dll",
+      "path": "C:\\WINDOWS\\System32\\wow64con.dll",
+      "base": 140712839675904,
+      "size": 94208
+    },
+    {
+      "name": "wow64cpu.dll",
+      "path": "C:\\WINDOWS\\System32\\wow64cpu.dll",
+      "base": 2010316800,
+      "size": 40960
+    },
+    {
+      "name": "th20.exe",
+      "path": "D:\\AIWorkspace\\Touhou20Reconstruction\\dist\\baseline\\th20.exe",
+      "base": 14745600,
+      "size": 2068480
+    },
+    {
+      "name": "ntdll.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\ntdll.dll",
+      "base": 2010382336,
+      "size": 1777664
+    },
+    {
+      "name": "KERNEL32.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\KERNEL32.DLL",
+      "base": 1989345280,
+      "size": 983040
+    },
+    {
+      "name": "KERNELBASE.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\KERNELBASE.dll",
+      "base": 1978073088,
+      "size": 2711552
+    },
+    {
+      "name": "apphelp.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\apphelp.dll",
+      "base": 1897398272,
+      "size": 679936
+    },
+    {
+      "name": "USER32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\USER32.dll",
+      "base": 1983447040,
+      "size": 1753088
+    },
+    {
+      "name": "win32u.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\win32u.dll",
+      "base": 1991180288,
+      "size": 106496
+    },
+    {
+      "name": "GDI32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\GDI32.dll",
+      "base": 1986723840,
+      "size": 139264
+    },
+    {
+      "name": "gdi32full.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\gdi32full.dll",
+      "base": 2006646784,
+      "size": 942080
+    },
+    {
+      "name": "msvcp_win.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\msvcp_win.dll",
+      "base": 1991311360,
+      "size": 495616
+    },
+    {
+      "name": "ucrtbase.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\ucrtbase.dll",
+      "base": 1976893440,
+      "size": 1122304
+    },
+    {
+      "name": "ole32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\ole32.dll",
+      "base": 2005008384,
+      "size": 1380352
+    },
+    {
+      "name": "combase.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\combase.dll",
+      "base": 2000158720,
+      "size": 2633728
+    },
+    {
+      "name": "RPCRT4.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\RPCRT4.dll",
+      "base": 2002845696,
+      "size": 770048
+    },
+    {
+      "name": "OLEAUT32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\OLEAUT32.dll",
+      "base": 1999372288,
+      "size": 643072
+    },
+    {
+      "name": "DSOUND.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DSOUND.dll",
+      "base": 2046164992,
+      "size": 466944
+    },
+    {
+      "name": "DINPUT8.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DINPUT8.dll",
+      "base": 2048786432,
+      "size": 229376
+    },
+    {
+      "name": "d3d9.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\d3d9.dll",
+      "base": 1917714432,
+      "size": 1511424
+    },
+    {
+      "name": "msvcrt.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\msvcrt.dll",
+      "base": 1987969024,
+      "size": 802816
+    },
+    {
+      "name": "sechost.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\sechost.dll",
+      "base": 1986920448,
+      "size": 540672
+    },
+    {
+      "name": "ADVAPI32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\ADVAPI32.dll",
+      "base": 1988820992,
+      "size": 516096
+    },
+    {
+      "name": "bcrypt.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\bcrypt.dll",
+      "base": 2000027648,
+      "size": 106496
+    },
+    {
+      "name": "d3dx9_43.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\d3dx9_43.dll",
+      "base": 2046689280,
+      "size": 2093056
+    },
+    {
+      "name": "WINMM.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\WINMM.dll",
+      "base": 1966014464,
+      "size": 200704
+    },
+    {
+      "name": "gdiplus.dll",
+      "path": "C:\\WINDOWS\\WinSxS\\x86_microsoft.windows.gdiplus_6595b64144ccf1df_1.1.22621.6133_none_9fa7d203e294764e\\gdiplus.dll",
+      "base": 1966276608,
+      "size": 1499136
+    },
+    {
+      "name": "XINPUT1_4.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\XINPUT1_4.dll",
+      "base": 1898512384,
+      "size": 53248
+    },
+    {
+      "name": "powrprof.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\powrprof.dll",
+      "base": 1949302784,
+      "size": 282624
+    },
+    {
+      "name": "dwmapi.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\dwmapi.dll",
+      "base": 1954021376,
+      "size": 147456
+    },
+    {
+      "name": "cfgmgr32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\cfgmgr32.dll",
+      "base": 1937833984,
+      "size": 249856
+    },
+    {
+      "name": "DEVOBJ.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DEVOBJ.dll",
+      "base": 1911160832,
+      "size": 147456
+    },
+    {
+      "name": "dxcore.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\dxcore.dll",
+      "base": 1931018240,
+      "size": 184320
+    },
+    {
+      "name": "winmmbase.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\winmmbase.dll",
+      "base": 2049048576,
+      "size": 126976
+    },
+    {
+      "name": "ResampleDmo.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\ResampleDmo.DLL",
+      "base": 2049179648,
+      "size": 626688
+    },
+    {
+      "name": "msdmo.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\msdmo.dll",
+      "base": 1935409152,
+      "size": 36864
+    },
+    {
+      "name": "IMM32.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\IMM32.DLL",
+      "base": 2006450176,
+      "size": 151552
+    },
+    {
+      "name": "UMPDC.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\UMPDC.dll",
+      "base": 1944649728,
+      "size": 57344
+    },
+    {
+      "name": "inputhost.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\inputhost.dll",
+      "base": 2049835008,
+      "size": 1392640
+    },
+    {
+      "name": "CoreMessaging.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\CoreMessaging.dll",
+      "base": 1529544704,
+      "size": 839680
+    },
+    {
+      "name": "uxtheme.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\uxtheme.dll",
+      "base": 1965162496,
+      "size": 540672
+    },
+    {
+      "name": "bcryptPrimitives.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\bcryptPrimitives.dll",
+      "base": 2003763200,
+      "size": 405504
+    },
+    {
+      "name": "DINPUT.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\DINPUT.DLL",
+      "base": 2051276800,
+      "size": 159744
+    },
+    {
+      "name": "CRYPTBASE.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\CRYPTBASE.DLL",
+      "base": 1954349056,
+      "size": 45056
+    },
+    {
+      "name": "HID.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\HID.DLL",
+      "base": 1926561792,
+      "size": 45056
+    },
+    {
+      "name": "SETUPAPI.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\SETUPAPI.DLL",
+      "base": 1972436992,
+      "size": 4444160
+    },
+    {
+      "name": "WINTRUST.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\WINTRUST.dll",
+      "base": 1971585024,
+      "size": 417792
+    },
+    {
+      "name": "CRYPT32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\CRYPT32.dll",
+      "base": 1981677568,
+      "size": 1064960
+    },
+    {
+      "name": "MSASN1.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\MSASN1.dll",
+      "base": 1954807808,
+      "size": 57344
+    },
+    {
+      "name": "nvldumd.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DriverStore\\FileRepository\\nvlti.inf_amd64_144938f242432a42\\nvldumd.dll",
+      "base": 1708457984,
+      "size": 638976
+    },
+    {
+      "name": "VERSION.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\VERSION.dll",
+      "base": 1970733056,
+      "size": 32768
+    },
+    {
+      "name": "cryptnet.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\cryptnet.dll",
+      "base": 1935147008,
+      "size": 159744
+    },
+    {
+      "name": "wldp.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\wldp.dll",
+      "base": 1935474688,
+      "size": 303104
+    },
+    {
+      "name": "drvstore.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\drvstore.dll",
+      "base": 1707343872,
+      "size": 1085440
+    },
+    {
+      "name": "imagehlp.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\imagehlp.dll",
+      "base": 2003632128,
+      "size": 110592
+    },
+    {
+      "name": "CRYPTSP.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\CRYPTSP.dll",
+      "base": 1954676736,
+      "size": 90112
+    },
+    {
+      "name": "rsaenh.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\rsaenh.dll",
+      "base": 1954414592,
+      "size": 204800
+    },
+    {
+      "name": "nvgpucomp32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DriverStore\\FileRepository\\nvlti.inf_amd64_144938f242432a42\\nvgpucomp32.dll",
+      "base": 1639710720,
+      "size": 67612672
+    },
+    {
+      "name": "SHELL32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\SHELL32.dll",
+      "base": 1992228864,
+      "size": 7135232
+    },
+    {
+      "name": "wintypes.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\wintypes.dll",
+      "base": 1980825600,
+      "size": 815104
+    },
+    {
+      "name": "NvMemMapStorage.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DriverStore\\FileRepository\\nvlti.inf_amd64_144938f242432a42\\NvMemMapStorage.dll",
+      "base": 1638662144,
+      "size": 1003520
+    },
+    {
+      "name": "windows.storage.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\windows.storage.dll",
+      "base": 1954873344,
+      "size": 7389184
+    },
+    {
+      "name": "SHCORE.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\SHCORE.dll",
+      "base": 1990328320,
+      "size": 843776
+    },
+    {
+      "name": "shlwapi.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\shlwapi.dll",
+      "base": 1972043776,
+      "size": 344064
+    },
+    {
+      "name": "nvd3dum.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DriverStore\\FileRepository\\nvlti.inf_amd64_144938f242432a42\\nvd3dum.dll",
+      "base": 1574043648,
+      "size": 64577536
+    },
+    {
+      "name": "directxdatabasehelper.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\directxdatabasehelper.dll",
+      "base": 1881407488,
+      "size": 249856
+    },
+    {
+      "name": "kernel.appcore.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\kernel.appcore.dll",
+      "base": 1954217984,
+      "size": 77824
+    },
+    {
+      "name": "MSCTF.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\MSCTF.dll",
+      "base": 2007629824,
+      "size": 1085440
+    },
+    {
+      "name": "textinputframework.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\textinputframework.dll",
+      "base": 1904214016,
+      "size": 1007616
+    },
+    {
+      "name": "CoreUIComponents.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\CoreUIComponents.dll",
+      "base": 1526792192,
+      "size": 2691072
+    },
+    {
+      "name": "nvspcap.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\nvspcap.dll",
+      "base": 2024931328,
+      "size": 1138688
+    },
+    {
+      "name": "profapi.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\profapi.dll",
+      "base": 1953300480,
+      "size": 114688
+    },
+    {
+      "name": "ntmarta.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\ntmarta.dll",
+      "base": 1936457728,
+      "size": 167936
+    },
+    {
+      "name": "gpapi.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\gpapi.dll",
+      "base": 1937506304,
+      "size": 135168
+    },
+    {
+      "name": "nvppe.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DriverStore\\FileRepository\\nvlti.inf_amd64_144938f242432a42\\nvppe.dll",
+      "base": 1545666560,
+      "size": 1310720
+    },
+    {
+      "name": "clbcatq.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\clbcatq.dll",
+      "base": 1985675264,
+      "size": 532480
+    },
+    {
+      "name": "MMDevApi.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\MMDevApi.dll",
+      "base": 2054684672,
+      "size": 507904
+    },
+    {
+      "name": "AUDIOSES.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\AUDIOSES.DLL",
+      "base": 2055208960,
+      "size": 1626112
+    },
+    {
+      "name": "resourcepolicyclient.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\resourcepolicyclient.dll",
+      "base": 1352859648,
+      "size": 65536
+    },
+    {
+      "name": "Windows.UI.dll",
+      "path": "C:\\Windows\\SysWOW64\\Windows.UI.dll",
+      "base": 2058616832,
+      "size": 1118208
+    },
+    {
+      "name": "avrt.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\avrt.dll",
+      "base": 1898643456,
+      "size": 36864
+    },
+    {
+      "name": "UIAutomationCore.DLL",
+      "path": "C:\\WINDOWS\\SysWOW64\\UIAutomationCore.DLL",
+      "base": 1892286464,
+      "size": 3473408
+    },
+    {
+      "name": "OLEACC.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\OLEACC.dll",
+      "base": 1962278912,
+      "size": 393216
+    },
+    {
+      "name": "threadpoolwinrt.dll",
+      "path": "C:\\Windows\\SysWOW64\\threadpoolwinrt.dll",
+      "base": 389873664,
+      "size": 69632
+    },
+    {
+      "name": "msctfuimanager.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\msctfuimanager.dll",
+      "base": 1516109824,
+      "size": 700416
+    },
+    {
+      "name": "DUI70.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DUI70.dll",
+      "base": 1514602496,
+      "size": 1478656
+    },
+    {
+      "name": "Comctl32.dll",
+      "path": "C:\\WINDOWS\\WinSxS\\x86_microsoft.windows.common-controls_6595b64144ccf1df_6.0.22621.6060_none_6ec0247887fefb51\\Comctl32.dll",
+      "base": 1926627328,
+      "size": 2289664
+    },
+    {
+      "name": "DUser.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DUser.dll",
+      "base": 1537671168,
+      "size": 499712
+    },
+    {
+      "name": "sxs.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\sxs.dll",
+      "base": 1710620672,
+      "size": 544768
+    },
+    {
+      "name": "UIAnimation.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\UIAnimation.dll",
+      "base": 1514012672,
+      "size": 249856
+    },
+    {
+      "name": "dwrite.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\dwrite.dll",
+      "base": 1913389056,
+      "size": 2260992
+    },
+    {
+      "name": "atlthunk.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\atlthunk.dll",
+      "base": 1896873984,
+      "size": 57344
+    },
+    {
+      "name": "d3d11.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\d3d11.dll",
+      "base": 2061697024,
+      "size": 2326528
+    },
+    {
+      "name": "dxgi.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\dxgi.dll",
+      "base": 1911422976,
+      "size": 827392
+    },
+    {
+      "name": "D3D10Warp.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\D3D10Warp.dll",
+      "base": 553058304,
+      "size": 6266880
+    },
+    {
+      "name": "dcomp.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\dcomp.dll",
+      "base": 1516830720,
+      "size": 1695744
+    },
+    {
+      "name": "directmanipulation.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\directmanipulation.dll",
+      "base": 2023489536,
+      "size": 520192
+    },
+    {
+      "name": "TextShaping.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\TextShaping.dll",
+      "base": 1907294208,
+      "size": 634880
+    },
+    {
+      "name": "xmllite.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\xmllite.dll",
+      "base": 2022244352,
+      "size": 176128
+    },
+    {
+      "name": "comctl32.dll",
+      "path": "C:\\WINDOWS\\WinSxS\\x86_microsoft.windows.common-controls_6595b64144ccf1df_5.82.22621.5983_none_fbec26ba7805fa7d\\comctl32.dll",
+      "base": 1970077696,
+      "size": 593920
+    },
+    {
+      "name": "OneCoreCommonProxyStub.dll",
+      "path": "C:\\Windows\\SysWOW64\\OneCoreCommonProxyStub.dll",
+      "base": 1898119168,
+      "size": 299008
+    }
+  ],
+  "limitations": [
+    "Asynchronous read-only samples are not frame-locked.",
+    "No deterministic replay equivalence claim."
+  ],
+  "samples": [
+    {
+      "difficulty": 1,
+      "player_pointer": 150702496,
+      "enemy_manager_pointer": 418991120,
+      "game_thread_pointer": 419089392,
+      "replay_manager_pointer": 419061408,
+      "main_menu_pointer": 0,
+      "mode_flags": 32,
+      "stage": 2,
+      "input_bits": 0,
+      "input_pressed_bits": 0,
+      "side0": {
+        "score": 9793,
+        "character": 0,
+        "story_stone": 0,
+        "narrow_shot_stone": 0,
+        "wide_shot_stone": 0,
+        "assist_stone": 0,
+        "power": 400,
+        "point_value": 527,
+        "hyper_meter": 32,
+        "summon_meter": 347,
+        "life_stocks": 7,
+        "bomb_stocks": 2,
+        "graze": 18
+      },
+      "save_directory": "D:\\AIWorkspace\\Touhou20Reconstruction\\incremental\\verification\\baseline_appdata\\ShanghaiAlice\\th20",
+      "utc": "2026-09-14T12:57:59.839934+00:00",
+      "cpp_exports": {}
+    }
+  ]
+}

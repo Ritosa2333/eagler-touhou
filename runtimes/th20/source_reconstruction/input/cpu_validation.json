@@ -1,0 +1,32 @@
+{
+"status":"passed",
+"source_sha256":"a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+"input_hpp_sha256":"fd36f455da92d8e3874cc5f50aa72fb95b0c487a70ce860a83393aeb00c9c5f6",
+"input_state_cpp_sha256":"5598f4cdcff58399640e2abcd435b97ce9f726927d0a3bd7a9471ee7d4652273",
+"input_win32_cpp_sha256":"b655c5c2a89bff2d5ffe2ce6a479e830c34e051d265a3e2de77bf4aa9aff891f",
+"callback_owner_hpp_sha256":"22ace0c017ecce7632344de83e5a1a97cab1e3ef1f3bef0f8d613615990960d4",
+"total":44271,
+"failed":0,
+"scope":"Full recovered input-state bytes, API observation order, edge/repeat/counter behavior, controller aggregate frames",
+"limitations":["OS input supplied by isolated deterministic host; no live user controls","Original instructions unchanged; only OS IAT calls and external COM device are fixtures","DirectInput/WMI discovery and allocation/lifecycle are production implementations but not CPU-compared","Invalid mappings, failed GetKeyboardState in clear operation, concurrent reconfiguration outside equivalence domain"],
+"comparisons":{
+"bit_mapping_shift_and_return":10000,
+"button_constructor":100,
+"button_update_all_704_bytes":10000,
+"byte_mapping_and_return":10000,
+"clear_keyboard_state_and_host_order":2000,
+"controller_constructor_all_recovered_fields":1,
+"device_constructor":100,
+"device_header_reset_preserves_history":100,
+"device_poll_all_bytes_and_host_order":6000,
+"keyboard_device_initialize":100,
+"legacy_probe_caps_flags_return_order":2000,
+"manager_frame_aggregate_history_and_host_order":1000,
+"shutdown_without_com_preserves_history":1,
+"single_keys_and_xinput_threshold_edges":768,
+"startup_legacy_aggregate_and_host_order":2000,
+"xinput_device_initialize":100,
+"xinput_table":1
+},
+"failure_examples":[]
+}

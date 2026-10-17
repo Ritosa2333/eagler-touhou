@@ -1,0 +1,22 @@
+{
+  "original_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "passed": 393216,
+  "failed": 0,
+  "failures": [],
+  "source_hashes": {
+    "source_reconstruction/options_system/data.hpp": "78e16aa8c2cb2cee5a2b584dfd9e8261c4d28406432eaa30c257375bf8091942",
+    "source_reconstruction/options_system/options.hpp": "fe06edd5d24ddb647364f6203aa533492863f84d3b82b23f08d270fede47e52f",
+    "source_reconstruction/options_system/draw.cpp": "d5524509fe9d710d7e5e524483be91657a207acb5e7f1a883df4669d41963bab",
+    "source_reconstruction/options_system/lifecycle.cpp": "55daa1f65a88d0bc12d5abe008516b611a544d89b52f59f019114387eab52867",
+    "source_reconstruction/options_system/update.cpp": "1a816a680f395b0d17c042a706c0acbf5626831cdeb60bf2a49fe0babdd1d2a7",
+    "source_reconstruction/options_system/volume.cpp": "d866afbad0f16ccbb1c4611292928327645d9d914d0c04daac3ced3065528e46",
+    "source_reconstruction/options_system/CMakeLists.txt": "b645ae8adff33c8e865d2f4ca49dd2a94f6baf02b80f988275f770ea5ccfcf72",
+    "source_reconstruction/options_system/oracle/compare.cpp": "f7e25659278fb3bcc747b05c4e0bb5a8f79ae4e1fde031f0aaec69a10b3a7493",
+    "source_reconstruction/options_system/oracle/CMakeLists.txt": "b649611edcd2d6b4625602ad9e6097eec7623def832fea282a8523033622b67a",
+    "source_reconstruction/text_renderer/menu_style.hpp": "2ae32e34e3bc8131cc9baeaecfd1da5944ad4941150352212db6265ea8cc37e1",
+    "source_reconstruction/text_renderer/menu_style.cpp": "be9413cdd6ac87933c44c291b114b002bef3f41a867da57f573561860a25e7a2",
+    "source_reconstruction/text_renderer/oracle/menu_compare.inl": "16611f8aab8dd4c03b62830b637fea6acab6b7d7f03dd5b1e06bddbb74441687",
+    "source_reconstruction/input/input.hpp": "fd36f455da92d8e3874cc5f50aa72fb95b0c487a70ce860a83393aeb00c9c5f6"
+  },
+  "validation_scope": "393216 update/volume CPU assertions. 32768 full update cases with screen/audio/device/create/save/retire service boundaries; all65536 raw music/effect-volume pairs, command enqueue boundary. Shared draw_validation has18432 new checks including KeyConfig and textstyle, do not count twice."
+}

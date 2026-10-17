@@ -1,0 +1,22 @@
+{
+  "source_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "image_base": "0x00400000",
+  "notes": "Names are analyst labels, not original debug symbols. Allocation assertion crossrefs do not establish a full function's semantics.",
+  "verified_routines": {
+    "0x00422cb0": "recovered_lcg_step",
+    "0x004235f0": "recovered_lcg_next",
+    "0x00423f50": "recovered_timer_reset_fields",
+    "0x00423fe0": "recovered_timer_set_mode",
+    "0x00423f80": "recovered_timer_set",
+    "0x004530f0": "recovered_timer_add",
+    "0x004533b0": "recovered_timer_tick"
+  },
+  "assertion_candidates": {
+    "0x0048c010": "contains_game_ecl_cpp_assertions_2387_2395",
+    "0x004a7080": "allocates_EclResourceInf",
+    "0x004a8920": "allocates_EnemyInf",
+    "0x00486630": "allocates_BulletInf",
+    "0x004ffff0": "allocates_PlayerInf",
+    "0x00508480": "contains_ReplayFileHeaderInf_and_ReplayDataHeaderInf"
+  }
+}

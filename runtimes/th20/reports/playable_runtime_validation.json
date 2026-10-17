@@ -1,0 +1,114 @@
+{
+  "status": "runtime_smoke_and_listed_demo_fields_passed",
+  "source_files_unchanged": true,
+  "original_save_files_unchanged": true,
+  "missing_x86_import_dependencies": [],
+  "original_and_rebuilt_ran_sequentially": true,
+  "executable_sha256": "c54f4c4f905e07ab4f0220f56a53784322c67f88fc2622d66de3e3bd68d0d6fe",
+  "linked_cpp_stats": {
+    "magic": "0x42303254",
+    "version": 1,
+    "struct_size": 52,
+    "source_status": 1,
+    "actual_main_module_base": "0x9f0000",
+    "first_counts": {
+      "lcg_step": 0,
+      "rng_next": 552,
+      "timer_reset": 136334,
+      "timer_mode": 0,
+      "timer_set": 5760,
+      "timer_add": 6931,
+      "timer_tick": 29664
+    },
+    "last_counts": {
+      "lcg_step": 0,
+      "rng_next": 717543,
+      "timer_reset": 209760,
+      "timer_mode": 334,
+      "timer_set": 426262,
+      "timer_add": 1207060,
+      "timer_tick": 7264520
+    },
+    "counter_increases": {
+      "lcg_step": 0,
+      "rng_next": 716991,
+      "timer_reset": 73426,
+      "timer_mode": 334,
+      "timer_set": 420502,
+      "timer_add": 1200129,
+      "timer_tick": 7234856
+    }
+  },
+  "frame_rate_observations": {
+    "original": {
+      "replay": "demo/demo2.rpy",
+      "first_frame": 1857,
+      "last_frame": 1977,
+      "elapsed_seconds": 2.000122,
+      "frames_advanced": 120,
+      "measured_frames_per_second": 59.99634022324638
+    },
+    "rebuilt": {
+      "replay": "demo/demo2.rpy",
+      "first_frame": 2772,
+      "last_frame": 2892,
+      "elapsed_seconds": 2.001356,
+      "frames_advanced": 120,
+      "measured_frames_per_second": 59.959347562352725
+    }
+  },
+  "demo_comparison": {
+    "report": "reports/playable_demo_comparison.json",
+    "shared_frames": 1916,
+    "identical_frames": 1916,
+    "compared_fields": [
+      "assist_stone",
+      "bomb_fragments",
+      "bomb_stocks",
+      "character",
+      "graze",
+      "hyper_meter",
+      "life_fragments",
+      "life_stocks",
+      "narrow_shot_stone",
+      "point_value",
+      "power",
+      "replay_input_bits",
+      "score",
+      "stone_level_blue",
+      "stone_level_green",
+      "stone_level_red",
+      "stone_level_yellow",
+      "story_stone",
+      "summon_meter",
+      "wide_shot_stone"
+    ],
+    "field_comparisons": 38320,
+    "mismatch_count": 0
+  },
+  "final_play_cmd_smoke": {
+    "process_id": 64844,
+    "actual_executable": "D:\\AIWorkspace\\Touhou20Reconstruction\\dist\\playable\\th20_rebuilt.exe",
+    "actual_save_directory": "D:\\AIWorkspace\\Touhou20Reconstruction\\dist\\playable\\userdata\\ShanghaiAlice\\th20",
+    "first_run_dialog_observed": true,
+    "resolution_selected": "Window 960x720",
+    "title_screenshot": "reports/playable_final_title.jpg",
+    "first_run_screenshot": "reports/playable_first_run_dialog.jpg",
+    "process_left_running": true,
+    "note": "Original first-run resolution dialog caption is TH19; actual game title is TH20 ver 1.00c. The original attract demo starts after idle time."
+  },
+  "controls_verification": {
+    "status": "not_verified_by_automation",
+    "attempted": "sky press_key z, Return and Escape; normal window close via Alt+F4 succeeded.",
+    "limitation": "The automation API provides momentary chords but no documented key-hold operation; game polling did not reliably capture these momentary keys. Keyboard gameplay, movement and bomb input are not claimed as tested."
+  },
+  "limitations": [
+    "Only listed fields are compared; no bullet/entity or image/audio hash.",
+    "Asynchronous stable observations are not synchronized full-frame execution traces.",
+    "Missing or unstable frames are omitted, never interpolated.",
+    "This is not evidence of full-game 1:1 equivalence.",
+    "Audio output was not captured or compared.",
+    "The 1916 shared frames come from one built-in demo and do not cover all stages or mechanics.",
+    "The executable retains original engine modules; this runtime result is not a pure C++ rewrite."
+  ]
+}

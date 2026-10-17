@@ -1,0 +1,10 @@
+{
+"status":"passed",
+"checks":41984,
+"failed":0,
+"motion_cpp_sha256":"c76b75db382b2c4454d62d6a5cb1dd22833bd32e3af1e91db6c58247cad35a87",
+"motion_hpp_sha256":"4e51ed62e5bb8b47c12d2eff1ff266e44afdea7e709af4cf2b8257fcaafc63f9",
+"scope":"Complete72-byte original453e40 velocity,453ac0 position,47a1f0 combined,4543d0 floor100 on8192 finite randomized states each; all16 mode nibbles and flags4/5;8192 strict bounds cases including NaNs;1024 constructor cases",
+"limitations":["Trajectory tests use finite inputs and round-to-nearest; original CRT floor uses verified host SSE4.1 path"],
+"failure_examples":[]
+}

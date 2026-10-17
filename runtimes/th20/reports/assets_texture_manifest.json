@@ -1,0 +1,5289 @@
+{
+  "decoded_successfully": 660,
+  "actual_formats": {
+    "PNG": 482,
+    "JPEG": 178
+  },
+  "textures": [
+    {
+      "path": "assets\\textures\\ascii\\ascii\\ascii@ascii@0.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "349b6b939d7aea5643788d26da17a167f0a43e12680f7b6598b4d7a0bdaee795"
+    },
+    {
+      "path": "assets\\textures\\ascii\\ascii\\ascii_big2@ascii@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 352,
+      "mode": "RGBA",
+      "sha256": "8c4e3b23bc5c1b72e4379349bacb5b267013d6fcca1b79822e71f175195fdab4"
+    },
+    {
+      "path": "assets\\textures\\ascii\\ascii\\ascii_big2f@ascii@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 352,
+      "mode": "RGBA",
+      "sha256": "78ba4c57d6a2d394577b993f44ff9a1587fa2d6a69ef5e5ff5deb84f139fa231"
+    },
+    {
+      "path": "assets\\textures\\ascii\\ascii\\ascii_big@ascii@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "c10ee8003e1eb6b6fee4619372b6dde83d3c72b6baf82d917dc87b2a12f6bfee"
+    },
+    {
+      "path": "assets\\textures\\ascii\\ascii\\ascii_bigf@ascii@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "4ecd16e9677e7e91019c7d6a05a7d401d02a98439bcefce9cca8949ce6dcff71"
+    },
+    {
+      "path": "assets\\textures\\ascii\\ascii\\ascii_norm2@ascii@5.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "de120e153ef98643e60a14e097bff53f766bd9bdb32bb18e6b67cdea7495efba"
+    },
+    {
+      "path": "assets\\textures\\ascii\\ascii\\ascii_norm2f@ascii@6.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "8bdb92b91ad32cef4932b99d04ee0b3ed2d25d2fe56b398e96fe2ca5890a0ffc"
+    },
+    {
+      "path": "assets\\textures\\ascii\\ascii\\loading@ascii@7.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "42435963cb46b7069f2a40146ccb983136a2cbb4a8072fcdd02798e216bfa11a"
+    },
+    {
+      "path": "assets\\textures\\ascii1280\\ascii\\ascii_1280@ascii1280@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "a7bb51d2fa03fe1d5fe3bfbb284380d417f29564c7c241ea8fa467cd18071330"
+    },
+    {
+      "path": "assets\\textures\\ascii1280\\ascii\\ascii_big2@ascii1280@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 352,
+      "mode": "RGBA",
+      "sha256": "8c4e3b23bc5c1b72e4379349bacb5b267013d6fcca1b79822e71f175195fdab4"
+    },
+    {
+      "path": "assets\\textures\\ascii1280\\ascii\\ascii_big2f@ascii1280@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 352,
+      "mode": "RGBA",
+      "sha256": "78ba4c57d6a2d394577b993f44ff9a1587fa2d6a69ef5e5ff5deb84f139fa231"
+    },
+    {
+      "path": "assets\\textures\\ascii1280\\ascii\\ascii_big@ascii1280@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "c10ee8003e1eb6b6fee4619372b6dde83d3c72b6baf82d917dc87b2a12f6bfee"
+    },
+    {
+      "path": "assets\\textures\\ascii1280\\ascii\\ascii_bigf@ascii1280@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "4ecd16e9677e7e91019c7d6a05a7d401d02a98439bcefce9cca8949ce6dcff71"
+    },
+    {
+      "path": "assets\\textures\\ascii1280\\ascii\\ascii_norm2@ascii1280@5.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "de120e153ef98643e60a14e097bff53f766bd9bdb32bb18e6b67cdea7495efba"
+    },
+    {
+      "path": "assets\\textures\\ascii1280\\ascii\\ascii_norm2f@ascii1280@6.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "8bdb92b91ad32cef4932b99d04ee0b3ed2d25d2fe56b398e96fe2ca5890a0ffc"
+    },
+    {
+      "path": "assets\\textures\\ascii1280\\ascii\\loading@ascii1280@7.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "42435963cb46b7069f2a40146ccb983136a2cbb4a8072fcdd02798e216bfa11a"
+    },
+    {
+      "path": "assets\\textures\\ascii_960\\ascii\\ascii_960@ascii_960@0.png",
+      "format": "PNG",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "ed2f4f60bcbe94666bb0d79ec585c745e783426864c2fe6abf02cb21a928eb86"
+    },
+    {
+      "path": "assets\\textures\\ascii_960\\ascii\\ascii_big2@ascii_960@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 352,
+      "mode": "RGBA",
+      "sha256": "8c4e3b23bc5c1b72e4379349bacb5b267013d6fcca1b79822e71f175195fdab4"
+    },
+    {
+      "path": "assets\\textures\\ascii_960\\ascii\\ascii_big2f@ascii_960@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 352,
+      "mode": "RGBA",
+      "sha256": "78ba4c57d6a2d394577b993f44ff9a1587fa2d6a69ef5e5ff5deb84f139fa231"
+    },
+    {
+      "path": "assets\\textures\\ascii_960\\ascii\\ascii_big@ascii_960@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "c10ee8003e1eb6b6fee4619372b6dde83d3c72b6baf82d917dc87b2a12f6bfee"
+    },
+    {
+      "path": "assets\\textures\\ascii_960\\ascii\\ascii_bigf@ascii_960@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "4ecd16e9677e7e91019c7d6a05a7d401d02a98439bcefce9cca8949ce6dcff71"
+    },
+    {
+      "path": "assets\\textures\\ascii_960\\ascii\\ascii_norm2@ascii_960@5.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "de120e153ef98643e60a14e097bff53f766bd9bdb32bb18e6b67cdea7495efba"
+    },
+    {
+      "path": "assets\\textures\\ascii_960\\ascii\\ascii_norm2f@ascii_960@6.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "8bdb92b91ad32cef4932b99d04ee0b3ed2d25d2fe56b398e96fe2ca5890a0ffc"
+    },
+    {
+      "path": "assets\\textures\\ascii_960\\ascii\\loading@ascii_960@7.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "42435963cb46b7069f2a40146ccb983136a2cbb4a8072fcdd02798e216bfa11a"
+    },
+    {
+      "path": "assets\\textures\\aura\\bullet\\aura@aura@0.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "7c476a55f6b5ce8868b00191a3aafc98e05cad83f352a7c9f487faef97465209"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\bullet1@bullet@0.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "159058cea0fda9b6b47fc7c16dec9a71e035fce869f4b749aa08d55d976167ea"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\bullet2@bullet@1.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "22418c3f7794428edae3ba14c64b6594c6cf4d46f701b96305cbbe0c9a9b9b1f"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\bullet3@bullet@2.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "416b01db3b7f0413ff5a5dcc39eecb7cf904835dec75ab9bdddb7585f0d08c3a"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\bullet4@bullet@6.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "bdad4ff96b7623107cf1743eb2de4a2b4f438489ab39ad1b524b6e8de8ba4817"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\bullet5@bullet@7.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "9bdd755ecd00a93acfe71e4f1f3305dfe406a2e5fa279cddc5fb3ebd9d948541"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\bullet6@bullet@9.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 96,
+      "mode": "RGBA",
+      "sha256": "3116df53f6edb472cc02c5c06d412f918492dddbce5106309d9112d03f05c016"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\item@bullet@3.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "4bd6ee542391e0adc5d1df3541c4fab56b24e60c6d38f7410286f984a7859fac"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\laser1@bullet@4.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "0396724f956b4798bc5e04913f22c472057dd26c01d0bac885958cea3e9322bb"
+    },
+    {
+      "path": "assets\\textures\\bullet\\bullet\\laser2@bullet@8.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "f402e0d3238348b56501a8e8715bc7587f947f830c7c3a29b8055841ed84f2f7"
+    },
+    {
+      "path": "assets\\textures\\bullet\\effect\\etbreak@bullet@5.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "5c73bb54aa21ba4c620fb9881287aa24ae8c9da2ab1ff7fed92ecf461ac7e520"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\e00a0a@e00a0@6.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "928b3c6965fb8114d13abec8c59c94f0bfd1409b341ce281cbb2aa85b0ad6393"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\e00a0a@e00a0@7.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "54fdad3e1c2bd38950af2acd84658c5cd00ee4723993db8564ad845042fb8efd"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\e00a0b@e00a0@8.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "18eb9fc4167e2cbf45b1e3cf8eec66068eb3be46c964a4d1c9c34e481f62917a"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\e00a0b@e00a0@9.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "1744c321acc08fb47eda73667cf89e0ef41781b9258fa0b72ad83004eb868733"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\e00a0c@e00a0@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\e00a0c@e00a0@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\ebg01@e00a0@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\ebg01@e00a0@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\ebg03@e00a0@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0b64cea9d6dfcf75bf3405cdb1caaf89a26defa2da415f40404a1d05ec6922c6"
+    },
+    {
+      "path": "assets\\textures\\e00a0\\ending\\ebg03@e00a0@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "e1fdb0fc44dc82ff8b81dcbc78034a94a6c55eaf6c99c3bb71671ce48fdeb7a2"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\e00a0c@e00a1@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\e00a0c@e00a1@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\e00a1a@e00a1@6.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "732e270a838d4796818d091b25e115fcaaddd37a121ebc72e4d41d601575b1a7"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\e00a1a@e00a1@7.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3f6d1fac01146f1a7472dfcc65a2b7db26f9a6226087cc9a263503676d78a995"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\e00a1b@e00a1@8.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b1376881082cc71dc9e84b41f51a5c762b21b980833ba6a08cb08a8c6215ec9f"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\e00a1b@e00a1@9.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "90162cf692ff16a909889b55b24e0a28bd4bcb6a933cac932360e0fa72a2dfea"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\ebg01@e00a1@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\ebg01@e00a1@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\ebg04@e00a1@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b574177a450974fba5cd65f21418c2122e3ece1ea73151a90629b179011dc570"
+    },
+    {
+      "path": "assets\\textures\\e00a1\\ending\\ebg04@e00a1@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "260e9935040896137e801ed8c114e6792e5303bf412dc6e9f2ac71501c9d4198"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\e00a0c@e00a2@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\e00a0c@e00a2@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\e00a2a@e00a2@6.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "a99ec85c615a888252bde3a8847021979aab8730cc00497818a2f780c55949d8"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\e00a2a@e00a2@7.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3c770c74f1f5050131f185fac9f6610373025d80fc5ed833a51dfef0f460b9a9"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\e00a2b@e00a2@8.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c784b4197508dc9d1a3671dbc82e597514cda325c9897c139b37f98586dbc586"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\e00a2b@e00a2@9.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b5edae4c5323c0c819b62f8c87b0fe507e760556b76a8b651ed7e702efe223c7"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\ebg01@e00a2@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\ebg01@e00a2@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\ebg08@e00a2@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "a544e497dc5e50842be0d6a471f7dfc0bdaa909022f83fd04fd3bc25d9291297"
+    },
+    {
+      "path": "assets\\textures\\e00a2\\ending\\ebg08@e00a2@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "5b4cec811cf95d0e6f94c6683ba91f98f17deb1f749ccde3dc541af5c29ddcdf"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\e00a0c@e00a3@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\e00a0c@e00a3@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\e00a3a@e00a3@6.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b83422cb6ebc26a3e67c6c8add69ceabe6b4a997b866760725d1dc8a95c6a4a9"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\e00a3a@e00a3@7.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "f7537da67762479252ae38c3b1dfce09986f5497fb0eee15fff1925f211196e0"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\e00a3b@e00a3@8.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "2e0f7ee3d46dfe41830e16a3fd5df0bd47d974f5271cbadcb8d824e60a4c3dac"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\e00a3b@e00a3@9.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "f41eb99be5b1018f53f69a0088edf382b875925f5b30c9909893738856b9c410"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\ebg01@e00a3@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\ebg01@e00a3@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\ebg05@e00a3@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c91ba663b7f5e68a0f5b9f9d6689a43144ae45b2022918763c04f69e7c2be7f8"
+    },
+    {
+      "path": "assets\\textures\\e00a3\\ending\\ebg05@e00a3@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3c2a899aba3c6b2ae941c0a7cbb9e5f4cf3847dc8f6f7f6e62d89205eab97c00"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\e00a0c@e00a4@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\e00a0c@e00a4@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\e00a4a@e00a4@6.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "35ee633ac4093647a0e973a561d21de339bc8f2bf7814d7c44e068ea4aa58d3a"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\e00a4a@e00a4@7.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "6934d1557167b0984c0e6be01ec48b9cc94e382539b4f223e79d57ec0a4e65b0"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\e00a4b@e00a4@8.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "6934e0d24326cbb3c42169fb377fc02a9863378fd251366abb7a6fc8c8eb0dd4"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\e00a4b@e00a4@9.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "d084fad3f75b1ae7fcd65098d188ffd0fd56863a9ca75a12835fa801a9c91cb7"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\ebg00@e00a4@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b91cb25f6c540f94eb5d73386a01531ee0f19708d260373a8ae3bf633665ca8d"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\ebg00@e00a4@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "24f033d8394e00225c6bb5495fede9f244d4a7f00cdacb2f947d624745553062"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\ebg01@e00a4@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e00a4\\ending\\ebg01@e00a4@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\e00a0c@e00a5@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\e00a0c@e00a5@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\e00a5a@e00a5@6.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "fdfb170a8eacb4544dd87d0aead13bdee2079f62d3cdd33527d7d865234d2a8e"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\e00a5a@e00a5@7.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "8c53fe66c27963129ecf553d7cfa54d2a1229f0cafe496a46218c9a7ff8ea625"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\e00a5b@e00a5@8.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "a70a7cb4b90bbf9c5609ce62140d821fdeda3039dac2b66c6fdada48691220d4"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\e00a5b@e00a5@9.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "fe72662132bbb1cc844c567b4b1c5af40fa2e43dd604ed5b79dc1c62c5031ffc"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\ebg00@e00a5@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b91cb25f6c540f94eb5d73386a01531ee0f19708d260373a8ae3bf633665ca8d"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\ebg00@e00a5@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "24f033d8394e00225c6bb5495fede9f244d4a7f00cdacb2f947d624745553062"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\ebg01@e00a5@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e00a5\\ending\\ebg01@e00a5@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\e00a0c@e00a6@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\e00a0c@e00a6@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\e00a6a@e00a6@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "9248f47dfc072aa29f3cce2fbd64dd55bdb8b3c15b56bf81521f8efbfc2a128d"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\e00a6a@e00a6@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "bdcbe69e0192732084c9dd21285b7cf132a91bd4b1507902c2ea13c25d681a6b"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\e00a6b@e00a6@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3f6d1fac01146f1a7472dfcc65a2b7db26f9a6226087cc9a263503676d78a995"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\e00a6b@e00a6@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0a66e097c5e75e31c938a4ed97ad411eaa23f02baa1d0495c8d7b3918325f58b"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\ebg01@e00a6@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\ebg01@e00a6@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\ebg05@e00a6@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c91ba663b7f5e68a0f5b9f9d6689a43144ae45b2022918763c04f69e7c2be7f8"
+    },
+    {
+      "path": "assets\\textures\\e00a6\\ending\\ebg05@e00a6@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3c2a899aba3c6b2ae941c0a7cbb9e5f4cf3847dc8f6f7f6e62d89205eab97c00"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\e00a0c@e00a7@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\e00a0c@e00a7@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\e00a7a@e00a7@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3f6d1fac01146f1a7472dfcc65a2b7db26f9a6226087cc9a263503676d78a995"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\e00a7a@e00a7@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3ccb2d87868fd61ee9b47585d6e8e69dbe65271247c42514f98f3878b0eb684d"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\e00a7b@e00a7@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "e9e7edb97b857b6de4625714c536e1970378beb9b2218086af814920cd5a7a8f"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\e00a7b@e00a7@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "021a2fef466300e7b6e5f0da734df857bd14f824b25d2cba0f98e831327715f3"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\ebg00@e00a7@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b91cb25f6c540f94eb5d73386a01531ee0f19708d260373a8ae3bf633665ca8d"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\ebg00@e00a7@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "24f033d8394e00225c6bb5495fede9f244d4a7f00cdacb2f947d624745553062"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\ebg01@e00a7@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e00a7\\ending\\ebg01@e00a7@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e00b\\ending\\e00b@e00b@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "084c2b1ed52d167aba3ddc8c70fd042faee99353ba982e3803908f0d24c656aa"
+    },
+    {
+      "path": "assets\\textures\\e00b\\ending\\e00b@e00b@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3759e436e37bc3ab200a192656d4849e0132115cb61b2ef930f032c3fccd40bc"
+    },
+    {
+      "path": "assets\\textures\\e00b\\ending\\ebg00@e00b@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b91cb25f6c540f94eb5d73386a01531ee0f19708d260373a8ae3bf633665ca8d"
+    },
+    {
+      "path": "assets\\textures\\e00b\\ending\\ebg00@e00b@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "24f033d8394e00225c6bb5495fede9f244d4a7f00cdacb2f947d624745553062"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\e00a0c@e01a0@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\e00a0c@e01a0@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\e01a0a@e01a0@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "649740dbef2607fbc414d0007e8f52374d7317560050d1cac026c86d5eb794a5"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\e01a0a@e01a0@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "2cb465651642f07d0ee629eac1df138ea265b659c36631bc71a24de23d6d2b99"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\e01a0b@e01a0@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "e2160aa31d76e63d14b15bd2fd59b58985b235c2800de729b9938fcaabf05524"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\e01a0b@e01a0@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "47cce3095a5e82c318a236a2605f95674a50756f867b8619cc6729661f33aed9"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\ebg01@e01a0@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\ebg01@e01a0@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\ebg03@e01a0@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0b64cea9d6dfcf75bf3405cdb1caaf89a26defa2da415f40404a1d05ec6922c6"
+    },
+    {
+      "path": "assets\\textures\\e01a0\\ending\\ebg03@e01a0@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "e1fdb0fc44dc82ff8b81dcbc78034a94a6c55eaf6c99c3bb71671ce48fdeb7a2"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\e00a0c@e01a1@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\e00a0c@e01a1@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\e01a1a@e01a1@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "6063d014696985aa51e3c8d29e6cbdc23de0f7d7f8e51e60dfacb8b4d208863b"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\e01a1a@e01a1@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "5a66f4682d801e9c441f36e250c06151f5a0e58530bcf9e0e70ba6f6c46e9a32"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\e01a1b@e01a1@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "30a5dc12f6d5482198dfeb24d136aee6123723147625a737946ee22032fc2f48"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\e01a1b@e01a1@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "90bca144c86a1881e3a7ecbbecc7474bebfc2e02706b2a927fa9403734057904"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\ebg01@e01a1@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\ebg01@e01a1@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\ebg02@e01a1@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0e607cef4197d0c28095dd0324c1ed853e502a8ffa3cb732e1f50cd032f19626"
+    },
+    {
+      "path": "assets\\textures\\e01a1\\ending\\ebg02@e01a1@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "9485fd383d28dfe50669169238e1292874645b7cf53d44b4dbfb9dc6523b9981"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\e00a0c@e01a2@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\e00a0c@e01a2@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\e01a2a@e01a2@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "e1343103cfa417331011815495e0e193d2e86613790766899ab6960c051a11dc"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\e01a2a@e01a2@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "fc5978bead2c49d69c728430816812d48135ad81fd6c4ef7568ecacc03a350f3"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\e01a2b@e01a2@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "e0cf7dda319bfa4d330769d98fc364600acf487e7accf1851e95b53e89979772"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\e01a2b@e01a2@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "2d73a43b6a6b22885b53feabbafdd77fce3874180f38694555c487c866bcd09f"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\ebg01@e01a2@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\ebg01@e01a2@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\ebg02@e01a2@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0e607cef4197d0c28095dd0324c1ed853e502a8ffa3cb732e1f50cd032f19626"
+    },
+    {
+      "path": "assets\\textures\\e01a2\\ending\\ebg02@e01a2@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "9485fd383d28dfe50669169238e1292874645b7cf53d44b4dbfb9dc6523b9981"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\e00a0c@e01a3@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\e00a0c@e01a3@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\e01a3a@e01a3@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "04486fa661fda7b540cee665a8f694d0288ac750b6d5d6fc845af7c94fb9b134"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\e01a3a@e01a3@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "fcb935590de8a6598af155bf0bbb6d458173b092591f4a39438cc728d759debe"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\e01a3b@e01a3@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "27ed594060fec3e18f956b5a586a17094579517c2a70151bdfaf35fbc04fe780"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\e01a3b@e01a3@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "45c2769e70504d0d79e09ae385d2746e8fb78630bbe07d69cb990cc6d4f02d0f"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\ebg01@e01a3@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\ebg01@e01a3@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\ebg06@e01a3@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "98b04a08c1b527979eb62572360b9765aee288f43a41a5dd10e8cdc3dad8109b"
+    },
+    {
+      "path": "assets\\textures\\e01a3\\ending\\ebg06@e01a3@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3320115b882b5e3b30f27887bcb5d80d13a7ec28838b2560abc1c33e98803d8a"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\e00a0c@e01a4@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\e00a0c@e01a4@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\e01a4a@e01a4@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5d5436f7a8d48f92c6dc76b16c4fd1f309337d883c602cc00b1880f0871a7e5"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\e01a4a@e01a4@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "667c57ad4ec898879281c55e839b0cde4614a0d88f0a30a7d2ee51721ddfa0c8"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\e01a4b@e01a4@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3f6d1fac01146f1a7472dfcc65a2b7db26f9a6226087cc9a263503676d78a995"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\e01a4b@e01a4@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0e577416aa2a9042a2790049facb31bd7d20a39b1e85221a34e7814f2928fa9c"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\ebg01@e01a4@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\ebg01@e01a4@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\ebg06@e01a4@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "98b04a08c1b527979eb62572360b9765aee288f43a41a5dd10e8cdc3dad8109b"
+    },
+    {
+      "path": "assets\\textures\\e01a4\\ending\\ebg06@e01a4@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3320115b882b5e3b30f27887bcb5d80d13a7ec28838b2560abc1c33e98803d8a"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\e00a0c@e01a5@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\e00a0c@e01a5@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\e01a5a@e01a5@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b5c641df2de85e37e0e78c631913a4e3140853ec89607e0346d58243ed9cee54"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\e01a5a@e01a5@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "ddbefe85da402c24c7120a2da3d75e0ca44d97c8f96278921298842e9c9d1b20"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\e01a5b@e01a5@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3f6d1fac01146f1a7472dfcc65a2b7db26f9a6226087cc9a263503676d78a995"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\e01a5b@e01a5@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "f6d6674776943f7bc145a4fdf6803c4fefe8cdc542ec13da8b06b919122e5c04"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\ebg01@e01a5@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\ebg01@e01a5@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\ebg07@e01a5@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "5d09b5b46baabbbcd9930e0d5d60ef82b09721fc354f53cc8ae0baf9c32c9ecf"
+    },
+    {
+      "path": "assets\\textures\\e01a5\\ending\\ebg07@e01a5@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "454a2a0569338b81308d049e8af4f90347d523e5fabca3193877b2d9432594a4"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\e00a0c@e01a6@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\e00a0c@e01a6@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\e01a6a@e01a6@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "ef9df2f16a48a860648826827bb42314c3aba41826abc3b173bdcf2087c580ad"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\e01a6a@e01a6@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "6a84352a56a88070454464ad3598c46f1928f9ee8e2597deb93dfaf30240f84d"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\e01a6b@e01a6@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3f6d1fac01146f1a7472dfcc65a2b7db26f9a6226087cc9a263503676d78a995"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\e01a6b@e01a6@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "9dce5e53b406fa2a07f66653fa4358d018c9c0f0ad56e220ca55cf82040addb3"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\ebg01@e01a6@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\ebg01@e01a6@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\ebg02@e01a6@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0e607cef4197d0c28095dd0324c1ed853e502a8ffa3cb732e1f50cd032f19626"
+    },
+    {
+      "path": "assets\\textures\\e01a6\\ending\\ebg02@e01a6@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "9485fd383d28dfe50669169238e1292874645b7cf53d44b4dbfb9dc6523b9981"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\e00a0c@e01a7@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c5605e7fe02caa378e6c91e9a78c0add2e404e0369754d5e7fe32978602052f6"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\e00a0c@e01a7@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3cb56427793bc08fd810a3e5fb49fda1764337d0cf96892fa55d000985894e72"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\e01a7a@e01a7@6.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "8bbce9a577e2c21a52ca0e58ca5b6967bff1a943919f090c0134c9a00e26febc"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\e01a7a@e01a7@7.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c63469751af4cac0dea11c5faf82fa8ce90f84dc2dffa4c0495337b149431c40"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\e01a7b@e01a7@8.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "d038577fd45d17f26a7b0bac6f650e2b971afcd045a3b9c0e7fe5451a5af040a"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\e01a7b@e01a7@9.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3a9e6e43848b227a50d116abaaf96e41554fc4435169174ecadad215811bd179"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\ebg01@e01a7@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "28a9b7d7f8c1c13be10acdbecb2fa20683c85595bf1e3af75b175f4b506c77fc"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\ebg01@e01a7@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "209520f8d954570758d0d21c76053baf5ebe150a495f7c292ce56321b6dd6710"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\ebg05@e01a7@4.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "c91ba663b7f5e68a0f5b9f9d6689a43144ae45b2022918763c04f69e7c2be7f8"
+    },
+    {
+      "path": "assets\\textures\\e01a7\\ending\\ebg05@e01a7@5.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "3c2a899aba3c6b2ae941c0a7cbb9e5f4cf3847dc8f6f7f6e62d89205eab97c00"
+    },
+    {
+      "path": "assets\\textures\\e01b\\ending\\e01b@e01b@2.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "a6c76bb0683129662adb943571a1991f3a00e90ab622109821436b8847df50ef"
+    },
+    {
+      "path": "assets\\textures\\e01b\\ending\\e01b@e01b@3.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "26c8008a12b76656c6cb98a056b872112543b604d34a333c35c8de2d56050cb5"
+    },
+    {
+      "path": "assets\\textures\\e01b\\ending\\ebg02@e01b@0.png",
+      "format": "JPEG",
+      "width": 1024,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0e607cef4197d0c28095dd0324c1ed853e502a8ffa3cb732e1f50cd032f19626"
+    },
+    {
+      "path": "assets\\textures\\e01b\\ending\\ebg02@e01b@1.png",
+      "format": "JPEG",
+      "width": 256,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "9485fd383d28dfe50669169238e1292874645b7cf53d44b4dbfb9dc6523b9981"
+    },
+    {
+      "path": "assets\\textures\\ebg00\\ending\\ebg00@ebg00@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "b938141cb49fea9b18e811c9285d6e5e22d467effca7ce205373a65748898a7f"
+    },
+    {
+      "path": "assets\\textures\\ebg01\\ending\\ebg01@ebg01@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "980ec238d3cd68ef6467a9755c7a782ed416b047c8408b385ffc69b4708668c7"
+    },
+    {
+      "path": "assets\\textures\\ebg02\\ending\\ebg02@ebg02@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "34335790a4c711619a0a41dfeb7fb14eb741fa3295ee84c1772f7676e12046ad"
+    },
+    {
+      "path": "assets\\textures\\ebg03\\ending\\ebg03@ebg03@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "4ecb8f5512400f846d8718205227e34a5aa96e9fb55fcb2d254e82a962b0c825"
+    },
+    {
+      "path": "assets\\textures\\ebg04\\ending\\ebg04@ebg04@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "0d4851bc077ea2a1fc3fbbf88c09fd7aa20bc47270a4bfa22162876f4283de35"
+    },
+    {
+      "path": "assets\\textures\\ebg05\\ending\\ebg05@ebg05@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "40b841805e58109fce69862bbe1899d9f9b2fe3bbf46b4ef12f35877105b7a4b"
+    },
+    {
+      "path": "assets\\textures\\ebg06\\ending\\ebg06@ebg06@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "17bd371a7730ce9e3812b498a3266fe85d042f73d15c483d29b548fd74d2da2b"
+    },
+    {
+      "path": "assets\\textures\\ebg07\\ending\\ebg07@ebg07@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "6ec066ddb042d1243c1bc661c2f0e43dfb9a877d512453003d1e7b732052bba3"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_aura@effect@7.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "0e20a8250827d053dcaada48232ff83e4e81b70110dc5b0eb514cf81c65e867b"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_base@effect@2.png",
+      "format": "PNG",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "6d0378af509da4bb54cbc63d6c5418d509f77476cfdc0ef359c2ca1ba8d8c860"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_breakwave2@effect@9.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "71536289c889d5149f63a2bdc6bccbf0fbb44696e9c3fa56ecc9a61ad4371c0c"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_breakwave3@effect@10.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "d32b7f7e202e4d2993fafa00fdc0cc042a348c362b7faea34e48d04d6a13f618"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_charge@effect@12.png",
+      "format": "PNG",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "sha256": "e5d5738af725fe5a09a2541b19ff8cad31c5ac93827b71c3af654e92f4477fb1"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_deadcircle@effect@4.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "20dfa3c55bab1ef3a0e5c0958834c77f3c3336d2ca01822b5989ac753e41e024"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_line@effect@1.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "cd1124fe65c91216b7008a7d6b49051f16588d128c3d885351d06355249ddd1c"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_magicsquare@effect@6.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "6fed7262887dd0cdacc7ef006a26418a6012f8ac5f5ce76d17ddadda9a8daa95"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_maple@effect@5.png",
+      "format": "PNG",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "ff76a1736233fbf6787bf3f88c7fe8cd7d75749e5d73a8baf1b4bce8859b3d8d"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_sloweffect@effect@3.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "25f7e97c3f8ba5f7f013264032c5ee3f9e1d1bc5b5352d89f90e1aaf8209c616"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_splash@effect@11.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "d0d00cfa4bba7e1da725ac144df979efd32b98266059b538056c3d817ec88cdb"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\eff_switch@effect@0.png",
+      "format": "PNG",
+      "width": 8,
+      "height": 8,
+      "mode": "RGBA",
+      "sha256": "4bac8beb572968908066fd2f70286a030193fefd862e72d23e891878fecbe5ac"
+    },
+    {
+      "path": "assets\\textures\\effect\\effect\\efflinegoast@effect@8.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 16,
+      "mode": "RGBA",
+      "sha256": "d828751e65c3331c0b5c450397407eb486aa257768f0a3a3cb380b6f2c280f1d"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy2@enemy@1.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "be890b3c5edc2842f0bb54ef1b9faead297a760b9bcec5d7a2466450d5bf307b"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy6@enemy@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "9618569e20710717814fc1f2c21aab82b21f04d24df1a659db421fe545319a4c"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy@enemy@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "16b7bbeb22c5102a2f5f9fce10950bfe4b5e3ab74413be02a3eee3849d115bf6"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy_aura@enemy@2.png",
+      "format": "PNG",
+      "width": 384,
+      "height": 48,
+      "mode": "RGBA",
+      "sha256": "89e6d30811c36645ee0e5bb5ede1f6935d103cef006474038e77c9ecc0c4fbdb"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy_g@enemy@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "335d14b651cc1ed42f2391db956beec09d4ab2d0c3d69d3c9c0760eb2951fa37"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy_ll2@enemy@6.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "cc2a20878abcb02d617bc201d2df38320572b615d88f1d6262e886062e23142b"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy_ll@enemy@5.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "104cef61735cbc233e48b7391843e49bf1b408e59dbc9acd8280715733f88453"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy_stone2@enemy@8.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "4321c0d88a05642c8f8c137e44c116a361d5a7321de1e5456c15f9cd96636153"
+    },
+    {
+      "path": "assets\\textures\\enemy\\enemy\\enemy_stone@enemy@7.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "82bd40141949dbfed3afc32ca449a9bfc414c95ce21175e438ae0fa60b18d22d"
+    },
+    {
+      "path": "assets\\textures\\front\\ascii\\pause@front@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "a30bf6ff9bc1ebe8fad2b1aabf42739eb86d510685165a0846e7955bcadb9603"
+    },
+    {
+      "path": "assets\\textures\\front\\ascii\\pause_back@front@5.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 600,
+      "mode": "RGBA",
+      "sha256": "df4e5df50443a80769b1246c43320ed7397166825a4270654fc566928d4ecbed"
+    },
+    {
+      "path": "assets\\textures\\front\\ascii\\pause_title@front@4.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "ddbdc10bef49bc5af2a6ea37d72078866c2a2591dc0a738ed80b53bf15ce8f87"
+    },
+    {
+      "path": "assets\\textures\\front\\face\\balloon_1024@front@10.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "f920d1c3fb358a0f0b5263a1c37e4837ce06026b96dac5b5f34db2b8c207835a"
+    },
+    {
+      "path": "assets\\textures\\front\\face\\balloon_1024@front@7.png",
+      "format": "PNG",
+      "width": 32,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "a1c6abdb5d49b93520216f560bbcd0d0ab48688f27eeb81bd86f07a8bc1b1c26"
+    },
+    {
+      "path": "assets\\textures\\front\\face\\balloon_1024@front@8.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "efc27987b1f5f04b5cf2586eacf29e43305b74559d98ddb11c47fc98e6e34c95"
+    },
+    {
+      "path": "assets\\textures\\front\\face\\balloon_1024@front@9.png",
+      "format": "PNG",
+      "width": 32,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "c0d0cf63009c90cd971bae4f793d2eeffaf05854655553cb44a3ff0a3f80497e"
+    },
+    {
+      "path": "assets\\textures\\front\\front\\ename@front@6.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "f72c53df732ab38aade20700c44556fb327bb26ca74857fd419a605444767fb6"
+    },
+    {
+      "path": "assets\\textures\\front\\front\\front00@front@0.png",
+      "format": "PNG",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "316bcf543d7641fb213951652b35ced4fdcdde4c350936479357556cc10a9149"
+    },
+    {
+      "path": "assets\\textures\\front\\front\\front01@front@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "b1ae55203b64afc0a0a308b223c1cc2a1fe63e7c67ddba8c17adfabe471903ce"
+    },
+    {
+      "path": "assets\\textures\\front\\front\\lifebar@front@11.png",
+      "format": "PNG",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "sha256": "f507a5cc45633e06720d10852e6c47d97b8a68b13c3d0638416be4a6dca8acd9"
+    },
+    {
+      "path": "assets\\textures\\front\\title\\demoplay@front@1.png",
+      "format": "PNG",
+      "width": 235,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "7f029050e31446d5c0d8f919296e07e3042793dc4ba2cfa35510905748495af1"
+    },
+    {
+      "path": "assets\\textures\\ghost\\enemy\\enemy2@ghost@0.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "be890b3c5edc2842f0bb54ef1b9faead297a760b9bcec5d7a2466450d5bf307b"
+    },
+    {
+      "path": "assets\\textures\\help\\help\\helpmenu@help@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "ff585da9dab15f6f3982f1f600578b0f3cbfa7a4e6f0db1b031ee004a79b1205"
+    },
+    {
+      "path": "assets\\textures\\notice\\help\\notice\\notice_bk@notice@0.png",
+      "format": "PNG",
+      "width": 1024,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "6075468a1c2a039ffc1def4e135c3b1185b0598085d7210d363440d2a392de83"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@12.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@13.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@14.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@15.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@16.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@17.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@18.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@19.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\dummy@pl00@20.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00an@pl00@6.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "6c7e67ed3735ffb0a226757879e60815fb025a52f214454989f811a63c85d32d"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00bsb@pl00@22.png",
+      "format": "PNG",
+      "width": 500,
+      "height": 700,
+      "mode": "RGBA",
+      "sha256": "1c70263380fda356a208d50d755819416e8c0c6c432503abef6a2c05bf5ed0f7"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00bsg@pl00@24.png",
+      "format": "PNG",
+      "width": 500,
+      "height": 700,
+      "mode": "RGBA",
+      "sha256": "ca346b67d4abe28a8b93a072cf8add8bba00935950a2af525f1e99cad5dcf149"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00bsr@pl00@21.png",
+      "format": "PNG",
+      "width": 500,
+      "height": 700,
+      "mode": "RGBA",
+      "sha256": "77370ee4212b8aa19809007b6974848a8b18f31ae49c474c273f36ff7aaf8e07"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00bsy@pl00@23.png",
+      "format": "PNG",
+      "width": 500,
+      "height": 700,
+      "mode": "RGBA",
+      "sha256": "b36816ed84c274aba73a95c443dfba1a44c9fba4e1d96346d83e41065c86d1db"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00dp@pl00@8.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "52a27f6ff8ee17a56efd90c8e72e75036d4469c65d6c896a5624dd9ba2afd0c3"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00hp@pl00@5.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "6042285fb891f1138ac50672f3994cb18fe974605ce0765bf4bf327f1266fddc"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00lo@pl00@11.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "1486ce5d9a23db3505eaab2ca6bb1b66525aa8f654b4da27acc1e66d24270e52"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00n2@pl00@4.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "978b598730092ca5d28480f895dd0afd61ec7c241b22d17fa4080750aebe605b"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00no@pl00@3.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "efc6f8368668107617f566e4c681046e07a13da7575082fc215353f36b73adbc"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00pr@pl00@9.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "a57b8c535c163f2b016c9c2ed91aef51456271b662610f2b8658d7847cfdb49b"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00sp@pl00@10.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "73251ae58525958069cd30dd2ede6a5dd909aeea526854072d1e448fcdbde8fc"
+    },
+    {
+      "path": "assets\\textures\\pl00\\face\\pl00\\face_pl00sw@pl00@7.png",
+      "format": "PNG",
+      "width": 311,
+      "height": 222,
+      "mode": "RGBA",
+      "sha256": "e6a5def175e6f5abbe89cd07c050c707325b45dca28a09d47fb4aa5c2d819561"
+    },
+    {
+      "path": "assets\\textures\\pl00\\player\\pl00\\pl00@pl00@0.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 144,
+      "mode": "RGBA",
+      "sha256": "740c12912d775c4f094cdca97f9319165f5ebf06befe725ca30c8b827decd26f"
+    },
+    {
+      "path": "assets\\textures\\pl00\\player\\pl00\\pl00b@pl00@2.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "3d72880333c457bdac592cef006781b3b6e11405eeaf07924ecb15019abdd290"
+    },
+    {
+      "path": "assets\\textures\\pl00\\player\\pl00\\pl00s@pl00@1.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "41d8bc1a763522076b787704b0bff246dfce78ae6bfe0c2e30c41029b23c0a80"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@14.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@15.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@16.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@17.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@18.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@19.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@20.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@21.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\dummy@pl01@22.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01an@pl01@8.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "c017d69340df8e58a0748fe0b803884504ce5c7bbbdda6a956889ddab8e331b1"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01bsb@pl01@24.png",
+      "format": "PNG",
+      "width": 620,
+      "height": 780,
+      "mode": "RGBA",
+      "sha256": "d632bad449646a438470f631efacc4c3a9b0b0045ffba4ca39ce1fd3bb5ea842"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01bsg@pl01@26.png",
+      "format": "PNG",
+      "width": 620,
+      "height": 780,
+      "mode": "RGBA",
+      "sha256": "5ffb2bdcea687f154349e0734fe50effa9b9dc7f4f2294ffe9a9e3718680b996"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01bsr@pl01@23.png",
+      "format": "PNG",
+      "width": 620,
+      "height": 780,
+      "mode": "RGBA",
+      "sha256": "453885cf2eb48c3478173e13da287447b998ce78759dfb33e543a039e3a5dadf"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01bsy@pl01@25.png",
+      "format": "PNG",
+      "width": 620,
+      "height": 780,
+      "mode": "RGBA",
+      "sha256": "bf495e048eef24f26d3efe5df59f808ffd0ee361565c004d902cf1770fa37f01"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01dp@pl01@10.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "ecb4ab5bfee7294be3fec99c3f268992b0e2f31d05c2062f2443e916b1b6e9e5"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01hp@pl01@7.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "d39455dc09ce753653c392cc89bd68daf0d11ee5f2c3eac6544afc2b354371a7"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01lo@pl01@13.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "eb20eda2ed9cef56f332b8c9d29d89b6dcf96ab37564edfa0550630867d00a40"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01n2@pl01@6.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "0723c6775e5dd44ee83d57f0461c9d4bbaf9ff7f01c0a54e1cea63ae246f576f"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01no@pl01@5.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "dfbc3e3228558de076cfdd50dd0244508c37a64c175ed47ec54bb35f5c651b8c"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01pr@pl01@11.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "c4ab89077f94d8c5bdf0a6c9de3e1fdca22ccdaee68e6607554ce0e007c7503d"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01sp@pl01@12.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "7e17dea52e993cfdaf24ceb7f25edbe9f618488829bd305a7f8f8e6889c930ac"
+    },
+    {
+      "path": "assets\\textures\\pl01\\face\\pl01\\face_pl01sw@pl01@9.png",
+      "format": "PNG",
+      "width": 298,
+      "height": 188,
+      "mode": "RGBA",
+      "sha256": "e543f32e61db2b57bdbb434a08911fddf7b384868fde4ad4ba3dfdfd88f22462"
+    },
+    {
+      "path": "assets\\textures\\pl01\\player\\pl01\\pl01@pl01@0.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 144,
+      "mode": "RGBA",
+      "sha256": "a2059f5440fd01e9ccd72dcb73b63bb881c307f52b3410afcee6264288005ae4"
+    },
+    {
+      "path": "assets\\textures\\pl01\\player\\pl01\\pl01b2@pl01@3.png",
+      "format": "PNG",
+      "width": 96,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "6d0a6ace4bbec240ca2c2a158d8f21bdf7af169aab23e349f1820ca1d08dcda7"
+    },
+    {
+      "path": "assets\\textures\\pl01\\player\\pl01\\pl01b@pl01@2.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "d626f97f379ddfb0c91c8c90315b7c1bd51bf3b92369c398708ac1fc80b12b74"
+    },
+    {
+      "path": "assets\\textures\\pl01\\player\\pl01\\pl01g@pl01@4.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "ba31b8172d0bcea70e13e7405a1ad89251691fd9f3efd6b983c7e77c78a8754b"
+    },
+    {
+      "path": "assets\\textures\\pl01\\player\\pl01\\pl01s@pl01@1.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "49709b6939090bd9791cbd7cdd86b5945f494d1bb66d3511c480ca41a0465e2e"
+    },
+    {
+      "path": "assets\\textures\\screenswitch\\effect\\eff_switch@screenswitch@0.png",
+      "format": "PNG",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "c7bbab113b2ca8e92921af442d7004f203475955a6f138977978a6a8d2f621ef"
+    },
+    {
+      "path": "assets\\textures\\screenswitch\\effect\\eff_switchbg@screenswitch@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "9d402e2967c9403a419687b6f3fb910a96652ef73224d9ae05a23a702a58c439"
+    },
+    {
+      "path": "assets\\textures\\sig\\loading\\sig1280@sig@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGB",
+      "sha256": "222615ed052caf24ff76a8e0812c901e57e24774f83492d05af6eb11d3d1adb3"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\ename01@st01enm@23.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "f4893871dfb5cd359f32aa58279996a9f081d570bae0c1200e1576e8f800b128"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01an@st01enm@4.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "d68c2f7f21721306ef34b63190b54d0d5c166fb5b2d6a44bb5bd96a5892db89b"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01anl@st01enm@13.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "2e2e92953b15a7de2d2d2dda54cb6c79de78a1d1c3c0f0e9df2451341010f95c"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01bs@st01enm@20.png",
+      "format": "PNG",
+      "width": 440,
+      "height": 720,
+      "mode": "RGBA",
+      "sha256": "bc0d27c807b34c3e570ce343df3c05ad1321475be40740d3e1750fac1ba55a6f"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01bsl@st01enm@19.png",
+      "format": "PNG",
+      "width": 440,
+      "height": 720,
+      "mode": "RGBA",
+      "sha256": "f6f90d98eb6e651837a8e61befb78f8915916b56bb9b986bf8f193a7ca6edd7b"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01ct@st01enm@24.png",
+      "format": "PNG",
+      "width": 265,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "e1ac47c96695cd0d6226ba44ec63e056be893d51c23e2aec21529fc04b380fa6"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01dp@st01enm@6.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "b8f27bef63faa42611842c199e23030efcc9990cf7fcf6439d4c7a43021781b8"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01dpl@st01enm@15.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "b46246e573fa061152c28ab04c93f00c8f9009c1934b1d20493af178582abc11"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01hp@st01enm@3.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "36c15ebafcda4b64ef0f596d94e5002a7831e18dd9a16a7e0c18ea3dd5b8c804"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01hpl@st01enm@12.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "a38404d915dac4cb7a7f6cd1c66615301638a78d1a571b6365684622777e0d38"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01lo@st01enm@9.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "1bf03b3386423c19f5996505593a72616a983593d63fce4accdc4a4777fcf128"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01lol@st01enm@18.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "ffe50504434cb7043ee9e6be3488eaaaad284ba1ce09345b19ba3812671a104a"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01n2@st01enm@2.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "1751d52a5338515614d66a00f5c0ab820ab1c2fe4a2f28bd7c665c0fa08d10a8"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01n2l@st01enm@11.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "157e2ad9716b3544dd64e12126000db0af522f1f4b612a311cfc01e85d0bbcde"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01no@st01enm@1.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "c466b68f15a1b860378777547bf5e525aa395d5db0d961e92ebe3d817dd484fb"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01nol@st01enm@10.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "0019132381efd682151bfebc3ac785d325186758f0cec94168b405ea8ec1024c"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01pr@st01enm@7.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "159d12da0c9cf0e1234d8f74e83ce03fcfc1bb1f199916c95abd581e160dc321"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01prl@st01enm@16.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "29079b6b0732ec902f6077cbf66b3fe9cb4b1c80ab5a766b519c78ae5e411a72"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01sp@st01enm@8.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "4828aa4535d39e6f03cbac9d791c0f39f76d9b5b959fc7beef6224ec9c64e22e"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01spl@st01enm@17.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "21ab96d379d8a3d2e57fff893fca82d54f60bb8bda1123f7f3545740861d6400"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01sw@st01enm@5.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "09500b05e301f47922faa23ad2fd33961afe3df42d3c6d804ff86a8a8fead2ca"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\face\\enemy1\\face01swl@st01enm@14.png",
+      "format": "PNG",
+      "width": 258,
+      "height": 219,
+      "mode": "RGBA",
+      "sha256": "5088d9d57195ca102ad1480fdd5925313b7c654ccd8158d227e28bbb1e66be31"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\stgenm\\stage01\\cardbg0@st01enm@21.png",
+      "format": "PNG",
+      "width": 384,
+      "height": 448,
+      "mode": "RGBA",
+      "sha256": "3219ec295f3a3284d77a772a8e4043ed1f6b7814733bf31cbd3e7aafac16f370"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\stgenm\\stage01\\cardbg1@st01enm@22.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "294a7001fa0fb385b59c6dc6e6596da7c5fa476f61a42c362f5e0a9c77d73358"
+    },
+    {
+      "path": "assets\\textures\\st01enm\\stgenm\\stage01\\enm1@st01enm@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "454b14c8dc84b009990d3bb205d96297ea3661431ab339efb9e3f67dcfc738ad"
+    },
+    {
+      "path": "assets\\textures\\st01logo\\front\\logo\\st01logo@st01logo@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 320,
+      "mode": "RGBA",
+      "sha256": "11de1fbd11c263beebb3ef20c61fc806975cab652ea40441e707e83783ad3328"
+    },
+    {
+      "path": "assets\\textures\\st01logo\\front\\logo\\st01logo@st01logo@1.png",
+      "format": "PNG",
+      "width": 768,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "d1d9f5dc60afb2e6f230f508624e2732a09cc86a958fa495cd76907bdad657c4"
+    },
+    {
+      "path": "assets\\textures\\st01wl\\background\\stage01\\A007@st01wl@2.png",
+      "format": "PNG",
+      "width": 1024,
+      "height": 141,
+      "mode": "RGBA",
+      "sha256": "8303e3ab6d828532d9611cc178662c220aa09c6110c0520eca3d7b330d8ac4de"
+    },
+    {
+      "path": "assets\\textures\\st01wl\\background\\stage01\\st01a@st01wl@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "7a132cfe7b3a90d214f5116158bcc418ecf18e8eab2d8b75967171b4db357e51"
+    },
+    {
+      "path": "assets\\textures\\st01wl\\background\\stage01\\st01b@st01wl@1.png",
+      "format": "PNG",
+      "width": 351,
+      "height": 244,
+      "mode": "RGBA",
+      "sha256": "3663e076a4be9a7759c75fd397a66f7526a39929b7e3ecb95a415c5f007a0ead"
+    },
+    {
+      "path": "assets\\textures\\st01wl\\background\\stage01\\st01c@st01wl@3.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "76d714ae697a83a9b0560fa8072d3378318b8d5a2c4d47405c746bb0e886cf2a"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\ename01@st02enm@23.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "fda16542e168be90d38bf29ec8cf0fa0f65671a50ce878fd405f1e5a7ce673a7"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01an@st02enm@4.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "f6b5feec570a54e23af47be5864a35bf39dd82149bbe69a823988932041a09b4"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01anl@st02enm@13.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "6c1b17a649b8389c033fbf866954bf88f569d25a1929e4e4eaf8dc55c46d5198"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01bs@st02enm@20.png",
+      "format": "PNG",
+      "width": 440,
+      "height": 720,
+      "mode": "RGBA",
+      "sha256": "2fa0113be727d45a539eddf2a1583950313a7beabb3376bebee1d48325aaeeaf"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01bsl@st02enm@19.png",
+      "format": "PNG",
+      "width": 440,
+      "height": 720,
+      "mode": "RGBA",
+      "sha256": "c966af39851abff64212dd8cb6855df8d332f999aa618cf58f1baa532e9c48a3"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01ct@st02enm@24.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 483,
+      "mode": "RGBA",
+      "sha256": "740e882493eccc56b28ee0418f167aa581733cc1ec1a8e2da06cfd2a75b3a6b3"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01dp@st02enm@6.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "c115025153ed1a320e00d627d97944167fb4f921897d63ace30958559af544ef"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01dpl@st02enm@15.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "90e2d0f82202fc7a7a662e91f91bfab2c081867a9c2886209556978e3819ecd0"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01hp@st02enm@3.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "0933097c3060106c6273f1429358040e5dcf17c7ed8718af4f3e05f99b7c524b"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01hpl@st02enm@12.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "28d4a6a388639bc236f389c2148de31c6ede1a4cc808af525085a0b7e25cdeba"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01lo@st02enm@9.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "b91d5bdb98ea1dc6a3a3cd9f2f637eb66248c0e5093336cbbecb5d23ae4ae5a4"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01lol@st02enm@18.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "b75f6e238624a7f251a302a4f06cd19c4c1bc3fa04aca9a97052839da980ffd7"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01n2@st02enm@2.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "c2f27fd190ee76d556f952111650105a363c5133e4d1e2e3a0af6bbc95ce819a"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01n2l@st02enm@11.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "19f513e69eabe0d34c6697e0cd54ad23f1347e1415934ac86b17b36ef43faa1a"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01no@st02enm@1.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "ae473b3b51ca898c53a50b481e59dda1f75b7bc9846935cccfb936b4fe1f036e"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01nol@st02enm@10.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "d92d020d5eb570814af356250d217fb8c12a0b06fe6f914eb0404d8ad4268560"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01pr@st02enm@7.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "873ebbb2a088798780d345e133002f40d8d06e437260d6a5f5db3975e9839687"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01prl@st02enm@16.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "a4cedfff15c1f60526f79db5c6c3ed16e77795ea4dacfe95e3f3ed7f4191e9f4"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01sp@st02enm@8.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "df6ca3da44688745e02466ecb2b6a5f745634366048bdd3756e81c483dec14fe"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01spl@st02enm@17.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "8ed8e247f37c7e5d2e36f9cd610e55cf73f8510c216c8f7d031c9646c969af9e"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01sw@st02enm@5.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "19538ea6443f4ff1875f73d8c04a1b12267da26d10a0c25caa6551664967f7e2"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\face\\enemy2\\face01swl@st02enm@14.png",
+      "format": "PNG",
+      "width": 303,
+      "height": 247,
+      "mode": "RGBA",
+      "sha256": "bc483e76dc676048dc906dd017d2e01ad8d3c6a42ff91c546a214bac400614b1"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\stgenm\\stage02\\cdbg02a00@st02enm@21.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "9f21046fdb829f12ae3743ba0717a163b703c087c9749344302ee6bf0328a569"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\stgenm\\stage02\\cdbg02b@st02enm@22.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "d1ab81910b03dd12c4a8906b760ebe9899b98f0fd703d11cea64e1cea3eca57a"
+    },
+    {
+      "path": "assets\\textures\\st02enm\\stgenm\\stage02\\enm2@st02enm@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "a966ebac471d73e2d67ba27f729ae2236a912efabcd4b1d63c70d1290a350b0e"
+    },
+    {
+      "path": "assets\\textures\\st02logo\\front\\logo\\st02logo@st02logo@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 320,
+      "mode": "RGBA",
+      "sha256": "bb01ab6175fcee55475679616e99a33a4e438f7092f2fb6583f0bbe3906d9699"
+    },
+    {
+      "path": "assets\\textures\\st02logo\\front\\logo\\st02logo@st02logo@1.png",
+      "format": "PNG",
+      "width": 768,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "2af29cf56db105cfdd82d7919d68a8571d8963a4dcfff0faa4cf0690e474a6fd"
+    },
+    {
+      "path": "assets\\textures\\st02wl\\background\\stage02\\st02a@st02wl@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "c8a9335deaea9520660ed563520cccbc5cd238aa9699795f4436000331e41ece"
+    },
+    {
+      "path": "assets\\textures\\st02wl\\background\\stage02\\st02b00@st02wl@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "f090db6cbb45932de909823074ddd5e8fab76e9a322a2f818abbcfe4272eb79b"
+    },
+    {
+      "path": "assets\\textures\\st02wl\\background\\stage02\\st02c00@st02wl@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "4662782c8088a4fed905c632baf0613aea63187382dbba37e7a8eeff8621b116"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\ename01@st03enm@23.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "087224669eae2c1966f022421f0786eea77fa47953c5ec59eb915d3011da25b0"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01an@st03enm@4.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "be6174ed52e97e7e0348517de7b65794604bc18c05a4bf8984eab5c404df1579"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01anl@st03enm@13.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "4fddff23601cd17090b3841107945868de8877996073fc499116bfed1ec84f3a"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01bs@st03enm@20.png",
+      "format": "PNG",
+      "width": 500,
+      "height": 720,
+      "mode": "RGBA",
+      "sha256": "df97e4273f1144374ea6056bb11737fd0c5780a5342f21ece9377a5cff78c6ee"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01bsl@st03enm@19.png",
+      "format": "PNG",
+      "width": 500,
+      "height": 720,
+      "mode": "RGBA",
+      "sha256": "6b1e3c924004ae5c774a004710375ec8935001410d3998856f6e9deebb3b2fc8"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01ct@st03enm@24.png",
+      "format": "PNG",
+      "width": 224,
+      "height": 431,
+      "mode": "RGBA",
+      "sha256": "3bffe0a3dcc261c5b9e0ce5dc9a4374e7f49d775f992c27b1ea3562624564061"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01dp@st03enm@6.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "175ea83a56b4c6a414d114531576c3d627a931502b969387cd7de2e00cb94807"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01dpl@st03enm@15.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "3e114c4407549e941fc32f719239d6ff2d51823391feadad3f32e7cb7c8010ff"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01hp@st03enm@3.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "cad6106cbc9205304eb5c1057a165d032bbf42698bc6f90589299313e8f4be19"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01hpl@st03enm@12.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "ba49722ea75e79613ae5d4af50b7c9ea0d3321e22034954537e2fa973bf5f20c"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01lo@st03enm@9.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "e60b41d4e9585ae7e7f9aec2bf3b07268d34a5d614b205125c34be33323f1d22"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01lol@st03enm@18.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "e60b41d4e9585ae7e7f9aec2bf3b07268d34a5d614b205125c34be33323f1d22"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01n2@st03enm@2.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "cc7b80e595acdb1c2b5fc455c3ff9c10c56b1c05fb2ea3382c81453943a20a0d"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01n2l@st03enm@11.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "e18f26a4b0548cb6ca9900e78805e1f7c21817afe6b850bd958dac714e2881ac"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01no@st03enm@1.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "a002110034479dee812ff85737740ba916dd2abdff4e4016661bec632943f661"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01nol@st03enm@10.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "59163b5e3b1693a69253481875c80ed6bbe62151b736e13733adf67084342fd8"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01pr@st03enm@7.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "4ae6e56d9924720abbdb50e6481407b762a9d110e1cb3ec8ffcc6c466e730bae"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01prl@st03enm@16.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "b220e1dca22407dc601be54bd6df8007cc429923bf2c74de0cb2b6081ce4446b"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01sp@st03enm@8.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "4d3064c7be44c0a484768706be30c96f3de12fe45f79160bdd6afcd4eae26970"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01spl@st03enm@17.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "aa764b012b7776481f7a31236f41306ea83e3195f3c002952948a408392cb127"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01sw@st03enm@5.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "682f496a61699d331d33f3a2d93a08409d99f35aa63463509e6424d5b8314a6a"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\face\\enemy3\\face01swl@st03enm@14.png",
+      "format": "PNG",
+      "width": 317,
+      "height": 223,
+      "mode": "RGBA",
+      "sha256": "ec61b3734a26690401d6d45184de5754206c0d0ad691f843f10c74239a12c343"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\stgenm\\stage03\\cdbg03a00@st03enm@21.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "bca9b50479687cdb95568a187cbcb53540f73f6020ba8c062b8041cd3d1f83c9"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\stgenm\\stage03\\cdbg03b@st03enm@22.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "8251077c025d1f3ba71af638a26605223abd4661c3e58f003dece3c92008aad3"
+    },
+    {
+      "path": "assets\\textures\\st03enm\\stgenm\\stage03\\enm3@st03enm@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 400,
+      "mode": "RGBA",
+      "sha256": "91331d36a4d0666e2c8dc96e1e192968b02ce71402c9635a02eda21915f6b81b"
+    },
+    {
+      "path": "assets\\textures\\st03logo\\front\\logo\\st03logo@st03logo@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 320,
+      "mode": "RGBA",
+      "sha256": "90d54ec155ecb13ece79fb7212ddf2f1f8bb763a3f4cece2e71f12cb1a454019"
+    },
+    {
+      "path": "assets\\textures\\st03logo\\front\\logo\\st03logo@st03logo@1.png",
+      "format": "PNG",
+      "width": 768,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "cb5f2ed1b7892be528ccbf82c73e4d6b4c6ebc8c3b794a323b8e2340b94bea17"
+    },
+    {
+      "path": "assets\\textures\\st03wl\\background\\stage03\\st03a00@st03wl@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "7eaa5a93cc4c0544018a9de5ff74810be1b74fd4ece97e32d92aa5924df6343a"
+    },
+    {
+      "path": "assets\\textures\\st03wl\\background\\stage03\\st03b00@st03wl@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "32447233ff810b2a2729cfc2da2ec4878dd424dfaa20d923bd285f32703b7d13"
+    },
+    {
+      "path": "assets\\textures\\st03wl\\background\\stage03\\st03c00@st03wl@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "c2b453d0acb1d72cdfbe385e5d4f9c24d4e19b8fac4956701b74feb7140d1d81"
+    },
+    {
+      "path": "assets\\textures\\st03wl\\background\\stage03\\st03d00@st03wl@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "8bf856254b1e7b3c72760a0ddfa27ab4dc3a9f7862fc87bed18b9ac7a41bde97"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\ename01@st04enm@23.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "2db5129e542096daf21caf6bf3edc11c873ac659af225923afdc25651eee2cd2"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01an@st04enm@4.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "b325eb7b4a5620f30f2afab3f2b2ae094e75203f374682a48f71825b782f13e0"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01anl@st04enm@13.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "eec6a0ce55139fca9df752da03b95301744776d7fac2132313462a36cde698b7"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01bs@st04enm@20.png",
+      "format": "PNG",
+      "width": 534,
+      "height": 820,
+      "mode": "RGBA",
+      "sha256": "736a1ea1d94d30703816a6b0d22e27ff01f0f15859db56b9f215240fa49aac46"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01bsl@st04enm@19.png",
+      "format": "PNG",
+      "width": 534,
+      "height": 820,
+      "mode": "RGBA",
+      "sha256": "2e1585209a601aec07461b8991fabb30f69169c4284f52ebee60450dc1994c73"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01ct@st04enm@24.png",
+      "format": "PNG",
+      "width": 288,
+      "height": 524,
+      "mode": "RGBA",
+      "sha256": "ef57b6391be25c8fb13f21245bb32232503a0cccbf8f17f05d7693c0bdd47b6e"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01dp@st04enm@6.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "cadee09a4a4dc415ed7841bfcd7db6fc5b3ed69608b816677c0f031c4ed36a9a"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01dpl@st04enm@15.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "974c77a120ef117d0525243c5447247f082315cbfc8af16410611cb2ba79a02f"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01hp@st04enm@3.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "7c8b1c9d345c3a628e14f5d284d051588c3cf43f9f38e5c1abb84960bd0746d7"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01hpl@st04enm@12.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "7b1dd5e468633a1fdd97a4ecaf18a66a44a30fef6c2daef6ffa2dbbde8db7492"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01lo@st04enm@9.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "cee7a541e5c7a680ec9e727afa4860274e82d896a2063ed8300ab5ff1fe7f9f4"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01lol@st04enm@18.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "fa2992b1d8dc4290585cb83f404a2c5a42360f3999b2b0cff8da604bf19833ed"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01n2@st04enm@2.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "b2f290837541a196a141d72c8aa8bd9d2aa4422e567ea016e38e566e976c49b1"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01n2l@st04enm@11.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "f9f59d17de8f9feb531b0e3e31ad824ed5c5feefc06a69ab1078ef21b7e0cea8"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01no@st04enm@1.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "ff57f296696ea96cf39838f7a7bc3ac256ddce18c68743df116cec36e624f1ec"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01nol@st04enm@10.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "116d0dc2a9ff34693dea8862273d1ec8236a3c60747b94c7891603002adcd37b"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01pr@st04enm@7.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "78a6c86ca7b3fb72317b9498eac8e8eb811005395cdf3d9f1d04f79e34b49c1a"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01prl@st04enm@16.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "41a14a03aaa3dc5ba3f56b10d4f17efa32d180e4ed6f1ee383fcf1eba8fb46df"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01sp@st04enm@8.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "306f51cef6be29141724ba38c4ce2abdd3bacec0a7eb9feae7595018fcb0323a"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01spl@st04enm@17.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "8435a4b437406f518279cb217a517a91e572601a38b3a81e936992b6c27fa654"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01sw@st04enm@5.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "0500c4988cc530c8e1055bef41f74ad5d2bccce53b88073deaea8c3cd8b881a5"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\face\\enemy4\\face01swl@st04enm@14.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "d0fe59b868c992ac0cf9ed74c30ed827b93c147a7020d1f54b4bb5b6dfcf6d58"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\stgenm\\stage04\\cdbg04a@st04enm@21.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "179750916c9b036e0da7e03b2631cbf3adff23983674f684559fe8abc052516d"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\stgenm\\stage04\\cdbg04b@st04enm@22.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0a2febc5ebfa0234c4b2028708c5d1fd30b8c1052a534b1bd5d004b4af1e84cb"
+    },
+    {
+      "path": "assets\\textures\\st04enm\\stgenm\\stage04\\enm4@st04enm@0.png",
+      "format": "PNG",
+      "width": 320,
+      "height": 448,
+      "mode": "RGBA",
+      "sha256": "c0f1387c921f9c642172779a37fe4cde373b2ad0a83dc2297c8dc6f47e109733"
+    },
+    {
+      "path": "assets\\textures\\st04logo\\front\\logo\\st04logo@st04logo@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 320,
+      "mode": "RGBA",
+      "sha256": "366e655a5727f98e485aa51a55b139d4c96290fbee461bec8e85ca79e89f14e7"
+    },
+    {
+      "path": "assets\\textures\\st04logo\\front\\logo\\st04logo@st04logo@1.png",
+      "format": "PNG",
+      "width": 768,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "84f7b7801bf50a8f436619131b3ef0b823c98e6d58f2491a2a48040f8f9e70d6"
+    },
+    {
+      "path": "assets\\textures\\st04menm\\stgenm\\stage04\\enm4b@st04menm@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "76d1d03abf79787f1205d1895c0826597e5daf133de61ae4ee5c151cfe977fdd"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04\\st04a00@st04wla@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "a9dd491752a19cb58326239d684722a58d609c338c6709bf9240575937de41f1"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04\\st04b00@st04wla@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "4632e8b2b0ece66642f449b1e5c805c652389eb094dd3e665e9af74724f44277"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04\\st04c00@st04wla@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "ba8d725aaca39a2111f68bf8e4b15c8cfb7824bbab7e92eea5b67827b5da5b8b"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04b\\st04a00@st04wla@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "d22ac21fa60c9751e0e7097a73c6a2eb7ed265bf9fd3f85ecd7274a9e14ea4b3"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04b\\st04b00@st04wla@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0abb81374c015472ab17f6edd03dcfe89c58dc185edab2a757c8a81fd2186ee2"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04b\\st04c00@st04wla@5.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0129a783575afd3754e33539ff3334b256319154b27b46df4f720e5c3372119d"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04c\\st04a00@st04wla@6.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "fc351ba9c97c60ba9ebfaad24895a28235bd3779a4744164c84fee6c3870b72d"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04c\\st04b00@st04wla@7.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "3b07d73f6b9048e61b6ecbbbcd225d452b62580bdcabd70847cf6ccc5ed2293b"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04c\\st04c00@st04wla@8.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "db8114fec5cdca86cef523a50ad6199d0881836e53ddc97cf74be1117b896fcf"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04d\\st04a00@st04wla@9.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "e35c094cfb7b3bfc1fb373af0546284c746239629a5ef9ab2145c77e087a257f"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04d\\st04b00@st04wla@10.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "11a3e8182a035f40dfbdce1367fec49c4e6df97a92d22b4a5f3db306ba976200"
+    },
+    {
+      "path": "assets\\textures\\st04wla\\background\\stage04d\\st04c00@st04wla@11.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "6cb5b713664591ab0f65b8778dbd17e657bc771bb3b6e979c45853a2ea17fd31"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04\\st04a00@st04wlb@9.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "a9dd491752a19cb58326239d684722a58d609c338c6709bf9240575937de41f1"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04\\st04b00@st04wlb@10.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "4632e8b2b0ece66642f449b1e5c805c652389eb094dd3e665e9af74724f44277"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04\\st04c00@st04wlb@11.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "ba8d725aaca39a2111f68bf8e4b15c8cfb7824bbab7e92eea5b67827b5da5b8b"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04b\\st04a00@st04wlb@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "d22ac21fa60c9751e0e7097a73c6a2eb7ed265bf9fd3f85ecd7274a9e14ea4b3"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04b\\st04b00@st04wlb@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0abb81374c015472ab17f6edd03dcfe89c58dc185edab2a757c8a81fd2186ee2"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04b\\st04c00@st04wlb@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0129a783575afd3754e33539ff3334b256319154b27b46df4f720e5c3372119d"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04c\\st04a00@st04wlb@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "fc351ba9c97c60ba9ebfaad24895a28235bd3779a4744164c84fee6c3870b72d"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04c\\st04b00@st04wlb@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "3b07d73f6b9048e61b6ecbbbcd225d452b62580bdcabd70847cf6ccc5ed2293b"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04c\\st04c00@st04wlb@5.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "db8114fec5cdca86cef523a50ad6199d0881836e53ddc97cf74be1117b896fcf"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04d\\st04a00@st04wlb@6.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "e35c094cfb7b3bfc1fb373af0546284c746239629a5ef9ab2145c77e087a257f"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04d\\st04b00@st04wlb@7.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "11a3e8182a035f40dfbdce1367fec49c4e6df97a92d22b4a5f3db306ba976200"
+    },
+    {
+      "path": "assets\\textures\\st04wlb\\background\\stage04d\\st04c00@st04wlb@8.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "6cb5b713664591ab0f65b8778dbd17e657bc771bb3b6e979c45853a2ea17fd31"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04\\st04a00@st04wlc@6.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "a9dd491752a19cb58326239d684722a58d609c338c6709bf9240575937de41f1"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04\\st04b00@st04wlc@7.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "4632e8b2b0ece66642f449b1e5c805c652389eb094dd3e665e9af74724f44277"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04\\st04c00@st04wlc@8.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "ba8d725aaca39a2111f68bf8e4b15c8cfb7824bbab7e92eea5b67827b5da5b8b"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04b\\st04a00@st04wlc@9.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "d22ac21fa60c9751e0e7097a73c6a2eb7ed265bf9fd3f85ecd7274a9e14ea4b3"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04b\\st04b00@st04wlc@10.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0abb81374c015472ab17f6edd03dcfe89c58dc185edab2a757c8a81fd2186ee2"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04b\\st04c00@st04wlc@11.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0129a783575afd3754e33539ff3334b256319154b27b46df4f720e5c3372119d"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04c\\st04a00@st04wlc@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "fc351ba9c97c60ba9ebfaad24895a28235bd3779a4744164c84fee6c3870b72d"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04c\\st04b00@st04wlc@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "3b07d73f6b9048e61b6ecbbbcd225d452b62580bdcabd70847cf6ccc5ed2293b"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04c\\st04c00@st04wlc@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "db8114fec5cdca86cef523a50ad6199d0881836e53ddc97cf74be1117b896fcf"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04d\\st04a00@st04wlc@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "e35c094cfb7b3bfc1fb373af0546284c746239629a5ef9ab2145c77e087a257f"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04d\\st04b00@st04wlc@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "11a3e8182a035f40dfbdce1367fec49c4e6df97a92d22b4a5f3db306ba976200"
+    },
+    {
+      "path": "assets\\textures\\st04wlc\\background\\stage04d\\st04c00@st04wlc@5.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "6cb5b713664591ab0f65b8778dbd17e657bc771bb3b6e979c45853a2ea17fd31"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04\\st04a00@st04wld@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "a9dd491752a19cb58326239d684722a58d609c338c6709bf9240575937de41f1"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04\\st04b00@st04wld@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "4632e8b2b0ece66642f449b1e5c805c652389eb094dd3e665e9af74724f44277"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04\\st04c00@st04wld@5.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "ba8d725aaca39a2111f68bf8e4b15c8cfb7824bbab7e92eea5b67827b5da5b8b"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04b\\st04a00@st04wld@6.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "d22ac21fa60c9751e0e7097a73c6a2eb7ed265bf9fd3f85ecd7274a9e14ea4b3"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04b\\st04b00@st04wld@7.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0abb81374c015472ab17f6edd03dcfe89c58dc185edab2a757c8a81fd2186ee2"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04b\\st04c00@st04wld@8.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0129a783575afd3754e33539ff3334b256319154b27b46df4f720e5c3372119d"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04c\\st04a00@st04wld@9.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "fc351ba9c97c60ba9ebfaad24895a28235bd3779a4744164c84fee6c3870b72d"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04c\\st04b00@st04wld@10.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "3b07d73f6b9048e61b6ecbbbcd225d452b62580bdcabd70847cf6ccc5ed2293b"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04c\\st04c00@st04wld@11.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "db8114fec5cdca86cef523a50ad6199d0881836e53ddc97cf74be1117b896fcf"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04d\\st04a00@st04wld@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "e35c094cfb7b3bfc1fb373af0546284c746239629a5ef9ab2145c77e087a257f"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04d\\st04b00@st04wld@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "11a3e8182a035f40dfbdce1367fec49c4e6df97a92d22b4a5f3db306ba976200"
+    },
+    {
+      "path": "assets\\textures\\st04wld\\background\\stage04d\\st04c00@st04wld@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "6cb5b713664591ab0f65b8778dbd17e657bc771bb3b6e979c45853a2ea17fd31"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\bullet\\bullet5@st05enm@25.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "9bdd755ecd00a93acfe71e4f1f3305dfe406a2e5fa279cddc5fb3ebd9d948541"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\ename01@st05enm@23.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "7335d4efcbe1b6617100eb33461ad236a3f565a484838876e5f4a7589709b306"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01an@st05enm@4.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "6c61df3020d538f633db2387b731bee4afd5395fa651d8c0a438f246a55d8b2f"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01anl@st05enm@13.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "c25bc635bce6a312c47cb000b8a7240f51b802aa5d1a7764f0a8de2bebb481d4"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01bs@st05enm@20.png",
+      "format": "PNG",
+      "width": 640,
+      "height": 810,
+      "mode": "RGBA",
+      "sha256": "bc031229b432d830ec6e42842655aad4a6e34a294878d5719915a942e775c9e2"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01bsl@st05enm@19.png",
+      "format": "PNG",
+      "width": 640,
+      "height": 810,
+      "mode": "RGBA",
+      "sha256": "761d9d7451ddb96f2127114437c509d068903a64e78021cd382ff2b3e9199042"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01ct@st05enm@24.png",
+      "format": "PNG",
+      "width": 350,
+      "height": 513,
+      "mode": "RGBA",
+      "sha256": "d7ec99b2204297484f5142367ed1647f566a1341b4270871ed385193822e2194"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01dp@st05enm@6.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "d875ec90794d19c654b0d52b8a18c7337b5b3331e7d2b8c85a7e67fd0a6fe008"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01dpl@st05enm@15.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "e0f0ca0ab4d680edbb2a388fdd831a7b1205b4d5e549c3fc6f7a9cb54d9685f1"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01hp@st05enm@3.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "fdd3515abc4d3dff5491437af6b1e287749396200a5e3a58d1912326172afe8b"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01hpl@st05enm@12.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "0e24ffcf28d6df9b5710e1530fbde3b65c47a9d2a707bfd7c8ca5df57369c8a1"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01lo@st05enm@9.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "f46ff4ba7f87afd8a35dd868e3a5cbf7f4112430629d4e41d0b6efdf517c84ed"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01lol@st05enm@18.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "dce5a9f87031ee421e864bcee044985ca522552716c1676730cdab06f4dad778"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01n2@st05enm@2.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "c45b495de24e24f3b225ae4ba87148c7737c9706c7316bc6f50f7752ee24fd96"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01n2l@st05enm@11.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "0c6fa5a7f7c5f8d7cb92cdcf2883c0e342f8ea591e936ff8daa4961ba03b9085"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01no@st05enm@1.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "f46cc476a2510687e53680cd530224f5f75a405e06129b4fc3b105ef16b3f3de"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01nol@st05enm@10.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "7bd651f1b0bc4ce84e619c8a16eca974ba80cb9b49d6c21b4fb9ea22b22ac5e8"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01pr@st05enm@7.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "a627b3f345f99cd3b9dae7c10ec78d0e3723c2effc2f13f99d130eed471388c0"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01prl@st05enm@16.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "de6853457dccd80a8efca8d4c18deea0e6ed172156c238836f5bb311ec2fb39f"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01sp@st05enm@8.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "ead65a3b9a5ef8cdedb5b83466bd0ec3dd0e86c7f880761d31bf827caede3e98"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01spl@st05enm@17.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "55179b7394a098573c9ee863c7ac386f180e21fb77f0074d952d003c1bc68386"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01sw@st05enm@5.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "332f43f6a44a89698588ae78d5c4631ffc44ffaeb08a20bf921ebf2e08956e6c"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\face\\enemy5\\face01swl@st05enm@14.png",
+      "format": "PNG",
+      "width": 366,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "d3cbe8fcc72a7aaef8f438fa7a41082f731e529ccf7ab5e81b41276660f9313d"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\stgenm\\stage05\\cdbg05a00@st05enm@21.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "5a5fffcb4d55d3df2d957a9c36ea722bac49ffeedb7e19fc09826d7b9e109995"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\stgenm\\stage05\\cdbg05b00@st05enm@22.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "203637b5eb0c6ab0ba722562af1170fa949fadbac057777885f57fdf51ccd8ab"
+    },
+    {
+      "path": "assets\\textures\\st05enm\\stgenm\\stage05\\enm5@st05enm@0.png",
+      "format": "PNG",
+      "width": 400,
+      "height": 448,
+      "mode": "RGBA",
+      "sha256": "d4841adb9249face40825cc92dea359d1e821ce04bc9c0406bb5e27e787341f4"
+    },
+    {
+      "path": "assets\\textures\\st05logo\\front\\logo\\st05logo@st05logo@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 320,
+      "mode": "RGBA",
+      "sha256": "fb4c09c547bf3a4abd35e11e1636d077406d59c52bea1dde2030610220fcbcce"
+    },
+    {
+      "path": "assets\\textures\\st05logo\\front\\logo\\st05logo@st05logo@1.png",
+      "format": "PNG",
+      "width": 768,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "c0c8bc334a3ade0b3ea2affcf40fc07e34e28e869d3611dd419ad92469c8e0c9"
+    },
+    {
+      "path": "assets\\textures\\st05wl\\background\\stage05\\st05a00@st05wl@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "cbf0edff8b2e42b9ed3467f2704d6edf8d40716ce89d7af58d97c90a255969bb"
+    },
+    {
+      "path": "assets\\textures\\st05wl\\background\\stage05\\st05b00@st05wl@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "7c58a53bf568ae445e8a23ea99b27e4e3328b9628c2440f34d651f61c89a5ed1"
+    },
+    {
+      "path": "assets\\textures\\st05wl\\background\\stage05\\st05c00@st05wl@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "8a6947d4c68dde3ff5e4b5f4c22ec3f678139c57af285e5f40d96e731794d008"
+    },
+    {
+      "path": "assets\\textures\\st05wl\\background\\stage05\\st05d00@st05wl@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "209a3621b47e8dd00235b8211bb807dc87574179ce79cc368f346b87709fedff"
+    },
+    {
+      "path": "assets\\textures\\st05wl\\background\\stage05\\st05f00@st05wl@4.png",
+      "format": "PNG",
+      "width": 384,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "4471d2c05a0d4e8a18b8801f7564f903be339ba9eb9e5e77a4530f9fa76b7cc7"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\bullet\\bullet5@st06enm@26.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "9bdd755ecd00a93acfe71e4f1f3305dfe406a2e5fa279cddc5fb3ebd9d948541"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@10.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@11.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@12.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@13.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@14.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@15.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@16.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@17.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@18.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@19.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\dummy@st06enm@9.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\ename01@st06enm@24.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "73cdf7ab63d0b2e88e7592ee1981f0ac9247066a8627dbb898bcabceb9f7b36d"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01an@st06enm@4.png",
+      "format": "PNG",
+      "width": 299,
+      "height": 226,
+      "mode": "RGBA",
+      "sha256": "a3dae0de7b4439d1d8209dba5dfffc3b0f0a631f4906352da1d8c697eb5d669a"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01bs@st06enm@20.png",
+      "format": "PNG",
+      "width": 1024,
+      "height": 840,
+      "mode": "RGBA",
+      "sha256": "d38867d9149338e36163aae20688a01a2f3ec2c29b96c270d22d30026599fe3f"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01ct@st06enm@25.png",
+      "format": "PNG",
+      "width": 540,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "fb5dc95a301274e87ee7cadeb94141497b6f7ca06599a3dcb5f0e1ca52056849"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01dp@st06enm@6.png",
+      "format": "PNG",
+      "width": 299,
+      "height": 226,
+      "mode": "RGBA",
+      "sha256": "57933b4cd2a7de464b8ff68e35bbacece6df6dda22ee807a5014b3e163f965c0"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01hp@st06enm@3.png",
+      "format": "PNG",
+      "width": 299,
+      "height": 226,
+      "mode": "RGBA",
+      "sha256": "b7af7662f193838cb8aad9140ee0cd5c2c1c501d87fb8388a65c4df6c43ae96b"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01n2@st06enm@2.png",
+      "format": "PNG",
+      "width": 299,
+      "height": 226,
+      "mode": "RGBA",
+      "sha256": "72bee52a6c8cad6dfc4aa129d186826175f517b1f4cff9aca1b6f05b62d0fb76"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01no@st06enm@1.png",
+      "format": "PNG",
+      "width": 299,
+      "height": 226,
+      "mode": "RGBA",
+      "sha256": "acd3c4ecb076bd19c231a9d5286544f8fc19acc8e81fc1a37f2d3bb670221824"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01pr@st06enm@7.png",
+      "format": "PNG",
+      "width": 299,
+      "height": 226,
+      "mode": "RGBA",
+      "sha256": "fd027f63e055806e42c4245c7ccc797f24570a8d6049bf02528fd266a86824af"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01sp@st06enm@8.png",
+      "format": "PNG",
+      "width": 299,
+      "height": 226,
+      "mode": "RGBA",
+      "sha256": "c9461264ce249bb41147364b46afc2c36d703992f8e47e4a50a0b61c02333c8e"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\face\\enemy6\\face01sw@st06enm@5.png",
+      "format": "PNG",
+      "width": 299,
+      "height": 226,
+      "mode": "RGBA",
+      "sha256": "892db79ea5e40c6bd5927a5349d6d8cdb242fb9bfc5760e480d8fd88d6e7206e"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\stgenm\\stage06\\cdbg06a00@st06enm@21.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "349db3a9ff690c36bb777d32066dd9af279f549b95e96f00c64970099d6e48cc"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\stgenm\\stage06\\cdbg06b00@st06enm@22.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "ecbf56bf5d3454cb605ce89f2d9ac1be620d1bc938fee516aa03efdcfc35190f"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\stgenm\\stage06\\cdbg06c00@st06enm@23.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "fe4bd225d78553b66a62c485dc34e7fde60efc7b2e102107ecc2b33e923f7f3a"
+    },
+    {
+      "path": "assets\\textures\\st06enm\\stgenm\\stage06\\enm6@st06enm@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "e3f0dcba64b5975ed9a563dc03ae0c4bd9eb4a2fd0a53497472c5850753013d9"
+    },
+    {
+      "path": "assets\\textures\\st06logo\\front\\logo\\st06logo@st06logo@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 320,
+      "mode": "RGBA",
+      "sha256": "6151c9f2068ce260b82ef2678261d2828cc00341fd10788484d188a83965670d"
+    },
+    {
+      "path": "assets\\textures\\st06logo\\front\\logo\\st06logo@st06logo@1.png",
+      "format": "PNG",
+      "width": 768,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "f5a7136a453d83515ebe077adf99a084f74de4bc8531d79a9eb2f2cac4c964e7"
+    },
+    {
+      "path": "assets\\textures\\st06wl\\background\\stage06\\st04b00@st06wl@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "885b323bcd86bd43b4c63ae87cfd112c9dfb42b6997e9a2f19d6c361f548cf9a"
+    },
+    {
+      "path": "assets\\textures\\st06wl\\background\\stage06\\st06a00@st06wl@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "dfda5146d551484810654919d19338196094c7c3076fe3bade6edf04d6c3af1a"
+    },
+    {
+      "path": "assets\\textures\\st06wl\\background\\stage06\\st06b00@st06wl@1.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "64ebb2e9c6dafb639e849863f7fa2b02cda079e58fa4c8aff6943ea56a9427eb"
+    },
+    {
+      "path": "assets\\textures\\st06wl\\background\\stage06\\st06c00@st06wl@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "592b70a8eb2c924d55e6203a7bc325819233aa6d2a77f1303470e07e7e258ec2"
+    },
+    {
+      "path": "assets\\textures\\st06wl\\background\\stage06\\st06d00@st06wl@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "9941ffd1afa3cc8a5402af4df9b9f01baf9b45060bd505ad4292d60deafd660c"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\bullet\\bullet5@st07enm@25.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "9bdd755ecd00a93acfe71e4f1f3305dfe406a2e5fa279cddc5fb3ebd9d948541"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\bullet\\etama7a@st07enm@26.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "da694623ea3aadf8e6762a62039aec446ffc5b7fa4f950071712189f46e0a4c4"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\bullet\\etama7b@st07enm@27.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "d96e2d570d2fc8e04565b3470181b287e3a5604da5268e90cfd2eb46f63e865d"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\ename01@st07enm@23.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "37ee0508d80c43d7ea4e529cc722570e8f0e7d34adfc3eea2d3145e99b0881eb"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01an@st07enm@4.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "d390c0f1f97889ad948f49a09743cd769f97c4e27bf819ebca203393d02ac7bf"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01anl@st07enm@13.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "192de016a0691e03656e970a552bba3d3b3bc02f493cc118fdd1cfd60cfab596"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01bs@st07enm@20.png",
+      "format": "PNG",
+      "width": 960,
+      "height": 880,
+      "mode": "RGBA",
+      "sha256": "43bb3a90c07f56ddd75dcfc70fde5fd6d2a687e74cc854880953223d1f0f3f4a"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01bsl@st07enm@19.png",
+      "format": "PNG",
+      "width": 960,
+      "height": 880,
+      "mode": "RGBA",
+      "sha256": "9d05d6bfc06751cf4f2444621527cb9e8253ab6497b8d937d9d2e54564477ca9"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01ct@st07enm@24.png",
+      "format": "PNG",
+      "width": 450,
+      "height": 480,
+      "mode": "RGBA",
+      "sha256": "72f73a0bb5db586475bd26cfeb1092129e6f150a98b2a6210b268f626f23463f"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01dp@st07enm@6.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "f44320471b1c52f0df2b51f2365daa359f4dd371400acb466c51b5bf4d1bb7db"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01dpl@st07enm@15.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "6a8dae29e8cc8bc1743602a8b75b082f384ae9f37690a20a7731be2df6ca9e4a"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01hp@st07enm@3.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "d996fa3e8f3b83906df7fbdff7e16901f38891db2129a89cd73083abbe7e9c57"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01hpl@st07enm@12.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "b1066a6282e1a83d91dddb24518832f8dc0cd7a3c395d4cb72ed66943ce62776"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01lo@st07enm@9.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "108e70a68b70f89fb2ba561107e7eddec4495695b8952973842a1e40c76bb72f"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01lol@st07enm@18.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "9600e977044e9ff28f6898696b150c3d2b8d885aeb7a78cbb849414988c7f260"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01n2@st07enm@2.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "059e0cc97b479ae8cff41b63bee82c6fa598ebc90af71adbb3986b53a075c58f"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01n2l@st07enm@11.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "d36e37ce9078450e751d3d319731aec086fcb8fec8aa379d9a38736fe7e99ca5"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01no@st07enm@1.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "a31a38965b39e93432dc8ffa926f26a6b946aa784954eaf741e22a75001c61f4"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01nol@st07enm@10.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "74e9094c24aa05df0ccf07f4abfe88b0728c643984f7fd6e6c454ed51c318ed3"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01pr@st07enm@7.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "324eef073b07316d5d38082c7c5387828c2a919a8c88bdef92bb5059bbe0a036"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01prl@st07enm@16.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "3d75febe10f25dd7ac2e274db2b9d0fe0e3580fb5b769025eb5b965f6fa0cd3b"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01sp@st07enm@8.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "96c43adc94c9fab82160400433be7871261f0b50d5843402117c941b61bce92b"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01spl@st07enm@17.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "539fe2b524704a71ad6380aee74d3a4e6c4308a64b8b35a0c925e94a3c1f9eab"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01sw@st07enm@5.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "c177d36b01e992c64a5fa3dd5b4510e014e3e9e0cea0f11d6e87b3afafafb0a7"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\face\\enemy7\\face01swl@st07enm@14.png",
+      "format": "PNG",
+      "width": 304,
+      "height": 213,
+      "mode": "RGBA",
+      "sha256": "d9a0b45bad0acdaca4d300e003b5b9c0c5a1982e74463877360bbaeb96ed7811"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\stgenm\\stage07\\cdbg07a00@st07enm@21.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "a220a9d191641ad038910fc89014041a6e3bfed8eb59f1331426602bc59d3752"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\stgenm\\stage07\\cdbg07b00@st07enm@22.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "d616d71a71deb2d4167056d19ae00a5ae1e1678623393e214ff9f8271ea22703"
+    },
+    {
+      "path": "assets\\textures\\st07enm\\stgenm\\stage07\\enm7@st07enm@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "ae318041f69873c9511720e722241c7fdb65e6f508eed4fc9d48d6ebc36ee48a"
+    },
+    {
+      "path": "assets\\textures\\st07logo\\front\\logo\\st07logo@st07logo@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 320,
+      "mode": "RGBA",
+      "sha256": "29495ffb344cc1350c4a24705d25fbd40f355b8c3b9e9cfd317917241c532db6"
+    },
+    {
+      "path": "assets\\textures\\st07logo\\front\\logo\\st07logo@st07logo@1.png",
+      "format": "PNG",
+      "width": 768,
+      "height": 64,
+      "mode": "RGBA",
+      "sha256": "0be883b5ca75cb7116d93a3bd127df739b27394901457e23af4f6fffb3b71b0f"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@10.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@11.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@12.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@13.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@14.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@15.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@16.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@17.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@18.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@19.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@2.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@3.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@5.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@7.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@8.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\dummy@st07menm@9.png",
+      "format": "PNG",
+      "width": 4,
+      "height": 4,
+      "mode": "RGBA",
+      "sha256": "710e50334b6604cbbb9c00953b4ab2610b506a419e65429fa3c0946ceac8d9f2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\enemy4\\ename01@st07menm@23.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 384,
+      "mode": "RGBA",
+      "sha256": "2db5129e542096daf21caf6bf3edc11c873ac659af225923afdc25651eee2cd2"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\enemy4\\face01an@st07menm@4.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "b325eb7b4a5620f30f2afab3f2b2ae094e75203f374682a48f71825b782f13e0"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\enemy4\\face01bs@st07menm@20.png",
+      "format": "PNG",
+      "width": 534,
+      "height": 820,
+      "mode": "RGBA",
+      "sha256": "736a1ea1d94d30703816a6b0d22e27ff01f0f15859db56b9f215240fa49aac46"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\enemy4\\face01ct@st07menm@24.png",
+      "format": "PNG",
+      "width": 288,
+      "height": 524,
+      "mode": "RGBA",
+      "sha256": "ef57b6391be25c8fb13f21245bb32232503a0cccbf8f17f05d7693c0bdd47b6e"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\enemy4\\face01dp@st07menm@6.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "cadee09a4a4dc415ed7841bfcd7db6fc5b3ed69608b816677c0f031c4ed36a9a"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\face\\enemy4\\face01no@st07menm@1.png",
+      "format": "PNG",
+      "width": 292,
+      "height": 194,
+      "mode": "RGBA",
+      "sha256": "ff57f296696ea96cf39838f7a7bc3ac256ddce18c68743df116cec36e624f1ec"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\stgenm\\stage04\\cdbg04a@st07menm@21.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "179750916c9b036e0da7e03b2631cbf3adff23983674f684559fe8abc052516d"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\stgenm\\stage04\\cdbg04b@st07menm@22.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "0a2febc5ebfa0234c4b2028708c5d1fd30b8c1052a534b1bd5d004b4af1e84cb"
+    },
+    {
+      "path": "assets\\textures\\st07menm\\stgenm\\stage04\\enm4@st07menm@0.png",
+      "format": "PNG",
+      "width": 320,
+      "height": 448,
+      "mode": "RGBA",
+      "sha256": "c0f1387c921f9c642172779a37fe4cde373b2ad0a83dc2297c8dc6f47e109733"
+    },
+    {
+      "path": "assets\\textures\\st07wl\\background\\stage07\\st05a00@st07wl@0.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "39f42a82901477e414f0bf3d744d8bd2b03fba8a2d743a932466ab7cb4cfacb5"
+    },
+    {
+      "path": "assets\\textures\\st07wl\\background\\stage07\\st05b00@st07wl@1.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "7d94babc2a189256ea6a44496842727d146ddf1e9a1ada578339e016ee24a1df"
+    },
+    {
+      "path": "assets\\textures\\st07wl\\background\\stage07\\st05c00@st07wl@2.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "8a6947d4c68dde3ff5e4b5f4c22ec3f678139c57af285e5f40d96e731794d008"
+    },
+    {
+      "path": "assets\\textures\\st07wl\\background\\stage07\\st05d00@st07wl@3.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "209a3621b47e8dd00235b8211bb807dc87574179ce79cc368f346b87709fedff"
+    },
+    {
+      "path": "assets\\textures\\st07wl\\background\\stage07\\st05f00@st07wl@4.png",
+      "format": "PNG",
+      "width": 384,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "4471d2c05a0d4e8a18b8801f7564f903be339ba9eb9e5e77a4530f9fa76b7cc7"
+    },
+    {
+      "path": "assets\\textures\\staff\\ending\\staff2@staff@2.png",
+      "format": "PNG",
+      "width": 1280,
+      "height": 1280,
+      "mode": "RGBA",
+      "sha256": "edc99b1b8a5582b1446b7abee01378420c63035d0a2defacbdc6d35228beb32c"
+    },
+    {
+      "path": "assets\\textures\\staff\\ending\\staff@staff@1.png",
+      "format": "PNG",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "805cf116d6e29f258ff9b3ad4c83917e8caca010b7db68eb324d3142f6e914b4"
+    },
+    {
+      "path": "assets\\textures\\staff\\ending\\stbg00@staff@0.png",
+      "format": "JPEG",
+      "width": 1280,
+      "height": 2048,
+      "mode": "RGB",
+      "sha256": "20caebafdc22f34590bc2b4e73b41662ca165b7c04cc3279d9adb7e0747be3e7"
+    },
+    {
+      "path": "assets\\textures\\stone\\front\\stonegauge@stone@20.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 32,
+      "mode": "RGBA",
+      "sha256": "ec62ec3a03af69f24abff488af75ccd9c5ee0591537b685463887606778f5146"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\button@stone@18.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 192,
+      "mode": "RGBA",
+      "sha256": "09c568b5d31bff3c2cc0ecc43204d9126ab6354ed813e53219dcaa38bdbdca6f"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_blue2@stone@3.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "4251d63442aa745b74b91fcb751b3d70948e17ce15e5508a24b2ee2af0195e17"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_blue2_80@stone@12.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "7084b1f6da8bc47fcdd195494bacc6e5722a9823cba94a00a3c2bcdc42196f86"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_blue@stone@2.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "3969802dbf5c6ba8f5e58966bcf3ff29b5880e88108c4e06c5836874fcc97253"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_blue_80@stone@11.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "964837cafeb605d349811596fa574ac8ab32e5527c0b269414aff6241d5f5209"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_common@stone@8.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "f24f83665bdb86df1f8e7fadea2fa2f664e5f557b1031ddcd8714961b788f867"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_common_80@stone@17.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "fe561b723c5a201c38c2c3c9ea9e91983190b368768d6622b2501ac647c0f599"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_green2@stone@7.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "0c3707856daee9121d2a90f374f6d59ddc79060c2a298fd1feb3bc652b6410d0"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_green2_80@stone@16.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "d417c3108ffa57de3a0e0b68b9cc011407066eba76b8cec4b9074af2ef24a114"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_green@stone@6.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "c9c55c49dc105301e0a478a2799fd274af15489b92a534eeea41d6774913b48e"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_green_80@stone@15.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "2fdf125f48cd4cb7e610c7e8abc784e81582aff25f6d88ae8754fd5aea303ddb"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_min@stone@21.png",
+      "format": "PNG",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "sha256": "c662ba1b3d80beb2c0e50f715e492ee50fa569dc0018086e825d1593f2ce087d"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_red2@stone@1.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "6c1bebd7b7f48682851ccf0b8c909bc77ad56e3be1940adedaac9738bb934eb0"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_red2_80@stone@10.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "efb8b5072cad205cb2abc6f44828ae00476a87832f4fc32313ccafe1cf770da9"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_red@stone@0.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "7d2f1e4ae509332ef3e6031b5803ea5a73e7ba338d3949591d237ebe1d6302c5"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_red_80@stone@9.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "3afb5984dfa9a1fcbe2737177211ead1dd305029a9f5f2f37c737863cea264c8"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_yellow2@stone@5.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "f2074395251754407041b240a13fb95987e339e5384fb2957ac805ea1c1109dd"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_yellow2_80@stone@14.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "ef93087a93a28dd0ccd0b4f6c491de4d737a6e1e3d9c690126e6274f155bbfc1"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_yellow@stone@4.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "7a4b8f6a31f32de889cfc7d590a3a4e9eb82d64457075e6e468c833f0a7dc2ae"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\stone_yellow_80@stone@13.png",
+      "format": "PNG",
+      "width": 80,
+      "height": 80,
+      "mode": "RGBA",
+      "sha256": "6f01dc8e19d3b2bfd35add150d8027a60c4d9695e00835649c307f5c78d2ba17"
+    },
+    {
+      "path": "assets\\textures\\stone\\stone\\text@stone@19.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "15afd650c8b3a928847360baf5321ab984583c431974b92f1cbbfd5011a542d4"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\pldata_select@title@33.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 608,
+      "mode": "RGBA",
+      "sha256": "3189e3d334a1b8ac22fec216f94aa017d7bbdef1e7aa609787e8b3468308098c"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\rank00@title@17.png",
+      "format": "PNG",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "1158436f2eda36ee6fbd27915f64b46b62929b4f0e240defe51797225d09ea2e"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\result00@title@32.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "aa1467b2784e34d078f23a02c72f75d087d81b5c018c276926450806f352b848"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_manual@title@12.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "1e3bd12e689673f6b00b61d82139b66743ac0058099bfef41e0772cf4f3eceb5"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_music@title@11.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "a9d9925d1f55ab58a1657b467d06430fc3b976541624833034f5515a6d942609"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_player@title@5.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "79515f8750bc5cd22e635e8a71606b69eaf1b4c60b818ed1c4dd2e0edba10e4b"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_playerdata@title@10.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "1ad2615cbb7bf6b867b23c2dc7a8d21c703ffbcbedbca3211d3c82c7936883f7"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_playerdataselect@title@15.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "ce8e0912a98cbb3aad474cbcae18b4eb90ce21655faba40495a631476715a76d"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_rank@title@4.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "a7f85d93f75979ab84ae003f7d213c28aeeef5e015903428b7c0c4a94a320013"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_regist@title@14.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "dd3db45e667497b648cdc0ecc883529d3f2e8bd7b43f98225033b4032f8752f7"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_replay@title@9.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "4c8957807a74ccedaaebff564c772cfd27b5ad4ad26a1a4575f6c11c4a6e925a"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_savereplay@title@13.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "5771a4e3ac4c7e06cb519874e42b6d1ed78a9d3786241e136f9b858b835ec4d7"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_spell@title@8.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "7cfce57008a84144cd88cfbd16680da9a57d5f9b533f448153b8c090d2e1d692"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_stage@title@7.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "2df2b9f8fa0d15a0fb8c3e6dad779c3289ed2a5f211e71f97f47f727b9fdf621"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_trophy@title@16.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "4c3dbcd8369283a1d548259f29a3e4135a9876d671e06d581c7a23924a2bf86f"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\selecttitle\\sl_weapon@title@6.png",
+      "format": "PNG",
+      "width": 512,
+      "height": 256,
+      "mode": "RGBA",
+      "sha256": "8840cbc530ce77b5fb81fb9b5310ad9fadc8cacd42a844de53ea8af5facd84ea"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\spell@title@34.png",
+      "format": "PNG",
+      "width": 1024,
+      "height": 512,
+      "mode": "RGBA",
+      "sha256": "aec11f3660a329b661906315b8c531de4f0060e39944cec854365dca34149a1c"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_bk00@title@0.png",
+      "format": "PNG",
+      "width": 1280,
+      "height": 960,
+      "mode": "RGBA",
+      "sha256": "67d1eb2f5df12f8af2d01ad95e46caceab398495a9ed5127d192700e937dfa65"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_ch00@title@1.png",
+      "format": "PNG",
+      "width": 838,
+      "height": 963,
+      "mode": "RGBA",
+      "sha256": "64cbaf9f2adf78b2d665868ea0d87ec1839463fd5dec4c97b45cf39b97026540"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_copy@title@3.png",
+      "format": "PNG",
+      "width": 400,
+      "height": 36,
+      "mode": "RGBA",
+      "sha256": "ab127f3e46b0810ca17a30a3ecf9801b6e5654a801f62409bacee1a65a3c351b"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_logo@title@2.png",
+      "format": "PNG",
+      "width": 680,
+      "height": 370,
+      "mode": "RGBA",
+      "sha256": "28e8cbeb283207814a5e953e44ff2121bd34d9c0b50739b157d395147af2ebd8"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl00b@title@18.png",
+      "format": "PNG",
+      "width": 1006,
+      "height": 980,
+      "mode": "RGBA",
+      "sha256": "60244e64f2e4d2d8692e8f148b9a10fb5eb35aa6c55cb33f154085d6645ccb96"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl00bb@title@20.png",
+      "format": "PNG",
+      "width": 1006,
+      "height": 973,
+      "mode": "RGBA",
+      "sha256": "5288730999dcd13a3e4a0215bf66f0e651f2dd4981c7f5cde2aa3e39879a0c2b"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl00bG@title@22.png",
+      "format": "PNG",
+      "width": 1006,
+      "height": 973,
+      "mode": "RGBA",
+      "sha256": "617b1088dc345c4709d6fb24041f86bebc93d077082fde023da49f141502a324"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl00br@title@19.png",
+      "format": "PNG",
+      "width": 1006,
+      "height": 973,
+      "mode": "RGBA",
+      "sha256": "5a6b39a6f2c47be6a9275c7b8d7acc7f8a0bb8b206f1b9729b69879d2250a867"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl00by@title@21.png",
+      "format": "PNG",
+      "width": 1006,
+      "height": 973,
+      "mode": "RGBA",
+      "sha256": "57496559d3443d942c32ce782e290f75bb936c74c698002882a496ab5aa0bb30"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl00c2@title@30.png",
+      "format": "PNG",
+      "width": 603,
+      "height": 357,
+      "mode": "RGBA",
+      "sha256": "e4f80dedaf5624e9002e3270eb24102469f7b8f3718ea80302a9b1f07f2c6f75"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl00c@title@28.png",
+      "format": "PNG",
+      "width": 603,
+      "height": 357,
+      "mode": "RGBA",
+      "sha256": "b2e9eaa8a8203a33ddf3341c3a11e7566eac054a9c1265c5f40086adb2957ef5"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl01b@title@23.png",
+      "format": "PNG",
+      "width": 980,
+      "height": 1000,
+      "mode": "RGBA",
+      "sha256": "d976db46103a6b0be2036b1b10a8ed1449562bdf2d697f2272156aec2395a7f9"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl01bb@title@25.png",
+      "format": "PNG",
+      "width": 980,
+      "height": 1000,
+      "mode": "RGBA",
+      "sha256": "24b525fde8a505ad1084930ee40c48526d2d42ea8d2efa24f68c696936bc9121"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl01bG@title@27.png",
+      "format": "PNG",
+      "width": 980,
+      "height": 1000,
+      "mode": "RGBA",
+      "sha256": "7c2b721b65acc45ad144f3e25269bfda3a672b0fb36331c1b86769154fbdd596"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl01br@title@24.png",
+      "format": "PNG",
+      "width": 980,
+      "height": 1000,
+      "mode": "RGBA",
+      "sha256": "2c66e46a9d1ca4bf30b44593bbf420d7ad2be495b99713277def1e96b2e018a1"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl01by@title@26.png",
+      "format": "PNG",
+      "width": 980,
+      "height": 1000,
+      "mode": "RGBA",
+      "sha256": "b91bf2eed5b6e47534e603a369230fd587d7e897449e48b8af4226480a0b1736"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl01c2@title@31.png",
+      "format": "PNG",
+      "width": 603,
+      "height": 357,
+      "mode": "RGBA",
+      "sha256": "5cba8751b4edf11b5271c3fb6606929e495d5cc937978806c28e43a15b785e8b"
+    },
+    {
+      "path": "assets\\textures\\title\\title\\title_pl01c@title@29.png",
+      "format": "PNG",
+      "width": 603,
+      "height": 357,
+      "mode": "RGBA",
+      "sha256": "15b440b62aae5ee0b1fbaf6bb087edb65113a1c447d8d1791201b940a8cfdf72"
+    },
+    {
+      "path": "assets\\textures\\title_v\\title\\title_ver@title_v@0.png",
+      "format": "PNG",
+      "width": 256,
+      "height": 32,
+      "mode": "RGBA",
+      "sha256": "ab3a5565ab9d9b13cc0261d4e076c69211d3490799b4513b6866ce03e663f23b"
+    },
+    {
+      "path": "assets\\textures\\trophy\\help\\trophy\\trophy@trophy@0.png",
+      "format": "PNG",
+      "width": 442,
+      "height": 192,
+      "mode": "RGBA",
+      "sha256": "3cc5b5a6db627cc30f271e58fb3bcb41f42e2d845c9c30f2e6ba0c308bdeb88c"
+    }
+  ]
+}

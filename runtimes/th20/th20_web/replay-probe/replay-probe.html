@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>TH20 deterministic replay probe</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}body{display:grid;place-items:center}
+canvas{display:block;width:min(100vw,133.333333vh);height:min(100vh,75vw);touch-action:none;outline:none}
+#log{position:absolute;left:0;top:0;color:#8f8;font:11px monospace;max-height:40vh;overflow:hidden}</style></head>
+<body>
+<canvas id="screen" width="1280" height="960" tabindex="0"></canvas>
+<pre id="log"></pre>
+<script type="module">
+// Deterministic TH20 replay probe (see README.md next to this file).
+//
+// Boots the SDL3/WebAssembly game without the launcher shell, steps it with the
+// fixed-step `sdl_loop_tick` entry point (no requestAnimationFrame), drives the
+// title menu by key injection and then plays a saved replay while injecting
+// live keyboard/touch input. Two runs must agree frame by frame: replay
+// playback is simulation, and live input must not be able to change it.
+//
+//   ?build=new   -> ./th20-sdl.mjs          (artifact under test)
+//   ?build=base  -> ./baseline/th20-sdl.mjs (reference build, optional)
+//   ?replay=th20_02.rpy
+const params = new URLSearchParams(location.search);
+const build = params.get('build') ?? 'new';
+const replayName = params.get('replay') ?? 'th20_02.rpy';
+const modulePath = build === 'base' ? './baseline/th20-sdl.mjs' : './th20-sdl.mjs';
+const createModule = (await import(modulePath)).default;
+
+const lines = [];
+const log = (...a) => {
+  lines.push(a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' '));
+  document.getElementById('log').textContent = lines.slice(-6).join('\n');
+};
+const canvas = document.getElementById('screen');
+let core = null, Module = null, app = 0, sawGraphicsFailure = false;
+const nativeError = console.error.bind(console);
+console.error = (...a) => {
+  const text = a.join(' ');
+  if (/SDL renderer|SDL TH20 graphics device|SDL invalid surface/.test(text)) sawGraphicsFailure = true;
+  log('[err]', text);
+  nativeError(...a);
+};
+
+const cstr = (text, fn) => {
+  const bytes = new TextEncoder().encode(text + '\0');
+  const p = core.graphics_allocate(bytes.length);
+  try { new Uint8Array(core.memory.buffer, p, bytes.length).set(bytes); return fn(p); }
+  finally { core.graphics_free(p); }
+};
+
+async function boot() {
+  Module = await createModule({
+    canvas, noInitialRun: true, print: (...a) => log('[out]', ...a), printErr: (...a) => log('[err]', ...a),
+    instantiateWasm(imports, ready) {
+      return WebAssembly.instantiateStreaming(fetch(modulePath.replace(/\.mjs$/, '.wasm')), imports)
+        .then(({ instance, module }) => { core = instance.exports; ready(instance, module); return core; });
+    }
+  });
+  window.Module = Module; window.FS = Module.FS;
+  Module.FS.mkdirTree('/game'); Module.FS.mkdirTree('/fonts'); Module.FS.mkdirTree('/savesth20/jp/replay');
+  Module.FS.writeFile('/game/th20.dat', new Uint8Array(await (await fetch('/th20.dat')).arrayBuffer()));
+  try {
+    Module.FS.writeFile('/fonts/msgothic.ttc', new Uint8Array(await (await fetch('/msgothic.ttc')).arrayBuffer()));
+  } catch { log('font unavailable; text glyphs stay blank'); }
+  // The launcher shell binds the SDL canvas selector before the game opens;
+  // without it SDL_GL_CreateContext cannot find the canvas and the graphics
+  // device has no GL context.
+  cstr('#screen', p => core.sdl_canvas(p));
+  app = core.sdl_game_open(0, 0x1234);
+  log('sdl_game_open', app);
+  return app !== 0;
+}
+
+const step = (n = 1) => { for (let i = 0; i < n; ++i) core.sdl_loop_tick(1 / 60, 1000 / 60); };
+const key = (code, down) => cstr(code, p => core.sdl_key(p, down ? 1 : 0));
+const tap = (code, frames = 2, gap = 4) => { key(code, 1); step(frames); key(code, 0); step(gap); };
+const status = () => Array.from(new Int32Array(core.memory.buffer, core.sdl_game_status(), 10));
+const player = () => Array.from(new Float32Array(core.memory.buffer, core.sdl_player_state(), 4));
+const probe = (n = 28) => Array.from(new Float32Array(core.memory.buffer, core.sdl_touch_probe(), n));
+
+// Title main menu -> Replay list -> the first list entry that has a file ->
+// stage list -> stage 1 playback.
+function toReplay() {
+  step(400);
+  for (let i = 0; i < 3; ++i) tap('ArrowDown', 2, 3);   // 0 -> 2 -> 3 -> 4 (Replay)
+  tap('KeyZ', 2, 40); step(90);
+  tap('ArrowDown', 2, 4);                              // slot 0 is empty; slot 1 holds the fixture
+  tap('KeyZ', 2, 40); step(60);
+  tap('KeyZ', 2, 60); step(180);
+  return { scene: status()[0], tstate: status()[3], tcursor: status()[7] };
+}
+
+// Only fields carried by every build are hashed so results stay comparable.
+const fingerprint = () => {
+  const p = player(), s = status();
+  return [Math.round(p[2] * 1024), Math.round(p[3] * 1024), Math.round(p[1]), s[0]];
+};
+const fnv = (bytes) => { let h = 0x811c9dc5; for (const b of bytes) { h ^= b & 0xff; h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; };
+
+// Live input the probe can inject. `key-*` uses the hosted-keyboard bridge
+// (sdl_key), which is the same path the launcher's on-screen controls and a
+// physical keyboard use. `touch-*` uses the gesture/direct-touch exports.
+function injector(mode) {
+  return mode === 'key-shoot' ? () => key('KeyZ', 1)
+    : mode === 'key-mash' ? (i) => key('KeyZ', (i % 7) < 4 ? 1 : 0)
+    : mode === 'key-slow' ? () => key('ShiftLeft', 1)
+    : mode === 'arrow-left' ? () => key('ArrowLeft', 1)
+    : mode === 'arrow-cycle' ? (i) => key(i % 20 < 10 ? 'ArrowLeft' : 'ArrowRight', 1)
+    : mode === 'touch-drag' ? (i) => { if (i === 0) core.sdl_touch(0, 5, 0.12, 0.55); else if (i === 40) core.sdl_touch(2, 5, 0.12, 0.55); }
+    : mode === 'touch-fire' ? () => core.sdl_touch_controls(1, 0, 0, 0, 0, 0)
+    : mode === 'touch-all' ? () => core.sdl_touch_controls(1, 1, 0, 0, 0, 0)
+    : null;
+}
+
+// One block hash per 300 frames, plus the dialogue windows, so a divergence can
+// be located without transferring a per-frame trace.
+async function longRun(mode, frames, referenceBlocks) {
+  if (!await boot()) return { error: 'boot failed' };
+  if (sawGraphicsFailure) return { error: 'graphics device failed to initialize' };
+  Module.FS.writeFile('/savesth20/jp/replay/' + replayName,
+    new Uint8Array(await (await fetch('/' + replayName)).arrayBuffer()));
+  const entered = toReplay();
+  if (entered.scene !== 7) return { error: 'replay did not start', entered };
+  const inject = injector(mode);
+  const blocks = [], dialogues = [];
+  let acc = [], inDialogue = false, start = 0, firstDiff = -1, last = null, prevCursor = -1;
+  for (let i = 0; i < frames; ++i) {
+    if (inject) inject(i);
+    step(1);
+    const q = probe();
+    const collecting = q[26] !== 0;
+    if (collecting !== inDialogue) { if (collecting) start = i; else dialogues.push([start, i]); inDialogue = collecting; }
+    const cursor = Math.round(q[25]);
+    if (prevCursor >= 0 && cursor < prevCursor) dialogues.push(['stage-change', i, prevCursor, cursor]);
+    prevCursor = cursor;
+    last = { i, cursor, stage: Math.round(q[24]), dialogue: collecting, scene: status()[0], player: player() };
+    for (const v of fingerprint()) acc.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff);
+    if ((i + 1) % 300 === 0) {
+      blocks.push(fnv(acc)); acc = [];
+      if (referenceBlocks && firstDiff < 0 && (blocks.length > referenceBlocks.length || blocks[blocks.length - 1] !== referenceBlocks[blocks.length - 1]))
+        firstDiff = (blocks.length - 1) * 300;
+    }
+  }
+  if (acc.length) blocks.push(fnv(acc));
+  return { build, mode, replay: replayName, frames, entered, blocks, dialogues, firstDiff, last };
+}
+
+window.H = { boot, step, key, tap, status, player, probe, toReplay, longRun, lines, get core() { return core; } };
+log('probe ready (' + build + ')');
+</script>
+</body>
+</html>

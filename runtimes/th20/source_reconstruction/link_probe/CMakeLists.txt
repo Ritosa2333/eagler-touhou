@@ -1,0 +1,20 @@
+# Explicit diagnostic target, excluded from the normal build while genuine
+# engine symbols are missing. It links the real recovered WinMain and modules;
+# there are no replacement definitions for missing dependencies.
+add_executable(th20_source_link_probe WIN32 EXCLUDE_FROM_ALL link_probe.cpp)
+target_link_libraries(th20_source_link_probe PRIVATE th20_trophy_system)
+target_link_libraries(th20_source_link_probe PRIVATE th20_help_system th20_notice_system)
+target_link_libraries(th20_source_link_probe PRIVATE th20_options_system th20_key_config th20_ending_scene th20_title_system)
+target_link_libraries(th20_source_link_probe PRIVATE th20_replay_system)
+target_link_libraries(th20_source_link_probe PRIVATE th20_pause_system)
+target_link_libraries(th20_source_link_probe PRIVATE
+  th20_program_entry_source th20_runtime_entry_adapter th20_platform_entry_adapter
+  th20_input_entry_adapter th20_sprite_entry_adapter th20_sprite_platform_adapter th20_audio_entry_adapter th20_gameplay_entry_adapter
+  th20_platform_window th20_ecl_vm th20_resource_manager th20_startup_scene th20_stage_background th20_bomb_system th20_effect_system th20_bullet_system th20_laser_system th20_item_system th20_player_entity th20_small_score th20_stone_menu th20_special_state th20_overlay_system th20_hud_system th20_stage_clear th20_stage_completion th20_card_system)
+
+# The diagnostic link and the source executable have the identical real engine
+# closure. This target remains explicit while end-to-end verification proceeds.
+get_target_property(th20_engine_libraries th20_source_link_probe LINK_LIBRARIES)
+add_executable(th20_source WIN32 EXCLUDE_FROM_ALL link_probe.cpp)
+target_link_libraries(th20_source PRIVATE ${th20_engine_libraries})
+set_target_properties(th20_source PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/source_game")

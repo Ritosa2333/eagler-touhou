@@ -1,0 +1,32 @@
+{
+  "schema":"th20.ecl.scan.v1",
+  "root":"assets/raw",
+  "files":[
+    {"path":"common.ecl","valid":true,"roundtrip_identical":true,"size":2572,"subroutine_count":2,"instruction_count":76},
+    {"path":"default.ecl","valid":true,"roundtrip_identical":true,"size":24176,"subroutine_count":55,"instruction_count":996},
+    {"path":"st01.ecl","valid":true,"roundtrip_identical":true,"size":35300,"subroutine_count":67,"instruction_count":1416},
+    {"path":"st01bs.ecl","valid":true,"roundtrip_identical":true,"size":19760,"subroutine_count":17,"instruction_count":837},
+    {"path":"st01mbs.ecl","valid":true,"roundtrip_identical":true,"size":5160,"subroutine_count":6,"instruction_count":215},
+    {"path":"st02.ecl","valid":true,"roundtrip_identical":true,"size":44884,"subroutine_count":75,"instruction_count":1835},
+    {"path":"st02bs.ecl","valid":true,"roundtrip_identical":true,"size":19808,"subroutine_count":17,"instruction_count":821},
+    {"path":"st02mbs.ecl","valid":true,"roundtrip_identical":true,"size":5368,"subroutine_count":6,"instruction_count":225},
+    {"path":"st03.ecl","valid":true,"roundtrip_identical":true,"size":49112,"subroutine_count":85,"instruction_count":1983},
+    {"path":"st03bs.ecl","valid":true,"roundtrip_identical":true,"size":33096,"subroutine_count":27,"instruction_count":1403},
+    {"path":"st04.ecl","valid":true,"roundtrip_identical":true,"size":45624,"subroutine_count":60,"instruction_count":1809},
+    {"path":"st04bs.ecl","valid":true,"roundtrip_identical":true,"size":32312,"subroutine_count":23,"instruction_count":1343},
+    {"path":"st04mbs.ecl","valid":true,"roundtrip_identical":true,"size":12064,"subroutine_count":12,"instruction_count":509},
+    {"path":"st05.ecl","valid":true,"roundtrip_identical":true,"size":23376,"subroutine_count":40,"instruction_count":879},
+    {"path":"st05bs.ecl","valid":true,"roundtrip_identical":true,"size":29620,"subroutine_count":24,"instruction_count":1249},
+    {"path":"st05mbs.ecl","valid":true,"roundtrip_identical":true,"size":13680,"subroutine_count":15,"instruction_count":568},
+    {"path":"st06.ecl","valid":true,"roundtrip_identical":true,"size":22056,"subroutine_count":45,"instruction_count":838},
+    {"path":"st06bs.ecl","valid":true,"roundtrip_identical":true,"size":50932,"subroutine_count":41,"instruction_count":2141},
+    {"path":"st07.ecl","valid":true,"roundtrip_identical":true,"size":30696,"subroutine_count":48,"instruction_count":1229},
+    {"path":"st07bs.ecl","valid":true,"roundtrip_identical":true,"size":66920,"subroutine_count":52,"instruction_count":2790},
+    {"path":"st07mbs.ecl","valid":true,"roundtrip_identical":true,"size":15072,"subroutine_count":13,"instruction_count":598}
+  ],
+  "valid_files":21,
+  "invalid_files":0,
+  "subroutine_count":730,
+  "instruction_count":23760,
+  "opcode_histogram":{"0":69,"1":221,"10":541,"11":369,"12":889,"13":304,"14":665,"15":217,"21":76,"22":316,"23":1436,"40":730,"42":3916,"43":900,"44":2310,"45":669,"46":34,"50":173,"51":453,"52":22,"53":82,"54":25,"55":375,"56":4,"57":39,"58":112,"59":163,"60":4,"61":1,"63":30,"64":18,"65":47,"66":6,"67":11,"68":3,"69":59,"70":16,"73":5,"74":39,"77":3,"78":389,"81":28,"82":44,"84":19,"87":14,"90":4,"91":22,"300":355,"301":71,"302":247,"303":184,"304":72,"306":183,"307":200,"308":7,"309":16,"313":63,"316":7,"317":2,"319":22,"325":2,"327":2,"329":17,"330":4,"336":5,"341":4,"342":1,"343":5,"344":3,"400":19,"401":154,"404":200,"405":113,"408":3,"410":16,"412":86,"420":3,"422":17,"424":4,"441":7,"445":114,"448":9,"500":106,"501":108,"502":103,"503":29,"504":95,"505":25,"506":24,"507":103,"508":8,"509":5,"510":13,"511":96,"512":33,"513":89,"514":86,"515":44,"516":270,"517":14,"518":60,"519":84,"520":26,"521":10,"522":13,"523":93,"524":84,"525":29,"526":87,"527":43,"529":74,"530":3,"531":62,"534":56,"536":1,"539":73,"540":19,"546":2,"548":7,"549":2,"550":16,"559":1,"564":2,"566":3,"567":19,"568":19,"572":1,"573":79,"574":1,"575":1,"600":262,"601":278,"602":274,"603":30,"604":434,"605":273,"606":267,"607":252,"608":68,"609":128,"610":32,"611":515,"612":8,"613":11,"614":9,"615":122,"616":141,"618":33,"619":22,"620":35,"621":12,"622":34,"624":76,"700":10,"701":6,"702":7,"703":3,"704":1,"708":1,"711":2,"901":1,"902":1,"1001":4,"1002":13,"1003":43,"1010":1,"1011":22,"1012":1,"1013":18}
+}
