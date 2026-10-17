@@ -46,7 +46,7 @@ assert.match(labServer,/artifacts\/presentation-lab\/runtime/);
 
 // Ordinary/Replay skip expired deadlines. Live MP and spectators with a
 // confirmed backlog use the shared TH06/07 bounded catch-up start budget.
-assert.match(host,/int tick\(\).*runtime->step\(false\)/s);
+assert.match(host,/int tick\(\).*runtime->step\(false,frame_begin\)/s);
 assert.match(host,/const bool tick_due=cadence\.advance\(delta\)!=0/);
 assert.match(host,/while\(due&&!result\)/);
 assert.match(host,/Configured\(\)&&\s*\(!runtime->app.session.netplay.ReadOnly\(\)\|\|\(runtime->app.session.netplay.Spectator\(\)&&\s*runtime->app.session.netplay.CanStart\(\)&&runtime->network_driver\(\)&&runtime->network_driver\(\)->Network\(\).SpectatorBacklog\(\)>4\)\)/);
@@ -61,7 +61,7 @@ assert.match(host,/const bool ready=interpolation_ready\(\)&&!limit60/);
 // refresh only hides that swap and follows it with a presentation-only draw.
 assert.match(host,/runtime->app\.draw\(1\.0f,false,false\)/);
 assert.match(host,/runtime->app\.draw\(presentation_alpha,interpolate,true,!frozen\)/);
-assert.match(host,/presentation_gate\.advance\(high,tick_due\)/);
+assert.match(host,/presentation_gate\.advance\(high,completed_after_correction\)/);
 assert.doesNotMatch(host,/interpolate=.*fast/);
 assert.match(host,/const bool frozen=.*paused.*retrying.*pause_state.*show_retry/s);
 const frameTick=host.indexOf('result=tick();');

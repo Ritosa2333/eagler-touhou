@@ -56,7 +56,7 @@ const flags=[...common,...(thcrap?['-DTH_ENABLE_THCRAP=1']:[]),'-std=c++17','-fn
 if(printPlan){console.log(JSON.stringify({game,profile,variant:multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':'normal',outputDirectory:out,flags,linkFlags,sources},null,2));process.exit(0);}
 const netplayHeaders=multiplayer?headers(resolve(netplayRoot,'include')):[];
 const fixtureHeaders=multiplayerFixtures?headers(resolve(workspace,'portable/multiplayer')):[];
-const dialogueHeaders=[resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp'),resolve(netplayRoot,'include/eagler/audio/WebSfx.hpp')];
+const dialogueHeaders=[resolve(netplayRoot,'include/eagler/input/DialogueGesture.hpp'),resolve(netplayRoot,'include/eagler/audio/WebSfx.hpp')];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...dialogueHeaders,...fixtureHeaders].sort())hash.update(path).update(observed(path));
 const prefix=JSON.stringify([flags,hash.digest('hex')]);
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});

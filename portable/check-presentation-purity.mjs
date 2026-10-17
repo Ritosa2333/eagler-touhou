@@ -81,8 +81,9 @@ const effects=read('th08_web/cpp/game/EffectSystem.cpp');
 assert.match(effects,/EffectState copy=\*e/);
 assert.match(effects,/copy\.vertices=vertices\.data\(\)/);
 // Nearby-player fades and local familiar ANMs also need a draw copy at 60 Hz.
-assert.match(effects,/if\(presentation::render_only\|\|alpha<255\|\|local_familiar\)\{[^}]*EffectState copy=\*e/s);
-assert.match(effects,/if\(presentation::render_only\|\|alpha<255\|\|local_familiar\)\{copy=\*e;[^}]*draw=&copy;\}/);
+assert.match(effects,/bool isolated=presentation::render_only\|\|alpha<255\|\|local_familiar/);
+assert.match(effects,/if\(isolated\)\{[^}]*EffectState copy=\*e/s);
+assert.match(effects,/if\(isolated\)\{copy=\*e;[^}]*draw=&copy;\}/);
 
 const runtime=read('th08_web/cpp/platform/BrowserRuntime.cpp');
 assert.match(runtime,/if\(presentation::render_only\)return graphics_device\(\)\.present\(back\)&&!capture_failed/);
