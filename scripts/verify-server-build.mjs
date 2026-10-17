@@ -1,4 +1,5 @@
 import {verifyLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
+import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import { verifyRuntimePublication } from "../lib/runtime-generations.mjs";
 import { RUNTIME_GENERATION_FILE, RUNTIME_MANIFEST_FILE, parseRuntimeGenerationPath } from "../lib/contracts/runtime-generations.mjs";
 import { createHash } from "node:crypto";
@@ -62,8 +63,7 @@ if (Object.hasOwn(deployment, "frontend")) {
   }
   const selectedSite = deployment.siteUrl ? new URL(normalizeSiteUrl(deployment.siteUrl)) : null;
   if (selectedSite && selectedSite.pathname !== reactFrontend.mountPath) throw new Error("site URL does not match the React frontend artifact mount");
-  if (reactFrontend.appShell && (!selectedSite || selectedSite.origin !== reactFrontend.appShell.origin ||
-      selectedSite.pathname !== reactFrontend.appShell.mountPath)) {
+  if (!reactAppShellMatchesSite(reactFrontend.appShell, selectedSite)) {
     throw new Error("React App Shell deployment does not match its exact isolated origin and mount");
   }
   if ((reactFrontend.appShell === null) !== (deployment.appShell === null)) {

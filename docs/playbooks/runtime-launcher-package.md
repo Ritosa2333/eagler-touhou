@@ -47,7 +47,7 @@ mutable user DATA / save / Replay
     → stays in explicit storage roots
 ```
 
-Service Worker caches and updates the App Shell. It does not own the Runtime filesystem or hide a package Runtime inside SW state. The Runtime uses same-origin HTML/JS/WASM and the App/Launcher manages DATA.
+Service Worker caches and updates the App Shell. Normal Launcher builds enable it by default on their own origin and mount. Only an explicit `EAGLER_REACT_APP_SHELL=disabled` build omits offline document loading. Exact-origin isolated preview builds remain supported. It does not own the Runtime filesystem or hide a package Runtime inside SW state. The Runtime uses same-origin HTML/JS/WASM and the App/Launcher manages DATA.
 
 An App Shell replacement first verifies and caches its complete required Launcher set. An idle Launcher then requests activation and reloads itself; an active game or operation defers that page's reload until it finishes. Other old tabs and Runtime iframes do not block activation. Verify both the reloaded current page and a newly opened page can load the new shell and launch a Runtime while an old page remains open.
 

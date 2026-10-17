@@ -76,7 +76,7 @@ test('actual React development server preserves canonical TH20 identity-only Hos
   try {
     const output = resolve(work, 'build');
     const environment = {...process.env, ...setup({EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: output})[1].environment,
-      EAGLER_REACT_MOUNT_PATH: '/', EAGLER_REACT_APP_SHELL: '', EAGLER_REACT_APP_SHELL_ORIGIN: '', EAGLER_TOUHOU_HOST: '127.0.0.1', EAGLER_ENABLE_THCRAP: '0'};
+      EAGLER_REACT_MOUNT_PATH: '/', EAGLER_REACT_APP_SHELL: 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: '', EAGLER_TOUHOU_HOST: '127.0.0.1', EAGLER_ENABLE_THCRAP: '0'};
     delete environment.EAGLER_TH20_CONTENT_DIR;
     delete environment.EAGLER_TOUHOU_NETPLAY_RELAY;
     execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {cwd: project, env: environment, stdio: 'pipe', timeout: 120000});

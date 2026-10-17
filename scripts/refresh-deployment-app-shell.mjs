@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import {assertReactFrontendEnvironment} from '../compat/frontend-environment.mjs';
 assertReactFrontendEnvironment();
 import {writeLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
@@ -72,8 +73,7 @@ if (reactTarget) {
   }
   const selectedSite = siteUrl ? new URL(siteUrl) : null;
   if (selectedSite && selectedSite.pathname !== selectedArtifact.mountPath) throw new Error("site URL does not match the React frontend artifact mount");
-  if (selectedArtifact.appShell && (!selectedSite || selectedSite.origin !== selectedArtifact.appShell.origin ||
-      selectedSite.pathname !== selectedArtifact.appShell.mountPath)) throw new Error("React refresh site URL must match the exact isolated origin and mount");
+  if (!reactAppShellMatchesSite(selectedArtifact.appShell, selectedSite)) throw new Error("React refresh site URL must match the exact isolated origin and mount");
   if (!refreshFrontend && siteUrl !== normalizeSiteUrl(deployment.siteUrl)) throw new Error("React site URL changes require --frontend");
   if (!(await lstat(root)).isDirectory()) throw new Error("React refresh requires an ordinary preparation directory, not a live publication symlink");
 }
