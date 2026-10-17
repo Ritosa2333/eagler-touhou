@@ -32,7 +32,8 @@ for(const file of ['th08.html','shell.mjs','startup-branding.mjs','directory-key
 files.set('/runtime/motion-replay.mjs',resolve(root,'portable/browser/motion-replay.mjs'));
 files.set('/runtime/adonis-calibration.mjs',resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'browser/adonis-calibration.mjs'));
 files.set('/fonts/msgothic.ttc',process.env.TH08_MP_FONT||resolve(workspace,'th06-eagler/assets/msgothic.ttc'));
-for(const name of ['blend.bin','cp932.bin'])files.set('/fonts/'+name,resolve(workspace,'th08-eagler/build-eagler/fonts',name));
+const fontAssets=process.env.TH08_MP_FONT_ASSETS||resolve(workspace,'th08-eagler/build-eagler/fonts');
+for(const name of ['blend.bin','cp932.bin'])files.set('/fonts/'+name,resolve(fontAssets,name));
 for(const path of files.values())if(!existsSync(path))throw Error('Missing smoke resource: '+path);
 const port=Number(process.env.PORT||(fixture?8140:8139));
 const {server,start}=createPresentationLabServer({port,files,identity:{game:'th08',variant:build.variant,wasm:build.sha256,scope:fixture?'diagnostic native cooperation fixtures, no transport acceptance':'local native HUD smoke, no transport acceptance'}});

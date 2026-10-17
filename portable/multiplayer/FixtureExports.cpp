@@ -3,6 +3,8 @@
 #include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
 #include <algorithm>
 #include <array>
+#include <cstring>
+#include <vector>
 #include <emscripten.h>
 #include "enemy-journal-fixture.hpp"
 #include "screen-journal-fixture.hpp"
@@ -14,6 +16,7 @@
 #include "product-fixture.hpp"
 #include "../../th08_web/cpp/multiplayer/TextureJournal.hpp"
 #include "../../th08_web/cpp/multiplayer/RollbackDriver.hpp"
+#include "../../th08_web/cpp/multiplayer/SpectatorStageState.hpp"
 
 extern "C" __attribute__((export_name("mp_fixture_network_capture")))
 th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
@@ -56,6 +59,13 @@ const u32* mp_fixture_rng_state(BrowserRuntime* r){
     if(!r||!r->app.in_game())return out;
     const auto& rng=r->app.session.random;
     out[0]=1;out[1]=rng.seed;out[2]=rng.backup;out[3]=rng.calls;return out;
+}
+__attribute__((export_name("mp_fixture_spectator_restore_probe")))
+const u32* mp_fixture_spectator_restore_probe(BrowserRuntime* r,u32 request){
+    static u32 out[33]{};const auto* driver=r?r->network_driver():nullptr;
+    if(!driver)return out;
+    if(request)const_cast<multiplayer::RollbackDriver*>(driver)->RequestSpectatorRestoreProbe();
+    return driver->SpectatorRestoreProbe();
 }
 __attribute__((export_name("mp_fixture_texture_restore_stats")))
 const u32* mp_fixture_texture_restore_stats(BrowserRuntime* r){
@@ -261,6 +271,67 @@ u32 mp_fixture_stage_clear_setup(BrowserRuntime* r){
     g.display.clear_clock=690;g.display.clear_clock_display=682;g.display.clear_clock_delay=60;
     g.globals.game_flags&=~0x60u;
     return 1;
+}
+__attribute__((export_name("mp_fixture_spectator_diagnostics")))
+const u32* mp_fixture_spectator_diagnostics(BrowserRuntime* r){
+    static u32 words[64]{};std::fill(words,words+64,0);auto* driver=r?r->network_driver():nullptr;if(!driver)return words;
+    const auto& network=driver->Network();const auto& playback=network.StagePlayback();const auto& history=playback.History();
+    words[0]=1;words[1]=playback.Ready();words[2]=playback.Failed();words[3]=playback.Position();words[4]=playback.Target();
+    words[5]=playback.Edge();words[6]=playback.Following();words[7]=playback.Paused();words[8]=u32(history.Segments().size());
+    words[9]=history.Received();words[10]=history.Serial();words[14]=network.SpectatorPublishFailed();words[15]=network.Enabled();
+    if(!history.Segments().empty()){const auto& first=history.Segments().front().checkpoint;const auto& last=history.Segments().back().checkpoint;
+        words[11]=first.frame;words[12]=last.frame;words[13]=last.stage;}
+    words[16]=playback.Seeking();words[17]=driver->SpectatorRestoreFailure();
+    if(const auto* segment=history.Locate(playback.Target())){
+        Netplay::SpectatorScalars::Reader reader(segment->checkpoint.state);multiplayer::SpectatorStageScalars scalars;
+        if(multiplayer::ReadSpectatorStageScalars(reader,scalars)){
+            std::copy(scalars.canonical.begin(),scalars.canonical.end(),words+18);
+            words[44]=segment->checkpoint.frame;words[45]=segment->checkpoint.stage;
+            words[46]=scalars.stage;words[47]=u32(scalars.difficulty);words[48]=u32(scalars.character);words[49]=u32(scalars.spell);
+            words[50]=u32(scalars.load_request.stage);words[51]=u32(scalars.load_request.difficulty);
+            words[52]=u32(scalars.load_request.character);words[53]=u32(scalars.load_request.spell);
+            words[54]=u32(scalars.load_request.supervisor_state);words[55]=u32(Scene::Init);words[56]=u32(Scene::NextStage);
+            words[57]=scalars.load_request.initial;words[58]=scalars.load_request.keep_resources;
+            words[59]=scalars.load_request.release_resources;
+        }
+    }
+    words[60]=r->app.game.load_failure_step;
+    words[61]=r->app.game.load_request().initial;words[62]=r->app.game.load_request().keep_resources;
+    words[63]=r->app.game.load_request().release_resources;
+    const auto* actual=multiplayer_canonical_state(r);
+    if(actual&&actual[0]==1)std::copy(actual,actual+13,words+31);
+    return words;
+}
+__attribute__((export_name("mp_fixture_spectator_checkpoint_info")))
+const u32* mp_fixture_spectator_checkpoint_info(BrowserRuntime* r){
+    static u32 words[15]{};std::fill(words,words+15,0);
+    const auto* driver=r?r->network_driver():nullptr;if(!driver)return words;
+    const auto frame=driver->SpectatorCheckpointFrame();if(frame==Netplay::INVALID_FRAME)return words;
+    words[0]=1;words[1]=frame;
+    const auto& canonical=driver->SpectatorCheckpointCanonical();
+    std::copy(canonical.begin(),canonical.end(),words+2);return words;
+}
+__attribute__((export_name("mp_fixture_spectator_checkpoint_group_bytes")))
+const u32* mp_fixture_spectator_checkpoint_group_bytes(BrowserRuntime* r,u32 group){
+    static std::vector<u32> words;words.clear();
+    const auto* driver=r?r->network_driver():nullptr;
+    const auto* bytes=driver?driver->SpectatorCheckpointTrace(group):nullptr;
+    if(!bytes||driver->SpectatorCheckpointFrame()==Netplay::INVALID_FRAME){words.push_back(0);return words.data();}
+    words.resize(1+(bytes->size()+sizeof(u32)-1)/sizeof(u32));words[0]=u32(bytes->size());
+    if(!bytes->empty())std::memcpy(words.data()+1,bytes->data(),bytes->size());return words.data();
+}
+__attribute__((export_name("mp_fixture_spectator_audio")))
+const u32* mp_fixture_spectator_audio(BrowserRuntime* r){
+    static u32 words[4]{};std::fill(words,words+4,0);if(r)r->diagnostic_spectator_audio(words);return words;
+}
+__attribute__((export_name("mp_fixture_spectator_canonical_trace")))
+const u32* mp_fixture_spectator_canonical_trace(BrowserRuntime* r){
+    static std::vector<u32> words;words.clear();
+    const auto* driver=r?r->network_driver():nullptr;if(!driver){words.push_back(0);return words.data();}
+    const auto& trace=driver->SpectatorCanonicalTrace();words.reserve(1+trace.size()*14);
+    words.push_back(u32(trace.size()));
+    for(const auto& sample:trace)words.insert(words.end(),sample.begin(),sample.end());
+    return words.data();
 }
 __attribute__((export_name("mp_fixture_dense_bullets")))
 u32 mp_fixture_dense_bullets(BrowserRuntime* r,u32 count){

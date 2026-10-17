@@ -1,12 +1,15 @@
 #pragma once
 #include "NetplayRuntime.hpp"
 #include "InputGapPacing.hpp"
-#include "SpectatorStream.hpp"
 #include "../game/Types.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
 #include <eagler/netplay/AdonisConnection.hpp>
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
+#include <eagler/netplay/SpectatorStagePlayback.hpp>
+#include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorStageView.hpp>
+#include <vector>
 
 namespace th08::multiplayer {
 // The shared channel owns handshake, ACK/retransmit and health. The only
@@ -16,13 +19,19 @@ public:
     explicit NetworkConnection(NetplayRuntime& n):net(n),channel(*this){}
     bool Connect(const char* relay);
     bool ConnectSpectator(const char* relay,const char* id);
-    bool ConsumeSpectator();
+    bool RecordSpectatorStage(u32 frame,u32 stage,u32 schema,const std::vector<u8>& initializer,
+        const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs,u8 boss_slots);
+    void DisableSpectatorPublishing(){spectator_publish_failed=true;transport.StopSpectators();}
+    Netplay::SpectatorStagePlayback& StagePlayback(){return spectator_playback;}
+    const Netplay::SpectatorStagePlayback& StagePlayback()const{return spectator_playback;}
+    const char* SpectatorState();
+    bool SpectatorControl(const char* run,const char* action,u32 frame){return spectator_view.Control(spectator_playback,run,action,frame);}
     void PublishConfirmedSpectatorFrames();
     void FinishSpectator();
     bool SpectatorFinished()const{return spectator_finished;}
-    std::size_t SpectatorBacklog()const{return spectator_frames.Size();}
-    u32 SpectatorReceived()const{return spectator_frames.Received();}
-    u32 SpectatorPublished()const{return spectator_publish;}
+    std::size_t SpectatorBacklog()const{return spectator_playback.History().Received()-spectator_playback.Position();}
+    u32 SpectatorReceived()const{return spectator_playback.History().Received();}
+    u32 SpectatorPublished()const{return spectator_publisher.Published();}
     bool SpectatorPublishFailed()const{return spectator_publish_failed;}
     // A callback may pump once before choosing its logical work. Step consumes
     // that pump before capture; it must not pump again and send the older tail.
@@ -53,9 +62,10 @@ private:
     Netplay::AdonisConnection calibration{transport};
     Netplay::SessionChannel channel;
     Netplay::SessionConfig retired_config{};
-    SpectatorStream spectator_frames;
-    u32 spectator_publish=0;
-    bool spectator_finished=false,spectator_publish_failed=false;
+    Netplay::SpectatorStagePlayback spectator_playback;
+    Netplay::SpectatorStagePublisher spectator_publisher;
+    Netplay::SpectatorStageView spectator_view;
+    bool spectator_finished=false,spectator_publish_failed=false,spectator_publisher_started=false;
     bool spectator_timing_sent=false;
     std::uint64_t spectator_deadline=0;
     const char* spectator_error="";

@@ -1,6 +1,7 @@
 #include "RollbackDriver.hpp"
 #include "NetworkFailure.hpp"
 #include "ResourceTrace.hpp"
+#include "SpectatorStageState.hpp"
 #include "../platform/BrowserRuntime.hpp"
 #include "../platform/PlatformDevices.hpp"
 #include <algorithm>
@@ -10,6 +11,11 @@
 
 namespace th08::multiplayer {
 #ifdef TH_MULTIPLAYER_FIXTURES
+const std::vector<u8>* CanonicalTrace(u32 group);
+void SnapshotCanonicalPlayerRegions();
+u32 CanonicalPlayerField(u32 offset);
+u32 CanonicalPlayerFieldByteOffset(u32 offset);
+u32 CanonicalResourceTraceLocation(u32 offset,u32* out);
 namespace {bool fixture_skip_resim_visual_enabled=false,fixture_skip_resim_geometry_enabled=false;}
 bool fixture_skip_resim_visual(bool enabled){fixture_skip_resim_visual_enabled=enabled;return enabled;}
 bool fixture_skip_resim_geometry(bool enabled){fixture_skip_resim_geometry_enabled=enabled;return enabled;}
@@ -54,8 +60,23 @@ bool RollbackDriver::FailNativeUpdate(u32 frame,bool updated){
         u32(a.animations.invalid)|(u32(a.title.invalid())<<1)|(u32(a.results.invalid())<<2)|(u32(a.screen.invalid())<<3));
     return Fail(native_error);
 }
-bool RollbackDriver::Connect(const char* relay){return !failed&&network.Connect(relay);}
-bool RollbackDriver::ConnectSpectator(const char* relay,const char* id){return !failed&&network.ConnectSpectator(relay,id);}
+bool RollbackDriver::Connect(const char* relay){
+#ifdef TH_MULTIPLAYER_FIXTURES
+    diagnostic_spectator_checkpoint_frame=Netplay::INVALID_FRAME;
+    diagnostic_spectator_checkpoint_canonical.fill(0);
+    for(auto& trace:diagnostic_spectator_checkpoint_traces)trace.clear();
+#endif
+    return !failed&&network.Connect(relay);
+}
+bool RollbackDriver::ConnectSpectator(const char* relay,const char* id){
+#ifdef TH_MULTIPLAYER_FIXTURES
+    diagnostic_spectator_canonical_trace.clear();
+    diagnostic_spectator_checkpoint_frame=Netplay::INVALID_FRAME;
+    diagnostic_spectator_checkpoint_canonical.fill(0);
+    for(auto& trace:diagnostic_spectator_checkpoint_traces)trace.clear();
+#endif
+    return !failed&&network.ConnectSpectator(relay,id);
+}
 bool RollbackDriver::Pump(bool capture_follows){
     return !failed&&(network.Pump(Stable(),capture_follows)||FailNetwork("network channel failed"));
 }
@@ -141,6 +162,13 @@ bool RollbackDriver::Admit(){
         if(!runtime.replay_archive.NextGeneration(net.Generation()))return Fail("Replay generation failed");
         next.started=true;a.session.multiplayer_session=next;
         a.session.random={u16(next.seed),u16(next.seed),0};
+        spectator_stage_tags.fill({});pending_spectator_frame=Netplay::INVALID_FRAME;
+        pending_spectator_initializer.clear();pending_spectator_checkpoint=false;pending_spectator_boss_slots=0;
+#ifdef TH_MULTIPLAYER_FIXTURES
+        diagnostic_spectator_checkpoint_frame=Netplay::INVALID_FRAME;
+        diagnostic_spectator_checkpoint_canonical.fill(0);
+        for(auto& trace:diagnostic_spectator_checkpoint_traces)trace.clear();
+#endif
         // The native teardown/loading graph writes records and emits loading
         // audio outside gameplay frames, just as at the initial bootstrap.
         // Rebind the confirmed-output journals only when the new world starts.
@@ -180,6 +208,90 @@ bool RollbackDriver::RunFrame(bool render){
             if(route==1)record.with_retries[0]|=64;
             else if(route==2)record.without_retries[0]|=128;
         }
+    }
+    pending_spectator_frame=Netplay::INVALID_FRAME;pending_spectator_initializer.clear();
+    pending_spectator_checkpoint=false;pending_spectator_boss_slots=0;
+    if(!net.Spectator()&&net.Generation()==0&&net.Setup().local_player==0&&
+       !network.SpectatorPublishFailed()){
+        const auto stage=u32(a.game.globals.stage)|(u32(session.multiplayer_route_state)<<8);
+        const auto& previous=spectator_stage_tags[(frame-1u)%spectator_stage_tags.size()];
+        // A stage checkpoint starts a segment only when the stage actually
+        // changes, or when the immediately preceding tag is unavailable.
+        // A non-checkpoint frame is still valid evidence of the same stage.
+        const bool checkpoint=a.in_game()&&(frame==0||previous.frame!=frame-1u||previous.stage!=stage);
+        pending_spectator_frame=frame;pending_spectator_stage=stage;
+        pending_spectator_checkpoint=checkpoint;
+        u32 capture_failure=0;
+        if(checkpoint&&!CaptureSpectatorStageScalars(runtime,pending_spectator_initializer,&capture_failure)){
+            pending_spectator_checkpoint=false;pending_spectator_initializer.clear();
+            // A stage number can change before its new GameplayLoad owner is
+            // ready. Keep the old published stage tag for this transition
+            // input so the first matching frame will retry the checkpoint.
+            if(capture_failure>=31&&capture_failure<=35){
+                if(previous.frame==frame-1u)pending_spectator_stage=previous.stage;
+                else pending_spectator_frame=Netplay::INVALID_FRAME;
+            }else network.DisableSpectatorPublishing();
+        }
+#ifdef TH_MULTIPLAYER_FIXTURES
+        if(checkpoint&&frame==0&&!pending_spectator_initializer.empty()){
+            Netplay::SpectatorScalars::Reader reader(pending_spectator_initializer);
+            SpectatorStageScalars captured;
+            if(ReadSpectatorStageScalars(reader,captured)){
+                diagnostic_spectator_checkpoint_frame=frame;
+                diagnostic_spectator_checkpoint_canonical=captured.canonical;
+                constexpr u32 groups[]{1,8};
+                for(u32 i=0;i<2;++i)if(const auto* trace=CanonicalTrace(groups[i]))
+                    diagnostic_spectator_checkpoint_traces[i]=*trace;
+            }
+        }
+#endif
+#ifdef TH_MULTIPLAYER_FIXTURES
+        if(checkpoint&&diagnostic_spectator_restore_requested&&!pending_spectator_initializer.empty()){
+            diagnostic_spectator_restore_requested=false;
+            auto& result=diagnostic_spectator_restore_result;
+            const auto* before=multiplayer_canonical_state(&runtime);
+            if(before&&before[0]==1){
+                std::copy(before,before+13,result.begin()+3);result[0]=1;
+                constexpr u32 trace_groups[]{1,3,9};std::array<std::vector<u8>,3> before_traces;
+                for(u32 i=0;i<3;++i)if(const auto* trace=CanonicalTrace(trace_groups[i]))before_traces[i]=*trace;
+                SnapshotCanonicalPlayerRegions();
+                Netplay::SpectatorStageEvent event;event.game='8';event.playerCount=u8(session.player_count);
+                event.kind=Netplay::SpectatorEventKind::Checkpoint;event.sessionId=1;event.gameplayAbi=1;
+                event.frame=frame;event.stage=stage;event.serial=1;event.schema=1;event.state=pending_spectator_initializer;
+                runtime.bind_audio_events(nullptr);
+                result[31]=u32(runtime.app.game.enemies.state.active_frames);
+                result[1]=RestoreSpectatorStageScalars(runtime,event,&result[2])?1u:0u;
+                result[32]=u32(runtime.app.game.enemies.state.active_frames);
+                std::vector<u8> restored_scalars;
+                if(CaptureSpectatorStageScalars(runtime,restored_scalars)){
+                    u32 differences=0;
+                    const auto count=std::min(restored_scalars.size(),pending_spectator_initializer.size());
+                    for(std::size_t i=0;i<count;++i)if(restored_scalars[i]!=pending_spectator_initializer[i]){if(!result[29])result[29]=u32(i+1);++differences;}
+                    if(!result[29]&&count!=pending_spectator_initializer.size())result[29]=u32(count+1);
+                    result[30]=differences;
+                }
+                audio.Reset(frame);files.Reset(frame);
+                runtime.bind_audio_events(&audio);
+                const auto* after=multiplayer_canonical_state(&runtime);
+                if(after&&after[0]==1){
+                    std::copy(after,after+13,result.begin()+16);result[33]=result[34]=~u32(0);
+                    for(u32 i=0;i<3&&result[33]==~u32(0);++i){
+                        const auto* trace=CanonicalTrace(trace_groups[i]);if(!trace)continue;
+                        const auto& old=before_traces[i];const auto count=std::min(old.size(),trace->size());
+                        std::size_t offset=0;while(offset<count&&old[offset]==(*trace)[offset])++offset;
+                        if(offset<count||old.size()!=trace->size()){
+                            result[33]=trace_groups[i];result[34]=u32(offset);
+                            result[35]=offset<old.size()?old[offset]:0xffu;
+                            result[36]=offset<trace->size()?(*trace)[offset]:0xffu;
+                            if(trace_groups[i]==1)result[2]=(result[2]&0xffffu)|((CanonicalPlayerField(u32(offset))&0xffu)<<16)|((CanonicalPlayerFieldByteOffset(u32(offset))&0xffu)<<24);
+                            if(trace_groups[i]==9)CanonicalResourceTraceLocation(u32(offset),result.data()+37);
+                        }
+                    }
+                }
+            }
+        }
+#endif
+        a.game.globals.spectator_boss_slots=0;
     }
     if(runtime.replay_archive.Recording()&&!runtime.replay_archive.BeginFrame(frame))return Fail("Replay frame stamp failed");
     const auto confirmed=net.ConfirmedThrough();
@@ -253,6 +365,13 @@ bool RollbackDriver::FinishFrame(){
     if((checkpoint_open&&(!world->EndFrame()||!textures->EndFrame()))||!audio.EndFrame()||!files.EndFrame())return Fail("end frame ownership failed");
     if(!net.MarkSimulated(frame,session.network_frame))return Fail("simulated input mismatch");
     const auto stage=u32(runtime.app.game.globals.stage);
+    if(pending_spectator_frame==frame){
+        const auto index=frame%spectator_stage_tags.size();
+        spectator_stage_tags[index]={frame,pending_spectator_stage};
+        const auto schema=pending_spectator_checkpoint?1u:0u;
+        if(!network.RecordSpectatorStage(frame,pending_spectator_stage,schema,pending_spectator_initializer,
+            session.network_frame.inputs,runtime.app.game.globals.spectator_boss_slots))return Fail("spectator stage record failed");
+    }
     if(runtime.replay_archive.Recording()&&!runtime.replay_archive.Stamp(frame,stage,session.numbers.score))return Fail("Replay stage stamp failed");
     if(net.Playback()&&!runtime.replay_archive.AdvancePlayback(frame,stage))return Fail("Replay native stage diverged");
     if(checkpoint_open){
@@ -353,6 +472,74 @@ bool RollbackDriver::CaptureLocalInput(){
     }
     return net.CaptureLocal(frame,sample);
 }
+bool RollbackDriver::RunSpectatorInput(const Netplay::SpectatorFramePacket& packet,bool historical){
+    (void)historical;
+    auto& app=runtime.app;auto& session=app.session;
+    if(packet.playerCount!=session.player_count)return false;
+    session.network_frame={};session.network_frame.canAdvance=true;session.network_frame.inputs=packet.inputs;
+    session.network_frame_open=true;
+    if(app.in_game()&&!app.game.commit_frame_inputs(packet.inputs.data(),packet.playerCount))return false;
+    u16 supervisor_buttons=packet.inputs[0].buttons;
+    for(u32 seat=1;seat<packet.playerCount;++seat)supervisor_buttons|=packet.inputs[seat].buttons&InputButton::Menu;
+    app.set_spectator_playback_input(supervisor_buttons);
+    return app.update()&&!runtime.capture_failed;
+}
+bool RollbackDriver::RunSpectatorPlayback(double callback_start_ms){
+    auto& session=runtime.app.session;auto& app=runtime.app;
+    auto& playback=network.StagePlayback();
+    if(!playback.Ready()||!app.active()){
+        session.network_waiting=true;return true;
+    }
+    const auto restore=[&](const Netplay::SpectatorStageEvent& event){
+#ifdef TH_MULTIPLAYER_FIXTURES
+        diagnostic_spectator_restore_failure=0;
+        return RestoreSpectatorStageScalars(runtime,event,&diagnostic_spectator_restore_failure);
+#else
+        return RestoreSpectatorStageScalars(runtime,event);
+#endif
+    };
+    bool rendered_input=false;
+    const auto tick=[&](const Netplay::SpectatorFramePacket& packet,bool historical){
+        if(!RunSpectatorInput(packet,historical)){session.network_frame_open=false;return false;}
+        // The source's SDL loop performs one ordinary draw after every
+        // admitted input frame. TH08 draw retains named ANM and trail state,
+        // so batching updates without their matching draws changes gameplay
+        // state even though the input stream is exact.
+        if(!app.draw(1.0f,false,false)){session.network_frame_open=false;return false;}
+        // FinishFrame closes the admission context and advances the logical
+        // clock only after the semantic Draw. Keep that ordering during replay
+        // so draw-time clock reads match the source; clear it before yielding
+        // to GameHost, which must not mistake this read-only tick for a player
+        // frame that it should draw or commit again.
+        session.network_frame_open=false;
+        ++runtime.multiplayer_logic_frame;
+#ifdef TH_MULTIPLAYER_FIXTURES
+        if(const auto* canonical=multiplayer_canonical_state(&runtime);canonical&&canonical[0]==1){
+            std::array<u32,14> sample{};sample[0]=packet.frame+1;
+            std::copy(canonical,canonical+13,sample.begin()+1);
+            if(diagnostic_spectator_canonical_trace.size()==4096)
+                diagnostic_spectator_canonical_trace.erase(diagnostic_spectator_canonical_trace.begin());
+            diagnostic_spectator_canonical_trace.push_back(sample);
+        }
+#endif
+        rendered_input=true;return true;
+    };
+    const auto should_yield=[&](){return callback_start_ms>=0&&emscripten_get_now()-callback_start_ms>=8.;};
+    const bool catching_up=playback.Seeking()||
+        (playback.Following()&&playback.Edge()>playback.Position()+1);
+    const auto step_budget=catching_up?32u:1u;
+    if(!playback.Step(restore,tick,should_yield,step_budget)||playback.Failed()){
+        // Stage restoration and replay are optional observer features. A bad
+        // checkpoint can stop this viewer, but never turns into a player error.
+        session.network_waiting=true;return true;
+    }
+    // A paused viewer still needs presentation, but this draw must not mutate
+    // the native world or emit sounds as a side effect of polling the UI.
+    if(!rendered_input&&!app.draw(1.0f,false,true)){
+        session.network_waiting=true;return true;
+    }
+    return true;
+}
 bool RollbackDriver::Step(bool render,double callback_start_ms){
     auto& session=runtime.app.session;auto& net=session.netplay;
     callback_yielded=false;
@@ -394,9 +581,10 @@ bool RollbackDriver::Step(bool render,double callback_start_ms){
         runtime.replay_finished=true;session.network_waiting=true;return true;
     }
     if(!initialized){audio.Reset(net.NextFrame());files.Reset(net.NextFrame());
-        if(!runtime.begin_replay_recording())return Fail("Replay recording bootstrap failed");
-        if(!runtime.bind_audio_events(&audio))return Fail("audio sink binding failed");
+        if(!net.Spectator()&&!runtime.begin_replay_recording())return Fail("Replay recording bootstrap failed");
+        if(!net.Spectator()&&!runtime.bind_audio_events(&audio))return Fail("audio sink binding failed");
         initialized=true;generation=net.Generation();}
+    if(net.Spectator())return RunSpectatorPlayback(callback_start_ms);
     // TH07's early once-only send rule: network threads can transmit while
     // this endpoint restores/replays. Restrict it to the current live world;
     // loading, retirement and generation bootstrap retain their admission fence.
@@ -433,15 +621,14 @@ bool RollbackDriver::Step(bool render,double callback_start_ms){
         if(net.Playback()){
             const auto* inputs=runtime.replay_archive.PlaybackFrame(frame);
             if(!inputs||!net.FeedPlayback(frame,*inputs))return Fail("Replay input rejected");
-        }else if(net.Spectator()){
-            if(!network.SpectatorBacklog()){session.network_waiting=true;return true;}
-            if(!network.ConsumeSpectator())return Fail("observer input consumption failed");
         }else{session.network_waiting=true;return PresentCorrection();}
     }
     if(!RunFrame(render))return false;
     return !session.network_waiting||PresentCorrection();
 }
 void RollbackDriver::Shutdown(){
+    spectator_stage_tags.fill({});pending_spectator_frame=Netplay::INVALID_FRAME;
+    pending_spectator_initializer.clear();pending_spectator_checkpoint=false;pending_spectator_boss_slots=0;
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     diagnostic::Disable(runtime);
 #endif
