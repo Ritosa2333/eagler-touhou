@@ -50,6 +50,9 @@ public:
     void copy_shot_state(ShotPlayer&)const noexcept;
     void set_speeds(const ShtHeader&) noexcept;
 private:
+#ifdef TH11_MULTIPLAYER
+    friend struct multiplayer::SpectatorShotAccess;
+#endif
     AnmResource& player_resource;AnmResource& bullet_resource;AnmManager& animations;PlayerMotionWorld& world;u16 player_file,bullet_file;
     void interrupt(u32,i16);void erase(u32);void place(u32,Vec3);
     bool change_body(i32);bool afterimage();

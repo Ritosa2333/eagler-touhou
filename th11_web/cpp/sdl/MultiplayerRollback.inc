@@ -147,6 +147,7 @@ bool rollback_commit(bool reconciled_prefix=false){
         rollback_committed_score=frame.score;rollback_committed_completed=frame.completed;
         ++rollback_published;rollback_frames.pop_front();
     }
+    netplay.PublishConfirmedSpectatorHistoryAfterReconcile();
     return true;
 }
 bool rollback_seal(MultiplayerRollbackTick& frame){
@@ -178,6 +179,8 @@ bool rollback_run_frame(bool historical){
     if(!multiplayer::InputLanes::Decode(decision.inputs.data(),netplay.Setup().player_count,input))
         return rollback_fail("TH11 rollback input decode failed");
     auto record=std::make_unique<MultiplayerRollbackTick>();record->frame=frame;record->stage=session.state.stage;
+    std::vector<u8> spectator_initializer;u32 spectator_stage=record->stage;
+    if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);
     // Replayed exact frames still live inside a correction. Retain a fresh
     // checkpoint until the complete old frontier has been reconstructed.
     const bool capture=true;
@@ -203,6 +206,9 @@ bool rollback_run_frame(bool historical){
     current.score=u32(std::max(0,session.economy.score_units));current.completed=multiplayer_completed();
     if(!rollback_seal(current))return false;
     if(!netplay.MarkSimulated(frame,decision))return rollback_fail(netplay.Error());
+    if(netplay.SpectatorPublisherOwner()&&!netplay.RecordSpectatorFrame(frame,spectator_stage,spectator_initializer,decision.inputs)){
+        // A spectator history failure is isolated from the confirmed player simulation.
+    }
     if(historical){++rollback_history_ticks;if(rollback_profile_enabled)++rollback_profile[14];}
     rollback_transaction_advanced=true;multiplayer_last_stage=current.stage;
     return true;
@@ -210,6 +216,7 @@ bool rollback_run_frame(bool historical){
 bool multiplayer_tick(bool forward_due=true){
     multiplayer_advanced=false;rollback_network_wait=rollback_cpu_wait=false;
     if(!netplay.FlushDeferredInputs())return rollback_fail(netplay.Error());
+    if(netplay.Spectator())return multiplayer_spectator_playback_tick(forward_due);
     if(!netplay.AllowsRollback()||netplay.ReadOnly()){
         if(!forward_due)return multiplayer_pump();
         const bool ok=multiplayer_exact_tick();if(ok&&multiplayer_advanced)refresh_multiplayer_touch_frontier();return ok;
