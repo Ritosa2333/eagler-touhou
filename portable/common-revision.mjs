@@ -1,2 +1,2 @@
 // One release pin for the builder, packager and their acceptance fixtures.
-export const COMMON_REVISION = 'd04c0657e4a7e89389347462332d605154f8d0c2';
+export const COMMON_REVISION = '6e5cdb35ac63b2eb2c5e11a84fd56b60c6da16b1';

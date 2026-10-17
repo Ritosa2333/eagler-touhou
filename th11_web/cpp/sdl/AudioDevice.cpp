@@ -22,6 +22,9 @@ float volume(i32 db){return std::pow(10.f,float(db)/2000.f);}
 struct AudioDevice::Impl {
     struct Voice {ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false;~Voice(){if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
     ma_engine engine{};SDL_AudioStream* stream=nullptr;bool engine_ready=false,ready=false,suspended=false,refill=true,music_paused=false;
+#ifdef TH11_MULTIPLAYER
+    bool spectator_silent=false;
+#endif
     std::array<std::unique_ptr<Voice>,56> sounds;std::array<std::vector<u8>,46> samples;std::unique_ptr<Voice> music;
     std::vector<u8> formats;i32 track=-1,pending_track=-1,fade=0,fade_total=0;ma_uint64 pending_frames=0;bool music_retry=false;mutable u32 stats[9]{};
     // Impl lifetime, never journaled: version, words, successful/failed starts,
@@ -39,6 +42,9 @@ void AudioDevice::close(){effects.reset();impl=std::make_unique<Impl>();}
 bool AudioDevice::initialize(GameResources& resources){
     if(impl->ready)return true;if(impl->engine_ready)impl=std::make_unique<Impl>();auto& a=*impl;auto engine=ma_engine_config_init();engine.noDevice=MA_TRUE;engine.channels=2;engine.sampleRate=44100;engine.defaultVolumeSmoothTimeInPCMFrames=0;
     if(ma_engine_init(&engine,&a.engine)!=MA_SUCCESS){error="Unable to initialize audio mixer";return false;}a.engine_ready=true;
+#ifdef TH11_MULTIPLAYER
+    if(a.spectator_silent)ma_engine_set_volume(&a.engine,0.f);
+#endif
     SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
     if(SDL_InitSubSystem(SDL_INIT_AUDIO))a.stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
     if(!a.stream){error=SDL_GetError();return false;}
@@ -137,12 +143,23 @@ void AudioDevice::pump(){
     if(queued>=6144)a.refill=false;finish();
 }
 void AudioDevice::suspend(bool paused){auto& a=*impl;a.suspended=paused;if(a.stream){if(paused)SDL_PauseAudioStreamDevice(a.stream);else SDL_ResumeAudioStreamDevice(a.stream);}}
+#ifdef TH11_MULTIPLAYER
+void AudioDevice::spectator_silent(bool quiet){
+    auto& a=*impl;if(a.spectator_silent==quiet)return;a.spectator_silent=quiet;
+    if(quiet)for(auto& voice:a.sounds)if(voice)ma_sound_stop(&voice->sound);
+    if(a.stream)SDL_ClearAudioStream(a.stream);
+    if(a.engine_ready)ma_engine_set_volume(&a.engine,quiet?0.f:1.f);
+}
+#endif
 void AudioDevice::sound_stop(u32 n){if(auto* v=impl->voice(n))ma_sound_stop(&v->sound);}
 void AudioDevice::sound_position(u32 n,u32 frame){if(auto* v=impl->voice(n))ma_sound_seek_to_pcm_frame(&v->sound,frame);}
 void AudioDevice::sound_pan(u32 n,i32 value){if(auto* v=impl->voice(n)){ma_sound_set_pan_mode(&v->sound,ma_pan_mode_balance);ma_sound_set_pan(&v->sound,value>=0?1.f-std::pow(10.f,-float(value)/2000.f):std::pow(10.f,float(value)/2000.f)-1.f);}}
 void AudioDevice::sound_volume(u32 n,i32 value){if(auto* v=impl->voice(n))ma_sound_set_volume(&v->sound,volume(value));}
 void AudioDevice::sound_play(u32 n){
     auto& a=*impl;
+#ifdef TH11_MULTIPLAYER
+    if(a.spectator_silent)return;
+#endif
     if(auto* v=a.voice(n)){
         const auto result=ma_sound_start(&v->sound); // Same single call and playback semantics.
         if(result==MA_SUCCESS){++a.sound_stats[2];++a.sound_stats[8+n-1];}

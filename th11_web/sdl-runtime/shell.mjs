@@ -8,6 +8,67 @@ import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {createDirectInputBridge} from './direct-input-bridge.mjs';
 import {validateMotionReplay} from './motion-replay.mjs';
 import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
+// BEGIN GENERATED SPECTATOR PLAYBACK
+// Generated from eagler-common/browser/spectator-playback.mjs.
+// Native playback owns every cursor and restore. The shell only transports
+// authenticated Launcher commands and publishes native reports.
+function createSpectatorPlaybackBridge({active,memory,state,control,allocate,deallocate,emit,
+  schedule=globalThis.setInterval,cancel=globalThis.clearInterval}) {
+  let timer=null,last=null;
+  const clear=()=>{if(last){last=null;emit('runtime-info',{spectatorPlayback:null});}};
+  function poll() {
+    if(!active()){clear();return null;}
+    try {
+      const pointer=state();
+      if(!pointer){clear();return null;}
+      const heap=memory();
+      if(!(heap instanceof Uint8Array)||!Number.isInteger(pointer)||pointer<1||pointer>=heap.length)
+        throw Error('Invalid native spectator report address');
+      const limit=Math.min(heap.length,pointer+131072);let end=pointer;
+      while(end<limit&&heap[end])++end;
+      if(end===limit)throw Error('Native spectator report exceeds its bound');
+      const report=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(heap.subarray(pointer,end)));
+      if(report?.version!==1||typeof report.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(report.run)||
+         !Number.isInteger(report.revision)||report.revision<1||report.revision>0xfffffffe||
+         !Array.isArray(report.nodes)||report.nodes.length>512)throw Error('Invalid native spectator report');
+      if(last?.run===report.run&&(report.revision<=last.revision||report.received<last.received))return last;
+      last=report;emit('runtime-info',{spectatorPlayback:report});return report;
+    } catch(error) {
+      clear();return null;
+    }
+  }
+  function command(message) {
+    if(!active())throw Error('Spectator playback is not active');
+    if(typeof message?.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(message.run)||
+       !['pause','play','seek','live'].includes(message.action)||
+       (message.action==='seek'&&(!Number.isInteger(message.frame)||message.frame<0||message.frame>0xfffffffe)))
+      throw Error('Invalid spectator playback command');
+    const report=poll();
+    if(!report||message.run!==report.run)throw Error('Spectator playback run has changed');
+    if(message.action==='seek'&&(message.frame<report.min||message.frame>report.edge))
+      throw Error('Spectator seek is outside received history');
+    // Keep terminators as zero bytes. The classic inline HTML optimizer can
+    // turn a JS NUL escape into a literal NUL, which HTML replaces by U+FFFD.
+    const run=new TextEncoder().encode(message.run),action=new TextEncoder().encode(message.action);
+    const actionOffset=run.length+1,bytes=new Uint8Array(actionOffset+action.length+1);
+    bytes.set(run);bytes.set(action,actionOffset);
+    const pointer=allocate(bytes.length);
+    if(!Number.isInteger(pointer)||pointer<1)throw Error('Spectator command allocation failed');
+    try {
+      const heap=memory();
+      if(pointer>heap.length-bytes.length)throw Error('Invalid spectator command allocation');
+      heap.set(bytes,pointer);
+      if(!control(pointer,pointer+actionOffset,message.action==='seek'?message.frame:0))
+        throw Error('Spectator playback command could not be applied');
+    } finally {deallocate(pointer);}
+    poll();return {};
+  }
+  return Object.freeze({poll,command,
+    start(){if(timer===null)timer=schedule(poll,250);poll();},
+    stop(){if(timer!==null)cancel(timer);timer=null;clear();},
+  });
+}
+// END GENERATED SPECTATOR PLAYBACK
 // BEGIN GENERATED LOCAL REPLAY
 // Generated from eagler-common/browser/local-replay*.mjs.
 // The native adapter owns parsing, stage bootstrap, fixed ticks and EOF.
@@ -143,6 +204,11 @@ const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
+const spectatorPlayback=createSpectatorPlaybackBridge({
+ active:()=>multiplayerRuntime&&launched&&options.netplaySpectator===true&&!stopping,memory:()=>new Uint8Array(core.memory.buffer),
+ state:()=>core?.th11_mp_spectator_state?.()||0,control:(run,action,frame)=>core?.th11_mp_spectator_control?.(run,action,frame)||0,
+ allocate:size=>core.malloc(size),deallocate:pointer=>core.free(pointer),emit,
+});
 const $=s=>document.querySelector(s);
 let Module,core,app=0,multiplayer=null,runtimeManifest=null,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null,storageSync=Promise.resolve();
@@ -240,7 +306,7 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop({returnToMenu=false}={}){if(stopping)return;localReplay.close();invalidateTouches();stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
+async function stop({returnToMenu=false}={}){if(stopping)return;localReplay.close();spectatorPlayback.stop();invalidateTouches();stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(multiplayerRuntime?/^\/savesth11(?:mp)?\//:/^\/savesth11\//,'').replace(/^\//,'');const valid=multiplayerRuntime?/^replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th11_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/:/^(?:scoreth11\.dat|th11\.cfg|replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;if(!valid.test(name))throw Error('存档路径无效');return name;}
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>saveRoot+'/'+path(value),replayState:()=>{const p=core.eagler_replay_state(),v=Array.from(new Uint32Array(core.memory.buffer,p,5));const u=multiplayerRuntime?new Uint32Array(core.memory.buffer,core.th11_mp_replay_ui_status(),12):null;return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:u?.[4]??0};},stopLoop:()=>{clearKeyboard();core.th11_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:error});
 async function launch(receivedTouchLifetime=touchLifetime){
@@ -259,6 +325,7 @@ async function launch(receivedTouchLifetime=touchLifetime){
  if(mode.runLoop)canvas.focus({preventScroll:true});if(!multiplayerRuntime)core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();if(mode.runLoop)core.th11_loop_start();
  if(multiplayerRuntime&&!mode.runLoop){await new Promise(requestAnimationFrame);assertTouchLifetime(receivedTouchLifetime);first=true;emit('first-frame');}
  launchSettled=true;
+ if(options.netplaySpectator)spectatorPlayback.start();
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
 }
 // Both carriers use this synchronous input-only dispatch. It never steps the
@@ -284,6 +351,7 @@ async function command(m,receivedTouchLifetime=touchLifetime){
  case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);if(multiplayerRuntime)multiplayer.validateOptions(options);else if(options.netplayMode==='lan'||options.netplaySpectator)throw Error('此 Runtime 不支持多人游戏');music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
  case 'resources':await installResources(m.resources);return {};
  case 'thprac-mouse':{if(!options.thpracEnabled||!core.sdl_thprac_mouse)return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);core.sdl_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(Number(m.x)-r.left-(r.width-640*scale)/2)/scale,(Number(m.y)-r.top-(r.height-480*scale)/2)/scale);return {};}
+ case 'spectator-playback':return spectatorPlayback.command(m);
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(m);
  case 'launch':await launch(receivedTouchLifetime);return {};
  case 'sync':await save();return {};
