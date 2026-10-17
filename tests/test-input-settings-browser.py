@@ -52,7 +52,7 @@ with sync_playwright() as p:
         dialog = page.locator('.input-settings-dialog')
         assert dialog.bounding_box()['height'] <= 1000 * .89
         layout = page.locator('select[aria-label="键位布局"]')
-        layout.select_option('arrows', force=True)
+        assert layout.input_value() == 'arrows'
         assert page.evaluate("Object.keys(keyboardPreferences.getSnapshot()).length") == 0
         assert page.locator('.keyboard-settings tr[data-action="up"] kbd').all_text_contents() == ['↑']
         layout.select_option('wasd', force=True)
