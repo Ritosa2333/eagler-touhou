@@ -36,7 +36,12 @@ bool EnemyState::state_command(EclContext& context,EclGlobals& globals,EnemyFram
     case 0x14c:{
         const auto slot=integer(0);
         if(slot<0){if(flags&0x8000)env.boss_slots[boss_slot]=nullptr;flags&=~0x8000u;}
-        else{flags|=0x8000;env.boss_slots[slot]=reinterpret_cast<Enemy*>(script_owner);boss_slot=slot;}
+        else{
+            flags|=0x8000;env.boss_slots[slot]=reinterpret_cast<Enemy*>(script_owner);boss_slot=slot;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            env.boss_registered(slot);
+#endif
+        }
         return true;
     }
     case 0x14d:seek(lifetime,lifetime_flags,0,env.default_rate);return true;

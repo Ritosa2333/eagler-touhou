@@ -1,5 +1,6 @@
 #include "NetplayRuntime.hpp"
 #include "InputLanes.hpp"
+#include "SpectatorStageState.hpp"
 #include <eagler/netplay/InputRepairBudget.hpp>
 #include <algorithm>
 #include <cmath>
@@ -65,7 +66,9 @@ bool NetplayRuntime::Connect(const char* relayUrl){
     if(!configured_||playback_||spectator_||network_enabled_||
        core_.LastSimulatedFrame()!=Netplay::INVALID_FRAME||
        !relayUrl||!relayUrl[0])return false;
-    if(!transport_.Connect(relayUrl,gate_.Config().localPlayer,gate_.Config().playerCount))return false;
+    if(!transport_.Connect(relayUrl,gate_.Config().localPlayer,gate_.Config().playerCount,true))return false;
+    if(!spectator_stage_publisher_.Reset('A',gate_.Config().playerCount,
+            gate_.Config().sessionId,gate_.Config().gameplayAbi)){transport_.Close();return false;}
     network_now_=network_clock();
     if(PreparingWorld())calibration_.Prepare(gate_.Config(),Mode(),setup_.input_delay_auto,setup_.input_delay,setup_.prediction_reserve);
     else if(!channel_.BeginSession(gate_.Config(),network_now_,channel_policy(Mode()))){transport_.Close();return false;}
@@ -76,7 +79,7 @@ bool NetplayRuntime::ConnectSpectator(const char* relayUrl,const char* spectator
     if(!configured_||playback_||spectator_||network_enabled_||
        core_.LastSimulatedFrame()!=Netplay::INVALID_FRAME||
        !relayUrl||!relayUrl[0]||!spectatorId||!spectatorId[0])return false;
-    if(!transport_.ConnectSpectator(relayUrl,spectatorId,gate_.Config().playerCount))return false;
+    if(!transport_.ConnectSpectator(relayUrl,spectatorId,gate_.Config().playerCount,true))return false;
     // Spectator packets are already authoritative logical frames. Keep the
     // live-session ABI (including negotiated delay) but never delay them again.
     if(!core_.Reset(core_config(setup_,base_session_id_,0))){transport_.Close();return false;}
@@ -84,12 +87,30 @@ bool NetplayRuntime::ConnectSpectator(const char* relayUrl,const char* spectator
     network_gap_tail_enabled_=network_tail_presentation_enabled_=false;
     spectator_retired_=false;spectator_publish_frame_=spectator_receive_frame_=0;
     spectator_timing_ready_=setup_.version<4||setup_.adonis_mode==0;spectator_deadline_=network_now_+45'000;
-    spectator_frames_.clear();spectator_error_.clear();return true;
+    spectator_frames_.clear();spectator_stage_playback_.Clear();spectator_stage_view_.Clear();
+    spectator_recorded_frames_={};spectator_error_.clear();return true;
+}
+
+bool NetplayRuntime::ReceiveSpectatorStageWire(const u8* bytes,std::size_t size){
+    Netplay::SpectatorStageEvent event{};
+    if(!Netplay::DecodeSpectatorStageEvent(bytes,size,&event)||event.game!='A'||
+       event.sessionId!=gate_.Config().sessionId||event.gameplayAbi!=gate_.Config().gameplayAbi||
+       event.playerCount!=gate_.Config().playerCount||
+       (event.kind==Netplay::SpectatorEventKind::Checkpoint&&event.schema!=kSpectatorStageSchema)||
+       !spectator_stage_playback_.Receive(event)){
+        spectator_error_="Invalid spectator stage stream";return false;
+    }
+    if(event.kind==Netplay::SpectatorEventKind::Bootstrap)spectator_deadline_=network_now_+15'000;
+    return true;
 }
 
 bool NetplayRuntime::DrainSpectatorFrames(){
     std::vector<u8> wire;
     for(unsigned read=0;read<128&&transport_.Poll(&wire);++read){
+        if(Netplay::IsSpectatorStageEvent(wire.data(),wire.size())){
+            if(!spectator_timing_ready_||!ReceiveSpectatorStageWire(wire.data(),wire.size()))return false;
+            spectator_deadline_=network_now_+15'000;continue;
+        }
         if(Netplay::AdonisSpectatorTiming::IsPacket(wire.data(),wire.size())){
             Netplay::AdonisSpectatorTiming timing;
             if(spectator_timing_ready_||spectator_receive_frame_||!Netplay::AdonisSpectatorTiming::Decode(wire.data(),wire.size(),timing)||
@@ -99,52 +120,61 @@ bool NetplayRuntime::DrainSpectatorFrames(){
             setup_=setup;spectator_timing_ready_=true;spectator_deadline_=network_now_+15'000;continue;
         }
         Netplay::SpectatorFramePacket packet{};
-        if(!spectator_timing_ready_||spectator_frames_.size()>=8192||!Netplay::DecodeSpectatorFramePacket(wire.data(),wire.size(),&packet)||
+        if(!spectator_timing_ready_||!Netplay::DecodeSpectatorFramePacket(wire.data(),wire.size(),&packet)||
            packet.sessionId!=gate_.Config().sessionId||
            packet.gameplayAbi!=gate_.Config().gameplayAbi||
-           packet.playerCount!=gate_.Config().playerCount||
-           packet.frame!=spectator_receive_frame_){
+           packet.playerCount!=gate_.Config().playerCount){
             spectator_error_="Invalid spectator stream";return false;
         }
-        spectator_frames_.push_back(packet);++spectator_receive_frame_;spectator_deadline_=network_now_+15'000;
+        if(spectator_stage_playback_.History().Segments().empty()){
+            if(spectator_frames_.size()>=8192||packet.frame!=spectator_receive_frame_){
+                spectator_error_="Invalid spectator input stream";return false;
+            }
+            spectator_frames_.push_back(packet);++spectator_receive_frame_;
+        }else{
+            if(!spectator_stage_playback_.Receive(packet)){
+                spectator_error_="Invalid spectator stage input";return false;
+            }
+            spectator_receive_frame_=spectator_stage_playback_.History().Received();
+        }
+        spectator_deadline_=network_now_+15'000;
     }
     if(transport_.Failed()){
         spectator_error_=transport_.LastError();return false;
     }
+    // Network silence cannot invalidate a local pause or reconstruction of
+    // already received history. Start the normal grace period again when
+    // this viewer actually needs another live input.
+    if(spectator_stage_playback_.Ready()&&!spectator_stage_playback_.WaitingForLiveInput())
+        spectator_deadline_=network_now_+15'000;
     if(network_now_>=spectator_deadline_){spectator_error_="Spectator input stream stalled; players are unaffected";return false;}
     return true;
 }
 
 void NetplayRuntime::PublishConfirmedSpectatorFrames(){
     if(Correcting()||HasRollbackRequest()||spectator_||playback_||generation_!=0||setup_.localPlayer!=0||
-       spectator_publish_failed_||!transport_.HasSpectators())return;
+       spectator_publish_failed_)return;
     const auto confirmed=core_.ConfirmedThroughAllRemotes();
     const auto last=core_.LastSimulatedFrame();
     if(confirmed==Netplay::INVALID_FRAME||last==Netplay::INVALID_FRAME)return;
     const auto through=std::min(confirmed,last);
-    if(transport_.SpectatorState()<0||(through>=spectator_publish_frame_&&through-spectator_publish_frame_>=Netplay::INPUT_HISTORY_SIZE)){
+    if(transport_.SpectatorState()<0||(through>=spectator_stage_publisher_.Published()&&
+       through-spectator_stage_publisher_.Published()>=Netplay::INPUT_HISTORY_SIZE)){
         spectator_publish_failed_=true;transport_.StopSpectators();return;}
     if(PreparingWorld()&&!spectator_timing_sent_){
         auto wire=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.input_delay_auto).Encode();
         if(wire.empty()){spectator_publish_failed_=true;transport_.StopSpectators();return;}
         if(!transport_.SendSpectator(wire.data(),wire.size()))return;spectator_timing_sent_=true;
     }
-    const auto began=network_clock_us();
-    for(unsigned sent=0;spectator_publish_frame_<=through&&sent<32;++sent){
-        if(sent&&network_clock_us()-began>=2000)break;
-        std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> inputs{};
-        if(!core_.ConfirmedInputs(spectator_publish_frame_,&inputs))return;
-        Netplay::SpectatorFramePacket packet{};
-        packet.sessionId=gate_.Config().sessionId;
-        packet.frame=spectator_publish_frame_;
-        packet.gameplayAbi=gate_.Config().gameplayAbi;
-        packet.playerCount=gate_.Config().playerCount;
-        packet.inputs=inputs;
-        std::vector<u8> wire;
-        if(!Netplay::EncodeSpectatorFramePacket(packet,&wire)||
-           !transport_.SendSpectator(wire.data(),wire.size()))return;
-        ++spectator_publish_frame_;
-    }
+    const auto publishThrough=std::min(through,spectator_stage_publisher_.Published()+31);
+    const bool published=spectator_stage_publisher_.Publish(publishThrough,last,
+        [&](std::uint32_t frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){
+            return core_.ConfirmedInputs(frame,&inputs);
+        },[&](const std::vector<u8>& bytes){
+            return transport_.SendSpectator(bytes.data(),bytes.size());
+        });
+    if(!published){spectator_publish_failed_=true;transport_.StopSpectators();return;}
+    spectator_publish_frame_=spectator_stage_publisher_.Published();
 }
 
 bool NetplayRuntime::InitialInputsReady()const{
@@ -194,6 +224,11 @@ bool NetplayRuntime::PumpNetwork(bool expectsInput,bool captureFollows){
         setup_=next;
         if(!channel_.BeginSession(gate_.Config(),network_now_,channel_policy(Mode(),choice.prediction)))return false;
         calibration_.Applied();
+        if(!spectator_stage_publisher_.Reset('A',gate_.Config().playerCount,
+                gate_.Config().sessionId,gate_.Config().gameplayAbi)){
+            spectator_publish_failed_=true;transport_.StopSpectators();
+        }
+        spectator_recorded_frames_={};spectator_publish_frame_=0;
     }
     if(calibration_.Waiting())return channel_.PumpRetirement(network_now_);
     // A loaded endpoint must not arm the gameplay watchdog or simulate frame
@@ -217,7 +252,7 @@ bool NetplayRuntime::PumpNetwork(bool expectsInput,bool captureFollows){
         Mode()==Netplay::AdonisMode::Rollback;
     if(network_gap_tail_enabled_)network_input_gap_tail_.Update(network_now_,MissingRemoteInputs(),pace);
     else input_gap_pacing_.Update(network_now_,MissingRemoteInputs(),pace);
-    PublishConfirmedSpectatorFrames();return true;
+    return true;
 }
 
 bool NetplayRuntime::SetNetworkGapTailEnabled(bool enabled){
@@ -320,6 +355,40 @@ bool NetplayRuntime::FeedSpectator(u32 frame){
     spectator_frames_.pop_front();return true;
 }
 
+const char* NetplayRuntime::SpectatorPlaybackState(){
+    return spectator_stage_view_.State(spectator_stage_playback_);
+}
+
+bool NetplayRuntime::SpectatorPlaybackControl(const char* run,const char* action,u32 frame){
+    return spectator_&&spectator_stage_view_.Control(spectator_stage_playback_,run,action,frame);
+}
+
+bool NetplayRuntime::SpectatorCheckpointRequired(u32 frame,u32 stage)const{
+    if(!network_enabled_||spectator_||playback_||frame==Netplay::INVALID_FRAME)return false;
+    if(!frame)return true;
+    const auto& previous=spectator_recorded_frames_[(frame-1)%spectator_recorded_frames_.size()];
+    return previous.frame!=frame-1||previous.stage!=stage;
+}
+
+bool NetplayRuntime::RecordSpectatorFrame(u32 frame,u32 stage,
+        const std::vector<u8>& initializer,
+        const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs,u8 bossMask){
+    if(!network_enabled_||spectator_||playback_||generation_!=0||setup_.localPlayer!=0)return true;
+    const bool checkpoint=SpectatorCheckpointRequired(frame,stage);
+    if(checkpoint!=!initializer.empty()||(!initializer.empty()&&initializer.size()>Netplay::SpectatorStageMaxStateBytes)){
+        spectator_publish_failed_=true;transport_.StopSpectators();return false;
+    }
+    Netplay::SpectatorStagePublisher::Frame record;
+    record.frame=frame;record.stage=stage;
+    record.schema=initializer.empty()?0:kSpectatorStageSchema;
+    record.initializer=initializer;record.inputs=inputs;record.hasInputs=true;record.bossSlots=bossMask;
+    if(!spectator_stage_publisher_.Record(std::move(record))){
+        spectator_publish_failed_=true;transport_.StopSpectators();return false;
+    }
+    spectator_recorded_frames_[frame%spectator_recorded_frames_.size()]={frame,stage};
+    return true;
+}
+
 bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId) noexcept {
     if(!setup.configured||!sessionId)return false;
     EndCorrection();input_gap_pacing_.Reset(network_now_);network_input_gap_tail_.Reset(network_now_);
@@ -360,7 +429,8 @@ void NetplayRuntime::Clear() noexcept {
     initial_wait_started_=false;initial_wait_since_=0;initial_wait_error_.clear();
     spectator_=spectator_retired_=false;spectator_publish_frame_=spectator_receive_frame_=0;
     spectator_timing_ready_=true;spectator_timing_sent_=spectator_publish_failed_=false;spectator_deadline_=0;
-    spectator_frames_.clear();spectator_error_.clear();
+    spectator_frames_.clear();spectator_stage_playback_.Clear();spectator_stage_view_.Clear();
+    spectator_recorded_frames_={};spectator_error_.clear();
     gate_.Clear();
     core_.Clear();
     configured_ = false;

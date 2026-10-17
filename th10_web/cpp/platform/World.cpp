@@ -11,6 +11,16 @@
 #include <new>
 #include <cstdlib>
 namespace th10::browser {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace {
+struct SpectatorSilentAudio final:AudioCommandSink {
+    void capture_effect(i32,i32,const SoundDefinition*) noexcept override{}
+    void capture_stop(i32) noexcept override{}
+    void capture_music(i32,i32,const char*) override{}
+};
+SpectatorSilentAudio spectator_silent_audio;
+}
+#endif
 World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& a,Scores& records,ScreenEffects& fx):state(s),engine(e),common(c),fonts(f),input(i),audio(a),scores(records),effects(fx),backgrounds(s,e,fx,records.files),chain(&e.chain_value),replay_files(records.files,s.game.flags),replay_writer(records.files,default_calendar(),s.game,s.active_time,s.total_time,s.motion.cheat_movement_used,s.chinese),calendar(default_calendar()){engine.register_receiver(*this);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     engine.rollback_state=nullptr;
@@ -66,6 +76,10 @@ void World::select_screen(i32 screen){state.pending_screen=state.engine_flags&0x
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool World::begin_netplay_frame(u32 frame){
     const auto& runtime=state.netplay_runtime;
+    spectator_boss_registration_mask=0;
+    spectator_activation_checkpoint_frame=Netplay::INVALID_FRAME;
+    spectator_activation_checkpoint_stage=0;
+    spectator_activation_checkpoint_wire.clear();
     // Exact input at this frame alone is insufficient: an earlier unconfirmed
     // prediction can still change its starting state. Rebuilt confirmed
     // prefixes, Replay and spectator frames need audio, but no undo storage.
@@ -82,6 +96,11 @@ bool World::begin_netplay_frame(u32 frame){
         // Mode changes belong to a new committed run, never an active frame.
         rollback.reset();
     }
+    if(runtime.StagePlaybackReady()){
+        engine.netplay_frame=frame;
+        audio.manager.command_sink=spectator_suppress_audio?&spectator_silent_audio:nullptr;
+        return true;
+    }
     if(!audio_events.BeginFrame(frame)){
         engine.rollback_state=nullptr;
         if(rollback&&rollback->IsFrameOpen())rollback->EndFrame();
@@ -90,15 +109,24 @@ bool World::begin_netplay_frame(u32 frame){
     engine.netplay_frame=frame;
     audio.manager.command_sink=&audio_events;return true;
 }
+void World::suppress_spectator_audio(bool suppress){
+    spectator_suppress_audio=suppress;
+    if(state.netplay_runtime.StagePlaybackReady())
+        audio.manager.command_sink=suppress?&spectator_silent_audio:nullptr;
+}
 bool World::end_netplay_frame(){
     if(audio.manager.command_sink==&audio_events)audio.manager.command_sink=nullptr;
+    if(audio.manager.command_sink==&spectator_silent_audio)audio.manager.command_sink=nullptr;
+    spectator_suppress_audio=false;
     engine.rollback_state=nullptr;engine.netplay_frame=~u32(0);
+    if(state.netplay_runtime.StagePlaybackReady())return true;
     const bool commands=audio_events.EndFrame();
     const bool state=!rollback||rollback->EndFrame();
     return commands&&state;
 }
 bool World::commit_audio(){
     const auto& runtime=state.netplay_runtime;
+    if(runtime.StagePlaybackReady())return true;
     if(runtime.Correcting()||runtime.HasRollbackRequest())return true;
     return audio_events.CommitThrough(runtime.ConfirmedThroughAllRemotes(),
         runtime.LastSimulatedFrame(),audio.manager,[](void* context){

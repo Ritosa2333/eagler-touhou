@@ -34,6 +34,7 @@ struct EnemyFrameEnvironment : EnemyEnvironment {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     u32 player_count=1;
     virtual void publish_player_targets(EnemyState& enemy)=0;
+    virtual void boss_registered(i32 slot)=0;
 #endif
     virtual i32 destroy(EnemyState& enemy)=0;
     virtual void play_sound(i32 sound,float horizontal_position)=0;

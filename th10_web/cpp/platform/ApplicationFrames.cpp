@@ -18,8 +18,9 @@ AppFrames::AppFrames(Application& a):owner(a){animations=&a.manager;pending_scre
 void AppFrames::update_audio(){owner.audio.advance_fades();}
 void AppFrames::update_input(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(!owner.state.multiplayer_session.configured||
-       (owner.state.netplay_runtime.Playback()&&!owner.state.multiplayer_session.started))
+    // Ending/title continue after the combat session stops advancing netplay.
+    // Only a live network world may consume its once-committed host lane.
+    if(!owner.multiplayer_active())
         InputDevices{owner.input}.update(0,false);
     else owner.input.player_profiles[0].input=multiplayer::InputLanes::HostControls(owner.state.input_lanes);
 #else

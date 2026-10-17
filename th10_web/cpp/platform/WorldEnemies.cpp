@@ -34,6 +34,7 @@ struct Frame final:EnemyFrameEnvironment,EnemyDropEnvironment {
     }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     void publish_player_targets(EnemyState& enemy) override{w.publish_player_targets(enemy);}
+    void boss_registered(i32 slot) override{w.spectator_boss_registered(slot);}
 #endif
     AnmVm* animation(u32& id) override{return registry->find_and_clear(id);}
     i32 player_damage(const Vec3& p,const Vec2& size) override{return w.player_damage(p,size);}

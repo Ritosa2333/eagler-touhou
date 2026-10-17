@@ -8,6 +8,7 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/PresentationCache.hpp"
 #include "../multiplayer/RollbackPool.hpp"
+#include "../multiplayer/AnimationCapacity.hpp"
 namespace th10::multiplayer { class RollbackState; }
 #endif
 namespace th10::browser {
@@ -29,7 +30,7 @@ struct AnimationEngine final:AnmEnvironment,AnmAllocationEnvironment,AnmSystemEn
     // draw-side first samples in a matching bounded table; a full table only
     // disables interpolation for the missing sample.
     multiplayer::PresentationCache<const AnmVm*,PresentationVmSample,4096> presentation_previous;
-    multiplayer::RollbackPool<sizeof(AnmVm),2048> rollback_animation_overflow{};
+    multiplayer::RollbackPool<sizeof(AnmVm),multiplayer::kAnimationOverflowCapacity> rollback_animation_overflow{};
     // ANM geometry is referenced from rewindable VMs. Keep it at stable
     // addresses as well; retail distortion is 0x4b0 and script-created vertex
     // buffers are bounded here to 64 KiB rather than falling back to the heap.

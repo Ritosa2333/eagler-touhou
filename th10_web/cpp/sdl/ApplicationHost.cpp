@@ -433,7 +433,11 @@ EM_BOOL frame(double timestamp,void* epoch){
     float frame_alpha=1.0f;bool interpolate=false,presented=false;
     sdl_defer(0);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(rollback_clock){
+    if(runtime.StagePlaybackReady()){
+        // Confirmed spectator packets own their semantic Draw individually.
+        // A browser repaint is read-only even during pause or catch-up.
+        if(!result)presented=application->presentation_draw(1.f,false,false);
+    }else if(rollback_clock){
         if(high&&completed_after_correction)presentation_primed=true;
         interpolate=high&&presentation_primed;
         if(!result&&!runtime.Correcting()){

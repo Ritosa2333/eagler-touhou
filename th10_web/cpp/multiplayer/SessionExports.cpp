@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 #include <cstddef>
+#include <cstring>
 
 using namespace th10;
 namespace {
@@ -13,9 +14,12 @@ u32 hash_bytes(const void* data,std::size_t bytes,u32 hash=2166136261u){
     for(std::size_t i=0;i<bytes;++i){hash^=p[i];hash*=16777619u;}
     return hash;
 }
+u32 float_bits(float value){u32 result=0;std::memcpy(&result,&value,sizeof(result));return result;}
 template<class T>u32 hash_value(const T& value,u32 hash=2166136261u){
     return hash_bytes(&value,sizeof(value),hash);
 }
+u32 hash_anm_vm_portable(const AnmVm& vm,u32 hash);
+u32 hash_cstring_portable(const char* value,u32 hash);
 u32 hash_input_lanes(const multiplayer::InputLanes::State& state,u32 hash=2166136261u){
     for(const auto& seat:state.seats)hash=hash_value(seat,hash);
     // FrameInput has tail padding on wasm32; hash its fields so allocator or
@@ -172,9 +176,9 @@ u32 hash_bullets(const EnemyBulletManager* manager){
     if(!manager)return 0;u32 hash=2166136261u;
     // The manager survives a native stage transition, while direct Replay
     // bootstrap creates a fresh owner. Update/draw handles, draw-list links,
-    // the animation-file pointer and the absolute pool cursor are graph
-    // addresses, not gameplay identity. Hash the cursor as a pool index and
-    // keep only scalar state that can affect later bullet operations.
+    // animation geometry, reserved bytes and draw-derived ANM script_position
+    // are presentation/graph state. Item-independent ANM state, bullet
+    // commands, modifiers, motion and all timers remain part of the hash.
     hash=hash_bytes(manager->manager_fields,sizeof(manager->manager_fields),hash);
     const u32 cursor=manager->cursor>=manager->pool&&manager->cursor<=manager->pool+2000?
         u32(manager->cursor-manager->pool):0xffffffffu;
@@ -183,7 +187,32 @@ u32 hash_bullets(const EnemyBulletManager* manager){
     hash=hash_value(manager->last_cancel_size,hash);
     hash=hash_value(manager->active_count,hash);
     for(u32 i=0;i<2000;++i)if(manager->pool[i].state){
-        hash=hash_value(i,hash);hash=hash_value(manager->pool[i],hash);
+        const auto& bullet=manager->pool[i];hash=hash_value(i,hash);
+        hash=hash_value(bullet.flags,hash);hash=hash_value(bullet.cancel_protection,hash);
+        AnmVm animation=bullet.animation;animation.script_position={};
+        hash=hash_anm_vm_portable(animation,hash);
+        hash=hash_cstring_portable(bullet.animation.animation_file?bullet.animation.animation_file->name:nullptr,hash);
+        hash=hash_value(bullet.motion.position,hash);hash=hash_value(bullet.motion.velocity,hash);
+        hash=hash_value(bullet.motion.speed,hash);hash=hash_value(bullet.motion.angle,hash);
+        hash=hash_value(bullet.cancel_size,hash);hash=hash_value(bullet.hitbox_height,hash);
+        hash=hash_timer_state(bullet.cancel_timer,hash);hash=hash_value(bullet.cancel_timer_flags,hash);
+        hash=hash_timer_state(bullet.secondary_timer,hash);hash=hash_value(bullet.secondary_timer_flags,hash);
+        hash=hash_value(bullet.id,hash);hash=hash_value(bullet.outside_delay,hash);
+        hash=hash_value(bullet.cancel_script,hash);hash=hash_value(bullet.active_features,hash);
+        hash=hash_value(bullet.spawn_flags,hash);hash=hash_value(bullet.state,hash);
+        hash=hash_value(bullet.turn_sound,hash);hash=hash_value(bullet.command_index,hash);
+        hash=hash_value(bullet.draw_layer,hash);
+        for(const auto& command:bullet.commands){
+            for(const auto argument:command.arguments)hash=hash_value(argument,hash);
+            hash=hash_value(command.type,hash);hash=hash_value(command.concurrent,hash);
+        }
+        for(const auto& modifier:bullet.modifiers){
+            hash=hash_timer_state(modifier.timer,hash);hash=hash_value(modifier.timer_flags,hash);
+            hash=hash_value(modifier.first,hash);hash=hash_value(modifier.second,hash);
+            hash=hash_value(modifier.vector,hash);hash=hash_value(modifier.duration,hash);
+            hash=hash_value(modifier.count,hash);hash=hash_value(modifier.iteration,hash);
+        }
+        hash=hash_value(bullet.sprite_type,hash);hash=hash_value(bullet.color,hash);
     }
     return hash;
 }
@@ -191,11 +220,24 @@ u32 hash_items(const ItemManager* manager){
     if(!manager)return 0;u32 hash=2166136261u;
     // Stage transitions retain this manager, while direct Replay creates a
     // fresh one. Callback/resource pointers are graph identity, not gameplay
-    // state. Keep only scalar manager state plus active item contents.
+    // state. Item::draw derives animation.script_position from the visible
+    // item position every draw, so omit that presentation cache from the
+    // semantic VM hash while retaining every authored animation field.
     hash=hash_value(manager->flags,hash);
     hash=hash_value(manager->manager_state,hash);
-    for(u32 i=0;i<150;++i)if(manager->regular[i].state){hash=hash_value(i,hash);hash=hash_value(manager->regular[i],hash);}
-    for(u32 i=0;i<2048;++i)if(manager->faith[i].state){hash=hash_value(i,hash);hash=hash_value(manager->faith[i],hash);}
+    const auto add=[&](const Item& item,u32 slot,u32 pool){
+        if(!item.state)return;
+        hash=hash_value(pool,hash);hash=hash_value(slot,hash);
+        hash=hash_value(item.state,hash);hash=hash_value(item.kind,hash);
+        hash=hash_value(item.sprite_kind,hash);hash=hash_value(item.position,hash);
+        hash=hash_value(item.velocity,hash);hash=hash_value(item.motion_3c4,hash);
+        hash=hash_timer_state(item.timer,hash);hash=hash_value(item.timer_flags,hash);
+        hash=hash_value(item.attraction_speed,hash);hash=hash_value(item.value_variant,hash);
+        AnmVm animation=item.animation;animation.script_position={};
+        hash=hash_anm_vm_portable(animation,hash);
+    };
+    for(u32 i=0;i<150;++i)add(manager->regular[i],i,0);
+    for(u32 i=0;i<2048;++i)add(manager->faith[i],i,1);
     hash=hash_value(manager->active_count,hash);hash=hash_value(manager->faith_cursor,hash);hash=hash_value(manager->faith_count,hash);return hash;
 }
 u32 hash_laser_semantic(const EnemyLaser& laser,u32 hash){
@@ -308,16 +350,12 @@ AnmHashes hash_anm_parts(const browser::AnimationEngine& engine){
         result.pooled=hash_value(i,result.pooled);
         result.pooled=hash_anm_vm_authored(manager.pool[i],result.pooled);
     }
-    for(u32 i=0;i<2048;++i)if(engine.rollback_animation_overflow.active(i)){
+    for(u32 i=0;i<multiplayer::kAnimationOverflowCapacity;++i)if(engine.rollback_animation_overflow.active(i)){
         result.overflow=hash_value(i,result.overflow);
         result.overflow=hash_anm_vm_authored(*static_cast<const AnmVm*>(engine.rollback_animation_overflow.at(i)),result.overflow);
     }
     return result;
 }
-u32 hash_anm(const AnmHashes& parts){
-    u32 hash=hash_value(parts.metadata);hash=hash_value(parts.pooled,hash);return hash_value(parts.overflow,hash);
-}
-
 // Cross-graph hashes used by read-only spectators. The rollback oracle above
 // intentionally retains exact pointer/layout identity; these helpers instead
 // describe authored state that must survive a different transport/allocation
@@ -467,18 +505,47 @@ u32 hash_anm_vm_portable(const AnmVm& vm,u32 hash){
     hash=hash_value(vm.file_index,hash);hash=hash_value(vm.script_index,hash);
     return hash_value(instructionOffset(vm.instruction),hash);
 }
+bool loading_tree_contains(const AnmVm& root,const AnmVm* candidate,u32 depth){
+    if(&root==candidate)return true;
+    if(depth>=32)return false;
+    for(auto* node=root.child_node.next;node;node=node->next){
+        if(!node->value)continue;
+        if(node->value==candidate||loading_tree_contains(*node->value,candidate,depth+1))return true;
+    }
+    return false;
+}
+bool is_startup_loading_vm(const browser::AnimationEngine& engine,const AnmVm& candidate){
+    const auto* candidateFile=candidate.animation_file;
+    if(!candidateFile||std::strcmp(candidateFile->name,"ascii.anm")!=0)return false;
+    const auto& registry=engine.manager.registry;
+    const auto contains=[&](ListNode<AnmVm>* node){
+        for(;node;node=node->next){
+            if(!node->value)continue;const auto& root=*node->value;const auto* file=root.animation_file;
+            if(file&&std::strcmp(file->name,"ascii.anm")==0&&root.script_index==6&&
+               loading_tree_contains(root,&candidate,0))return true;
+        }
+        return false;
+    };
+    return contains(registry.world_head)||contains(registry.ui_head);
+}
 u32 hash_anm_portable(const browser::AnimationEngine& engine){
     const auto& manager=engine.manager;u32 hash=2166136261u;
-    hash=hash_value(manager.started_scripts,hash);hash=hash_value(manager.processed_count,hash);
-    hash=hash_bytes(manager.occupied,sizeof(manager.occupied),hash);
-    hash=hash_value(manager.cursor,hash);hash=hash_value(manager.last_id,hash);
-    for(u32 i=0;i<4096;++i)if(manager.occupied[i]){
-        hash=hash_value(i,hash);hash=hash_anm_vm_portable(manager.pool[i],hash);
-    }
-    for(u32 i=0;i<2048;++i)if(engine.rollback_animation_overflow.active(i)){
-        hash=hash_value(i,hash);
-        hash=hash_anm_vm_portable(
-            *static_cast<const AnmVm*>(engine.rollback_animation_overflow.at(i)),hash);
+    // Pool slots, ANM ids, and file slots are local handles. Preserve the
+    // authored update order and resource/script identity across both lists.
+    // Only the ASCII script-6 loading root and its actual child tree are
+    // omitted: the host retains that startup graph after the viewer joins.
+    for(u32 listIndex=0;listIndex<2;++listIndex){
+        hash=hash_value(listIndex,hash);u32 count=0;
+        auto* node=listIndex?manager.registry.ui_head:manager.registry.world_head;
+        for(;node;node=node->next){
+            if(!node->value)continue;const auto& source=*node->value;
+            if(is_startup_loading_vm(engine,source))continue;
+            const auto* file=source.animation_file;
+            hash=hash_cstring_portable(file?file->name:nullptr,hash);
+            auto vm=source;vm.id=0;vm.file_index=0;
+            hash=hash_anm_vm_portable(vm,hash);++count;
+        }
+        hash=hash_value(count,hash);
     }
     return hash;
 }
@@ -576,6 +643,26 @@ const i32* multiplayer_lifecycle_status(browser::Application* app){
     words[9]=i32(app->multiplayer_resimulated_frames);
     words[10]=app->input.player_profiles[0].input.raw_pressed;
     words[11]=app->input.player_profiles[0].input.raw_repeat;
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_load_debug")))
+const i32* multiplayer_spectator_load_debug(browser::Application* app){
+    static i32 words[29]{};std::fill(words,words+29,0);if(!app)return words;
+    words[0]=app->error;
+    words[24]=app->startup?app->startup->error:0;words[25]=app->title?app->title->error:0;
+    words[26]=app->credits?app->credits->error:0;words[27]=app->value.screen;words[28]=app->value.pending_screen;
+    auto* world=app->world;if(!world)return words;
+    words[1]=world->error;words[2]=world->backgrounds.error;words[3]=world->loading;
+    words[4]=i32(world->loading_progress.phase);words[5]=world->new_game;
+    words[6]=world->state.game.flags;words[7]=world->state.game.stage;
+    words[8]=world->actors.session!=nullptr;words[9]=world->state.current_stage!=nullptr;
+    words[10]=world->backgrounds.current!=nullptr;words[11]=world->actors.gui!=nullptr;
+    words[12]=world->actors.player!=nullptr;words[13]=world->actors.bullets!=nullptr;
+    words[14]=world->actors.items!=nullptr;words[15]=world->actors.lasers!=nullptr;
+    words[16]=world->actors.results!=nullptr;words[17]=world->actors.hints!=nullptr;
+    words[18]=world->actors.popups!=nullptr;words[19]=world->actors.enemies!=nullptr;
+    words[20]=world->actors.effects!=nullptr;words[21]=world->actors.bomb!=nullptr;
+    words[22]=world->actors.spell!=nullptr;words[23]=world->state.replay!=nullptr;
     return words;
 }
 extern "C" __attribute__((export_name("multiplayer_calibration_status")))
@@ -728,7 +815,7 @@ const u32* multiplayer_canonical_hashes(browser::Application* app){
     chain=hash_pool(w.rollback_session_owners,chain);
     chain=hash_pool(w.rollback_game_effect_owners,chain);
     const auto anm=hash_anm_parts(app->engine);
-    words[0]=2;words[2]=economy;words[3]=rng;words[4]=players;words[5]=enemies;words[6]=hash_bullets(w.actors.bullets);words[7]=lasers;words[8]=items;words[9]=hash_anm(anm);words[10]=scene;words[11]=chain;
+    words[0]=2;words[2]=economy;words[3]=rng;words[4]=players;words[5]=enemies;words[6]=hash_bullets(w.actors.bullets);words[7]=lasers;words[8]=items;words[9]=hash_anm_portable(app->engine);words[10]=scene;words[11]=chain;
     u32 composite=2166136261u;for(u32 i=2;i<12;++i)composite=hash_value(words[i],composite);words[1]=composite;words[12]=app->state.multiplayer_session.started;
     words[13]=app->engine.script_random.seed;words[14]=app->engine.script_random.calls;
     words[15]=app->engine.visual_random.seed;words[16]=app->engine.visual_random.calls;
@@ -737,7 +824,7 @@ const u32* multiplayer_canonical_hashes(browser::Application* app){
     for(const auto value:manager.occupied)occupied+=value?1u:0u;
     for(auto* node=manager.registry.world_head;node;node=node->next)++worldCount;
     for(auto* node=manager.registry.ui_head;node;node=node->next)++uiCount;
-    for(u32 i=0;i<2048;++i)overflowCount+=app->engine.rollback_animation_overflow.active(i)?1u:0u;
+    for(u32 i=0;i<multiplayer::kAnimationOverflowCapacity;++i)overflowCount+=app->engine.rollback_animation_overflow.active(i)?1u:0u;
     words[20]=manager.started_scripts;words[21]=manager.processed_count;words[22]=u32(manager.cursor);words[23]=manager.last_id;
     words[24]=occupied;words[25]=worldCount;words[26]=uiCount;words[27]=overflowCount;
     const u32 enemyManager=w.actors.enemies?hash_value(*w.actors.enemies):0;
@@ -882,6 +969,226 @@ const u32* multiplayer_portable_hashes(browser::Application* app){
     for(u32 i=2;i<12;++i)composite=hash_value(words[i],composite);
     words[1]=composite;return words;
 }
+namespace {
+u32 hash_stage_scene(const Stage* s){
+    u32 h=hash_value(s!=nullptr);if(!s)return h;
+    h=hash_value(s->stage_number,h);h=hash_cstring_portable(s->file?s->file->animation_name:nullptr,h);
+    h=hash_value(s->flags,h);h=hash_value(s->state,h);h=hash_value(s->camera_effect,h);
+    h=hash_timer_state(s->effect_timer,h);h=hash_value(s->effect_timer_flags,h);
+    h=hash_timer_state(s->script_timer,h);h=hash_value(s->script_timer_flags,h);
+    const i32 pc=s->instruction&&s->script_begin?i32(reinterpret_cast<const u8*>(s->instruction)-
+        reinterpret_cast<const u8*>(s->script_begin)):-1;h=hash_value(pc,h);
+    h=hash_interpolator_portable(s->target_interpolation,h);
+    h=hash_interpolator_portable(s->position_interpolation,h);
+    h=hash_interpolator_portable(s->fog_interpolation,h);
+    h=hash_value(s->reserved_174,h);h=hash_value(s->draw_distance_squared,h);
+    h=hash_value(s->effects_enabled,h);h=hash_value(s->fade_color,h);h=hash_value(s->frame_effect,h);
+    h=hash_value(s->effect_position,h);h=hash_value(s->effect_size,h);
+    h=hash_value(s->draw_flags,h);h=hash_timer_state(s->fade_timer,h);
+    h=hash_value(s->fade_timer_flags,h);h=hash_value(s->frame_count,h);
+    // StageResources inherits this render basis from the previous engine
+    // camera. Every world draw recomputes the active basis in configure_world
+    // before billboard use; Stage simulation never reads this cached right.
+    // Keep its raw value in diagnostics and on the wire, outside this oracle.
+    auto camera=s->camera;camera.right={};h=hash_value(camera,h);
+    const bool initialized=s->instruction!=nullptr;h=hash_value(initialized,h);
+    // StageResources allocates the primitive VM array before Stage::restart
+    // initializes it. A viewer can expose this valid loading state while its
+    // checkpoint is buffered; those raw allocations contain no VM state yet.
+    if(!initialized)return h;
+    const auto vmHash=[&](const AnmVm& original){
+        auto vm=original;vm.id=vm.owner_tag=0;vm.file_index=0;
+        h=hash_cstring_portable(vm.animation_file?vm.animation_file->name:nullptr,h);
+        h=hash_anm_vm_portable(vm,h);
+    };
+    if(s->file)for(i32 i=0;i<s->file->object_count;++i){
+        const auto* object=s->objects[i];h=hash_value(object->id,h);h=hash_value(object->layer,h);
+        h=hash_value(object->flags,h);
+        for(auto* p=const_cast<StageObject*>(object)->primitives();p->type>=0;p=p->next()){
+            h=hash_value(p->animation,h);vmHash(s->object_animations[p->animation]);
+        }
+    }
+    for(const auto& vm:s->script_animations)vmHash(vm);
+    for(const auto& vm:s->effect_animations)vmHash(vm);
+    return h;
+}
+u32 hash_vec2_fields(const Vec2& value,u32 hash=2166136261u){
+    hash=hash_value(float_bits(value.x),hash);return hash_value(float_bits(value.y),hash);
+}
+u32 hash_vec3_fields(const Vec3& value,u32 hash=2166136261u){
+    hash=hash_value(float_bits(value.x),hash);hash=hash_value(float_bits(value.y),hash);
+    return hash_value(float_bits(value.z),hash);
+}
+u32 hash_matrix_fields(const Matrix4& value){
+    u32 hash=2166136261u;
+    for(const auto& row:value.elements)for(const auto component:row)
+        hash=hash_value(float_bits(component),hash);
+    return hash;
+}
+u32 hash_camera_fog_fields(const AnmFog& value,u32 hash=2166136261u){
+    hash=hash_value(float_bits(value.near_distance),hash);
+    hash=hash_value(float_bits(value.far_distance),hash);
+    for(const auto component:value.color)hash=hash_value(float_bits(component),hash);
+    return hash_value(value.packed_color,hash);
+}
+template<class T,unsigned N>u32 hash_interpolator_fields(const Interpolator<T,N>& value){
+    u32 hash=2166136261u;
+    for(const auto component:value.start)hash=hash_value(component,hash);
+    for(const auto component:value.end)hash=hash_value(component,hash);
+    for(const auto component:value.initial_tangent)hash=hash_value(component,hash);
+    for(const auto component:value.final_tangent)hash=hash_value(component,hash);
+    hash=hash_timer_state(value.timer,hash);hash=hash_value(value.flags,hash);
+    hash=hash_value(value.duration,hash);return hash_value(value.mode,hash);
+}
+u32 hash_fog_interpolator_fields(const FogInterpolator& value){
+    u32 hash=2166136261u;
+    for(const auto* fog:{&value.start,&value.end,&value.initial_tangent,&value.final_tangent})
+        hash=hash_camera_fog_fields(*fog,hash);
+    hash=hash_timer_state(value.timer,hash);hash=hash_value(value.flags,hash);
+    hash=hash_value(value.duration,hash);return hash_value(value.mode,hash);
+}
+u32 hash_stage_vm_fields(const AnmVm& original,u32 hash=2166136261u){
+    auto vm=original;vm.id=vm.owner_tag=0;vm.file_index=0;
+    hash=hash_cstring_portable(vm.animation_file?vm.animation_file->name:nullptr,hash);
+    return hash_anm_vm_portable(vm,hash);
+}
+bool write_stage_scene_fields(const Stage& s,u32* out){
+    const bool initialized=s.instruction!=nullptr;
+    const auto instructionOffset=initialized&&s.script_begin?
+        i32(reinterpret_cast<const u8*>(s.instruction)-reinterpret_cast<const u8*>(s.script_begin)):-1;
+    const auto timerRate=[](const Timer& timer){return float_bits(timer.rate?*timer.rate:0.0f);};
+    // Per-row word map (64 words):
+    // 0 initialized, 1 stage_number, 2 flags, 3 state, 4 camera_effect;
+    // 5-9 effect timer (prev,current,fraction,rate,flags), 10-14 script timer;
+    // 15 instruction PC, 16-18 target/position/fog interpolation hashes;
+    // 19 reserved_174, 20 draw_distance, 21 effects_enabled, 22 fade_color,
+    // 23 frame_effect, 24 effect_position, 25 effect_size, 26-29 draw counts/flags;
+    // 30-34 fade timer, 35 frame_count, 36 object flags, 37 primitive descriptors,
+    // 38 primitive VM group, 39 script VM group, 40 effect VM group;
+    // 41-46 Camera named vectors, 47 FOV, 48 view, 49 projection,
+    // 50-55 viewport fields, 56 screen_space, 57 draw_offset, 58 animation_delta,
+    // 59 fog, 60 resource name, 61 object count, 62 primitive count, 63 source size.
+    out[0]=initialized;out[1]=u32(s.stage_number);out[2]=s.flags;out[3]=s.state;
+    out[4]=s.camera_effect;
+    out[5]=u32(s.effect_timer.previous);out[6]=u32(s.effect_timer.current);
+    out[7]=float_bits(s.effect_timer.fractional);out[8]=timerRate(s.effect_timer);out[9]=s.effect_timer_flags;
+    out[10]=u32(s.script_timer.previous);out[11]=u32(s.script_timer.current);
+    out[12]=float_bits(s.script_timer.fractional);out[13]=timerRate(s.script_timer);out[14]=s.script_timer_flags;
+    out[15]=u32(instructionOffset);out[16]=hash_interpolator_fields(s.target_interpolation);
+    out[17]=hash_interpolator_fields(s.position_interpolation);
+    out[18]=hash_fog_interpolator_fields(s.fog_interpolation);out[19]=s.reserved_174;
+    out[20]=float_bits(s.draw_distance_squared);out[21]=s.effects_enabled;out[22]=s.fade_color;
+    out[23]=u32(s.frame_effect);out[24]=hash_vec3_fields(s.effect_position);
+    out[25]=hash_vec3_fields(s.effect_size);out[26]=s.drawn_objects;out[27]=s.culled_objects;
+    out[28]=s.drawn_primitives;out[29]=s.draw_flags;
+    out[30]=u32(s.fade_timer.previous);out[31]=u32(s.fade_timer.current);
+    out[32]=float_bits(s.fade_timer.fractional);out[33]=timerRate(s.fade_timer);out[34]=s.fade_timer_flags;
+    out[35]=s.frame_count;
+    out[60]=hash_cstring_portable(s.file?s.file->animation_name:nullptr,2166136261u);
+    out[61]=s.file?u32(s.file->object_count):0;out[62]=s.file?u32(s.file->primitive_count):0;
+    out[63]=s.source_size;
+    const auto& camera=s.camera;
+    out[41]=hash_vec3_fields(camera.position);out[42]=hash_vec3_fields(camera.target_offset);
+    out[43]=hash_vec3_fields(camera.up);out[44]=hash_vec3_fields(camera.reserved_024);
+    out[45]=hash_vec3_fields(camera.right);out[46]=hash_vec3_fields(camera.eye_offset);
+    out[47]=float_bits(camera.field_of_view);out[48]=hash_matrix_fields(camera.view);
+    out[49]=hash_matrix_fields(camera.projection);out[50]=camera.viewport.x;out[51]=camera.viewport.y;
+    out[52]=camera.viewport.width;out[53]=camera.viewport.height;
+    out[54]=float_bits(camera.viewport.near_depth);out[55]=float_bits(camera.viewport.far_depth);
+    out[56]=camera.screen_space;out[57]=hash_vec2_fields(camera.draw_offset);
+    out[58]=hash_vec3_fields(camera.animation_delta);out[59]=hash_camera_fog_fields(camera.fog);
+    // StageResources allocates primitive VM storage before restart initializes it.
+    // Its raw bytes are not readable until an instruction PC has been installed.
+    if(!initialized)return true;
+    if(!s.file||!s.objects||(s.file->primitive_count>0&&!s.object_animations))return false;
+    u32 objectFlags=2166136261u,primitiveDescriptors=2166136261u;
+    u32 primitiveVms=2166136261u,scriptVms=2166136261u,effectVms=2166136261u;
+    u32 primitiveCount=0;
+    for(i32 object=0;object<s.file->object_count;++object){
+        const auto* owner=s.objects[object];if(!owner)return false;
+        objectFlags=hash_value(u32(object),objectFlags);objectFlags=hash_value(owner->id,objectFlags);
+        objectFlags=hash_value(owner->layer,objectFlags);objectFlags=hash_value(owner->flags,objectFlags);
+        for(auto* primitive=const_cast<StageObject*>(owner)->primitives();primitive->type>=0;
+            primitive=primitive->next()){
+            if(primitiveCount>=u32(s.file->primitive_count)||primitive->animation<0||
+               primitive->animation>=s.file->primitive_count)return false;
+            primitiveDescriptors=hash_value(u32(object),primitiveDescriptors);
+            primitiveDescriptors=hash_value(primitive->type,primitiveDescriptors);
+            primitiveDescriptors=hash_value(primitive->length,primitiveDescriptors);
+            primitiveDescriptors=hash_value(primitive->script,primitiveDescriptors);
+            primitiveDescriptors=hash_value(primitive->animation,primitiveDescriptors);
+            primitiveDescriptors=hash_vec3_fields(primitive->position,primitiveDescriptors);
+            primitiveDescriptors=hash_vec2_fields(primitive->size,primitiveDescriptors);
+            primitiveVms=hash_value(primitiveCount,primitiveVms);
+            primitiveVms=hash_value(primitive->animation,primitiveVms);
+            primitiveVms=hash_stage_vm_fields(s.object_animations[primitive->animation],primitiveVms);
+            ++primitiveCount;
+        }
+    }
+    if(primitiveCount!=u32(s.file->primitive_count))return false;
+    for(const auto& vm:s.script_animations)scriptVms=hash_stage_vm_fields(vm,scriptVms);
+    for(const auto& vm:s.effect_animations)effectVms=hash_stage_vm_fields(vm,effectVms);
+    out[36]=objectFlags;out[37]=primitiveDescriptors;out[38]=primitiveVms;
+    out[39]=scriptVms;out[40]=effectVms;return true;
+}
+u32 hash_screen_effects(browser::World& w){
+    const auto ownerHash=[&](const ScreenEffect& e){
+        u32 h=hash_value(e.flags);h=hash_value(e.state,h);h=hash_value(e.kind,h);
+        h=hash_value(e.reserved_014,h);h=hash_value(e.alpha,h);h=hash_value(e.duration,h);
+        for(auto p:e.parameters)h=hash_value(p,h);
+        h=hash_value(e.releasing,h);h=hash_timer_state(e.timer,h);return hash_value(e.timer_flags,h);
+    };
+    u32 h=2166136261u;
+    for(auto* sentinel:{&w.chain->update,&w.chain->draw}){
+        u32 count=0;
+        for(auto* node=sentinel->node.next;node;node=node->next){
+            const auto* entry=node->value;
+            if(!entry||!w.effects.rollback_effects.owns(entry->owner))continue;
+            h=hash_value(entry->priority,h);h=hash_value(entry->flags,h);
+            h=hash_value(ownerHash(*static_cast<const ScreenEffect*>(entry->owner)),h);++count;
+        }
+        h=hash_value(count,h);
+    }
+    std::vector<u32> ownerHashes;
+    for(u32 slot=0;slot<128;++slot)if(w.effects.rollback_effects.active(slot))
+        ownerHashes.push_back(ownerHash(*static_cast<const ScreenEffect*>(w.effects.rollback_effects.at(slot))));
+    std::sort(ownerHashes.begin(),ownerHashes.end());h=hash_value(u32(ownerHashes.size()),h);
+    for(auto value:ownerHashes)h=hash_value(value,h);
+    return h;
+}
+}
+extern "C" __attribute__((export_name("multiplayer_stage_scene_hashes")))
+const u32* multiplayer_stage_scene_hashes(browser::Application* app){
+    // Extend the cross-world oracle to the STD timeline and embedded VMs.
+    // The existing twelve-word oracle remains independently checked.
+    static u32 out[5]{};out[0]=1;out[1]=out[2]=out[3]=out[4]=0;
+    if(!app||!app->world)return out;auto& w=*app->world;
+    out[1]=hash_stage_scene(w.backgrounds.current);out[2]=hash_stage_scene(w.backgrounds.previous);
+    u32 h=2166136261u;
+    for(u32 seat=0;seat<w.player_count;++seat)if(w.pilots[seat].player){
+        auto vm=w.pilots[seat].player->animation;vm.id=vm.owner_tag=0;vm.file_index=0;
+        h=hash_cstring_portable(vm.animation_file?vm.animation_file->name:nullptr,h);
+        h=hash_anm_vm_portable(vm,h);
+    }
+    out[3]=h;out[4]=hash_screen_effects(w);return out;
+}
+extern "C" __attribute__((export_name("multiplayer_stage_scene_fields")))
+const u32* multiplayer_stage_scene_fields(browser::Application* app){
+    // Diagnostic-only field groups; the existing canonical StageScene hash
+    // remains the strict parity gate.
+    constexpr u32 headerWords=4,rowWords=64;
+    static u32 words[headerWords+rowWords*2]{};
+    std::fill(words,words+headerWords+rowWords*2,0u);
+    words[0]=1;words[3]=rowWords;
+    if(!app||!app->world)return words;
+    auto& world=*app->world;
+    const auto* current=world.backgrounds.current;const auto* previous=world.backgrounds.previous;
+    words[1]=current!=nullptr;words[2]=previous!=nullptr;
+    if((current&&!write_stage_scene_fields(*current,words+headerWords))||
+       (previous&&!write_stage_scene_fields(*previous,words+headerWords+rowWords)))
+        words[0]=0;
+    return words;
+}
 extern "C" __attribute__((export_name("multiplayer_enemy_debug")))
 const u32* multiplayer_enemy_debug(browser::Application* app){
     // Read-only diagnostic words for the first four fixed-pool enemies.  Keep
@@ -904,6 +1211,404 @@ const u32* multiplayer_enemy_debug(browser::Application* app){
         out[19]=u32(s.direction);++row;
     }
     words[80]=row;return words;
+}
+extern "C" __attribute__((export_name("multiplayer_ecl_context_debug")))
+const u32* multiplayer_ecl_context_debug(browser::Application* app){
+    // Read-only, allocation-independent ECL timing diagnostics for the first
+    // four active enemies. Instruction addresses are represented as an offset
+    // within the owning subroutine, never as a native pointer.
+    static u32 words[225]{};std::fill(words,words+225,0);if(!app||!app->world)return words;
+    const auto context_words=[](const EclContext& context,const EclProgram* program,u32* out){
+        std::memcpy(out,&context.time,sizeof(context.time));
+        const auto* instruction=context.instruction;
+        out[1]=instruction?u32(instruction->time):0xffffffffu;
+        out[2]=instruction?u32(instruction->opcode):0xffffffffu;
+        out[3]=instruction?u32(instruction->length):0xffffffffu;
+        out[4]=u32(context.stack.top);out[5]=u32(context.stack.frame_base);
+        out[6]=u32(context.thread_id);out[7]=context.state_1018;
+        out[8]=context.difficulty;out[9]=context.flags;
+        out[10]=0;out[11]=0xffffffffu;
+        for(u32 i=0;i<4;++i){out[12+i]=0;if(i*4+4<=u32(std::clamp(context.stack.top,0,4096)))
+            std::memcpy(out+12+i,context.stack.data+i*4,4);}
+        if(instruction){
+            if(const auto* sub=ecl_subroutine_for(program,instruction)){
+                out[10]=hash_cstring_portable(sub->name,2166136261u);
+                out[11]=u32(reinterpret_cast<std::uintptr_t>(instruction)-
+                           reinterpret_cast<std::uintptr_t>(sub->header+16));
+            }
+        }
+    };
+    auto& world=*app->world;u32 row=0;words[0]=1;
+    for(u32 slot=0;slot<512&&row<4;++slot){
+        if(!world.rollback_enemies.active(slot))continue;
+        const auto& enemy=*static_cast<const Enemy*>(world.rollback_enemies.at(slot));
+        auto* out=words+1+row*56;out[0]=slot;
+        const auto* program=enemy.script.program;out[1]=program?u32(program->file_count):0;
+        out[2]=program?u32(program->subroutine_count):0;
+        context_words(enemy.script.root,program,out+3);
+        const auto* active=enemy.script.active?enemy.script.active:&enemy.script.root;
+        context_words(*active,program,out+19);
+        u32 threads=0;for(auto* node=enemy.script.threads.next;node;node=node->next)++threads;
+        out[35]=threads;out[36]=u32(enemy.state.lifetime.current);
+        out[37]=u32(enemy.state.lifetime.previous);out[38]=u32(enemy.state.boss_slot);
+        out[39]=u32(enemy.state.health);
+        u32 contextHash=hash_ecl_context_portable(enemy.script.root,program);
+        for(auto* node=enemy.script.threads.next;node;node=node->next)
+            if(node->value)contextHash=hash_ecl_context_portable(*node->value,program,contextHash);
+        out[40]=contextHash;out[41]=hash_enemy_portable(enemy,program);
+        const auto& state=enemy.state;
+        u32 hash=2166136261u;
+        hash=hash_movement_state(state.previous,hash);hash=hash_movement_state(state.current,hash);
+        hash=hash_movement_state(state.absolute,hash);hash=hash_movement_state(state.relative,hash);out[42]=hash;
+        hash=hash_value(state.hitbox);hash=hash_value(state.collision_box,hash);out[43]=hash;
+        hash=hash_value(state.animation_file);hash=hash_value(state.bound_animation_file,hash);
+        hash=hash_value(state.animation_script,hash);hash=hash_value(state.base_animation,hash);
+        hash=hash_value(state.direction,hash);out[44]=hash;
+        hash=hash_bytes(state.integer_variables,sizeof(state.integer_variables));
+        hash=hash_bytes(state.float_variables,sizeof(state.float_variables),hash);out[45]=hash;
+        hash=hash_timer_state(state.lifetime,2166136261u);hash=hash_value(state.lifetime_flags,hash);out[46]=hash;
+        hash=hash_interpolator_portable(state.absolute_position,2166136261u);
+        hash=hash_interpolator_portable(state.relative_position,hash);
+        hash=hash_interpolator_portable(state.absolute_angle,hash);
+        hash=hash_interpolator_portable(state.relative_angle,hash);
+        hash=hash_interpolator_portable(state.absolute_radius,hash);
+        hash=hash_interpolator_portable(state.relative_radius,hash);out[47]=hash;
+        hash=hash_bytes(state.emitters,sizeof(state.emitters));out[48]=hash;
+        hash=hash_bytes(state.emitter_offsets,sizeof(state.emitter_offsets));out[49]=hash;
+        hash=hash_value(state.visual_size);hash=hash_value(state.clamp_center,hash);
+        hash=hash_value(state.clamp_size,hash);out[50]=hash;
+        hash=hash_value(state.score);hash=hash_value(state.health,hash);
+        hash=hash_value(state.maximum_health,hash);hash=hash_value(state.health_to_interrupt,hash);out[51]=hash;
+        hash=hash_value(state.drops);hash=hash_value(state.death_sound,hash);
+        hash=hash_value(state.death_animation,hash);hash=hash_value(state.death_animation_file,hash);
+        hash=hash_value(state.flash_frames,hash);hash=hash_value(state.reserved_1418,hash);out[52]=hash;
+        hash=hash_timer_state(state.damage_immunity,2166136261u);hash=hash_value(state.damage_immunity_flags,hash);
+        hash=hash_timer_state(state.collision_immunity,hash);hash=hash_value(state.collision_immunity_flags,hash);out[53]=hash;
+        hash=hash_value(state.flags);hash=hash_value(state.alternate_animation,hash);
+        hash=hash_value(state.saved_animation,hash);hash=hash_value(state.boss_slot,hash);
+        hash=hash_value(state.shot_exclusion_distance_squared,hash);out[54]=hash;
+        hash=2166136261u;for(const auto& interrupt:state.interrupts){
+            hash=hash_value(interrupt.health,hash);hash=hash_value(interrupt.time,hash);
+            hash=hash_cstring_portable(interrupt.health_subroutine,hash);
+            hash=hash_cstring_portable(interrupt.time_subroutine,hash);
+        }out[55]=hash;++row;
+    }
+    words[224]=row;return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_parity_debug")))
+const u32* multiplayer_spectator_parity_debug(browser::Application* app){
+    // Narrow diagnostics for cross-graph spectator parity. Player state is
+    // split into the same components used by the semantic hash; ANM list
+    // hashes separate world-owned scripts from UI history and allocator IDs.
+    static u32 words[96]{};std::fill(words,words+96,0u);words[0]=1;
+    if(!app||!app->world)return words;
+    auto& world=*app->world;auto& manager=app->engine.manager;
+    words[1]=world.player_count;words[2]=manager.started_scripts;
+    words[3]=manager.processed_count;words[4]=u32(manager.cursor);words[5]=manager.last_id;
+    u32 worldCount=0,uiCount=0,worldHash=2166136261u,uiHash=2166136261u;
+    for(auto* node=manager.registry.world_head;node;node=node->next){
+        if(!node->value)continue;++worldCount;
+        worldHash=hash_anm_vm_portable(*node->value,worldHash);
+    }
+    for(auto* node=manager.registry.ui_head;node;node=node->next){
+        if(!node->value)continue;++uiCount;
+        uiHash=hash_anm_vm_portable(*node->value,uiHash);
+    }
+    words[6]=worldCount;words[7]=uiCount;words[8]=worldHash;words[9]=uiHash;
+    for(u32 seat=0;seat<world.player_count&&seat<3;++seat){
+        const auto& pilot=world.pilots[seat];const auto parts=pilot.player?hash_player_parts(*pilot.player):PlayerHashParts{};
+        auto* out=words+12+seat*20;out[0]=pilot.input_keys;out[1]=pilot.player?1u:0u;
+        out[2]=parts.core;out[3]=parts.timers;out[4]=parts.shotCount;out[5]=parts.shots;
+        out[6]=parts.options;out[7]=parts.damage;out[8]=parts.activeLasers;
+        out[9]=parts.optionSpeed;out[10]=parts.invulnerability;out[11]=parts.bounds;
+        out[12]=parts.history;out[13]=u32(pilot.game.character);out[14]=u32(pilot.game.shot_type);
+        out[15]=u32(pilot.game.lives);out[16]=u32(pilot.game.power);
+        if(pilot.player){out[17]=u32(pilot.player->state);out[18]=u32(pilot.player->fixed_position.x);
+            out[19]=u32(pilot.player->fixed_position.y);}
+    }
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_options_debug")))
+const u32* multiplayer_spectator_options_debug(browser::Application* app){
+    // Expose the authored option-follow state behind the player hash component.
+    static u32 words[256]{};std::fill(words,words+256,0u);words[0]=1;
+    if(!app||!app->world)return words;
+    const auto& world=*app->world;words[1]=world.player_count;
+    for(u32 seat=0;seat<world.player_count&&seat<3;++seat){
+        const auto& pilot=world.pilots[seat];auto* out=words+4+seat*84;
+        if(!pilot.player)continue;
+        out[0]=pilot.input_keys;out[1]=u32(pilot.player->option_count);
+        for(u32 index=0;index<4;++index){
+            const auto& option=pilot.player->options[index];auto* row=out+2+index*20;
+            row[0]=u32(option.active);row[1]=u32(option.target.x);row[2]=u32(option.target.y);
+            row[3]=u32(option.position.x);row[4]=u32(option.position.y);
+            row[5]=u32(option.offset.x);row[6]=u32(option.offset.y);
+            row[7]=u32(option.focused_offset.x);row[8]=u32(option.focused_offset.y);
+            row[9]=option.animations[0];row[10]=option.animations[1];
+            row[11]=u32(option.previous_focus);row[12]=u32(option.index);
+            row[13]=u32(option.snap_next);row[14]=option.on_update;row[15]=option.on_draw;
+        }
+    }
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_entity_counts")))
+const u32* multiplayer_spectator_entity_counts(browser::Application* app){
+    static u32 words[8]{};std::fill(words,words+8,0u);words[0]=1;
+    if(!app||!app->world)return words;
+    const auto& world=*app->world;u32 enemies=0,regularItems=0,faithItems=0;
+    for(u32 slot=0;slot<512;++slot)if(world.rollback_enemies.active(slot))++enemies;
+    if(world.actors.items){
+        for(const auto& item:world.actors.items->regular)if(item.state)++regularItems;
+        for(const auto& item:world.actors.items->faith)if(item.state)++faithItems;
+    }
+    words[1]=enemies;
+    words[2]=world.actors.bullets?u32(std::max(0,world.actors.bullets->active_count)):0;
+    words[3]=world.actors.lasers?u32(std::max(0,world.actors.lasers->count)):0;
+    words[4]=regularItems;words[5]=faithItems;
+    words[6]=u32(app->state.game.stage_frames);words[7]=u32(app->state.game.section_frames);
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_item_debug")))
+const u32* multiplayer_spectator_item_debug(browser::Application* app){
+    // Header: schema, manager flags/state/count/cursor/faith count,
+    // regular/faith active counts, row count, truncated rows. Each row names
+    // the item pool and slot, then records every gameplay scalar separately
+    // from process-local animation/geometry handles.
+    static u32 words[10+512*64]{};std::fill(words,words+10+512*64,0u);words[0]=1;
+    if(!app||!app->world||!app->world->actors.items)return words;
+    const auto& world=*app->world;const auto& manager=*world.actors.items;
+    words[1]=manager.flags;words[2]=manager.manager_state;
+    words[3]=u32(manager.active_count);words[4]=u32(manager.faith_cursor);words[5]=u32(manager.faith_count);
+    for(const auto& item:manager.regular)words[6]+=item.state?1u:0u;
+    for(const auto& item:manager.faith)words[7]+=item.state?1u:0u;
+    u32 row=0,truncated=0;
+    const auto emit=[&](u32 pool,u32 slot,const Item& item,const multiplayer::ItemOwnership& owner){
+        if(!item.state)return;
+        if(row>=512){++truncated;return;}
+        auto* out=words+10+row*64;out[0]=pool;out[1]=slot;out[2]=u32(item.state);
+        out[3]=u32(item.kind);out[4]=u32(item.sprite_kind);
+        out[5]=float_bits(item.position.x);out[6]=float_bits(item.position.y);out[7]=float_bits(item.position.z);
+        out[8]=float_bits(item.velocity.x);out[9]=float_bits(item.velocity.y);out[10]=float_bits(item.velocity.z);
+        out[11]=float_bits(item.motion_3c4);out[12]=u32(item.timer.previous);out[13]=u32(item.timer.current);
+        out[14]=float_bits(item.timer.fractional);out[15]=float_bits(item.timer.rate?*item.timer.rate:0.0f);
+        out[16]=item.timer_flags;out[17]=float_bits(item.attraction_speed);out[18]=u32(item.value_variant);
+        out[19]=u32(i32(owner.homing));out[20]=u32(i32(owner.recipient));
+        AnmVm semanticAnimation=item.animation;semanticAnimation.script_position={};
+        out[21]=hash_anm_vm_portable(semanticAnimation,2166136261u);out[22]=item.animation.id;out[23]=item.animation.owner_tag;
+        out[24]=u32(i32(item.animation.script_index));out[25]=item.animation.file_index;
+        out[26]=item.animation.instruction&&item.animation.script_begin?
+            u32(reinterpret_cast<const u8*>(item.animation.instruction)-reinterpret_cast<const u8*>(item.animation.script_begin)):
+            item.animation.instruction?0xfffffffEu:0xffff'ffffu;
+        out[27]=u32(item.animation.script_timer.previous);out[28]=u32(item.animation.script_timer.current);
+        out[29]=hash_cstring_portable(item.animation.animation_file?item.animation.animation_file->name:nullptr,2166136261u);
+        out[30]=u32(reinterpret_cast<std::uintptr_t>(item.animation.geometry));out[31]=hash_value(item);
+        const auto& vm=item.animation;u32 group=2166136261u;
+        group=hash_value(vm.rotation,group);out[32]=hash_value(vm.angular_velocity,group);
+        group=hash_value(vm.scale,2166136261u);out[33]=hash_value(vm.scale_velocity,group);
+        group=hash_value(vm.sprite_size,2166136261u);group=hash_value(vm.uv_offset,group);out[34]=hash_value(vm.uv_velocity,group);
+        out[35]=hash_timer_state(vm.script_timer,2166136261u);out[36]=vm.script_timer_flags;
+        out[37]=hash_interpolator_portable(vm.position_interpolation,2166136261u);
+        out[38]=hash_interpolator_portable(vm.color_interpolation,2166136261u);
+        out[39]=hash_interpolator_portable(vm.alpha_interpolation,2166136261u);
+        out[40]=hash_interpolator_portable(vm.rotation_interpolation,2166136261u);
+        out[41]=hash_interpolator_portable(vm.scale_interpolation,2166136261u);
+        out[42]=hash_interpolator_portable(vm.color2_interpolation,2166136261u);
+        out[43]=hash_interpolator_portable(vm.alpha2_interpolation,2166136261u);
+        group=hash_value(vm.color,2166136261u);group=hash_value(vm.secondary_color,group);
+        out[44]=hash_value(vm.pending_interrupt,group);
+        out[45]=hash_bytes(vm.integer_variables,sizeof(vm.integer_variables));
+        out[46]=hash_bytes(vm.float_variables,sizeof(vm.float_variables));
+        out[47]=hash_bytes(vm.extra_integer_variables,sizeof(vm.extra_integer_variables));
+        out[48]=hash_value(vm.script_position);out[49]=hash_value(vm.position);out[50]=hash_value(vm.child_position);
+        out[51]=vm.flags&~12u;out[52]=hash_timer_state(vm.saved_timer,2166136261u);
+        out[53]=vm.saved_timer_flags;
+        out[54]=vm.saved_instruction&&vm.script_begin?
+            u32(reinterpret_cast<const u8*>(vm.saved_instruction)-reinterpret_cast<const u8*>(vm.script_begin)):
+            vm.saved_instruction?0xffff'fffeu:0xffff'ffffu;
+        out[55]=u32(vm.sprite_frame);group=hash_value(vm.sprite_index,2166136261u);
+        group=hash_value(vm.file_index,group);out[56]=hash_value(vm.script_index,group);
+        group=hash_value(vm.sprite_matrix);group=hash_value(vm.transform_matrix,group);
+        out[57]=hash_value(vm.uv_matrix,group);out[58]=hash_cstring_portable(vm.animation_file?vm.animation_file->name:nullptr,2166136261u);
+        out[59]=float_bits(vm.script_timer.rate?*vm.script_timer.rate:0.0f);
+        ++row;
+    };
+    for(u32 i=0;i<150;++i)emit(0,i,manager.regular[i],world.regular_item_owners[i]);
+    for(u32 i=0;i<2048;++i)emit(1,i,manager.faith[i],world.faith_item_owners[i]);
+    words[8]=row;words[9]=truncated;return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_bullet_debug")))
+const u32* multiplayer_spectator_bullet_debug(browser::Application* app){
+    // Header: schema, manager fields, cursor slot, last cancel position/size,
+    // active count, live slot count, rows and truncation. Rows expose authored
+    // motion/timers/commands/modifiers and separate item-independent ANM state
+    // from draw-derived coordinates and local geometry addresses.
+    static u32 words[10+512*48]{};std::fill(words,words+10+512*48,0u);words[0]=1;
+    if(!app||!app->world||!app->world->actors.bullets)return words;
+    const auto& manager=*app->world->actors.bullets;
+    words[1]=manager.manager_fields[0];words[2]=manager.manager_fields[1];
+    words[3]=manager.cursor>=manager.pool&&manager.cursor<=manager.pool+2000?
+        u32(manager.cursor-manager.pool):0xffff'ffffu;
+    words[4]=hash_value(manager.last_cancel_position);words[5]=hash_value(manager.last_cancel_size);
+    words[6]=u32(manager.active_count);
+    for(u32 i=0;i<2000;++i)if(manager.pool[i].state)++words[7];
+    u32 row=0,truncated=0;
+    for(u32 i=0;i<2000;++i){
+        const auto& bullet=manager.pool[i];if(!bullet.state)continue;
+        if(row>=512){++truncated;continue;}
+        auto* out=words+10+row*48;out[0]=i;out[1]=bullet.state;out[2]=u32(bullet.id);
+        out[3]=bullet.flags;out[4]=bullet.cancel_protection;
+        out[5]=float_bits(bullet.motion.position.x);out[6]=float_bits(bullet.motion.position.y);
+        out[7]=float_bits(bullet.motion.position.z);out[8]=float_bits(bullet.motion.velocity.x);
+        out[9]=float_bits(bullet.motion.velocity.y);out[10]=float_bits(bullet.motion.velocity.z);
+        out[11]=float_bits(bullet.motion.speed);out[12]=float_bits(bullet.motion.angle);
+        out[13]=float_bits(bullet.cancel_size);out[14]=float_bits(bullet.hitbox_height);
+        out[15]=hash_timer_state(bullet.cancel_timer,2166136261u);out[16]=bullet.cancel_timer_flags;
+        out[17]=hash_timer_state(bullet.secondary_timer,2166136261u);out[18]=bullet.secondary_timer_flags;
+        out[19]=u32(bullet.outside_delay);out[20]=u32(bullet.cancel_script);
+        out[21]=bullet.active_features;out[22]=bullet.spawn_flags;out[23]=u32(bullet.command_index);
+        out[24]=u32(bullet.draw_layer);out[25]=u32(std::int32_t(bullet.sprite_type));
+        out[26]=u32(std::int32_t(bullet.color));u32 group=2166136261u;
+        for(const auto& command:bullet.commands){
+            group=hash_bytes(command.arguments,sizeof(command.arguments),group);
+            group=hash_value(command.type,group);group=hash_value(command.concurrent,group);
+        }
+        out[27]=group;group=2166136261u;
+        for(const auto& modifier:bullet.modifiers){
+            group=hash_timer_state(modifier.timer,group);group=hash_value(modifier.timer_flags,group);
+            group=hash_value(modifier.first,group);group=hash_value(modifier.second,group);
+            group=hash_value(modifier.vector,group);group=hash_value(modifier.duration,group);
+            group=hash_value(modifier.count,group);group=hash_value(modifier.iteration,group);
+        }
+        out[28]=group;
+        AnmVm semantic=bullet.animation;semantic.script_position={};
+        out[29]=hash_anm_vm_portable(semantic,2166136261u);out[30]=bullet.animation.id;
+        out[31]=bullet.animation.owner_tag;out[32]=u32(std::int32_t(bullet.animation.script_index));
+        out[33]=bullet.animation.file_index;
+        out[34]=bullet.animation.instruction&&bullet.animation.script_begin?
+            u32(reinterpret_cast<const u8*>(bullet.animation.instruction)-reinterpret_cast<const u8*>(bullet.animation.script_begin)):
+            bullet.animation.instruction?0xffff'fffeu:0xffff'ffffu;
+        out[35]=hash_timer_state(bullet.animation.script_timer,2166136261u);
+        out[36]=hash_cstring_portable(bullet.animation.animation_file?bullet.animation.animation_file->name:nullptr,2166136261u);
+        out[37]=hash_value(bullet);out[38]=u32(reinterpret_cast<std::uintptr_t>(bullet.animation.geometry));
+        out[39]=float_bits(bullet.animation.script_position.x);out[40]=float_bits(bullet.animation.script_position.y);
+        out[41]=float_bits(bullet.animation.script_position.z);out[42]=bullet.animation.flags;
+        out[43]=float_bits(bullet.animation.position.x);out[44]=float_bits(bullet.animation.position.y);
+        out[45]=float_bits(bullet.animation.position.z);out[46]=u32(std::int32_t(bullet.animation.sprite_index));
+        out[47]=u32(bullet.animation.sprite_frame);++row;
+    }
+    words[8]=row;words[9]=truncated;return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_common_debug")))
+const u32* multiplayer_spectator_common_debug(browser::Application* app){
+    static u32 words[7]{};std::fill(words,words+7,0u);words[0]=1;
+    if(!app||!app->world||!app->world->common.value)return words;
+    const auto& common=*app->world->common.value;
+    words[1]=common.flags;words[2]=common.state;words[3]=u32(common.frames);
+    words[4]=common.introduction_animation;words[5]=common.loading_animation;
+    words[6]=common.text_count;
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_scores_debug")))
+const u32* multiplayer_spectator_scores_debug(browser::Application* app){
+    // Field-group hashes split canonical word 43 so score records and random
+    // settings can be distinguished from their containing object identity.
+    static u32 words[41]{};std::fill(words,words+41,0u);words[0]=1;
+    if(!app||!app->world||!app->world->scores.data)return words;
+    const auto& scores=*app->world->scores.data;
+    words[1]=hash_value(scores.settings.header);
+    words[2]=hash_bytes(scores.settings.last_name,sizeof(scores.settings.last_name));
+    words[3]=hash_bytes(scores.settings.statistics,sizeof(scores.settings.statistics));
+    words[4]=hash_bytes(scores.settings.random_words,sizeof(scores.settings.random_words));
+    words[5]=hash_value(scores.settings.reserved_446);
+    for(u32 index=0;index<7;++index){
+        const auto& character=scores.characters[index];const u32 base=6+index*5;
+        words[base]=hash_value(character.header);
+        words[base+1]=hash_value(character.character);
+        words[base+2]=hash_bytes(character.high_scores,sizeof(character.high_scores));
+        words[base+3]=hash_bytes(character.statistics,sizeof(character.statistics));
+        words[base+4]=hash_bytes(character.spells,sizeof(character.spells));
+    }
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_anm_debug")))
+const u32* multiplayer_spectator_anm_debug(browser::Application* app){
+    // Stable resource/script/timer/position rows identify whether ANM hash
+    // divergence is authored state or only process-local handles.
+    constexpr u32 header=8,rowWords=17,capacity=40;
+    static u32 words[header+capacity*rowWords*2]{};
+    std::fill(words,words+header+capacity*rowWords*2,0u);words[0]=1;
+    if(!app)return words;const auto& manager=app->engine.manager;
+    words[3]=manager.started_scripts;words[4]=manager.processed_count;
+    words[5]=u32(manager.cursor);words[6]=manager.last_id;
+    const auto writeList=[&](ListNode<AnmVm>* node,u32 base,u32& count){
+        for(;node&&count<capacity;node=node->next){
+            if(!node->value)continue;const auto& vm=*node->value;
+            auto* out=words+base+count*rowWords;
+            out[0]=vm.id;out[1]=vm.owner_tag;
+            out[2]=hash_cstring_portable(vm.animation_file?vm.animation_file->name:nullptr,2166136261u);
+            out[3]=vm.file_index;out[4]=u32(vm.script_index);
+            out[5]=vm.instruction&&vm.script_begin?
+                u32(reinterpret_cast<std::uintptr_t>(vm.instruction)-
+                    reinterpret_cast<std::uintptr_t>(vm.script_begin)):0xffffffffu;
+            out[6]=u32(vm.script_timer.previous);out[7]=u32(vm.script_timer.current);
+            std::memcpy(out+8,&vm.script_timer.fractional,sizeof(vm.script_timer.fractional));
+            out[9]=vm.script_timer_flags;out[10]=u32(vm.sprite_index);
+            out[11]=u32(vm.sprite_frame);
+            std::memcpy(out+12,&vm.position.x,4);std::memcpy(out+13,&vm.position.y,4);
+            std::memcpy(out+14,&vm.position.z,4);
+            auto semantic=vm;semantic.id=0;semantic.owner_tag=0;
+            out[15]=hash_anm_vm_portable(semantic,2166136261u);
+            out[16]=is_startup_loading_vm(app->engine,vm)?1u:0u;++count;
+        }
+    };
+    writeList(manager.registry.world_head,header,words[1]);
+    writeList(manager.registry.ui_head,header+capacity*rowWords,words[2]);
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_anm_fields")))
+const u32* multiplayer_spectator_anm_fields(browser::Application* app){
+    // Read-only named diagnostics. Keep the existing portable hash as the gate.
+    constexpr u32 header=4,rowWords=80,capacity=128;
+    static u32 words[header+capacity*rowWords]{};
+    std::fill(words,words+header+capacity*rowWords,0u);
+    words[0]=1;words[2]=rowWords;words[3]=capacity;
+    if(!app)return words;
+    const auto bits=[](float value){u32 result;std::memcpy(&result,&value,4);return result;};
+    const auto pc=[](const AnmVm& vm,const AnmInstruction* instruction){
+        return instruction&&vm.script_begin?u32(reinterpret_cast<std::uintptr_t>(instruction)-
+            reinterpret_cast<std::uintptr_t>(vm.script_begin)):0xffffffffu;
+    };
+    for(u32 list=0;list<2;++list){
+        auto* node=list?app->engine.manager.registry.ui_head:app->engine.manager.registry.world_head;
+        u32 order=0;
+        for(;node;node=node->next){
+            if(!node->value||is_startup_loading_vm(app->engine,*node->value))continue;
+            if(words[1]>=capacity){words[0]=0;return words;}
+            const auto& vm=*node->value;auto* out=words+header+words[1]++*rowWords;u32 at=0;
+            const auto put=[&](u32 value){out[at++]=value;};
+            const auto vec2=[&](const auto& value){put(bits(value.x));put(bits(value.y));};
+            const auto vec3=[&](const auto& value){vec2(value);put(bits(value.z));};
+            const auto timer=[&](const Timer& value,u32 flags){put(u32(value.previous));put(u32(value.current));
+                put(bits(value.fractional));put(bits(value.rate?*value.rate:0.0f));put(flags);};
+            const auto interp=[&](const auto& value){put(hash_interpolator_portable(value,2166136261u));
+                put(bits(value.timer.rate?*value.timer.rate:0.0f));};
+            put(list);put(order++);put(hash_cstring_portable(vm.animation_file?vm.animation_file->name:nullptr,2166136261u));
+            put(u32(vm.script_index));put(pc(vm,vm.instruction));put(vm.owner_tag);
+            vec3(vm.rotation);vec3(vm.angular_velocity);vec2(vm.scale);vec2(vm.scale_velocity);
+            vec2(vm.sprite_size);vec2(vm.uv_offset);timer(vm.script_timer,vm.script_timer_flags);
+            interp(vm.position_interpolation);interp(vm.color_interpolation);interp(vm.alpha_interpolation);
+            interp(vm.rotation_interpolation);interp(vm.scale_interpolation);interp(vm.color2_interpolation);interp(vm.alpha2_interpolation);
+            vec2(vm.uv_velocity);put(vm.color);put(vm.secondary_color);put(u32(vm.pending_interrupt));
+            for(auto value:vm.integer_variables)put(u32(value));for(auto value:vm.float_variables)put(bits(value));
+            for(auto value:vm.extra_integer_variables)put(u32(value));
+            vec3(vm.script_position);vec3(vm.position);vec3(vm.child_position);put(vm.flags&~12u);
+            timer(vm.saved_timer,vm.saved_timer_flags);put(pc(vm,vm.saved_instruction));
+            put(u32(vm.sprite_frame));put(u32(vm.sprite_index));
+            put(hash_value(vm.sprite_matrix));put(hash_value(vm.transform_matrix));put(hash_value(vm.uv_matrix));
+            put(vm.update_callback);put(vm.draw_callback);put(hash_bytes(vm.text_settings,sizeof(vm.text_settings)));
+        }
+    }
+    return words;
 }
 extern "C" __attribute__((export_name("multiplayer_status")))
 const i32* multiplayer_status(browser::Application* app){
