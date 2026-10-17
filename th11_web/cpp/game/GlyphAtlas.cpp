@@ -13,8 +13,9 @@ bool GlyphAtlas::load(u32 slot,const u8* data,u32 size){
     }
     fonts[slot].assign(data,data+size);return true;
 }
-bool GlyphAtlas::ready()const{if(encoding.empty()||blend.empty())return false;for(const auto& f:fonts)if(f.empty())return false;return true;}
+bool GlyphAtlas::ready()const{if(rendererDraw)return true;if(encoding.empty()||blend.empty())return false;for(const auto& f:fonts)if(f.empty())return false;return true;}
 bool GlyphAtlas::draw(TextureImage& image,i32 x,i32 y,u32 font,u32 color,const std::string& text){
+    if(rendererDraw)return image.format==touhou::graphics::PixelFormat::Argb4444&&rendererDraw(rendererOwner,image,x,y,font,color,text);
     if(!ready()||font>=4||image.format!=touhou::graphics::PixelFormat::Argb4444||image.pitch<image.width*2||image.pixels.size()<u64(image.pitch)*image.height)return false;
     const auto& f=fonts[font];const u32 count=read<u32>(f.data()+16);const u8* p=reinterpret_cast<const u8*>(text.data()),*end=p+text.size();
     while(p<end&&*p){u32 bytes=*p++;if((bytes>=0x81&&bytes<=0x9f)||(bytes>=0xe0&&bytes<=0xfc)){if(p<end&&*p)bytes=(bytes<<8)|*p++;}

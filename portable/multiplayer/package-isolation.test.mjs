@@ -8,7 +8,7 @@ import {
   createRuntimeManifest, packageEagler, MULTIPLAYER_EXPORTS, sha256,
 } from '../package-eagler.mjs';
 
-const revision = '62345858e1a4b101074cdc04720eac44a7c89cf0';
+import {COMMON_REVISION as revision} from '../common-revision.mjs';
 const leb = value => {
   const bytes = [];
   do { const part = value & 127; value >>>= 7; bytes.push(part | (value ? 128 : 0)); } while (value);
@@ -65,7 +65,7 @@ function withFixture(multiplayer, body) {
   put('portable/browser/multiplayer-replay.mjs', '// mp replay\n');
   put('third_party/eagler-common/browser/adonis-calibration.mjs', '// calibration\n');
   put('third_party/eagler-common/browser/direct-input-bridge.mjs','// input bridge\n');
-  for (const name of ['font0.bin', 'font1.bin', 'font2.bin', 'font3.bin', 'cp932.bin', 'blend4444.bin'])
+  for (const name of ['cp932.bin'])
     put('private-fonts/' + name, Buffer.from([0]));
   try {
     return body({root, plan, build, binary, put,
@@ -128,6 +128,7 @@ test('closed runtime inventories include the complete MP browser module closure 
     fixture.package();
     const manifest = JSON.parse(readFileSync(resolve(fixture.plan.out, 'manifest.json')));
     const inventory = JSON.parse(readFileSync(resolve(fixture.plan.out, 'runtime-files.json')));
+    assert.deepEqual(Object.keys(inventory.files).filter(name => name.startsWith('fonts/')), ['fonts/cp932.bin']);
     const shell = readFileSync(resolve(fixture.plan.out, 'shell.mjs'), 'utf8');
     assert.equal(manifest.game, 'th11');
     assert.match(shell, new RegExp('"multiplayer":' + multiplayer));

@@ -5,6 +5,7 @@ import {resolve, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {responseFileContents} from './response-file.mjs';
+import {COMMON_REVISION as commonRevision} from './common-revision.mjs';
 
 const builtAt = new Date().toISOString();
 const workspace = resolve(fileURLToPath(new URL('../', import.meta.url)));
@@ -13,12 +14,15 @@ const multiplayer = process.argv.includes('--multiplayer');
 const lto=process.argv.includes('--lto');
 const simdExperiment=process.argv.includes('--simd-experiment');
 const printPlan = process.argv.includes('--print-plan');
+// Local validation of shared work in progress must never produce a release
+// attestation or overwrite the normal/multiplayer build directory.
+const diagnostic = process.argv.includes('--diagnostic');
 const thprac = process.env.TH_ENABLE_THPRAC === '1' || process.argv.includes('--thprac');
 if (multiplayer && thprac) throw Error('TH11 multiplayer and THPrac are separate runtime variants.');
 const profile = multiplayer ? 'multiplayer' : 'sdl3';
 const variant = multiplayer ? 'multiplayer' : 'normal';
-const out = resolve(root, 'artifacts', profile);
-const commonRevision = '84b5eae1de9735f8dc562f89447b9864e4986c9e';
+const out = resolve(root, 'artifacts', profile + (diagnostic ? '-diagnostic' : ''));
+
 const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, 'third_party/eagler-common'));
 const sdk = process.env.EMSDK || [
   resolve(workspace, 'tools/emsdk'),
@@ -40,6 +44,7 @@ const flags = [
 ];
 if (multiplayer) flags.push('-DTH11_MULTIPLAYER=1', '-I' + resolve(root, 'cpp/multiplayer'),
   '-I' + resolve(netplayRoot, 'include'));
+if (!multiplayer) flags.push('-I' + resolve(netplayRoot, 'include'));
 const files = dir => existsSync(dir) ? readdirSync(dir, {withFileTypes: true}).flatMap(entry =>
   entry.isDirectory() ? files(resolve(dir, entry.name)) :
     entry.name.endsWith('.cpp') ? [resolve(dir, entry.name)] : []) : [];
@@ -77,10 +82,12 @@ if (printPlan) {
     commonRevision: multiplayer ? commonRevision : null, prediction: multiplayer, rollback: multiplayer}, null, 2));
   process.exit(0);
 }
+let observedCommonRevision = null;
 if (multiplayer) {
   const actual = execFileSync('git', ['-C', netplayRoot, 'rev-parse', 'HEAD'], {encoding: 'utf8', windowsHide: true}).trim();
-  if (actual !== commonRevision) throw Error('TH11 MP requires eagler-common ' + commonRevision + ', found ' + actual);
-  execFileSync('git', ['-C', netplayRoot, 'diff', '--quiet', 'HEAD', '--'], {windowsHide: true});
+  observedCommonRevision = actual;
+  if (actual !== commonRevision && !diagnostic) throw Error('TH11 MP requires eagler-common ' + commonRevision + ', found ' + actual);
+  if (!diagnostic) execFileSync('git', ['-C', netplayRoot, 'diff', '--quiet', 'HEAD', '--'], {windowsHide: true});
 }
 mkdirSync(out, {recursive: true});
 const env = {...process.env, EM_CONFIG: process.env.EM_CONFIG || resolve(sdk, '.emscripten'),
@@ -99,11 +106,12 @@ const headerFiles = dir => readdirSync(dir, {withFileTypes: true}).flatMap(entry
     headerFiles(resolve(dir, entry.name))) :
     /\.(h|hpp|inc)$/.test(entry.name) ? [resolve(dir, entry.name)] : []);
 const headers = [...headerFiles(resolve(root, 'cpp')), ...headerFiles(resolve(workspace, 'portable/sdl')),
-  ...headerFiles(resolve(workspace, 'portable/input')), resolve(workspace, 'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp'),
-  ...(multiplayer ? headerFiles(resolve(netplayRoot, 'include')) : [])].sort();
+  ...headerFiles(resolve(workspace, 'portable/input')), resolve(netplayRoot, 'include/eagler/input/DialogueGesture.hpp'),
+  ...(multiplayer ? headerFiles(resolve(netplayRoot, 'include')) : [resolve(netplayRoot,'include/eagler/text/RuntimeFontRaster.hpp')])].sort();
 const headerHash = sha(headers.map(path => path + sha(readObserved(path))).join('\n'));
 readObserved(fileURLToPath(import.meta.url));
 readObserved(resolve(workspace, 'portable/response-file.mjs'));
+readObserved(resolve(workspace, 'portable/common-revision.mjs'));
 const runtimeSourceFiles = {
   'direct-input-bridge.mjs': sha(readObserved(resolve(netplayRoot, 'browser/direct-input-bridge.mjs'))),
   ...(multiplayer?{'adonis-calibration.mjs': sha(readObserved(resolve(netplayRoot, 'browser/adonis-calibration.mjs')))}:{}),
@@ -170,19 +178,19 @@ const sdkMetadata = resolve(sdk, 'touhou-sdk.json');
 const toolchain = existsSync(sdkMetadata) ? JSON.parse(readFileSync(sdkMetadata)) :
   {emsdkRoot: relative(workspace, sdk).replaceAll('\\', '/'), layout: 'external'};
 const report = {
-  builtAt, game: 'th11', kind: 'cpp-sdl3', profile, variant, diagnostic: false,
+  builtAt, game: 'th11', kind: 'cpp-sdl3', profile, variant, diagnostic,
   optimization:{level:lto?'O3':'O2',linkTime:lto,fastMath:false,fpContract:'off',simdExperiment},
   ...(simdExperiment?{compatibility:{experimental:true,requiredWasmFeatures:['simd128'],scalarFallbackPackaged:false,
     warning:'Private performance experiment; cannot replace the default compatible Runtime without a separately validated fallback/peer-build policy.'}}:{}),
   version: multiplayer ? '1.0.0-mp2-rollback-sdl3' : '1.0.0-sdl3',
   features: {thprac, languages: true, focusHitbox: false, ...(multiplayer ? {multiplayer: true} : {})},
   runtimeSourceFiles,
-  ...(multiplayer ? {commonRevision,
+  ...(multiplayer ? {commonRevision: observedCommonRevision,
     netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true}} : {}),
   architecture: {loop: multiplayer ? 'cpp-fixed-60hz-bounded-rollback' : 'cpp-fixed-60hz-bounded-catchup',
     audio: 'cpp-miniaudio-vorbis-sdl3-stream', renderer: 'cpp-gles-semantic-batched',
     graphicsInterface: 'semantic-state-texture-matrix', vertexUpload: 'web-bufferData-direct-game-batches-cached-vao',
-    files: 'sdl-io-idbfs', fonts: 'cpp-original-baked-glyphs-argb4444', input: 'cpp-sdl', launcher: 'eagler-touhou/1'},
+    files: 'sdl-io-idbfs', fonts: 'cpp-shared-gothic-on-demand-argb4444', input: 'cpp-sdl', launcher: 'eagler-touhou/1'},
   sdlVersion: '3.4.2', sources: source.map(path => relative(workspace, path).replaceAll('\\', '/')),
   sourceFiles: inventory, sourceDigest: sha(JSON.stringify(inventory)),
   sharedSources: ['Renderer.cpp', 'Renderer.hpp', 'Shaders.hpp', 'GraphicsState.hpp', 'AssetPixelFormat.hpp',

@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <set>
-#include "../../third_party/eagler-common/include/eagler/input/DialogueGesture.hpp"
+#include <eagler/input/DialogueGesture.hpp>
 // Shared gesture policy, adapted from eagler-th07 Touch.cpp (CC0). Only the
 // adapter supplies game state and consumes movement; no score or stage rule
 // lives here. The original 60Hz game determines the actual movement distance.

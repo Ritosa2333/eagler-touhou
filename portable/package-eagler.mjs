@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 
 const GAME = 'th11';
 const SHA256 = /^[a-f0-9]{64}$/i;
-const COMMON_REVISION = '62345858e1a4b101074cdc04720eac44a7c89cf0';
+import {COMMON_REVISION} from './common-revision.mjs';
 export const MULTIPLAYER_EXPORTS = Object.freeze([
   'configure', 'connect', 'spectator_connect', 'start', 'pump', 'status',
   'calibration_status', 'rollback_status', 'error', 'stop', 'replay_validate', 'replay_load',
@@ -157,7 +157,7 @@ export function packageEagler({
       throw Error('The calibration module does not match the pinned MP build.');
     copy(calibration, 'adonis-calibration.mjs');
   }
-  const fontNames = ['font0.bin', 'font1.bin', 'font2.bin', 'font3.bin', 'cp932.bin', 'blend4444.bin'];
+  const fontNames = ['cp932.bin'];
   const resources = fontNames.map(name => {
     const bytes = readFileSync(resolve(fonts, name));
     add('fonts/' + name, bytes);
