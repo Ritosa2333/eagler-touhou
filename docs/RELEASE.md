@@ -112,6 +112,16 @@ Site assembly:
 5. verifies the complete site;
 6. publishes only the final candidate across the release-output boundary.
 
+App Shell generation also includes every present catalog-owned game cover and
+site icon, even when rebuilding from an explicit sealed frontend graph. Artwork
+stays Host-owned and is not added to the repository frontend graph. Each cached
+image uses its actual SHA-256, so replacing a cover changes the worker build ID.
+Missing artwork remains optional for source-only distributions. Present empty
+or invalid artwork, or artwork omitted by the precache generator, fails the
+build. DATA and unrelated images are not collected by this rule.
+Run `node --test tests/test-app-shell-host-artwork.mjs` for the shared regression
+check covering all catalog titles.
+
 `host/requirements.txt` exclusively declares Python asset-tool dependencies. Formal release uses a task-private Python environment and does not depend on the caller having preinstalled `soundfile`, Pillow, or fontTools.
 
 Default self-host assembly prepares Japanese, Simplified Chinese, and English. If a formal release uses a custom language set, every non-`ja` `lang_*` entry must have a corresponding generated language pack. The Runtime downloads only the language resources selected by the player.
