@@ -1,6 +1,6 @@
 
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-#include "../../../third_party/eagler-common/include/eagler/replay/Workspace.hpp"
+#include <eagler/replay/Workspace.hpp>
 namespace th08 {
 namespace {std::string local_description;unsigned local_start=0,local_lengths[9]{};bool local_started=false;
 const char* local_labels[]={"STAGE 1","STAGE 2","STAGE 3","STAGE 4A","STAGE 4B","STAGE 5","FINAL A","FINAL B","EXTRA"};
