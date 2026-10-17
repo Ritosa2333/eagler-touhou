@@ -1,0 +1,33 @@
+{
+  "name": "th08-web",
+  "private": true,
+  "version": "1.0.5",
+  "type": "module",
+  "scripts": {
+    "start": "node artifacts/sdl-release/scripts/serve.mjs --port 8088",
+    "start:legacy": "node scripts/native/http-server.mjs --dist --port 8088",
+    "dev": "node scripts/native/http-server.mjs --port 8089",
+    "build": "node scripts/native/build.mjs",
+    "test": "node --test tests/native-*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "test:browser": "node scripts/native/browser-test.mjs",
+    "test:pixels": "node scripts/native/d3d-pixel-check.mjs",
+    "cpp:build": "node scripts/cpp/build.mjs --test",
+    "cpp:browser": "node scripts/cpp/build.mjs --browser",
+    "cpp:start": "node artifacts/sdl-release/scripts/serve.mjs --port 8092",
+    "cpp:fonts": "node scripts/cpp/prepare-fonts.mjs",
+    "cpp:test": "node --test tests/cpp/*.test.mjs",
+    "cpp:analyze": "node scripts/cpp/analyze.mjs",
+    "build:sdl": "node ../portable/build.mjs --th08",
+    "package:sdl": "node ../portable/package-architecture.mjs --th08 --out artifacts/sdl-release",
+    "dev:sdl": "node scripts/cpp/server.mjs --sdl --port 8094"
+  },
+  "devDependencies": {
+    "@alexaltea/unicorn-js": "2.1.4",
+    "koffi": "3.2.1",
+    "playwright": "1.60.0",
+    "spessasynth_core": "4.3.22",
+    "v86": "0.5.458",
+    "wabt": "1.0.39"
+  }
+}

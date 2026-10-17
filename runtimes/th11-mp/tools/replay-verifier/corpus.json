@@ -1,0 +1,97 @@
+{
+  "schema": "eagler/replay-corpus/v1",
+  "game": "th11",
+  "version": "1.00a",
+  "policy": {
+    "gameplayMutation": "forbidden",
+    "candidate": "current-wasi-core",
+    "demoScope": "complete-stored-demo-replay"
+  },
+  "suites": {
+    "quick": [
+      "demo3",
+      "demo2",
+      "demo1",
+      "demo0"
+    ],
+    "daily": [
+      "reimu-a-lunatic",
+      "reimu-a-extra"
+    ]
+  },
+  "cases": [
+    {
+      "id": "demo3",
+      "kind": "demo",
+      "demo": 3,
+      "source": "th11_web/reference/assets/demo3.rpy",
+      "replaySha256": "ad569b727d2e0ea06ecd4b901a6f186fcfcd7f5c736ba0262882569886fca6e4",
+      "status": "ready"
+    },
+    {
+      "id": "demo2",
+      "kind": "demo",
+      "demo": 2,
+      "source": "th11_web/reference/assets/demo2.rpy",
+      "replaySha256": "7f1196f23b54ae01f7210eb3828aa1c333705358ee100be7f6b08d9252bc4c59",
+      "status": "ready"
+    },
+    {
+      "id": "demo1",
+      "kind": "demo",
+      "demo": 1,
+      "source": "th11_web/reference/assets/demo1.rpy",
+      "replaySha256": "74ddef8519d5a1e3b2b85aeb3f2ce926f2450a4b4f50595e0a42b31de39fc508",
+      "status": "ready"
+    },
+    {
+      "id": "demo0",
+      "kind": "demo",
+      "demo": 0,
+      "source": "th11_web/reference/assets/demo0.rpy",
+      "replaySha256": "923b2ad69e973f5781d055040e610424f90388ac8cfd4999250af4f1f7081ef0",
+      "status": "ready"
+    },
+    {
+      "id": "reimu-a-lunatic",
+      "kind": "lunatic",
+      "source": "th11_web/reference/replays/th11_ud0189.rpy",
+      "sourceUrl": "https://www.pndsng.com/touhou/threp/replay/th11_ud0189.rpy",
+      "replaySha256": "04bdd21390bebff68a68a0e6d7af9c008e797320a4269305ca23ffe471419e21",
+      "character": 0,
+      "subtype": 0,
+      "difficulty": 3,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "status": "ready"
+    },
+    {
+      "id": "reimu-a-extra",
+      "kind": "extra",
+      "source": "th11_web/reference/replays/th11_ud0170.rpy",
+      "sourceUrl": "https://www.pndsng.com/touhou/threp/replay/th11_ud0170.rpy",
+      "replaySha256": "8503598ded249b04352bdec6120a4dcb05ad5f3ee17a1a55bd52a6abd4fb5175",
+      "character": 0,
+      "subtype": 0,
+      "difficulty": 4,
+      "stages": [
+        7
+      ],
+      "status": "ready"
+    }
+  ],
+  "demo": {
+    "rotationOrder": [
+      "th11_web/reference/assets/demo3.rpy",
+      "th11_web/reference/assets/demo2.rpy",
+      "th11_web/reference/assets/demo1.rpy",
+      "th11_web/reference/assets/demo0.rpy"
+    ]
+  }
+}

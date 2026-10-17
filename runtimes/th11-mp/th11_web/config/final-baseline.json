@@ -1,0 +1,98 @@
+{
+  "schema": "th11-final-baseline/1",
+  "date": "2026-09-26",
+  "target": {
+    "game": "th11",
+    "version": "1.00a",
+    "language": "Japanese",
+    "executable": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.exe",
+    "sha256": "2978b17f6184d100d249d4311348dd30c5c32ec75c014b667a525b797d3d8813",
+    "imageBase": "0x00400000",
+    "evidence": "Executable title string: Subterranean Animism. ver 1.00a; PE fields recorded by inspect-target.mjs.",
+    "completeGame": false,
+    "localizedExecutable": {
+      "file": "../[th11] 东方地灵殿 (汉化版+日文版)/th11c.exe",
+      "sha256": "11a9f3c6718289d9c0b0fa78c148b168a77d3554e804eb2d77f890be48b3865d"
+    }
+  },
+  "releases": {
+    "th08": {
+      "manifest": "th08_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "82e48878b53803b27dcd3377361b5ebf55285709d44955459af6be8ece409f50",
+      "version": "3.4.1-sdl3",
+      "execution": {
+        "kind": "cpp-sdl3",
+        "architecture": {
+          "loop": "cpp-fixed-60hz-bounded-catchup",
+          "audio": "miniaudio-sdl3",
+          "renderer": "cpp-gles-semantic-batched",
+          "graphicsInterface": "semantic-state-texture-matrix",
+          "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+          "files": "sdl-io-idbfs",
+          "fonts": "sdl3-ttf",
+          "input": "cpp-sdl",
+          "launcher": "eagler-touhou/1"
+        },
+        "sdlVersion": "3.4.2",
+        "bytes": 2885667,
+        "sha256": "a6de8136ad65d47175b13436cdc26448a081f1633b39e3e57b961fd2d7d083cb",
+        "loaderSha256": "96c8006d2dd3d0795023e9ef7eb9a897b81f52909eaca732e4d55034e4632781"
+      }
+    },
+    "th10": {
+      "manifest": "th10_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "91f9ed76beeed8e066b89a7898deafd6d73eba30bc01ddb9666c61029ca96535",
+      "version": "3.5.1-sdl3",
+      "execution": {
+        "kind": "cpp-sdl3",
+        "architecture": {
+          "loop": "cpp-fixed-60hz-bounded-catchup",
+          "audio": "miniaudio-sdl3",
+          "renderer": "cpp-gles-semantic-batched",
+          "graphicsInterface": "semantic-state-texture-matrix",
+          "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+          "files": "sdl-io-idbfs",
+          "fonts": "sdl3-ttf",
+          "input": "cpp-sdl",
+          "launcher": "eagler-touhou/1"
+        },
+        "sdlVersion": "3.4.2",
+        "bytes": 2795006,
+        "sha256": "903ae6d5ff0e7d62fa4b9713efad3adecc56c2c98aeff2c1da91b781962bbff8",
+        "loaderSha256": "2268632d25e486af4fa06ad29a484ea213cba0ebe64fbfa03c2a620cb0d6612b"
+      }
+    },
+    "th09": {
+      "manifest": "th09_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "033f5a86084f1b9a07868582ba57b8575615f8f739c82b24df4e085bb925a6e7",
+      "version": "b6e1724a546540054415b15e",
+      "execution": {
+        "kind": "cpp-sdl3",
+        "entry": "/",
+        "wasm": "/runtime/45f20a6929b1765d0702/th09.wasm",
+        "loader": "/runtime/45f20a6929b1765d0702/th09.mjs",
+        "sha256": "6edb1ca1364c63073acdce4f2d121c7c9b693371aae478f5a938b7799ec0b979",
+        "loaderSha256": "1d1a641214040d09f937130d23e260fca394f7e55bb3b3ce5b4f6127d6104670"
+      },
+      "launcher": {
+        "protocol": "eagler-touhou/1",
+        "source": "local TH08/TH10 final launcher"
+      }
+    }
+  },
+  "files": {
+    "portable/sdl/Renderer.cpp": "525b8ac0ed47a2f75b9f0c95d8edb9b66e65792baa4c96dfd077b92b29b3fae7",
+    "portable/sdl/Renderer.hpp": "c002c9b9fdfb43f33883c7b50cb222e0ab2291eb25c57bf284ba515fa0bf23c7",
+    "portable/sdl/GraphicsState.hpp": "5f9c21e4f13385fe74bfc42d4a43ce9cd8af643cfdf589a99fb77912b83a9f64",
+    "portable/sdl/Shaders.hpp": "c2168b9412c46c6589f2c726d8ea7b9ea5def8c61c4eb8f8feff6b51cc11181e",
+    "portable/sdl/FrameCadence.hpp": "1b2a610ac172de2089b4cd6551e88b04d36fb4030da93526a4442cefa8cdbed8",
+    "portable/input/KeyboardMap.inc": "3171e0fab2b2a0bcd4d5c6a73d6f0a274fcda320c05c269dfe74f76c159cfada",
+    "portable/input/TouchController.hpp": "f187a6a0fd159aab554a6374631e582cebf7d5afd1bb01dee981df6d0b64a5f6",
+    "portable/input/MotionTrack.hpp": "49bf41a724cf7cd6b7f4f6de85ad8521d17864ae0bc4e31955d3cb4456152af4",
+    "th09_web/launcher/src/launcher/app.mts": "afb859cb45df871abf457c3caea0e86a8867475fb1ca59df338da585be55c142",
+    "th09_web/launcher/src/contracts/product-catalog.mts": "d43ba4ad0d0d5881b257af259aabb6e6b0b56650a518fdf6e85335dda440c1c7",
+    "th09_web/launcher/public/styles.css": "13b7bc09d8a035a2c8bcaed378ea43fbee28950ed011b8c00c6e58185a7ed9fd",
+    "th10_web/launcher/public/index.html": "b63c17ce27f187e9868e155562d3224ad7a095961798425905ace2784e138ac0",
+    "th10_web/launcher/public/app.js": "0aeebebad0e7b3a906f08cf9238c735750611308283588b5cae41854147b0b6d"
+  }
+}
