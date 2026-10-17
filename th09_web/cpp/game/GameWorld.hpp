@@ -11,6 +11,7 @@ struct WorldPresentation {
     virtual ~WorldPresentation()=default;
     virtual void begin_field(i32 side)=0;
     virtual void animation(AnmVm&,BattleSprite)=0;
+    virtual void hitbox(i32,AnmLoaded*,const Vec3&,i32){}
     virtual void colored(const AnmVm*,const AttackColorVertex*,u32,BattleGeometry,bool additive)=0;
     virtual void textured(const AnmVm&,const AttackTextureVertex*,u32,BattleGeometry)=0;
     virtual void text(AnmVm&,const char* shift_jis,u32 color,u32 shadow)=0;

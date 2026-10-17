@@ -12,6 +12,7 @@
 #include "../game/MusicCatalog.hpp"
 #include "../game/GameConfiguration.hpp"
 #include "../game/KeyboardInput.hpp"
+#include "../game/HitboxDisplay.hpp"
 #include "../game/NetworkInput.hpp"
 #include "../multiplayer/WorldState.hpp"
 #include "../multiplayer/RollbackSession.hpp"
@@ -937,6 +938,7 @@ TH09_EXPORT("th09_keys_clear") void th09_keys_clear(){clear_inputs();}
 TH09_EXPORT("th09_pulse") void th09_pulse(u32 mask){for(u32 n=0;n<16;++n)if(mask&(1u<<n))pulse_ticks[n]=2;}
 TH09_EXPORT("th09_touch") void th09_touch(u32 type,i32 id,float x,float y){gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}
 TH09_EXPORT("th09_touch_cancel") void th09_touch_cancel(){gestures.cancel();}
+TH09_EXPORT("th09_always_hitbox") void th09_always_hitbox(u32 on){th09::presentation::always_hitbox=on!=0;}
 TH09_EXPORT("th09_touch_controls") void th09_touch_controls(u32 enabled,u32 fire,u32 focus,u32 bomb,u32 escape){gestures.enabled=enabled!=0;gestures.controls(fire!=0,focus!=0,bomb,escape,0,0);}
 TH09_EXPORT("th09_touch_options") void th09_touch_options(u32 enabled,u32 mode,float sensitivity,u32 two_finger,u32 double_tap){gestures.enabled=enabled!=0;gestures.mode=mode<=3?i32(mode):0;gestures.unlimited=mode==1;gestures.sensitivity=std::clamp(sensitivity,.25f,4.f);gestures.two_finger=two_finger!=0;gestures.double_tap=double_tap!=0;}
 TH09_EXPORT("th09_touch_stick") void th09_touch_stick(float x,float y){gestures.stick_x=std::clamp(x/32767.f,-1.f,1.f);gestures.stick_y=std::clamp(y/32767.f,-1.f,1.f);}

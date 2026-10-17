@@ -3,6 +3,7 @@
 #include "StageRenderer.hpp"
 #include "AsciiRenderer.hpp"
 #include "InGameMenu.hpp"
+#include "HitboxDisplay.hpp"
 namespace th09 {
 struct GameMedia {
     virtual ~GameMedia()=default;
@@ -17,6 +18,7 @@ struct GameMedia {
 };
 class GamePresentation final:public WorldPresentation,public AsciiOutput {
     ZunGraphics& backend;GameMedia& media;
+    std::array<presentation::HitboxDisplay,2> hitbox_displays;
 public:
     AnmRenderer renderer;StageRenderer stages;AsciiRenderer ascii;GameWorld* world=nullptr;
     Vec2 offsets[3]{};i32 active_field=2;BackgroundDrawState stage_state[2];
@@ -24,6 +26,10 @@ public:
     static Viewport viewport(i32 side){return side<2?Viewport{u32(16+320*side),16,288,448,0,1}:Viewport{};}
     void begin_field(i32)override;
     void animation(AnmVm&,BattleSprite)override;
+    void hitbox(i32 side,AnmLoaded* file,const Vec3& position,i32 frame)override{
+        if(!file){hitbox_displays[side].reset();return;}
+        auto marker=hitbox_displays[side].sample(*file,position,frame);renderer.draw_2d(marker);
+    }
     void colored(const AnmVm*,const AttackColorVertex*,u32,BattleGeometry,bool)override;
     void textured(const AnmVm&,const AttackTextureVertex*,u32,BattleGeometry)override;
     void text(AnmVm& a,const char* s,u32 color,u32 shadow)override{renderer.flush();media.render_text(a,s,color,shadow);}

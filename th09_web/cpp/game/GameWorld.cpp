@@ -65,6 +65,7 @@ struct GameWorld::Services:BattlePresentation,HudPresentation,MatchRuleActions,S
     void positioned_sound(i32 side,i32 id,float x)override{g.output.positioned_sound(side,id,x);}
     void begin_field(i32 side)override{g.output.begin_field(side);}
     void animation(AnmVm& vm,BattleSprite mode)override{g.output.animation(vm,mode);}
+    void hitbox(i32 side,AnmLoaded* file,const Vec3& position,i32 frame)override{g.output.hitbox(side,file,position,frame);}
     void colored(const AnmVm* vm,const AttackColorVertex* p,u32 n,BattleGeometry mode,bool additive)override{g.output.colored(vm,p,n,mode,additive);}
     void textured(const AnmVm& vm,const AttackTextureVertex* p,u32 n,BattleGeometry mode)override{g.output.textured(vm,p,n,mode);}
     void text(AnmVm& vm,const char* s,u32 color,u32 shadow)override{g.output.text(vm,s,color,shadow);}

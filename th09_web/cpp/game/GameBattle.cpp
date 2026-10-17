@@ -1,4 +1,5 @@
 #include "GameBattleServices.hpp"
+#include "HitboxDisplay.hpp"
 namespace th09 {
 GameBattle::GameBattle(EclWorldState& w,MatchRules& r,GameResources& res,AnmExecutor& a,BattlePresentation& out):
     world(w),rules(r),resources(res),animations(a),output(out),behaviors(character_attack_behaviors()){
@@ -98,9 +99,19 @@ void GameBattle::reward_enemy(i32 side,i32 reward){
     if(e){e->values.item_reward=reward;e->values.flags|=0x2000;}
 }
 void GameBattle::draw_enemies(i32 side,bool upper){output.begin_field(side);auto& a=*services->fields[side];a.EnemyDrawServices::geometry=state.geometry[side];EnemyDraw::layers(*fields[side].enemies,upper?2:0,upper?4:2,a);}
-void GameBattle::draw_player(i32 side,bool fading){output.begin_field(side);fields[side].player->draw(fading);}
+void GameBattle::draw_player(i32 side,bool fading){
+    output.begin_field(side);auto& p=*fields[side].player;p.draw(fading);
+}
 void GameBattle::draw_attacks(bool cross){draw_character_attacks(*attack_queue,services->attacks,cross);}
-void GameBattle::draw_effects(i32 side,i32 layer){(side==2?cross_effects.get():fields[side].effects.get())->draw(layer);}
+void GameBattle::draw_effects(i32 side,i32 layer){
+    auto& effects=*(side==2?cross_effects.get():fields[side].effects.get());effects.draw(layer);
+    if(side>=2||layer!=0)return;
+    auto& p=*fields[side].player;auto* file=resources.animation(AnimationFile::bullets);
+    bool native_marker=false;
+    for(auto* effect:effects.draw_lists[0])if(effect->kind==EffectKind::focus_aura&&effect->active){native_marker=true;break;}
+    const bool show=presentation::always_hitbox&&!state.hide_players&&(p.control.player_state==0||p.control.player_state==3)&&!native_marker;
+    output.hitbox(side,show&&file&&file->scriptCount>63?file:nullptr,state.geometry[side].to_screen(p.motion.position),rules.progress.total_frames);
+}
 void GameBattle::draw_bullets(i32 side){auto& f=fields[side];auto& a=*services->fields[side];a.BulletDrawServices::geometry=state.geometry[side];BulletDraw::draw(*f.bullets,*f.bullet_visuals,*f.lasers,a);}
 void GameBattle::draw_controller(i32 side){services->controllers[side]->pull();fields[side].attacks->draw();}
 

@@ -20,6 +20,7 @@ struct BattlePresentation {
     virtual void positioned_sound(i32 side,i32 id,float x)=0;
     virtual void begin_field(i32 side)=0;
     virtual void animation(AnmVm&,BattleSprite mode=BattleSprite::rotated)=0;
+    virtual void hitbox(i32,AnmLoaded*,const Vec3&,i32){}
     virtual void colored(const AnmVm*,const AttackColorVertex*,u32,BattleGeometry,bool additive=false)=0;
     virtual void textured(const AnmVm&,const AttackTextureVertex*,u32,BattleGeometry)=0;
     virtual void text(AnmVm&,const char*,u32 color,u32 shadow)=0;

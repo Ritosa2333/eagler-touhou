@@ -62,7 +62,7 @@ function path(value){
  const replay=parts[0]==='replay'&&(parts.length===2||(parts.length===3&&parts[1].length<=128&&!/[<>:"\\|?*\u0000-\u001f\u007f]/.test(parts[1])&&!/[. ]$/.test(parts[1])))&&/^th9_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/.test(parts.at(-1));
  if(name.length>240||(!['score.dat','th09.cfg'].includes(name)&&!replay))throw Error('存档路径无效');return name;
 }
-function apply(){const sensitivity=Number(options.touchSensitivity??100);options.touchSensitivity=Number.isFinite(sensitivity)?Math.max(100,Math.min(300,sensitivity)):100;core.eaglerOptions=options;core._th09_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),options.touchSensitivity/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);appliedTouchPolicy=touchPolicy(options);if(launched)core._th09_music_enabled(+music);}
+function apply(){core._th09_always_hitbox(+(options.alwaysHitbox===true));const sensitivity=Number(options.touchSensitivity??100);options.touchSensitivity=Number.isFinite(sensitivity)?Math.max(100,Math.min(300,sensitivity)):100;core.eaglerOptions=options;core._th09_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),options.touchSensitivity/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);appliedTouchPolicy=touchPolicy(options);if(launched)core._th09_music_enabled(+music);}
 async function resource(r,receivedLifetime,owner){
  assertLifetime(receivedLifetime,owner);
  if(!(/^\/(?:music|fonts)\/[a-z0-9_.-]+$/.test(r.path)||r.path==='/msgothic.ttc'||r.path==='/unifont.otf'))throw Error('资源路径无效');
