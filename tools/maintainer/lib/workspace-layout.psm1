@@ -3,7 +3,11 @@ function Get-EaglerWorkspaceLayout {
     param([Parameter(Mandatory)] [string] $ProjectRoot)
 
     $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
-    $configPath = Join-Path $project 'config\workspace.json'
+    $resolver = Join-Path $project 'scripts\resolve-workspace-layout.mjs'
+    $resolvedJson = & node $resolver $project
+    if ($LASTEXITCODE -ne 0) { throw "Workspace layout resolution failed: $project" }
+    $resolved = ($resolvedJson -join "`n") | ConvertFrom-Json
+    $configPath = Join-Path $resolved.projectRoot 'config\workspace.json'
     $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
     if ($config.schema -ne 'eagler-touhou/workspace-layout/1' -or -not $config.repositories) {
         throw "Invalid workspace layout: $configPath"
@@ -25,13 +29,10 @@ function Get-EaglerWorkspaceLayout {
             throw "Missing workspace repository '$required' in $configPath"
         }
     }
-    $root = if ($env:EAGLER_WORKSPACE_ROOT) {
-        [IO.Path]::GetFullPath($env:EAGLER_WORKSPACE_ROOT)
-    } else {
-        Split-Path $project -Parent
-    }
+    $root = [string]$resolved.root
     [pscustomobject]@{
         ProjectRoot = $project
+        ConfigurationRoot = [string]$resolved.projectRoot
         Root = $root
         Repositories = $config.repositories
     }

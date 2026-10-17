@@ -1,8 +1,7 @@
 import fs from "node:fs";
-import path from "node:path";
+import { workspacePath } from "../lib/workspace-layout.mjs";
 
-const root = path.resolve(import.meta.dirname, "..", "..");
-const read = rel => fs.readFileSync(path.join(root, rel), "utf8");
+const read = rel => { const [repository, ...segments] = rel.split("/"); return fs.readFileSync(workspacePath(repository.replace(/-eagler$/, ""), ...segments), "utf8").replaceAll("\r\n", "\n"); };
 const requireText = (source, needle, label) => {
   if (!source.includes(needle)) throw new Error(`missing ${label}: ${needle}`);
 };
@@ -94,7 +93,7 @@ for (const game of ["th06", "th07"]) {
   }
 
   requireText(gameWindow, "preserveReplayCadence", `${game} replay playback has an explicit original-style cadence mode`);
-  requireText(gameWindow, "if (limitPresentationTo60 || preserveReplayCadence)", `${game} replay playback never uses multi-tick accumulator catch-up`);
+  requireMatch(gameWindow, /if \((?:\(limitPresentationTo60 \|\| preserveReplayCadence\) && targetDt\s*==\s*baseTargetDt|limitPresentationTo60 \|\| preserveReplayCadence)\)/, `${game} replay playback never uses multi-tick accumulator catch-up`);
 
   if (practice.includes("ReplayUnsafeAssistUsedThisRun") || result.includes("ReplayUnsafeAssistUsedThisRun") ||
       practice.includes("ResetReplayDeterminismUsage")) {
@@ -145,7 +144,7 @@ if (pracPos < 0 || eagxPos < 0 || pracPos > eagxPos) {
 requireText(th07Extension, "if (g_PlaybackVersion != VERSION)", "th07 SaveReplay2 rejects non-final ReplayX identity");
 requireText(th07Extension, "return AppendInputEvents(path, g_PlaybackInputs", "th07 SaveReplay2 rewrites only final ReplayX layout");
 
-const host = read("eagler-touhou/src/launcher/app.mts");
+const host = fs.readFileSync(new URL("../app/services/files.ts", import.meta.url), "utf8");
 if (host.includes('"EAGX"')) throw new Error("host file manager must not parse the game-owned EAGX format");
 
 console.log("TH06/TH07 ReplayExtension contract: PASS");

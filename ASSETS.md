@@ -94,3 +94,7 @@ The room reuses `assets/launcher-background.webp` without runtime blur. Player
 and spectator avatars are intentional initial placeholders; no generated artwork
 is published. `assets/room-*.svg` are unmodified Phosphor regular icons, with
 license in `assets/room-icons-LICENSE.txt`. They ship in the offline App Shell.
+
+The input settings entries embed the unmodified `keyboard` and `game-controller`
+paths from [Phosphor regular icons](https://github.com/phosphor-icons/core/tree/main/assets/regular),
+under the same MIT license in `assets/room-icons-LICENSE.txt`.

@@ -22,9 +22,9 @@ Current required capabilities include:
   RNG, timers and native menu/state-machine semantics unless an explicit Eagler
   Touhou product contract intentionally adds or changes behavior;
 - Runtime lifecycle: `ready -> configure -> launch -> first-frame -> exit/error`;
-- keyboard input and held-key cleanup;
-- physical gamepad/controller input through the title's normal logical input
-  path;
+- keyboard input, synchronous Launcher mapping and held-key cleanup;
+- physical gamepad/controller input, with Launcher-owned per-device mapping
+  sampled synchronously through the title's normal logical input path;
 - complete touch transport: controls, direct touch, cancellation and shared
   sensitivity semantics; touch is an input source, not a separate Replay model;
 - shared Restart semantics: R restarts the current run through the title's
@@ -109,7 +109,8 @@ Several broad required capabilities also expand into machine-readable behavior
 profiles so a future adapter cannot satisfy them with a superficial checkbox:
 
 - `REQUIRED_INPUT_BEHAVIORS` - keyboard/controller logical-input equivalence,
-  independent source ownership, lifecycle/disconnect cleanup and native menu
+  synchronous Launcher-owned keyboard aliases, independent source ownership,
+  lifecycle/disconnect cleanup and native menu
   semantics;
 - `REQUIRED_STORAGE_BEHAVIORS` - declared save root, strict file allowlist,
   durable sync/restart/offline continuity and separation between Package bytes
@@ -224,7 +225,8 @@ machine-readable behavior lists:
 
 - `REQUIRED_MULTIPLAYER_BEHAVIORS` - dedicated Runtime variant, declared room
   bounds, ready/start synchronization, deterministic peer authority, seat/input
-  ownership, spectator policy, pause/restart, Replay, transport/relay fallback,
+  ownership, spectator admission, confirmed history, failure isolation and
+  final-tail lifecycle, pause/restart, Replay, transport/relay fallback,
   local-player visibility, diagnostics and room-exit lifecycle;
 - `REQUIRED_THPRAC_BEHAVIORS` - Runtime attestation, prelaunch session config,
   the supported practice parameter surface, Replay PRAC metadata, touch/mouse
@@ -238,6 +240,12 @@ machine-readable behavior lists:
 `adapter:inspect` reports each profile as `active: true/false` for the selected
 product and includes the whole behavior list. An inactive profile is not missing
 work; an active profile with an unimplemented behavior is incomplete support.
+
+The [Spectator protocol](SPECTATOR_PROTOCOL.md) defines the shared spectator
+obligations and the timeline migration target separately. Existing start-only
+admission does not imply late join, local pause/seek or cross-match rewind.
+TH09 provides the current complete-initializer reference; each remaining MP
+adapter must prove its own deterministic reconstruction before activation.
 
 ## 4. Optional product capabilities
 

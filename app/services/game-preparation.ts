@@ -15,7 +15,7 @@ import type {SettingsSnapshot} from '../models/game-settings';
 import {prepareLanguagePack, type PreparedLanguagePack} from './language-pack';
 import {checkPreparationAbort, preparationErrorText, type AcquisitionRequest, type PackageAcquisition,
   type PackageAcquisitionResult, type PreparationProgress} from './package-acquisition';
-import {ensureOggStartup, musicTransport, oggMusic, packageResourceIds, remoteMusicResources,
+import {ensureOggStartup, ensureRequiredSharedResources, musicTransport, oggMusic, packageResourceIds, remoteMusicResources,
   remoteRuntimeResources, sharedResources} from './game-resources';
 import {startPreparedGameBackground} from './game-preparation-background';
 import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
@@ -49,6 +49,7 @@ export interface GamePreparationInput extends FilePreparationInput {
   onLanguageDownloadActivity?(active: boolean): void;
   decideUpdate?: AcquisitionRequest['decideUpdate'];
   onWarning?(message: string): void;
+  onUpdateReady?(epoch: number): void;
   onStatus?(message: string): void;
   /** Console diagnostics only. Main's current-session visible warnings use onWarning. */
   onBackgroundError?(error: unknown, message?: string): void;
@@ -127,13 +128,13 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),
       ...(multiplayer?.kind === 'preflight' && 'multiplayer' in product && 'preflightWithoutRoom' in product.multiplayer ? {multiplayerPreflight: true} : {}),
       ...(multiplayer?.kind === 'room' ? multiplayer.options : {})} : {}),
-    ...(input.replayWorkspace ? {replayViewer: true, touchEnabled: false, thpracEnabled: false} : {}),
+    ...(input.replayWorkspace ? {replayViewer: true, touchEnabled: false, ...(game === 'th09' ? {thpracEnabled: false} : {})} : {}),
     ...(input.replayPath !== undefined ? {replayPath: input.replayPath} : {}),
     ...(input.debugHarness ? {debugHarness: input.debugHarness} : {})};
 }
 async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, guard: () => void): Promise<PreparedGamePlan> {
   const {settings, acquisition, translate: t} = input, metadata = acquisition.getMetadata(), host = metadata.siteManifest;
-  let generation = initial.generation, music = effectiveMusic(input, generation, host), language = settings.language;
+  let generation = await ensureRequiredSharedResources(initial.generation, acquisition, input.signal), music = effectiveMusic(input, generation, host), language = settings.language;
   const catalog = buildLanguageCatalog({languageOptions: host?.games[settings.gameId]?.languageOptions,
     legacyLanguages: host?.games[settings.gameId]?.languages, offlineEntries: settings.context.languages,
     generation, translate: t, priority: languagePriority});

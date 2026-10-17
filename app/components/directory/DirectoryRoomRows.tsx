@@ -7,6 +7,7 @@ import {
 import {
   directoryRoomState,
   directoryRoomCanEnter,
+  directoryRoomSpectatorEntry,
   type DirectoryRoom,
   type DirectorySnapshot,
   type LobbyDirectoryService,
@@ -65,7 +66,7 @@ function RoomRow({
   const policy = multiplayerConfigForProduct(room.product)!;
   const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
-  const spectating = state === 'playing' && directoryRoomCanEnter(room);
+  const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
   const disabled =
     snapshot.connection !== 'live' ||

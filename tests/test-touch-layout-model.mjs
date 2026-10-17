@@ -28,7 +28,7 @@ assert.equal(touchLayoutStorageKey, "eagler-touhou-touch-layout-v1");
 assert.equal(touchLayoutVersion, 6);
 assert.deepEqual([...touchLayoutOrientations], ["landscape", "portrait"]);
 assert.equal(touchLayoutScaleMin, 0.6);
-assert.equal(touchLayoutScaleMax, 1.8);
+assert.equal(touchLayoutScaleMax, 3);
 assert.deepEqual(Object.keys(touchLayoutControlMeta), [
   "focus", "fire", "bomb", "joystick", "escape", "restart", "function", "thpracTab", "thpracMenu",
 ]);
@@ -59,8 +59,21 @@ assert.equal(normalizeTouchLayout({ version: 4, profiles: {
 } }), null, "viewport offset outside the persisted contract must fail closed");
 assert.equal(normalizeTouchLayout({ version: 4, profiles: {
   landscape: { controls: requiredControls(), viewport: { x: 0 } },
-  portrait: { controls: { ...requiredControls(), fire: placement(1, { scale: 1.81 }) }, viewport: { x: 0 } },
+  portrait: { controls: { ...requiredControls(), fire: placement(1, { scale: 3.01 }) }, viewport: { x: 0 } },
 } }), null, "invalid control scale must invalidate the whole saved layout");
+
+for (const scale of [0.6, 1.5, 1.8, 2.5, 3]) {
+  const layout = {version: touchLayoutVersion, profiles: {
+    landscape: {controls: {...requiredControls(), bomb: placement(2, {scale})}, viewport: {x: 0}},
+    portrait: {controls: requiredControls(), viewport: {x: 0}},
+  }};
+  const values = new Map();
+  const storage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key)};
+  assert.ok(persistTouchLayoutResult(storage, layout).persisted);
+  const loaded = loadTouchLayoutFromStorage(storage);
+  assert.equal(loaded.profiles.landscape.controls.bomb.scale, scale, "old and enlarged Bomb layouts survive a storage round trip");
+  assert.equal(loaded.profiles.portrait.controls.bomb.scale, 1, "enlarging one orientation preserves the other");
+}
 
 const oldLayoutWithoutLaterOptionalControls = normalizeTouchLayout({
   version: 4,

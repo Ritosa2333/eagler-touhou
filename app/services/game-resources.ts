@@ -1,5 +1,7 @@
 import {descriptorGameVersion} from "../../package/game-version.mjs";
 import {componentFileIds} from '../../package/package-generation.mjs';
+import {fetchPublishedPackage, desiredFilesForPublishedPackage} from '../../package/package-launcher.mjs';
+import {installPackageFromRemote} from '../../package/package-installer.mjs';
 import {linkAbortSignals} from './abort-signals';
 import {PRODUCT_GAMES, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
@@ -12,6 +14,43 @@ import {checkPreparationAbort, preparationErrorText, type PackageAcquisition, ty
 
 export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full';
 export const musicTransport = (mode: MusicMode): 'ogg' | 'midi' | 'none' => oggMusic(mode) ? 'ogg' : mode === 'midi' ? 'midi' : 'none';
+
+/** Upgrade only a newly required shared dependency. Existing DATA and selected
+ * optional files must have identical content in the publication. */
+export async function ensureRequiredSharedResources(generation: InstalledPackageGeneration | null,
+  acquisition: PackageAcquisition, signal?: AbortSignal): Promise<InstalledPackageGeneration | null> {
+  if (!generation) return generation;
+  const product = PRODUCT_GAMES[generation.game], required = 'requiredShared' in product ? product.requiredShared : [];
+  const targets = new Set(generation.descriptor.base.files.filter(id => generation.files[id]?.objectId)
+    .map(id => generation.descriptor.files[id]?.target));
+  const missing = required.filter(path => !targets.has(path));
+  if (!missing.length) return generation;
+  const publication = await acquisition.getPublication(descriptorGameVersion(generation.descriptor), signal);
+  if (!publication.catalog?.games[generation.game]) return generation;
+  const published = await fetchPublishedPackage(generation.game, {...publication, fetchImpl: acquisition.fetchImpl, signal});
+  if (!published) return generation;
+  const next = published.descriptor;
+  const currentFiles = Object.keys(generation.files).filter(id => generation.files[id]?.objectId);
+  const same = (id: string) => {
+    const a = generation.descriptor.files[id], b = next.files[id];
+    return a && b && a.target === b.target && a.bytes === b.bytes && a.sha256 && a.sha256 === b.sha256;
+  };
+  if (currentFiles.some(id => !same(id)) ||
+      next.base.files.some(id => !generation.files[id]?.objectId && !missing.includes(next.files[id]?.target)) ||
+      missing.some(path => !next.base.files.some(id => next.files[id]?.target === path))) {
+    throw new GameDataAcquisitionError('安装包缺少运行所需的共享字体，请更新游戏资源');
+  }
+  const result = await installPackageFromRemote(next, {descriptorUrl: published.descriptorUrl,
+    desiredFileIds: current => {
+      if (current.generation?.id !== generation.id) throw new Error('游戏安装已变化，请重新启动');
+      return desiredFilesForPublishedPackage(next, {current: current.generation});
+    },
+    source: current => current.installation?.source === 'local' ? 'local' : 'remote',
+    fetchImpl: acquisition.getPackageFetch(generation.game), signal});
+  checkPreparationAbort(signal);
+  await acquisition.refreshInstalled(generation.game);
+  return result.generation;
+}
 export function packageResourceIds(generation: InstalledPackageGeneration): string[] {
   const descriptor = generation.descriptor, runtimeOwned = new Set<string>();
   const runtimes = descriptor.runtimes || (descriptor.runtime ? {normal: descriptor.runtime} : {});
@@ -53,7 +92,7 @@ export function sharedResources({game, generation, host, language, thprac, baseU
       ? t('package.missingRequiredResource', {resource: path.slice(1)}) : t('runtime.sharedFontManifestInvalid'));
     result.push({url: new URL(source, baseUrl).href, path});
   }
-  if (language === 'ja' && (!('requiredShared' in product) || product.requiredShared.some(path => path === '/msgothic.ttc')) && !targets.has('/msgothic.ttc')) add('/msgothic.ttc', host?.shared.vanillaFont);
+  if ((!('requiredShared' in product) ? language === 'ja' : product.requiredShared.some(path => path === '/msgothic.ttc')) && !targets.has('/msgothic.ttc')) add('/msgothic.ttc', host?.shared.vanillaFont);
   if ((language !== 'ja' || thprac) && !targets.has('/unifont.otf')) add('/unifont.otf', host?.shared.unicodeFont);
   return result;
 }

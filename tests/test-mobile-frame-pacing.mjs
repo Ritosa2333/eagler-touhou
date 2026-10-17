@@ -13,7 +13,6 @@ for (const game of preloadGames) {
     ["#ifdef __EMSCRIPTEN__", "Web-only guard"],
     ["const bool limitPresentationTo60 = EaglerOptions::LimitPresentationTo60();", "optional 60 FPS presentation mode"],
     ["const bool preserveReplayCadence", "replay cadence gate"],
-    ["if (limitPresentationTo60 || preserveReplayCadence)", "original-style replay timing path"],
     ["if (limitPresentationTo60 && !updated)", "optional 60 FPS presentation gate"],
     ["if (limitPresentationTo60)", "locked presentation alpha override"],
     ["g_RenderAlpha = 1.0f;", "authoritative current-state draw in locked mode"],
@@ -26,16 +25,20 @@ for (const game of preloadGames) {
     if (!source.includes(needle)) throw new Error(`${game}: missing ${label}`);
   }
 
-  const locked = source.indexOf("if (limitPresentationTo60 || preserveReplayCadence)");
+  const locked = source.search(/if \((?:\(limitPresentationTo60 \|\| preserveReplayCadence\) && targetDt\s*==\s*baseTargetDt|limitPresentationTo60 \|\| preserveReplayCadence)\)/);
   const discard = source.indexOf("do\n            {\n                this->accumulator -= targetDt;", locked);
   const singleTick = source.indexOf("const i32 res = runSimulationTick();", discard);
   const catchUp = source.indexOf("while (this->accumulator >= targetDt)", singleTick + 1);
   if (locked < 0 || discard < locked || singleTick < discard || catchUp < singleTick)
     throw new Error(`${game}: locked one-tick path must precede the high-refresh catch-up loop`);
-  const firstFrameAck = source.indexOf("EM_ASM({ globalThis.EaglerTouhouFirstFrame?.(); });");
+  const firstFrameAck = source.lastIndexOf("EM_ASM({ globalThis.EaglerTouhouFirstFrame?.(); });");
   const presentBeforeAck = source.lastIndexOf("Present();", firstFrameAck);
   if (firstFrameAck < 0 || presentBeforeAck < 0 || presentBeforeAck > firstFrameAck)
     throw new Error(`${game}: first-frame acknowledgement must happen only after Present()`);
+  // Startup branding has its own committed swap before the ordinary game loop.
+  const supervisor = readFileSync(workspacePath(game,'src/Supervisor.cpp'),'utf8');
+  const startup = supervisor.slice(supervisor.indexOf('Supervisor::DrawStartupLogo()'));
+  if (!startup.includes('SwapBuffers();')) throw new Error(`${game}: startup acknowledgement needs a visible startup frame`);
 }
 
 const targetDt = 1 / 60;

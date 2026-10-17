@@ -57,7 +57,7 @@ function managedPlan(game = 'th10', options = {}) {
       base: {files: ['data']}, components: {}}, files: {data: {objectId: `obj-${game}-data`, revision: 'data-r1'}}},
     configure: {music: 'none', options}};
 }
-function fixture({onFrameRetired, worker, ...overrides} = {}) {
+function fixture({onFrameRetired, onUpdateReady, worker, ...overrides} = {}) {
   const messageListeners = new Set(), loadListeners = new Set(), eventContexts = [], outbound = [], navigations = [], retained = [], released = [], codeCalls = [], dataReads = [];
   const timers = deterministicTimers();
   const host = {location: {origin, href: `${baseUrl}?game=th06`},
@@ -71,7 +71,7 @@ function fixture({onFrameRetired, worker, ...overrides} = {}) {
     removeAttribute(name) {assert.equal(name, 'src'); runtime.location.replace('about:blank');},
     addEventListener(type, listener) {assert.equal(type, 'load'); loadListeners.add(listener);}, removeEventListener(_type, listener) {loadListeners.delete(listener);}};
   const service = owners.createRuntimeService({translate: key => key, frame, hostWindow: host, baseUrl, timers,
-    onFrameRetired, worker,
+    onFrameRetired, onUpdateReady, worker,
     fetchImpl: async () => {throw new Error('Unexpected network in deterministic service fixture');},
     onEvent: (message, context) => eventContexts.push({message, context, snapshot: service.getSnapshot()}),
     dependencies: {
@@ -310,9 +310,20 @@ for (const authority of ['catalog', 'host']) test(`runtime: main live ${authorit
   await assert.rejects(f.service.prepare({...plan, entry: 'runtime/unapproved.html'}), /Host authority/);
   assert.equal(f.navigations.length, 0); await f.prepare(plan);
   const source = new URL(f.service.getSnapshot().source);
-  assert.equal(source.pathname, new URL(plan.entry, baseUrl).pathname); assert.equal(source.searchParams.get('managedData'), '1');
-  assert.equal(source.searchParams.get('gameGeneration'), plan.generation.id); assert.equal(f.codeCalls.length, 0);
+  assert.equal(source.pathname, new URL(authority==='catalog'?'__runtime/test-generation/entry.html':plan.entry,baseUrl).pathname); assert.equal(source.searchParams.get('managedData'), '1');
+  assert.equal(source.searchParams.get('gameGeneration'), plan.generation.id); assert.equal(f.codeCalls.length, authority==='catalog'?1:0);
   assert.equal(f.retained.length, 1); assert.equal(f.service.getSnapshot().ready, true);
+});
+
+test('runtime: offline launch checks updates only after ACK and notifies only for a complete successor', async () => {
+  let checks=0,finish;const notices=[];
+  const f=fixture({onUpdateReady:game=>notices.push(game),prepareCode:async()=>({url:baseUrl+'runtime/th06/local/entry.html',generation:'old',cached:true,
+    checkForUpdate:()=>{checks++;return new Promise(resolve=>{finish=resolve;});}})});
+  await f.prepare(managedPlan('th06'));assert.equal(checks,0);
+  const launch=f.service.launch();await flush();assert.equal(checks,0);f.ack('launch');await launch;
+  assert.equal(checks,1);assert.deepEqual(notices,[]);
+  const source=f.service.getSnapshot().source;finish({url:baseUrl+'runtime/th06/new/entry.html',generation:'new'});await flush();
+  assert.deepEqual(notices,['th06']);assert.equal(f.service.getSnapshot().source,source);assert.equal(f.service.getSnapshot().codeGeneration,'old');
 });
 test('runtime: offline local package resolves the owning worker program before exact document binding', async () => {
   const worker = {postMessage() {}};

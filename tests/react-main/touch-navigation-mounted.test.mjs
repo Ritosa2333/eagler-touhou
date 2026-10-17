@@ -447,22 +447,22 @@ test('synthetic mounted decisions: existing application prompt wins over dirty B
   await click('#decisionCancel'); assert.ok(hasEditor()); assert.deepEqual(mounted.host.touchLayout.getSnapshot().draft, draft);
 });
 
-test('synthetic mounted StrictMode: cancelled touch movement restores actual native/custom select across repeated editor mounts', async () => {
+test('synthetic mounted StrictMode: touch movement applies without warnings across repeated editor mounts', async () => {
   await mountEntry(['/?keep=1'], {realDecisions: true, strictMode: true});
   for (let cycle = 0; cycle < 3; cycle++) {
     await openOptions('th06'); const retainedSelects = env.document.querySelectorAll('.mizuki-select').length; await openEditor();
     const select = node('#touchMovementMode'), wrapper = select.closest('.mizuki-select'); assert.ok(wrapper);
     assert.equal(wrapper.querySelectorAll('.mizuki-select-trigger').length, 1);
     assert.equal(env.document.querySelectorAll('#touchMovementMode').length, 1);
-    const trigger = wrapper.querySelector('.mizuki-select-trigger'), before = select.value, label = wrapper.querySelector('.mizuki-select-value').textContent;
-    const savedBefore = new Map(mounted.storage.values), optionsBefore = structuredClone(mounted.host.settings.getSnapshot().options);
+    const trigger = wrapper.querySelector('.mizuki-select-trigger'), before = select.value;
+    const next = ['touch', 'joystick-free', 'touch-unlimited'][cycle];
     await React.act(async () => {trigger.click();});
     const menu = node('.mizuki-select-menu:not([hidden])');
-    await React.act(async () => {menu.querySelector('[data-value="touch-unlimited"]').click();}); await tick();
-    assert.equal(node('#decisionMessage').textContent, owners.translate('en', 'touch.unlimitedWarning'));
-    await click('#decisionCancel');
-    assert.equal(select.value, before); assert.equal(wrapper.querySelector('.mizuki-select-value').textContent, label);
-    assert.deepEqual(mounted.host.settings.getSnapshot().options, optionsBefore); assert.deepEqual(mounted.storage.values, savedBefore);
+    await React.act(async () => {menu.querySelector(`[data-value="${next}"]`).click();}); await tick();
+    assert.equal(node('#decisionDialog').open, false);
+    assert.notEqual(select.value, before); assert.equal(select.value, next);
+    assert.equal(mounted.host.settings.getSnapshot().options.touchMovementMode, next);
+    assert.equal(JSON.parse(mounted.storage.getItem('eagler-touhou-touch-options-v1')).touchMovementMode, next);
     assert.equal(env.document.querySelectorAll('.mizuki-select-menu:not([hidden])').length, 0);
     await click('#touchLayoutExit'); await until(() => !hasEditor() && hasOptions('th06'), 'StrictMode editor Exit retains parent');
     assert.equal(env.document.querySelector('#touchMovementMode'), null);

@@ -56,5 +56,17 @@ test('first use does not create IDBFS; unknown schema and unsafe paths fail with
   await seed(factory,'/savesth09',[['replay/th9_01.rpy',new Uint8Array([1])]],20);
   await assert.rejects(read.read('th09'),/存储版本/);assert.equal((await factory.databases())[0].version,20);
   for(const path of ['score.dat','replay/../../score.dat','replay/a/b/th9_01.rpy','replay/th6_01.rpy'])await assert.rejects(read.read('th09',{path}));
-  await assert.rejects(read.read('th06'));await assert.rejects(read.read('th09',{directory:'replay/../bad'}));
+  assert.deepEqual(await read.read('th06'),[]);await assert.rejects(read.read('th09',{directory:'replay/../bad'}));
+});
+
+
+test('every title and variant reads its real native namespace, with TH10 language and TH15 MP filename isolation',async()=>{
+  const factory=new IDBFactory(),read=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange}));
+  const cases=[['th06','/savesth06','th6'],['th06mp','/savesth06-multiplayer','th6'],['th07','/savesth07','th7'],['th07mp','/savesth07-multiplayer','th7'],['th08','/savesth08','th8'],['th08mp','/savesth08-multiplayer','th8'],['th11','/savesth11','th11'],['th11mp','/savesth11mp','th11'],['th15','/savesth15','th15'],['th15mp','/savesth15mp','th15mp']];
+  for(let i=0;i<cases.length;i++){const [product,database,prefix]=cases[i];await seed(factory,database,[[`replay/${prefix}_01.rpy`,new Uint8Array([i+1])],['replay/wrong_01.rpy',new Uint8Array([255])]]);const rows=await read.read(product);assert.equal(rows.length,1,product);assert.deepEqual([...rows[0].bytes],[i+1],product);}
+  for(const [product,database]of [['th10','/savesth10'],['th10mp','/savesth10-multiplayer']]){
+    await seed(factory,database,[['jp/replay/th10_01.rpy',new Uint8Array([1])],['chs/replay/th10_01.rpy',new Uint8Array([2])]]);
+    const japanese=await read.read(product,{language:'ja'}),chinese=await read.read(product,{language:'lang_zh-hans'});assert.deepEqual([...japanese[0].bytes],[1]);assert.deepEqual([...chinese[0].bytes],[2]);
+    if(product==='th10mp'){assert.equal(japanese[0].path,'replay/th10_01.rpyx');assert.deepEqual([...(await read.read(product,{path:japanese[0].path}))[0].bytes],[1]);}
+  }
 });

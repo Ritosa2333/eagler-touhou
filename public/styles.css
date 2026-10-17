@@ -1921,3 +1921,108 @@ body:has(#touchLayoutEditor:not([hidden]))>.mizuki-select-menu .mizuki-select-it
 .replay-move select,.replay-move input{box-sizing:border-box;min-width:0;width:100%;min-height:36px;padding:5px 8px;border:1px solid #44394d;border-radius:8px;background:#100d16;color:#eee8ef;font:inherit}
 .replay-move .replay-row-actions{justify-content:flex-end}
 .replay-window button:disabled{opacity:.45;cursor:default}
+
+/* Launcher gamepad mapping: controls remain usable on narrow screens. */
+
+/* Input settings shares the options panel palette and disclosure rhythm. */
+.input-settings-heading{width:100%;border:0;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.input-settings-heading i{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.input-settings[data-open="true"] .input-settings-heading i{transform:rotate(180deg)}
+.input-settings-collapse{display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;transition:grid-template-rows .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease,visibility 0s .24s}
+.input-settings[data-open="true"] .input-settings-collapse{grid-template-rows:1fr;opacity:1;visibility:visible;transition-delay:0s}
+.input-settings-content{min-height:0;overflow:hidden}
+.input-device-tabs{display:flex;gap:4px;margin:4px 12px 12px;padding:4px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);border-radius:10px}
+.input-device-tabs button{flex:1;min-height:34px;border:0;border-radius:7px;background:transparent;color:var(--muted,#a9a99c);font:600 12px var(--ui-font);cursor:pointer;transition:background-color .16s,color .16s,transform .12s}
+.input-device-tabs button[aria-selected="true"]{background:var(--red-bright);color:#fff;box-shadow:0 3px 10px rgba(189,68,56,.18)}
+.input-device-tabs button:active{transform:scale(.98)}
+.input-device-panel{animation:input-panel-in .2s cubic-bezier(.2,.8,.2,1) both}
+.input-settings :is(button,input,select):focus-visible{outline:2px solid var(--red-bright);outline-offset:3px}
+@keyframes input-panel-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.input-settings *{animation:none!important;transition:none!important}}
+.less-motion .input-settings *{animation:none!important;transition:none!important}
+
+:is(.library-layout,.mp-settings-room-drawer) .input-settings[data-open="true"]>.options-group-head i{transform:rotate(45deg)}
+.input-settings input{accent-color:var(--red-bright)}
+
+/* The rail stays compact. Details scroll inside the mapping dialog. */
+.input-settings-entries{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:2px 0 12px}
+.input-settings-entry{display:flex;align-items:center;gap:9px;min-width:0;min-height:48px;padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:10px;background:rgba(255,255,255,.025);color:var(--paper);text-align:left;font-family:var(--ui-font);cursor:pointer;transition:background-color .16s,border-color .16s,transform .12s}
+.input-settings-entry:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.13)}
+.input-settings-entry:active{transform:scale(.98)}
+.input-settings-entry svg{width:22px;height:22px;flex:0 0 22px;fill:currentColor;opacity:.7}
+.input-settings-entry strong{display:block;min-width:0;flex:1;font-size:12px;font-weight:600}
+.input-settings-entry>span:last-child{font-size:20px;color:var(--muted)}
+.input-settings-dialog{width:min(680px,calc(100vw - 28px));height:min(680px,88dvh);max-width:none;max-height:88dvh;padding:0;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:var(--panel,#191a17);color:var(--paper,#eee9e1);box-shadow:0 25px 70px rgba(0,0,0,.6);overflow:hidden;font-family:var(--ui-font)}
+.input-settings-dialog[open]{display:flex;flex-direction:column;animation:input-dialog-in .2s cubic-bezier(.2,.8,.2,1) both}
+.input-settings-dialog::backdrop{background:rgba(0,0,0,.65);animation:input-backdrop-in .18s ease both}
+.input-settings-dialog>header{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;min-height:56px;padding:4px 12px 4px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.input-settings-dialog h2{margin:0;font:700 16px var(--ui-font)}
+.input-settings-dialog .input-dialog-close{width:36px;height:36px;border:0;border-radius:9px;background:none;color:var(--muted);font:22px var(--ui-font);cursor:pointer;transition:background-color .15s,color .15s,transform .12s}
+.input-settings-dialog .input-dialog-close:hover{background:rgba(255,255,255,.06);color:var(--paper)}
+.input-settings-dialog>.input-device-tabs{flex:0 0 auto;margin:12px 16px 8px}
+.input-context-toolbar{display:flex;align-items:center;gap:12px;flex:0 0 auto;margin:12px 20px 4px;font-size:12px}
+.input-context-toolbar .option-select{flex:1;min-width:0}
+.input-context-toolbar>label{flex-shrink:0;white-space:nowrap}
+.input-local-players{margin:8px 0 12px}
+.input-dialog-scroll{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:0 16px 14px}
+.input-settings-dialog.is-closing{animation:input-dialog-out .16s ease-in both}
+.input-settings-dialog.is-closing::backdrop{animation:input-backdrop-out .16s ease-in both}
+@keyframes input-dialog-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes input-dialog-out{to{opacity:0;transform:translateY(6px) scale(.985)}}
+@keyframes input-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes input-backdrop-out{to{opacity:0}}
+@media(prefers-reduced-motion:reduce){.input-settings-dialog,.input-settings-dialog::backdrop{animation:none!important}}
+.less-motion .input-settings-dialog,.less-motion .input-settings-dialog::backdrop{animation:none!important}
+
+/* Conventional game controls: action rows with clickable keycaps. */
+.input-config{padding:2px 4px 6px}
+.input-layout-toolbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;margin:8px 0}
+.input-layout-toolbar>label{font-size:12px;white-space:nowrap;color:var(--muted)}
+.input-layout-toolbar>select{display:none}
+.input-layout-toolbar .mizuki-select,.input-layout-toolbar .option-select{min-width:0;margin:0!important;width:100%}
+.input-layout-toolbar .mizuki-select-trigger{min-height:36px;font-size:12px}
+.input-config-button{min-height:32px;flex:none;padding:6px 11px;border:1px solid rgba(255,255,255,.09);border-radius:8px;background:#2a2c25;color:var(--paper);font:600 11px var(--ui-font);cursor:pointer;transition:background-color .15s,transform .12s}
+.input-config-button:hover{background:#383b31}
+.input-config-button:active{transform:scale(.97)}
+.input-config-button:disabled{opacity:.4;cursor:default}
+.input-config-button.primary{background:var(--red-bright);color:#fff;border-color:transparent}
+.input-config-hint{margin:8px 0 12px;color:var(--muted);font:11px/1.5 var(--ui-font)}
+.input-save-layout{display:flex;gap:6px;margin:8px 0;animation:input-panel-in .18s ease both}
+.input-save-layout input{box-sizing:border-box;min-width:0;flex:1;min-height:34px;padding:6px 10px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:#121310;color:var(--paper);font:12px var(--ui-font)}
+.input-binding-table{width:100%;table-layout:fixed;border-collapse:collapse;color:var(--paper);font:12px/1.3 var(--ui-font)}
+.input-binding-table thead th{padding:7px 8px 8px;color:var(--muted);font-size:10px;font-weight:500;text-align:left;border-bottom:1px solid rgba(255,255,255,.1)}
+.input-binding-table th:first-child{width:35%}
+.input-binding-table th:last-child,.input-binding-table td:last-child{width:28px;padding-right:0}
+.input-binding-table tbody th{font-weight:500;text-align:left;padding:5px 8px}
+.input-binding-table td{padding:4px 6px}
+.input-binding-table tr{border-bottom:1px solid rgba(255,255,255,.045);transition:background-color .14s}
+.input-binding-table tr:hover{background:rgba(255,255,255,.025)}
+.input-binding-table tr.input-action-divider{border-top:1px solid rgba(255,255,255,.14)}
+.input-binding-table tr[data-active=true]{background:rgba(189,68,56,.13)}
+.input-binding-button{box-sizing:border-box;display:flex;align-items:center;flex-wrap:wrap;gap:5px;width:100%;min-height:33px;margin:0;padding:4px 7px;border:1px solid rgba(255,255,255,.07);border-radius:7px;background:#141511;color:var(--paper);font:12px var(--ui-font);text-align:left;cursor:pointer;transition:border-color .14s,background-color .14s,transform .12s}
+.input-binding-button:hover{border-color:rgba(255,255,255,.24);background:#20221b}
+.input-binding-button:active{transform:scale(.985)}
+.input-binding-button[aria-pressed=true]{border-color:var(--red-bright);background:rgba(189,68,56,.1);animation:input-binding-pulse 1.1s ease-in-out infinite}
+.input-keycap{display:inline-flex;align-items:center;justify-content:center;min-width:18px;min-height:20px;padding:1px 5px;border:1px solid rgba(255,255,255,.16);border-bottom-width:2px;border-radius:4px;background:#2a2c25;color:var(--paper);font:600 11px/1.2 var(--ui-font);white-space:nowrap}
+.input-keycap.secondary{opacity:.6}
+.input-binding-empty{color:var(--muted)}
+.input-binding-listening{font-size:11px;color:#f4b7a9}
+.input-binding-reset{width:28px;min-height:30px;padding:0;border:0;border-radius:6px;background:none;color:var(--muted);font:18px var(--ui-font);cursor:pointer;opacity:.55;transition:opacity .15s,background-color .15s}
+.input-binding-reset:hover,.input-binding-reset:focus-visible{opacity:1;background:rgba(255,255,255,.06)}
+.input-config-footer{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:12px;color:var(--muted);font-size:10px;line-height:1.5}
+.input-config-footer>span{min-width:0;flex:1}
+.input-gamepad-enable{display:flex;align-items:center;gap:8px;margin:8px 0 12px;font-size:12px}
+.input-axis-threshold{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:14px;color:var(--muted);font-size:11px}
+.input-axis-threshold input{grid-column:1/-1;width:100%;margin:0}
+.input-visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@keyframes input-binding-pulse{50%{box-shadow:0 0 0 2px rgba(189,68,56,.14)}}
+@media(max-width:480px){.input-settings-entry{gap:6px;padding:9px 7px}.input-settings-entry svg{width:18px;height:18px;flex-basis:18px}.input-settings-dialog{height:min(680px,88dvh)}.input-dialog-scroll{padding:0 12px 12px}.input-layout-toolbar{gap:6px}.input-binding-table th:first-child{width:31%}.input-binding-table tbody th{padding-left:3px;font-size:11px}.input-binding-table td{padding-left:3px;padding-right:3px}.input-config-button{padding:6px 8px;font-size:10px}}
+
+.spectator-playback{position:absolute;z-index:18;bottom:max(16px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(420px,calc(100% - 24px));padding:8px 12px;background:var(--panel,#191a24);color:var(--text,#fff);border:1px solid var(--border,#555);border-radius:14px;box-shadow:0 4px 24px #0005}
+.spectator-playback button{min-height:36px;padding:6px 10px}
+.spectator-playback-toggle{width:100%;text-align:left}
+.spectator-playback input[type=range]{width:100%;min-height:40px}
+.spectator-playback-nodes{display:flex;gap:6px;overflow-x:auto;padding-top:8px}
+.spectator-playback-nodes button{flex:none}
+.spectator-playback-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+.spectator-playback-actions>span{margin-right:auto;font-variant-numeric:tabular-nums}

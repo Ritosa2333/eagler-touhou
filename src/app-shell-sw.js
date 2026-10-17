@@ -238,7 +238,7 @@ self.addEventListener("message", event => {
         return;
       }
       if (protocol && type === protocol.RUNTIME_CAPABILITIES) {
-        port?.postMessage({ ok: !!runtimeCache, protocol: protocol.RUNTIME_CACHE_PROTOCOL });
+        port?.postMessage({ ok: !!runtimeCache, protocol: protocol.RUNTIME_CACHE_PROTOCOL, localOnly: true });
         return;
       }
       if (protocol && type === protocol.RUNTIME_PREPARE) {
@@ -246,6 +246,7 @@ self.addEventListener("message", event => {
         const request = protocol.validateRuntimePrepareRequest(event.data);
         port?.postMessage(await runtimeCache.prepareLaunch(request.entry, {
           exclude: request.exclude, ...(request.catalog ? { catalog: request.catalog } : {}),
+          ...(request.localOnly ? {localOnly: true} : {}),
         }));
         return;
       }

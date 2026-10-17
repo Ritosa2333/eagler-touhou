@@ -41,6 +41,8 @@ try {
   assert.throws(()=>canonicalRuntimePayload(a.entry,[...a.files,a.files[0]]), /identity/);
   assert.throws(()=>validateRuntimePrepareRequest({type:RUNTIME_PREPARE,entry:"runtime/th08/game.html",exclude:["bad"]}), /exclusions/);
   assert.throws(()=>validateRuntimePrepareRequest({type:RUNTIME_PREPARE,entry:"../private.html"}), /entry/);
+  assert.equal(validateRuntimePrepareRequest({type:RUNTIME_PREPARE,entry:"runtime/th08/game.html",localOnly:true}).localOnly,true);
+  assert.throws(()=>validateRuntimePrepareRequest({type:RUNTIME_PREPARE,entry:"runtime/th08/game.html",localOnly:'yes'}), /local-only/);
   assert.throws(()=>assertPortableRuntimeSources(new Map([["shell.mjs",Buffer.from('import "../mutable/glue.mjs";')]])), /escapes/);
   assert.throws(()=>assertPortableRuntimeSources(new Map([["shell.mjs",Buffer.from('new Worker("missing.mjs");')]])), /not declared/);
   await writeFile(resolve(source,"shell.mjs"), 'import "./glue.mjs"; // next generation');
@@ -103,6 +105,12 @@ try {
   }
   await command("scripts/verify-server-build.mjs",output);
   const store=resolve(temp,"releases"),current=resolve(temp,"current");
+  if (process.platform === "win32") {
+    await assert.rejects(deployStaticSite({source:output,releases:store,current}),
+      {code:"EAGLER_ATOMIC_DEPLOYMENT_UNSUPPORTED_PLATFORM"});
+    for (const path of [store,current]) await assert.rejects(lstat(path),{code:"ENOENT"});
+    console.log("Immutable Runtime generation/Host/refresh: PASS; atomic deployment: Windows early refusal PASS (POSIX switch runs in Linux CI)");
+  } else {
   const first=await deployStaticSite({source:output,releases:store,current});
   assert.equal((await lstat(current)).isSymbolicLink(),true);
   const second=await deployStaticSite({source:output,releases:store,current});
@@ -113,4 +121,5 @@ try {
   await assert.rejects(deployStaticSite({source:output,releases:store,current}),/mismatch/);
   await command("scripts/verify-server-build.mjs",current);
   console.log("Immutable Runtime protocol, generator, legacy read, declared-variant Host, refresh and atomic deployment: PASS");
+  }
 } finally { await rm(temp,{recursive:true,force:true}); }

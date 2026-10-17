@@ -20,6 +20,7 @@ import { useLocale } from '../../i18n';
 import { playerUtilityIcons } from './utility-icons';
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
+import { SpectatorPlayback } from './SpectatorPlayback';
 const noopSubscribe = () => () => {};
 const initialTouch = () => undefined;
 const noNetwork = () => null;
@@ -68,6 +69,7 @@ export function PlayerControls({ session, replayWorkspace = false }: { session: 
   return (
     <>
       <TitleNetworkOverlay model={session.titleNetwork} />
+      <SpectatorPlayback session={session} />
       {network && (
         <NetplayConnectionWindow
           network={network}

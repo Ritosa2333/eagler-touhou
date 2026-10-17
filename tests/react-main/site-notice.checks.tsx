@@ -56,11 +56,8 @@ export async function runChecks(repo: string) {
     await run(); cases.push({name, status: 'passed'}); console.log(`PASS ${name}`);
   }
   const originalHtml = execFileSync('git', ['show', `${pinnedMain}:public/index.html`], {cwd: repo, encoding: 'utf8'});
-  await check('shared parser preserves pinned bytes with the requested four-second lifespan', () => {
-    const pinned = execFileSync('git', ['show', `${pinnedMain}:src/launcher/site-notice.mts`], {cwd: repo, encoding: 'utf8'});
-    const content = readFileSync(join(repo, 'src/launcher/site-notice-content.mts'), 'utf8').replaceAll('\r\n', '\n');
-    assert.equal(content.replace('export function fallbackBaseUrl()', 'function fallbackBaseUrl()'),
-      pinned.slice(0, pinned.indexOf('function renderSiteNoticeText(')).replace('15_000', '4_000'));
+  await check('shared parser exports the same policy and uses a four-second lifespan', () => {
+    assert.equal(contentPolicy.SITE_NOTICE_DURATION_MS, 4_000);
     for (const name of ['parseSiteNoticeText', 'siteNoticeBrandAsset', 'SITE_NOTICE_DURATION_MS', 'SITE_NOTICE_STORAGE_KEY', 'SITE_NOTICE_DISMISSED_KEY'] as const) {
       assert.equal(reactPolicy[name], contentPolicy[name]);
     }

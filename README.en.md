@@ -40,13 +40,22 @@ While preserving the original game experience, including some original bugs:
 - Aims for a polished experience. It fixes numerous issues inherited from the original portable branches, including jittery bullets, uneven bullet movement, flickering, music stutters when switching tracks in single-threaded mode, and poor performance on phones.
 - Supports refresh rates above 60 Hz, except for th09. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
 
+### Input Settings
+
+The default-expanded Input Settings group sits above Advanced Settings. The Keyboard tab provides Arrow keys and WASD presets plus named custom layouts. The Gamepad tab supports per-device button/axis learning, thresholds, and saved profiles. When enabled, Launcher gamepad mapping takes priority over in-game controller settings and requires updated Runtime packages.
+
+The WASD layout retains original controls: arrows / WASD to move, Z / K to shoot, X / J for Bomb, Shift / L / Space to focus, and C / H for the title's existing C action. New aliases take priority when keys conflict and require updated game Runtime packages.
+
+TH09 has a separate Local two-player editor with per-player keyboard/controller selection, saved layouts and conflict checks. Original left/right keyboard halves, WASD and arrow-key presets are available. Enabling it overrides local versus device settings without changing single-player or online mappings.
+
 ### Touch Controls
 
 ![A touch layout with adjustable positions, sizes, sensitivity, and Focus controls](docs/assets/readme/touch-controls.webp)
 
 - Your touch path becomes the player's movement path. Available movement methods include Touch, Touch (cheat, unlimited speed), Joystick, and more. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
-- Customizable touch layouts. Touch buttons can be freely moved and scaled from 60% to 180%.
+- Customizable touch layouts. Touch buttons can be freely moved and scaled from 60% to 300%.
 - Landscape and portrait layouts can be saved separately.
+- Rolling back to an older Launcher resets saved layouts that use scales above 180%.
 - A Magnifier lets players zoom the game viewport at any time with a two-finger gesture. No more losing bullets because they are too small to see (x
 - Touch Replays preserve the touch trajectory actually sent to the game.
 - Menu gestures: swipe to move the selection cursor, tap to confirm, and tap with two fingers to go back. \[by [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]

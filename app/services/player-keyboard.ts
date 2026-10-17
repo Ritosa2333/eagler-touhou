@@ -1,5 +1,9 @@
 import {HostedKeyboard} from '../../src/launcher/hosted-keyboard.mts';
+import {KeyboardMapping, keyboardMappingSchema, type KeyboardMappingPort} from '../../src/launcher/keyboard-mapping.mts';
+import {keyboardInputBridge} from '../../src/launcher/touch-runtime-protocol.mts';
 import type {RuntimeService, RuntimeMidiEventContext} from './runtime';
+import type {KeyboardPreferences} from '../../src/launcher/keyboard-preferences.mts';
+import type {Th09LocalInput} from '../../src/launcher/th09-local-input.mts';
 
 export interface PlayerKeyboardOptions {
   runtime: Pick<RuntimeService, 'getInputContext' | 'getMidiEventContext' | 'getSnapshot' | 'postInput' | 'subscribe'>;
@@ -14,6 +18,8 @@ export interface PlayerKeyboardOptions {
   toggleFullscreen(): void;
   isPlayerFullscreen(): boolean;
   android: boolean;
+  preferences?:KeyboardPreferences;
+  th09Local?:Th09LocalInput;
   now?: () => number;
   setInterval?: typeof globalThis.setInterval;
   clearInterval?: typeof globalThis.clearInterval;
@@ -21,8 +27,8 @@ export interface PlayerKeyboardOptions {
 function sameNativeContext(a: RuntimeMidiEventContext | null, b: RuntimeMidiEventContext | null) {
   return a === b || !!a && !!b && a.epoch === b.epoch && a.game === b.game && a.document === b.document && a.target === b.target;
 }
-/** Main's host keyboard + Android startup focus relay. Native key events remain
- * native; only Alt+Enter is intercepted in the current iframe window. */
+/** Launcher owns the mapping policy. A capable Runtime calls that policy in
+ * its native event stack; older Runtime shells keep their original keyboard. */
 export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
   const keyboard = new HostedKeyboard();
   const now = options.now ?? (() => performance.now());
@@ -33,6 +39,8 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
   let bound: RuntimeMidiEventContext | null = null;
   let unbind: (() => void) | null = null;
   let identity = options.runtime.getInputContext();
+  let inputAllowed = identity.launched && !identity.spectator;
+  let mapping: KeyboardMapping | null = null;
   function stopFocusRelay() {
     if (timer !== null) clearInterval(timer);
     timer = null; deadline = 0;
@@ -56,12 +64,23 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     const state = options.runtime.getSnapshot();
     if (!state.launched || !options.playerOpen() || !options.frame.contentWindow) {keyboard.clear(); return;}
     const context = options.runtime.getInputContext();
+    if (mapping && keyboardInputBridge(context)) {
+      if (event.type === 'keydown' && event.isComposing) return;
+      if (options.launcherOwnsTarget(event.target) && event.type === 'keydown') return;
+      if (!mapping.recognizes(event) || event.type === 'keydown' && (event.altKey || event.metaKey)) return;
+      if (options.runtime.postInput('keyboard', {code:event.code,key:event.key,keyCode:event.keyCode,location:event.location,
+          down:event.type === 'keydown',repeat:event.repeat,inputSource:'physical',launcherOwnsFocus:options.launcherOwnsTarget(event.target)})) event.preventDefault();
+      return;
+    }
     const keys = keyboard.forward(event, context, options.launcherOwnsTarget(event.target));
     for (const key of keys) options.runtime.postInput('keyboard', {down: event.type === 'keydown', ...key});
     if (keys.length) event.preventDefault();
   };
   function clear() {
     options.releaseHeldTouchFire(); options.cancelTouchFunction(); keyboard.clear();
+    const context = options.runtime.getInputContext();
+    const bridge = keyboardInputBridge(context);
+    if (bridge && bridge.submit({protocol:context.protocol,game:context.game,epoch:context.epoch,command:'keyboard-clear'})) return;
     if (!options.runtime.getSnapshot().launched || !options.frame.contentWindow) return;
     options.runtime.postInput('keyboard-clear', {});
   }
@@ -75,10 +94,13 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
       stopFocusRelay(); identity = nextIdentity;
     }
     const state = options.runtime.getSnapshot();
+    const allowed = nextIdentity.launched && !nextIdentity.spectator;
+    if (inputAllowed && !allowed) clear();
+    inputAllowed = allowed;
     if (state.firstFrame || !state.ready) stopFocusRelay();
     const next = options.runtime.getMidiEventContext();
     if (sameNativeContext(bound, next)) return;
-    unbind?.(); unbind = null; bound = next;
+    unbind?.(); unbind = null; bound = next; mapping = null;
     if (!next) return;
     const fullscreen: EventListener = raw => {
       if (!sameNativeContext(next, options.runtime.getMidiEventContext())) return;
@@ -91,8 +113,41 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
       }
     };
     const target = next.target as EventTarget;
+    let port: KeyboardMappingPort | null = null;
+    const inputContext = options.runtime.getInputContext();
+    const mappingTarget = inputContext.target;
+    if (mappingTarget && keyboardInputBridge(inputContext)) {
+      const owner = new KeyboardMapping(options.preferences?.getSnapshot,options.th09Local);
+      mapping = owner;
+      let clearing = false;
+      port = {
+        schema:keyboardMappingSchema,protocol:inputContext.protocol,game:next.game,epoch:next.epoch,origin:inputContext.targetOrigin,
+        supports:code=>owner.supports(code),
+        sampleLocal(seat){if(!options.playerOpen()||options.document.visibilityState==='hidden')owner.clear();return owner.sampleLocal(seat,options.runtime.getInputContext());},
+        map(event,down,source,profile) {
+          if (clearing || !sameNativeContext(next,options.runtime.getMidiEventContext()) || !options.playerOpen()) return [];
+          if (source === 'physical' && event.code === 'Enter' && (down && event.altKey && !event.metaKey && !event.ctrlKey || !down && chord)) {
+            if (down) {if (!event.repeat && !chord) {chord = true;options.toggleFullscreen();}}
+            else chord = false;
+            return [];
+          }
+          if (source === 'physical' && down && (event.altKey || event.metaKey)) return null;
+          return owner.map(event,down,source,profile,options.runtime.getInputContext());
+        },
+        clear() {
+          clearing = true;
+          try {options.cancelTouchFunction();options.releaseHeldTouchFire();return owner.clear();}
+          finally {clearing = false;}
+        },
+      };
+      mappingTarget.__eaglerKeyboardMapping = port;
+    }
     target.addEventListener('keydown', fullscreen, true); target.addEventListener('keyup', fullscreen, true);
-    unbind = () => {target.removeEventListener('keydown', fullscreen, true); target.removeEventListener('keyup', fullscreen, true);};
+    unbind = () => {
+      target.removeEventListener('keydown', fullscreen, true);target.removeEventListener('keyup', fullscreen, true);
+      try {if (port && mappingTarget?.__eaglerKeyboardMapping === port) delete mappingTarget.__eaglerKeyboardMapping;}
+      catch { /* The retired document may have navigated. */ }
+    };
   }
   const visibility = () => {if (options.document.visibilityState === 'hidden') clear();};
   const fullscreenChange = () => {if (!options.isPlayerFullscreen()) chord = false;};
@@ -105,12 +160,14 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
   options.document.addEventListener('webkitfullscreenchange', fullscreenChange);
   options.frame.addEventListener('load', rebind);
   const unsubscribe = options.runtime.subscribe(rebind);
+  const unsubscribePreferences = options.preferences?.subscribe(clear);
+  const unsubscribeLocal = options.th09Local?.subscribe(clear);
   rebind();
   return {
     clear, rebind, startFocusRelay, stopFocusRelay, focusBrowsingContext,
     dispose() {
       if (disposed) return;
-      clear(); disposed = true; stopFocusRelay(); unsubscribe(); unbind?.(); unbind = null; bound = null;
+      clear(); disposed = true; stopFocusRelay(); unsubscribe(); unsubscribePreferences?.();unsubscribeLocal?.(); unbind?.(); unbind = null; bound = null;
       options.window.removeEventListener('keydown', forward, true);
       options.window.removeEventListener('keyup', forward, true);
       options.window.removeEventListener('blur', clear);

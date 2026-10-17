@@ -548,9 +548,13 @@ neutral lobby, signaling, route-barrier and emergency WebSocket relay service. L
 readiness is bound to a monotonically increasing settings version; match-affecting
 changes invalidate prior ready acknowledgements, offline grace seats never satisfy
 start conditions, and `start` is idempotent while a match is starting/running.
-Spectator admission is snapshotted at match start: the post-start grace period is
-only for those already admitted spectators to establish their receive stream, not
-for admitting new mid-game spectators.
+Start-only spectator admission is snapshotted at match start: its post-start
+grace period is only for already admitted spectators to establish a receive
+stream. TH09 timeline rooms additionally authorize late spectators against the
+current run and replay the current match's complete prefix. Existing viewers
+retain only their own earlier matches locally. The [Spectator protocol](SPECTATOR_PROTOCOL.md)
+owns exact wire layouts, local playback, final-tail retirement and cross-title
+rollout gates; the TH09 exception is not active coverage for every product.
 Lobby client IDs are public display/routing identities, never credentials.
 Every lobby connection supplies a distinct cryptographically random private browser `member` identity;
 reconnect replacement requires the existing client ID's member to match. Match
@@ -566,10 +570,13 @@ budgets plus the shared outgoing queue budget, including retained delayed sends.
 The WebSocket decoder limits reassembled messages to 64 KiB; gameplay accepts
 16 KiB and lobby/signaling accepts 32 KiB before copying or parsing. Signaling
 forwards only bounded SDP/ICE fields. A slow recipient is terminated instead of
-accumulating an unlimited send queue. Spectator admission retains at most 8192
-frames and 1 MiB of owned payload bytes, releases history when no admitted viewer
-is pending, and stops the optional stream on overflow without dropping history
-silently or closing player transports.
+accumulating an unlimited send queue. Start-only spectator admission retains at
+most 8192 payloads and 1 MiB of owned bytes and releases history when no admitted
+viewer is pending. TH09 timeline retains at most 32401 payloads / 2 MiB for the
+current match, replacing it on each initializer. Overflow stops the optional
+stream without silently dropping its prefix or closing player transports.
+These server limits do not bound TH09's already-consumed local viewer archive,
+which currently grows until the viewer leaves.
 Binary send/history queues own exact-sized copies rather than retaining views
 into larger inbound buffers. Forwarding and fault-injection counters belong to
 their run and are released with it instead of accumulating global room/run keys.

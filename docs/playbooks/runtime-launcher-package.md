@@ -65,6 +65,48 @@ current.
 
 Keep ordinary and MP storage roots separate. Keep DATA separate from Replay/save. `runtimeReady=true` means required Runtime dependencies are prepared; it is not a game-function, browser or device PASS. Record local provenance so an old package cannot silently pose as a new one.
 
+### Installed launches and background updates
+
+Complete installed DATA and complete verified Runtime programs launch locally
+before any online update check. `prepareRuntimeLaunch` first asks the cache
+authority for `localOnly` preparation. Main's `runtime-program-sw.js` is scoped
+to `runtime/`; Launcher documents remain outside its control. Isolated App
+Shell deployments expose the same Runtime cache protocol. Both use the canonical
+whole-generation cache and its byte/hash verification. Neither worker owns
+mutable saves, imported DATA, shared fonts or OGG.
+
+After the native launch acknowledgement, compare Runtime Manifest and Package
+revision and download changed generations in the background. Announce an update
+only after the complete successor has been downloaded, verified and committed.
+An identical manifest, failed request, incomplete download or failed verification
+produces no update notice. Keep the running document and DATA generation pinned;
+the downloaded successor is used on a subsequent launch. A completed update
+opens the existing decision dialog with **Restart now** and **Use on next
+launch**. Focus defaults to the latter; Escape makes the same choice. Restart
+uses native save/close and the existing launch owner, never a page reload. Save
+failure retains Retry/Leave/Stay handling. Program and DATA completion share one
+prompt for the exact product/version/Runtime epoch; closed or replaced games
+cannot be restarted by a stale notification. Existing dialogs and operations
+finish before the update prompt appears. Live room matches defer it until the
+room is back in its lobby; lobby restart reuses the room launch owner.
+Canonical Package Store
+serialization checks the expected generation inside the mutation queue so a late
+background update cannot overwrite a newer import from another tab.
+
+Missing/corrupt local programs retain whole-generation recovery and verified
+HTTP fallback; first installation still needs its required resources. The
+runtime-only worker does not provide an offline Launcher document reload.
+Validate with `tests/test-runtime-offline-first-browser.mjs`,
+`tests/test-runtime-launch.mjs`, `tests/runtime-cache-cases.mjs` and the
+preparation/runtime service tests. `tests/test-game-update-dialog-browser.mjs`
+checks the real shared dialog in Chromium, Firefox and desktop WebKit. The
+offline-first browser fixture accepts `--engine=chromium|firefox|webkit`; it uses
+an independent literal-response worker probe before permitting origin connection
+drops for WebKit's known offline-emulation issue
+([upstream #42775](https://github.com/microsoft/playwright/issues/42775)).
+Synthetic browser fixtures establish cache
+and network behavior; native title and device acceptance remain separate.
+
 Source diagnostics such as Presentation Lab use an isolated build/package
 profile. Instrumented WASM, `audit_*` exports, diagnostic workbench files and
 evidence reports are not Runtime Release or Package Store inputs and never add
@@ -172,6 +214,54 @@ retain their existing input owners.
 
 ## Verification
 
+### Shared local Replay workspace
+
+The non-versus workspace uses the title's native decoder for name, date,
+loadout, difficulty, score units, slowdown, special modes and recorded stage
+starts. Selecting a file expands its real stage/score list. Only selecting an
+available native stage starts playback. TH09 keeps its matchup/round flow.
+Keep values in aligned columns without repeated NAME/PLAYER labels. Check the
+actual desktop and portrait pages: a file-row `small` rule previously overrode
+the summary layout and concatenated otherwise separate React spans.
+
+The shared browser controller owns pacing, pause and seek command ordering.
+Native title adapters own input consumption, stage bootstrap and EOF. Backward
+seeks reopen the selected native stage in the same viewer/IDBFS owner. Wait for
+native menu readiness, rather than a startup loading picture's first-frame
+event, before retiring the original loop. A paused seek to zero must finish
+native initialization before clearing its seek target. MP stages may have a
+nonzero native input offset; keep transport time relative to that start.
+
+Seek reconstruction uses bounded message tasks instead of waiting for another
+display refresh after every batch. Keep each native fixed tick and authored
+Draw, including offscreen rendering and capture requests. TH06/TH07 optionally
+coalesce only backend window swaps through `eagler_replay_present`; do not skip
+their native `GameWindow::Present`, which also owns capture and game state.
+Present the completed target before clearing the seek status, preserving the
+user's pause/rate. Hidden viewers yield and closing cancels queued work.
+Measure the actual browser/device: software GPU rendering can dominate even
+when JavaScript/native execution no longer waits for RAF.
+
+TH06/TH07 external native file reads require the full absolute preference path.
+Their workspace adapter must also stop at the native recorded-input boundary:
+a partial run can exhaust its recording while gameplay still remains active.
+Waiting only for a return to the menu can keep advancing beyond saved input.
+TH08 ordinary caches Replay resources at boot, so direct playback must replace
+the cached bytes from the current FS file after import/overwrite. TH08 ordinary
+does not declare a total input length: display an unknown duration and disable
+arbitrary position seeking rather than inventing a duration. Stage selection,
+pause, rate and restart remain available. Preserve stage branches and Spell
+Practice metadata through the native decoder, including CP932 spell names.
+
+The common bridge source is `eagler-common/browser/local-replay*.mjs`. Inline
+carriers are generated by `tools/sync-local-replay.mjs`; `--check` rejects stale
+blocks. Use zero-filled byte buffers for C-string terminators because HTML
+optimization may materialize a string's NUL escape as an invalid HTML byte.
+
+See `docs/history-session/2026-10-17-local-replay-workspace.md` for per-title
+browser evidence and its corpus/coverage limits.
+These control/storage checks do not establish retail playback determinism.
+
 1. Verify catalog, descriptor, installed generation and required-file list independently.
 2. Exercise local import, remote fetch failure, update, reload and rollback/old-generation behavior.
 3. Check root 308/nested 200, app.js, WASM MIME, managed DATA hook and package generation.
@@ -183,3 +273,7 @@ retain their existing input owners.
 Passing the four-game workspace gate does not by itself claim public deployment,
 real-device acceptance, long-duration mobile stability or visual correctness.
 Those remain browser/device/deployment evidence lanes.
+
+## Windows 本地发布检查的边界
+
+`lib/static-deployment.mjs` 的原子发布依赖 POSIX 目录符号链接替换。Windows 在创建目录或修改 current 之前返回 `EAGLER_ATOMIC_DEPLOYMENT_UNSUPPORTED_PLATFORM`，不把它降级为逐文件复制。对应 Windows 门禁验证提前拒绝及无写入，POSIX 门禁仍验证真正的原子替换；Windows 的 PASS 不能表示验证过 Linux 发布。`refresh-deployment-app-shell.mjs` 的预备目录刷新另有有界共享锁重试、整目录候选验证和失败回滚，它不解除 live publication 的平台限制。

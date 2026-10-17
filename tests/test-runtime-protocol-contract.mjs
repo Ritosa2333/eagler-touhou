@@ -16,8 +16,8 @@ import { workspacePath } from "../lib/workspace-layout.mjs";
 const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => [game,
   product.runtimeFileLayout === "directory"
     ? game === "th09"
-      ? [workspacePath(game, "th09_web", "sdl-runtime", "managed.mjs")]
-      : [
+      ? [workspacePath(game, `${game}_web`, "sdl-runtime", "managed.mjs")]
+      : game === "th15" ? [workspacePath(game, `${game}_web`, "sdl-runtime", "shell.mjs")] : [
         workspacePath(game, `${game}_web`, "sdl-runtime", "shell.mjs"),
         workspacePath(game, `${game}_web`, "sdl-runtime", "eagler-host.mjs"),
       ]
@@ -32,9 +32,9 @@ for (const [game, paths] of Object.entries(shellSources)) {
     `${game}: Runtime shell must reject Host commands from another navigation epoch`);
   const directoryRuntime = PRODUCT_GAMES[game].runtimeFileLayout === "directory";
   if (directoryRuntime) {
-    assert.ok(source.includes(`Math.max(${TOUCH_SENSITIVITY_MIN},Math.min(${TOUCH_SENSITIVITY_MAX},sensitivity))`),
+    assert.ok(source.includes(`Math.max(${TOUCH_SENSITIVITY_MIN},Math.min(${TOUCH_SENSITIVITY_MAX},`),
       `${game}: directory Runtime touch normalization must share the ${TOUCH_SENSITIVITY_MIN}-${TOUCH_SENSITIVITY_MAX}% contract`);
-    assert.ok(source.includes(`sensitivity>=${TOUCH_SENSITIVITY_MIN}&&sensitivity<=${TOUCH_SENSITIVITY_MAX}`),
+    assert.ok(new RegExp(`(?:sensitivity|touchSensitivity)>=${TOUCH_SENSITIVITY_MIN}&&[\\w.]+<=${TOUCH_SENSITIVITY_MAX}`).test(source),
       `${game}: live touch sensitivity must reject values outside the shared contract`);
   } else {
     assert.ok(source.includes(`touchSensitivity < ${TOUCH_SENSITIVITY_MIN}`) && source.includes(`touchSensitivity > ${TOUCH_SENSITIVITY_MAX}`),

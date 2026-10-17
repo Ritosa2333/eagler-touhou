@@ -610,12 +610,13 @@ orchestration must not branch on a title number:
   the match entry that asks the Launcher to open the shared room dialog on top of
   the running game (TH09's "妖怪対妖怪"). The dialog creates or joins the same
   room the Launcher card uses, so both entry points stay one room and one lobby.
-- `multiplayer.spectator` — whether the room offers the spectator seat. TH09
-  currently declares `false`: its two-player ordered-lockstep transport has no
-  spectator stream, so the Runtime rejects a spectator session instead of
-  appearing to join one. This is a recorded coverage gap, not a general opt-out;
-  the profile-required spectator obligation applies again as soon as a title
-  declares the seat.
+- `multiplayer.spectator` — whether the room offers the spectator role. TH09
+  declares `true` and publishes confirmed match history. Other declared MP
+  products retain start-only admission until their complete timeline path is
+  implemented and verified. A spectator declaration alone does not establish
+  late join or rewind support. Follow the shared [Spectator protocol](SPECTATOR_PROTOCOL.md)
+  for identity, initialization, confirmed history, local controls, bounded
+  failure and final-tail lifecycle, and its per-title rollout gates.
 
 Those three lists are the product authority. Do **not** add parallel
 `difficultyMax`, `characterMax` or `loadoutCount` declarations: difficulty and

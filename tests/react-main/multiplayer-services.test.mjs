@@ -546,7 +546,7 @@ test('TH09 spectator invite joins without seating and waits for authoritative sp
   const f = roomFixture();
   const invite = owner.encodeRoomInvite({g: 'th09mp', r: '1234', f: true, a: 'join', s: true});
   assert.equal(owner.decodeRoomInvite(invite).s, true);
-  assert.equal(owner.decodeRoomInvite(owner.encodeRoomInvite({g: 'th08mp', r: '1234', a: 'join', s: true})).s, undefined);
+  assert.equal(owner.decodeRoomInvite(owner.encodeRoomInvite({g: 'th08mp', r: '1234', a: 'join', s: true})).s, true);
   f.service.restoreInvite('https://launcher.invalid/?j=' + invite, 'th09mp');
   await flush();
   const socket = f.sockets[0];
@@ -610,6 +610,16 @@ test('TH09 directory admits full and starting rooms before spectator history is 
       capacity:2,players:2,ready:0,difficulty:1,joinable:false,spectatable:false,
       seats:[{initial:'A',online:true},{initial:'B',online:true}]}),true,phase);
   }
+});
+
+for(const product of ['th06mp','th07mp','th08mp','th10mp','th11mp','th15mp'])test(`Directory observer intent never auto-reserves a player seat: ${product}`,async()=>{
+  const f=roomFixture();
+  assert.equal(f.service.restoreInvite('https://launcher.invalid/?j='+owner.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true}),product),true);
+  await flush();const socket=f.sockets.at(-1);socket.open();
+  socket.message({type:'state',room:roomState('other_host',{seats:[{clientId:'other_host',name:'A',loadout:0,ready:true},{clientId:'other_guest',name:'B',loadout:1,ready:true}]})});
+  await flush();assert.equal(socket.sent.some(m=>m.type==='take-seat'),false);
+  assert.equal(socket.sent.some(m=>m.type==='spectate'),true);
+  assert.equal(f.service.getSnapshot().spectatorRequested,true);f.service.dispose();
 });
 
 test('public nickname commits only an authoritative approval and ignores stale connection replies',async()=>{

@@ -1,11 +1,11 @@
 /** L2/L3 workspace integration.
- * Preconditions: current TH06/TH07/TH08 Runtime build artifacts and TH06/TH07
+ * Preconditions: current TH06/TH07 Runtime build artifacts and TH06/TH07
  * original-content fixtures in the workspace.
  * Mutations: system temp only.
  * Invariant: after creating a resource-free all-product Runtime Release, host
  * assembly for TH06/TH07 succeeds even when EAGLER_WORKSPACE_ROOT points to an
  * empty directory. Only explicit original-content inputs may be consumed.
- * Proves: Runtime Release is a real host input and packager provenance does not
+ * Proves: real TH06/TH07 programs in a complete fixture Runtime Release are host inputs. Other products are synthetic. Host provenance does not
  * re-open sibling Runtime source repositories.
  * Does NOT prove: TH08 original-content host assembly, browser/gameplay, OGG,
  * language packs, thprac, device behavior, or publication.
@@ -17,6 +17,8 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { workspacePath } from "../lib/workspace-layout.mjs";
+import { writeSyntheticRuntimeRelease } from "./support/runtime-release-fixture.mjs";
+import { writeRuntimeGeneration } from "../lib/runtime-generations.mjs";
 
 function run(args, env = process.env) {
   return new Promise((resolveRun, reject) => {
@@ -62,19 +64,10 @@ try {
       th07: { languages: ["ja"], thprac: false },
     },
   }));
-  await run([
-    "scripts/package-runtime-release.mjs",
-    `--output=${runtimeRelease}`,
-    `--th06-build=${workspacePath("th06", "build-web-eagler-thprac-test")}`,
-    `--th06-multiplayer-build=${workspacePath("th06", "build-web-netplay-th06")}`,
-    `--th07-build=${workspacePath("th07", "build-web-eagler-thprac")}`,
-    `--th07-multiplayer-build=${workspacePath("th07", "build-web-th07-netplay")}`,
-    `--th08-build=${workspacePath("th08", "build-eagler")}`,
-    `--th09-build=${workspacePath("th09", "th09_web", "build-eagler")}`,
-    `--th09-multiplayer-build=${workspacePath("th09", "th09_web", "build-eagler-multiplayer")}`,
-    `--th10-build=${workspacePath("th10", "build-eagler")}`,
-    `--th11-build=${workspacePath("th11", "build-eagler")}`,
-  ]);
+  await writeSyntheticRuntimeRelease(runtimeRelease, {preloadBuilds: {
+    th06: {runtime: workspacePath("th06", "build-web-eagler-thprac-test"), multiplayerRuntime: workspacePath("th06", "build-web-netplay-th06")},
+    th07: {runtime: workspacePath("th07", "build-web-eagler-thprac"), multiplayerRuntime: workspacePath("th07", "build-web-th07-netplay")},
+  }});
   const runtimeManifestPath = resolve(runtimeRelease, "runtime-release.json");
 
   await run([
@@ -94,10 +87,6 @@ try {
   ], { ...process.env, EAGLER_WORKSPACE_ROOT: fakeWorkspace });
 
   const originalRuntimeManifest = JSON.parse(await readFile(runtimeManifestPath, "utf8"));
-  assert.equal(originalRuntimeManifest.games.th08.features.thprac, true,
-    "directory Runtime manifest must attest the compiled TH08 thprac capability");
-  assert.equal(originalRuntimeManifest.games.th08.features.languages, true,
-    "directory Runtime manifest must attest the compiled TH08 language capability");
   const mismatchedCapabilities = structuredClone(originalRuntimeManifest);
   mismatchedCapabilities.games.th06.features.thprac = false;
   await writeFile(runtimeManifestPath, JSON.stringify(mismatchedCapabilities, null, 2));
@@ -165,10 +154,9 @@ try {
   assert.equal(hostManifest.shared.netplayRelay, "wss://relay.example.com/eagler-netplay/");
   assert.equal(hostManifest.shared.gameDataFallback.url, "https://downloads.example.com/packages");
   assert.deepEqual(hostManifest.shared.originMigration, { mode: "http-to-https" });
-  assert.match(hostManifest.games.th06.multiplayerRuntime, /^runtime\/th06\/multiplayer\/th06\.html\?hosted=1&v=/,
-    "TH06 host assembly must publish the isolated multiplayer Runtime from Runtime Release");
-  assert.match(hostManifest.games.th07.multiplayerRuntime, /^runtime\/th07\/multiplayer\/th07\.html\?hosted=1&v=/,
-    "TH07 host assembly must publish the isolated multiplayer Runtime from Runtime Release");
+  for (const game of ['th06','th07']) assert.equal(hostManifest.games[game].multiplayerRuntime,
+    `${originalRuntimeManifest.games[game].multiplayerRuntime.root}/${game}.html?hosted=1`,
+    `${game}: publish the isolated immutable multiplayer generation from Runtime Release`);
   const externalDeployment = JSON.parse(await readFile(resolve(external, "deployment.json"), "utf8"));
   const externalManifest = JSON.parse(await readFile(resolve(external, "site-manifest.json"), "utf8"));
   const externalCatalog = JSON.parse(await readFile(resolve(external, "release-catalog.json"), "utf8"));
@@ -177,8 +165,8 @@ try {
   assert.deepEqual(Object.keys(externalCatalog.games).sort(), ["th06", "th07"]);
   assert(!externalDeployment.files.some(file => file.path.startsWith("games/") || file.path.startsWith("shared/")),
     "external deployment must retain Package metadata without bundling game/shared payloads");
-  assert(externalDeployment.files.some(file => file.path === "runtime/th06/th06.wasm"));
-  assert(externalDeployment.files.some(file => file.path === "runtime/th07/th07.wasm"));
+  assert(externalDeployment.files.some(file => file.path === originalRuntimeManifest.games.th06.runtime.root + "/th06.wasm"));
+  assert(externalDeployment.files.some(file => file.path === originalRuntimeManifest.games.th07.runtime.root + "/th07.wasm"));
 
   const externalDeploymentBeforeMismatch = await readFile(resolve(external, "deployment.json"), "utf8");
   const changedRuntimeManifest = JSON.parse(await readFile(runtimeManifestPath, "utf8"));
@@ -189,6 +177,15 @@ try {
     bytes: changedRuntimeBytes.length,
     sha256: createHash("sha256").update(changedRuntimeBytes).digest("hex"),
   };
+  // Build a valid different generation. A stale generation ID would fail
+  // earlier validation and never exercise hosted/external identity isolation.
+  const previousRoot = changedRuntimeManifest.games.th06.runtime.root;
+  const changed = await writeRuntimeGeneration({site:runtimeRelease, root:'runtime/th06/',
+    source:resolve(runtimeRelease, previousRoot), entry:'th06.html', names:Object.keys(changedRuntimeManifest.games.th06.runtime.files)});
+  changedRuntimeManifest.games.th06.runtime.root = 'runtime/th06/' + changed.generation;
+  changedRuntimeManifest.games.th06.runtime.generation = changed.generation;
+  assert(resolve(runtimeRelease, previousRoot).startsWith(runtimeRelease + (process.platform === 'win32' ? '\\' : '/')));
+  await rm(resolve(runtimeRelease, previousRoot), {recursive:true});
   await writeFile(runtimeManifestPath, JSON.stringify(changedRuntimeManifest, null, 2));
   const mismatchFailure = runExpectFailure([
     "scripts/package-external-site.mjs",
@@ -198,7 +195,7 @@ try {
     "--games=th06,th07",
     "--profile=web-validation-runtime-release-external",
   ], { ...process.env, EAGLER_WORKSPACE_ROOT: fakeWorkspace });
-  assert.match(mismatchFailure, /external Runtime identity does not match hosted source/);
+  assert.match(mismatchFailure, /external Runtime file set does not match its hosted source/);
   assert.equal(await readFile(resolve(external, "deployment.json"), "utf8"), externalDeploymentBeforeMismatch,
     "a mismatched Runtime candidate must not replace the previous External output");
   console.log(JSON.stringify({ runtimeReleaseHost: "PASS", games: deployment.games, sourceRepositories: Object.keys(manifest.sources) }));

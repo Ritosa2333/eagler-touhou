@@ -103,15 +103,18 @@ export interface RuntimePrepareRequest {
   entry: string;
   catalog?: RuntimeManifest;
   exclude: string[];
+  localOnly?: boolean;
 }
 export function validateRuntimePrepareRequest(value: unknown): RuntimePrepareRequest {
   if (!record(value) || value.type !== RUNTIME_PREPARE || !isRuntimePath(value.entry) ||
       !value.entry.startsWith("runtime/") || !value.entry.endsWith(".html")) throw new Error("Invalid Runtime preparation entry");
   const exclude = value.exclude ?? [];
+  if (value.localOnly !== undefined && typeof value.localOnly !== 'boolean') throw new Error('Invalid Runtime local-only mode');
   if (!Array.isArray(exclude) || exclude.length > RUNTIME_CACHE_MAX_PREVIOUS + 1 ||
       exclude.some(id => typeof id !== "string" || !SHA256.test(id)) || new Set(exclude).size !== exclude.length) {
     throw new Error("Invalid Runtime preparation exclusions");
   }
   return { type: RUNTIME_PREPARE, entry: value.entry, exclude: [...exclude] as string[],
+    ...(value.localOnly === undefined ? {} : {localOnly: value.localOnly}),
     ...(value.catalog === undefined ? {} : { catalog: validateRuntimeManifest(value.catalog) }) };
 }

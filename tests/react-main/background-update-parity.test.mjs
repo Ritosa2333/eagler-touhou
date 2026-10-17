@@ -1,4 +1,6 @@
-/** Exact pinned-main differential for update/background feedback ownership.
+/** Pinned-main differential for background failure feedback ownership.
+ * Foreground prompting is deliberately superseded by the offline-first tests:
+ * complete local games start before downloads and only successful updates notify.
  * The original app functions and copy are read with git show, not copied into
  * new expected behavior. Actual React preparation services run against explicit
  * Package Store, network, and live-session ports. This is not browser, engine,
@@ -158,7 +160,7 @@ for (const locale of ['zh-CN', 'en']) {
         translate: actualTranslate(locale), runtime: {getSnapshot: () => snapshot,
           extendOggResources: async () => assert.fail('Failed OGG cannot reach Runtime FS')},
         onBackgroundError: actual.onBackgroundError, onWarning: actual.toast},
-      prepared: {music: 'ogg-stream', plan: {game: 'th06', generation}}, epoch: 1, deferredUpdate: null});
+      prepared: {music: 'ogg-stream', plan: {game: 'th06', generation, localOgg: {fileIds: ['track-1', 'track-2']}}}, epoch: 1, deferredUpdate: null});
       assert.deepEqual(actual.diagnostics, expected.diagnostics, retirement);
       assert.deepEqual(actual.visible, expected.visible, retirement);
       assert.equal(actual.visible.length, retirement === 'live' ? 1 : 0);
@@ -167,7 +169,7 @@ for (const locale of ['zh-CN', 'en']) {
     }
   });
 
-  test(`pinned main: foreground failure/cancel keeps its visible warning; declining stays quiet (${locale})`, async () => {
+  test(`offline-first supersedes pinned main's foreground update prompt (${locale})`, async () => {
     for (const choice of ['confirm', 'cancel']) for (const cancelled of [false, true]) {
       const error = cancelled ? new DOMException('fixture cancelled update', 'AbortError') : new Error('fixture foreground update failed');
       const generation = oldGeneration(), catalog = publication('new'), expected = feedback(), actual = feedback();
@@ -186,13 +188,16 @@ for (const locale of ['zh-CN', 'en']) {
         decideUpdate: async options => {actual.decisions.push(options); return choice;}, onWarning: actual.toast,
         onUpdateActivity: value => actual.activity.push(value), onProgress: value => actual.status.push(value.message)});
       assert.equal(originalResult, 'none');
-      assert.deepEqual(actual.decisions, expected.decisions, 'All decision copy comes from pinned main');
-      assert.deepEqual(actual.visible, expected.visible);
-      assert.deepEqual(actual.status, expected.status);
-      assert.deepEqual(actual.activity, expected.activity);
-      assert.equal(actualInstalls, originalInstalls);
+      assert.deepEqual(actual.decisions, [], 'No prompt before a complete download');
+      assert.deepEqual(actual.visible, []);
+      assert.deepEqual(actual.status, []);
+      assert.deepEqual(actual.activity, []);
+      assert.equal(actualInstalls, 0);
       assert.equal(acquired.generation, generation);
-      assert.equal(acquired.deferredUpdate, null);
+      assert.equal(acquired.deferredUpdate.generation, generation);
+      await assert.rejects(fixture.acquisition.startBackgroundUpdate(acquired.deferredUpdate,
+        {productId:'th06',music:'none',language:'ja',onWarning:actual.toast}), error);
+      assert.equal(actualInstalls,1);assert.deepEqual(actual.visible,[]);
     }
   });
 }

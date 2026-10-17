@@ -125,6 +125,7 @@ export async function installPublishedPackage(game, {
   addFileIds = [],
   selectedComponentEntries = {},
   preserveLocalSource = true,
+  expectedGenerationId = null,
   fetchImpl = globalThis.fetch,
   onProgress = null,
   signal = null,
@@ -138,12 +139,12 @@ export async function installPublishedPackage(game, {
     // Resolve preservation policy inside the installer's per-game mutation
     // queue. Otherwise a queued import/update can advance current after these
     // decisions were calculated and then be silently dropped.
-    desiredFileIds: currentResult => desiredFilesForPublishedPackage(published.descriptor, {
-      current: currentResult.generation,
-      addComponents,
-      addFileIds,
-      selectedComponentEntries,
-    }),
+    desiredFileIds: currentResult => {
+      if (expectedGenerationId !== null && currentResult.generation?.id !== expectedGenerationId) throw new Error('Package changed before background update');
+      return desiredFilesForPublishedPackage(published.descriptor, {
+        current: currentResult.generation, addComponents, addFileIds, selectedComponentEntries,
+      });
+    },
     source: currentResult => preserveLocalSource && currentResult.installation?.source === "local" ? "local" : "remote",
     fetchImpl,
     onProgress,

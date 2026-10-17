@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
+import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import { RoomView } from '../components/room';
 import type { BrowserSession } from './browser-session';
 import { useSurfaceNavigation } from '../navigation/surface-navigation';
@@ -73,7 +74,7 @@ export function RoomComposition({
         th09NetworkOverlayOpen: state.th09NetworkOverlayOpen,
         launchStage: state.roomLaunchStage === 'runtime' ? 'preparing' : state.roomLaunchStage,
         touchEnabled: settings?.options.touchEnabled === true,
-        touchMovementMode: settings?.options.touchMovementMode ?? 'touch',
+        touchMovementMode: settings?.options.touchMovementMode ?? DEFAULT_GAME_OPTIONS.touchMovementMode,
       }}
       assetUrl={(path) => new URL(path, session.baseUrl).href}
       onLeave={session.leaveRoom}

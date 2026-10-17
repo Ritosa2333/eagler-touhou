@@ -129,7 +129,7 @@ function runtimeFixture(order = [], overrides = {}) {
     fetchImpl: async () => {throw new Error('Unexpected Runtime network');},
     onLocalResourceProgress: overrides.onLocalResourceProgress,
     dependencies: {
-      prepareCode: async () => {throw new Error('No immutable code selection without Host capability');},
+      prepareCode: async entry => ({url:new URL(entry,baseUrl).href,generation:'a'.repeat(64),cached:true}),
       readData: async value => {dataReads.push(value); return api.readManagedRuntimeData(value, {readObject: async () => ({data: bytes.buffer})});},
       readResource: overrides.readResource ?? (async (value, id) => api.readManagedRuntimeResource(value, id, {readObject: async () => ({data: bytes.buffer})})),
       retainGeneration: async (game, id) => {retained.push({game, id});}, releaseGeneration: async () => {},
@@ -244,27 +244,24 @@ test('main 5971: resolved Runtime plan hook precedes native navigation and disti
   }
 });
 
-test('main 5682: optional update cancel keeps current, while whole-launch abort rejects', async () => {
-  for (const wholeLaunch of [false, true]) {
-    const optional = new AbortController(), launch = new AbortController(), warnings = [];
-    const f = acquisitionFixture({catalogValue: catalog('newer'), dependencies: {installPublished: async (_game, options) => {
-      (wholeLaunch ? launch : optional).abort(); assert.equal(options.signal.aborted, true);
-      throw new DOMException('Cancelled', 'AbortError');
-    }}});
-    const pending = f.acquisition.acquire({productId: 'th06', music: 'none', language: 'ja', signal: launch.signal,
-      updateSignal: optional.signal, decideUpdate: async () => 'confirm', onWarning: value => warnings.push(value)});
-    if (wholeLaunch) {await assert.rejects(pending, {name: 'AbortError'}); assert.deepEqual(warnings, []);}
-    else {assert.equal((await pending).generation, f.current); assert.deepEqual(warnings, [t('package.updateCancelled')]);}
-  }
+test('offline-first: cached acquisition never waits for an update decision or download', async () => {
+  const f=acquisitionFixture({catalogValue:catalog('newer'),dependencies:{installPublished:async()=>assert.fail('No foreground update')}});
+  const request={productId:'th06',music:'none',language:'ja',decideUpdate:async()=>assert.fail('No pre-download prompt')};
+  const result=await f.acquisition.acquire(request);
+  assert.equal(result.generation,f.current);assert.equal(result.deferredUpdate.generation,f.current);
+  const controller=new AbortController();controller.abort();
+  await assert.rejects(f.acquisition.acquire({...request,signal:controller.signal}),{name:'AbortError'});
 });
 
-test('main 5720: failed optional update reports original warning and uses current', async () => {
+test('offline-first: failed background download keeps current and never announces an update', async () => {
   const warnings = [], f = acquisitionFixture({catalogValue: catalog('newer'), dependencies: {installPublished: async () => {throw new Error('fixture download failed');}}});
   const result = await f.acquisition.acquire({productId: 'th06', music: 'none', language: 'ja', decideUpdate: async () => 'confirm', onWarning: value => warnings.push(value)});
-  assert.equal(result.generation, f.current); assert.deepEqual(warnings, [t('package.updateFailed', {reason: 'fixture download failed'})]);
+  assert.equal(result.generation, f.current);
+  await assert.rejects(f.acquisition.startBackgroundUpdate(result.deferredUpdate,{productId:'th06',music:'none',language:'ja',onWarning:value=>warnings.push(value)}),/fixture download failed/);
+  assert.deepEqual(warnings, []);
 });
 
-test('main foreground update operation is active only during installation and finishes on success/failure/cancel', async () => {
+test('offline-first: updates start after launch and notify only after download succeeds', async () => {
   for (const mode of ['success', 'failure', 'cancel']) {
     const activity = [], update = new AbortController(); let f;
     f = acquisitionFixture({catalogValue: catalog('newer'), dependencies: {installPublished: async () => {
@@ -273,12 +270,16 @@ test('main foreground update operation is active only during installation and fi
       if (mode === 'cancel') {update.abort(); throw new DOMException('Cancelled', 'AbortError');}
       const next = generation({id: 'updated', revision: 'newer'}); f.setCurrent(next); return {generation: next};
     }}});
-    const r = runtimeFixture();
-    await api.prepareGame(gameInput(f, settingsFixture(), {runtime: r.service, updateSignal: update.signal,
-      decideUpdate: async () => {assert.deepEqual(activity, []); return 'confirm';},
-      onUpdateActivity: active => activity.push(active)}));
-    assert.deepEqual(activity, [true, 'install', false], mode);
-    assert.equal(r.service.getSnapshot().generationId, mode === 'success' ? 'updated' : 'installed-1');
+    const r = runtimeFixture(),warnings=[],ready=[];
+    const prepared=await api.prepareGame(gameInput(f,settingsFixture(),{runtime:r.service,updateSignal:update.signal,
+      decideUpdate:async()=>assert.fail('No prompt before complete download'),
+      onWarning:message=>warnings.push(message),onUpdateReady:epoch=>ready.push(epoch),onUpdateActivity:active=>activity.push(active)}));
+    assert.deepEqual(activity,[]);await r.service.launch();await prepared.startBackground();
+    assert.deepEqual(activity,['install']);
+    assert.equal(r.service.getSnapshot().generationId,'installed-1','Running DATA remains pinned');
+    assert.equal(f.current.id,mode==='success'?'updated':'installed-1');
+    assert.deepEqual(warnings,[]);
+    assert.deepEqual(ready,mode==='success'?[r.service.getSnapshot().epoch]:[]);
   }
 });
 
@@ -334,13 +335,13 @@ test('main 1392/5744: acquisition injects per-game foreground fetch and quiet ba
   const called = [];
   const network = {packageFetch: game => async () => {called.push(`foreground:${game}`); return new Response('');},
     backgroundFetch: async () => {called.push('background'); return new Response('');}};
-  const dependencies = {installPublished: async (_game, options) => {await options.fetchImpl('https://launcher.invalid/package'); return {generation: generation()};}};
+  const dependencies = {installPublished: async (_game, options) => {await options.fetchImpl('https://launcher.invalid/package'); return {generation:generation({revision:options.catalog.games.th06.revision})};}};
   const first = acquisitionFixture({current: null, catalogValue: catalog(), network, dependencies});
   await first.acquisition.acquire({productId: 'th06', music: 'none', language: 'ja'});
   const update = acquisitionFixture({catalogValue: catalog('newer'), network, dependencies});
   await update.acquisition.acquire({productId: 'th06', music: 'none', language: 'ja', decideUpdate: async () => 'confirm'});
   await update.acquisition.startBackgroundUpdate({generation: update.current, installation: {source: 'local'}}, {productId: 'th06', music: 'none', language: 'ja'});
-  assert.deepEqual(called, ['foreground:th06', 'foreground:th06', 'background']);
+  assert.deepEqual(called, ['foreground:th06', 'background']);
 });
 
 test('main 4126 and language-fallback original: native ready precedes optional language; failure uses Japanese for this launch only', async () => {
