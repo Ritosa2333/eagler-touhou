@@ -4,14 +4,20 @@
 #include <utility>
 namespace th15::sdl {
 #include "FontLocalization.inc"
-bool FontDevice::load(u32 slot){if(slot>=loaded.size()){error="Font slot outside range";return false;}if(loaded[slot])return true;const std::string name=slot<13?"font"+std::to_string(slot)+".bin":slot==13?"cp932.bin":"blend4444.bin",path="/fonts/"+name;size_t size=0;auto* bytes=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));const bool valid=bytes&&size<=UINT32_MAX&&raster.glyphs.load(slot,bytes,u32(size));SDL_free(bytes);if(!valid){error="Invalid measured original font: "+path;return false;}loaded[slot]=true;return true;}
 bool FontDevice::initialize(){
+ if(!fontsReady){
+  size_t size=0;auto* bytes=static_cast<u8*>(SDL_LoadFile("/fonts/cp932.bin",&size));
+  const bool valid=bytes&&runtimeFonts.initialize(bytes,size);SDL_free(bytes);
+  if(!valid){error="Shared Gothic font or CP932 mapping unavailable";return false;}
+  raster.glyphs.renderer(&runtimeFonts,[](void* owner,TextureImage& image,i32 x,i32 y,u32 font,u32 color,const std::string& text){return static_cast<eagler::text::RuntimeFontRaster*>(owner)->draw(image,x,y,font,color,text);});
+  fontsReady=true;
+ }
 #if defined(TH_ENABLE_THCRAP)
  if(!initialize_localized())return false;
 #endif
- return load(13)&&load(14);
+ return true;
 }
-bool FontDevice::preload(i32 style){return initialize()&&load(TextRaster::font_index(style,fallback));}
+bool FontDevice::preload(i32){return initialize();}
 i32 FontDevice::extent(const std::string& value,i32 font){
 #if defined(TH_ENABLE_THCRAP)
  if(font>=0&&font<9&&value.size()<=4096&&initialize()&&localized[font]&&valid_utf8(value)){

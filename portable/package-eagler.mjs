@@ -18,7 +18,7 @@ const wasm=readFileSync(resolve(buildRoot,'th15.wasm'));
 if(hash(wasm)!==build.sha256)throw Error('Wasm build identity mismatch');
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
  if(/^(?:application_|th15_probe|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);
-const fontNames=[...Array.from({length:8},(_,i)=>`font${i}.bin`),'cp932.bin','blend4444.bin'];
+const fontNames = ['cp932.bin'];
 const names=['th15.html','manifest.json','startup-branding.mjs','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','th15.mjs','th15.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}

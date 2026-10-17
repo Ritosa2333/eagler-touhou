@@ -237,3 +237,5 @@ EMSCRIPTEN_KEEPALIVE const int* th15_probe_hud_score(){using namespace th15::sdl
 EMSCRIPTEN_KEEPALIVE const int* th15_probe_pause_state(){using namespace th15::sdl;static std::array<int,7> value{};value.fill(-1);if(app&&app->pause){const auto& p=app->pause->state;value={int(p.screen),p.phase,p.menu.cursor,p.menu.count,p.names.cursor,p.name_length,p.age.current};}return value.data();}
 #endif
 }
+
+#include "LocalReplay.inc"
