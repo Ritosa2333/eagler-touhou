@@ -1,0 +1,128 @@
+#pragma once
+#include "AnmManager.hpp"
+#include "Movement.hpp"
+#include "Projectile.hpp"
+namespace th10 {
+struct BulletEffectEnvironment;
+struct BulletFrameEnvironment;
+struct BulletBehaviorEnvironment;
+enum class BulletFeature : u32;
+struct EnemyBulletMotion {
+    Vec3 position,velocity;
+    u8 reserved_018[0xc];
+    float speed;
+    u8 reserved_028[8];
+    float angle;
+    u8 reserved_034[8];
+};
+struct EnemyBullet {
+    u32 flags,cancel_protection;
+    AnmVm animation;
+    EnemyBulletMotion motion;
+    float cancel_size;
+    float hitbox_height;
+    Timer cancel_timer;
+    u32 cancel_timer_flags;
+    Timer secondary_timer;
+    u32 secondary_timer_flags;
+    i32 id;
+    u8 reserved_424[0x10];
+    i32 outside_delay;
+    i32 cancel_script;
+    u32 active_features,spawn_flags;
+    u16 reserved_444;
+    u16 state;
+    u32 reserved_448;
+    EnemyBullet* draw_next;
+    u32 reserved_450,reserved_454;
+    i32 turn_sound,command_index,draw_layer;
+    ProjectileCommand commands[18];
+    ProjectileModifier modifiers[9];
+    u16 reserved_7e8;
+    std::int16_t sprite_type,color;
+    u16 reserved_7ee;
+    void initialize() noexcept;
+    void reset(const float* default_rate) noexcept;
+    void release(AnmAllocationEnvironment& environment);
+    i32 update(BulletFrameEnvironment& environment);
+    void update_feature(BulletFeature feature,BulletFrameEnvironment& environment);
+    void process_commands(BulletBehaviorEnvironment& environment);
+    i32 cancel(BulletEffectEnvironment& environment);
+};
+static_assert(sizeof(EnemyBullet)==0x7f0);
+static_assert(offsetof(EnemyBullet,state)==0x446);
+struct EnemyLaser {
+    u32 original_virtual_table;
+    EnemyLaser* previous;
+    EnemyLaser* next;
+    i32 state;
+    Timer timer;
+    u32 timer_flags;
+    Vec3 position,velocity;
+    float angle,length,width,speed,distance_travelled;
+    u8 delete_wait,reserved_051[3];
+    u32 id;
+    Timer acceleration_timer;
+    u32 acceleration_timer_flags;
+    u8 reserved_06c[0x10];
+    i32 acceleration_step;
+    u8 reserved_080[0xc];
+    Timer vector_timer;
+    u32 vector_timer_flags;
+    float acceleration,acceleration_angle;
+    Vec3 vector_acceleration;
+    i32 vector_duration;
+    u8 reserved_0b8[8];
+    Timer angular_timer;
+    u32 angular_timer_flags;
+    float angular_acceleration,angular_speed;
+    u8 reserved_0dc[0xc];
+    i32 angular_duration;
+    u8 reserved_0ec[8];
+    Timer turn_timer;
+    u32 turn_timer_flags;
+    float turn_speed,turn_angle;
+    u8 reserved_110[0xc];
+    i32 turn_duration,turn_count,turn_completed;
+    u8 reserved_128[0x14];
+    float reflection_speed;
+    u8 reserved_140[0x10];
+    i32 reflection_count,reflection_state;
+    u32 reserved_158;
+    Timer feature_delay;
+    u32 feature_delay_flags;
+    u8 reserved_170[0x20];
+    Timer size_timer;
+    u32 size_timer_flags;
+    u8 reserved_1a4[0x54];
+    Timer blend_timer;
+    u32 blend_timer_flags;
+    float blend_start,blend_end;
+    u8 reserved_214[0xc];
+    i32 blend_duration;
+    u8 reserved_224[0x1dc];
+    i32 command_index;
+    u32 active_features,reserved_408;
+    i32 turn_sound;
+    Timer outside_delay;
+    u32 outside_delay_flags;
+    void initialize(const float* default_rate) noexcept;
+    i32 intersects(const Vec3& point,float margin) const noexcept;
+};
+static_assert(sizeof(EnemyLaser)==0x424);
+struct BulletCancellationEnvironment {
+    virtual void cancel_bullet(EnemyBullet& bullet)=0;
+    virtual void cancel_laser(EnemyLaser& laser,bool convert_items)=0;
+};
+void cancel_bullets(EnemyBullet* pool,bool include_protected,BulletCancellationEnvironment& environment);
+void cancel_lasers(EnemyLaser* head,bool convert_items,BulletCancellationEnvironment& environment);
+struct BulletEffectEnvironment {
+    const float* default_rate;
+    AnmManager* manager;
+    AnmFile* effect_file;
+    AnmEnvironment* animations;
+    AnmAllocationEnvironment* allocation;
+    virtual void spawn_faith(const Vec3& position)=0;
+};
+i32 cancel_bullet_circle(EnemyBullet* pool,const Vec3& position,float radius,bool convert_items,bool respect_protection,BulletEffectEnvironment& environment);
+}

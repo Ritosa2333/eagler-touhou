@@ -1,0 +1,177 @@
+#pragma once
+#include "Hud.hpp"
+#include "Backgrounds.hpp"
+#include "ReplayFiles.hpp"
+#include "../game/GameSessionResources.hpp"
+#include "../game/BulletEmitter.hpp"
+#include "../game/LaserManager.hpp"
+#include "../game/EclProgram.hpp"
+#include "../../../portable/input/MotionTrack.hpp"
+#include <map>
+#include <memory>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/InputLanes.hpp"
+#include "../multiplayer/PresentationCache.hpp"
+#include "../multiplayer/RemotePlayerPresentation.hpp"
+#include "../multiplayer/Pilot.hpp"
+#include "../multiplayer/CooperativeRules.hpp"
+#include "../multiplayer/ItemOwnership.hpp"
+#include "../multiplayer/RollbackPool.hpp"
+#include "../multiplayer/HintOwnerPool.hpp"
+#include "../multiplayer/SceneOwnerPools.hpp"
+#include "../multiplayer/RollbackState.hpp"
+#include "../multiplayer/AudioEvents.hpp"
+#endif
+namespace th10::browser {
+// The gameplay owner persists across sessions, including transitions that keep
+// the player/replay/projectile pools or hand a completed replay to the menus.
+struct World final:HudActions,CallbackReceiver {
+    GameState& state;AnimationEngine& engine;Common& common;Fonts& fonts;Input& input;Audio& audio;Scores& scores;ScreenEffects& effects;
+    GameActors actors;Backgrounds backgrounds;UpdateChain* chain;Hud* hud=nullptr;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::Pilot pilots[3]{{state.pilot_games[0],0},{state.pilot_games[1],1},{state.pilot_games[2],2}};
+    multiplayer::State cooperation{};
+    multiplayer::ItemOwnership regular_item_owners[150]{},faith_item_owners[2048]{};
+    multiplayer::RollbackPool<sizeof(Enemy),512> rollback_enemies{};
+    multiplayer::RollbackPool<sizeof(TimedLaser),256> rollback_lasers{};
+    multiplayer::RollbackPool<sizeof(EclContext),1024> rollback_ecl{};
+    // Both loaded and auto-recorded hints are mutable linked owners. A death
+    // during prediction must not leave malloc nodes outside the checkpoint.
+    // 8192 covers the two 7*255 files plus retained copies and run recordings.
+    multiplayer::RollbackPool<sizeof(StageHint),8192> rollback_hints{};
+    // Restart reconstructs the manager in this same slot. Do not clear it at
+    // BeginNextRun, which happens after the next scene graph has been created.
+    multiplayer::HintOwnerPool rollback_hint_owners{};
+    // Native load creates one laser manager and one bomb per pilot. Keep the
+    // storage and allocator cursor across Restart / BeginNextRun as above.
+    multiplayer::LaserOwnerPool rollback_laser_owners{};
+    multiplayer::BombOwnerPool rollback_bomb_owners{};
+    multiplayer::SessionOwnerPool rollback_session_owners{};
+    multiplayer::GameEffectOwnerPool rollback_game_effect_owners{};
+    // Exact-input, spectator and Replay worlds never create undo storage.
+    std::unique_ptr<multiplayer::RollbackState> rollback;
+    multiplayer::AudioEvents audio_events{};
+    multiplayer::ReplayCheckpoint replay_checkpoint_pending{};
+    multiplayer::ReplayCheckpoint replay_checkpoint_commit_pending{};
+    multiplayer::InputLanes::State replay_checkpoint_precommit_lanes{};
+    u32 replay_checkpoint_precommit_frame=Netplay::INVALID_FRAME;
+    u32 replay_checkpoint_commit_frame=Netplay::INVALID_FRAME;
+    bool replay_checkpoint_pending_valid=false;
+    bool replay_checkpoint_commit_valid=false;
+    bool replay_checkpoint_precommit_valid=false;
+    bool replay_checkpoint_precommit_cheat_used=false;
+    bool begin_netplay_frame(u32 frame);
+    bool end_netplay_frame();
+    bool commit_audio();
+    void begin_replay_checkpoint();
+    void capture_replay_checkpoint_precommit(u32 archiveFrame);
+    void clear_replay_checkpoint_precommit();
+    bool restore_replay_checkpoint_bootstrap();
+    bool finalize_replay_checkpoint();
+    bool rollback_resimulating=false;
+    u32 player_count=2,local_player=0;
+    // Presentation-only generation handles, retained through native fade-out.
+    mutable std::map<u32,u32> multiplayer_hitbox_owners;
+    // Separate reserved ANM slots, after the native title's 0..32 slots.
+    static constexpr i32 pilot_animation_slot(i32 character){return 33+character;}
+    multiplayer::Pilot* pilot_for(Player*);
+    multiplayer::Pilot* pilot_for(Bomb*);
+    void configure_player(multiplayer::Pilot&);
+    i32 update_player(Player*);i32 draw_player(Player*);i32 update_bomb(Bomb*);
+    u8 player_visual_alpha(const AnmVm&)const;
+    i32 start_bomb(multiplayer::Pilot&);i32 bomb_damage(multiplayer::Pilot&,const Vec3&);
+    void update_cooperation();
+    bool spawn_life_transfer(u32 donor,u32 recipient);
+    bool spawn_power_transfer(u32 donor,u32 recipient);
+    i32 spawn_single_item(const Vec3&,i32,u32,float,float);
+    bool spawn_directed_power(u32 donor,u32 recipient,i32 amount);
+    u32 boss_participant_count()const;
+    const Vec3& target_player(const Vec3& origin) const;
+    void publish_player_targets(EnemyState&);
+    void award_team_life() override;
+    void award_team_clear_bonus() override;
+    u32 multiplayer_count()const override{return player_count;}
+    u32 multiplayer_local_seat()const override{return local_player;}
+    const GameEconomy& multiplayer_economy(u32 seat)const override{return pilots[seat].game;}
+    u32 multiplayer_deaths(u32 seat)const override{return pilots[seat].game.pilot.challenge_deaths;}
+#endif
+    PlayerProfile* cached_profile=nullptr;ReplayDocument replay_files;MemoryPool replay_memory;
+    ReplayWriter replay_writer;ReplayCalendar& calendar;
+    touhou::input::MotionTrack& motion=state.motion;
+    struct Preview {ReplayDocument document;Preview* next;Preview(FileSystem& files,u32 flags,Preview* next):document(files,flags),next(next){}};
+    Preview* previews=nullptr;
+    i32 new_game=0,loader_stop=0,loader_running=0,resource_drawing=-1,resource_updating=-1,pending_upload=0;
+    float measured_fps=60;bool loading=false;bool always_hitbox=false;i32 error=0;
+    struct PlayerPresentation {Vec3 position{};i32 state=0;bool valid=false;} player_presentation;
+    struct BulletPresentation {Vec3 position{};float angle=0;i32 id=0;u16 state=0;bool active=false;} bullet_presentation[2000]{};
+    struct ItemPresentation {Vec3 position{};i32 age=0,state=0,kind=0;bool active=false;} item_regular_presentation[150]{},item_faith_presentation[2048]{};
+    struct LaserPresentation {Vec3 position{};float angle=0,length=0,width=0;u32 id=0;i32 state=0;u32 kind=0;};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // LaserManager::create caps the authoritative live list at 256 entries.
+    multiplayer::PresentationCache<const EnemyLaser*,LaserPresentation,256> laser_presentation;
+#else
+    std::map<const EnemyLaser*,LaserPresentation> laser_presentation;
+#endif
+    struct PopupPresentation {Vec3 position{};float elapsed=0;i32 timer=-2;u8 active=0,length=0;};
+    PopupPresentation popup_presentation[723]{};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Explicitly outside RollbackState::BeginFrame's enumerated owners and
+    // SessionExports' full44/portable hashes. Neither captures sizeof(World).
+    // This cache never changes Pilot::presentation, native Player, or input.
+    multiplayer::RemotePlayerPresentation remote_player_presentation;
+    u32 remote_player_presentation_revision=0;
+    multiplayer::RemotePlayerPresentation::Identity remote_player_presentation_identity()const;
+    multiplayer::RemotePlayerPresentation::Snapshot remote_player_presentation_snapshot(const multiplayer::Pilot&)const;
+    void read_remote_player_presentation(multiplayer::RemotePlayerPresentation::Snapshots&)const;
+    bool remote_player_presentation_pair(const multiplayer::Pilot&,multiplayer::RemotePlayerPresentation::Pair&)const;
+#endif
+    GameSessionResources::Progress loading_progress;
+    World(GameState&,AnimationEngine&,Common&,Fonts&,Input&,Audio&,Scores&,ScreenEffects&);
+    ~World();
+    bool start(i32 mode);void advance_loading();void stop_session();void shutdown();
+    void advance_loading_step();
+#ifndef TH_NATIVE_PLATFORM
+    bool invoke(CallbackToken,void*,i32&) override;
+#endif
+    bool create_object(SessionObject,i32);void destroy_object(SessionObject,GameSystemCallbacks*);
+    void clear_for_dialogue() override;void show_clear_results() override;
+    void select_screen(i32);void sound(i32);void sound(i32,float);
+    AudioGame music();u32 animation(AnmFile&,i32,u32 tag=15);
+    void effect(AnmFile&,i32,const Vec3&);void rectangle(const ScreenRect&,u32);
+    void text(AnmVm&,u32,const char*,TextAlignment,const u32* words=nullptr,u32 count=0);
+    void queue_text(const Vec3&,const char*,const u32*,u32);
+    void* read_file(const char*);void fail();
+    bool create_player();void destroy_player(Player*);void activate_player();void configure_player();
+    i32 update_player();i32 draw_player();void hit_player();
+    i32 player_damage(const Vec3&,const Vec2&);i32 collide_player(const Vec3&,const Vec2&);i32 collide_player_laser(const Vec3&,float,float,float);
+    bool create_bullets();void destroy_bullets(EnemyBulletManager*);void clear_bullets();
+    i32 update_bullets();i32 draw_bullets();void fire(const BulletEmitter&);
+    void cancel_bullets(bool);void cancel_bullet_circle(const Vec3&,float,bool,bool);
+    i32 cancel_bullet_rectangle(i32);void cancel_bullet(EnemyBullet&);
+    bool create_lasers();void destroy_lasers(LaserManager*);void clear_lasers();
+    i32 update_lasers();i32 draw_lasers();i32 create_laser(i32,const void*);
+    i32 cancel_lasers(i32);i32 cancel_laser_circle(const Vec3&,float,i32);i32 cancel_laser_rectangle(const Vec3&,const Vec3&,i32);
+    void destroy_laser(EnemyLaser&);
+    bool create_items();void destroy_items(ItemManager*);i32 update_items();i32 draw_items();
+    i32 spawn_item(const Vec3&,i32,u32,float,float);i32 convert_power();
+    bool create_bomb();void destroy_bomb(Bomb*);i32 start_bomb();i32 update_bomb();i32 bomb_damage(const Vec3&);
+    bool create_effects();void destroy_effects(GameEffects*);
+    bool create_enemies();void destroy_enemies(EnemyManager*);void clear_enemies(bool all);i32 update_enemies();
+    Enemy* spawn_enemy(const char*,const EnemySpawnParameters&);void destroy_enemy(Enemy&);i32 update_enemy(Enemy&);
+    i32 enemy_command(EnemyState&,EclContext&,EclGlobals&);
+    bool create_spell();void destroy_spell(SpellCard*);i32 update_spell();i32 draw_spell(bool foreground);
+    void start_spell(i32,i32,const char*,i32);void finish_spell();
+    bool create_replay(i32,const char*);void destroy_replay(Replay*);void prepare_replay();void activate_replay();
+    i32 update_replay();i32 replay_frame_action();i32 draw_replay();void finish_replay(i32);
+    Replay* preview(const char*);void release_replay(Replay*);void save_replay(const char*,const char*);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool commit_replay();
+#endif
+    bool create_results();void destroy_results(Results*);void show_results(bool);i32 update_results();i32 draw_results();
+    bool create_popups();void destroy_popups(ScorePopups*);i32 update_popups();i32 draw_popups();void popup(const Vec3&,i32,u32);
+    bool create_hints();void destroy_hints(StageHints*);i32 update_hints();void record_hint(const char*,const Vec3&,bool caution);
+    i32 update_session();void activate_session();
+    ResultsEnvironment* results_adapter=nullptr;
+    ResultsEnvironment& results_services();void release_results_services();
+};
+}

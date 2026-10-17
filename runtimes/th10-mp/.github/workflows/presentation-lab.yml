@@ -1,0 +1,38 @@
+name: Presentation Lab
+
+on:
+  push:
+    paths:
+      - '.github/workflows/presentation-lab.yml'
+      - 'portable/presentation-lab/**'
+      - 'portable/check-high-refresh-contract.mjs'
+      - 'portable/check-presentation-purity.mjs'
+      - 'portable/build.mjs'
+      - 'portable/package-eagler.mjs'
+      - 'third_party/eagler-common'
+  pull_request:
+    paths:
+      - '.github/workflows/presentation-lab.yml'
+      - 'portable/presentation-lab/**'
+      - 'portable/check-high-refresh-contract.mjs'
+      - 'portable/check-presentation-purity.mjs'
+      - 'portable/build.mjs'
+      - 'portable/package-eagler.mjs'
+      - 'third_party/eagler-common'
+  workflow_dispatch:
+
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test third_party/eagler-common/testkit/presentation-lab/controller-core.test.mjs third_party/eagler-common/testkit/presentation-lab/release-contract.test.mjs
+      - run: node portable/check-high-refresh-contract.mjs
+      - run: node portable/check-presentation-purity.mjs
+      - run: node --check portable/presentation-lab/serve.mjs
+      - run: node --check portable/package-eagler.mjs
