@@ -1,4 +1,5 @@
-import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
+import {synchronizedMainAuthority} from './source-text.mjs';
+import {runInNewContext} from 'node:vm';
 /** Independent mounted synthetic-DOM regression. No browser/CSS/native top-layer claim. */
 import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,7 +25,9 @@ before(async()=>{
  globalThis.matchMedia=env.window.matchMedia=query=>({matches:reduce,media:query,addEventListener(){},removeEventListener(){}});
  React=await import(pathToFileURL(require.resolve('react')));
  ({createRoot}=await import(pathToFileURL(require.resolve('react-dom/client'))));
- for(const p of ['src/launcher/replay-files.mts','src/launcher/i18n.mts'])assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project,p), 'utf8')),pinned(p),`${p} remains pinned`);
+ // Replay format/storage evolves in its own contract tests. This carrier pins
+ // original visible messages without rejecting unrelated additive catalog keys.
+ const messages=runInNewContext('('+pinned('src/launcher/i18n.mts').match(/const entries = (\[[\s\S]*?\]) as const/)[1]+')');
  baselineHTML=pinned('public/index.html');
  buildDirectory=await mkdtemp(resolve(here,'replay-carrier-build-'));
  await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
@@ -37,6 +40,10 @@ before(async()=>{
  export {SurfaceNavigationProvider,useSurfaceNavigation} from './app/navigation/surface-navigation.tsx';
  `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'actual-bundle.mjs'),logLevel:'silent',plugins:[{name:'existing-deps',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
  owners=await import(pathToFileURL(resolve(buildDirectory,'actual-bundle.mjs')));
+ for(const [key,zh,en]of messages)if(/^replay\.|^status\.(?:readingReplay|replayReadFailed|noReplay)$|^action\.(?:close|download|rename|delete)$/.test(key)){
+   assert.equal(owners.translate('zh-CN',key),zh,`legacy Replay copy ${key} zh-CN stays pinned`);
+   assert.equal(owners.translate('en',key),en,`legacy Replay copy ${key} en stays pinned`);
+ }
 });
 afterEach(async()=>{globalThis.setTimeout=originalSetTimeout;globalThis.clearTimeout=originalClearTimeout;env.window.setTimeout=originalWindowSetTimeout;env.window.clearTimeout=originalWindowClearTimeout;for(const m of alive)await React.act(async()=>m.root.unmount());alive.clear();env.document.body.replaceChildren();reduce=true;assert.deepEqual(env.errors.splice(0),[],'No unexpected React/DOM errors');});
 after(async()=>{
@@ -59,6 +66,7 @@ function normalizedActualReplay(){
  // attributes, descendants and copy must still equal the pinned main markup.
  assert.equal(actual.getAttribute('data-launcher-document'),'');
  actual.removeAttribute('data-launcher-document');
+ for(const row of actual.querySelectorAll('[data-replay-file]'))row.removeAttribute('data-replay-file');
  return normalize(actual);
 }
 const t=(locale,key,params)=>owners.translate(locale,key,params);

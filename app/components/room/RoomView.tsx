@@ -1,3 +1,4 @@
+import { defaultTh15ChapterThreshold } from "../../../src/launcher/th15-chapter-reward.mts";
 import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { multiplayerInputTimingPolicy } from '../../../src/contracts/product-catalog.mts';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
@@ -68,6 +69,7 @@ export function RoomView(props: RoomViewProps) {
     <section
       className="mp-room-view"
       id="mpRoomView"
+      data-public-names={state.nickname ? 'true' : undefined}
       hidden={props.visible === false}
       aria-label={`${gameId.toUpperCase()} ${t('multiplayer.roomAria')}`}
       inert={props.settingsOpen}
@@ -127,7 +129,7 @@ export function RoomView(props: RoomViewProps) {
               count: room.playerCount,
             })}
           </span>
-          <span id="mpRoomDifficultyBadge">{config.difficulties[room.difficulty] || 'Normal'}</span>
+          <span id="mpRoomDifficultyBadge" hidden={config.inGameSelection}>{config.inGameSelection ? '' : config.difficulties[room.difficulty] || 'Normal'}</span>
           <span
             id="mpRoomPhase"
             title={state.preparation?.status === 'failed' ? state.preparation.error : ''}
@@ -162,6 +164,31 @@ export function RoomView(props: RoomViewProps) {
             <span aria-hidden="true">›</span>
           </button>
         </div>
+        {state.product === "th15mp" && (
+          <div
+            className="mp-room-chapter-summary"
+            id="mpTh15ChapterSummary"
+            aria-live="polite"
+          >
+            <p>
+              {t("room.th15ChapterThreshold")}：
+              <strong id="mpTh15ChapterSummaryScore">
+                {(
+                  room.chapterThreshold ??
+                  defaultTh15ChapterThreshold(room.playerCount)
+                ).toLocaleString()}
+              </strong>{" "}
+              <span>{t("room.th15ChapterSettingsHint")}</span>
+            </p>
+            <p id="mpTh15ChapterSummaryGraze">
+              {t("room.th15ChapterGraze", {
+                count:
+                  (room.chapterThreshold ??
+                    defaultTh15ChapterThreshold(room.playerCount)) / 5000,
+              })}
+            </p>
+          </div>
+        )}
       </section>
       <div className="mp-session-dock">
         <div className="mp-dock-players">
@@ -216,7 +243,7 @@ export function RoomView(props: RoomViewProps) {
               aria-checked={
                 room.phase && room.phase !== 'lobby' ? room.adonisMode !== 1 : state.rollbackEnabled
               }
-              title={t('room.rollbackHint')}
+              title={t(multiplayerInputTimingPolicy(config).manualRollbackDelay ? 'room.rollbackDelayHint' : 'room.rollbackHint')}
               hidden={rollbackHidden}
               disabled={!rollbackSupported || !ready || !owner || room.phase !== 'lobby'}
               onClick={() => service.setRollbackEnabled(!state.rollbackEnabled)}

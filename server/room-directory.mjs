@@ -13,6 +13,7 @@ export function publicControlMode(seat) {
 // Discovery never joins a room. Membership is anonymous and browser-scoped;
 // it prevents accidental multi-tab seats, not multiple accounts/devices.
 export function createRoomDirectory({
+  publicNames = false,
   rooms,
   clearSeat,
   invalidateReady,
@@ -60,6 +61,7 @@ export function createRoomDirectory({
     if (!hasGame(room) && idle > idleHideMs) return null;
     const run = room.runs.get(String(room.lobby.startSerial));
     return {
+      ...(publicNames ? {publicNames:true} : {}),
       product: match[1],
       code: match[2],
       phase: room.lobby.phase,
@@ -70,7 +72,7 @@ export function createRoomDirectory({
         (seat) => seat.ready && seat.readyVersion === room.lobby.settingsVersion,
       ).length,
       difficulty: room.lobby.difficulty,
-      host: initial(seats[0]?.name),
+      host: publicNames ? seats[0]?.name || '' : initial(seats[0]?.name),
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       challengeMode: room.lobby.challengeMode === true,
       prankMode: room.lobby.prankMode === true,
@@ -82,9 +84,10 @@ export function createRoomDirectory({
         seat
           ? {
               initial: initial(seat.name),
+              ...(publicNames ? {name:seat.name || ''} : {}),
               ...(match[1] === 'th09mp'
                 ? {
-                    ...(typeof seat.machineSign === 'string' && seat.machineSign.trim()
+                    ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {
                           machineSign: [
                             ...seat.machineSign
@@ -192,6 +195,16 @@ export function createRoomDirectory({
     maybeDelete(entry.roomId, room);
   }
   function admit(socket, roomId, clientId, memberId) {
+    const room = rooms.get(roomId);
+    const ownerEntry = clients.get(clientId);
+    const sameMember = ownerEntry?.roomId === roomId && ownerEntry.memberId === memberId;
+    // A host removal lasts for this room's lifetime, including across tabs
+    // sharing the anonymous browser membership. Never ban a shared/NAT IP.
+    if (room?.removedMembers?.has(memberId) || room?.removedClients?.has(clientId) ||
+        (room?.removedMembers?.size >= 1024 && !sameMember)) {
+      socket.close(4010, 'removed by host');
+      return false;
+    }
     const owner = clients.get(clientId);
     // clientId is public in room snapshots. Only its private member may resume.
     if (owner && owner.memberId !== memberId) {
@@ -278,6 +291,16 @@ export function createRoomDirectory({
   function evict(roomId, clientId) {
     const entry = clients.get(clientId);
     if (!entry || entry.roomId !== roomId) return false;
+    const room = rooms.get(roomId);
+    if (!room) return false;
+    room.removedMembers ??= new Set();
+    room.removedClients ??= new Set();
+    // Once full, admit() refuses fresh members while existing members may
+    // reconnect. Keep host-controlled removal history bounded as well.
+    if (room.removedMembers.size < 1024) {
+      room.removedMembers.add(entry.memberId);
+      room.removedClients.add(clientId);
+    }
     releaseTransports?.(roomId, clientId);
     remove(entry);
     entry.socket.close(4010, 'removed by host');
@@ -334,6 +357,7 @@ export function createRoomDirectory({
     evict,
     track,
     memberIdFor,
+    memberLocation: memberId => members.get(memberId),
     close() {
       clearInterval(maintenance);
       clearTimeout(updateTimer);

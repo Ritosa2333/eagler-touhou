@@ -1,3 +1,8 @@
+import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
+import {
+  validTh15ChapterThreshold,
+  defaultTh15ChapterThreshold,
+} from "../../src/launcher/th15-chapter-reward.mts";
 import {
   gameIdForProduct,
   isMultiplayerProductId,
@@ -5,10 +10,7 @@ import {
   multiplayerInputTimingPolicy,
   type MultiplayerProductId,
 } from '../../src/contracts/product-catalog.mts';
-import {
-  multiplayerDisplayInitial,
-  type MultiplayerIdentityStore,
-} from '../../src/launcher/multiplayer-identity.mts';
+import {multiplayerDisplayInitial, type MultiplayerIdentityStore} from '../../src/launcher/multiplayer-identity.mts';
 import {
   normalizeMultiplayerLobbySnapshot,
   type MultiplayerResourceProgress,
@@ -42,6 +44,7 @@ export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
 };
 export interface RoomSettingsInput {
+  replayAutoSave?: boolean;
   touchMovementMode: string;
   touchEnabled: boolean;
   mobileDevice: boolean;
@@ -67,6 +70,7 @@ export interface RoomOwnerSnapshot {
   preferredLoadout: number;
   loadoutPending: boolean;
   displayName: string;
+  nickname?: Readonly<PublicNicknameState> | null;
   roomSettingsOpen: boolean;
   startSerial: number;
   preparation: Readonly<RoomPreparationProgress> | null;
@@ -198,6 +202,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     spectatorRequested: false,
     preferredLoadout: 0,
     displayName: '',
+    nickname: null as PublicNicknameState | null,
     roomSettingsOpen: false,
     startSerial: 0,
     preparation: null as RoomPreparationProgress | null,
@@ -220,6 +225,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         created: room.created,
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
+        chapterThreshold: room.chapterThreshold,
         challengeMode: room.challengeMode,
         prankMode: false,
       },
@@ -256,10 +262,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   publish();
   function send(message: Record<string, unknown>): boolean {
     if (!state.connected || socket?.readyState !== 1) return false;
-    // Privacy is a wire contract, not merely an avatar presentation choice.
+    // Full spelling is submitted only after the server advertises moderation.
     const payload =
       typeof message.name === 'string'
-        ? { ...message, name: multiplayerDisplayInitial(message.name, '') }
+        ? { ...message, name: state.nickname ? normalizePublicNickname(message.name) : multiplayerDisplayInitial(message.name, '') }
         : message;
     socket.send(JSON.stringify(payload));
     return true;
@@ -380,6 +386,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       difficulty: room.difficulty,
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
+      ...(product === "th15mp"
+        ? {
+            chapterThreshold:
+              room.chapterThreshold ??
+              defaultTh15ChapterThreshold(room.playerCount),
+          }
+        : {}),
       challengeMode: !!room.challengeMode,
       prankMode: false,
     });
@@ -445,6 +458,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         intent,
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
+        chapterThreshold: room.chapterThreshold,
         challengeMode: room.challengeMode,
         prankMode: false,
         playerCount: room.playerCount,
@@ -507,6 +521,19 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         return;
       }
       if (!message) return;
+      if (message.type === 'nickname-status') {
+        const profile = parsePublicNicknameState(message);
+        if (!profile) return;
+        const migrateDraft = !state.nickname && profile.status === 'idle' && !!state.displayName;
+        state.nickname = Object.freeze(profile);
+        if (profile.name) {
+          state.displayName = profile.name;
+          ports.identity.updateDisplayName(profile.name, profile.name);
+        }
+        publish();
+        if (migrateDraft) setDisplayName(state.displayName);
+        return;
+      }
       if (message.type === 'room-probe-config' || message.type === 'room-probe') {
         void ports.network.receive(message);
         return;
@@ -629,6 +656,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
     state.preferredLoadout = preferred.preferredLoadout ?? 0;
     state.displayName = ports.identity.loadDisplayName();
+    state.nickname = null;
   }
   function restoreInvite(source: string | URL, selectedProduct?: MultiplayerProductId): boolean {
     const invite = resolveRoomInvite(source);
@@ -669,6 +697,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
+      chapterThreshold: saved?.room.chapterThreshold,
       challengeMode: saved?.room.challengeMode ?? false,
       prankMode: false,
       seats: null,
@@ -809,6 +838,17 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     publish();
   }
   function setDisplayName(value: string) {
+    if (state.nickname) {
+      const name = normalizePublicNickname(value);
+      if (!name || !state.connected || ['reviewing','queued'].includes(state.nickname.status)) return state.nickname.pendingName || state.displayName;
+      if (name === state.nickname.name) return name;
+      if (send({type:'set-name',name})) {
+        state.nickname = Object.freeze({...state.nickname,status:'reviewing'});
+        publish();
+        return name;
+      }
+      return state.displayName;
+    }
     const previous = state.displayName,
       result = ports.identity.updateDisplayName(value, previous);
     if (result.updated) state.displayName = result.name;
@@ -853,7 +893,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     patch: Partial<
       Pick<
         MultiplayerRoomState,
-        'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode'
+        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode'
+        | "chapterThreshold"
       >
     >,
   ) {
@@ -867,7 +908,23 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         patch.challengeMode !== undefined)
     )
       return;
+    if (
+      patch.chapterThreshold !== undefined &&
+      (product !== "th15mp" ||
+        room.phase !== "lobby" ||
+        !validTh15ChapterThreshold(patch.chapterThreshold))
+    )
+      return;
     const config = policy()!;
+    const chapterThreshold =
+      product === "th15mp"
+        ? (patch.chapterThreshold ??
+          (patch.playerCount !== undefined &&
+          patch.playerCount !== room.playerCount
+            ? defaultTh15ChapterThreshold(patch.playerCount)
+            : (room.chapterThreshold ??
+              defaultTh15ChapterThreshold(room.playerCount))))
+        : undefined;
     const playerCount =
       patch.playerCount && config.playerCounts.includes(patch.playerCount)
         ? patch.playerCount
@@ -889,6 +946,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       type: 'settings',
       playerCount,
       difficulty,
+      ...(chapterThreshold !== undefined ? { chapterThreshold } : {}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
@@ -962,11 +1020,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const automatic = !rollback && measured && state.timingChoice === 'auto';
     const selected = Number(state.timingChoice);
     const inputDelay =
-      rollback || automatic
+      rollback && !timingPolicy.manualRollbackDelay || automatic || rollback && state.timingChoice === 'auto'
         ? 0
         : Number.isInteger(selected) &&
             selected >= 0 &&
-            selected <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
+            selected <= (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8)
           ? selected
           : timingRecommendation().inputDelay;
     send({
@@ -1033,6 +1091,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorId: spectator ? clientId : '',
         spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
         spectatorTimeline: room.spectatorTimeline === true,
+        ...(product === 'th09mp' ? {
+          replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
+          replayNames: [0, 1].map(side => room!.seats?.[side]?.name || `P${side + 1}`),
+        } : {}),
+        ...(product === 'th15mp' ? {
+          chapterThreshold: room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount),
+        } : {}),
         ...(config.gameplay === 'cooperative'
           ? { challengeMode: room.challengeMode === true }
           : {}),
@@ -1154,6 +1219,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       preparation = null;
       void prepareResources();
     }
+  }
+  function movePlayerToSpectator(index: number, targetClientId: string) {
+    const target = room?.seats?.[index];
+    if (!Number.isInteger(index) || index <= 0 || !target || target.offline ||
+        target.clientId !== targetClientId || !ownerLocal() || !state.connected ||
+        room?.phase !== 'lobby') return;
+    send({ type: 'move-player-to-spectator', seat: index, clientId: targetClientId });
   }
   async function removePlayer(index: number) {
     const target = room?.seats?.[index],
@@ -1316,6 +1388,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     changeLoadout,
     toggleReady,
     setRoomSettings,
+    movePlayerToSpectator,
     removePlayer,
     removeSpectator,
     start,

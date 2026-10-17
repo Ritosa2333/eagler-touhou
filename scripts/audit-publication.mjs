@@ -35,6 +35,12 @@ const publicAssets = new Set([
   "assets/room-chart-bar.svg", "assets/room-copy.svg",
   "assets/room-gear-six.svg", "assets/room-sliders-horizontal.svg",
   "assets/room-users.svg", "assets/room-icons-LICENSE.txt",
+  // Player/Replay controls from the same reviewed Phosphor collection.
+  "assets/room-user.svg", "assets/player-pause.svg", "assets/player-play.svg",
+  "assets/player-live.svg", "assets/player-chat.svg", "assets/replay-arrow-left.svg",
+  "assets/replay-arrow-counter-clockwise.svg", "assets/replay-file-text.svg",
+  "assets/replay-folder.svg", "assets/replay-upload-simple.svg", "assets/replay-dots-three.svg",
+  "assets/LICENSE-Phosphor.txt", "assets/phosphor-ui-icons.json",
   "assets/fonts/touhou98.woff2",
   "assets/fonts/unifont-site.woff2",
   "assets/fonts/OFL-Unifont.txt",

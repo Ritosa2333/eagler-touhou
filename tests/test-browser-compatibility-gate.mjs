@@ -1,5 +1,5 @@
-import {STATIC_APP_SHELL_FILES} from "../lib/frontend-static-manifest.mjs";
 import assert from "node:assert/strict";
+import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from "../lib/frontend-static-manifest.mjs";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runInNewContext } from "node:vm";
@@ -7,13 +7,13 @@ import { runInNewContext } from "node:vm";
 const root = resolve(import.meta.dirname, "..");
 const index = readFileSync(resolve(root, "public/bootstrap/index.html"), "utf8");
 const guide = readFileSync(resolve(root, "public/compatibility.html"), "utf8");
-const manifest = readFileSync(resolve(root, "lib/frontend-static-manifest.mjs"), "utf8");
 const scripts = [...index.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
 assert.ok(scripts.length >= 2, "compatibility gate and boot script should both be inline");
 const gate = scripts[0][1];
 assert.ok(index.indexOf(scripts[0][0]) >= 0, "compatibility gate must be present in bootstrap source");
 assert.doesNotMatch(gate, /\bconst\b|\blet\b|=>|\?\.|Object\.hasOwn|URLSearchParams/, "gate must work in old browsers");
-assert.ok(STATIC_APP_SHELL_FILES.includes("compatibility.html"), "compatibility page must ship and be precached");
+assert.ok(STATIC_FRONTEND_PACKAGE_FILES.includes("compatibility.html"), "compatibility page must ship");
+assert.ok(STATIC_APP_SHELL_FILES.includes("compatibility.html"), "compatibility page must be precached");
 assert.doesNotMatch(guide, /<link\b|<script\s+type="module"/i, "guide must not depend on external assets or modules");
 for (const snippet of ["id=\"computer\"", "id=\"phone\"", "id=\"graphics\"", "supermium.net", "--use-angle=gl", "卓易通", "Via", "get.webgl.org/webgl2"]) {
   assert.ok(guide.includes(snippet), `missing guide content: ${snippet}`);

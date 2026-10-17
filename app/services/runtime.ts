@@ -120,7 +120,7 @@ export interface RuntimePlan {
 }
 export type RuntimeReadyContinuation = (epoch: number) => Promise<RuntimePlan>;
 export type RuntimePhase = 'idle' | 'loading' | 'configuring' | 'prepared' | 'launching' | 'running' | 'saving' | 'exited' | 'error';
-export type RuntimeRequestCommand = 'list' | 'read' | 'write' | 'remove' | 'resources' | 'retry-music';
+export type RuntimeRequestCommand = 'playback' | 'list' | 'read' | 'write' | 'remove' | 'resources' | 'retry-music';
 export type RuntimeFileCommand = 'list' | 'read' | 'write' | 'remove';
 /** Exclusive access to the existing prepared Runtime filesystem, never another writer. */
 export interface RuntimeFileSession {
@@ -969,7 +969,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       throw new Error('Close the current Runtime before checking a game');
     }
     const product = PRODUCT_GAMES[input.game], multiplayer = product && 'multiplayer' in product ? product.multiplayer : null;
-    if (input.runtimeVariant !== 'multiplayer' || !multiplayer || input.configure.options?.replayViewer ||
+    if (input.runtimeVariant !== 'multiplayer' || !multiplayer || input.configure.options?.replayViewer || input.configure.options?.replayPath !== undefined ||
         Object.entries(input.configure.options ?? {}).some(([key, value]) => key.startsWith('netplay') && value !== undefined)) {
       throw new Error('A game check requires a multiplayer plan without gameplay transport or replay');
     }
@@ -986,7 +986,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     try {
       const prepared = await Promise.race([prepareOwned(plan, undefined, owner, onReady ? async epoch => {
         const final = structuredClone(await onReady(epoch));
-        if (final.configure.options?.replayViewer || Object.entries(final.configure.options ?? {}).some(([key, value]) => key.startsWith('netplay') && value !== undefined)) {
+        if (final.configure.options?.replayViewer || final.configure.options?.replayPath !== undefined || Object.entries(final.configure.options ?? {}).some(([key, value]) => key.startsWith('netplay') && value !== undefined)) {
           throw new Error('A game check requires a multiplayer plan without gameplay transport or replay');
         }
         final.configure.options = {...final.configure.options};
@@ -1025,7 +1025,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     await send('network-cancel', {}); assertCurrent(token);
   }
   function request<C extends RuntimeRequestCommand>(command: C, payload: RuntimeCommandPayloads[C], timeout?: number) {
-    if (!['list', 'read', 'write', 'remove', 'resources', 'retry-music'].includes(command)) {
+    if (!['playback', 'list', 'read', 'write', 'remove', 'resources', 'retry-music'].includes(command)) {
       return Promise.reject(new Error('Lifecycle commands must use prepare, launch or sync'));
     }
     if (preflightEpoch !== null) return Promise.reject(new Error('Game-check files are owned by its Runtime preparation'));

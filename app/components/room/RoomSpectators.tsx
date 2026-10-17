@@ -32,7 +32,7 @@ export function RoomSpectators({
         {entries.length ? (
           entries.map((entry, index) => {
             const mine = entry.clientId === state.localClientId,
-              title = t('room.spectatorNumber', { number: index + 1 });
+              title = state.nickname && entry.name ? entry.name : t('room.spectatorNumber', { number: index + 1 });
             return (
               <div
                 className={`mp-spectator-entry${mine ? ' mine' : ''}`}

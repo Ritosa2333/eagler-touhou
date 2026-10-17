@@ -163,6 +163,19 @@ test('authenticated Runtime ready hides game DATA only; other event kinds retain
   f.model.runtimeTransfer({kind: 'music', mode: 'ogg'}); f.model.runtimeEvent({epoch: 1, event: 'ready'}); assert.equal(f.model.getSnapshot().hidden, false);
 });
 
+test('launch ACK clears resource mounts reported after ready while retaining downloads and music', () => {
+  const f = fixture();
+  f.model.runtimeEvent({epoch: 1, event: 'ready'});
+  f.model.runtimeTransfer({kind: 'game', mode: 'runtime', loaded: 9, total: 9});
+  f.model.launchAcknowledged(); assert.equal(f.model.getSnapshot().hidden, false, 'unlaunched owner cannot finish progress');
+  f.state.launched = true; f.model.launchAcknowledged(); assert.equal(f.model.getSnapshot().hidden, true);
+  f.model.networkSnapshot(net([task()])); f.frame();
+  f.model.launchAcknowledged(); assert.equal(f.model.getSnapshot().hidden, false, 'active download retains presentation');
+  f.model.networkSnapshot(net([])); f.frame(); assert.equal(f.model.getSnapshot().hidden, true);
+  f.model.runtimeTransfer({kind: 'music', mode: 'ogg', loaded: 1, total: 2});
+  const music = f.model.getSnapshot(); f.model.launchAcknowledged(); assert.equal(f.model.getSnapshot(), music);
+});
+
 test('main 3390: DATA timeout reveals transfer without replacing its byte metrics', () => {
   const f = fixture(); f.model.runtimeTransfer({kind: 'game', loaded: MiB, total: 2 * MiB, speed: 1024}); f.model.hide();
   const before = f.model.getSnapshot(); f.model.revealGameData(); const after = f.model.getSnapshot();
@@ -268,4 +281,40 @@ test('dispose clears pending frames and timers, and late completion does not rea
   const f = fixture(); f.model.musicComplete({}); f.model.midiFallback(); f.model.networkSnapshot(net([task()])); f.model.dispose();
   f.model.musicComplete({}); f.model.midiFallback(); f.model.launchAcknowledged(); f.model.beginRuntime({game: 'th06', generation: null});
   assert.equal(f.pending.size, 0); assert.equal(f.frameQueue.size, 0); assert.deepEqual(f.statuses, []);
+});
+
+test('language browser cache persists across launches and refreshes changed or corrupt packs', async () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'caches');
+  const stored = new Map();
+  const cache = {
+    async match(request) {return stored.get(request.url)?.clone();},
+    async put(request, response) {stored.set(request.url, response.clone());},
+    async delete(request) {return stored.delete(request.url);},
+  };
+  Object.defineProperty(globalThis, 'caches', {configurable: true, value: {async open() {return cache;}}});
+  const path = 'thcrap/th06/localization/strings.etl';
+  function pack(text) {
+    const payload = strToU8(text);
+    const manifest = {schema: 'eagler-touhou/thcrap-static-pack/1', game: 'th06', language: 'lang_en', runtimeVersion: 'independent', files: [{path: `/${path}`, bytes: payload.length}]};
+    const zip = zipSync({'manifest.json': strToU8(JSON.stringify(manifest)), [path]: payload}, {level: 0});
+    return {zip, entry: {id: 'lang_en', title: 'English', pack: {url: 'en.zip', sha256: createHash('sha256').update(zip).digest('hex'), bytes: zip.length}}};
+  }
+  let current = pack('ETL1'), requests = 0;
+  const modes = [];
+  const launch = () => api.prepareLanguagePack({game: 'th06', entry: current.entry, baseUrl: 'https://launcher.invalid/', translate: t,
+    fetchImpl: async (_url, options) => {requests++; modes.push(options.cache); return new Response(current.zip);}});
+  try {
+    await launch(); await launch();
+    assert.equal(requests, 1, 'repeat launch must not fetch');
+    current = pack('ETL1 updated'); await launch();
+    assert.equal(requests, 2, 'new content at same URL must fetch');
+    const key = [...stored.keys()].find(key => key.endsWith(current.entry.pack.sha256));
+    stored.set(key, new Response('corrupted'));
+    await launch(); await launch();
+    assert.equal(requests, 3, 'corrupt cache is replaced once');
+    assert.equal(modes.at(-1), 'no-store');
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'caches', original);
+    else delete globalThis.caches;
+  }
 });

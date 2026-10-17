@@ -32,6 +32,7 @@ export function relayAbuseConfig(env = process.env) {
     maxConnectionsPerIp: integer('MAX_CONNECTIONS_PER_IP', 32),
     maxConnections: integer('MAX_CONNECTIONS', 2048),
     attemptsPerMinute: integer('CONNECTIONS_PER_MINUTE', 60),
+    roomLookupsPerMinute: integer('ROOM_LOOKUPS_PER_MINUTE', 12),
     maxRoomsPerIp: integer('MAX_ROOMS_PER_IP', 2),
     maxRooms: integer('MAX_ROOMS', 512),
     maxAddresses: integer('MAX_TRACKED_ADDRESSES', 10_000),
@@ -46,7 +47,7 @@ export function createRelayAbuseGuard({ now = Date.now, ...config } = relayAbuse
     if (!state) {
       if (addresses.size >= config.maxAddresses) sweep();
       if (addresses.size >= config.maxAddresses) return null;
-      state = { active: 0, rooms: 0, attempts: [] };
+      state = { active: 0, rooms: 0, attempts: [], lookups: new Map() };
       addresses.set(address, state);
     }
     return state;
@@ -54,11 +55,13 @@ export function createRelayAbuseGuard({ now = Date.now, ...config } = relayAbuse
   function prune(state) {
     const time = now();
     state.attempts = state.attempts.filter(value => time - value < 60_000);
+    for (const [room, at] of state.lookups)
+      if (time - at >= 60_000) state.lookups.delete(room);
   }
   function sweep() {
     for (const [address, state] of addresses) {
       prune(state);
-      if (!state.active && !state.rooms && !state.attempts.length) addresses.delete(address);
+      if (!state.active && !state.rooms && !state.attempts.length && !state.lookups.size) addresses.delete(address);
     }
   }
   function allowHandshake(address) {
@@ -75,6 +78,18 @@ export function createRelayAbuseGuard({ now = Date.now, ...config } = relayAbuse
     if (!state || connections >= config.maxConnections || state.active >= config.maxConnectionsPerIp) return false;
     ++state.active; ++connections;
     socket.once('close', () => { --state.active; --connections; });
+    return true;
+  }
+  function allowRoomLookup(address, roomId) {
+    if (!address) return false;
+    const state = entry(address);
+    if (!state) return false;
+    prune(state);
+    // Count distinct targets before resolving them. Failed joins and create
+    // conflicts must not provide a cheaper room-code enumeration path.
+    if (state.lookups.has(roomId)) return true;
+    if (state.lookups.size >= config.roomLookupsPerMinute) return false;
+    state.lookups.set(roomId, now());
     return true;
   }
   function canCreateRoom(address) {
@@ -97,5 +112,5 @@ export function createRelayAbuseGuard({ now = Date.now, ...config } = relayAbuse
     --addresses.get(address).rooms;
     owners.delete(id);
   }
-  return { allowHandshake, trackSocket, canCreateRoom, createRoom, releaseRoom, sweep };
+  return { allowHandshake, allowRoomLookup, trackSocket, canCreateRoom, createRoom, releaseRoom, sweep };
 }

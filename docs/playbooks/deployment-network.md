@@ -68,6 +68,18 @@ historical direct/TURN proportions.
 
 ### Relay/TURN deployment and incident verification
 
+Build relay services with
+`node tools/maintainer/build-netplay-relay.mjs OUTPUT_DIRECTORY`. Ship both
+`netplay-relay.mjs` and `nickname-worker.mjs` together and install the pinned `ws`
+dependency. The worker is a separate bundle beside the relay; a single-file
+upload omits nickname moderation. Public nicknames require Node.js 22.13+ and
+the private settings in `tools/maintainer/operator-delivery/relay.env.example`.
+Keep the API key outside frontend artifacts and the SQLite state outside the
+static root, writable only by the service user. A stopped-service file copy or
+SQLite backup must preserve approvals, 24-hour cooldowns and pending review jobs. Enabling
+moderation without its key/state fails startup; an online provider outage keeps
+the old approved name, durably queues pending names and leaves gameplay running.
+
 Treat WebSocket Relay and TURN as separate transport layers. WSS owns room control and WebRTC signaling; coturn relays WebRTC traffic when direct ICE cannot connect. A persistent WSS connection does not prove game traffic uses WSS, while a final diagnostic route of `relay` means WebRTC did not become ready and gameplay fell back to the WebSocket data path.
 
 Do not accept `systemctl active`, an open `3478` socket or a single TURN echo probe as proof that the deployed service uses its intended configuration. Before restart, verify the configuration file is readable by the exact systemd `User` and `Group`; after restart, inspect effective realm, listener, relay and public/private `external-ip` mapping. A configuration file owned by an unreadable group can leave coturn active on defaults while all service-level health checks appear green.

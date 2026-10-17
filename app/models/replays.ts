@@ -1,11 +1,27 @@
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, type ProductId} from '../../src/contracts/product-catalog.mts';
-import {createReplayMutationQueue, isReplayFilePath, isValidReplayName, isReplayTargetAvailable,
+import {createReplayMutationQueue, isReplayFilePath, isValidReplayName, isReplayTargetAvailable, replayStoragePathKey, allocateReplayName,
   type ReplayMutationQueue} from '../../src/launcher/replay-files.mts';
 import type {RuntimeService, RuntimeFileSession} from '../services/runtime';
 import type {RuntimeResponseMessage} from '../../src/contracts/runtime-protocol.mts';
 import type {SettingsDecision} from '../components/settings/types';
+import {parseTh09ReplayMatch, isTh09ReplayDirectory, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
+import type {ReplayStorageReader} from '../services/replay-storage';
+import {zipSync} from 'fflate';
 
-export interface ReplayRow {readonly path: string; readonly name: string; readonly size: number}
+export interface ReplayRow {readonly path: string; readonly name: string; readonly size: number; readonly modifiedAt?: number; readonly replayMatch?: Th09ReplayMatch}
+export interface ReplayFolder {readonly key: string; readonly name: string; readonly rows: ReplayRow[]}
+export function groupReplayFolders(rows: readonly ReplayRow[]): ReplayFolder[] {
+  const folders = new Map<string, ReplayFolder>();
+  for (const row of rows) {
+    const parts = row.path.split('/');
+    if (parts.length !== 3) continue;
+    const key = parts.slice(0, -1).join('/');
+    let folder = folders.get(key);
+    if (!folder) {folder = {key, name: parts[1]!, rows: []}; folders.set(key, folder);}
+    folder.rows.push(row);
+  }
+  return [...folders.values()];
+}
 export interface ReplaySnapshot {
   readonly open: boolean;
   readonly phase: 'idle' | 'loading' | 'ready' | 'error';
@@ -16,6 +32,11 @@ export interface ReplaySnapshot {
 export interface ReplayModelOptions {
   runtime: RuntimeService;
   prepareFiles(product: ProductId): Promise<void>;
+  /** A persistent TH09 viewer owns its launched Runtime until this manager closes. */
+  prepareViewer?(product: ProductId): Promise<void>;
+  /** TH09 browsing/downloads read persisted IDBFS without acquiring a Runtime. */
+  storage?: ReplayStorageReader;
+  closeViewer?(): void;
   /** Host must recheck product/epoch before retiring an owned idle preload. */
   releasePrepared(product: ProductId, epoch: number): Promise<void>;
   translate(key: string, params?: Record<string, string | number>): string;
@@ -26,6 +47,7 @@ export interface ReplayModelOptions {
   afterPaint(): Promise<void>;
   afterClose(): void;
   mutations?: ReplayMutationQueue;
+  watch?(product: ProductId, path: string): Promise<void>;
 }
 function errorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -42,6 +64,8 @@ export function createReplayModel(options: ReplayModelOptions) {
   const listeners = new Set<() => void>();
   let snapshot: ReplaySnapshot = Object.freeze({open: false, phase: 'idle', productId: null, rows: [], animateRows: false});
   let generation = 0, readVersion = 0, disposed = false;
+  let closeWork: Promise<void> = Promise.resolve(), watching = false;
+  let viewerPreparation: {product: ProductId; promise: Promise<void>} | null = null;
   type TemporaryOwner = {product: ProductId; epoch: number | null};
   let runtimeOwner: TemporaryOwner | null = null;
   let retainedOwner: TemporaryOwner | null = null;
@@ -54,21 +78,44 @@ export function createReplayModel(options: ReplayModelOptions) {
     for (const listener of listeners) listener();
   }
   function valid(token: number, product: ProductId) {return !disposed && snapshot.open && generation === token && snapshot.productId === product;}
+  function prepareViewer(product: ProductId): Promise<void> {
+    if (viewerPreparation?.product === product) return viewerPreparation.promise;
+    const preparation = {product, promise: (async () => options.prepareViewer!(product))()};
+    viewerPreparation = preparation;
+    const settled = () => {if (viewerPreparation === preparation) viewerPreparation = null;};
+    void preparation.promise.then(settled, settled);
+    return preparation.promise;
+  }
+  function preloadViewer(product: ProductId, token: number): void {
+    if (!options.storage || !options.prepareViewer || gameIdForProduct(product) !== 'th09') return;
+    // Listing and downloads stay independent of the eagerly prepared player.
+    void prepareViewer(product).catch(error => {
+      if (valid(token, product) && !watching) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));
+    });
+  }
   function responseBytes(response: RuntimeResponseMessage): number[] {
     if (!Array.isArray(response.bytes) || !response.bytes.every(value => Number.isInteger(value) && value >= 0 && value <= 255)) throw new Error(t('runtime.invalidFileContent'));
     return response.bytes as number[];
   }
-  function responseFiles(response: RuntimeResponseMessage): ReplayRow[] {
+  function responseFiles(response: RuntimeResponseMessage, product: ProductId): ReplayRow[] {
     if (!Array.isArray(response.files)) throw new Error(t('runtime.invalidFileList'));
     return response.files.map(value => {
       if (!value || typeof value !== 'object' || !('path' in value) || typeof value.path !== 'string' || !value.path) throw new Error(t('runtime.invalidFileEntry'));
-      return {path: value.path, name: value.path.split('/').pop() || value.path,
+      const match = product === 'th09mp' && 'replayMatch' in value ? parseTh09ReplayMatch(value.replayMatch) : null;
+      const modifiedAt = Number('modifiedAt' in value ? value.modifiedAt : 0);
+      return {path: value.path, name: value.path.split('/').pop() || value.path, ...(match ? {replayMatch: match} : {}),
+        ...(Number.isFinite(modifiedAt) && modifiedAt > 0 && modifiedAt <= 8.64e15 ? {modifiedAt} : {}),
         size: Math.max(0, Number('size' in value ? value.size : 0) || 0)};
     });
   }
   async function withFiles<T>(product: ProductId, operation: (access: RuntimeFileSession) => Promise<T>, mutation = false): Promise<T> {
-    await options.prepareFiles(product);
-    return runtime.withFileSession(gameIdForProduct(product), operation, {
+    const fileOwner = runtimeOwner ?? retainedOwner;
+    if (gameIdForProduct(product) === 'th09' && options.prepareViewer && !options.storage) await options.prepareViewer(product);
+    else await options.prepareFiles(product);
+    return runtime.withFileSession(gameIdForProduct(product), async access => {
+      if (!runtime.getSnapshot().launched && options.storage && gameIdForProduct(product) === 'th09' && fileOwner?.product === product) fileOwner.epoch = access.epoch;
+      return operation(access);
+    }, {
       runtimeVariant: isMultiplayerProductId(product) ? 'multiplayer' : 'normal',
       readOnly: !mutation, replayMutation: mutation,
     });
@@ -82,17 +129,20 @@ export function createReplayModel(options: ReplayModelOptions) {
     const current = runtime.getSnapshot();
     if (!current.launched && current.epoch === epoch && current.game === gameIdForProduct(product)) {await options.releasePrepared(product, epoch); if (retainedOwner === owner) retainedOwner = null;}
   }
-  async function refresh({animateRows = false}: {animateRows?: boolean} = {}): Promise<void> {
+  async function refresh({animateRows = false, afterMutation = false}: {animateRows?: boolean; afterMutation?: boolean} = {}): Promise<void> {
     const product = snapshot.productId, token = generation, version = ++readVersion;
     if (!product || !snapshot.open || disposed) return;
     const ownerAtStart = runtimeOwner;
-    const promise = withFiles(product, async access => {
+    // Import's committed writer still owns the mutation queue while requesting
+    // this read. Waiting for that same queue here would wait on ourselves.
+    const promise = options.storage && gameIdForProduct(product) === 'th09' ? (afterMutation ? Promise.resolve() : mutations.idle()).then(async () =>
+      (await options.storage!.read(product)).map(({bytes: _bytes, ...file}) => ({...file, name: file.path.split('/').pop() || file.path}))) : withFiles(product, async access => {
       if (ownerAtStart && ownerAtStart.epoch === null) ownerAtStart.epoch = access.epoch;
       await access.sync();
-      return responseFiles(await access.send('list', {})).filter(file => isReplayFilePath(file.path)).sort((a, b) => a.path.localeCompare(b.path));
+      return responseFiles(await access.send('list', {}), product).filter(file => isReplayFilePath(file.path));
     });
     retainedRead = {product, animateRows, promise};
-    const rows = await promise;
+    const rows = (await promise).sort((a, b) => (b.replayMatch?.startedAt ?? 0) - (a.replayMatch?.startedAt ?? 0) || a.path.localeCompare(b.path));
     if (valid(token, product) && readVersion === version) publish({phase: 'ready', rows: Object.freeze(rows), animateRows});
   }
 
@@ -101,12 +151,14 @@ export function createReplayModel(options: ReplayModelOptions) {
     const token = ++generation;
     retainedRead = null;
     const current = runtime.getSnapshot();
-    if (!runtimeOwner && !current.ready && current.epoch === null) runtimeOwner = {product, epoch: null};
+    if (options.storage && gameIdForProduct(product) === 'th09' || !runtimeOwner && !current.ready && current.epoch === null) runtimeOwner = {product, epoch: null};
     retainedOwner = null;
     publish({open: true, phase: 'loading', productId: product, rows: [], animateRows: false});
     await options.afterPaint();
     if (!valid(token, product)) return;
-    try {await refresh({animateRows: true});}
+    const listing = refresh({animateRows: true});
+    preloadViewer(product, token);
+    try {await listing;}
     catch (error) {
       if (valid(token, product)) publish({phase: 'error', rows: [], animateRows: false});
       throw error;
@@ -119,6 +171,7 @@ export function createReplayModel(options: ReplayModelOptions) {
     const current = runtime.getSnapshot();
     if (retainedOwner?.product === product && !current.launched && current.epoch === retainedOwner.epoch) runtimeOwner = retainedOwner;
     publish({open: true});
+    preloadViewer(product, token);
     if (snapshot.phase !== 'loading') return;
     // Closing before the first paint may have prevented the initial read.
     if (!read) {
@@ -142,14 +195,43 @@ export function createReplayModel(options: ReplayModelOptions) {
     retainedOwner = release ?? retainedOwner;
     runtimeOwner = null;
     publish({open: false});
+    if (product && gameIdForProduct(product) === 'th09' && options.prepareViewer) options.closeViewer?.();
     if (release && product) {
-      void cleanup(release, token).catch(error => options.toast(t('replay.operationFailed', {reason: errorMessage(error)}))).finally(options.afterClose);
+      closeWork = cleanup(release, token);
+      void closeWork.catch(error => options.toast(t('replay.operationFailed', {reason: errorMessage(error)}))).finally(options.afterClose);
     } else options.afterClose();
+  }
+  async function watch(path: string): Promise<void> {
+    const product = snapshot.productId, token = generation;
+    if (watching || !product || !valid(token, product)) return;
+    watching = true;
+    try {
+      if (gameIdForProduct(product) !== 'th09' || !options.watch || !isReplayFilePath(path)) throw new Error(t('replay.unsupported'));
+      await mutations.idle();
+      if (!valid(token, product)) return;
+      if (runtime.getSnapshot().launched && !options.prepareViewer) throw new Error(t('replay.stopBeforeWatch'));
+      if (!snapshot.rows.some(row => row.path === path)) throw new Error(t('runtime.invalidFileEntry'));
+      if (options.prepareViewer) {await prepareViewer(product); if (valid(token, product)) await options.watch(product, path); return;}
+      // Retire the manager's temporary native owner before playback acquires
+      // its own epoch. Router Back may later reopen the retained folder view.
+      close(); const closedGeneration = generation; await closeWork;
+      if (!disposed && generation === closedGeneration && !snapshot.open) await options.watch(product, path);
+    } catch (error) {if (!disposed && (!options.prepareViewer || valid(token, product))) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));}
+    finally {watching = false;}
   }
   async function download(path: string): Promise<void> {
     const product = snapshot.productId, token = generation;
     if (!product || !valid(token, product)) return;
     try {
+      if (options.storage && gameIdForProduct(product) === 'th09') {
+        const files = await mutations.run(() => options.storage!.read(product, {path}));
+        if (!valid(token, product)) return;
+        const file = files.find(file => file.path === path);
+        if (!file) throw new Error(t('runtime.invalidFileEntry'));
+        const copy = new Uint8Array(file.bytes.length); copy.set(file.bytes);
+        options.download(path.split('/').pop() || 'replay.rpy', copy.buffer, 'application/octet-stream');
+        return;
+      }
       const content = await withFiles(product, async access => responseBytes(await access.send('read', {path})));
       if (!valid(token, product)) return;
       const bytes = new Uint8Array(content);
@@ -167,23 +249,84 @@ export function createReplayModel(options: ReplayModelOptions) {
       const prefix = PRODUCT_GAMES[gameIdForProduct(product)].replay?.prefix;
       if (!prefix) throw new Error(t('replay.unsupported'));
       if (!isValidReplayName(prefix, renamed.trim())) throw new Error(t('replay.nameInvalid', {prefix}));
-      const target = `replay/${renamed.trim()}`;
-      if (target.toLowerCase() === path.toLowerCase()) return;
+      const target = `${path.slice(0, path.lastIndexOf('/'))}/${renamed.trim()}`;
+      const sharedExtensionSlot = gameIdForProduct(product) === 'th09';
+      if (replayStoragePathKey(target, sharedExtensionSlot) === replayStoragePathKey(path, sharedExtensionSlot)) return;
       await mutations.run(async () => {
         // Once the user committed this mutation, closing the manager waits for
         // its queue; it must not silently cancel the requested file operation.
         if (disposed) return;
         await withFiles(product, async access => {
           await access.sync();
-          const currentPaths = responseFiles(await access.send('list', {})).map(file => file.path);
-          if (!isReplayTargetAvailable(currentPaths, target)) throw new Error(t('replay.nameExists'));
+          const currentFiles = responseFiles(await access.send('list', {}), product);
+          const currentPaths = currentFiles.map(file => file.path);
+          if (!isReplayTargetAvailable(currentPaths, target, sharedExtensionSlot)) throw new Error(t('replay.nameExists'));
           const content = responseBytes(await access.send('read', {path}));
-          await access.send('write', {path: target, bytes: content});
+          const replayMatch = currentFiles.find(file => file.path === path)?.replayMatch;
+          await access.send('write', {path: target, bytes: content, ...(replayMatch ? {replayMatch} : {})});
           await access.send('remove', {path});
         }, true);
       });
       if (valid(token, product)) await refresh();
     } catch (error) {if (valid(token, product)) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));}
+  }
+  async function move(path: string, directory: string): Promise<boolean> {
+    const product = snapshot.productId, token = generation;
+    if (!product || !valid(token, product) || gameIdForProduct(product) !== 'th09') return false;
+    try {
+      if (!isTh09ReplayDirectory(directory) || !isReplayFilePath(path)) throw new Error(t('replay.folderInvalid'));
+      if (path.slice(0, path.lastIndexOf('/')).toLowerCase() === directory.toLowerCase()) return true;
+      await mutations.run(async () => {
+        if (disposed) throw new Error(t('replay.operationCancelled'));
+        await withFiles(product, async access => {
+          await access.sync();
+          const files = responseFiles(await access.send('list', {}), product), source = files.find(file => file.path === path);
+          if (!source) throw new Error(t('runtime.invalidFileEntry'));
+          const prefix = PRODUCT_GAMES[gameIdForProduct(product)].replay!.prefix;
+          const name = allocateReplayName(prefix, files.map(file => file.path), source.name, true, directory);
+          if (!name) throw new Error(t('file.replaySlotsExhausted'));
+          const target = `${directory}/${name}`, content = responseBytes(await access.send('read', {path}));
+          await access.send('write', {path: target, bytes: content, ...(source.replayMatch ? {replayMatch: source.replayMatch} : {})});
+          // The destination must survive a flush before removing the source.
+          await access.sync();
+          const saved = responseBytes(await access.send('read', {path: target}));
+          if (saved.length !== content.length || saved.some((byte, index) => byte !== content[index])) throw new Error(t('file.saveVerifyFailed'));
+          await access.send('remove', {path});
+        }, true);
+      });
+      if (valid(token, product)) await refresh();
+      return true;
+    } catch (error) {if (valid(token, product)) options.toast(t('replay.operationFailed', {reason: errorMessage(error)})); return false;}
+  }
+  async function downloadFolder(directory: string): Promise<void> {
+    const product = snapshot.productId, token = generation;
+    if (!product || !valid(token, product) || gameIdForProduct(product) !== 'th09') return;
+    try {
+      if (!isTh09ReplayDirectory(directory) || directory === 'replay') throw new Error(t('replay.folderInvalid'));
+      const bytes = await mutations.run(async () => {
+        if (options.storage) {
+          const files = await options.storage.read(product, {directory});
+          if (!files.length) throw new Error(t('file.noReplayToExport'));
+          const entries: Record<string, Uint8Array> = {};
+          for (const file of files) {entries[file.path] = file.bytes; if (file.replayMatch) entries[file.path.replace(/\.rpyx?$/, '.json')] = new TextEncoder().encode(JSON.stringify(file.replayMatch));}
+          return zipSync(entries, {level: 1});
+        }
+        return withFiles(product, async access => {
+        await access.sync();
+        const files = responseFiles(await access.send('list', {}), product).filter(file => isReplayFilePath(file.path) && file.path.slice(0, file.path.lastIndexOf('/')) === directory);
+        if (!files.length) throw new Error(t('file.noReplayToExport'));
+        const entries: Record<string, Uint8Array> = {};
+        for (const file of files) {
+          entries[file.path] = new Uint8Array(responseBytes(await access.send('read', {path: file.path})));
+          if (file.replayMatch) entries[file.path.replace(/\.rpyx?$/, '.json')] = new TextEncoder().encode(JSON.stringify(file.replayMatch));
+        }
+        return zipSync(entries, {level: 1});
+        });
+      });
+      if (!valid(token, product)) return;
+      const copy = new Uint8Array(bytes.length); copy.set(bytes);
+      options.download(`${directory.slice(7)}.zip`, copy.buffer, 'application/zip');
+    } catch (error) {if (valid(token, product)) options.toast(t('replay.downloadFailed', {reason: errorMessage(error)}));}
   }
   async function remove(path: string): Promise<void> {
     const product = snapshot.productId, token = generation;
@@ -203,7 +346,7 @@ export function createReplayModel(options: ReplayModelOptions) {
   return {
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};},
     getSnapshot: () => snapshot, isOpen: () => snapshot.open,
-    open, refresh, reopenRetained, close, download, rename, remove, mutations,
+    open, refresh, reopenRetained, close, watch, download, downloadFolder, rename, move, remove, mutations,
     dispose() {disposed = true; generation++; retainedRead = null; listeners.clear();},
   };
 }

@@ -128,6 +128,48 @@ Blob HTML as the final carrier, hiding Runtime filesystem state inside a Service
 - Canonical title repositories — Runtime-specific implementation authority;
   historical temp/migration worktrees are provenance only.
 
+## TH09 independent Replay browsing
+
+TH09's Replay workspace lists and downloads persisted files through
+`app/services/replay-storage.ts`, a read-only compatibility adapter for the
+existing IDBFS v21 `FILE_DATA` store. It derives the ordinary root from the
+Product Catalog and preserves the Runtime's separate MP root. Missing databases
+are not created; unsupported schemas fail without migration or native fallback.
+
+Opening the workspace starts the persistent viewer and independently reads the
+file list in parallel. Browsing and downloading must not wait for Runtime, DATA,
+language or music readiness, and remain available after a loading failure.
+Watch joins an in-flight preparation; subsequent files and backward seeks reuse
+that viewer. Native writes requested during preparation wait for the same owner.
+A matching already-owned Runtime must finish its normal
+save/sync before an independent read. This handshake concerns the current
+document's Runtime, not unsaved memory held by another browser tab.
+
+Native Runtime commands remain the only writer for import, rename, move and
+delete. The reader preserves Replay bytes, THMOTION export extensions and
+validated MP sidecars. ZIP code is available with the page so an offline folder
+download does not depend on fetching a module at the moment of download.
+
+Verify file listing/download while game readiness is withheld, automatic player
+preparation, ordinary/MP root isolation, offline download and byte equality,
+save ACK before read, queued Watch,
+hot file switch, and one-click return. Source gates are
+`tests/react-main/replay-storage.test.mjs`, `replays-model.test.mjs`, and the
+Replay cases in `browser-session-mounted.test.mjs`.
+
+Replay fullscreen uses the permanent `#player` workspace owner, so wide screens
+retain the file browser and its menus beside the game. Portrait fullscreen uses
+the game and transport only. Keep the native iframe in place and preserve a
+visible upper-right fullscreen exit control in either layout.
+
+The Replay workspace mounts playback controls without the normal gameplay input
+owner, touch HUD/utilities or runtime diagnostics. Keep that boundary through
+preparation, launch ACK and file playback. Its iframe does not receive pointer
+input, so the native canvas cannot consume vertical page swipes. Verify phone
+scrolling with Touch enabled after the game is ready, as well as file actions
+and the workspace's own fullscreen controls. Ordinary play and live spectating
+retain their existing input owners.
+
 ## Verification
 
 1. Verify catalog, descriptor, installed generation and required-file list independently.

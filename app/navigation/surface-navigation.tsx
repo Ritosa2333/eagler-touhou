@@ -107,11 +107,11 @@ interface SurfaceNavigation extends SurfaceAddress {
   closeDirectoryForm(): void;
   openTouchLayout(): void;
   playerOpen: boolean;
-  openPlayer(productId: ProductId): void;
+  openPlayer(productId: ProductId, options?: {dismissInfo?: boolean}): void;
   closeSurface(): void;
   completeRuntimeClose(context?: {titleOverlayWasOpen?: boolean}): void;
   infoDialogOpen(id: InformationDialogId): boolean;
-  openInfoDialog(id: InformationDialogId): void;
+  openInfoDialog(id: InformationDialogId, options?: {replace?: boolean}): void;
   closeInfoDialog(id?: InformationDialogId): void;
 }
 const NavigationContext = createContext<SurfaceNavigation | null>(null);
@@ -332,13 +332,16 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   }, []);
   const manualRoomPlayerExit = useRef(false);
   const pageHistory = readPageHistory(location.state);
+  // Loading/retiring the persistent iframe adds joint browser history entries
+  // that the parent Router cannot count. Its Back buttons use explicit parents.
+  const replayChildHistory = useRef(false);
   const gameEntry = plainState(plainState(location.state)[gameEntryKey]);
   const topGame = playerOpen && typeof gameEntry.position === 'number' && gameEntry.position === pageHistory?.position;
   const pendingDirectorySelection = useRef<{position: number; product: ProductId} | null>(null);
   function returnToPageParent(parentProduct?: ProductId) {
     const history = readPageHistory(location.state), parent = history && PAGE_PARENTS[history.page];
     if (!parent) return;
-    const distance = parentDistance(history);
+    const distance = replayChildHistory.current ? null : parentDistance(history);
     roomPolicyNavigation.current = true;
     try {
       if (distance !== null) {
@@ -559,18 +562,19 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   function infoDialogOpen(id: InformationDialogId) {
     return validInfo && infoVisible[id] === true;
   }
-  function openInfoDialog(id: InformationDialogId) {
+  function openInfoDialog(id: InformationDialogId, options?: {replace?: boolean}) {
     if (!INFORMATION_DIALOG_IDS.includes(id) || infoDialogOpen(id) || blocker.state !== 'unblocked' ||
         infoOpenIssuedKey.current === location.key) return;
     infoOpenIssuedKey.current = location.key;
+    if (id === 'replayDialog' && options?.replace) replayChildHistory.current = true;
     // Bounded visible flags are the current Router-rendered UI, not retained
     // history receipts. Main keeps an open parent native dialog beneath child.
     const visible = Object.fromEntries(INFORMATION_DIALOG_IDS.map(name => [name, infoDialogOpen(name)]));
     visible[id] = true;
     const next = {pathname: location.pathname, search: location.search, hash: location.hash};
-    void navigate(next, {preventScrollReset: true, state: {
+    void navigate(next, {replace: options?.replace, preventScrollReset: true, state: {
       ...plainState(location.state),
-      [infoEntryKey]: {session: dialogSession, active: id, visible, parentKey: location.key, href: href(next)},
+      [infoEntryKey]: {session: dialogSession, active: id, visible, ...(options?.replace ? {} : {parentKey: location.key}), href: href(next)},
     }});
   }
   function closeInfoDialog(id?: InformationDialogId) {
@@ -657,16 +661,18 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     void navigate({pathname: destination.pathname, search: destination.search, hash: destination.hash},
       {state: {}, preventScrollReset: false});
   }
-  function openPlayer(productId: ProductId) {
+  function openPlayer(productId: ProductId, options?: {dismissInfo?: boolean}) {
     if (playerOpen || typeof gameEntry.position === 'number' && gameEntry.position === pageHistory?.position) return;
     if (address.productId !== productId) {openOptions(productId); return;}
     const position = pageHistory?.position ?? 0;
+    const state = plainState(location.state);
+    if (options?.dismissInfo) delete state[infoEntryKey];
     void navigate({pathname: location.pathname, search: location.search, hash: location.hash}, {
       // The requested app return policy gives gameplay a Back layer above its
       // options/room. The Runtime retires the old browsing context on close so
       // this new layer cannot restore a previous game's document.
       preventScrollReset: true,
-      state: {...plainState(location.state), [gameEntryKey]: {position: position + 1, parentPosition: position}},
+      state: {...state, [gameEntryKey]: {position: position + 1, parentPosition: position, ...(options?.dismissInfo ? {replayManager: true} : {})}},
     });
   }
   function applyRoomOperations(operations: HistoryOperation[]) {
@@ -807,6 +813,23 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   }
   function completeRuntimeClose(context: {titleOverlayWasOpen?: boolean} = {}) {
     if (completedRuntimeCloseKey.current === location.key) return;
+    if (gameEntry.replayManager === true) {
+      completedRuntimeCloseKey.current = location.key;
+      const state = plainState(location.state); delete state[gameEntryKey];
+      // Retained room layers now close in place too: their pre-playback history
+      // offsets no longer describe the browser's joint iframe history.
+      for (const key of [roomPanelKey, roomSettingsKey]) {
+        if (!(key in state)) continue;
+        const entry = {...plainState(state[key])}; delete entry.parentKey; delete entry.parentPosition;
+        state[key] = entry;
+      }
+      // Restore the manager in place after native storage has flushed. Never
+      // traverse a joint iframe history entry to recover an earlier runtime.
+      applyRoomOperations([{kind: 'replace', url: currentUrl().href, state: {...state,
+        [PLAYER_HISTORY_KEY]: false, [infoEntryKey]: {session: dialogSession, active: 'replayDialog',
+          visible: {replayDialog: true}, href: href(location)}}}]);
+      return;
+    }
     if (address.surface === 'room' && !context.titleOverlayWasOpen && address.productId && address.roomCode) {
       completedRuntimeCloseKey.current = location.key;
       applyRoomOperations([completedRoomReturnOperation(address.productId, address.roomCode)]);

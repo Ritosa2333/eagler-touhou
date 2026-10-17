@@ -47,7 +47,9 @@ try{
   const seeking=await waitRuntime(viewer,s=>s.viewer[6]===1,'manual fast forward');const target=seeking.viewer[4];
   await waitRuntime(viewer,s=>s.viewer[1]>=target&&!s.viewer[6],'stop at selected target');
   const trace=await frame.locator('body').evaluate(()=>window.__spectatorTestFrames);assert.ok(trace.some(s=>s[1]===target),'exact target was reached without skipped input');report.checks.manualTargetAndStop=true;
-  const beforeBack=await runtime(viewer);await frame.locator('#spectatorSeek').press('Home');const afterBack=await runtime(viewer);assert.ok(afterBack.viewer[1]>=beforeBack.viewer[1]);report.checks.noBackwardSeek=true;
+  const beforeBack=await runtime(viewer);await frame.locator('#spectatorSeek').press('Home');
+  const afterBack=await waitRuntime(viewer,s=>s.viewer[1]<beforeBack.viewer[1],'rewind retained match history');
+  assert.equal(afterBack.active,true);report.checks.backwardSeek=true;
   await frame.locator('#spectatorLive').click();const live=await waitRuntime(viewer,s=>s.viewer[7]===1&&!s.viewer[6]&&s.viewer[2]-s.viewer[1]>60&&s.viewer[2]-s.viewer[1]<=110,'delayed live');report.checks.liveDelay=live.viewer[2]-live.viewer[1];
   async function unobstructedTimeline() {
     const timeline = await frame.locator('#spectatorTimeline').boundingBox();

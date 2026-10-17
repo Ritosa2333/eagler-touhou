@@ -26,6 +26,7 @@ const REQUIRED_OPERATOR_FILES = Object.freeze([
   "services/relay/relay.env.example",
   "services/relay/eagler-netplay-relay.service",
   "services/relay/server/netplay-relay.mjs",
+  "services/relay/server/nickname-worker.mjs",
   "services/relay/server/room-probe-policy.mjs",
   "services/relay/server/spectator-frame.mjs",
   "services/turn/render-coturn-config.cjs",

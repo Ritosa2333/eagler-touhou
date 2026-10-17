@@ -4,7 +4,7 @@ The Hosted site intentionally starts without a Netplay Relay endpoint.
 
 ## Relay
 
-Install Node.js 22+, copy `services/relay/` to a private service directory, then:
+Install Node.js 22.13+, copy `services/relay/` to a private service directory, then:
 
 ```sh
 npm --prefix /opt/eagler-touhou/services/relay ci --omit=dev
@@ -27,6 +27,14 @@ Only after both pass, configure the deployed site copy:
 ```sh
 node services/configure-deployed-site.mjs --site=/var/www/eagler-touhou --relay=wss://YOUR_DOMAIN/eagler-netplay/
 ```
+
+Public nicknames are optional. Enable the settings in `relay.env.example`, create
+the SQLite parent directory readable/writable only by the service user, and keep
+the state and API key outside the static site. Ship both bundled server files;
+`nickname-worker.mjs` must remain beside `netplay-relay.mjs`. The worker owns SQL
+and model requests, while the relay only publishes approved results. Preserve
+the SQLite database and its WAL/SHM files when moving a running service; stop the
+service before an ordinary file copy. Back up state before upgrades.
 
 ## TURN
 

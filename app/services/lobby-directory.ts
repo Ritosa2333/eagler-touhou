@@ -1,3 +1,4 @@
+import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
   PRODUCT_IDS,
   gameIdForProduct,
@@ -9,6 +10,7 @@ import {
 import { validateSiteManifest, type SiteManifest } from '../../src/contracts/site-manifest.mts';
 import {
   multiplayerControlMode,
+  generateMultiplayerRoomCode,
   type MultiplayerIdentityStore,
 } from '../../src/launcher/multiplayer-identity.mts';
 import { buildMultiplayerDirectoryRelayUrl } from '../../src/launcher/multiplayer-relay-url.mts';
@@ -20,6 +22,7 @@ import { parseTh09PlayerStats, type Th09PlayerStats } from '../../src/launcher/t
 export type DirectoryConnection = 'loading' | 'live' | 'offline' | 'unsupported' | 'missing';
 export type DirectoryFormMode = 'create' | 'join';
 export interface DirectorySeat {
+  name?: string;
   machineSign?: string;
   stats?: Th09PlayerStats;
   initial: string;
@@ -274,6 +277,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         ][0] || '?';
       return Object.freeze({
         initial,
+        ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
         ...(row.product === 'th09mp'
           ? {
               machineSign:
@@ -644,10 +648,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     }
     const created = form.mode === 'create';
     if (created) {
-      const word = options.randomWord
-        ? options.randomWord()
-        : crypto.getRandomValues(new Uint32Array(1))[0];
-      code = String(1000 + (word % 9000));
+      code = generateMultiplayerRoomCode(options.randomWord);
       while (snapshot.rooms.some((room) => room.product === form.product && room.code === code))
         code = String(1000 + ((Number(code) - 999) % 9000));
     }

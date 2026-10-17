@@ -8,7 +8,7 @@ export function FullscreenTransient({children}: {children: ReactNode}) {
     const sync = () => {
       const fullscreen = document.fullscreenElement || (document as Document & {webkitFullscreenElement?: Element}).webkitFullscreenElement;
       const player = document.getElementById('player');
-      const parent = player && fullscreen === player ? player : document.body;
+      const parent = player && fullscreen instanceof HTMLElement && player.contains(fullscreen) ? fullscreen : document.body;
       if (host.parentNode !== parent) parent.append(host);
     };
     sync(); document.addEventListener('fullscreenchange', sync); document.addEventListener('webkitfullscreenchange', sync);

@@ -815,3 +815,60 @@ test('a reloaded retired home-selection marker cannot override the options page 
   await settle(() => controls.navigation.closeSurface());
   assert.equal(controls.navigation.surface,'library'); assert.equal(state().launcherIntegration,'keep');
 });
+
+for (const product of ['th09', 'th09mp']) test(`selected Replay returns to its manager without leaving ${product}`, async () => {
+  const controls = await mount(product === 'th09mp' ? inviteEntry({g: product, r: '4079'}) : {pathname: '/', search: '?game=th09', hash: '', state: {unrelated: 7}});
+  await settle(() => controls.navigation.openInfoDialog('replayDialog'));
+  await settle(() => {controls.navigation.openPlayer(product, {dismissInfo: true}); controls.setPlayer(true);});
+  assert.equal(controls.navigation.infoDialogOpen('replayDialog'), false);
+  assert.equal(controls.navigation.playerOpen, true);
+  controls.closeResult = false;
+  await settle(() => controls.navigation.closeSurface());
+  assert.equal(controls.navigation.playerOpen, true);
+  assert.equal(controls.navigation.infoDialogOpen('replayDialog'), false);
+  controls.closeResult = true;
+  await settle(() => controls.navigation.closeSurface());
+  assert.equal(controls.navigation.playerOpen, false);
+  assert.equal(controls.navigation.infoDialogOpen('replayDialog'), true);
+  assert.equal(controls.leaveCount, 0);
+  assert.equal(controls.navigation.productId, product);
+  await settle(() => controls.navigation.closeInfoDialog('replayDialog'));
+  assert.equal(controls.navigation.infoDialogOpen('replayDialog'), false);
+  assert.equal(controls.closeCount, 2);
+  assert.equal(controls.navigation.productId, product);
+});
+
+for (const layer of ['settings', 'panel']) test(`Replay return rebases retained room ${layer} instead of traversing pre-game iframe history`, async () => {
+  const controls = await mount(inviteEntry({g: 'th09mp', r: '4079'}));
+  await settle(() => layer === 'settings' ? controls.navigation.openRoomSettings() : controls.navigation.openRoomPanel('personal'));
+  await settle(() => controls.navigation.openInfoDialog('replayDialog'));
+  await settle(() => {controls.navigation.openPlayer('th09mp', {dismissInfo: true}); controls.setPlayer(true);});
+  await settle(() => controls.navigation.closeSurface());
+  await settle(() => controls.navigation.closeInfoDialog('replayDialog'));
+  assert.equal(layer === 'settings' ? controls.navigation.roomSettingsOpen : controls.navigation.roomPanel === 'personal', true);
+  await settle(() => layer === 'settings' ? controls.navigation.closeRoomSettings() : controls.navigation.closeRoomPanel());
+  assert.equal(layer === 'settings' ? controls.navigation.roomSettingsOpen : controls.navigation.roomPanel !== null, false);
+  assert.equal(mounted.router.state.historyAction, 'REPLACE');
+  assert.equal(controls.navigation.roomCode, '4079'); assert.equal(controls.leaveCount, 0); assert.equal(controls.closeCount, 1);
+});
+
+test('persistent Replay workspace replaces its options layer and closes without traversing child history', async () => {
+  const controls = await mount({pathname: '/', search: '?game=th09', hash: '', state: {unrelated: 7}});
+  const before = owner.readPageHistory(state()).position;
+  await settle(() => controls.navigation.openInfoDialog('replayDialog', {replace: true}));
+  assert.equal(mounted.router.state.historyAction, 'REPLACE');
+  assert.equal(owner.readPageHistory(state()).position, before);
+  assert.equal(state().launcherInformationDialogs.parentKey, undefined);
+  assert.equal(controls.navigation.infoDialogOpen('replayDialog'), true);
+  await settle(() => controls.setPlayer(true));
+  await settle(() => controls.setPlayer(false));
+  await settle(() => controls.navigation.closeInfoDialog('replayDialog'));
+  assert.equal(mounted.router.state.historyAction, 'REPLACE');
+  assert.equal(controls.navigation.infoDialogOpen('replayDialog'), false);
+  assert.equal(controls.navigation.surface, 'options');
+  assert.equal(controls.navigation.productId, 'th09');
+  assert.equal(state().unrelated, 7);
+  await settle(() => controls.navigation.closeSurface());
+  assert.equal(controls.navigation.surface, 'library', 'the options Back button closes with one click after Replay return');
+  assert.equal(mounted.router.state.historyAction, 'REPLACE', 'numeric parent offsets cannot traverse a retired iframe');
+});

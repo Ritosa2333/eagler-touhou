@@ -63,6 +63,8 @@ const TH08_MULTIPLAYER_LOADOUTS = Object.freeze([
 ]);
 const TH10_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, REIMU_C, MARISA_A, MARISA_B, MARISA_C]);
 const TH11_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, REIMU_C, MARISA_A, MARISA_B, MARISA_C]);
+const TH15_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu", "marisa", "sanae", "reisen"].map((name, character) =>
+  Object.freeze({ labelKey: `multiplayer.loadout.th15_${name}`, glyph: ["霊", "魔", "早", "鈴"][character], character, shot: 0 })));
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
 const TH09_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic"]);
@@ -267,7 +269,7 @@ export const PRODUCT_GAMES = Object.freeze({
     runtimeAssets: Object.freeze([
       "th09.html", "manifest.json", "version.json", "shell.mjs", "managed.css", "keyboard.mjs",
       "directory-keyboard.mjs",
-      "shared-netplay.mjs", "motion-replay.mjs", "th09.mjs", "th09.wasm",
+      "shared-netplay.mjs", "motion-replay.mjs", "auto-replay.mjs", "replay-player.mjs", "playback-clock.mjs", "th09.mjs", "th09.wasm",
       "fonts/blend.bin", "fonts/cp932.bin",
     ]),
     dataProvider: "retail-memory",
@@ -282,7 +284,8 @@ export const PRODUCT_GAMES = Object.freeze({
     multiplayer: Object.freeze({
       titleKey: "game.title.th09mp",
       gameplay: "versus",
-      inputTiming: Object.freeze({ rollbackLimit: 8, measuredStartup: true, manualDelayLimit: 9 }),
+      inGameSelection: true,
+      inputTiming: Object.freeze({ rollbackLimit: 8, measuredStartup: true, manualDelayLimit: 9, manualRollbackDelay: true }),
       playerCounts: Object.freeze([2] as const),
       difficulties: TH09_MULTIPLAYER_DIFFICULTIES,
       loadouts: TH09_MULTIPLAYER_LOADOUTS,
@@ -466,6 +469,18 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/music" }),
     }),
     replay: Object.freeze({ prefix: "th15" }),
+    multiplayerRuntime: "./runtime/th15/multiplayer/th15.html",
+    multiplayer: Object.freeze({
+      titleKey: "game.title.th15mp",
+      gameplay: "cooperative",
+      inputTiming: Object.freeze({ rollbackLimit: 0, measuredStartup: true, manualDelayLimit: 9 }),
+      playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
+      difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+      loadouts: TH15_MULTIPLAYER_LOADOUTS,
+      peerTransportGlobal: "__th15PeerTransport",
+      spectator: true,
+      titleRoomEntry: false,
+    }),
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
   th20: Object.freeze({
@@ -535,10 +550,12 @@ export interface MultiplayerInputTimingConfig {
   sendPredictionLimit?: number;
   measuredStartup?: boolean;
   manualDelayLimit?: number;
+  manualRollbackDelay?: boolean;
 }
 export interface MultiplayerProductConfig {
   titleKey: string;
   gameplay: "cooperative" | "versus";
+  inGameSelection?: boolean;
   inputTiming?: Readonly<MultiplayerInputTimingConfig>;
   playerCounts: readonly (2 | 3)[];
   difficulties: readonly string[];
@@ -554,6 +571,7 @@ export function multiplayerInputTimingPolicy(product: Pick<MultiplayerProductCon
   return {
     measuredStartup,
     rollback,
+    manualRollbackDelay: rollback && timing?.manualRollbackDelay === true,
     manualDelayLimit: timing?.manualDelayLimit ?? (measuredStartup ? 9 : 8),
     predictionLimit: rollback ? timing?.sendPredictionLimit ?? 8 : 0,
   };

@@ -24,6 +24,12 @@ const storage = new MemoryStorage([
   [multiplayerLoadoutStorageKey("th07mp"), "5"],
 ]);
 const preferences = createMultiplayerPreferenceStore({ storage });
+assert.equal(preferences.replayAutoSave('th09mp'), true);
+preferences.persistReplayAutoSave('th09mp', false);
+assert.equal(createMultiplayerPreferenceStore({storage}).replayAutoSave('th09mp'), false);
+preferences.persistReplayAutoSave('th09mp', true);
+assert.equal(preferences.replayAutoSave('th09mp'), true);
+assert.equal(preferences.replayAutoSave('th07mp'), false);
 assert.deepEqual(preferences.load({ product: "th06mp", multiplayer: true, maxLoadout: 4 }), {
   shareSingleplayerSettings: false,
   preferredLoadout: 3,
@@ -44,6 +50,7 @@ assert.equal(storage.getItem(multiplayerLoadoutStorageKey("th07mp")), "4");
 
 const hostile = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } };
 const hostilePreferences = createMultiplayerPreferenceStore({ storage: hostile });
+assert.equal(hostilePreferences.replayAutoSave('th09mp'), true);
 assert.deepEqual(hostilePreferences.load({ product: "th06mp", multiplayer: true, maxLoadout: 4 }), {
   shareSingleplayerSettings: true,
   preferredLoadout: 0,

@@ -3,7 +3,7 @@ import {execFileSync} from 'node:child_process';
 export const normalizeSourceText = value => value.replaceAll('\r\n', '\n');
 /** Added settings labels are covered separately by the shared-settings fixture.
  * All prior messages and domain authorities remain pinned byte for byte. */
-export const pinnedUiAuthorityText = value => normalizeSourceText(value).replace(/^  \["settings\.(?:thpracMultiplayerDisabled|gameVersion|version\.(?:original|beauty|hint))".*\n/gm, '');
+export const pinnedUiAuthorityText = value => normalizeSourceText(value).replace(/^  \["(?:nickname\.[^"]+|file\.replayImported|room\.(?:rollbackDelayHint|manualDelayHint)|multiplayer\.control\.keysOrStick|settings\.(?:pixelPerfect|thpracMultiplayerDisabled|gameVersion|version\.(?:original|beauty|hint)))".*\n/gm, '');
 
 /** Domain facts now include main's TH11 policy. The newer editable-nickname
  * label is retained from origin/main; do not bless the candidate as its own oracle. */

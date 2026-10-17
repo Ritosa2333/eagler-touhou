@@ -11,5 +11,10 @@ export function createMainSelectController(options: {
     // A detached menu retains its native select's document scope independently
     // from its current body/dialog/fullscreen host.
     menu.toggleAttribute('data-launcher-document', !!select.closest('[data-launcher-document]'));
+    const trigger = select.parentElement?.querySelector('.mizuki-select-trigger');
+    if (trigger) {
+      const size = select.ownerDocument.defaultView?.getComputedStyle(trigger).fontSize;
+      if (size) menu.style.setProperty('--select-font-size', size);
+    }
   }});
 }

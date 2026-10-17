@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { verifyReleaseBundle } from "../../lib/release-bundle-verifier.mjs";
 import { verifyReleaseManifest } from "../../lib/release-manifest.mjs";
+import {buildNetplayRelay} from './build-netplay-relay.mjs';
 import {
   assertHostedSiteMatchesOperatorProfile,
   validateOperatorProfile,
@@ -53,7 +54,7 @@ async function writeRelayPackage(target) {
     private: true,
     version: "0.0.0",
     type: "module",
-    engines: { node: ">=22" },
+    engines: { node: ">=22.13" },
     scripts: { start: "node server/netplay-relay.mjs" },
     dependencies: { ws: rootLock.packages[""].dependencies.ws },
   };
@@ -120,7 +121,6 @@ try {
     resolve(candidate, "services/relay/eagler-netplay-relay.service"));
 
   const mappings = [
-    ["server/netplay-relay.mjs", "services/relay/server/netplay-relay.mjs"],
     ["server/room-probe-policy.mjs", "services/relay/server/room-probe-policy.mjs"],
     ["server/spectator-frame.mjs", "services/relay/server/spectator-frame.mjs"],
     ["lib/contracts/load-compiled-contract.mjs", "services/relay/lib/contracts/load-compiled-contract.mjs"],
@@ -133,6 +133,7 @@ try {
     ["tools/maintainer/verify-public-targeted-relay.mjs", "services/verify/verify-public-targeted-relay.mjs"],
   ];
   for (const [source, target] of mappings) await copyFile(resolve(project, source), resolve(candidate, target));
+  await buildNetplayRelay(resolve(candidate, 'services/relay/server'));
   await copyFile(resolve(hosted, "assets/contracts/product-catalog.mjs"),
     resolve(candidate, "services/relay/assets/contracts/product-catalog.mjs"));
   await writeRelayPackage(resolve(candidate, "services/relay"));

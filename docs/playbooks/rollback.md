@@ -54,6 +54,7 @@ Separate at least these components:
 8. **transport blackout** — missing input because bytes did not arrive, not because rollback took too long;
 9. **presentation/render cost** — high-refresh draw/submission, which must be measured separately from logical throughput;
 10. **instrumentation cost** — tracing/readbacks/profiling can itself create stalls.
+11. **confirmation/lifetime barrier waiting** — a phase outside rollback coverage, or a resource-destroying transition, can require exact input before any further update even when simulation and resimulation are cheap.
 
 Always measure more than average FPS. Useful rollback reports include:
 
@@ -69,6 +70,8 @@ Always measure more than average FPS. Useful rollback reports include:
 - actual transport impairment applied;
 - canonical checkpoint hashes;
 - input-to-render decomposition when responsiveness is under investigation.
+- boundary reason, time waiting for exact input/reconciliation/retirement ACKs,
+  and whether menu/Ending updates or presentation stopped during that wait.
 
 PASS means the requested run completed and correctness gates passed. PASS alone does not mean the presentation was smooth.
 
@@ -634,6 +637,302 @@ experiment was **excluded** from `b063ca2`; TH07's adopted span-3 policy is not 
 TH08 default. Exact-distance arithmetic refactoring and roster-order caching
 were also removed when correctness passed but useful performance gains did not.
 
+## Confirmation barriers and non-rewindable phases
+
+A large visible stall can come from waiting for permission to advance rather
+than expensive replay. If a driver excludes an entire Pause, Ending, Result or
+selection phase from prediction, it may require actual remote input on every
+tick of that phase. With little or no scheduled input delay, even ordinary
+network latency can then slow its animation and input feedback. A fast battle
+rollback benchmark, low replay count or cheap menu renderer does not rule this
+out. Record it separately from a transport blackout and from time spent restoring
+or simulating the world.
+
+### Audit coverage and the exact action that needs a fence
+
+"Cannot roll back" is a statement about the adapter's current state/lifetime
+coverage, not an inherent property of a named screen. For each supported phase,
+identify ordinary navigation/animation, the action that crosses a boundary, and
+the state owners that must survive a rewind. A menu cursor, repeat state, timer
+or animation can be rewindable while Retry, Continue, returning to title,
+creating Ending resources, replacing the world or committing records needs an
+exact-input fence.
+
+Prefer fencing the specific irreversible step when ordinary phase state has
+complete snapshot coverage. Keep history fully reconciled before retiring owners
+that old checkpoints still reference; retain any additional peer-ACK requirement
+for network/session retirement as its own condition. Removing a guard without
+proving coverage can rewind freed resources, duplicate persistent output or
+split the endpoints. A genuinely unsupported phase still needs a safe fence and
+an explicit recorded limitation.
+
+TH09 `a2d7652` is a concrete scoped example: `Application::checkpoint` includes
+paused/menu state, and `InGameMenus::{pause,game_over,match_end}_retires_world`
+identifies lifetime-changing actions. `rollback_tick` waits when that predicate
+requires exact input but the current decision is predicted or earlier history
+is not reconciled. Ordinary Pause navigation is therefore not a blanket
+rollback exclusion. TH09's battle snapshot is scoped to its two-human versus
+world; the story-mode `GameSession::update` path that constructs an Ending does
+not establish multiplayer Ending rollback support or a measured Ending stall.
+Audit that path separately in each title that actually supports it.
+
+### Cross-title phase audit (2026-10-16)
+
+Audit every declared multiplayer product, not only the title that supplied the
+first symptom. The current catalog declares TH06/07/08/09/10/11/15MP. Source
+inspection covered each local integration ref and, for the six published MP
+runtimes, the source refs declared by the main site's deployment metadata.
+The captured main release was `sha256-9737cc5d1432e8d554945977bb92520b008406814c90a5ef25b0daf2ed07519d`;
+its runtime-manifest identities agreed over SSH and public HTTPS. This identifies
+the release and declared sources, not a reproducible build or a measured WAN
+stall. TH15MP was declared locally but absent from that release's MP entries.
+
+| Title | Main declared source / local integration | Ordinary Pause | Ending, Result and other boundaries | Audit disposition |
+| --- | --- | --- | --- | --- |
+| TH06 | `b20fd0b` / `aa9bff8` | Snapshot includes GameManager/Gui/AsciiManager, but `SharedUiNeedsConfirmedInputs` requires actual input throughout Pause/retry. | Stage-finished UI also requires actual input. Ending/Result become local after gameplay ownership retires. | Existing independent 60 Hz `PumpConfirmedUiInput` mitigates per-tick send/wait coupling; still assess entry wait, menu feedback, queued input and resume catch-up. Do not classify local Ending as a sustained network wait. |
+| TH07 | `a04c8dc` / `80bbe45` | Snapshot-covered Pause/retry still requires actual input on every UI tick. | `SessionStillOwnsStageState` explicitly retains the entire Ending; `SharedUiNeedsConfirmedInputs` makes it confirmed-only. Result/title after retirement are local. | `PumpBufferedLockstepInput` already keeps a bounded wall-clock capture pipeline during shared UI. Whole-Ending and menu confirmation remain limitations, but are not evidence of an unmitigated stop/send/wait cycle. |
+| TH08 | `3942133` / `b720d98` | `WorldJournal` includes paused/retrying/menu/Ascii state; ordinary Pause does not itself fail `CanAdvance`. | Leaving the stable Game graph clears the journals after reconciliation. Ending/Result/title remain in `RollbackDriver`, with `world_ready=false` requiring a contiguous actual-input prefix on each tick. | High-priority cause candidate: broad post-game exact-input phases plus capture tied to `next_capture_ == next_`. This can stall cheap animation and delay local feedback even when correction costs are small. |
+| TH09 | `80aa50e` / `80aa50e` | Checkpoint covers Pause/game-over/match-end menus; lifetime-changing action predicates fence the specific due step. | The committed driver still treats all `in_title` frames as an exact-input boundary. Its current network selection flow can therefore wait throughout selection. Versus MP has no story Ending. | Preserve the narrow in-game predicates. Investigate the whole-title exclusion and required title state/resource coverage separately; an uncommitted selection snapshot change is not evidence that main already supports it. |
+| TH10 | `87346cb` / `c578c71` | The ordinary rollback transaction includes Results/Pause, input lanes, ANM state and native session state; no blanket Pause exact-input gate was found. | A changed `pending_screen` requires `PrepareTransitionFence` (reconciled inputs and retirement ACKs). `destroy_game` stops the combat session; Ending uses ordinary local input afterward. | No matching whole-Pause/whole-Ending exclusion found. Retain the resource/ACK fence and measure its duration and reliable tail repair separately. |
+| TH11 | `d965cec` / `a4b7b28` | `WorldRollback::CanCapture` rejects paused state and any pause-menu owner. Pause entry aborts/restores an open speculative transaction before menu construction. | Ending, game-over and result/title owners are also excluded. The exact driver continues the shared lifecycle through Ending and result UI. | Highest-priority cause candidate: the whole phase uses exact input, while `NeedsCapture` also requires `next_capture_ == next_`. This is a real coverage/lifetime limitation; deleting the eligibility guard would leave menu/resource ownership uncovered. |
+| TH15 | no published MP entry / `fb6f6a5` | `allowPrediction=false` applies to all phases. | Ending is synchronized by the same exact driver; native result/title UI becomes local only after the final retirement fence. | Intentional full lockstep, not a selective Pause rollback regression. Delay below delivery needs can expose repeated waits in combat as well as menus. Evaluate as its own policy. |
+
+TH08/TH11's relevant captured driver/eligibility/capture code was identical
+between the declared published sources and the inspected local integration refs.
+For TH06/TH07/TH10, the relevant driver policies above were also present in both
+versions; this does not assert that all source files or binaries were identical.
+
+Primary source anchors (inspect TH10/TH11 at their **MP refs**, not the ordinary
+checked-out branch):
+
+- TH06/TH07 `src/netplay/Th0xLanStageProbe.cpp`: production frame drivers,
+  `SharedUiNeedsConfirmedInputs`, the independent UI capture pump, and
+  `SessionStillOwnsStageState`; `Th0xRollbackState.cpp` for actual snapshot owners.
+- TH08 `th08_web/cpp/multiplayer/{RollbackDriver,WorldJournal,NetplayRuntime}.cpp`
+  and `NetplayRuntime.hpp`: `Admit`, `Stable`, `CanAdvance`, `Prepare`,
+  `CanCapture`; `platform/BrowserRuntime.cpp::step` retains the configured
+  network driver outside gameplay.
+- TH09 `th09_web/cpp/sdl/Application.cpp::{checkpoint,rollback_tick}`,
+  `game/InGameMenu.hpp` and `multiplayer/RollbackSession.{cpp,hpp}`.
+- TH10 `th10_web/cpp/platform/{Application,ApplicationFrames,World,WorldSession}.cpp`,
+  `multiplayer/{RollbackState,NetplayRuntime}.cpp`; the existing
+  `portable/multiplayer/check-rollback-pause.py` defines a late-Pause correction
+  comparison, but reading that test is not a fresh passing run.
+- TH11 `th11_web/cpp/game/{WorldRollback,GameSessionMultiplayer}.cpp`,
+  `sdl/MultiplayerRollback.inc`, and `multiplayer/NetplayRuntime.cpp`.
+- TH15 `th15_web/cpp/multiplayer/NetplayRuntime.cpp` and
+  `sdl/BrowserRuntime.cpp::mp_tick`.
+
+Prioritize TH11 Pause/Ending/result, TH08 post-game phases, then TH09 network
+selection. Keep TH06/TH07's existing mitigation in the comparison. Prefer
+snapshot coverage for stable UI owners with a fence at actual allocation,
+destruction, persistence or generation changes. If a temporary independent
+capture pipeline is considered instead, bound it by phase and measure queue age,
+release response, repeat/edge handling and resume catch-up. Do not add unlimited
+future sampling or copy a lead limit without proving the input-age tradeoff.
+
+The validation chain must identify the published generation, select the phase,
+record the concrete admission predicate, and connect its wait interval to input
+capture, input arrival, unique authoritative updates/Draws and presentation.
+Compare combat, Pause entry/idle/navigation/resume, a cancelled due Retry/exit,
+Ending skip and Result/selection where supported. Use two and three players where
+supported, explicit RTT 50 ms with small (about 5 ms) and larger (about 20 ms)
+variation, and delay an actual input immediately before/at a transition. State
+the impairment's direction and distribution; an added 50 ms in each direction
+is not a 50 ms RTT case. Check final reliable input/ACK repair, Replay's confirmed
+all-seat stream and spectators across the same boundaries. These are acceptance
+conditions, not tests executed by this source audit.
+
+### Diagnose and validate the boundary, not just the battle
+
+- Log the phase/action and barrier predicate, first blocked time and release
+  time, local/remote input frontiers, predicted mask, pending correction and
+  required retirement ACKs. Separate arrival waiting from remaining replay work.
+- Count unique phase updates and submissions alongside wait duration. Transport
+  may continue receiving while the authoritative menu stays frozen; a live
+  socket is not evidence that the boundary can advance. Keep receive/ACK/repair,
+  audio pumping and safe presentation eligible while waiting, without advancing
+  uncovered authoritative state.
+- Exercise Pause entry/resume, cancelling a due Retry/exit, Continue, round/stage
+  changes, Result and Ending where supported, including delayed input immediately
+  before and during the transition. Test that the frame needed to release the
+  fence can still be captured/sent and received without a circular wait.
+- Report per-phase wait tails and input feedback as well as battle FPS. If
+  expanding coverage, verify restored menu/animation/input state, resource
+  lifetime, exactly-once committed effects, Replay and spectator boundaries.
+
+The TH09 predicates above are source evidence for the mechanism and its current
+scope. They do not quantify a user's pause/Ending stall. Boundary measurements
+are required before claiming that a coverage change fixed that symptom.
+
+### Repair set following the audit (2026-10-16)
+
+The audit table above describes the inspected baseline. The subsequent repair
+set is committed separately in each title's existing integration branch. Source
+publication and deployment are separate; this record does not establish that a
+published Runtime contains these changes:
+
+- TH06/TH07 narrow the ordinary Pause confirmation gate to native menu setup
+  and due Resume/exit/restart steps. Cursor and close-animation state use the
+  existing snapshot; Retry, Ending where synchronized, and unsupported scene
+  boundaries keep confirmation. The UI capture lead is reduced from 64 to 8
+  slots. TH07 retains its separate 64-slot incremental-CPU-recovery allowance.
+- TH08/TH11 add a shared `Netplay::ConfirmedInputClock` for exact-input phases.
+  They can capture/send a new physical slot at 60 Hz while the current UI frame
+  waits, with at most eight capture slots ahead of simulation. Combat drains
+  the existing tail before returning to its ordinary capture rule. This is
+  input pipelining, **not** new Ending/menu snapshot coverage. Resource and
+  confirmation fences remain authoritative. Pure-delay modes use the same
+  bounded pipeline without enabling prediction.
+- TH11 also prevents an ahead-of-simulation physical capture from writing raw
+  keyboard edges into shared native title state. Live/recorded shared menus
+  consume their committed seat inputs; the local Replay directory keeps local
+  keyboard metadata.
+- TH09's existing working-copy selection candidate supplies title RNG/settings,
+  input, animation-vector and native selection snapshots, combines both seats
+  for shared controls, and fences resource setup, match creation and departure.
+  This task validated that candidate rather than discarding/replacing it.
+- TH10's existing Pause rollback and transition input/ACK repair remain in
+  place. The audit found no corresponding blanket phase exclusion to remove.
+- TH15 remains pure lockstep. Its physical capture cursor is now separate from
+  `NextFrame`, and the host sends the actual capture slot rather than assigning
+  each new sample to a stalled simulation cursor. Its MP build gives MP common
+  headers priority over ordinary common headers. An explicit
+  `EAGLER_COMMON_NETPLAY_ROOT` can select a dependency snapshot for local checks;
+  an unversioned directory is recorded as such, never as the unrelated default
+  submodule's revision.
+
+The clock has no wire, Replay or rollback-state ownership. A retry cannot
+overwrite an existing sample. It preserves normal cadence jitter, does not
+batch missed independent-clock slots, and resets with each session
+generation. Eight slots bound the queue length, **not** wall-clock latency
+during an outage. Do not interpret this bound as an input-to-photon p95.
+
+Focused evidence: TH06/TH07 MP Web builds and actual local Chromium two-player
+Pause/resume runs completed through frame 900 with matching canonical hashes.
+TH09's Release selection run with 60 ms delayed input sends sustained about
+60 logical ticks/s, performed real corrections, matched confirmed hashes and
+launched from either seat's shared selection controls. This delay setting is
+not a measured 60 ms RTT. TH08/TH11/TH15 capture tests use their real gate/core
+adapters to check waiting, once-only sampling, held/release preservation,
+bounded lead, tail drain and generation reset; existing exact-input/Replay
+checks include two/three seats and negotiated D=0/2/9. A separate shared-core
+model exercises explicit 50 ms RTT with 5/20 ms variation. Model throughput is
+not a browser/public-network measurement.
+
+Full MP Web builds also completed for TH08 (fixture variant), TH11 and TH15.
+TH08 and TH15 checks used explicit copies of their locked common commits plus
+the new header; TH08 retained the working-copy audio header needed by its
+pre-existing audio changes. Publication replaces these overlays with common
+pins: TH08 uses `858e4c2`, TH11 uses `84b5eae` based on `6234585`, and TH15's
+netplay dependency uses `f4d318d` based on `dd93c94`. The latter two add only the
+clock and its test registration to their original shared API. Three-player real UI/Ending/result runs, public
+50 ms/jitter traces, per-phase response tails and full lifecycle Replay/observer
+acceptance remain separate gates before claiming the original visible stall
+has been completely eliminated.
+
+### TH09 confirmed output retention: issue #89 (2026-10-16)
+
+The post-Present driver originally bounded its lead from the first prediction
+mismatch, while its nine-slot ring also retained older unpublished audio,
+Replay boundaries and spectator input. Eight delayed inputs can arrive with the
+first five predictions correct and only a later mismatch. If recovery has not
+run, two more fresh ticks can overwrite the oldest unpublished slot even though
+the correction itself remains inside the eight-frame rollback window. The
+later publication then fails with `Confirmed output history expired`.
+
+The repair bounds deferred advancement by the oldest unpublished output too.
+It drains reconciled output after transport/capture and after completed ticks,
+including the catch-up frontier before another fresh tick reuses a slot. The
+once-only publication cursor remains authoritative, and a slot-owner check
+rejects overwriting a different unpublished frame. This changes neither the
+rollback window nor the input protocol.
+
+`th09_web/tests/multiplayer/output-history-browser.mjs` exercises real Release
+worlds and native input packets with explicitly controlled delivery/recovery.
+The old build reproduces the error with `--expect-broken`; the repaired build
+must pass both recovery schedules, publish exact inputs once and in order, and
+match the exact peer's confirmed world hash. No observer or Replay-save call is
+required to trigger the old failure. This establishes the driver defect, not
+the reporting player's exact packet timing or its public-network frequency.
+
+The cross-title ownership rule is recorded in
+[Adapter behavior invariants](../ADAPTER_BEHAVIOR_INVARIANTS.md#未发布输出必须保留到提交完成).
+
+## TH09 input scheduling and post-Present recovery (2026-10-16)
+
+TH09 `a2d7652` adopts arrival-driven retry of an already-due tick, removes its
+extra shortage slowdown, and keeps post-Present asynchronous recovery. This
+section records that title's scheduling implementation and tradeoffs. It does
+not extend TH07 device acceptance to TH09 or establish a universal fastest policy.
+
+### Receive wakeups do not earn simulation ticks
+
+The ordinary clock first marks a tick due. If remote input or reconciliation
+blocks it, the scheduler retains one retry obligation. Receiving a packet may
+retry that obligation before the next rAF; receiving more packets must not grant
+additional fresh ticks, bypass the prediction bound, or resample a captured word.
+
+Process receive/ACK state before retrying. Gate the wake by the active player's
+rollback session, running/unsuspended lifecycle and a pending due tick; pure
+delay, spectators and closed sessions do not use this live rollback wake. Keep
+the regular network timer for liveness and repair even when no packets arrive.
+
+After a successful wake, prevent time spent blocked from becoming new catch-up
+credit. TH09 rebases the outer wall-clock stamp and retains only the fractional
+phase saved by `FrameSchedule::blocked`. Failed or partial recovery keeps the
+pending obligation. This is clock ownership, not permission to skip logical state.
+
+### Deferred recovery needs cancellation within the same loop epoch
+
+Submitting the visible frontier before historical recovery can move work out of
+the current visible pass. The asynchronous callback still needs one owner and a
+unique ticket. Pause/resume can cancel and replace a callback without changing
+the loop epoch; checking the epoch alone allows the old callback to consume the
+replacement's work. Stop/start, pause, disable and close must invalidate pending
+work, and callbacks must recheck current lifecycle eligibility.
+
+Preserve exact restore/replay, the title's history bound and confirmation fences.
+Fall back to input-point recovery at the bound or an irreversible boundary.
+Audit [confirmation barriers and phase coverage](#confirmation-barriers-and-non-rewindable-phases)
+separately; moving recovery after Present does not make an uncovered phase rewindable.
+Present here means graphics submission, not acknowledgment that pixels reached
+the display. An 8 ms budget for starting more replay ticks cannot preempt a
+running tick or restore and does not bound keyboard-event delivery latency.
+
+### Shortage slowdown is also local input latency
+
+TH09 previously lengthened wall-clock tick intervals toward twice normal once
+the contiguous remote-input gap grew, then recovered gradually. Fresh capture
+followed that cadence, so even a correctly received local UP could wait longer
+to be sampled. An already-captured held frame blocked at the history bound added
+a separate delay; it could not be rewritten after physical release.
+
+The new policy removes this extra slowdown and its recovery tail while keeping
+the eight-frame hard bound and the channel's small frame-advantage correction.
+It may reach hard waits sooner on poor arrival conditions. Compare local release
+response, stalls, replay work and presentation tails together; removing slowdown
+is not itself proof of better responsiveness on every network. Native bounded
+same-frame waits also cannot be copied into a blocking browser loop, where input
+and receive handlers need the same thread to run.
+
+### Anchors and evidence limits
+
+In `th09-eagler/th09_web/`, see `cpp/multiplayer/RollbackSession.{cpp,hpp}`,
+`FrameSchedule.hpp`, `RecoverySchedule.hpp`, `cpp/sdl/Application.cpp`
+(`th09_rollback_wake`, `queue_rollback_recovery`), and
+`sdl-runtime/shared-netplay.mjs`'s transport `onReceive` hook. Short-press input
+ownership is covered in [Input and Touch](input-touch.md#bounded-keyboard-edge-retention);
+irreversible feedback is covered in [Audio](audio.md#th09-rollback-feedback-and-pcm-queue-2026-10-16).
+
+The focused `session`, `frame-schedule`, `after-present` and `keyboard-shot` WASI
+gates and 57 shared-netplay/managed-input JS checks passed for the candidate;
+release construction and public file identities were also checked. These prove
+their stated component and delivery boundaries, not human WAN feel, long-held Z
+release p95, or physical input-to-photon latency. The earlier direction-release
+trace with one-way INPUT +350 ms supports the old blocked-capture/slowdown
+mechanism; it is not a long-held Z reproduction or ordinary 50 ms RTT evidence.
+
 ## Performance experiment toolkit
 
 The TH07 rollback work did not rely on one benchmark. It built a layered set of test instruments so that simulation cost, snapshot cost, network delivery, input responsiveness and presentation could be isolated instead of being guessed from one FPS counter.
@@ -1089,6 +1388,8 @@ At minimum, cover these dimensions before calling a rollback optimization produc
 - pause/resume;
 - stage transition;
 - Result/ending where relevant;
+- exact-input/lifetime barriers under delayed input, including menu animation,
+  cancellation at a due transition and the input needed to release the fence;
 - Replay record/save/playback exact-input comparison;
 - spectator read-only confirmed history;
 - ordinary non-MP build remains valid if shared code changed.

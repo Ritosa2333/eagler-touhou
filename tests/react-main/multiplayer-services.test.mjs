@@ -163,7 +163,7 @@ test('rollback products default to D0 for both room creation and restored invite
     const socket=f.sockets[0],id=f.identity.lobbyClientId(product);socket.open();
     socket.message({type:'state',room:roomState(id,{predictionLimit:product==='th11mp'?12:8,seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}]})});
     f.service.setTimingChoice(7);f.service.start();const started=socket.sent.findLast(m=>m.type==='start');
-    assert.ok(started,product);if(['th08mp','th09mp','th10mp'].includes(product)){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,0);assert.equal(started.inputDelayAuto,false);
+    assert.ok(started,product);if(['th08mp','th09mp','th10mp'].includes(product)){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,product==='th09mp'?7:0);assert.equal(started.inputDelayAuto,false);
       f.service.setRollbackEnabled(false);f.service.start();const delay=socket.sent.findLast(m=>m.type==='start');assert.equal(delay.adonisMode,1);assert.equal(delay.inputDelay,7);
     }
     if(product==='th11mp'){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,0);assert.equal(started.predictionLimit,12);}
@@ -184,7 +184,32 @@ async function joinedRoom(extra = {}) {
   return fixture;
 }
 
-test('room wire always minimizes names, keeps editable local name, and normalizes challenge/prank', async () => {
+test('host spectator moves bind the target, wait for relay state and preserve membership', async () => {
+  const f=await joinedRoom(), socket=f.sockets[0], id=f.identity.lobbyClientId('th06mp');
+  const seats=[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}];
+  const receive=patch=>socket.message({type:'state',room:roomState(id,{seats,...patch})});
+  receive({});
+  f.service.movePlayerToSpectator(1,'old_client');
+  f.service.movePlayerToSpectator(0,id);
+  assert.ok(!socket.sent.some(m=>m.type==='move-player-to-spectator'));
+  f.service.movePlayerToSpectator(1,'guest12345');
+  assert.deepEqual(socket.sent.at(-1),{type:'move-player-to-spectator',seat:1,clientId:'guest12345'});
+  assert.equal(f.service.getSnapshot().room.seats[1].clientId,'guest12345','only relay state changes the seat');
+  const count=socket.sent.length;
+  receive({phase:'running'});f.service.movePlayerToSpectator(1,'guest12345');
+  receive({seats:[seats[0],{...seats[1],offline:true}]});f.service.movePlayerToSpectator(1,'guest12345');
+  receive({seats:[{...seats[0],clientId:'other_host'},seats[1]]});f.service.movePlayerToSpectator(1,'guest12345');
+  assert.equal(socket.sent.length,count,'running, offline and non-host moves are rejected locally');
+  receive({seats:[seats[0],{...seats[1],clientId:id}],spectators:[]});
+  receive({seats:[{...seats[0],clientId:'other_host'},null],spectators:[{clientId:id,name:'A'}]});
+  assert.equal(f.service.getSnapshot().seat,null);
+  assert.equal(f.service.getSnapshot().spectatorRequested,true);
+  assert.equal(f.service.getSnapshot().ready,false);
+  assert.equal(f.service.getSnapshot().connected,true);
+  f.service.dispose();
+});
+
+test('legacy room wire minimizes names until the server advertises moderation and normalizes challenge/prank', async () => {
   const fixture = await joinedRoom(), {service, sockets, identity} = fixture, socket = sockets[0];
   assert.equal(socket.sent.find(message => message.type === 'take-seat').name, 'A');
   service.setDisplayName('Beatrice'); assert.equal(service.getSnapshot().displayName, 'Beatrice');
@@ -585,4 +610,30 @@ test('TH09 directory admits full and starting rooms before spectator history is 
       capacity:2,players:2,ready:0,difficulty:1,joinable:false,spectatable:false,
       seats:[{initial:'A',online:true},{initial:'B',online:true}]}),true,phase);
   }
+});
+
+test('public nickname commits only an authoritative approval and ignores stale connection replies',async()=>{
+ const f=await joinedRoom(),socket=f.sockets.at(-1),before=f.service.getSnapshot().displayName;
+ socket.message({type:'nickname-status',name:'',status:'rejected',nextChangeAt:0,retryAt:0});
+ assert.equal(f.service.setDisplayName(' Ａlice '),'Alice');
+ assert.deepEqual(socket.sent.at(-1),{type:'set-name',name:'Alice'});
+ assert.equal(f.service.getSnapshot().displayName,before);
+ assert.equal(f.service.getSnapshot().nickname.status,'reviewing');
+ socket.message({type:'nickname-status',name:before,status:'queued',pendingName:'Alice',nextChangeAt:0,retryAt:0});
+ assert.equal(f.service.getSnapshot().displayName,before);assert.equal(f.service.getSnapshot().nickname.pendingName,'Alice');
+ const queuedCount=socket.sent.length;assert.equal(f.service.setDisplayName('Replacement'),'Alice');assert.equal(socket.sent.length,queuedCount,'a saved pending draft cannot be overwritten');
+ socket.message({type:'nickname-status',name:'Alice',status:'approved',nextChangeAt:Date.now()+86400000,retryAt:0});
+ assert.equal(f.service.getSnapshot().displayName,'Alice');
+ socket.message({type:'nickname-status',name:'Alice',status:'cooldown',nextChangeAt:Date.now()+86400000,retryAt:0});
+ assert.equal(f.service.getSnapshot().displayName,'Alice');
+ f.service.dispose();socket.message({type:'nickname-status',name:'Stale',status:'approved',nextChangeAt:0,retryAt:0});
+ assert.notEqual(f.service.getSnapshot().displayName,'Stale');
+});
+
+test('existing local nickname migrates only after the moderation handshake without publishing the legacy initial',async()=>{
+ const f=await joinedRoom(),socket=f.sockets.at(-1);
+ socket.message({type:'nickname-status',name:'',status:'idle',nextChangeAt:0,retryAt:0});
+ assert.deepEqual(socket.sent.at(-1),{type:'set-name',name:'Alice Wonder'});
+ assert.equal(f.service.getSnapshot().nickname.status,'reviewing');
+ f.service.dispose();
 });

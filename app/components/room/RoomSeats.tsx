@@ -59,7 +59,7 @@ function RoomSeat({
     )
       return;
     for (const child of element.querySelectorAll<HTMLElement>(
-      ':scope > .mp-seat-face, :scope > .mp-seat-index, :scope > .mp-seat-name, :scope > .mp-seat-state',
+      ':scope > .mp-seat-face, :scope > .mp-seat-index, :scope > .mp-seat-name, :scope > .mp-seat-identity, :scope > .mp-seat-state',
     )) {
       if (!child.hidden && typeof child.animate === 'function') {
         const animation = child.animate([{ opacity: 0.25 }, { opacity: 1 }], {
@@ -88,6 +88,14 @@ function RoomSeat({
           ? 'cheat'
           : 'touch'
       : seat?.controlMode;
+  const controlLabel = control
+    ? t(state.nickname && control === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${control}`)
+    : '';
+  const controlCaption = (
+    <span className="mp-seat-control" hidden={!occupied || !control} data-mode={control || ''} title={state.nickname ? controlLabel : undefined}>
+      {controlLabel}
+    </span>
+  );
   const message = networkMessage(state, context, t),
     local = seat?.clientId === state.localClientId;
   const values = (['direct', 'turn'] as const).map((lane) => {
@@ -190,9 +198,23 @@ function RoomSeat({
           {local ? t('room.localDevice') : values.map((value) => <span key={value}>{value}</span>)}
         </button>
       </span>
-      <strong className="mp-seat-name" data-mp-seat-name={index}>
-        {occupied ? seatLabel : ''}
-      </strong>
+      {state.nickname && occupied ? (
+        <div className="mp-seat-identity">
+          <strong className="mp-seat-name" data-mp-seat-name={index} title={seat?.name || `P${index + 1}`}>
+            {seat?.name || `P${index + 1}`}
+          </strong>
+          <span className="mp-seat-details">
+            <span className="mp-seat-loadout" title={seatLabel}>
+              {seatLabel}
+            </span>
+            {controlCaption}
+          </span>
+        </div>
+      ) : (
+        <strong className="mp-seat-name" data-mp-seat-name={index}>
+          {occupied ? seatLabel : ''}
+        </strong>
+      )}
       <span className="mp-seat-state" data-mp-seat-state={index}>
         {!occupied
           ? ''
@@ -207,9 +229,7 @@ function RoomSeat({
       <span className="mp-seat-me" data-mp-seat-me={index} hidden={state.seat !== index}>
         {t('multiplayer.you')}
       </span>
-      <span className="mp-seat-control" hidden={!occupied || !control} data-mode={control || ''}>
-        {control ? t(`multiplayer.control.${control}`) : ''}
-      </span>
+      {(!state.nickname || !occupied) && controlCaption}
       <button
         className="mp-seat-edit"
         type="button"
@@ -218,18 +238,29 @@ function RoomSeat({
         onClick={(event) => openPanel('personal', event.currentTarget)}
       />
       {index > 0 && (
-        <button
-          className="mp-seat-remove"
-          type="button"
+        <details
+          key={seat?.clientId}
+          className="mp-seat-moderation"
           hidden={!ready || !owner || room.phase !== 'lobby' || !seat}
-          aria-label={t('room.removePlayer', { seat: index + 1 })}
-          title={t('room.removePlayer', { seat: index + 1 })}
-          onClick={() => {
-            void service.removePlayer(index);
+          onBlur={event => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false;
           }}
         >
-          ×
-        </button>
+          <summary aria-label={t('room.managePlayer', { seat: index + 1 })}
+            title={t('room.managePlayer', { seat: index + 1 })}>⋯</summary>
+          <div className="mp-seat-moderation-actions">
+            <button type="button" className="mp-seat-move" disabled={seat?.offline}
+              onClick={event => {
+                event.currentTarget.closest('details')?.removeAttribute('open');
+                if (seat) service.movePlayerToSpectator(index, seat.clientId);
+              }}>{t('room.movePlayerToSpectator')}</button>
+            <button className="mp-seat-remove" type="button"
+              onClick={event => {
+                event.currentTarget.closest('details')?.removeAttribute('open');
+                void service.removePlayer(index);
+              }}>{t('room.removePlayer', { seat: index + 1 })}</button>
+          </div>
+        </details>
       )}
       <div className="mp-seat-resource" hidden={!seat || !resource} data-status={resource?.status}>
         <span className="mp-seat-resource-label">{resourceLabel}</span>

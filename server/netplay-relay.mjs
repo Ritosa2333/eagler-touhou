@@ -1,3 +1,10 @@
+import {createNicknameService} from './nickname-service.mjs';
+import {createNicknameRequestGuard} from './nickname-request-guard.mjs';
+import {normalizePublicNickname} from '../lib/contracts/public-nickname.mjs';
+import {
+  validTh15ChapterThreshold,
+  defaultTh15ChapterThreshold,
+} from "../lib/th15-chapter-reward.mjs";
 import { quickChatPhrase } from '../lib/contracts/multiplayer-quick-chat.mjs';
 import { createHmac } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -31,6 +38,48 @@ import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
 } from '../lib/contracts/netplay-timing.mjs';
+
+const nicknameService = await createNicknameService();
+const nicknameProfiles = new Map(), nicknameRequests = new Map();
+const allowNicknameRequest = createNicknameRequestGuard();
+function nicknameProfile(member) {
+  return nicknameProfiles.get(member) || {name:'',status:'idle',nextChangeAt:0,retryAt:0,attemptsLeft:null};
+}
+function publishNickname(member, profile) {
+  if (nicknameProfiles.size >= 10000 && !nicknameProfiles.has(member)) nicknameProfiles.delete(nicknameProfiles.keys().next().value);
+  nicknameProfiles.set(member, profile);
+  const entry = roomDirectory.memberLocation(member), room = rooms.get(entry?.roomId);
+  if (!room) return;
+  const {clientId:client, socket} = entry;
+  let changed = false;
+  const seat = lobbySeatOf(room, client);
+  if (seat >= 0 && room.lobby.seats[seat].name !== profile.name) {room.lobby.seats[seat].name=profile.name;changed=true;}
+  if (room.lobby.spectators.has(client) && room.lobby.spectators.get(client) !== profile.name) {room.lobby.spectators.set(client,profile.name);changed=true;}
+  sendLobby(socket,{type:'nickname-status',...profile});
+  if (changed) broadcastLobby(room);
+}
+nicknameService?.onUpdate(publishNickname);
+function reviewNickname(socket, member, proposed) {
+  const old=nicknameProfile(member);
+  if (old.status === 'queued' || (old.name && normalizePublicNickname(proposed) === old.name)) {
+    sendLobby(socket,{type:'nickname-status',...old});return;
+  }
+  const retryAt = allowNicknameRequest(socket.relayAddress);
+  if (retryAt) {sendLobby(socket,{type:'nickname-status',...old,status:'rate-limited',retryAt});return;}
+  if (nicknameRequests.has(member)) {sendLobby(socket,{type:'nickname-status',...old,status:'reviewing'});return;}
+  sendLobby(socket,{type:'nickname-status',...old,status:'reviewing'});
+  const task=nicknameService.submit(member,socket.relayAddress,proposed)
+    .then(profile=>publishNickname(member,profile))
+    .catch(()=>publishNickname(member,{...old,status:'unavailable',retryAt:Date.now()+10000}))
+    .finally(()=>nicknameRequests.delete(member));
+  nicknameRequests.set(member,task);
+}
+function seatNickname(socket, member, proposed) {
+  if (!nicknameService) return normalizeDisplayName(proposed);
+  // A role message may still contain the legacy initial. Only set-name reviews
+  // a complete candidate, after the client receives nickname-status.
+  return nicknameProfile(member).name;
+}
 
 function multiplayerPolicyForRoomId(roomId) {
   const separator = roomId.indexOf('-');
@@ -298,6 +347,7 @@ function getRoom(id, socket) {
     const multiplayer = multiplayerPolicyForRoomId(id);
     room = {
       id,
+      th15: id.startsWith("th15mp-"),
       createdAt: Date.now(),
       lastActivityAt: Date.now(),
       multiplayer,
@@ -310,6 +360,13 @@ function getRoom(id, socket) {
         difficulty: 1,
         visibility: 'public',
         disableCheatMovement: false,
+        ...(id.startsWith("th15mp-")
+          ? {
+              chapterThreshold: defaultTh15ChapterThreshold(
+                defaultPlayerCount(multiplayer),
+              ),
+            }
+          : {}),
         challengeMode: false,
         prankMode: false,
         inputDelay: 0,
@@ -667,6 +724,7 @@ function lobbySnapshot(room) {
     difficulty: room.lobby.difficulty,
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
+    ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
     prankMode: room.lobby.prankMode,
     inputDelay: room.lobby.inputDelay,
@@ -788,6 +846,18 @@ function resetLobbyAfterRun(room) {
 }
 
 function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initialPolicy) {
+  if (
+    initialPolicy?.chapterThreshold !== undefined &&
+    (!roomId.startsWith("th15mp-") ||
+      !validTh15ChapterThreshold(initialPolicy.chapterThreshold))
+  ) {
+    sendLobby(socket, {
+      type: "error",
+      error: "invalid chapter reward threshold",
+    });
+    socket.close(4007, "invalid settings");
+    return;
+  }
   const existing = rooms.get(roomId);
   if (!existing && intent !== 'join' && !abuseGuard.canCreateRoom(socket.relayAddress)) {
     rejectRoomCreation(socket);
@@ -808,6 +878,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     return;
   }
   if (!roomDirectory.admit(socket, roomId, clientId, memberId)) return;
+  if (nicknameService) void nicknameService.current(memberId).then(profile=>publishNickname(memberId,nicknameRequests.has(memberId) ? {...profile,status:'reviewing'} : profile)).catch(()=>sendLobby(socket,{type:'nickname-status',...nicknameProfile(memberId),status:'unavailable'}));
   const room = getRoom(roomId, socket);
   if (!room) return;
   if (!existing && intent === 'create') {
@@ -818,6 +889,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     room.lobby.prankMode = false;
     if (validPlayerCount(room.multiplayer, initialPolicy?.playerCount))
       room.lobby.playerCount = initialPolicy.playerCount;
+    if (room.th15)
+      room.lobby.chapterThreshold =
+        initialPolicy?.chapterThreshold ??
+        defaultTh15ChapterThreshold(room.lobby.playerCount);
     const difficultyMax = Math.max(0, (room.multiplayer?.difficulties?.length ?? 6) - 1);
     if (Number.isInteger(initialPolicy?.difficulty))
       room.lobby.difficulty = Math.max(0, Math.min(difficultyMax, initialPolicy.difficulty));
@@ -882,6 +957,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         'settings',
         'start',
         'remove-player',
+        'move-player-to-spectator',
         'remove-spectator',
       ].includes(message.type)
     )
@@ -960,7 +1036,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         currentRun.admittedSpectators.delete(clientId);
       room.lobby.seats[seat] = {
         clientId,
-        name: normalizeDisplayName(message.name),
+        name: seatNickname(socket, memberId, message.name),
         loadout: Number(message.loadout),
         movementMode: message.movementMode,
         touchEnabled: typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined,
@@ -992,7 +1068,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       const seatChanged = clearLobbySeat(room, clientId);
       const spectatorChanged = !room.lobby.spectators.has(clientId);
-      room.lobby.spectators.set(clientId, normalizeDisplayName(message.name));
+      room.lobby.spectators.set(clientId, seatNickname(socket, memberId, message.name));
       if (seatChanged) invalidateLobbyReady(room);
       if (seatChanged || spectatorChanged) broadcastLobby(room);
       if (room.lobby.phase !== 'lobby') {
@@ -1019,6 +1095,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     }
 
     if (message.type === 'set-name') {
+      if (nicknameService) {reviewNickname(socket,memberId,message.name);return;}
       const name = normalizeDisplayName(message.name);
       const playerSeat = lobbySeatOf(room, clientId);
       if (playerSeat >= 0) room.lobby.seats[playerSeat].name = name;
@@ -1096,6 +1173,25 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
 
+    if (message.type === 'move-player-to-spectator') {
+      const targetSeat = Number(message.seat);
+      const target = room.lobby.seats[targetSeat];
+      if (
+        seat !== 0 || room.lobby.phase !== 'lobby' ||
+        !Number.isInteger(targetSeat) || targetSeat < 1 ||
+        targetSeat >= room.lobby.playerCount || !target ||
+        target.clientId !== message.clientId ||
+        room.lobbyClients.get(target.clientId)?.readyState !== WebSocket.OPEN
+      ) {
+        sendLobby(socket, { type: 'error', error: '无法将该玩家移到观众席，请刷新房间状态后重试。' });
+        return;
+      }
+      clearLobbySeat(room, target.clientId);
+      room.lobby.spectators.set(target.clientId, target.name || '');
+      invalidateLobbyReady(room);
+      broadcastLobby(room);
+      return;
+    }
     if (message.type === 'remove-player') {
       const targetSeat = Number(message.seat);
       const target = room.lobby.seats[targetSeat];
@@ -1202,6 +1298,22 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       const difficultyMax = Math.max(0, (room.multiplayer?.difficulties?.length ?? 6) - 1);
       const difficulty = Math.max(0, Math.min(difficultyMax, Number(message.difficulty) || 0));
+      if (
+        message.chapterThreshold !== undefined &&
+        (!room.th15 || !validTh15ChapterThreshold(message.chapterThreshold))
+      ) {
+        sendLobby(socket, {
+          type: "error",
+          error: "invalid chapter reward threshold",
+        });
+        return;
+      }
+      const chapterThreshold = room.th15
+        ? (message.chapterThreshold ??
+          (playerCount !== room.lobby.playerCount
+            ? defaultTh15ChapterThreshold(playerCount)
+            : room.lobby.chapterThreshold))
+        : undefined;
       const visibility =
         message.visibility === 'private' || message.visibility === 'public'
           ? message.visibility
@@ -1224,12 +1336,14 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.difficulty !== difficulty ||
         room.lobby.disableCheatMovement !== disableCheatMovement ||
         room.lobby.challengeMode !== challengeMode ||
-        room.lobby.prankMode !== prankMode
+        room.lobby.prankMode !== prankMode ||
+        (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
       ) {
         invalidateLobbyReady(room);
         room.lobby.disableCheatMovement = disableCheatMovement;
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
+        if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
         room.lobby.playerCount = playerCount;
         room.lobby.difficulty = difficulty;
         for (let index = playerCount; index < room.lobby.seats.length; index++)
@@ -1335,7 +1449,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
             (message.predictionLimit !== undefined && message.predictionLimit !== 0))) ||
         !Number.isInteger(inputDelay) ||
         inputDelay < 0 ||
-        inputDelay > (adonisMode ? timingPolicy.manualDelayLimit : 8) ||
+        inputDelay > (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8) ||
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
             predictionLimit < 1 ||
@@ -1345,7 +1459,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         return;
       }
       const rollback = !!room.multiplayer && timingPolicy.rollback && adonisMode !== 1;
-      room.lobby.inputDelay = rollback ? 0 : inputDelay;
+      room.lobby.inputDelay = rollback && !timingPolicy.manualRollbackDelay ? 0 : inputDelay;
       room.lobby.adonisMode = rollback ? 0 : adonisMode;
       room.lobby.inputDelayAuto = rollback ? false : inputDelayAuto;
       room.lobby.predictionReserve = predictionReserve;
@@ -1527,6 +1641,7 @@ const server = new WebSocketServer({
 const abuseMaintenance = setInterval(() => abuseGuard.sweep(), 60_000);
 abuseMaintenance.unref();
 const roomDirectory = createRoomDirectory({
+  publicNames: !!nicknameService,
   rooms,
   clearSeat: clearLobbySeat,
   invalidateReady: invalidateLobbyReady,
@@ -1535,6 +1650,7 @@ const roomDirectory = createRoomDirectory({
   releaseTransports: releaseMemberTransports,
 });
 server.on('close', () => {
+  void nicknameService?.close();
   roomDirectory.close();
   clearInterval(abuseMaintenance);
   for (const room of rooms.values())
@@ -1562,6 +1678,12 @@ server.on('connection', (socket, request) => {
     return;
   }
   const roomId = url.searchParams.get('room') || '';
+  if (/^[A-Za-z0-9_-]{1,64}$/.test(roomId) &&
+      !abuseGuard.allowRoomLookup(socket.relayAddress, roomId)) {
+    sendLobby(socket, { type: 'error', code: 'rate-limited', error: '房间查询过于频繁，请稍后再试。' });
+    socket.close(1008, 'room lookup rate exceeded');
+    return;
+  }
   const runId = url.searchParams.get('run') || '0';
   const lobbyClient = url.searchParams.get('lobby') || '';
   if (/^[A-Za-z0-9_-]{1,64}$/.test(roomId) && /^[A-Za-z0-9_-]{8,64}$/.test(lobbyClient)) {
@@ -1572,6 +1694,9 @@ server.on('connection', (socket, request) => {
     handleLobbyConnection(socket, roomId, lobbyClient, memberId, url.searchParams.get('intent'), {
       visibility: url.searchParams.get('visibility'),
       disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
+      chapterThreshold: url.searchParams.has('chapterThreshold')
+        ? Number(url.searchParams.get('chapterThreshold'))
+        : undefined,
       challengeMode: url.searchParams.get('challengeMode') === '1',
       prankMode: url.searchParams.get('prankMode') === '1',
       playerCount: Number(url.searchParams.get('players')),
@@ -1690,16 +1815,18 @@ server.on('connection', (socket, request) => {
       if (run.spectatorStopped) return;
       if (player !== 0 || (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0)) return;
       const payload = incoming.subarray(1);
+      const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;
       const ending =
-        run.spectatorTimeline &&
+        th09Stream &&
         payload.length === 24 &&
         [84, 57, 83, 69, 1, 0, 2, 0].every((v, i) => payload[i] === v);
       const beginning =
-        run.spectatorTimeline &&
-        payload.length === 74 &&
-        [84, 57, 66, 71, 1, 0, 2, 0].every((v, i) => payload[i] === v);
+        th09Stream &&
+        ((payload.length === 74 && payload[4] === 1) || (payload.length === 102 && payload[4] === 2)) &&
+        [84, 57, 66, 71].every((v, i) => payload[i] === v) &&
+        payload[5] === 0 && payload[6] === 2 && payload[7] === 0;
       const roundStart =
-        run.spectatorTimeline &&
+        th09Stream &&
         payload.length === 28 &&
         [84, 57, 82, 68, 1, 0, 2, 0].every((v, i) => payload[i] === v);
       if (
@@ -1716,7 +1843,7 @@ server.on('connection', (socket, request) => {
           build = payload.subarray(12, 24);
         if (
           frame < (run.spectatorNextFrame || 0) ||
-          (!run.spectatorComplete && frame !== (run.spectatorNextFrame || 0)) ||
+          (run.spectatorBuild && !run.spectatorComplete && frame !== (run.spectatorNextFrame || 0)) ||
           (run.spectatorBuild && !run.spectatorBuild.equals(build))
         ) {
           stopSpectatorStream(run);
@@ -1731,7 +1858,7 @@ server.on('connection', (socket, request) => {
         run.spectatorHistory = run.spectatorTiming ? [run.spectatorTiming] : [];
         run.spectatorHistoryBytes = run.spectatorTiming?.length || 0;
       }
-      if (run.spectatorTimeline && (payload.length === 46 || ending || roundStart)) {
+      if (th09Stream && (payload.length === 46 || ending || roundStart)) {
         const frame = payload.readUInt32LE(8),
           build = payload.subarray(12, 24);
         if (

@@ -1,3 +1,4 @@
+import {normalizePublicNickname} from '../contracts/public-nickname.mjs';
 export const multiplayerDisplayNameStorageKey = "eagler-touhou-mp-display-name-v1";
 export function multiplayerControlMode(value: unknown): "normal" | "touch" | "cheat" | null {
   return value === "normal" || value === "touch" || value === "cheat" ? value : null;
@@ -5,6 +6,20 @@ export function multiplayerControlMode(value: unknown): "normal" | "touch" | "ch
 export const multiplayerDisplayNameLockedStorageKey = "eagler-touhou-mp-display-name-locked-v1";
 export const multiplayerLobbyClientStorageKey = (product: string): string =>
   `eagler-touhou-${product}-lobby-client-v1`;
+
+// Four-digit codes remain easy to share. Room admission and lookup limits
+// protect entry; rejection sampling avoids bias from truncating a Uint32.
+export function generateMultiplayerRoomCode(
+  randomWord = () => crypto.getRandomValues(new Uint32Array(1))[0]!,
+): string {
+  for (let attempt = 0; attempt < 128; ++attempt) {
+    const word = randomWord();
+    if (!Number.isInteger(word) || word < 0 || word > 0xffffffff)
+      throw new Error('Invalid room-code randomness');
+    if (word < 4_294_962_000) return String(1000 + word % 9000);
+  }
+  throw new Error('Unable to generate a room code');
+}
 
 // A browser membership spans titles and tabs; the existing client id still
 // belongs to a single tab. No name or account information is used here.
@@ -31,9 +46,7 @@ export interface MultiplayerIdentityStorage {
 }
 
 export function normalizeMultiplayerDisplayName(value: unknown): string {
-  // Strip all Unicode Bidi_Control characters and the existing invisible
-  // controls before trimming/counting, so avatar initials stay visible too.
-  return [...String(value || "").replace(/[\u0000-\u001f\u007f\u061c\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g, "").trim()].slice(0, 12).join("");
+  return normalizePublicNickname(value);
 }
 
 export function multiplayerDisplayInitial(name: unknown, fallback = "观"): string {

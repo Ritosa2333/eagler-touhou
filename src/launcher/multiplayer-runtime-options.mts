@@ -1,4 +1,8 @@
 import {
+  validTh15ChapterThreshold,
+  defaultTh15ChapterThreshold,
+} from "./th15-chapter-reward.mjs";
+import {
   multiplayerConfigForProduct,
   multiplayerInputTimingPolicy,
   type MultiplayerInputTimingConfig,
@@ -14,6 +18,7 @@ export interface MultiplayerRuntimeOptionConstraints {
   difficulties: readonly string[];
   loadouts: readonly MultiplayerRuntimeLoadout[];
   inputTiming?: Readonly<MultiplayerInputTimingConfig>;
+  inGameSelection?: boolean;
 }
 
 export interface MultiplayerRuntimeOptionInput {
@@ -31,7 +36,10 @@ export interface MultiplayerRuntimeOptionInput {
   spectatorId: string;
   spectatorCount: number;
   spectatorTimeline?: boolean;
+  replayAutoSave?: boolean;
+  replayNames?: string[];
   challengeMode?: boolean;
+  chapterThreshold?: number;
   iceServers: unknown;
   loadouts: MultiplayerRuntimeLoadout[];
 }
@@ -48,11 +56,15 @@ export interface MultiplayerRuntimeOptions {
   netplayPredictionReserve?: number;
   netplayAdonisMode?: number;
   netplayPredictionLimit?: number;
+  netplayInGameSelection?: boolean;
   netplaySpectator: boolean;
   netplaySpectatorId: string;
   netplaySpectatorCount: number;
   netplaySpectatorTimeline?: boolean;
+  netplayReplayAutoSave?: boolean;
+  netplayReplayNames?: string[];
   netplayChallengeMode?: boolean;
+  netplayChapterThreshold?: number;
   netplayIceServers: unknown[];
   netplayLoadouts: MultiplayerRuntimeLoadout[];
 }
@@ -75,6 +87,12 @@ export function buildMultiplayerRuntimeOptions(
   const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
   if (input.challengeMode !== undefined && typeof input.challengeMode !== 'boolean')
     throw new Error('挑战模式参数无效');
+  if (
+    input.chapterThreshold !== undefined &&
+    (roomProduct !== "th15mp" ||
+      !validTh15ChapterThreshold(input.chapterThreshold))
+  )
+    throw new Error("奖残所需得分无效");
   const { player, playerCount, seed } = input;
   const spectator = input.spectator === true;
   if (
@@ -154,7 +172,7 @@ export function buildMultiplayerRuntimeOptions(
   )
     throw new Error('该多人 Runtime 仅支持纯延迟时序，不能启用预测或回滚');
   if (
-    requestedMode &&
+    (requestedMode || timingPolicy.manualRollbackDelay && input.inputDelay !== undefined) &&
     (!Number.isInteger(input.inputDelay) ||
       input.inputDelay! < 0 ||
       input.inputDelay! > timingPolicy.manualDelayLimit)
@@ -162,6 +180,12 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
   return {
     netplayMode: 'lan',
+    ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
+    ...(roomProduct === "th15mp"
+      ? {
+          netplayChapterThreshold:
+            input.chapterThreshold ?? defaultTh15ChapterThreshold(playerCount),
+        } : {}),
     ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
     netplayUrl: url.href,
     netplayPlayer: player,
@@ -171,12 +195,12 @@ export function buildMultiplayerRuntimeOptions(
     ...(rollback || input.inputDelay !== undefined
       ? {
           netplayInputDelay:
-            rollback || input.inputDelayAuto
+            rollback && !timingPolicy.manualRollbackDelay || input.inputDelayAuto
               ? 0
               : typeof input.inputDelay === 'number' &&
                   Number.isInteger(input.inputDelay) &&
                   input.inputDelay >= 0 &&
-                  input.inputDelay <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
+                  input.inputDelay <= (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8)
                 ? input.inputDelay
                 : 0,
         }
@@ -206,6 +230,10 @@ export function buildMultiplayerRuntimeOptions(
     netplaySpectatorId: spectator ? input.spectatorId : '',
     netplaySpectatorCount: Math.max(0, Number(input.spectatorCount) || 0),
     ...(input.spectatorTimeline === true ? { netplaySpectatorTimeline: true } : {}),
+    ...(roomProduct === 'th09mp' && !spectator ? {
+      netplayReplayAutoSave: input.replayAutoSave !== false,
+      netplayReplayNames: [0, 1].map(side => String(input.replayNames?.[side] || `P${side + 1}`).slice(0, 64)),
+    } : {}),
     netplayIceServers: Array.isArray(input.iceServers) ? input.iceServers : [],
     netplayLoadouts: loadouts,
   };

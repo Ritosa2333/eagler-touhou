@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { bindPixelPerfectDisplay } from '../app/services/pixel-perfect-display.ts';
+import { DEFAULT_GAME_OPTIONS, loadStoredGamePreferences, persistStoredGamePreferences } from '../.cache/build/browser/assets/launcher/game-preferences.mjs';
+
+const values = new Map();
+const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+const context = { thpracAvailable: true, webAudioAvailable: true };
+const read = preferenceId => loadStoredGamePreferences({ storage, preferenceId, context }).options.pixelPerfectEnabled;
+assert.equal(read('th10'), false);
+persistStoredGamePreferences({ storage, preferenceId: 'th10', preferences: { options: { ...DEFAULT_GAME_OPTIONS, pixelPerfectEnabled: true }, music: 'none' }, language: 'ja' });
+assert.equal(read('th10'), true);
+assert.equal(read('th09'), false, 'display preference must stay scoped to its title');
+
+const dom = new JSDOM('<iframe></iframe>');
+const frame = dom.window.document.querySelector('iframe');
+let enabled = true;
+const dispose = bindPixelPerfectDisplay(frame, () => enabled);
+frame.dispatchEvent(new dom.window.Event('load'));
+const child = frame.contentDocument;
+const canvas = child.createElement('canvas');
+canvas.style.width = '1000.5px';
+child.body.append(canvas);
+assert.equal(child.styleSheets[0].cssRules[0].selectorText, 'canvas');
+assert.equal(child.styleSheets[0].cssRules[0].style.getPropertyValue('image-rendering'), 'pixelated');
+assert.equal(canvas.style.width, '1000.5px', 'pixel display must preserve layout and input coordinates');
+assert.equal(canvas.width, 300, 'pixel display must preserve the drawing buffer');
+enabled = false;
+frame.dispatchEvent(new dom.window.Event('load'));
+assert.equal(child.querySelector('#eagler-pixel-perfect-display'), null, 'a reused frame must not leak the prior title setting');
+enabled = true;
+frame.dispatchEvent(new dom.window.Event('load'));
+dispose();
+assert.equal(child.querySelector('#eagler-pixel-perfect-display'), null);
+frame.dispatchEvent(new dom.window.Event('load'));
+assert.equal(child.querySelector('#eagler-pixel-perfect-display'), null);
+dom.window.close();
+console.log('PASS: default off, per-title persistence, late canvas, frame reuse and disposal');

@@ -22,14 +22,17 @@ const base={url:'ws://localhost/?room=th09mp-1234&run=1&player=0&players=2',play
   inputDelay:0,adonisMode:2,inputDelayAuto:true,predictionReserve:2,spectator:false,spectatorId:'',spectatorCount:0,iceServers:[],loadouts:constraints.loadouts};
 for(const adonisMode of [1,2])for(const predictionReserve of [1,2]){
   const o=buildMultiplayerRuntimeOptions({...base,adonisMode,predictionReserve},constraints);
-  assert.equal(o.netplayInputDelayAuto,true);assert.equal(o.netplayInputDelay,0);assert.equal(o.netplayPredictionReserve,predictionReserve);
+  assert.equal(o.netplayInputDelay,0);
+  assert.equal(o.netplayAdonisMode,adonisMode===1?1:0);
+  if(adonisMode===1){assert.equal(o.netplayInputDelayAuto,true);assert.equal(o.netplayPredictionReserve,predictionReserve);}
+  else {assert.equal(o.netplayInputDelayAuto,undefined);assert.equal(o.netplayPredictionReserve,undefined);}
 }
 for(const inputDelay of [0,1,9])assert.equal(buildMultiplayerRuntimeOptions({...base,inputDelay,inputDelayAuto:false},constraints).netplayInputDelay,inputDelay);
 for(const mutation of [{inputDelayAuto:'true'},{predictionReserve:0},{predictionReserve:3},{adonisMode:0},
   {url:base.url.replace('th09mp','th07mp')}])assert.throws(()=>buildMultiplayerRuntimeOptions({...base,...mutation},constraints));
 for(const game of ['th08mp','th10mp']){
   const o=buildMultiplayerRuntimeOptions({...base,url:base.url.replace('th09mp',game)},constraints);
-  assert.equal(o.netplayInputDelayAuto,true);assert.equal(o.netplayAdonisMode,2);
+  assert.equal(o.netplayInputDelayAuto,undefined);assert.equal(o.netplayAdonisMode,0);
   const watcher=buildMultiplayerRuntimeOptions({...base,url:base.url.replace('th09mp',game),inputDelay:3,
     spectator:true,spectatorId:'watcher123'},constraints);
   assert.equal(watcher.netplayInputDelay,0,'Automatic spectator starts unresolved and applies stream metadata exactly once');

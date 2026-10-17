@@ -71,6 +71,8 @@ before(async () => {
     export {touchLayoutStorageKey} from './src/launcher/touch-layout-model.mts';
     export {RUNTIME_EPOCH_QUERY_PARAMETER} from './src/contracts/runtime-protocol.mts';
   `}, outfile, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', packages: 'external', logLevel: 'silent',
+    // Synthetic DOM verifies lifecycle, not CSS asset loading/rendering.
+    loader: {'.css': 'empty'},
     plugins: [{name: 'native-acquisition-scheduling', setup(ctx) {
       // Test-only references and a storage-read scheduling edge. Both wrappers
       // delegate to the authored owners; no preparation/queue policy is replaced.
@@ -212,7 +214,7 @@ async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = tru
   storage.blocked = blockStorage;
   Object.defineProperty(env.window, 'localStorage', {configurable: true, value: storage}); expose('localStorage', storage);
   Object.defineProperty(env.window, 'sessionStorage', {configurable: true, value: sessionStorage}); expose('sessionStorage', sessionStorage);
-  const idb = new IDBFactory(); expose('IDBKeyRange', IDBKeyRange); Object.defineProperty(env.window, 'indexedDB', {configurable: true, value: idb}); expose('indexedDB', idb);
+  const idb = new IDBFactory(); expose('IDBKeyRange', IDBKeyRange); Object.defineProperty(env.window, 'IDBKeyRange', {configurable: true, value: IDBKeyRange}); Object.defineProperty(env.window, 'indexedDB', {configurable: true, value: idb}); expose('indexedDB', idb);
   for (const game of seedPackages) await api.installParsedPackageZip(await api.parsePackageZip(importPackageFile(game)));
   installSocketBoundary(socketBoundary, directoryTransport);
   const fetches = [], order = [];
@@ -450,7 +452,7 @@ test('actual BrowserLauncher: cold save export owns file-only preparation and re
 const storageImportCases = [
   {kind: 'save', game: 'th06', name: 'import.dat', path: 'score.dat', accept: '.dat'},
   {kind: 'hint', game: 'th10', name: 'import.txt', path: 'hint/hint_user.txt', accept: '.txt'},
-  {kind: 'replay', game: 'th06', name: 'th6_01.rpy', path: 'replay/th6_01.rpy', accept: '.zip,.rpy,.rpyx'},
+  {kind: 'replay', game: 'th06', name: 'th6_01.rpy', path: 'replay/th6_01.rpy', accept: '.zip,.rpy,.rpyx,.rep'},
 ];
 async function runningStorageImport({kind, game}) {
   const f = await mountBrowser({initial: `/?game=${game}&keep=a%20b`, host: subsetHost([game], {multiplayer: false}), seedPackages: game === 'th10' ? [game] : [], seedStorage(storage) {
@@ -1156,9 +1158,42 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   host.games[game].multiplayerRuntime = `${runtimePath}?hosted=1&v=test-multiplayer`;
   // Same explicit setup boundary as above: the old home-card activation is
   // baseline-conflicted, so it is not counted as original browser acceptance.
-  const f = await mountBrowser({initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game]});
+  const f = await mountBrowser({initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game], autoReady: game !== 'th09',
+    seedStorage(storage) {if (game === 'th09') storage.values.set('eagler-touhou-runtime-diagnostics-v1', '1');}});
   const frame = node('#gameFrame');
-  await click('#mpReplayViewer'); await until(() => commands().includes('launch'), 'actual Replay action configures and launches the multiplayer Runtime');
+  const assertPlaybackOnly = () => {
+    for (const selector of ['#touchDirectSurface', '#touchHud', '#touchEscape', '#touchRestart', '#touchThpracMenu', '.touch-utility-row', '#runtimeDiagnostics'])
+      assert.equal(env.document.querySelector(selector), null, `Replay workspace must not mount gameplay overlay ${selector}`);
+    assert.equal(node('#player').classList.contains('touch-enabled'), false);
+  };
+  if (game === 'th09') {
+    await React.act(async () => {api.getTestSession().settings.setOption('touchEnabled', true);});
+    await React.act(async () => {
+    const database = await new Promise((resolve, reject) => {const request = env.window.indexedDB.open('/savesth09mp', 21); request.onupgradeneeded = () => request.result.createObjectStore('FILE_DATA'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);});
+    await new Promise((resolve, reject) => {const transaction = database.transaction('FILE_DATA', 'readwrite'); transaction.objectStore('FILE_DATA').put({mode: 0o100666, timestamp: new Date(2000), contents: new Uint8Array([3,4,5])}, '/savesth09mp/replay/th9_01.rpy'); transaction.oncomplete = resolve; transaction.onabort = () => reject(transaction.error);});
+    database.close();
+    });
+    await click('#mpReplayViewer'); await until(() => env.document.querySelector('[data-replay-watch="replay/th9_01.rpy"]'), 'TH09 opens its independent file listing');
+    assertPlaybackOnly();
+    await until(() => f.navigations.length === 1, 'TH09 automatically starts its player without selecting a file');
+    assert.equal(api.getTestSession().getRuntime().getSnapshot().ready, false, 'the file list is usable before game readiness');
+    const document = f.native.document;
+    await click('[aria-label="管理 th9_01.rpy"]');await click('.replay-file-menu [role="menuitem"]');
+    assert.equal(f.downloads[0].name, 'th9_01.rpy', 'direct download succeeds while the native ready message is withheld');
+    let imported;
+    await React.act(async () => {imported = api.getTestSession().importFile('replay', new NativeFile([new Uint8Array([8,9])], 'th9_02.rpy'), product);});
+    await tick();assert.equal(commands().includes('write'), false);assert.equal(f.native.document, document, 'a queued import does not replace the loading player');
+    await click('[data-replay-watch="replay/th9_01.rpy"]');
+    assert.equal(commands().includes('playback'), false, 'selection waits for the same in-flight preparation');
+    await React.act(async () => {
+      const parsed = new URL(f.native.location.href);
+      const data = await env.window.__eaglerPrepareManagedRuntimeDataV1({game, generation: parsed.searchParams.get('gameGeneration'), epoch: f.native.envelope.epoch});
+      f.dataReads.push([...new Uint8Array(data.buffer)]);f.native.emit('ready');
+    });
+    await React.act(async () => {await imported;});
+    assert.equal(f.native.document, document);assert.equal(f.navigations.length, 1);assert.deepEqual(f.storedFiles.get('replay/th9_02.rpy'), [8,9]);
+  } else await click('#mpReplayViewer');
+  await until(() => commands().includes('launch') && (game !== 'th09' || commands().includes('playback')), 'actual Replay action configures and launches the multiplayer Runtime');
   const source = f.native.location.href, configure = f.outbound.find(message => message.command === 'configure');
   // Original test-multiplayer-replay-launcher-browser.py170–174, observing
   // the actual navigated document rather than Runtime model bookkeeping.
@@ -1168,7 +1203,40 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   assert.equal(Object.keys(configure.options).some(key => key.startsWith('netplay')), false);
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.deepEqual(f.dataReads, [[1, 2, 3]]);
   assert.equal(f.sockets.length, 0, 'Replay viewer never creates room/gameplay transport');
-  await back(); await until(() => !playerOpen(), 'Replay viewer closes through its actual Runtime owner');
+  if (game === 'th09') {
+    assert.equal(api.getTestSession().getActiveSettings().options.touchEnabled, true, 'touch preference is retained without mounting its gameplay owner');
+    assertPlaybackOnly();
+    const inputs = f.outbound.filter(message => message.command === 'keyboard').length;
+    await React.act(async () => {env.window.dispatchEvent(new env.window.KeyboardEvent('keydown', {code: 'KeyZ', key: 'z', keyCode: 90, bubbles: true, cancelable: true}));});
+    assert.equal(f.outbound.filter(message => message.command === 'keyboard').length, inputs, 'Replay workspace does not forward game keyboard input');
+    assert.equal(f.outbound.find(message => message.command === 'playback')?.path, 'replay/th9_01.rpy');
+    const labels=['Reimu','Marisa','Sakuya','Youmu','Reisen','Cirno','Lyrica','Mystia','Tewi','Yuuka','Aya','Medicine','Komachi','Shikieiki','Merlin','Lunasa'];
+    const playback={kind:'replay',path:'replay/th9_01.rpy',frame:120,total:600,paused:true,seeking:false,target:null,rate:1,ended:false,difficulty:1,stage:9,roundStarts:[0,160,400]};
+    for(let left=0;left<16;left++){
+      const right=15-left;
+      await React.act(async()=>{f.native.emit('runtime-info',{playback:{...playback,left,right}});});
+      assert.equal(node('.replay-current p span:last-child').textContent,`${labels[left]} vs ${labels[right]}`,'both native character IDs resolve through the shared catalog');
+    }
+    assert.equal(env.document.querySelectorAll('.replay-round-marker').length,3);
+    await click('.replay-round-marker[aria-label="第 2 回合，0:02"]');
+    assert.equal(f.outbound.findLast(message=>message.command==='playback').action,'seek');
+    assert.equal(f.outbound.findLast(message=>message.command==='playback').value,160);
+    await React.act(async()=>{f.native.emit('runtime-info',{playback:{...playback,left:0,right:1,roundStarts:undefined}});});
+    assert.equal(env.document.querySelectorAll('.replay-round-marker').length,0,'original files without optional markers retain a working seekbar');
+    assert.equal(node('[aria-label="录像进度"]').disabled,false);
+    await click('.replay-transport [aria-label="切换全屏"]');
+    assert.equal(f.fullscreen, node('#gameViewport'), 'Replay fullscreen owns only the stable game viewport');
+    assert.equal(f.fullscreen.contains(frame), true);
+    assert.equal(f.fullscreen.contains(node('.replay-file-browser')), false);
+    assert.equal(f.fullscreen.contains(node('.replay-transport')), false);
+    await click('.replay-fullscreen-exit');assert.equal(f.fullscreen, null);
+    await click('.replay-back');
+  } else {
+    assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');
+    assert.equal(node('#playbackExit').nextElementSibling.id, 'fullscreenToggle');
+    await click('#playbackExit');
+  }
+  await until(() => !playerOpen(), 'Replay exit closes through the actual Runtime owner');
   assert.equal(node('#gameFrame'), frame);
 });
 
@@ -1887,4 +1955,24 @@ test('actual BrowserLauncher: direct fallback import retires its loading epoch a
   await React.act(async () => {f.native.emit('ready');}); await tick();
   assert.equal(commands().includes('launch'), false); assert.equal(commands().includes('configure'), false);
   assert.equal(f.native.location.href, 'about:blank');
+});
+
+
+test('actual BrowserLauncher: spectator toolbar exits playback into the existing room', async () => {
+  const invite = api.encodeRoomInvite({g: 'th09mp', r: '1234', f: true, a: 'join', s: true});
+  const host = subsetHost(['th09']); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({initial: '/?j=' + invite, host, socketBoundary: true, seedPackages: ['th09']});
+  await until(() => f.sockets.length > 0, 'room socket');
+  const socket = f.sockets[0];
+  const room = {code: '1234', playerCount: 2, difficulty: 1, phase: 'playing', inputDelay: 0, predictionLimit: 8,
+    startSerial: 4, spectatorTimeline: true, seats: [{clientId: 'host', name: 'A', loadout: 0, ready: true}, {clientId: 'peer', name: 'B', loadout: 1, ready: true}], spectators: []};
+  await React.act(async () => {socket.open(); socket.message({type: 'state', room}); socket.message({type: 'spectator-start', serial: 4, room});});
+  await until(() => commands().includes('launch'), 'spectator Runtime launched');
+  assert.equal(f.outbound.find(message => message.command === 'configure').options.netplaySpectator, true);
+  assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');
+  assert.equal(node('#playbackExit').nextElementSibling.id, 'fullscreenToggle');
+  await click('#playbackExit'); await until(() => !playerOpen(), 'spectator playback stopped');
+  assert.equal(node('#mpRoomCode').textContent, '1234');
+  assert.equal(socket.closes.length, 0, 'room membership survives playback exit');
+  assert.equal(env.document.querySelector('#playbackExit'), null);
 });

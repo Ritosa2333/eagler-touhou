@@ -1,3 +1,4 @@
+import {isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import {componentFileIds} from '../../package/package-generation.mjs';
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, languagePriority, productFeatureAvailable,
   type ProductId} from '../../src/contracts/product-catalog.mts';
@@ -37,6 +38,8 @@ export interface FilePreparationInput {
   onRuntimePlan?(plan: Readonly<RuntimePlan>): void;
 }
 export interface GamePreparationInput extends FilePreparationInput {
+  replayPath?: string;
+  replayWorkspace?: boolean;
   /** Click-time Launcher controls. Root owns gameplay, input and navigation. */
   touchLayout: TouchLayout | null;
   updateSignal?: AbortSignal;
@@ -109,6 +112,7 @@ function effectiveMusic(input: GamePreparationInput, generation: InstalledPackag
 export function gameRuntimeOptions(input: GamePreparationInput, language: string, music: MusicMode, host: SiteManifest | null): RuntimeConfigureOptions {
   const {settings, multiplayer} = input, {gameId: game, options} = settings, product = PRODUCT_GAMES[game];
   const isMultiplayer = isMultiplayerProductId(input.productId), features = host?.games[game]?.features;
+  if (input.replayPath !== undefined && (game !== 'th09' || !isReplayFilePath(input.replayPath))) throw new Error('Invalid direct Replay selection');
   if (isMultiplayer && !multiplayer) throw new Error('Multiplayer launch requires a room, Replay or game-check intent');
   if (!isMultiplayer && multiplayer) throw new Error('A single-player Runtime cannot use multiplayer launch options');
   return {limitPresentationTo60: !product.support.highRefreshRate || options.frameLimit60Enabled,
@@ -123,6 +127,8 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),
       ...(multiplayer?.kind === 'preflight' && 'multiplayer' in product && 'preflightWithoutRoom' in product.multiplayer ? {multiplayerPreflight: true} : {}),
       ...(multiplayer?.kind === 'room' ? multiplayer.options : {})} : {}),
+    ...(input.replayWorkspace ? {replayViewer: true, touchEnabled: false, thpracEnabled: false} : {}),
+    ...(input.replayPath !== undefined ? {replayPath: input.replayPath} : {}),
     ...(input.debugHarness ? {debugHarness: input.debugHarness} : {})};
 }
 async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, guard: () => void): Promise<PreparedGamePlan> {
@@ -146,7 +152,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   }
   guard();
   const musicPolicy=PRODUCT_GAMES[input.settings.gameId].musicRuntime;
-  const completeOgg = ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) || input.settings.gameId === 'th09' && input.multiplayer?.kind === 'room';
+  const completeOgg = ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) || input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
   ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,
     completeSet: completeOgg,
     downloadSignal: input.musicDownloadSignal, onMusicDownloadActivity: input.onMusicDownloadActivity,

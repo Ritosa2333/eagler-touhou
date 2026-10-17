@@ -395,3 +395,177 @@ Merged the room worktree with the current library UI from the common base, then 
 Occupied seat avatars show only the first character of the participant's chosen display name, or `?` when absent. The adjacent game loadout remains visible. Local relay browser verification displayed 琪 for a named peer and ? for an empty name; no full nickname appeared in the seat label. The Launcher also limits the `name` field of outgoing lobby messages to that first character; an absent name stays empty on the wire.
 
 Checked menu → room → settings → menu at desktop and 390×844 portrait. The settings fold and cover had one instance before, during and after the room; disclosure state survived the move. Replay button computed font, color, corner radius and shadow matched in both locations; the mobile room settings scroller had equal client/scroll width (373px). Library launcher build and relevant DOM, i18n, identity, product, preference, network and relay tests pass. Two temporary QA players were removed from room 9419. No physical device acceptance was performed.
+
+# TH09 Replay workspace — 2026-10-15
+
+Scope: TH09 and TH09 MP Replay workspace. Existing reports above are preserved.
+
+Source visual truth: `C:/Users/Ritosa/.codex/generated_images/01a13943-15ce-7063-adf7-b60fb29f26ef/exec-5fcfdc81-631e-4fba-806b-8009d375b1e0.png`.
+Implementation: `http://127.0.0.1:38978/?game=th09`, main worktree `D:/workspace/eagler/worktrees/launcher-th09-spectator-main`.
+Evidence directory: `D:/workspace/eagler/artifacts/replay-workspace-20261015/qa/`.
+
+## Comparison and normalization
+
+Reference: 1487 × 1058 pixels. Browser CSS viewport: 1490 × 1058 at device scale 1. Browser capture: 1480 × 1058 (capture excludes the scrollbar gutter). Full comparison normalizes its width to 1487, a 0.47% adjustment, preserving height. Both show actual playback near 00:10. The reference's actors, Replay duration and sample file count are illustrative. Browser evidence uses the supplied Replay and a byte-identical named test copy, in separate normal/MP storage roots. These content differences are not design findings.
+
+`desktop.png`, `mobile.png` (390 × 844 CSS, 380 × 844 capture), `comparison.png`, `controls-comparison.png`, `files-comparison.png`, and `header-comparison.png` provide full and focused evidence. `options-desktop.png`, `options-fullscreen.png`, and `speed-menu.png` show shared controls. The complete comparison images were opened together before judgment.
+
+## Comparison history
+
+- P1: Height-dependent desktop tracks changed the selected left/right proportions. Fixed with width-based 2.3:1 columns, narrow gap, and one enclosing player card.
+- P0: Portrait game viewport overlapped controls and metadata. Fixed with an always-present stage, React portals for its controls, and intrinsic vertical flow. The iframe remains in the same React branch.
+- P1: Native selects and a separate settings presentation failed the reuse requirement. Reused MainSelect, the original OptionsPanel and SettingsBody. Extracted only an OptionsDialog presentation shell; there is one mounted settings owner. The same menu/focus/fullscreen behavior is retained.
+- P2: New Phosphor icons initially lacked delivery declarations. Added all six to the canonical static manifest and pinned provenance registry; final captures show actual icons.
+- P2: DOM order placed the file manager before the game on portrait flex layout. Explicit stage/file order now puts the game first, files below.
+- P2: Desktop file names and sizes were smaller than the reference. Increased them to 18px/15px while retaining compact mobile sizes.
+- P2: Extremely narrow controls needed more room. At 360px and below the restart action uses its existing icon, retaining its accessible label.
+
+## Required fidelity surfaces
+
+- Typography: reuses the site's ET Yatra / ET Chill Round stack as explicitly requested. Generated mock lettering is not substituted for the site's fonts. Filename truncation, metadata and file sizes are kept on their intended lines.
+- Spacing/layout: left game, transport and metadata share a bordered card; files occupy the right card. Portrait has natural scrolling, without an overlay or a height-compressed grid. Card widths, padding, dividers and controls were compared in full and focused views.
+- Colors/tokens: uses existing paper, line, muted, red-bright and panel tokens. Coral progress and primary action, dark neutral surfaces and muted selected row follow the target.
+- Assets: actual game canvas and existing site background. Existing Phosphor family for file/folder/import/more/back/restart, with license and hashes. No rasterized fake controls or replacement game screenshot.
+- Content: no playing badge or volume control. Real file names/counts and runtime progress are shown. Game settings explicitly apply on the next game opening, so changing them does not restart a current Replay.
+
+## Functional evidence
+
+CUA browser verification: automatic game loading on entering management; actual normal and multiplayer playback; pause/play; shared speed selector and 2× selection; backward seek; import while a Replay remains loaded; hot file switch; folder creation/move; fullscreen enter/exit; original options panel and its language menu inside fullscreen. Hot switching and rewinding retained the same iframe, document and WASM core. Final console review found only the native thcrap localization-enabled status emitted on stderr; no uncaught exception, decode failure or missing asset was observed in the verified flows. Native stepping/self-consistency and original-derived quick Demo checks are recorded separately; this visual report does not promote launch evidence to determinism proof.
+
+Source checks: typecheck and build passed. 66 shared settings/navigation/Replay tests passed; 21 final settings/file tests passed. Earlier related suites: 110 launcher tests, 40 native-shell tests and 3 shared-clock tests passed. The whole-public-source inventory test stops on pre-existing undeclared `public/assets/th20-card.webp`; that file was preserved. This is not a production publication approval.
+
+Remaining acceptance: physical Android/WebView hardware and long Replay corpus checks are not claimed. Spectator rewind/page unification is outside this completed Replay UI lane and has not been implemented here.
+
+## Final verification
+
+Final full/focused comparisons were reopened after the last build. No actionable P0/P1/P2 visual findings remain. At 320px the restart icon retains its accessible label; at 669px the controls start at the exact bottom of the game viewport (579.57px), without overlap, and scrollWidth equals clientWidth. Desktop and 390px portrait captures show the selected proportions and game-first order. The same site fonts and original options controls are intentional fidelity constraints.
+
+A final P1 return-flow finding was repaired: a persistent viewer must not pop a historical iframe snapshot. TH09 opens its information layer in place, saves/retires the runtime before closing, removes the information marker in place, and restores its parent product settings. Actual normal → MP → Return verification confirmed player aria-hidden=true, empty iframe source, informationLayer=false, normal settings restored and MP settings absent. Evidence: `return-options.png`. The dedicated navigation regression passed.
+
+The broader mounted browser/navigation run passed 238/239 cases. Its import-only ZIP timing assertion failed in the combined run, then passed unchanged in isolation (`import-only-isolated.log`). This timing sensitivity is recorded rather than claiming a fully green aggregate run. No production publication was performed.
+
+Remaining P3: generated mock lettering differs from the deliberately reused site font; folder download remains directly available in the file list. Dynamic actors, game time and file counts differ because the browser renders the real fixture. No physical phone/WebView acceptance is claimed.
+
+Implementation checklist completed: shared options/select owners, desktop card proportions, portrait intrinsic layout, narrow controls, real file import/switch/move, real pause/speed/rewind, fullscreen menus, in-place return cleanup, screenshot comparison. Temporary viewport overrides were reset and the local preview was left open.
+
+final result: passed
+
+## User revisions — 2026-10-15
+
+These revisions supersede the earlier options-dialog and direct folder-download presentation. Removed the product selector, readiness label, Replay settings entry, and its dedicated dialog. The original launcher/lobby settings remain available outside Replay management.
+
+Fullscreen now targets the permanent player stage, with transport controls and an always-visible exit button at its top right. Shared select/transient hosts also follow the fullscreen stage. The normal page uses a content-sized player row so a short desktop viewport scrolls instead of clipping controls.
+
+File actions use one floating menu outside the scrolling list, with viewport-clamped placement, outside-click/Escape dismissal, and keyboard navigation. Folder download moved into its three-dot menu. File rows show the match start time when available, otherwise the filesystem modification time; unavailable timestamps are identified rather than invented. Runtime listing exposes the existing stat timestamp without another file read.
+
+Added short entrance/exit, folder/list, menu, hover and press motions using the site easing, with reduced-motion support. After a persistent Replay iframe has affected joint browser history, application Back uses the explicit parent page instead of a stale numeric history offset.
+
+Targeted CUA verification confirmed actual Replay playback, fullscreen entry and exit using the top-right button, an unclipped floating action menu, timestamps, and lobby options closing after exactly one click following Replay return. Evidence: `qa/fullscreen-player-final.png`, `qa/file-menu-final.png`, and `qa/one-click-return-final.png` under `artifacts/replay-workspace-20261015`. UI typecheck and final build passed. Broad gameplay/determinism suites were not rerun for these presentation changes. No production deployment was performed.
+
+revision result: passed
+
+## Independent storage integration — 2026-10-15
+
+The latest requested flow supersedes automatic game preloading on manager entry.
+The same workspace opens its file listing with an unloaded game iframe and a
+small existing-style placeholder. First Watch starts the game; changing files
+keeps the same iframe, native document and WASM core. Ordinary and MP storage
+remain separate. File mutations retain the native writer and queue.
+
+Actual local frontend evidence in `artifacts/replay-workspace-20261015`:
+`direct-read-frontend.json` records no game-resource requests during ordinary/MP
+browsing, empty iframe sources, offline reopen/folder download, and readonly
+storage transactions. The ordinary downloaded fixture SHA-256 is
+`a1a122609b57ee873654cd912ba98685fa5e92641f5a4a5b0b67ddc83a67d5bd`.
+`direct-read-zip.json` verifies the same bytes in the downloaded folder ZIP.
+The live-reader sequence is native `sync`, successful matching ACK, then a
+readonly storage transaction. Hot-switch evidence retains frame, document and
+core identity. `qa/direct-read-browser.png` shows the unloaded-player layout.
+
+These are local frontend/storage checks. The earlier isolated 1000-file timing
+report is not a new benchmark of this integrated build. No production deployment
+or cross-tab flush protocol is claimed.
+
+Final closeout: 230 focused Replay/navigation/file/select regressions and five
+actual BrowserLauncher Replay cases passed; the TH09 packaged storage test also
+passed. UI build and typecheck passed both in the working directory and in an
+archive of the exact staged source, excluding unrelated dirty changes. The cold
+rename/close race has its own passing regression. Functional changes are in
+launcher `06bd5fc`; Runtime listing timestamps are in TH09 `f06e6ff`.
+
+## Parallel player loading revision — 2026-10-15
+
+The user's clarification supersedes the deferred-start policy above. Entering
+TH09 Replay management now starts the persistent game viewer automatically while
+the independent storage reader publishes the file list. Browsing and downloads
+remain available before game readiness and after a resource-loading failure.
+Watch joins the pending preparation and does not create another native document.
+
+Native mutations requested during startup also join that preparation. The
+import-completion refresh reads after its writer has committed while still owning
+the mutation queue, avoiding a self-wait on that same queue. Closing the workspace
+cancels its pending viewer/Watch and suppresses obsolete failure feedback.
+
+51 focused model/storage/file-service checks and five actual BrowserLauncher
+mounted Replay cases pass. The TH09 mounted case explicitly withholds native
+readiness, downloads a listed file, queues an import and Watch, then releases
+readiness and verifies one native navigation and successful playback/import.
+These are synthetic lifecycle checks, separate from browser/engine acceptance.
+
+Local browser acceptance paused only the native shell script request. The file
+list appeared and the real fixture downloaded before readiness, with the same
+SHA-256 recorded above. Releasing the request let the automatically started game
+finish loading and play the selected file. All raw interception was removed.
+Evidence: `eager-player-browser.json` and `qa/eager-player-loading.png`.
+
+## Wide-window fit revision — 2026-10-15
+
+Wide layouts size the game from the space remaining below the header and above
+the transport/metadata, rather than deriving an oversized height from width.
+The native canvas remains proportionally letterboxed. The file list has its own
+scroll area and its header/footer remain visible. Short desktop windows use
+smaller outer spacing. Portrait and very short windows retain document scrolling.
+
+Browser geometry and screenshots at 1440×900, 1366×640 and 1920×1080 verify no
+outer vertical scroll and visible transport, metadata and file footer. Native
+canvas geometry confirms its 4:3 fit. Evidence is `viewport-fit.json` and
+`qa/viewport-fit-*.png`. Temporary viewport overrides were reset. The updated UI
+build passed; no production deployment was performed.
+
+## Compact navigation and fullscreen files — 2026-10-15
+
+Removed the visible Replay workspace title. Desktop navigation is now one 36px
+Back button directly above the player; the file panel spans the full right-hand
+column. Portrait keeps the existing 44px touch target.
+
+Fullscreen now belongs to the permanent workspace/player owner, including the
+right-side file browser on wide screens. The game-stage exit button remains at
+the upper right. Portrait fullscreen uses the game and transport layout, with
+the file panel hidden. No iframe is moved or remounted for these transitions.
+
+Local browser acceptance confirms the native fullscreen owner is `#player`, the
+file column stays to the right without outer scrolling, and both file-action
+and speed menus are descendants of that fullscreen owner. A folder and another
+Replay were selected while fullscreen remained active; the upper-right exit
+button returned normally. Evidence: `fullscreen-files-browser.json`,
+`qa/fullscreen-files-wide.png`, and `qa/compact-replay-header.png` under
+`artifacts/replay-workspace-20261015`. Viewport overrides were reset.
+
+Five mounted Replay lifecycle cases and 28 shared-select/transient checks passed,
+along with UI build and typecheck. Physical-device acceptance and production
+deployment were not part of this revision.
+
+## Inline wide-screen transport — 2026-10-15
+
+Wide screens place play/pause, restart and the existing shared speed select to
+the left of the seek bar, with time/fullscreen on the right. Narrow screens
+retain their previous two rows: seek/time above, controls below. The 44px touch
+button height and existing icon-only restart below 360px are preserved.
+
+Browser checks cover 1440×900, 390×844, 320×700 and wide fullscreen. Geometry
+confirms horizontal controls on wide screens, separate seek/button rows on
+narrow screens and no horizontal transport overflow. Playback/pause and
+fullscreen exit remain usable. Evidence: `inline-transport-browser.json` and
+`qa/inline-transport-*.png` under `artifacts/replay-workspace-20261015`. UI build
+and typecheck passed. No new behavior tests were added for this layout-only
+change. Viewport overrides were reset; no production deployment was performed.

@@ -26,7 +26,7 @@ const initialTouch = () => undefined;
 const noNetwork = () => null;
 /** The editor and actual game use one original control markup tree. Only this
  * mounted gameplay binding can deliver native input. */
-export function PlayerControls({ session }: { session: BrowserSession }) {
+export function PlayerControls({ session, replayWorkspace = false }: { session: BrowserSession; replayWorkspace?: boolean }) {
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot),
     navigation = useSurfaceNavigation(),
     { locale, t } = useLocale();
@@ -64,7 +64,7 @@ export function PlayerControls({ session }: { session: BrowserSession }) {
   const spectatorTimeline =
     state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
-  const th09Information = state.runtime?.launched === true && room.product === 'th09mp';
+  const th09Information = state.runtime?.launched === true && room.product === 'th09mp' && !state.replayViewer;
   const wins = [room.room?.seats?.[0]?.stats?.wins ?? 0, room.room?.seats?.[1]?.stats?.wins ?? 0] as const;
   return (
     <>
@@ -83,7 +83,7 @@ export function PlayerControls({ session }: { session: BrowserSession }) {
         : !room.spectatorRequested && room.seat != null ? <Th09MatchStats wins={wins}
           minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
           spectators={Math.max(room.room?.spectatorCount ?? 0,room.room?.spectators?.length ?? 0)}/> : null)}
-      {diagnostics && (
+      {diagnostics && !replayWorkspace && (
         <RuntimeDiagnostics
           model={diagnostics}
           netplay={netplay}
@@ -115,14 +115,15 @@ export function PlayerControls({ session }: { session: BrowserSession }) {
       <span id="playerStatus" className="visually-hidden" role="status">
         {feedback.playerStatus}
       </span>
-      {settings && <PlayerUtilities session={session} settings={settings} />}
+      {settings && !replayWorkspace && <PlayerUtilities session={session} settings={settings} canExitPlayback={state.replayViewer || room.spectatorRequested} />}
       {settings &&
+        !replayWorkspace &&
         state.bootTouchPreview &&
         !session.getActiveSettings() &&
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && navigation.surface !== 'touch' && state.playerOpen && (
+      {session.getActiveSettings() && !replayWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
         <GameplayControls session={session} />
       )}
     </>
@@ -252,11 +253,14 @@ function GameplayControls({ session }: { session: BrowserSession }) {
 function PlayerUtilities({
   session,
   settings,
+  canExitPlayback,
 }: {
   session: BrowserSession;
   settings: SettingsSnapshot;
+  canExitPlayback: boolean;
 }) {
   const { t } = useLocale(),
+    navigation = useSurfaceNavigation(),
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const [, updateOrientation] = useState(0);
   const portrait =
@@ -288,6 +292,12 @@ function PlayerUtilities({
         }
       />
       <nav className="touch-utility-row" aria-label={t('touch.tools')}>
+        {canExitPlayback && state.runtime?.launched && <button
+          id="playbackExit" type="button" aria-label={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
+          title={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
+          onClick={navigation.closeSurface}
+          dangerouslySetInnerHTML={{ __html: playerUtilityIcons.exitPlayback }}
+        />}
         <button
           className="fullscreen-toggle"
           id="fullscreenToggle"

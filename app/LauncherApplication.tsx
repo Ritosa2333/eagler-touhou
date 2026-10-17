@@ -53,6 +53,7 @@ export interface LauncherHost {
   bootTouchPreview?: boolean;
   bootTouchPreviewImage?: string;
   runtimeOpen?: boolean;
+  replayWorkspace?: boolean;
   runtimeLaunched?: boolean;
   titleOverlayOpen?: boolean;
   requestRuntimeClose?(): Promise<boolean>;
@@ -92,7 +93,7 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
   if (navigation.productId && catalog.some(product => product.id === navigation.productId)) retainedProduct.current = navigation.productId;
   // Main keeps the selected panel in the DOM during its closing transition.
   const selectedProduct = catalog.find(product => product.id === retainedProduct.current);
-  const presence = useLibraryOptionsPresence({open: optionsOpen, context: navigation.context, product: selectedProduct, lessMotion: host.lessMotion === true, concealed: host.runtimeLaunched === true && navigation.surface !== 'touch'});
+  const presence = useLibraryOptionsPresence({open: optionsOpen, context: navigation.context, product: selectedProduct, lessMotion: host.lessMotion === true, concealed: (host.runtimeLaunched === true || host.replayWorkspace === true) && navigation.surface !== 'touch'});
   useLayoutEffect(() => {
     if (!optionsOpen && !roomOpen) {if (navigation.context === 'lobby') selectedLifetime.current = null; return;}
     if (!navigation.productId) return;
@@ -145,14 +146,14 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
   const lobbyProps: LobbySurfaceProps = {...host.lobby, products: host.products.filter(product => product.multiplayer),
     selectedProduct: navigation.filterProductId ?? undefined, openedProduct: presence.openedProduct, onSelect: id => {if (isProductId(id)) navigation.selectLobbyProduct(id);},
     onActivate: activate, roomUsersArtwork: host.assetUrl('assets/room-users.svg'),
-    children: <LobbyOptionsHost open={presence.open} foregroundActive={navigation.surface === 'touch' || host.runtimeOpen === true} onCloseRequest={navigation.closeSurface}>{settingsPanel}</LobbyOptionsHost>};
+    children: <LobbyOptionsHost open={presence.open} foregroundActive={navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} onCloseRequest={navigation.closeSurface}>{host.replayWorkspace ? null : settingsPanel}</LobbyOptionsHost>};
   return <OptionsOwnership value={presence.targets}>
     {navigation.context === 'lobby' ? host.renderLobby ? host.renderLobby(lobbyProps) : <LobbySurface {...lobbyProps}/> : <LibrarySurface products={host.products} selectedProduct={preview} openedProduct={presence.openedProduct}
       onSelect={setPreview} onActivate={activate} masthead={host.masthead} footer={host.footer} serverStatusNote={host.serverStatusNote}
       lobbyHref={host.lobbyHref} roomUsersArtwork={host.assetUrl('assets/room-users.svg')} optionsOpen={presence.open} roomOpen={roomOpen} roomDrawer={host.roomDrawer} onBack={navigation.closeSurface}>
-      {settingsPanel}{host.roomSurface}
+      {host.replayWorkspace ? null : settingsPanel}{host.roomSurface}
     </LibrarySurface>}
-    <PlayerSurface preview={host.bootTouchPreview} previewImage={host.bootTouchPreviewImage} onElement={setPlayerElement} onFrame={host.runtimeFrame} open={navigation.surface === 'touch' || host.runtimeOpen === true} editing={navigation.surface === 'touch'}>{host.runtimeControls}</PlayerSurface>
+    <PlayerSurface replayWorkspace={host.replayWorkspace} preview={host.bootTouchPreview} previewImage={host.bootTouchPreviewImage} onElement={setPlayerElement} onFrame={host.runtimeFrame} open={navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} editing={navigation.surface === 'touch'}>{host.runtimeControls}</PlayerSurface>
     {editor}{host.overlays}
   </OptionsOwnership>;
 }
