@@ -1,6 +1,7 @@
 #include "GameDraw.hpp"
 #if TH15_MULTIPLAYER
 #include "MultiplayerHud.hpp"
+#include "MultiplayerPilot.hpp"
 #endif
 namespace th15 {
 GameDraw::GameDraw(StageGameplay& s,SessionState& p,RecordStore& v,AnmManager& a,AnmRenderer& r,ZunGraphics& g,ScreenViews& views,AsciiText& t,StageDrawServices& h,ReplayCalendarServices& d):scene(s),progress(p),records(v),animations(a),renderer(r),text(t),dates(d),scheduler(s.frame_scheduler()),background(scheduler,s.background,a,r,g,views,h){
@@ -49,6 +50,13 @@ bool GameDraw::run(u32 index){
 #endif
  context.frame={&b.enemy_world,b.player?&b.player->motion.position:nullptr,b.spell.flags,scene.messages.active()};context.spell_available=true;context.spell_frames=b.spell_card.clock.completed_frames;context.spell_best_time=b.spell_card.clock.encoded;return scene.hud.draw(context,text)||fail(scene.hud.error);}
  case 7:return !pause||pause->visuals.draw(text,dates,replay_header,captured)||fail(pause->visuals.error);
+ // Native focus root/child layers run at priorities 30/38. Keep the
+ // supplemental marker in those same passes, above the same game objects.
+ case 8:case 9:{Player* player=b.player.get();
+#if TH15_MULTIPLAYER
+ if(b.mp_enabled){auto& pilot=*b.pilots[b.mp_options.local_seat];if(pilot.ghost)return true;player=pilot.player;}
+#endif
+ return !player||player->draw_hitbox(renderer,index==8?14:18)||fail(player->error);}
  default:return fail("Gameplay draw pass outside schedule");
  }
 }

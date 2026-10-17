@@ -1,14 +1,19 @@
 #pragma once
 #include "PlayerMotion.hpp"
 #include "AnmManager.hpp"
+#include "HitboxDisplay.hpp"
 namespace th15 {
 class PlayerAnmHost final:public PlayerMotionVisuals {
     AnmManager& animations;i32 player_resource,effect_resource;
 public:
+    presentation::HitboxDisplay hitbox_display;u32 previous_focus_display=0;
     AnmVm root;u32 focus_handle=0,barrier_handle=0;std::array<std::array<u32,2>,8> option_handles{};
     PlayerAnmHost(AnmManager& manager,i32 player,i32 effects):animations(manager),player_resource(player),effect_resource(effects){}
     ~PlayerAnmHost(){animations.registry.destroy_tree(root);animations.retire(focus_handle);animations.retire(barrier_handle);for(auto& pair:option_handles)for(auto& handle:pair)animations.retire(handle);}
     bool initialize(){return pose(0);}
+    const AnmVm* focus_template(u32 script)const noexcept{return animations.script_template(effect_resource,script);}
+    float focus_rate()const noexcept{return animations.rate;}
+    bool native_focus_visible(){if(focus_handle)previous_focus_display=focus_handle;return animations.registry.find(previous_focus_display)!=nullptr;}
     bool focus_begin(bool enabled,float scale)override{
         if(!enabled){if(!animations.interrupt(focus_handle,1))return false;focus_handle=0;return true;}
         if(!focus_handle){focus_handle=animations.create(effect_resource,26,14,0);if(!focus_handle)return false;}

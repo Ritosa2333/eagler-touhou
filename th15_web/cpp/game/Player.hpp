@@ -21,7 +21,7 @@ public:
     Player(const ShtResource&,AnmManager&,EffectManager&,Rng& game_random,Rng& visual_random,PlayerLifeSession&,PlayerSpellStatus&,PlayerHost&,i32 character,i32 player_resource,i32 effect_resource);
     bool initialize();bool configure_options(){return options_changed();}bool update(const PlayerFrameContext&,float& rate);
     bool reset_for_stage();
-    bool draw(AnmRenderer&);
+    bool draw(AnmRenderer&);bool draw_hitbox(AnmRenderer&,i32 layer);
     bool finish_stage_options();
     void hit()override{
         if(!life.hit()){error=life.error;return;}

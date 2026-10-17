@@ -13,15 +13,15 @@ class MultiplayerHud;
 class GameDraw final:private PopupDrawServices {
  struct Callback {FrameCallback frame;GameDraw* owner=nullptr;u32 index=0;};
 #if TH15_MULTIPLAYER
- std::array<Callback,8> callbacks;std::unique_ptr<MultiplayerHud> multiplayer_hud;
+ std::array<Callback,10> callbacks;std::unique_ptr<MultiplayerHud> multiplayer_hud;
  bool prepare_multiplayer_hud();
 #else
- std::array<Callback,8> callbacks;
+ std::array<Callback,10> callbacks;
 #endif
  StageGameplay& scene;SessionState& progress;RecordStore& records;AnmManager& animations;AnmRenderer& renderer;AsciiText& text;ReplayCalendarServices& dates;FrameScheduler& scheduler;
  bool fail(const std::string&);bool draw_glyph(AnmVm&)override;bool draw_text(const Vec3&,u32,const std::string&)override;bool run(u32);
 public:
- static constexpr std::array<i32,8> priorities{12,28,32,34,36,45,46,69};
+ static constexpr std::array<i32,10> priorities{12,28,32,34,36,45,46,69,30,38};
  StageDrawFrame background;RunPause* pause=nullptr;AnmVm* captured=nullptr;std::array<u8,0xa4>* replay_header=nullptr;
  SpellDrawContext spell_context;std::string error;
  GameDraw(StageGameplay&,SessionState&,RecordStore&,AnmManager&,AnmRenderer&,ZunGraphics&,ScreenViews&,AsciiText&,StageDrawServices&,ReplayCalendarServices&);~GameDraw();
