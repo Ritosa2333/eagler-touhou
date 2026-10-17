@@ -1,10 +1,17 @@
 """Exercise selected-file Replay through the real TH06/TH07 shell protocol."""
-import argparse, hashlib, json, threading, time
+import argparse, hashlib, json, threading, time, subprocess, re
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 p=argparse.ArgumentParser();p.add_argument('--game',choices=['th06','th07'],required=True);p.add_argument('--variant',default='normal');p.add_argument('--fixture');p.add_argument('--fixtures',type=Path);p.add_argument('--eof',action='store_true');p.add_argument('--seek-benchmark',type=int,default=0);p.add_argument('--runtime-dir',type=Path);p.add_argument('--workspace',type=Path,default=Path('D:/workspace/eagler'));p.add_argument('--output',type=Path,required=True)
 a=p.parse_args();root=a.workspace;build=a.runtime_dir or root/(a.game+'-eagler')/('build-web-release-'+a.variant)
+repo=root/(a.game+'-eagler')
+def owner_git(*args):return subprocess.check_output(['git','-c','safe.directory='+repo.as_posix(),'-C',str(repo),*args],text=True).strip()
+owner={'repository':str(repo),'branch':owner_git('branch','--show-current'),'commit':owner_git('rev-parse','HEAD'),'dirty':bool(owner_git('status','--porcelain'))}
+if not a.runtime_dir:
+ cache=(build/'CMakeCache.txt').read_text(encoding='utf-8');flag=re.search(r'^TH_ENABLE_MULTIPLAYER_GAMEPLAY:BOOL=(ON|OFF)$',cache,re.M)
+ if not flag or (flag[1]=='ON')!=(a.variant=='multiplayer'):p.error(f'{build}: native multiplayer compile flag does not match --variant {a.variant}')
+ owner['multiplayerCompileFlag']=flag[1]
 host='''<!doctype html><iframe id="runtime" width="640" height="480"></iframe><script>
 const game=GAME,frame=document.querySelector('iframe'),pending=new Map();let serial=0;window.errors=[];
 window.send=(command,payload={})=>new Promise((resolve,reject)=>{const request=String(++serial);pending.set(request,{resolve,reject});setTimeout(()=>{if(pending.delete(request))reject(Error(command+' timeout'));},30000);frame.contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:1,command,request,...payload},location.origin);});
@@ -30,7 +37,7 @@ class Handler(SimpleHTTPRequestHandler):
   else:self.send_error(404);return
   self.send_response(200);self.send_header('Content-Type',kind);self.send_header('Content-Length',str(len(content)));self.end_headers();self.wfile.write(content)
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start()
-report={'game':a.game,'variant':a.variant,'wasm':hashlib.sha256((build/(a.game+'.wasm')).read_bytes()).hexdigest(),'passed':False,'files':[]}
+report={'game':a.game,'variant':a.variant,'owner':owner,'wasm':hashlib.sha256((build/(a.game+'.wasm')).read_bytes()).hexdigest(),'passed':False,'files':[]}
 with sync_playwright() as pw:
  browser=pw.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']);page=browser.new_page();page_errors=[];page.on('pageerror',lambda e:page_errors.append(str(e)))
  page.on('console',lambda m:print(m.text,flush=True) if 'Replay workspace:' in m.text else None)
@@ -44,12 +51,19 @@ with sync_playwright() as pw:
    page.evaluate('({path,bytes})=>send("write",{path,bytes})',{'path':path,'bytes':data})
    print(a.game+' inspect '+fixture,flush=True)
    description=page.evaluate('async path=>(await send("playback",{action:"inspect",path})).description',path)
+   expected_players=re.fullmatch(r'recording-([23])p\.rpyx',fixture) if a.variant=='multiplayer' else None
+   if expected_players:native.evaluate('() => {globalThis.__eaglerNetplayReplayPlaybackIndependentInputs=false;}')
    stage=description['stages'][0]['id'];print(a.game+' open '+str(stage),flush=True);page.evaluate('({path,stage})=>send("playback",{action:"open",path,stage})',{'path':path,'stage':stage})
    page.wait_for_function('window.playback?.frame>=60||errors.length',timeout=60000);assert page.evaluate('!errors.length'),page.evaluate('errors')
    page.evaluate('send("playback",{action:"pause"})');before=page.evaluate('playback.frame');page.wait_for_timeout(200);assert page.evaluate('playback.frame')==before
    print(a.game+' rewind',flush=True)
    page.evaluate('send("playback",{action:"seek",value:20})');page.wait_for_function('!playback.seeking&&playback.frame===20||errors.length',timeout=60000);assert page.evaluate('!errors.length'),page.evaluate('errors')
    page.evaluate('send("playback",{action:"rate",value:4})');page.evaluate('send("playback",{action:"play"})');page.wait_for_function('playback.frame>=120',timeout=60000)
+   native_inputs=None
+   if expected_players:
+    page.wait_for_function('playback.frame>=150||playback.ended',timeout=60000)
+    native_inputs=native.evaluate('({players:globalThis.__eaglerNetplayReplayPlaybackPlayerCount??0,independent:!!globalThis.__eaglerNetplayReplayPlaybackIndependentInputs,frame:globalThis.__eaglerNetplayReplayPlaybackFrame??0})')
+    assert native_inputs['players']==int(expected_players[1]) and native_inputs['independent'] and native_inputs['frame']>=150,native_inputs
    benchmark=None
    if a.seek_benchmark:
     page.evaluate('send("playback",{action:"pause"})');page.evaluate('send("playback",{action:"seek",value:20})');page.wait_for_function('!playback.preparing&&!playback.seeking&&playback.frame===20',timeout=60000)
@@ -73,7 +87,7 @@ with sync_playwright() as pw:
    if a.eof:
     deadline=max(60000,page.evaluate('playback.total')*50+15000)
     page.evaluate('send("playback",{action:"rate",value:0})');page.evaluate('send("playback",{action:"play"})');page.wait_for_function('playback.ended||errors.length',timeout=deadline);assert page.evaluate('!errors.length'),page.evaluate('errors');assert page.evaluate('playback.frame===playback.total&&playback.total>0'),page.evaluate('playback')
-   report['files'].append({'fixture':fixture,'description':description,'playback':page.evaluate('playback'),**({'seekBenchmark':benchmark} if benchmark else {})})
+   report['files'].append({'fixture':fixture,'description':description,'playback':page.evaluate('playback'),**({'nativeInputs':native_inputs} if native_inputs else {}),**({'seekBenchmark':benchmark} if benchmark else {})})
   assert not page_errors,page_errors;report['passed']=True
  except Exception as e:
   report['failure']=str(e);report['nativeError']=native.evaluate('typeof Module._eagler_replay_error==="function"?UTF8ToString(Module._eagler_replay_error()):"no native error export"');report['state']=page.evaluate('({playback:window.playback,errors})');report['pageErrors']=page_errors;raise

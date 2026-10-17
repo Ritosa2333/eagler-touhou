@@ -216,6 +216,16 @@ retain their existing input owners.
 
 ### Shared local Replay workspace
 
+Verify source ownership before building or testing Replay changes. TH06/TH07
+ordinary and MP builds are separate artifacts: inspect each CMake multiplayer
+flag and test both. For TH08 and later, inspect the actual `eagler` and
+`eagler-mp` owners and propagate shared changes to both. An ordinary build made
+with MP disabled in the MP checkout does not establish ordinary-branch coverage.
+The native browser checks bind each result to its branch, WASM identity and
+declared Replay source hashes; MP recording checks accept an explicit `--repo`
+and reject an ordinary checkout. Keep prior named-artifact evidence separate
+from a new validation of the latest branch HEAD.
+
 The non-versus workspace uses the title's native decoder for name, date,
 loadout, difficulty, score units, slowdown, special modes and recorded stage
 starts. Selecting a file expands its real stage/score list. Only selecting an
