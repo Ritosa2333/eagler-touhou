@@ -13,7 +13,7 @@
 </div>
 
 > [!TIP]
-> 对于游戏支持情况，参见[游戏还原和适配总进度表](launcher/docs/TOUHOU_PROGRESS.md)。<br>
+> 对于游戏支持情况，参见[游戏还原和适配总进度表](docs/TOUHOU_PROGRESS.md)。<br>
 > 如果您已经着手做某作了，直接提交修改表格的 Issue 或 PR 即可。<br>
 > 如果您对原作逆向或原作/东二适配感兴趣，欢迎加入我们的 [QQ 群](https://qm.qq.com/q/eeUrxIltug?from=tim)，我们有个开发者群。
 
@@ -54,7 +54,7 @@
 - 力求完美体验。解决了原 portable 分支中出现的 弹幕抖动、弹幕运动不流畅、闪烁、单线程切换音乐卡顿、手机卡顿 等大量问题。
 - 支持高刷新率（>60Hz），th09 除外。\[感谢 [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
 
-不同作品的适配情况有所不同，见[作品进度表](launcher/docs/TOUHOU_PROGRESS.md)。
+不同作品的适配情况有所不同，见[作品进度表](docs/TOUHOU_PROGRESS.md)。
 
 ### 输入设置
 

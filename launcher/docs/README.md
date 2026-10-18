@@ -7,7 +7,7 @@ deployment, and verification.
 
 ## Start here
 
-- [作品进度](TOUHOU_PROGRESS.md)
+- [作品进度](../../docs/TOUHOU_PROGRESS.md)
 - [Product surface](PRODUCT_SURFACE.md) - supported games, Launcher features,
   multiplayer behavior, deployment modes, and deliberate limitations.
 - [Architecture](ARCHITECTURE.md) - module ownership, browser/runtime boundary,
