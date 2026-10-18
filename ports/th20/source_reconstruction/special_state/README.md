@@ -1,0 +1,11 @@
+# Wonder stone runtime state
+
+`Controller` is the actual non-virtual `0xb4`-byte object allocated by `5117e0` and stored at `5c6118`. It is not a `CallbackOwner`. Its leading 24 bytes are an intrusive list; timers are at `18/28`, scalar interpolations at `38/84`, a padded byte interpolation at `64`, and the active byte at `b0`. Entries are `0x34` bytes, including the link, enemy and animation handles, age, color and level. Constructors retain original padding and untouched Entry color/level bytes; factories zero their allocations first.
+
+The implementation restores real update `5120d0`, draw `512aa0`, entry update `512980`, attach/initialization `512f60/512fb0`, collection `511f00`, and lifecycle `511980/5119e0/511a30/513cc0/514240`. It uses real Enemy ECL spawning, Sprite animations, Effects, Bullet/Laser cancellation and Text source modules. The unique global is shared with Item, Player and StoneMenu. Entry collection establishes the corrected `std::function<void(Enemy*)>` callback, using the supplied enemy's position.
+
+`cpu_validation.json`: **116,736 assertions passed, zero failed**. This covers exact owner and Entry constructors; byte and float interpolation including all 32 mode values; color selection with mutating Player clamps; 4,096 full update/draw cases; and 4,096 collection cases. Whole Controller, eight Entries, Player, RNG and ordered boundary arguments are compared against selected original CPU instructions. The test executable never starts the game entry point.
+
+Production initialization `512fb0`, allocation release and backend adapters are compiled source with per-function instruction evidence, but are not part of the current CPU comparison. The update oracle records actual spawn/lookup/effect/text boundaries instead of executing an entire scene. The destructor advances its observer before freeing a link to avoid reproducing a use-after-free in standard C++; allocation release order is retained.
+
+The `5c6114` owner pointer gate and the HUD boss-collection query still refer to explicit required interfaces in their existing modules. No missing result is replaced with a default. Integrated scene loading and replay equivalence remain unfinished. Next work is the Context `+2c` overlay used by StoneMenu, Player power and item phase activation.

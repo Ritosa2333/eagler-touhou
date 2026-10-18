@@ -1,0 +1,1859 @@
+{
+  "original_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "status": "compiled_with_explicit_engine_dependencies",
+  "original_nondefault_cases": 161,
+  "source_cases_including_nop_and_label": 163,
+  "unimplemented_original_cases": [],
+  "default_case": "All remaining signed 16-bit opcodes advance by instruction size, as 0x42b8d3 -> 0x434dad; no missing known opcode is dispatched here.",
+  "validation": {
+    "path": "anm_vm_cpu_validation.json",
+    "sha256": "2f2f59bb36ac05ba0393739513d262a5e67cb38216f730f5d0e5a45f7298794c",
+    "checks": 261652,
+    "failed": 0
+  },
+  "assets": [
+    {
+      "path": "scripts\\recovered\\anm\\ascii.anm.txt",
+      "sha256": "084e0ce116f49c46c4af92340154b8fa678755c7a46081a0ac209a84a92ef36f",
+      "instructions": 533
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ascii1280.anm.txt",
+      "sha256": "caf05b79e84b48cd4ada887acdbf4e6d3adce61043fae4279f1db1295e22deed",
+      "instructions": 533
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ascii_960.anm.txt",
+      "sha256": "c8a086dbaac328f9b47e3316b4e2918efd4465375cb9375a03b9792c21a08e3f",
+      "instructions": 533
+    },
+    {
+      "path": "scripts\\recovered\\anm\\aura.anm.txt",
+      "sha256": "6b469b63966d8226bb82a851853e7dcf53395622b1d4f1fea4f6f34f4158bd55",
+      "instructions": 833
+    },
+    {
+      "path": "scripts\\recovered\\anm\\bullet.anm.txt",
+      "sha256": "7d0869bd4681778186d33de8438d1e2fb6385654edfdd421d4ff3f2492b16acd",
+      "instructions": 7032
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00a0.anm.txt",
+      "sha256": "0db04f615e09489416f48846ed303c9cacacd1aec9e735cf2806bf9de6fe91df",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00a1.anm.txt",
+      "sha256": "ab1ac7c4fac6e10b6c4877563192e86c1a34ddb98f06d2a0de60bbc4947892fb",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00a2.anm.txt",
+      "sha256": "3ff7f15c1024415abf8d5e8fa52d603cca64905729e4c9a168df4ee09136f989",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00a3.anm.txt",
+      "sha256": "9f0733bf8e71ee979e0f25d639f88dafdc452f31244fe88df9e2bd388ce91c0e",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00a4.anm.txt",
+      "sha256": "f58d12a4043717ec0d328d6fbc18c9f232d8722c21b03a07060864748c133339",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00a5.anm.txt",
+      "sha256": "d951ca2556be9316d0ad064ff59b801fd588eee7b2bea447401eabb1fd9fdb45",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00a6.anm.txt",
+      "sha256": "b6d037abca9fee4734c0963ff709b98f5449eb6d065e459c0bd1599099360503",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00a7.anm.txt",
+      "sha256": "ccc6f68f1e58f49c4498695f767281e599470ce27914b621299b4a7cff173bd1",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e00b.anm.txt",
+      "sha256": "cc4df974dc32da332577f420e888b4e860ad5daa0ff49fc3c62b2f38e33c8450",
+      "instructions": 58
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01a0.anm.txt",
+      "sha256": "32cae5ba98fcaa9d0f8da3da68570e1452a8395f939ffce36da6e66687f2589c",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01a1.anm.txt",
+      "sha256": "330b15f2d44864968a272f6091e5a45cd917ebacedaf2e5055ac30c744aaa6aa",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01a2.anm.txt",
+      "sha256": "c85a7587b3c7b80c38bf46eef97e5eb9cb2f374b3f1406c75e92189ca48b7ec1",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01a3.anm.txt",
+      "sha256": "0353eb5929c6f5417a6246ea92ca8100fe23d80d78cdd5ce308c3e26716f67fb",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01a4.anm.txt",
+      "sha256": "c2fb191b6428a6e9b460460f99acd31738dca41e29a97046384e8afadcd14792",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01a5.anm.txt",
+      "sha256": "8c829962460b64523331c1f2c5070ab11bd90714edf0f5c63e74f9dacc17371d",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01a6.anm.txt",
+      "sha256": "dc459a761f698a72ad77aa46d152462df1b69b94993715158de270e8df34865e",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01a7.anm.txt",
+      "sha256": "b4577b5619a8ab1c916cd9dc16822bbd03d189ce42a1d10aa3145fdadc43353d",
+      "instructions": 145
+    },
+    {
+      "path": "scripts\\recovered\\anm\\e01b.anm.txt",
+      "sha256": "9902df36dd7b855d287beb62651cd62457292a3fe2571b4dd59e8775bfbb5361",
+      "instructions": 58
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ebg00.anm.txt",
+      "sha256": "9ebb3aeb6c84f5346a2890de88ba73950615bdfee8a3e65cbc5c42fb210b1517",
+      "instructions": 17
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ebg01.anm.txt",
+      "sha256": "a2055b89b8796d9accf73b03e9b3fa813f2a76824ef5aac0536041a72ef8c7dc",
+      "instructions": 17
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ebg02.anm.txt",
+      "sha256": "12628e8c36c4be15ceb95fc06d950269e40c6d5d2c900dc37d96baf5811aae25",
+      "instructions": 17
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ebg03.anm.txt",
+      "sha256": "1cca2914ded1f7d43ecb6b198843c861218397289b704ecdbe7fc3e22055bec4",
+      "instructions": 17
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ebg04.anm.txt",
+      "sha256": "3ed0449233ffccefe387152b221cc3db8cb79647d9c8f0ae4664ab7189038f66",
+      "instructions": 17
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ebg05.anm.txt",
+      "sha256": "4983f78ce0fda18ce558004b54f6c4b91d2271da7f9064f9e529965e4b3cc807",
+      "instructions": 17
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ebg06.anm.txt",
+      "sha256": "0e732e6ae1d013d6ab00c42a38e08b1b28c43d8dbc542665ff0c3a5a1be90ad8",
+      "instructions": 17
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ebg07.anm.txt",
+      "sha256": "1f6064f458b3624d5784f50e88a6918a5f7d0edbd49fcb586e7d6a6c0c14a804",
+      "instructions": 17
+    },
+    {
+      "path": "scripts\\recovered\\anm\\effect.anm.txt",
+      "sha256": "daa1810279f3d297e701a2fba2a25cc471fe93f354ad0e561991ee28b44f3107",
+      "instructions": 2600
+    },
+    {
+      "path": "scripts\\recovered\\anm\\enemy.anm.txt",
+      "sha256": "02af90beb7d3f749ccae79b207daa074ee47bb8de698f1306ced7e8a705dee65",
+      "instructions": 4456
+    },
+    {
+      "path": "scripts\\recovered\\anm\\front.anm.txt",
+      "sha256": "07e4e7292005cf2f687125c668d63915335d7d2d013ad4fb8e63ec76cf4e70c7",
+      "instructions": 9587
+    },
+    {
+      "path": "scripts\\recovered\\anm\\ghost.anm.txt",
+      "sha256": "d4da012753a7ee8498b85d1b63873d336ba216b588b7c4a2928e0bc116b70302",
+      "instructions": 696
+    },
+    {
+      "path": "scripts\\recovered\\anm\\help.anm.txt",
+      "sha256": "e120253f9a597a98d4e010d8ceedea6b487a431a40c542d6b44bdbbb12ba9499",
+      "instructions": 338
+    },
+    {
+      "path": "scripts\\recovered\\anm\\notice.anm.txt",
+      "sha256": "365b2d0f00fa53cd2834da5115d87d763626c411e4df667f05dda9c9a45febdf",
+      "instructions": 68
+    },
+    {
+      "path": "scripts\\recovered\\anm\\pl00.anm.txt",
+      "sha256": "496abadb8f6f8a4c1dc68c0fa2fe3ab8004770285e61b24617480fa68694e209",
+      "instructions": 1538
+    },
+    {
+      "path": "scripts\\recovered\\anm\\pl01.anm.txt",
+      "sha256": "cace2011fd3e87f5487bc6c9a4b10955197a8b2aa43a91413e63e78c881ec992",
+      "instructions": 1537
+    },
+    {
+      "path": "scripts\\recovered\\anm\\screenswitch.anm.txt",
+      "sha256": "8805b12440c9208f7a3b7fdbcbd68a74655851325ca0be1d272ade744f219f4d",
+      "instructions": 114
+    },
+    {
+      "path": "scripts\\recovered\\anm\\sig.anm.txt",
+      "sha256": "a7de59b21e5a3a0996ccc8a87bd74687a054c7939d98c842efdcdd9869b3819d",
+      "instructions": 10
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st01enm.anm.txt",
+      "sha256": "f6cdab442bcb6f51cac188a73c8f514a8bd7220e50756e2ea2deb8331da11c3a",
+      "instructions": 431
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st01logo.anm.txt",
+      "sha256": "bcb499722eff715963418c9972aeb84edb9b5ae7f55f73c2b280f52397224483",
+      "instructions": 94
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st01wl.anm.txt",
+      "sha256": "990c1a7eeeebe9dd2d4ef7ddf82c2365dfa50d33bc9b6f1e427b7ef0c1e13a1e",
+      "instructions": 80
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st02enm.anm.txt",
+      "sha256": "fdb1b70fdf4b3915ca56ae6b480a8509a3a058f00e3fb3459f4795fcad05a0d9",
+      "instructions": 459
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st02logo.anm.txt",
+      "sha256": "315be2870de8f7f309724037914f0637dca0d25068c4a98b2c5884fc1c6ad35d",
+      "instructions": 94
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st02wl.anm.txt",
+      "sha256": "f8a40d646cc91e92e4f363d739ba30151ba8121ccdbef3e9af7383ff0aa7f8b2",
+      "instructions": 63
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st03enm.anm.txt",
+      "sha256": "eaef1569d46d0afe992ebc9b52d3ff90e9baae99b006f453ed7f133e69379134",
+      "instructions": 406
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st03logo.anm.txt",
+      "sha256": "5aa621d8765e63f46476b7d4b6d846d8f6149433d0af4b917e690a7ae0a92477",
+      "instructions": 94
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st03wl.anm.txt",
+      "sha256": "e4f5944a66ae11755356421fa508e21c909fe68d78ccdb83d94a7f6e6e37aeba",
+      "instructions": 50
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st04enm.anm.txt",
+      "sha256": "3c467df66cf55e59c36c1ab1c26c9bb30d09514ad94d71b4c9fb09c2a5fa3b99",
+      "instructions": 403
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st04logo.anm.txt",
+      "sha256": "2023edb5a8e15977438ac49b8eb25874b7829c3f37e955dbc2ebcac797a124f3",
+      "instructions": 94
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st04menm.anm.txt",
+      "sha256": "a67499fdc70b1751dcd1ba5b8d83f9523788139155ec87e221a3fb83a3e89eb0",
+      "instructions": 312
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st04wla.anm.txt",
+      "sha256": "030c08d0c93f8458b250cda3afdd2f017048eda048951d32896c252f27da4f89",
+      "instructions": 532
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st04wlb.anm.txt",
+      "sha256": "e572bac0c7b63f9f6f40aefc7291a9c27327fc5167ac87dbadbc50e4bc5582c1",
+      "instructions": 532
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st04wlc.anm.txt",
+      "sha256": "f43abfed802656cffdd6e87fb556e2d7aaeffb8ddbd999ced1add387f0b903a1",
+      "instructions": 532
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st04wld.anm.txt",
+      "sha256": "597a1d9aea4c0f6c5baf0c3db83d6a6dcdd843c930423d55cd4e9f3c70696340",
+      "instructions": 532
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st05enm.anm.txt",
+      "sha256": "ba90112f62410b027ab1a6b6c3911d738fb5ce0d8881759274519f1630a13556",
+      "instructions": 413
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st05logo.anm.txt",
+      "sha256": "922ca4c5af7c1bdb89906da61a308c805890b85f50ff34000c405cd0d2db0efa",
+      "instructions": 94
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st05wl.anm.txt",
+      "sha256": "a604ef0a1bfaa97943afb7f366172c9f5c9a5bf58f9a4e3642afb38521b33748",
+      "instructions": 67
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st06enm.anm.txt",
+      "sha256": "c5266aac34d306739209e98fdb585ec8e813f2f716452283929a13136ba60a13",
+      "instructions": 512
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st06logo.anm.txt",
+      "sha256": "2d0d62a53fed5a3731b0257b9d6194940f5e5b38f5ad6ebbd6c301645f3a4a0f",
+      "instructions": 94
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st06wl.anm.txt",
+      "sha256": "2c3eb093d60e2c9f1997ed1024481bccaf67e8368651342673ea731c264c9514",
+      "instructions": 409
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st07enm.anm.txt",
+      "sha256": "88b1efbd07867828179521b798803b7a49a00570a12ef1df2d95c1c1ba3b9f40",
+      "instructions": 706
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st07logo.anm.txt",
+      "sha256": "9f424432a19b1ab8887ed2bed34141bd244b1a32481ad5768fc90dede1742c27",
+      "instructions": 94
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st07menm.anm.txt",
+      "sha256": "9dcff7f902c30589a2f38ee5614008f024d62b829c31cf3107aceb73177ef73d",
+      "instructions": 405
+    },
+    {
+      "path": "scripts\\recovered\\anm\\st07wl.anm.txt",
+      "sha256": "17c8845e5a34fda4dd47af8c3d80da1d4598441f464baa51a66b8c60f93d0ac1",
+      "instructions": 75
+    },
+    {
+      "path": "scripts\\recovered\\anm\\staff.anm.txt",
+      "sha256": "cb0177c7d27cc88a7cfdf99aef0eb4f9115c416d762ddc0986421b365ef4ac17",
+      "instructions": 408
+    },
+    {
+      "path": "scripts\\recovered\\anm\\stone.anm.txt",
+      "sha256": "2fbb3e584329f7a41ef08156c72d7436bb6130e2ba14b613e7cccc1ba08aab7e",
+      "instructions": 843
+    },
+    {
+      "path": "scripts\\recovered\\anm\\text.anm.txt",
+      "sha256": "48a833657065fbbd88c16848cd67ac83af5c9c7a7635c72284342df26ee153b1",
+      "instructions": 1635
+    },
+    {
+      "path": "scripts\\recovered\\anm\\title.anm.txt",
+      "sha256": "fc8fee699aa9f1c01ac27c92bbbbb728ebfc40839d54536a40137deb3a490c23",
+      "instructions": 5182
+    },
+    {
+      "path": "scripts\\recovered\\anm\\title_v.anm.txt",
+      "sha256": "32612d14e5c71bba46fc6eff388ae2d7a240f02434479d1d09baf7eee5b8c7ed",
+      "instructions": 21
+    },
+    {
+      "path": "scripts\\recovered\\anm\\trophy.anm.txt",
+      "sha256": "39dd4ee4e3e6d874d5df7061adfaa417425072ab12f9a78b5b15d398b46b5f57",
+      "instructions": 149
+    }
+  ],
+  "actual_instruction_count": 48795,
+  "actual_unknown_opcodes": {},
+  "opcodes": [
+    {
+      "opcode": -1,
+      "dispatch_case_va": "0x42b8d8",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 40,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 0,
+      "dispatch_case_va": "0x42b8d3",
+      "original_explicit_case": false,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 156
+    },
+    {
+      "opcode": 1,
+      "dispatch_case_va": "0x42b8d8",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 40,
+      "actual_instruction_occurrences": 1943
+    },
+    {
+      "opcode": 2,
+      "dispatch_case_va": "0x42b90a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 40,
+      "actual_instruction_occurrences": 30
+    },
+    {
+      "opcode": 3,
+      "dispatch_case_va": "0x42ddb3",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 2956
+    },
+    {
+      "opcode": 4,
+      "dispatch_case_va": "0x42dd98",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 40
+    },
+    {
+      "opcode": 5,
+      "dispatch_case_va": "0x42b8d3",
+      "original_explicit_case": false,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 4573
+    },
+    {
+      "opcode": 6,
+      "dispatch_case_va": "0x42dd16",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 407
+    },
+    {
+      "opcode": 7,
+      "dispatch_case_va": "0x42e02e",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 704
+    },
+    {
+      "opcode": 100,
+      "dispatch_case_va": "0x432944",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 356
+    },
+    {
+      "opcode": 101,
+      "dispatch_case_va": "0x4329c9",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 248
+    },
+    {
+      "opcode": 102,
+      "dispatch_case_va": "0x4333ae",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 13
+    },
+    {
+      "opcode": 103,
+      "dispatch_case_va": "0x433447",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 291
+    },
+    {
+      "opcode": 104,
+      "dispatch_case_va": "0x4334f1",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 105,
+      "dispatch_case_va": "0x43358a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 57
+    },
+    {
+      "opcode": 106,
+      "dispatch_case_va": "0x433634",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 107,
+      "dispatch_case_va": "0x4336ce",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 90
+    },
+    {
+      "opcode": 108,
+      "dispatch_case_va": "0x433778",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 109,
+      "dispatch_case_va": "0x433812",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 32
+    },
+    {
+      "opcode": 110,
+      "dispatch_case_va": "0x4338bc",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 111,
+      "dispatch_case_va": "0x433956",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 112,
+      "dispatch_case_va": "0x432a5d",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 5
+    },
+    {
+      "opcode": 113,
+      "dispatch_case_va": "0x432b33",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 12
+    },
+    {
+      "opcode": 114,
+      "dispatch_case_va": "0x432c35",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 115,
+      "dispatch_case_va": "0x432d0b",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 116,
+      "dispatch_case_va": "0x432e0d",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 117,
+      "dispatch_case_va": "0x432ee4",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 587
+    },
+    {
+      "opcode": 118,
+      "dispatch_case_va": "0x432fe6",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 119,
+      "dispatch_case_va": "0x4330bf",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 129
+    },
+    {
+      "opcode": 120,
+      "dispatch_case_va": "0x4331c1",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 176
+    },
+    {
+      "opcode": 121,
+      "dispatch_case_va": "0x43329a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 122,
+      "dispatch_case_va": "0x433a6c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 3
+    },
+    {
+      "opcode": 123,
+      "dispatch_case_va": "0x433b08",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 124,
+      "dispatch_case_va": "0x433bba",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 28
+    },
+    {
+      "opcode": 125,
+      "dispatch_case_va": "0x433c6a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 28
+    },
+    {
+      "opcode": 126,
+      "dispatch_case_va": "0x433d1a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 127,
+      "dispatch_case_va": "0x433dca",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 128,
+      "dispatch_case_va": "0x433e7a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 129,
+      "dispatch_case_va": "0x433f2a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 130,
+      "dispatch_case_va": "0x433fe3",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 8
+    },
+    {
+      "opcode": 131,
+      "dispatch_case_va": "0x43412a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 15
+    },
+    {
+      "opcode": 200,
+      "dispatch_case_va": "0x42cf9a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 870
+    },
+    {
+      "opcode": 201,
+      "dispatch_case_va": "0x42cfde",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 111
+    },
+    {
+      "opcode": 202,
+      "dispatch_case_va": "0x434441",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 2
+    },
+    {
+      "opcode": 203,
+      "dispatch_case_va": "0x4344f8",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 204,
+      "dispatch_case_va": "0x4345cc",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 65
+    },
+    {
+      "opcode": 205,
+      "dispatch_case_va": "0x434683",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 206,
+      "dispatch_case_va": "0x434757",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 207,
+      "dispatch_case_va": "0x43480e",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 208,
+      "dispatch_case_va": "0x4348de",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 209,
+      "dispatch_case_va": "0x434995",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 210,
+      "dispatch_case_va": "0x434a65",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 211,
+      "dispatch_case_va": "0x434b1c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 212,
+      "dispatch_case_va": "0x434bec",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 213,
+      "dispatch_case_va": "0x434ca3",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 300,
+      "dispatch_case_va": "0x42c5e7",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 6291
+    },
+    {
+      "opcode": 301,
+      "dispatch_case_va": "0x42c769",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 24
+    },
+    {
+      "opcode": 302,
+      "dispatch_case_va": "0x42ff71",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 1535
+    },
+    {
+      "opcode": 303,
+      "dispatch_case_va": "0x42d76f",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 679
+    },
+    {
+      "opcode": 304,
+      "dispatch_case_va": "0x43436c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 2597
+    },
+    {
+      "opcode": 305,
+      "dispatch_case_va": "0x42e209",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 108
+    },
+    {
+      "opcode": 306,
+      "dispatch_case_va": "0x42e23b",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 6
+    },
+    {
+      "opcode": 307,
+      "dispatch_case_va": "0x434403",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 554
+    },
+    {
+      "opcode": 308,
+      "dispatch_case_va": "0x42d0c0",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 58
+    },
+    {
+      "opcode": 309,
+      "dispatch_case_va": "0x42d138",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 310,
+      "dispatch_case_va": "0x42e05d",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 48
+    },
+    {
+      "opcode": 311,
+      "dispatch_case_va": "0x42e26a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 463
+    },
+    {
+      "opcode": 312,
+      "dispatch_case_va": "0x4326ca",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 8
+    },
+    {
+      "opcode": 313,
+      "dispatch_case_va": "0x4327b6",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 1387
+    },
+    {
+      "opcode": 314,
+      "dispatch_case_va": "0x432849",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 2
+    },
+    {
+      "opcode": 315,
+      "dispatch_case_va": "0x42d25b",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 17
+    },
+    {
+      "opcode": 316,
+      "dispatch_case_va": "0x42d299",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 317,
+      "dispatch_case_va": "0x42d2b9",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 318,
+      "dispatch_case_va": "0x4328c5",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 2
+    },
+    {
+      "opcode": 319,
+      "dispatch_case_va": "0x42c24f",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 400,
+      "dispatch_case_va": "0x42d792",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 1652
+    },
+    {
+      "opcode": 401,
+      "dispatch_case_va": "0x42d351",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 643
+    },
+    {
+      "opcode": 402,
+      "dispatch_case_va": "0x42c9b0",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 1397
+    },
+    {
+      "opcode": 403,
+      "dispatch_case_va": "0x42cc92",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 2473
+    },
+    {
+      "opcode": 404,
+      "dispatch_case_va": "0x42ccf6",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 2615
+    },
+    {
+      "opcode": 405,
+      "dispatch_case_va": "0x42ce16",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 170
+    },
+    {
+      "opcode": 406,
+      "dispatch_case_va": "0x42ce7a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 156
+    },
+    {
+      "opcode": 407,
+      "dispatch_case_va": "0x42e29b",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 1239
+    },
+    {
+      "opcode": 408,
+      "dispatch_case_va": "0x42ed18",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 1237
+    },
+    {
+      "opcode": 409,
+      "dispatch_case_va": "0x42eedc",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 2945
+    },
+    {
+      "opcode": 410,
+      "dispatch_case_va": "0x42f284",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 225
+    },
+    {
+      "opcode": 411,
+      "dispatch_case_va": "0x42f520",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 412,
+      "dispatch_case_va": "0x42f721",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 1550
+    },
+    {
+      "opcode": 413,
+      "dispatch_case_va": "0x42efce",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 26
+    },
+    {
+      "opcode": 414,
+      "dispatch_case_va": "0x42f192",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 76
+    },
+    {
+      "opcode": 415,
+      "dispatch_case_va": "0x42d4b0",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 205
+    },
+    {
+      "opcode": 416,
+      "dispatch_case_va": "0x42d5f1",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 417,
+      "dispatch_case_va": "0x42d6ce",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 418,
+      "dispatch_case_va": "0x4303b4",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 419,
+      "dispatch_case_va": "0x4304fb",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 420,
+      "dispatch_case_va": "0x42e7d4",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 7
+    },
+    {
+      "opcode": 421,
+      "dispatch_case_va": "0x42e0a4",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 958
+    },
+    {
+      "opcode": 422,
+      "dispatch_case_va": "0x42ffaf",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 423,
+      "dispatch_case_va": "0x434391",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 28
+    },
+    {
+      "opcode": 424,
+      "dispatch_case_va": "0x4343ca",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 104
+    },
+    {
+      "opcode": 425,
+      "dispatch_case_va": "0x42e0e7",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 48
+    },
+    {
+      "opcode": 426,
+      "dispatch_case_va": "0x42e178",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 166
+    },
+    {
+      "opcode": 427,
+      "dispatch_case_va": "0x42fbd7",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 428,
+      "dispatch_case_va": "0x42fda4",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 429,
+      "dispatch_case_va": "0x42cb9c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 50
+    },
+    {
+      "opcode": 430,
+      "dispatch_case_va": "0x42fa45",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 48
+    },
+    {
+      "opcode": 431,
+      "dispatch_case_va": "0x43432f",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 482
+    },
+    {
+      "opcode": 432,
+      "dispatch_case_va": "0x42b921",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 433,
+      "dispatch_case_va": "0x42e55e",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 4
+    },
+    {
+      "opcode": 434,
+      "dispatch_case_va": "0x42caa6",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 40
+    },
+    {
+      "opcode": 435,
+      "dispatch_case_va": "0x42f8b3",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 200,
+      "actual_instruction_occurrences": 32
+    },
+    {
+      "opcode": 436,
+      "dispatch_case_va": "0x42dbbb",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 25
+    },
+    {
+      "opcode": 437,
+      "dispatch_case_va": "0x42dc9c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 99
+    },
+    {
+      "opcode": 438,
+      "dispatch_case_va": "0x4342f9",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 42
+    },
+    {
+      "opcode": 439,
+      "dispatch_case_va": "0x42d2d9",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 440,
+      "dispatch_case_va": "0x42d1b1",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 441,
+      "dispatch_case_va": "0x42da5f",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 160,
+      "actual_instruction_occurrences": 23
+    },
+    {
+      "opcode": 500,
+      "dispatch_case_va": "0x42b9a0",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 1503
+    },
+    {
+      "opcode": 501,
+      "dispatch_case_va": "0x42be0e",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 107
+    },
+    {
+      "opcode": 502,
+      "dispatch_case_va": "0x42bd7c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 64
+    },
+    {
+      "opcode": 503,
+      "dispatch_case_va": "0x42bea0",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 504,
+      "dispatch_case_va": "0x42c127",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 393
+    },
+    {
+      "opcode": 505,
+      "dispatch_case_va": "0x42ba32",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 21
+    },
+    {
+      "opcode": 506,
+      "dispatch_case_va": "0x42bf6b",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 8
+    },
+    {
+      "opcode": 507,
+      "dispatch_case_va": "0x43264c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 508,
+      "dispatch_case_va": "0x42c1b9",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 42
+    },
+    {
+      "opcode": 509,
+      "dispatch_case_va": "0x42bf32",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 510,
+      "dispatch_case_va": "0x42bbd7",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 16
+    },
+    {
+      "opcode": 600,
+      "dispatch_case_va": "0x43000b",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 19
+    },
+    {
+      "opcode": 601,
+      "dispatch_case_va": "0x4301e0",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 602,
+      "dispatch_case_va": "0x430255",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 603,
+      "dispatch_case_va": "0x43057a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 12
+    },
+    {
+      "opcode": 604,
+      "dispatch_case_va": "0x430aea",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 57
+    },
+    {
+      "opcode": 605,
+      "dispatch_case_va": "0x43158f",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 5
+    },
+    {
+      "opcode": 606,
+      "dispatch_case_va": "0x430662",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 31
+    },
+    {
+      "opcode": 607,
+      "dispatch_case_va": "0x43074a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 608,
+      "dispatch_case_va": "0x430832",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 6
+    },
+    {
+      "opcode": 609,
+      "dispatch_case_va": "0x4302ca",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 610,
+      "dispatch_case_va": "0x43033f",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 611,
+      "dispatch_case_va": "0x43166b",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 612,
+      "dispatch_case_va": "0x430a02",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 2
+    },
+    {
+      "opcode": 613,
+      "dispatch_case_va": "0x43091a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 614,
+      "dispatch_case_va": "0x432552",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 4
+    },
+    {
+      "opcode": 615,
+      "dispatch_case_va": "0x4317b0",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 616,
+      "dispatch_case_va": "0x4318f5",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 617,
+      "dispatch_case_va": "0x431a3a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 9
+    },
+    {
+      "opcode": 618,
+      "dispatch_case_va": "0x43263a",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 2
+    },
+    {
+      "opcode": 619,
+      "dispatch_case_va": "0x431b16",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 620,
+      "dispatch_case_va": "0x431bf2",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 621,
+      "dispatch_case_va": "0x431d37",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 622,
+      "dispatch_case_va": "0x431e7c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 623,
+      "dispatch_case_va": "0x430bc6",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 624,
+      "dispatch_case_va": "0x430d79",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 625,
+      "dispatch_case_va": "0x430f2c",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 626,
+      "dispatch_case_va": "0x43114d",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 627,
+      "dispatch_case_va": "0x43136e",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 628,
+      "dispatch_case_va": "0x431fc1",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 1
+    },
+    {
+      "opcode": 629,
+      "dispatch_case_va": "0x43209f",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 630,
+      "dispatch_case_va": "0x43217d",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 631,
+      "dispatch_case_va": "0x4322c4",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 632,
+      "dispatch_case_va": "0x43240b",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": false,
+      "cpu_cases": 100,
+      "actual_instruction_occurrences": 0
+    },
+    {
+      "opcode": 633,
+      "dispatch_case_va": "0x430080",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 2
+    },
+    {
+      "opcode": 634,
+      "dispatch_case_va": "0x430153",
+      "original_explicit_case": true,
+      "source_control_flow": true,
+      "external_domain_calls": true,
+      "cpu_cases": 0,
+      "actual_instruction_occurrences": 4
+    }
+  ],
+  "limitations": [
+    "No complete independently linked game or pixel-by-pixel gameplay validation.",
+    "Sprite resource binding, camera storage, allocator and creation/lifetime implementations must satisfy anm_environment extern declarations.",
+    "CPU checks count storage/result comparisons separately; they are not a count of independently recovered original functions.",
+    "Geometry allocation and child/effect creation are call-site recovery and were not original-CPU executed in this oracle.",
+    "Trig and fmod checks used finite inputs; the original CRT NaN error path remains unavailable in the isolated PE oracle."
+  ]
+}

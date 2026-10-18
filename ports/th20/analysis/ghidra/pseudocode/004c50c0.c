@@ -1,0 +1,18 @@
+/* Entry: 0x004c50c0; symbol: FUN_004c50c0; body bytes: 108 */
+
+void FUN_004c50c0(void)
+
+{
+  uint *puVar1;
+  int iVar2;
+  undefined4 *puVar3;
+  uint uVar4;
+  
+  puVar1 = (uint *)FUN_00425620((undefined4 *)&stack0x00000004);
+  iVar2 = FUN_00425620((undefined4 *)&stack0x00000008);
+  uVar4 = iVar2 - (int)puVar1;
+  puVar3 = (undefined4 *)move<>(&stack0x0000000c);
+  FUN_00452450(puVar1,*puVar3,uVar4);
+  return;
+}
+

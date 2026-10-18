@@ -1,0 +1,28 @@
+CMake is re-running because D:/AIWorkspace/Touhou20Reconstruction/build_sources/CMakeFiles/generate.stamp is out-of-date.
+  the file 'D:/AIWorkspace/Touhou20Reconstruction/source_reconstruction/CMakeLists.txt'
+  is newer than 'D:/AIWorkspace/Touhou20Reconstruction/build_sources/CMakeFiles/generate.stamp.depend'
+  result='-1'
+-- Selecting Windows SDK version 10.0.19041.0 to target Windows 10.0.22631.
+-- Configuring done
+-- Generating done
+-- Build files have been written to: D:/AIWorkspace/Touhou20Reconstruction/build_sources
+用于 .NET Framework 的 Microsoft (R) 生成引擎版本 16.11.2+f32259642
+版权所有(C) Microsoft Corporation。保留所有权利。
+
+  Checking Build System
+  th20_core_scheduler.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\core_scheduler\Release\th20_core_scheduler.lib
+  th20_ecl_binary.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\ecl_vm\Release\th20_ecl_binary.lib
+  th20_ecl_vm.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\ecl_vm\Release\th20_ecl_vm.lib
+  th20_runtime_core.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\runtime_core\Release\th20_runtime_core.lib
+  th20_platform_services.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\platform_services\Release\th20_platform_services.lib
+  th20_source_archive.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\archive\Release\th20_source_archive.lib
+  th20_resource_manager.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\Release\th20_resource_manager.lib
+  Building Custom Rule D:/AIWorkspace/Touhou20Reconstruction/source_reconstruction/sprite_renderer/CMakeLists.txt
+  colored_draw.cpp
+  th20_sprite_renderer.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\sprite_renderer\Release\th20_sprite_renderer.lib
+  Building Custom Rule D:/AIWorkspace/Touhou20Reconstruction/source_reconstruction/sprite_renderer/CMakeLists.txt
+  controller_cpu_compare.cpp
+  binary.cpp
+  pe.cpp
+  正在生成代码...
+  th20_controller_cpu_compare.vcxproj -> D:\AIWorkspace\Touhou20Reconstruction\build_sources\sprite_renderer\Release\th20_controller_cpu_compare.exe

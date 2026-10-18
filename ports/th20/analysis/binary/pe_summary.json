@@ -1,0 +1,95 @@
+{
+  "source": "E:\\BaiduNetdiskDownload\\PCGAME-Touhou.Kinjoukyou.Fossilized.Wonders-P2P\\Touhou.Kinjoukyou.Fossilized.Wonders\\th20.exe",
+  "sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "size": 1858560,
+  "machine": "0x014c",
+  "image_base": "0x00400000",
+  "entrypoint": "0x005435e0",
+  "subsystem": 2,
+  "pe_timestamp": 1753839620,
+  "dll_characteristics": "0x8140",
+  "sections": [
+    {
+      "name": ".text",
+      "va": "0x00401000",
+      "rva": 4096,
+      "virtual_size": 1483899,
+      "raw_offset": 1024,
+      "raw_size": 1484288,
+      "characteristics": "0x60000020",
+      "entropy": 6.313
+    },
+    {
+      "name": ".rdata",
+      "va": "0x0056c000",
+      "rva": 1490944,
+      "virtual_size": 269196,
+      "raw_offset": 1485312,
+      "raw_size": 269312,
+      "characteristics": "0x40000040",
+      "entropy": 6.4581
+    },
+    {
+      "name": ".data",
+      "va": "0x005ae000",
+      "rva": 1761280,
+      "virtual_size": 227760,
+      "raw_offset": 1754624,
+      "raw_size": 34816,
+      "characteristics": "0xc0000040",
+      "entropy": 4.411
+    },
+    {
+      "name": ".fptable",
+      "va": "0x005e6000",
+      "rva": 1990656,
+      "virtual_size": 128,
+      "raw_offset": 1789440,
+      "raw_size": 512,
+      "characteristics": "0xc0000040",
+      "entropy": -0.0
+    },
+    {
+      "name": ".rsrc",
+      "va": "0x005e7000",
+      "rva": 1994752,
+      "virtual_size": 6128,
+      "raw_offset": 1789952,
+      "raw_size": 6144,
+      "characteristics": "0x40000040",
+      "entropy": 5.6658
+    },
+    {
+      "name": ".reloc",
+      "va": "0x005e9000",
+      "rva": 2002944,
+      "virtual_size": 61968,
+      "raw_offset": 1796096,
+      "raw_size": 62464,
+      "characteristics": "0x42000040",
+      "entropy": 6.7347
+    }
+  ],
+  "import_dlls": [
+    "DINPUT8.dll",
+    "DSOUND.dll",
+    "GDI32.dll",
+    "KERNEL32.dll",
+    "OLEAUT32.dll",
+    "USER32.dll",
+    "WINMM.dll",
+    "XINPUT1_4.dll",
+    "d3d9.dll",
+    "d3dx9_43.dll",
+    "gdiplus.dll",
+    "ole32.dll"
+  ],
+  "import_count": 211,
+  "warnings": [],
+  "string_count": 5099,
+  "linear_instruction_count": 466332,
+  "function_candidates": 6894,
+  "direct_and_import_calls": 36607,
+  "xref_count": 65753,
+  "function_boundary_caveat": "Candidate starts inferred from calls/prologues; spans are not verified function sizes. Semantic anchor names are provisional labels supplied by manual analysis."
+}

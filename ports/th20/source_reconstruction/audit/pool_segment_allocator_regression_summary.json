@@ -1,0 +1,131 @@
+{
+  "generated_utc": "2026-09-19T11:05:49.003351+00:00",
+  "status": "passed",
+  "build_directory": "build_pool_audit_20260919",
+  "configuration": "Release; Visual Studio 16 2019; Win32",
+  "build_target": "th20_pool_cpu_compare",
+  "test_executable_sha256": "7af3b342624d345514f7d08eb3df657ce245eadf5c363c66619b6782d8d1c864",
+  "canonical_report_sha256": "605f8e338fd8c37e34ddde3e61d7ecd9d39a87310720851e90c7757462e80e8b",
+  "original_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "total": 2915831,
+  "failed": 0,
+  "original_cpu_checks": 2915767,
+  "source_only_checks": 64,
+  "comparison_groups": 2690,
+  "bound_source_hash_count": 389,
+  "all_bound_hashes_match_current_source": true,
+  "changed_bound_hashes_since_previous_canonical": {
+    "../laser_system/type1.cpp": {
+      "previous": "09d05135136f5132507f5d2e2e244815a38534f0b501835c3b72e62a51ea3bbd",
+      "current": "953fd7f7ba5e56906bbcc2fe7d5757694f33d495cd6f92f8dca26d8e3db662d5"
+    },
+    "../laser_system/type0.cpp": {
+      "previous": "3768c6cfe75965b3b3279f616c93137fb45901bcb7e72e6823084c5228773f40",
+      "current": "57cf42ab8a62c280330332112fb0ba904c704e5191655bd0b48166158e805fe3"
+    }
+  },
+  "module_reports": [
+    {
+      "path": "source_reconstruction/effect_system/additional_validation.json",
+      "total": 357860,
+      "original_cpu_checks": 357860,
+      "source_only_checks": 0,
+      "sha256": "5df518f406606581b15d2f4c63139451872473395d7f74be75644e78874b2f19"
+    },
+    {
+      "path": "source_reconstruction/bullet_system/pool_validation.json",
+      "total": 341623,
+      "original_cpu_checks": 341623,
+      "source_only_checks": 0,
+      "sha256": "f4e651be9a26ff636d44089f2331abd41318a145d03e6976961e38eadeaba2ea"
+    },
+    {
+      "path": "source_reconstruction/laser_system/pool_validation.json",
+      "total": 431652,
+      "original_cpu_checks": 431588,
+      "source_only_checks": 64,
+      "sha256": "40b943309ca24c99aa06ccfa4986e2525b86371517af56a3d899112f5adcd65f"
+    },
+    {
+      "path": "source_reconstruction/hud_system/draw_validation.json",
+      "total": 232192,
+      "original_cpu_checks": 232192,
+      "source_only_checks": 0,
+      "sha256": "8665fa49a5b2844c76463944bc50c331b6e8d3ba62642df39606d09046cd7376"
+    },
+    {
+      "path": "source_reconstruction/stage_clear/pool_validation.json",
+      "total": 95232,
+      "original_cpu_checks": 95232,
+      "source_only_checks": 0,
+      "sha256": "691021f2867956c581e22bdd9efb544d7afd891776c7fb33f6df6b6e1cefc2e4"
+    },
+    {
+      "path": "source_reconstruction/card_system/pool_validation.json",
+      "total": 206784,
+      "original_cpu_checks": 206784,
+      "source_only_checks": 0,
+      "sha256": "d7c72cbc3d3e710cf01cad1e2287ac2da76ed05f49df9841fef83a540021eef7"
+    },
+    {
+      "path": "source_reconstruction/gameplay/frame_validation.json",
+      "total": 225280,
+      "original_cpu_checks": 225280,
+      "source_only_checks": 0,
+      "sha256": "b5b961574b15b0874a13c37fd554de294e1057ec8ac66f39a497f8ed6f8d46b4"
+    },
+    {
+      "path": "source_reconstruction/pause_system/draw_validation.json",
+      "total": 81920,
+      "original_cpu_checks": 81920,
+      "source_only_checks": 0,
+      "sha256": "cdf6a1c0092b55b1099b58e3a3e9cc1d4faa4d9de0eb4bb611a7765bddfec027"
+    },
+    {
+      "path": "source_reconstruction/title_system/draw_validation.json",
+      "total": 122880,
+      "original_cpu_checks": 122880,
+      "source_only_checks": 0,
+      "sha256": "07f2fd0e000cd11d4e3c4bbcfb7c6f4af79a20d3ea0d9c58d3edfa4e31636b51"
+    },
+    {
+      "path": "source_reconstruction/notice_system/pool_validation.json",
+      "total": 59904,
+      "original_cpu_checks": 59904,
+      "source_only_checks": 0,
+      "sha256": "1a92de333a6ed3de2dd57d239704aa5ee4d2bb5c3bd44cddd5817fbf7e137d53"
+    },
+    {
+      "path": "source_reconstruction/ending_scene/pool_validation.json",
+      "total": 200618,
+      "original_cpu_checks": 200618,
+      "source_only_checks": 0,
+      "sha256": "491db2cfdcab7fe74de491f6f0faf768c15613c518633d54d009c6dfb372c074"
+    },
+    {
+      "path": "source_reconstruction/trophy_system/pool_validation.json",
+      "total": 34404,
+      "original_cpu_checks": 34404,
+      "source_only_checks": 0,
+      "sha256": "eb85eb54ff00a4a69b09a0dc078f5565e7f7035aaad0eb4deefe7d10d0a45232"
+    },
+    {
+      "path": "source_reconstruction/bomb_system/cancellation_validation.json",
+      "total": 9216,
+      "original_cpu_checks": 9216,
+      "source_only_checks": 0,
+      "sha256": "146aa3508a408aa0056f33608d2ab25eec8bb5650a618bd6b12a014322e3c44b"
+    }
+  ],
+  "limitations": [
+    "Uses existing isolated original-function CPU fixture, no original entry point or game UI executed.",
+    "Not an ASAN run and not a whole-game equivalence or lifetime proof.",
+    "Player/Title owner factories and Effect callback lifecycle changes are not compiled by this target.",
+    "64 labeled source-only ETEX13 checks validate deliberate checked failure, not original unsafe-copy equivalence."
+  ],
+  "covered_allocator_files": {
+    "../laser_system/type1.cpp": "953fd7f7ba5e56906bbcc2fe7d5757694f33d495cd6f92f8dca26d8e3db662d5",
+    "../laser_system/type0.cpp": "57cf42ab8a62c280330332112fb0ba904c704e5191655bd0b48166158e805fe3",
+    "../laser_system/type2.cpp": "a7fb29bb5ceaa4a142554ff742d7a93752a6deade1b88e8c566b908de72a0b63"
+  }
+}

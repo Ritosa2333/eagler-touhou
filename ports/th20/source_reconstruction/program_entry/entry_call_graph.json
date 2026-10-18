@@ -1,0 +1,2020 @@
+{
+  "source_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "scope": "Exact statically resolved calls in selected entry/scheduler functions; indirect object/vtable/callback targets require further recovery",
+  "roots": [
+    "0x005435e0",
+    "0x00543461",
+    "0x0041e7d0"
+  ],
+  "nodes": [
+    {
+      "address": "0x005435e0",
+      "role": "PE entry / CRT security cookie entry",
+      "ranges": [
+        [
+          "0x005435e0",
+          "0x005435e9"
+        ]
+      ],
+      "pseudocode": "pseudocode/005435e0.c"
+    },
+    {
+      "address": "0x00543461",
+      "role": "MSVC CRT startup and invocation of WinMain",
+      "ranges": [
+        [
+          "0x00543461",
+          "0x00543584"
+        ],
+        [
+          "0x005435ba",
+          "0x005435de"
+        ]
+      ],
+      "pseudocode": "pseudocode/00543461.c"
+    },
+    {
+      "address": "0x00543cd2",
+      "role": "MSVC security cookie initialization",
+      "ranges": [
+        [
+          "0x00543cd2",
+          "0x00543d1c"
+        ]
+      ],
+      "pseudocode": "pseudocode/00543cd2.c"
+    },
+    {
+      "address": "0x0041e7d0",
+      "role": "WinMain, corrected four-argument WINAPI ABI",
+      "ranges": [
+        [
+          "0x0041e7d0",
+          "0x0041ea65"
+        ],
+        [
+          "0x0041ea68",
+          "0x0041f1b8"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041e7d0.c"
+    },
+    {
+      "address": "0x00419c20",
+      "role": "unlimited frame scheduler",
+      "ranges": [
+        [
+          "0x00419c20",
+          "0x00419cb4"
+        ],
+        [
+          "0x00419cb7",
+          "0x00419dd0"
+        ]
+      ],
+      "pseudocode": "pseudocode/00419c20.c"
+    },
+    {
+      "address": "0x00419de0",
+      "role": "software timed frame scheduler",
+      "ranges": [
+        [
+          "0x00419de0",
+          "0x00419f09"
+        ],
+        [
+          "0x00419f0c",
+          "0x0041a026"
+        ]
+      ],
+      "pseudocode": "pseudocode/00419de0.c"
+    },
+    {
+      "address": "0x0041a030",
+      "role": "present paced frame scheduler",
+      "ranges": [
+        [
+          "0x0041a030",
+          "0x0041a084"
+        ],
+        [
+          "0x0041a087",
+          "0x0041a1a1"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041a030.c"
+    },
+    {
+      "address": "0x0041cb10",
+      "role": "clock source, unresolved lock and uint64 conversion dependencies",
+      "ranges": [
+        [
+          "0x0041cb10",
+          "0x0041cbcc"
+        ],
+        [
+          "0x0041cbd2",
+          "0x0041cc52"
+        ],
+        [
+          "0x0041cc5c",
+          "0x0041cc69"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041cb10.c"
+    },
+    {
+      "address": "0x0041cc70",
+      "role": "display mode getter",
+      "ranges": [
+        [
+          "0x0041cc70",
+          "0x0041cc83"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041cc70.c"
+    },
+    {
+      "address": "0x0041d080",
+      "role": "reset flag getter",
+      "ranges": [
+        [
+          "0x0041d080",
+          "0x0041d098"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041d080.c"
+    },
+    {
+      "address": "0x0041dcc0",
+      "role": "draw counter setter",
+      "ranges": [
+        [
+          "0x0041dcc0",
+          "0x0041dcd5"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041dcc0.c"
+    },
+    {
+      "address": "0x0041de00",
+      "role": "reset flag setter",
+      "ranges": [
+        [
+          "0x0041de00",
+          "0x0041de2b"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041de00.c"
+    },
+    {
+      "address": "0x0041de30",
+      "role": "reset delay setter",
+      "ranges": [
+        [
+          "0x0041de30",
+          "0x0041de48"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041de30.c"
+    },
+    {
+      "address": "0x00412730",
+      "role": "Direct3D device getter",
+      "ranges": [
+        [
+          "0x00412730",
+          "0x00412740"
+        ]
+      ],
+      "pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "address": "0x00415800",
+      "role": "D3DPRESENT_PARAMETERS.Windowed getter",
+      "ranges": [
+        [
+          "0x00415800",
+          "0x00415813"
+        ]
+      ],
+      "pseudocode": "pseudocode/00415800.c"
+    },
+    {
+      "address": "0x0041a200",
+      "role": "release Direct3D object",
+      "ranges": [
+        [
+          "0x0041a200",
+          "0x0041a231"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041a200.c"
+    },
+    {
+      "address": "0x0041a240",
+      "role": "release Direct3D device",
+      "ranges": [
+        [
+          "0x0041a240",
+          "0x0041a271"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041a240.c"
+    },
+    {
+      "address": "0x0041b480",
+      "role": "SetForegroundWindow wrapper",
+      "ranges": [
+        [
+          "0x0041b480",
+          "0x0041b48f"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041b480.c"
+    },
+    {
+      "address": "0x0041b490",
+      "role": "restore system settings",
+      "ranges": [
+        [
+          "0x0041b490",
+          "0x0041b4e0"
+        ]
+      ],
+      "pseudocode": "pseudocode/0041b490.c"
+    },
+    {
+      "address": "0x00412540",
+      "role": "proven side-effect-free constant-zero function",
+      "ranges": [
+        [
+          "0x00412540",
+          "0x0041254c"
+        ]
+      ],
+      "pseudocode": "pseudocode/00412540.c"
+    },
+    {
+      "address": "0x004111e0",
+      "role": "proven side-effect-free constant-minus-one function",
+      "ranges": [
+        [
+          "0x004111e0",
+          "0x004111e7"
+        ]
+      ],
+      "pseudocode": "pseudocode/004111e0.c"
+    },
+    {
+      "address": "0x0040c6b0",
+      "role": "proven five-byte no-op, not printf",
+      "ranges": [
+        [
+          "0x0040c6b0",
+          "0x0040c6b4"
+        ]
+      ],
+      "pseudocode": "pseudocode/0040c6b0.c"
+    }
+  ],
+  "edges": [
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419c7c",
+      "target": "0x004455c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004455c0.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419c88",
+      "target": "0x0041dce0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041dce0.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419c93",
+      "target": "0x00412810",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412810.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419ca6",
+      "target": "0x004d9e30",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004d9e30.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419cc2",
+      "target": "0x004d9e30",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004d9e30.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419cfd",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419d1c",
+      "target": "0x00445a40",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00445a40.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419d30",
+      "target": "0x004dda60",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004dda60.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419d3b",
+      "target": "0x00412aa0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412aa0.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419d46",
+      "target": "0x004455c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004455c0.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419d50",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419d76",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419d99",
+      "target": "0x004193e0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004193e0.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419da2",
+      "target": "0x0041cb10",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cb10.c"
+    },
+    {
+      "caller": "0x00419c20",
+      "site": "0x00419dc5",
+      "target": "0x00412540",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412540.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419dec",
+      "target": "0x0041cb10",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cb10.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419e68",
+      "target": "0x0056c16c",
+      "kind": "indirect_absolute_call",
+      "symbol": "KERNEL32.dll!Sleep",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419ed1",
+      "target": "0x004455c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004455c0.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419edd",
+      "target": "0x0041dce0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041dce0.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419ee8",
+      "target": "0x00412810",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412810.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419efb",
+      "target": "0x004d9e30",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004d9e30.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419f17",
+      "target": "0x004d9e30",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004d9e30.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419f53",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419f72",
+      "target": "0x00445a40",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00445a40.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419f86",
+      "target": "0x004dda60",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004dda60.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419f91",
+      "target": "0x00412aa0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412aa0.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419f9c",
+      "target": "0x004455c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004455c0.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419fa6",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419fcc",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419fef",
+      "target": "0x004199a0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004199a0.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x00419ff8",
+      "target": "0x0041cb10",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cb10.c"
+    },
+    {
+      "caller": "0x00419de0",
+      "site": "0x0041a01b",
+      "target": "0x00412540",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412540.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a04c",
+      "target": "0x004455c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004455c0.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a058",
+      "target": "0x0041dce0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041dce0.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a063",
+      "target": "0x00412810",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412810.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a076",
+      "target": "0x004d9e30",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004d9e30.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a092",
+      "target": "0x004d9e30",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004d9e30.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a0ce",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a0ed",
+      "target": "0x00445a40",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00445a40.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a101",
+      "target": "0x004dda60",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004dda60.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a10c",
+      "target": "0x00412aa0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412aa0.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a117",
+      "target": "0x004455c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004455c0.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a121",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a147",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a16a",
+      "target": "0x00419a50",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00419a50.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a173",
+      "target": "0x0041cb10",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cb10.c"
+    },
+    {
+      "caller": "0x0041a030",
+      "site": "0x0041a196",
+      "target": "0x00412540",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412540.c"
+    },
+    {
+      "caller": "0x0041b480",
+      "site": "0x0041b487",
+      "target": "0x0056c250",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetForegroundWindow",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041b490",
+      "site": "0x0041b4a5",
+      "target": "0x0056c284",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SystemParametersInfoW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041b490",
+      "site": "0x0041b4b9",
+      "target": "0x0056c284",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SystemParametersInfoW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041b490",
+      "site": "0x0041b4cd",
+      "target": "0x0056c284",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SystemParametersInfoW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041b490",
+      "site": "0x0041b4d7",
+      "target": "0x0054065a",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054065a.c"
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cb2a",
+      "target": "0x0040c310",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0040c310.c"
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cb33",
+      "target": "0x0040b730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0040b730.c"
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cb4e",
+      "target": "0x0056c11c",
+      "kind": "indirect_absolute_call",
+      "symbol": "KERNEL32.dll!QueryPerformanceCounter",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cb66",
+      "target": "0x00542e00",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00542e00.c"
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cb7c",
+      "target": "0x00542e00",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00542e00.c"
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cbc0",
+      "target": "0x0040b900",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0040b900.c"
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cbd2",
+      "target": "0x0056c2e8",
+      "kind": "indirect_absolute_call",
+      "symbol": "WINMM.dll!timeGetTime",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cc49",
+      "target": "0x0040b900",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0040b900.c"
+    },
+    {
+      "caller": "0x0041cb10",
+      "site": "0x0041cc61",
+      "target": "0x005429ee",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/005429ee.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e7d8",
+      "target": "0x00542c40",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00542c40.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e806",
+      "target": "0x0056c2d8",
+      "kind": "indirect_absolute_call",
+      "symbol": "WINMM.dll!timeBeginPeriod",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e80e",
+      "target": "0x0054a4e0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054a4e0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e81b",
+      "target": "0x0041ccc0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041ccc0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e823",
+      "target": "0x0054275d",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054275d.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e840",
+      "target": "0x0041f5b0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041f5b0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e875",
+      "target": "0x00418db0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00418db0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e881",
+      "target": "0x0041e770",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041e770.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e893",
+      "target": "0x00454150",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00454150.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e89f",
+      "target": "0x0041c020",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041c020.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e8ba",
+      "target": "0x004117a0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004117a0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e8c5",
+      "target": "0x0041b4f0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041b4f0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e8d8",
+      "target": "0x00454230",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00454230.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e8ef",
+      "target": "0x004dc1c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004dc1c0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e8fd",
+      "target": "0x00420f80",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00420f80.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e902",
+      "target": "0x00421040",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00421040.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e90b",
+      "target": "0x0041ae70",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041ae70.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e932",
+      "target": "0x004111e0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004111e0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e937",
+      "target": "0x00416d20",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00416d20.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e93d",
+      "target": "0x0041c320",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041c320.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e954",
+      "target": "0x0041ccf0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041ccf0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e967",
+      "target": "0x0041c3e0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041c3e0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e980",
+      "target": "0x004187a0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004187a0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e995",
+      "target": "0x00418830",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00418830.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e9a4",
+      "target": "0x00415800",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00415800.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e9b2",
+      "target": "0x0041d0f0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041d0f0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e9bf",
+      "target": "0x0054065a",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054065a.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e9c7",
+      "target": "0x0056c268",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!ShowCursor",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e9d3",
+      "target": "0x0056c26c",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetCursor",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041e9ea",
+      "target": "0x0041cb10",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cb10.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ea1a",
+      "target": "0x0041cb10",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cb10.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ea3c",
+      "target": "0x0041b480",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041b480.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ea44",
+      "target": "0x004de1f0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004de1f0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ea88",
+      "target": "0x0041dcc0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041dcc0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eab8",
+      "target": "0x0056c2d0",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!PeekMessageW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eac9",
+      "target": "0x0056c2b4",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!TranslateMessage",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ead6",
+      "target": "0x0056c2b8",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!DispatchMessageW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eae7",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eaf7",
+      "target": "0x00412730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00412730.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eb2e",
+      "target": "0x0041d080",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041d080.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eb4f",
+      "target": "0x00419c20",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00419c20.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eb83",
+      "target": "0x0041a030",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041a030.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eba3",
+      "target": "0x00419de0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00419de0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ebe5",
+      "target": "0x0041de30",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041de30.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ebf0",
+      "target": "0x0041d080",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041d080.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ebfe",
+      "target": "0x0041cc70",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cc70.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ec14",
+      "target": "0x0056c260",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!GetWindowRect",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ec6c",
+      "target": "0x0041e050",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041e050.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ec77",
+      "target": "0x004dd840",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004dd840.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ec82",
+      "target": "0x0041dbe0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041dbe0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ec8a",
+      "target": "0x0041c730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041c730.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ec9b",
+      "target": "0x0041a2c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041a2c0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eca6",
+      "target": "0x0041d9f0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041d9f0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ecc9",
+      "target": "0x0041d080",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041d080.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ecdb",
+      "target": "0x004dbce0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004dbce0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ece6",
+      "target": "0x0041cc70",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cc70.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ecf5",
+      "target": "0x0041cc70",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cc70.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ed0e",
+      "target": "0x0056c274",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetWindowLongW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ed1c",
+      "target": "0x0056c228",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!ShowWindow",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ed4d",
+      "target": "0x0040c6b0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0040c6b0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ed72",
+      "target": "0x0056c22c",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetWindowPos",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ed7c",
+      "target": "0x0054065a",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054065a.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ed84",
+      "target": "0x0056c268",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!ShowCursor",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ed90",
+      "target": "0x0056c26c",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetCursor",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eda7",
+      "target": "0x0041cc70",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cc70.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041edc3",
+      "target": "0x0056c274",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetWindowLongW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041edcb",
+      "target": "0x0056c248",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!GetSystemMetrics",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ede2",
+      "target": "0x0056c248",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!GetSystemMetrics",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041edf3",
+      "target": "0x0056c248",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!GetSystemMetrics",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ee27",
+      "target": "0x0056c22c",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetWindowPos",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ee36",
+      "target": "0x0056c228",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!ShowWindow",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ee40",
+      "target": "0x0054065a",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054065a.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ee48",
+      "target": "0x0056c268",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!ShowCursor",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ee79",
+      "target": "0x0056c274",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetWindowLongW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ee9c",
+      "target": "0x0056c22c",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetWindowPos",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eea6",
+      "target": "0x0054065a",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054065a.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eeae",
+      "target": "0x0056c268",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!ShowCursor",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eeba",
+      "target": "0x0056c26c",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!SetCursor",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eed3",
+      "target": "0x0056c260",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!GetWindowRect",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eede",
+      "target": "0x004dbd70",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004dbd70.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eeea",
+      "target": "0x0041de00",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041de00.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041eefa",
+      "target": "0x0041cc70",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041cc70.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ef18",
+      "target": "0x0056c260",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!GetWindowRect",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ef3b",
+      "target": "0x004dd490",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004dd490.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ef4f",
+      "target": "0x004186c0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/004186c0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ef63",
+      "target": "0x00426170",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00426170.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041ef75",
+      "target": "0x00418730",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00418730.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041effc",
+      "target": "0x0041a240",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041a240.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f006",
+      "target": "0x0041a200",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041a200.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f01e",
+      "target": "0x0056c228",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!ShowWindow",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f02a",
+      "target": "0x0056c224",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!DestroyWindow",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f03c",
+      "target": "0x0056c268",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!ShowCursor",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f058",
+      "target": "0x00419be0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00419be0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f067",
+      "target": "0x00454150",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00454150.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f074",
+      "target": "0x00415800",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00415800.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f081",
+      "target": "0x0054065a",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054065a.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f0a9",
+      "target": "0x0056c2d0",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!PeekMessageW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f0ba",
+      "target": "0x0056c2b4",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!TranslateMessage",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f0c7",
+      "target": "0x0056c2b8",
+      "kind": "indirect_absolute_call",
+      "symbol": "USER32.dll!DispatchMessageW",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f0f8",
+      "target": "0x0041aa70",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041aa70.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f0ff",
+      "target": "0x0056c2dc",
+      "kind": "indirect_absolute_call",
+      "symbol": "WINMM.dll!timeEndPeriod",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f117",
+      "target": "0x00548610",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00548610.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f130",
+      "target": "0x005486a0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/005486a0.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f13d",
+      "target": "0x00453220",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00453220.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f148",
+      "target": "0x0041b490",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041b490.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f16b",
+      "target": "0x00419320",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00419320.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f187",
+      "target": "0x0041ca30",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041ca30.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f19d",
+      "target": "0x00418e90",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00418e90.c"
+    },
+    {
+      "caller": "0x0041e7d0",
+      "site": "0x0041f1ae",
+      "target": "0x005429ee",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/005429ee.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x00543468",
+      "target": "0x00543c40",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00543c40.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x0054346f",
+      "target": "0x0054280f",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0054280f.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x00543489",
+      "target": "0x005427dd",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/005427dd.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x005434b5",
+      "target": "0x00555a29",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00555a29.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x005434db",
+      "target": "0x005559fe",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/005559fe.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x005434f6",
+      "target": "0x00542966",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00542966.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x005434fc",
+      "target": "0x00543d7c",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00543d7c.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x0054350a",
+      "target": "0x005428cf",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/005428cf.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x0054351c",
+      "target": "0x0056c37c",
+      "kind": "indirect_absolute_call",
+      "symbol": "",
+      "target_pseudocode": null
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x00543524",
+      "target": "0x00543d82",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00543d82.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x00543530",
+      "target": "0x005428cf",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/005428cf.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x0054353c",
+      "target": "0x00552e03",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00552e03.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x00543542",
+      "target": "0x00543b4e",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00543b4e.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x0054354a",
+      "target": "0x005559a6",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/005559a6.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x00543557",
+      "target": "0x0041e7d0",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/0041e7d0.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x0054355e",
+      "target": "0x00543b86",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00543b86.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x0054356b",
+      "target": "0x00552dde",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00552dde.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x00543573",
+      "target": "0x00542983",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00542983.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x005435cc",
+      "target": "0x00543a39",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00543a39.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x005435d2",
+      "target": "0x00552e29",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00552e29.c"
+    },
+    {
+      "caller": "0x00543461",
+      "site": "0x005435da",
+      "target": "0x00552ded",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00552ded.c"
+    },
+    {
+      "caller": "0x005435e0",
+      "site": "0x005435e0",
+      "target": "0x00543cd2",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00543cd2.c"
+    },
+    {
+      "caller": "0x00543cd2",
+      "site": "0x00543cec",
+      "target": "0x00543c85",
+      "kind": "direct_call",
+      "symbol": "",
+      "target_pseudocode": "pseudocode/00543c85.c"
+    },
+    {
+      "caller": "0x005435e0",
+      "site": "0x005435e5",
+      "target": "0x00543461",
+      "kind": "tail_jump",
+      "symbol": "CRT startup"
+    }
+  ],
+  "crt_initializers": {
+    "C": [
+      {
+        "slot": "0x0056c418",
+        "target": "0x00000000"
+      },
+      {
+        "slot": "0x0056c41c",
+        "target": "0x0054339c"
+      },
+      {
+        "slot": "0x0056c420",
+        "target": "0x00543447"
+      },
+      {
+        "slot": "0x0056c424",
+        "target": "0x005423f7"
+      },
+      {
+        "slot": "0x0056c428",
+        "target": "0x00551851"
+      },
+      {
+        "slot": "0x0056c42c",
+        "target": "0x0055a1c0"
+      },
+      {
+        "slot": "0x0056c430",
+        "target": "0x0055be03"
+      },
+      {
+        "slot": "0x0056c434",
+        "target": "0x005659d4"
+      },
+      {
+        "slot": "0x0056c438",
+        "target": "0x0055fbf6"
+      }
+    ],
+    "C++": [
+      {
+        "slot": "0x0056c384",
+        "target": "0x00000000"
+      },
+      {
+        "slot": "0x0056c388",
+        "target": "0x0054344f"
+      },
+      {
+        "slot": "0x0056c38c",
+        "target": "0x0040aeba"
+      },
+      {
+        "slot": "0x0056c390",
+        "target": "0x0040aef4"
+      },
+      {
+        "slot": "0x0056c394",
+        "target": "0x0040aee8"
+      },
+      {
+        "slot": "0x0056c398",
+        "target": "0x0040aed0"
+      },
+      {
+        "slot": "0x0056c39c",
+        "target": "0x0040aedc"
+      },
+      {
+        "slot": "0x0056c3a0",
+        "target": "0x00401000"
+      },
+      {
+        "slot": "0x0056c3a4",
+        "target": "0x00401030"
+      },
+      {
+        "slot": "0x0056c3a8",
+        "target": "0x00401060"
+      },
+      {
+        "slot": "0x0056c3ac",
+        "target": "0x00401090"
+      },
+      {
+        "slot": "0x0056c3b0",
+        "target": "0x004010b0"
+      },
+      {
+        "slot": "0x0056c3b4",
+        "target": "0x004010d0"
+      },
+      {
+        "slot": "0x0056c3b8",
+        "target": "0x004010f0"
+      },
+      {
+        "slot": "0x0056c3bc",
+        "target": "0x00401120"
+      },
+      {
+        "slot": "0x0056c3c0",
+        "target": "0x00401100"
+      },
+      {
+        "slot": "0x0056c3c4",
+        "target": "0x00401160"
+      },
+      {
+        "slot": "0x0056c3c8",
+        "target": "0x00401140"
+      },
+      {
+        "slot": "0x0056c3cc",
+        "target": "0x00401180"
+      },
+      {
+        "slot": "0x0056c3d0",
+        "target": "0x00401190"
+      },
+      {
+        "slot": "0x0056c3d4",
+        "target": "0x004011c0"
+      },
+      {
+        "slot": "0x0056c3d8",
+        "target": "0x00401240"
+      },
+      {
+        "slot": "0x0056c3dc",
+        "target": "0x00401210"
+      },
+      {
+        "slot": "0x0056c3e0",
+        "target": "0x004011f0"
+      },
+      {
+        "slot": "0x0056c3e4",
+        "target": "0x00401280"
+      },
+      {
+        "slot": "0x0056c3e8",
+        "target": "0x0040a990"
+      },
+      {
+        "slot": "0x0056c3ec",
+        "target": "0x0040a9c0"
+      },
+      {
+        "slot": "0x0056c3f0",
+        "target": "0x0040a9f0"
+      },
+      {
+        "slot": "0x0056c3f4",
+        "target": "0x0040aa10"
+      },
+      {
+        "slot": "0x0056c3f8",
+        "target": "0x0040aa40"
+      },
+      {
+        "slot": "0x0056c3fc",
+        "target": "0x0040ae40"
+      },
+      {
+        "slot": "0x0056c400",
+        "target": "0x0040ae50"
+      },
+      {
+        "slot": "0x0056c404",
+        "target": "0x0040ae60"
+      },
+      {
+        "slot": "0x0056c408",
+        "target": "0x0040ae70"
+      },
+      {
+        "slot": "0x0056c40c",
+        "target": "0x0040ae80"
+      },
+      {
+        "slot": "0x0056c410",
+        "target": "0x0040ae90"
+      }
+    ]
+  }
+}

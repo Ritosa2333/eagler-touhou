@@ -1,0 +1,211 @@
+[
+  {
+    "name": "th09_00.wav",
+    "file": "th09_00.ogg",
+    "frames": 3135680,
+    "loopFrame": 218336,
+    "encodedBytes": 1757496,
+    "pcmSha256": "ff865d4fc621250016c5d998aecdf03dcc199539a67784b9eabf052c9873e811",
+    "encodedSha256": "316c5ae8a2492bcf9b8e39dafb537ebe7ea4e70fb9fd9dd52b7f281deadf458e",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_00b.wav",
+    "file": "th09_00b.ogg",
+    "frames": 5940992,
+    "loopFrame": 481024,
+    "encodedBytes": 3470198,
+    "pcmSha256": "8c5c9817d0ab66169f5623fdd6a4277956ee71a60b81c251fca13f80c70d06da",
+    "encodedSha256": "3bfe666bf744a3709c9fc991b45a179da88d9dc21ecd7ba87026fa8939552b8a",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_00c.wav",
+    "file": "th09_00c.ogg",
+    "frames": 3104416,
+    "loopFrame": 187968,
+    "encodedBytes": 1623421,
+    "pcmSha256": "21cd6a966bbe6dd1529f0ab323e03f74a5f890761e1442eddcf4c38c1f20e4fc",
+    "encodedSha256": "bd7808c1ee0a66f344b2b876638b42413b6e1743db00b07b91ba43c36179add7",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_01.wav",
+    "file": "th09_01.ogg",
+    "frames": 7044096,
+    "loopFrame": 377472,
+    "encodedBytes": 4154589,
+    "pcmSha256": "f698f904a3b2a1bac13e888da9759624fb78ccf523297464746f94e2249d2d70",
+    "encodedSha256": "0ccbf94d0ece753ac97c24659d1bd28bf305b68f3c8db0de54ed435f2da73d9b",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_02.wav",
+    "file": "th09_02.ogg",
+    "frames": 5741904,
+    "loopFrame": 208272,
+    "encodedBytes": 3330544,
+    "pcmSha256": "f9b1e2c5df25a8156ae1bb1262a3d16df6688c3e6970c1d801b035afa41e8456",
+    "encodedSha256": "fa259e5ba48ebb683b6bb1ef86866bc0a752e7616b1ed5c03e2927d72d7443fe",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_05.wav",
+    "file": "th09_05.ogg",
+    "frames": 6555392,
+    "loopFrame": 478464,
+    "encodedBytes": 4329700,
+    "pcmSha256": "cd2a10305030a6103e8b1a8da83b1a4db765e3049cf175781cf1149db5235129",
+    "encodedSha256": "16bc29037f448813168ee318b209c21f2b1697054244e7de128a379e2219b5b5",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_07.wav",
+    "file": "th09_07.ogg",
+    "frames": 7331840,
+    "loopFrame": 449536,
+    "encodedBytes": 4326338,
+    "pcmSha256": "9de598314ddb7ae103952878120793a6d5d8dd173e80bd61e4958bd2bd4eae61",
+    "encodedSha256": "e8def2e9acfe65f679effcff3c657e87441f4fcd9e4762ccdf051938d27ed762",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th07_09.wav",
+    "file": "th07_09.ogg",
+    "frames": 6224832,
+    "loopFrame": 186560,
+    "encodedBytes": 3768596,
+    "pcmSha256": "f4a359f163540990be54d8e036f9d479ea9b39e2c6f6c1e5905971b19a4cf523",
+    "encodedSha256": "b6b5982b28234ad292ef57c5b013dd48b193c80a3cf85898d9eb4f91a93d6b99",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th07_10_b.wav",
+    "file": "th07_10_b.ogg",
+    "frames": 7015168,
+    "loopFrame": 672256,
+    "encodedBytes": 4254555,
+    "pcmSha256": "0d15876b2391b2cf92758af8b8f6eea7b89fe7634b88024376788947b68d1520",
+    "encodedSha256": "ff042456fa3f8cc211665698437f9f55473dea8a371cf4d67172b30731cb5dc9",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_08_2.wav",
+    "file": "th09_08_2.ogg",
+    "frames": 7882368,
+    "loopFrame": 704320,
+    "encodedBytes": 4871445,
+    "pcmSha256": "1962f23003ca78d0b2402b98569178acd4f5cd2431ab1f26823317b9b0659043",
+    "encodedSha256": "ffa52aa2aef9474bb509363e0ae03e2bb3a4510546a40b719f4813ec1d591b8d",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_09.wav",
+    "file": "th09_09.ogg",
+    "frames": 7511232,
+    "loopFrame": 631360,
+    "encodedBytes": 4577477,
+    "pcmSha256": "e76d6bfb06e2afb7ff7097d06384ed17d85b6c4eec1955f2ebd55a8def046711",
+    "encodedSha256": "c89d14b131c6f893ba2b280338ea521de09870f3670d833682cc4b23a3187857",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th08_12.wav",
+    "file": "th08_12.ogg",
+    "frames": 5334528,
+    "loopFrame": 167936,
+    "encodedBytes": 3203611,
+    "pcmSha256": "2d631c424f327fdae89d844199277ab0d4c82dcd4e64b2ad35b5cdf9fd8eed9e",
+    "encodedSha256": "713f8becb676cc83229cd11f455be786b82cd3cc9de2c22b16371d600a0c4498",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_10.wav",
+    "file": "th09_10.ogg",
+    "frames": 4835464,
+    "loopFrame": 248832,
+    "encodedBytes": 2949875,
+    "pcmSha256": "fa30937b6d2ab2f1ed6b31d35664e1ec7eede1f0ae86b896c712a47da2bbf0c3",
+    "encodedSha256": "353c27aa5fbfa7e08ecb0a37c34f8f62ae3a45d3cd906dee38f2e1da043609b6",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_11.wav",
+    "file": "th09_11.ogg",
+    "frames": 11224320,
+    "loopFrame": 269056,
+    "encodedBytes": 6959581,
+    "pcmSha256": "cb56acb116ffa9d788fc8a5ddd554fc78a206389e708bbaa68fd819e100031d9",
+    "encodedSha256": "d2f92da2940b7f830ccb8a23e8398df1795ec16063bef0b8fbbbcb9789bc8f0b",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_12.wav",
+    "file": "th09_12.ogg",
+    "frames": 5189248,
+    "loopFrame": 272704,
+    "encodedBytes": 3258330,
+    "pcmSha256": "d93b8c263602c689606deb18c81f20150739ed39fc298504998aceda458954ee",
+    "encodedSha256": "87162fc05c0cd396825b0c80430e530736382b81e7131849631ab84271a0caae",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_13.wav",
+    "file": "th09_13.ogg",
+    "frames": 7055872,
+    "loopFrame": 474560,
+    "encodedBytes": 4190716,
+    "pcmSha256": "30105e6da3b7ab6c68a584112a3b7e2e2b72dd0f6ce4ddb97c4d3fcb301ffa62",
+    "encodedSha256": "e8339d3f5dbf3a2a450ab54fb937e20fa121550874eca101fb93c7a0a3806f9a",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_14.wav",
+    "file": "th09_14.ogg",
+    "frames": 2182080,
+    "loopFrame": 99744,
+    "encodedBytes": 1270677,
+    "pcmSha256": "aab92c3ce87e66b6e986e74ba5d1a3cb27d3b0fb10916e1fe2c11aff4bccda04",
+    "encodedSha256": "d05ef899b591d9f12a3f84bd9a1ff7ec1978b7eb1b4de71b9963f2b3ddcc52ef",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_15.wav",
+    "file": "th09_15.ogg",
+    "frames": 1690560,
+    "loopFrame": 865696,
+    "encodedBytes": 989967,
+    "pcmSha256": "04d27ec39e1e4e93da482035d53843e017a6505a1d1481c5036105b98a2321f3",
+    "encodedSha256": "b1a7981b546dd373cc8375a6f4688b5e4562c7418095572070ff6fc894bc48bc",
+    "codec": "vorbis",
+    "lossless": false
+  },
+  {
+    "name": "th09_17.wav",
+    "file": "th09_17.ogg",
+    "frames": 4958944,
+    "loopFrame": 222080,
+    "encodedBytes": 2825216,
+    "pcmSha256": "5b203798b826415dafc3c3fc09e7aa00f54e783c615026af3e8b29425015c298",
+    "encodedSha256": "6e631a0b7e09a7eea653fb77229b174594c8e3676db3ebf8885968e6b0cc7e64",
+    "codec": "vorbis",
+    "lossless": false
+  }
+]

@@ -1,0 +1,93 @@
+{
+  "schema": "eagler/replay-corpus/v1",
+  "game": "th15",
+  "version": "1.00b",
+  "policy": {
+    "gameplayMutation": "forbidden",
+    "candidate": "current-wasi-core",
+    "demoScope": "complete-stored-demo-replay",
+    "dailyScope": "natural-stage-clears-from-complete-original-replay"
+  },
+  "suites": {
+    "quick": [
+      "demo0",
+      "demo1",
+      "demo2"
+    ],
+    "daily": [
+      "marisa-lunatic",
+      "marisa-extra"
+    ]
+  },
+  "cases": [
+    {
+      "id": "demo0",
+      "kind": "demo",
+      "demo": 0,
+      "source": "th15_web/reference/assets/demo0.rpy",
+      "replaySha256": "d04a58b01b12ce3c76d98ee6acd088b4422a65cd27634834b877f3ddf6820a1c",
+      "status": "ready"
+    },
+    {
+      "id": "demo1",
+      "kind": "demo",
+      "demo": 1,
+      "source": "th15_web/reference/assets/demo1.rpy",
+      "replaySha256": "7ea4791563aa2cda7a957ec2fd16d4ef9589913ac6ba928a453331b3e4df0eba",
+      "status": "ready"
+    },
+    {
+      "id": "demo2",
+      "kind": "demo",
+      "demo": 2,
+      "source": "th15_web/reference/assets/demo2.rpy",
+      "replaySha256": "158045b68171cafa4ba63e6fc4edd6a8a8a2f9529cc21c0a1f17d216a399fb9e",
+      "status": "ready"
+    },
+    {
+      "id": "marisa-lunatic",
+      "kind": "lunatic",
+      "source": "tools/replay-verifier/fixtures/original/th15_ud0186.rpy",
+      "replaySha256": "480e93f57235a8f4ceef9e1a3182d6e98bf4307c1390e7d872829d00d5886c76",
+      "character": 1,
+      "difficulty": 3,
+      "clearStage": 8,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "sourceUrl": "https://maribelhearn.com/replays/royalflare/th15/th15_ud0186.rpy",
+      "sourceArchive": "Royalflare",
+      "submitter": "名前",
+      "displayedScore": 2001749730,
+      "status": "ready"
+    },
+    {
+      "id": "marisa-extra",
+      "kind": "extra",
+      "source": "tools/replay-verifier/fixtures/original/th15_ud0484.rpy",
+      "sourceUrl": "https://maribelhearn.com/replays/royalflare/th15/th15_ud0484.rpy",
+      "sourceArchive": "Royalflare",
+      "submitter": "hage",
+      "replaySha256": "6ae9905f7a9d25b4baaf93460b4a276352dcf72707b4563a06170775383f168b",
+      "character": 1,
+      "difficulty": 4,
+      "clearStage": 8,
+      "stages": [
+        7
+      ],
+      "status": "ready"
+    }
+  ],
+  "demo": {
+    "rotationOrder": [
+      "th15_web/reference/assets/demo0.rpy",
+      "th15_web/reference/assets/demo1.rpy",
+      "th15_web/reference/assets/demo2.rpy"
+    ]
+  }
+}

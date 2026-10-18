@@ -1,0 +1,10 @@
+LIBRARY th20_native_bridge
+EXPORTS
+    th20_lcg_step
+    th20_lcg_next=@th20_lcg_next@8
+    th20_timer_reset=@th20_timer_reset@8
+    th20_timer_mode=@th20_timer_mode@12
+    th20_timer_set=@th20_timer_set@12
+    th20_timer_add=@th20_timer_add@12
+    th20_timer_tick=@th20_timer_tick@8
+    g_th20_bridge_stats DATA

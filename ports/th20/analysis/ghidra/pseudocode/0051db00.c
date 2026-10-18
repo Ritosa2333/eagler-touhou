@@ -1,0 +1,92 @@
+/* Entry: 0x0051db00; symbol: FUN_0051db00; body bytes: 922 */
+
+undefined4 * __fastcall FUN_0051db00(undefined4 *param_1)
+
+{
+  char **ppcVar1;
+  int *unaff_FS_OFFSET;
+  int local_10;
+  undefined1 *puStack_c;
+  undefined4 local_8;
+  
+  local_8 = 0xffffffff;
+  puStack_c = &LAB_0056ae4b;
+  local_10 = *unaff_FS_OFFSET;
+  ppcVar1 = (char **)(DAT_005b25c0 ^ (uint)&stack0xfffffffc);
+  *unaff_FS_OFFSET = (int)&local_10;
+  FUN_0041fd20(param_1);
+  local_8 = 0;
+  *param_1 = &PTR_FUN_00574fbc;
+  param_1[4] = 0;
+  param_1[5] = 0;
+  param_1[6] = 0;
+  param_1[7] = 0;
+  param_1[8] = 0;
+  FUN_004aef00(param_1 + 9);
+  local_8._0_1_ = 1;
+  FUN_004aef00(param_1 + 0x1c);
+  local_8._0_1_ = 2;
+  FUN_004aef00(param_1 + 0x2f);
+  local_8._0_1_ = 3;
+  FUN_004aef00(param_1 + 0x42);
+  local_8._0_1_ = 4;
+  FUN_00422d90(param_1 + 0x55);
+  FUN_0051daa0(param_1 + 0x59);
+  FUN_00425cc0(param_1 + 0xe4);
+  FUN_0049ebe0(param_1 + 0xe5);
+  FUN_0051da50(param_1 + 0xf5);
+  FUN_0051da00(param_1 + 0x115);
+  FUN_00425cc0(param_1 + 0x11d);
+  FUN_0040b710(param_1 + 0x11e);
+  param_1[0x11f] = 0;
+  param_1[0x120] = 0;
+  param_1[0x121] = 0;
+  param_1[0x122] = 0;
+  param_1[0x123] = 0;
+  _memset(param_1 + 0x124,0,0x800);
+  _memset(param_1 + 0x324,0,0x840);
+  _memset(param_1 + 0x534,0,0x4200);
+  param_1[0x15b4] = 0;
+  param_1[0x15b5] = 0;
+  param_1[0x15b6] = 0;
+  *(undefined2 *)(param_1 + 0x15b7) = 0;
+  param_1[0x15b8] = 0;
+  param_1[0x15b9] = 0;
+  FUN_004aef00(param_1 + 0x15ba);
+  local_8._0_1_ = 5;
+  param_1[0x15cd] = 0;
+  param_1[0x15ce] = 0;
+  param_1[0x15cf] = 0;
+  param_1[0x15d0] = 0;
+  _memset(param_1 + 0x15d1,0,0x18c);
+  param_1[0x1634] = 0;
+  FUN_0051d9b0(param_1 + 0x1635);
+  param_1[0x1636] = 0;
+  param_1[0x1637] = 0;
+  param_1[0x1638] = 0;
+  param_1[0x1639] = 0;
+  param_1[0x163a] = 0;
+  param_1[0x163b] = 0;
+  param_1[0x163c] = 0;
+  param_1[0x163d] = 0;
+  param_1[0x163e] = 0;
+  param_1[0x163f] = 0;
+  param_1[0x1640] = 0;
+  FUN_00422d90(param_1 + 0x1641);
+  FUN_00422d90(param_1 + 0x1645);
+  param_1[0x1649] = 0;
+  FUN_00447de0(param_1 + 0x164a);
+  param_1[0x164b] = 0;
+  FUN_0040de30(param_1 + 0x164c);
+  FUN_0040de30(param_1 + 0x1650);
+  FUN_0040de30(param_1 + 0x1654);
+  param_1[0x1658] = 0xffffffff;
+  param_1[0x1659] = 0xffffffff;
+  FUN_0040b780(param_1 + 0x165a);
+  local_8 = CONCAT31(local_8._1_3_,6);
+  std::_Adl_verify_range<char*,char_const*>((char **)"initialize TitleInf\n",ppcVar1);
+  DAT_005c6124 = param_1;
+  *unaff_FS_OFFSET = local_10;
+  return param_1;
+}
+

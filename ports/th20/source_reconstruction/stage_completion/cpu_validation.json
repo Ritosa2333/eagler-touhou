@@ -1,0 +1,22 @@
+{
+  "original_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "passed": 126976,
+  "failed": 0,
+  "failures": [],
+  "source_hashes": {
+    "source_reconstruction/stage_completion/completion.cpp": "ae0a2790a28a21b4bc2f7a5b0df422ea1562276b4fdf0526c27da72e8e3bb9d4",
+    "source_reconstruction/stage_completion/environment.cpp": "2989e07512d366c29c00599b1b0a4cc73421657b345c441ddcbe74c58c4e9c97",
+    "source_reconstruction/stage_completion/playtime.cpp": "21addac6a2a48e5ba1d981b9526c955a1d0cc32181984f2af0e7d8a52898ddb0",
+    "source_reconstruction/stage_completion/progress.cpp": "55105bb56227402276155998c33a039e5847efdfaf918d6d0dc27b0ea1efb7b0",
+    "source_reconstruction/stage_completion/replay_access.cpp": "4adc9669d7864e84eec83ed583862036fbef01b5d9f5586f0a5c35b4e87c7b2f",
+    "source_reconstruction/stage_completion/completion.hpp": "7cb5cbb878028b449945cc885e617c66207d0980a28b7e0c864a58a4564b5050",
+    "source_reconstruction/stage_completion/dependencies.hpp": "3acbc0992688adc22c55343830ee85163be5672ea439f8422e85ae6d265ce030",
+    "source_reconstruction/stage_completion/playtime.hpp": "a4cd615a0bc213361d97d44450b82f2131d367b1a09451fe40d439db484302e8",
+    "source_reconstruction/stage_completion/progress.hpp": "277b8b8e79de52dd14e830efcedd3c9165bdd18beb0e073d6803d6bfeae1f99b",
+    "source_reconstruction/stage_completion/replay_access.hpp": "10bf10dc5c20e5d4fe43ec964fece8d60202a9c2645f4447cbdad45f007b1909",
+    "source_reconstruction/stage_completion/CMakeLists.txt": "59296684cb3d21bdf75749f0ceb4b87660e1c56b8d5aee7fad0f9b94798c6eee",
+    "source_reconstruction/stage_completion/oracle/compare.cpp": "d3ea0b711e3eb49909e7d771f07cb15cb731ba388b311c9db8fbabc92994133f",
+    "source_reconstruction/stage_completion/oracle/CMakeLists.txt": "470bd7633c44a8381494606fd1e21adb911af76ab8126d21ac944f5347e9f845"
+  },
+  "validation_scope": "126976 comparisons: complete_stage original body with external UI/player/audio boundaries; three full Replay getters. Unlock/grant/playtime helpers have 49152 combined checks with profile getters in progress_state/cpu_validation.json; do not count those twice."
+}

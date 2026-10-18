@@ -1,0 +1,25 @@
+{
+  "schema": "eagler/replay-golden-set/v1",
+  "game": "th08",
+  "profile": "jp-1.00d/original-jit-present-v1",
+  "identity": {
+    "executableSha256": "330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924",
+    "resourceSha256": "9d7edf43b8ddd347cbb641836f6b5050745dd936f688daebbf9382ca557043bb"
+  },
+  "policy": {
+    "candidateMayUpdateGolden": false,
+    "gameplayMutation": "forbidden"
+  },
+  "suites": {
+    "quick": ["demo0", "demo1", "demo2", "demo3"],
+    "daily": ["lunatic", "extra"]
+  },
+  "assets": {
+    "demo0": {"kind":"demo","path":"demo0.rows.jsonl.gz","sha256":"a90e630a867ff1d45714a474bd48dd34becc3b541b678410efd233d42ce38b4a","replaySha256":"6de76d9f5d0ef8d58887bc74087fd566c246c676b6429850ea4702776f2533d8","rawTicks":10607,"comparedTicks":10607},
+    "demo1": {"kind":"demo","path":"demo1.rows.jsonl.gz","sha256":"1ca39fb27ebc557a220d5e677ccec76dacc3e08425fbeb7114a7c6ebf6593e28","replaySha256":"b13b50fb09e5a2a545e284a1c9b160f95f1f63072822fda7fdfdd0e1e3990092","rawTicks":7658,"comparedTicks":7658},
+    "demo2": {"kind":"demo","path":"demo2.rows.jsonl.gz","sha256":"99cd5422a748d19b722a2239eb2c63c9539bc2fd456dccecf2d91b4ce86e0175","replaySha256":"d9fabd1d7c661909c6ecdfc83ae6caaea908ba4eae7b465fd1458bdc81a4efaa","rawTicks":8468,"comparedTicks":8468},
+    "demo3": {"kind":"demo","path":"demo3.rows.jsonl.gz","sha256":"aeaee599c848bcf4521f6ad5cfcff27f45d6a15142709040651c12d49791441a","replaySha256":"cfad7206efdb23d5a3ee704f5367781115dfe814ae4d83ba94a6c5838bd75f97","rawTicks":9241,"comparedTicks":9241},
+    "lunatic": {"kind":"lunatic","path":"lunatic.rows.jsonl.gz","sha256":"069c0dfcfd2c97d9f64990c5e76a37b9651cfd1ed68b096315639e2d879c2889","replaySha256":"9f5bc5e7e7e32a6adc92e98a1219bbdac7acdb1475011242ba76493e2f658ed1","rawTicks":113362,"comparedTicks":110851,"stages":[0,1,2,3,5,7],"finalScore":203680275},
+    "extra": {"kind":"extra","path":"extra.rows.jsonl.gz","sha256":"c69f84825b3b6a1ff9ca43ffd07d14a9169c97f03fee2779b599ffa156ac3781","replaySha256":"3338efac5946ab42502e4ca80f17f9b0eb6811ba87b69a79b100489cde622eb5","rawTicks":42335,"comparedTicks":41505,"stages":[8],"finalScore":196287838}
+  }
+}

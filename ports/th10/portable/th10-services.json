@@ -1,0 +1,117 @@
+[
+  {
+    "module": "th10_time",
+    "name": "monotonic",
+    "kind": "function"
+  },
+  {
+    "module": "th10_audio",
+    "name": "call",
+    "kind": "function"
+  },
+  {
+    "module": "th10_audio",
+    "name": "create",
+    "kind": "function"
+  },
+  {
+    "module": "th10_audio",
+    "name": "event",
+    "kind": "function"
+  },
+  {
+    "module": "th10_audio",
+    "name": "advance",
+    "kind": "function"
+  },
+  {
+    "module": "th10_files",
+    "name": "open",
+    "kind": "function"
+  },
+  {
+    "module": "th10_files",
+    "name": "close",
+    "kind": "function"
+  },
+  {
+    "module": "th10_files",
+    "name": "size",
+    "kind": "function"
+  },
+  {
+    "module": "th10_files",
+    "name": "seek",
+    "kind": "function"
+  },
+  {
+    "module": "th10_files",
+    "name": "read",
+    "kind": "function"
+  },
+  {
+    "module": "th10_files",
+    "name": "write",
+    "kind": "function"
+  },
+  {
+    "module": "th10_files",
+    "name": "list",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "bitmap",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "context",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "select",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "delete_context",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "delete_object",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "font",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "background",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "color",
+    "kind": "function"
+  },
+  {
+    "module": "th10_fonts",
+    "name": "text",
+    "kind": "function"
+  },
+  {
+    "module": "th10_time",
+    "name": "local_date",
+    "kind": "function"
+  },
+  {
+    "module": "th10_time",
+    "name": "timestamp",
+    "kind": "function"
+  }
+]

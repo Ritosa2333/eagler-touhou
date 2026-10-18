@@ -1,0 +1,9 @@
+{
+  "status": "oracle_unavailable_for_domain",
+  "original_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "function": "0x481200 offscreen delay -> 0x43e910 Vec2 normalization -> 0x446b30 -> original CRT sqrt 0x550050",
+  "input": "quiet NaN 0x7fc12345 in position.x; synthetic case 101",
+  "exception": "0xc0000005, operation execute, EIP/address 0x993aed03; isolated image base 0x00da0000",
+  "interpretation": "The isolated image does not initialize the original CRT's exceptional transcendental path. The same limitation is documented in ecl_vm/unavailable_edge_probe.json. This is not evidence of source equivalence or source failure for NaN sqrt.",
+  "action": "Preserve original instructions unchanged. Restrict offscreen-delay CPU comparison to finite positions; retain NaN input checks for bounce, basic geometry and timer operations. No original-code patch or successful stand-in was added."
+}

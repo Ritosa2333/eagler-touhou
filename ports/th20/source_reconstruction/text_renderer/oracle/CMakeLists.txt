@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.20)
+cmake_policy(SET CMP0091 NEW)
+project(th20_text_oracle LANGUAGES CXX)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(SPRITE ../../sprite_renderer)
+add_executable(th20_text_cpu_compare compare.cpp ../ascii.cpp ../line_data.cpp ../job_layout.cpp ../format.cpp ../fps.cpp ../bitmap.cpp ../raster.cpp ../deferred_queue.cpp ../dynamic.cpp ../job_lifecycle.cpp ${SPRITE}/pool.cpp ${SPRITE}/animation.cpp ${SPRITE}/binding.cpp ${SPRITE}/bind_dispatch.cpp ${SPRITE}/anm_vm.cpp ../../ecl_vm/math.cpp ../../core_scheduler/scheduler.cpp ../../runtime_core/runtime_core.cpp ../../../src/binary.cpp ../../../src/pe.cpp)
+target_include_directories(th20_text_cpu_compare PRIVATE ../../../native_recovered ../../../include ../../core_scheduler)
+target_compile_options(th20_text_cpu_compare PRIVATE /W4 /utf-8 /fp:strict /arch:SSE2)
+target_compile_features(th20_text_cpu_compare PRIVATE cxx_std_20)
+target_link_libraries(th20_text_cpu_compare PRIVATE bcrypt user32 gdi32)
+target_link_options(th20_text_cpu_compare PRIVATE /BASE:0x10000000 /DYNAMICBASE:NO)
+target_compile_definitions(th20_text_cpu_compare PRIVATE TH20_NATIVE_CORE_SHA256="unused")
+
+target_sources(th20_text_cpu_compare PRIVATE ../../options_system/draw.cpp ../../key_config/draw.cpp ../menu_style.cpp ../../stone_menu/cursor.cpp)
+
+target_link_options(th20_text_cpu_compare PRIVATE /MAP)

@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="docs/assets/eagler-touhou-wordmark.svg" alt="EAGLER TOUHOU" width="312">
+  <img src="launcher/docs/assets/eagler-touhou-wordmark.svg" alt="EAGLER TOUHOU" width="312">
 </h1>
 
 <div align="center">
@@ -7,13 +7,13 @@
   <p>
     <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?style=flat-square&amp;logo=tencentqq&amp;logoColor=white" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Chromium-%E2%89%A5108-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chromium >=108">
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg?style=flat-square" alt="License: GPL-3.0-or-later"></a>
+    <a href="launcher/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg?style=flat-square" alt="License: GPL-3.0-or-later"></a>
   </p>
   <p><a href="README.md">简体中文</a> | English</p>
 </div>
 
 > [!TIP]
-> For game support, see the [Game Restoration and Adaptation Progress](https://github.com/YomotsuHisami/eagler-touhou/blob/main/docs/TOUHOU_PROGRESS.md).<br>
+> For game support, see the [Game Restoration and Adaptation Progress](launcher/docs/TOUHOU_PROGRESS.md).<br>
 > If you have started working on a game, submit an Issue or PR to update the table.<br>
 > If you are interested in reverse engineering the original games or adapting official games and Touhou fangames, join our [QQ group](https://qm.qq.com/q/eeUrxIltug?from=tim). We also have a developer group.
 
@@ -33,9 +33,9 @@ While preserving the original game experience, including some original bugs:
 
 ### The Complete Original Game Experience
 
-![The Eagler Touhou Launcher and game management interface](docs/assets/readme/launcher.webp)
+![The Eagler Touhou Launcher and game management interface](launcher/docs/assets/readme/launcher.webp)
 
-- Run games in the browser with keyboard, gamepad, and touch controls. See the [game progress table](docs/TOUHOU_PROGRESS.md) for support by title.
+- Run games in the browser with keyboard, gamepad, and touch controls. See the [game progress table](launcher/docs/TOUHOU_PROGRESS.md) for support by title.
 - Import and export original-format saves and Replays. Inputs supported by the original format remain interoperable; adaptation inputs that it cannot record use extension data.
 - Aims for a polished experience. It fixes numerous issues inherited from the original portable branches, including jittery bullets, uneven bullet movement, flickering, music stutters when switching tracks in single-threaded mode, and poor performance on phones.
 - Supports refresh rates above 60 Hz, except for th09. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
@@ -50,7 +50,7 @@ TH09 has a separate Local two-player editor with per-player keyboard/controller 
 
 ### Touch Controls
 
-![A touch layout with adjustable positions, sizes, sensitivity, and Focus controls](docs/assets/readme/touch-controls.webp)
+![A touch layout with adjustable positions, sizes, sensitivity, and Focus controls](launcher/docs/assets/readme/touch-controls.webp)
 
 - Your touch path becomes the player's movement path. Available movement methods include Touch, Touch (cheat, unlimited speed), Joystick, and more. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
 - Customizable touch layouts. Touch buttons can be freely moved and scaled from 60% to 300%.
@@ -65,7 +65,7 @@ TH09 has a separate Local two-player editor with per-player keyboard/controller 
 
 ### Popular STG Community Tools
 
-![Using the thprac practice menu in the browser](docs/assets/readme/stg-community-tools.webp)
+![Using the thprac practice menu in the browser](launcher/docs/assets/readme/stg-community-tools.webp)
 
 #### thprac
 
@@ -80,7 +80,7 @@ TH09 has a separate Local two-player editor with per-player keyboard/controller 
 
 ### Multiplayer Lobby
 
-![A multiplayer lobby with player and spectator seats](docs/assets/readme/multiplayer-lobby.webp)
+![A multiplayer lobby with player and spectator seats](launcher/docs/assets/readme/multiplayer-lobby.webp)
 
 - Provides th06MP, th07MP, th08MP, th09MP, and th10MP. th06MP and th07MP are based on the [th07MP rules](https://github.com/sbrik1111/th07_multi_player).
 - th06MP, th07MP, th08MP, and th10MP support 2–3 players; th09MP supports 2 players.
@@ -104,17 +104,17 @@ Operators can choose among three modes based on their resources and bandwidth:
 - **External**: the user-facing site serves the Launcher and Runtime components, while a separate complete resource site or CDN serves large game files. Players can still install games directly without sending large-file traffic through the frontend server;
 - **Import**: the site serves only the Launcher and Runtime components and does not publish original game data. Players import a ZIP made from their legally owned game copy. This suits operators without a CDN traffic budget or who do not want to host original resources.
 
-All three modes share the same frontend, browser-local game packages, and offline-play support. See the [self-hosting guide](docs/SELF_HOSTING.md) for complete deployment instructions.
+All three modes share the same frontend, browser-local game packages, and offline-play support. See the [self-hosting guide](launcher/docs/SELF_HOSTING.md) for complete deployment instructions.
 
 ## Frequently Asked Questions
 
-See the [FAQ](/docs/FAQ.md). The website page is generated from this Markdown source. (Only Chinese is currently available.)
+See the [FAQ](launcher/docs/FAQ.md). The website page is generated from this Markdown source. (Only Chinese is currently available.)
 
 ## License
 
-Licensed under the [GNU General Public License v3.0 or later](LICENSE).
+The Launcher is licensed under the [GNU General Public License v3.0 or later](launcher/LICENSE).
 
-Complete third-party source, asset attribution, and licensing information is available in [THIRD_PARTY.md](THIRD_PARTY.md) and [ASSETS.md](ASSETS.md).
+Complete third-party source, asset attribution, and licensing information is available in [THIRD_PARTY.md](launcher/THIRD_PARTY.md) and [ASSETS.md](launcher/ASSETS.md).
 
 ## Star History
 

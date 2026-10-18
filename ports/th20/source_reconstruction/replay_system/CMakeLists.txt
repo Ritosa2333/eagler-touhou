@@ -1,0 +1,5 @@
+add_library(th20_replay_system STATIC records.cpp input.cpp controller.cpp lifecycle.cpp activation.cpp frame.cpp initialize.cpp load.cpp)
+target_sources(th20_replay_system PRIVATE save.cpp)
+target_compile_features(th20_replay_system PUBLIC cxx_std_20)
+target_compile_options(th20_replay_system PRIVATE /W4 /utf-8 /fp:strict /arch:SSE2)
+target_link_libraries(th20_replay_system PUBLIC th20_gameplay th20_progress_state th20_input th20_overlay_system th20_platform_window th20_text_renderer)

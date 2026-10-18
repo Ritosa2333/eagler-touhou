@@ -1,0 +1,28 @@
+{
+  "files": 4,
+  "stages": 4,
+  "frames": 27411,
+  "original_executable_loaded": false,
+  "observations": [
+    "demo1.rpy stages=1 frames=6424",
+    "demo2.rpy stages=1 frames=7041",
+    "demo3.rpy stages=1 frames=7813",
+    "demo4.rpy stages=1 frames=6133"
+  ],
+  "archive_sha256": "9db8d7c43fbacec95614163d4c3e1d254e82169f8550177ee849831130590494",
+  "verifier_sha256": "dbadd6e3a63167d9c2c0b47af9c42e260984ee71b06850fdd1e914126ddd0a59",
+  "source_hashes": {
+    "oracle/demo_verify.cpp": "20eb79196cf8fa4511291e086dd0bc52e449cb5c894dbd6ab651ab8284ebfa91",
+    "load.cpp": "d7531d50c94648a1f9ba25ef01769617b9b9ce4dee9bd8ff5962e029e0d60c8c",
+    "replay.hpp": "cbb6c9901c2dbb1dd533542add951e3e4ac24b794cbbbfef2569cbb1ba627958",
+    "../archive/resource_manager.cpp": "e9be491caaa9fe3af7d7448503a793bbdc8d372faf10a45cbcb0479bdff3e35b",
+    "../archive/archive.cpp": "bde92899611e1f6276f06c6a535c3260377acd39077b086a22846adac72228e2",
+    "../runtime_core/runtime_core.cpp": "c48e39ddcbf088a11ee13db31f97a3d24290b3aa3d9ef24de2a575290bb43b60",
+    "../platform_services/services.cpp": "b25e5c341b64229e27fab1acdb12e0a53b22f9709b5989cc8aeb078f4ace4def",
+    "../platform_services/clock.cpp": "52d57f32c467b642e167dafecdd371528e8b59cc61c9f49ba31efa5a279852a9",
+    "../game_session/session.cpp": "013dc069db5bb21644de34be43f47804aa383be7b284489dcb84cf59e32f0d44",
+    "../core_scheduler/scheduler.cpp": "2cd241acce16c15991b528516f66da75a08df72f1f99a1b32e1333f5ef8e405e",
+    "../platform_services/configuration.cpp": "bcb8ab516a9691fc710c6b77f07c8601587263b01bc5ca18bcebb6abd4a8d263"
+  },
+  "scope": "Actual source file loader, archive lookup, decryption, shared LZSS decode, record/input/FPS stream layout; no whole-game playback validation."
+}

@@ -1,0 +1,1784 @@
+{
+  "capturedAt": "2026-09-30",
+  "games": [
+    {
+      "game": "th08",
+      "path": "E:/claude cli/东方测试/th08_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "82e48878b53803b27dcd3377361b5ebf55285709d44955459af6be8ece409f50",
+      "manifest": {
+        "game": "th08",
+        "version": "3.4.1-sdl3",
+        "execution": {
+          "kind": "cpp-sdl3",
+          "architecture": {
+            "loop": "cpp-fixed-60hz-bounded-catchup",
+            "audio": "miniaudio-sdl3",
+            "renderer": "cpp-gles-semantic-batched",
+            "graphicsInterface": "semantic-state-texture-matrix",
+            "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+            "files": "sdl-io-idbfs",
+            "fonts": "sdl3-ttf",
+            "input": "cpp-sdl",
+            "launcher": "eagler-touhou/1"
+          },
+          "sdlVersion": "3.4.2",
+          "bytes": 2885667,
+          "sha256": "a6de8136ad65d47175b13436cdc26448a081f1633b39e3e57b961fd2d7d083cb",
+          "loaderSha256": "96c8006d2dd3d0795023e9ef7eb9a897b81f52909eaca732e4d55034e4632781"
+        }
+      }
+    },
+    {
+      "game": "th09",
+      "path": "E:/claude cli/东方测试/th09_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "033f5a86084f1b9a07868582ba57b8575615f8f739c82b24df4e085bb925a6e7",
+      "manifest": {
+        "game": "th09",
+        "version": "b6e1724a546540054415b15e",
+        "sourceVersion": "Japanese 1.50a",
+        "execution": {
+          "kind": "cpp-sdl3",
+          "entry": "/",
+          "wasm": "/runtime/45f20a6929b1765d0702/th09.wasm",
+          "loader": "/runtime/45f20a6929b1765d0702/th09.mjs",
+          "sha256": "6edb1ca1364c63073acdce4f2d121c7c9b693371aae478f5a938b7799ec0b979",
+          "loaderSha256": "1d1a641214040d09f937130d23e260fca394f7e55bb3b3ce5b4f6127d6104670"
+        },
+        "downloadBytes": 166390080,
+        "files": {
+          "/runtime/45f20a6929b1765d0702/th09.wasm": {
+            "path": "runtime/45f20a6929b1765d0702/th09.wasm",
+            "bytes": 2618367,
+            "sha256": "6edb1ca1364c63073acdce4f2d121c7c9b693371aae478f5a938b7799ec0b979",
+            "immutable": true
+          },
+          "/runtime/45f20a6929b1765d0702/th09.mjs": {
+            "path": "runtime/45f20a6929b1765d0702/th09.mjs",
+            "bytes": 227071,
+            "sha256": "1d1a641214040d09f937130d23e260fca394f7e55bb3b3ce5b4f6127d6104670",
+            "immutable": true
+          },
+          "/app/th09.html": {
+            "path": "app/th09.html",
+            "bytes": 153,
+            "sha256": "4ff032897582c39bf663f5702bcf71f653bc8b40c8eb0c178974f5ead4a7f552",
+            "immutable": false
+          },
+          "/app/style.css": {
+            "path": "app/style.css",
+            "bytes": 2574,
+            "sha256": "13340b5915c9f53eb67d09a1ce44be815e8bf959cc525fd5135f5b8268a1d832",
+            "immutable": false
+          },
+          "/app/keyboard.mjs": {
+            "path": "app/keyboard.mjs",
+            "bytes": 1298,
+            "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274",
+            "immutable": false
+          },
+          "/app/netplay.mjs": {
+            "path": "app/netplay.mjs",
+            "bytes": 3345,
+            "sha256": "8c6bdda4962361f5c411e029820ac01473df55026a241e764ef703cfc2aa0117",
+            "immutable": false
+          },
+          "/app/motion-replay.mjs": {
+            "path": "app/motion-replay.mjs",
+            "bytes": 1866,
+            "sha256": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+            "immutable": false
+          },
+          "/app/shell.mjs": {
+            "path": "app/shell.mjs",
+            "bytes": 13482,
+            "sha256": "7c182f4840e103804666ae14730de6d73c5070bf861c478d5de62a3a6409d974",
+            "immutable": false
+          },
+          "/": {
+            "path": "index.html",
+            "bytes": 74221,
+            "sha256": "38ac61b03f74fbe86cad655e132c5204998597e50c189e344509cf6f50c84175",
+            "immutable": false
+          },
+          "/index.html": {
+            "path": "index.html",
+            "bytes": 74221,
+            "sha256": "38ac61b03f74fbe86cad655e132c5204998597e50c189e344509cf6f50c84175",
+            "immutable": false
+          },
+          "/th09.dat": {
+            "path": "th09.dat",
+            "bytes": 88180006,
+            "sha256": "73a344a2cb7b1113831058010758f03d6d20e7710d889a95f249046fb8fa5ea0",
+            "immutable": false
+          },
+          "/fonts/cp932.bin": {
+            "path": "fonts/cp932.bin",
+            "bytes": 131072,
+            "sha256": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919",
+            "immutable": false
+          },
+          "/fonts/blend.bin": {
+            "path": "fonts/blend.bin",
+            "bytes": 131072,
+            "sha256": "cd7099994c1d25a9526fba4422c518b38fbb4e7ac9940288adc0c0ddef2106eb",
+            "immutable": false
+          },
+          "/fonts/msgothic.ttc": {
+            "path": "fonts/msgothic.ttc",
+            "bytes": 8990160,
+            "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+            "immutable": false
+          },
+          "/music/th07_09.ogg": {
+            "path": "music/th07_09.ogg",
+            "bytes": 3768596,
+            "sha256": "b6b5982b28234ad292ef57c5b013dd48b193c80a3cf85898d9eb4f91a93d6b99",
+            "immutable": false
+          },
+          "/music/th07_10_b.ogg": {
+            "path": "music/th07_10_b.ogg",
+            "bytes": 4254555,
+            "sha256": "ff042456fa3f8cc211665698437f9f55473dea8a371cf4d67172b30731cb5dc9",
+            "immutable": false
+          },
+          "/music/th08_12.ogg": {
+            "path": "music/th08_12.ogg",
+            "bytes": 3203611,
+            "sha256": "713f8becb676cc83229cd11f455be786b82cd3cc9de2c22b16371d600a0c4498",
+            "immutable": false
+          },
+          "/music/th09_00.ogg": {
+            "path": "music/th09_00.ogg",
+            "bytes": 1757496,
+            "sha256": "316c5ae8a2492bcf9b8e39dafb537ebe7ea4e70fb9fd9dd52b7f281deadf458e",
+            "immutable": false
+          },
+          "/music/th09_00b.ogg": {
+            "path": "music/th09_00b.ogg",
+            "bytes": 3470198,
+            "sha256": "3bfe666bf744a3709c9fc991b45a179da88d9dc21ecd7ba87026fa8939552b8a",
+            "immutable": false
+          },
+          "/music/th09_00c.ogg": {
+            "path": "music/th09_00c.ogg",
+            "bytes": 1623421,
+            "sha256": "bd7808c1ee0a66f344b2b876638b42413b6e1743db00b07b91ba43c36179add7",
+            "immutable": false
+          },
+          "/music/th09_01.ogg": {
+            "path": "music/th09_01.ogg",
+            "bytes": 4154589,
+            "sha256": "0ccbf94d0ece753ac97c24659d1bd28bf305b68f3c8db0de54ed435f2da73d9b",
+            "immutable": false
+          },
+          "/music/th09_02.ogg": {
+            "path": "music/th09_02.ogg",
+            "bytes": 3330544,
+            "sha256": "fa259e5ba48ebb683b6bb1ef86866bc0a752e7616b1ed5c03e2927d72d7443fe",
+            "immutable": false
+          },
+          "/music/th09_05.ogg": {
+            "path": "music/th09_05.ogg",
+            "bytes": 4329700,
+            "sha256": "16bc29037f448813168ee318b209c21f2b1697054244e7de128a379e2219b5b5",
+            "immutable": false
+          },
+          "/music/th09_07.ogg": {
+            "path": "music/th09_07.ogg",
+            "bytes": 4326338,
+            "sha256": "e8def2e9acfe65f679effcff3c657e87441f4fcd9e4762ccdf051938d27ed762",
+            "immutable": false
+          },
+          "/music/th09_08_2.ogg": {
+            "path": "music/th09_08_2.ogg",
+            "bytes": 4871445,
+            "sha256": "ffa52aa2aef9474bb509363e0ae03e2bb3a4510546a40b719f4813ec1d591b8d",
+            "immutable": false
+          },
+          "/music/th09_09.ogg": {
+            "path": "music/th09_09.ogg",
+            "bytes": 4577477,
+            "sha256": "c89d14b131c6f893ba2b280338ea521de09870f3670d833682cc4b23a3187857",
+            "immutable": false
+          },
+          "/music/th09_10.ogg": {
+            "path": "music/th09_10.ogg",
+            "bytes": 2949875,
+            "sha256": "353c27aa5fbfa7e08ecb0a37c34f8f62ae3a45d3cd906dee38f2e1da043609b6",
+            "immutable": false
+          },
+          "/music/th09_11.ogg": {
+            "path": "music/th09_11.ogg",
+            "bytes": 6959581,
+            "sha256": "d2f92da2940b7f830ccb8a23e8398df1795ec16063bef0b8fbbbcb9789bc8f0b",
+            "immutable": false
+          },
+          "/music/th09_12.ogg": {
+            "path": "music/th09_12.ogg",
+            "bytes": 3258330,
+            "sha256": "87162fc05c0cd396825b0c80430e530736382b81e7131849631ab84271a0caae",
+            "immutable": false
+          },
+          "/music/th09_13.ogg": {
+            "path": "music/th09_13.ogg",
+            "bytes": 4190716,
+            "sha256": "e8339d3f5dbf3a2a450ab54fb937e20fa121550874eca101fb93c7a0a3806f9a",
+            "immutable": false
+          },
+          "/music/th09_14.ogg": {
+            "path": "music/th09_14.ogg",
+            "bytes": 1270677,
+            "sha256": "d05ef899b591d9f12a3f84bd9a1ff7ec1978b7eb1b4de71b9963f2b3ddcc52ef",
+            "immutable": false
+          },
+          "/music/th09_15.ogg": {
+            "path": "music/th09_15.ogg",
+            "bytes": 989967,
+            "sha256": "b1a7981b546dd373cc8375a6f4688b5e4562c7418095572070ff6fc894bc48bc",
+            "immutable": false
+          },
+          "/music/th09_17.ogg": {
+            "path": "music/th09_17.ogg",
+            "bytes": 2825216,
+            "sha256": "6e631a0b7e09a7eea653fb77229b174594c8e3676db3ebf8885968e6b0cc7e64",
+            "immutable": false
+          },
+          "/resources.json": {
+            "path": "resources.json",
+            "bytes": 3414,
+            "sha256": "83de68be2e0471a8c4982e28c5f5e1f8a57b0bc53dc208c4f19480f3a9cce28a",
+            "immutable": false
+          },
+          "/THIRD-PARTY-NOTICES.txt": {
+            "path": "THIRD-PARTY-NOTICES.txt",
+            "bytes": 1231,
+            "sha256": "b1b417e296cb257c99132169ed1d85fc3bd274c2db468404def8478c8baa9b71",
+            "immutable": false
+          },
+          "/licenses/Emscripten.txt": {
+            "path": "licenses/Emscripten.txt",
+            "bytes": 5093,
+            "sha256": "620a78084fc7ca97c0b5dea9abf891f3ffcadfdbf305276f099c9c4e12fc1d86",
+            "immutable": false
+          },
+          "/licenses/FreeType.txt": {
+            "path": "licenses/FreeType.txt",
+            "bytes": 6743,
+            "sha256": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+            "immutable": false
+          },
+          "/licenses/SDL3.txt": {
+            "path": "licenses/SDL3.txt",
+            "bytes": 884,
+            "sha256": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+            "immutable": false
+          },
+          "/licenses/SDL3_ttf.txt": {
+            "path": "licenses/SDL3_ttf.txt",
+            "bytes": 878,
+            "sha256": "7826eca0a0f7e591f38dd844e207a200aac81a59b20d8a30c3af8c6282af13e6",
+            "immutable": false
+          },
+          "/licenses/TH08-codec.txt": {
+            "path": "licenses/TH08-codec.txt",
+            "bytes": 1060,
+            "sha256": "5ecb9fcee54e69ef4d7965d98c1151fb4d40c4a9fd76d0d4dfb4d949bf0a2381",
+            "immutable": false
+          },
+          "/licenses/miniaudio.txt": {
+            "path": "licenses/miniaudio.txt",
+            "bytes": 2645,
+            "sha256": "489be3a4efdd827cb424bf0787b9a3300fb05153ad2709b1d4439e6f51f94b93",
+            "immutable": false
+          },
+          "/licenses/stb_image.h.txt": {
+            "path": "licenses/stb_image.h.txt",
+            "bytes": 205,
+            "sha256": "1af34d4c36a3df342e789207ac25f462cb58805de31ec100a41a4c9b790a3596",
+            "immutable": false
+          },
+          "/licenses/stb_vorbis.h.txt": {
+            "path": "licenses/stb_vorbis.h.txt",
+            "bytes": 2472,
+            "sha256": "f03021c9303ff5a702da300d50b649b72202914199bc7e98a68919adb05d3fe5",
+            "immutable": false
+          },
+          "/licenses/ws.txt": {
+            "path": "licenses/ws.txt",
+            "bytes": 1183,
+            "sha256": "2b29dcfe0d6471f7e8c92c5fb38c9f93edee10330937055440192f1832b1ecef",
+            "immutable": false
+          },
+          "/app-shell-sw.js": {
+            "path": "app-shell-sw.js",
+            "bytes": 15898,
+            "sha256": "54b1335c65021333f5ab59b0798e311b466ef7b15a19ba3bb02215fc0dd42209",
+            "immutable": false
+          },
+          "/version.json": {
+            "path": "version.json",
+            "bytes": 50,
+            "sha256": "865245172f99133b941c08a0e10e257c1eb0d70ee3ba1188843847e9a678088e",
+            "immutable": false
+          },
+          "/native-audio.js": {
+            "path": "native-audio.js",
+            "bytes": 619,
+            "sha256": "5c93550c45061792d1c5d022fc392fe2bd4f1f82e672a44cb50ff266aa80a73e",
+            "immutable": false
+          },
+          "/app.js": {
+            "path": "app.js",
+            "bytes": 1491,
+            "sha256": "a44aae2d238ecb222f251f63995783fca49db224875e20bb0394993105873f1c",
+            "immutable": false
+          },
+          "/assets/launcher/app.mjs": {
+            "path": "assets/launcher/app.mjs",
+            "bytes": 344010,
+            "sha256": "d27a98892d81898f65694872d25cebd620136c650d9c6c05c191cc2395a8c8c1",
+            "immutable": false
+          },
+          "/assets/launcher/route-state.mjs": {
+            "path": "assets/launcher/route-state.mjs",
+            "bytes": 5258,
+            "sha256": "fa4af031d5548070e7e33fb95bf66641baeec4391b564022bf2d630516307ad6",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-spectator-rail-position.mjs": {
+            "path": "assets/launcher/multiplayer-spectator-rail-position.mjs",
+            "bytes": 2079,
+            "sha256": "7ab578c8f2fe8aeb92c576a25671a1156f85ccecdfa32c20131bbf28c8ce835e",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-room-session.mjs": {
+            "path": "assets/launcher/multiplayer-room-session.mjs",
+            "bytes": 2751,
+            "sha256": "60b6bcd12822af94e667a1725383f07524843cb9e4d553cec76d123b16a7c55e",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-runtime-options.mjs": {
+            "path": "assets/launcher/multiplayer-runtime-options.mjs",
+            "bytes": 2248,
+            "sha256": "88957a41ee816ba1ffed2ce1e2bd33e4cf5f8b6a53ec2a9c10f40f0aeff958b3",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-relay-url.mjs": {
+            "path": "assets/launcher/multiplayer-relay-url.mjs",
+            "bytes": 1525,
+            "sha256": "0916e3206395621d1ebcb0d82a157aa3c760142db86f87f001dea50bbe32cec8",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-preferences.mjs": {
+            "path": "assets/launcher/multiplayer-preferences.mjs",
+            "bytes": 1971,
+            "sha256": "ee8a51526867c3c65edc5fe95961911a914f7772745595645614c124c5516134",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-lobby-snapshot.mjs": {
+            "path": "assets/launcher/multiplayer-lobby-snapshot.mjs",
+            "bytes": 2623,
+            "sha256": "95e5d3c2a615152ec4e0b98c01b36124c36138c3b8ffbde19fb8c9343a7b8359",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-identity.mjs": {
+            "path": "assets/launcher/multiplayer-identity.mjs",
+            "bytes": 3329,
+            "sha256": "51f6ed641a8e5a5d70b00917980edfa1148854222a33cfbe5577cd83a7bb4bf5",
+            "immutable": false
+          },
+          "/assets/launcher/runtime-diagnostics-model.mjs": {
+            "path": "assets/launcher/runtime-diagnostics-model.mjs",
+            "bytes": 8155,
+            "sha256": "18d22b709fc0229be8b81fee2d3434e67d531da40ebf9f10e12b4fa28f6eff34",
+            "immutable": false
+          },
+          "/assets/launcher/replay-files.mjs": {
+            "path": "assets/launcher/replay-files.mjs",
+            "bytes": 3754,
+            "sha256": "027919533cdf5eb59570518c7717cd5b9cc8a0238e743547060f0be17a28d953",
+            "immutable": false
+          },
+          "/assets/launcher/game-zoom.mjs": {
+            "path": "assets/launcher/game-zoom.mjs",
+            "bytes": 7252,
+            "sha256": "f1a2ac81c18b962a65c380cb992df9697a74b42d053e0689b2e2fa74e4a5b31b",
+            "immutable": false
+          },
+          "/assets/launcher/touch-runtime-protocol.mjs": {
+            "path": "assets/launcher/touch-runtime-protocol.mjs",
+            "bytes": 1440,
+            "sha256": "c504f2a50296441f029b7b4edc0229561a14f4a651aafb8ea8ab0ad6aab77e4b",
+            "immutable": false
+          },
+          "/assets/launcher/game-preferences.mjs": {
+            "path": "assets/launcher/game-preferences.mjs",
+            "bytes": 7255,
+            "sha256": "d1d53362fd6616349679624a6ee7ecc07828246ab0e91ca4f897fb5f5f2f8266",
+            "immutable": false
+          },
+          "/assets/launcher/changelog.mjs": {
+            "path": "assets/launcher/changelog.mjs",
+            "bytes": 7996,
+            "sha256": "733360531c4001cfc5315580cf4cfdef4583735c4ebeb18dc246bdcd8edf6103",
+            "immutable": false
+          },
+          "/assets/launcher/site-notice.mjs": {
+            "path": "assets/launcher/site-notice.mjs",
+            "bytes": 10352,
+            "sha256": "fdc763a7f1fb46b4c90e4f2c2b24114b777588d30fe95c828a48b98bd08ff55c",
+            "immutable": false
+          },
+          "/assets/launcher/touch-layout-editor-state.mjs": {
+            "path": "assets/launcher/touch-layout-editor-state.mjs",
+            "bytes": 3531,
+            "sha256": "85f4a72d7f0a0ed0d2a27d448f452d8b98a5f599bbf8704ba61f543903227afe",
+            "immutable": false
+          },
+          "/assets/launcher/touch-layout-model.mjs": {
+            "path": "assets/launcher/touch-layout-model.mjs",
+            "bytes": 7189,
+            "sha256": "7cda2ab1a649de1083659c82dd900159e11aff9d25a3333edbef58f6ebaa6e38",
+            "immutable": false
+          },
+          "/assets/launcher/app-shell-client.mjs": {
+            "path": "assets/launcher/app-shell-client.mjs",
+            "bytes": 3889,
+            "sha256": "fe27cb48531f00b264b39ccf1213927238423b4571034f5efb1cce0a0827d7fa",
+            "immutable": false
+          },
+          "/assets/launcher/i18n.mjs": {
+            "path": "assets/launcher/i18n.mjs",
+            "bytes": 33348,
+            "sha256": "495dadbc63cbde061b2de5b52d77168fe80c29edd8212e9194110e63826c777f",
+            "immutable": false
+          },
+          "/assets/launcher/remote-metadata.mjs": {
+            "path": "assets/launcher/remote-metadata.mjs",
+            "bytes": 882,
+            "sha256": "5f70dd8c99c466fa4c193ee23e454b96c5a796e9685fe65deb82675074b012fe",
+            "immutable": false
+          },
+          "/assets/contracts/release-catalog.mjs": {
+            "path": "assets/contracts/release-catalog.mjs",
+            "bytes": 1497,
+            "sha256": "c9eef67f7dab7bb24eccf76b423eeb171a0e9e011d8f6a903e9a9a1b8bf9a3e2",
+            "immutable": false
+          },
+          "/assets/contracts/product-catalog.mjs": {
+            "path": "assets/contracts/product-catalog.mjs",
+            "bytes": 7039,
+            "sha256": "dcca671c1bbc3aefce20a3c6808e1774a9606473714e43619bfcd76e6ec0dc9b",
+            "immutable": false
+          },
+          "/assets/contracts/host-manifest.mjs": {
+            "path": "assets/contracts/host-manifest.mjs",
+            "bytes": 6957,
+            "sha256": "744e23f0c0e1f88f2205f3c1fc138c1ee29271472a32aee1e64017166b724efc",
+            "immutable": false
+          },
+          "/assets/contracts/resource-mode.mjs": {
+            "path": "assets/contracts/resource-mode.mjs",
+            "bytes": 335,
+            "sha256": "c3e434538c68b6684f47ee8c0f444c45f1c753ca25fd412bbaea583c6eadf5b2",
+            "immutable": false
+          },
+          "/assets/contracts/runtime-protocol.mjs": {
+            "path": "assets/contracts/runtime-protocol.mjs",
+            "bytes": 1780,
+            "sha256": "c427df208f74845c4df137c2bc3aa2c4150d2265d5a527b5bf2f15fc843ed901",
+            "immutable": false
+          },
+          "/assets/launcher/music-availability.mjs": {
+            "path": "assets/launcher/music-availability.mjs",
+            "bytes": 2536,
+            "sha256": "88434a8abf26478a9bfc732e95d3ac3ad7865c4cb7afae38c6f26d700034695a",
+            "immutable": false
+          },
+          "/assets/launcher/network-activity.mjs": {
+            "path": "assets/launcher/network-activity.mjs",
+            "bytes": 10198,
+            "sha256": "8f0489ad4a175e507da6f5934450b27163b6045b2170614b33733813ddf746ee",
+            "immutable": false
+          },
+          "/assets/launcher/language-catalog.mjs": {
+            "path": "assets/launcher/language-catalog.mjs",
+            "bytes": 4096,
+            "sha256": "1fd6f4d0fec1c74596be2fb7200e7d91c907ac0729fbf58babb40a9a0c1c2579",
+            "immutable": false
+          },
+          "/assets/launcher/sha256.mjs": {
+            "path": "assets/launcher/sha256.mjs",
+            "bytes": 3512,
+            "sha256": "a78ab9a4a59db8d34abe9a26afd00f54d1f8e0a86d45bc0ae4769f7d75bf4a9c",
+            "immutable": false
+          },
+          "/assets/launcher/language-pack-validation.mjs": {
+            "path": "assets/launcher/language-pack-validation.mjs",
+            "bytes": 2437,
+            "sha256": "d497b9289bb7a33691801afddc329e68cee91dba503dea595b6f2f3588d3cca6",
+            "immutable": false
+          },
+          "/assets/launcher/runtime-generation-lease.mjs": {
+            "path": "assets/launcher/runtime-generation-lease.mjs",
+            "bytes": 818,
+            "sha256": "d013626f56eccd5625786b6d41ab3587e1ec968462f665a26dc83694998ba5a5",
+            "immutable": false
+          },
+          "/assets/launcher/runtime-preparation.mjs": {
+            "path": "assets/launcher/runtime-preparation.mjs",
+            "bytes": 3726,
+            "sha256": "d2b3f136794ebb7671ad69b25897bf03574aca8f3d6ee080e80c0cb85ee0f99b",
+            "immutable": false
+          },
+          "/package/package-store.mjs": {
+            "path": "package/package-store.mjs",
+            "bytes": 17216,
+            "sha256": "6c5881a0ba686b4a30b172f4c2283b7415688c19dd830cc15aa6b7d8e5760d8a",
+            "immutable": false
+          },
+          "/product-catalog.mjs": {
+            "path": "product-catalog.mjs",
+            "bytes": 57,
+            "sha256": "1850071519242c67b50b8650dc470457e592ceee157c077bd7afb9dbd6c3370d",
+            "immutable": false
+          },
+          "/package/package-descriptor.mjs": {
+            "path": "package/package-descriptor.mjs",
+            "bytes": 8382,
+            "sha256": "a67b5c10ef6ad3951124260a66dde3119006b6b6541b5d2071ed64c8583b183d",
+            "immutable": false
+          },
+          "/package/package-generation.mjs": {
+            "path": "package/package-generation.mjs",
+            "bytes": 4379,
+            "sha256": "b6e812087ff1434eb8ec11f407913cfe50ee73af1b8509b3f56f12140fd9588c",
+            "immutable": false
+          },
+          "/package/package-launcher.mjs": {
+            "path": "package/package-launcher.mjs",
+            "bytes": 6941,
+            "sha256": "49e6c697cee40240f9a9f42bb66917ff382807cd9927968ef0b4bb69e92212e9",
+            "immutable": false
+          },
+          "/release-catalog.mjs": {
+            "path": "release-catalog.mjs",
+            "bytes": 57,
+            "sha256": "da289976653ba6b5f7fcf206e927dc045201343ad949591cf6e52184dc9c43d4",
+            "immutable": false
+          },
+          "/package/package-installer.mjs": {
+            "path": "package/package-installer.mjs",
+            "bytes": 7031,
+            "sha256": "6f302b3179d23c8b1887b73a2149d86a3ec9c2ccbe59ae88c6838f3000c9bec7",
+            "immutable": false
+          },
+          "/package/package-mutation-queue.mjs": {
+            "path": "package/package-mutation-queue.mjs",
+            "bytes": 635,
+            "sha256": "372a4572f26700f2ed3f290721c1240c31e09519b38e4090b14c6187601a71cd",
+            "immutable": false
+          },
+          "/package/package-zip.mjs": {
+            "path": "package/package-zip.mjs",
+            "bytes": 1408,
+            "sha256": "ed201f3289a90615c8a4290cce928f0b12e21111fee9724d84bad42622210c7c",
+            "immutable": false
+          },
+          "/package/stored-zip.mjs": {
+            "path": "package/stored-zip.mjs",
+            "bytes": 5324,
+            "sha256": "f3705c7e83a2ddbcafe07dba3ef6b42b7fce084246341bd1ae308abd2d05ef04",
+            "immutable": false
+          },
+          "/legacy/legacy-import-storage.mjs": {
+            "path": "legacy/legacy-import-storage.mjs",
+            "bytes": 13772,
+            "sha256": "03f79c445955678578ca8b013412be2f0706675dd2fa32ba8597d0a17ef22647",
+            "immutable": false
+          },
+          "/legacy/legacy-package-adapter.mjs": {
+            "path": "legacy/legacy-package-adapter.mjs",
+            "bytes": 8379,
+            "sha256": "e6bc56e176e6181a55e670b5e091c457dd60767a74b470bc2372ad3352c6fd2d",
+            "immutable": false
+          },
+          "/legacy/legacy-game-pack.mjs": {
+            "path": "legacy/legacy-game-pack.mjs",
+            "bytes": 7932,
+            "sha256": "6a8d2a2e856882b90b1c65f7688f647c141fa54f85a11c1ef72b9759c2332092",
+            "immutable": false
+          },
+          "/about.css": {
+            "path": "about.css",
+            "bytes": 1726,
+            "sha256": "1b0c1a01a963231bd0541ade420b21c93016dd3bc5e40ee086f72d39d5def9d4",
+            "immutable": false
+          },
+          "/about.html": {
+            "path": "about.html",
+            "bytes": 1102,
+            "sha256": "9fcac227f6ba1ce8d7d4fe7e8a3ce0ff14fa83ba279800ae656c229f3934dc37",
+            "immutable": false
+          },
+          "/assets/fonts/chill-round-gothic-site-bold.woff2": {
+            "path": "assets/fonts/chill-round-gothic-site-bold.woff2",
+            "bytes": 146352,
+            "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+            "immutable": false
+          },
+          "/assets/fonts/chill-round-gothic-site-heavy.woff2": {
+            "path": "assets/fonts/chill-round-gothic-site-heavy.woff2",
+            "bytes": 3912,
+            "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+            "immutable": false
+          },
+          "/assets/fonts/chill-round-gothic-site-medium.woff2": {
+            "path": "assets/fonts/chill-round-gothic-site-medium.woff2",
+            "bytes": 144388,
+            "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+            "immutable": false
+          },
+          "/assets/fonts/OFL-ChillRoundGothic.txt": {
+            "path": "assets/fonts/OFL-ChillRoundGothic.txt",
+            "bytes": 4447,
+            "sha256": "9a188aa140f360b1ac9e2be2e3cf5fa5710cc89b5712e7fcf12eee3718173d35",
+            "immutable": false
+          },
+          "/assets/fonts/OFL-Unifont.txt": {
+            "path": "assets/fonts/OFL-Unifont.txt",
+            "bytes": 4688,
+            "sha256": "787fdbf8834c8abfd12a92e1c611e7c53d60e19b08ae99562a763e05b452722d",
+            "immutable": false
+          },
+          "/assets/fonts/OFL-YatraOne.txt": {
+            "path": "assets/fonts/OFL-YatraOne.txt",
+            "bytes": 4437,
+            "sha256": "942d3ca0ed0582db74a824c67c1b0e4a0ae7d84f9d8f8ffbc1ebc39fd4d89f37",
+            "immutable": false
+          },
+          "/assets/fonts/touhou98.woff2": {
+            "path": "assets/fonts/touhou98.woff2",
+            "bytes": 9416,
+            "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+            "immutable": false
+          },
+          "/assets/fonts/unifont-site.woff2": {
+            "path": "assets/fonts/unifont-site.woff2",
+            "bytes": 23504,
+            "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+            "immutable": false
+          },
+          "/assets/fonts/yatra-one-latin.woff2": {
+            "path": "assets/fonts/yatra-one-latin.woff2",
+            "bytes": 18568,
+            "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+            "immutable": false
+          },
+          "/assets/notice-bilibili.svg": {
+            "path": "assets/notice-bilibili.svg",
+            "bytes": 1160,
+            "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+            "immutable": false
+          },
+          "/assets/notice-github.svg": {
+            "path": "assets/notice-github.svg",
+            "bytes": 679,
+            "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+            "immutable": false
+          },
+          "/assets/notice-qq.svg": {
+            "path": "assets/notice-qq.svg",
+            "bytes": 508,
+            "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+            "immutable": false
+          },
+          "/assets/notice-touhou-cloud.png": {
+            "path": "assets/notice-touhou-cloud.png",
+            "bytes": 23262,
+            "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+            "immutable": false
+          },
+          "/assets/touch-rotate-landscape.webp": {
+            "path": "assets/touch-rotate-landscape.webp",
+            "bytes": 141862,
+            "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+            "immutable": false
+          },
+          "/CHANGELOG.txt": {
+            "path": "CHANGELOG.txt",
+            "bytes": 238,
+            "sha256": "72aa6387a013c3c476786dd0120fcc1012c5ff897633474f71d59551f6baa01f",
+            "immutable": false
+          },
+          "/faq.html": {
+            "path": "faq.html",
+            "bytes": 1722,
+            "sha256": "021e8de41a8eaa5130d784fbd44d5ee59f0eac38b7c8bedbfda984df7d302292",
+            "immutable": false
+          },
+          "/migrate.html": {
+            "path": "migrate.html",
+            "bytes": 708,
+            "sha256": "accad34b7ee8e17a4c03087ede53d74eb7ca3ff7eb5aedde26bae9cbd71548b2",
+            "immutable": false
+          },
+          "/NOTICE.txt": {
+            "path": "NOTICE.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "immutable": false
+          },
+          "/site.webmanifest": {
+            "path": "site.webmanifest",
+            "bytes": 290,
+            "sha256": "b4193c6d1d7f0b409b7bb58af64c030acbf67f308e219b285167da90f19436c4",
+            "immutable": false
+          },
+          "/styles.css": {
+            "path": "styles.css",
+            "bytes": 157844,
+            "sha256": "13b7bc09d8a035a2c8bcaed378ea43fbee28950ed011b8c00c6e58185a7ed9fd",
+            "immutable": false
+          },
+          "/touch-guide.css": {
+            "path": "touch-guide.css",
+            "bytes": 19172,
+            "sha256": "e35893f22273928c7a614e6ea309bbd61ec819a5fd8a5446fd619f96cbc88ca4",
+            "immutable": false
+          },
+          "/vendor/fflate.LICENSE": {
+            "path": "vendor/fflate.LICENSE",
+            "bytes": 1089,
+            "sha256": "c4a2b81d52232155bf78d4ea54a514115d8b9dfb9c0de752af68662a5672efe9",
+            "immutable": false
+          },
+          "/vendor/fflate.min.js": {
+            "path": "vendor/fflate.min.js",
+            "bytes": 33044,
+            "sha256": "462ef8041fc970e3615a20a9dd2b2e3047a073b2da729ef4f02b634bba8b7b83",
+            "immutable": false
+          },
+          "/vendor/webaudio-tinysynth.LICENSE": {
+            "path": "vendor/webaudio-tinysynth.LICENSE",
+            "bytes": 11558,
+            "sha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363",
+            "immutable": false
+          },
+          "/vendor/webaudio-tinysynth.min.js": {
+            "path": "vendor/webaudio-tinysynth.min.js",
+            "bytes": 42859,
+            "sha256": "864269534ada22f57da86884d8c8dd5f4c71ca3658c584f8a35d781965dff1ab",
+            "immutable": false
+          },
+          "/assets/th09-card.png": {
+            "path": "assets/th09-card.png",
+            "bytes": 1167152,
+            "sha256": "c27dfe9ecf2b8faa3783d297b54a9f270817e6e299447d201884235c001c62a4",
+            "immutable": false
+          },
+          "/runtime/th09/th09.html": {
+            "path": "runtime/th09/th09.html",
+            "bytes": 894,
+            "sha256": "bd0a69e1265ae1e0d38cf0b65869cd5f07597ede3ec281db5f5fc36b21659c7c",
+            "immutable": false
+          },
+          "/runtime/th09/managed.mjs": {
+            "path": "runtime/th09/managed.mjs",
+            "bytes": 10663,
+            "sha256": "476543d89efdf8b67036e16db923c78378074131a940856afb8cc5e14d59c815",
+            "immutable": false
+          },
+          "/runtime/th09/managed.css": {
+            "path": "runtime/th09/managed.css",
+            "bytes": 733,
+            "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+            "immutable": false
+          },
+          "/runtime/th09/keyboard.mjs": {
+            "path": "runtime/th09/keyboard.mjs",
+            "bytes": 1298,
+            "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274",
+            "immutable": false
+          },
+          "/runtime/th09/netplay.mjs": {
+            "path": "runtime/th09/netplay.mjs",
+            "bytes": 3345,
+            "sha256": "8c6bdda4962361f5c411e029820ac01473df55026a241e764ef703cfc2aa0117",
+            "immutable": false
+          },
+          "/runtime/th09/motion-replay.mjs": {
+            "path": "runtime/th09/motion-replay.mjs",
+            "bytes": 1866,
+            "sha256": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+            "immutable": false
+          },
+          "/runtime/th09/th09.mjs": {
+            "path": "runtime/th09/th09.mjs",
+            "bytes": 227071,
+            "sha256": "1d1a641214040d09f937130d23e260fca394f7e55bb3b3ce5b4f6127d6104670",
+            "immutable": false
+          },
+          "/runtime/th09/th09.wasm": {
+            "path": "runtime/th09/th09.wasm",
+            "bytes": 2618367,
+            "sha256": "6edb1ca1364c63073acdce4f2d121c7c9b693371aae478f5a938b7799ec0b979",
+            "immutable": false
+          },
+          "/packages/th09/th09.data": {
+            "path": "packages/th09/th09.data",
+            "bytes": 97432310,
+            "sha256": "bff5662318f0e1d1d91b2e3652bf3c80cfe9e1375ad0ff23a50687f7d4a32767",
+            "immutable": false
+          },
+          "/runtime/th09/th09.data.json": {
+            "path": "runtime/th09/th09.data.json",
+            "bytes": 569,
+            "sha256": "3da281a1a770a2ca062a4581fb020ec70db4c796ba9e5799cbe27720652540da",
+            "immutable": false
+          },
+          "/packages/th09/music/th07_09.ogg": {
+            "path": "packages/th09/music/th07_09.ogg",
+            "bytes": 3768596,
+            "sha256": "b6b5982b28234ad292ef57c5b013dd48b193c80a3cf85898d9eb4f91a93d6b99",
+            "immutable": false
+          },
+          "/packages/th09/music/th07_10_b.ogg": {
+            "path": "packages/th09/music/th07_10_b.ogg",
+            "bytes": 4254555,
+            "sha256": "ff042456fa3f8cc211665698437f9f55473dea8a371cf4d67172b30731cb5dc9",
+            "immutable": false
+          },
+          "/packages/th09/music/th08_12.ogg": {
+            "path": "packages/th09/music/th08_12.ogg",
+            "bytes": 3203611,
+            "sha256": "713f8becb676cc83229cd11f455be786b82cd3cc9de2c22b16371d600a0c4498",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_00.ogg": {
+            "path": "packages/th09/music/th09_00.ogg",
+            "bytes": 1757496,
+            "sha256": "316c5ae8a2492bcf9b8e39dafb537ebe7ea4e70fb9fd9dd52b7f281deadf458e",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_00b.ogg": {
+            "path": "packages/th09/music/th09_00b.ogg",
+            "bytes": 3470198,
+            "sha256": "3bfe666bf744a3709c9fc991b45a179da88d9dc21ecd7ba87026fa8939552b8a",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_00c.ogg": {
+            "path": "packages/th09/music/th09_00c.ogg",
+            "bytes": 1623421,
+            "sha256": "bd7808c1ee0a66f344b2b876638b42413b6e1743db00b07b91ba43c36179add7",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_01.ogg": {
+            "path": "packages/th09/music/th09_01.ogg",
+            "bytes": 4154589,
+            "sha256": "0ccbf94d0ece753ac97c24659d1bd28bf305b68f3c8db0de54ed435f2da73d9b",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_02.ogg": {
+            "path": "packages/th09/music/th09_02.ogg",
+            "bytes": 3330544,
+            "sha256": "fa259e5ba48ebb683b6bb1ef86866bc0a752e7616b1ed5c03e2927d72d7443fe",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_05.ogg": {
+            "path": "packages/th09/music/th09_05.ogg",
+            "bytes": 4329700,
+            "sha256": "16bc29037f448813168ee318b209c21f2b1697054244e7de128a379e2219b5b5",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_07.ogg": {
+            "path": "packages/th09/music/th09_07.ogg",
+            "bytes": 4326338,
+            "sha256": "e8def2e9acfe65f679effcff3c657e87441f4fcd9e4762ccdf051938d27ed762",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_08_2.ogg": {
+            "path": "packages/th09/music/th09_08_2.ogg",
+            "bytes": 4871445,
+            "sha256": "ffa52aa2aef9474bb509363e0ae03e2bb3a4510546a40b719f4813ec1d591b8d",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_09.ogg": {
+            "path": "packages/th09/music/th09_09.ogg",
+            "bytes": 4577477,
+            "sha256": "c89d14b131c6f893ba2b280338ea521de09870f3670d833682cc4b23a3187857",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_10.ogg": {
+            "path": "packages/th09/music/th09_10.ogg",
+            "bytes": 2949875,
+            "sha256": "353c27aa5fbfa7e08ecb0a37c34f8f62ae3a45d3cd906dee38f2e1da043609b6",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_11.ogg": {
+            "path": "packages/th09/music/th09_11.ogg",
+            "bytes": 6959581,
+            "sha256": "d2f92da2940b7f830ccb8a23e8398df1795ec16063bef0b8fbbbcb9789bc8f0b",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_12.ogg": {
+            "path": "packages/th09/music/th09_12.ogg",
+            "bytes": 3258330,
+            "sha256": "87162fc05c0cd396825b0c80430e530736382b81e7131849631ab84271a0caae",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_13.ogg": {
+            "path": "packages/th09/music/th09_13.ogg",
+            "bytes": 4190716,
+            "sha256": "e8339d3f5dbf3a2a450ab54fb937e20fa121550874eca101fb93c7a0a3806f9a",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_14.ogg": {
+            "path": "packages/th09/music/th09_14.ogg",
+            "bytes": 1270677,
+            "sha256": "d05ef899b591d9f12a3f84bd9a1ff7ec1978b7eb1b4de71b9963f2b3ddcc52ef",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_15.ogg": {
+            "path": "packages/th09/music/th09_15.ogg",
+            "bytes": 989967,
+            "sha256": "b1a7981b546dd373cc8375a6f4688b5e4562c7418095572070ff6fc894bc48bc",
+            "immutable": false
+          },
+          "/packages/th09/music/th09_17.ogg": {
+            "path": "packages/th09/music/th09_17.ogg",
+            "bytes": 2825216,
+            "sha256": "6e631a0b7e09a7eea653fb77229b174594c8e3676db3ebf8885968e6b0cc7e64",
+            "immutable": false
+          },
+          "/packages/th09/package.json": {
+            "path": "packages/th09/package.json",
+            "bytes": 3971,
+            "sha256": "45c8b90d1c0d94c7aa6ba6feb02edec66e38e5b1fa2e55c91895f79f9458f569",
+            "immutable": false
+          },
+          "/release-catalog.json": {
+            "path": "release-catalog.json",
+            "bytes": 147,
+            "sha256": "ca4ffdc41519f7a0a1becdb250b0a71b60330676c359528a0a338787d4231ab2",
+            "immutable": false
+          },
+          "/host-manifest.json": {
+            "path": "host-manifest.json",
+            "bytes": 671,
+            "sha256": "1a5a35acda6316ce0bcae936aeeaf69ea707df26c853e5095804df4e5b97ae02",
+            "immutable": false
+          },
+          "/LICENSE-launcher.txt": {
+            "path": "LICENSE-launcher.txt",
+            "bytes": 35823,
+            "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809",
+            "immutable": false
+          },
+          "/app/redirect.mjs": {
+            "path": "app/redirect.mjs",
+            "bytes": 45,
+            "sha256": "ff20f94105f045933bcc6d46d5048ec9761539857f10bf66d4bdaa93d3d7eb0d",
+            "immutable": false
+          }
+        },
+        "launcher": {
+          "protocol": "eagler-touhou/1",
+          "source": "local TH08/TH10 final launcher"
+        }
+      }
+    },
+    {
+      "game": "th10",
+      "path": "E:/claude cli/东方测试/th10_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "91f9ed76beeed8e066b89a7898deafd6d73eba30bc01ddb9666c61029ca96535",
+      "manifest": {
+        "game": "th10",
+        "version": "3.5.1-sdl3",
+        "execution": {
+          "kind": "cpp-sdl3",
+          "architecture": {
+            "loop": "cpp-fixed-60hz-bounded-catchup",
+            "audio": "miniaudio-sdl3",
+            "renderer": "cpp-gles-semantic-batched",
+            "graphicsInterface": "semantic-state-texture-matrix",
+            "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+            "files": "sdl-io-idbfs",
+            "fonts": "sdl3-ttf",
+            "input": "cpp-sdl",
+            "launcher": "eagler-touhou/1"
+          },
+          "sdlVersion": "3.4.2",
+          "bytes": 2795006,
+          "sha256": "903ae6d5ff0e7d62fa4b9713efad3adecc56c2c98aeff2c1da91b781962bbff8",
+          "loaderSha256": "2268632d25e486af4fa06ad29a484ea213cba0ebe64fbfa03c2a620cb0d6612b"
+        }
+      }
+    },
+    {
+      "game": "th11",
+      "path": "E:/claude cli/东方测试/th11_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "5d5740d29cb78060d5095c9e476ebfd41b5d90e0564ae615f9631d890a09df4c",
+      "manifest": {
+        "game": "th11",
+        "version": "40704f8bcd9f1dd9f4cb63f5",
+        "sourceVersion": "Japanese 1.00a",
+        "completeGame": true,
+        "development": false,
+        "execution": {
+          "kind": "cpp-sdl3",
+          "entry": "/",
+          "architecture": {
+            "loop": "cpp-fixed-60hz-bounded-catchup",
+            "input": "cpp-sdl",
+            "renderer": "cpp-gles-semantic-batched",
+            "graphicsInterface": "semantic-state-texture-matrix",
+            "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+            "files": "sdl-io-idbfs",
+            "launcher": "eagler-touhou/1",
+            "audio": "cpp-miniaudio-vorbis-sdl3-stream",
+            "fonts": "cpp-original-baked-glyphs-argb4444"
+          },
+          "wasm": "/runtime/th11/th11.wasm",
+          "loader": "/runtime/th11/th11.mjs",
+          "sha256": "d3ab386f9ffd3bf9c10ee2a4e45a587b68eb42e883c04110b83cff1d5e568bc4",
+          "loaderSha256": "38fa37b7b47c2efabd4af19af86f3f135151ddd34d22e9479ebace82eb531aaa"
+        },
+        "launcher": {
+          "protocol": "eagler-touhou/1",
+          "source": "TH09 final common launcher / TH08+TH10 shared architecture",
+          "baseline": "final-baseline.json"
+        },
+        "files": {
+          "/native-audio.js": {
+            "path": "native-audio.js",
+            "bytes": 619,
+            "sha256": "5c93550c45061792d1c5d022fc392fe2bd4f1f82e672a44cb50ff266aa80a73e",
+            "immutable": false
+          },
+          "/app.js": {
+            "path": "app.js",
+            "bytes": 37,
+            "sha256": "0aeebebad0e7b3a906f08cf9238c735750611308283588b5cae41854147b0b6d",
+            "immutable": false
+          },
+          "/assets/launcher/app.mjs": {
+            "path": "assets/launcher/app.mjs",
+            "bytes": 344258,
+            "sha256": "598f3f446fc026232c1b4c5e770c87057a8e3d085d806c2d8b80d62927d17269",
+            "immutable": false
+          },
+          "/assets/launcher/route-state.mjs": {
+            "path": "assets/launcher/route-state.mjs",
+            "bytes": 5258,
+            "sha256": "fa4af031d5548070e7e33fb95bf66641baeec4391b564022bf2d630516307ad6",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-spectator-rail-position.mjs": {
+            "path": "assets/launcher/multiplayer-spectator-rail-position.mjs",
+            "bytes": 2079,
+            "sha256": "7ab578c8f2fe8aeb92c576a25671a1156f85ccecdfa32c20131bbf28c8ce835e",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-room-session.mjs": {
+            "path": "assets/launcher/multiplayer-room-session.mjs",
+            "bytes": 2751,
+            "sha256": "60b6bcd12822af94e667a1725383f07524843cb9e4d553cec76d123b16a7c55e",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-runtime-options.mjs": {
+            "path": "assets/launcher/multiplayer-runtime-options.mjs",
+            "bytes": 2248,
+            "sha256": "88957a41ee816ba1ffed2ce1e2bd33e4cf5f8b6a53ec2a9c10f40f0aeff958b3",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-relay-url.mjs": {
+            "path": "assets/launcher/multiplayer-relay-url.mjs",
+            "bytes": 1525,
+            "sha256": "0916e3206395621d1ebcb0d82a157aa3c760142db86f87f001dea50bbe32cec8",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-preferences.mjs": {
+            "path": "assets/launcher/multiplayer-preferences.mjs",
+            "bytes": 1971,
+            "sha256": "ee8a51526867c3c65edc5fe95961911a914f7772745595645614c124c5516134",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-lobby-snapshot.mjs": {
+            "path": "assets/launcher/multiplayer-lobby-snapshot.mjs",
+            "bytes": 2623,
+            "sha256": "95e5d3c2a615152ec4e0b98c01b36124c36138c3b8ffbde19fb8c9343a7b8359",
+            "immutable": false
+          },
+          "/assets/launcher/multiplayer-identity.mjs": {
+            "path": "assets/launcher/multiplayer-identity.mjs",
+            "bytes": 3329,
+            "sha256": "51f6ed641a8e5a5d70b00917980edfa1148854222a33cfbe5577cd83a7bb4bf5",
+            "immutable": false
+          },
+          "/assets/launcher/runtime-diagnostics-model.mjs": {
+            "path": "assets/launcher/runtime-diagnostics-model.mjs",
+            "bytes": 8155,
+            "sha256": "18d22b709fc0229be8b81fee2d3434e67d531da40ebf9f10e12b4fa28f6eff34",
+            "immutable": false
+          },
+          "/assets/launcher/replay-files.mjs": {
+            "path": "assets/launcher/replay-files.mjs",
+            "bytes": 3754,
+            "sha256": "027919533cdf5eb59570518c7717cd5b9cc8a0238e743547060f0be17a28d953",
+            "immutable": false
+          },
+          "/assets/launcher/game-zoom.mjs": {
+            "path": "assets/launcher/game-zoom.mjs",
+            "bytes": 7252,
+            "sha256": "f1a2ac81c18b962a65c380cb992df9697a74b42d053e0689b2e2fa74e4a5b31b",
+            "immutable": false
+          },
+          "/assets/launcher/touch-runtime-protocol.mjs": {
+            "path": "assets/launcher/touch-runtime-protocol.mjs",
+            "bytes": 1440,
+            "sha256": "c504f2a50296441f029b7b4edc0229561a14f4a651aafb8ea8ab0ad6aab77e4b",
+            "immutable": false
+          },
+          "/assets/launcher/game-preferences.mjs": {
+            "path": "assets/launcher/game-preferences.mjs",
+            "bytes": 7255,
+            "sha256": "d1d53362fd6616349679624a6ee7ecc07828246ab0e91ca4f897fb5f5f2f8266",
+            "immutable": false
+          },
+          "/assets/launcher/changelog.mjs": {
+            "path": "assets/launcher/changelog.mjs",
+            "bytes": 7996,
+            "sha256": "733360531c4001cfc5315580cf4cfdef4583735c4ebeb18dc246bdcd8edf6103",
+            "immutable": false
+          },
+          "/assets/launcher/site-notice.mjs": {
+            "path": "assets/launcher/site-notice.mjs",
+            "bytes": 10352,
+            "sha256": "fdc763a7f1fb46b4c90e4f2c2b24114b777588d30fe95c828a48b98bd08ff55c",
+            "immutable": false
+          },
+          "/assets/launcher/touch-layout-editor-state.mjs": {
+            "path": "assets/launcher/touch-layout-editor-state.mjs",
+            "bytes": 3531,
+            "sha256": "85f4a72d7f0a0ed0d2a27d448f452d8b98a5f599bbf8704ba61f543903227afe",
+            "immutable": false
+          },
+          "/assets/launcher/touch-layout-model.mjs": {
+            "path": "assets/launcher/touch-layout-model.mjs",
+            "bytes": 7189,
+            "sha256": "7cda2ab1a649de1083659c82dd900159e11aff9d25a3333edbef58f6ebaa6e38",
+            "immutable": false
+          },
+          "/assets/launcher/app-shell-client.mjs": {
+            "path": "assets/launcher/app-shell-client.mjs",
+            "bytes": 3889,
+            "sha256": "fe27cb48531f00b264b39ccf1213927238423b4571034f5efb1cce0a0827d7fa",
+            "immutable": false
+          },
+          "/assets/launcher/i18n.mjs": {
+            "path": "assets/launcher/i18n.mjs",
+            "bytes": 33322,
+            "sha256": "f844cdf8ba4f1bdb49b7341e1d27c85e6db0c0220e68f5c9e61eeee3e21d3920",
+            "immutable": false
+          },
+          "/assets/launcher/remote-metadata.mjs": {
+            "path": "assets/launcher/remote-metadata.mjs",
+            "bytes": 882,
+            "sha256": "5f70dd8c99c466fa4c193ee23e454b96c5a796e9685fe65deb82675074b012fe",
+            "immutable": false
+          },
+          "/assets/contracts/release-catalog.mjs": {
+            "path": "assets/contracts/release-catalog.mjs",
+            "bytes": 1497,
+            "sha256": "c9eef67f7dab7bb24eccf76b423eeb171a0e9e011d8f6a903e9a9a1b8bf9a3e2",
+            "immutable": false
+          },
+          "/assets/contracts/product-catalog.mjs": {
+            "path": "assets/contracts/product-catalog.mjs",
+            "bytes": 7722,
+            "sha256": "288d00b656c6cea6223e235f4acb4d41aed70a78ecec01d50267dfca544fcfe2",
+            "immutable": false
+          },
+          "/assets/contracts/host-manifest.mjs": {
+            "path": "assets/contracts/host-manifest.mjs",
+            "bytes": 6957,
+            "sha256": "744e23f0c0e1f88f2205f3c1fc138c1ee29271472a32aee1e64017166b724efc",
+            "immutable": false
+          },
+          "/assets/contracts/resource-mode.mjs": {
+            "path": "assets/contracts/resource-mode.mjs",
+            "bytes": 335,
+            "sha256": "c3e434538c68b6684f47ee8c0f444c45f1c753ca25fd412bbaea583c6eadf5b2",
+            "immutable": false
+          },
+          "/assets/contracts/runtime-protocol.mjs": {
+            "path": "assets/contracts/runtime-protocol.mjs",
+            "bytes": 1780,
+            "sha256": "c427df208f74845c4df137c2bc3aa2c4150d2265d5a527b5bf2f15fc843ed901",
+            "immutable": false
+          },
+          "/assets/launcher/music-availability.mjs": {
+            "path": "assets/launcher/music-availability.mjs",
+            "bytes": 2536,
+            "sha256": "88434a8abf26478a9bfc732e95d3ac3ad7865c4cb7afae38c6f26d700034695a",
+            "immutable": false
+          },
+          "/assets/launcher/network-activity.mjs": {
+            "path": "assets/launcher/network-activity.mjs",
+            "bytes": 10198,
+            "sha256": "8f0489ad4a175e507da6f5934450b27163b6045b2170614b33733813ddf746ee",
+            "immutable": false
+          },
+          "/assets/launcher/language-catalog.mjs": {
+            "path": "assets/launcher/language-catalog.mjs",
+            "bytes": 4096,
+            "sha256": "1fd6f4d0fec1c74596be2fb7200e7d91c907ac0729fbf58babb40a9a0c1c2579",
+            "immutable": false
+          },
+          "/assets/launcher/sha256.mjs": {
+            "path": "assets/launcher/sha256.mjs",
+            "bytes": 3512,
+            "sha256": "a78ab9a4a59db8d34abe9a26afd00f54d1f8e0a86d45bc0ae4769f7d75bf4a9c",
+            "immutable": false
+          },
+          "/assets/launcher/language-pack-validation.mjs": {
+            "path": "assets/launcher/language-pack-validation.mjs",
+            "bytes": 2437,
+            "sha256": "d497b9289bb7a33691801afddc329e68cee91dba503dea595b6f2f3588d3cca6",
+            "immutable": false
+          },
+          "/assets/launcher/runtime-generation-lease.mjs": {
+            "path": "assets/launcher/runtime-generation-lease.mjs",
+            "bytes": 818,
+            "sha256": "d013626f56eccd5625786b6d41ab3587e1ec968462f665a26dc83694998ba5a5",
+            "immutable": false
+          },
+          "/assets/launcher/runtime-preparation.mjs": {
+            "path": "assets/launcher/runtime-preparation.mjs",
+            "bytes": 3726,
+            "sha256": "d2b3f136794ebb7671ad69b25897bf03574aca8f3d6ee080e80c0cb85ee0f99b",
+            "immutable": false
+          },
+          "/package/package-store.mjs": {
+            "path": "package/package-store.mjs",
+            "bytes": 17216,
+            "sha256": "6c5881a0ba686b4a30b172f4c2283b7415688c19dd830cc15aa6b7d8e5760d8a",
+            "immutable": false
+          },
+          "/product-catalog.mjs": {
+            "path": "product-catalog.mjs",
+            "bytes": 57,
+            "sha256": "1850071519242c67b50b8650dc470457e592ceee157c077bd7afb9dbd6c3370d",
+            "immutable": false
+          },
+          "/package/package-descriptor.mjs": {
+            "path": "package/package-descriptor.mjs",
+            "bytes": 8382,
+            "sha256": "a67b5c10ef6ad3951124260a66dde3119006b6b6541b5d2071ed64c8583b183d",
+            "immutable": false
+          },
+          "/package/package-generation.mjs": {
+            "path": "package/package-generation.mjs",
+            "bytes": 4379,
+            "sha256": "b6e812087ff1434eb8ec11f407913cfe50ee73af1b8509b3f56f12140fd9588c",
+            "immutable": false
+          },
+          "/package/package-launcher.mjs": {
+            "path": "package/package-launcher.mjs",
+            "bytes": 6941,
+            "sha256": "49e6c697cee40240f9a9f42bb66917ff382807cd9927968ef0b4bb69e92212e9",
+            "immutable": false
+          },
+          "/release-catalog.mjs": {
+            "path": "release-catalog.mjs",
+            "bytes": 57,
+            "sha256": "da289976653ba6b5f7fcf206e927dc045201343ad949591cf6e52184dc9c43d4",
+            "immutable": false
+          },
+          "/package/package-installer.mjs": {
+            "path": "package/package-installer.mjs",
+            "bytes": 7031,
+            "sha256": "6f302b3179d23c8b1887b73a2149d86a3ec9c2ccbe59ae88c6838f3000c9bec7",
+            "immutable": false
+          },
+          "/package/package-mutation-queue.mjs": {
+            "path": "package/package-mutation-queue.mjs",
+            "bytes": 635,
+            "sha256": "372a4572f26700f2ed3f290721c1240c31e09519b38e4090b14c6187601a71cd",
+            "immutable": false
+          },
+          "/package/package-zip.mjs": {
+            "path": "package/package-zip.mjs",
+            "bytes": 1408,
+            "sha256": "ed201f3289a90615c8a4290cce928f0b12e21111fee9724d84bad42622210c7c",
+            "immutable": false
+          },
+          "/package/stored-zip.mjs": {
+            "path": "package/stored-zip.mjs",
+            "bytes": 5324,
+            "sha256": "f3705c7e83a2ddbcafe07dba3ef6b42b7fce084246341bd1ae308abd2d05ef04",
+            "immutable": false
+          },
+          "/legacy/legacy-import-storage.mjs": {
+            "path": "legacy/legacy-import-storage.mjs",
+            "bytes": 13772,
+            "sha256": "03f79c445955678578ca8b013412be2f0706675dd2fa32ba8597d0a17ef22647",
+            "immutable": false
+          },
+          "/legacy/legacy-package-adapter.mjs": {
+            "path": "legacy/legacy-package-adapter.mjs",
+            "bytes": 8379,
+            "sha256": "e6bc56e176e6181a55e670b5e091c457dd60767a74b470bc2372ad3352c6fd2d",
+            "immutable": false
+          },
+          "/legacy/legacy-game-pack.mjs": {
+            "path": "legacy/legacy-game-pack.mjs",
+            "bytes": 7932,
+            "sha256": "6a8d2a2e856882b90b1c65f7688f647c141fa54f85a11c1ef72b9759c2332092",
+            "immutable": false
+          },
+          "/about.css": {
+            "path": "about.css",
+            "bytes": 1726,
+            "sha256": "1b0c1a01a963231bd0541ade420b21c93016dd3bc5e40ee086f72d39d5def9d4",
+            "immutable": false
+          },
+          "/about.html": {
+            "path": "about.html",
+            "bytes": 1102,
+            "sha256": "9fcac227f6ba1ce8d7d4fe7e8a3ce0ff14fa83ba279800ae656c229f3934dc37",
+            "immutable": false
+          },
+          "/assets/fonts/chill-round-gothic-site-bold.woff2": {
+            "path": "assets/fonts/chill-round-gothic-site-bold.woff2",
+            "bytes": 146352,
+            "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+            "immutable": false
+          },
+          "/assets/fonts/chill-round-gothic-site-heavy.woff2": {
+            "path": "assets/fonts/chill-round-gothic-site-heavy.woff2",
+            "bytes": 3912,
+            "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+            "immutable": false
+          },
+          "/assets/fonts/chill-round-gothic-site-medium.woff2": {
+            "path": "assets/fonts/chill-round-gothic-site-medium.woff2",
+            "bytes": 144388,
+            "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+            "immutable": false
+          },
+          "/assets/fonts/OFL-ChillRoundGothic.txt": {
+            "path": "assets/fonts/OFL-ChillRoundGothic.txt",
+            "bytes": 4447,
+            "sha256": "9a188aa140f360b1ac9e2be2e3cf5fa5710cc89b5712e7fcf12eee3718173d35",
+            "immutable": false
+          },
+          "/assets/fonts/OFL-Unifont.txt": {
+            "path": "assets/fonts/OFL-Unifont.txt",
+            "bytes": 4688,
+            "sha256": "787fdbf8834c8abfd12a92e1c611e7c53d60e19b08ae99562a763e05b452722d",
+            "immutable": false
+          },
+          "/assets/fonts/OFL-YatraOne.txt": {
+            "path": "assets/fonts/OFL-YatraOne.txt",
+            "bytes": 4437,
+            "sha256": "942d3ca0ed0582db74a824c67c1b0e4a0ae7d84f9d8f8ffbc1ebc39fd4d89f37",
+            "immutable": false
+          },
+          "/assets/fonts/touhou98.woff2": {
+            "path": "assets/fonts/touhou98.woff2",
+            "bytes": 9416,
+            "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+            "immutable": false
+          },
+          "/assets/fonts/unifont-site.woff2": {
+            "path": "assets/fonts/unifont-site.woff2",
+            "bytes": 23504,
+            "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+            "immutable": false
+          },
+          "/assets/fonts/yatra-one-latin.woff2": {
+            "path": "assets/fonts/yatra-one-latin.woff2",
+            "bytes": 18568,
+            "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+            "immutable": false
+          },
+          "/assets/notice-bilibili.svg": {
+            "path": "assets/notice-bilibili.svg",
+            "bytes": 1160,
+            "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+            "immutable": false
+          },
+          "/assets/notice-github.svg": {
+            "path": "assets/notice-github.svg",
+            "bytes": 679,
+            "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+            "immutable": false
+          },
+          "/assets/notice-qq.svg": {
+            "path": "assets/notice-qq.svg",
+            "bytes": 508,
+            "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+            "immutable": false
+          },
+          "/assets/notice-touhou-cloud.png": {
+            "path": "assets/notice-touhou-cloud.png",
+            "bytes": 23262,
+            "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+            "immutable": false
+          },
+          "/assets/th11-card.png": {
+            "path": "assets/th11-card.png",
+            "bytes": 571410,
+            "sha256": "57add9cc4fa6493cae196a1ecb5e277290a70af04cc4d226b88c8c6fc06e8b57",
+            "immutable": false
+          },
+          "/assets/touch-rotate-landscape.webp": {
+            "path": "assets/touch-rotate-landscape.webp",
+            "bytes": 141862,
+            "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+            "immutable": false
+          },
+          "/CHANGELOG.txt": {
+            "path": "CHANGELOG.txt",
+            "bytes": 301,
+            "sha256": "d769af2280b71cf1e0b885762d1381a09453d5c1badb97c56a97b45027e0dcea",
+            "immutable": false
+          },
+          "/faq.html": {
+            "path": "faq.html",
+            "bytes": 1722,
+            "sha256": "021e8de41a8eaa5130d784fbd44d5ee59f0eac38b7c8bedbfda984df7d302292",
+            "immutable": false
+          },
+          "/index.html": {
+            "path": "index.html",
+            "bytes": 73831,
+            "sha256": "bdf55abbaa63864b46c75b6e2970b2cef88b704019900867876e98354059bee5",
+            "immutable": false
+          },
+          "/migrate.html": {
+            "path": "migrate.html",
+            "bytes": 708,
+            "sha256": "accad34b7ee8e17a4c03087ede53d74eb7ca3ff7eb5aedde26bae9cbd71548b2",
+            "immutable": false
+          },
+          "/NOTICE.txt": {
+            "path": "NOTICE.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "immutable": false
+          },
+          "/site.webmanifest": {
+            "path": "site.webmanifest",
+            "bytes": 290,
+            "sha256": "083b07bbc53490eb39dc45ec0e2289e39052e3a5447fb760a37e040dc0cd1027",
+            "immutable": false
+          },
+          "/styles.css": {
+            "path": "styles.css",
+            "bytes": 157844,
+            "sha256": "13b7bc09d8a035a2c8bcaed378ea43fbee28950ed011b8c00c6e58185a7ed9fd",
+            "immutable": false
+          },
+          "/touch-guide.css": {
+            "path": "touch-guide.css",
+            "bytes": 19172,
+            "sha256": "e35893f22273928c7a614e6ea309bbd61ec819a5fd8a5446fd619f96cbc88ca4",
+            "immutable": false
+          },
+          "/vendor/fflate.LICENSE": {
+            "path": "vendor/fflate.LICENSE",
+            "bytes": 1089,
+            "sha256": "c4a2b81d52232155bf78d4ea54a514115d8b9dfb9c0de752af68662a5672efe9",
+            "immutable": false
+          },
+          "/vendor/fflate.min.js": {
+            "path": "vendor/fflate.min.js",
+            "bytes": 33044,
+            "sha256": "462ef8041fc970e3615a20a9dd2b2e3047a073b2da729ef4f02b634bba8b7b83",
+            "immutable": false
+          },
+          "/vendor/webaudio-tinysynth.LICENSE": {
+            "path": "vendor/webaudio-tinysynth.LICENSE",
+            "bytes": 11558,
+            "sha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363",
+            "immutable": false
+          },
+          "/vendor/webaudio-tinysynth.min.js": {
+            "path": "vendor/webaudio-tinysynth.min.js",
+            "bytes": 42859,
+            "sha256": "864269534ada22f57da86884d8c8dd5f4c71ca3658c584f8a35d781965dff1ab",
+            "immutable": false
+          },
+          "/runtime/th11/th11.html": {
+            "path": "runtime/th11/th11.html",
+            "bytes": 450,
+            "sha256": "83c69589e87fc7d88308329a1dc378664b798014b2b3ae46ffbebcf413cc43f9",
+            "immutable": false
+          },
+          "/runtime/th11/managed.css": {
+            "path": "runtime/th11/managed.css",
+            "bytes": 733,
+            "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+            "immutable": false
+          },
+          "/runtime/th11/keyboard.mjs": {
+            "path": "runtime/th11/keyboard.mjs",
+            "bytes": 1298,
+            "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274",
+            "immutable": false
+          },
+          "/runtime/th11/managed.mjs": {
+            "path": "runtime/th11/managed.mjs",
+            "bytes": 9707,
+            "sha256": "da65828dc2424809b4fe8dacb9dbc6f893abff6b5e40b26799162cfdd45ca4eb",
+            "immutable": false
+          },
+          "/runtime/th11/th11.mjs": {
+            "path": "runtime/th11/th11.mjs",
+            "bytes": 224464,
+            "sha256": "38fa37b7b47c2efabd4af19af86f3f135151ddd34d22e9479ebace82eb531aaa",
+            "immutable": false
+          },
+          "/runtime/th11/th11.wasm": {
+            "path": "runtime/th11/th11.wasm",
+            "bytes": 1422572,
+            "sha256": "d3ab386f9ffd3bf9c10ee2a4e45a587b68eb42e883c04110b83cff1d5e568bc4",
+            "immutable": false
+          },
+          "/packages/th11/th11.data": {
+            "path": "packages/th11/th11.data",
+            "bytes": 43218056,
+            "sha256": "df61c31ab1a282e93da8c1971105c5f67e9972ee4a0c34d4f7525649f7a0ae99",
+            "immutable": false
+          },
+          "/runtime/th11/th11.data.json": {
+            "path": "runtime/th11/th11.data.json",
+            "bytes": 742,
+            "sha256": "e9d85df1c5fbe5cb87bec96f09e30896b078d0d83d7254b11e78fe467574d9b1",
+            "immutable": false
+          },
+          "/packages/th11/music/th10_17.ogg": {
+            "path": "packages/th11/music/th10_17.ogg",
+            "bytes": 836423,
+            "sha256": "e98886fc76b6eacb678c743da56dee12459c22a4d891e0b1e6edafc3ffa03702",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_00.ogg": {
+            "path": "packages/th11/music/th11_00.ogg",
+            "bytes": 2201825,
+            "sha256": "c4532effcd8e77526fd142d1b123f8fff66cd5c7f03fc97eac13490b13a946fe",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_01.ogg": {
+            "path": "packages/th11/music/th11_01.ogg",
+            "bytes": 2602489,
+            "sha256": "c74b9b1ca681e7f83f9b9fdd7ac99ae0f8fc692d94835e8324e54e898cf81af4",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_02.ogg": {
+            "path": "packages/th11/music/th11_02.ogg",
+            "bytes": 1533753,
+            "sha256": "51c5828ebff06f928352920271e72dfc223130626797132f94efb126829abc9e",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_03.ogg": {
+            "path": "packages/th11/music/th11_03.ogg",
+            "bytes": 2767299,
+            "sha256": "fd3d840e304f5a45693a899cf9dcdb3888148e837d8ee81abf2bae9ee58eaf4b",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_05.ogg": {
+            "path": "packages/th11/music/th11_05.ogg",
+            "bytes": 2986852,
+            "sha256": "a49e631fc205efd41d2f6a2a2e144bf0add5cc97aeb2c339f5ffd589fb4a971a",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_06.ogg": {
+            "path": "packages/th11/music/th11_06.ogg",
+            "bytes": 3013153,
+            "sha256": "f857e8db1da14d3596e924c5c81229232a0b3954a678650faf055de413c76983",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_07.ogg": {
+            "path": "packages/th11/music/th11_07.ogg",
+            "bytes": 2838667,
+            "sha256": "7c52660791e199b530fce8719f6b9d86f403ede6af805b03c5e22a7260c3c88b",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_08.ogg": {
+            "path": "packages/th11/music/th11_08.ogg",
+            "bytes": 3693423,
+            "sha256": "76a9b08875f4dc911e9703a54302b06786f44a1f4d0ffa6a20f7297f4372a770",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_10.ogg": {
+            "path": "packages/th11/music/th11_10.ogg",
+            "bytes": 3238931,
+            "sha256": "2b8e408f0537e76142da79d1bdc8d2d8d01daea08bd643af92fe262869e2956e",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_12.ogg": {
+            "path": "packages/th11/music/th11_12.ogg",
+            "bytes": 4522571,
+            "sha256": "a451d01921cdb6536cb1325bfc47cdd3d5f0b4cf8b4008bfc1e5847002acfb70",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_13.ogg": {
+            "path": "packages/th11/music/th11_13.ogg",
+            "bytes": 2760517,
+            "sha256": "577b43531ed28a58a9c63795fa7aa65588126f4870be1fcf5136ef431af5bbf4",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_14.ogg": {
+            "path": "packages/th11/music/th11_14.ogg",
+            "bytes": 2945655,
+            "sha256": "a5a22c04d53c69e572ac7d897cc9db9944c338a0ed6f9412114ad63a74a8f5ce",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_15.ogg": {
+            "path": "packages/th11/music/th11_15.ogg",
+            "bytes": 4761149,
+            "sha256": "d4a1a36c82729301534124769fe2fdc540f6ae95ed7b833c0e745cdecd434d81",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_16.ogg": {
+            "path": "packages/th11/music/th11_16.ogg",
+            "bytes": 4128251,
+            "sha256": "3d37ae452d0f800bc6791f487237d5584a02373a487ca89dd37b07310b6ca24a",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_17.ogg": {
+            "path": "packages/th11/music/th11_17.ogg",
+            "bytes": 4029164,
+            "sha256": "2801b6ea78d2b3d6672d0d457adeb06300964210968b1906147c742bb41ad71e",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_18.ogg": {
+            "path": "packages/th11/music/th11_18.ogg",
+            "bytes": 1855179,
+            "sha256": "3130e569fc51dd3e3d77734053f35fc7bf2fc63f0b80df78f9a67dc183c90a4c",
+            "immutable": false
+          },
+          "/packages/th11/music/th11_19.ogg": {
+            "path": "packages/th11/music/th11_19.ogg",
+            "bytes": 2173306,
+            "sha256": "b2d7f2e191ed1aafa88349c19580b09e840098a3769cf7db90d006441125440d",
+            "immutable": false
+          },
+          "/packages/th11/package.json": {
+            "path": "packages/th11/package.json",
+            "bytes": 3770,
+            "sha256": "1d3daab63204ba76d65f898cfd18d6c32304e9f02548cb050c66519dbd9783ba",
+            "immutable": false
+          },
+          "/release-catalog.json": {
+            "path": "release-catalog.json",
+            "bytes": 142,
+            "sha256": "25a4a10a0646d5b39dfce052e2fed777c6ad83be45d35188ce2115dfb55ddb12",
+            "immutable": false
+          },
+          "/host-manifest.json": {
+            "path": "host-manifest.json",
+            "bytes": 671,
+            "sha256": "9060f87a217cc6b3400b78fca493d2b531503b029405ba1ba4d856c140233ac4",
+            "immutable": false
+          },
+          "/LICENSE-launcher.txt": {
+            "path": "LICENSE-launcher.txt",
+            "bytes": 35823,
+            "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809",
+            "immutable": false
+          },
+          "/THIRD-PARTY-NOTICES.txt": {
+            "path": "THIRD-PARTY-NOTICES.txt",
+            "bytes": 249,
+            "sha256": "bfebaa310f64c7a4abf269d3750cfef9a5753e7e82af7ce7943ff9227be78757",
+            "immutable": false
+          },
+          "/final-baseline.json": {
+            "path": "final-baseline.json",
+            "bytes": 4766,
+            "sha256": "4cb1ea182fbfb10d19b030bb5d36539b6f42b4fcf4ccb369df4b418da4cef618",
+            "immutable": false
+          },
+          "/app/th11.html": {
+            "path": "app/th11.html",
+            "bytes": 153,
+            "sha256": "14bd051c49f2b8c18a3c736acdf77714f109129151d7b8f6b32383cbaed3a553",
+            "immutable": false
+          },
+          "/app/redirect.mjs": {
+            "path": "app/redirect.mjs",
+            "bytes": 45,
+            "sha256": "ff20f94105f045933bcc6d46d5048ec9761539857f10bf66d4bdaa93d3d7eb0d",
+            "immutable": false
+          },
+          "/app-shell-sw.js": {
+            "path": "app-shell-sw.js",
+            "bytes": 14171,
+            "sha256": "443cd287c119277780dd54516d7cd49cd75178a942bb171e4d2cc8bce94b5d62",
+            "immutable": false
+          },
+          "/": {
+            "path": "index.html",
+            "bytes": 73831,
+            "sha256": "bdf55abbaa63864b46c75b6e2970b2cef88b704019900867876e98354059bee5",
+            "immutable": false
+          },
+          "/version.json": {
+            "path": "version.json",
+            "bytes": 50,
+            "sha256": "b8a263475f38e5f7fe94a06ad37fed465139abdcc4eae6ce815c42de178ebb54",
+            "immutable": false
+          }
+        }
+      }
+    }
+  ],
+  "sharedFiles": [
+    {
+      "path": "portable/sdl/Renderer.cpp",
+      "size": 28697,
+      "sha256": "525b8ac0ed47a2f75b9f0c95d8edb9b66e65792baa4c96dfd077b92b29b3fae7"
+    },
+    {
+      "path": "portable/sdl/Renderer.hpp",
+      "size": 4120,
+      "sha256": "c002c9b9fdfb43f33883c7b50cb222e0ab2291eb25c57bf284ba515fa0bf23c7"
+    },
+    {
+      "path": "portable/sdl/GraphicsState.hpp",
+      "size": 8416,
+      "sha256": "5f9c21e4f13385fe74bfc42d4a43ce9cd8af643cfdf589a99fb77912b83a9f64"
+    },
+    {
+      "path": "portable/sdl/Shaders.hpp",
+      "size": 3709,
+      "sha256": "c2168b9412c46c6589f2c726d8ea7b9ea5def8c61c4eb8f8feff6b51cc11181e"
+    },
+    {
+      "path": "portable/sdl/FrameCadence.hpp",
+      "size": 593,
+      "sha256": "1b2a610ac172de2089b4cd6551e88b04d36fb4030da93526a4442cefa8cdbed8"
+    },
+    {
+      "path": "portable/input/TouchController.hpp",
+      "size": 5922,
+      "sha256": "f187a6a0fd159aab554a6374631e582cebf7d5afd1bb01dee981df6d0b64a5f6"
+    },
+    {
+      "path": "portable/input/MotionTrack.hpp",
+      "size": 4379,
+      "sha256": "49bf41a724cf7cd6b7f4f6de85ad8521d17864ae0bc4e31955d3cb4456152af4"
+    },
+    {
+      "path": "portable/input/KeyboardMap.inc",
+      "size": 3305,
+      "sha256": "3171e0fab2b2a0bcd4d5c6a73d6f0a274fcda320c05c269dfe74f76c159cfada"
+    }
+  ]
+}

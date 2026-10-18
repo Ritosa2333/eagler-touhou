@@ -1,0 +1,10 @@
+{
+  "file": "d3dx9_43.dll",
+  "sha256": "0b28546be22c71834501f7d7185ede5d79742457331c7ee09efc14490dd64f5f",
+  "source": "Existing Microsoft DirectX June 2010 Redistributable: th11_web/tools/directx-redist/Jun2010_d3dx9_43_x86.cab",
+  "use": "Original-executable oracle only; excluded from production game",
+  "exports": [
+    "D3DXVec2Normalize"
+  ],
+  "loadedInHostProcess": false
+}

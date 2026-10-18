@@ -1,0 +1,20 @@
+source_pid=43784
+debug: mincore\com\oleaut32\dispatch\ups.cpp(2126)\OLEAUT32.dll!772E2FE7: (caller: 772E578F) ReturnHr(1) tid(f404) 8002801D ¿âÃ»ÓÐ×¢²á¡£
+
+unhandled exception=0xc0000005 at=0026F81D thread=63556
+  parameter[0]=0x0
+  parameter[1]=0x14
+  0x26f81d
+  0x26f81d
+  0x28b831
+  0x28c682
+  0x28bb41
+  0x1eb0e7
+  0x1eb2c0
+  0x176ba7
+  0x175ed6
+  0x12a709
+  0x76947ba9
+  0x77dac3ab
+  0x77dac32f
+exit_code=0xc0000005

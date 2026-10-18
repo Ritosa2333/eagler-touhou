@@ -1,0 +1,138 @@
+entry entry0 {
+    version: 8,
+    name: "help/notice/notice_bk.png",
+    filename: "help/notice/notice_bk@notice@0.png",
+    format: 5,
+    width: 1024,
+    height: 256,
+    memoryPriority: 0,
+    lowResScale: 1,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1024,
+    THTXHeight: 256,
+    THTXZero: 0,
+    w_max: 1024,
+    h_max: 256,
+    sprites: {
+        sprite0: { x: 0, y: 0, w: 512, h: 256 },
+        sprite1: { x: 512, y: 0, w: 512, h: 256 }
+    }
+}
+
+script script0 {
+    ins_431(1);
+    ins_307(1);
+    ins_304(36);
+    ins_313(2);
+    ins_300(-1);
+    ins_403(0);
+    ins_501(script1);
+    ins_501(script2);
+    ins_3();
+    ins_5(1);
+    ins_501(script3);
++30: // 30
+    ins_1();
+}
+
+script script1 {
+    ins_431(1);
+    ins_307(1);
+    ins_304(36);
+    ins_313(2);
+    ins_300(-1);
+    ins_603(1296.0f, 256.0f);
+    ins_403(192);
+    ins_404(0, 0, 0);
+    ins_406(0, 0, 0);
+    ins_421(1, 0);
+    ins_400(1535.0f, 480.0f, 0.0f);
+    ins_407(30, 1, -1.0f, 480.0f, 0.0f);
++30: // 30
+    ins_3();
+    ins_5(1);
+    ins_421(2, 0);
+    ins_400(1281.0f, 480.0f, 0.0f);
+    ins_407(30, 1, -257.0f, 480.0f, 0.0f);
++30: // 60
+    ins_1();
+}
+
+script script2 {
+    ins_300(sprite0);
+    ins_431(1);
+    ins_307(1);
+    ins_304(36);
+    ins_313(2);
+    ins_403(192);
+    ins_421(2, 0);
+    ins_400(1536.0f, 480.0f, 0.0f);
+    ins_407(30, 1, 0.0f, 480.0f, 0.0f);
++30: // 30
+    ins_1();
+}
+
+script script3 {
+    ins_300(sprite1);
+    ins_431(1);
+    ins_307(1);
+    ins_304(36);
+    ins_313(2);
+    ins_403(192);
+    ins_421(1, 0);
+    ins_400(1280.0f, 480.0f, 0.0f);
+    ins_407(30, 1, -256.0f, 480.0f, 0.0f);
++30: // 30
+    ins_1();
+}
+
+
+entry entry1 {
+    version: 8,
+    name: "@",
+    filename: "@@notice@1",
+    format: 1,
+    width: 1024,
+    height: 256,
+    memoryPriority: 10,
+    lowResScale: 1,
+    hasData: 0,
+    w_max: 0,
+    h_max: 0,
+    sprites: {
+        sprite2: { x: 0, y: 0, w: 1024, h: 256 },
+        sprite3: { x: 0, y: 56, w: 1024, h: 72 },
+        sprite4: { x: 0, y: 128, w: 1024, h: 72 }
+    }
+}
+
+script script4 {
+    ins_300(sprite2);
+    ins_431(1);
+    ins_307(1);
+    ins_304(36);
+    ins_313(2);
+    ins_421(1, 0);
+    ins_400(1664.0f, 480.0f, 0.0f);
+    ins_407(30, 4, 128.0f, 480.0f, 0.0f);
+    ins_3();
+    ins_5(1);
+    ins_409(30, 0, 0);
+    ins_400(128.0f, 480.0f, 0.0f);
+    ins_407(30, 4, -1152.0f, 480.0f, 0.0f);
++30: // 30
+    ins_1();
+}
+
+script script5 {
+    ins_300(sprite3);
+    ins_4();
+}
+
+script script6 {
+    ins_300(sprite4);
+    ins_4();
+}
+
+

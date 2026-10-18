@@ -1,0 +1,1125 @@
+entry entry0 {
+    version: 8,
+    name: "enemy/enemy2.png",
+    filename: "enemy/enemy2@ghost@0.png",
+    format: 5,
+    width: 256,
+    height: 128,
+    memoryPriority: 10,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 128,
+    THTXZero: 0,
+    w_max: 256,
+    h_max: 128,
+    sprites: {
+        sprite0: { x: 0, y: 0, w: 32, h: 32 },
+        sprite1: { x: 32, y: 0, w: 32, h: 32 },
+        sprite2: { x: 64, y: 0, w: 32, h: 32 },
+        sprite3: { x: 96, y: 0, w: 32, h: 32 },
+        sprite4: { x: 128, y: 0, w: 32, h: 32 },
+        sprite5: { x: 160, y: 0, w: 32, h: 32 },
+        sprite6: { x: 192, y: 0, w: 32, h: 32 },
+        sprite7: { x: 224, y: 0, w: 32, h: 32 },
+        sprite8: { x: 0, y: 32, w: 32, h: 32 },
+        sprite9: { x: 32, y: 32, w: 32, h: 32 },
+        sprite10: { x: 64, y: 32, w: 32, h: 32 },
+        sprite11: { x: 96, y: 32, w: 32, h: 32 },
+        sprite12: { x: 128, y: 32, w: 32, h: 32 },
+        sprite13: { x: 160, y: 32, w: 32, h: 32 },
+        sprite14: { x: 192, y: 32, w: 32, h: 32 },
+        sprite15: { x: 224, y: 32, w: 32, h: 32 },
+        sprite16: { x: 0, y: 64, w: 32, h: 32 },
+        sprite17: { x: 32, y: 64, w: 32, h: 32 },
+        sprite18: { x: 64, y: 64, w: 32, h: 32 },
+        sprite19: { x: 96, y: 64, w: 32, h: 32 },
+        sprite20: { x: 128, y: 64, w: 32, h: 32 },
+        sprite21: { x: 160, y: 64, w: 32, h: 32 },
+        sprite22: { x: 192, y: 64, w: 32, h: 32 },
+        sprite23: { x: 224, y: 64, w: 32, h: 32 },
+        sprite24: { x: 0, y: 96, w: 32, h: 32 },
+        sprite25: { x: 32, y: 96, w: 32, h: 32 },
+        sprite26: { x: 64, y: 96, w: 32, h: 32 },
+        sprite27: { x: 96, y: 96, w: 32, h: 32 },
+        sprite28: { x: 128, y: 96, w: 32, h: 32 },
+        sprite29: { x: 160, y: 96, w: 32, h: 32 },
+        sprite30: { x: 192, y: 96, w: 32, h: 32 },
+        sprite31: { x: 224, y: 96, w: 32, h: 32 }
+    }
+}
+
+script script0 {
+    ins_304(9);
+    ins_302(0);
+    ins_303(1);
+    ins_301(sprite0, 8);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 8.0f);
+    ins_105([10005.0f], 4.0f);
+    ins_400([10004.0f], [10005.0f], 0.0f);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], -16.0f);
+    ins_105([10005.0f], 16.0f);
+    ins_407(10, 0, [10004.0f], [10005.0f], 0.0f);
+    ins_402(0.5f, 0.5f);
+    ins_412(10, 1, 0.0f, 0.0f);
++10: // 10
+    ins_1();
+}
+
+script script1 {
+    ins_304(9);
+    ins_302(0);
+    ins_303(1);
+    ins_301(sprite0, 8);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 8.0f);
+    ins_105([10005.0f], 4.0f);
+    ins_400([10004.0f], [10005.0f], 0.0f);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 16.0f);
+    ins_103([10005.0f], 16.0f);
+    ins_407(10, 0, [10004.0f], [10005.0f], 0.0f);
+    ins_402(0.5f, 0.5f);
+    ins_412(10, 1, 0.0f, 0.0f);
++10: // 10
+    ins_1();
+}
+
+script script2 {
+    ins_304(9);
+    ins_302(0);
+    ins_402(0.0f, 0.0f);
+    ins_412(6, 4, 3.0f, 3.0f);
+    ins_300(sprite0);
++3: // 3
+    ins_300(sprite1);
++3: // 6
+    ins_300(sprite2);
+    ins_412(12, 1, 1.0f, 1.0f);
++3: // 9
+    ins_300(sprite3);
++3: // 12
+    ins_300(sprite4);
+offset148:
+    ins_300(sprite0);
+    ins_504(script0);
++1: // 13
+    ins_504(script0);
++1: // 14
+    ins_504(script0);
++1: // 15
+    ins_300(sprite1);
+    ins_504(script0);
++1: // 16
+    ins_504(script0);
++1: // 17
+    ins_504(script0);
++1: // 18
+    ins_300(sprite2);
+    ins_504(script0);
++1: // 19
+    ins_504(script0);
++1: // 20
+    ins_504(script0);
++1: // 21
+    ins_300(sprite3);
+    ins_504(script0);
++1: // 22
+    ins_504(script0);
++1: // 23
+    ins_504(script0);
++1: // 24
+    ins_300(sprite4);
+    ins_412(12, 1, 1.0f, 1.0f);
+    ins_504(script0);
++1: // 25
+    ins_504(script0);
++1: // 26
+    ins_504(script0);
++1: // 27
+    ins_300(sprite5);
+    ins_504(script0);
++1: // 28
+    ins_504(script0);
++1: // 29
+    ins_504(script0);
++1: // 30
+    ins_300(sprite6);
+    ins_504(script0);
++1: // 31
+    ins_504(script0);
++1: // 32
+    ins_504(script0);
++1: // 33
+    ins_300(sprite7);
+    ins_504(script0);
++1: // 34
+    ins_504(script0);
++1: // 35
+    ins_504(script0);
++1: // 36
+    ins_200(offset148, 12);
+}
+
+script script3 {
+    ins_304(9);
+    ins_302(0);
+    ins_402(0.0f, 0.0f);
+    ins_412(6, 4, 2.0f, 2.0f);
+    ins_300(sprite0);
++3: // 3
+    ins_300(sprite1);
++3: // 6
+    ins_300(sprite2);
+    ins_412(6, 1, 1.0f, 1.0f);
++3: // 9
+    ins_300(sprite3);
++3: // 12
+    ins_300(sprite4);
+offset148:
+    ins_300(sprite0);
+    ins_504(script1);
++1: // 13
+    ins_504(script1);
++1: // 14
+    ins_504(script1);
++1: // 15
+    ins_300(sprite1);
+    ins_504(script1);
++1: // 16
+    ins_504(script1);
++1: // 17
+    ins_504(script1);
++1: // 18
+    ins_300(sprite2);
+    ins_504(script1);
++1: // 19
+    ins_504(script1);
++1: // 20
+    ins_504(script1);
++1: // 21
+    ins_300(sprite3);
+    ins_504(script1);
++1: // 22
+    ins_504(script1);
++1: // 23
+    ins_504(script1);
++1: // 24
+    ins_300(sprite4);
+    ins_412(12, 1, 1.0f, 1.0f);
+    ins_504(script1);
++1: // 25
+    ins_504(script1);
++1: // 26
+    ins_504(script1);
++1: // 27
+    ins_300(sprite5);
+    ins_504(script1);
++1: // 28
+    ins_504(script1);
++1: // 29
+    ins_504(script1);
++1: // 30
+    ins_300(sprite6);
+    ins_504(script1);
++1: // 31
+    ins_504(script1);
++1: // 32
+    ins_504(script1);
++1: // 33
+    ins_300(sprite7);
+    ins_504(script1);
++1: // 34
+    ins_504(script1);
++1: // 35
+    ins_504(script1);
++1: // 36
+    ins_200(offset148, 12);
+}
+
+script script4 {
+    ins_304(9);
+    ins_302(0);
+    ins_303(1);
+    ins_301(sprite8, 8);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 8.0f);
+    ins_105([10005.0f], 4.0f);
+    ins_400([10004.0f], [10005.0f], 0.0f);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], -16.0f);
+    ins_105([10005.0f], 16.0f);
+    ins_407(10, 0, [10004.0f], [10005.0f], 0.0f);
+    ins_402(0.5f, 0.5f);
+    ins_412(10, 1, 0.0f, 0.0f);
++10: // 10
+    ins_1();
+}
+
+script script5 {
+    ins_304(9);
+    ins_302(0);
+    ins_303(1);
+    ins_301(sprite8, 8);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 8.0f);
+    ins_105([10005.0f], 4.0f);
+    ins_400([10004.0f], [10005.0f], 0.0f);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 16.0f);
+    ins_103([10005.0f], 16.0f);
+    ins_407(10, 0, [10004.0f], [10005.0f], 0.0f);
+    ins_402(0.5f, 0.5f);
+    ins_412(10, 1, 0.0f, 0.0f);
++10: // 10
+    ins_1();
+}
+
+script script6 {
+    ins_304(9);
+    ins_302(0);
+    ins_402(0.0f, 0.0f);
+    ins_412(6, 4, 3.0f, 3.0f);
+    ins_300(sprite8);
++3: // 3
+    ins_300(sprite9);
++3: // 6
+    ins_300(sprite10);
+    ins_412(12, 1, 1.0f, 1.0f);
++3: // 9
+    ins_300(sprite11);
++3: // 12
+    ins_300(sprite12);
+offset148:
+    ins_300(sprite8);
+    ins_504(script4);
++1: // 13
+    ins_504(script4);
++1: // 14
+    ins_504(script4);
++1: // 15
+    ins_300(sprite9);
+    ins_504(script4);
++1: // 16
+    ins_504(script4);
++1: // 17
+    ins_504(script4);
++1: // 18
+    ins_300(sprite10);
+    ins_504(script4);
++1: // 19
+    ins_504(script4);
++1: // 20
+    ins_504(script4);
++1: // 21
+    ins_300(sprite11);
+    ins_504(script4);
++1: // 22
+    ins_504(script4);
++1: // 23
+    ins_504(script4);
++1: // 24
+    ins_300(sprite12);
+    ins_412(12, 1, 1.0f, 1.0f);
+    ins_504(script4);
++1: // 25
+    ins_504(script4);
++1: // 26
+    ins_504(script4);
++1: // 27
+    ins_300(sprite13);
+    ins_504(script4);
++1: // 28
+    ins_504(script4);
++1: // 29
+    ins_504(script4);
++1: // 30
+    ins_300(sprite14);
+    ins_504(script4);
++1: // 31
+    ins_504(script4);
++1: // 32
+    ins_504(script4);
++1: // 33
+    ins_300(sprite15);
+    ins_504(script4);
++1: // 34
+    ins_504(script4);
++1: // 35
+    ins_504(script4);
++1: // 36
+    ins_200(offset148, 12);
+}
+
+script script7 {
+    ins_304(9);
+    ins_302(0);
+    ins_402(0.0f, 0.0f);
+    ins_412(6, 4, 2.0f, 2.0f);
+    ins_300(sprite8);
++3: // 3
+    ins_300(sprite9);
++3: // 6
+    ins_300(sprite10);
+    ins_412(6, 1, 1.0f, 1.0f);
++3: // 9
+    ins_300(sprite11);
++3: // 12
+    ins_300(sprite12);
+offset148:
+    ins_300(sprite8);
+    ins_504(script5);
++1: // 13
+    ins_504(script5);
++1: // 14
+    ins_504(script5);
++1: // 15
+    ins_300(sprite9);
+    ins_504(script5);
++1: // 16
+    ins_504(script5);
++1: // 17
+    ins_504(script5);
++1: // 18
+    ins_300(sprite10);
+    ins_504(script5);
++1: // 19
+    ins_504(script5);
++1: // 20
+    ins_504(script5);
++1: // 21
+    ins_300(sprite11);
+    ins_504(script5);
++1: // 22
+    ins_504(script5);
++1: // 23
+    ins_504(script5);
++1: // 24
+    ins_300(sprite12);
+    ins_412(12, 1, 1.0f, 1.0f);
+    ins_504(script5);
++1: // 25
+    ins_504(script5);
++1: // 26
+    ins_504(script5);
++1: // 27
+    ins_300(sprite13);
+    ins_504(script5);
++1: // 28
+    ins_504(script5);
++1: // 29
+    ins_504(script5);
++1: // 30
+    ins_300(sprite14);
+    ins_504(script5);
++1: // 31
+    ins_504(script5);
++1: // 32
+    ins_504(script5);
++1: // 33
+    ins_300(sprite15);
+    ins_504(script5);
++1: // 34
+    ins_504(script5);
++1: // 35
+    ins_504(script5);
++1: // 36
+    ins_200(offset148, 12);
+}
+
+script script8 {
+    ins_304(9);
+    ins_302(0);
+    ins_303(1);
+    ins_301(sprite16, 8);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 8.0f);
+    ins_105([10005.0f], 4.0f);
+    ins_400([10004.0f], [10005.0f], 0.0f);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], -16.0f);
+    ins_105([10005.0f], 16.0f);
+    ins_407(10, 0, [10004.0f], [10005.0f], 0.0f);
+    ins_402(0.5f, 0.5f);
+    ins_412(10, 1, 0.0f, 0.0f);
++10: // 10
+    ins_1();
+}
+
+script script9 {
+    ins_304(9);
+    ins_302(0);
+    ins_303(1);
+    ins_301(sprite16, 8);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 8.0f);
+    ins_105([10005.0f], 4.0f);
+    ins_400([10004.0f], [10005.0f], 0.0f);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 16.0f);
+    ins_103([10005.0f], 16.0f);
+    ins_407(10, 0, [10004.0f], [10005.0f], 0.0f);
+    ins_402(0.5f, 0.5f);
+    ins_412(10, 1, 0.0f, 0.0f);
++10: // 10
+    ins_1();
+}
+
+script script10 {
+    ins_304(9);
+    ins_302(0);
+    ins_402(0.0f, 0.0f);
+    ins_412(6, 4, 3.0f, 3.0f);
+    ins_300(sprite16);
++3: // 3
+    ins_300(sprite17);
++3: // 6
+    ins_300(sprite18);
+    ins_412(12, 1, 1.0f, 1.0f);
++3: // 9
+    ins_300(sprite19);
++3: // 12
+    ins_300(sprite20);
+offset148:
+    ins_300(sprite16);
+    ins_504(script8);
++1: // 13
+    ins_504(script8);
++1: // 14
+    ins_504(script8);
++1: // 15
+    ins_300(sprite17);
+    ins_504(script8);
++1: // 16
+    ins_504(script8);
++1: // 17
+    ins_504(script8);
++1: // 18
+    ins_300(sprite18);
+    ins_504(script8);
++1: // 19
+    ins_504(script8);
++1: // 20
+    ins_504(script8);
++1: // 21
+    ins_300(sprite19);
+    ins_504(script8);
++1: // 22
+    ins_504(script8);
++1: // 23
+    ins_504(script8);
++1: // 24
+    ins_300(sprite20);
+    ins_412(12, 1, 1.0f, 1.0f);
+    ins_504(script8);
++1: // 25
+    ins_504(script8);
++1: // 26
+    ins_504(script8);
++1: // 27
+    ins_300(sprite21);
+    ins_504(script8);
++1: // 28
+    ins_504(script8);
++1: // 29
+    ins_504(script8);
++1: // 30
+    ins_300(sprite22);
+    ins_504(script8);
++1: // 31
+    ins_504(script8);
++1: // 32
+    ins_504(script8);
++1: // 33
+    ins_300(sprite23);
+    ins_504(script8);
++1: // 34
+    ins_504(script8);
++1: // 35
+    ins_504(script8);
++1: // 36
+    ins_200(offset148, 12);
+}
+
+script script11 {
+    ins_304(9);
+    ins_302(0);
+    ins_402(0.0f, 0.0f);
+    ins_412(6, 4, 2.0f, 2.0f);
+    ins_300(sprite16);
++3: // 3
+    ins_300(sprite17);
++3: // 6
+    ins_300(sprite18);
+    ins_412(6, 1, 1.0f, 1.0f);
++3: // 9
+    ins_300(sprite19);
++3: // 12
+    ins_300(sprite20);
+offset148:
+    ins_300(sprite16);
+    ins_504(script9);
++1: // 13
+    ins_504(script9);
++1: // 14
+    ins_504(script9);
++1: // 15
+    ins_300(sprite17);
+    ins_504(script9);
++1: // 16
+    ins_504(script9);
++1: // 17
+    ins_504(script9);
++1: // 18
+    ins_300(sprite18);
+    ins_504(script9);
++1: // 19
+    ins_504(script9);
++1: // 20
+    ins_504(script9);
++1: // 21
+    ins_300(sprite19);
+    ins_504(script9);
++1: // 22
+    ins_504(script9);
++1: // 23
+    ins_504(script9);
++1: // 24
+    ins_300(sprite20);
+    ins_412(12, 1, 1.0f, 1.0f);
+    ins_504(script9);
++1: // 25
+    ins_504(script9);
++1: // 26
+    ins_504(script9);
++1: // 27
+    ins_300(sprite21);
+    ins_504(script9);
++1: // 28
+    ins_504(script9);
++1: // 29
+    ins_504(script9);
++1: // 30
+    ins_300(sprite22);
+    ins_504(script9);
++1: // 31
+    ins_504(script9);
++1: // 32
+    ins_504(script9);
++1: // 33
+    ins_300(sprite23);
+    ins_504(script9);
++1: // 34
+    ins_504(script9);
++1: // 35
+    ins_504(script9);
++1: // 36
+    ins_200(offset148, 12);
+}
+
+script script12 {
+    ins_304(9);
+    ins_302(0);
+    ins_303(1);
+    ins_301(sprite24, 8);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 8.0f);
+    ins_105([10005.0f], 4.0f);
+    ins_400([10004.0f], [10005.0f], 0.0f);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], -16.0f);
+    ins_105([10005.0f], 16.0f);
+    ins_407(10, 0, [10004.0f], [10005.0f], 0.0f);
+    ins_402(0.5f, 0.5f);
+    ins_412(10, 1, 0.0f, 0.0f);
++10: // 10
+    ins_1();
+}
+
+script script13 {
+    ins_304(9);
+    ins_302(0);
+    ins_303(1);
+    ins_301(sprite24, 8);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 8.0f);
+    ins_105([10005.0f], 4.0f);
+    ins_400([10004.0f], [10005.0f], 0.0f);
+    ins_117([10004.0f], [10012.0f], 8.0f);
+    ins_117([10005.0f], [10011.0f], 16.0f);
+    ins_103([10005.0f], 16.0f);
+    ins_407(10, 0, [10004.0f], [10005.0f], 0.0f);
+    ins_402(0.5f, 0.5f);
+    ins_412(10, 1, 0.0f, 0.0f);
++10: // 10
+    ins_1();
+}
+
+script script14 {
+    ins_304(9);
+    ins_302(0);
+    ins_402(0.0f, 0.0f);
+    ins_412(6, 4, 3.0f, 3.0f);
+    ins_300(sprite24);
++3: // 3
+    ins_300(sprite25);
++3: // 6
+    ins_300(sprite26);
+    ins_412(12, 1, 1.0f, 1.0f);
++3: // 9
+    ins_300(sprite27);
++3: // 12
+    ins_300(sprite28);
+offset148:
+    ins_300(sprite24);
+    ins_504(script12);
++1: // 13
+    ins_504(script12);
++1: // 14
+    ins_504(script12);
++1: // 15
+    ins_300(sprite25);
+    ins_504(script12);
++1: // 16
+    ins_504(script12);
++1: // 17
+    ins_504(script12);
++1: // 18
+    ins_300(sprite26);
+    ins_504(script12);
++1: // 19
+    ins_504(script12);
++1: // 20
+    ins_504(script12);
++1: // 21
+    ins_300(sprite27);
+    ins_504(script12);
++1: // 22
+    ins_504(script12);
++1: // 23
+    ins_504(script12);
++1: // 24
+    ins_300(sprite28);
+    ins_412(12, 1, 1.0f, 1.0f);
+    ins_504(script12);
++1: // 25
+    ins_504(script12);
++1: // 26
+    ins_504(script12);
++1: // 27
+    ins_300(sprite29);
+    ins_504(script12);
++1: // 28
+    ins_504(script12);
++1: // 29
+    ins_504(script12);
++1: // 30
+    ins_300(sprite30);
+    ins_504(script12);
++1: // 31
+    ins_504(script12);
++1: // 32
+    ins_504(script12);
++1: // 33
+    ins_300(sprite31);
+    ins_504(script12);
++1: // 34
+    ins_504(script12);
++1: // 35
+    ins_504(script12);
++1: // 36
+    ins_200(offset148, 12);
+}
+
+script script15 {
+    ins_304(9);
+    ins_302(0);
+    ins_402(0.0f, 0.0f);
+    ins_412(6, 4, 2.0f, 2.0f);
+    ins_300(sprite24);
++3: // 3
+    ins_300(sprite25);
++3: // 6
+    ins_300(sprite26);
+    ins_412(6, 1, 1.0f, 1.0f);
++3: // 9
+    ins_300(sprite27);
++3: // 12
+    ins_300(sprite28);
+offset148:
+    ins_300(sprite24);
+    ins_504(script13);
++1: // 13
+    ins_504(script13);
++1: // 14
+    ins_504(script13);
++1: // 15
+    ins_300(sprite25);
+    ins_504(script13);
++1: // 16
+    ins_504(script13);
++1: // 17
+    ins_504(script13);
++1: // 18
+    ins_300(sprite26);
+    ins_504(script13);
++1: // 19
+    ins_504(script13);
++1: // 20
+    ins_504(script13);
++1: // 21
+    ins_300(sprite27);
+    ins_504(script13);
++1: // 22
+    ins_504(script13);
++1: // 23
+    ins_504(script13);
++1: // 24
+    ins_300(sprite28);
+    ins_412(12, 1, 1.0f, 1.0f);
+    ins_504(script13);
++1: // 25
+    ins_504(script13);
++1: // 26
+    ins_504(script13);
++1: // 27
+    ins_300(sprite29);
+    ins_504(script13);
++1: // 28
+    ins_504(script13);
++1: // 29
+    ins_504(script13);
++1: // 30
+    ins_300(sprite30);
+    ins_504(script13);
++1: // 31
+    ins_504(script13);
++1: // 32
+    ins_504(script13);
++1: // 33
+    ins_300(sprite31);
+    ins_504(script13);
++1: // 34
+    ins_504(script13);
++1: // 35
+    ins_504(script13);
++1: // 36
+    ins_200(offset148, 12);
+}
+
+script script16 {
+    ins_300(-1);
+    ins_304(6);
+    ins_403(0);
+    ins_500(script17);
+    ins_500(script18);
+    ins_3();
+    ins_5(1);
++20: // 20
+    ins_1();
+}
+
+script script17 {
+    ins_300(-1);
+    ins_304(6);
+    ins_604(1.0f, 22);
+    ins_404(255, 128, 64);
+    ins_406(0, 0, 0);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(1);
+    ins_405(220);
+    ins_402(1.0f, 1.0f);
+    ins_3();
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 10
+    ins_1();
+}
+
+script script18 {
+    ins_300(-1);
+    ins_304(6);
+    ins_303(1);
+    ins_604(1.0f, 22);
+    ins_404(255, 128, 128);
+    ins_406(0, 0, 0);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(1);
+    ins_405(240);
+    ins_402(1.1f, 1.1f);
+    ins_3();
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 10
+    ins_1();
+}
+
+script script19 {
+    ins_300(-1);
+    ins_304(28);
+    ins_403(0);
+    ins_500(script21);
+    ins_500(script20);
+    ins_402(0.75f, 0.75f);
+    ins_3();
+    ins_5(1);
++10: // 10
+    ins_1();
+}
+
+script script20 {
+    ins_300(-1);
+    ins_304(28);
+    ins_303(2);
+    ins_604(1.0f, 12);
+    ins_404(128, 128, 255);
+    ins_406(64, 64, 64);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(200);
+    ins_405(40);
+    ins_402(13.0f, 13.0f);
+offset152:
+    ins_412(20, 0, 14.0f, 14.0f);
++20: // 20
+    ins_412(20, 0, 12.0f, 12.0f);
++20: // 40
+    ins_200(offset152, 0);
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 50
+    ins_1();
+}
+
+script script21 {
+    ins_300(-1);
+    ins_304(28);
+    ins_303(1);
+    ins_604(1.0f, 12);
+    ins_404(192, 192, 255);
+    ins_406(128, 128, 128);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(255);
+    ins_405(0);
+    ins_402(20.0f, 20.0f);
+offset152:
+    ins_412(20, 0, 18.0f, 18.0f);
++20: // 20
+    ins_412(20, 0, 22.0f, 22.0f);
++20: // 40
+    ins_200(offset152, 0);
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 50
+    ins_1();
+}
+
+script script22 {
+    ins_300(-1);
+    ins_304(28);
+    ins_403(0);
+    ins_500(script24);
+    ins_500(script23);
+    ins_402(0.75f, 0.75f);
+    ins_3();
+    ins_5(1);
++10: // 10
+    ins_1();
+}
+
+script script23 {
+    ins_300(-1);
+    ins_304(28);
+    ins_303(2);
+    ins_604(1.0f, 12);
+    ins_404(255, 128, 64);
+    ins_406(128, 64, 64);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(200);
+    ins_405(40);
+    ins_402(13.0f, 13.0f);
+offset152:
+    ins_412(20, 0, 14.0f, 14.0f);
++20: // 20
+    ins_412(20, 0, 12.0f, 12.0f);
++20: // 40
+    ins_200(offset152, 0);
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 50
+    ins_1();
+}
+
+script script24 {
+    ins_300(-1);
+    ins_304(28);
+    ins_303(1);
+    ins_604(1.0f, 12);
+    ins_404(255, 192, 192);
+    ins_406(255, 0, 0);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(255);
+    ins_405(0);
+    ins_402(20.0f, 20.0f);
+offset152:
+    ins_412(20, 0, 18.0f, 18.0f);
++20: // 20
+    ins_412(20, 0, 22.0f, 22.0f);
++20: // 40
+    ins_200(offset152, 0);
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 50
+    ins_1();
+}
+
+script script25 {
+    ins_300(-1);
+    ins_304(28);
+    ins_403(0);
+    ins_500(script27);
+    ins_500(script26);
+    ins_402(0.75f, 0.75f);
+    ins_3();
+    ins_5(1);
++10: // 10
+    ins_1();
+}
+
+script script26 {
+    ins_300(-1);
+    ins_304(28);
+    ins_303(2);
+    ins_604(1.0f, 12);
+    ins_404(255, 32, 224);
+    ins_406(64, 128, 64);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(200);
+    ins_405(40);
+    ins_402(13.0f, 13.0f);
+offset152:
+    ins_412(20, 0, 14.0f, 14.0f);
++20: // 20
+    ins_412(20, 0, 12.0f, 12.0f);
++20: // 40
+    ins_200(offset152, 0);
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 50
+    ins_1();
+}
+
+script script27 {
+    ins_300(-1);
+    ins_304(28);
+    ins_303(1);
+    ins_604(1.0f, 12);
+    ins_404(192, 255, 192);
+    ins_406(0, 255, 0);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(255);
+    ins_405(0);
+    ins_402(20.0f, 20.0f);
+offset152:
+    ins_412(20, 0, 18.0f, 18.0f);
++20: // 20
+    ins_412(20, 0, 22.0f, 22.0f);
++20: // 40
+    ins_200(offset152, 0);
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 50
+    ins_1();
+}
+
+script script28 {
+    ins_300(-1);
+    ins_304(28);
+    ins_403(0);
+    ins_500(script30);
+    ins_500(script29);
+    ins_402(0.75f, 0.75f);
+    ins_3();
+    ins_5(1);
++10: // 10
+    ins_1();
+}
+
+script script29 {
+    ins_300(-1);
+    ins_304(28);
+    ins_303(2);
+    ins_604(1.0f, 12);
+    ins_404(64, 255, 64);
+    ins_406(128, 128, 128);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(200);
+    ins_405(40);
+    ins_402(13.0f, 13.0f);
+offset152:
+    ins_412(20, 0, 14.0f, 14.0f);
++20: // 20
+    ins_412(20, 0, 12.0f, 12.0f);
++20: // 40
+    ins_200(offset152, 0);
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 50
+    ins_1();
+}
+
+script script30 {
+    ins_300(-1);
+    ins_304(28);
+    ins_303(1);
+    ins_604(1.0f, 12);
+    ins_404(255, 128, 255);
+    ins_406(192, 0, 192);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(255);
+    ins_405(0);
+    ins_402(20.0f, 20.0f);
+offset152:
+    ins_412(20, 0, 18.0f, 18.0f);
++20: // 20
+    ins_412(20, 0, 22.0f, 22.0f);
++20: // 40
+    ins_200(offset152, 0);
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 50
+    ins_1();
+}
+
+script script31 {
+    ins_300(-1);
+    ins_304(28);
+    ins_313(0);
+    ins_604(1.0f, 16);
+    ins_404(192, 192, 255);
+    ins_406(0, 0, 255);
+    ins_415(0.017453292f, 0.0f, 0.017453292f);
+    ins_403(200);
+    ins_405(200);
+    ins_402(16.0f, 16.0f);
+    ins_3();
+    ins_5(1);
+    ins_409(10, 0, 0);
+    ins_414(10, 0, 0);
++10: // 10
+    ins_1();
+}
+
+

@@ -1,0 +1,6 @@
+scripts/recovered/ecl\st01bs.ecl.txt:894:    ins_612(0, 0, 13, 1, 8, 1, 1, 4000000.0f, 0.0f, 1.0f, 1.0f);
+scripts/recovered/ecl\st04bs.ecl.txt:556:    ins_610(0, 4, 0, 13, 8, 8, 4, 1, -9999994.0f, 0.7853982f, 0.0f, 0.5f);
+scripts/recovered/ecl\st04bs.ecl.txt:901:    ins_610(0, 4, 1, 13, 8, 8, 1, 1, -9999994.0f, 0.7853982f, -1.0f, -0.5f);
+scripts/recovered/ecl\st05bs.ecl.txt:1122:    ins_711(0);
+scripts/recovered/ecl\st07mbs.ecl.txt:215:    ins_610(0, 5, 1, 13, 8, 8, 1, 1, -9999994.0f, 0.7853982f, -1.0f, -0.5f);
+scripts/recovered/ecl\st07mbs.ecl.txt:309:    ins_711(0);

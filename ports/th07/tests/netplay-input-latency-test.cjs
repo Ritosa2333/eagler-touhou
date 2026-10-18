@@ -1,0 +1,21 @@
+const assert = require('node:assert/strict');
+require('./netplay-input-latency-probe.cjs');
+let now = 1000;
+const probe = globalThis.installNetplayInputLatencyProbe(() => now);
+probe.receive({type:'move', testIssuedAt:998});
+now = 1004; probe.capture(10, 16, true);
+now = 1104; probe.simulate(16);
+now = 1106; probe.present(16, 900);
+assert.equal(probe.finish().samples.length, 0, 'simulation frame is next-frame index');
+probe.present(17, 900);
+assert.deepEqual(probe.finish().samples[0], {frame:16, delayFrames:6, deliveryMs:2,
+  samplingMs:4, scheduleMs:100, presentationMs:2, eventToPresentMs:108, bullets:900});
+probe.simulate(16); probe.present(18, 900);
+assert.equal(probe.finish().samples.length,1,'replay must not double-count latency');
+now=1200; probe.receive({type:'move',testIssuedAt:1199});
+probe.capture(20,20,false);
+assert.equal(probe.finish().pendingEvents,1,'zero-motion hold does not consume touch events');
+probe.capture(20,20,true); probe.simulate(20); probe.present(21,900);
+assert.equal(probe.finish().samples[1].delayFrames,0);
+assert.equal(probe.finish().samples[1].eventToPresentMs,1);
+console.log('PASS latency decomposition, delayed/zero schedules and once-only presentation');

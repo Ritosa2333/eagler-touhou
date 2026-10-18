@@ -1,0 +1,57 @@
+{
+  "source_url": "https://github.com/thpatch/thtk",
+  "revision": "892114a0fcaa0bbdaaecf3cb4ad56f758683fb40",
+  "patch_path": "tools/asset_thtk_th20.patch",
+  "patch_sha256": "176de303ae10cf4bd88ca206dbebb020ac88ae3c5154ad1806d4fb5c48fa6ae8",
+  "modified_files": [
+    {
+      "path": "thecl/ecsparse.y",
+      "upstream_sha256": "68b138b2d8d6128df85ad8c72ac3cb64778f4abc583bac3bd956938859b143ba",
+      "patched_worktree_sha256": "bf0f33a05b572e2946b78fb52f8a0fceb05c8ebe6f4560c2041f93e25e5dedd3"
+    },
+    {
+      "path": "thmsg/thmsg06.c",
+      "upstream_sha256": "89540a277a9e29fbabb0d11960c36dd67a4330bc56a0bf8e5db4fb7fdfc0fc54",
+      "patched_worktree_sha256": "32a99006afbdf43c73fc709dc91f14f34f6b708e54b794727bcfc67ff8e96932"
+    },
+    {
+      "path": "thstd/thstd.c",
+      "upstream_sha256": "dcd48165df26490c012f40f109e5c8311be3a2e838ea47e97a51e84d33c74ff4",
+      "patched_worktree_sha256": "7c00d26781f623cf5eefd84af6ed489c5732999255bcd5e1400014cc71c54d7e"
+    },
+    {
+      "path": "thstd/thstd.h",
+      "upstream_sha256": "dd09c051289210a81a4d7a242460fe078625d434f01ed0d1a646706b56eeb2dd",
+      "patched_worktree_sha256": "f51c1d7a50083413ff32d868890ae46f301bcb5b19d5232286f3d9da927b7001"
+    }
+  ],
+  "submodules": " f5e92d76973a7a53f517579bc95d61483bf108c0 extlib/libpng (f5e92d7)\n 29ed7d6e1db555ad15fd29edcc0763754ad5b764 extlib/thtypes (heads/master)\n c939498c7f2a1d645833a98251365e2c814fd736 extlib/zlib-ng (c939498)\n",
+  "tool_executables": [
+    {
+      "path": "third_party\\thtk\\build\\thdat\\Release\\thdat.exe",
+      "sha256": "1ecf28af386723af9c515840943f70d476e7cc4721412a6c9be2ebf023fe21b2"
+    },
+    {
+      "path": "third_party\\thtk\\build\\thecl\\Release\\thecl.exe",
+      "sha256": "fc4def26f4abe9457a72ac64749a85ac743d88069750f6075fbf8d8c4404b0c0"
+    },
+    {
+      "path": "third_party\\thtk\\build\\thanm\\Release\\thanm.exe",
+      "sha256": "c8397599823809966d44a5092e450b8ad3a69318ed6394e8f9b1de82b8b9cf04"
+    },
+    {
+      "path": "third_party\\thtk\\build\\thmsg\\Release\\thmsg.exe",
+      "sha256": "8fd4320c3f54f625c77c9c1543ea7befc1c73343128e0d313219f45dfbf0a2c5"
+    },
+    {
+      "path": "third_party\\thtk\\build\\thstd\\Release\\thstd.exe",
+      "sha256": "28410c09a03430cf8a8ffe23723a10ed60f2b84ffa506739dc99d0f8a6570aea"
+    },
+    {
+      "path": "tools\\asset_index\\build\\Release\\asset_extract_index.exe",
+      "sha256": "ea40c1579bfaae27fb54008c5c6835684c01b5cb55da19a9fd5a25db3274f3e9"
+    }
+  ],
+  "patch_clean_apply_verified": true,
+  "patched_build_script_rerun_verified": true
+}

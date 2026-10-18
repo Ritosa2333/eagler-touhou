@@ -1,0 +1,42 @@
+{
+  "schema": "th09/mobile-rollback-validation-addendum/1",
+  "declaredAt": "2026-10-11",
+  "timing": "Before the first mobile browser gate or performance run; component and build checks only have executed.",
+  "originalPlan": "rollback-mobile-validation-plan.json",
+  "clarifications": {
+    "fingerCoverage": "The primary profile uses one continuously moving pointer plus concurrent touch auto-fire/focus controls. It does not exercise an actual second pointer or the Launcher two-finger owner. Real multi-pointer gesture/lifecycle acceptance remains pending.",
+    "inputRoute": "The new workload submits via public native touch ABI. It does not use DOM PointerEvent dispatch, Launcher __eaglerDirectInputBridge or TH09 managed postMessage queue.",
+    "responseClaim": "Report conditional changed-wire-to-render-progress association and all due/future-censored source events. A changed field after the latest event is not proof of that event causing a pixel change; game readiness, focus speed, collision/death and clipping are retained context.",
+    "cpuScope": "The manual three-world gate uses one shared renderer at CPU4, including the exact reference. The independent-browser performance runs use rates [1,4].",
+    "bodyPolicy": "Keep continuous prediction-frontier windows and endpoint observations. Publish sampledAt intervals separately from RAF timestamps and keep startup/tail/longest gap.",
+    "baselineScope": "Old E diagnostic and release builds remain the controls. Wall-clock actual input tape may differ across runs even with identical source plans; within-run confirmed agreement is mandatory."
+  },
+  "builds": {
+    "baselineRelease": {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-release",
+      "wasm": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577"
+    },
+    "baselineDiagnostic": {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-live",
+      "wasm": "59364fa88a9a23913fe2d808ae6e303790dcb1c1533f5e4d4e5893d14fde4877"
+    },
+    "candidateRelease": {
+      "path": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched",
+      "wasm": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
+    },
+    "candidateDiagnostic": {
+      "path": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-live-matched",
+      "wasm": "f0fe104e03cf4c10617c16c8c08897784a83b02d5e8eeeabf8c2ee1e7e9e58cb"
+    },
+    "identityGate": "rollback-mobile-build-matched-evidence.json: 275 native input files, 274 identical, only RollbackSession.cpp changed. Exact header bytes restored after first comparison detected checkout line endings. First builds/failed comparison retained; both final Wasm digests equal initial candidate Wasm digests."
+  },
+  "deviceAvailability": {
+    "observed": "Existing ADB reports one connected TYH212U/ARES device",
+    "commands": [
+      "xnNbZ1IBWcN6NtbI8MH3M6hI",
+      "HQbQe5JLt_14wmAoWlPUy4NB"
+    ],
+    "operations": "Read-only command discovery and device inventory. No forward, browser session takeover, app installation, device setting or UI change.",
+    "acceptance": "No real phone run has been performed in this phase."
+  }
+}

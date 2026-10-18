@@ -1,0 +1,454 @@
+{
+  "schemaVersion": 1,
+  "kind": "th09-source-only-network-pacing-contract",
+  "scope": {
+    "workspace": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+    "commonWorkspace": "D:/workspace/eagler/worktrees/th09-rollback-input-batch-common",
+    "sourcePathBase": "workspace; ../th09-rollback-input-batch-common resolves to commonWorkspace",
+    "candidate": "B scalar release; mode Rollback(0), inputDelay 0",
+    "intendedObservation": {
+      "cpuRates": [
+        1,
+        4
+      ],
+      "transport": "independent relay process",
+      "oneWayDelayMs": 125,
+      "jitterMs": 5,
+      "frames": 1800,
+      "inputClock": "wall-clock",
+      "responsiveness": true
+    },
+    "runtimeResultIncluded": false,
+    "operations": "仅通过 nig 读取现代 authored C++ / JS、冻结构建清单及 SHA；本证据不运行游戏、测试、浏览器、编译或性能测量。",
+    "limitation": "计划的延迟不是实测包延迟，不预先推定实际预测或恢复深度。D0 本身不能替代 mode==Rollback 的检查。"
+  },
+  "identity": {
+    "build": {
+      "path": "th09_web/artifacts/rollback4x-chain-input-batch-release/build.json",
+      "bytes": 87045,
+      "sha256": "20eb7b45a3eb6bcd1fc6c726a96e9ece972a82736b85ae379529edfcae0928fd",
+      "kind": "th09-native-web-release-candidate",
+      "wasmSha256": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97",
+      "wasmBytes": 2827629,
+      "audioSimd": false
+    },
+    "sourceMatchCount": 13,
+    "matched": [
+      {
+        "path": "th09_web/cpp/sdl/Application.cpp",
+        "bytes": 87130,
+        "manifestSha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
+        "actualSha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
+        "match": true
+      },
+      {
+        "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+        "bytes": 15088,
+        "manifestSha256": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
+        "actualSha256": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
+        "match": true
+      },
+      {
+        "path": "../th09-rollback-input-batch-common/src/netplay/NetplayCore.cpp",
+        "bytes": 21580,
+        "manifestSha256": "da1ccd45031cc6ddb8702e9357b031fa2bbb38754b9382f3dadab69f963c90b0",
+        "actualSha256": "da1ccd45031cc6ddb8702e9357b031fa2bbb38754b9382f3dadab69f963c90b0",
+        "match": true
+      },
+      {
+        "path": "../th09-rollback-input-batch-common/src/netplay/SessionChannel.cpp",
+        "bytes": 23964,
+        "manifestSha256": "29c6e89b7ba7a4be8bcc6bd359b7600005440bded3e6d44722e942e4407692a1",
+        "actualSha256": "29c6e89b7ba7a4be8bcc6bd359b7600005440bded3e6d44722e942e4407692a1",
+        "match": true
+      },
+      {
+        "path": "portable/sdl/FrameCadence.hpp",
+        "bytes": 610,
+        "manifestSha256": "d475dd64d34b68178c1da18b27e46f46476363946179aa156554df15f37702d6",
+        "actualSha256": "d475dd64d34b68178c1da18b27e46f46476363946179aa156554df15f37702d6",
+        "match": true
+      },
+      {
+        "path": "th09_web/cpp/multiplayer/FrameSchedule.hpp",
+        "bytes": 1053,
+        "manifestSha256": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
+        "actualSha256": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
+        "match": true
+      },
+      {
+        "path": "th09_web/cpp/multiplayer/RollbackSession.hpp",
+        "bytes": 5390,
+        "manifestSha256": "b344877fe772c6a030707970db35a77f1d4432e7ef5b17d78501778ed255f978",
+        "actualSha256": "b344877fe772c6a030707970db35a77f1d4432e7ef5b17d78501778ed255f978",
+        "match": true
+      },
+      {
+        "path": "../th09-rollback-input-batch-common/include/eagler/netplay/FrameAdvantageWindow.hpp",
+        "bytes": 1219,
+        "manifestSha256": "72af20efcf0d6317ee817a5538f4009cd7acf3977565b0087663a958bb6493d1",
+        "actualSha256": "72af20efcf0d6317ee817a5538f4009cd7acf3977565b0087663a958bb6493d1",
+        "match": true
+      },
+      {
+        "path": "../th09-rollback-input-batch-common/include/eagler/netplay/FramePacingPolicy.hpp",
+        "bytes": 2150,
+        "manifestSha256": "60efd7cfb63aff9df2e906beb2ba8088c650b53853a7e75453a8dff151df8f97",
+        "actualSha256": "60efd7cfb63aff9df2e906beb2ba8088c650b53853a7e75453a8dff151df8f97",
+        "match": true
+      },
+      {
+        "path": "../th09-rollback-input-batch-common/include/eagler/netplay/NetplayCore.hpp",
+        "bytes": 7816,
+        "manifestSha256": "10a4d1d323a2ae5796fb57857bd36801de2c721d89d173cfe0298940aee88b2b",
+        "actualSha256": "10a4d1d323a2ae5796fb57857bd36801de2c721d89d173cfe0298940aee88b2b",
+        "match": true
+      },
+      {
+        "path": "../th09-rollback-input-batch-common/include/eagler/netplay/PendingFrameSchedule.hpp",
+        "bytes": 848,
+        "manifestSha256": "6e99f7c74d70936c061e079b2f7b028cf342d93ee55ba355ea9e53240e3ef67e",
+        "actualSha256": "6e99f7c74d70936c061e079b2f7b028cf342d93ee55ba355ea9e53240e3ef67e",
+        "match": true
+      },
+      {
+        "path": "../th09-rollback-input-batch-common/include/eagler/netplay/SessionChannel.hpp",
+        "bytes": 6175,
+        "manifestSha256": "2651afcdc9b3d2b54cc231a4ed82d5587317247226c999aac811f79d56642e29",
+        "actualSha256": "2651afcdc9b3d2b54cc231a4ed82d5587317247226c999aac811f79d56642e29",
+        "match": true
+      },
+      {
+        "path": "../th09-rollback-input-batch-common/include/eagler/netplay/SessionPacing.hpp",
+        "bytes": 1699,
+        "manifestSha256": "f02778ad8611438fdaeb6cfdb599fb2a30f66214ed603a83820eb45a022e3045",
+        "actualSha256": "f02778ad8611438fdaeb6cfdb599fb2a30f66214ed603a83820eb45a022e3045",
+        "match": true
+      }
+    ],
+    "support": [
+      {
+        "path": "th09_web/tests/multiplayer/session.cpp",
+        "bytes": 20117,
+        "sha256": "70426136949591040a848668c5c0877b2bcb9f016dbfbd80c15db95d57cfa8bf"
+      },
+      {
+        "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+        "bytes": 55655,
+        "sha256": "8c94c92453556670e9e748d3aca9edaf6b09402254e9864e80320b1b461f2f51"
+      }
+    ]
+  },
+  "anchors": [
+    {
+      "path": "th09_web/cpp/multiplayer/RollbackSession.hpp",
+      "lines": [
+        11,
+        11
+      ],
+      "supports": "History=8"
+    },
+    {
+      "path": "th09_web/cpp/multiplayer/RollbackSession.hpp",
+      "lines": [
+        40,
+        48
+      ],
+      "supports": "Frame、PredictionFrontier、actual frontier 和 missing-input getters"
+    },
+    {
+      "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "lines": [
+        21,
+        65
+      ],
+      "supports": "Configure/Clear: mode、8帧窗口、预测按钮/方向、网络状态复位"
+    },
+    {
+      "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "lines": [
+        96,
+        152
+      ],
+      "supports": "实际输入缺口、目标及斜率、effective scale、PacedElapsedMs、Pump后更新"
+    },
+    {
+      "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "lines": [
+        193,
+        254
+      ],
+      "supports": "采样一次、Prepare/Complete/Restored、公开 confirmed 的恢复期保护"
+    },
+    {
+      "path": "../th09-rollback-input-batch-common/src/netplay/NetplayCore.cpp",
+      "lines": [
+        216,
+        315
+      ],
+      "supports": "连续 actual frontier、方向预测、8帧硬边界"
+    },
+    {
+      "path": "../th09-rollback-input-batch-common/include/eagler/netplay/SessionChannel.hpp",
+      "lines": [
+        17,
+        27
+      ],
+      "supports": "默认 receiveBudget=256；TH09 不改该值"
+    },
+    {
+      "path": "../th09-rollback-input-batch-common/src/netplay/SessionChannel.cpp",
+      "lines": [
+        286,
+        370
+      ],
+      "supports": "先验证并应用输入；仅较新合法包可更新 phase pacing"
+    },
+    {
+      "path": "../th09-rollback-input-batch-common/src/netplay/SessionChannel.cpp",
+      "lines": [
+        415,
+        447
+      ],
+      "supports": "收包、retirement/control、普通输入发送路径的 Pump 顺序"
+    },
+    {
+      "path": "../th09-rollback-input-batch-common/include/eagler/netplay/SessionPacing.hpp",
+      "lines": [
+        14,
+        35
+      ],
+      "supports": "重复 senderFrame 不参与 phase 采样"
+    },
+    {
+      "path": "../th09-rollback-input-batch-common/include/eagler/netplay/FramePacingPolicy.hpp",
+      "lines": [
+        14,
+        51
+      ],
+      "supports": "phase scale 0.98..1.02、0.5帧死区、0.08平滑"
+    },
+    {
+      "path": "../th09-rollback-input-batch-common/include/eagler/netplay/FrameAdvantageWindow.hpp",
+      "lines": [
+        10,
+        40
+      ],
+      "supports": "64样本窗口，至少20样本，截尾均值"
+    },
+    {
+      "path": "th09_web/cpp/sdl/Application.cpp",
+      "lines": [
+        379,
+        410
+      ],
+      "supports": "只读导出及独立 timer Pump"
+    },
+    {
+      "path": "th09_web/cpp/sdl/Application.cpp",
+      "lines": [
+        437,
+        440
+      ],
+      "supports": "8项 rollback_info 与 normalized confirmed"
+    },
+    {
+      "path": "th09_web/cpp/sdl/Application.cpp",
+      "lines": [
+        480,
+        578
+      ],
+      "supports": "先收包/早采样/flush，再恢复及重演；8ms内部软预算"
+    },
+    {
+      "path": "th09_web/cpp/sdl/Application.cpp",
+      "lines": [
+        610,
+        645
+      ],
+      "supports": "入口 elapsed/scale、cadence retry、10ms外层预算、末尾音频"
+    },
+    {
+      "path": "th09_web/cpp/multiplayer/FrameSchedule.hpp",
+      "lines": [
+        1,
+        27
+      ],
+      "supports": "blocked 后保留 retry，不累加整帧旧债；exhausted 条件复位"
+    },
+    {
+      "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "lines": [
+        425,
+        443
+      ],
+      "supports": "原 samples 及 callback末尾 networkPacing 导出位置"
+    },
+    {
+      "path": "th09_web/tests/multiplayer/session.cpp",
+      "lines": [
+        268,
+        347
+      ],
+      "supports": "既有有针对性的源码合同；此次只读，未执行测试"
+    }
+  ],
+  "definitions": {
+    "next": "RollbackSession::Frame()/next_：当前执行位置，即下一逻辑帧；在 Restore 后可低于此前预测前沿。",
+    "F": "PredictionFrontier() = max(next_, replayEnd_)，exclusive；Restore 不令旧预测前沿回退。",
+    "A": "RemoteInputFrontier()：core.ConfirmedThroughAllRemotes()+1；INVALID_FRAME 映射为0。仅连续、已接受的远端实际输入推进；乱序收到更后面的帧不能跨过洞。",
+    "B": "MissingRemoteInputs() = max(F-A,0)。表示已推进历史中仍缺连续远端实际输入的帧数。",
+    "R": "可由同一回调末尾 F-next 推导部分重演欠账；这是正在追赶的帧数，不是这次校正的原始总深度。",
+    "publicConfirmed": "rollback_info[1] 为已发布前沿与已安全确认帧的归一化结果。待校正或未完成 replay 时 ConfirmedThrough() 返回 INVALID，再使用 published；不能拿它代替 A。",
+    "receivedBoundary": "A 只证明 Core 已接受到连续输入；不能证明 OS/浏览器/JS 队列里无更多输入。SessionChannel 每次 Pump 至多 Poll 256 条消息。"
+  },
+  "prediction": {
+    "maxRollbackFrames": 8,
+    "allowPredictionForMode0": true,
+    "inputDelay": 0,
+    "directionPredictionFrames": 3,
+    "freshForwardGate": "当 next==F 时，待执行帧相对连续实际输入的 distance=B+1；超过8即不能前进。B=7允许再执行一帧到B=8；B=8禁止第9个未确认帧，即使该第9帧自己的输入已到而更早仍有洞。",
+    "replayGate": "Core 对 next 对应的当前执行帧检查窗口；F用于缺口制动，不能因 Restore 降低 next 就假装网络缺口消失。",
+    "sampling": "NeedsCapture 要求 Ready、next>=replayEnd 且本帧尚未 capture。生产 driver 在 Restore 前采样并发送一次；重演不重复采样。达到窗口而不能 Prepare 时，已采到的 frontier 输入仍保留。",
+    "outageBoundary": "有限8帧窗口与最多2倍间隔不能保证无限断网时持续产生新状态；信息长期不再前进最终必须等待。125±5ms不能单独推出实际恢复深度或校正次数。"
+  },
+  "networkPacing": {
+    "activation": "Ready && mode==Rollback && expectsInput；不满足时 networkIntervalScale=1，并更新 pace clock。",
+    "updateOrder": "成功 channel.Pump 收包/发送处理之后调用 UpdateNetworkPacing；独立 timer 的 th09_rollback_pump(false) 仍是完整收/发/repair Pump。",
+    "targetFormula": "1 + clamp((B-4)/3, 0, 1)",
+    "targets": [
+      {
+        "B": "0..4",
+        "target": 1
+      },
+      {
+        "B": 5,
+        "target": "4/3"
+      },
+      {
+        "B": 6,
+        "target": "5/3"
+      },
+      {
+        "B": ">=7",
+        "target": 2
+      }
+    ],
+    "rise": "elapsedMs/50，向上不越过当前 target；完整1到2至少需50ms被观察的前进时钟。",
+    "fall": "elapsedMs/150，向下不越过当前 target；若B保持<=4，从2到1最多需要150ms已观察的前进时钟，实际在之后的 Pump 才落实。",
+    "clock": "重复同一时刻 Pump 不增加升降额度；0时钟原点有效；倒退由上游 Channel ClockReversed 合同失败处理；Clear/Configure 重置。",
+    "cpuInputAbsent": "公式不读取 callback耗时、CPU限速值或 resimulated 计数。CPU慢但完整actual已在本次接收预算内应用时，不因next回退而新增网络制动。",
+    "residualBrake": "A>=F 后 netScale 可保留先前制动并缓降；此时 netScale>1 不是仍缺实际输入的证据。",
+    "originLimit": "B表征输入信息不足，不能独自区分网络传输慢、慢peer迟采样/迟发送、浏览器调度或未应用队列。",
+    "phasePacing": {
+      "range": [
+        0.98,
+        1.02
+      ],
+      "leadDeadbandFrames": 0.5,
+      "scalePerLeadFrame": 0.003,
+      "smoothingFactor": 0.08,
+      "windowSamples": 64,
+      "minimumSamples": 20,
+      "source": "仅经过验证的新序号且 senderFrame 前进的包，按本地/对端 frameAdvantage 推导 lead；这不是 B。"
+    },
+    "effective": "Ready且mode0且netScale>1时 max(channelPhaseScale,netScale)；其余直接channelPhaseScale。因此netScale=1时effective可低于1或略高于1。",
+    "adonis": "mode0 的 channel.TakeAdonisDelayMs() 返回0；PacedElapsedMs 中的 phaseDebtMs 不是CPU重演欠账。"
+  },
+  "scheduling": {
+    "entry": "Application rAF入口先用浏览器rAF timestamp 的相邻差计算delta；非retry时经过 PacedElapsedMs，再除以当时 IntervalScale 后传给 FrameSchedule。",
+    "retry": "已due但返回2的工作置retry；下个rAF尝试1个due tick，不要求再累积一个16.67ms间隔，也不再消费新的Adonis等待信用。该分支不能用60/effectiveScale直接推断实际推进速率。",
+    "innerBudgetMs": 8,
+    "innerBudgetStart": "rollback_tick 的计时在transport Pump前；完整 Restore 循环之后至少尝试一个可执行原子tick，再在历史重演tick后检查8ms。",
+    "innerBudgetLimit": "软预算，不是8ms callback上限；Restore、单个原子tick、随后的确认副作用及音频都能令整次调用超出。",
+    "outerBudgetMs": 10,
+    "outerBudget": "多个due tick的外层rAF循环在完整一次 th09_game_tick 后检查10ms；若尚有due tick未做才 exhausted/reset。末尾audio.pump仍执行。",
+    "noDebtEquivalence": "需分别命名：网络scale、phase/Adonis等待、cadence墙钟信用、R历史重演欠账；四者不能合并为同一种债务。",
+    "noDispatch": "回调未获得rAF派发与已经派发但等待实际输入是不同状态；pacing分支只能影响回调中是否推进，不能解释已request rAF本身为何长期没有派发。"
+  },
+  "observation": {
+    "export": "th09_network_pacing_info",
+    "exportColumns": [
+      "version",
+      "B",
+      "networkScaleMilli",
+      "effectiveScaleMilli",
+      "F",
+      "A"
+    ],
+    "version": 1,
+    "scaling": "scale导出按 uint32(scale*1000+0.5) 舍入；分析应容许0.001分辨率，不能从相同整数推断内部double完全不变。",
+    "reportField": "results[peer].measure.networkPacing",
+    "reportColumns": [
+      "sampleIndex",
+      "version",
+      "B",
+      "networkScaleMilli",
+      "effectiveScaleMilli",
+      "F",
+      "A"
+    ],
+    "prerequisites": "RAF_DIAGNOSTICS=1 且导出存在；否则数组可能为空，不能用公开confirmed补造A。",
+    "sampleColumns": {
+      "next": 3,
+      "publicConfirmed": 4,
+      "corrections": 5,
+      "resimulated": 6,
+      "captures": 7,
+      "repairs": 8,
+      "ready": 9,
+      "published": 10,
+      "present": 11,
+      "sessionPhase": 12,
+      "rafTimestamp": 13
+    },
+    "timing": "onGameFrame先play.frame，再更新输入/读取stats并push原samples，随后读取networkPacing。两次读取之间没有异步yield，但取样已在本回调fresh推进之后。",
+    "phaseMismatch": "该末尾观测不是入口计算 elapsed 使用的scale快照；本回调Pump可更新scale，之后fresh推进又可改变B。不得把末尾scale直接归给该回调全部执行时间。",
+    "publicPhase": "samples[12] 是 SessionPhase，不是内部 MatchScene；同epoch内才比较F/A/R及累加计数。",
+    "responsiveness": "wall-clock条件必须保留实际intent覆盖、未采到/未呈现及尾部；不能宣称与固定frame tape是同工作量。"
+  },
+  "interpretationRules": [
+    {
+      "observation": "B>4 且netScale正向靠近对应target",
+      "supported": "观察到actual输入缺口相关制动",
+      "notSupported": "仅由此认定网络或relay是根因；把制动解释成CPU优化"
+    },
+    {
+      "observation": "A>=F 且F>next，伴随resim计数推进",
+      "supported": "已知actual数据足够但历史重演尚未完成；可能仍有先前制动的衰减",
+      "notSupported": "从公开confirmed滞后认定仍缺包"
+    },
+    {
+      "observation": "F==next 且B==0",
+      "supported": "取样时没有可见的部分重演欠账或连续actual缺口",
+      "notSupported": "排除尚未Restore的pending correction、同回调已完成的重演、普通Update/Draw/audio成本或浏览器派发延迟"
+    },
+    {
+      "observation": "netScale==1，effective在0.98..1.02偏离1",
+      "supported": "现有phase/frameAdvantage建议仍可生效",
+      "notSupported": "把全部effective变化都归于缺口制动"
+    },
+    {
+      "observation": "B>0且F>next",
+      "supported": "缺实际输入和历史重演欠账可以同时存在",
+      "notSupported": "强行把整段只分类为网络或只分类为CPU"
+    },
+    {
+      "observation": "新的Present/逻辑帧停顿",
+      "supported": "结合rAF request/entry/exit、native耗时、B/A/F和原计数分段",
+      "notSupported": "重复Present当流畅；125ms先验换算并断言实测回滚深度"
+    }
+  ],
+  "existingTargetedSourceCoverage": {
+    "path": "th09_web/tests/multiplayer/session.cpp",
+    "cases": [
+      "零时钟及重复/倒退时钟",
+      "Ready/mode/expectsInput gating",
+      "B阈值与第9帧禁止",
+      "乱序洞不推进连续frontier",
+      "已到齐actual下深度8部分replay不制动",
+      "恢复衰减与本地capture一次"
+    ],
+    "executionByThisTask": false
+  }
+}

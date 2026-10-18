@@ -1,0 +1,14 @@
+{
+  "game": "th11",
+  "version": "1.00a",
+  "language": "Japanese",
+  "executable": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.exe",
+  "sha256": "2978b17f6184d100d249d4311348dd30c5c32ec75c014b667a525b797d3d8813",
+  "imageBase": "0x00400000",
+  "evidence": "Executable title string: Subterranean Animism. ver 1.00a; PE fields recorded by inspect-target.mjs.",
+  "completeGame": true,
+  "localizedExecutable": {
+    "file": "../[th11] 东方地灵殿 (汉化版+日文版)/th11c.exe",
+    "sha256": "11a9f3c6718289d9c0b0fa78c148b168a77d3554e804eb2d77f890be48b3865d"
+  }
+}

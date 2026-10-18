@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>东方花映塚 · 网页版</title><link rel="stylesheet" href="/app/style.css"></head>
+<body><main id="stage"><canvas id="canvas" width="640" height="480" tabindex="0" aria-label="东方花映塚游戏画面"></canvas>
+<div id="touch" hidden><button id="shoot">射击 开</button><button id="charge">蓄力</button><button id="focus">低速</button><button id="bomb">B</button><button id="pause">暂停</button><button id="skip">快进</button></div>
+<div id="welcome"><h1>东方花映塚</h1><p>日文原版 · C++ / SDL3 网页版</p><button id="start">开始游戏</button><progress id="progress" hidden></progress><p id="status" role="status">首次加载需要下载游戏资源。</p></div></main>
+<footer><button id="fullscreen">全屏</button><button id="touch-toggle">显示触控</button><button id="storage-open">存档 / 录像</button><button id="network-open">联机</button><span id="health"></span></footer>
+<dialog id="storage"><h2>存档与录像</h2><p>文件保存在此浏览器中。导入请先返回游戏标题。</p><input id="import" type="file" accept=".dat,.rpy,.rpyx,.cfg"><p id="storage-status" role="status"></p><div id="files"></div><button id="storage-close">返回游戏</button></dialog>
+<dialog id="network"><h2>花映塚 Network 对战</h2><p>创建房间后把房间码发给另一位玩家。房主控制左侧，对手控制右侧；双方使用各自的键盘或触控。</p><p>进入游戏后选择难度，双方分别选择角色。等待网络时游戏会暂缓推进。</p><button id="network-create">创建房间</button><label>房间码 <input id="network-code" maxlength="12" autocomplete="off" spellcheck="false"></label><button id="network-join">加入房间</button><p id="network-status" role="status"></p><button id="network-leave">退出房间</button><button id="network-close">返回游戏</button></dialog>
+<div id="error" role="alert" hidden></div><script type="module" src="/app/shell.mjs"></script></body></html>

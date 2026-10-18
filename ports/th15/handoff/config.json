@@ -1,0 +1,8 @@
+{
+  "game": "th15",
+  "webVersion": "1.0.3",
+  "releaseDate": "2026-10-05",
+  "manifestVersion": "2ea2acf4808e508e33aa307c",
+  "productionWasmSha256": "d75950f168ec4328b02805f1f2bc1c62d98e7d9644a1f1166e4660a53bc1c3d9",
+  "archiveRoot": "TH15-1.0.3-development-20261005"
+}

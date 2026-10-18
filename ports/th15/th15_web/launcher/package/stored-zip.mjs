@@ -1,0 +1,87 @@
+const EOCD_SIGNATURE = 0x06054b50;
+const CENTRAL_SIGNATURE = 0x02014b50;
+const LOCAL_SIGNATURE = 0x04034b50;
+const MAX_EOCD_SEARCH = 0xffff + 22;
+const textDecoder = new TextDecoder("utf-8", { fatal: true });
+
+export function isSafeStoredZipName(name) {
+  if (typeof name !== "string" || !name || name.includes("\\") || name.startsWith("/") || name.includes("\0")) return false;
+  return !name.split("/").some(part => !part || part === "." || part === "..");
+}
+
+function assertStoredEntry(entry) {
+  if (entry.flags & 0x0001) throw new Error(`${entry.name}: encrypted ZIP entries are not supported`);
+  if (entry.method !== 0) throw new Error(`${entry.name}: ZIP entry must use STORE (method 0), not compression method ${entry.method}`);
+  if (entry.compressedSize !== entry.uncompressedSize) throw new Error(`${entry.name}: STORE entry size mismatch`);
+}
+
+async function locateEocd(blob) {
+  if (!(blob instanceof Blob) || blob.size < 22) throw new Error("invalid ZIP file");
+  const tailLength = Math.min(blob.size, MAX_EOCD_SEARCH);
+  const tailOffset = blob.size - tailLength;
+  const tail = new Uint8Array(await blob.slice(tailOffset).arrayBuffer());
+  const view = new DataView(tail.buffer, tail.byteOffset, tail.byteLength);
+  for (let offset = tail.byteLength - 22; offset >= 0; offset--) {
+    if (view.getUint32(offset, true) !== EOCD_SIGNATURE) continue;
+    const commentLength = view.getUint16(offset + 20, true);
+    if (offset + 22 + commentLength !== tail.byteLength) continue;
+    const disk = view.getUint16(offset + 4, true);
+    const centralDisk = view.getUint16(offset + 6, true);
+    const entriesOnDisk = view.getUint16(offset + 8, true);
+    const totalEntries = view.getUint16(offset + 10, true);
+    const centralSize = view.getUint32(offset + 12, true);
+    const centralOffset = view.getUint32(offset + 16, true);
+    if (disk !== 0 || centralDisk !== 0 || entriesOnDisk !== totalEntries) throw new Error("multi-disk ZIP is not supported");
+    if (totalEntries === 0xffff || centralSize === 0xffffffff || centralOffset === 0xffffffff) throw new Error("ZIP64 is not supported");
+    if (centralOffset + centralSize > blob.size) throw new Error("ZIP central directory is out of bounds");
+    return { totalEntries, centralSize, centralOffset };
+  }
+  throw new Error("ZIP end-of-central-directory record not found");
+}
+
+export async function parseStoredZip(blob) {
+  const eocd = await locateEocd(blob);
+  const centralBytes = new Uint8Array(await blob.slice(eocd.centralOffset, eocd.centralOffset + eocd.centralSize).arrayBuffer());
+  const view = new DataView(centralBytes.buffer, centralBytes.byteOffset, centralBytes.byteLength);
+  const entries = new Map();
+  let offset = 0;
+  for (let index = 0; index < eocd.totalEntries; index++) {
+    if (offset + 46 > centralBytes.byteLength || view.getUint32(offset, true) !== CENTRAL_SIGNATURE) {
+      throw new Error("invalid ZIP central directory entry");
+    }
+    const flags = view.getUint16(offset + 8, true);
+    const method = view.getUint16(offset + 10, true);
+    const crc32 = view.getUint32(offset + 16, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const uncompressedSize = view.getUint32(offset + 24, true);
+    const nameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localOffset = view.getUint32(offset + 42, true);
+    if (compressedSize === 0xffffffff || uncompressedSize === 0xffffffff || localOffset === 0xffffffff) {
+      throw new Error("ZIP64 entries are not supported");
+    }
+    const next = offset + 46 + nameLength + extraLength + commentLength;
+    if (next > centralBytes.byteLength) throw new Error("ZIP central directory entry is truncated");
+    const name = textDecoder.decode(centralBytes.subarray(offset + 46, offset + 46 + nameLength));
+    if (!isSafeStoredZipName(name)) throw new Error(`unsafe ZIP entry name: ${name}`);
+    if (entries.has(name)) throw new Error(`duplicate ZIP entry: ${name}`);
+    const entry = { name, flags, method, crc32, compressedSize, uncompressedSize, localOffset };
+    assertStoredEntry(entry);
+
+    const localBytes = new Uint8Array(await blob.slice(localOffset, localOffset + 30).arrayBuffer());
+    if (localBytes.byteLength !== 30) throw new Error(`${name}: truncated ZIP local header`);
+    const localView = new DataView(localBytes.buffer, localBytes.byteOffset, localBytes.byteLength);
+    if (localView.getUint32(0, true) !== LOCAL_SIGNATURE) throw new Error(`${name}: invalid ZIP local header`);
+    if (localView.getUint16(8, true) !== method) throw new Error(`${name}: local/central compression method mismatch`);
+    const localNameLength = localView.getUint16(26, true);
+    const localExtraLength = localView.getUint16(28, true);
+    const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
+    if (dataOffset + compressedSize > blob.size) throw new Error(`${name}: ZIP entry data is out of bounds`);
+    entry.dataOffset = dataOffset;
+    entries.set(name, entry);
+    offset = next;
+  }
+  if (offset > centralBytes.byteLength) throw new Error("invalid ZIP central directory length");
+  return entries;
+}

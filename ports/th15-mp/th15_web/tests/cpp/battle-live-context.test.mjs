@@ -1,0 +1,21 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';import {core,oracle,memory,string,root,report} from './helpers.mjs';import {ins,resource} from './ecl-fixtures.mjs';
+test('Battle observes live dialogue, enemy count and Reisen collision size after callbacks',async()=>{
+ const c=await core(),m=await oracle(),a=c.anm_manager_create(),program=c.program_create(),sht=c.sht_create(),{bytes}=resource({main:Buffer.concat([ins(40,[0]),ins(302,[2]),ins(303,[0,0]),ins(542,[],0,3),ins(523,[],0,4),ins(10,[],0,100000)])}),pp=c.allocate(bytes.length),name=c.allocate(5),request=c.allocate(84),out=c.allocate(24),nativeBomb=m.allocate(0x40),hud=m.allocate(0x200),enemy=m.allocate(0x200);let game=0,checks=0;
+ const dv=()=>new DataView(c.memory.buffer),load=(file,id)=>{const b=readFileSync(resolve(root,'reference/assets',file)),p=c.allocate(b.length);memory(c,p,b.length).set(b);assert.equal(c.anm_manager_load(a,id,p,b.length),1,string(c,c.anm_manager_error(a)));c.release(p);if(id===2)assert.equal(c.anm_manager_fallback(a,2),1);};
+ m.u32(0x4e9a68,nativeBomb);m.u32(0x4e9a8c,hud);m.u32(0x4e9a80,enemy);
+ try{
+  for(const[file,id]of [['ascii.anm',2],['enemy.anm',1],['effect.anm',8],['bullet.anm',7],['pl03.anm',12]])load(file,id);assert.equal(c.anm_manager_fallback(a,2),1);
+  const b=readFileSync(resolve(root,'reference/assets/pl03.sht')),p=c.allocate(b.length);memory(c,p,b.length).set(b);assert.equal(c.sht_open(sht,p,b.length),1);c.release(p);memory(c,pp,bytes.length).set(bytes);assert.equal(c.program_attach(program,pp,bytes.length),0);
+  game=c.game_battle_create(a,program,sht,3);assert.equal(c.game_battle_initialize(game),1,string(c,c.game_battle_error(game)));dv().setInt32(c.game_battle_field(game,0),1,true);
+  const step=(pressed=0)=>{assert.equal(c.game_battle_step(game,0,pressed,0,1,1),1,string(c,c.game_battle_error(game)));};
+  const gate=(count,dialogue)=>{m.i32(nativeBomb+0x24,dv().getInt32(c.game_battle_field(game,3)+20,true));m.i32(enemy+0x18c,count);m.u32(hud+0x1b8,dialogue?1:0);assert.equal(c.game_battle_bomb_allowed(game),m.call(0x414a80)|0);checks++;};
+  step(2);gate(0,false);assert.equal(dv().getInt32(c.game_battle_field(game,3)+36,true),3,'B before an enemy exists does not consume stock');
+  memory(c,name,5).set(Buffer.from('main\0'));const r=Buffer.alloc(84);r.writeFloatLE(64,4);r.writeInt32LE(100000,20);memory(c,request,84).set(r);assert.equal(c.game_battle_spawn(game,name,request),1,string(c,c.game_battle_error(game)));
+  c.game_battle_dialogue(game,1);step(2);gate(1,true);assert.equal(dv().getInt32(c.game_battle_field(game,3)+36,true),3,'B during dialogue does not consume stock');
+  const at=c.game_battle_field(game,1),x=dv().getFloat32(at,true),y=dv().getFloat32(at+4,true);for(let kind=0;kind<3;kind++)assert.equal(c.game_battle_collision_contact(game,kind,x,y,10,4,0),0,'dialogue protects current contact');
+  c.game_battle_dialogue(game,0);step();gate(1,false);step(2);assert.equal(dv().getInt32(c.game_battle_field(game,3)+36,true),2);for(let i=0;i<31;i++)step();
+  assert.equal(dv().getUint32(c.game_battle_field(game,4),true)&8,8,'ECL survival status survives the real finish callback');checks++;c.game_battle_collision_state(game,out);assert.equal(dv().getFloat32(out+12,true),7.5,'circle uses live Reisen bomb header');assert.equal(dv().getFloat32(out+16,true),3.75,'laser uses live Reisen hit half-size');
+  assert.equal(c.game_battle_collision_contact(game,1,x+6.5,y,0,0,0),1,'expanded circle hits where the original 3px circle would only graze');assert.equal(c.game_battle_collision_contact(game,1,x+6.5,y,0,0,0),0,'subsequent circle observes deathbomb state');checks+=12;
+  report('battle-live-context',{passed:true,checks,originalFunctions:['0x414a80','0x455be0','0x455d00','0x455e10'],scope:'Real battle input and original availability predicate, live dialogue protection, actual Reisen bomb progression and circle/laser dimensions after the bomb callback. Primitive contacts and Reisen lifecycle are separately compared against original functions.'});
+ }finally{if(game)c.game_battle_delete(game);c.release(pp);c.release(name);c.release(request);c.release(out);c.sht_delete(sht);c.program_delete(program);c.anm_manager_delete(a);m.close();}
+});

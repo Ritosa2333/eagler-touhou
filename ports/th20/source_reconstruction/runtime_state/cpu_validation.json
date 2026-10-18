@@ -1,0 +1,12 @@
+{
+  "status":"passed",
+  "total":164000,
+  "failed":0,
+  "state_cpp_sha256":"6b1280d5771a8d6abbf648148f6cdb2704b0bb23c0149bca0d62b95c018b7f91",
+  "state_hpp_sha256":"3e269ab0a5964cf4c04da3f326901839e400142a95e9ba00daf22dcebb671724",
+  "original_sha256":"a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "comparisons":{"bounded":40000,"constructor":2000,"next":40000,"seed":2000,"signed_unit":40000,"unit":40000},
+  "scope":"Whole 28-byte RNG constructor/seed/state and return values for integer, bounded and both float wrappers under all four rounding modes",
+  "limitations":["Original single-thread recursive lock path exercised; cross-thread ordering not compared","Zero modulus original CPU fault is replaced by explicit domain_error"],
+  "failure_examples":[]
+}

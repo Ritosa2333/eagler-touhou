@@ -1,0 +1,21 @@
+{
+  "pid": 27092,
+  "image_base": "0x9a0000",
+  "game": "0x29a5cbc0",
+  "scene": 7,
+  "next_scene": 7,
+  "session_flags": 32,
+  "mode": 0,
+  "stage": 3,
+  "score": 39701,
+  "menu_idle_frames": 0,
+  "game_flags": 67108864,
+  "game_frame": 3584,
+  "load_stage": 3585,
+  "player_position": [
+    53.2109375,
+    432.0,
+    0.0
+  ],
+  "player_state": 1
+}

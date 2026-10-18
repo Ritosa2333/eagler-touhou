@@ -1,0 +1,694 @@
+function_entry,pseudocode_file,warning_count,contains_bad_or_unimplemented_data_marker,warning_lines
+0x00401280,pseudocode/00401280.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0040a9f0,pseudocode/0040a9f0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0040b3e0,pseudocode/0040b3e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0040b730,pseudocode/0040b730.c,1,False,/* WARNING: Load size is inaccurate */
+0x0040bdb0,pseudocode/0040bdb0.c,1,False,/* WARNING: Subroutine does not return */
+0x0040c920,pseudocode/0040c920.c,1,False,/* WARNING: Subroutine does not return */
+0x0040d100,pseudocode/0040d100.c,1,False,/* WARNING: Load size is inaccurate */
+0x0040d240,pseudocode/0040d240.c,1,False,/* WARNING: Load size is inaccurate */
+0x0040d370,pseudocode/0040d370.c,1,False,/* WARNING: Load size is inaccurate */
+0x0040d4b0,pseudocode/0040d4b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0040d5e0,pseudocode/0040d5e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0040ec20,pseudocode/0040ec20.c,1,False,/* WARNING: Subroutine does not return */
+0x004105d0,pseudocode/004105d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004119b0,pseudocode/004119b0.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00411bb0,pseudocode/00411bb0.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00412400,pseudocode/00412400.c,1,False,/* WARNING: Load size is inaccurate */
+0x00413000,pseudocode/00413000.c,1,False,/* WARNING: Load size is inaccurate */
+0x004130a0,pseudocode/004130a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004130e0,pseudocode/004130e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00414ff0,pseudocode/00414ff0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00415030,pseudocode/00415030.c,1,False,/* WARNING: Load size is inaccurate */
+0x00415070,pseudocode/00415070.c,1,False,/* WARNING: Load size is inaccurate */
+0x00415460,pseudocode/00415460.c,1,False,/* WARNING: Load size is inaccurate */
+0x004154c0,pseudocode/004154c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00415520,pseudocode/00415520.c,1,False,/* WARNING: Load size is inaccurate */
+0x00415830,pseudocode/00415830.c,5,False,"/* WARNING: Removing unreachable block (ram,0x00415e89) */ | /* WARNING: Removing unreachable block (ram,0x00415da1) */ | /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */ | /* WARNING: Ignoring partial resolution of indirect */ | /* WARNING: Ignoring partial resolution of indirect */"
+0x00416cf0,pseudocode/00416cf0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004182a0,pseudocode/004182a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00418380,pseudocode/00418380.c,1,False,/* WARNING: Load size is inaccurate */
+0x004184b0,pseudocode/004184b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004193e0,pseudocode/004193e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004199a0,pseudocode/004199a0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00419a50,pseudocode/00419a50.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00419c20,pseudocode/00419c20.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00419de0,pseudocode/00419de0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0041a030,pseudocode/0041a030.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0041b4f0,pseudocode/0041b4f0.c,1,False,/* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x0041c3e0,pseudocode/0041c3e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0041cb10,pseudocode/0041cb10.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0041ccf0,pseudocode/0041ccf0.c,10,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0041d350,pseudocode/0041d350.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0041e7d0,pseudocode/0041e7d0.c,2,False,/* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */ | /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00421180,pseudocode/00421180.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x004219d0,pseudocode/004219d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00424350,pseudocode/00424350.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004244c0,pseudocode/004244c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004249f0,pseudocode/004249f0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00425190,pseudocode/00425190.c,1,False,/* WARNING: Load size is inaccurate */
+0x00426890,pseudocode/00426890.c,1,False,/* WARNING: Load size is inaccurate */
+0x00426ef0,pseudocode/00426ef0.c,13,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004286b0,pseudocode/004286b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00428de0,pseudocode/00428de0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00428e80,pseudocode/00428e80.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429060,pseudocode/00429060.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004292f0,pseudocode/004292f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429340,pseudocode/00429340.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429390,pseudocode/00429390.c,1,False,/* WARNING: Load size is inaccurate */
+0x004293c0,pseudocode/004293c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429440,pseudocode/00429440.c,1,False,/* WARNING: Load size is inaccurate */
+0x004294a0,pseudocode/004294a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004294e0,pseudocode/004294e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429520,pseudocode/00429520.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429570,pseudocode/00429570.c,1,False,/* WARNING: Load size is inaccurate */
+0x004295d0,pseudocode/004295d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429610,pseudocode/00429610.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429640,pseudocode/00429640.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429690,pseudocode/00429690.c,1,False,/* WARNING: Load size is inaccurate */
+0x004296e0,pseudocode/004296e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00429740,pseudocode/00429740.c,1,False,/* WARNING: Load size is inaccurate */
+0x0042a3a0,pseudocode/0042a3a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0042a980,pseudocode/0042a980.c,1,False,/* WARNING: Load size is inaccurate */
+0x0042ad80,pseudocode/0042ad80.c,1,False,/* WARNING: Load size is inaccurate */
+0x0042b1f0,pseudocode/0042b1f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0042b5d0,pseudocode/0042b5d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00435520,pseudocode/00435520.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00435c80,pseudocode/00435c80.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004383a0,pseudocode/004383a0.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00438940,pseudocode/00438940.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00439910,pseudocode/00439910.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00439960,pseudocode/00439960.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00439a00,pseudocode/00439a00.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0043b0e0,pseudocode/0043b0e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0043cd40,pseudocode/0043cd40.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0043e2c0,pseudocode/0043e2c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00441430,pseudocode/00441430.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00441f00,pseudocode/00441f00.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00443020,pseudocode/00443020.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00445680,pseudocode/00445680.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00446690,pseudocode/00446690.c,1,False,/* WARNING: Load size is inaccurate */
+0x00446f50,pseudocode/00446f50.c,1,False,"/* WARNING: Removing unreachable block (ram,0x00446f76) */"
+0x004493e0,pseudocode/004493e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00449400,pseudocode/00449400.c,1,False,/* WARNING: Load size is inaccurate */
+0x00449430,pseudocode/00449430.c,1,False,/* WARNING: Load size is inaccurate */
+0x00449460,pseudocode/00449460.c,1,False,/* WARNING: Load size is inaccurate */
+0x004495a0,pseudocode/004495a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0044b930,pseudocode/0044b930.c,1,False,/* WARNING: Load size is inaccurate */
+0x0044c1e0,pseudocode/0044c1e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0044cf50,pseudocode/0044cf50.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0044d000,pseudocode/0044d000.c,1,False,/* WARNING: Load size is inaccurate */
+0x0044dfb0,pseudocode/0044dfb0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0044ef90,pseudocode/0044ef90.c,1,False,/* WARNING: Load size is inaccurate */
+0x0044f0d0,pseudocode/0044f0d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004502c0,pseudocode/004502c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00450560,pseudocode/00450560.c,1,False,/* WARNING: Load size is inaccurate */
+0x00450630,pseudocode/00450630.c,1,False,/* WARNING: Load size is inaccurate */
+0x004506b0,pseudocode/004506b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00450cb0,pseudocode/00450cb0.c,1,False,"/* WARNING: Removing unreachable block (ram,0x00450ee4) */"
+0x00452f80,pseudocode/00452f80.c,1,False,/* WARNING: Load size is inaccurate */
+0x00452fc0,pseudocode/00452fc0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00452ff0,pseudocode/00452ff0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004530c0,pseudocode/004530c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004530f0,pseudocode/004530f0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00453220,pseudocode/00453220.c,1,False,/* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x004533b0,pseudocode/004533b0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00453e40,pseudocode/00453e40.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00454480,pseudocode/00454480.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004547e0,pseudocode/004547e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00454d80,pseudocode/00454d80.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00454ef0,pseudocode/00454ef0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004562e0,pseudocode/004562e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00456920,pseudocode/00456920.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00457040,pseudocode/00457040.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00457610,pseudocode/00457610.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004578b0,pseudocode/004578b0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00457c10,pseudocode/00457c10.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004580c0,pseudocode/004580c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00458670,pseudocode/00458670.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00458b60,pseudocode/00458b60.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00458e90,pseudocode/00458e90.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00459a70,pseudocode/00459a70.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00459d70,pseudocode/00459d70.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0045aaa0,pseudocode/0045aaa0.c,5,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0045b850,pseudocode/0045b850.c,4,False,"/* WARNING: Removing unreachable block (ram,0x0045b8eb) */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */"
+0x0045bd10,pseudocode/0045bd10.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0045beb0,pseudocode/0045beb0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0045e800,pseudocode/0045e800.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0045f4c0,pseudocode/0045f4c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0045f4f0,pseudocode/0045f4f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0045f520,pseudocode/0045f520.c,1,False,/* WARNING: Load size is inaccurate */
+0x0045f540,pseudocode/0045f540.c,1,False,/* WARNING: Load size is inaccurate */
+0x0045f670,pseudocode/0045f670.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0045fe60,pseudocode/0045fe60.c,1,False,/* WARNING: Load size is inaccurate */
+0x0045fe90,pseudocode/0045fe90.c,1,False,/* WARNING: Load size is inaccurate */
+0x0045ff40,pseudocode/0045ff40.c,1,False,/* WARNING: Load size is inaccurate */
+0x0045ff70,pseudocode/0045ff70.c,1,False,/* WARNING: Load size is inaccurate */
+0x004618c0,pseudocode/004618c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00461b80,pseudocode/00461b80.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004632b0,pseudocode/004632b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00463310,pseudocode/00463310.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x00466a20,pseudocode/00466a20.c,1,False,/* WARNING: Load size is inaccurate */
+0x004673b0,pseudocode/004673b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00467d80,pseudocode/00467d80.c,1,False,/* WARNING: Load size is inaccurate */
+0x0046b1b0,pseudocode/0046b1b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0046b330,pseudocode/0046b330.c,1,False,/* WARNING: Load size is inaccurate */
+0x0046b360,pseudocode/0046b360.c,1,False,/* WARNING: Load size is inaccurate */
+0x0046bb90,pseudocode/0046bb90.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0046d300,pseudocode/0046d300.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00470270,pseudocode/00470270.c,1,False,/* WARNING: Load size is inaccurate */
+0x00470310,pseudocode/00470310.c,1,False,/* WARNING: Load size is inaccurate */
+0x004708e0,pseudocode/004708e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00470a20,pseudocode/00470a20.c,1,False,/* WARNING: Load size is inaccurate */
+0x00471db0,pseudocode/00471db0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00471e60,pseudocode/00471e60.c,1,False,/* WARNING: Load size is inaccurate */
+0x00471f50,pseudocode/00471f50.c,1,False,/* WARNING: Load size is inaccurate */
+0x00472060,pseudocode/00472060.c,1,False,/* WARNING: Load size is inaccurate */
+0x004722e0,pseudocode/004722e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00473590,pseudocode/00473590.c,1,False,/* WARNING: Load size is inaccurate */
+0x004739e0,pseudocode/004739e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00473b20,pseudocode/00473b20.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00474880,pseudocode/00474880.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004751b0,pseudocode/004751b0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00478680,pseudocode/00478680.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00478e00,pseudocode/00478e00.c,1,False,/* WARNING: Load size is inaccurate */
+0x00479360,pseudocode/00479360.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0047a400,pseudocode/0047a400.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0047a7d0,pseudocode/0047a7d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0047c650,pseudocode/0047c650.c,1,False,/* WARNING: Load size is inaccurate */
+0x0047dcf0,pseudocode/0047dcf0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00481200,pseudocode/00481200.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004818e0,pseudocode/004818e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004827e0,pseudocode/004827e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00482a60,pseudocode/00482a60.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00482da0,pseudocode/00482da0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00482ec0,pseudocode/00482ec0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00483010,pseudocode/00483010.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00483150,pseudocode/00483150.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00483d20,pseudocode/00483d20.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00483f00,pseudocode/00483f00.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00484940,pseudocode/00484940.c,1,False,/* WARNING: Load size is inaccurate */
+0x00484a20,pseudocode/00484a20.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004852b0,pseudocode/004852b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00485420,pseudocode/00485420.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00485740,pseudocode/00485740.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004872d0,pseudocode/004872d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004892b0,pseudocode/004892b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004892f0,pseudocode/004892f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00489340,pseudocode/00489340.c,1,False,/* WARNING: Load size is inaccurate */
+0x004893f0,pseudocode/004893f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0048bd70,pseudocode/0048bd70.c,1,False,/* WARNING: Load size is inaccurate */
+0x0048bf10,pseudocode/0048bf10.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0048c010,pseudocode/0048c010.c,1,False,/* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x00497c20,pseudocode/00497c20.c,1,False,/* WARNING: Load size is inaccurate */
+0x00497d70,pseudocode/00497d70.c,1,False,/* WARNING: Load size is inaccurate */
+0x00497db0,pseudocode/00497db0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00497df0,pseudocode/00497df0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00497e30,pseudocode/00497e30.c,1,False,/* WARNING: Load size is inaccurate */
+0x00497fc0,pseudocode/00497fc0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00498020,pseudocode/00498020.c,1,False,/* WARNING: Load size is inaccurate */
+0x00498080,pseudocode/00498080.c,1,False,/* WARNING: Load size is inaccurate */
+0x004980e0,pseudocode/004980e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00498140,pseudocode/00498140.c,1,False,/* WARNING: Load size is inaccurate */
+0x00498f70,pseudocode/00498f70.c,1,False,/* WARNING: Load size is inaccurate */
+0x004995d0,pseudocode/004995d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0049c0e0,pseudocode/0049c0e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0049d5b0,pseudocode/0049d5b0.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0049d850,pseudocode/0049d850.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004a11f0,pseudocode/004a11f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004a15e0,pseudocode/004a15e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004a1630,pseudocode/004a1630.c,1,False,/* WARNING: Load size is inaccurate */
+0x004a16b0,pseudocode/004a16b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004a3f80,pseudocode/004a3f80.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004a4190,pseudocode/004a4190.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004a5be0,pseudocode/004a5be0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004a5df0,pseudocode/004a5df0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004a7710,pseudocode/004a7710.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004a8260,pseudocode/004a8260.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004a8d70,pseudocode/004a8d70.c,1,False,/* WARNING: Variable defined which should be unmapped: param_2 */
+0x004a9a10,pseudocode/004a9a10.c,1,False,/* WARNING: Load size is inaccurate */
+0x004aa070,pseudocode/004aa070.c,1,False,/* WARNING: Load size is inaccurate */
+0x004aa0b0,pseudocode/004aa0b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004aa0f0,pseudocode/004aa0f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004aa810,pseudocode/004aa810.c,1,False,/* WARNING: Load size is inaccurate */
+0x004aa870,pseudocode/004aa870.c,1,False,/* WARNING: Load size is inaccurate */
+0x004aa8d0,pseudocode/004aa8d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004abd50,pseudocode/004abd50.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004b0720,pseudocode/004b0720.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004b2c90,pseudocode/004b2c90.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004b4730,pseudocode/004b4730.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004b89a0,pseudocode/004b89a0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004bad40,pseudocode/004bad40.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004bce10,pseudocode/004bce10.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004bed50,pseudocode/004bed50.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004bfa00,pseudocode/004bfa00.c,7,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004c0210,pseudocode/004c0210.c,1,False,/* WARNING: Load size is inaccurate */
+0x004c0240,pseudocode/004c0240.c,1,False,/* WARNING: Load size is inaccurate */
+0x004c1c10,pseudocode/004c1c10.c,1,False,/* WARNING: Load size is inaccurate */
+0x004c25a0,pseudocode/004c25a0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004c45b0,pseudocode/004c45b0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004c58d0,pseudocode/004c58d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004c6b30,pseudocode/004c6b30.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004c90d0,pseudocode/004c90d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004c9130,pseudocode/004c9130.c,1,False,/* WARNING: Load size is inaccurate */
+0x004cb510,pseudocode/004cb510.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004cb970,pseudocode/004cb970.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004cbfa0,pseudocode/004cbfa0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004cf940,pseudocode/004cf940.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004cfa30,pseudocode/004cfa30.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d01d0,pseudocode/004d01d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d0290,pseudocode/004d0290.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d0380,pseudocode/004d0380.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d1470,pseudocode/004d1470.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d2750,pseudocode/004d2750.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004d2dd0,pseudocode/004d2dd0.c,3,False,"/* WARNING: Removing unreachable block (ram,0x004d2f30) */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */"
+0x004d3230,pseudocode/004d3230.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d3d70,pseudocode/004d3d70.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d4150,pseudocode/004d4150.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d46e0,pseudocode/004d46e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d49e0,pseudocode/004d49e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d5710,pseudocode/004d5710.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d58d0,pseudocode/004d58d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d5e50,pseudocode/004d5e50.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d6830,pseudocode/004d6830.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d6c40,pseudocode/004d6c40.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d7280,pseudocode/004d7280.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d7750,pseudocode/004d7750.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d99d0,pseudocode/004d99d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004d9ea0,pseudocode/004d9ea0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004da1f0,pseudocode/004da1f0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004dec30,pseudocode/004dec30.c,1,False,/* WARNING: Load size is inaccurate */
+0x004dec50,pseudocode/004dec50.c,1,False,/* WARNING: Load size is inaccurate */
+0x004dec80,pseudocode/004dec80.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e0e80,pseudocode/004e0e80.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e0fc0,pseudocode/004e0fc0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004e14b0,pseudocode/004e14b0.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004e1fd0,pseudocode/004e1fd0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e5020,pseudocode/004e5020.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004e5240,pseudocode/004e5240.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004e54c0,pseudocode/004e54c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004e5620,pseudocode/004e5620.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004e6e10,pseudocode/004e6e10.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e7000,pseudocode/004e7000.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e70f0,pseudocode/004e70f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e71b0,pseudocode/004e71b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e74e0,pseudocode/004e74e0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e7590,pseudocode/004e7590.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e7640,pseudocode/004e7640.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e76f0,pseudocode/004e76f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e77b0,pseudocode/004e77b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e78d0,pseudocode/004e78d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004e79a0,pseudocode/004e79a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004ea270,pseudocode/004ea270.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004eacf0,pseudocode/004eacf0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004eb690,pseudocode/004eb690.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004ee870,pseudocode/004ee870.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Subroutine does not return */
+0x004eec20,pseudocode/004eec20.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Subroutine does not return */
+0x004eefd0,pseudocode/004eefd0.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Subroutine does not return */
+0x004ef250,pseudocode/004ef250.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Subroutine does not return */
+0x004f0020,pseudocode/004f0020.c,1,False,"/* WARNING: Removing unreachable block (ram,0x004f023b) */"
+0x004f0a40,pseudocode/004f0a40.c,1,False,"/* WARNING: Removing unreachable block (ram,0x004f0c3f) */"
+0x004f1480,pseudocode/004f1480.c,1,False,"/* WARNING: Removing unreachable block (ram,0x004f16b1) */"
+0x004f1c10,pseudocode/004f1c10.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x004f1e70,pseudocode/004f1e70.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x004f2000,pseudocode/004f2000.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x004f2630,pseudocode/004f2630.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x004f30f0,pseudocode/004f30f0.c,1,False,/* WARNING: Subroutine does not return */
+0x004f4e70,pseudocode/004f4e70.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004f5510,pseudocode/004f5510.c,1,False,/* WARNING: Subroutine does not return */
+0x004f5650,pseudocode/004f5650.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f5690,pseudocode/004f5690.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f57c0,pseudocode/004f57c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f57f0,pseudocode/004f57f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f5890,pseudocode/004f5890.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f58c0,pseudocode/004f58c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f58f0,pseudocode/004f58f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f5920,pseudocode/004f5920.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f5b90,pseudocode/004f5b90.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f5fe0,pseudocode/004f5fe0.c,1,False,"/* WARNING: Removing unreachable block (ram,0x004f602d) */"
+0x004f6610,pseudocode/004f6610.c,1,False,"/* WARNING: Removing unreachable block (ram,0x004f665b) */"
+0x004f6c40,pseudocode/004f6c40.c,1,False,"/* WARNING: Removing unreachable block (ram,0x004f6c9c) */"
+0x004f6f60,pseudocode/004f6f60.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f6fa0,pseudocode/004f6fa0.c,1,False,/* WARNING: Subroutine does not return */
+0x004f70d0,pseudocode/004f70d0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004f70f0,pseudocode/004f70f0.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004f7210,pseudocode/004f7210.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004f8ff0,pseudocode/004f8ff0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004fbf20,pseudocode/004fbf20.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004fc4b0,pseudocode/004fc4b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fc8c0,pseudocode/004fc8c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fc8f0,pseudocode/004fc8f0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fc950,pseudocode/004fc950.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fcb20,pseudocode/004fcb20.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fcba0,pseudocode/004fcba0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fcbc0,pseudocode/004fcbc0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fcdc0,pseudocode/004fcdc0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fcdf0,pseudocode/004fcdf0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fed50,pseudocode/004fed50.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fee00,pseudocode/004fee00.c,1,False,/* WARNING: Load size is inaccurate */
+0x004fefc0,pseudocode/004fefc0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004ff020,pseudocode/004ff020.c,1,False,/* WARNING: Load size is inaccurate */
+0x004ff060,pseudocode/004ff060.c,1,False,/* WARNING: Load size is inaccurate */
+0x004ff0d0,pseudocode/004ff0d0.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x004ff350,pseudocode/004ff350.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004ff3f0,pseudocode/004ff3f0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x004ff710,pseudocode/004ff710.c,1,False,/* WARNING: Load size is inaccurate */
+0x004ff7a0,pseudocode/004ff7a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x004ffc80,pseudocode/004ffc80.c,1,False,/* WARNING: Load size is inaccurate */
+0x00500230,pseudocode/00500230.c,1,False,/* WARNING: Load size is inaccurate */
+0x005006f0,pseudocode/005006f0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00500790,pseudocode/00500790.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005008c0,pseudocode/005008c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00501110,pseudocode/00501110.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005013b0,pseudocode/005013b0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005015a0,pseudocode/005015a0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00501650,pseudocode/00501650.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00501770,pseudocode/00501770.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00501820,pseudocode/00501820.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00501f50,pseudocode/00501f50.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00502550,pseudocode/00502550.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00502b70,pseudocode/00502b70.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00502c50,pseudocode/00502c50.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00502db0,pseudocode/00502db0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005032d0,pseudocode/005032d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00503ee0,pseudocode/00503ee0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00503fc0,pseudocode/00503fc0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00504480,pseudocode/00504480.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00504e90,pseudocode/00504e90.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00506030,pseudocode/00506030.c,1,False,/* WARNING: Load size is inaccurate */
+0x00507b70,pseudocode/00507b70.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005081e0,pseudocode/005081e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00508360,pseudocode/00508360.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00508480,pseudocode/00508480.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x0050a220,pseudocode/0050a220.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0050a25e) */"
+0x0050ac70,pseudocode/0050ac70.c,1,False,/* WARNING: Load size is inaccurate */
+0x0050ff70,pseudocode/0050ff70.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00510110,pseudocode/00510110.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00511f00,pseudocode/00511f00.c,1,False,/* WARNING: Load size is inaccurate */
+0x00512aa0,pseudocode/00512aa0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005142b0,pseudocode/005142b0.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00515830,pseudocode/00515830.c,4,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00515ce0,pseudocode/00515ce0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00515e40,pseudocode/00515e40.c,1,False,/* WARNING: Load size is inaccurate */
+0x005163c0,pseudocode/005163c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x00516470,pseudocode/00516470.c,1,False,/* WARNING: Load size is inaccurate */
+0x00516490,pseudocode/00516490.c,1,False,/* WARNING: Load size is inaccurate */
+0x005167b0,pseudocode/005167b0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005189c0,pseudocode/005189c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0051a0b0,pseudocode/0051a0b0.c,2,False,/* WARNING: Type propagation algorithm not settling */ | /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0051ac30,pseudocode/0051ac30.c,1,False,/* WARNING: Load size is inaccurate */
+0x0051c1e0,pseudocode/0051c1e0.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0051c1ff) */"
+0x0051cb20,pseudocode/0051cb20.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0051cb3f) */"
+0x0051cb90,pseudocode/0051cb90.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0051cbaf) */"
+0x0051cef0,pseudocode/0051cef0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0051cf20,pseudocode/0051cf20.c,3,False,"/* WARNING: Removing unreachable block (ram,0x0051cf61) */ | /* WARNING: Removing unreachable block (ram,0x0051cf71) */ | /* WARNING: Load size is inaccurate */"
+0x0051d040,pseudocode/0051d040.c,3,False,"/* WARNING: Removing unreachable block (ram,0x0051d081) */ | /* WARNING: Removing unreachable block (ram,0x0051d091) */ | /* WARNING: Load size is inaccurate */"
+0x0051d6a0,pseudocode/0051d6a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0051d790,pseudocode/0051d790.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0051e080,pseudocode/0051e080.c,1,False,/* WARNING: Load size is inaccurate */
+0x0051e0a0,pseudocode/0051e0a0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0051e0c0,pseudocode/0051e0c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0051ed90,pseudocode/0051ed90.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0051f490,pseudocode/0051f490.c,1,False,/* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x0051feb0,pseudocode/0051feb0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00520c80,pseudocode/00520c80.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00521060,pseudocode/00521060.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x00522e20,pseudocode/00522e20.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00523440,pseudocode/00523440.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005240d0,pseudocode/005240d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005257f0,pseudocode/005257f0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005277f0,pseudocode/005277f0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00527f00,pseudocode/00527f00.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00528a50,pseudocode/00528a50.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00529430,pseudocode/00529430.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00529b40,pseudocode/00529b40.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0052a8a0,pseudocode/0052a8a0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0052b480,pseudocode/0052b480.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0052b8e0,pseudocode/0052b8e0.c,2,False,/* WARNING: Type propagation algorithm not settling */ | /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005307e0,pseudocode/005307e0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00533720,pseudocode/00533720.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00533970,pseudocode/00533970.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005348d0,pseudocode/005348d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00534ab0,pseudocode/00534ab0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00534f10,pseudocode/00534f10.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00535680,pseudocode/00535680.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00535770,pseudocode/00535770.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00535c50,pseudocode/00535c50.c,1,False,/* WARNING: Load size is inaccurate */
+0x00535ca0,pseudocode/00535ca0.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00535f70,pseudocode/00535f70.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00536ac0,pseudocode/00536ac0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00537410,pseudocode/00537410.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00537ec0,pseudocode/00537ec0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00538160,pseudocode/00538160.c,1,False,/* WARNING: Load size is inaccurate */
+0x005388c0,pseudocode/005388c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00538af0,pseudocode/00538af0.c,5,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00538c50,pseudocode/00538c50.c,1,False,/* WARNING: Load size is inaccurate */
+0x00539550,pseudocode/00539550.c,1,False,"/* WARNING: Removing unreachable block (ram,0x005398f7) */"
+0x00539ed0,pseudocode/00539ed0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0053a210,pseudocode/0053a210.c,4,False,"/* WARNING: Removing unreachable block (ram,0x0053a314) */ | /* WARNING: Removing unreachable block (ram,0x0053a32f) */ | /* WARNING: Removing unreachable block (ram,0x0053a320) */ | /* WARNING: Removing unreachable block (ram,0x0053a336) */"
+0x0053a350,pseudocode/0053a350.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0053a3c0,pseudocode/0053a3c0.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0053a529) */"
+0x0053a8b0,pseudocode/0053a8b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0053b5c0,pseudocode/0053b5c0.c,5,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0053e5c0,pseudocode/0053e5c0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0053e720,pseudocode/0053e720.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0053e7c0,pseudocode/0053e7c0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0053e970,pseudocode/0053e970.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0053ea90,pseudocode/0053ea90.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0053eb70,pseudocode/0053eb70.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0053ec80,pseudocode/0053ec80.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0053f7b0,pseudocode/0053f7b0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0053fdb0,pseudocode/0053fdb0.c,1,False,/* WARNING: Load size is inaccurate */
+0x0054065a,pseudocode/0054065a.c,2,False,/* WARNING: Could not recover jumptable at 0x0054065a. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00540660,pseudocode/00540660.c,2,False,/* WARNING: Could not recover jumptable at 0x00540660. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00540666,pseudocode/00540666.c,2,False,/* WARNING: Could not recover jumptable at 0x00540666. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x0054066c,pseudocode/0054066c.c,2,False,/* WARNING: Could not recover jumptable at 0x0054066c. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00540672,pseudocode/00540672.c,2,False,/* WARNING: Could not recover jumptable at 0x00540672. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00540678,pseudocode/00540678.c,2,False,/* WARNING: Could not recover jumptable at 0x00540678. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x0054067e,pseudocode/0054067e.c,2,False,/* WARNING: Could not recover jumptable at 0x0054067e. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00540684,pseudocode/00540684.c,2,False,/* WARNING: Could not recover jumptable at 0x00540684. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x0054068a,pseudocode/0054068a.c,2,False,/* WARNING: Could not recover jumptable at 0x0054068a. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00540690,pseudocode/00540690.c,2,False,/* WARNING: Could not recover jumptable at 0x00540690. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00540696,pseudocode/00540696.c,2,False,/* WARNING: Could not recover jumptable at 0x00540696. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x0054069c,pseudocode/0054069c.c,2,False,/* WARNING: Could not recover jumptable at 0x0054069c. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005406a2,pseudocode/005406a2.c,2,False,/* WARNING: Could not recover jumptable at 0x005406a2. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005406a8,pseudocode/005406a8.c,2,False,/* WARNING: Could not recover jumptable at 0x005406a8. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005406ae,pseudocode/005406ae.c,2,False,/* WARNING: Could not recover jumptable at 0x005406ae. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005406b4,pseudocode/005406b4.c,2,False,/* WARNING: Could not recover jumptable at 0x005406b4. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005406ba,pseudocode/005406ba.c,2,False,/* WARNING: Could not recover jumptable at 0x005406ba. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005406c0,pseudocode/005406c0.c,2,False,/* WARNING: Could not recover jumptable at 0x005406c0. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005406c6,pseudocode/005406c6.c,2,False,/* WARNING: Could not recover jumptable at 0x005406c6. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005406df,pseudocode/005406df.c,1,False,/* WARNING: Subroutine does not return */
+0x00540753,pseudocode/00540753.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00540a27,pseudocode/00540a27.c,2,False,/* WARNING: Could not recover jumptable at 0x00540a27. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00540c9f,pseudocode/00540c9f.c,1,False,/* WARNING: Function: __EH_prolog3_GS replaced with injection: EH_prolog3 */
+0x00540fd9,pseudocode/00540fd9.c,2,False,/* WARNING: Could not recover jumptable at 0x00540fd9. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00541026,pseudocode/00541026.c,1,False,/* WARNING: Subroutine does not return */
+0x005419cb,pseudocode/005419cb.c,1,False,/* WARNING: Subroutine does not return */
+0x00541a86,pseudocode/00541a86.c,1,False,/* WARNING: Load size is inaccurate */
+0x00541b24,pseudocode/00541b24.c,3,False,/* WARNING: Function: __EH_prolog3 replaced with injection: EH_prolog3 */ | /* WARNING: Function: __EH_epilog3 replaced with injection: EH_epilog3 */ | /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00542527,pseudocode/00542527.c,1,False,/* WARNING: Subroutine does not return */
+0x0054256f,pseudocode/0054256f.c,1,False,/* WARNING: Function: __alloca_probe_16 replaced with injection: alloca_probe */
+0x00542848,pseudocode/00542848.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005428cf,pseudocode/005428cf.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00542a5a,pseudocode/00542a5a.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00542b62,pseudocode/00542b62.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00542c40,pseudocode/00542c40.c,1,False,/* WARNING: This is an inlined function */
+0x00542eaf,pseudocode/00542eaf.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00542f23,pseudocode/00542f23.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00542fab,pseudocode/00542fab.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00543461,pseudocode/00543461.c,2,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */ | /* WARNING: Subroutine does not return */
+0x005435ed,pseudocode/005435ed.c,1,False,/* WARNING: This is an inlined function */
+0x00543601,pseudocode/00543601.c,1,False,/* WARNING: Function: __EH_epilog3 replaced with injection: EH_epilog3 */
+0x00543610,pseudocode/00543610.c,3,False,/* WARNING: This is an inlined function */ | /* WARNING: Unable to track spacebase fully for stack */ | /* WARNING: Variable defined which should be unmapped: param_1 */
+0x00543643,pseudocode/00543643.c,3,False,/* WARNING: This is an inlined function */ | /* WARNING: Unable to track spacebase fully for stack */ | /* WARNING: Variable defined which should be unmapped: param_1 */
+0x00543679,pseudocode/00543679.c,3,False,/* WARNING: This is an inlined function */ | /* WARNING: Unable to track spacebase fully for stack */ | /* WARNING: Variable defined which should be unmapped: param_1 */
+0x005436c1,pseudocode/005436c1.c,6,False,"/* WARNING: Removing unreachable block (ram,0x005436f3) */ | /* WARNING: Removing unreachable block (ram,0x00543801) */ | /* WARNING: Removing unreachable block (ram,0x005437d6) */ | /* WARNING: Removing unreachable block (ram,0x0054379a) */ | /* WARNING: Removing unreachable block (ram,0x0054372e) */ | /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */"
+0x005439e0,pseudocode/005439e0.c,2,False,/* WARNING: This is an inlined function */ | /* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x005439f6,pseudocode/005439f6.c,2,False,/* WARNING: This is an inlined function */ | /* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x00543c2a,pseudocode/00543c2a.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00543c40,pseudocode/00543c40.c,3,False,/* WARNING: This is an inlined function */ | /* WARNING: Unable to track spacebase fully for stack */ | /* WARNING: Variable defined which should be unmapped: param_2 */
+0x00543d88,pseudocode/00543d88.c,5,False,"/* WARNING: Removing unreachable block (ram,0x00543d98) */ | /* WARNING: Removing unreachable block (ram,0x00543d99) */ | /* WARNING: Removing unreachable block (ram,0x00543d9f) */ | /* WARNING: Removing unreachable block (ram,0x00543da9) */ | /* WARNING: Removing unreachable block (ram,0x00543db0) */"
+0x00543de0,pseudocode/00543de0.c,2,False,/* WARNING: Could not recover jumptable at 0x00543de0. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543de6,pseudocode/00543de6.c,2,False,/* WARNING: Could not recover jumptable at 0x00543de6. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543dec,pseudocode/00543dec.c,2,False,/* WARNING: Could not recover jumptable at 0x00543dec. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543df2,pseudocode/00543df2.c,2,False,/* WARNING: Could not recover jumptable at 0x00543df2. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543df8,pseudocode/00543df8.c,2,False,/* WARNING: Could not recover jumptable at 0x00543df8. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543dfe,pseudocode/00543dfe.c,2,False,/* WARNING: Could not recover jumptable at 0x00543dfe. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543e04,pseudocode/00543e04.c,2,False,/* WARNING: Could not recover jumptable at 0x00543e04. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543e0a,pseudocode/00543e0a.c,2,False,/* WARNING: Could not recover jumptable at 0x00543e0a. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543e10,pseudocode/00543e10.c,2,False,/* WARNING: Could not recover jumptable at 0x00543e10. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543e16,pseudocode/00543e16.c,2,False,/* WARNING: Could not recover jumptable at 0x00543e16. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00543e20,pseudocode/00543e20.c,3,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */ | /* WARNING: Could not recover jumptable at 0x00544045. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00544394,pseudocode/00544394.c,1,False,/* WARNING: Subroutine does not return */
+0x00544562,pseudocode/00544562.c,2,False,/* WARNING: Could not recover jumptable at 0x0054458b. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x0054463b,pseudocode/0054463b.c,1,False,/* WARNING: Subroutine does not return */
+0x00544683,pseudocode/00544683.c,2,False,/* WARNING: Could not recover jumptable at 0x0054471a. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00544760,pseudocode/00544760.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00544ae9,pseudocode/00544ae9.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005463e0,pseudocode/005463e0.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x005467d6,pseudocode/005467d6.c,1,False,/* WARNING: Subroutine does not return */
+0x005468ff,pseudocode/005468ff.c,4,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */ | /* WARNING: Subroutine does not return */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x00546a3d,pseudocode/00546a3d.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00546b5a,pseudocode/00546b5a.c,1,False,/* WARNING: Subroutine does not return */
+0x00546efd,pseudocode/00546efd.c,1,False,/* WARNING: Subroutine does not return */
+0x00547224,pseudocode/00547224.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x005473f3,pseudocode/005473f3.c,2,False,/* WARNING: Function: __EH_prolog3_catch replaced with injection: EH_prolog3 */ | /* WARNING: Subroutine does not return */
+0x00547497,pseudocode/00547497.c,2,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */ | /* WARNING: Subroutine does not return */
+0x00547585,pseudocode/00547585.c,1,False,/* WARNING: Subroutine does not return */
+0x00547650,pseudocode/00547650.c,1,False,/* WARNING: Restarted to delay deadcode elimination for space: stack */
+0x00547850,pseudocode/00547850.c,2,False,/* WARNING: Could not recover jumptable at 0x00547867. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00547992,pseudocode/00547992.c,2,False,/* WARNING: Could not recover jumptable at 0x005479c7. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00547b43,pseudocode/00547b43.c,1,False,/* WARNING: Subroutine does not return */
+0x00547b87,pseudocode/00547b87.c,2,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */ | /* WARNING: Subroutine does not return */
+0x00547c78,pseudocode/00547c78.c,2,False,/* WARNING: Subroutine does not return */ | /* WARNING: Subroutine does not return */
+0x00547ea3,pseudocode/00547ea3.c,1,False,/* WARNING: Subroutine does not return */
+0x00547ff9,pseudocode/00547ff9.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0054803f,pseudocode/0054803f.c,1,False,/* WARNING: Subroutine does not return */
+0x005494a8,pseudocode/005494a8.c,1,False,/* WARNING: Load size is inaccurate */
+0x0054a3d6,pseudocode/0054a3d6.c,1,False,/* WARNING: Load size is inaccurate */
+0x0054a407,pseudocode/0054a407.c,4,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0054b871,pseudocode/0054b871.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0054bda1) */"
+0x0054bfd0,pseudocode/0054bfd0.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0054c145,pseudocode/0054c145.c,3,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0054c44c,pseudocode/0054c44c.c,2,False,/* WARNING: Load size is inaccurate */ | /* WARNING: Load size is inaccurate */
+0x0054c5fb,pseudocode/0054c5fb.c,1,False,/* WARNING: Subroutine does not return */
+0x0054c620,pseudocode/0054c620.c,1,False,/* WARNING: Subroutine does not return */
+0x0054c685,pseudocode/0054c685.c,2,False,"/* WARNING: Removing unreachable block (ram,0x0054c841) */ | /* WARNING: Removing unreachable block (ram,0x0054c98f) */"
+0x0054cbf0,pseudocode/0054cbf0.c,1,False,/* WARNING: Type propagation algorithm not settling */
+0x0054e8ef,pseudocode/0054e8ef.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0054e940) */"
+0x0054e9f0,pseudocode/0054e9f0.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0054ed58) */"
+0x0054f91e,pseudocode/0054f91e.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0054f93f) */"
+0x0054f9a3,pseudocode/0054f9a3.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0054f9c0) */"
+0x0054fb1e,pseudocode/0054fb1e.c,1,False,/* WARNING: Subroutine does not return */
+0x0054ff50,pseudocode/0054ff50.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0054ffb0,pseudocode/0054ffb0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00550000,pseudocode/00550000.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00550150,pseudocode/00550150.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00550230,pseudocode/00550230.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00550abe,pseudocode/00550abe.c,1,False,"/* WARNING: Removing unreachable block (ram,0x00550fbd) */"
+0x0055110b,pseudocode/0055110b.c,1,False,/* WARNING: Subroutine does not return */
+0x0055151e,pseudocode/0055151e.c,1,False,"/* WARNING: Removing unreachable block (ram,0x0055155f) */"
+0x00551f19,pseudocode/00551f19.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00551f74,pseudocode/00551f74.c,1,False,/* WARNING: Subroutine does not return */
+0x005520d3,pseudocode/005520d3.c,1,False,/* WARNING: Subroutine does not return */
+0x005522f0,pseudocode/005522f0.c,1,False,/* WARNING: Subroutine does not return */
+0x005528c0,pseudocode/005528c0.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00552920,pseudocode/00552920.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00552b1d,pseudocode/00552b1d.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00552b6a,pseudocode/00552b6a.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00552d10,pseudocode/00552d10.c,1,False,/* WARNING: Subroutine does not return */
+0x00552e03,pseudocode/00552e03.c,2,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */ | /* WARNING: Subroutine does not return */
+0x00552e3f,pseudocode/00552e3f.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00553223,pseudocode/00553223.c,1,False,/* WARNING: Subroutine does not return */
+0x00553308,pseudocode/00553308.c,1,False,/* WARNING: Subroutine does not return */
+0x00553516,pseudocode/00553516.c,2,False,/* WARNING: Function: __EH_prolog3 replaced with injection: EH_prolog3 */ | /* WARNING: Function: __EH_epilog3 replaced with injection: EH_epilog3 */
+0x0055356c,pseudocode/0055356c.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x005535c7,pseudocode/005535c7.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00553825,pseudocode/00553825.c,2,False,/* WARNING: Function: __EH_prolog3 replaced with injection: EH_prolog3 */ | /* WARNING: Function: __EH_epilog3 replaced with injection: EH_epilog3 */
+0x00553b40,pseudocode/00553b40.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00555a94,pseudocode/00555a94.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00555ae1,pseudocode/00555ae1.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00555b26,pseudocode/00555b26.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00555b94,pseudocode/00555b94.c,1,False,/* WARNING: Subroutine does not return */
+0x00555bde,pseudocode/00555bde.c,1,False,/* WARNING: Subroutine does not return */
+0x00555c78,pseudocode/00555c78.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00555d76,pseudocode/00555d76.c,1,False,/* WARNING: Subroutine does not return */
+0x00555dba,pseudocode/00555dba.c,1,False,/* WARNING: Subroutine does not return */
+0x00555def,pseudocode/00555def.c,1,False,/* WARNING: Subroutine does not return */
+0x00555e81,pseudocode/00555e81.c,1,False,/* WARNING: Subroutine does not return */
+0x00555ef1,pseudocode/00555ef1.c,1,False,/* WARNING: Subroutine does not return */
+0x005560bf,pseudocode/005560bf.c,1,False,/* WARNING: Subroutine does not return */
+0x00556495,pseudocode/00556495.c,1,False,/* WARNING: Subroutine does not return */
+0x00556559,pseudocode/00556559.c,1,False,/* WARNING: Subroutine does not return */
+0x005566f6,pseudocode/005566f6.c,1,False,/* WARNING: Subroutine does not return */
+0x005569e6,pseudocode/005569e6.c,2,False,/* WARNING: Type propagation algorithm not settling */ | /* WARNING: Subroutine does not return */
+0x00556fa0,pseudocode/00556fa0.c,1,False,/* WARNING: Subroutine does not return */
+0x00556fdf,pseudocode/00556fdf.c,1,False,/* WARNING: Subroutine does not return */
+0x00557051,pseudocode/00557051.c,1,False,/* WARNING: Subroutine does not return */
+0x0055710f,pseudocode/0055710f.c,1,False,/* WARNING: Subroutine does not return */
+0x005572d3,pseudocode/005572d3.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x005573cc,pseudocode/005573cc.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005573ea,pseudocode/005573ea.c,2,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */ | /* WARNING: Subroutine does not return */
+0x005575dc,pseudocode/005575dc.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x0055762e,pseudocode/0055762e.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00557699,pseudocode/00557699.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x005576ee,pseudocode/005576ee.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x005579c2,pseudocode/005579c2.c,1,False,/* WARNING: Subroutine does not return */
+0x005579d0,pseudocode/005579d0.c,4,False,/* WARNING: Function: __EH_prolog3 replaced with injection: EH_prolog3 */ | /* WARNING: Function: __EH_epilog3 replaced with injection: EH_epilog3 */ | /* WARNING: Unable to track spacebase fully for stack */ | /* WARNING: Subroutine does not return */
+0x00557a13,pseudocode/00557a13.c,3,False,/* WARNING: Function: __EH_prolog3 replaced with injection: EH_prolog3 */ | /* WARNING: Function: __EH_epilog3 replaced with injection: EH_epilog3 */ | /* WARNING: Unable to track spacebase fully for stack */
+0x00557a9f,pseudocode/00557a9f.c,3,False,/* WARNING: Function: __EH_prolog3 replaced with injection: EH_prolog3 */ | /* WARNING: Function: __EH_epilog3 replaced with injection: EH_epilog3 */ | /* WARNING: Unable to track spacebase fully for stack */
+0x00557c08,pseudocode/00557c08.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00557e53,pseudocode/00557e53.c,1,False,/* WARNING: Subroutine does not return */
+0x005580f1,pseudocode/005580f1.c,2,False,/* WARNING: Could not recover jumptable at 0x005580f7. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005580fd,pseudocode/005580fd.c,2,False,/* WARNING: Could not recover jumptable at 0x00558103. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00558109,pseudocode/00558109.c,2,False,/* WARNING: Could not recover jumptable at 0x00558114. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00558116,pseudocode/00558116.c,2,False,/* WARNING: Could not recover jumptable at 0x0055811c. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00558122,pseudocode/00558122.c,2,False,/* WARNING: Could not recover jumptable at 0x00558128. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005581a9,pseudocode/005581a9.c,2,False,/* WARNING: Could not recover jumptable at 0x005581af. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00558341,pseudocode/00558341.c,1,False,/* WARNING: Subroutine does not return */
+0x00558aad,pseudocode/00558aad.c,1,False,/* WARNING: Subroutine does not return */
+0x00558e20,pseudocode/00558e20.c,1,False,/* WARNING: Subroutine does not return */
+0x00558ee9,pseudocode/00558ee9.c,1,False,"/* WARNING: Removing unreachable block (ram,0x00558f73) */"
+0x0055929a,pseudocode/0055929a.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055a2f8,pseudocode/0055a2f8.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055a2fe,pseudocode/0055a2fe.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055a938,pseudocode/0055a938.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055a93e,pseudocode/0055a93e.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055ac3f,pseudocode/0055ac3f.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055acf8,pseudocode/0055acf8.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055acfe,pseudocode/0055acfe.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055af8a,pseudocode/0055af8a.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055af91,pseudocode/0055af91.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055b258,pseudocode/0055b258.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055b25e,pseudocode/0055b25e.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055b45f,pseudocode/0055b45f.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055b518,pseudocode/0055b518.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055b51e,pseudocode/0055b51e.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055ba20,pseudocode/0055ba20.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055c162,pseudocode/0055c162.c,1,False,/* WARNING: Subroutine does not return */
+0x0055c37e,pseudocode/0055c37e.c,1,False,/* WARNING: Subroutine does not return */
+0x0055c540,pseudocode/0055c540.c,1,False,/* WARNING: Subroutine does not return */
+0x0055c587,pseudocode/0055c587.c,1,False,/* WARNING: Subroutine does not return */
+0x0055c81a,pseudocode/0055c81a.c,1,False,/* WARNING: Subroutine does not return */
+0x0055c9e9,pseudocode/0055c9e9.c,1,False,/* WARNING: Subroutine does not return */
+0x0055ca2b,pseudocode/0055ca2b.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x0055ca88,pseudocode/0055ca88.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x0055cadc,pseudocode/0055cadc.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x0055cb87,pseudocode/0055cb87.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x0055cc13,pseudocode/0055cc13.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x0055ce76,pseudocode/0055ce76.c,1,False,/* WARNING: Function: __alloca_probe_16 replaced with injection: alloca_probe */
+0x0055cf58,pseudocode/0055cf58.c,1,False,/* WARNING: Subroutine does not return */
+0x0055d108,pseudocode/0055d108.c,1,False,/* WARNING: Function: __alloca_probe_16 replaced with injection: alloca_probe */
+0x0055d206,pseudocode/0055d206.c,1,False,/* WARNING: Function: __alloca_probe_16 replaced with injection: alloca_probe */
+0x0055dc10,pseudocode/0055dc10.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0055e20c,pseudocode/0055e20c.c,1,False,/* WARNING: Subroutine does not return */
+0x0055e389,pseudocode/0055e389.c,1,False,/* WARNING: Subroutine does not return */
+0x0055e85a,pseudocode/0055e85a.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x0055ed36,pseudocode/0055ed36.c,2,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */ | /* WARNING: Subroutine does not return */
+0x0055f1dc,pseudocode/0055f1dc.c,1,False,/* WARNING: Subroutine does not return */
+0x0055f466,pseudocode/0055f466.c,2,False,/* WARNING: Subroutine does not return */ | /* WARNING: Subroutine does not return */
+0x0055fa17,pseudocode/0055fa17.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00560b88,pseudocode/00560b88.c,2,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */ | /* WARNING: Subroutine does not return */
+0x00560c59,pseudocode/00560c59.c,1,False,/* WARNING: Subroutine does not return */
+0x00560e06,pseudocode/00560e06.c,1,False,/* WARNING: Subroutine does not return */
+0x005610e6,pseudocode/005610e6.c,1,False,/* WARNING: Subroutine does not return */
+0x0056134a,pseudocode/0056134a.c,1,False,/* WARNING: Subroutine does not return */
+0x005625c9,pseudocode/005625c9.c,1,False,/* WARNING: Subroutine does not return */
+0x0056281d,pseudocode/0056281d.c,2,False,/* WARNING: Type propagation algorithm not settling */ | /* WARNING: Subroutine does not return */
+0x00563e40,pseudocode/00563e40.c,2,False,/* WARNING: Could not recover jumptable at 0x00563eb3. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x00563eb5,pseudocode/00563eb5.c,2,False,/* WARNING: Could not recover jumptable at 0x00563f4d. Too many branches */ | /* WARNING: Treating indirect jump as call */
+0x005642db,pseudocode/005642db.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x0056433a,pseudocode/0056433a.c,1,False,/* WARNING: Subroutine does not return */
+0x005643f3,pseudocode/005643f3.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00564548,pseudocode/00564548.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00564b17,pseudocode/00564b17.c,1,False,/* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x00564bf2,pseudocode/00564bf2.c,1,False,/* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x00564cdb,pseudocode/00564cdb.c,1,False,/* WARNING: Function: __alloca_probe replaced with injection: alloca_probe */
+0x00564e0d,pseudocode/00564e0d.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00566030,pseudocode/00566030.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00566340,pseudocode/00566340.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x0056641d,pseudocode/0056641d.c,1,False,/* WARNING: Function: __SEH_prolog4 replaced with injection: SEH_prolog4 */
+0x00566a4e,pseudocode/00566a4e.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x00566ed0,pseudocode/00566ed0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+0x005670d0,pseudocode/005670d0.c,1,False,/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */

@@ -1,0 +1,11 @@
+{
+  "game": "th09",
+  "version": "1.50a",
+  "language": "Japanese",
+  "executable": "../[th09] 东方花映塚 (日文版)/th09.exe",
+  "sha256": "10350095bcf95edb59e03bee9849a2dc8a7714b4927ad5909c569c550fce6822",
+  "imageBase": "0x00400000",
+  "entry": "0x0047d45f",
+  "evidence": "Executable version strings and PE header; bundled old readme is not the target version.",
+  "completeGame": false
+}

@@ -1,0 +1,11 @@
+import {readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+const common=resolve(process.env.EAGLER_COMMON_ROOT||fileURLToPath(new URL('../../../eagler-common',import.meta.url)));
+const {joinCompletedTraces}=await import(pathToFileURL(resolve(common,'testkit/replay-verifier/join-traces.mjs')));
+const option=name=>{const i=process.argv.indexOf(name);return i<0?null:process.argv[i+1];};
+const id=option('--case'),out=option('--capture-root');if(!id||!out)throw Error('Use --case case-id --capture-root directory');
+const corpus=JSON.parse(readFileSync(new URL('./corpus.json',import.meta.url))),fixture=corpus.cases.find(f=>f.id===id);
+if(!fixture?.stages)throw Error('Only complete daily routes can be joined');
+await joinCompletedTraces(fixture.stages.map(stage=>resolve(out,`${id}-stage${stage}.original.jsonl`)),resolve(out,id+'.original.jsonl'));
+console.log('Joined complete original route:',id);

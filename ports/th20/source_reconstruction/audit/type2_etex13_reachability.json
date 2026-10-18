@@ -1,0 +1,1308 @@
+{
+  "schema": "th20.type2.etex13.static_reachability.v1",
+  "generated_utc": "2026-09-19T11:16:17.218794+00:00",
+  "method": "Raw SCPT/ECLH decode + literal parameter-mask audit + intra-subroutine CFG dominators + production source review; no build or game execution.",
+  "coverage": {
+    "files": 21,
+    "subroutines": 730,
+    "instructions": 23760,
+    "exact_histogram_matches_existing_scan": true,
+    "etex_setters": 683,
+    "etex_setter_opcodes": {
+      "609": 128,
+      "610": 32,
+      "611": 515,
+      "612": 8
+    },
+    "dynamic_command_type_arguments": 0,
+    "literal_etex13_sites": 4,
+    "type2_creator_sites": 2
+  },
+  "result": "Both supplied ECL Type2 creation bodies locally exclude ETEX13 through dominating reset and literal command writes; whole-native-program/global reachability is not proved.",
+  "etex13_writers": [
+    {
+      "file": "assets/raw/st01bs.ecl",
+      "subroutine": "BossCard3_at",
+      "file_offset": "0x49f0",
+      "instruction_offset": 424,
+      "opcode": 612,
+      "time": 0,
+      "rank_mask": 255,
+      "parameter_mask": 0,
+      "arguments_u32": [
+        0,
+        0,
+        13,
+        1,
+        8,
+        1,
+        1,
+        1249125376,
+        0,
+        1065353216,
+        1065353216
+      ],
+      "dsl_file": "scripts/recovered/ecl/st01bs.ecl.txt",
+      "dsl_line": 894,
+      "dsl_text": "ins_612(0, 0, 13, 1, 8, 1, 1, 4000000.0f, 0.0f, 1.0f, 1.0f);",
+      "queue": 0,
+      "command_index": 2,
+      "command_index_method": "straight-line append cursor from reset",
+      "reset": {
+        "file": "assets/raw/st01bs.ecl",
+        "subroutine": "BossCard3_at",
+        "file_offset": "0x485c",
+        "instruction_offset": 20,
+        "opcode": 600,
+        "time": 0,
+        "rank_mask": 255,
+        "parameter_mask": 0,
+        "arguments_u32": [
+          0
+        ],
+        "dsl_file": "scripts/recovered/ecl/st01bs.ecl.txt",
+        "dsl_line": 868,
+        "dsl_text": "ins_600(0);"
+      },
+      "ordinary_bullet_fires": [
+        {
+          "file": "assets/raw/st01bs.ecl",
+          "subroutine": "BossCard3_at",
+          "file_offset": "0x4b20",
+          "instruction_offset": 728,
+          "opcode": 601,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0
+          ],
+          "dsl_file": "scripts/recovered/ecl/st01bs.ecl.txt",
+          "dsl_line": 902,
+          "dsl_text": "ins_601(0);"
+        }
+      ],
+      "type2_creations_in_same_subroutine": [],
+      "classification": "ordinary-bullet queue setup; no Type2 creator in this subroutine"
+    },
+    {
+      "file": "assets/raw/st04bs.ecl",
+      "subroutine": "BossCard1_at",
+      "file_offset": "0x40bc",
+      "instruction_offset": 432,
+      "opcode": 610,
+      "time": 0,
+      "rank_mask": 255,
+      "parameter_mask": 0,
+      "arguments_u32": [
+        0,
+        4,
+        0,
+        13,
+        8,
+        8,
+        4,
+        1,
+        3407386234,
+        1061752795,
+        0,
+        1056964608
+      ],
+      "dsl_file": "scripts/recovered/ecl/st04bs.ecl.txt",
+      "dsl_line": 556,
+      "dsl_text": "ins_610(0, 4, 0, 13, 8, 8, 4, 1, -9999994.0f, 0.7853982f, 0.0f, 0.5f);",
+      "queue": 0,
+      "command_index": 4,
+      "command_index_method": "literal",
+      "reset": {
+        "file": "assets/raw/st04bs.ecl",
+        "subroutine": "BossCard1_at",
+        "file_offset": "0x3f20",
+        "instruction_offset": 20,
+        "opcode": 600,
+        "time": 0,
+        "rank_mask": 255,
+        "parameter_mask": 0,
+        "arguments_u32": [
+          0
+        ],
+        "dsl_file": "scripts/recovered/ecl/st04bs.ecl.txt",
+        "dsl_line": 537,
+        "dsl_text": "ins_600(0);"
+      },
+      "ordinary_bullet_fires": [
+        {
+          "file": "assets/raw/st04bs.ecl",
+          "subroutine": "BossCard1_at",
+          "file_offset": "0x41b8",
+          "instruction_offset": 684,
+          "opcode": 601,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0
+          ],
+          "dsl_file": "scripts/recovered/ecl/st04bs.ecl.txt",
+          "dsl_line": 561,
+          "dsl_text": "ins_601(0);"
+        }
+      ],
+      "type2_creations_in_same_subroutine": [],
+      "classification": "ordinary-bullet queue setup; no Type2 creator in this subroutine"
+    },
+    {
+      "file": "assets/raw/st04bs.ecl",
+      "subroutine": "BossCard3_at",
+      "file_offset": "0x6024",
+      "instruction_offset": 364,
+      "opcode": 610,
+      "time": 0,
+      "rank_mask": 255,
+      "parameter_mask": 0,
+      "arguments_u32": [
+        0,
+        4,
+        1,
+        13,
+        8,
+        8,
+        1,
+        1,
+        3407386234,
+        1061752795,
+        3212836864,
+        3204448256
+      ],
+      "dsl_file": "scripts/recovered/ecl/st04bs.ecl.txt",
+      "dsl_line": 901,
+      "dsl_text": "ins_610(0, 4, 1, 13, 8, 8, 1, 1, -9999994.0f, 0.7853982f, -1.0f, -0.5f);",
+      "queue": 0,
+      "command_index": 4,
+      "command_index_method": "literal",
+      "reset": {
+        "file": "assets/raw/st04bs.ecl",
+        "subroutine": "BossCard3_at",
+        "file_offset": "0x5ecc",
+        "instruction_offset": 20,
+        "opcode": 600,
+        "time": 0,
+        "rank_mask": 255,
+        "parameter_mask": 0,
+        "arguments_u32": [
+          0
+        ],
+        "dsl_file": "scripts/recovered/ecl/st04bs.ecl.txt",
+        "dsl_line": 891,
+        "dsl_text": "ins_600(0);"
+      },
+      "ordinary_bullet_fires": [
+        {
+          "file": "assets/raw/st04bs.ecl",
+          "subroutine": "BossCard3_at",
+          "file_offset": "0x6170",
+          "instruction_offset": 696,
+          "opcode": 601,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0
+          ],
+          "dsl_file": "scripts/recovered/ecl/st04bs.ecl.txt",
+          "dsl_line": 909,
+          "dsl_text": "ins_601(0);"
+        }
+      ],
+      "type2_creations_in_same_subroutine": [],
+      "classification": "ordinary-bullet queue setup; no Type2 creator in this subroutine"
+    },
+    {
+      "file": "assets/raw/st07mbs.ecl",
+      "subroutine": "MBossCard1_at",
+      "file_offset": "0x1520",
+      "instruction_offset": 412,
+      "opcode": 610,
+      "time": 0,
+      "rank_mask": 255,
+      "parameter_mask": 0,
+      "arguments_u32": [
+        0,
+        5,
+        1,
+        13,
+        8,
+        8,
+        1,
+        1,
+        3407386234,
+        1061752795,
+        3212836864,
+        3204448256
+      ],
+      "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+      "dsl_line": 215,
+      "dsl_text": "ins_610(0, 5, 1, 13, 8, 8, 1, 1, -9999994.0f, 0.7853982f, -1.0f, -0.5f);",
+      "queue": 0,
+      "command_index": 5,
+      "command_index_method": "literal",
+      "reset": {
+        "file": "assets/raw/st07mbs.ecl",
+        "subroutine": "MBossCard1_at",
+        "file_offset": "0x1398",
+        "instruction_offset": 20,
+        "opcode": 600,
+        "time": 0,
+        "rank_mask": 255,
+        "parameter_mask": 0,
+        "arguments_u32": [
+          0
+        ],
+        "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+        "dsl_line": 204,
+        "dsl_text": "ins_600(0);"
+      },
+      "ordinary_bullet_fires": [
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard1_at",
+          "file_offset": "0x171c",
+          "instruction_offset": 920,
+          "opcode": 601,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 227,
+          "dsl_text": "ins_601(0);"
+        }
+      ],
+      "type2_creations_in_same_subroutine": [],
+      "classification": "ordinary-bullet queue setup; no Type2 creator in this subroutine"
+    }
+  ],
+  "type2_creators": [
+    {
+      "file": "assets/raw/st05bs.ecl",
+      "subroutine": "BossCard4_at",
+      "file_offset": "0x6aec",
+      "instruction_offset": 456,
+      "opcode": 711,
+      "time": 0,
+      "rank_mask": 255,
+      "parameter_mask": 0,
+      "arguments_u32": [
+        0
+      ],
+      "dsl_file": "scripts/recovered/ecl/st05bs.ecl.txt",
+      "dsl_line": 1122,
+      "dsl_text": "ins_711(0);",
+      "queue": 0,
+      "commands_at_every_creation": [
+        7,
+        3
+      ],
+      "command_writes": [
+        {
+          "file": "assets/raw/st05bs.ecl",
+          "subroutine": "BossCard4_at",
+          "file_offset": "0x6a08",
+          "instruction_offset": 228,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            0,
+            0,
+            7,
+            300,
+            4284967302,
+            3407386234,
+            3407386234
+          ],
+          "dsl_file": "scripts/recovered/ecl/st05bs.ecl.txt",
+          "dsl_line": 1115,
+          "dsl_text": "ins_609(0, 0, 0, 7, 300, -9999994, -9999994.0f, -9999994.0f);"
+        },
+        {
+          "file": "assets/raw/st05bs.ecl",
+          "subroutine": "BossCard4_at",
+          "file_offset": "0x6a38",
+          "instruction_offset": 276,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 128,
+          "arguments_u32": [
+            0,
+            1,
+            1,
+            3,
+            190,
+            0,
+            1008981770,
+            0
+          ],
+          "dsl_file": "scripts/recovered/ecl/st05bs.ecl.txt",
+          "dsl_line": 1116,
+          "dsl_text": "ins_609(0, 1, 1, 3, 190, 0, 0.01f, %A);"
+        }
+      ],
+      "reset": {
+        "file": "assets/raw/st05bs.ecl",
+        "subroutine": "BossCard4_at",
+        "file_offset": "0x6938",
+        "instruction_offset": 20,
+        "opcode": 600,
+        "time": 0,
+        "rank_mask": 255,
+        "parameter_mask": 0,
+        "arguments_u32": [
+          0
+        ],
+        "dsl_file": "scripts/recovered/ecl/st05bs.ecl.txt",
+        "dsl_line": 1108,
+        "dsl_text": "ins_600(0);"
+      },
+      "reset_dominates_creation": true,
+      "every_command_write_dominates_creation": true,
+      "instruction_count": 27,
+      "reachable_instruction_count": 27,
+      "all_times": 0,
+      "all_rank_masks": 255,
+      "calls_or_yields_or_queue_copies_in_subroutine": [],
+      "direct_literal_callers": [
+        {
+          "file": "assets/raw/st03bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0x7318",
+          "opcode": 15
+        },
+        {
+          "file": "assets/raw/st03bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0x7538",
+          "opcode": 15
+        },
+        {
+          "file": "assets/raw/st04bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0x6638",
+          "opcode": 15
+        },
+        {
+          "file": "assets/raw/st05bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0x6510",
+          "opcode": 11
+        },
+        {
+          "file": "assets/raw/st05bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0x653c",
+          "opcode": 11
+        },
+        {
+          "file": "assets/raw/st06bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0x769c",
+          "opcode": 11
+        },
+        {
+          "file": "assets/raw/st07bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0xa0fc",
+          "opcode": 15
+        },
+        {
+          "file": "assets/raw/st07bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0xa184",
+          "opcode": 15
+        },
+        {
+          "file": "assets/raw/st07bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0xa20c",
+          "opcode": 15
+        },
+        {
+          "file": "assets/raw/st07bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0xa294",
+          "opcode": 15
+        },
+        {
+          "file": "assets/raw/st07bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0xa31c",
+          "opcode": 15
+        },
+        {
+          "file": "assets/raw/st07bs.ecl",
+          "subroutine": "BossCard4",
+          "file_offset": "0xa380",
+          "opcode": 11
+        }
+      ],
+      "cfg_edges": [
+        {
+          "from": "0x6924",
+          "to": [
+            "0x6938"
+          ]
+        },
+        {
+          "from": "0x6938",
+          "to": [
+            "0x694c"
+          ]
+        },
+        {
+          "from": "0x694c",
+          "to": [
+            "0x6968"
+          ]
+        },
+        {
+          "from": "0x6968",
+          "to": [
+            "0x6984"
+          ]
+        },
+        {
+          "from": "0x6984",
+          "to": [
+            "0x69a0"
+          ]
+        },
+        {
+          "from": "0x69a0",
+          "to": [
+            "0x69c4"
+          ]
+        },
+        {
+          "from": "0x69c4",
+          "to": [
+            "0x69ec"
+          ]
+        },
+        {
+          "from": "0x69ec",
+          "to": [
+            "0x6a08"
+          ]
+        },
+        {
+          "from": "0x6a08",
+          "to": [
+            "0x6a38"
+          ]
+        },
+        {
+          "from": "0x6a38",
+          "to": [
+            "0x6a68"
+          ]
+        },
+        {
+          "from": "0x6a68",
+          "to": [
+            "0x6a7c"
+          ]
+        },
+        {
+          "from": "0x6a7c",
+          "to": [
+            "0x6a90"
+          ]
+        },
+        {
+          "from": "0x6a90",
+          "to": [
+            "0x6aa4"
+          ]
+        },
+        {
+          "from": "0x6aa4",
+          "to": [
+            "0x6ab8"
+          ]
+        },
+        {
+          "from": "0x6ab8",
+          "to": [
+            "0x6b84"
+          ]
+        },
+        {
+          "from": "0x6ad0",
+          "to": [
+            "0x6aec"
+          ]
+        },
+        {
+          "from": "0x6aec",
+          "to": [
+            "0x6b00"
+          ]
+        },
+        {
+          "from": "0x6b00",
+          "to": [
+            "0x6b14"
+          ]
+        },
+        {
+          "from": "0x6b14",
+          "to": [
+            "0x6b28"
+          ]
+        },
+        {
+          "from": "0x6b28",
+          "to": [
+            "0x6b3c"
+          ]
+        },
+        {
+          "from": "0x6b3c",
+          "to": [
+            "0x6b4c"
+          ]
+        },
+        {
+          "from": "0x6b4c",
+          "to": [
+            "0x6b5c"
+          ]
+        },
+        {
+          "from": "0x6b5c",
+          "to": [
+            "0x6b70"
+          ]
+        },
+        {
+          "from": "0x6b70",
+          "to": [
+            "0x6b84"
+          ]
+        },
+        {
+          "from": "0x6b84",
+          "to": [
+            "0x6b98"
+          ]
+        },
+        {
+          "from": "0x6b98",
+          "to": [
+            "0x6ad0",
+            "0x6bb0"
+          ]
+        },
+        {
+          "from": "0x6bb0",
+          "to": []
+        }
+      ],
+      "conclusion": "ETEX13 excluded at every reachable creation in this body, independently of incoming queue contents"
+    },
+    {
+      "file": "assets/raw/st07mbs.ecl",
+      "subroutine": "MBossCard2_at",
+      "file_offset": "0x1fd0",
+      "instruction_offset": 976,
+      "opcode": 711,
+      "time": 0,
+      "rank_mask": 255,
+      "parameter_mask": 0,
+      "arguments_u32": [
+        0
+      ],
+      "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+      "dsl_line": 309,
+      "dsl_text": "ins_711(0);",
+      "queue": 0,
+      "commands_at_every_creation": [
+        7,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "command_writes": [
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2_at",
+          "file_offset": "0x1ce4",
+          "instruction_offset": 228,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            0,
+            0,
+            7,
+            400,
+            4284967302,
+            3407386234,
+            3407386234
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 294,
+          "dsl_text": "ins_609(0, 0, 0, 7, 400, -9999994, -9999994.0f, -9999994.0f);"
+        },
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2_at",
+          "file_offset": "0x1d14",
+          "instruction_offset": 276,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            1,
+            1,
+            3,
+            60,
+            0,
+            0,
+            1007614517
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 295,
+          "dsl_text": "ins_609(0, 1, 1, 3, 60, 0, 0.0f, 0.008726646f);"
+        },
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2_at",
+          "file_offset": "0x1d44",
+          "instruction_offset": 324,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            2,
+            1,
+            3,
+            60,
+            60,
+            0,
+            3163486773
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 296,
+          "dsl_text": "ins_609(0, 2, 1, 3, 60, 60, 0.0f, -0.017453292f);"
+        },
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2_at",
+          "file_offset": "0x1d74",
+          "instruction_offset": 372,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            3,
+            1,
+            3,
+            60,
+            120,
+            1008981770,
+            1016003125
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 297,
+          "dsl_text": "ins_609(0, 3, 1, 3, 60, 120, 0.01f, 0.017453292f);"
+        },
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2_at",
+          "file_offset": "0x1da4",
+          "instruction_offset": 420,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            4,
+            1,
+            3,
+            60,
+            180,
+            1008981770,
+            3163486773
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 298,
+          "dsl_text": "ins_609(0, 4, 1, 3, 60, 180, 0.01f, -0.017453292f);"
+        },
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2_at",
+          "file_offset": "0x1dd4",
+          "instruction_offset": 468,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            5,
+            1,
+            3,
+            60,
+            240,
+            1008981770,
+            1016003125
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 299,
+          "dsl_text": "ins_609(0, 5, 1, 3, 60, 240, 0.01f, 0.017453292f);"
+        },
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2_at",
+          "file_offset": "0x1e04",
+          "instruction_offset": 516,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            6,
+            1,
+            3,
+            60,
+            300,
+            1008981770,
+            3163486773
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 300,
+          "dsl_text": "ins_609(0, 6, 1, 3, 60, 300, 0.01f, -0.017453292f);"
+        },
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2_at",
+          "file_offset": "0x1e34",
+          "instruction_offset": 564,
+          "opcode": 609,
+          "time": 0,
+          "rank_mask": 255,
+          "parameter_mask": 0,
+          "arguments_u32": [
+            0,
+            7,
+            1,
+            3,
+            60,
+            360,
+            1008981770,
+            1016003125
+          ],
+          "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+          "dsl_line": 301,
+          "dsl_text": "ins_609(0, 7, 1, 3, 60, 360, 0.01f, 0.017453292f);"
+        }
+      ],
+      "reset": {
+        "file": "assets/raw/st07mbs.ecl",
+        "subroutine": "MBossCard2_at",
+        "file_offset": "0x1c14",
+        "instruction_offset": 20,
+        "opcode": 600,
+        "time": 0,
+        "rank_mask": 255,
+        "parameter_mask": 0,
+        "arguments_u32": [
+          0
+        ],
+        "dsl_file": "scripts/recovered/ecl/st07mbs.ecl.txt",
+        "dsl_line": 287,
+        "dsl_text": "ins_600(0);"
+      },
+      "reset_dominates_creation": true,
+      "every_command_write_dominates_creation": true,
+      "instruction_count": 47,
+      "reachable_instruction_count": 47,
+      "all_times": 0,
+      "all_rank_masks": 255,
+      "calls_or_yields_or_queue_copies_in_subroutine": [],
+      "direct_literal_callers": [
+        {
+          "file": "assets/raw/st07mbs.ecl",
+          "subroutine": "MBossCard2",
+          "file_offset": "0x1b24",
+          "opcode": 11
+        }
+      ],
+      "cfg_edges": [
+        {
+          "from": "0x1c00",
+          "to": [
+            "0x1c14"
+          ]
+        },
+        {
+          "from": "0x1c14",
+          "to": [
+            "0x1c28"
+          ]
+        },
+        {
+          "from": "0x1c28",
+          "to": [
+            "0x1c44"
+          ]
+        },
+        {
+          "from": "0x1c44",
+          "to": [
+            "0x1c60"
+          ]
+        },
+        {
+          "from": "0x1c60",
+          "to": [
+            "0x1c7c"
+          ]
+        },
+        {
+          "from": "0x1c7c",
+          "to": [
+            "0x1ca0"
+          ]
+        },
+        {
+          "from": "0x1ca0",
+          "to": [
+            "0x1cc8"
+          ]
+        },
+        {
+          "from": "0x1cc8",
+          "to": [
+            "0x1ce4"
+          ]
+        },
+        {
+          "from": "0x1ce4",
+          "to": [
+            "0x1d14"
+          ]
+        },
+        {
+          "from": "0x1d14",
+          "to": [
+            "0x1d44"
+          ]
+        },
+        {
+          "from": "0x1d44",
+          "to": [
+            "0x1d74"
+          ]
+        },
+        {
+          "from": "0x1d74",
+          "to": [
+            "0x1da4"
+          ]
+        },
+        {
+          "from": "0x1da4",
+          "to": [
+            "0x1dd4"
+          ]
+        },
+        {
+          "from": "0x1dd4",
+          "to": [
+            "0x1e04"
+          ]
+        },
+        {
+          "from": "0x1e04",
+          "to": [
+            "0x1e34"
+          ]
+        },
+        {
+          "from": "0x1e34",
+          "to": [
+            "0x1e64"
+          ]
+        },
+        {
+          "from": "0x1e64",
+          "to": [
+            "0x1e78"
+          ]
+        },
+        {
+          "from": "0x1e78",
+          "to": [
+            "0x1e8c"
+          ]
+        },
+        {
+          "from": "0x1e8c",
+          "to": [
+            "0x1ea0"
+          ]
+        },
+        {
+          "from": "0x1ea0",
+          "to": [
+            "0x1eb4"
+          ]
+        },
+        {
+          "from": "0x1eb4",
+          "to": [
+            "0x1ec8"
+          ]
+        },
+        {
+          "from": "0x1ec8",
+          "to": [
+            "0x1ed8"
+          ]
+        },
+        {
+          "from": "0x1ed8",
+          "to": [
+            "0x1ee8"
+          ]
+        },
+        {
+          "from": "0x1ee8",
+          "to": [
+            "0x1efc"
+          ]
+        },
+        {
+          "from": "0x1efc",
+          "to": [
+            "0x1f10"
+          ]
+        },
+        {
+          "from": "0x1f10",
+          "to": [
+            "0x1f24"
+          ]
+        },
+        {
+          "from": "0x1f24",
+          "to": [
+            "0x2090"
+          ]
+        },
+        {
+          "from": "0x1f3c",
+          "to": [
+            "0x1f50"
+          ]
+        },
+        {
+          "from": "0x1f50",
+          "to": [
+            "0x1f64"
+          ]
+        },
+        {
+          "from": "0x1f64",
+          "to": [
+            "0x1f78"
+          ]
+        },
+        {
+          "from": "0x1f78",
+          "to": [
+            "0x1f88"
+          ]
+        },
+        {
+          "from": "0x1f88",
+          "to": [
+            "0x1f98"
+          ]
+        },
+        {
+          "from": "0x1f98",
+          "to": [
+            "0x1fb4"
+          ]
+        },
+        {
+          "from": "0x1fb4",
+          "to": [
+            "0x1fd0"
+          ]
+        },
+        {
+          "from": "0x1fd0",
+          "to": [
+            "0x1fe4"
+          ]
+        },
+        {
+          "from": "0x1fe4",
+          "to": [
+            "0x1ff8"
+          ]
+        },
+        {
+          "from": "0x1ff8",
+          "to": [
+            "0x200c"
+          ]
+        },
+        {
+          "from": "0x200c",
+          "to": [
+            "0x201c"
+          ]
+        },
+        {
+          "from": "0x201c",
+          "to": [
+            "0x2030"
+          ]
+        },
+        {
+          "from": "0x2030",
+          "to": [
+            "0x2044"
+          ]
+        },
+        {
+          "from": "0x2044",
+          "to": [
+            "0x2058"
+          ]
+        },
+        {
+          "from": "0x2058",
+          "to": [
+            "0x2068"
+          ]
+        },
+        {
+          "from": "0x2068",
+          "to": [
+            "0x207c"
+          ]
+        },
+        {
+          "from": "0x207c",
+          "to": [
+            "0x2090"
+          ]
+        },
+        {
+          "from": "0x2090",
+          "to": [
+            "0x20a4"
+          ]
+        },
+        {
+          "from": "0x20a4",
+          "to": [
+            "0x1f3c",
+            "0x20bc"
+          ]
+        },
+        {
+          "from": "0x20bc",
+          "to": []
+        }
+      ],
+      "conclusion": "ETEX13 excluded at every reachable creation in this body, independently of incoming queue contents"
+    }
+  ],
+  "source_evidence": [
+    {
+      "file": "source_reconstruction/gameplay/enemy_shot.cpp",
+      "line": 22,
+      "excerpt": "case 600:{auto& q=at(true);auto v=shot_values(q);v.parameters={};auto& metadata=meta(q);const auto padding0=metadata.padding_4a[0],padding1=metadata.padding_4a[1];auto defaults=env.metadata(nullptr);metadata=std::move(*static_cast<bullet::ShotMetadata*>(defaults.get()));metadata.padding_4a[0]=padding0;metadata.padding_4a[1]=padding1;v.command_cursor=0;v.offset.x=v.offset.y=0;v.absolute={};store_shot_values(q,v);break;} //offset.z(+3c) is deliberately retained",
+      "meaning": "ECL600 replaces metadata with fresh defaults and resets the append cursor; prior/aliased commands are discarded."
+    },
+    {
+      "file": "source_reconstruction/bullet_system/metadata.cpp",
+      "line": 3,
+      "excerpt": "ShotMetadata::ShotMetadata(){commands.resize(2);} //47bb90 ->4862f0: value-construct two zero commands",
+      "meaning": "Fresh metadata has two value-initialized zero command records."
+    },
+    {
+      "file": "source_reconstruction/bullet_system/command.hpp",
+      "line": 8,
+      "excerpt": "std::uint32_t words[11]{};",
+      "meaning": "Command words are initially zero."
+    },
+    {
+      "file": "source_reconstruction/gameplay/enemy_shot.cpp",
+      "line": 31,
+      "excerpt": "case 609:case 610:case 611:case 612:{auto& q=at(true);auto v=shot_values(q);auto& metadata=meta(q);const bool append=op>=611,wide=op==610||op==612;int arg=append?1:2;const int index=append?v.command_cursor:r.integer(1);if(index<0)throw std::out_of_range(\"Negative Enemy ETEX index\");if(metadata.commands.size()<std::size_t(index)+1)metadata.commands.resize(std::size_t(index)+1);auto& command=metadata.commands[unsigned(index)];command.words[9]=unsigned(r.integer(arg++));command.words[8]=unsigned(r.integer(arg++));command.words[4]=unsigned(r.integer(arg++));command.words[5]=unsigned(r.integer(arg++));if(wide){command.words[6]=unsigned(r.integer(arg++));command.words[7]=unsigned(r.integer(arg++));}command.words[0]=std::bit_cast<unsigned>(r.real(arg++));command.words[1]=std::bit_cast<unsigned>(r.real(arg++));if(wide){command.words[2]=std::bit_cast<unsigned>(r.real(arg++));command.words[3]=std::bit_cast<unsigned>(r.real(arg++));}v.command_cursor=recovered::signed_bits(unsigned(index)+1u);store_shot_values(q,v);break;}",
+      "meaning": "Only the mapped ETEX argument is written to words[8]; append and explicit index setters differ."
+    },
+    {
+      "file": "source_reconstruction/gameplay/enemy_shot.cpp",
+      "line": 24,
+      "excerpt": "case 602:{auto& q=at(false);auto v=shot_values(q);v.parameters.fields_00[0]=unsigned(r.integer(1));v.parameters.fields_00[1]=unsigned(r.integer(2));store_shot_values(q,v);break;}",
+      "meaning": "The third argument of ECL602 sets color; a literal 13 here is not ETEX13."
+    },
+    {
+      "file": "source_reconstruction/gameplay/enemy_shot.cpp",
+      "line": 33,
+      "excerpt": "case 614:{const int destination=r.integer(0),source=r.integer(1);if(destination<0||source<0)throw std::out_of_range(\"Negative Enemy shot copy index\");const auto count=std::distance(s.queued.begin(),s.queued.end());const auto size=std::size_t((std::max)(destination,source))+1;if(count<size)s.queued.resize(size);auto to=s.queued.begin(),from=s.queued.begin();std::advance(to,destination);std::advance(from,source);*to=*from;break;}",
+      "meaning": "Queue copy exists globally but is absent between reset and both Type2 creation sites."
+    },
+    {
+      "file": "source_reconstruction/gameplay/enemy_opcode_laser.cpp",
+      "line": 25,
+      "excerpt": "case 711:{auto& q=queued();const auto v=shot_values(q);const auto& m=metadata(q);laser::Type2Parameters p;p.commands=m.commands;p.position=shot_origin(r.state,v);p.type=v.parameters.fields_00[0];p.color=v.parameters.fields_00[1];p.angle=ecl::math::wrap_angle(v.parameters.angle);p.speed=v.parameters.speed;p.width=m.fields_14[0];p.count=m.fields_24[0];p.flags|=1u;p.sound=m.field_3c;p.motion_sound=m.field_40;p.radial_offset=m.field_00;p.view_index=int(r.state.fields_2c8[8]);env.create(r.context(),2,&p);break;}",
+      "meaning": "ECL711 copies queued commands by value into Type2Parameters and creates kind 2."
+    },
+    {
+      "file": "source_reconstruction/gameplay/enemy_opcode_laser_adapter.cpp",
+      "line": 8,
+      "excerpt": "void create(game_session::Context& c,unsigned kind,const void* p) override{laser::spawn_laser(*static_cast<laser::Controller*>(c.objects_04[4]),kind,p);}",
+      "meaning": "Production adapter calls spawn_laser."
+    },
+    {
+      "file": "source_reconstruction/laser_system/spawn.cpp",
+      "line": 10,
+      "excerpt": "case 2:return spawn_type2(owner,*static_cast<const Type2Parameters*>(p));",
+      "meaning": "Kind 2 dispatch calls spawn_type2."
+    },
+    {
+      "file": "source_reconstruction/laser_system/type2.cpp",
+      "line": 26,
+      "excerpt": "parameters=input;{Type2Parameters returned_copy(parameters);} //4c8d70 returns a value, immediately destroyed by4d3230.",
+      "meaning": "Type2 owns a copy; subsequent queue writes cannot inject ETEX13 into an existing curve."
+    },
+    {
+      "file": "source_reconstruction/laser_system/type2.cpp",
+      "line": 44,
+      "excerpt": "else{path=*parameters.path;auto* destination=&path;for(auto* source=parameters.path;source;source=source->next){if(source->next){destination->next=create_curve_node();if(!destination->next)return -1;*destination->next=*source->next;destination=destination->next;}}parameters.path=nullptr;command_index=99;}",
+      "meaning": "Curve splitting clones path and disables command replay in the child."
+    },
+    {
+      "file": "source_reconstruction/laser_system/type2_cancellation.cpp",
+      "line": 36,
+      "excerpt": "if(!field_1324&&length>3){Type2Parameters p=parameters;p.path=&path;p.count=length;p.time=sub(timer_48.current_f,n::int_float(start));p.sound=-1;p.field_50=999;spawn_type2(*static_cast<Controller*>(context->objects_04[4]),p);}",
+      "meaning": "The only additional Type2 spawn path copies existing Type2 parameters during splitting."
+    },
+    {
+      "file": "source_reconstruction/laser_system/type2_commands.cpp",
+      "line": 30,
+      "excerpt": "case 13:reemit(op);continue;",
+      "meaning": "The exceptional reemit path requires command.words[8] == 13."
+    },
+    {
+      "file": "source_reconstruction/laser_system/type2_commands.cpp",
+      "line": 23,
+      "excerpt": "case 6:if(op.i(4)>0){active_commands|=64;auto& c=commands[4];c.field_10=op.f(0)<0?field_7c:op.f(0);auto& mutable_op=parameters.commands[command_index];--mutable_op.words[4];c.field_34=mutable_op.words[4];c.field_30=0;c.field_38=op.words[5];}break;",
+      "meaning": "Command mutation decrements words[4], not words[8]; existing 3/7 codes do not synthesize 13."
+    },
+    {
+      "file": "source_reconstruction/bullet_system/laser_spawn.cpp",
+      "line": 8,
+      "excerpt": "if(op.words[4]==0){",
+      "meaning": "Bullet ETEX27 supports Type0 and Type1 only; it cannot turn a bullet ETEX13 list into Type2."
+    },
+    {
+      "file": "source_reconstruction/gameplay/enemy_vm.cpp",
+      "line": 114,
+      "excerpt": "auto* previous=manager->current;manager->current=&target;target.subroutine=manager->loader->find(name);target.instruction_offset=0;target.time=0;",
+      "meaning": "Synchronous/async subroutine calls enter at offset zero, before the dominating reset."
+    },
+    {
+      "file": "source_reconstruction/gameplay/enemy_vm.cpp",
+      "line": 132,
+      "excerpt": "if(!(static_cast<float>(ins.time())<=time)) {time=add(time,delta);break;}",
+      "meaning": "Interpreter yields at a future instruction time; both inspected bodies have time 0 and no waits."
+    },
+    {
+      "file": "source_reconstruction/gameplay/enemy_vm.cpp",
+      "line": 283,
+      "excerpt": "std::int32_t ScriptManager::tick(float delta,EnemyVmEnvironment& environment){",
+      "meaning": "Asynchronous runtimes run sequentially; there is no instruction-level preemption in a body."
+    }
+  ],
+  "limitations": [
+    "This is a static result for the hashed 21 supplied ECL resources and inspected production implementation, not an executed whole-game replay or proof that all recovered native semantics are equivalent.",
+    "Cross-OS-thread writes, reentrant external callbacks and whole-program global aliases were not independently audited against the native program. Their absence is an assumption, not a proved global non-reachability result; unknown behavior outside the inspected sequential ECL execution is retained as unknown.",
+    "The conclusion assumes normal subroutine entry at offset zero, valid VM rank/state, sequential runtime scheduling and memory-safe state. It does not model corrupt pointers, arbitrary instruction-pointer injection, external modified scripts or another program version.",
+    "The CFG overapproximates both conditional branches and does not prove which difficulties, phases or loops execute. A writer/fire site is a syntactic candidate, not proof that a bullet reaches its ETEX13 at runtime.",
+    "Dynamic angles, counts and other values remain unresolved. All 683 command-type arguments are literal; both Type2 queue operands, their reset queues and their command indices/types are literal. Incoming queues and cross-subroutine state may be arbitrary because the dominating reset discards them.",
+    "The original Type2 ETEX13 out-of-bounds-copy limitation remains real for synthetic or modified inputs. This audit does not change that code, execute the invalid copy or count it as an oracle pass."
+  ],
+  "input_sha256": {
+    "assets/raw/common.ecl": "16bb6964ad0bab3b845b4b4bfc920d8a1ad2704258829ea01c11cdbc04729866",
+    "assets/raw/default.ecl": "5b9d45e50e2358a09e0d3d2c293cddff6215c7559181564d14f2637bcdd2f6cf",
+    "assets/raw/st01.ecl": "424cb10afdce379e0477dfca1c276840fddc7e104b975d4c06a084bdc64c1a10",
+    "assets/raw/st01bs.ecl": "8ba84344fa19483266c6b5aa50fd8abd9d13603e6ac068059af91be03901ac60",
+    "assets/raw/st01mbs.ecl": "875bcd4d57a0cb928d7d1e6f0eb673502fb061e09a4e91920415aa8b9f6f6c2f",
+    "assets/raw/st02.ecl": "93b90d038e850b7ac505961ff266bab55ff58ff7d48636aa3a2c9def934f7375",
+    "assets/raw/st02bs.ecl": "1793de3b213848eeb80784b36d9f1c5acc227b47774d015783c9d386ae0456ab",
+    "assets/raw/st02mbs.ecl": "092e93320e2cdff34a322c5c6a8ba3f4040e820da26f4303cba858c9f963b11a",
+    "assets/raw/st03.ecl": "74d0dbd3dc936d05e9b21bbffefdabc4f73dd704d7cc325590662e4e95201aca",
+    "assets/raw/st03bs.ecl": "6c92e4d22b86cca441fed0c6409bb6ccaef8abf6cf99d78a6ac25b59980d2304",
+    "assets/raw/st04.ecl": "15c7ec8e5700dfa3860ab1ee0058de9ef7ae27652784d855d0b36b581e825b01",
+    "assets/raw/st04bs.ecl": "8c02ac7b3853b7749bb46e1bc71aefb30b795885f21f0466780bad6ce1377e1e",
+    "assets/raw/st04mbs.ecl": "d75b16ae5ff613fff4c140f7a7bbe8b112b296b1a4463f5beb238cb7d3664fbd",
+    "assets/raw/st05.ecl": "70749cb6a5f6b3c2df48b24f68527d692c3bd606afb7a9ee10c7c2467a97620e",
+    "assets/raw/st05bs.ecl": "ee94230fa5ce061f85ff8fbf2dc4e3551f54ffcd55a6a0e4b5f774f0cad5e3ce",
+    "assets/raw/st05mbs.ecl": "b09f70156b9c6c2b46f863d5890504d1bfa4942d25ab3c6096fd989aca5526d0",
+    "assets/raw/st06.ecl": "9a876f595f25f026f5a737f9860a8c8c8d65998fc8caccc47a4245656ccf2101",
+    "assets/raw/st06bs.ecl": "2be51f0f192bb8487ceb5d2b7f01f7c9127c5fd871477c62f33e6be1a1899d7c",
+    "assets/raw/st07.ecl": "3e602bb51d94e1a430a7b524d20449e5297e7d9ed136d225c25853c239c3c87b",
+    "assets/raw/st07bs.ecl": "c0ddef265db774033c5956acb9c73a536b9dc3decd86c90639c53060f49770cf",
+    "assets/raw/st07mbs.ecl": "fbcd96616446272fedc4f540aee301cb1b05686bdde46d6cad7801aaaf33f3a5",
+    "reports/ecl_binary_scan.json": "acaa125fa0aed5e4cee4874d58b602db39a7726d06dbb1c65fa85e686240ae47",
+    "scripts/recovered/ecl/st01bs.ecl.txt": "426db57cd87c3d63c2b024a7a695dbd8aa81d81de12ed8d4312556e18f14c86f",
+    "scripts/recovered/ecl/st04bs.ecl.txt": "506a971eb46718c80198e8c06015acd223a8e542c332af8a20a681cb08a6a4a7",
+    "scripts/recovered/ecl/st05bs.ecl.txt": "e6d28972095acb0c97762e2a1806e4ce523b5ffd13a5678ba0a58530c222e93e",
+    "scripts/recovered/ecl/st07mbs.ecl.txt": "82a15bd0a9eef52caec70313fc0ea6f7fe298cc8aa7a140ba57a875eff71ed27",
+    "source_reconstruction/audit/audit_type2_etex13_reachability.py": "eb9d6e530ed51a0f9b88f3682b719bc4374803f801317e43cb6a7f929f3f8674",
+    "source_reconstruction/bullet_system/command.hpp": "b360fd17899731066825cdbd6f06bae53b18fe9bc5d54abb6e8a8d3508e46312",
+    "source_reconstruction/bullet_system/laser_spawn.cpp": "8fee8ba1af3cbf76b9f70ddc706806750ec12cce219379af0e4260763b947a5f",
+    "source_reconstruction/bullet_system/metadata.cpp": "169105c7f0c781898e055535ec5cc5d9e1bb5c634a5eb66f1c6ca128e9266092",
+    "source_reconstruction/gameplay/enemy_opcode_laser.cpp": "fc1365f15029b4f682ab51b9e9626299f3b1b976a3402f7d7e0f93cf4cc0d8a1",
+    "source_reconstruction/gameplay/enemy_opcode_laser_adapter.cpp": "148aaf11a9411c9535b2a382f1f74525907b1ff8f1bd06b7fe8830ad73c6bcb4",
+    "source_reconstruction/gameplay/enemy_shot.cpp": "59c76d69deccaffe6064eb6fd0904324f549935769782036cb32a20415a18f8d",
+    "source_reconstruction/gameplay/enemy_vm.cpp": "e688c8349625d072d578eb59dccd10803817b002682fac68928842c898135918",
+    "source_reconstruction/laser_system/TYPE2_ETEX13.md": "3d5ea4e1af9113e8af185f6d56f60ae44f0c49d294ff8c1fed30828fbf1c8059",
+    "source_reconstruction/laser_system/spawn.cpp": "38c6419bccf69871af115bdf79d4509ef491b9d4505b407aa8f38cb5cf2bd1cb",
+    "source_reconstruction/laser_system/type2.cpp": "a7fb29bb5ceaa4a142554ff742d7a93752a6deade1b88e8c566b908de72a0b63",
+    "source_reconstruction/laser_system/type2.hpp": "81d79f9873fa2a7d09bbe4474a180ef59f07c6810f7f1acce512f87f4ed405df",
+    "source_reconstruction/laser_system/type2_cancellation.cpp": "8c304a6c1a4c0822aad5194608caa9fe039f3da4c4520e9147f729640de1a6fd",
+    "source_reconstruction/laser_system/type2_commands.cpp": "46e88a3e817ec280e8cf3f7ca929e9f7a80fb0f31e39a1aaaffe47f6a17ff6ea",
+    "source_reconstruction/laser_system/type2_reemit.cpp": "e198e17f71f019e4ddbe402c44cde965d4c3cce969f4cc9dece66edab524e668"
+  }
+}

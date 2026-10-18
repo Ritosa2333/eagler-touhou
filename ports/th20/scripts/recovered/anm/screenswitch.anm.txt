@@ -1,0 +1,220 @@
+entry entry0 {
+    version: 8,
+    name: "effect/eff_switch.png",
+    filename: "effect/eff_switch@screenswitch@0.png",
+    format: 5,
+    width: 64,
+    height: 64,
+    memoryPriority: 10,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 64,
+    THTXHeight: 64,
+    THTXZero: 0,
+    w_max: 64,
+    h_max: 64,
+    sprites: {
+        sprite0: { x: 0, y: 1, w: 128, h: 128 }
+    }
+}
+
+script script0 {
+    ins_403(0);
+    ins_3();
+}
+
+script script1 {
+    ins_403(0);
+    ins_304(35);
+    ins_500(script3);
+    ins_500(script4);
+    ins_500(script5);
+    ins_500(script6);
+    ins_3();
+    ins_5(1);
++60: // 60
+    ins_1();
+}
+
+script script2 {
+    ins_403(0);
+    ins_313(1);
+    ins_500(script10);
+    ins_500(script9);
+    ins_500(script8);
+    ins_500(script7);
+    ins_3();
+    ins_5(1);
++60: // 60
+    ins_1();
+}
+
+script script3 {
+-1:
+    ins_302(1);
+    ins_300(sprite0);
+    ins_312(0, 1);
+    ins_402(3.0f, 12.0f);
+    ins_401(0.0f, 0.0f, 1.9198622f);
+    ins_400(-992.0f, -512.0f, 0.0f);
+    ins_407(30, 1, 160.0f, -87.89502f, 0.0f);
+    ins_404(64, 64, 56);
+    ins_313(1);
+45:
+    ins_300(-1);
+    ins_603(640.0f, 480.0f);
+    ins_402(1.0f, 1.0f);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_3();
+}
+
+script script4 {
+-1:
+    ins_302(1);
+    ins_300(sprite0);
+    ins_312(0, 1);
+    ins_402(3.0f, 12.0f);
+    ins_401(0.0f, 0.0f, -1.9198622f);
+    ins_400(992.0f, -512.0f, 0.0f);
+    ins_404(64, 64, 56);
+    ins_313(1);
+5:
+    ins_407(30, 1, -96.0f, -161.77138f, 0.0f);
++40: // 45
+    ins_1();
+}
+
+script script5 {
+-1:
+    ins_302(1);
+    ins_300(sprite0);
+    ins_312(0, 1);
+    ins_402(3.0f, 12.0f);
+    ins_401(0.0f, 0.0f, 1.7453293f);
+    ins_400(-1056.0f, 0.0f, 0.0f);
+    ins_404(64, 64, 56);
+    ins_313(1);
+10:
+    ins_407(30, 1, 160.0f, 215.32375f, 0.0f);
++35: // 45
+    ins_1();
+}
+
+script script6 {
+-1:
+    ins_302(1);
+    ins_300(sprite0);
+    ins_312(0, 1);
+    ins_402(3.0f, 12.0f);
+    ins_401(0.0f, 0.0f, -1.7453293f);
+    ins_400(1088.0f, 0.0f, 0.0f);
+    ins_404(64, 64, 56);
+    ins_313(1);
+15:
+    ins_407(30, 1, 64.0f, 177.81573f, 0.0f);
++30: // 45
+    ins_1();
+}
+
+script script7 {
+-1:
+    ins_302(1);
+    ins_300(sprite0);
+    ins_312(0, 1);
+    ins_402(3.0f, 12.0f);
+    ins_401(0.0f, 0.0f, 1.2217305f);
+    ins_400(160.0f, -328.10498f, 0.0f);
+    ins_407(30, 1, -1024.0f, 96.0f, 0.0f);
+    ins_404(64, 64, 56);
+    ins_313(1);
+40:
+    ins_1();
+}
+
+script script8 {
+-1:
+    ins_302(1);
+    ins_300(sprite0);
+    ins_312(0, 1);
+    ins_402(3.0f, 12.0f);
+    ins_401(0.0f, 0.0f, -1.2217305f);
+    ins_400(-96.0f, -254.22862f, 0.0f);
+    ins_404(64, 64, 56);
+    ins_313(1);
+5:
+    ins_407(30, 1, 1024.0f, 96.0f, 0.0f);
++40: // 45
+    ins_1();
+}
+
+script script9 {
+-1:
+    ins_302(1);
+    ins_300(sprite0);
+    ins_312(0, 1);
+    ins_402(3.0f, 12.0f);
+    ins_401(0.0f, 0.0f, 1.3962634f);
+    ins_400(160.0f, 104.67626f, 0.0f);
+    ins_404(64, 64, 56);
+    ins_313(1);
+10:
+    ins_407(30, 1, -1056.0f, 320.0f, 0.0f);
++40: // 50
+    ins_1();
+}
+
+script script10 {
+-1:
+    ins_302(1);
+    ins_300(sprite0);
+    ins_312(0, 1);
+    ins_402(3.0f, 12.0f);
+    ins_401(0.0f, 0.0f, -1.3962634f);
+    ins_400(-96.0f, 142.18427f, 0.0f);
+    ins_404(64, 64, 56);
+    ins_313(1);
+15:
+    ins_407(30, 1, 1088.0f, 320.0f, 0.0f);
++40: // 55
+    ins_1();
+}
+
+
+entry entry1 {
+    version: 8,
+    name: "effect/eff_switchbg.png",
+    filename: "effect/eff_switchbg@screenswitch@1.png",
+    format: 5,
+    width: 512,
+    height: 512,
+    memoryPriority: 10,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite1: { x: 0, y: 0, w: 1280, h: 960 }
+    }
+}
+
+script script11 {
+-1:
+    ins_302(0);
+    ins_304(35);
+    ins_313(0);
+    ins_300(sprite1);
+    ins_303(7);
+    ins_421(1, 1);
+    ins_425(-0.001f);
+    ins_426(-0.001f);
+10:
+    ins_3();
+}
+
+

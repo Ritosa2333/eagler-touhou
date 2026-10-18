@@ -1,0 +1,23 @@
+/* Entry: 0x0040dc60; symbol: FUN_0040dc60; body bytes: 87 */
+
+_Compressed_pair<struct_std::default_delete<class_std::_Facet_base>,class_std::_Facet_base*,1> *
+__fastcall
+FUN_0040dc60(_Compressed_pair<struct_std::default_delete<class_std::_Facet_base>,class_std::_Facet_base*,1>
+             *param_1)
+
+{
+  int *unaff_FS_OFFSET;
+  int local_10;
+  undefined1 *puStack_c;
+  undefined4 uStack_8;
+  
+  uStack_8 = 0xffffffff;
+  puStack_c = &LAB_00567750;
+  local_10 = *unaff_FS_OFFSET;
+  *unaff_FS_OFFSET = (int)&local_10;
+  _Compressed_pair<><>(param_1);
+  FUN_0040ee40(param_1);
+  *unaff_FS_OFFSET = local_10;
+  return param_1;
+}
+

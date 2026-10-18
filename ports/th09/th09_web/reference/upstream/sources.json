@@ -1,0 +1,44 @@
+[
+  {
+    "repository": "https://github.com/thpatch/thtk",
+    "commit": "892114a0fcaa0bbdaaecf3cb4ad56f758683fb40",
+    "path": "COPYING",
+    "sha256": "ce178fcaf4e95785bf386a100b6c1eabaef8ef4e7462675317538951a8e8bb46",
+    "use": "Reference only; not linked into the game"
+  },
+  {
+    "repository": "https://github.com/thpatch/thtk",
+    "commit": "892114a0fcaa0bbdaaecf3cb4ad56f758683fb40",
+    "path": "thtk/thdat08.c",
+    "sha256": "c4aacb1539999d31913535a5cb2ecf8879fe5d70a93d51c4e191ffe0f5035b41",
+    "use": "Reference only; not linked into the game"
+  },
+  {
+    "repository": "https://github.com/thpatch/thtk",
+    "commit": "892114a0fcaa0bbdaaecf3cb4ad56f758683fb40",
+    "path": "thtk/thcrypt.c",
+    "sha256": "ef49d5bf7a09d8592a76c4a5fc6c7d4e7ca94ebed325b09587738dd033d94365",
+    "use": "Reference only; not linked into the game"
+  },
+  {
+    "repository": "https://github.com/thpatch/thtk",
+    "commit": "892114a0fcaa0bbdaaecf3cb4ad56f758683fb40",
+    "path": "thtk/thcrypt.h",
+    "sha256": "f389a242b051f0483973985430da889aba23d994ba80d346232c23a5156e7d7c",
+    "use": "Reference only; not linked into the game"
+  },
+  {
+    "repository": "https://github.com/touhouworldcup/thprac",
+    "commit": "585fae1aad4b720f350655a44e3f2ec7fc0dfa25",
+    "path": "LICENCE",
+    "sha256": "a7bab1bff60ef24bdae2eefe674a149370e686e80185696c23c305f3d242203c",
+    "use": "Reference only; not linked into the game"
+  },
+  {
+    "repository": "https://github.com/touhouworldcup/thprac",
+    "commit": "585fae1aad4b720f350655a44e3f2ec7fc0dfa25",
+    "path": "thprac/src/thprac/thprac_th09.cpp",
+    "sha256": "1ed94c79edee010b1daa8788888a25dc1e9104b117d6cd33614f0418e1f68f84",
+    "use": "Reference only; not linked into the game"
+  }
+]

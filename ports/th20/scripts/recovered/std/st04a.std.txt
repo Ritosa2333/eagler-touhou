@@ -1,0 +1,1503 @@
+ANM: st04wla.anm
+Std_unknown: 0
+
+ENTRY:
+    Id: 0
+    Unknown: 1
+    Position: 0 0 0
+    Depth: -128
+    Width: 0
+    Height: 0
+    TH20_extra: 0 0 768 512 512
+
+    QUAD:
+        Type: 0
+        Script_index: 0
+        Position: -256 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 0
+        Position: 256 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 256
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 11
+        Position: -255 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 11
+        Position: 255 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 255
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 -255
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 8
+        Position: -250 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 8
+        Position: 250 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 1
+    Unknown: 1
+    Position: 0 0 0
+    Depth: -128
+    Width: 0
+    Height: 0
+    TH20_extra: 128 0 768 768 512
+
+    QUAD:
+        Type: 0
+        Script_index: 0
+        Position: -256 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 2
+        Position: 0 256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 256
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 8
+        Position: -250 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 2
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 128 0 512 768 512
+
+    QUAD:
+        Type: 0
+        Script_index: 2
+        Position: 0 -256 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 2
+        Position: 0 256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 3
+        Position: 0 0 256
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 3
+        Position: 0 0 -256
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 13
+        Position: 0 -255 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 13
+        Position: 0 255 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 255
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 -255
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 -250 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 3
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 0 0 512 512 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 256
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 255
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 -255
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 4
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: -128 0 512 768 512
+
+    QUAD:
+        Type: 0
+        Script_index: 2
+        Position: 0 -256 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 256
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 -256
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 255
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 -255
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 -250 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 5
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 128 0 512 768 512
+
+    QUAD:
+        Type: 0
+        Script_index: 0
+        Position: 256 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 2
+        Position: 0 256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 256
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 11
+        Position: 255 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 13
+        Position: 0 255 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 255
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 -255
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 8
+        Position: 250 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 6
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 128
+    Width: 0
+    Height: 0
+    TH20_extra: 128 0 768 768 512
+
+    QUAD:
+        Type: 0
+        Script_index: 0
+        Position: 256 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 2
+        Position: 0 256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 256
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 11
+        Position: 255 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 13
+        Position: 0 255 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 255
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 -255
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 8
+        Position: 250 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 7
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 0 0 512 512 512
+
+    QUAD:
+        Type: 0
+        Script_index: 0
+        Position: -256 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 2
+        Position: 0 -256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 256
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 11
+        Position: -255 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 13
+        Position: 0 -255 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 255
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 -255
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 8
+        Position: -250 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 -250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 8
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 0 -253 512 512 6
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 5
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 9
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 125
+    Width: 0
+    Height: 0
+    TH20_extra: 128 0 762 768 512
+
+    QUAD:
+        Type: 0
+        Script_index: 49
+        Position: -256 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 53
+        Position: -255 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 21
+        Position: 256 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 25
+        Position: 255 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 6
+        Position: 0 -256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 13
+        Position: 0 -255 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 34
+        Position: 0 256 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 41
+        Position: 0 255 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 50
+        Position: -250 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 50
+        Position: -250 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 22
+        Position: 250 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 22
+        Position: 250 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 -250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 -250 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 38
+        Position: 0 250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 38
+        Position: 0 250 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+
+ENTRY:
+    Id: 10
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 0 0 512 1024 512
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: 0 -256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: 0 256 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 5
+        Position: 0 0 256
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 5
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 13
+        Position: 0 -255 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 13
+        Position: 0 255 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 255
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 12
+        Position: 0 0 -255
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 -250 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 10
+        Position: 0 250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 9
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 11
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 128 0 512 768 512
+
+    QUAD:
+        Type: 0
+        Script_index: 18
+        Position: 0 -256 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 18
+        Position: 0 256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 19
+        Position: 0 0 256
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 19
+        Position: 0 0 -256
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 27
+        Position: 0 -255 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 27
+        Position: 0 255 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 26
+        Position: 0 0 255
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 26
+        Position: 0 0 -255
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 24
+        Position: 0 -250 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 24
+        Position: 0 250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 23
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 23
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 12
+    Unknown: 1
+    Position: 0 0 0
+    Depth: -128
+    Width: 0
+    Height: 0
+    TH20_extra: 0 0 768 512 512
+
+    QUAD:
+        Type: 0
+        Script_index: 28
+        Position: -256 0 0
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 28
+        Position: 256 0 0
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 29
+        Position: 0 0 256
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 29
+        Position: 0 0 -256
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 39
+        Position: -255 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 39
+        Position: 255 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 40
+        Position: 0 0 255
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 40
+        Position: 0 0 -255
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 36
+        Position: -250 0 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 36
+        Position: 250 0 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 37
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 37
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+ENTRY:
+    Id: 13
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 128 0 512 768 512
+
+    QUAD:
+        Type: 0
+        Script_index: 44
+        Position: 0 -256 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 44
+        Position: 0 256 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 45
+        Position: 0 0 256
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 45
+        Position: 0 0 -256
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 55
+        Position: 0 -255 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 55
+        Position: 0 255 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 54
+        Position: 0 0 255
+        Padding: 0
+        Width: 512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 54
+        Position: 0 0 -255
+        Padding: 0
+        Width: -512
+        Height: -512
+
+    QUAD:
+        Type: 0
+        Script_index: 52
+        Position: 0 -250 0
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 52
+        Position: 0 250 0
+        Padding: 0
+        Width: 512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 51
+        Position: 0 0 250
+        Padding: 0
+        Width: -512
+        Height: 512
+
+    QUAD:
+        Type: 0
+        Script_index: 51
+        Position: 0 0 -250
+        Padding: 0
+        Width: 512
+        Height: 512
+
+
+INSTANCE: 0 256 0 0 0
+INSTANCE: 0 256 0 512 0
+INSTANCE: 0 256 0 1024 0
+INSTANCE: 0 256 0 1536 0
+INSTANCE: 0 256 0 2048 0
+INSTANCE: 3 256 0 2560 0
+INSTANCE: 0 256 0 3072 0
+INSTANCE: 0 256 0 3584 0
+INSTANCE: 0 256 0 4096 0
+INSTANCE: 0 256 0 4608 0
+INSTANCE: 10 256 -512 2560 0
+INSTANCE: 2 256 512 2560 0
+INSTANCE: 2 256 1024 2560 0
+INSTANCE: 2 256 1536 2560 0
+INSTANCE: 4 256 2048 2560 0
+INSTANCE: 5 256 2560 2560 0
+INSTANCE: 0 256 2560 2048 0
+INSTANCE: 0 256 2048 3072 0
+INSTANCE: 0 256 2048 3584 0
+INSTANCE: 0 256 2048 4096 0
+INSTANCE: 0 256 -2048 0 0
+INSTANCE: 0 256 -2048 512 0
+INSTANCE: 0 256 -2048 1024 0
+INSTANCE: 0 256 -2048 1536 0
+INSTANCE: 6 256 -2048 2048 0
+INSTANCE: 2 256 -2560 2048 0
+INSTANCE: 7 256 -3072 2048 0
+INSTANCE: 0 256 -3072 2560 0
+INSTANCE: 0 256 -3072 3072 0
+INSTANCE: 0 256 -3072 3584 0
+INSTANCE: 0 256 -3072 4096 0
+INSTANCE: 0 256 -3072 4608 0
+INSTANCE: 3 256 -3072 5120 0
+INSTANCE: 10 256 -3584 5120 0
+INSTANCE: 2 256 -2560 5120 0
+INSTANCE: 0 256 -3072 5632 0
+INSTANCE: 0 256 -3072 6144 0
+INSTANCE: 0 256 -3072 6656 0
+INSTANCE: 0 256 -3072 7168 0
+INSTANCE: 8 256 -3072 7680 0
+INSTANCE: 13 256 -3584 7680 0
+INSTANCE: 11 256 -2560 7680 0
+INSTANCE: 12 256 -3072 8192 0
+INSTANCE: 12 256 -3072 8704 0
+INSTANCE: 9 256 -3072 7680 512
+INSTANCE: 9 256 -3072 7680 1024
+INSTANCE: 9 256 -3072 7680 1536
+INSTANCE: 9 256 -3072 7680 2048
+INSTANCE: 9 256 -3072 7680 2560
+
+SCRIPT:
+    ins_6(0.0f, 0.0f, -1.0f);
+    ins_7(1.5707964f);
+    ins_20(6000.0f);
+    ins_8(#000000ff, 200.0f, 400.0f);
+    ins_9(1000, 0, #001000ff, 400.0f, 1300.0f);
+    ins_4(0.0f, 200.0f, 50.0f);
+    ins_2(0.0f, 0.0f, 0.0f);
+    ins_3(500, 0, 0.0f, 512.0f, 0.0f);
+500:
+    ins_2(0.0f, 512.0f, 0.0f);
+    ins_3(500, 0, 0.0f, 1024.0f, 0.0f);
+1000:
+    ins_2(0.0f, 1024.0f, 0.0f);
+    ins_3(500, 0, 0.0f, 1536.0f, 0.0f);
+1500:
+    ins_2(0.0f, 1536.0f, 0.0f);
+    ins_3(500, 0, 0.0f, 2048.0f, 0.0f);
+2000:
+    ins_2(0.0f, 2048.0f, 0.0f);
+    ins_5(300, 9, 200.0f, 0.0f, 50.0f);
+    ins_3(300, 0, 160.0f, 2548.0f, 0.0f);
+2300:
+    ins_2(160.0f, 2548.0f, 0.0f);
+    ins_3(256, 0, 672.0f, 2548.0f, 0.0f);
+2556:
+    ins_2(672.0f, 2548.0f, 0.0f);
+    ins_3(256, 0, 1184.0f, 2548.0f, 0.0f);
+2812:
+    ins_2(1184.0f, 2548.0f, 0.0f);
+    ins_3(180, 0, 1544.0f, 2548.0f, 0.0f);
+2992:
+    ins_2(1544.0f, 2548.0f, 0.0f);
+    ins_12(8);
+    ins_5(300, 9, 0.0f, 200.0f, 50.0f);
+    ins_3(300, 0, 2044.0f, 2848.0f, 0.0f);
+3292:
+    ins_2(2044.0f, 2848.0f, 0.0f);
+    ins_2(0.0f, 288.0f, 0.0f);
+    ins_3(256, 1, 0.0f, 800.0f, 0.0f);
+3548:
+    ins_2(0.0f, 288.0f, 0.0f);
+    ins_3(128, 0, 0.0f, 800.0f, 0.0f);
+3676:
+    ins_2(0.0f, 288.0f, 0.0f);
+    ins_3(128, 0, 0.0f, 800.0f, 0.0f);
+3804:
+    ins_2(0.0f, 800.0f, 0.0f);
+    ins_3(128, 0, 0.0f, 1312.0f, 0.0f);
+3932:
+    ins_2(0.0f, 1312.0f, 0.0f);
+    ins_3(128, 0, 0.0f, 1824.0f, 0.0f);
+4060:
+    ins_2(0.0f, 1824.0f, 0.0f);
+    ins_3(128, 0, 0.0f, 2336.0f, 0.0f);
+4188:
+    ins_2(0.0f, 2336.0f, 0.0f);
+    ins_3(128, 0, 0.0f, 2848.0f, 0.0f);
+4316:
+    ins_2(0.0f, 2848.0f, 0.0f);
+    ins_2(0.0f, 800.0f, 0.0f);
+    ins_3(480, 0, 0.0f, 2848.0f, 0.0f);
+4796:
+    ins_2(0.0f, 800.0f, 0.0f);
+    ins_3(480, 0, 0.0f, 2848.0f, 0.0f);
+5276:
+    ins_2(0.0f, 800.0f, 0.0f);
+    ins_2(-2048.0f, 288.0f, 0.0f);
+    ins_3(240, 0, -2048.0f, 1312.0f, 0.0f);
+5516:
+    ins_2(-2048.0f, 1312.0f, 0.0f);
+    ins_5(200, 9, -200.0f, 80.0f, 50.0f);
+    ins_3(200, 0, -2208.0f, 2012.0f, 0.0f);
+5716:
+    ins_2(-2208.0f, 2012.0f, 0.0f);
+    ins_3(160, 0, -2720.0f, 2012.0f, 0.0f);
+5876:
+    ins_2(-2720.0f, 2012.0f, 0.0f);
+    ins_5(280, 9, 0.0f, 200.0f, 50.0f);
+    ins_3(280, 0, -3080.0f, 2212.0f, 0.0f);
+6156:
+    ins_2(-3080.0f, 2212.0f, 0.0f);
+    ins_9(500, 0, #000000ff, 700.0f, 1500.0f);
+    ins_3(512, 0, -3080.0f, 2532.0f, 0.0f);
+6668:
+    ins_2(-3080.0f, 2532.0f, 0.0f);
+    ins_3(128, 2, -3080.0f, 3044.0f, 0.0f);
+6796:
+    ins_2(-3080.0f, 3044.0f, 0.0f);
+    ins_3(300, 0, -3080.0f, 5092.0f, 0.0f);
+7096:
+    ins_2(-3080.0f, 3044.0f, 0.0f);
+    ins_3(300, 0, -3080.0f, 5092.0f, 0.0f);
+7396:
+    ins_2(-3080.0f, 3044.0f, 0.0f);
+    ins_3(300, 0, -3080.0f, 5092.0f, 0.0f);
+7696:
+    ins_2(-3080.0f, 3044.0f, 0.0f);
+    ins_3(300, 0, -3080.0f, 5092.0f, 0.0f);
+7996:
+    ins_2(-3080.0f, 5092.0f, 0.0f);
+    ins_3(400, 4, -3080.0f, 7140.0f, 0.0f);
+8396:
+    ins_2(-3080.0f, 7140.0f, 0.0f);
+    ins_5(280, 9, 0.0f, 40.0f, 200.0f);
+    ins_3(280, 0, -3080.0f, 7600.0f, 200.0f);
+8676:
+    ins_2(-3080.0f, 7600.0f, 200.0f);
+    ins_3(512, 0, -3080.0f, 7600.0f, 712.0f);
+9188:
+    ins_2(-3080.0f, 7600.0f, 712.0f);
+    ins_3(512, 0, -3080.0f, 7600.0f, 1224.0f);
+9700:
+    ins_2(-3080.0f, 7600.0f, 712.0f);
+    ins_1(1860, 9188);
+    ins_16(1);
+    ins_2(-3080.0f, 7600.0f, 712.0f);
+    ins_4(0.0f, 40.0f, 200.0f);
+    ins_8(#000000ff, 700.0f, 1500.0f);
+    ins_9(1, 0, #000000ff, 700.0f, 1500.0f);
+    ins_12(8);
+    ins_19(1);
+    ins_3(512, 0, -3080.0f, 7600.0f, 1224.0f);
+10212:
+    ins_2(-3080.0f, 7600.0f, 712.0f);
+    ins_1(2048, 9700);

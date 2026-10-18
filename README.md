@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="docs/assets/eagler-touhou-wordmark.svg" alt="EAGLER TOUHOU" width="312">
+  <img src="launcher/docs/assets/eagler-touhou-wordmark.svg" alt="EAGLER TOUHOU" width="312">
 </h1>
 
 <div align="center">
@@ -7,13 +7,13 @@
   <p>
     <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?style=flat-square&amp;logo=tencentqq&amp;logoColor=white" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Chromium-%E2%89%A5108-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chromium >=108">
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg?style=flat-square" alt="License: GPL-3.0-or-later"></a>
+    <a href="launcher/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg?style=flat-square" alt="License: GPL-3.0-or-later"></a>
   </p>
   <p>简体中文 | <a href="README.en.md">English</a></p>
 </div>
 
 > [!TIP]
-> 对于游戏支持情况，参见[游戏还原和适配总进度表](https://github.com/YomotsuHisami/eagler-touhou/blob/main/docs/TOUHOU_PROGRESS.md)。<br>
+> 对于游戏支持情况，参见[游戏还原和适配总进度表](launcher/docs/TOUHOU_PROGRESS.md)。<br>
 > 如果您已经着手做某作了，直接提交修改表格的 Issue 或 PR 即可。<br>
 > 如果您对原作逆向或原作/东二适配感兴趣，欢迎加入我们的 [QQ 群](https://qm.qq.com/q/eeUrxIltug?from=tim)，我们有个开发者群。
 
@@ -54,7 +54,7 @@
 - 力求完美体验。解决了原 portable 分支中出现的 弹幕抖动、弹幕运动不流畅、闪烁、单线程切换音乐卡顿、手机卡顿 等大量问题。
 - 支持高刷新率（>60Hz），th09 除外。\[感谢 [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
 
-不同作品的适配情况有所不同，见[作品进度表](docs/TOUHOU_PROGRESS.md)。
+不同作品的适配情况有所不同，见[作品进度表](launcher/docs/TOUHOU_PROGRESS.md)。
 
 ### 输入设置
 
@@ -66,7 +66,7 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 
 ### 触控适配
 
-![可调整位置、大小、灵敏度和低速操作方式的触控布局](docs/assets/readme/touch-controls.webp)
+![可调整位置、大小、灵敏度和低速操作方式的触控布局](launcher/docs/assets/readme/touch-controls.webp)
 
 - 触摸轨迹 = 游戏人物移动轨迹。提供直接触摸、无限速直接触摸，除此之外，还提供轮盘等移动方式。\[感谢 [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
 - 触控布局自定义。触控按键可以随意拖动、缩放（60% ~ 300%）。
@@ -81,7 +81,7 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 
 ### STG 社区热门工具
 
-![在浏览器中使用 thprac 练习菜单](docs/assets/readme/stg-community-tools.webp)
+![在浏览器中使用 thprac 练习菜单](launcher/docs/assets/readme/stg-community-tools.webp)
 
 #### thprac
 
@@ -108,7 +108,7 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 
 ### 游戏与文件管理
 
-![Eagler Touhou 启动器与游戏管理界面](docs/assets/readme/launcher.webp)
+![Eagler Touhou 启动器与游戏管理界面](launcher/docs/assets/readme/launcher.webp)
 
 - 提供统一的游戏入口，可以选择作品并启动对应的 Runtime。
 - 提供导入导出存档、Replay 等文件的界面。
@@ -116,7 +116,7 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 
 ### 多人联机大厅
 
-![支持玩家与旁观者的多人联机大厅](docs/assets/readme/multiplayer-lobby.webp)
+![支持玩家与旁观者的多人联机大厅](launcher/docs/assets/readme/multiplayer-lobby.webp)
 
 - 提供了一个大厅，支持创建房间后输入房间号加入、选择角色和难度、玩家都准备后再开始、旁观者。
 - 可选角色和难度取决于作品，包括对应作品的 Extra 和 Phantasm。
@@ -139,17 +139,17 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 - **External**：用户站点提供启动器和运行组件，游戏大文件由单独的完整资源站或 CDN 提供。玩家仍可直接安装，前端服务器无需承担大文件流量。
 - **Import**：站点只提供启动器和运行组件，不发布原版游戏数据。玩家导入自己合法持有的游戏包 ZIP，适合没有 CDN 流量预算或不希望托管原版资源的部署者。
 
-三种模式共用同一套前端、浏览器本地游戏包和离线运行能力。完整部署方法见[自托管指南](docs/SELF_HOSTING.md)。
+三种模式共用同一套前端、浏览器本地游戏包和离线运行能力。完整部署方法见[自托管指南](launcher/docs/SELF_HOSTING.md)。
 
 ## 常见问题
 
-详见[常见问题](docs/FAQ.md)。
+详见[常见问题](launcher/docs/FAQ.md)。
 
 ## 许可证
 
-本仓库采用 [GNU General Public License v3.0 or later](LICENSE)。各游戏 Runtime 的许可证见对应仓库。
+启动器采用 [GNU General Public License v3.0 or later](launcher/LICENSE)。各游戏 Runtime 的许可证见 `ports/` 下对应源码目录。
 
-完整的第三方来源、素材归属和许可信息见 [THIRD_PARTY.md](THIRD_PARTY.md) 与 [ASSETS.md](ASSETS.md)。
+完整的第三方来源、素材归属和许可信息见 [THIRD_PARTY.md](launcher/THIRD_PARTY.md) 与 [ASSETS.md](launcher/ASSETS.md)。
 
 ## 星标历史
 

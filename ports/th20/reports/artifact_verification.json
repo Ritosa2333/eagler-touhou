@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "verification": "independent rehash of actual raw and rebuilt files plus WAV-decoded PCM",
+  "script_counts": {
+    "anm": 73,
+    "ecl": 21,
+    "msg": 87,
+    "std": 10
+  },
+  "script_total": 191,
+  "bgm_total": 19,
+  "failures": [],
+  "gameplay_validated": false
+}

@@ -1,0 +1,20 @@
+{
+  "schema":"th20.playable.link.validation.v1",
+  "status":"passed",
+  "scope":"Final on-disk PE seven patched function entries via FF25 and native DLL IAT, original hardware oracle; no process entry point, gameplay, or Windows loader validation",
+  "original_sha256":"a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "rebuilt_sha256":"c54f4c4f905e07ab4f0220f56a53784322c67f88fc2622d66de3e3bd68d0d6fe",
+  "bridge_sha256":"611fc3be4ef2de58db309f98bba580e45c6edc59a85ce84db87df75ac5795464",
+  "original_mapped_base":805306368,
+  "original_highlow_relocations_applied":29196,
+  "msvc_full_ver":192930145,
+  "floating_environment":{"mxcsr":8064,"x87_control":895,"status_flags_compared":false},
+  "checks":["complete object bytes and surrounding guards","EAX value or self pointer","ESP stack cleanup","EBX/ESI/EDI preservation","seven final FF25 IAT operands","two distinct rebuilt image bases"],
+  "preferred_base_attempt":{"base":4194304,"status":"skipped","reason":"Preferred image region is occupied before test initialization: \\Device\\HarddiskVolume5\\WINDOWS\\System32\\C_936.NLS"},
+  "mappings":[{"base":536870912,"preferred":false,"highlow_relocations_applied":29203,"resolved_bridge_imports":7,"failures":0},{"base":603979776,"preferred":false,"highlow_relocations_applied":29203,"resolved_bridge_imports":7,"failures":0}],
+  "comparisons":{"th20_lcg_next":20016,"th20_lcg_step":20016,"th20_timer_add":89232,"th20_timer_mode":8176,"th20_timer_reset":6272,"th20_timer_set":8176,"th20_timer_tick":10896},
+  "total":162784,
+  "failed":0,
+  "bridge_call_counters":[20016,20016,6272,8176,8176,89232,10896],
+  "failures_first_32":[]
+}

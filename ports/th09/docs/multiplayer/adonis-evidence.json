@@ -1,0 +1,1754 @@
+{
+  "schema": "th09/adonis-evidence/1",
+  "date": "2026-10-02",
+  "base": "5b9305c",
+  "common": "5669eff",
+  "scope": "Local desktop evidence only. A summary is not a phone/WAN guarantee; raw file hashes identify each attempt, including failures. See ADONIS-EXPERIMENT.md.",
+  "builds": [
+    {
+      "directory": "th09_web/artifacts/sdl-adonis",
+      "kind": "th09-presentation-harness",
+      "sha256": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "bytes": 2823361
+    },
+    {
+      "directory": "th09_web/artifacts/sdl-adonis-release",
+      "kind": "th09-native-web-release-candidate",
+      "sha256": "480fe94192741332ee5393d5bbe679e42fda2e3b2287096b74c1ac740449d27a",
+      "bytes": 2799665
+    }
+  ],
+  "records": [
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-baseline-peer-report.json",
+      "sha256": "68d8aca81c82c50447111800f5d9b598b798e7dea915e899ba4b426f306d999b",
+      "passed": true,
+      "parameters": {
+        "fixedDelay": 0,
+        "forceCorrection": false,
+        "limit": 900,
+        "hardware": true,
+        "pauseTrace": false,
+        "inputTrace": "legacy-zigzag",
+        "adonisMode": 0,
+        "inputDelay": 0
+      },
+      "wasm": "45f5cdc75f66993c9f7bd4e36b506cb23fea5b1e7b7b57ed31e9a4421c6dc55d",
+      "harnessSha256": "095b12f6b908aa9cbcfc67035d47dffe07618d0234ac584404a8e62b3333a165",
+      "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected iteration-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
+      "result": {
+        "frames": 900,
+        "summary": [
+          [
+            900,
+            900,
+            204,
+            568,
+            900,
+            1,
+            1,
+            900
+          ],
+          [
+            900,
+            900,
+            285,
+            1006,
+            900,
+            1,
+            1,
+            900
+          ]
+        ],
+        "adonis": [
+          [
+            0,
+            0,
+            1156,
+            0,
+            0,
+            23
+          ],
+          [
+            0,
+            0,
+            1493,
+            0,
+            0,
+            22
+          ]
+        ],
+        "hashes": [
+          1762405403,
+          1762405403,
+          1762405403
+        ],
+        "framebuffersEqual": true,
+        "replayBytes": 1312,
+        "phases": [
+          [
+            1
+          ],
+          [
+            1
+          ]
+        ],
+        "pauseCalls": [
+          0,
+          0
+        ],
+        "costs": [
+          {
+            "calls": 743,
+            "p50": 0.5249999761581421,
+            "p95": 1.3450000286102295,
+            "p99": 2.0549999475479126,
+            "max": 3.5399999618530273,
+            "correctionCalls": 103,
+            "completeDeepCalls": 103,
+            "maxResimulatedInCall": 5
+          },
+          {
+            "calls": 742,
+            "p50": 0.5649999380111694,
+            "p95": 2.2549999952316284,
+            "p99": 3.1549999713897705,
+            "max": 4.005000114440918,
+            "correctionCalls": 178,
+            "completeDeepCalls": 178,
+            "maxResimulatedInCall": 5
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-baseline-rtc-report.json",
+      "sha256": "ae2132d47e248f61f111f5d67fc223e01b1be5ca7ba63d6a55ff104cbbe2a7a6",
+      "passed": true,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 0,
+        "inputDelay": 0
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            437,
+            1438,
+            600,
+            6,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            422,
+            2019,
+            600,
+            6,
+            1,
+            600
+          ]
+        ],
+        "adonis": [
+          [
+            0,
+            0,
+            1438,
+            0,
+            0,
+            20
+          ],
+          [
+            0,
+            0,
+            2019,
+            0,
+            0,
+            18
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "elapsedMs": 12006.944999933243,
+        "sustainedCadencePassed": true,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 627,
+              "total": 1007.889999628067,
+              "p50": 1.5299999713897705,
+              "p95": 3.1050000190734863,
+              "p99": 3.9800000190734863,
+              "max": 10.754999995231628,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 597,
+              "total": 10282.485000014305,
+              "p50": 16.665000081062317,
+              "p95": 18.884999990463257,
+              "p99": 20.080000042915344,
+              "max": 350.02499997615814,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 627,
+              "total": 1139.4000027179718,
+              "p50": 1.7599999904632568,
+              "p95": 3.790000081062317,
+              "p99": 4.800000071525574,
+              "max": 6.625,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 597,
+              "total": 10283.66000008583,
+              "p50": 16.59500002861023,
+              "p95": 20.56500005722046,
+              "p99": 23.555000066757202,
+              "max": 316.6999999284744,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 627,
+              "total": 210.924999833107,
+              "p50": 0.2849999666213989,
+              "p95": 0.7200000286102295,
+              "p99": 0.9499999284744263,
+              "max": 4.775000095367432,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 569,
+              "total": 10306.75,
+              "p50": 16.694999933242798,
+              "p95": 22.7849999666214,
+              "p99": 40.269999980926514,
+              "max": 398.7850000858307,
+              "over50ms": 4
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay-endurance-report.json",
+      "sha256": "15e4ce7b8a65251db18a18c2b363cb35ce035a23d2919c828303904c15cae0da",
+      "passed": true,
+      "parameters": {
+        "fixedDelay": 0,
+        "forceCorrection": false,
+        "limit": 6000,
+        "hardware": true,
+        "pauseTrace": true,
+        "inputTrace": "endurance-tape",
+        "adonisMode": 1,
+        "inputDelay": 4
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "harnessSha256": "095b12f6b908aa9cbcfc67035d47dffe07618d0234ac584404a8e62b3333a165",
+      "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected iteration-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
+      "result": {
+        "frames": 6000,
+        "summary": [
+          [
+            6000,
+            6000,
+            0,
+            0,
+            6000,
+            1,
+            1,
+            6000
+          ],
+          [
+            6000,
+            6000,
+            0,
+            0,
+            6000,
+            1,
+            1,
+            6000
+          ]
+        ],
+        "adonis": [
+          [
+            1,
+            4,
+            0,
+            6,
+            27000,
+            46
+          ],
+          [
+            1,
+            4,
+            0,
+            6,
+            27000,
+            46
+          ]
+        ],
+        "hashes": [
+          3197602033,
+          3197602033,
+          3197602033
+        ],
+        "framebuffersEqual": true,
+        "replayBytes": 1990,
+        "phases": [
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "pauseCalls": [
+          200,
+          200
+        ],
+        "costs": [
+          {
+            "calls": 5862,
+            "p50": 0.25,
+            "p95": 0.6399999856948853,
+            "p99": 1.6750000715255737,
+            "max": 9.804999947547913,
+            "correctionCalls": 0,
+            "completeDeepCalls": 0,
+            "maxResimulatedInCall": 0
+          },
+          {
+            "calls": 5862,
+            "p50": 0.24000000953674316,
+            "p95": 0.5800000429153442,
+            "p99": 1.505000114440918,
+            "max": 14.224999904632568,
+            "correctionCalls": 0,
+            "completeDeepCalls": 0,
+            "maxResimulatedInCall": 0
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay-peer-report.json",
+      "sha256": "4d98c8d66272ffefdef6d3a8acd6a82bfa79507724a1c3d80a9345c4e9e1a686",
+      "passed": true,
+      "parameters": {
+        "fixedDelay": 0,
+        "forceCorrection": false,
+        "limit": 900,
+        "hardware": true,
+        "pauseTrace": false,
+        "inputTrace": "legacy-zigzag",
+        "adonisMode": 1,
+        "inputDelay": 3
+      },
+      "wasm": "45f5cdc75f66993c9f7bd4e36b506cb23fea5b1e7b7b57ed31e9a4421c6dc55d",
+      "harnessSha256": "095b12f6b908aa9cbcfc67035d47dffe07618d0234ac584404a8e62b3333a165",
+      "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected iteration-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
+      "result": {
+        "frames": 900,
+        "summary": [
+          [
+            900,
+            900,
+            0,
+            0,
+            900,
+            1,
+            1,
+            900
+          ],
+          [
+            900,
+            900,
+            0,
+            0,
+            900,
+            1,
+            1,
+            900
+          ]
+        ],
+        "adonis": [
+          [
+            1,
+            3,
+            0,
+            12,
+            41499,
+            181
+          ],
+          [
+            1,
+            3,
+            0,
+            13,
+            74000,
+            181
+          ]
+        ],
+        "hashes": [
+          1429533072,
+          1429533072,
+          1429533072
+        ],
+        "framebuffersEqual": true,
+        "replayBytes": 1312,
+        "phases": [
+          [
+            1
+          ],
+          [
+            1
+          ]
+        ],
+        "pauseCalls": [
+          0,
+          0
+        ],
+        "costs": [
+          {
+            "calls": 868,
+            "p50": 0.2099999189376831,
+            "p95": 0.6650000810623169,
+            "p99": 1.274999976158142,
+            "max": 3.319999933242798,
+            "correctionCalls": 0,
+            "completeDeepCalls": 0,
+            "maxResimulatedInCall": 0
+          },
+          {
+            "calls": 868,
+            "p50": 0.1950000524520874,
+            "p95": 0.5900000333786011,
+            "p99": 1.0099999904632568,
+            "max": 2.5449999570846558,
+            "correctionCalls": 0,
+            "completeDeepCalls": 0,
+            "maxResimulatedInCall": 0
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay-rtc-failure.json",
+      "sha256": "8e8bf457132b132a7693fbc5b98db03b0c6a18cd050375f7261223bb23a0161a",
+      "passed": false,
+      "error": "page.evaluate: Error: Simulation slowed by recovery: 16033.509999990463 ms",
+      "result": {}
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay4-rtc-report.json",
+      "sha256": "528adbf602b3b510a7b12347452fd0aad22e3e56ca60ea81d3863bd492dc0ce0",
+      "passed": true,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 1,
+        "inputDelay": 4
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            8,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            8,
+            1,
+            600
+          ]
+        ],
+        "adonis": [
+          [
+            1,
+            4,
+            0,
+            9,
+            72000,
+            115
+          ],
+          [
+            1,
+            4,
+            0,
+            9,
+            72000,
+            116
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "elapsedMs": 13573.719999909401,
+        "sustainedCadencePassed": true,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 721,
+              "total": 347.3500007390976,
+              "p50": 0.42500007152557373,
+              "p95": 0.9550000429153442,
+              "p99": 1.350000023841858,
+              "max": 11.68999993801117,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 597,
+              "total": 11954.020000100136,
+              "p50": 16.74500000476837,
+              "p95": 34.1599999666214,
+              "p99": 50.06499993801117,
+              "max": 417.56000006198883,
+              "over50ms": 6
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 721,
+              "total": 257.84500074386597,
+              "p50": 0.31499993801116943,
+              "p95": 0.7649999856948853,
+              "p99": 1.0099999904632568,
+              "max": 4.189999938011169,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 597,
+              "total": 11945.179999947548,
+              "p50": 16.80999994277954,
+              "p95": 33.86500000953674,
+              "p99": 50.450000047683716,
+              "max": 384.06500005722046,
+              "over50ms": 7
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 721,
+              "total": 203.7700002193451,
+              "p50": 0.24499988555908203,
+              "p95": 0.6499999761581421,
+              "p99": 0.8949999809265137,
+              "max": 2.590000033378601,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 565,
+              "total": 11981.129999995232,
+              "p50": 16.875,
+              "p95": 49.78000009059906,
+              "p99": 66.78500008583069,
+              "max": 415.64999997615814,
+              "over50ms": 27
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay5-rtc-report.json",
+      "sha256": "5f4d07a8cedfeb14f2cdceb6418ffafe4fee489cf5185bc0ea7e164672d2d2cf",
+      "passed": true,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 1,
+        "inputDelay": 5
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            6,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            7,
+            1,
+            600
+          ]
+        ],
+        "adonis": [
+          [
+            1,
+            5,
+            0,
+            7,
+            56000,
+            49
+          ],
+          [
+            1,
+            5,
+            0,
+            8,
+            58062,
+            50
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "elapsedMs": 12386.409999966621,
+        "sustainedCadencePassed": true,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 654,
+              "total": 356.9900006055832,
+              "p50": 0.47499990463256836,
+              "p95": 1.0149999856948853,
+              "p99": 1.340000033378601,
+              "max": 13.284999966621399,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 596,
+              "total": 10837.21499991417,
+              "p50": 16.679999947547913,
+              "p95": 19.125,
+              "p99": 49.22500002384186,
+              "max": 415.1200000047684,
+              "over50ms": 3
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 654,
+              "total": 257.3200021982193,
+              "p50": 0.35500001907348633,
+              "p95": 0.8250000476837158,
+              "p99": 1.125,
+              "max": 3.0600000619888306,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 595,
+              "total": 10813.829999923706,
+              "p50": 16.725000023841858,
+              "p95": 26.4099999666214,
+              "p99": 47.7150000333786,
+              "max": 385.25999999046326,
+              "over50ms": 2
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 654,
+              "total": 217.58499884605408,
+              "p50": 0.26999998092651367,
+              "p95": 0.7549999952316284,
+              "p99": 1.1100000143051147,
+              "max": 3.1100000143051147,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 587,
+              "total": 10862.379999995232,
+              "p50": 16.700000047683716,
+              "p95": 26.100000023841858,
+              "p99": 50.0550000667572,
+              "max": 434.4650000333786,
+              "over50ms": 6
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-hybrid-endurance-failure.json",
+      "sha256": "481093895666a5054c89481e9b9515295446ff4e3acb9b86cac5c07df443b33a",
+      "passed": false,
+      "error": "page.evaluate: Error: Results path was not exercised",
+      "result": {}
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-hybrid-endurance12k-report.json",
+      "sha256": "304a77efe535e66561aee7cae9e1ae5e5f6657bb3c55dcfef131dc4d4744cb27",
+      "passed": true,
+      "parameters": {
+        "fixedDelay": 0,
+        "forceCorrection": false,
+        "limit": 12000,
+        "hardware": true,
+        "pauseTrace": true,
+        "inputTrace": "endurance-tape",
+        "adonisMode": 2,
+        "inputDelay": 2
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "harnessSha256": "095b12f6b908aa9cbcfc67035d47dffe07618d0234ac584404a8e62b3333a165",
+      "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected iteration-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
+      "result": {
+        "frames": 12000,
+        "summary": [
+          [
+            12000,
+            12000,
+            435,
+            582,
+            12000,
+            2,
+            1,
+            12000
+          ],
+          [
+            12000,
+            12000,
+            821,
+            1354,
+            12000,
+            1,
+            1,
+            12000
+          ]
+        ],
+        "adonis": [
+          [
+            2,
+            2,
+            5471,
+            185,
+            567457,
+            30
+          ],
+          [
+            2,
+            2,
+            11021,
+            187,
+            744864,
+            29
+          ]
+        ],
+        "hashes": [
+          3681705413,
+          3681705413,
+          3681705413
+        ],
+        "framebuffersEqual": true,
+        "replayBytes": 3384,
+        "phases": [
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "pauseCalls": [
+          199,
+          198
+        ],
+        "costs": [
+          {
+            "calls": 11850,
+            "p50": 0.3999999761581421,
+            "p95": 1.2400000095367432,
+            "p99": 2.299999952316284,
+            "max": 373.52499997615814,
+            "correctionCalls": 358,
+            "completeDeepCalls": 358,
+            "maxResimulatedInCall": 6
+          },
+          {
+            "calls": 11850,
+            "p50": 0.5099999904632568,
+            "p95": 1.434999942779541,
+            "p99": 2.6200000047683716,
+            "max": 11.77999997138977,
+            "correctionCalls": 753,
+            "completeDeepCalls": 753,
+            "maxResimulatedInCall": 6
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-hybrid-peer-report.json",
+      "sha256": "9f440522007019e66abd6b21bf1dc81cfdd04866accf621e2413e3c858c1e3b4",
+      "passed": true,
+      "parameters": {
+        "fixedDelay": 0,
+        "forceCorrection": false,
+        "limit": 900,
+        "hardware": true,
+        "pauseTrace": false,
+        "inputTrace": "legacy-zigzag",
+        "adonisMode": 2,
+        "inputDelay": 2
+      },
+      "wasm": "45f5cdc75f66993c9f7bd4e36b506cb23fea5b1e7b7b57ed31e9a4421c6dc55d",
+      "harnessSha256": "095b12f6b908aa9cbcfc67035d47dffe07618d0234ac584404a8e62b3333a165",
+      "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected iteration-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
+      "result": {
+        "frames": 900,
+        "summary": [
+          [
+            900,
+            900,
+            89,
+            145,
+            900,
+            1,
+            1,
+            900
+          ],
+          [
+            900,
+            900,
+            272,
+            1023,
+            900,
+            1,
+            1,
+            900
+          ]
+        ],
+        "adonis": [
+          [
+            2,
+            2,
+            190,
+            3,
+            9825,
+            32
+          ],
+          [
+            2,
+            2,
+            1482,
+            14,
+            103433,
+            28
+          ]
+        ],
+        "hashes": [
+          64498979,
+          64498979,
+          64498979
+        ],
+        "framebuffersEqual": true,
+        "replayBytes": 1312,
+        "phases": [
+          [
+            1
+          ],
+          [
+            1
+          ]
+        ],
+        "pauseCalls": [
+          0,
+          0
+        ],
+        "costs": [
+          {
+            "calls": 752,
+            "p50": 0.309999942779541,
+            "p95": 0.7950000762939453,
+            "p99": 1.850000023841858,
+            "max": 4.414999961853027,
+            "correctionCalls": 6,
+            "completeDeepCalls": 6,
+            "maxResimulatedInCall": 8
+          },
+          {
+            "calls": 748,
+            "p50": 0.6100000143051147,
+            "p95": 2.8799999952316284,
+            "p99": 3.8049999475479126,
+            "max": 7.370000004768372,
+            "correctionCalls": 185,
+            "completeDeepCalls": 185,
+            "maxResimulatedInCall": 6
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-hybrid-rtc-report.json",
+      "sha256": "56667791595f3a1136a9df13c0a520ea655992721b5a93cd17efab63a881a19a",
+      "passed": true,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 2,
+        "inputDelay": 2
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            426,
+            899,
+            600,
+            6,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            421,
+            870,
+            600,
+            6,
+            1,
+            600
+          ]
+        ],
+        "adonis": [
+          [
+            2,
+            2,
+            901,
+            9,
+            72000,
+            17
+          ],
+          [
+            2,
+            2,
+            872,
+            9,
+            72000,
+            17
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "elapsedMs": 11970.875,
+        "sustainedCadencePassed": true,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 628,
+              "total": 851.5100016593933,
+              "p50": 1.2599999904632568,
+              "p95": 2.7300000190734863,
+              "p99": 3.625,
+              "max": 5.759999990463257,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 597,
+              "total": 10309.325000047684,
+              "p50": 16.6599999666214,
+              "p95": 18.78000009059906,
+              "p99": 31.59500002861023,
+              "max": 301.7150000333786,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 628,
+              "total": 764.3300005197525,
+              "p50": 1.1200000047683716,
+              "p95": 2.3450000286102295,
+              "p99": 2.944999933242798,
+              "max": 34.50499999523163,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 597,
+              "total": 10309.534999966621,
+              "p50": 16.625,
+              "p95": 19.46499991416931,
+              "p99": 31.509999990463257,
+              "max": 302.60000002384186,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 628,
+              "total": 193.0049990415573,
+              "p50": 0.24500000476837158,
+              "p95": 0.8599998950958252,
+              "p99": 1.6299999952316284,
+              "max": 3.7300000190734863,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 415,
+              "total": 10278.990000009537,
+              "p50": 16.634999990463257,
+              "p95": 21.304999947547913,
+              "p99": 49.984999895095825,
+              "max": 2692.375,
+              "over50ms": 4
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-report.json",
+      "sha256": "f40e8c60c46110d9fd0e21bcc28f7bcb8b78f8aa6f3cf411d2acee5f411057f6",
+      "passed": true,
+      "wasm": "91f03ef87269fa0d9a68e3643f9d648831503cf4970999bb62acbf7bdd58ac00",
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance",
+      "result": {}
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-baseline-relay-report.json",
+      "sha256": "6775123cd7ee921ff9e99aa8463c479df8ff7bcacc1bf99dff2604875b64e72c",
+      "passed": true,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 0,
+        "inputDelay": 0
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            470,
+            1566,
+            600,
+            0,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            463,
+            2184,
+            600,
+            0,
+            1,
+            600
+          ]
+        ],
+        "adonis": [
+          [
+            0,
+            0,
+            1566,
+            0,
+            0,
+            22
+          ],
+          [
+            0,
+            0,
+            2184,
+            0,
+            0,
+            21
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "relay",
+          "relay",
+          "spectator"
+        ],
+        "elapsedMs": 10794.394999980927,
+        "sustainedCadencePassed": true,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 628,
+              "total": 958.6399999856949,
+              "p50": 1.4449999332427979,
+              "p95": 2.8949999809265137,
+              "p99": 3.740000009536743,
+              "max": 17.350000023841858,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 598,
+              "total": 10332.44000005722,
+              "p50": 16.615000009536743,
+              "p95": 18.945000052452087,
+              "p99": 20.5,
+              "max": 383.95499992370605,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 628,
+              "total": 1153.5850002765656,
+              "p50": 1.809999942779541,
+              "p95": 3.8000000715255737,
+              "p99": 4.6600000858306885,
+              "max": 7.215000033378601,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 599,
+              "total": 10312.264999985695,
+              "p50": 16.575000047683716,
+              "p95": 21.009999990463257,
+              "p99": 22.6599999666214,
+              "max": 369.29500007629395,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 628,
+              "total": 206.23000049591064,
+              "p50": 0.2549999952316284,
+              "p95": 0.7300000190734863,
+              "p99": 1.1299999952316284,
+              "max": 5,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 563,
+              "total": 10320.509999990463,
+              "p50": 16.664999961853027,
+              "p95": 22.25,
+              "p99": 49.47500002384186,
+              "max": 452.22499990463257,
+              "over50ms": 5
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-delay5-relay-failure.json",
+      "sha256": "14bc3045ff1b7b3a4017bbe1879aef1f5429bab9f876054cf817f11e54f15212",
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: Simulation slowed by recovery: 23988.53499996662 ms",
+      "result": {}
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-delay5-relay-repeat-report.json",
+      "sha256": "4bd176d63c6d24e90989e5c7af1649fbea5afc459f98144c82b513e7b64b42bd",
+      "passed": true,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 1,
+        "inputDelay": 5
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            0,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            0,
+            1,
+            600
+          ]
+        ],
+        "adonis": [
+          [
+            1,
+            5,
+            0,
+            3,
+            24000,
+            32
+          ],
+          [
+            1,
+            5,
+            0,
+            3,
+            17000,
+            34
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "relay",
+          "relay",
+          "spectator"
+        ],
+        "elapsedMs": 11004.604999899864,
+        "sustainedCadencePassed": true,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 638,
+              "total": 331.1350004673004,
+              "p50": 0.4750000238418579,
+              "p95": 0.9150000810623169,
+              "p99": 1.3650000095367432,
+              "max": 10.379999995231628,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 598,
+              "total": 10522.860000014305,
+              "p50": 16.665000081062317,
+              "p95": 17.990000009536743,
+              "p99": 33.19000005722046,
+              "max": 433.125,
+              "over50ms": 2
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 638,
+              "total": 244.28500187397003,
+              "p50": 0.3400000333786011,
+              "p95": 0.8050000667572021,
+              "p99": 1.1850000619888306,
+              "max": 4.269999980926514,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 599,
+              "total": 10494.955000042915,
+              "p50": 16.699999928474426,
+              "p95": 18.040000081062317,
+              "p99": 18.700000047683716,
+              "max": 432.9649999141693,
+              "over50ms": 2
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 638,
+              "total": 210.77000093460083,
+              "p50": 0.29499995708465576,
+              "p95": 0.7400000095367432,
+              "p99": 1.1100000143051147,
+              "max": 3.1549999713897705,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 597,
+              "total": 10542.125,
+              "p50": 16.730000019073486,
+              "p95": 18.399999976158142,
+              "p99": 33.139999985694885,
+              "max": 417.875,
+              "over50ms": 2
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-delay5-relay-report.json",
+      "sha256": "cb9103e93a8a3569b89adcb6a4a8801de4a9903e6f4be70934c8e536208f3a33",
+      "passed": false,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 1,
+        "inputDelay": 5
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            0,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            0,
+            1,
+            600
+          ]
+        ],
+        "adonis": [
+          [
+            1,
+            5,
+            0,
+            3,
+            19187,
+            806
+          ],
+          [
+            1,
+            5,
+            0,
+            3,
+            24000,
+            810
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "relay",
+          "relay",
+          "spectator"
+        ],
+        "elapsedMs": 23988.53499996662,
+        "sustainedCadencePassed": false,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 1408,
+              "total": 424.7550005912781,
+              "p50": 0.23500001430511475,
+              "p95": 0.8849999904632568,
+              "p99": 1.3700000047683716,
+              "max": 9.409999966621399,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 592,
+              "total": 23540.78499996662,
+              "p50": 16.710000038146973,
+              "p95": 24.960000038146973,
+              "p99": 66.84499990940094,
+              "max": 12682.465000033379,
+              "over50ms": 10
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 1408,
+              "total": 321.9800007343292,
+              "p50": 0.20000004768371582,
+              "p95": 0.7549999952316284,
+              "p99": 1.215000033378601,
+              "max": 4.960000038146973,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 592,
+              "total": 23530.134999990463,
+              "p50": 16.72000002861023,
+              "p95": 19.65499997138977,
+              "p99": 66.92999994754791,
+              "max": 12778.504999995232,
+              "over50ms": 9
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 1408,
+              "total": 275.2600008249283,
+              "p50": 0.1700000762939453,
+              "p95": 0.6499999761581421,
+              "p99": 0.9649999141693115,
+              "max": 6.769999980926514,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 577,
+              "total": 23561.615000009537,
+              "p50": 16.75,
+              "p95": 31.75499999523163,
+              "p99": 70.66499996185303,
+              "max": 12785.144999980927,
+              "over50ms": 13
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-delay5-rtc-report.json",
+      "sha256": "f589990cf1ec15ebc2aef657c550f3111cf15cfa34f68a76f76e2705e070fdc3",
+      "passed": true,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 1,
+        "inputDelay": 5
+      },
+      "wasm": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            5,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            0,
+            0,
+            600,
+            7,
+            1,
+            600
+          ]
+        ],
+        "adonis": [
+          [
+            1,
+            5,
+            0,
+            8,
+            59000,
+            48
+          ],
+          [
+            1,
+            5,
+            0,
+            8,
+            64000,
+            49
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "elapsedMs": 12538.170000076294,
+        "sustainedCadencePassed": true,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 654,
+              "total": 331.2099976539612,
+              "p50": 0.43999993801116943,
+              "p95": 0.934999942779541,
+              "p99": 1.3799999952316284,
+              "max": 9.740000009536743,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 598,
+              "total": 10823.674999952316,
+              "p50": 16.680000066757202,
+              "p95": 31.9650000333786,
+              "p99": 34.09999990463257,
+              "max": 367,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 654,
+              "total": 241.74499821662903,
+              "p50": 0.2999999523162842,
+              "p95": 0.8049999475479126,
+              "p99": 1.1649999618530273,
+              "max": 3.940000057220459,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 598,
+              "total": 10779.139999985695,
+              "p50": 16.674999952316284,
+              "p95": 18.645000100135803,
+              "p99": 35.49000000953674,
+              "max": 400.36500000953674,
+              "over50ms": 4
+            },
+            "wasmMemoryBytes": 134217728
+          },
+          {
+            "callbackWorkMs": {
+              "count": 654,
+              "total": 208.12500047683716,
+              "p50": 0.2549999952316284,
+              "p95": 0.7000000476837158,
+              "p99": 1.0850000381469727,
+              "max": 4.200000047683716,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 589,
+              "total": 10808.514999985695,
+              "p50": 16.674999952316284,
+              "p95": 19.305000066757202,
+              "p99": 50.25999999046326,
+              "max": 367.86500000953674,
+              "over50ms": 6
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    },
+    {
+      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-hybrid-release-rtc-report.json",
+      "sha256": "5a8a3991423f23575e32b1a306bed0afec35287bdfccc655a04199ab834a0e01",
+      "passed": true,
+      "correctnessPassed": true,
+      "parameters": {
+        "adonisMode": 2,
+        "inputDelay": 2
+      },
+      "wasm": "480fe94192741332ee5393d5bbe679e42fda2e3b2287096b74c1ac740449d27a",
+      "scope": "Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium; production WASM smoke, no forced frame limit",
+      "result": {
+        "summary": [
+          [
+            604,
+            602,
+            333,
+            669,
+            604,
+            8,
+            1,
+            602
+          ],
+          [
+            605,
+            603,
+            402,
+            1130,
+            605,
+            9,
+            1,
+            603
+          ]
+        ],
+        "adonis": [
+          [
+            2,
+            2,
+            673,
+            9,
+            72000,
+            20
+          ],
+          [
+            2,
+            2,
+            1134,
+            9,
+            72000,
+            18
+          ]
+        ],
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": false,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "elapsedMs": 12136.570000052452,
+        "sustainedCadencePassed": true,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 623,
+              "total": 607.1449992656708,
+              "p50": 0.8650000095367432,
+              "p95": 1.9600000381469727,
+              "p99": 2.940000057220459,
+              "max": 7.309999942779541,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 595,
+              "total": 10560.429999947548,
+              "p50": 16.709999918937683,
+              "p95": 18.445000052452087,
+              "p99": 32.519999980926514,
+              "max": 350.8000000715256,
+              "over50ms": 2
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 623,
+              "total": 727.2750005722046,
+              "p50": 1.059999942779541,
+              "p95": 2.555000066757202,
+              "p99": 3.125,
+              "max": 3.9800000190734863,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 600,
+              "total": 10559.835000038147,
+              "p50": 16.62999999523163,
+              "p95": 19.134999990463257,
+              "p99": 31.549999952316284,
+              "max": 319.4949998855591,
+              "over50ms": 2
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 623,
+              "total": 188.5249993801117,
+              "p50": 0.24500000476837158,
+              "p95": 0.6699999570846558,
+              "p99": 0.9799998998641968,
+              "max": 2.6750000715255737,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 567,
+              "total": 10297.664999961853,
+              "p50": 16.735000014305115,
+              "p95": 20.480000019073486,
+              "p99": 48.549999952316284,
+              "max": 433.1599999666214,
+              "over50ms": 3
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ]
+      }
+    }
+  ]
+}

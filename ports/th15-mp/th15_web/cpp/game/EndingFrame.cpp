@@ -1,0 +1,6 @@
+#include "EndingFrame.hpp"
+namespace th15 {
+EndingFrame::EndingFrame(EndingScript& value,EndingDestination& platform,FrameScheduler& schedule):script(value),host(platform),scheduler(schedule){for(auto& c:callbacks){c.owner=this;c.enabled=true;}callbacks[0].run=[](void* p){return static_cast<EndingFrame*>(p)->update();};callbacks[1].run=[](void*){return i32(FrameAction::Continue);};if(scheduler.add(callbacks[0],FramePass::Update,36)<0||scheduler.add(callbacks[1],FramePass::Draw,64)<0)error="Ending callback registration failed";}
+EndingFrame::~EndingFrame(){for(auto& c:callbacks)scheduler.remove(c);}
+i32 EndingFrame::update(){if(!error.empty())return i32(FrameAction::Error);if(!script.step(input)){error=script.error;return i32(FrameAction::Error);}if(script.finished){if(!host.ending_destination(system_flags&0x2000?2:16)){error="Ending destination failed";return i32(FrameAction::Error);}return i32(FrameAction::Continue);}script.state.age.tick(&input.rate);frames=wrapping_add(frames,1);if(!(script.state.flags&4)&&!(script.run.first_seen_flags&2)&&(script.state.flags&2)){const bool skip=(input.held&0x200)||((input.held&1)&&input.held_frames>=20);if(skip&&frames%12)return i32(FrameAction::Restart);}return i32(FrameAction::Continue);}
+}

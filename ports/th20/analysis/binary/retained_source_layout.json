@@ -1,0 +1,1100 @@
+{
+  "core/filectrl.cpp": [
+    {
+      "string_va": "0x0056c578",
+      "source_line": 50,
+      "type_or_context": "u_char",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\filectrl.cpp:50 u_char"
+    },
+    {
+      "string_va": "0x0056c5b8",
+      "source_line": 131,
+      "type_or_context": "u_char",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\filectrl.cpp:131 u_char"
+    },
+    {
+      "string_va": "0x0056c6d4",
+      "source_line": 496,
+      "type_or_context": "void",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\filectrl.cpp:496 void"
+    }
+  ],
+  "core/func.cpp": [
+    {
+      "string_va": "0x0056c728",
+      "source_line": 317,
+      "type_or_context": "funcChainInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\func.cpp:317 funcChainInf"
+    }
+  ],
+  "core/grpfont.cpp": [
+    {
+      "string_va": "0x0056c7e0",
+      "source_line": 615,
+      "type_or_context": "u_char",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\grpfont.cpp:615 u_char"
+    },
+    {
+      "string_va": "0x0056c860",
+      "source_line": 920,
+      "type_or_context": "AflDIB",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\grpfont.cpp:920 AflDIB"
+    }
+  ],
+  "core/main.cpp": [
+    {
+      "string_va": "0x0056c9b4",
+      "source_line": 172,
+      "type_or_context": "FuncCtrlInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\main.cpp:172 FuncCtrlInf"
+    },
+    {
+      "string_va": "0x0056c9f4",
+      "source_line": 173,
+      "type_or_context": "SprtCtrlInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\main.cpp:173 SprtCtrlInf"
+    }
+  ],
+  "core/pad.cpp": [
+    {
+      "string_va": "0x0056d698",
+      "source_line": 771,
+      "type_or_context": "InputInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\pad.cpp:771 InputInf"
+    }
+  ],
+  "core/screen.cpp": [
+    {
+      "string_va": "0x0056d768",
+      "source_line": 580,
+      "type_or_context": "ScreenInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\screen.cpp:580 ScreenInf"
+    }
+  ],
+  "core/sound.cpp": [
+    {
+      "string_va": "0x0056dc48",
+      "source_line": 255,
+      "type_or_context": "CSoundManager",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sound.cpp:255 CSoundManager"
+    },
+    {
+      "string_va": "0x0056de10",
+      "source_line": 653,
+      "type_or_context": "char",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sound.cpp:653 char"
+    }
+  ],
+  "core/sprtlib.h": [
+    {
+      "string_va": "0x0056e0a7",
+      "source_line": 911,
+      "type_or_context": "void",
+      "raw_text": "?D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sprtlib.h:911 void"
+    }
+  ],
+  "core/sprtlib.cpp": [
+    {
+      "string_va": "0x0056e270",
+      "source_line": 905,
+      "type_or_context": "SprtGroupTexInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sprtlib.cpp:905 SprtGroupTexInf"
+    },
+    {
+      "string_va": "0x0056e2b8",
+      "source_line": 906,
+      "type_or_context": "SprtDataInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sprtlib.cpp:906 SprtDataInf"
+    },
+    {
+      "string_va": "0x0056e2fc",
+      "source_line": 907,
+      "type_or_context": "int*",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sprtlib.cpp:907 int*"
+    },
+    {
+      "string_va": "0x0056e338",
+      "source_line": 929,
+      "type_or_context": "SprtInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sprtlib.cpp:929 SprtInf"
+    },
+    {
+      "string_va": "0x0056e3b0",
+      "source_line": 950,
+      "type_or_context": "SprtGroupInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sprtlib.cpp:950 SprtGroupInf"
+    },
+    {
+      "string_va": "0x0056e5bc",
+      "source_line": 2888,
+      "type_or_context": "SprtInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\sprtlib.cpp:2888 SprtInf"
+    }
+  ],
+  "core/zwave.cpp": [
+    {
+      "string_va": "0x0056e750",
+      "source_line": 119,
+      "type_or_context": "CWaveFile",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:119 CWaveFile"
+    },
+    {
+      "string_va": "0x0056e790",
+      "source_line": 154,
+      "type_or_context": "DSBPOSITIONNOTIFY",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:154 DSBPOSITIONNOTIFY"
+    },
+    {
+      "string_va": "0x0056e7d8",
+      "source_line": 173,
+      "type_or_context": "CStreamingSound",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:173 CStreamingSound"
+    },
+    {
+      "string_va": "0x0056e838",
+      "source_line": 209,
+      "type_or_context": "CWaveFile",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:209 CWaveFile"
+    },
+    {
+      "string_va": "0x0056e878",
+      "source_line": 237,
+      "type_or_context": "DSBPOSITIONNOTIFY",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:237 DSBPOSITIONNOTIFY"
+    },
+    {
+      "string_va": "0x0056e8c0",
+      "source_line": 256,
+      "type_or_context": "CStreamingSound",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:256 CStreamingSound"
+    },
+    {
+      "string_va": "0x0056e910",
+      "source_line": 278,
+      "type_or_context": "LPDIRECTSOUNDBUFFER",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:278 LPDIRECTSOUNDBUFFER"
+    },
+    {
+      "string_va": "0x0056e958",
+      "source_line": 322,
+      "type_or_context": "LPDIRECTSOUNDBUFFER",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:322 LPDIRECTSOUNDBUFFER"
+    },
+    {
+      "string_va": "0x0056e9a0",
+      "source_line": 336,
+      "type_or_context": "DSBPOSITIONNOTIFY",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\core\\zwave.cpp:336 DSBPOSITIONNOTIFY"
+    }
+  ],
+  "effect/effchargepoint.cpp": [
+    {
+      "string_va": "0x0056ec30",
+      "source_line": 40,
+      "type_or_context": "EffectChargePointInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effchargepoint.cpp:40 EffectChargePointInf"
+    }
+  ],
+  "effect/efffanspark.cpp": [
+    {
+      "string_va": "0x0056ecc0",
+      "source_line": 131,
+      "type_or_context": "EffectFanSparkInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\efffanspark.cpp:131 EffectFanSparkInf"
+    }
+  ],
+  "effect/effline.cpp": [
+    {
+      "string_va": "0x0056ed38",
+      "source_line": 70,
+      "type_or_context": "EffectLineEffectInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effline.cpp:70 EffectLineEffectInf"
+    },
+    {
+      "string_va": "0x0056ed88",
+      "source_line": 154,
+      "type_or_context": "EffectLineEffectInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effline.cpp:154 EffectLineEffectInf"
+    }
+  ],
+  "effect/efflinespark.cpp": [
+    {
+      "string_va": "0x0056edf8",
+      "source_line": 125,
+      "type_or_context": "EffectLineSparkInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\efflinespark.cpp:125 EffectLineSparkInf"
+    }
+  ],
+  "effect/efflinespark2.cpp": [
+    {
+      "string_va": "0x0056ee68",
+      "source_line": 135,
+      "type_or_context": "EffectLineSpark2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\efflinespark2.cpp:135 EffectLineSpark2Inf"
+    }
+  ],
+  "effect/efflinestone.cpp": [
+    {
+      "string_va": "0x0056eed8",
+      "source_line": 139,
+      "type_or_context": "EffectLineStoneInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\efflinestone.cpp:139 EffectLineStoneInf"
+    }
+  ],
+  "effect/efflinestone2.cpp": [
+    {
+      "string_va": "0x0056ef48",
+      "source_line": 145,
+      "type_or_context": "EffectLineStone2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\efflinestone2.cpp:145 EffectLineStone2Inf"
+    }
+  ],
+  "effect/effmenuwindow.cpp": [
+    {
+      "string_va": "0x0056efb8",
+      "source_line": 93,
+      "type_or_context": "EffectMenuWindowInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effmenuwindow.cpp:93 EffectMenuWindowInf"
+    }
+  ],
+  "effect/effpyramid.cpp": [
+    {
+      "string_va": "0x0056f038",
+      "source_line": 379,
+      "type_or_context": "EffectPyramidInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effpyramid.cpp:379 EffectPyramidInf"
+    }
+  ],
+  "effect/effscreenswitch.cpp": [
+    {
+      "string_va": "0x0056f0b0",
+      "source_line": 37,
+      "type_or_context": "EffectScreenSwitchInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effscreenswitch.cpp:37 EffectScreenSwitchInf"
+    }
+  ],
+  "effect/effshortline.cpp": [
+    {
+      "string_va": "0x0056f138",
+      "source_line": 60,
+      "type_or_context": "EffectShortLineEffectInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effshortline.cpp:60 EffectShortLineEffectInf"
+    }
+  ],
+  "effect/effshortline2.cpp": [
+    {
+      "string_va": "0x0056f1b0",
+      "source_line": 60,
+      "type_or_context": "EffectShortLineEffect2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effshortline2.cpp:60 EffectShortLineEffect2Inf"
+    }
+  ],
+  "effect/effshortline3.cpp": [
+    {
+      "string_va": "0x0056f228",
+      "source_line": 83,
+      "type_or_context": "EffectShortLineEffect3Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effshortline3.cpp:83 EffectShortLineEffect3Inf"
+    }
+  ],
+  "effect/effstonegaugeline.cpp": [
+    {
+      "string_va": "0x0056f2a0",
+      "source_line": 130,
+      "type_or_context": "EffectStoneGaugeLineInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\effect\\effstonegaugeline.cpp:130 EffectStoneGaugeLineInf"
+    }
+  ],
+  "game/ascii.cpp": [
+    {
+      "string_va": "0x0056f63c",
+      "source_line": 111,
+      "type_or_context": "AsciiInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\ascii.cpp:111 AsciiInf"
+    },
+    {
+      "string_va": "0x0056f6d0",
+      "source_line": 1118,
+      "type_or_context": "JapaneseStrInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\ascii.cpp:1118 JapaneseStrInf"
+    },
+    {
+      "string_va": "0x0056f718",
+      "source_line": 1139,
+      "type_or_context": "JapaneseStrInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\ascii.cpp:1139 JapaneseStrInf"
+    }
+  ],
+  "game/background.cpp": [
+    {
+      "string_va": "0x0056f888",
+      "source_line": 136,
+      "type_or_context": "BackGroundInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\background.cpp:136 BackGroundInf"
+    },
+    {
+      "string_va": "0x0056f8d0",
+      "source_line": 601,
+      "type_or_context": "StageFileHeaderInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\background.cpp:601 StageFileHeaderInf"
+    },
+    {
+      "string_va": "0x0056f990",
+      "source_line": 1029,
+      "type_or_context": "RenderMeshInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\background.cpp:1029 RenderMeshInf"
+    },
+    {
+      "string_va": "0x0056f9d8",
+      "source_line": 1031,
+      "type_or_context": "RenderMeshInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\background.cpp:1031 RenderMeshInf"
+    }
+  ],
+  "game/bomb.cpp": [
+    {
+      "string_va": "0x0056facc",
+      "source_line": 87,
+      "type_or_context": "BombInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\bomb.cpp:87 BombInf"
+    }
+  ],
+  "game/bomb_marisaa.cpp": [
+    {
+      "string_va": "0x0056fb30",
+      "source_line": 172,
+      "type_or_context": "BombMarisaAInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\bomb_marisaa.cpp:172 BombMarisaAInf"
+    }
+  ],
+  "game/bomb_reimua.cpp": [
+    {
+      "string_va": "0x0056fbb0",
+      "source_line": 295,
+      "type_or_context": "BombReimuAInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\bomb_reimua.cpp:295 BombReimuAInf"
+    }
+  ],
+  "game/bullet.cpp": [
+    {
+      "string_va": "0x0056fcd4",
+      "source_line": 666,
+      "type_or_context": "BulletInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\bullet.cpp:666 BulletInf"
+    }
+  ],
+  "game/card.cpp": [
+    {
+      "string_va": "0x0056fdbc",
+      "source_line": 641,
+      "type_or_context": "CardInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\card.cpp:641 CardInf"
+    }
+  ],
+  "game/ecl.cpp": [
+    {
+      "string_va": "0x0056fee8",
+      "source_line": 2387,
+      "type_or_context": "EnemyDataInf::BossRenderInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\ecl.cpp:2387 EnemyDataInf::BossRenderInf"
+    },
+    {
+      "string_va": "0x0056ff38",
+      "source_line": 2395,
+      "type_or_context": "RenderMeshInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\ecl.cpp:2395 RenderMeshInf"
+    }
+  ],
+  "game/effect.cpp": [
+    {
+      "string_va": "0x0056ffec",
+      "source_line": 213,
+      "type_or_context": "EffectInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\effect.cpp:213 EffectInf"
+    },
+    {
+      "string_va": "0x0057002c",
+      "source_line": 430,
+      "type_or_context": "SprtID",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\effect.cpp:430 SprtID"
+    },
+    {
+      "string_va": "0x00570068",
+      "source_line": 431,
+      "type_or_context": "SprtInf*",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\effect.cpp:431 SprtInf*"
+    },
+    {
+      "string_va": "0x005700a8",
+      "source_line": 432,
+      "type_or_context": "sprtVERTEXC",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\effect.cpp:432 sprtVERTEXC"
+    },
+    {
+      "string_va": "0x005700ec",
+      "source_line": 433,
+      "type_or_context": "FVector",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\effect.cpp:433 FVector"
+    }
+  ],
+  "game/ending.cpp": [
+    {
+      "string_va": "0x00570268",
+      "source_line": 128,
+      "type_or_context": "EndingMsgInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\ending.cpp:128 EndingMsgInf"
+    },
+    {
+      "string_va": "0x005702c0",
+      "source_line": 170,
+      "type_or_context": "EndingInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\ending.cpp:170 EndingInf"
+    }
+  ],
+  "game/enemy.cpp": [
+    {
+      "string_va": "0x00570420",
+      "source_line": 69,
+      "type_or_context": "EnemyInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\enemy.cpp:69 EnemyInf"
+    },
+    {
+      "string_va": "0x00570460",
+      "source_line": 205,
+      "type_or_context": "EclResourceInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\enemy.cpp:205 EclResourceInf"
+    },
+    {
+      "string_va": "0x005704f8",
+      "source_line": 420,
+      "type_or_context": "EnemyCtrlInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\enemy.cpp:420 EnemyCtrlInf"
+    }
+  ],
+  "game/fps.cpp": [
+    {
+      "string_va": "0x005705d8",
+      "source_line": 61,
+      "type_or_context": "FPSInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\fps.cpp:61 FPSInf"
+    }
+  ],
+  "game/front.cpp": [
+    {
+      "string_va": "0x00570694",
+      "source_line": 402,
+      "type_or_context": "FrontInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\front.cpp:402 FrontInf"
+    },
+    {
+      "string_va": "0x005706f8",
+      "source_line": 1199,
+      "type_or_context": "MsgInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\front.cpp:1199 MsgInf"
+    }
+  ],
+  "game/game.cpp": [
+    {
+      "string_va": "0x00570b8c",
+      "source_line": 594,
+      "type_or_context": "GameInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\game.cpp:594 GameInf"
+    }
+  ],
+  "game/help.cpp": [
+    {
+      "string_va": "0x00570c2c",
+      "source_line": 86,
+      "type_or_context": "HelpInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\help.cpp:86 HelpInf"
+    }
+  ],
+  "game/hit.cpp": [
+    {
+      "string_va": "0x00570cc4",
+      "source_line": 73,
+      "type_or_context": "HitCtrlInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\hit.cpp:73 HitCtrlInf"
+    },
+    {
+      "string_va": "0x00570d00",
+      "source_line": 605,
+      "type_or_context": "HitInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\hit.cpp:605 HitInf"
+    }
+  ],
+  "game/item.cpp": [
+    {
+      "string_va": "0x00570d74",
+      "source_line": 113,
+      "type_or_context": "ItemInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\item.cpp:113 ItemInf"
+    }
+  ],
+  "game/keyconfig.cpp": [
+    {
+      "string_va": "0x00570e10",
+      "source_line": 74,
+      "type_or_context": "KeyConfigTaskInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\keyconfig.cpp:74 KeyConfigTaskInf"
+    }
+  ],
+  "game/laser.h": [
+    {
+      "string_va": "0x005711d0",
+      "source_line": 315,
+      "type_or_context": "LaserLineInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.h:315 LaserLineInf"
+    },
+    {
+      "string_va": "0x005712a0",
+      "source_line": 468,
+      "type_or_context": "CurveEquationInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.h:468 CurveEquationInf"
+    }
+  ],
+  "game/laser.cpp": [
+    {
+      "string_va": "0x00571438",
+      "source_line": 163,
+      "type_or_context": "LaserInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:163 LaserInf"
+    },
+    {
+      "string_va": "0x00571478",
+      "source_line": 296,
+      "type_or_context": "LaserLineInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:296 LaserLineInf"
+    },
+    {
+      "string_va": "0x005714c0",
+      "source_line": 306,
+      "type_or_context": "LaserInfiniteInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:306 LaserInfiniteInf"
+    },
+    {
+      "string_va": "0x00571508",
+      "source_line": 317,
+      "type_or_context": "LaserBeamInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:317 LaserBeamInf"
+    },
+    {
+      "string_va": "0x00571550",
+      "source_line": 328,
+      "type_or_context": "LaserCurveInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:328 LaserCurveInf"
+    },
+    {
+      "string_va": "0x00571598",
+      "source_line": 551,
+      "type_or_context": "LaserHitDataInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:551 LaserHitDataInf"
+    },
+    {
+      "string_va": "0x005715e0",
+      "source_line": 1730,
+      "type_or_context": "LaserHitDataInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:1730 LaserHitDataInf"
+    },
+    {
+      "string_va": "0x00571628",
+      "source_line": 2597,
+      "type_or_context": "sprtVERTEXC",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:2597 sprtVERTEXC"
+    },
+    {
+      "string_va": "0x00571670",
+      "source_line": 2599,
+      "type_or_context": "LaserCurveVtxInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:2599 LaserCurveVtxInf"
+    },
+    {
+      "string_va": "0x005716b8",
+      "source_line": 2638,
+      "type_or_context": "CurveEquationInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:2638 CurveEquationInf"
+    },
+    {
+      "string_va": "0x00571700",
+      "source_line": 2719,
+      "type_or_context": "LaserHitDataInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:2719 LaserHitDataInf"
+    },
+    {
+      "string_va": "0x00571748",
+      "source_line": 3617,
+      "type_or_context": "u_char",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\laser.cpp:3617 u_char"
+    }
+  ],
+  "game/loading.cpp": [
+    {
+      "string_va": "0x005718c8",
+      "source_line": 239,
+      "type_or_context": "LoadingInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\loading.cpp:239 LoadingInf"
+    }
+  ],
+  "game/mother.cpp": [
+    {
+      "string_va": "0x0057199c",
+      "source_line": 233,
+      "type_or_context": "SprtInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\mother.cpp:233 SprtInf"
+    },
+    {
+      "string_va": "0x005719dc",
+      "source_line": 234,
+      "type_or_context": "SprtInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\mother.cpp:234 SprtInf"
+    },
+    {
+      "string_va": "0x00571a1c",
+      "source_line": 235,
+      "type_or_context": "SprtInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\mother.cpp:235 SprtInf"
+    },
+    {
+      "string_va": "0x00571a5c",
+      "source_line": 236,
+      "type_or_context": "SprtInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\mother.cpp:236 SprtInf"
+    },
+    {
+      "string_va": "0x00571a9c",
+      "source_line": 237,
+      "type_or_context": "SprtInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\mother.cpp:237 SprtInf"
+    },
+    {
+      "string_va": "0x00571b44",
+      "source_line": 424,
+      "type_or_context": "BYTE",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\mother.cpp:424 BYTE"
+    },
+    {
+      "string_va": "0x00571bb0",
+      "source_line": 483,
+      "type_or_context": "Gdiplus::ImageCodecInfo",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\mother.cpp:483 Gdiplus::ImageCodecInfo"
+    },
+    {
+      "string_va": "0x00571c00",
+      "source_line": 501,
+      "type_or_context": "BITMAPINFO",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\mother.cpp:501 BITMAPINFO"
+    }
+  ],
+  "game/notice.cpp": [
+    {
+      "string_va": "0x00571fa8",
+      "source_line": 154,
+      "type_or_context": "NoticeInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\notice.cpp:154 NoticeInf"
+    }
+  ],
+  "game/option.cpp": [
+    {
+      "string_va": "0x005720c8",
+      "source_line": 60,
+      "type_or_context": "OptionTaskInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\option.cpp:60 OptionTaskInf"
+    }
+  ],
+  "game/pause.cpp": [
+    {
+      "string_va": "0x005724e4",
+      "source_line": 238,
+      "type_or_context": "PauseInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\pause.cpp:238 PauseInf"
+    }
+  ],
+  "game/player.cpp": [
+    {
+      "string_va": "0x00572c08",
+      "source_line": 313,
+      "type_or_context": "PlayerInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\player.cpp:313 PlayerInf"
+    }
+  ],
+  "game/plyshot.cpp": [
+    {
+      "string_va": "0x00573284",
+      "source_line": 184,
+      "type_or_context": "ShotInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\plyshot.cpp:184 ShotInf"
+    }
+  ],
+  "game/replay.h": [
+    {
+      "string_va": "0x005732f0",
+      "source_line": 140,
+      "type_or_context": "ReplayRecDataInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.h:140 ReplayRecDataInf"
+    }
+  ],
+  "game/replay.cpp": [
+    {
+      "string_va": "0x00573338",
+      "source_line": 48,
+      "type_or_context": "ReplayFileHeaderInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:48 ReplayFileHeaderInf"
+    },
+    {
+      "string_va": "0x00573380",
+      "source_line": 54,
+      "type_or_context": "ReplayDataHeaderInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:54 ReplayDataHeaderInf"
+    },
+    {
+      "string_va": "0x005733c8",
+      "source_line": 55,
+      "type_or_context": "ReplayStageDataHeaderInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:55 ReplayStageDataHeaderInf"
+    },
+    {
+      "string_va": "0x00573428",
+      "source_line": 169,
+      "type_or_context": "ReplayInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:169 ReplayInf"
+    },
+    {
+      "string_va": "0x00573468",
+      "source_line": 188,
+      "type_or_context": "ReplayInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:188 ReplayInf"
+    },
+    {
+      "string_va": "0x005734ac",
+      "source_line": 530,
+      "type_or_context": "void",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:530 void"
+    },
+    {
+      "string_va": "0x005734e8",
+      "source_line": 585,
+      "type_or_context": "char",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:585 char"
+    },
+    {
+      "string_va": "0x00573670",
+      "source_line": 708,
+      "type_or_context": "ReplayFrameDataInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:708 ReplayFrameDataInf"
+    },
+    {
+      "string_va": "0x005736b8",
+      "source_line": 818,
+      "type_or_context": "ReplayStageDataHeaderInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\replay.cpp:818 ReplayStageDataHeaderInf"
+    }
+  ],
+  "game/score.cpp": [
+    {
+      "string_va": "0x00573770",
+      "source_line": 118,
+      "type_or_context": "ScoreInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\score.cpp:118 ScoreInf"
+    },
+    {
+      "string_va": "0x005737c0",
+      "source_line": 175,
+      "type_or_context": "ScoreFileHeaderInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\score.cpp:175 ScoreFileHeaderInf"
+    },
+    {
+      "string_va": "0x00573848",
+      "source_line": 201,
+      "type_or_context": "ScoreChunkInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\score.cpp:201 ScoreChunkInf"
+    },
+    {
+      "string_va": "0x005738a8",
+      "source_line": 252,
+      "type_or_context": "char",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\score.cpp:252 char"
+    }
+  ],
+  "game/smallscore.cpp": [
+    {
+      "string_va": "0x00573998",
+      "source_line": 57,
+      "type_or_context": "SmallScoreInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\smallscore.cpp:57 SmallScoreInf"
+    }
+  ],
+  "game/stageclear.cpp": [
+    {
+      "string_va": "0x00573f08",
+      "source_line": 89,
+      "type_or_context": "StageClearInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\stageclear.cpp:89 StageClearInf"
+    }
+  ],
+  "game/stoneenemy.cpp": [
+    {
+      "string_va": "0x005741f0",
+      "source_line": 67,
+      "type_or_context": "StoneEnemyCtrlInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\stoneenemy.cpp:67 StoneEnemyCtrlInf"
+    },
+    {
+      "string_va": "0x00574240",
+      "source_line": 76,
+      "type_or_context": "StoneEnemyInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\stoneenemy.cpp:76 StoneEnemyInf"
+    }
+  ],
+  "game/stonemenu.cpp": [
+    {
+      "string_va": "0x00574e80",
+      "source_line": 302,
+      "type_or_context": "StoneMenuInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\stonemenu.cpp:302 StoneMenuInf"
+    }
+  ],
+  "game/title.cpp": [
+    {
+      "string_va": "0x00575018",
+      "source_line": 219,
+      "type_or_context": "TitleInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\title.cpp:219 TitleInf"
+    },
+    {
+      "string_va": "0x00575610",
+      "source_line": 5302,
+      "type_or_context": "RenderMeshInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\title.cpp:5302 RenderMeshInf"
+    }
+  ],
+  "game/trophy.cpp": [
+    {
+      "string_va": "0x00575720",
+      "source_line": 92,
+      "type_or_context": "TrophyMsgInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\trophy.cpp:92 TrophyMsgInf"
+    },
+    {
+      "string_va": "0x00575770",
+      "source_line": 181,
+      "type_or_context": "TrophyInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\trophy.cpp:181 TrophyInf"
+    }
+  ],
+  "game/weaponblue.cpp": [
+    {
+      "string_va": "0x00575908",
+      "source_line": 39,
+      "type_or_context": "StoneBlueReimuInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponblue.cpp:39 StoneBlueReimuInf"
+    }
+  ],
+  "game/weaponblue2.cpp": [
+    {
+      "string_va": "0x005759d0",
+      "source_line": 51,
+      "type_or_context": "StoneBlueReimu2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponblue2.cpp:51 StoneBlueReimu2Inf"
+    }
+  ],
+  "game/weaponblue2_m.cpp": [
+    {
+      "string_va": "0x00575aa0",
+      "source_line": 52,
+      "type_or_context": "StoneBlueMarisa2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponblue2_m.cpp:52 StoneBlueMarisa2Inf"
+    }
+  ],
+  "game/weaponblue_m.cpp": [
+    {
+      "string_va": "0x00575b70",
+      "source_line": 39,
+      "type_or_context": "StoneBlueMarisaInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponblue_m.cpp:39 StoneBlueMarisaInf"
+    }
+  ],
+  "game/weapongreen.cpp": [
+    {
+      "string_va": "0x00575c40",
+      "source_line": 59,
+      "type_or_context": "StoneGreenReimuInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weapongreen.cpp:59 StoneGreenReimuInf"
+    }
+  ],
+  "game/weapongreen2.cpp": [
+    {
+      "string_va": "0x00575d08",
+      "source_line": 73,
+      "type_or_context": "StoneGreenReimu2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weapongreen2.cpp:73 StoneGreenReimu2Inf"
+    }
+  ],
+  "game/weapongreen2_m.cpp": [
+    {
+      "string_va": "0x00575dd8",
+      "source_line": 72,
+      "type_or_context": "StoneGreenMarisa2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weapongreen2_m.cpp:72 StoneGreenMarisa2Inf"
+    }
+  ],
+  "game/weapongreen_m.cpp": [
+    {
+      "string_va": "0x00575ea8",
+      "source_line": 59,
+      "type_or_context": "StoneGreenMarisaInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weapongreen_m.cpp:59 StoneGreenMarisaInf"
+    }
+  ],
+  "game/weaponred.cpp": [
+    {
+      "string_va": "0x00575f78",
+      "source_line": 42,
+      "type_or_context": "StoneRedReimuInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponred.cpp:42 StoneRedReimuInf"
+    }
+  ],
+  "game/weaponred2.cpp": [
+    {
+      "string_va": "0x00576040",
+      "source_line": 35,
+      "type_or_context": "StoneRedReimu2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponred2.cpp:35 StoneRedReimu2Inf"
+    }
+  ],
+  "game/weaponred2_m.cpp": [
+    {
+      "string_va": "0x00576108",
+      "source_line": 36,
+      "type_or_context": "StoneRedMarisa2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponred2_m.cpp:36 StoneRedMarisa2Inf"
+    }
+  ],
+  "game/weaponred_m.cpp": [
+    {
+      "string_va": "0x005761d8",
+      "source_line": 37,
+      "type_or_context": "StoneRedMarisaInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponred_m.cpp:37 StoneRedMarisaInf"
+    }
+  ],
+  "game/weaponstone.cpp": [
+    {
+      "string_va": "0x00576278",
+      "source_line": 256,
+      "type_or_context": "WeaponStoneInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponstone.cpp:256 WeaponStoneInf"
+    },
+    {
+      "string_va": "0x005762d0",
+      "source_line": 482,
+      "type_or_context": "RenderMeshInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponstone.cpp:482 RenderMeshInf"
+    },
+    {
+      "string_va": "0x00576318",
+      "source_line": 652,
+      "type_or_context": "RenderMeshInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponstone.cpp:652 RenderMeshInf"
+    }
+  ],
+  "game/weaponyellow.cpp": [
+    {
+      "string_va": "0x005763e0",
+      "source_line": 71,
+      "type_or_context": "StoneYellowReimuInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponyellow.cpp:71 StoneYellowReimuInf"
+    }
+  ],
+  "game/weaponyellow2.cpp": [
+    {
+      "string_va": "0x005764b0",
+      "source_line": 81,
+      "type_or_context": "StoneYellowReimu2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponyellow2.cpp:81 StoneYellowReimu2Inf"
+    }
+  ],
+  "game/weaponyellow2_m.cpp": [
+    {
+      "string_va": "0x005765d0",
+      "source_line": 81,
+      "type_or_context": "StoneYellowMarisa2Inf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponyellow2_m.cpp:81 StoneYellowMarisa2Inf"
+    }
+  ],
+  "game/weaponyellow_m.cpp": [
+    {
+      "string_va": "0x005766f8",
+      "source_line": 72,
+      "type_or_context": "StoneYellowMarisaInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\game\\weaponyellow_m.cpp:72 StoneYellowMarisaInf"
+    }
+  ],
+  "pack/File.cpp": [
+    {
+      "string_va": "0x00576798",
+      "source_line": 162,
+      "type_or_context": "void",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\pack\\File.cpp:162 void"
+    }
+  ],
+  "pack/LzssUtil.cpp": [
+    {
+      "string_va": "0x005767ec",
+      "source_line": 57,
+      "type_or_context": "BYTE",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\pack\\LzssUtil.cpp:57 BYTE"
+    },
+    {
+      "string_va": "0x00576828",
+      "source_line": 202,
+      "type_or_context": "BYTE",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\pack\\LzssUtil.cpp:202 BYTE"
+    }
+  ],
+  "pack/_ArcMngr.cpp": [
+    {
+      "string_va": "0x005768a0",
+      "source_line": 78,
+      "type_or_context": "File",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\pack\\_ArcMngr.cpp:78 File"
+    },
+    {
+      "string_va": "0x00576910",
+      "source_line": 173,
+      "type_or_context": "BYTE",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\pack\\_ArcMngr.cpp:173 BYTE"
+    },
+    {
+      "string_va": "0x00576960",
+      "source_line": 344,
+      "type_or_context": "void",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\pack\\_ArcMngr.cpp:344 void"
+    },
+    {
+      "string_va": "0x005769a0",
+      "source_line": 385,
+      "type_or_context": "ARCFILE_INFO",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\pack\\_ArcMngr.cpp:385 ARCFILE_INFO"
+    },
+    {
+      "string_va": "0x005769e4",
+      "source_line": 422,
+      "type_or_context": "char",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\pack\\_ArcMngr.cpp:422 char"
+    }
+  ],
+  "script/sptcmd.cpp": [
+    {
+      "string_va": "0x00576a40",
+      "source_line": 1013,
+      "type_or_context": "SptBaseInf",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\script\\sptcmd.cpp:1013 SptBaseInf"
+    },
+    {
+      "string_va": "0x00576a88",
+      "source_line": 1014,
+      "type_or_context": "LinkInf<SptBaseInf*>",
+      "raw_text": "D:\\cygwin\\home\\zun\\prog\\th20\\src\\script\\sptcmd.cpp:1014 LinkInf<SptBaseInf*>"
+    }
+  ]
+}

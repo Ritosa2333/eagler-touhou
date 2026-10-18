@@ -1,0 +1,41 @@
+{
+  "project_local_only": true,
+  "target_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "tools": [
+    {
+      "name": "Ghidra",
+      "version": "11.4.2",
+      "url": "https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.4.2_build/ghidra_11.4.2_PUBLIC_20250826.zip",
+      "sha256": "795a02076af16257bd6f3f4736c4fc152ce9ff1f95df35cd47e2adc086e037a6",
+      "checksum_source": "https://api.github.com/repos/NationalSecurityAgency/ghidra/releases/tags/Ghidra_11.4.2_build",
+      "purpose": "Headless PE auto-analysis and per-function C-like pseudocode export"
+    },
+    {
+      "name": "Oracle JDK",
+      "version": "21.0.12.1",
+      "url": "https://download.oracle.com/java/21/latest/jdk-21_windows-x64_bin.zip",
+      "sha256": "9f5d3f285558bef31744514232af6647377d1b7ba42358580f9f99bbb9ff270d",
+      "checksum_source": "https://download.oracle.com/java/21/latest/jdk-21_windows-x64_bin.zip.sha256",
+      "purpose": "Private Java runtime for Ghidra; not installed system-wide"
+    },
+    {
+      "name": "Reko",
+      "version": "0.12.4.0",
+      "url": "https://github.com/uxmal/reko/releases/download/version-0.12.4/CmdLine-0.12.4-x64-aa02002c3b.zip",
+      "sha256": "9f10d1ff30f7a0fcd3bc86e21b50e676f520022f1f4443ead46640c77d7bda86",
+      "checksum_source": "https://api.github.com/repos/uxmal/reko/releases/latest",
+      "purpose": "Alternative decompiler; whole-PE run encountered SSA/type-analysis errors"
+    },
+    {
+      "name": "Microsoft .NET Runtime",
+      "version": "8.0.31",
+      "url": "https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.31/dotnet-runtime-8.0.31-win-x64.zip",
+      "sha512": "9c55c58694676ee64b0eed2cd6d8cbf58b9aa8288420acc66841e15ca0099c75d4af0182d23a641c2342e5a151a325df4a12fa0bde2e47c0fb7e9a33e7b09896",
+      "checksum_source": "https://builds.dotnet.microsoft.com/dotnet/release-metadata/8.0/releases.json",
+      "purpose": "Private runtime for Reko; not installed system-wide"
+    },
+    { "name": "pefile", "version": "2024.8.26", "purpose": "Independent read-only PE parser" },
+    { "name": "Capstone", "version": "5.0.7", "purpose": "Independent linear x86 disassembly" }
+  ],
+  "important": "Tool installation and automatic decompilation are analysis steps, not recovered compilable game C++ or proof of gameplay equivalence."
+}

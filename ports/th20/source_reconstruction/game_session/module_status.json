@@ -1,0 +1,30 @@
+{
+  "status": "compiled_source_module",
+  "full_game_equivalence": false,
+  "original_va": [
+    "0x00401180",
+    "0x00422e40",
+    "0x00422f20",
+    "0x00423050",
+    "0x00423320",
+    "0x0040bbc0",
+    "0x004989f0",
+    "0x00488720",
+    "0x0041df50",
+    "0x00464230",
+    "0x00464250",
+    "0x00478e80",
+    "0x0040c300",
+    "0x004be220",
+    "0x004bdd60",
+    "0x004bccc0",
+    "0x004bccf0"
+  ],
+  "source_hashes": {
+    "source_reconstruction/game_session/session.hpp": "9cef8f2cb2e3efc6bce7f6170ab54409e3e11df9f2bef02b8e8a50cdac324176",
+    "source_reconstruction/game_session/session.cpp": "013dc069db5bb21644de34be43f47804aa383be7b284489dcb84cf59e32f0d44",
+    "source_reconstruction/game_session/CMakeLists.txt": "2a1d8619b9c1ef9620717d57435588879d7e565c1ac48f3c87c7f8d094c3a56c",
+    "source_reconstruction/game_session/cpu_compare.cpp": "fddd904f4054259af80f0312d2a9d2554a2f29dd5f6bc3b8d8988ab8f6f3dfbd"
+  },
+  "cpu_validation": "cpu_validation.json"
+}

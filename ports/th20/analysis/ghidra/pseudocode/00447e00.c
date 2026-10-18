@@ -1,0 +1,186 @@
+/* Entry: 0x00447e00; symbol: FUN_00447e00; body bytes: 2794 */
+
+undefined1 * __fastcall FUN_00447e00(undefined1 *param_1)
+
+{
+  default_delete<class_std::_Facet_base> *pdVar1;
+  int iVar2;
+  int *piVar3;
+  int *unaff_FS_OFFSET;
+  default_delete<class_std::_Facet_base> *local_20;
+  int local_1c;
+  int local_10;
+  undefined1 *puStack_c;
+  undefined4 uStack_8;
+  
+  uStack_8 = 0xffffffff;
+  puStack_c = &LAB_005682c0;
+  local_10 = *unaff_FS_OFFSET;
+  *unaff_FS_OFFSET = (int)&local_10;
+  *param_1 = 0;
+  FUN_0040b780((undefined4 *)(param_1 + 4));
+  *(undefined4 *)(param_1 + 0x14) = 0;
+  _memset(param_1 + 0x18,0,0xa0);
+  FUN_0040bc20(param_1 + 0x18,0x28,4,CCmdUI::CCmdUI);
+  *(undefined4 *)(param_1 + 0xb8) = 0;
+  *(undefined4 *)(param_1 + 0xbc) = 0;
+  *(undefined4 *)(param_1 + 0xc0) = 0;
+  *(undefined4 *)(param_1 + 0xc4) = 0;
+  *(undefined4 *)(param_1 + 200) = 0;
+  *(undefined4 *)(param_1 + 0xcc) = 0;
+  *(undefined4 *)(param_1 + 0xd0) = 0;
+  *(undefined4 *)(param_1 + 0xd4) = 0;
+  *(undefined4 *)(param_1 + 0xd8) = 0;
+  FUN_00448b40((undefined4 *)(param_1 + 0xdc));
+  *(undefined4 *)(param_1 + 0x6c0) = 0;
+  *(undefined4 *)(param_1 + 0x6c4) = 0;
+  FUN_00447c10(param_1 + 0x6c8);
+  FUN_00447c60(param_1 + 0x710);
+  *(undefined4 *)(param_1 + 0x6000710) = 0;
+  *(undefined4 *)(param_1 + 0x6000714) = 0;
+  FUN_00418a10((undefined4 *)(param_1 + 0x6000718));
+  *(undefined4 *)(param_1 + 0x600072c) = 0;
+  _memset(param_1 + 0x6000730,0,0xa8);
+  FUN_00447dc0(param_1 + 0x60007d8);
+  FUN_00448b40((undefined4 *)(param_1 + 0x6000818));
+  *(undefined4 *)(param_1 + 0x6000e00) = 0;
+  *(undefined4 *)(param_1 + 0x6000e04) = 0;
+  *(undefined4 *)(param_1 + 0x6000e08) = 0;
+  param_1[0x6000e0c] = 0;
+  param_1[0x6000e0d] = 0;
+  param_1[0x6000e0e] = 0;
+  param_1[0x6000e0f] = 0;
+  param_1[0x6000e10] = 0;
+  param_1[0x6000e11] = 0;
+  param_1[0x6000e12] = 0;
+  param_1[0x6000e13] = 0;
+  param_1[0x6000e14] = 0;
+  *(undefined4 *)(param_1 + 0x6000e18) = 0;
+  *(undefined4 *)(param_1 + 0x6000e1c) = 0;
+  FUN_0040bc20(param_1 + 0x6000e20,0x14,4,FUN_00449110);
+  *(undefined4 *)(param_1 + 0x6000e70) = 0;
+  FUN_0040bc20(param_1 + 0x6000e74,0x1c,0x100000,FUN_00449170);
+  *(undefined4 *)(param_1 + 0x7c00e74) = 0;
+  *(undefined4 *)(param_1 + 0x7c00e78) = 0;
+  *(undefined4 *)(param_1 + 0x7c00e7c) = 0;
+  FUN_0040bc20(param_1 + 0x7c00e80,0x14,0x10000,FUN_00449140);
+  *(undefined4 *)(param_1 + 0x7d40e80) = 0;
+  *(undefined4 *)(param_1 + 0x7d40e84) = 0;
+  FUN_00425cc0((undefined4 *)(param_1 + 0x7d40e88));
+  FUN_00425cc0((undefined4 *)(param_1 + 0x7d40e8c));
+  *(undefined4 *)(param_1 + 0x7d40e90) = 0;
+  DAT_005c0084 = DAT_0056c8cc;
+  DAT_005c006c = DAT_0056c8cc;
+  DAT_005c0054 = DAT_0056c8cc;
+  DAT_005c003c = DAT_0056c8cc;
+  DAT_005c0040 = 0;
+  DAT_005c0044 = 0;
+  DAT_005c0058 = DAT_0056c8cc;
+  DAT_005c005c = 0;
+  DAT_005c0070 = 0;
+  DAT_005c0074 = DAT_0056c8cc;
+  DAT_005c0088 = DAT_0056c8cc;
+  DAT_005c008c = DAT_0056c8cc;
+  DAT_005aef70 = DAT_0056c8cc;
+  DAT_005aef54 = DAT_0056c8cc;
+  DAT_005aef38 = DAT_0056c8cc;
+  DAT_005aef1c = DAT_0056c8cc;
+  DAT_005aef24 = 0;
+  DAT_005aef28 = 0;
+  DAT_005aef40 = DAT_0056c8cc;
+  DAT_005aef44 = 0;
+  DAT_005aef5c = 0;
+  DAT_005aef60 = DAT_0056c8cc;
+  DAT_005aef78 = DAT_0056c8cc;
+  DAT_005aef7c = DAT_0056c8cc;
+  *(undefined4 *)(param_1 + 0x6000e1c) = 0;
+  *(undefined4 *)(param_1 + 0x6000e08) = 0xffffffff;
+  param_1[0x6000e0c] = 0;
+  param_1[0x6000e0d] = 0;
+  *(undefined4 *)(param_1 + 0x6000e04) = 1;
+  param_1[0x6000e0e] = 0;
+  param_1[0x6000e10] = 0xff;
+  param_1[0x6000e0f] = 0;
+  for (local_1c = 0; local_1c < 4; local_1c = local_1c + 1) {
+    *(undefined4 *)(param_1 + local_1c * 0x28 + 0x18) = 0xffffffff;
+  }
+  FUN_0044a670(param_1 + 0x6000718,0);
+  local_20 = std::
+             _Compressed_pair<struct_std::default_delete<class_std::_Facet_base>,class_std::_Facet_base*,1>
+             ::_Get_first((_Compressed_pair<struct_std::default_delete<class_std::_Facet_base>,class_std::_Facet_base*,1>
+                           *)(param_1 + 0x710));
+  pdVar1 = (default_delete<class_std::_Facet_base> *)FUN_0044b7d0((int)(param_1 + 0x710));
+  for (; local_20 != pdVar1; local_20 = local_20 + 0x600) {
+    iVar2 = FUN_004494d0(param_1 + 0x710,0);
+    if (((int)local_20 - iVar2) / 0x600 < 0xffff) {
+      FUN_004299d0((int)local_20);
+      FUN_00429e30(local_20);
+      iVar2 = FUN_004494d0(param_1 + 0x710,0);
+      *(int *)(local_20 + 0x4c4) = ((int)local_20 - iVar2) / 0x600;
+      local_20[0x5f8] = (default_delete<class_std::_Facet_base>)0x0;
+      iVar2 = FUN_004494d0(param_1 + 0x710,0);
+      *(int *)(local_20 + 0x5fc) = ((int)local_20 - iVar2) / 0x600;
+      FUN_0044a670(local_20 + 0x5e4,local_20);
+      FUN_00411ee0(param_1 + 0x6000718,(int)(local_20 + 0x5e4));
+    }
+  }
+  *(undefined4 *)(param_1 + 0x6000710) = 0;
+  FUN_004122c0(0x2c,FUN_00450880,param_1);
+  FUN_004122c0(0xe,FUN_004508c0,param_1);
+  FUN_00412360(5,FUN_004508d0,param_1);
+  FUN_00412360(7,FUN_004508e0,param_1);
+  FUN_00412360(9,FUN_00450910,param_1);
+  FUN_00412360(0xb,FUN_004508f0,param_1);
+  FUN_00412360(10,FUN_00450a50,param_1);
+  FUN_00412360(0xd,FUN_00450a70,param_1);
+  FUN_00412360(0x10,FUN_00450a90,param_1);
+  FUN_00412360(0x12,FUN_00450930,param_1);
+  FUN_00412360(0x14,FUN_00450940,param_1);
+  FUN_00412360(0x15,FUN_00450950,param_1);
+  FUN_00412360(0x16,FUN_00450960,param_1);
+  FUN_00412360(0x18,FUN_00450a80,param_1);
+  FUN_00412360(0x1b,FUN_00450ac0,param_1);
+  FUN_00412360(0x1c,FUN_00450c60,param_1);
+  FUN_00412360(0x21,FUN_00450c50,param_1);
+  FUN_00412360(0x22,FUN_00450900,param_1);
+  FUN_00412360(0x25,FUN_00450970,param_1);
+  FUN_00412360(0x28,FUN_00450980,param_1);
+  FUN_00412360(0x2b,FUN_00450920,param_1);
+  FUN_00412360(0x2e,FUN_00450ab0,param_1);
+  FUN_00412360(0x31,FUN_00450b40,param_1);
+  FUN_00412360(0x32,FUN_00450b30,param_1);
+  FUN_00412360(0x3c,FUN_00450b10,param_1);
+  FUN_00412360(0x3e,FUN_00450b20,param_1);
+  FUN_00412360(0x40,FUN_00450af0,param_1);
+  FUN_00412360(0x41,FUN_00450ae0,param_1);
+  FUN_00412360(0x44,FUN_00450b70,param_1);
+  FUN_00412360(0x45,FUN_00450b60,param_1);
+  FUN_00412360(0x4c,FUN_00450a30,param_1);
+  FUN_00412360(0x4e,FUN_00450a40,param_1);
+  FUN_00412360(0x62,FUN_004509d0,param_1);
+  FUN_00412360(100,FUN_004509e0,param_1);
+  FUN_00412360(0x67,FUN_004509f0,param_1);
+  FUN_00412360(0x69,FUN_004509b0,param_1);
+  FUN_00412360(0x6b,FUN_004509c0,param_1);
+  FUN_00412360(0x49,FUN_00450a00,param_1);
+  FUN_00412360(0x48,FUN_00450a10,param_1);
+  FUN_00412360(0x51,FUN_00450990,param_1);
+  FUN_00412360(0x53,FUN_004509a0,param_1);
+  FUN_00412360(0x3f,FUN_00450c10,param_1);
+  FUN_00412360(0x4a,FUN_00450c00,param_1);
+  FUN_00412360(0x4d,FUN_00450c30,param_1);
+  FUN_00412360(0x4f,FUN_00450c40,param_1);
+  FUN_00412360(0x50,FUN_00450b90,param_1);
+  FUN_00412360(0x52,FUN_00450ba0,param_1);
+  FUN_00412360(99,FUN_00450bd0,param_1);
+  FUN_00412360(0x65,FUN_00450be0,param_1);
+  FUN_00412360(0x68,FUN_00450bf0,param_1);
+  FUN_00412360(0x6a,FUN_00450bb0,param_1);
+  FUN_00412360(0x6c,FUN_00450bc0,param_1);
+  piVar3 = (int *)FUN_00412730(0x5c4d40);
+  (**(code **)(*piVar3 + 0x170))(piVar3,0);
+  *(undefined4 *)(param_1 + 0x6000714) = 0;
+  *unaff_FS_OFFSET = local_10;
+  return param_1;
+}
+

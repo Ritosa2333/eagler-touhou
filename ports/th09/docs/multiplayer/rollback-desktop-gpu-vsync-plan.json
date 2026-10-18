@@ -1,0 +1,86 @@
+{
+  "schema": "th09/desktop-gpu-vsync-single-flag-plan/1",
+  "createdAt": "2026-10-11T12:39:53.510Z",
+  "scope": "Desktop-only reversible diagnostic of unexplained registered RAF waits; artificial native-ABI joystick. No phone, production GPU-setting change, deployment, or presumed GPU root cause.",
+  "baseline": {
+    "wasmSha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
+    "originalDriver": {
+      "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "sha256": "23790f4409b8ec835d47f21c1d8293280acd37f084d1ba8b7d94d6a1b04bf1ff",
+      "bytes": 79424
+    },
+    "archivedDriver": {
+      "path": "th09_web/artifacts/multiplayer-tests/smoothness-browser-before-gpu-vsync-23790f44.mjs",
+      "sha256": "23790f4409b8ec835d47f21c1d8293280acd37f084d1ba8b7d94d6a1b04bf1ff",
+      "bytes": 79424
+    }
+  },
+  "proposal": {
+    "environmentKey": "DISABLE_GPU_VSYNC",
+    "values": [
+      "0",
+      "1"
+    ],
+    "difference": "Only B appends --disable-gpu-vsync to both owned Chrome processes. All groups must exclude --disable-frame-rate-limit and reject assigned variants/duplicates.",
+    "strictWhenDeclared": true,
+    "sameFrozenDriverForAllGroups": true
+  },
+  "runs": [
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-a1",
+      "value": "0"
+    },
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-b1",
+      "value": "1"
+    },
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-a2",
+      "value": "0"
+    }
+  ],
+  "constants": {
+    "frames": 1200,
+    "formalBody": [
+      180,
+      1200
+    ],
+    "cpuRates": [
+      4,
+      4
+    ],
+    "headless": false,
+    "mode": 0,
+    "inputDelay": 0,
+    "history": 8,
+    "transport": "Independent relay input lane 39±5 ms; no additional burst, no drop",
+    "touch": {
+      "profile": "joystick",
+      "pattern": "continuous",
+      "sourceHz": 120,
+      "durationMs": 120000
+    },
+    "graphics": "Existing normal Windows Chrome, Intel UHD/ANGLE D3D11",
+    "diagnostics": {
+      "raf": true,
+      "renderWork": true,
+      "host": true,
+      "relay": true,
+      "chromeSchedulerTrace": true,
+      "traceProfile": "graphics",
+      "cpuProfile": false,
+      "liveCost": false,
+      "networkBrowser": false,
+      "rafAnomaly": false,
+      "audioOutput": false
+    }
+  },
+  "acceptance": {
+    "launch": "Both actual owned browser argv observed and verified, unique PIDs, same executable identity; A lacks flag, B has exactly the bare flag, no frame-rate-disable variants",
+    "run": "Complete native frontier body, actual route, valid touch with all denominators, ordered peer hashes through 1200, lifecycle/trace coverage qualified",
+    "effect": "Compare registered RAF wait, native callback wall, new-state RAF and Page gap tails, conditional input response, pacing and GPU/compositor evidence; argv alone does not prove runtime effect",
+    "failure": "Retain all failures, incomplete traces, endpoint/teardown distinctions and adverse samples. Do not infer a fix from one good B if the A groups do not reproduce the issue.",
+    "limits": "Independent input clocks, source tapes, background execution and window exposure can differ. Setup/end window snapshots are not continuous foreground or physical scanout proof."
+  },
+  "status": "Predeclared; driver implementation and all experiment runs pending"
+}

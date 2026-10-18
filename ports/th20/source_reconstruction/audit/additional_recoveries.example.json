@@ -1,0 +1,18 @@
+{
+  "note": "Template only; this file is not read as recovery evidence. Create additional_recoveries.json only after supplying actual paths and validation results. Status values must describe the real scope; only validated_compilable_cpp_component joins the strict component count.",
+  "recoveries": [
+    {
+      "entry_va": "0x00000000",
+      "module_id": "REPLACE_WITH_MODULE_NAME",
+      "name": "REPLACE_WITH_ACTUAL_RECOVERED_FUNCTION",
+      "source": "REPLACE_WITH_EXISTING_CPP_SOURCE_PATH",
+      "status": "cpp_implementation_pending_validation",
+      "build_integration_status": "compiled_but_unlinked",
+      "complete_original_function_equivalence_claimed": false,
+      "source_hash_bindings": {"REPLACE_WITH_EXISTING_CPP_SOURCE_PATH": "REPLACE_WITH_VALIDATION_BOUND_SOURCE_SHA256"},
+      "hash_binding_origin": "Describe whether hashes come from the validation report or only an audit snapshot.",
+      "evidence": ["REPLACE_WITH_EXISTING_VALIDATION_REPORT_PATH"],
+      "limitations": "State which arguments, side effects and engine integration remain unverified."
+    }
+  ]
+}

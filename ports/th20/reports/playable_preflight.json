@@ -1,0 +1,129 @@
+{
+  "source_directory": "E:\\BaiduNetdiskDownload\\PCGAME-Touhou.Kinjoukyou.Fossilized.Wonders-P2P\\Touhou.Kinjoukyou.Fossilized.Wonders",
+  "source_matches_manifest": true,
+  "original_save_directory": "C:\\Users\\oracat\\AppData\\Roaming\\ShanghaiAlice\\th20",
+  "original_save_files": [
+    {
+      "path": "scoreth20.dat",
+      "size": 81738,
+      "sha256": "631f297830b4bfe2af9ce76e1835ae5c965ba4735169c3079c11ce2ca22bbdd3"
+    },
+    {
+      "path": "scoreth20bak.dat",
+      "size": 81738,
+      "sha256": "631f297830b4bfe2af9ce76e1835ae5c965ba4735169c3079c11ce2ca22bbdd3"
+    },
+    {
+      "path": "th20.cfg",
+      "size": 176,
+      "sha256": "22196dc830f5d6fe74e0501e3fb17518a83d310965b92b94655458c5708cea8d"
+    }
+  ],
+  "original_save_unchanged": true,
+  "dependencies": [
+    {
+      "name": "d3d9.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\d3d9.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "6f43bb50c8aca07bbd7c0a5129e6dc6c25c276303d41fa1d2c88b6a03d2a5491",
+      "size": 1497424
+    },
+    {
+      "name": "d3dx9_43.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\d3dx9_43.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "0b28546be22c71834501f7d7185ede5d79742457331c7ee09efc14490dd64f5f",
+      "size": 1998168
+    },
+    {
+      "name": "DINPUT8.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DINPUT8.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "1477b205a3eb2f5611cb5e14c84b28911ed6911518ac1a42a75deec2b43079df",
+      "size": 178688
+    },
+    {
+      "name": "DSOUND.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\DSOUND.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "dbdc8af2c0b25fe2d575f48b90d1b264f45d5c3dabb7eb82e511c9356941a54f",
+      "size": 444928
+    },
+    {
+      "name": "GDI32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\GDI32.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "eb45f91eb786c2910a8c14c4cb02847fb1d13836fb30da38d9c6a0ec7598f526",
+      "size": 131784
+    },
+    {
+      "name": "gdiplus.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\gdiplus.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "fe5c620fc7ac56187326ee967d416dc4bf6dc206d492d70654847d0e65ae3fd1",
+      "size": 1481216
+    },
+    {
+      "name": "KERNEL32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\KERNEL32.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "e3c216de7535280d13aa0d75b74401a9efb3ab8619c5f997bb943dcc628ebb39",
+      "size": 675024
+    },
+    {
+      "name": "ole32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\ole32.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "189ba889dc05f25a11332ab375f4c8a21c259dd4be844b0daab5a42fd0c2c7c7",
+      "size": 1385808
+    },
+    {
+      "name": "OLEAUT32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\OLEAUT32.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "1d517c7839b30942da14c3ecdbbd376e50434653941ec7c9bf1b694b736fb125",
+      "size": 636888
+    },
+    {
+      "name": "USER32.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\USER32.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "26bbb54a2586eae717d6bb65fe17f78f9350ffe12d6468a05ed6bf974f79af51",
+      "size": 1757144
+    },
+    {
+      "name": "WINMM.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\WINMM.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "95e9741a5fe9fd58ff7d9654cf0f4769b77142618ca77ab2716bdfa82abcdceb",
+      "size": 189120
+    },
+    {
+      "name": "XINPUT1_4.dll",
+      "path": "C:\\WINDOWS\\SysWOW64\\XINPUT1_4.dll",
+      "exists": true,
+      "machine": "0x14c",
+      "sha256": "92409879fbc826450b32346a23d20765b4ec73d3054b39238ed68b98cd886e74",
+      "size": 37376
+    }
+  ],
+  "appdata_isolation_evidence": {
+    "function": "0x0041b4f0",
+    "call_va": "0x0041b5ca",
+    "api": "GetEnvironmentVariableW",
+    "variable": "APPDATA",
+    "source": "analysis/ghidra/pseudocode/0041b4f0.c:46"
+  },
+  "scope": "Dependency and source-preservation check; runtime evidence is reported separately."
+}

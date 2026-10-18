@@ -1,0 +1,54 @@
+{
+  "status": "passed_listed_fields",
+  "baseline_file": "reports\\playable_baseline_demo_frames.json",
+  "rebuilt_file": "reports\\playable_rebuilt_demo_frames.json",
+  "baseline_sha256": "eeb466eb0c7c367e9549b8e1c2dc2b8d3d8a834137430ecd26a29a213ff135ec",
+  "rebuilt_sha256": "9f87ab0c49ba006b598a1c423e20dce1c1b05fc8224f375f396c2da629d85b5d",
+  "baseline_executable": "D:\\AIWorkspace\\Touhou20Reconstruction\\dist\\baseline\\th20.exe",
+  "rebuilt_executable": "D:\\AIWorkspace\\Touhou20Reconstruction\\dist\\playable\\th20_rebuilt.exe",
+  "baseline_executable_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "rebuilt_executable_sha256": "c54f4c4f905e07ab4f0220f56a53784322c67f88fc2622d66de3e3bd68d0d6fe",
+  "executable_hash_provenance": "Read from the recorded process module paths at comparison time; compare with launch and build manifests.",
+  "shared_frames": 1916,
+  "identical_frames": 1916,
+  "field_comparisons": 38320,
+  "compared_fields": [
+    "assist_stone",
+    "bomb_fragments",
+    "bomb_stocks",
+    "character",
+    "graze",
+    "hyper_meter",
+    "life_fragments",
+    "life_stocks",
+    "narrow_shot_stone",
+    "point_value",
+    "power",
+    "replay_input_bits",
+    "score",
+    "stone_level_blue",
+    "stone_level_green",
+    "stone_level_red",
+    "stone_level_yellow",
+    "story_stone",
+    "summon_meter",
+    "wide_shot_stone"
+  ],
+  "by_replay": {
+    "demo2.rpy": {
+      "stage": 1,
+      "shared_frames": 1916,
+      "identical_frames": 1916,
+      "first_frame": 1595,
+      "last_frame": 3601,
+      "field_comparisons": 38320
+    }
+  },
+  "mismatches": [],
+  "limitations": [
+    "Only listed fields are compared; no bullet/entity or image/audio hash.",
+    "Asynchronous stable observations are not synchronized full-frame execution traces.",
+    "Missing or unstable frames are omitted, never interpolated.",
+    "This is not evidence of full-game 1:1 equivalence."
+  ]
+}

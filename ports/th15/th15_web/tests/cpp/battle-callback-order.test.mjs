@@ -1,0 +1,7 @@
+import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import{resolve}from'node:path';import{core,memory,report,root,target,sha}from'./helpers.mjs';import{PEImage}from'../../scripts/native/pe.mjs';
+test('TH15 battle priorities match actual original manager registration instructions',async()=>{
+ const c=await core(),exe=readFileSync(resolve(root,target.executable)),pe=new PEImage(exe);assert.equal(sha(exe),target.sha256);
+ const sites=[0x4834b3,0x453408,0x414330,0x426523,0x44162d,0x418e53,0x41faa0,0x43f7a0,0x483446],calls=[0x4834ce,0x453412,0x41433a,0x42652d,0x441637,0x418e5d,0x41faaa,0x43f7aa,0x483461],actual=Array.from(new Int32Array(c.memory.buffer,c.game_battle_priorities(),9));
+ const native=sites.map((at,i)=>{const p=pe.offset(at-pe.base);assert.equal(exe[p],0x6a,'original priority push');const call=pe.offset(calls[i]-pe.base);assert.equal(exe[call],0xe8,'original registration call');assert.equal(calls[i]+5+exe.readInt32LE(call+1),0x401390);return exe.readInt8(p+1);});assert.deepEqual(actual,native);
+ report('battle-callback-order',{passed:true,checks:28,priorities:native,scope:'Reads priority PUSH and callback-registration CALL directly from the hash-verified original executable at nine real constructor sites. In particular ItemManager runs at 29 before SpellCard 31 and GUI 33. Full scene callback integration is verified separately.'});
+});

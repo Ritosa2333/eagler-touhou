@@ -1,0 +1,142 @@
+{
+  "generated_utc": "2026-09-19T11:01:53.200018+00:00",
+  "status": "passed",
+  "build_directory": "build_pool_audit_20260919",
+  "configuration": "Release; Visual Studio 16 2019; Win32",
+  "build_target": "th20_pool_cpu_compare",
+  "test_executable_sha256": "f88de40d192322b02dbe57260932b38278db3b15deebaccaaa64c41b86da9cc9",
+  "canonical_report_sha256": "604e81b1d0dbb88303543e1977dacc6b104a4ff83a90d64f1c8b5a8e47862ebc",
+  "original_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "total": 2915831,
+  "failed": 0,
+  "original_cpu_checks": 2915767,
+  "source_only_checks": 64,
+  "comparison_groups": 2690,
+  "bound_source_hash_count": 389,
+  "all_bound_hashes_match_current_source": true,
+  "changed_bound_hashes_since_previous_canonical": {
+    "../laser_system/type2.cpp": {
+      "previous": "ce48e6ca935d77d3cc01bdae5161a286405e96c31bfcc4a3caa2474c2d8e4df5",
+      "current": "a7fb29bb5ceaa4a142554ff742d7a93752a6deade1b88e8c566b908de72a0b63"
+    },
+    "../text_renderer/format.cpp": {
+      "previous": "471924fc3c68b79c3dc98bf8ee3f01c47ad1605072a83b9804d1bcb83f63e49a",
+      "current": "b634b70533d906b3bd19de0be32afc8f4dc09c1b35ba9cabe579db3d296bd794"
+    },
+    "../pause_system/draw.cpp": {
+      "previous": "b8823c9bcc02519ad2c248f491cfb0e52c78dbb660c3390abfd80d6d8389cd4c",
+      "current": "52a67e4d52bf4debd407ed40fc4fe8b12e1d563b02f65279cd3f9852767b91d7"
+    },
+    "../pause_system/text_style.cpp": {
+      "previous": null,
+      "current": "cfe5f370525ab62a843bf8d342f14710511e166bdb39905b3dabebcdd4fecfe0"
+    },
+    "../runtime_core/worker.hpp": {
+      "previous": "f9501687a4ca7b19f6bb757b3be5e350885be54c8edc1479279e75e5d840f667",
+      "current": "c9c9a176914b2ef301d16fa1f2b811e5df7e56e79d449a7efd8bc343bd638271"
+    },
+    "pool_test/CMakeLists.txt": {
+      "previous": "d5de61fe92447feac6a90d3e33ba617d0895740ed855cf079a957b2ef6926cfe",
+      "current": "b2d9b8c1b8c1cb37476903afc964a92002dd53b03af82268b72d6c692dcb7bbc"
+    }
+  },
+  "module_reports": [
+    {
+      "path": "source_reconstruction/effect_system/additional_validation.json",
+      "total": 357860,
+      "original_cpu_checks": 357860,
+      "source_only_checks": 0,
+      "sha256": "290b1ce28a1372426655c46c5da5c6f6d4ee5f7e23741a0e3cb519c62884f861"
+    },
+    {
+      "path": "source_reconstruction/bullet_system/pool_validation.json",
+      "total": 341623,
+      "original_cpu_checks": 341623,
+      "source_only_checks": 0,
+      "sha256": "7bdf9d308c6c3bba0e8a55c816ebbe69c1793cee7137cb49bb0b01be606324c6"
+    },
+    {
+      "path": "source_reconstruction/laser_system/pool_validation.json",
+      "total": 431652,
+      "original_cpu_checks": 431588,
+      "source_only_checks": 64,
+      "sha256": "47d82e85d5c75f7e493c6922a85612e16a559cd52b95fedb0724199c80732fd7"
+    },
+    {
+      "path": "source_reconstruction/hud_system/draw_validation.json",
+      "total": 232192,
+      "original_cpu_checks": 232192,
+      "source_only_checks": 0,
+      "sha256": "055b4175482095a1ee61134d726e6c19d2c45c0096e108be6d81e1f7ef31c812"
+    },
+    {
+      "path": "source_reconstruction/stage_clear/pool_validation.json",
+      "total": 95232,
+      "original_cpu_checks": 95232,
+      "source_only_checks": 0,
+      "sha256": "54aa329973604b5cebf776d1d536fe002441f06c363979a02da2e0c1f908d964"
+    },
+    {
+      "path": "source_reconstruction/card_system/pool_validation.json",
+      "total": 206784,
+      "original_cpu_checks": 206784,
+      "source_only_checks": 0,
+      "sha256": "14bb17e6e58c0e81784f31dc93d419eb010708fcd37e71cc6bce214d8398af13"
+    },
+    {
+      "path": "source_reconstruction/gameplay/frame_validation.json",
+      "total": 225280,
+      "original_cpu_checks": 225280,
+      "source_only_checks": 0,
+      "sha256": "adcc0849045dc15bfe69e49ea564f4449bdf5a3ec57269b0a77d8e331230c00c"
+    },
+    {
+      "path": "source_reconstruction/pause_system/draw_validation.json",
+      "total": 81920,
+      "original_cpu_checks": 81920,
+      "source_only_checks": 0,
+      "sha256": "231b6f8ce8293cf16a8d8c48a02f9f0dc87e56356a1a23a00dbafea6b31c0561"
+    },
+    {
+      "path": "source_reconstruction/title_system/draw_validation.json",
+      "total": 122880,
+      "original_cpu_checks": 122880,
+      "source_only_checks": 0,
+      "sha256": "1f6d8187f6c455907f858d7b8360d20c3363d478fc439f82b3e3a04409967705"
+    },
+    {
+      "path": "source_reconstruction/notice_system/pool_validation.json",
+      "total": 59904,
+      "original_cpu_checks": 59904,
+      "source_only_checks": 0,
+      "sha256": "b8e0e2e66b061d4db866530ef6cfe23448def4774f8e812de9adcfe6ea3a2a52"
+    },
+    {
+      "path": "source_reconstruction/ending_scene/pool_validation.json",
+      "total": 200618,
+      "original_cpu_checks": 200618,
+      "source_only_checks": 0,
+      "sha256": "efd7a153b0d07bdd2c5a7851423e14d147664d7a795578434d927c1ec28afe7a"
+    },
+    {
+      "path": "source_reconstruction/trophy_system/pool_validation.json",
+      "total": 34404,
+      "original_cpu_checks": 34404,
+      "source_only_checks": 0,
+      "sha256": "da838649a62706e4d1ad470bad0ed01b4ca17f3f15aa824990116b715d99a183"
+    },
+    {
+      "path": "source_reconstruction/bomb_system/cancellation_validation.json",
+      "total": 9216,
+      "original_cpu_checks": 9216,
+      "source_only_checks": 0,
+      "sha256": "9160ef73019ccaca492b7037a54f544570a86a8e1fe5ca659319de96d2a97975"
+    }
+  ],
+  "limitations": [
+    "Uses existing isolated original-function CPU fixture, no original entry point or game UI executed.",
+    "Not an ASAN run and not a whole-game equivalence or lifetime proof.",
+    "Player/Title owner factories and Effect callback lifecycle changes are not compiled by this target.",
+    "64 labeled source-only ETEX13 checks validate deliberate checked failure, not original unsafe-copy equivalence."
+  ]
+}
