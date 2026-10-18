@@ -81,7 +81,7 @@ jobs:
     - run: node tools/ci/validate-source-entries.mjs
       env:
         EAGLER_CI_AFFECTED: ${{ needs.scope.outputs.affected }}
-    - run: node --test tools/build/compiler-arguments.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
+    - run: node --test tools/build/compiler-arguments.test.mjs tools/build/source-dependencies.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
   common_ci_native:
     strategy:
       matrix:

@@ -1,7 +1,8 @@
+import {isSourceDependency,sourceDependencyTool} from '../../../tools/build/source-dependencies.mjs';
 import {parseMakeDependencies} from './make-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
-import {resolve,relative,dirname,isAbsolute} from 'node:path';
+import {resolve,relative,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {WASI} from 'node:wasi';
@@ -37,12 +38,13 @@ const dependencies=new Map();
 const sha256=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 function remember(path){
     const name=relative(root,path);
-    if(name.startsWith('..')||isAbsolute(name))throw Error(`Project dependency outside checkout: ${path}`);
+    if(!isSourceDependency(root,name))throw Error(`Project dependency outside checkout: ${path}`);
     const digest=sha256(path);
     if(dependencies.has(path)&&dependencies.get(path)!==digest)
         throw Error(`Project dependency changed after first observation: ${name}`);
     dependencies.set(path,digest);
 }
+remember(sourceDependencyTool);
 remember(resolve(root,'portable/check-network-tail-presentation.mjs'));
 remember(resolve(root,'portable/make-dependencies.mjs'));
 function compile(source,name,compileFlags=flags){

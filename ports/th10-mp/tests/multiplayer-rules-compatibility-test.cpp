@@ -15,8 +15,8 @@ const Netplay::BrowserPeerTransport* receiver=nullptr;
 }
 namespace Netplay {
 BrowserPeerTransport::~BrowserPeerTransport(){Close();}
-bool BrowserPeerTransport::Connect(const char*,std::uint8_t,std::uint8_t){return false;}
-bool BrowserPeerTransport::ConnectSpectator(const char*,const char*,std::uint8_t){
+bool BrowserPeerTransport::Connect(const char*,std::uint8_t,std::uint8_t,bool){return false;}
+bool BrowserPeerTransport::ConnectSpectator(const char*,const char*,std::uint8_t,bool){
     queues[this]={};receiver=this;return true;
 }
 void BrowserPeerTransport::Close(){queues.erase(this);if(receiver==this)receiver=nullptr;}

@@ -47,6 +47,8 @@ common 改动需要验证全部实际消费者。根 CI 汇总保留的适配检
 
 使用 `tests/support/runtime-source-owner.mjs` 的原生浏览器检查按 `runtime-builds.json` 的源码目录绑定普通版和 MP，不要求 monorepo 的开发分支叫作旧的 `eagler` 或 `eagler-mp`。本轮实际验收入口与未覆盖的旧审计入口列在搬迁验收记录中。跨作品共用的编译器参数处理保留在根 `tools/build/`，相关 CI 检出该目录。
 
+编译测试的依赖清单同时记录作品和根 common 的真实文件，使用 `tools/build/source-dependencies.mjs` 核对归属，仍拒绝其他作品、SDK 或无关目录。源码资源审阅对文本按 LF 规范化校验，对二进制保留逐字节校验；Windows 换行不能成为 Linux 检出时放宽资源白名单的理由。
+
 ## 迁移前的 PR 与工作树
 
 现有 PR、分支和工作树继续保留。此次迁移只继承来源记录中选定的提交，不代表已接受其他分支的独立工作。无需为了搬迁先合入所有旧 PR；明确要求本次包含的改动，应先完成审核，再刷新候选和相关验收。

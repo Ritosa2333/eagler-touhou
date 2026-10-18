@@ -574,13 +574,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -597,13 +597,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -620,13 +620,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -643,13 +643,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -666,13 +666,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -689,13 +689,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -712,13 +712,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -735,13 +735,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -758,13 +758,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -781,13 +781,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -804,13 +804,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -827,13 +827,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -850,13 +850,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -873,13 +873,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -896,13 +896,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -919,13 +919,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -942,13 +942,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -965,13 +965,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -988,13 +988,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1011,13 +1011,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1034,13 +1034,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1057,13 +1057,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1080,13 +1080,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1103,13 +1103,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1126,13 +1126,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1149,13 +1149,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1172,13 +1172,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
@@ -1195,13 +1195,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1213,13 +1213,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1231,13 +1231,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1249,13 +1249,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1267,13 +1267,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1285,13 +1285,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1303,13 +1303,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1321,13 +1321,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1339,13 +1339,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         }
       ]
     },
@@ -1357,13 +1357,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1380,13 +1380,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1403,13 +1403,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1426,13 +1426,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1449,13 +1449,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1472,13 +1472,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1495,13 +1495,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1518,13 +1518,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1541,13 +1541,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
@@ -1564,13 +1564,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1587,13 +1587,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1610,13 +1610,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1633,13 +1633,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1656,13 +1656,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1679,13 +1679,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1702,13 +1702,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1725,13 +1725,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1748,13 +1748,13 @@
       "evidence": [
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         },
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "ports/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
@@ -1765,127 +1765,127 @@
     },
     {
       "path": "ports/th08-mp/th10_web/launcher/public/assets/notice-bilibili.svg",
-      "hashMode": "bytes",
-      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "hashMode": "lf-text",
+      "sha256": "f4874d4b046470cca2f71277963330d7e65d0e64f96db60eb89cfaa249470da3",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th08/th10_web/launcher/public/assets/notice-bilibili.svg",
-      "hashMode": "bytes",
-      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "hashMode": "lf-text",
+      "sha256": "f4874d4b046470cca2f71277963330d7e65d0e64f96db60eb89cfaa249470da3",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th09/th09_web/launcher/public/assets/notice-bilibili.svg",
-      "hashMode": "bytes",
-      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "hashMode": "lf-text",
+      "sha256": "f4874d4b046470cca2f71277963330d7e65d0e64f96db60eb89cfaa249470da3",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th10-mp/th10_web/launcher/public/assets/notice-bilibili.svg",
-      "hashMode": "bytes",
-      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "hashMode": "lf-text",
+      "sha256": "f4874d4b046470cca2f71277963330d7e65d0e64f96db60eb89cfaa249470da3",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th10/th10_web/launcher/public/assets/notice-bilibili.svg",
-      "hashMode": "bytes",
-      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "hashMode": "lf-text",
+      "sha256": "f4874d4b046470cca2f71277963330d7e65d0e64f96db60eb89cfaa249470da3",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th11-mp/th11_web/launcher/public/assets/notice-bilibili.svg",
-      "hashMode": "bytes",
-      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "hashMode": "lf-text",
+      "sha256": "f4874d4b046470cca2f71277963330d7e65d0e64f96db60eb89cfaa249470da3",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th11/th11_web/launcher/public/assets/notice-bilibili.svg",
-      "hashMode": "bytes",
-      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "hashMode": "lf-text",
+      "sha256": "f4874d4b046470cca2f71277963330d7e65d0e64f96db60eb89cfaa249470da3",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -1897,13 +1897,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -1915,139 +1915,139 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th08-mp/th10_web/launcher/public/assets/notice-github.svg",
-      "hashMode": "bytes",
-      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "hashMode": "lf-text",
+      "sha256": "ccdcb426d996a3814d23ee7e31027d6893265518a53a6b24c1e72589f0f461f1",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th08/th10_web/launcher/public/assets/notice-github.svg",
-      "hashMode": "bytes",
-      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "hashMode": "lf-text",
+      "sha256": "ccdcb426d996a3814d23ee7e31027d6893265518a53a6b24c1e72589f0f461f1",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th09/th09_web/launcher/public/assets/notice-github.svg",
-      "hashMode": "bytes",
-      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "hashMode": "lf-text",
+      "sha256": "ccdcb426d996a3814d23ee7e31027d6893265518a53a6b24c1e72589f0f461f1",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th10-mp/th10_web/launcher/public/assets/notice-github.svg",
-      "hashMode": "bytes",
-      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "hashMode": "lf-text",
+      "sha256": "ccdcb426d996a3814d23ee7e31027d6893265518a53a6b24c1e72589f0f461f1",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th10/th10_web/launcher/public/assets/notice-github.svg",
-      "hashMode": "bytes",
-      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "hashMode": "lf-text",
+      "sha256": "ccdcb426d996a3814d23ee7e31027d6893265518a53a6b24c1e72589f0f461f1",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th11-mp/th11_web/launcher/public/assets/notice-github.svg",
-      "hashMode": "bytes",
-      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "hashMode": "lf-text",
+      "sha256": "ccdcb426d996a3814d23ee7e31027d6893265518a53a6b24c1e72589f0f461f1",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th11/th11_web/launcher/public/assets/notice-github.svg",
-      "hashMode": "bytes",
-      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "hashMode": "lf-text",
+      "sha256": "ccdcb426d996a3814d23ee7e31027d6893265518a53a6b24c1e72589f0f461f1",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2059,13 +2059,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2077,139 +2077,139 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th08-mp/th10_web/launcher/public/assets/notice-qq.svg",
-      "hashMode": "bytes",
-      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "hashMode": "lf-text",
+      "sha256": "a1d41b033040bd9a02eb03a47c5546bd3613ccda177c73e6afe750f18143f17d",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th08/th10_web/launcher/public/assets/notice-qq.svg",
-      "hashMode": "bytes",
-      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "hashMode": "lf-text",
+      "sha256": "a1d41b033040bd9a02eb03a47c5546bd3613ccda177c73e6afe750f18143f17d",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th09/th09_web/launcher/public/assets/notice-qq.svg",
-      "hashMode": "bytes",
-      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "hashMode": "lf-text",
+      "sha256": "a1d41b033040bd9a02eb03a47c5546bd3613ccda177c73e6afe750f18143f17d",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th10-mp/th10_web/launcher/public/assets/notice-qq.svg",
-      "hashMode": "bytes",
-      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "hashMode": "lf-text",
+      "sha256": "a1d41b033040bd9a02eb03a47c5546bd3613ccda177c73e6afe750f18143f17d",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th10/th10_web/launcher/public/assets/notice-qq.svg",
-      "hashMode": "bytes",
-      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "hashMode": "lf-text",
+      "sha256": "a1d41b033040bd9a02eb03a47c5546bd3613ccda177c73e6afe750f18143f17d",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th11-mp/th11_web/launcher/public/assets/notice-qq.svg",
-      "hashMode": "bytes",
-      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "hashMode": "lf-text",
+      "sha256": "a1d41b033040bd9a02eb03a47c5546bd3613ccda177c73e6afe750f18143f17d",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
     {
       "path": "ports/th11/th11_web/launcher/public/assets/notice-qq.svg",
-      "hashMode": "bytes",
-      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "hashMode": "lf-text",
+      "sha256": "a1d41b033040bd9a02eb03a47c5546bd3613ccda177c73e6afe750f18143f17d",
       "classification": "legacy-ui-image",
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2221,13 +2221,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2239,13 +2239,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2257,13 +2257,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2275,13 +2275,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2293,13 +2293,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2311,13 +2311,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2329,13 +2329,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2347,13 +2347,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2365,13 +2365,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2383,13 +2383,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2401,13 +2401,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2419,13 +2419,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2437,13 +2437,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2455,13 +2455,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2473,13 +2473,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2491,13 +2491,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2509,13 +2509,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2527,13 +2527,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2545,13 +2545,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },
@@ -2563,13 +2563,13 @@
       "evidence": [
         {
           "path": "launcher/ASSETS.md",
-          "hashMode": "bytes",
-          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+          "hashMode": "lf-text",
+          "sha256": "dcc3e44d06d4082e3582699a548ea4b78ea88dcd3c38daf1c6049f37010afdc9"
         },
         {
           "path": "launcher/THIRD_PARTY.md",
-          "hashMode": "bytes",
-          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+          "hashMode": "lf-text",
+          "sha256": "2a5b47d0c3c85837db75ee1575b3c7c71708378d260b157dca1a4fef1c7b9abc"
         }
       ]
     },

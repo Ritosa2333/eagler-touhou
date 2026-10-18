@@ -1,3 +1,4 @@
+import {isSourceDependency,sourceDependencyTool} from '../../../tools/build/source-dependencies.mjs';
 import {parseMakeDependencies} from './make-dependencies.mjs';
 import {spawnSync} from 'node:child_process';
 import {existsSync,mkdirSync,readFileSync,writeFileSync,openSync,closeSync,statSync} from 'node:fs';
@@ -122,10 +123,10 @@ const explicitSources=[
     resolve(platform,'Callbacks.hpp'),resolve(platform,'Callbacks.cpp'),legacySource
 ];
 function dependencyPaths(files){
-    const result=new Set(explicitSources);
+    const result=new Set([sourceDependencyTool,...explicitSources]);
     for(const file of files)for(const token of parseMakeDependencies(readFileSync(file,'utf8'))){
         const path=resolve(root,token),name=relative(root,path);
-        if(name==='..'||name.startsWith('..'+sep)||isAbsolute(name))
+        if(!isSourceDependency(root,name))
             throw Error('Project dependency outside checkout: '+path);
         result.add(path);
     }

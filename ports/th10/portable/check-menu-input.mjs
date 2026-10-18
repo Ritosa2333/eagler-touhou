@@ -1,7 +1,8 @@
+import {isSourceDependency,sourceDependencyTool} from '../../../tools/build/source-dependencies.mjs';
 import {parseMakeDependencies} from './make-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync,mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
-import {resolve,relative,dirname,isAbsolute} from 'node:path';
+import {resolve,relative,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {WASI} from 'node:wasi';
@@ -28,7 +29,7 @@ const bindings=[
     ['th10_web/cpp/platform/WorldResults.cpp','pressed=&w.input.player_profiles[0].input.raw_pressed;'],
     ['th10_web/cpp/platform/Credits.cpp','pressed=&owner.input.player_profiles[0].input.raw_pressed;'],
 ];
-const dependencies=new Set([resolve(root,'portable/check-menu-input.mjs'),resolve(root,'portable/make-dependencies.mjs')]);
+const dependencies=new Set([sourceDependencyTool,resolve(root,'portable/check-menu-input.mjs'),resolve(root,'portable/make-dependencies.mjs')]);
 for(const [source,directBinding] of bindings){
     const path=resolve(root,source);dependencies.add(path);
     if(!readFileSync(path,'utf8').replace(/\s+/g,'').includes(directBinding))
@@ -39,7 +40,7 @@ function compile(source,name,compileFlags){
     execFileSync(compiler,[...compileFlags,'-MMD','-MF',depfile,'-MT','source','-c',resolve(root,source),'-o',object],{cwd:root,stdio:'inherit'});
     for(const token of parseMakeDependencies(readFileSync(depfile,'utf8'))){
         const path=resolve(root,token),name=relative(root,path);
-        if(name.startsWith('..')||isAbsolute(name))throw Error(`Project dependency outside checkout: ${path}`);
+        if(!isSourceDependency(root,name))throw Error(`Project dependency outside checkout: ${path}`);
         dependencies.add(path);
     }
     return object;

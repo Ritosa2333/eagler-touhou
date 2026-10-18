@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import os
 
 ROOT = Path(__file__).resolve().parents[2]
-COMMON = ROOT / "third_party" / "eagler-common"
+COMMON = Path(os.environ.get("EAGLER_COMMON_ROOT", ROOT.parent.parent / "common")).resolve()
 DRIVER = (ROOT / "src/netplay/Th07LanStageProbe.cpp").read_text(encoding="utf-8")
 SHELL = (ROOT / "resources/shell.html").read_text(encoding="utf-8")
 PEER = (COMMON / "src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
