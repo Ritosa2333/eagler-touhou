@@ -288,7 +288,7 @@ function apply(){Module.eaglerOptions=options;core.th11_always_hitbox(+(options.
 let thpracKeyboardBits=0;
 function thpracKey(code,down){const bit=code==='Backspace'?1:code==='Tab'?1<<8:code==='F12'?1<<9:/^F[1-7]$/.test(code)?1<<Number(code.slice(1)):0;if(!bit||!options.thpracEnabled)return false;if(down)thpracKeyboardBits|=bit;else thpracKeyboardBits&=~bit;(Module.eaglerControls??={}).thpracKeyboardBits=thpracKeyboardBits;return true;}
 function clearPracticeKeys(){thpracKeyboardBits=0;if(Module)(Module.eaglerControls??={}).thpracKeyboardBits=0;}
-const keyboard=createBrowserKeyboard({
+const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!stopping,reset:clearKeyboard,},
  accept:code=>!!scanCodes[code],
  send(code,down){if(!core||(multiplayerRuntime&&!multiplayer?.acceptInput()))return;if(thpracKey(code,down))return;core.th11_key(scanCodes[code],+down);},
  onClear:clearPracticeKeys
@@ -405,6 +405,7 @@ for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(!core||!launched||stopping||document.hidden)return;
  if(multiplayerRuntime){if(multiplayer.keyboard(event,name==='keydown')){event.preventDefault();return;}if(!multiplayer.acceptInput())return;}
+ if(keyboard.mapNative(event,name==='keydown')){event.preventDefault();event.stopImmediatePropagation();return;}
  if(keyboard.event(event,name==='keydown'))event.preventDefault();
 },{capture:true});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.

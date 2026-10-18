@@ -2,6 +2,8 @@
 
 当前适配记录见[TH15 适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。
 
+Launcher 的改键与标准化手柄动作经共用浏览器桥进入原生键盘路径。常显判定点复用本作原生低速动画，在独立绘制状态中按原有层级呈现，开关由 `alwaysHitbox` 控制。
+
 ## 构建并在 Launcher 启动
 
 需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th15.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。未安装 Emscripten 时可运行 `python ports/th15/tools/download-emscripten.py`。

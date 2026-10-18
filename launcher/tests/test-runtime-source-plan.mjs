@@ -79,6 +79,12 @@ try {
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09", emsdk: resolve(root, "missing-sdk") }, context), /Emscripten compiler not found/);
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09" }, context), /specify --emsdk/);
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09", emsdk: sdk, emscriptenVersion: "6.0.5" }, context), /version mismatch/);
+  for (const version of ['6.0.9', '6.0.9-git', '"6.0.9"', '"6.0.9-git"']) {
+    await put(resolve(sdk, "install/emscripten/emscripten-version.txt"), version+'\n');
+    const plan=await planRuntimeSourceBuild({game:"th09",emsdk:sdk,emscriptenVersion:"6.0.9"},context);
+    assert.equal(plan.toolchain.version, version.replaceAll('"',''));
+    await assert.rejects(()=>planRuntimeSourceBuild({game:"th09",emsdk:sdk,emscriptenVersion:"6.0.8"},context),/version mismatch/);
+  }
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09", emsdk: sdk, common: resolve(root, "missing-common") }, context), /common dependency is missing/);
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th15", variant: "multiplayer", emsdk: sdk, thprac: true }, context), /fixed to false/);
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09", emsdk: sdk, jobs: 0 }, context), /jobs must be/);

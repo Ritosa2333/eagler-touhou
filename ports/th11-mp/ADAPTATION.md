@@ -15,7 +15,7 @@
 | 编号 | 检查项 | multiplayer | 记录 |
 | --- | --- | --- | --- |
 | BUILD-01 | [源码目录与普通版／MP归属](../../docs/adaptation/build.md#build-01) | 已验证 | multiplayer：[source-inputs](../../docs/adaptation/status.json) |
-| BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 已验证 | multiplayer：[compiled-runtime](../../docs/adaptation/status.json) |
+| BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | BUILD-03 | [对应模式独立构建](../../docs/adaptation/build.md#build-03) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -45,7 +45,7 @@
 | INPUT-01 | [键盘逻辑输入](../../docs/adaptation/input.md#input-01) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | INPUT-02 | [启动器键盘改键](../../docs/adaptation/input.md#input-02) | 已实现 | multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
 | INPUT-03 | [启动器手柄映射](../../docs/adaptation/input.md#input-03) | 已实现 | multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
-| INPUT-04 | [手柄方向与按钮](../../docs/adaptation/input.md#input-04) | 检查失败 | multiplayer：[native-gamepad](../../docs/adaptation/status.json) |
+| INPUT-04 | [手柄方向与按钮](../../docs/adaptation/input.md#input-04) | 已实现 | multiplayer：[native-gamepad](../../docs/adaptation/status.json) |
 | INPUT-05 | [多种输入独立持有](../../docs/adaptation/input.md#input-05) | 已实现 | multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
 | INPUT-06 | [失焦与断开释放](../../docs/adaptation/input.md#input-06) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | INPUT-07 | [原作菜单与对话输入](../../docs/adaptation/input.md#input-07) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |

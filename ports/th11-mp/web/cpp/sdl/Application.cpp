@@ -1,3 +1,4 @@
+#include <eagler/input/BrowserGamepad.hpp>
 #include "GraphicsDevice.hpp"
 #include "AudioDevice.hpp"
 #include "FontDevice.hpp"
@@ -831,6 +832,7 @@ bool sample_and_tick(bool advance=true){
 #endif
     bool keys[256]{};std::array<u8,256> scans{};const auto* physical=th11_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
+    const int mappedPad=eagler::input::BrowserGamepadState();eagler::input::ApplyGamepadVirtualKeys(keys,mappedPad);eagler::input::ApplyGamepadScanKeys(scans,mappedPad);
     // Live/recorded shared UI consumes the committed seat words below. A
     // future physical capture must not overwrite its current title key edges.
     bool local_title_input=true;
@@ -855,7 +857,7 @@ bool sample_and_tick(bool advance=true){
 #ifndef TH11_MULTIPLAYER
     if(auto* b=app.session.battle.get()){b->player_input.movement.touch_mode=sample.motion;b->player_input.movement.touch_x=sample.x;b->player_input.movement.touch_y=sample.y;}
 #endif
-    const u32 raw=sample_controller()|keyboard_keys(keys);
+    const u32 raw=(mappedPad<0?sample_controller():0)|keyboard_keys(keys);
     const u32 held=(raw&~0x80100u)|((raw&0x80000)?256:0);
 #ifdef TH11_MULTIPLAYER
     if(app.multiplayer_viewer){

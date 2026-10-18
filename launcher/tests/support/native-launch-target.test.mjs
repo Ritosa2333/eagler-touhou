@@ -70,7 +70,7 @@ async function start(environment, port) {
   } catch (error) {await stop(); throw error;}
 }
 
-test('actual React development server preserves canonical TH20 identity-only Host and per-run Relay metadata; missing selected build fails closed', {timeout: 180000}, async () => {
+test('actual React development server preserves th20 identity, readable shared font routes and per-run Relay metadata; missing selected build fails closed', {timeout: 180000}, async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true});
   const work = await mkdtemp(resolve(project, '.cache/native-launch-setup-'));
   try {
@@ -96,6 +96,13 @@ test('actual React development server preserves canonical TH20 identity-only Hos
       assert.match(html, /__reactRouterContext/); assert.doesNotMatch(html, /<script[^>]+src=["'](?:\.\/)?app\.js/);
       const actual = await (await fetch(server.base + '/site-manifest.json')).json();
       const canonical = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', "import {createDevelopmentSiteManifest} from './lib/development-site-manifest.mjs';console.log(JSON.stringify(await createDevelopmentSiteManifest({games:['th20'],netplayRelay:process.env.EAGLER_TOUHOU_NETPLAY_RELAY})))"], {cwd: project, env: environment, encoding: 'utf8'}));
+      for (const [key,name] of [['vanillaFont','msgothic.ttc'],['unicodeFont','unifont.otf']]) {
+        assert.match(actual.shared[key],new RegExp('^/__development-content/[a-f0-9]{64}/'+name.replaceAll('.','\\.')+'$'));
+        const resource=await fetch(new URL(actual.shared[key],server.base));
+        assert.equal(resource.status,200,name);
+        assert.deepEqual(new Uint8Array(await resource.arrayBuffer()),new Uint8Array([1,2,3]),name);
+        canonical.shared[key]=actual.shared[key];
+      }
       assert.deepEqual(actual, canonical);
       assert.equal(actual.shared.netplayRelay, environment.EAGLER_TOUHOU_NETPLAY_RELAY);
       assert.deepEqual(Object.keys(actual.games), ['th20']);

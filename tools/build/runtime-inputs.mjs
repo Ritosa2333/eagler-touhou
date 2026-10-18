@@ -9,7 +9,7 @@ export function headerInputs(...directories) {
     return entry.isDirectory() ? headerInputs(path) : /\.(?:h|hpp|inc)$/.test(entry.name) ? [path] : [];
   }));
 }
-export function printRuntimeInputs({workspace, root, sources, headers, flags}) {
+export async function printRuntimeInputs({workspace, root, sources, headers, flags}) {
   if (!printingRuntimeInputs) return;
   const name = path => relative(workspace, resolve(root, path)).split(sep).join('/');
   const units = [...new Set(sources.map(name))].sort();
@@ -18,8 +18,9 @@ export function printRuntimeInputs({workspace, root, sources, headers, flags}) {
     const bytes = readFileSync(resolve(workspace, path));
     return [path, {bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex')}];
   }));
-  console.log(JSON.stringify({schema: 'eagler-touhou/runtime-inputs/1',
+  const output=JSON.stringify({schema: 'eagler-touhou/runtime-inputs/1',
     directory: workspace.split(sep).at(-1), translationUnits: units, inputs: files,
-    compilerFlags: flags}, null, 2));
+    compilerFlags: flags}, null, 2)+'\n';
+  await new Promise((accept,reject)=>process.stdout.write(output,error=>error?reject(error):accept()));
   process.exit(0);
 }

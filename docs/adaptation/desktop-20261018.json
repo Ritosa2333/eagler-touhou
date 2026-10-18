@@ -1199,5 +1199,37 @@
       },
       "buildScope": "Recorded real-room production builds"
     }
-  ]
+  ],
+  "ciFollowup": {
+    "date": "2026-10-19",
+    "baseline": "229194e4877bc1d7544b887d34ee85d6a3e6ad8b",
+    "scope": "CI repair follow-up, 15 source/module targets and focused th11 MP / th15 normal production Runtime checks",
+    "results": {
+      "source-status": {
+        "localEvidence": "status-verified/report.json",
+        "sha256": "818ecb3445e8ea2d718ad396b934b42a0517849e54f11c470b0f9ade7d24eece",
+        "targets": 15
+      },
+      "th11-mp-runtime": {
+        "localEvidence": "th11-room/report.json",
+        "sha256": "6659fd7a71823859f14df1fa493363f622a01e78a15d78fac50ee07ed80a7c82",
+        "targets": 1
+      },
+      "th15-normal-runtime": {
+        "localEvidence": "th15-runtime/report.json",
+        "sha256": "824d90dfd4bb3712c4a3dda2f344c08c4d09dabc935391739e4dd3e8e58998c0",
+        "targets": 1
+      },
+      "th11-multiplayer-build": {
+        "sha256": "154ca2665d85a53ee9a4ef7faf3b319ad6ee51899ec1f684c691faf87b63ff56",
+        "bytes": 3059046,
+        "localEvidence": "artifacts/validation/source-builds/th11-multiplayer.json"
+      },
+      "th15-normal-build": {
+        "sha256": "91b87e39d9aa152c1769178a1cbe4076b5f78028971b20b76c2fe0a90e4928aa",
+        "bytes": 3615601,
+        "localEvidence": "artifacts/validation/source-builds/th15-normal.json"
+      }
+    }
+  }
 }

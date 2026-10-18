@@ -35,7 +35,7 @@ const run=args=>new Promise((accept,reject)=>{const child=spawn(process.env.TH_P
 const source=[];for(const dir of ['cpp/game','cpp/sdl','cpp/multiplayer'])for(const name of readdirSync(resolve(root,dir)).filter(n=>n.endsWith('.cpp')).sort())source.push(resolve(root,dir,name));for(const name of ['BrowserPeerTransport','NetplayCore','NetplayProtocol','NetplaySession','SessionChannel','RollbackJournal'])source.push(resolve(commonRoot,'src/netplay',name+'.cpp'));source.push(resolve(workspace,'portable/sdl/Renderer.cpp'));
 const allHeaders=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?allHeaders(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
 const headers=[...allHeaders(resolve(root,'cpp')),...allHeaders(resolve(workspace,'portable/sdl')),...allHeaders(resolve(workspace,'portable/input')),...allHeaders(resolve(commonRoot,'include'))].sort();
-printRuntimeInputs({workspace,root,sources:source,headers,flags:common});
+await printRuntimeInputs({workspace,root,sources:source,headers,flags:common});
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex'),headerHash=createHash('sha256');for(const name of headers)headerHash.update(name).update(readFileSync(name));const settings=JSON.stringify([common,headerHash.digest('hex')]);
 // Keep SIMD opt-in and confined to the audio translation unit. The linker
 // detects its target features; game logic and SDL ports keep their old flags.

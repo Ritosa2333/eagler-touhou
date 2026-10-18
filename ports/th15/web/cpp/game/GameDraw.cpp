@@ -18,6 +18,7 @@ bool GameDraw::run(u32 index){
  case 5:return b.player&&scene.popups.draw(*this,b.player->motion.position)||fail(scene.popups.error);
  case 6:{if(!scene.hud.root)return true;HudDrawContext context;context.frame={&b.enemy_world,b.player?&b.player->motion.position:nullptr,b.spell.flags,scene.messages.active()};context.spell_available=true;context.spell_frames=b.spell_card.clock.completed_frames;context.spell_best_time=b.spell_card.clock.encoded;return scene.hud.draw(context,text)||fail(scene.hud.error);}
  case 7:return !pause||pause->visuals.draw(text,dates,replay_header,captured)||fail(pause->visuals.error);
+ case 8:case 9:return !b.player||b.player->draw_hitbox(renderer,index==8?14:18)||fail(b.player->error);
  default:return fail("Gameplay draw pass outside schedule");
  }
 }

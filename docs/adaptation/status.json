@@ -6,7 +6,7 @@
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "de426cbc2c73c884df14c5b3d51a49663f09789f7bbd4ad18da297cf55723deb",
+      "sourceDigest": "0eacba21aa923008d67412a17f1af6afa4846e8e22df97ca624e5e9dae6882b7",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -156,48 +156,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th06/build/web/multiplayer/th06.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th06",
-            "--variant=multiplayer",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=2",
-            "--cmake=<CMAKE>",
-            "--ninja=<NINJA>"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": false,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:56:10.562Z",
-          "evidence": {
-            "path": "ports/th06/build/web/multiplayer/th06.wasm",
-            "bytes": 2325852,
-            "sha256": "41e2c58cf6d03c27504d92f81dd59f8668fe5f561d421bf0770c128d0a66fc96",
-            "sourceEntries": 0,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -205,7 +163,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "a32b8e6734d9bc295ec675b70f970d483816947fa4eb12e8c1849b2521d98a36",
+      "sourceDigest": "fa969fdd389c9374a03cb1806c4aeed224317528d712099e497a94d54f0295cc",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -374,48 +332,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th06/build/web/normal/th06.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th06",
-            "--variant=normal",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=2",
-            "--cmake=<CMAKE>",
-            "--ninja=<NINJA>"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": false,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:55:41.048Z",
-          "evidence": {
-            "path": "ports/th06/build/web/normal/th06.wasm",
-            "bytes": 2061933,
-            "sha256": "68e99669933757d1913f78f155cb956735eddece61e531d2adb01cdf0436457f",
-            "sourceEntries": 0,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -423,7 +339,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "c44316b50dd64c9834b3f69d847632dafc6fef1ef22c28eefb1dc67d52cf8a5d",
+      "sourceDigest": "bb0d0dd6429c704fdb5b85b32dbbd27aee3a7c0383152eb9dbcc3ab8bbb09ecf",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -573,48 +489,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th07/build/web/multiplayer/th07.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th07",
-            "--variant=multiplayer",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=2",
-            "--cmake=<CMAKE>",
-            "--ninja=<NINJA>"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": false,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:56:10.781Z",
-          "evidence": {
-            "path": "ports/th07/build/web/multiplayer/th07.wasm",
-            "bytes": 2781848,
-            "sha256": "f70b65177b2415a9326099fef697edd363492c1ceccec3e7254313cede376ee6",
-            "sourceEntries": 0,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -622,7 +496,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "4ad83ae61ca1a908323e450666e74e4cb7780b9c5509e9aae0f10ebbffa2efdb",
+      "sourceDigest": "5603161986999a251d74dfc7db2155667ac9b16f3a741fc1fa0fdfb0ba264cd2",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -791,48 +665,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th07/build/web/normal/th07.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th07",
-            "--variant=normal",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=2",
-            "--cmake=<CMAKE>",
-            "--ninja=<NINJA>"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": false,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:55:41.377Z",
-          "evidence": {
-            "path": "ports/th07/build/web/normal/th07.wasm",
-            "bytes": 2431275,
-            "sha256": "d0cdd9c04c4d23664c1beb41f88c49a0037d1c67bf4f7ad85f979c06c7df88cf",
-            "sourceEntries": 0,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -840,7 +672,7 @@
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "3308e075cf7729809f05e23ed536a45e9b47f8f40ff1c6a46450baa3061a2311",
+      "sourceDigest": "02f50a51351037d974f1340ed833fcd64686affd6703bca5654a00a715c40f63",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -970,46 +802,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th08-mp/web/artifacts/multiplayer/th08-sdl.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th08",
-            "--variant=multiplayer",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": true
-            }
-          },
-          "executedAt": "2026-10-18T12:56:26.328Z",
-          "evidence": {
-            "path": "ports/th08-mp/web/artifacts/multiplayer/th08-sdl.wasm",
-            "bytes": 3685904,
-            "sha256": "c34f71e6e2688c14ff023e611a80b67c628437c9e3e7b1fa50113da0c0ff3373",
-            "sourceEntries": 524,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -1017,7 +809,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "caf68badc728c9b91aa830b1ff95407f0dd62757795b38f2bd55dcbd8c824f5b",
+      "sourceDigest": "a6435b28a332cc640e4961ac2f835c7717cc98debf2b606acd30e8498d34141b",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -1165,46 +957,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th08/web/artifacts/sdl3/th08-sdl.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th08",
-            "--variant=normal",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": true
-            }
-          },
-          "executedAt": "2026-10-18T12:56:14.183Z",
-          "evidence": {
-            "path": "ports/th08/web/artifacts/sdl3/th08-sdl.wasm",
-            "bytes": 3460550,
-            "sha256": "ec778c1d508cfec6ce2958116d2bb0a09bb2c22ff40b25f1291acfd2ccbe37b0",
-            "sourceEntries": 428,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -1212,7 +964,7 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "fa895158142561021169ac05780f8f5fe598c158c94da089f888f012dab93ad8",
+      "sourceDigest": "3e1e1daeb5d57868f052790cf25e79e2a9180e8ab2b97168dfd1cf2dcd9a7bb7",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 114,
@@ -1339,46 +1091,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th09/web/artifacts/sdl-release/th09.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th09",
-            "--variant=multiplayer",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:56:01.652Z",
-          "evidence": {
-            "path": "ports/th09/web/artifacts/sdl-release/th09.wasm",
-            "bytes": 2853639,
-            "sha256": "d494131c64ddd55f002e88b40aeb4a5f93f1490a99bd1bbc0aa60d8110700aa8",
-            "sourceEntries": 303,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -1386,7 +1098,7 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "e37c808adeffc0abc763d172d1b9448cc2a9ab7efe5c6252cac7e69101d87576",
+      "sourceDigest": "39dd2dca8eaf1e8bbf4f72355fd5ef2470fcf6afbb232e6fb1bb0e678c135a21",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 114,
@@ -1532,46 +1244,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th09/web/artifacts/sdl-release/th09.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th09",
-            "--variant=normal",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:55:49.587Z",
-          "evidence": {
-            "path": "ports/th09/web/artifacts/sdl-release/th09.wasm",
-            "bytes": 2853639,
-            "sha256": "d494131c64ddd55f002e88b40aeb4a5f93f1490a99bd1bbc0aa60d8110700aa8",
-            "sourceEntries": 303,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -1579,7 +1251,7 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "13567edb8569e085a1e89374eb61e8cae1ca18dcc20c722b2b93248a66e5fe24",
+      "sourceDigest": "9d0bbb45502777f9348d8d7e0e24fcdb8c11d06152cabff3cf9fc8527b523aa0",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 279,
@@ -1708,46 +1380,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th10-mp/web/artifacts/multiplayer/th10-sdl.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th10",
-            "--variant=multiplayer",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:55:36.552Z",
-          "evidence": {
-            "path": "ports/th10-mp/web/artifacts/multiplayer/th10-sdl.wasm",
-            "bytes": 3456386,
-            "sha256": "8e34de9bcb0518d362cf8035592823698a6f84d465b1e24b9ce0a0e5bccb22b6",
-            "sourceEntries": 592,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -1755,7 +1387,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "f161d90cc3224dce042ee6bb6dc9b352d60ac915477f18f1aa28541c3b7f4760",
+      "sourceDigest": "564da2f1b2c5957900ff39c597b77e40391b9c986599f895fbdc63d56a454970",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -1903,46 +1535,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th10/web/artifacts/sdl3/th10-sdl.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th10",
-            "--variant=normal",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": true
-            }
-          },
-          "executedAt": "2026-10-18T12:55:21.223Z",
-          "evidence": {
-            "path": "ports/th10/web/artifacts/sdl3/th10-sdl.wasm",
-            "bytes": 3352364,
-            "sha256": "cfc1a04c362d7e69e57082cbf0f20e5ead170da3b59168f8daafb24c5b10152b",
-            "sourceEntries": 491,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -1950,7 +1542,7 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "f6491c7f8b7e63539bff71479b34bf08da0b45b32a54ea9ae7c0adcf020a9afe",
+      "sourceDigest": "71f58b7c8c57b895375f7a53a26f5a12a75320248664b26dd61fd81ecb172c5f",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 138,
@@ -2007,14 +1599,15 @@
         },
         {
           "id": "native-gamepad",
-          "status": "failed",
+          "status": "passed",
           "level": "source-contract",
           "checks": [
             "INPUT-04"
           ],
-          "files": [],
-          "complete": true,
-          "error": "Compiled native source must sample the Launcher gamepad owner"
+          "files": [
+            "web/cpp/sdl/Application.cpp"
+          ],
+          "complete": true
         },
         {
           "id": "always-hitbox-abi",
@@ -2078,41 +1671,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th11-mp/web/artifacts/multiplayer-diagnostic/th11-sdl.wasm"
-          ],
-          "command": [
-            "node",
-            "ports/th11-mp/portable/build.mjs",
-            "--multiplayer",
-            "--diagnostic"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "diagnostic": true
-            }
-          },
-          "executedAt": "2026-10-18T12:56:45.486Z",
-          "evidence": {
-            "path": "ports/th11-mp/web/artifacts/multiplayer-diagnostic/th11-sdl.wasm",
-            "bytes": 3058589,
-            "sha256": "a137f7b13432a52900622762a9ef1f82975576f79b933a9673f2847e2ac6c938",
-            "sourceEntries": 335,
-            "diagnostic": true
-          }
         }
       ]
     },
@@ -2120,7 +1678,7 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "0cf1d5a5bd6ac7323d8fdc0153c0000a9f1869e3ce3c484c6b818f173102ef74",
+      "sourceDigest": "36d918f28afbfa180468da0ffed237ef0cce4d922b4cbc96b6184952452b03ce",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 113,
@@ -2268,46 +1826,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th11/web/artifacts/sdl3/th11-sdl.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th11",
-            "--variant=normal",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": true
-            }
-          },
-          "executedAt": "2026-10-18T12:56:36.847Z",
-          "evidence": {
-            "path": "ports/th11/web/artifacts/sdl3/th11-sdl.wasm",
-            "bytes": 3065691,
-            "sha256": "b14f623a0ad886e5a711807864f1f2e1b5e30a2396b4dbbc5f235bcce07eb0fc",
-            "sourceEntries": 250,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -2315,7 +1833,7 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "fd518869dfb945ff871ade94dd83ec78c48b320563f8ed672c6a6b1626a22e9d",
+      "sourceDigest": "44813d75dde49806de65d2f831860b43ef95d288e2e6b93dcccfb92d687af3b0",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 266,
@@ -2443,46 +1961,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th15-mp/web/artifacts/sdl-multiplayer/th15.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th15",
-            "--variant=multiplayer",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:57:09.811Z",
-          "evidence": {
-            "path": "ports/th15-mp/web/artifacts/sdl-multiplayer/th15.wasm",
-            "bytes": 3576433,
-            "sha256": "74abc87b024628fa99c89e25c72929d7628f810fabcb028aebab400c497e00a9",
-            "sourceEntries": 610,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -2490,7 +1968,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "405ea0c17fd91d35ef1bc853841706cfa3ff5fae338cff2993b6e0a74a225fe1",
+      "sourceDigest": "5c4b94cecd0cac204d34cc843d0732d873bfc0fec32898a742ef377c0ca42ae7",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -2546,18 +2024,19 @@
         },
         {
           "id": "native-gamepad",
-          "status": "failed",
+          "status": "passed",
           "level": "source-contract",
           "checks": [
             "INPUT-04"
           ],
-          "files": [],
-          "complete": true,
-          "error": "Compiled native source must sample the Launcher gamepad owner"
+          "files": [
+            "web/cpp/sdl/BrowserRuntime.cpp"
+          ],
+          "complete": true
         },
         {
           "id": "always-hitbox-abi",
-          "status": "failed",
+          "status": "passed",
           "level": "source-contract",
           "checks": [
             "RUNTIME-06"
@@ -2565,8 +2044,7 @@
           "files": [
             "web/sdl-runtime/shell.mjs"
           ],
-          "complete": false,
-          "error": "Missing native option endpoint: _th15_always_hitbox"
+          "complete": false
         },
         {
           "id": "package-store",
@@ -2637,46 +2115,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th15/web/artifacts/sdl-release/th15.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th15",
-            "--variant=normal",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": true,
-              "thprac": true
-            }
-          },
-          "executedAt": "2026-10-18T12:56:57.536Z",
-          "evidence": {
-            "path": "ports/th15/web/artifacts/sdl-release/th15.wasm",
-            "bytes": 3611234,
-            "sha256": "e4fa53031e41e3d54909f0dc40a60dee0c7f4e8d41d91bfb2cd4ff2f2262c43a",
-            "sourceEntries": 542,
-            "diagnostic": false
-          }
         }
       ]
     },
@@ -2684,7 +2122,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "e9fa02c1a16d10ba0697fed40493d6f3448b92277eaac4acb4f17bfe1606034b",
+      "sourceDigest": "39dd8f96aab70ddbef3f021eac1f86d7ef4e9a3ebe16d4baf8e3e90740e90dd8",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,
@@ -2831,72 +2269,6 @@
           ],
           "complete": true,
           "status": "passed"
-        },
-        {
-          "id": "compiled-runtime",
-          "level": "build",
-          "checks": [
-            "BUILD-02",
-            "BUILD-03"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th20/web/artifacts/sdl3/th20-sdl.wasm"
-          ],
-          "command": [
-            "node",
-            "launcher/scripts/build-runtime.mjs",
-            "--game=th20",
-            "--variant=normal",
-            "--emsdk=<SDK>",
-            "--emscripten-version=6.0.9",
-            "--jobs=4"
-          ],
-          "environment": {
-            "platform": "win32",
-            "release": "10.0.26200",
-            "arch": "x64",
-            "emscripten": "6.0.9",
-            "features": {
-              "thcrap": false,
-              "thprac": false
-            }
-          },
-          "executedAt": "2026-10-18T12:55:24.208Z",
-          "evidence": {
-            "path": "ports/th20/web/artifacts/sdl3/th20-sdl.wasm",
-            "bytes": 2765430,
-            "sha256": "ed1f75db61750729afbaa4654e2be4a12b6c9187e346bb3cf3966c38aae82826",
-            "sourceEntries": 896,
-            "diagnostic": false
-          }
-        },
-        {
-          "id": "packaged-runtime",
-          "level": "package",
-          "checks": [
-            "BUILD-04"
-          ],
-          "complete": true,
-          "status": "passed",
-          "files": [
-            "ports/th20/build-eagler/runtime-files.json"
-          ],
-          "command": [
-            "node",
-            "ports/th20/portable/package-eagler.mjs"
-          ],
-          "environment": {
-            "platform": "win32",
-            "arch": "x64"
-          },
-          "executedAt": "2026-10-18T12:55:24.496Z",
-          "evidence": {
-            "path": "ports/th20/build-eagler/runtime-files.json",
-            "files": 10,
-            "sha256": "da4a9a9d56ee6e4e124817a92f38434319c01d31022d30642f12e5af897669eb"
-          }
         }
       ]
     }

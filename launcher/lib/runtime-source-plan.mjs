@@ -35,7 +35,9 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
   const sdk = requestedSdk && resolve(requestedSdk);
   if (!sdk || !compilerPath(sdk)) throw new Error(`Emscripten compiler not found; specify --emsdk for ${game}/${variant}`);
   const versionFile = resolve(dirname(compilerPath(sdk)), "emscripten-version.txt");
-  const version = existsSync(versionFile) ? readFileSync(versionFile, "utf8").trim() : null;
+  const versionText = existsSync(versionFile) ? readFileSync(versionFile, "utf8").trim() : null;
+  const version = versionText?.startsWith('"') ? JSON.parse(versionText) : versionText;
+  if (version !== null && typeof version !== "string") throw new Error(`Invalid Emscripten version: ${versionText}`);
   if (options.emscriptenVersion && version?.replace(/-git$/, "") !== options.emscriptenVersion) {
     throw new Error(`Emscripten version mismatch: expected ${options.emscriptenVersion}, found ${version}`);
   }

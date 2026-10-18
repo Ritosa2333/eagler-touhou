@@ -26,6 +26,8 @@ TH06、TH07 使用 CMake 3.20 以上与 Ninja，并按根 `.gitmodules` 初始�
 
 直接检查 Node 构建输入可运行本作构建入口的 `--print-inputs`。CMake 的源码声明检查记录条件分支的声明并集；实际编译使用构建目录的 `compile_commands.json`。
 
+SDK 版本核对读取带引号或纯文本的版本文件，统一比较版本号并保留 `-git` 来源标记。各作 Node 构建入口在 `--print-inputs` 模式等待完整 JSON 写入管道后退出，调用方可直接解析大型源码清单。
+
 ## 逐项检查
 
 | 编号 | 操作 | 通过时应看到 |
