@@ -478,7 +478,13 @@ bool RollbackDriver::RunSpectatorInput(const Netplay::SpectatorFramePacket& pack
     if(packet.playerCount!=session.player_count)return false;
     session.network_frame={};session.network_frame.canAdvance=true;session.network_frame.inputs=packet.inputs;
     session.network_frame_open=true;
-    if(app.in_game()&&!app.game.commit_frame_inputs(packet.inputs.data(),packet.playerCount))return false;
+    auto gameplay=packet.inputs;
+    // Frame zero carries P1's route selection in an out-of-band analog sample.
+    // The checkpoint already restored that route, so mirror the player path:
+    // retain the raw packet in network_frame but never apply the metadata as
+    // one frame of direct-touch movement in the spectator's native world.
+    if(packet.frame==0)gameplay[0]=StripRouteBootstrap(gameplay[0]);
+    if(app.in_game()&&!app.game.commit_frame_inputs(gameplay.data(),packet.playerCount))return false;
     u16 supervisor_buttons=packet.inputs[0].buttons;
     for(u32 seat=1;seat<packet.playerCount;++seat)supervisor_buttons|=packet.inputs[seat].buttons&InputButton::Menu;
     app.set_spectator_playback_input(supervisor_buttons);
@@ -525,8 +531,7 @@ bool RollbackDriver::RunSpectatorPlayback(double callback_start_ms){
         rendered_input=true;return true;
     };
     const auto should_yield=[&](){return callback_start_ms>=0&&emscripten_get_now()-callback_start_ms>=8.;};
-    const bool catching_up=playback.Seeking()||
-        (playback.Following()&&playback.Edge()>playback.Position()+1);
+    const bool catching_up=playback.FastForwarding();
     const auto step_budget=catching_up?32u:1u;
     if(!playback.Step(restore,tick,should_yield,step_budget)||playback.Failed()){
         // Stage restoration and replay are optional observer features. A bad

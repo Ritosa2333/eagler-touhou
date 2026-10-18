@@ -7,6 +7,7 @@ import os
 import time
 import uuid
 from pathlib import Path
+from urllib.parse import parse_qs,urlparse
 from playwright.sync_api import sync_playwright
 
 parser=argparse.ArgumentParser()
@@ -20,20 +21,29 @@ parser.add_argument('--timing',choices=['pure','hybrid'],default='pure')
 parser.add_argument('--stage-two-controls',action='store_true')
 parser.add_argument('--first-diff-only',action='store_true')
 parser.add_argument('--old-viewer-cross-stage',action='store_true')
+parser.add_argument('--lifecycle-reentry',action='store_true')
 args=parser.parse_args()
 assert args.frames>=239
 if args.stage_two_controls:assert args.frames>=900,'Stage-two controls need at least 600 frames after the native Stage 2 checkpoint'
 if args.first_diff_only:assert args.stage_two_controls,'First-difference probe requires Stage 2 setup'
 if args.old_viewer_cross_stage:assert not args.stage_two_controls and not args.first_diff_only,'Old-viewer cross-stage proof is a separate case'
+if args.lifecycle_reentry:
+    assert args.players=='2','Lifecycle reentry is a focused two-player case'
+    assert not (args.stage_two_controls or args.first_diff_only or args.old_viewer_cross_stage),\
+        'Lifecycle reentry is a separate case from stage-two and old-viewer validation'
 adonis_mode=1 if args.timing=='pure' else 2
+input_overrides={}
 report={'passed':False,'scope':'Production TH08 admitted read-only spectator using actual Runtime host protocol',
         'mode':args.mode,'cases':[],'errors':[]}
-requested_case='old-viewer-cross-stage' if args.old_viewer_cross_stage else \
+requested_case='lifecycle-reentry' if args.lifecycle_reentry else \
+    'old-viewer-cross-stage' if args.old_viewer_cross_stage else \
     'stage-two-controls' if args.stage_two_controls else 'default'
-expected_phase='old-viewer-stage-one-admission' if args.old_viewer_cross_stage else \
+expected_phase='repeated-runtime-admission-and-idle-pause' if args.lifecycle_reentry else \
+    'old-viewer-stage-one-admission' if args.old_viewer_cross_stage else \
     'stage-two-late-admission' if args.stage_two_controls else 'delayed-admission'
 report['spectatorRequest']={'case':requested_case,'stageTwoControls':args.stage_two_controls,
     'oldViewerCrossStage':args.old_viewer_cross_stage,'firstDiffOnly':args.first_diff_only,
+    'lifecycleReentry':args.lifecycle_reentry,
     'frames':args.frames,'expectedPhase':expected_phase}
 input_data=Path(os.environ.get('TH08_MP_DATA',''))
 if input_data.is_file():
@@ -46,6 +56,7 @@ def call(page,code,arg=None):return page.evaluate(code,arg)
 def request(page,command,**fields):return call(page,'v=>host.request(v.command,v.fields)',{'command':command,'fields':fields})
 def snapshot(page,full=True):return call(page,'full=>host.snapshot(full)',full)
 def input_at(seat,frame):
+    if (seat,frame) in input_overrides:return input_overrides[(seat,frame)]
     if frame<180:return 0
     return 1|(64 if (seat+frame//12)%2 else 128)|(4 if frame%30<15 else 0)|(2 if frame==215 else 0)
 def signed32(value):return value-(1<<32) if value&(1<<31) else value
@@ -155,7 +166,30 @@ with sync_playwright() as pw:
         for count in ([2,3] if args.players=='all' else [int(args.players)]):
             contexts=[];pages=[];case={'players':count,'passed':False,'phase':'boot',
                 'requestedCase':requested_case,'expectedPhase':expected_phase}
+            runtime_sockets={}
             source_checkpoint_captures=None
+            def runtime_socket_query(record):
+                return parse_qs(urlparse(record['url']).query)
+            def runtime_socket_records(endpoint):
+                return runtime_sockets.get(endpoint,[])
+            def player_data_socket_records(seat):
+                return [record for record in runtime_socket_records(seat)
+                    if runtime_socket_query(record).get('player')==[str(seat)] and
+                    'signal' not in runtime_socket_query(record)]
+            def player_data_sockets(seat):
+                return [dict(record) for record in player_data_socket_records(seat)]
+            def observer_data_socket_records():
+                return [record for record in runtime_socket_records(count)
+                    if runtime_socket_query(record).get('spectator')==[observer_id] and
+                    'signal' not in runtime_socket_query(record)]
+            def observer_data_sockets():
+                return [dict(record) for record in observer_data_socket_records()]
+            def runtime_sockets_snapshot():
+                return {endpoint:[dict(record) for record in records]
+                    for endpoint,records in runtime_sockets.items()}
+            def connection_status_snapshot():
+                return {'players':{seat:player_data_sockets(seat) for seat in range(count)},
+                    'observer':observer_data_sockets()}
             report['cases'].append(case);save()
             try:
                 # Prepare all shell instances before the lobby starts its
@@ -166,12 +200,46 @@ with sync_playwright() as pw:
                     if args.mode=='spectator-relay':
                         context.add_init_script("Object.defineProperty(globalThis,'RTCPeerConnection',{value:undefined,configurable:true})")
                     page=context.new_page();pages.append(page)
+                    runtime_sockets[endpoint]=[]
+                    def observe_runtime_socket(socket,owner=endpoint):
+                        if 'run=' not in socket.url:return
+                        record={'url':socket.url,'closed':False}
+                        runtime_sockets[owner].append(record)
+                        socket.on('close',lambda _,row=record:row.update(closed=True))
+                    page.on('websocket',observe_runtime_socket)
                     page.on('pageerror',lambda error:report['errors'].append(str(error)))
                     page.goto(args.url+'host.html');call(page,'host.open()')
                     page.wait_for_function('host.ready()',timeout=120000)
                     if endpoint==0:
                         case['webglRenderer']=call(page,"()=>{const c=document.createElement('canvas');const gl=c.getContext('webgl2')||c.getContext('webgl');if(!gl)return 'unavailable';const e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)}")
                 players=pages[:count];observer=pages[-1]
+                wire_probe={'entry':0,'packets':{},'closed':{}}
+                observer_host_iframe=call(observer,'host.iframeState()') if args.lifecycle_reentry else None
+                if args.lifecycle_reentry:
+                    assert observer_host_iframe and observer_host_iframe['creationCount']==1,{
+                        'observerHostIframe':observer_host_iframe}
+                    def observe_spectator_socket(socket):
+                        if 'run=' not in socket.url:return
+                        entry=wire_probe['entry']
+                        wire_probe['packets'].setdefault(entry,[])
+                        wire_probe['closed'].setdefault(entry,False)
+                        def record_frame(payload):
+                            if not isinstance(payload,(bytes,bytearray)):return
+                            packet=bytes(payload);kind=None;frame=None;session=None
+                            if packet[:4]==b'E8TM':
+                                kind='timing';session=int.from_bytes(packet[12:20],'little') if len(packet)>=20 else None
+                            elif packet[:4]==b'E8SV' and len(packet)>=32:
+                                kind={1:'checkpoint',2:'node',3:'end',4:'bootstrap'}.get(packet[5],'stage-unknown')
+                                frame=int.from_bytes(packet[20:24],'little');session=int.from_bytes(packet[8:16],'little')
+                            elif packet[:4]==b'E8NP' and len(packet)>=24 and packet[5]==3:
+                                kind='input';frame=int.from_bytes(packet[16:20],'little')
+                                session=int.from_bytes(packet[8:16],'little')
+                            if kind:
+                                wire_probe['packets'][entry].append({'kind':kind,'frame':frame,
+                                    'sessionId':session,'bytes':len(packet)})
+                        socket.on('framereceived',record_frame)
+                        socket.on('close',lambda _:wire_probe['closed'].__setitem__(entry,True))
+                    observer.on('websocket',observe_spectator_socket)
                 room='th08mp-audit-'+uuid.uuid4().hex[:16];observer_id='observer_1234'
                 started=call(players[0],'v=>host.lobby(...v)',[args.relay,room,count,observer_id,{'adonisMode':adonis_mode,'inputDelay':2,'inputDelayAuto':False,'predictionReserve':2}])
                 assert started['room']['spectatorCount']==1,started
@@ -187,24 +255,34 @@ with sync_playwright() as pw:
                 def advance(target,watch=False):
                     deadline=time.monotonic()+(360 if args.stage_two_controls else 120);iterations=0
                     while True:
-                        values=[]
+                        source_values=[]
                         for seat,page in enumerate(players):
                             s=snapshot(page,False);n=s['net']
                             if n[3]<=target:
                                 if n[2]:call(page,'v=>host.buttons(v)',input_at(seat,n[3]))
-                                values.append(call(page,'t=>host.tickTo(t,false)',target))
+                                source_values.append(call(page,'t=>host.tickTo(t,false)',target))
                             else:
                                 # The inclusive target is already captured. Do
                                 # not poll a stopped source while another seat
                                 # catches up; its player watchdog is still live.
-                                values.append(s)
-                        if watch:values.append(call(observer,'t=>host.tickTo(t,false)',target))
+                                source_values.append(s)
+                        values=list(source_values)
+                        viewer_playback=None
+                        if watch:
+                            viewer_value=call(observer,'t=>host.tickTo(t,false)',target)
+                            values.append(viewer_value)
+                            viewer_playback=call(observer,'host.nativePlayback()')
                         iterations+=1
-                        if all(s['net'][4]==target and s['net'][5]>=target and s['net'][6]==0xffffffff for s in values):
+                        sources_done=all(s['net'][4]==target and s['net'][5]>=target and s['net'][6]==0xffffffff
+                            for s in source_values)
+                        viewer_done=not watch or (viewer_playback is not None and
+                            viewer_playback['received']>=target+1)
+                        if sources_done and viewer_done:
                             # Hash the stopped, fully confirmed checkpoint once.
                             # Progress polling need not hash the entire native world.
                             return [snapshot(page) for page in players+([observer] if watch else [])],iterations
-                        assert time.monotonic()<deadline,values
+                        assert time.monotonic()<deadline,{'targetLastFrame':target,'sources':source_values,
+                            'viewerPlayback':viewer_playback,'viewerSnapshot':snapshot(observer,False) if watch else None}
                         players[0].wait_for_timeout(1)
                 def drive_sources_to(target,expected_next):
                     for seat,page in enumerate(players):
@@ -228,6 +306,78 @@ with sync_playwright() as pw:
                                 'sourceStatus':status}
                             page.wait_for_timeout(1)
                     return captures
+                def lifecycle_entry(target,values):
+                    entry=wire_probe['entry'];packets=wire_probe['packets'].get(entry,[])
+                    counts={name:sum(packet['kind']==name for packet in packets)
+                        for name in ('timing','checkpoint','bootstrap','input')}
+                    assert all(counts[name]>0 for name in counts),{'entry':entry,'wirePacketCounts':counts,
+                        'wirePackets':packets[-32:]}
+                    session_ids={packet['sessionId'] for packet in packets if packet['sessionId'] is not None}
+                    assert len(session_ids)==1,{'entry':entry,'wireSessionIds':sorted(session_ids),
+                        'wirePacketCounts':counts}
+                    # Packet receipt only proves transport admission. The first
+                    # native report is intentionally unavailable until the
+                    # required checkpoint restore has completed, so keep
+                    # stepping the healthy observer while sources remain at a
+                    # fixed, fully captured boundary.
+                    deadline=time.monotonic()+60;native=None;viewer=None
+                    while True:
+                        # Poll and execute at most one native callback, then
+                        # read the playback cursor and canonical bytes inside
+                        # the same synchronous host.snapshot call. This keeps
+                        # a browser task boundary from pairing Position N with
+                        # a canonical snapshot from N+1.
+                        viewer=call(observer,'host.spectatorAdvanceOnce(true)')
+                        native=viewer.get('spectatorPlayback')
+                        if native and native['position']==0 and not native['seeking'] and \
+                                not native['paused'] and not viewer['error'] and \
+                                viewer['spectator'] and viewer['spectator'][1]==1 and \
+                                viewer['spectator'][7]==1:
+                            break
+                        assert time.monotonic()<deadline,{'entry':entry,'targetLastFrame':target,
+                            'nativePlayback':native,'nativeStatus':viewer,
+                            'observerDiagnostics':call(observer,'host.diagnostics()'),
+                            'spectatorDiagnostics':call(observer,'host.spectatorDiagnostics()'),
+                            'sourceNextFrames':[snapshot(page,False)['net'][3] for page in players]}
+                        observer.wait_for_timeout(5)
+                    values=[snapshot(page) for page in players]+[viewer]
+                    assert native and native['received']>=target+1 and not viewer['error'] and \
+                        viewer['spectator'] and viewer['spectator'][1]==1 and viewer['spectator'][7]==1,{
+                        'entry':entry,'targetLastFrame':target,'nativePlayback':native,
+                        'nativeStatus':viewer}
+                    assert values[0]['canonical'] and all(value['canonical']==values[0]['canonical']
+                        for value in values[:count]),{'entry':entry,'sourceBoundary':values[:count]}
+                    timeline_samples=[]
+                    sample=viewer
+                    for frame in range(5):
+                        native=sample.get('spectatorPlayback')
+                        assert native and native['position']==frame and not native['seeking'] and \
+                            not native['paused'],{'entry':entry,'expectedPosition':frame,
+                                'atomicSample':sample}
+                        source_by_seat=[call(page,'f=>host.canonicalAt(f)',frame) for page in players]
+                        row={'position':frame,'sourceCanonicalBySeat':source_by_seat,
+                            'viewerCanonical':sample['canonical'],'nativePlayback':native,
+                            'canonicalReadAtomicWithPosition':True}
+                        row['sourceSeatsAgree']=bool(source_by_seat[0]) and all(
+                            value==source_by_seat[0] for value in source_by_seat)
+                        row['viewerMatchesSource']=row['sourceSeatsAgree'] and \
+                            sample['canonical']==source_by_seat[0]
+                        timeline_samples.append(row)
+                        assert row['viewerMatchesSource'],{'entry':entry,
+                            'firstDifferencePosition':frame,'timelineSamples':timeline_samples}
+                        if frame<4:
+                            sample=call(observer,'host.spectatorAdvanceOnce(true)')
+                    native=sample['spectatorPlayback']
+                    source_at_position=timeline_samples[-1]['sourceCanonicalBySeat']
+                    sockets=observer_data_sockets()
+                    assert sockets and not sockets[-1]['closed'],{'entry':entry,'runtimeSockets':sockets}
+                    return {'entry':entry,'targetLastFrame':target,'run':native['run'],
+                        'receivedNextFrame':native['received'],'position':native['position'],
+                        'edge':native['edge'],'sourceCanonicalAtPosition':source_at_position[0],
+                        'atomicTimelineSamples0To4':timeline_samples,
+                        'wirePacketCounts':counts,
+                        'wirePacketSample':packets[:12],'sessionId':next(iter(session_ids)),
+                        'runtimeSocketOpen':True,'sourceViewerCanonicalEqual':True}
                 case['phase']='delayed-admission';save()
                 if args.stage_two_controls:
                     before,_=advance(179)
@@ -298,6 +448,10 @@ with sync_playwright() as pw:
                     before,_=advance(89)
                     source_stage_one_capture=decode_checkpoint_capture(
                         call(players[0],'host.spectatorCheckpointCapture()'))
+                elif args.lifecycle_reentry:
+                    tracked=list(range(0,args.frames+1))
+                    for page in players:call(page,'v=>host.trackFrames(v)',tracked)
+                    before,_=advance(119)
                 else:
                     before,_=advance(89)
                 expected_route=1 if args.mode=='spectator-rtc' else 2
@@ -1087,9 +1241,251 @@ with sync_playwright() as pw:
                         'sourceStoppedExplicitly':True});save()
                     print('TH08 observer',args.mode,count,'players Stage 2 controls: PASS',flush=True)
                     continue
-                caught,iterations=advance(119,True)
+                initial_target=120 if args.lifecycle_reentry else 119
+                caught,iterations=advance(initial_target,True)
                 case['caughtUp']={'iterations':iterations,'values':caught};save()
                 assert iterations<120,'observer did not use bounded native catch-up'
+                if args.lifecycle_reentry:
+                    lifecycle_entries=[]
+                    lifecycle_entries.append(lifecycle_entry(initial_target,caught))
+                    case['phase']='repeated-runtime-admission-and-idle-pause'
+                    case['lifecycleReentry']={'entries':lifecycle_entries,'phase':'initial-admission',
+                        'permanentHostIframe':observer_host_iframe,'runtimeDocumentEpochs':[observer_host_iframe['epoch']]};save()
+                    # Re-enter the same running room twice with the same
+                    # observer identity. Each connection must receive a fresh
+                    # timing/bootstrap/checkpoint/input path and reach the
+                    # exact source boundary before any pause test begins.
+                    for entry,target in ((1,initial_target+1),(2,initial_target+2)):
+                        old_socket_records=observer_data_socket_records()
+                        old_sockets=[dict(record) for record in old_socket_records]
+                        assert old_sockets and not old_sockets[-1]['closed'],{
+                            'entry':entry,'runtimeSocketsAtAssertion':json.dumps(old_sockets,
+                                separators=(',',':'))}
+                        old_socket=old_socket_records[-1]
+                        old_host_iframe=call(observer,'host.iframeState()')
+                        exits=call(observer,'host.close()')
+                        epoch_exits=[event for event in exits if event.get('epoch')==old_host_iframe['epoch']]
+                        assert len(epoch_exits)==1 and epoch_exits[0].get('status')=='success',{
+                            'entry':entry,'runtimeEpoch':old_host_iframe['epoch'],
+                            'epochExitEvents':epoch_exits,'allRuntimeExitEvents':[dict(event) for event in exits]}
+                        deadline=time.monotonic()+15
+                        while not old_socket['closed']:
+                            assert time.monotonic()<deadline,{'entry':entry,
+                                'oldRuntimeSocketAtAssertion':json.dumps(dict(old_socket),separators=(',',':'))}
+                            observer.wait_for_timeout(25)
+                        player_sockets={seat:player_data_sockets(seat) for seat in range(count)}
+                        assert all(rows and not rows[-1]['closed'] for rows in player_sockets.values()),{
+                            'entry':entry,'playerDataSocketsAtAssertion':json.dumps(player_sockets,
+                                separators=(',',':'))}
+                        wire_probe['entry']=entry
+                        call(observer,'host.open()')
+                        observer.wait_for_function('host.ready()',timeout=120000)
+                        host_iframe=call(observer,'host.iframeState()')
+                        assert host_iframe['creationCount']==observer_host_iframe['creationCount'] and \
+                            host_iframe['blankNavigations']==entry and host_iframe['epoch']==observer_host_iframe['epoch']+entry and \
+                            f'runtimeEpoch={host_iframe["epoch"]}' in host_iframe['src'],{
+                                'entry':entry,'initialHostIframe':observer_host_iframe,'hostIframe':host_iframe}
+                        request(observer,'configure',options={**common,'netplayPlayer':-1,
+                            'netplaySpectator':True,'netplaySpectatorId':observer_id,
+                            'netplayUrl':url+'&member=fixture_'+observer_id},music='none')
+                        request(observer,'launch')
+                        case['lifecycleReentry'].update({'phase':f'entry-{entry}-waiting',
+                            'targetLastFrame':target,'runtimeSocketClosedBeforeReentry':True,
+                            'permanentHostIframe':host_iframe,
+                            'runtimeDocumentEpochs':case['lifecycleReentry']['runtimeDocumentEpochs']+[host_iframe['epoch']]});save()
+                        values,_=advance(target,True)
+                        lifecycle_entries.append(lifecycle_entry(target,values))
+                        case['lifecycleReentry'].update({'entries':lifecycle_entries,
+                            'phase':f'entry-{entry}-ready'});save()
+
+                    # After bootstrap, passive Following must stay at one
+                    # authored frame per native tick even when new input is
+                    # available. Feed one source frame, receive it, then make
+                    # exactly one viewer tick and compare the cursor movement.
+                    current=call(observer,'host.nativePlayback()')
+                    assert current and not current['paused'],{'bootstrapPlayback':current}
+                    request(observer,'spectator-playback',run=current['run'],action='live')
+                    deadline=time.monotonic()+60
+                    while True:
+                        call(observer,'t=>host.tickTo(t,false)',0xfffffffe)
+                        current=call(observer,'host.nativePlayback()')
+                        if current and current['following'] and not current['seeking'] and \
+                                current['position']>=current['edge']:
+                            break
+                        assert time.monotonic()<deadline,{'waitingForInitialLive':current,
+                            'observerStatus':snapshot(observer,False)}
+                        observer.wait_for_timeout(1)
+                    passive_follow_ticks=[]
+                    for _ in range(3):
+                        before_tick=call(observer,'host.nativePlayback()')
+                        source_next=snapshot(players[0],False)['net'][3]
+                        source_frame,_=advance(source_next,False)
+                        assert all(value['net'][3]==source_next+1 for value in source_frame),{
+                            'sourceNextFrameBeforeOneXInput':source_next,'sourceAfterInput':source_frame}
+                        expected_received=before_tick['received']+1
+                        deadline=time.monotonic()+15;received=None
+                        while True:
+                            received=call(observer,'host.spectatorPollOnce()')
+                            if received and received['received']>=expected_received:break
+                            assert time.monotonic()<deadline,{'expectedReceived':expected_received,
+                                'sourceNextFrame':source_next+1,'nativePlayback':received}
+                            observer.wait_for_timeout(1)
+                        assert received['received']==expected_received and \
+                                received['edge']==before_tick['edge']+1,{
+                            'oneSourceFrameMustMoveEdgeOne':{'before':before_tick,'afterReceive':received,
+                                'sourceNextFrame':source_next+1}}
+                        call(observer,'()=>host.spectatorTickOnce(false)')
+                        after_tick=call(observer,'host.nativePlayback()')
+                        assert after_tick and after_tick['following'] and not after_tick['paused'] and \
+                                not after_tick['seeking'] and after_tick['position']==before_tick['position']+1,{
+                            'passiveFollowingMustAdvanceExactlyOnePerNativeTick':{
+                                'before':before_tick,'afterReceive':received,'afterTick':after_tick}}
+                        passive_follow_ticks.append({'before':before_tick,'afterReceive':received,
+                            'afterOneTick':after_tick})
+
+                    # Create a fixed seek with enough available history to
+                    # remain in progress after one accelerated callback. Pause
+                    # must cancel that target immediately at the actual cursor.
+                    before_backlog=call(observer,'host.nativePlayback()')
+                    source_next=snapshot(players[0],False)['net'][3]
+                    backlog_frames=96
+                    backlog_target=source_next+backlog_frames-1
+                    backlog_sources,_=advance(backlog_target,False)
+                    assert all(value['net'][3]==backlog_target+1 for value in backlog_sources),{
+                        'backlogTargetLastFrame':backlog_target,'sources':backlog_sources}
+                    expected_received=before_backlog['received']+backlog_frames
+                    deadline=time.monotonic()+30;after_backlog=None
+                    while True:
+                        after_backlog=call(observer,'host.spectatorPollOnce()')
+                        if after_backlog and after_backlog['received']>=expected_received:break
+                        assert time.monotonic()<deadline,{'expectedReceived':expected_received,
+                            'nativePlayback':after_backlog,'backlogSourceNextFrame':backlog_target+1}
+                        observer.wait_for_timeout(1)
+                    assert after_backlog['received']==expected_received and \
+                            after_backlog['edge']>=before_backlog['position']+80,{
+                        'seekBacklogNotAvailable':{'before':before_backlog,'afterReceive':after_backlog,
+                            'backlogFrames':backlog_frames}}
+                    seek_target=before_backlog['position']+80
+                    assert request(observer,'spectator-playback',run=after_backlog['run'],
+                        action='seek',frame=seek_target)
+                    seeking=call(observer,'host.nativePlayback()')
+                    assert seeking and seeking['seeking'] and seeking['target']==seek_target,{
+                        'seekDidNotStart':seeking,'seekTarget':seek_target}
+                    call(observer,'()=>host.spectatorTickOnce(false)')
+                    after_seek_tick=call(observer,'host.nativePlayback()')
+                    assert after_seek_tick and after_seek_tick['seeking'] and \
+                            before_backlog['position']<after_seek_tick['position']<seek_target,{
+                        'seekMustBeInProgressBeforePause':{'before':before_backlog,
+                            'afterReceive':after_backlog,'afterSeekTick':after_seek_tick,
+                            'seekTarget':seek_target}}
+                    request(observer,'spectator-playback',run=after_seek_tick['run'],action='pause')
+                    stopped_seek=call(observer,'host.nativePlayback()')
+                    assert stopped_seek and stopped_seek['paused'] and not stopped_seek['seeking'] and \
+                            stopped_seek['position']==after_seek_tick['position'] and \
+                            stopped_seek['target']==after_seek_tick['position'],{
+                        'pauseMustStopActiveSeekAtCurrentPosition':{
+                            'afterSeekTick':after_seek_tick,'afterPause':stopped_seek,
+                            'requestedSeekTarget':seek_target}}
+                    case['lifecycleReentry'].update({'phase':'one-x-and-stop-seek',
+                        'passiveFollowingOneX':passive_follow_ticks,
+                        'pauseStopsSeek':{'beforeBacklog':before_backlog,
+                            'afterBacklog':after_backlog,'seekTarget':seek_target,
+                            'afterSeekTick':after_seek_tick,'afterPause':stopped_seek}});save()
+                    request(observer,'spectator-playback',run=stopped_seek['run'],action='live')
+                    deadline=time.monotonic()+60
+                    while True:
+                        call(observer,'t=>host.tickTo(t,false)',0xfffffffe)
+                        current=call(observer,'host.nativePlayback()')
+                        if current and current['following'] and not current['seeking'] and \
+                                current['position']>=current['edge']:
+                            break
+                        assert time.monotonic()<deadline,{'returningToLiveAfterCancelledSeek':current,
+                            'observerStatus':snapshot(observer,False)}
+                        observer.wait_for_timeout(1)
+
+                    # Hold the real source transports open while the fixture
+                    # stops driving source native frames. This isolates the
+                    # spectator's healthy idle/pause behavior from gameplay
+                    # Menu capture and its input-delay boundary.
+                    source_hold_snapshots=[snapshot(page,False) for page in players]
+                    assert all(row and not row['error'] for row in source_hold_snapshots),{
+                        'sourceHoldSnapshots':source_hold_snapshots}
+                    source_frontier=[row['net'][3] for row in source_hold_snapshots]
+                    case['lifecycleReentry'].update({'phase':'test-source-hold',
+                        'sourceHoldMode':'fixture stops source native progression; player data sockets stay open',
+                        'sourceFrontier':source_frontier,
+                        'sourceSnapshotsAtHold':source_hold_snapshots});save()
+                    current=call(observer,'host.nativePlayback()')
+                    assert current and not snapshot(observer,False)['error'],{
+                        'sourceFrontier':source_frontier,'nativePlayback':current,
+                        'observerStatus':snapshot(observer,False)}
+                    assert current['following'] and not current['paused'] and \
+                            current['position']>=current['edge'],{
+                        'observerNotAtLiveEdgeBeforeSourceHold':current}
+
+                    def hold_healthy_idle(label,seconds,viewer_pause):
+                        before=call(observer,'host.nativePlayback()')
+                        assert before and not snapshot(observer,False)['error'],{
+                            'label':label,'nativePlayback':before,'observerStatus':snapshot(observer,False)}
+                        deadline=time.monotonic()+seconds;polls=0
+                        while time.monotonic()<deadline:
+                            call(observer,'t=>host.tickTo(t,false)',0xfffffffe)
+                            current=call(observer,'host.nativePlayback()');status=snapshot(observer,False)
+                            source_status=[snapshot(page,False) for page in players]
+                            assert current and not status['error'] and status['spectator'] and \
+                                status['spectator'][1]==1 and status['spectator'][7]==1,{
+                                    'label':label,'nativePlayback':current,'observerStatus':status}
+                            assert all(row['net'][3]==source_frontier[seat] and not row['error']
+                                for seat,row in enumerate(source_status)),{
+                                    'label':label,'sourceNextFrame':source_frontier,'sources':source_status}
+                            connection_snapshot=connection_status_snapshot()
+                            player_sockets=connection_snapshot['players']
+                            observer_sockets=connection_snapshot['observer']
+                            connection_snapshot={'players':player_sockets,'observer':observer_sockets}
+                            case['lastIdleConnectionSnapshot']={'label':label,
+                                'wallMonotonic':time.monotonic(),'connections':connection_snapshot}
+                            sockets_healthy=all(rows and not rows[-1]['closed']
+                                for rows in player_sockets.values()) and \
+                                observer_sockets and not observer_sockets[-1]['closed']
+                            if not sockets_healthy:save()
+                            assert sockets_healthy,{'label':label,'connectionSnapshotAtAssertion':
+                                json.dumps(connection_snapshot,separators=(',',':'))}
+                            assert current['edge']==before['edge'] and \
+                                    current['position']==before['position'] and \
+                                    current['received']==before['received'],{
+                                'label':label,'before':before,'after':current}
+                            if viewer_pause:assert current['paused'],{'label':label,'playback':current}
+                            else:assert current['following'] and not current['paused'],{
+                                'label':label,'playback':current}
+                            polls+=1;observer.wait_for_timeout(50)
+                        return {'label':label,'wallSeconds':round(seconds,3),'pumpPolls':polls,
+                            'sourceHoldMode':'fixture stopped source native progression; player data sockets stay open',
+                            'sourceNextFrame':source_frontier,
+                            'observerPlaybackBefore':before,'observerPlaybackAfter':current,
+                            'observerSocketOpen':True,'allPlayerSocketsOpen':True,
+                            'allRuntimeSocketsOpen':True}
+
+                    source_idle_hold=hold_healthy_idle('test-source-hold-over-15s',16.2,False)
+                    current=call(observer,'host.nativePlayback()')
+                    request(observer,'spectator-playback',run=current['run'],action='pause')
+                    deadline=time.monotonic()+10
+                    while True:
+                        call(observer,'t=>host.tickTo(t,false)',0xfffffffe)
+                        current=call(observer,'host.nativePlayback()')
+                        if current and current['paused'] and not current['seeking']:break
+                        assert time.monotonic()<deadline,{'waitingForViewerPause':current}
+                        observer.wait_for_timeout(1)
+                    observer_pause_hold=hold_healthy_idle('observer-local-pause-over-15s',16.2,True)
+                    case['lifecycleReentry'].update({'phase':'complete',
+                        'entries':lifecycle_entries,'sourceIdleHold':source_idle_hold,
+                        'observerLocalPauseHold':observer_pause_hold,
+                        'sourceHoldMode':'fixture stopped source native progression; player data sockets stay open',
+                        'sameObserverId':observer_id,'sameRunSerial':started['serial']});save()
+                    case.update({'passed':True,'phase':'complete','runtimeSockets':runtime_sockets_snapshot(),
+                        'observerPeer':call(observer,'host.observerPeer()')})
+                    save()
+                    print('TH08 observer repeated admission and >15s pauses: PASS',flush=True)
+                    continue
                 # Browser controls must not become an extra input participant.
                 request(observer,'keyboard',code='KeyX',down=True)
                 request(observer,'direct-touch',type='down',id=31,x=.5,y=.7)
@@ -1147,6 +1543,7 @@ with sync_playwright() as pw:
                 print('TH08 observer',args.mode,count,'players: PASS',flush=True)
             except BaseException:
                 case['latest']=[snapshot(page) for page in pages]
+                case['runtimeSocketsAtFailure']=runtime_sockets_snapshot()
                 case['nativeSpectatorDiagnostics']=[call(page,'host.spectatorDiagnostics()') for page in pages]
                 try:
                     checkpoint_frame=case.get('stageTwoBoundary',{}).get('firstStage2CheckpointFrame')
