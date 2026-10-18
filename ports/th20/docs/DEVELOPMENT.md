@@ -16,6 +16,8 @@ node ports/th20/portable/package-eagler.mjs
 
 编译输出在 `ports/th20/web/artifacts/sdl3/`，完整 Runtime 在 `ports/th20/build-eagler/`。打包器核对源码与编译产物的 SHA-256，并生成 `runtime-files.json`。字体通过启动器的共用资源供给。
 
+模块头文件搜索目录按名称固定排序，Windows 与 Linux 使用相同的搜索优先级和源码身份。
+
 ## 原版内容与联调
 
 使用自己提供的 `th20.dat`、`thbgm.dat` 和 ffmpeg 准备数据与 OGG：

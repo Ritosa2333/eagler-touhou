@@ -34,7 +34,7 @@ if(game==='th20'){
  sources.push(...walk(recon));
  // Module headers reference each other with bare quoted includes (the native
  // CMake wires these per-target); expose every module dir plus src.
- for(const dir of readdirSync(recon,{withFileTypes:true}))if(dir.isDirectory())common.push('-I'+resolve(recon,dir.name));
+ for(const name of readdirSync(recon,{withFileTypes:true}).filter(dir=>dir.isDirectory()).map(dir=>dir.name).sort())common.push('-I'+resolve(recon,name));
  common.push('-I'+resolve(workspace,'src'));
 }
 sources.push(...readdirSync(resolve(root,'cpp/platform')).filter(n=>n.endsWith('.cpp')).map(n=>'cpp/platform/'+n));

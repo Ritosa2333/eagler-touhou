@@ -2,10 +2,19 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {selectedPortGames} from '../../launcher/tests/support/port-selection.mjs';
 import {STATUS_SCHEMA,checkStates,retainedVerification,validateStatusReport} from './status.mjs';
-import {targets,dependencyRevision,sourceIdentity} from './inputs.mjs';
+import {targets,dependencyRevision,sourceIdentity,inspectInputs} from './inputs.mjs';
 import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve,dirname} from 'node:path';
+
+test('th20 compiler include precedence uses the same module order on every platform',()=>{
+  const input=inspectInputs(targets({game:'th20',variant:'normal'})[0]);
+  const modules=input.compilerFlags.map(flag=>flag.replaceAll('\\','/'))
+    .filter(flag=>/-I.*\/ports\/th20\/src\/[^/]+$/.test(flag));
+  assert.ok(modules.some(flag=>flag.endsWith('/game_session')));
+  assert.ok(modules.some(flag=>flag.endsWith('/gameplay')));
+  assert.deepEqual(modules,[...modules].sort());
+});
 
 test('source identity normalizes line endings and preserves non-UTF-8 source bytes',()=>{
   const directory=mkdtempSync(resolve(tmpdir(),'eagler-source-identity-')),file=resolve(directory,'source.mjs');
