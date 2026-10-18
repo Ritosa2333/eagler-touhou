@@ -3,15 +3,15 @@
 // Negative Replay file fixtures and the offline seek ABI are labeled below.
 // The real Launcher owns connection/calibration/error/return UI. This minimal
 // protocol host checks Runtime signals only; frontend acceptance lives in
-// eagler-touhou/tests/browser/test-th11mp-launcher.py.
+// launcher/tests/browser/test-th11mp-launcher.py.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {spawn} from 'node:child_process';
 import {readFileSync, writeFileSync, existsSync, mkdirSync} from 'node:fs';
 import {resolve, extname} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {createRequire} from 'node:module';
 import {randomUUID,createHash} from 'node:crypto';
+import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 const option=(name,fallback)=>{const i=process.argv.indexOf(name);return i<0?fallback:process.argv[i+1];};
@@ -34,28 +34,34 @@ assert.ok(selections.length===players&&selections.every(value=>Number.isInteger(
 assert.ok(Number.isInteger(frames)&&frames>=180&&frames<=3600);
 assert.ok(Number.isInteger(joinLag)&&joinLag>=0&&joinLag<frames);
 assert.ok(!fullSlots||restart,'Full Replay slots are exercised at a real restart boundary');
-const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../eagler-touhou'));
+const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../launcher'));
+const relayEntry=resolve(process.env.EAGLER_RELAY_ROOT||resolve(root,'../../services/relay'),'src/netplay-relay.mjs');
 const runtime=resolve(process.env.TH11_MP_PACKAGE||resolve(root,'build-eagler-multiplayer'));
-const archive=resolve(process.env.TH11_TEST_ARCHIVE||resolve(root,'../../th11-eagler/[th11] 东方地灵殿 (汉化版+日文版)/th11.dat'));
+const archive=resolve(process.env.TH11_TEST_ARCHIVE||resolve(root,'../th11/assets-ogg/th11.data'));
+const fonts=[['msgothic.ttc',process.env.TH11_TEST_FONT||process.env.EAGLER_DEVELOPMENT_VANILLA_FONT],
+  ['unifont.otf',process.env.TH11_TEST_UNICODE_FONT||process.env.EAGLER_DEVELOPMENT_UNICODE_FONT]];
+for(const [name,file] of fonts)assert.ok(file&&existsSync(file),'Missing explicit shared font: '+name);
 const existingReplay=fullSlots?resolve(option('--existing-replay',resolve(root,'artifacts/multiplayer-browser/2p-rtc-auto.rpy'))):null;
 const output=resolve(option('--output',resolve(root,'artifacts/multiplayer-browser',players+'p-'+route+(spectator?'-spectator':'')+(restart?'-restart':'')+(automatic?'-auto':'')+(dropFirst?'-repair':'')+(fullSlots?'-full-slots':'')+'.json')));
 mkdirSync(resolve(output,'..'),{recursive:true});
-for(const path of [archive,resolve(runtime,'runtime-files.json'),resolve(launcher,'server/netplay-relay.mjs')])
+for(const path of [archive,resolve(runtime,'runtime-files.json'),relayEntry])
   assert.ok(existsSync(path),'Missing required fixture: '+path);
 if(existingReplay)assert.ok(existsSync(existingReplay),'First run the same-build 2P RTC gate to produce an existing Replay: '+existingReplay);
-const require=createRequire(resolve(launcher,'package.json'));
-const {chromium}=require('playwright');
+const {chromium}=await loadPlaywright();
 const {buildMultiplayerRuntimeOptions}=await import(pathToFileURL(resolve(launcher,'.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs')));
 const {buildMultiplayerGameplayRelayUrl}=await import(pathToFileURL(resolve(launcher,'.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs')));
 const {PRODUCT_GAMES}=await import(pathToFileURL(resolve(launcher,'lib/contracts/product-catalog.mjs')));
 const policy=PRODUCT_GAMES.th11.multiplayer;
-assert.equal(policy.inputTiming.rollbackLimit,0);
+assert.equal(policy.inputTiming.measuredStartup,true);
+assert.ok(Number.isInteger(policy.inputTiming.rollbackLimit)&&policy.inputTiming.rollbackLimit>=0);
 const manifest=JSON.parse(readFileSync(resolve(runtime,'manifest.json')));
 assert.equal(manifest.product,'th11mp');
 const inventory=JSON.parse(readFileSync(resolve(runtime,'runtime-files.json')));
 const html=readFileSync(resolve(import.meta.dirname,'browser-host.html'));
 const report={passed:false,scope:'local Chromium production Runtime and shared relay',players,route,language,
   selections,spectator,replay,restart,disconnect,automatic,dropFirst,fullSlots,joinLag,frames,wasm:manifest.execution.sha256,errors:[],checkpoints:[]};
+report.inputTimingProfile='pure-delay';
+report.fonts=fonts.map(([name,file])=>({name,file,sha256:createHash('sha256').update(readFileSync(file)).digest('hex')}));
 const bytesHash=bytes=>createHash('sha256').update(Uint8Array.from(bytes)).digest('hex');
 function foreignReplayFixture(value){
   // Keep the recorded inputs and chapters intact. Recompute the published
@@ -166,7 +172,7 @@ async function captureUi(page,name,{narrow=true}={}){
 let server,relay,browser;const pages=[],contexts=[];
 let relayLog='';
 try {
-  relay=spawn(process.execPath,[resolve(launcher,'server/netplay-relay.mjs')],{
+  relay=spawn(process.execPath,[relayEntry],{
     cwd:launcher,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',
       EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',
       EAGLER_NETPLAY_RELAY_DROP_FIRST_INPUT_PER_EDGE:dropFirst?'1':'0'},
@@ -187,6 +193,7 @@ try {
     if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
     let file;
     if(path==='/data/th11')file=archive;
+    else if(fonts.some(([name])=>path==='/shared/'+name))file=fonts.find(([name])=>path==='/shared/'+name)[1];
     else if(path.startsWith('/runtime/')){
       const name=path.slice('/runtime/'.length);
       if(name==='runtime-files.json'||Object.hasOwn(inventory.files,name))file=resolve(runtime,name);
@@ -207,6 +214,7 @@ try {
     contexts.push(context);
     if(route==='relay')await context.addInitScript("Object.defineProperty(globalThis,'RTCPeerConnection',{value:undefined,configurable:true})");
     const page=await context.newPage();pages.push(page);
+    await page.addInitScript(resources=>{window.acceptanceSharedResources=resources;},fonts.map(([name])=>({path:'/'+name,url:'/shared/'+name})));
     page.on('pageerror',error=>report.errors.push({label,error:String(error)}));
     await page.goto(base);await page.evaluate(language=>{host.language=language;host.open();},language);
     await page.waitForFunction(()=>host.ready(),{},{timeout:120000});
