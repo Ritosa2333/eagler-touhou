@@ -45,7 +45,7 @@ common 改动需要验证全部实际消费者。根 CI 汇总保留的适配检
 
 完整源码检出后可运行 `node launcher/scripts/audit-publication.mjs --workspace`。已审阅资源的精确内容和许可证据由 `docs/migration/reviewed-source-assets.json` 约束，新增或变化的资源需要单独核对。游戏画面和原版数据通过显式外部 Host 输入提供。
 
-原生浏览器检查按 `runtime-builds.json` 的源码目录绑定普通版和 MP，不要求 monorepo 的开发分支叫作旧的 `eagler` 或 `eagler-mp`。跨作品共用的编译器参数处理保留在根 `tools/build/`，相关 CI 检出该目录。
+使用 `tests/support/runtime-source-owner.mjs` 的原生浏览器检查按 `runtime-builds.json` 的源码目录绑定普通版和 MP，不要求 monorepo 的开发分支叫作旧的 `eagler` 或 `eagler-mp`。本轮实际验收入口与未覆盖的旧审计入口列在搬迁验收记录中。跨作品共用的编译器参数处理保留在根 `tools/build/`，相关 CI 检出该目录。
 
 ## 迁移候选限制
 
