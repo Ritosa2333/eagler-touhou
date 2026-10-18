@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { unzipSync } from "fflate";
+import {readFile} from 'node:fs/promises';
+import {transform} from 'esbuild';
 import { createStaticThcrapPack, staticLanguagePackPath } from "../server/thcrap-static-pack.mjs";
 
 const bytes = Buffer.from("ETL1\0\0\0\0", "ascii");
@@ -48,3 +50,16 @@ console.log(JSON.stringify({ schema: pack.manifest.schema, files: pack.manifest.
 const th15Pack = createStaticThcrapPack({pack: {game: "th15", language: "lang_zh-hans", assets: []}, resources: [{targetPath: "/thcrap/th15/st01a.msg", bytes}]});
 assert.deepEqual(Buffer.from(unzipSync(th15Pack.archive)["thcrap/th15/st01a.msg"]), bytes);
 assert.equal(th15Pack.manifest.runtimeVersion, "independent");
+
+// Exercise the actual browser consumer instead of reconstructing its schema.
+const consumer=await transform(await readFile(new URL('../src/launcher/language-pack-validation.mts',import.meta.url),'utf8'),{loader:'ts',format:'esm'});
+const {validateStaticLanguagePackEntries}=await import('data:text/javascript;base64,'+Buffer.from(consumer.code).toString('base64'));
+for(const built of [pack,th07Pack,th08Pack,th09Pack,th11Pack,th15Pack]) {
+  const accepted=validateStaticLanguagePackEntries(unzipSync(built.archive),{game:built.manifest.game,language:built.manifest.language});
+  assert.equal(accepted.files.length,built.manifest.files.length);
+}
+assert.throws(()=>createStaticThcrapPack({pack:{game:'th09',language:'lang_en',assets:[]},resources:[
+  {path:'th09/pl00.msg',targetPath:'/thcrap/th09/pl00.msg',format:'touhou-message/1',bytes},
+  {path:'th09/pl00.msg.jdiff',mountPath:'/thcrap/th09/pl00.msg',format:'touhou-message/1',bytes:new Uint8Array([9])},
+]}),/duplicate thcrap target path/,'raw and jdiff outputs cannot silently produce a duplicate manifest');
+console.log('Six producer/consumer round trips and duplicate compiled-target rejection: PASS');

@@ -83,8 +83,13 @@ export async function ensureNodeDependencies(projectRoot) {
   if (await installedEnvironmentMatches(projectRoot, required, identity)) return;
 
   console.log(`[Build] Refreshing locked Node.js dependencies (${required.join(", ")})`);
-  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-  await run(npm, ["ci", "--no-audit", "--no-fund"], { cwd: projectRoot });
+  // npm.cmd is a batch entrypoint and cannot be spawned directly on Windows.
+  // The interpreter receives only this fixed command; the path stays in cwd.
+  if (process.platform === 'win32') {
+    await run(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', 'npm.cmd ci --no-audit --no-fund'], {cwd: projectRoot});
+  } else {
+    await run('npm', ['ci', '--no-audit', '--no-fund'], {cwd: projectRoot});
+  }
   if (!await installedEnvironmentMatchesAfterInstall(projectRoot, required)) {
     throw new Error(`npm ci completed but the required dependency set is incomplete or mismatched: ${required.join(", ")}`);
   }

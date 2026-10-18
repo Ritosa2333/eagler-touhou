@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
+import {execFileSync} from 'node:child_process';
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { assertSupportedNode, isSupportedNodeVersion, requiredNodeDependencies, installedEnvironmentMatches } from "../host/lib/node-environment.mjs";
+import { assertSupportedNode, isSupportedNodeVersion, requiredNodeDependencies, installedEnvironmentMatches, ensureNodeDependencies } from "../host/lib/node-environment.mjs";
 
 assert.equal(isSupportedNodeVersion("v22.0.0"),true);
 assert.equal(isSupportedNodeVersion("21.9.0"),false);
@@ -32,3 +33,28 @@ packages[`node_modules/${required[0]}`].version="2.0.0";
 await writeFile(resolve(root,"package-lock.json"),JSON.stringify({lockfileVersion:3,packages}));
 assert.equal(await installedEnvironmentMatches(root,required,identity),false,"lock/install drift must invalidate environment");
 console.log("Node environment contract: PASS");
+
+// A real first install, without an existing stamp or registry/network inputs.
+// Local package fixtures exercise the actual platform npm startup and lockfile.
+const fresh=await mkdtemp(resolve(tmpdir(),'eagler-host-first install-'));
+try {
+  const names=requiredNodeDependencies(fresh), dependencies={};
+  for(const name of names){
+    const folder=resolve(fresh,'vendor',name);await mkdir(folder,{recursive:true});
+    await writeFile(resolve(folder,'package.json'),JSON.stringify({name,version:'1.0.0'}));
+    dependencies[name]=`file:vendor/${name}`;
+  }
+  await writeFile(resolve(fresh,'package.json'),JSON.stringify({name:'host-bootstrap-fixture',version:'1.0.0',private:true,dependencies}));
+  await writeFile(resolve(fresh,'.npmrc'),'install-links=true\n');
+  const lockArgs=['install','--package-lock-only','--ignore-scripts','--offline','--no-audit','--no-fund'];
+  if(process.platform==='win32')execFileSync(process.env.ComSpec||'cmd.exe',['/d','/s','/c','npm.cmd '+lockArgs.join(' ')],{cwd:fresh,windowsHide:true,stdio:'pipe'});
+  else execFileSync('npm',lockArgs,{cwd:fresh,stdio:'pipe'});
+  await ensureNodeDependencies(fresh);
+  const stamp=JSON.parse(await readFile(resolve(fresh,'node_modules','.eagler-host-lock.json'),'utf8'));
+  assert.equal(await installedEnvironmentMatches(fresh,names,stamp.lockSha256),true);
+  await ensureNodeDependencies(fresh);
+  console.log('Actual first Host dependency install, spaced cwd, locked local packages and warm stamp: PASS');
+} finally {
+  assert.equal(resolve(fresh,'..'),resolve(tmpdir()));
+  await rm(fresh,{recursive:true,force:true});
+}

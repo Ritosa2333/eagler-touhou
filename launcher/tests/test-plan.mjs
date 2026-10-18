@@ -18,6 +18,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-test-ownership.mjs",
   "tests/test-thcrap-service.mjs",
   "tests/test-thcrap-compiler.mjs",
+  "tests/test-thcrap-static-pack.mjs",
   "tests/test-build-profile.mjs",
   "tests/test-runtime-build-profiles.mjs",
   "tests/test-runtime-source-plan.mjs",
