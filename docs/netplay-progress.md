@@ -560,3 +560,61 @@ Production WASM: 5982f90abd8ea3de77914768cd1b29ba451c8eb00edf300dca8439a022b1638
 - The same gate with `--players 3 --timing hybrid --frames 599`: PASS, 8 complete checkpoints, one predicted frame and zero corrections in this run. This is hybrid lifecycle coverage, not a forced rollback/resimulation proof. Evidence: `artifacts/multiplayer/spectator-hybrid-final-20261010.json`.
 
 Promotion from the previously public bdf2347 also includes existing ancestor fixes: recovery/disconnection forwarding to the shared channel, valid background-sparkle positions, and the original native loading picture. The loading picture is additional visible behavior and is explicitly identified here. Ordinary TH08 Runtime and retail/resource bytes are outside this MP update. These local browser checks do not prove full campaigns, mobile devices, or the original user's exact mid-run failure.
+
+
+## 2026-10-18 legacy driver and no-history restart repair
+
+The original `ed28bff` MP source and locked common `44d0732`, with Launcher
+main `d0c1364`, reproduced the migration gate's failures before any directory
+relocation: manual packets rejected capture 185, and Relay stopped near
+next=42 / confirmed=33. The original failed reports are retained in workspace
+`artifacts/validation/th08-mp-before-move-20261018/`; this evidence establishes
+provenance, not the absence of defects.
+
+Two fixture assumptions caused those early stops. A native correction can
+finish a callback at a historical cursor before completing its owed forward
+tick. The packet driver now drains only that already captured work before
+requesting the next test frame, with a strict unchanged capture frontier.
+It keeps delayed, reordered and duplicate packets, all canonical/audio checks,
+and the bounded prediction-stall assertion. Every player now has an exact
+render control with the same local seat: remote-player proximity alpha is
+intentionally different between viewpoints, so unlike seats are not pixel
+oracles for one another. Same-viewpoint pixels must still match exactly.
+
+The connected digital-input driver now supplies keyboard state and lets the
+production driver capture and call the channel's capture notification. The
+old direct capture export only wrote the core; it bypassed channel publication,
+so local input and the channel's latest-capture cursor diverged. Packet-only
+and analog wire fixtures retain their explicit input path. This round's
+standard digital RTC/Relay change is not an analog transport acceptance claim.
+
+After those repairs, the existing Relay test reached its native Restart case
+and exposed a separate product defect. Legacy startup can have no restorable
+spectator checkpoint and no publisher, yet P1 waited for an uncreated stream's
+terminal frame. P1 stayed in generation zero while its peer timed out in
+generation one. Retirement now skips that observer flush only when no publisher
+was created; player confirmation/ACK fences and an existing publisher's final
+frame requirement remain in force. No wire format, simulation input, canonical
+domain, timeout protection or ordinary build policy changed.
+
+The production MP build has WASM SHA-256
+`7b7809a096a10aea749fd4ad2795eeb6f6a1239632aa55b62174d10ebeaaebc9`.
+All 522 manifest sources match; compared with the frozen original build, only
+`NetworkConnection.cpp` changed. The standard two-player packet gate passed
+119/179/379 and its immutable-capture/visual/bounded-stall assertions. The
+standard two-player private Relay gate passed 119/239/379, native Restart,
+confirmed generation-one frame 119 and rejection of the old generation.
+
+This round does not refresh older three-player, RTC, analog, full-stage or
+public-device acceptance. Detailed raw results and local commit identity are
+recorded in workspace `artifacts/validation/th08-mp-driver-20261018/`.
+
+Supplemental observer validation remains failing and is not promoted by the
+standard two-player PASS. The old default observer case compared a player at
+frame 179 with a viewer at position 90, although received=180 and edge=90;
+receipt alone cannot establish playback equality. A separate private probe
+observed both players retire to generation one and the observer receive all
+188 inputs through old terminal frame 187, but then timed out waiting for
+new-generation readiness. Both players remained at next=0 / CanStart=false.
+That probe remains FAIL and its readiness cause is unresolved. These receipts
+are retained separately from the passing standard packet/Relay suite.
