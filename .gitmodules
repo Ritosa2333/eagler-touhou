@@ -1,18 +1,18 @@
 [submodule "runtimes/th06/vendored/SDL"]
-	path = runtimes/th06/vendored/SDL
+	path = ports/th06/vendored/SDL
 	url = https://github.com/libsdl-org/SDL.git
 [submodule "runtimes/th06/vendored/SDL_image"]
-	path = runtimes/th06/vendored/SDL_image
+	path = ports/th06/vendored/SDL_image
 	url = https://github.com/libsdl-org/SDL_image.git
 [submodule "runtimes/th06/vendored/SDL_ttf"]
-	path = runtimes/th06/vendored/SDL_ttf
+	path = ports/th06/vendored/SDL_ttf
 	url = https://github.com/libsdl-org/SDL_ttf.git
 [submodule "runtimes/th07/vendored/SDL_image"]
-	path = runtimes/th07/vendored/SDL_image
+	path = ports/th07/vendored/SDL_image
 	url = https://github.com/libsdl-org/SDL_image.git
 [submodule "runtimes/th07/vendored/SDL"]
-	path = runtimes/th07/vendored/SDL
+	path = ports/th07/vendored/SDL
 	url = https://github.com/libsdl-org/SDL.git
 [submodule "runtimes/th07/vendored/SDL_ttf"]
-	path = runtimes/th07/vendored/SDL_ttf
+	path = ports/th07/vendored/SDL_ttf
 	url = https://github.com/libsdl-org/SDL_ttf.git

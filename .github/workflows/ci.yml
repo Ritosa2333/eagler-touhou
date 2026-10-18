@@ -112,8 +112,8 @@ jobs:
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th06_eagler_ci_core-tests:
-    name: runtimes/th06 / Core behavior tests
+  ports_th06_eagler_ci_core-tests:
+    name: ports/th06 / Core behavior tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -121,27 +121,27 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th06
+        sparse-checkout: 'ports/th06
 
           common
 
           tools/build'
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- runtimes/th06/vendored/SDL runtimes/th06/vendored/SDL_image runtimes/th06/vendored/SDL_ttf
+      run: git submodule update --init --recursive -- ports/th06/vendored/SDL ports/th06/vendored/SDL_image ports/th06/vendored/SDL_ttf
     - name: Compile and run core behavior tests
       run: bash scripts/run-core-tests.sh
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th06') }}
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th06') }}
     defaults:
       run:
-        working-directory: runtimes/th06
+        working-directory: ports/th06
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th06_eagler_ci_web-build:
-    name: runtimes/th06 / Web ${{ matrix.variant }}
+  ports_th06_eagler_ci_web-build:
+    name: ports/th06 / Web ${{ matrix.variant }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -154,14 +154,14 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th06
+        sparse-checkout: 'ports/th06
 
           common
 
           tools/build'
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- runtimes/th06/vendored/SDL runtimes/th06/vendored/SDL_image runtimes/th06/vendored/SDL_ttf
+      run: git submodule update --init --recursive -- ports/th06/vendored/SDL ports/th06/vendored/SDL_image ports/th06/vendored/SDL_ttf
     - name: Set up Emscripten
       uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
@@ -178,15 +178,15 @@ jobs:
         \ | grep -q .; then\n  echo 'error: source-only Web CI produced original-game DATA' >&2\n  exit 1\nfi\n"
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th06') }}
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th06') }}
     defaults:
       run:
-        working-directory: runtimes/th06
+        working-directory: ports/th06
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th07_eagler_ci_core-tests:
-    name: runtimes/th07 / Core behavior tests
+  ports_th07_eagler_ci_core-tests:
+    name: ports/th07 / Core behavior tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -194,14 +194,14 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th07
+        sparse-checkout: 'ports/th07
 
           common
 
           tools/build'
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- runtimes/th07/vendored/SDL runtimes/th07/vendored/SDL_image runtimes/th07/vendored/SDL_ttf
+      run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
     - name: Check Python and integration script syntax
       shell: bash
       run: "python3 -m py_compile tests/*.py audit/source-contracts/*.py scripts/convert_bgm_ogg.py\nfor file in tests/*.cjs; do\n  node --check\
@@ -210,15 +210,15 @@ jobs:
       run: bash scripts/run-core-tests.sh
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th07') }}
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th07') }}
     defaults:
       run:
-        working-directory: runtimes/th07
+        working-directory: ports/th07
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th07_eagler_ci_web-build:
-    name: runtimes/th07 / Web ${{ matrix.variant }}
+  ports_th07_eagler_ci_web-build:
+    name: ports/th07 / Web ${{ matrix.variant }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -231,14 +231,14 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th07
+        sparse-checkout: 'ports/th07
 
           common
 
           tools/build'
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- runtimes/th07/vendored/SDL runtimes/th07/vendored/SDL_image runtimes/th07/vendored/SDL_ttf
+      run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
     - name: Set up Emscripten
       uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
@@ -255,20 +255,20 @@ jobs:
         \ | grep -q .; then\n  echo 'error: source-only Web CI produced original-game DATA' >&2\n  exit 1\nfi\n"
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th07') }}
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th07') }}
     defaults:
       run:
-        working-directory: runtimes/th07
+        working-directory: ports/th07
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th08_presentation_lab_source-contract:
+  ports_th08_presentation_lab_source-contract:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th08
+        sparse-checkout: 'ports/th08
 
           common
 
@@ -284,21 +284,21 @@ jobs:
     - run: node --check portable/package-eagler.mjs
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th08') }}
-    name: runtimes/th08 / source-contract
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th08') }}
+    name: ports/th08 / source-contract
     defaults:
       run:
-        working-directory: runtimes/th08
+        working-directory: ports/th08
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th08_replay_verifier_golden-integrity:
+  ports_th08_replay_verifier_golden-integrity:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th08
+        sparse-checkout: 'ports/th08
 
           common
 
@@ -310,21 +310,21 @@ jobs:
     - run: node --test tools/replay-verifier/golden.test.mjs
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th08') }}
-    name: runtimes/th08 / golden-integrity
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th08') }}
+    name: ports/th08 / golden-integrity
     defaults:
       run:
-        working-directory: runtimes/th08
+        working-directory: ports/th08
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th08_mp_presentation_lab_source-contract:
+  ports_th08_mp_presentation_lab_source-contract:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th08-mp
+        sparse-checkout: 'ports/th08-mp
 
           common
 
@@ -340,21 +340,21 @@ jobs:
     - run: node --check portable/package-eagler.mjs
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th08-mp') }}
-    name: runtimes/th08-mp / source-contract
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th08-mp') }}
+    name: ports/th08-mp / source-contract
     defaults:
       run:
-        working-directory: runtimes/th08-mp
+        working-directory: ports/th08-mp
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th08_mp_replay_verifier_golden-integrity:
+  ports_th08_mp_replay_verifier_golden-integrity:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th08-mp
+        sparse-checkout: 'ports/th08-mp
 
           common
 
@@ -366,21 +366,21 @@ jobs:
     - run: node --test tools/replay-verifier/golden.test.mjs
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th08-mp') }}
-    name: runtimes/th08-mp / golden-integrity
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th08-mp') }}
+    name: ports/th08-mp / golden-integrity
     defaults:
       run:
-        working-directory: runtimes/th08-mp
+        working-directory: ports/th08-mp
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th10_input_regressions_input:
+  ports_th10_input_regressions_input:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th10
+        sparse-checkout: 'ports/th10
 
           common
 
@@ -417,21 +417,21 @@ jobs:
         '
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th10') }}
-    name: runtimes/th10 / input
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10') }}
+    name: ports/th10 / input
     defaults:
       run:
-        working-directory: runtimes/th10
+        working-directory: ports/th10
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th10_presentation_lab_source-contract:
+  ports_th10_presentation_lab_source-contract:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th10
+        sparse-checkout: 'ports/th10
 
           common
 
@@ -446,21 +446,21 @@ jobs:
     - run: node --check portable/package-eagler.mjs
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th10') }}
-    name: runtimes/th10 / source-contract
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10') }}
+    name: ports/th10 / source-contract
     defaults:
       run:
-        working-directory: runtimes/th10
+        working-directory: ports/th10
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th10_replay_verifier_golden-integrity:
+  ports_th10_replay_verifier_golden-integrity:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th10
+        sparse-checkout: 'ports/th10
 
           common
 
@@ -472,21 +472,21 @@ jobs:
     - run: node --test tools/replay-verifier/golden.test.mjs
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th10') }}
-    name: runtimes/th10 / golden-integrity
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10') }}
+    name: ports/th10 / golden-integrity
     defaults:
       run:
-        working-directory: runtimes/th10
+        working-directory: ports/th10
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th10_mp_performance_regressions_native-regressions:
+  ports_th10_mp_performance_regressions_native-regressions:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th10-mp
+        sparse-checkout: 'ports/th10-mp
 
           common
 
@@ -538,21 +538,21 @@ jobs:
         '
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th10-mp') }}
-    name: runtimes/th10-mp / native-regressions
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
+    name: ports/th10-mp / native-regressions
     defaults:
       run:
-        working-directory: runtimes/th10-mp
+        working-directory: ports/th10-mp
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th10_mp_performance_regressions_wasm-owner-regressions:
+  ports_th10_mp_performance_regressions_wasm-owner-regressions:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th10-mp
+        sparse-checkout: 'ports/th10-mp
 
           common
 
@@ -621,21 +621,21 @@ jobs:
         th10_web/cpp/multiplayer/${source}.cpp\" -o \"artifacts/performance-regressions/${source}.o\"\ndone\n"
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th10-mp') }}
-    name: runtimes/th10-mp / wasm-owner-regressions
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
+    name: ports/th10-mp / wasm-owner-regressions
     defaults:
       run:
-        working-directory: runtimes/th10-mp
+        working-directory: ports/th10-mp
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th10_mp_presentation_lab_source-contract:
+  ports_th10_mp_presentation_lab_source-contract:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th10-mp
+        sparse-checkout: 'ports/th10-mp
 
           common
 
@@ -650,21 +650,21 @@ jobs:
     - run: node --check portable/package-eagler.mjs
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th10-mp') }}
-    name: runtimes/th10-mp / source-contract
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
+    name: ports/th10-mp / source-contract
     defaults:
       run:
-        working-directory: runtimes/th10-mp
+        working-directory: ports/th10-mp
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
-  runtimes_th10_mp_replay_verifier_golden-integrity:
+  ports_th10_mp_replay_verifier_golden-integrity:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: false
-        sparse-checkout: 'runtimes/th10-mp
+        sparse-checkout: 'ports/th10-mp
 
           common
 
@@ -676,11 +676,11 @@ jobs:
     - run: node --test tools/replay-verifier/golden.test.mjs
     needs:
     - scope
-    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'runtimes/th10-mp') }}
-    name: runtimes/th10-mp / golden-integrity
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
+    name: ports/th10-mp / golden-integrity
     defaults:
       run:
-        working-directory: runtimes/th10-mp
+        working-directory: ports/th10-mp
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
@@ -693,21 +693,21 @@ jobs:
     - source-contracts
     - source-publication
     - common_ci_native
-    - runtimes_th06_eagler_ci_core-tests
-    - runtimes_th06_eagler_ci_web-build
-    - runtimes_th07_eagler_ci_core-tests
-    - runtimes_th07_eagler_ci_web-build
-    - runtimes_th08_presentation_lab_source-contract
-    - runtimes_th08_replay_verifier_golden-integrity
-    - runtimes_th08_mp_presentation_lab_source-contract
-    - runtimes_th08_mp_replay_verifier_golden-integrity
-    - runtimes_th10_input_regressions_input
-    - runtimes_th10_presentation_lab_source-contract
-    - runtimes_th10_replay_verifier_golden-integrity
-    - runtimes_th10_mp_performance_regressions_native-regressions
-    - runtimes_th10_mp_performance_regressions_wasm-owner-regressions
-    - runtimes_th10_mp_presentation_lab_source-contract
-    - runtimes_th10_mp_replay_verifier_golden-integrity
+    - ports_th06_eagler_ci_core-tests
+    - ports_th06_eagler_ci_web-build
+    - ports_th07_eagler_ci_core-tests
+    - ports_th07_eagler_ci_web-build
+    - ports_th08_presentation_lab_source-contract
+    - ports_th08_replay_verifier_golden-integrity
+    - ports_th08_mp_presentation_lab_source-contract
+    - ports_th08_mp_replay_verifier_golden-integrity
+    - ports_th10_input_regressions_input
+    - ports_th10_presentation_lab_source-contract
+    - ports_th10_replay_verifier_golden-integrity
+    - ports_th10_mp_performance_regressions_native-regressions
+    - ports_th10_mp_performance_regressions_wasm-owner-regressions
+    - ports_th10_mp_presentation_lab_source-contract
+    - ports_th10_mp_replay_verifier_golden-integrity
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-node@v7

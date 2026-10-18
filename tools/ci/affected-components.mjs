@@ -5,7 +5,7 @@ import {pathToFileURL} from 'node:url';
 
 export function affectedComponents(files, workspace, builds) {
   const runtimes = [...new Set(Object.entries(workspace.repositories)
-    .filter(([key, value]) => value.startsWith('runtimes/')).map(([, value]) => value))];
+    .filter(([key, value]) => value.startsWith('ports/')).map(([, value]) => value))];
   const all = ['launcher', workspace.repositories.common, ...runtimes];
   if (files === null) return all.sort();
   const affected = new Set(['launcher']);

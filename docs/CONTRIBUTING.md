@@ -19,7 +19,7 @@ npm --prefix launcher run dev:ui-rewrite
 
 ## 修改作品或 common
 
-使用 `git sparse-checkout add common runtimes/<作品> tools` 扩大范围。普通版和 MP 已独立的作品同时选中两份源码，并按 `launcher/config/workspace.json` 核对实际目录。
+使用 `git sparse-checkout add common ports/<作品> tools` 扩大范围。普通版和 MP 已独立的作品同时选中两份源码，并按 `launcher/config/workspace.json` 核对实际目录。
 
 统一源码构建入口为：
 

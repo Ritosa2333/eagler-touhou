@@ -4,7 +4,7 @@
 
 - `launcher/`：启动器及构建配方。
 - `common/`：全部作品默认消费的共享源码，不为各作固定另一份 common 提交。
-- `runtimes/`：各作源码。已有普通版和 MP 分支分别保留，MP 内现有构建模式继续存在。
+- `ports/`：各作源码。已有普通版和 MP 分支分别保留，MP 内现有构建模式继续存在。
 - `tools/ci/`：按改动范围选择检查。common 修改检查全部消费者，普通版修改同时检查对应 MP。
 
 贡献方式见 [贡献指南](docs/CONTRIBUTING.md)，项目入口见 [WORKSPACE.md](WORKSPACE.md)。
