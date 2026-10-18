@@ -149,7 +149,7 @@
     "check": "node scripts/check.mjs",
     "check:workspace": "node scripts/check.mjs --workspace",
     "typecheck:ui-rewrite": "tsc -p tsconfig.ui-rewrite.json",
-    "test:ui-rewrite": "node scripts/ui-rewrite/check-runtime.mjs && node --test --test-concurrency=1 tests/react-main/*.test.mjs && node tests/react-main/site-notice.run.mjs",
+    "test:ui-rewrite": "node scripts/ui-rewrite/check-runtime.mjs && node ../tests/run.mjs --suite=launcher-ui",
     "test:support": "node --test tests/support/*.test.mjs",
     "build:ui-rewrite": "react-router build",
     "dev:ui-rewrite": "react-router dev --host 127.0.0.1",

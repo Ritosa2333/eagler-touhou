@@ -114,6 +114,7 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
     _th09_game_open: () => {native('game-open', []);return 1;},
     _th09_rollback_recovery_mode: enabled => {native('recovery-mode', [enabled]);return 1;},
     _th09_game_close: () => native('game-close', []),
+    _th09_always_hitbox: enabled => native('always-hitbox', [enabled]),
   };
   core.HEAP32[7] = 1; // Keep the unrelated title-exit branch inactive.
   core.HEAP32.set([1, 1, 0, 0], 16);
@@ -238,7 +239,7 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
     if (initializationError) throw initializationError;
     assert.ok(emitted.some(message => message.event === 'ready'));
   }
-  function ok(request) {assert.equal(replies.get(request)?.ok, true, 'successful response: ' + request);}
+  function ok(request) {assert.equal(replies.get(request)?.ok, true, 'successful response: ' + request + ': ' + JSON.stringify(replies.get(request)));}
   function noFatal() {assert.deepEqual(emitted.filter(message => message.event === 'error'), []);}
   async function beginLaunch(movement = 'touch', options = {}) {
     await ready();

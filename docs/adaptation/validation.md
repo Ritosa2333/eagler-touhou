@@ -33,11 +33,13 @@
 
 ## 测试辅助器
 
-桌面 Runtime 验收使用 `node tools/ports/runtime-browser.mjs --manifest=/absolute/private-inputs.json --output=/absolute/results`。输入清单逐项声明 `id`、`game`、`variant`、`runtime`、`entry` 和私有 DATA 路径 `data`，共用字体放在 `shared` 字段。命令核对打包清单、启动正式 Runtime，记录协议握手、首帧、文件命令、实际按键、窗口尺寸与截图。每个场景保留独立结果，作品和模式分别执行。多人房间与实际设备使用对应专项验收入口。
+桌面 Runtime 验收使用 `node tools/ports/runtime-browser.mjs --manifest=/absolute/private-inputs.json --game=th06,th07,th08,th09,th10,th11,th15,th20 --variant=normal --gamepad --output=/absolute/results`。输入清单逐项声明 `id`、`game`、`variant`、Runtime 包目录 `runtime`、入口 `entry`、私有 DATA 路径 `data`、期望 `packageSha256`、仓库相对 `sourceRoot` 和 `buildReceipt`，共用字体放在 `shared` 字段。Receipt 以 `eagler-touhou/runtime-source-build/1` 登记 `game`、`variant`、`profile`、绑定正式 WASM 的 `executionSha256`，以及 builder 实际记录的 `sourceFiles`（仓库相对路径与源码 SHA-256）。验收器逐项核对当前源码、产物包哈希、执行 WASM 与 DATA；清单缺项、私有 DATA 缺失或源码／包身份不符都会使对应目标失败。
 
-该入口默认执行普通版，可用 `--game=th08` 选择单作。记录包含暂停与重开前后状态、已同步用户文件的刷新恢复、旧代请求拒绝及当前驱动身份。条目中的 `complete` 表示是否覆盖该编号的完整操作；分项截图与状态用于复核具体行为。
+该入口要求显式指定 `--game` 和 `--variant=normal|multiplayer|both`，并完整执行所选作品与模式。记录包含包与源码构建身份、暂停与重开前后状态、已同步用户文件的刷新恢复、旧代请求拒绝及当前驱动身份。条目中的 `complete` 表示是否覆盖该编号的完整操作；分项截图与状态用于复核具体行为。
 
-真实多人房间可运行 `npm run ports:rooms -- --url=http://127.0.0.1:8130/ --game=th11 --players=2 --route=rtc --output=/absolute/results`。驱动通过产品卡片、建房、入座、准备和开局控件进入本作 Runtime，记录实际通道、席位、原生帧推进与截图。`--route=relay` 验证 Relay 路径，`--players=3` 选择本作支持的三人场景。失败记录保留当前界面、房间状态和资源请求，便于区分前端准备与原生运行阶段。
+行为断言读取正式 Runtime 已公开的原生输入、玩家坐标、逻辑帧、暂停阶段和呈现计数。方向操作在进入关卡后核对按下、位移与松开；暂停和重开按本作对应的逻辑状态判断。进入关卡、手柄采样、原生输入生效分别记录。键盘与手柄行为完成须同时具有原生输入变化、方向位移和释放证据。截图与无只读观察器的操作单独记为 `observed`；必需行为缺少通过记录时，目标状态为 `incomplete` 并返回非零。加 `--gamepad` 执行必需的原生手柄取样与效果检查。呈现计数和应用 Tick 按各自职责记录，观察器与必需场景由 `tools/ports/runtime-observations.mjs` 集中维护。
+
+真实多人房间可运行 `npm run ports:rooms -- --url=http://127.0.0.1:8130/ --manifest=/absolute/private-inputs.json --game=th11 --players=2 --route=rtc --output=/absolute/results`。驱动先从同一私有清单验证所选 MP 包的 builder receipt、当前源码哈希和包身份，再核对 Launcher 当前代及其每个服务字节与该包身份相同，随后通过产品卡片、建房、入座、准备和开局控件进入 Runtime，记录实际通道、席位、原生帧推进与截图。目标缺失或不支持所选人数时立即失败，不会跳过。`--route=relay` 验证 Relay 路径，`--players=3` 选择本作支持的三人场景。桌面浏览器验收不代表实体设备或原版资源验收。
 
 导入模式通过 `--packages=/absolute/packages.json` 提供作品到本地 ZIP 的映射，驱动使用房间设置中的导入按钮和文件选择器安装。ZIP 由 `package-server.mjs` 和 `package-offline-game.mjs` 生成，测试配置与私有游戏内容放在本地证据目录。
 

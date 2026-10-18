@@ -55,8 +55,10 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
   if (variant === "multiplayer") requireDirectoryInput(env.EAGLER_COMMON_NETPLAY_ROOT,
     "include/eagler/netplay/SessionChannel.hpp", "netplay common dependency");
   const steps = [];
+  let execution;
   if (recipe.kind === "cmake") {
     const build = resolve(options.buildDirectory ?? resolve(source, "build/web", variant));
+    execution = resolve(build, `${game}.wasm`);
     const toolchain = ["install", "upstream"].map(part => resolve(sdk, part, "emscripten/cmake/Modules/Platform/Emscripten.cmake")).find(existsSync);
     if (!toolchain) throw new Error(`Emscripten CMake toolchain not found: ${sdk}`);
     const cache = { ...config.defaults.cache, ...definition.cache, TH_ENABLE_THCRAP: thcrap, TH_ENABLE_THPRAC: thprac,
@@ -75,6 +77,8 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
     steps.push({ command, args: ["-S", source, "-B", build, "-G", "Ninja", ...cmakeCacheArguments(cache)], cwd: source });
     steps.push({ command, args: ["--build", build, "--parallel", String(jobs)], cwd: source });
   } else {
+    if (!recipe.execution) throw new Error(`execution output is not declared: ${game}/${variant}`);
+    execution = resolve(source, recipe.execution);
     for (const name of ["buildDirectory", "assets", "font", "imgui", "runtimeExtension", "ninja", "cmake"]) {
       if (options[name] != null) throw new Error(`${name} is only supported by CMake source builds`);
     }
@@ -83,7 +87,7 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
     steps.push({ command: process.execPath, args: [resolve(source, args[0]), ...args.slice(1)], cwd: source });
   }
   const metadata = resolve(sdk, "touhou-sdk.json");
-  return { game, variant, owner, source, common, features: { thcrap, thprac },
+  return { game, variant, owner, source, common, execution, features: { thcrap, thprac },
     toolchain: { root: sdk, compiler: compilerPath(sdk), version, ...(existsSync(metadata) ? { metadata: JSON.parse(readFileSync(metadata, "utf8")) } : {}) },
     environment: env, steps };
 }

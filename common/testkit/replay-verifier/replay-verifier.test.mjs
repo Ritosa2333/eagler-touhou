@@ -5,11 +5,12 @@ import {digestCanonicalJson, recordsFromSegments} from './adapter.mjs';
 import {corpusReadiness, validateCorpus} from './corpus.mjs';
 
 const digest = value => value.toString(16).padStart(32, '0');
-function trace({game = 'th08', ticks = 3, mutate, complete = true, omitCategory} = {}) {
+function trace({game = 'th08', ticks = 3, mutate, complete = true, omitCategory,
+  coverage = {requiredCategories: ['rng', 'player'], optionalCategories: []}} = {}) {
   const records = [{
     type: 'run-start', schema: 'eagler/replay-trace/v1',
     comparisonIdentity: {game, profile: 'jp-1.00d', replaySha256: 'a'.repeat(64), executableSha256: 'b'.repeat(64), resourceSha256: 'c'.repeat(64), stateSchema: 'th08/state/v1', traceCodec: 'jsonl/v1', digestAlgorithm: 'fixture-128/v1'},
-    coverage: {requiredCategories: ['rng', 'player'], optionalCategories: []},
+    coverage,
     provenance: {provider: 'fixture'},
   }, {type: 'segment-start', sequence: 0, segmentId: 'stage-1#0', route: 'stage-1'}];
   for (let logicalTick = 0; logicalTick < ticks; logicalTick++) {
@@ -22,7 +23,7 @@ function trace({game = 'th08', ticks = 3, mutate, complete = true, omitCategory}
     records.push(record);
   }
   records.push({type: 'segment-end', sequence: records.length - 1, segmentId: 'stage-1#0', logicalTick: ticks, reason: 'route-complete', complete});
-  records.push({type: 'run-end', sequence: records.length - 1, reason: 'replay-complete', complete, summary: {segments: 1}});
+  records.push({type: 'run-end', sequence: records.length - 1, reason: 'replay-complete', complete, summary: {segments: 1, ticks}});
   return records;
 }
 
@@ -60,6 +61,63 @@ test('a declared category missing from one tick is a divergence', async () => {
   assert.equal(result.reason, 'missing-category');
 });
 
+test('run-end summary is optional, but a present summary must match the trace it closes', async () => {
+  const expected = trace(), actual = trace();
+  expected.at(-1).summary = {segments: 99, ticks: 999};
+  actual.at(-1).summary = {segments: 99, ticks: 999};
+  const invalid = await compareTraces(expected, actual);
+  assert.equal(invalid.status, 'INCOMPLETE');
+  assert.equal(invalid.reason, 'run-end-summary-mismatch');
+
+  const withoutSummaryExpected = trace(), withoutSummaryActual = trace();
+  delete withoutSummaryExpected.at(-1).summary;
+  delete withoutSummaryActual.at(-1).summary;
+  assert.equal((await compareTraces(withoutSummaryExpected, withoutSummaryActual)).status, 'PASS');
+
+  const oneSummaryExpected = trace(), oneSummaryActual = trace();
+  delete oneSummaryExpected.at(-1).summary;
+  assert.equal((await compareTraces(oneSummaryExpected, oneSummaryActual)).status, 'PASS',
+    'A valid optional summary on one trace does not make otherwise equal traces diverge');
+});
+
+test('coverage declarations must match and caller requirements only add declared categories', async () => {
+  const incompatible = await compareTraces(trace(), trace({coverage: {requiredCategories: ['rng'], optionalCategories: []}}));
+  assert.equal(incompatible.status, 'INCOMPATIBLE');
+  assert.equal(incompatible.reason, 'coverage');
+
+  const expected = trace();
+  const actual = trace({mutate: {tick: 0, apply: record => { record.categories.player = digest(999); }}});
+  const narrowed = await compareTraces(expected, actual, {requiredCategories: ['rng']});
+  assert.equal(narrowed.status, 'DIVERGED', 'an override cannot turn off header-required player coverage');
+  assert.equal(narrowed.firstDifference.category, 'player');
+
+  const optionalCoverage = {requiredCategories: ['rng'], optionalCategories: ['player']};
+  const optionalExpected = trace({coverage: optionalCoverage});
+  const optionalActual = trace({coverage: optionalCoverage,
+    mutate: {tick: 1, apply: record => { record.categories.player = digest(999); }}});
+  assert.equal((await compareTraces(optionalExpected, optionalActual)).status, 'PASS');
+  const requestedOptional = await compareTraces(optionalExpected, optionalActual, {requiredCategories: ['player']});
+  assert.equal(requestedOptional.status, 'DIVERGED');
+  assert.equal(requestedOptional.firstDifference.category, 'player');
+  assert.equal((await compareTraces(optionalExpected, optionalActual, {requiredCategories: ['not-declared']})).status, 'INCOMPATIBLE');
+
+  const legacyCoverage = {requiredCategories: ['rng', 'player']};
+  assert.equal((await compareTraces(trace({coverage: legacyCoverage}), trace({coverage: legacyCoverage}))).status, 'PASS',
+    'An omitted optional category list means no optional categories in Replay v1');
+});
+
+test('a zero-tick run passes only with a closed segment lifecycle', async () => {
+  const expected = trace({ticks: 0}), actual = trace({ticks: 0});
+  const result = await compareTraces(expected, actual);
+  assert.equal(result.status, 'PASS');
+  assert.equal(result.comparedTicks, 0);
+
+  const noSegments = [trace()[0], {type: 'run-end', sequence: 0, reason: 'replay-complete', complete: true, summary: {segments: 0, ticks: 0}}];
+  const invalidLifecycle = await compareTraces(noSegments, noSegments);
+  assert.equal(invalidLifecycle.status, 'INCOMPLETE');
+  assert.equal(invalidLifecycle.reason, 'invalid-run-end-lifecycle');
+});
+
 test('a truncated or explicitly incomplete run cannot pass', async () => {
   const truncated = trace(); truncated.pop();
   assert.equal((await compareTraces(trace(), truncated)).status, 'INCOMPLETE');
@@ -87,6 +145,8 @@ test('rejects a duplicate run-start and non-canonical floating JSON values', asy
   assert.equal((await compareTraces(duplicated, duplicated)).reason, 'duplicate-run-start');
   const floating = trace(); floating[2].scalars.score = 0.5;
   assert.equal((await compareTraces(trace(), floating)).status, 'ERROR');
+  const overlappingCoverage = trace(); overlappingCoverage[0].coverage.optionalCategories = ['rng'];
+  assert.equal((await compareTraces(overlappingCoverage, overlappingCoverage)).status, 'ERROR');
 });
 
 test('shared adapter frames multiple title-owned segments without hiding incomplete runs', () => {

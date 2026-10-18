@@ -140,6 +140,7 @@ const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...f
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
 let practice;
 const keyboard=createBrowserKeyboard({
+ hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!closing,reset:clearKeyboard,},
  send(code,down){if(!core)return;if(options.thpracEnabled&&practice?.key(code,down))return;cstring(code,p=>core.sdl_key(p,+down));},
  onClear(){practice?.clear();}
 });
@@ -293,6 +294,7 @@ canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearK
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(!core||!launched||closing||document.hidden)return;
+ if(keyboard.mapNative(event,name==='keydown')){event.preventDefault();event.stopImmediatePropagation();return;}
  const handled=keyboard.event(event,name==='keydown');
  if(handled&&options.thpracEnabled&&/^(Backspace|Tab|F[1-7]|F12)$/.test(event.code))event.preventDefault();
 },{capture:true});

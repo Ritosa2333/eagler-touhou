@@ -18,10 +18,10 @@
 
 目录规则检查 Git 当前跟踪或新增的源码，生成物和本地依赖继续由忽略规则隔离。退役目录、组件内 CI 和未登记的汇编／目标文件会使检查失败。当前目录职责见[源码布局](../../docs/architecture/source-layout.md)。
 
-根 CI 在 Windows 与 Linux 执行源码和模块检查。源码构建按目录映射与配方生成矩阵，成对选择普通版和 MP；共用生产程序也分别登记模式。TH06、TH07 使用已有 CMake 构建任务，其余作品使用 Emscripten 6.0.9 和共用构建入口。CI 保存检查日志与构建来源记录。
+根 CI 在 Windows 与 Linux 执行源码和模块检查。源码构建按目录映射与配方生成矩阵，成对选择普通版和 MP；共用生产程序也分别登记模式。th06、th07 使用已有 CMake 构建任务，其余作品使用 Emscripten 6.0.9 和共用构建入口。CI 保存检查日志与构建来源记录。
 
 已执行的构建和打包可在 `status.json` 登记 `build`／`package` 范围的结果，附命令、环境与产物 SHA-256。源码身份相同时，重新检查会保留这些执行记录并显示“已验证”；源码身份改变后重新验收。源码接口检查失败始终优先显示。
 
-桌面实跑使用 `ports:runtime` 与 `ports:rooms`，资源清单与本地导入包由调用方显式提供。加 `--gamepad` 可验证生产映射到正式 WASM 的同步取样，报告保留驱动、生产映射 bundle 和逐次动作记录。操作范围见[运行验收](../../docs/adaptation/validation.md)。
+桌面实跑使用 `ports:runtime` 与 `ports:rooms`，必须显式选择游戏和模式／人数／通道。两个入口都读取同一份私有 Runtime 清单：每个目标带规范化 Runtime 包 SHA-256、仓库相对 `sourceRoot` 和本次构建 receipt。验收器复核 builder 记录的源码 SHA-256 与当前文件，并要求 receipt 的执行 SHA 与包内正式 WASM 一致；房间验收再要求 Launcher 当前代的全部服务字节与该包身份一致。缺少 DATA、receipt、目标或包身份都会使场景失败。加 `--gamepad` 可验证生产映射到正式 WASM 的同步取样，报告保留驱动、生产映射 bundle 和逐次动作记录。桌面模拟输入不代表实体设备验收。操作范围见[运行验收](../../docs/adaptation/validation.md)。
 
 CMake 依赖的 Git 固定版本与本地变更进入源码身份。干净依赖在已初始化和按需检出环境中使用相同身份；已检出的依赖提交必须与登记版本一致。

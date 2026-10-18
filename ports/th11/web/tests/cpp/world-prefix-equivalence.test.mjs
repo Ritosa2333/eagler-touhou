@@ -1,11 +1,15 @@
 // Connect a previously checked native prefix to a rebuilt C++ core. Compare
 // every field in world-replays.test.mjs, not just the replay's final score.
 import test from 'node:test';import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';import {resolve} from 'node:path';
+import {existsSync,readFileSync} from 'node:fs';import {resolve} from 'node:path';
 import {gunzipSync} from 'node:zlib';import {WASI} from 'node:wasi';
 import {core,memory,root,report,sha,target} from './helpers.mjs';
 
-test('TH11 rebuilt core preserves the complete previously verified native prefix',{skip:!process.env.TH11_NATIVE_PREFIX},async()=>{
+assert.ok(process.env.TH11_NATIVE_PREFIX,'TH11_NATIVE_PREFIX must name the independently captured native prefix directory');
+assert.ok(process.env.TH11_PREFIX_CORE,'TH11_PREFIX_CORE must name the baseline core captured in the prefix');
+assert.ok(existsSync(resolve(process.env.TH11_NATIVE_PREFIX,'state.json')),'TH11_NATIVE_PREFIX/state.json is required');
+assert.ok(existsSync(process.env.TH11_PREFIX_CORE),`TH11_PREFIX_CORE does not exist: ${process.env.TH11_PREFIX_CORE}`);
+test('TH11 rebuilt core preserves the complete previously verified native prefix',async()=>{
  const dir=resolve(process.env.TH11_NATIVE_PREFIX),saved=JSON.parse(readFileSync(resolve(dir,'state.json'))),baselinePath=resolve(process.env.TH11_PREFIX_CORE),baseline=readFileSync(baselinePath);
  const raw=readFileSync(resolve(root,'reference/replays/th11_ud0189.rpy')),archive=readFileSync(resolve(root,'../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat'));
  assert.equal(saved.identity.coreSha256,sha(baseline));assert.equal(saved.identity.replaySha256,sha(raw));assert.equal(saved.identity.targetSha256,target.sha256);assert.equal(saved.identity.stageDrawClocks,1);

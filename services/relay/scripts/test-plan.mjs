@@ -1,7 +1,9 @@
-import {readdirSync} from 'node:fs';
+import {discoverNodeTests} from '../../../tools/testing/discovery.mjs';
+import {fileURLToPath} from 'node:url';
 
-// The standalone check and consumers' capability gates share this inventory.
-export const RELAY_NODE_TESTS = Object.freeze(
-  readdirSync(new URL('../tests/', import.meta.url))
-    .filter(name => name.endsWith('.mjs')).sort().map(name => 'tests/' + name),
-);
+const testsDirectory = fileURLToPath(new URL('../tests/', import.meta.url));
+
+// npm test and the standalone capability gate use the same recursive test
+// inventory; fixture programs are never treated as executable tests.
+export const RELAY_NODE_TESTS = Object.freeze((await discoverNodeTests(testsDirectory)).map(file => 'tests/' + file));
+if (!RELAY_NODE_TESTS.length) throw new Error('No Relay tests found');

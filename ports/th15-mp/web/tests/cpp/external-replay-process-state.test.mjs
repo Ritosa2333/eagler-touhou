@@ -6,7 +6,9 @@ import {core,memory,string,root,report,sha,target} from './helpers.mjs';
 import {preloadStage} from './stage-assets-fixture.mjs';
 const replayFile=resolve(root,'../[th15] 东方绀珠传 (汉化版+日文版)/replay/th15_ud0186.rpy');
 const traceFile=resolve(root,'artifacts/native-process-replay/native-replay-frames.bin');
-test('TH15 supplied Legacy replay preserves original executable gameplay state through all six stages',{skip:!existsSync(replayFile)||!existsSync(traceFile)},async()=>{
+assert.ok(existsSync(replayFile),`Required private Legacy replay is missing: ${replayFile}`);
+assert.ok(existsSync(traceFile),`Required original-process capture is missing: ${traceFile}`);
+test('TH15 supplied Legacy replay preserves original executable gameplay state through all six stages',async()=>{
  const bytes=readFileSync(replayFile),raw=readFileSync(traceFile);
  assert.equal(sha(bytes),'480e93f57235a8f4ceef9e1a3182d6e98bf4307c1390e7d872829d00d5886c76','capture belongs to supplied replay');
  assert.equal(sha(raw),'f1a6b014632a699fd016111612915e88781e975029ed54844103423c2d4d396c','atomic original-process capture');

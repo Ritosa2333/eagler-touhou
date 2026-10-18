@@ -43,7 +43,7 @@ function validateSourceBuild(value, label, partial = false) {
       typeof input !== "string" || /[\\:\0]/.test(input) || input.split("/").some(part => !part || part === "." || part === "..")))) {
     throw new Error(`${label} invalid sourceBuild commonInputs`);
   }
-  for (const key of ["commonMarker", "netplayCommonDirectory"]) {
+  for (const key of ["commonMarker", "netplayCommonDirectory", "execution"]) {
     if (value[key] != null && (typeof value[key] !== "string" || /[\\:\0]/.test(value[key]) ||
         value[key].split("/").some(part => !part || part === "." || part === ".."))) {
       throw new Error(`${label} invalid sourceBuild ${key}`);

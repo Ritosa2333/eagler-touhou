@@ -11,6 +11,7 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <memory>
+#include <eagler/input/BrowserGamepad.hpp>
 // New browser shells own all DOM keys; old shells keep the SDL fallback.
 EM_JS(int, th08_browser_keyboard, (), {return typeof Module['resetBrowserKeyboard']==='function';});
 EM_JS(void, th08_reset_browser_keyboard, (), {Module['resetBrowserKeyboard']?.();});
@@ -100,7 +101,8 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     }
     auto* keys=runtime->keyboard_state();std::memset(keys,0,256);const bool* physical=th08_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){keys[k.vk]=128;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=128;}
-    if(gamepad&&SDL_GamepadConnected(gamepad)){u8 buttons[128]{};for(size_t i=0;i<sizeof(gamepad_slots)/sizeof(*gamepad_slots);++i)buttons[i]=SDL_GetGamepadButton(gamepad,gamepad_slots[i])?128:0;
+    const int mappedPad=eagler::input::BrowserGamepadState();eagler::input::ApplyGamepadVirtualKeys(keys,mappedPad);
+    if(mappedPad<0&&gamepad&&SDL_GamepadConnected(gamepad)){u8 buttons[128]{};for(size_t i=0;i<sizeof(gamepad_slots)/sizeof(*gamepad_slots);++i)buttons[i]=SDL_GetGamepadButton(gamepad,gamepad_slots[i])?128:0;
         int x=gamepad_axis(SDL_GAMEPAD_AXIS_LEFTX),y=gamepad_axis(SDL_GAMEPAD_AXIS_LEFTY);
         const int dx=int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))-int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_LEFT));
         const int dy=int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_DOWN))-int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_UP));

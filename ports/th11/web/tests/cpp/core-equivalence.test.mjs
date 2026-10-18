@@ -1,7 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {WASI} from 'node:wasi';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';
 import {core,memory,root,report,sha} from './helpers.mjs';
-test('TH11 presentation-only additions preserve every compared original replay state',{skip:!process.env.TH11_EQUIVALENCE_CORE},async()=>{
+assert.ok(process.env.TH11_EQUIVALENCE_CORE,'TH11_EQUIVALENCE_CORE must name the independently built baseline core');
+test('TH11 presentation-only additions preserve every compared original replay state',async()=>{
  const baseline=readFileSync(resolve(process.env.TH11_EQUIVALENCE_CORE)),wasi=new WASI({version:'preview1',args:[],env:{},preopens:{}}),instance=(await WebAssembly.instantiate(baseline,{wasi_snapshot_preview1:wasi.wasiImport})).instance;wasi.initialize(instance);
  const cores=[instance.exports,await core()],archive=readFileSync(resolve(root,'../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat')),cases=[];
  for(const file of ['th11_ud0189.rpy','th11_ud0170.rpy']){

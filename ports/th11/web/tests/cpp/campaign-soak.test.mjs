@@ -1,8 +1,14 @@
 import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import{resolve}from'node:path';import{core,memory,root,report}from'./helpers.mjs';
+assert.ok(process.env.TH11_CAMPAIGN_SOAK,'TH11_CAMPAIGN_SOAK must select all or one or more selection:difficulty pairs');
+if(process.env.TH11_CAMPAIGN_SOAK!=='all')for(const item of process.env.TH11_CAMPAIGN_SOAK.split(',')){
+ const pair=item.split(':').map(Number);assert.equal(pair.length,2,`Invalid campaign sample ${item}`);
+ assert.ok(Number.isInteger(pair[0])&&pair[0]>=0&&pair[0]<=5&&Number.isInteger(pair[1])&&pair[1]>=0&&pair[1]<=4,
+  `Invalid campaign sample ${item}; selection is 0..5 and difficulty is 0..4`);
+}
 // Diagnostic coverage, not proof of a legitimate clear or replay equivalence:
 // replenish only spare lives so every real stage script can reach its exit.
 // Damage, collision, deaths, power loss, shots, Bombs and boss timers run normally.
-test('TH11 complete campaign scripts and Extra reach their original exit', {skip:!process.env.TH11_CAMPAIGN_SOAK},async()=>{
+test('TH11 complete campaign scripts and Extra reach their original exit',async()=>{
  const c=await core(),raw=readFileSync(resolve(root,'../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat')),data=c.allocate(raw.length),source=c.resources_create();memory(c,data,raw.length).set(raw);assert.equal(c.resources_open(source,data,raw.length),1);
  const samples=process.env.TH11_CAMPAIGN_SOAK==='all'?Array.from({length:30},(_,i)=>[Math.floor(i/5),i%5]):process.env.TH11_CAMPAIGN_SOAK.split(',').map(v=>v.split(':').map(Number));const cases=[];
  try{for(const[selection,difficulty]of samples){const s=c.game_session_create(),render=c.comp_create(),visited=[],name=`shot${selection} level${difficulty}`;let spareLivesGranted=0,frames=0,lastStage=0;

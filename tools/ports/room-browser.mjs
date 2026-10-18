@@ -6,20 +6,34 @@ import {execFileSync} from 'node:child_process';
 import {launchBrowser} from '../browser/launch.mjs';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {gamepadProbeBundle,prepareVirtualGamepad,probeNativeGamepad} from './gamepad-probe.mjs';
+import {selectRoomTargets,selectRuntimeTargets,verifyPublishedRuntime,verifyRuntimePackage} from './acceptance-contracts.mjs';
+import {sourceSnapshot} from '../testing/source-snapshot.mjs';
 
-const option=(name,fallback)=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
-const base=option('url'),out=option('output'),route=option('route','rtc'),players=Number(option('players','2'));
+const option=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
+const base=option('url'),out=option('output'),route=option('route'),playersText=option('players'),manifestPath=option('manifest');
 const disconnect=process.argv.includes('--disconnect');
 const gamepad=process.argv.includes('--gamepad'),gamepadBundle=gamepad?await gamepadProbeBundle():null;
-assert.ok(base&&out,'Required: --url=local-launcher --output=private-directory');
-assert.ok(['rtc','relay'].includes(route));assert.ok([2,3].includes(players));
-const games=option('game',Object.keys(PRODUCT_GAMES).filter(game=>PRODUCT_GAMES[game].multiplayer).join(',')).split(',');
+assert.ok(base&&manifestPath&&out,'Required: --url=local-launcher --manifest=private-inputs.json --game=thXX[,thYY] --players=2|3 --route=rtc|relay --output=private-directory');
+assert.ok(playersText&&/^[23]$/.test(playersText),'--players must be explicitly set to 2 or 3');
+const players=Number(playersText),selection=selectRoomTargets({game:option('game'),players,route}),games=selection.games;
 const directory=resolve(out);await mkdir(directory,{recursive:true});
+const config=JSON.parse(await readFile(resolve(manifestPath),'utf8'));
+const runtimeSelection=selectRuntimeTargets(config,{game:games.join(','),variant:'multiplayer'});
+const runtimeTargets=new Map(runtimeSelection.targets.map(target=>[target.game,target]));
+const root=resolve(import.meta.dirname,'../..');
+const sourcePackages=new Map();
+for(const game of games){
+  const target=runtimeTargets.get(game);
+  sourcePackages.set(game,await verifyRuntimePackage(target,{repoRoot:root}));
+}
 const packages=option('packages')?JSON.parse(await readFile(resolve(option('packages')),'utf8')):{};
 const report={schema:'eagler-touhou/room-browser/1',startedAt:new Date().toISOString(),url:base,route,players,
-  scope:'Real Launcher room controls, actual production Runtime and private installed DATA; desktop browser session acceptance',targets:[]};
+  selection:{games,players,route,expectedTargets:selection.expected},
+  scope:'Real Launcher room controls, hash-identified current multiplayer Runtime and private installed DATA; desktop browser session acceptance',targets:[]};
 report.disconnectRequested=disconnect;
 report.commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();
+report.sourceSnapshot=sourceSnapshot(root);
+report.sourcePackages=Object.fromEntries(sourcePackages);
 report.harnessSha256=createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
 if(gamepad){report.gamepadProbeSha256=createHash('sha256').update(await readFile(new URL('./gamepad-probe.mjs',import.meta.url))).digest('hex');report.gamepadBundleSha256=createHash('sha256').update(gamepadBundle).digest('hex');await writeFile(resolve(directory,'gamepad-bundle.js'),gamepadBundle);await writeFile(resolve(directory,'gamepad-probe.mjs'),await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));}
 await writeFile(resolve(directory,'harness.mjs'),await readFile(new URL(import.meta.url)));
@@ -56,17 +70,25 @@ async function nativeSnapshot(page){return page.evaluate(()=>{
     transportState:{disconnected:r.__eaglerPeerTransport?.disconnected===true,recovering:r.__eaglerPeerTransport?.isRecovering?.()===true},
     state:runtime?.status?.()??null,gameplayStage:r.__eaglerNetplayGameplayStage??null,
     options:{player:options.netplayPlayer,players:options.netplayPlayerCount,mode:options.netplayMode,prediction:options.netplayPredictionLimit},
-    events:window.acceptanceEvents??[]};
+    runtimeUrl:r.location?.href??'',events:window.acceptanceEvents??[]};
 });}
+const records=new Map(games.map(game=>{
+  const record={game,players,route,steps:[],errors:[],consoleErrors:[],httpErrors:[]};report.targets.push(record);return[game,record];
+}));
+for(const game of games){
+  const record=records.get(game);
+  try{record.runtimeIdentity=await verifyPublishedRuntime(base,game,'multiplayer',{expectedPackageSha256:sourcePackages.get(game).packageSha256});}
+  catch(error){record.passed=false;record.stage='runtime-identity';record.error=String(error.stack||error);}
+}
+await save();
 try{
   for(const game of games){
-    assert.ok(PRODUCT_GAMES[game]?.multiplayer,game);
-    if(!PRODUCT_GAMES[game].multiplayer.playerCounts.includes(players))continue;
-    const browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
-      '--disable-background-timer-throttling','--disable-renderer-backgrounding']});report.browser=browser.version();
-    const contexts=[],pages=[],record={game,players,route,steps:[],errors:[],consoleErrors:[],httpErrors:[]};report.targets.push(record);
+    const record=records.get(game);if(!record.runtimeIdentity)continue;
+    let browser;const contexts=[],pages=[];
     const step=async(name,operation)=>{record.stage=name;record.steps.push({name,at:new Date().toISOString()});await save();return operation();};
     try{
+      browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
+        '--disable-background-timer-throttling','--disable-renderer-backgrounding']});report.browser=browser.version();
       for(let seat=0;seat<players;seat++){
         const context=await browser.newContext({viewport:{width:1280,height:900}});contexts.push(context);
         if(gamepad)await prepareVirtualGamepad(context,gamepadBundle);
@@ -155,7 +177,8 @@ try{
           await pages[0].waitForTimeout(200);
         }
         for(let seat=0;seat<players;seat++){
-          const state=record.native[seat];assert.equal(state.options.player,seat);assert.equal(state.options.players,players);assert.equal(state.options.mode,'lan');assert.equal(state.route,route);
+          const state=record.native[seat];assert.equal(new URL(state.runtimeUrl).pathname,new URL(record.runtimeIdentity.entryUrl).pathname,'Room launched a Runtime other than the hash-identified current package');
+          assert.equal(state.options.player,seat);assert.equal(state.options.players,players);assert.equal(state.options.mode,'lan');assert.equal(state.route,route);
           if(game==='th09')assert.equal(state.state?.session?.[0],1,'TH09 must enter an actual versus match');
           await pages[seat].screenshot({path:resolve(directory,`${game}-${players}p-${route}-p${seat+1}.png`)});
           await pages[seat].frameLocator('#gameFrame').locator('canvas').first().screenshot({path:resolve(directory,`${game}-${players}p-${route}-p${seat+1}-canvas.png`)});
@@ -199,7 +222,7 @@ try{
       record.stage='site-assets';assert.deepEqual(record.httpErrors,[]);record.passed=true;
     }catch(error){record.passed=false;record.error=String(error.stack||error);record.failure=await Promise.all(pages.map(page=>roomSnapshot(page).catch(error=>({error:String(error)}))));
       for(let seat=0;seat<pages.length;seat++)await pages[seat].screenshot({path:resolve(directory,`${game}-failure-p${seat+1}.png`)}).catch(()=>{});
-    }finally{try{for(const context of contexts)await context.close();}finally{await browser.close();}await save();console.log(`${game}: ${record.passed?'PASS':record.runtimePassed?'NATIVE PASS / SITE ASSETS FAIL':'FAIL'} at ${record.stage} ${record.error?.split('\n')[0]??''}`);}
+    }finally{try{for(const context of contexts)await context.close();}finally{if(browser)await browser.close();}await save();console.log(`${game}: ${record.passed?'PASS':record.runtimePassed?'NATIVE PASS / SITE ASSETS FAIL':'FAIL'} at ${record.stage} ${record.error?.split('\n')[0]??''}`);}
   }
 }finally{report.finishedAt=new Date().toISOString();await save();}
-if(report.targets.some(target=>!target.passed))process.exitCode=1;
+if(report.targets.length!==selection.expected.length||report.targets.some(target=>!target.passed))process.exitCode=1;

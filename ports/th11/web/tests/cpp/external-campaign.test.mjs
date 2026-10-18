@@ -1,5 +1,7 @@
 import test from'node:test';import assert from'node:assert/strict';import{readFileSync,existsSync}from'node:fs';import{resolve}from'node:path';import{core,memory,root,report,sha,target}from'./helpers.mjs';
-test('TH11 external original clear replay traverses full campaign without added lives', {skip:!process.env.TH11_EXTERNAL_REPLAY},async()=>{
+assert.ok(process.env.TH11_EXTERNAL_REPLAY,'TH11_EXTERNAL_REPLAY must name the private original clear replay');
+assert.ok(existsSync(process.env.TH11_EXTERNAL_REPLAY),`TH11_EXTERNAL_REPLAY does not exist: ${process.env.TH11_EXTERNAL_REPLAY}`);
+test('TH11 external original clear replay traverses full campaign without added lives',async()=>{
  const c=await core(),raw=readFileSync(resolve(process.env.TH11_EXTERNAL_REPLAY)),rp=c.allocate(raw.length),replay=c.replay_create(),archive=readFileSync(resolve(root,'../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat')),data=c.allocate(archive.length),source=c.resources_create(),s=c.game_session_create(),render=c.comp_create();
  memory(c,rp,raw.length).set(raw);assert.equal(c.replay_open(replay,rp,raw.length),1);const header=Buffer.from(memory(c,c.replay_data(replay),112)),stages=[];
  for(let n=1;n<=7;++n){const p=c.replay_stage(replay,n);if(p)stages.push({stage:n,header:Buffer.from(memory(c,c.replay_data(replay)+new DataView(c.memory.buffer).getUint32(p+4,true),144))});}

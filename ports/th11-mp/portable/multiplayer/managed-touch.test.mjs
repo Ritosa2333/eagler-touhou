@@ -12,6 +12,8 @@ import {SourceTextModule,SyntheticModule,createContext} from 'node:vm';
 // browser/native gameplay or physical touch latency test. The only source
 // substitution is the same TH11_BUILD_INFO variant stamp used by packaging.
 const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../../web/sdl-runtime');
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
+const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'));
 const sourcePath=process.env.TH11_SHELL_UNDER_TEST||resolve(runtime,'shell.mjs');
 const source=readFileSync(sourcePath,'utf8');
 const stamp="/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false,multiplayer:false}";
@@ -117,7 +119,7 @@ async function harness({multiplayer=true,holdInitialization=false,holdData=false
     if(modules.has(name))return modules.get(name);
     let module;
     if(name==='./direct-input-bridge.mjs')
-      module=new SourceTextModule(readFileSync(resolve(runtime,'../../third_party/eagler-common/browser/direct-input-bridge.mjs'),'utf8'),{context,identifier:name});
+      module=new SourceTextModule(readFileSync(resolve(commonRoot,'browser/direct-input-bridge.mjs'),'utf8'),{context,identifier:name});
     else if(['./directory-keyboard.mjs','./eagler-host.mjs','./keyboard.mjs'].includes(name))
       module=new SourceTextModule(readFileSync(resolve(runtime,name),'utf8'),{context,identifier:resolve(runtime,name)});
     else{

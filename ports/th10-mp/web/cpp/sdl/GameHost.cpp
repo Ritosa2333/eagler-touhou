@@ -1,3 +1,4 @@
+#include <eagler/input/BrowserGamepad.hpp>
 #include "../platform/Application.hpp"
 #include "ThpracUi.hpp"
 #include "../game/PracticeConfig.hpp"
@@ -101,7 +102,11 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
     const bool* physical=th10_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native]))key(snapshot,k.scan,k.vk);
     const int keyboardDpad=th10_keyboard_gamepad_dpad();if(keyboardDpad&1)key(snapshot,0xc8,38);if(keyboardDpad&2)key(snapshot,0xd0,40);if(keyboardDpad&4)key(snapshot,0xcb,37);if(keyboardDpad&8)key(snapshot,0xcd,39);
-    poll_controllers(snapshot);
+    const int mappedPad=eagler::input::BrowserGamepadState();
+    if(mappedPad<0)poll_controllers(snapshot);else {
+        bool mappedKeys[256]{};eagler::input::ApplyGamepadVirtualKeys(mappedKeys,mappedPad);
+        for(const auto& k:keyboard_map)if(mappedKeys[k.vk])key(snapshot,k.scan,k.vk);
+    }
     const auto state=touch_state();sync_touch_context(state);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const auto& runtime=app->state.netplay_runtime;

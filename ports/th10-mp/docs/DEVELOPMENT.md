@@ -1,8 +1,8 @@
-# TH10 多人版开发指南
+# th10 多人版开发指南
 
-本目录打包入口固定使用 TH10 产品身份，普通版与 MP 由显式构建参数选择。编译模块文件名可与其他作品相同。
+本目录打包入口固定使用 th10 产品身份，普通版与 MP 由显式构建参数选择。编译模块文件名可与其他作品相同。
 
-当前适配记录见[TH10 多人适配表](../ADAPTATION.md)。命令从仓库根目录运行；示例使用 PowerShell。
+当前适配记录见[th10 多人适配表](../ADAPTATION.md)。命令从仓库根目录运行；示例使用 PowerShell。
 
 ## 构建并在 Launcher 启动
 
@@ -10,7 +10,7 @@
 
 ```powershell
 npm --prefix launcher ci --ignore-scripts # 仅首次安装
-node launcher/scripts/prepare-th10-content.mjs --original='C:\Games\TH10' --output='ports/th10/assets-ogg'
+node launcher/scripts/prepare-th10-content.mjs --original='C:\Games\th10' --output='ports/th10/assets-ogg'
 $env:EAGLER_FONT_ROOT='C:\local-content\th10-fonts'
 $env:EAGLER_TH10_CONTENT_DIR=(Resolve-Path 'ports/th10/assets-ogg').Path
 $env:EAGLER_DEVELOPMENT_VANILLA_FONT='C:\Windows\Fonts\msgothic.ttc'
@@ -23,8 +23,8 @@ npm --prefix launcher run build
 npm --prefix launcher run dev:workspace
 ```
 
-多人版配方启用 `thcrap`、关闭 `thprac`。准备目录含 `th10.data` 和 `bgm-ogg/`；多人编译产物在 `ports/th10-mp/web/artifacts/multiplayer/`，Runtime 在 `ports/th10-mp/build-eagler-multiplayer/`。TH10 和 TH10 Multiplayer 使用同一 Launcher 内容目录。Host 在 <http://127.0.0.1:8130/>；房间联调另开终端启动 Relay：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。
+多人版配方启用 `thcrap`、关闭 `thprac`。准备目录含 `th10.data` 和 `bgm-ogg/`；多人编译产物在 `ports/th10-mp/web/artifacts/multiplayer/`，Runtime 在 `ports/th10-mp/build-eagler-multiplayer/`。th10 和 th10 Multiplayer 使用同一 Launcher 内容目录。Host 在 <http://127.0.0.1:8130/>；房间联调另开终端启动 Relay：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。
 
 ## 源码与验证
 
-多人源码在 `web/cpp/multiplayer/` 和 `portable/multiplayer/`；共享 GLES、输入接口在 `portable/`。从 `ports/th10-mp/` 运行 `node portable/check-high-refresh-contract.mjs --multiplayer` 和 `node portable/check-presentation-purity.mjs --multiplayer`；纯度报告以 `unknown` 标记尚待归类的结果。
+多人源码在 `web/cpp/multiplayer/` 和 `portable/multiplayer/`；共享 GLES、输入接口在 `portable/`。目录键盘模块由 `eagler-common` 生成：从仓库根目录运行 `node common/tools/sync-directory-keyboard.mjs ports/th10-mp/web/sdl-runtime/directory-keyboard.mjs`。键盘映射与 Shell 接线回归运行 `python launcher/tests/test-keyboard-mapping-browser.py`，在 Chromium 中覆盖全部 15 个 normal/MP Runtime 变体。从 `ports/th10-mp/` 运行 `node portable/check-high-refresh-contract.mjs --multiplayer` 和 `node portable/check-presentation-purity.mjs --multiplayer`；纯度报告以 `unknown` 标记尚待归类的结果。Launcher 手柄动作在原生取样边界合并进游戏输入；运行 `node launcher/tests/test-gamepad-contract.mjs` 校验全部登记变体与共享 C++ 映射。

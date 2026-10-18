@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,readdirSync,writeFileSync} from 'node:fs';
+import {existsSync,readFileSync,readdirSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {oracle,core,memory,report,root,d3dxScalar} from './helpers.mjs';
 import {installAnm,normalizedAnm} from './anm-oracle.mjs';
 
-test('Supplied campaign replay matches the original world frame by frame',{skip:!process.env.TH09_REPLAY_FILE},async()=>{
+const externalReplay=process.env.TH09_REPLAY_FILE;
+assert.ok(externalReplay,'TH09_REPLAY_FILE is required for the supplied campaign replay comparison');
+assert.ok(existsSync(externalReplay),`TH09_REPLAY_FILE does not exist: ${externalReplay}`);
+test('Supplied campaign replay matches the original world frame by frame',async()=>{
  const m=await oracle(),routeOracle=await oracle(),c=await core(),f=c.session_create(),name=c.allocate(128),data=c.allocate(16000000),scratch=c.allocate(88),files=new Map();
  const source=n=>{if(!files.has(n))files.set(n,readFileSync(resolve(root,'reference/assets',n)));return files.get(n);};
  for(const n of readdirSync(resolve(root,'reference/assets')).filter(n=>/\.(anm|sht|ecl|msg|std|bmp|png)$/.test(n))){const b=source(n);memory(c,name,128).fill(0);memory(c,name,128).set(new TextEncoder().encode(n));memory(c,data,b.length).set(b);c.session_file(f,name,data,b.length);}
