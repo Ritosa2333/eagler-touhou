@@ -1,7 +1,8 @@
+import {isSourceDependency,sourceDependencyTool} from '../../../tools/build/source-dependencies.mjs';
 import {parseMakeDependencies} from './make-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync,mkdirSync,readFileSync,writeFileSync,rmSync,openSync,closeSync} from 'node:fs';
-import {resolve,relative,dirname,isAbsolute} from 'node:path';
+import {resolve,relative,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {WASI} from 'node:wasi';
@@ -28,13 +29,13 @@ const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFT
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
 const sanitizer={enabled:sanitized,softfloatIncluded:false,scope:sanitized?'C++ tests/production code only; vendored SoftFloat excluded':'none'};
 console.log(JSON.stringify({suite:'player-shot-lookup',sanitizer}));
-const dependencies=new Set([resolve(root,'portable/check-player-shot-lookup.mjs'),resolve(root,'portable/make-dependencies.mjs')]),runs=[];
+const dependencies=new Set([sourceDependencyTool,resolve(root,'portable/check-player-shot-lookup.mjs'),resolve(root,'portable/make-dependencies.mjs')]),runs=[];
 function compile(source,name,compileFlags=flags){
     const object=resolve(out,name+'.o'),depfile=object+'.d';
     execFileSync(compiler,[...compileFlags,'-MMD','-MF',depfile,'-MT','source','-c',resolve(root,source),'-o',object],{cwd:root,stdio:'inherit'});
     for(const token of parseMakeDependencies(readFileSync(depfile,'utf8'))){
         const path=resolve(root,token),name=relative(root,path);
-        if(name.startsWith('..')||isAbsolute(name))throw Error(`Project dependency outside checkout: ${path}`);
+        if(!isSourceDependency(root,name))throw Error(`Project dependency outside checkout: ${path}`);
         dependencies.add(path);
     }
     return object;

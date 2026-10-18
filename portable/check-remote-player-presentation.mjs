@@ -1,7 +1,8 @@
+import {isSourceDependency,sourceDependencyTool} from '../../../tools/build/source-dependencies.mjs';
 import {parseMakeDependencies} from './make-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync,mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
-import {resolve,relative,dirname,isAbsolute,sep} from 'node:path';
+import {resolve,relative,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {WASI} from 'node:wasi';
@@ -38,11 +39,11 @@ const compilerOptions={cwd:root,stdio:'inherit',windowsHide:true};
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 
 function dependencyPaths(path) {
-    const result=new Set([driver,resolve(root,'portable/make-dependencies.mjs')]);
+    const result=new Set([sourceDependencyTool,driver,resolve(root,'portable/make-dependencies.mjs')]);
     for(const token of parseMakeDependencies(readFileSync(path,'utf8'))) {
         const dependency=resolve(root,token);
         const name=relative(root,dependency);
-        if(name==='..'||name.startsWith('..'+sep)||isAbsolute(name))
+        if(!isSourceDependency(root,name))
             throw Error('Project dependency outside checkout: '+dependency);
         result.add(dependency);
     }

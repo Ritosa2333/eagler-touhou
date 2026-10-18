@@ -1,3 +1,4 @@
+import {isSourceDependency,sourceDependencyTool} from '../../../tools/build/source-dependencies.mjs';
 import {parseMakeDependencies} from './make-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
@@ -23,7 +24,7 @@ const compileFlags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11',
   '-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
-const dependencies=new Set([resolve(root,'portable/check-anm-dense-engine.mjs'),resolve(root,'portable/make-dependencies.mjs')]);
+const dependencies=new Set([sourceDependencyTool,resolve(root,'portable/check-anm-dense-engine.mjs'),resolve(root,'portable/make-dependencies.mjs')]);
 const objects=new Map();
 function compile(source,flags=compileFlags){
   if(objects.has(source))return objects.get(source);
@@ -36,7 +37,7 @@ function compile(source,flags=compileFlags){
   for(const token of parseMakeDependencies(readFileSync(depfile,'utf8'))){
     const path=resolve(root,token);
     const name=relative(root,path);
-    if(name.startsWith('..')||isAbsolute(name))throw new Error(`Project dependency outside checkout: ${path}`);
+    if(!isSourceDependency(root,name))throw new Error(`Project dependency outside checkout: ${path}`);
     dependencies.add(path);
   }
   objects.set(source,object);return object;

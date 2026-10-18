@@ -1,6 +1,7 @@
+import {isSourceDependency,sourceDependencyTool} from '../../../tools/build/source-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync,mkdirSync,readFileSync,writeFileSync,openSync,closeSync,rmSync} from 'node:fs';
-import {resolve,relative,dirname,basename,isAbsolute} from 'node:path';
+import {resolve,relative,dirname,basename} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {cpus} from 'node:os';
@@ -26,7 +27,7 @@ const names=['ResourceArchive','ArchiveLifecycle','ResourceCodec','ResourceFiles
 const sources=['tests/game-resource-check.cpp','../../common/src/netplay/RollbackJournal.cpp','th10_web/cpp/platform/FileSystem.cpp',...names.map(n=>`th10_web/cpp/game/${n}.cpp`)];
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
-const dependencies=new Set([resolve(root,'portable/check-game-resources.mjs')]);
+const dependencies=new Set([sourceDependencyTool,resolve(root,'portable/check-game-resources.mjs')]);
 function compile(source,compileFlags=flags){
   const object=resolve(out,source.replace(/[^A-Za-z0-9_.-]/g,'_')+'.o'),depfile=object+'.d';
   execFileSync(compiler,[...compileFlags,'-MMD','-MF',depfile,'-MT','source','-c',resolve(root,source),'-o',object],{cwd:root,stdio:'inherit'});
@@ -34,7 +35,7 @@ function compile(source,compileFlags=flags){
   const make=readFileSync(depfile,'utf8').replace(/\\\r?\n/g,'').replace(/^source:\s*/,'');
   for(const token of make.match(/(?:\\.|[^\s])+/g)??[]){
     const path=resolve(root,token.replace(/\\(.)/g,'$1')),name=relative(root,path);
-    if(name.startsWith('..')||isAbsolute(name))throw Error(`Project dependency outside checkout: ${path}`);
+    if(!isSourceDependency(root,name))throw Error(`Project dependency outside checkout: ${path}`);
     dependencies.add(path);
   }
   return object;
