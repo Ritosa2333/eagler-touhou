@@ -2,6 +2,8 @@
 
 `common/` 是仓库内共享源码的默认维护位置。它提供 C++ 联机与回滚组件、浏览器模块、客户端和服务端共用的 JavaScript 契约，以及可复用的测试工具。
 
+C++ 手柄输入可包含 `<eagler/input/BrowserGamepad.hpp>`，同步读取 Launcher 的标准化动作并合并到本作键盘／扫描码路径。该入口使用共用浏览器桥头，供各作品直接接入。
+
 ## 开始
 
 需要 CMake 3.20、C++17 编译器；安装 Node.js 后，CTest 也会运行可用的 JavaScript 测试。从仓库根目录执行：
