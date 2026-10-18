@@ -94,6 +94,7 @@ int clearStraight(Laser& object, Manager& manager, World& world, Pred hit, bool 
   }
   if (!hits)
     return 0;
+  ++s.presentationTopology;
   if (moving && hits == count) {
     s.retirePending = 1;
     return hits;
@@ -157,6 +158,7 @@ int clearCurve(CurveLaser& object, Manager&, World& world, Pred hit, bool conver
     }
   if (!hits)
     return 0;
+  ++s.presentationTopology;
   if (hits == count) {
     s.retirePending = 1;
     return hits;

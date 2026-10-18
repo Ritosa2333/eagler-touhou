@@ -1,4 +1,5 @@
 #include "Items.hpp"
+#include "Practice.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -127,6 +128,8 @@ Entity* Manager::spawn(const SpawnRequest& r) {
   e->multiplier = r.multiplier;
   if (r.type >= 16 && onSpawnSound)
     onSpawnSound(50, r.position, false);
+  if (r.type >= 10 && r.type <= 15)
+    practice::recordUfoDropped(r.type - 10);
   return e;
 }
 

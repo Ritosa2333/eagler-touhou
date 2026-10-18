@@ -7,6 +7,8 @@
 #include "HostilePool.hpp"
 #include "ItemPresentation.hpp"
 #include "LaserWorld.hpp"
+#include "Practice.hpp"
+#include "PracticeDamageSources.hpp"
 
 namespace th12 {
 FullGameFlow fullGameFlow{};
@@ -47,6 +49,7 @@ int startFullGame(int c, int s, int d, int seed, bool practice) {
   if (c < 0 || c > 2 || s < 0 || s > 1 || d < 0 || d > 4 || seed < 0 || seed > 65535 ||
       (stageNumber == 7) != (d == 4))
     return 0;
+  th12::practice::resetTracker();
   SessionCarry initial;
   initial.resources = item_system::ResourceState::initial(d);
   initial.seed = uint16_t(seed);
@@ -142,6 +145,8 @@ int startNextStage() {
     return 0;
   const auto carry = flow.carry;
   const auto total = flow.totalFrames;
+  if (!practice::damage::armTransition(flow.stage, stageNumber))
+    return 0;
   startGame(character, shot, difficulty, carry.seed, nullptr, &carry);
   setFullGameMode(false);
   fullGameFlow.totalFrames = total;

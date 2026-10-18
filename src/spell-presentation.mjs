@@ -1,5 +1,6 @@
 // Read-only spell text output from TH12 1.00b 40def0/460800.
 // ANM poses belong to the core; this module never advances their clocks.
+import {localizedHex} from './localization/loader.mjs';
 const validHex=hex=>typeof hex==='string'&&hex.length%2===0&&hex.length<=4096&&/^[0-9a-f]*$/i.test(hex);
 const signedInteger=value=>Number.isInteger(value)&&value>=-0x80000000&&value<=0x7fffffff;
 
@@ -10,7 +11,7 @@ function titleBytes(hex) {
   return terminator===-1?bytes:bytes.subarray(0,terminator);
 }
 export function decodeSpellTitle(titleHex) {
-  return new TextDecoder('shift-jis',{fatal:true}).decode(titleBytes(titleHex));
+  return localizedHex('spell',titleHex)?.text??new TextDecoder('shift-jis',{fatal:true}).decode(titleBytes(titleHex));
 }
 export function readCoreSpell(core) {
   if(!core._th12_spell||!core._th12_spell_size)return null;
@@ -50,19 +51,19 @@ export function spellAsciiDescriptors(spell,logicalPoses=[]) {
 
 export function spellTitleDescriptors(spell,logicalPoses=[]) {
   if(!spell?.titleHex)return [];
-  const bytes=titleBytes(spell.titleHex),text=new TextDecoder('shift-jis',{fatal:true}).decode(bytes);
+  const bytes=titleBytes(spell.titleHex),translation=localizedHex('spell',spell.titleHex,{cardId:spell.cardId}),text=translation?.text??new TextDecoder('shift-jis',{fatal:true}).decode(bytes);
   if(!text)return [];
   // text74 selects dynamic sprite7 (320x17). Titles stay attached during
   // interrupt1's outro even though Spell.active and the numeric draw stop.
   return logicalPoses.filter(p=>matchPose(p,'text',7)&&p.a.visible&&p.a.alpha>0).map(p=>{
-    const offset=320-8*bytes.length;
+    const offset=320-8*(translation?.byteLength??bytes.length);
     return {kind:'spell-title',text,titleHex:spell.titleHex,
       pose:{...p,a:{...p.a}},width:320,height:17,
       metrics:{width:320,height:17,sourceWidth:666,sourceHeight:36},
       record:{textHex:spell.titleHex,style:0,color:0xffffff,outlineColor:0,offset,spacing:0},
       // 460800 right aligns by CP932 byte count before44e660 doubles the
       // x coordinate. The MSG helper's default +2px x inset is absent here.
-      raster:{fontFamily:'ＭＳ ゴシック',fontPixelHeight:32,fontWeight:400,
+      raster:{fontFamily:translation?.fontFamily??'ＭＳ ゴシック',fontPixelHeight:32,fontWeight:400,
         sourceX:2*offset,sourceY:2,foregroundColor:0xffffff,outlineColor:0,
         outlineOffsets:[[2,4],[-2,4],[2,0],[-2,0]]}};
   });

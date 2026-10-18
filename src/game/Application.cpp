@@ -1,11 +1,13 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "CameraEffects.hpp"
+#include "AdaptedInput.hpp"
 #include "EnemyCallbacks.hpp"
 #include "FriendlyPool.hpp"
 #include "GameState.hpp"
 #include "HostilePool.hpp"
 #include "ItemPresentation.hpp"
 #include "LaserWorld.hpp"
+#include "Practice.hpp"
 
 namespace th12 {
 void tick(int held, int pressed) {
@@ -19,7 +21,9 @@ void tick(int held, int pressed) {
   animationScene.tickSecondary();
   tickStage();
   tickCameraEffects();
+  practice::beforeTick(held, pressed);
   tickPlayer(held, pressed);
+  adaptedMotion.finish();
   tickBomb();
   tickEnemies();
   tickUfo();
@@ -50,6 +54,7 @@ void tick(int held, int pressed) {
   enemies.erase(std::remove_if(enemies.begin(), enemies.end(), [](auto& e) { return !e->active; }),
                 enemies.end());
   ++frame;
+  practice::afterTick();
 }
 
 } // namespace th12

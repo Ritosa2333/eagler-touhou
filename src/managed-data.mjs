@@ -47,7 +47,7 @@ export class RuntimeAssets {
   constructor(environment=window){
     this.environment=environment;this.base=environment.location.href;
     this.query=new URL(this.base).searchParams;this.managed=this.query.get('managedData')==='1';
-    this.epoch=Number(this.query.get('runtimeEpoch'));this.music=new Map();this.content=null;
+    this.epoch=Number(this.query.get('runtimeEpoch'));this.music=new Map();this.fonts=new Map();this.waitingMusic=new Map();this.content=null;this.localization=null;
     this.fetch=this.fetch.bind(this);
   }
   async prepare(){
@@ -62,29 +62,47 @@ export class RuntimeAssets {
   }
   async fetch(path){
     if(typeof path!=='string'||!/^\/(?:assets|replays)\//.test(path)||path.includes('..')||path.includes('\\'))throw Error('资源路径无效');
+    const overlay=this.localization?.fetchOverride(path);if(overlay)return overlay;
+    const response=await this.fetchBase(path);
+    if(response.ok&&this.localization?.language!=='ja'&&/^\/assets\/st0[1-7]_0[012][ab]\.msg$/.test(path)){
+      const original=new Uint8Array(await response.arrayBuffer()),patched=await this.localization?.patchMessage(path,original);
+      return new Response(patched??original,{headers:response.headers,status:response.status});
+    }
+    return response;
+  }
+  async fetchBase(path){
     if(!this.managed)return this.environment.fetch(new URL('.'+path,new URL('.',this.base)));
     if(!path.startsWith('/assets/'))throw Error('正式运行时仅读取浏览器内已安装的录像');
     if(path.startsWith('/assets/music/')){
-      const name='/music/'+path.slice('/assets/music/'.length),blob=this.music.get(name);
-      if(!blob)throw Error('音乐尚未安装：'+name);
+      const name='/music/'+path.slice('/assets/music/'.length),blob=this.music.get(name)??await this.waitForMusic(name);
       return new Response(blob,{headers:{'Content-Type':'audio/ogg'}});
     }
     if(!this.content)throw Error('游戏资源尚未准备');
     return this.content.fetch(path.slice(1));
   }
+  waitForMusic(name){
+    if(!musicName.test(name))return Promise.reject(Error('音乐路径无效'));
+    const existing=this.waitingMusic.get(name);if(existing)return existing.promise;
+    let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});
+    const timer=setTimeout(()=>{this.waitingMusic.delete(name);reject(Error('等待启动器安装音乐超时：'+name));},60000);
+    this.waitingMusic.set(name,{promise,resolve,reject,timer});return promise;
+  }
   async install(resources=[],emit=()=>{}){
     if(!Array.isArray(resources)||resources.length>128)throw Error('附加资源列表无效');
     const pending=new Map();
     for(const resource of resources){
-      if(!resource||!musicName.test(resource.path)||pending.has(resource.path))throw Error('未支持的附加资源路径');
+      if(!resource||!musicName.test(resource.path)&&!['/msgothic.ttc','/unifont.otf'].includes(resource.path)||pending.has(resource.path))throw Error('未支持的附加资源路径');
       const url=new URL(resource.url,this.base),origin=new URL(this.base).origin;
       if(url.origin!==origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('附加资源来源无效');
       const response=await this.environment.fetch(url);if(!response.ok)throw Error('附加资源加载失败：'+resource.path);
       const blob=await response.blob(),expected=resource.bytes??resource.size;
       if(!blob.size||blob.size>64*1024*1024||(expected!==undefined&&blob.size!==expected))throw Error('附加资源大小不匹配');
       if(resource.sha256!==undefined&&(!/^[a-f0-9]{64}$/.test(resource.sha256)||await digest(await blob.arrayBuffer())!==resource.sha256))throw Error('附加资源校验失败');
-      pending.set(resource.path,blob);emit({event:'transfer',mode:'ogg',path:resource.path,loaded:blob.size,total:blob.size});
+      pending.set(resource.path,blob);emit({event:'transfer',mode:musicName.test(resource.path)?'ogg':'font',path:resource.path,loaded:blob.size,total:blob.size});
     }
-    for(const [path,blob]of pending)this.music.set(path,blob);
+    for(const [path,blob]of pending){
+      (musicName.test(path)?this.music:this.fonts).set(path,blob);
+      const waiting=this.waitingMusic.get(path);if(waiting){this.waitingMusic.delete(path);clearTimeout(waiting.timer);waiting.resolve(blob);}
+    }
   }
 }

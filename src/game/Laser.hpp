@@ -72,6 +72,9 @@ struct Acceleration {
   Vec3 vector{};
 };
 struct State {
+  // Presentation cross-sections have stable rank roles during normal history
+  // shifts. Destructive prefix/interior cuts change the topology generation.
+  uint32_t presentationTopology=1;
   uint32_t serialId = 0;
   int lookupId = 0;
   Kind kind = Kind::Moving;

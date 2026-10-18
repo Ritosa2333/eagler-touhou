@@ -1,5 +1,6 @@
 // Native registered VM ownership and saved-successor traversal.
 #include "AnmScene.hpp"
+#include "PresentationTracking.hpp"
 
 namespace th12::anm_logic {
 
@@ -70,7 +71,10 @@ void Scene::tickNode(Node& node) {
     return;
   }
   auto local = runtimeFor(node);
+  const auto presentationRevision = node.vm.presentationRevision();
   const bool ended = node.vm.tick(local);
+  if (node.owner && presentationRevision != node.vm.presentationRevision())
+    presentation::discontinuity(node.owner);
   if (node.vm.state().deleteRequested || (ended && node.membership != Membership::Embedded))
     node.alive = false;
 }
@@ -85,6 +89,7 @@ void Scene::traverse(std::list<std::shared_ptr<Node>>& list) {
 }
 
 void Scene::reset() {
+  presentation::reset();
   primary_.clear();
   secondary_.clear();
   embedded_.clear();
@@ -160,6 +165,7 @@ Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership
                   int layer, bool withoutReset, float engineZ) {
   if (!registry.bank(bank))
     return nullptr;
+  if (owner) presentation::discontinuity(owner);
   if (auto old = roots_.find(key); old != roots_.end())
     old->second->alive = false;
   auto node = std::make_shared<Node>();
@@ -209,6 +215,7 @@ void Scene::interruptNode(uint32_t id, int code, bool immediate) {
   const auto keepAlive = at->second;
   auto* node = keepAlive.get();
   const auto deliver = [&](Node& target) {
+    if (target.owner) presentation::discontinuity(target.owner);
     if (target.onInterrupt)
       target.onInterrupt(int16_t(code));
     target.vm.interrupt(code);
@@ -276,6 +283,7 @@ void Scene::customInterrupt(uint64_t key, std::function<void(int)> callback) {
 
 bool Scene::rebind(uint64_t key, int bank, int script, bool withoutReset) {
   if (auto* node = find(key)) {
+    if (node->owner) presentation::discontinuity(node->owner);
     auto local = runtimeFor(*node);
     return withoutReset ? node->vm.rebindWithoutReset(registry, bank, script, local)
                         : node->vm.bind(registry, bank, script, local);

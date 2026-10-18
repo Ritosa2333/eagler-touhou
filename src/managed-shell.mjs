@@ -1,8 +1,9 @@
 import {allowedPath} from './storage.mjs';
 import {parseReplay} from './replay.mjs';
+import {validateNativeProfile} from './native-profile.mjs';
 
 const boolOptions=['limitPresentationTo60','touchEnabled','doubleTapBombEnabled','alwaysHitbox','thpracEnabled','focusHitboxEnabled'];
-const acceptedOptions=new Set([...boolOptions,'touchMovementMode','touchSensitivity','touchFocusMode','oggDecodeMode','replayPath','debugHarness']);
+const acceptedOptions=new Set([...boolOptions,'touchMovementMode','touchSensitivity','touchFocusMode','oggDecodeMode','replayPath','debugHarness','thpracLocale']);
 export function runtimeOptions(value={}){
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('运行配置无效');
   for(const key of Object.keys(value))if(!acceptedOptions.has(key))throw Error('此版本未支持的运行配置：'+key);
@@ -13,21 +14,20 @@ export function runtimeOptions(value={}){
   if(value.oggDecodeMode!==undefined&&!['stream','full'].includes(value.oggDecodeMode))throw Error('音乐解码模式无效');
   // These are deliberately rejected until their complete owners are connected.
   // A successful configure must not silently discard a required behavior.
-  if(value.touchEnabled||value.alwaysHitbox||value.thpracEnabled||value.focusHitboxEnabled)throw Error('此接入版本尚未完成所选触控、判定点增强或练习工具');
+  if(value.focusHitboxEnabled)throw Error('此接入版本尚未完成所选判定点增强');
+  if(value.thpracLocale!==undefined&&!['ja-JP','en-US','zh-CN'].includes(value.thpracLocale))throw Error('练习工具语言无效');
   if(value.replayPath!==undefined&&!savePath(value.replayPath).endsWith('.rpy'))throw Error('录像路径无效');
   if(value.debugHarness!==undefined&&value.debugHarness!==null&&typeof value.debugHarness!=='string')throw Error('诊断配置无效');
   return {...value,limitPresentationTo60:value.limitPresentationTo60??true};
 }
 export function savePath(value){
   if(typeof value!=='string')throw Error('存档路径无效');
-  return allowedPath(value.startsWith('/savesth12/')?value:'/savesth12/'+value);
+  const path=allowedPath(value.startsWith('/savesth12/')?value:'/savesth12/'+value);
+  if(path.endsWith('/web-profile.json'))throw Error('此文件属于浏览器内部记录');return path;
 }
 function importedFile(path,bytes){
   if(path.endsWith('.rpy')){parseReplay(bytes);return;}
-  // The current profile codec preserves unknown retail bytes on local reads.
-  // Do not claim a retail import succeeded while the game cannot consume it.
-  let value;try{value=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw Error('原版成绩／配置文件编解码尚未接入');}
-  if(value.schema!==(path.endsWith('th12.cfg')?'th12-web-config/1':'th12-web-score/1'))throw Error('存档格式无效');
+  validateNativeProfile(path,bytes);
 }
 export function managedCommandHandler(api){
   let configured=false;
@@ -36,12 +36,12 @@ export function managedCommandHandler(api){
     case 'configure':{
       if(api.running())throw Error('游戏运行中不能重新配置');
       if(!['ogg','none'].includes(message.music))throw Error('星莲船未支持此音乐模式');
-      if(message.language!==undefined&&!['ja',''].includes(message.language))throw Error('此版本未接入语言包');
-      if(message.runtimePack)throw Error('此版本不使用独立运行资源包');
+      const language=message.language||message.runtimePack?.language||'ja';
+      if(!['ja','lang_zh-hant'].includes(language))throw Error('尚未安装此语言的星莲船资源');
+      if(message.runtimePack&&message.runtimePack.language!==language)throw Error('语言包与所选语言不匹配');
       const options=runtimeOptions(message.options),resources=[];
-      if(message.music==='ogg'&&options.oggDecodeMode==='stream')throw Error('此接入版本尚未完成流式音乐，请选择完整 OGG 或无音乐');
       for(const key of ['resources','runtimeResources','sharedResources']){if(message[key]!==undefined&&!Array.isArray(message[key]))throw Error('附加资源列表无效');resources.push(...(message[key]??[]));}
-      await api.resources(resources);await api.configure({options,music:message.music});configured=true;return {};
+      await api.resources(resources);await api.configure({options,music:message.music,language,runtimePack:message.runtimePack??null});configured=true;return {};
     }
     case 'resources':await api.resources(message.resources);return {};
     case 'launch':if(!configured)throw Error('请先配置游戏');if(api.running())throw Error('游戏已启动');await api.launch();return {};
@@ -50,13 +50,15 @@ export function managedCommandHandler(api){
     case 'touch-cancel':api.cancelTouch();return {};
     case 'touch-controls':{
       if(typeof message.fireEnabled!=='boolean'||typeof message.focusEnabled!=='boolean'||!['bombSerial','escapeSerial'].every(key=>Number.isSafeInteger(message[key])&&message[key]>=0)||!['joystickX','joystickY'].every(key=>Number.isFinite(message[key])&&Math.abs(message[key])<=32767))throw Error('触控快照无效');
-      // configure refuses enabled touch. Inactive control snapshots must still
-      // be consumed without turning a disabled UI channel into a game error.
+      if(message.touchSensitivity!==undefined&&(!Number.isFinite(message.touchSensitivity)||message.touchSensitivity<100||message.touchSensitivity>300))throw Error('触控灵敏度无效');
+      for(const key of ['thpracMobilePanelsEnabled','thpracMobilePanelsVisible'])if(message[key]!==undefined&&typeof message[key]!=='boolean')throw Error('练习面板配置无效');
+      api.touch(message);
       return {};
     }
-    case 'direct-touch':if(!['down','move','up'].includes(message.type)||!Number.isSafeInteger(message.id)||!Number.isFinite(message.x)||!Number.isFinite(message.y))throw Error('触控坐标无效');return {};
+    case 'direct-touch':if(!['down','move','up'].includes(message.type)||!Number.isSafeInteger(message.id)||!Number.isFinite(message.x)||!Number.isFinite(message.y))throw Error('触控坐标无效');api.pointer(message);return {};
+    case 'thprac-mouse':if(!['down','move','up'].includes(message.type)||!Number.isFinite(message.x)||!Number.isFinite(message.y)||message.id!==undefined&&!Number.isSafeInteger(message.id)||message.button!==undefined&&(!Number.isInteger(message.button)||message.button<0||message.button>4))throw Error('练习面板坐标无效');api.practicePointer(message);return {};
     case 'list':{
-      await api.sync();const files=[];for(const path of await api.store.list()){const bytes=await api.store.read(savePath(path));files.push({path:savePath(path).slice('/savesth12/'.length),size:bytes?.byteLength??0});}return {files};
+      await api.sync();const files=[];for(const path of await api.store.list()){if(path.endsWith('/web-profile.json'))continue;const bytes=await api.store.read(savePath(path));files.push({path:savePath(path).slice('/savesth12/'.length),size:bytes?.byteLength??0});}return {files};
     }
     case 'read':{await api.sync();const bytes=await api.store.read(savePath(message.path));if(!bytes)throw Error('文件不存在');return {bytes:Array.from(bytes)};}
     case 'write':{

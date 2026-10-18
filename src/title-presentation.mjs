@@ -197,7 +197,7 @@ export class TitlePresentation {
     if(force||headerKey!==this.dataHeaderKey){for(const name of [...this.bindings.keys()])if(name.startsWith('data-header-'))this.remove(name);for(const id of nativePlayerDataScripts(c,shot,d).filter(id=>id!==114))this.bind('data-header-'+id,id);this.dataHeaderKey=headerKey;}
     if(page>0){
       const selected=this.profile.spellRecords({character:c,shot,difficulty:d,includeUnseen:true}),all=this.profile.spellRecords({difficulty:d,includeUnseen:true}),records={};
-      for(const r of selected){const cached=this.resources.spellNames?.[r.id],any=all.find(a=>a.id===r.id);records[r.id]={name:r.title||cached?.title||'',nameByteLength:cached?.byteLength,attempts:r.attempts,captures:r.captures,anyAttempts:any?.attempts??0};}
+      for(const r of selected){const cached=this.resources.spellNames?.[r.id],any=all.find(a=>a.id===r.id);records[r.id]={name:cached?.localized?cached.title:r.title||cached?.title||'',nameByteLength:cached?.byteLength,attempts:r.attempts,captures:r.captures,anyAttempts:any?.attempts??0};}
       const rows=nativeSpellDescriptors(d,page,records),visible=new Set();
       for(const row of rows){const name='data-row-'+row.script;visible.add(name);const vm=this.bindings.get(name)??this.bind(name,row.script,row.bank);vm.setText(row.script,{text:row.text,colorRGB:row.colorRGB,width:row.width,height:row.height});}
       for(const name of [...this.bindings.keys()])if(name.startsWith('data-row-')&&!visible.has(name))this.remove(name);
@@ -209,6 +209,7 @@ export class TitlePresentation {
     const output=[],scene=state.scene,selected=state.selection,run=state.run;
     const line=(text,x,y,color=0xffffff,size=14,width=570,height=20)=>output.push({text,x,y,color,size,width,height});
     if(scene==='practice'){
+      if(state.practiceMenu)return output; // The real practice parameter body is the pointer-capable overlay.
       if(state.phase==='in'||state.phase==='out'&&state.transitionAction==='cancel')return output;
       const rows=state.choices.map(item=>({disabled:item.disabled,scoreStored:Math.trunc((this.profile.rankings(run.character,run.shot,run.difficulty,item.id)[0]?.score??0)/10)}));
       output.push(...nativePracticeDescriptors(rows,{selection:selected,age:state.phase==='out'?state.transitionAge:Math.max(0,state.age-state.readyAt+1),confirming:state.phase==='out'}));

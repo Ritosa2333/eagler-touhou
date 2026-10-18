@@ -6,6 +6,7 @@
 #include "GameState.hpp"
 #include "HostilePool.hpp"
 #include "LaserWorld.hpp"
+#include "PresentationTracking.hpp"
 #include "SpellHistory.hpp"
 
 namespace th12 {
@@ -341,9 +342,11 @@ void command(Enemy& e, Context& c, int op) {
     if (auto* node = animationScene.find(enemyAnimationKey(e.id, slot))) {
       auto& state = node->vm.control();
       if (op == 277) {
+        presentation::discontinuity(e.id);
         state.rotation = F(1); // 415c24 writes raw rotationZ, without wrapping.
         state.flags |= 4u;
       } else {
+        presentation::discontinuity(e.id);
         state.sx = F(1);
         state.flags |= 8u;
         // 415c61 and415c80 both read operand1. A referenced random value
@@ -362,6 +365,7 @@ void command(Enemy& e, Context& c, int op) {
     }
     // 415cb6/415cd2/415cda: these belong to Enemy, even without a VM.
     e.animationOffsets[slot] = {F(1), F(2), 0};
+    presentation::discontinuity(e.id);
     break;
   }
   case 281: {
@@ -372,6 +376,7 @@ void command(Enemy& e, Context& c, int op) {
       break;
     }
     e.animationParents[slot] = parent;
+    presentation::discontinuity(e.id);
     break;
   }
   case 263:
@@ -405,6 +410,7 @@ void command(Enemy& e, Context& c, int op) {
   }
   case 300:
   case 302: {
+    presentation::discontinuity(e.id);
     const float x = F(0), y = F(1);
     float& xx = op == 300 ? e.ax : e.rx;
     float& yy = op == 300 ? e.ay : e.ry;
@@ -502,6 +508,7 @@ void command(Enemy& e, Context& c, int op) {
   case 310:
   case 320:
   case 322: {
+    presentation::discontinuity(e.id);
     const bool rel = op == 310 || op == 322;
     auto& m = rel ? e.relativeCircle : e.absoluteCircle;
     if (!m.enabled) {
@@ -534,6 +541,7 @@ void command(Enemy& e, Context& c, int op) {
   case 311:
   case 321:
   case 323: {
+    presentation::discontinuity(e.id);
     const bool rel = op == 311 || op == 323;
     auto& m = rel ? e.relativeCircle : e.absoluteCircle;
     m.ticks = std::max(0, I(0));
@@ -618,6 +626,7 @@ void command(Enemy& e, Context& c, int op) {
   }
   case 314:
   case 315: {
+    presentation::discontinuity(e.id);
     if (auto* boss = primaryBoss()) {
       if (op == 314) {
         e.ax = boss->x;
@@ -1071,8 +1080,10 @@ void command(Enemy& e, Context& c, int op) {
     spawnLaser(e, s, laser::Kind::Curve);
     break;
   case 604:
-    if (auto* object = laserManager.find(I(0)))
+    if (auto* object = laserManager.find(I(0))) {
+      presentation::discontinuity(0xb0000000u + object->state.serialId);
       object->state.position = {F(1), F(2), 0};
+    }
     break;
   case 605:
     if (auto* object = laserManager.find(I(0))) {
@@ -1087,12 +1098,16 @@ void command(Enemy& e, Context& c, int op) {
       object->state.speed = F(1);
     break;
   case 607:
-    if (auto* object = laserManager.find(I(0)))
+    if (auto* object = laserManager.find(I(0))) {
+      presentation::discontinuity(0xb0000000u + object->state.serialId);
       object->state.width = F(1);
+    }
     break;
   case 608:
-    if (auto* object = laserManager.find(I(0)))
+    if (auto* object = laserManager.find(I(0))) {
+      presentation::discontinuity(0xb0000000u + object->state.serialId);
       object->state.angle = F(1);
+    }
     break;
   case 609:
     if (auto* object = laserManager.find(I(0))) {

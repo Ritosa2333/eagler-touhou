@@ -1,10 +1,12 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
+#include "AdaptedInput.hpp"
 #include "BulletCancellation.hpp"
 #include "CameraEffects.hpp"
 #include "FriendlyPool.hpp"
 #include "GameState.hpp"
 #include "LaserWorld.hpp"
 #include "PlayerBounds.hpp"
+#include "Practice.hpp"
 
 namespace th12 {
 bool playerFocused = false;
@@ -33,7 +35,7 @@ void awardPlayerGraze(float x, float y, float z) {
   eventBits |= 16;
 }
 void playerMissCollision() {
-  if (invuln || playerState != 1)
+  if (invuln || playerState != 1 || practice::tool(practice::Invulnerable))
     return;
   sound_system::queue.play(2, 0, false);
   // 438370 loses capture eligibility on collision, before the deathbomb window.
@@ -1053,7 +1055,8 @@ void tickPlayer(int held, int pressed) {
        (playerState == 4 && playerStateTicks < 8)) &&
       startPlayerBomb()) {
     syncBombAnimations();
-    --bombs;
+    practice::recordBomb();
+    if (!practice::tool(practice::InfiniteBombs)) --bombs;
     deathWindow = 0;
     playerState = 1;
     // 436d18 preserves a normal state's age; only436da8 deathbomb resets60.
@@ -1094,7 +1097,7 @@ void tickPlayer(int held, int pressed) {
   else if (held & 0x80)
     dir = 4;
   const int beforeX = px;
-  if (beganMoving) {
+  if (beganMoving && !((held & 0xf0) == 0 && adaptedMotion.apply(px, py, scaledSpeed))) {
     switch (dir) {
     case 1:
       py -= scaledSpeed;
@@ -1141,7 +1144,8 @@ void tickPlayer(int held, int pressed) {
       // Native436d61 commits a miss only after the deathbomb window expires.
       ++phasePlayerCounters[0];
       phasePlayerCounters[2] = 0;
-      --lives;
+      practice::recordMiss();
+      if (!practice::tool(practice::InfiniteLives)) --lives;
       resources.addRank(-1024);
       playerState = 2;
       playerStateTicks = 0;
@@ -1155,7 +1159,9 @@ void tickPlayer(int held, int pressed) {
   }
   if (playerState == 2) {
     if (playerStateTicks == 3) {
+      const int powerBeforeLoss = power;
       const auto plan = item_system::deathPowerDrops(resources, {px / 128.f, py / 128.f});
+      if (practice::tool(practice::InfinitePower)) power = powerBeforeLoss;
       for (const auto& request : plan.spawns)
         itemManager.spawn(request);
       playerMotion.updateOptions(s, power, px, py, focus, true);

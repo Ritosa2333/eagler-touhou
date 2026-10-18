@@ -12,6 +12,6 @@ export function runtimeSourceFiles(root, folder = 'src') {
     .sort((a, b) => a.name.localeCompare(b.name)).flatMap(entry => {
       const name = folder + '/' + entry.name;
       return entry.isDirectory() ? runtimeSourceFiles(root, name)
-        : /\.(cpp|hpp)$/.test(name) ? [name] : [];
+        : /\.(cpp|hpp|inc)$/.test(name) ? [name] : [];
     });
 }

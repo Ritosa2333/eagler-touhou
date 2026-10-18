@@ -3,13 +3,14 @@
 ANM v7 layout reference: thpatch/thtypes anm_types.h. Original payload is kept
 outside source control and separate from the Runtime code release.
 """
-import json, pathlib, struct, hashlib, shutil, math, sys
+import json, pathlib, struct, hashlib, shutil, math, os
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT.parent/'tools/python'))
 from PIL import Image
-retail=ROOT/'local/retail';dest=ROOT/'site/assets';dest.mkdir(parents=True,exist_ok=True)
+original=pathlib.Path(os.environ.get('TH12_ORIGINAL',ROOT/'local/original')).expanduser().resolve()
+retail=pathlib.Path(os.environ.get('TH12_RETAIL',ROOT/'local/retail')).expanduser().resolve()
+dest=pathlib.Path(os.environ.get('TH12_ASSETS',ROOT/'site/assets')).expanduser().resolve()
 PINNED_EXE_SHA256='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
-if hashlib.sha256((ROOT.parent/'th12/th12.exe').read_bytes()).hexdigest()!=PINNED_EXE_SHA256:
+if hashlib.sha256((original/'th12.exe').read_bytes()).hexdigest()!=PINNED_EXE_SHA256:
     raise ValueError('Presentation preparation supports the pinned TH12 1.00b executable')
 def u16(b,o):return struct.unpack_from('<H',b,o)[0]
 def u32(b,o):return struct.unpack_from('<I',b,o)[0]
@@ -72,21 +73,26 @@ def anm(file):
     return {'entries':entries,'sprites':sprites,'scripts':scripts,'provenance':{
       'source':file.name,'sha256':hashlib.sha256(b).hexdigest(),'anmVersion':7,'originalExeSha256':PINNED_EXE_SHA256,
       'wholePresentationOracle':False}}
-chosen=['pl00','pl01','pl02','bullet','enemy','front','ascii','text','title','title_v']
-for stage in range(1,8):
-    chosen.extend([f'stgenm{stage:02d}',f'stage{stage:02d}',f'st{stage:02d}logo'])
-chosen.extend(file.stem for file in retail.glob('stgenm*m.anm'))
-metadata={}
-for name in chosen:
-    metadata[name]=anm(retail/(name+'.anm'));print(name,len(metadata[name]['entries']),len(metadata[name]['sprites']),len(metadata[name]['scripts']))
-    shutil.copyfile(retail/(name+'.anm'),dest/(name+'.anm'))
-for name in ['default.ecl',*[f'stage{stage:02d}.ecl' for stage in range(1,8)],*[file.name for file in retail.glob('stage*boss.ecl')],'pl00a.sht','pl00b.sht','pl01a.sht','pl01b.sht','pl02a.sht','pl02b.sht']:
-    shutil.copyfile(retail/name,dest/name)
-for file in retail.glob('stage??.std'):shutil.copyfile(file,dest/file.name)
-for file in retail.glob('se_*.wav'):shutil.copyfile(file,dest/file.name)
-for file in retail.glob('st??_0[012][ab].msg'):shutil.copyfile(file,dest/file.name)
-(dest/'atlases.json').write_text(json.dumps(metadata,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
-original=ROOT.parent/'th12'
-identity={name:{'bytes':(original/name).stat().st_size,'sha256':hashlib.sha256((original/name).read_bytes()).hexdigest()} for name in ['th12.exe','th12.dat','thbgm.dat']}
-(ROOT/'local/content-identity.json').write_text(json.dumps({'game':'th12','version':'1.00b','files':identity},indent=2),encoding='utf-8')
-print('Local resource preparation complete.')
+def main():
+    dest.mkdir(parents=True,exist_ok=True)
+    chosen=['pl00','pl01','pl02','bullet','enemy','front','ascii','text','title','title_v']
+    for stage in range(1,8):
+        chosen.extend([f'stgenm{stage:02d}',f'stage{stage:02d}',f'st{stage:02d}logo'])
+    chosen.extend(file.stem for file in sorted(retail.glob('stgenm*m.anm')))
+    metadata={}
+    for name in chosen:
+        metadata[name]=anm(retail/(name+'.anm'));print(name,len(metadata[name]['entries']),len(metadata[name]['sprites']),len(metadata[name]['scripts']))
+        shutil.copyfile(retail/(name+'.anm'),dest/(name+'.anm'))
+    for name in ['default.ecl',*[f'stage{stage:02d}.ecl' for stage in range(1,8)],*[file.name for file in sorted(retail.glob('stage*boss.ecl'))],'pl00a.sht','pl00b.sht','pl01a.sht','pl01b.sht','pl02a.sht','pl02b.sht']:
+        shutil.copyfile(retail/name,dest/name)
+    for file in sorted(retail.glob('stage??.std')):shutil.copyfile(file,dest/file.name)
+    for file in sorted(retail.glob('se_*.wav')):shutil.copyfile(file,dest/file.name)
+    for file in sorted(retail.glob('st??_0[012][ab].msg')):shutil.copyfile(file,dest/file.name)
+    (dest/'atlases.json').write_text(json.dumps(metadata,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
+    identity={name:{'bytes':(original/name).stat().st_size,'sha256':hashlib.sha256((original/name).read_bytes()).hexdigest()} for name in ['th12.exe','th12.dat','thbgm.dat']}
+    identity_path=ROOT/'local/content-identity.json';identity_path.parent.mkdir(parents=True,exist_ok=True)
+    identity_path.write_text(json.dumps({'game':'th12','version':'1.00b','files':identity},indent=2),encoding='utf-8')
+    print('Local resource preparation complete.')
+
+if __name__=='__main__':
+    main()

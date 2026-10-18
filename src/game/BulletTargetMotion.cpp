@@ -1,6 +1,7 @@
 #include "BulletTargetMotion.hpp"
 #include "../bullet.hpp"
 #include "AnmTypes.hpp"
+#include "PresentationTracking.hpp"
 #include <cmath>
 
 namespace th12::eb {
@@ -33,6 +34,7 @@ bool beginTargetMotion(TargetMotion& motion, State& bullet, const Record& record
   }
   motion.savedSpeed = bullet.speed;
   motion.duration = record.c;
+  if (motion.duration <= 0) presentation::discontinuity(0x10000000u + bullet.id);
   motion.mode = mode;
   bullet.active |= 0x2000000;
   return true;

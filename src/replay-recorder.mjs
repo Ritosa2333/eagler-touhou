@@ -1,3 +1,4 @@
+import {appendMotionReplay} from './replay-motion.mjs';
 // TH12 1.00b recording layout:43ae80/43c590/43b7e0/43bc10.
 // The original loader43c350 has no replay checksum. Its reserved checksum-
 // looking header words are zero, as initialized at43aec8..43aeee.
@@ -20,7 +21,7 @@ export function defaultReplayConfig(){
   // recorded in the input stream. Callers may supply their current 60 bytes.
   const bytes=new Uint8Array(60),view=new DataView(bytes.buffer);
   view.setUint32(0,0x120001,true);
-  [3,2,7,8,0xffff,0xffff,0xffff,0xffff,1].forEach((n,i)=>view.setUint16(4+i*2,n,true));
+  [0,1,2,4,0xffff,0xffff,0xffff,0xffff,3].forEach((n,i)=>view.setUint16(4+i*2,n,true));
   view.setUint16(0x16,600,true);view.setUint16(0x18,600,true);
   bytes[0x1b]=bytes[0x1c]=1;bytes[0x1f]=bytes[0x23]=2;bytes[0x20]=100;bytes[0x21]=80;
   view.setUint32(0x28,0x80000000,true);view.setUint32(0x2c,0x80000000,true);view.setUint32(0x38,0x100,true);
@@ -123,7 +124,7 @@ export class ReplayRecorder {
   recordStage(header){
     if(this.active)throw Error('上一关录像尚未结束');
     const number=integer(header?.number,1,7,'录像关卡');if(this.stages.some(s=>s.number===number))throw Error('录像包含重复关卡');
-    this.active={number,seed:word(header.seed),initial:initialHeader(header.initial),spellTimes:(header.spellTimes??defaultReplaySpellTimes()).map(signed),inputs:[],fps:[]};
+    this.active={number,seed:word(header.seed),initial:initialHeader(header.initial),spellTimes:(header.spellTimes??defaultReplaySpellTimes()).map(signed),inputs:[],fps:[],motion:[]};
     if(this.active.spellTimes.length!==21){this.active=null;throw Error('录像符卡时间记录无效');}
     this.previousHeld=0;return this.active;
   }
@@ -134,6 +135,11 @@ export class ReplayRecorder {
     if(!Number.isFinite(fps)||fps<0)throw Error('录像帧率无效');
     if(stage.inputs.length%30===0)stage.fps.push(Math.min(255,Math.trunc(fps+.5)));
     stage.inputs.push({held,pressed,released});this.previousHeld=held;return stage.inputs.length;
+  }
+  recordMotion(dx,dy,unlimited=false){
+    if(!this.active||!this.active.inputs.length)throw Error('尚未记录当前帧输入');
+    if(dx||dy)this.active.motion.push([this.active.inputs.length-1,dx,dy]);
+    if(unlimited){this.resultInfo.slowdown=100;this.resultInfo.unlimitedMovement=true;}
   }
   setSpellTime(index,encoded){if(!this.active)throw Error('尚未开始记录关卡');this.active.spellTimes[integer(index,0,19,'录像符卡序号')]=signed(encoded);}
   finishStage({spellTimes,end=false}={}){
@@ -146,6 +152,8 @@ export class ReplayRecorder {
   result(info={}){
     const {end=true,...metadata}=info;this.resultInfo={...this.resultInfo,...metadata};
     if(this.active)this.finishStage({end});
-    return encodeReplay({...this.options,...this.resultInfo,stages:this.stages});
+    const file=encodeReplay({...this.options,...this.resultInfo,stages:this.stages});
+    return appendMotionReplay(file,this.stages,this.resultInfo.unlimitedMovement===true,this.webExtensions);
   }
+  setWebExtensions(value){this.webExtensions={...this.webExtensions,...value};}
 }

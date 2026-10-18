@@ -1,6 +1,7 @@
 import {emscripten} from './toolchain.mjs';
 import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';
 import {runtimeSources,runtimeSourceFiles} from './runtime-sources.mjs';
+import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 const python=emscripten(root).python;
 const compiler=emscripten(root).compiler;
@@ -8,6 +9,15 @@ if(!fs.existsSync(compiler))throw Error('Emscripten 4.0.22 is required; see docs
 fs.mkdirSync(path.join(root,'site/runtime'),{recursive:true});
 const exports=['_malloc','_free','_th12_load_ecl','_th12_load_msg','_th12_select_stage','_th12_load_sht','_th12_start','_th12_oracle_fixture','_th12_set_initial','_th12_set_replay_economy','_th12_state','_th12_state_size','_th12_tick','_th12_draw','_th12_draw_ptr','_th12_draw_stride','_th12_draw_version','_th12_hud','_th12_hud_size','_th12_unsupported','_th12_rng16','_th12_rng32'];
 const cache=path.join(root,'artifacts/emscripten-cache');fs.mkdirSync(cache,{recursive:true});
+const thprac=process.env.TH12_THPRAC==='1',sharedSourceFiles={},buildFlags=[];
+if(thprac){
+  const pin=JSON.parse(fs.readFileSync(path.join(root,'integration/common-dependency.json'),'utf8'));
+  const candidates=[process.env.EAGLER_COMMON_ROOT,path.resolve(root,'../eagler-common'),path.resolve(root,'../common'),path.resolve(root,'../../common'),path.resolve(root,'../../eagler-touhou/common')].filter(Boolean);
+  const common=candidates.find(candidate=>fs.existsSync(path.join(candidate,'include/eagler/thprac/PracticeSpeed.hpp')));
+  if(!common)throw Error('完整适配构建需要固定版本的 common；请按 integration/common-dependency.json 准备并设置 EAGLER_COMMON_ROOT');
+  for(const [name,expected]of Object.entries(pin.files)){const hash=createHash('sha256').update(fs.readFileSync(path.join(common,name))).digest('hex');if(hash!==expected)throw Error('共享源码与固定版本不一致：'+name);sharedSourceFiles[name]=hash;}
+  buildFlags.push('-DTH12_ENABLE_THPRAC=1','-I'+path.join(common,'include'));
+}
 exports.push('_th12_message','_th12_message_size','_th12_spell','_th12_spell_size');
 exports.push('_th12_ufo','_th12_ufo_size');
 exports.push('_th12_start_replay','_th12_set_wall_time');
@@ -23,10 +33,14 @@ exports.push('_th12_mesh_draw','_th12_mesh_draw_ptr','_th12_mesh_draw_stride','_
 exports.push('_th12_score_popups','_th12_score_popups_ptr','_th12_score_popups_stride');
 exports.push('_th12_score_stored');
 exports.push('_th12_start_full_game','_th12_set_full_game_mode','_th12_start_next_stage','_th12_continue_game','_th12_stage_flow','_th12_stage_flow_size');
+exports.push('_th12_motion','_th12_motion_result','_th12_player_state','_th12_player_instance','_th12_player_speed');
+exports.push('_th12_presentation_motion','_th12_presentation_motion_size');
+exports.push('_th12_practice_enabled','_th12_practice_reset','_th12_practice_configure','_th12_practice_start','_th12_practice_prepare_replay','_th12_practice_replay','_th12_practice_tools','_th12_practice_speed','_th12_practice_interval','_th12_practice_state','_th12_practice_state_size','_th12_practice_boss_music','_th12_practice_everlasting_bgm');
+exports.push('_th12_practice_damage_begin','_th12_practice_damage_reset','_th12_practice_damage_transition','_th12_practice_damage_load','_th12_practice_damage_stage','_th12_practice_damage_stage_words','_th12_practice_damage_state','_th12_practice_damage_state_size');
 exports.push('_th12_load_spell_history','_th12_spell_history','_th12_spell_history_size');
-const result=spawnSync(python,[compiler,...runtimeSources(root),'-std=c++20','-O2','-o','site/runtime/core.mjs','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,node','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=33554432','-sEXPORTED_FUNCTIONS='+JSON.stringify(exports),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','HEAPU16','HEAPU32','HEAPF32']),'-sASSERTIONS=1'],{cwd:root,stdio:'inherit',env:{...process.env,EM_CACHE:cache,EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});
+const result=spawnSync(python,[compiler,...runtimeSources(root),...buildFlags,'-std=c++20','-O2','-o','site/runtime/core.mjs','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,node','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=33554432','-sEXPORTED_FUNCTIONS='+JSON.stringify(exports),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','HEAPU16','HEAPU32','HEAPF32']),'-sASSERTIONS=1'],{cwd:root,stdio:'inherit',env:{...process.env,EM_CACHE:cache,EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});
 if(result.status!==0)process.exit(result.status||1);
-const {createHash}=await import('node:crypto'),sources=runtimeSourceFiles(root);
+const sources=runtimeSourceFiles(root);
 const sourceFiles=Object.fromEntries(sources.map(name=>[name,createHash('sha256').update(fs.readFileSync(path.join(root,name))).digest('hex')]));
-const sourceSha256=createHash('sha256').update(JSON.stringify(sourceFiles)).digest('hex');
-fs.writeFileSync(path.join(root,'site/runtime/build.json'),JSON.stringify({version:'0.3.0-cpp',compiler:'emscripten-4.0.22',sourceSha256,sourceFiles},null,2)+'\n');
+const sourceSha256=createHash('sha256').update(JSON.stringify({sourceFiles,sharedSourceFiles})).digest('hex');
+fs.writeFileSync(path.join(root,'site/runtime/build.json'),JSON.stringify({version:'0.3.0-cpp',builtAt:new Date().toISOString(),compiler:'emscripten-4.0.22',features:{thprac,languages:false,focusHitbox:false},sourceSha256,sourceFiles,sharedSourceFiles},null,2)+'\n');

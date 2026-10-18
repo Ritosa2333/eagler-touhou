@@ -42,6 +42,7 @@ export function createReplaySeeker(core,{batchTicks=240,
           if(request!==serial)return result('cancelled');
           const input=replay.input(stage.number,cursor);
           if(replayInputEnded(input))return result('replay-input-ended');
+          const motion=replay.motion?.(stage.number,cursor);core._th12_motion?.(motion?4:0,motion?.[0]??0,motion?.[1]??0);
           core._th12_tick(input.held,input.pressed);
           previous=input.held;cursor++;
           onTick?.(core,cursor,input);

@@ -10,6 +10,7 @@ import {MusicPlayer} from '/src/music.mjs';
 import {readCoreSoundEvents} from '/src/sound-events.mjs';
 import {createReplaySeeker} from '/src/replay-seek.mjs';
 import {createFrameRateMeter} from '/src/fps-presentation.mjs';
+import {DamageSourceBridge} from '/src/practice/damage-sources.mjs';
 
 const $=id=>document.getElementById(id),canvas=$('screen'),inputState=new PreviewInput();
 let core,renderer,store,stageLoader,currentStage=1,post=()=>{},ready=false,running=false,paused=false,busy=false,loadingReplay=false,last=0,accumulator=0,generation=0,previous=0,activeReplay=null,replayFrame=0;
@@ -178,6 +179,7 @@ function loop(now,token){
           if(replayInputEnded(input)){finish('replay-input-ended');break;}
           replayFrame++;
         }else input=inputState.sample(previous,pad);
+        const motion=activeReplay?.motion?.(currentStage,replayFrame-1);core._th12_motion?.(motion?4:0,motion?.[0]??0,motion?.[1]??0);
         core._th12_tick(input.held,input.pressed);previous=input.held;accumulator-=tickMs;afterTick();
       }
     }else accumulator=0;
@@ -193,6 +195,7 @@ function loop(now,token){
 async function start(replay=null){
   if(!ready)throw Error('资源尚未就绪');if(busy)throw Error('正在准备开局');
   if(replay&&!supportedReplay(replay,Number($('replay-stage').value)))throw Error('录像中没有选择的关卡');
+  if(replay?.extension?.practice?.params.mode)throw Error('自定义练习录像请从完整游戏入口的 Replay 播放');
   busy=true;updateButtons();message('正在准备音乐与开局…');
   try{
     running=paused=false;replaySeeker?.cancel();replayScrub=null;updateButtons();canvas.dataset.sessionState='starting';generation++;const token=generation;clear();inputState.clear({resetSerials:true});activeReplay=replay;replayFrame=0;firstPresented=false;focusLostDuringStart=document.hidden;padPauseHeld=false;log=[];stopMusic();stopEffects();
@@ -200,6 +203,8 @@ async function start(replay=null){
     const c=replay?.character??Number($('character').value),s=replay?.shot??Number($('shot').value),d=replay?.difficulty??(currentStage===7?4:Number($('difficulty').value)),stage=replay?.stages.find(s=>s.number===currentStage);
     await renderer.prepareStage(currentStage);
     if(!await stageLoader.load(currentStage,()=>token===generation))return;
+    if(core._th12_practice_replay)core._th12_practice_replay(replay?1:0);
+    if(core._th12_practice_damage_begin){const damage=new DamageSourceBridge(core);if(replay?.extension?.damage)core._th12_practice_enabled(1);damage.begin({replay:!!replay,practice:!!replay?.practice,character:c,shot:s,metadata:replay?.extension?.damage});}
     if(stage)startReplayStage(core,replay,stage);
     else core._th12_start(c,s,d,Math.floor(Math.random()*65536));
     resetReplayMusic();

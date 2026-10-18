@@ -1,6 +1,7 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "GameState.hpp"
 #include "ItemPresentation.hpp"
+#include "Practice.hpp"
 
 namespace th12 {
 ufo_system::EnemyHooks ufoHooks() {
@@ -38,6 +39,8 @@ void tickUfo() {
   const auto hooks = ufoHooks();
   const auto result = ufoManager.tick(
       {power, stageNumber, primaryBoss() != nullptr, dialogue > 0, gameSpeed, resources.powerStep}, hooks);
+  if (result.spawned)
+    practice::recordUfoSummoned(ufoManager.kind == -1 ? 3 : ufoManager.kind - 1);
   for (const auto& action : result.actions)
     for (auto& p : enemies)
       if (p->id == action.enemyId && p->active) {
@@ -95,6 +98,7 @@ void tickItems(bool focus) {
       eventBits |= 64;
       break;
     case K::CollectToken:
+      practice::recordUfoCollected(event.value);
       sound_system::queue.play(38, event.entity.position.x);
       applyUfoPlan(ufoManager.collectToken({event.value, event.entity.position}, resources));
       eventBits |= 64;

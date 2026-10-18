@@ -1,39 +1,11 @@
-diff --git a/common/contracts/product-catalog.mjs b/common/contracts/product-catalog.mjs
---- a/common/contracts/product-catalog.mjs
-+++ b/common/contracts/product-catalog.mjs
-@@ -375,6 +375,24 @@
-         }),
-         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
-     }),
-+    th12: Object.freeze({
-+        number: "12", title: "東方星蓮船", subtitle: "Undefined Fantastic Object",
-+        cardArtwork: "th12-card.webp",
-+        storage: Object.freeze({saveRoot: "/savesth12", scoreFile: "scoreth12.dat", configFiles: Object.freeze(["th12.cfg"])}),
-+        runtime: "./runtime/th12/th12.html",
-+        runtimeFileLayout: "directory",
-+        runtimeAssets: Object.freeze(["th12.html", "manifest.json", "site/game.css", "site/game.mjs", "site/runtime/core.mjs", "site/runtime/core.wasm", "src/managed-data.mjs", "src/managed-shell.mjs"]),
-+        requiredShared: Object.freeze([]),
-+        dataProvider: "retail-memory",
-+        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th12.data",
-+            musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
-+        musicCapabilities: Object.freeze({midi: false}),
-+        musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
-+        touchFire: TOGGLE_TOUCH_FIRE,
-+        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Tweet-META/th12", adaptationNotice: "early-test"}),
-+        replay: Object.freeze({prefix: "th12"}),
-+        features: Object.freeze({thprac: false, languages: false, focusHitbox: false}),
-+    }),
-     th15: Object.freeze({
-         number: "15",
-         title: "東方紺珠伝",
 diff --git a/common/contracts/product-catalog.d.mts b/common/contracts/product-catalog.d.mts
+index 9d8d2d02..477e2b65 100644
 --- a/common/contracts/product-catalog.d.mts
 +++ b/common/contracts/product-catalog.d.mts
-@@ -609,6 +609,21 @@
-             languages: true;
+@@ -610,6 +610,21 @@ export declare const PRODUCT_GAMES: Readonly<{
              focusHitbox: false;
          }>;
-+    }>;
+     }>;
 +    th12: Readonly<{
 +        number: "12"; title: "東方星蓮船"; subtitle: "Undefined Fantastic Object";
 +        cardArtwork: "th12-card.webp";
@@ -45,48 +17,110 @@ diff --git a/common/contracts/product-catalog.d.mts b/common/contracts/product-c
 +        musicCapabilities: Readonly<{midi: false}>;
 +        musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
 +        touchFire: Readonly<{readonly mode: "toggle"; readonly labelKey: "touch.tapToggle"}>;
-+        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Tweet-META/th12"; adaptationNotice: "early-test"}>;
++        support: Readonly<{highRefreshRate: true; sourceRepository: "https://github.com/Tweet-META/th12"; adaptationNotice: "early-test"}>;
 +        replay: Readonly<{prefix: "th12"}>;
-+        features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
-     }>;
++        features: Readonly<{thprac: true; languages: true; focusHitbox: false}>;
++    }>;
      th15: Readonly<{
          number: "15";
-diff --git a/launcher/lib/content-definition.mjs b/launcher/lib/content-definition.mjs
---- a/launcher/lib/content-definition.mjs
-+++ b/launcher/lib/content-definition.mjs
-@@ -1,3 +1,4 @@
-+import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
- import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
- import { TH15_MUSIC_FILES } from "./th15-content-layout.mjs";
- import { TH11_MUSIC_FILES } from "./th11-content-layout.mjs";
-@@ -213,6 +214,17 @@
-       }),
+         title: "東方紺珠伝";
+diff --git a/common/contracts/product-catalog.mjs b/common/contracts/product-catalog.mjs
+index 0aa5f3fc..a98e908e 100644
+--- a/common/contracts/product-catalog.mjs
++++ b/common/contracts/product-catalog.mjs
+@@ -375,6 +375,24 @@ export const PRODUCT_GAMES = Object.freeze({
+         }),
+         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
      }),
-   }),
-+  th12: Object.freeze({
-+    original: Object.freeze({files: Object.freeze(["th12.dat"]), oggSourceFiles: Object.freeze(["thbgm.dat"]),
-+      preparedAlternative: Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze(["th12.data", "music/th12_01.ogg"])})}),
-+    dataLayout: TH12_DATA_LAYOUT,
-+    music: Object.freeze({ogg: Object.freeze({mount: PRODUCT_GAMES.th12.package.musicMounts.ogg, files: TH12_MUSIC_FILES})}),
-+    hostPreparation: Object.freeze({
-+      artwork: Object.freeze({kind: "retail-memory-title-no-reader"}),
-+      preparedContent: Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze(["th12.data", "music/th12_01.ogg"]), script: "scripts/prepare-th12-content.mjs"}),
-+      ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
++    th12: Object.freeze({
++        number: "12", title: "東方星蓮船", subtitle: "Undefined Fantastic Object",
++        cardArtwork: "th12-card.webp",
++        storage: Object.freeze({saveRoot: "/savesth12", scoreFile: "scoreth12.dat", configFiles: Object.freeze(["th12.cfg"])}),
++        runtime: "./runtime/th12/th12.html",
++        runtimeFileLayout: "directory",
++        runtimeAssets: Object.freeze(["th12.html", "manifest.json", "game.css", "game.mjs", "core.mjs", "core.wasm", "vorbis.mjs", "vorbis.wasm", "managed-data.mjs", "managed-shell.mjs"]),
++        requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
++        dataProvider: "retail-memory",
++        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th12.data",
++            musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
++        musicCapabilities: Object.freeze({midi: false}),
++        musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
++        touchFire: TOGGLE_TOUCH_FIRE,
++        support: Object.freeze({highRefreshRate: true, sourceRepository: "https://github.com/Tweet-META/th12", adaptationNotice: "early-test"}),
++        replay: Object.freeze({prefix: "th12"}),
++        features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
 +    }),
-+  }),
-   th15: Object.freeze({
-     original: Object.freeze({
-       files: Object.freeze(["th15.dat"]),
-diff --git a/launcher/lib/th12-content-layout.mjs b/launcher/lib/th12-content-layout.mjs
-new file mode 100644
---- /dev/null
-+++ b/launcher/lib/th12-content-layout.mjs
-@@ -0,0 +1,4 @@
-+// Mount contract for TH12's prepared asset container, not a retail DATA hash.
-+// sha256(JSON.stringify(DATA_LAYOUT_SPEC)) in th12/src/managed-data.mjs.
-+export const TH12_DATA_LAYOUT="sha256-94ee7257f452f635041170f868a8229c9deef1fc647e1897ca03adb328dd57df";
-+export const TH12_MUSIC_FILES=Object.freeze(["th12_01.ogg","th12_00.ogg","th12_02.ogg","th12_04.ogg","th12_05.ogg","th12_07.ogg","th12_08.ogg","th12_09.ogg","th12_10.ogg","th12_13.ogg","th12_14.ogg","th12_16.ogg","th12_17.ogg","th12_18.ogg","th12_19.ogg","th12_20.ogg","th12_21.ogg","th10_17.ogg"]);
+     th15: Object.freeze({
+         number: "15",
+         title: "東方紺珠伝",
+diff --git a/launcher/app/services/game-preparation.ts b/launcher/app/services/game-preparation.ts
+index 4f871f23..d02b8d4e 100644
+--- a/launcher/app/services/game-preparation.ts
++++ b/launcher/app/services/game-preparation.ts
+@@ -179,7 +179,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
+     configure: {music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
+       runtimeResources: remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
+     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
+-    ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: true}} : {}),
++    ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),
+     launcherControls: {restartButtonEnabled: settings.options.restartButtonEnabled,
+       thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
+       touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};
+diff --git a/launcher/app/services/game-resources.ts b/launcher/app/services/game-resources.ts
+index c6400f30..19dacc65 100644
+--- a/launcher/app/services/game-resources.ts
++++ b/launcher/app/services/game-resources.ts
+@@ -120,17 +120,18 @@ export async function ensureOggStartup({generation, music, acquisition, signal,
+   completeSet?: boolean;
+ }): Promise<{generation: InstalledPackageGeneration | null; music: MusicMode}> {
+   if (!generation || !oggMusic(music)) return {generation, music};
++  const fallback: MusicMode = PRODUCT_GAMES[generation.game].musicCapabilities?.midi === true ? 'midi' : 'none';
+   checkPreparationAbort(signal);
+   const declared = componentFileIds(generation.descriptor, 'ogg');
+   const initial = completeSet ? declared : declared.slice(0, 2);
+-  if (initial.length < 2) return {generation, music: 'midi'};
++  if (initial.length < 2) return {generation, music: fallback};
+   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
+   const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
+   let publication;
+-  try {publication = await acquisition.getPublication(gameVersion, signal);} catch {onWarning?.(t("music.initialOggIncomplete")); return {generation, music: "midi"};}
++  try {publication = await acquisition.getPublication(gameVersion, signal);} catch {onWarning?.(t("music.initialOggIncomplete")); return {generation, music: fallback};}
+   const {catalog, catalogUrl} = publication;
+   if (metadata.siteManifest?.shared.resourceMode === 'import' || catalog?.games[generation.game]?.revision !== generation.descriptor.revision) {
+-    onWarning?.(t('music.initialOggIncomplete')); return {generation, music: 'midi'};
++    onWarning?.(t('music.initialOggIncomplete')); return {generation, music: fallback};
+   }
+   const linked = linkAbortSignals(signal, downloadSignal);
+   try {
+@@ -151,6 +152,6 @@ export async function ensureOggStartup({generation, music, acquisition, signal,
+   } catch (error) {
+     checkPreparationAbort(signal);
+     if (!downloadSignal?.aborted && !(error instanceof Error && error.name === 'AbortError')) onWarning?.(t('music.initialOggFailed', {reason: preparationErrorText(error)}));
+-    return {generation, music: 'midi'};
++    return {generation, music: fallback};
+   } finally {linked.dispose(); onMusicDownloadActivity?.(false);}
+ }
+diff --git a/launcher/config/runtime-builds.json b/launcher/config/runtime-builds.json
+index f02a3730..5bd0a4c3 100644
+--- a/launcher/config/runtime-builds.json
++++ b/launcher/config/runtime-builds.json
+@@ -142,6 +142,14 @@
+       "variants": {
+         "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+       }
++    },
++    "th12": {
++      "builder": "prebuilt",
++      "sourceBuild": { "kind": "node", "build": ["scripts/build-eagler.mjs"], "commonInputs": ["include/eagler/thprac/PracticeSpeed.hpp"] },
++      "workspaceRepository": "th12",
++      "variants": {
++        "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} }
++      }
+     }
+   }
+ }
 diff --git a/launcher/config/workspace.json b/launcher/config/workspace.json
+index a6725968..be03d627 100644
 --- a/launcher/config/workspace.json
 +++ b/launcher/config/workspace.json
 @@ -20,6 +20,7 @@
@@ -98,29 +132,449 @@ diff --git a/launcher/config/workspace.json b/launcher/config/workspace.json
 +    "th12": "ports/th12"
    }
  }
-diff --git a/launcher/config/runtime-builds.json b/launcher/config/runtime-builds.json
---- a/launcher/config/runtime-builds.json
-+++ b/launcher/config/runtime-builds.json
-@@ -142,6 +142,14 @@
-       "variants": {
-         "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
-       }
-+    },
-+    "th12": {
-+      "builder": "prebuilt",
-+      "sourceBuild": { "kind": "node", "build": ["scripts/build-eagler.mjs"] },
-+      "workspaceRepository": "th12",
-+      "variants": {
-+        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
-+      }
-     }
+diff --git a/launcher/host/lib/python-environment.mjs b/launcher/host/lib/python-environment.mjs
+index a4a69be8..99683c54 100644
+--- a/launcher/host/lib/python-environment.mjs
++++ b/launcher/host/lib/python-environment.mjs
+@@ -11,7 +11,7 @@ function environmentPython(environment) {
+ 
+ async function importsWork(python) {
+   if (!existsSync(python)) return false;
+-  const result = await run(python, ["-c", "import fontTools, soundfile, PIL"], {
++  const result = await run(python, ["-c", "import fontTools, soundfile, PIL, pefile, imageio_ffmpeg"], {
+     capture: true,
+     allowFailure: true,
+   });
+@@ -48,7 +48,7 @@ export async function ensurePythonEnvironment({ projectRoot, hostRoot, python =
+     "-r", resolve(projectRoot, "host", "requirements.txt"),
+   ]);
+   if (!await importsWork(privatePython)) {
+-    throw new Error("The private Python environment cannot import fontTools, soundfile and PIL after installation");
++    throw new Error("The private Python environment cannot import required content-preparation dependencies after installation");
    }
+   return privatePython;
  }
+diff --git a/launcher/host/lib/site-builder.mjs b/launcher/host/lib/site-builder.mjs
+index 5d7fa068..c3afa1ff 100644
+--- a/launcher/host/lib/site-builder.mjs
++++ b/launcher/host/lib/site-builder.mjs
+@@ -94,8 +94,11 @@ async function treeHasFileNewerThan(root, cutoff) {
+ export function hostedLanguagesComplete(manifest) {
+   for (const game of GAMES) {
+     if (!PRODUCT_GAMES[game].features.languages) continue;
++    const preparation = PRODUCT_CONTENT[game].hostPreparation?.languagePack;
++    const required = preparation?.optional ? ["ja"]
++      : ["ja", ...(preparation?.languages ?? DEFAULT_LANGUAGES.slice(1))];
+     const options=manifest.games?.[game]?.languageOptions;
+-    if (!Array.isArray(options) || DEFAULT_LANGUAGES.some(id=>!options.some(option=>option.id===id&&(id==='ja'||option.pack)))) return false;
++    if (!Array.isArray(options) || required.some(id=>!options.some(option=>option.id===id&&(id==='ja'||option.pack)))) return false;
+   }
+   return true;
+ }
+@@ -179,14 +182,18 @@ async function resolveFonts(projectRoot, layout) {
+   return Object.freeze({ unicode, japanese });
+ }
+ 
+-async function prepareFeatureConfig(projectRoot, layout, resourceMode) {
++async function prepareFeatureConfig(projectRoot, layout, resourceMode, languageSelections) {
+   const basePath = script(projectRoot, "host/config/site-features.default.json");
+   const features = JSON.parse(await readFile(basePath, "utf8"));
+   features.resourceMode = resourceMode;
++  const hostedManifest = !languageSelections && resourceMode === "import"
++    ? JSON.parse(await readFile(resolve(layout.site, "site-manifest.json"), "utf8")) : null;
+   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+     if (!product.features.languages && !product.features.thprac) continue;
++    const available = languageSelections?.[game] ?? hostedManifest?.games?.[game]?.languageOptions
++      ?.filter(option => option.id === "ja" || option.pack).map(option => option.id) ?? ["ja"];
+     features.games[game] = {
+-      ...(product.features.languages ? { languages: [...DEFAULT_LANGUAGES] } : {}),
++      ...(product.features.languages ? { languages: ["ja", ...new Set(available.filter(id => id !== "ja"))] } : {}),
+       ...(product.features.thprac ? { thprac: true } : {}),
+     };
+   }
+@@ -208,19 +215,43 @@ async function prepareFeatureConfig(projectRoot, layout, resourceMode) {
+ async function prepareLanguages(projectRoot, layout, python, thtk, font) {
+   const languageRoot = resolve(layout.root, ".cache", "generated", "language-packs");
+   const games = GAMES.filter(game => PRODUCT_GAMES[game].features.languages);
+-  const requestedLanguages = ["lang_zh-hans", "lang_en"];
++  const requestedLanguages = game => PRODUCT_CONTENT[game].hostPreparation?.languagePack?.languages ?? DEFAULT_LANGUAGES.slice(1);
+   let task = 0;
+-  const total = games.length * requestedLanguages.length;
++  const total = games.reduce((count, game) => count + requestedLanguages(game).length, 0);
+   const prepared = {};
+-  for (const language of requestedLanguages) {
+-    const label = language === "lang_zh-hans" ? "Simplified Chinese" : "English";
+-    for (const game of games) {
+-      const preparation = PRODUCT_CONTENT[game].hostPreparation?.languagePack;
+-      if (preparation?.kind !== "thcrap-runtime-compiler") {
+-        throw new Error(`${game}: language capability has no supported Host preparation declaration`);
+-      }
++  const selections = {};
++  for (const game of games) {
++    selections[game] = ["ja"];
++    const preparation = PRODUCT_CONTENT[game].hostPreparation?.languagePack;
++    if (!["thcrap-runtime-compiler", "retail-overlay-compiler"].includes(preparation?.kind)) {
++      throw new Error(`${game}: language capability has no supported Host preparation declaration`);
++    }
++    for (const language of requestedLanguages(game)) {
+       const output = resolve(languageRoot, game);
+-      prepared[game] = output;
++      console.log(`[Languages ${++task}/${total}] ${game.toUpperCase()} ${language}`);
++      if (preparation.kind === "retail-overlay-compiler") {
++        if (!preparation.script) throw new Error(`${game}: language compiler script is not declared`);
++        const result = await run(process.execPath, [
++          script(projectRoot, preparation.script), "--game", game, "--language", language,
++          "--original", layout.games[game], "--output", output,
++          "--python", python, "--thdat", thtk.thdat,
++        ], {cwd: projectRoot, capture: true});
++        if (result.stderr) process.stderr.write(`${result.stderr}\n`);
++        const status = JSON.parse(result.stdout);
++        if (status.game !== game || typeof status.skipped !== "boolean" ||
++            !Array.isArray(status.languages) ||
++            (status.skipped ? !preparation.optional || status.languages.length !== 0
++              : status.languages.length !== 1 || status.languages[0] !== language)) {
++          throw new Error(`${game}: invalid language compiler result`);
++        }
++        if (status.skipped) {
++          console.log(`[Languages] ${game.toUpperCase()} optional ${language} inputs absent; Japanese only`);
++          continue;
++        }
++        prepared[game] = output;
++        selections[game].push(language);
++        continue;
++      }
+       const args = [
+         script(projectRoot, "scripts/prepare-th06-language-pack.mjs"),
+         "--game", game, "--language", language,
+@@ -235,15 +266,17 @@ async function prepareLanguages(projectRoot, layout, python, thtk, font) {
+       } else {
+         throw new Error(`${game}: invalid language Host preparation input mode`);
+       }
+-      console.log(`[Languages ${++task}/${total}] ${game.toUpperCase()} ${label}`);
+       await run(process.execPath, args, { cwd: projectRoot });
++      prepared[game] = output;
++      selections[game].push(language);
+     }
++    Object.freeze(selections[game]);
+   }
+-  console.log("Default languages ready: Japanese / Simplified Chinese / English");
+-  return Object.freeze(prepared);
++  console.log("Language packs ready; Japanese remains the default for every game");
++  return Object.freeze({directories: Object.freeze(prepared), selections: Object.freeze(selections)});
+ }
+ 
+-async function prepareArtwork(projectRoot, layout, python, thtk) {
++async function prepareArtwork(projectRoot, layout, python, thtk, preparedContent) {
+   const output = resolve(layout.root, ".cache", "generated", "host-artwork");
+   const args = [
+     script(projectRoot, "scripts/prepare-host-artwork.py"),
+@@ -253,11 +286,18 @@ async function prepareArtwork(projectRoot, layout, python, thtk) {
+   ];
+   if (thtk?.thdat) args.push(`--thdat=${thtk.thdat}`);
+   if (thtk?.thanm) args.push(`--thanm=${thtk.thanm}`);
++  for (const game of GAMES) {
++    const declaration = PRODUCT_CONTENT[game].hostPreparation?.artwork;
++    if (declaration?.kind === 'prepared-content') {
++      if (!preparedContent[game]) throw new Error(`${game}: prepared artwork content is unavailable`);
++      args.push(`--prepared-artwork-dir=${game}=${resolve(preparedContent[game], declaration.directory)}`);
++    }
++  }
+   await run(python, args, { cwd: projectRoot });
+   return output;
+ }
+ 
+-async function prepareDeclaredContent(projectRoot, layout) {
++async function prepareDeclaredContent(projectRoot, layout, python, thtk) {
+   const prepared = {};
+   for (const game of GAMES) {
+     const declaration = PRODUCT_CONTENT[game].hostPreparation?.preparedContent;
+@@ -279,7 +319,7 @@ async function prepareDeclaredContent(projectRoot, layout) {
+       preparationScript,
+       `--original=${layout.games[game]}`,
+       `--output=${output}`,
+-    ], { cwd: projectRoot });
++    ], { cwd: projectRoot, env: {...process.env, EAGLER_CONTENT_PYTHON:python, EAGLER_CONTENT_THDAT:thtk?.thdat ?? 'thdat'} });
+     prepared[game] = output;
+   }
+   return Object.freeze(prepared);
+@@ -361,12 +401,12 @@ export async function buildHostedSite({ projectRoot, hostRoot, music = "midi,ogg
+   console.log("[Build 2/6] Preparing language packs");
+   const languages = await prepareLanguages(projectRoot, layout, hostPython, thtk, fonts.unicode);
+   console.log("[Build 3/6] Preparing Launcher artwork");
+-  const artwork = await prepareArtwork(projectRoot, layout, hostPython, thtk);
+-  const preparedContent = await prepareDeclaredContent(projectRoot, layout);
++  const preparedContent = await prepareDeclaredContent(projectRoot, layout, hostPython, thtk);
++  const artwork = await prepareArtwork(projectRoot, layout, hostPython, thtk, preparedContent);
+   const dataAssets = await prepareDeclaredDataAssets(projectRoot, layout, hostPython, fonts, preparedContent);
+   console.log("[Build 4/6] Preparing music");
+   const ogg = modes.includes("ogg") ? await prepareOgg(projectRoot, layout, hostPython, preparedContent) : null;
+-  const features = await prepareFeatureConfig(projectRoot, layout, "hosted");
++  const features = await prepareFeatureConfig(projectRoot, layout, "hosted", languages.selections);
+   try {
+     console.log("[Build 5/6] Assembling static site");
+     const args = [
+@@ -383,7 +423,7 @@ export async function buildHostedSite({ projectRoot, hostRoot, music = "midi,ogg
+       `--runtime-release=${layout.runtimeRelease}`,
+       ...GAMES.map(game => `--${game}-assets=${layout.games[game]}`),
+       ...Object.entries(dataAssets).map(([game, path]) => `--${game}-data-assets=${path}`),
+-      ...Object.entries(languages).map(([game, path]) => `--${game}-language-packs=${path}`),
++      ...Object.entries(languages.directories).map(([game, path]) => `--${game}-language-packs=${path}`),
+     ];
+     if (ogg) {
+       for (const game of GAMES) args.push(`--${game}-ogg=${ogg[game]}`);
+diff --git a/launcher/host/requirements.txt b/launcher/host/requirements.txt
+index 3ca53350..c0e4427c 100644
+--- a/launcher/host/requirements.txt
++++ b/launcher/host/requirements.txt
+@@ -1,3 +1,5 @@
+ fonttools>=4.59,<5
+ Pillow>=12,<13
+ soundfile>=0.13,<1
++pefile>=2024.8.26
++imageio-ffmpeg>=0.6,<1
+diff --git a/launcher/lib/content-definition.mjs b/launcher/lib/content-definition.mjs
+index cfcee05e..caa10757 100644
+--- a/launcher/lib/content-definition.mjs
++++ b/launcher/lib/content-definition.mjs
+@@ -1,3 +1,4 @@
++import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
+ import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
+ import { TH15_MUSIC_FILES } from "./th15-content-layout.mjs";
+ import { TH11_MUSIC_FILES } from "./th11-content-layout.mjs";
+@@ -213,6 +214,28 @@ export const PRODUCT_CONTENT = Object.freeze({
+       }),
+     }),
+   }),
++  th12: Object.freeze({
++    original: Object.freeze({files: Object.freeze(["th12.exe", "th12.dat"]), oggSourceFiles: Object.freeze(["thbgm.dat"]),
++      preparedAlternative: Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze(["th12.data", "music/th12_01.ogg", "artwork/th12-card.webp"])})}),
++    dataLayout: TH12_DATA_LAYOUT,
++    music: Object.freeze({ogg: Object.freeze({mount: PRODUCT_GAMES.th12.package.musicMounts.ogg, files: TH12_MUSIC_FILES})}),
++    hostPreparation: Object.freeze({
++      artwork: Object.freeze({kind: "prepared-content", directory: "artwork"}),
++      preparedContent: Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze(["th12.data", "music/th12_01.ogg", "artwork/th12-card.webp"]), script: "scripts/prepare-th12-content.mjs"}),
++      languagePack: Object.freeze({
++        kind: "retail-overlay-compiler",
++        script: "scripts/prepare-th12-language-pack.mjs",
++        languages: Object.freeze(["lang_zh-hant"]),
++        optional: true,
++        optionalFiles: Object.freeze(["th12c.dat", "th12c.exe"]),
++        buildSources: Object.freeze([
++          Object.freeze({role: "compiler", repository: "th12", source: "scripts/prepare-localization.py", target: "host/language-compilers/th12/prepare-localization.py"}),
++          Object.freeze({role: "source-manifest", repository: "th12", source: "localization/th12c-1.00b.json", target: "host/language-compilers/th12/th12c-1.00b.json"}),
++        ]),
++      }),
++      ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
++    }),
++  }),
+   th15: Object.freeze({
+     original: Object.freeze({
+       files: Object.freeze(["th15.dat"]),
+diff --git a/launcher/lib/development-content.mjs b/launcher/lib/development-content.mjs
+index 634346b7..f7bec8a0 100644
+--- a/launcher/lib/development-content.mjs
++++ b/launcher/lib/development-content.mjs
+@@ -22,6 +22,9 @@ const th10ContentRoot = process.env.EAGLER_TH10_CONTENT_DIR?.trim()
+ const th11ContentRoot = process.env.EAGLER_TH11_CONTENT_DIR?.trim()
+   ? resolve(process.env.EAGLER_TH11_CONTENT_DIR.trim())
+   : null;
++const th12ContentRoot = process.env.EAGLER_TH12_CONTENT_DIR?.trim()
++  ? resolve(process.env.EAGLER_TH12_CONTENT_DIR.trim())
++  : null;
+ const th09ContentRoot = process.env.EAGLER_TH09_CONTENT_DIR?.trim()
+   ? resolve(process.env.EAGLER_TH09_CONTENT_DIR.trim())
+   : null;
+@@ -161,6 +164,21 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
+         }),
+       } : {}),
+     }),
++    th12: Object.freeze({
++      runtime: `${ws("th12", "build-eagler", "th12.html")}?hosted=1`,
++      data: Object.freeze({
++        source: th12ContentRoot
++          ? projectRelativePath(resolve(th12ContentRoot, "th12.data"))
++          : ws("th12", "artifacts", "eagler-content", "th12.data"),
++        layout: PRODUCT_CONTENT.th12.dataLayout,
++      }),
++      music: Object.freeze(th12ContentRoot ? {
++        ogg: Object.freeze({
++          base: `${projectRelativePath(resolve(th12ContentRoot, "music"))}/`,
++          ...PRODUCT_CONTENT.th12.music.ogg,
++        }),
++      } : {}),
++    }),
+     th15: Object.freeze({
+       runtime: `${ws("th15", "build-eagler", "th15.html")}?hosted=1`,
+       multiplayerRuntime: `${ws("th15mp", "build-eagler-multiplayer", "th15.html")}?hosted=1`,
+diff --git a/launcher/lib/self-host-bundle.mjs b/launcher/lib/self-host-bundle.mjs
+index 3cb0666c..b8a1e568 100644
+--- a/launcher/lib/self-host-bundle.mjs
++++ b/launcher/lib/self-host-bundle.mjs
+@@ -2,6 +2,7 @@ import { FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT, resolveFrontendPackage
+ import { localModuleClosure } from "./browser-module-graph.mjs";
+ import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "./client-services-build.mjs";
+ import { PRODUCT_CONTENT } from "./content-definition.mjs";
++import { workspacePath } from "./workspace-layout.mjs";
+ import { relative, resolve } from "node:path";
+ import { fileURLToPath } from "node:url";
+ import { ensureContractsBuild } from "./contracts-build.mjs";
+@@ -20,10 +21,14 @@ const verifiedOggBaselineFiles = Object.entries(PRODUCT_CONTENT)
+ const preparedContentScripts = Object.values(PRODUCT_CONTENT)
+   .map(content => content.hostPreparation?.preparedContent?.script)
+   .filter(Boolean);
+-const languagePreparationScripts = Object.values(PRODUCT_CONTENT)
+-  .some(content => content.hostPreparation?.languagePack?.kind === "thcrap-runtime-compiler")
+-    ? ["scripts/prepare-th06-language-pack.mjs"]
+-    : [];
++const languagePreparationScripts = [...new Set(Object.values(PRODUCT_CONTENT)
++  .map(content => {
++    const preparation = content.hostPreparation?.languagePack;
++    return preparation?.script ?? (preparation?.kind === "thcrap-runtime-compiler"
++      ? "scripts/prepare-th06-language-pack.mjs" : null);
++  }).filter(Boolean))];
++const languageCompilerSources = Object.values(PRODUCT_CONTENT)
++  .flatMap(content => content.hostPreparation?.languagePack?.buildSources ?? []);
+ 
+ // The self-host bundle is a distributable product, not a trimmed source checkout.
+ // Every repository-owned file that can reach `npm run host` / `npm run import`
+@@ -136,6 +141,12 @@ export const SELF_HOST_BUNDLE_COPY_RULES = Object.freeze([
+       relative(project, resolveHostBuildSource(source)).replaceAll("\\", "/"),
+       source,
+     )),
++  // Only declared compiler source/metadata enter the private build tools. Retail
++  // installations and generated language resources are never copied here.
++  ...languageCompilerSources.map(source => copyRule(
++    relative(project, workspacePath(source.repository, source.source)).replaceAll("\\", "/"),
++    source.target,
++  )),
+   ...mappedFiles.map(([source, target]) => copyRule(source, target)),
+ ]);
+ 
+diff --git a/launcher/scripts/prepare-host-artwork.py b/launcher/scripts/prepare-host-artwork.py
+index b393125a..3caf3ace 100644
+--- a/launcher/scripts/prepare-host-artwork.py
++++ b/launcher/scripts/prepare-host-artwork.py
+@@ -43,6 +43,7 @@ ARTWORK_BY_GAME = {
+     "th11": ("th11-card.webp",),
+     # TH15's title is layered artwork in the retail title.anm, not a screenshot.
+     "th15": ("th15-card.webp",),
++    "th12": ("th12-card.webp",),
+ }
+ # Launcher cards are presentation derivatives, not archival copies of the
+ # original title artwork.  The UI darkens/crops them heavily and Lighthouse's
+@@ -224,6 +225,7 @@ def prepare_host_artwork(
+     override_dir: Path | None = None,
+     thdat: str = "thdat",
+     thanm: str = "thanm",
++    prepared_artwork_dirs: dict[str, Path] | None = None,
+ ) -> dict[str, object]:
+     output = output.resolve()
+     if output.exists():
+@@ -275,13 +277,20 @@ def prepare_host_artwork(
+                 source_bytes = len(raw)
+             else:
+                 try:
+-                    raw = _default_artwork(game, name, roots, thdat, thanm)
+-                    if name.endswith(".webp"):
++                    prepared_root = (prepared_artwork_dirs or {}).get(game)
++                    raw = (prepared_root / name).read_bytes() if prepared_root is not None else _default_artwork(game, name, roots, thdat, thanm)
++                    if prepared_root is not None and name.endswith(".webp"):
++                        _validate_artwork(name, raw)
++                        with Image.open(BytesIO(raw)) as image:
++                            image.load()
++                            dimensions = image.size
++                        data = raw
++                    elif name.endswith(".webp"):
+                         data, dimensions = _encode_webp(raw, f"{game}-title00")
+                     else:
+                         data = raw
+                         _validate_artwork(name, data)
+-                    source = "site-brand" if name == "favicon.ico" else "original-extraction"
++                    source = "prepared-content" if prepared_root is not None else "site-brand" if name == "favicon.ico" else "original-extraction"
+                     source_bytes = len(raw)
+                 except (FileNotFoundError, ValueError, EOFError, OSError) as error:
+                     entries.append({
+@@ -324,6 +333,7 @@ def _main() -> None:
+         help="original game directory; repeat once per selected game",
+     )
+     parser.add_argument("--override-dir", type=Path)
++    parser.add_argument("--prepared-artwork-dir", action="append", default=[], metavar="GAME=DIR")
+     parser.add_argument("--thdat", default="thdat")
+     parser.add_argument("--thanm", default="thanm")
+     args = parser.parse_args()
+@@ -353,6 +363,15 @@ def _main() -> None:
+         roots[game] = Path(directory).resolve()
+     if args.override_dir is not None and not args.override_dir.is_dir():
+         parser.error(f"override directory not found: {args.override_dir}")
++    prepared_artwork_dirs: dict[str, Path] = {}
++    for value in args.prepared_artwork_dir:
++        game, separator, directory = value.partition("=")
++        if not separator or game not in games or game in prepared_artwork_dirs or not directory.strip():
++            parser.error(f"invalid or duplicate --prepared-artwork-dir: {value}")
++        location = Path(directory).resolve()
++        if not location.is_dir():
++            parser.error(f"prepared artwork directory not found: {location}")
++        prepared_artwork_dirs[game] = location
+     report = prepare_host_artwork(
+         args.output,
+         games,
+@@ -360,6 +379,7 @@ def _main() -> None:
+         args.override_dir.resolve() if args.override_dir else None,
+         args.thdat,
+         args.thanm,
++        prepared_artwork_dirs,
+     )
+     print(json.dumps(report, ensure_ascii=False))
+ 
+diff --git a/launcher/server/thcrap-static-pack.mjs b/launcher/server/thcrap-static-pack.mjs
+index 87cdafe4..d03b7d85 100644
+--- a/launcher/server/thcrap-static-pack.mjs
++++ b/launcher/server/thcrap-static-pack.mjs
+@@ -1,7 +1,7 @@
+ import { createHash } from "node:crypto";
+ import { zipSync } from "fflate";
++import {isGameId} from '../lib/contracts/product-catalog.mjs';
+ 
+-const GAME_ID = /^th(?:06|07|08|09|10|11|15)$/;
+ const LANGUAGE_ID = /^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i;
+ const MAX_FILES = 256;
+ 
+@@ -11,7 +11,7 @@ function assertBytes(value, label) {
+ }
+ 
+ function assertGame(value) {
+-  if (typeof value !== "string" || !GAME_ID.test(value)) throw new TypeError(`invalid game id: ${value}`);
++  if (typeof value !== "string" || !isGameId(value.toLowerCase())) throw new TypeError(`invalid game id: ${value}`);
+   return value.toLowerCase();
+ }
+ 
+diff --git a/launcher/src/launcher/language-catalog.mts b/launcher/src/launcher/language-catalog.mts
+index 6ab99919..efee9539 100644
+--- a/launcher/src/launcher/language-catalog.mts
++++ b/launcher/src/launcher/language-catalog.mts
+@@ -175,7 +175,7 @@ export function resolveLanguagePackSource(entry: LanguageCatalogEntry | null, ba
+ }
+ 
+ export function thpracLocaleForLanguage(id: string) {
+-  return id === "lang_zh-hans" ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
++  return /^lang_zh(?:-|$)/i.test(id) ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
+ }
+ 
+ /** Stored choices win; otherwise use an available translation for the launcher locale. */
+diff --git a/launcher/lib/th12-content-layout.mjs b/launcher/lib/th12-content-layout.mjs
+new file mode 100644
+--- /dev/null
++++ b/launcher/lib/th12-content-layout.mjs
+@@ -0,0 +1,4 @@
++// Mount contract for TH12's prepared asset container, not a retail DATA hash.
++// sha256(JSON.stringify(DATA_LAYOUT_SPEC)) in th12/src/managed-data.mjs.
++export const TH12_DATA_LAYOUT="sha256-94ee7257f452f635041170f868a8229c9deef1fc647e1897ca03adb328dd57df";
++export const TH12_MUSIC_FILES=Object.freeze(["th12_01.ogg","th12_00.ogg","th12_02.ogg","th12_04.ogg","th12_05.ogg","th12_07.ogg","th12_08.ogg","th12_09.ogg","th12_10.ogg","th12_13.ogg","th12_14.ogg","th12_16.ogg","th12_17.ogg","th12_18.ogg","th12_19.ogg","th12_20.ogg","th12_21.ogg","th10_17.ogg"]);
 diff --git a/launcher/scripts/prepare-th12-content.mjs b/launcher/scripts/prepare-th12-content.mjs
 new file mode 100644
 --- /dev/null
 +++ b/launcher/scripts/prepare-th12-content.mjs
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,18 @@
 +import {existsSync} from 'node:fs';
 +import path from 'node:path';
 +import {spawnSync} from 'node:child_process';
@@ -131,7 +585,110 @@ new file mode 100644
 +};
 +const original=argument('--original',''),output=argument('--output','');
 +if(!original||!output)throw Error('Usage: node scripts/prepare-th12-content.mjs --original=DIR --output=DIR [--assets=PREPARED_ASSETS]');
-+const assets=argument('--assets',path.resolve(original,'site/assets'));
-+if(!existsSync(path.join(assets,'menu-resources.json')))throw Error('TH12 currently requires locally prepared retail assets; run the title resource preparation first and supply --assets=DIR. Raw th12.dat import is not implemented.');
-+const result=spawnSync(process.execPath,[workspacePath('th12','scripts/prepare-managed-content.mjs'),'--assets='+path.resolve(assets),'--output='+path.resolve(output)],{stdio:'inherit',windowsHide:true});
++const assets=argument('--assets','');
++if(assets&&!existsSync(path.join(assets,'menu-resources.json')))throw Error('Prepared TH12 asset directory is incomplete.');
++const script=assets?'prepare-managed-content.mjs':'prepare-retail.mjs';
++const options=assets?['--assets='+path.resolve(assets)]:['--original='+path.resolve(original),
++  '--python='+(process.env.EAGLER_CONTENT_PYTHON??process.env.TH12_PYTHON??process.env.PYTHON??'python'),
++  '--thdat='+(process.env.EAGLER_CONTENT_THDAT??process.env.THDAT??'thdat')];
++const result=spawnSync(process.execPath,[workspacePath('th12','scripts/'+script),...options,'--output='+path.resolve(output)],{stdio:'inherit',windowsHide:true});
 +if(result.error)throw result.error;process.exitCode=result.status??1;
+diff --git a/launcher/scripts/prepare-th12-language-pack.mjs b/launcher/scripts/prepare-th12-language-pack.mjs
+new file mode 100644
+--- /dev/null
++++ b/launcher/scripts/prepare-th12-language-pack.mjs
+@@ -0,0 +1,94 @@
++import {createHash} from 'node:crypto';
++import {readFile, stat, writeFile} from 'node:fs/promises';
++import {resolve} from 'node:path';
++import {fileURLToPath} from 'node:url';
++import {PRODUCT_CONTENT} from '../lib/content-definition.mjs';
++import {workspacePath} from '../lib/workspace-layout.mjs';
++import {run} from '../host/lib/process.mjs';
++
++const args = new Map();
++for (let index = 2; index < process.argv.length; index++) {
++  const argument = process.argv[index];
++  if (!argument.startsWith('--')) throw new Error(`unexpected argument: ${argument}`);
++  const separator = argument.indexOf('=');
++  const key = argument.slice(2, separator < 0 ? undefined : separator);
++  const value = separator < 0 ? process.argv[++index] : argument.slice(separator + 1);
++  if (!value || value.startsWith('--')) throw new Error(`missing value for --${key}`);
++  args.set(key, value);
++}
++
++const project = fileURLToPath(new URL('..', import.meta.url));
++const game = args.get('game') || 'th12';
++const language = args.get('language') || 'lang_zh-hant';
++const preparation = PRODUCT_CONTENT[game]?.hostPreparation?.languagePack;
++if (game !== 'th12' || preparation?.kind !== 'retail-overlay-compiler' || !preparation.languages.includes(language)) {
++  throw new Error(`unsupported retail overlay language: ${game}/${language}`);
++}
++if (!args.get('original') || !args.get('output')) {
++  throw new Error('Supply --original=INSTALLATION and --output=CONTENT_DIRECTORY');
++}
++const original = resolve(args.get('original'));
++const output = resolve(args.get('output'));
++
++async function fileExists(path) {
++  try { return (await stat(path)).isFile(); }
++  catch (error) { if (error.code === 'ENOENT') return false; throw error; }
++}
++
++const optionalInputs = await Promise.all(preparation.optionalFiles.map(name => fileExists(resolve(original, name))));
++if (preparation.optional && optionalInputs.every(present => !present)) {
++  // Do not consume a stale generated catalog after the optional inputs disappear.
++  console.log(JSON.stringify({game, output, skipped: true, languages: []}));
++  process.exit(0);
++}
++if (!optionalInputs.every(Boolean)) {
++  throw new Error(`${game}: incomplete translation installation; supply ${preparation.optionalFiles.join(' and ')}`);
++}
++
++async function buildSource(role) {
++  const source = preparation.buildSources.find(entry => entry.role === role);
++  if (!source) throw new Error(`${game}: missing declared ${role} build source`);
++  const bundled = resolve(project, source.target);
++  if (await fileExists(bundled)) return bundled;
++  const canonical = workspacePath(source.repository, source.source);
++  if (!await fileExists(canonical)) throw new Error(`${game}: language ${role} source is unavailable: ${canonical}`);
++  return canonical;
++}
++
++const compiler = await buildSource('compiler');
++const sourceManifest = await buildSource('source-manifest');
++const python = args.get('python') || process.env.EAGLER_CONTENT_PYTHON || process.env.TH12_PYTHON || 'python';
++const thdat = args.get('thdat') || process.env.EAGLER_CONTENT_THDAT || process.env.TH12_THDAT || process.env.THDAT;
++const result = await run(python, [
++  compiler, '--original', original, '--output', output, '--source-manifest', sourceManifest,
++  ...(thdat ? ['--thdat', thdat] : []),
++], {cwd: project, capture: true});
++if (result.stdout) process.stderr.write(`${result.stdout}\n`);
++if (result.stderr) process.stderr.write(`${result.stderr}\n`);
++
++const catalog = JSON.parse(await readFile(resolve(output, 'language/catalog.json'), 'utf8'));
++if (catalog.schema !== 'th12-localization-catalog/1' || catalog.game !== game ||
++    catalog.defaultLanguage !== 'ja' || !Array.isArray(catalog.languages) || catalog.languages.length !== 1) {
++  throw new Error(`${game}: invalid retail overlay catalog`);
++}
++const entry = catalog.languages[0];
++if (entry.id !== language || entry.pack?.url !== `language/${language}.zip` || entry.pack.runtimeVersion !== 'independent') {
++  throw new Error(`${game}: unexpected retail overlay language entry`);
++}
++const archive = await readFile(resolve(output, entry.pack.url));
++const sha256 = createHash('sha256').update(archive).digest('hex');
++const manifest = JSON.parse(await readFile(resolve(output, `language/${language}.manifest.json`), 'utf8'));
++if (entry.pack.bytes !== archive.length || entry.pack.sha256 !== sha256 ||
++    manifest.schema !== 'eagler-touhou/thcrap-static-pack/1' || manifest.game !== game ||
++    manifest.language !== language || manifest.runtimeVersion !== 'independent' ||
++    !Array.isArray(manifest.files) || entry.pack.files !== manifest.files.length) {
++  throw new Error(`${game}: retail overlay output identity does not match its catalog`);
++}
++// The compiler's source catalog stays with its coverage report. The Host reads
++// this standard catalog at the content root and publishes only its static ZIP.
++await writeFile(resolve(output, 'catalog.json'), `${JSON.stringify({
++  schema: 'eagler-touhou/thcrap-static-catalog/1', game,
++  runtimeVersion: 'independent', defaultLanguage: 'ja', languages: [entry],
++}, null, 2)}\n`);
++console.log(JSON.stringify({game, output, skipped: false, languages: [language],
++  files: manifest.files.length, bytes: archive.length, sha256, pack: entry.pack.url}));

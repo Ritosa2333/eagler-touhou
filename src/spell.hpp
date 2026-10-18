@@ -115,15 +115,17 @@ struct State {
   bool onMiss(bool bombActive){return lose(Failure::Miss,bombActive);}
   bool onBomb(bool bombActive=true){return lose(Failure::Bomb,bombActive);}
   bool onTimeout(bool bombActive){if(!active())return false;timedOut=true;return survival()?false:lose(Failure::Timeout,bombActive);}
-  Tick tick(bool bombActive,float playerY,float bossX,float bossY,float rate=1){
+  Tick tick(bool bombActive,float playerY,float bossX,float bossY,float rate=1,bool lockBonus=false){
     Tick result;if(!active())return result;++serialTicks;
     if(age>=300&&!survival()){
       const int denominator=timeLimit-300;
       // A malformed <=300 limit reaches native idiv0 or an unintended negative
       // divisor; report it instead of inventing a useful gameplay reward.
       if(denominator<=0){result.valid=false;return result;}
-      const int decrement=(initialBonusDisplayed-initialBonusDisplayed/4)/denominator;
-      const int next=bonusDisplayed-decrement;bonusDisplayed=next-next%10;
+      if(!lockBonus){
+        const int decrement=(initialBonusDisplayed-initialBonusDisplayed/4)/denominator;
+        const int next=bonusDisplayed-decrement;bonusDisplayed=next-next%10;
+      }
     }
     if(int(ageTime)!=age)ageTime=float(age);
     previousAge=age;ageTime=float(double(ageTime)+rate);age=int(ageTime);result.openedGameplay=previousAge==60;

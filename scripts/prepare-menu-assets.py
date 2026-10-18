@@ -4,35 +4,30 @@ The shared ANM decoder is reused without executing its game-asset export loop.
 Ending and staff MSG records are retained losslessly as well as annotated with
 their native 411420 meanings. This is extraction, not a redraw of retail art.
 """
-import ast
+import importlib.util
 import hashlib
 import json
 import pathlib
+import os
 import shutil
 import struct
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-RETAIL = ROOT / 'local/retail'
-DEST = ROOT / 'site/assets'
+ORIGINAL = pathlib.Path(os.environ.get('TH12_ORIGINAL', ROOT / 'local/original')).expanduser().resolve()
+RETAIL = pathlib.Path(os.environ.get('TH12_RETAIL', ROOT / 'local/retail')).expanduser().resolve()
+DEST = pathlib.Path(os.environ.get('TH12_ASSETS', ROOT / 'site/assets')).expanduser().resolve()
 PINNED_EXE_SHA256 = '99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
 
 
 def shared_anm_decoder():
     source_path = ROOT / 'scripts/prepare-assets.py'
-    tree = ast.parse(source_path.read_text('utf-8'), filename=str(source_path))
-    definitions = []
-    for node in tree.body:
-        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'chosen' for t in node.targets):
-            break
-        definitions.append(node)
-    else:
-        raise ValueError('Shared asset decoder export boundary changed')
-    scope = {'__file__': str(source_path), '__name__': 'menu_asset_decoder'}
-    exec(compile(ast.Module(body=definitions, type_ignores=[]), str(source_path), 'exec'), scope)
-    if not callable(scope.get('anm')):
+    spec = importlib.util.spec_from_file_location('th12_anm_decoder', source_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    if not callable(getattr(module, 'anm', None)):
         raise ValueError('Shared ANM decoder is unavailable')
-    return scope['anm']
+    return module.anm
 
 
 def decrypt_text(payload):
@@ -140,7 +135,7 @@ def spell_names():
                     size = struct.unpack_from('<i', data, cursor + 28)[0]
                     if 0 < size <= length - 32:
                         title = decrypt_text(data[cursor + 32:cursor + 32 + size])
-                        for difficulty in range(5):
+                        for difficulty in ([4] if path.name.startswith('stage07') else range(4)):
                             if not data[cursor + 10] & (1 << difficulty):
                                 continue
                             card = base + (difficulty if opcode == 437 else difficulty - 1 if opcode == 438 else difficulty - 2 if opcode == 439 else 0)
@@ -152,7 +147,7 @@ def spell_names():
 
 def music_warning():
     """Read MusicRoom's eight warning-line pointers from the pinned PE image."""
-    data = (ROOT.parent / 'th12/th12.exe').read_bytes()
+    data = (ORIGINAL / 'th12.exe').read_bytes()
     if hashlib.sha256(data).hexdigest() != PINNED_EXE_SHA256:
         raise ValueError('Menu strings support the pinned TH12 1.00b executable')
     pe = struct.unpack_from('<I', data, 0x3c)[0]
@@ -212,13 +207,13 @@ def main():
     credits = ending_message(RETAIL / 'staff.msg')
     # Use the checked replay decoder rather than duplicating its compression.
     import subprocess
-    parsed = subprocess.run(['node', '--input-type=module', '-e',
-        "import fs from 'node:fs';import {parseReplay} from './src/replay.mjs';"
+    parsed = subprocess.run([os.environ.get('TH12_NODE', 'node'), '--input-type=module', '-e',
+        "import fs from 'node:fs';import path from 'node:path';import {parseReplay} from './src/replay.mjs';"
         "console.log(JSON.stringify(Array.from({length:4},(_,i)=>{"
-        "const r=parseReplay(fs.readFileSync('local/retail/demo'+i+'.rpy'));"
+        "const r=parseReplay(fs.readFileSync(path.join(process.env.TH12_RETAIL,'demo'+i+'.rpy')));"
         "return {id:i,file:'demo'+i+'.rpy',character:r.character,shot:r.shot,difficulty:r.difficulty,"
         "stage:r.stages[0].number,frames:r.stages[0].frames};})));"],
-        cwd=ROOT, check=True, capture_output=True, text=True)
+        cwd=ROOT, env={**os.environ, 'TH12_RETAIL': str(RETAIL)}, check=True, capture_output=True, text=True)
     demos = json.loads(parsed.stdout)
     for item in demos:
         source = RETAIL / item['file']

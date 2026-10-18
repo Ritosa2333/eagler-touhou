@@ -1,6 +1,7 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "EnemyCallbacks.hpp"
 #include "GameState.hpp"
+#include "Practice.hpp"
 
 namespace th12 {
 void finishEnemyUpdate(Enemy& e);
@@ -216,11 +217,15 @@ void finishEnemyUpdate(Enemy& e) {
     --e.bodyImmunityTicks;
   e.invincible = bool(e.flags & 17) || e.immunityTicks > 0;
   if (anm_logic::nativeInt(e.ageTime) != e.age) e.ageTime = float(e.age);
-  if (anm_logic::nativeInt(e.phaseAgeTime) != e.phaseAge) e.phaseAgeTime = float(e.phaseAge);
+  // F5 removes only the normal-rate integer phase-age increment. Keep the
+  // floating clock advancing, and retain the original slow-rate path.
+  const bool lockPhaseAge = gameSpeed == 1 && practice::tool(practice::TimeLock);
+  if (!lockPhaseAge && anm_logic::nativeInt(e.phaseAgeTime) != e.phaseAge)
+    e.phaseAgeTime = float(e.phaseAge);
   e.ageTime = float(double(e.ageTime) + gameSpeed);
   e.phaseAgeTime = float(double(e.phaseAgeTime) + gameSpeed);
   e.age = anm_logic::nativeInt(e.ageTime);
-  e.phaseAge = anm_logic::nativeInt(e.phaseAgeTime);
+  if (!lockPhaseAge) e.phaseAge = anm_logic::nativeInt(e.phaseAgeTime);
   ++e.animationAge;
 }
 bool enemyOutside(Enemy& e) {

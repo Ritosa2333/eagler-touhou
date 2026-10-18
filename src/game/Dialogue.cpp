@@ -1,6 +1,7 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "GameState.hpp"
 #include "StageFlow.hpp"
+#include "Practice.hpp"
 
 namespace th12 {
 void tickMessage(int held, int pressed) {
@@ -17,7 +18,7 @@ void tickMessage(int held, int pressed) {
       bindScreenAnimation(7, 85);
       // Native420aa4 returns to the practice results before final bonuses.
       // Legacy standalone/replay mode retains its established award behavior.
-      if (!fullGamePractice())
+      if (!fullGamePractice() || practice::tool(practice::AllClearBonus))
         stage_award::add(score, stage_award::final(stageNumber, difficulty, power, lives, bombs,
                                                    resources.pointValueStored));
       ended = 1;

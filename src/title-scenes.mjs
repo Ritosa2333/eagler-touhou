@@ -1,6 +1,7 @@
 // TH12 1.00b TitleInf (43f760/43fde0). Resource loading and gameplay stay in
 // the runtime; this controller owns only menu input, clocks and scene requests.
 import {nativeSpellPageCount} from './native-data-presentation.mjs';
+import {PracticeMenu} from './practice/menu.mjs';
 export const TITLE_CHOICES=Object.freeze(['Start','Extra Start','Practice Start','Replay','Player Data','Music Room','Option','Quit']);
 export const DIFFICULTIES=Object.freeze(['Easy','Normal','Hard','Lunatic']);
 export const CHARACTERS=Object.freeze(['博麗 霊夢','霧雨 魔理沙','東風谷 早苗']);
@@ -22,7 +23,7 @@ const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value))
  * state.events describes animation changes, including native IRQ numbers.
  */
 export class TitleScenes {
-  constructor({profile={},corpus=[],settings={},musicTracks=[]}={}) {
+  constructor({profile={},corpus=[],settings={},musicTracks=[],practiceEnabled=false,practiceLocale='zh-CN'}={}) {
     this.profile=profile;this.corpus=Array.isArray(corpus)?corpus:corpus.fixtures||[];
     this.musicTracks=musicTracks;this.settings={bgmVolume:100,seVolume:80,keyMap:{...DEFAULT_KEYS},...profile.settings,...settings};
     this.settings.keyMap={...DEFAULT_KEYS,...profile.settings?.keyMap,...settings.keyMap};
@@ -30,6 +31,7 @@ export class TitleScenes {
     this.settings.bgmVolume=clamp(Number(this.settings.bgmVolume)||0,0,100);
     this.settings.seVolume=clamp(Number(this.settings.seVolume)||0,0,100);
     this.actions=[];this.keys=new Set();this.previousHeld=0;this.holdAges=Array(32).fill(0);
+    this.practiceEnabled=!!practiceEnabled;this.practiceLocale=practiceLocale;this.practiceMenu=null;this.practiceSettings=null;
     this.demoIndex=0;this.serial=0;this.idleFrames=0;this.pending=null;
     this.run={mode:'story',difficulty:1,character:0,shot:0,stage:1};
     this.remember={title:0,difficulty:1,character:0,shot:0,practice:0,replay:0,replaySave:0,music:0};
@@ -64,7 +66,7 @@ export class TitleScenes {
       case 'difficulty':s.choices=this.run.mode==='extra'?[choice('Extra',4)]:DIFFICULTIES.map((label,i)=>choice(label,i));break;
       case 'character':s.choices=CHARACTERS.map((label,i)=>choice(label,i,this.run.mode==='extra'&&![0,1].some(shot=>this.canExtra(i,shot))));break;
       case 'shot':s.choices=['A','B'].map((label,i)=>choice(label,i,this.run.mode==='extra'&&!this.canExtra(this.run.character,i)));break;
-      case 'practice':s.choices=Array.from({length:6},(_,i)=>choice(`Stage ${i+1}`,i+1,!this.canPractice(i+1)));break;
+      case 'practice':s.choices=this.practiceEnabled&&this.practiceMenu?this.practiceMenu.rows().map(row=>choice(row.label,row.id)):Array.from({length:6},(_,i)=>choice(`Stage ${i+1}`,i+1,!this.canPractice(i+1)));break;
       case 'replay':s.choices=this.replaySlots().map((r,i)=>choice(r?r.name||r.id:i<25?`No.${String(i+1).padStart(2,'0')} --------`:'User --------',r?.id??null,!r));break;
       case 'replay-stage':s.choices=Array.from({length:7},(_,i)=>choice(i===6?'Extra':`Stage ${i+1}`,i+1,!s.replay?.stages?.some(stage=>stage.number===i+1)));break;
       case 'player-data':s.choices=Array.from({length:6},(_,i)=>choice(`${CHARACTERS[Math.floor(i/2)]} ${i%2?'B':'A'}`,i));s.dataDifficulty??=1;break;
@@ -91,6 +93,11 @@ export class TitleScenes {
   enter(scene,selection=0,values={}) {
     const from=this.state.scene;
     this.pending=null;this.state={scene,from,selection,age:0,readyAt:7,phase:'in',serial:++this.serial,events:[],notice:'',...values};
+    if(scene==='practice'&&this.practiceEnabled){
+      this.practiceMenu=new PracticeMenu({params:this.practiceSettings??{stage:this.run.stage-1},difficulty:this.run.difficulty,locale:this.practiceLocale});
+      this.practiceMenu.selection=0;this.state.practiceMenu=this.practiceMenu;this.state.selection=0;
+      this.emit('practiceReset');
+    }
     if(scene==='key-config'&&!values.joyDraft)this.state.joyDraft={...this.settings.joyButtons};
     this.refreshChoices();this.emit('scene',{scene,from,selection:this.state.selection});
   }
@@ -221,6 +228,9 @@ export class TitleScenes {
     if(!this.ready())return this.state;
     if(s.captureJoy){if(pressed&CANCEL)s.captureJoy=null;return this.state;}
     if(s.phase==='in'){s.phase='active';s.events.push({type:'ready',resetInterrupt:3,selectionInterrupt:17+s.selection});}
+    if(s.scene==='practice'&&this.practiceEnabled&&this.practiceMenu){
+      const action=this.practiceMenu.tick(held,pressed);this.syncPracticeRows();if(action)this.practiceAction(action);return this.state;
+    }
     if(s.scene==='pause'&&(pressed&0x200000)&&this.quickRetry())return this.state;
     const direction=(pressed|repeat)&DIRECTIONS;
     if(s.scene==='name'&&s.ranked===false) {
@@ -248,7 +258,16 @@ export class TitleScenes {
     }else if(s.scene==='music-room'||s.scene==='manual')this.move(delta);
   }
   dataDifficulty(delta){const s=this.state;s.dataDifficulty=(s.dataDifficulty+delta+5)%5;s.dataPage=0;this.animate('data-header');this.emit('sound',{id:10});}
-  choose(index) {if(!this.ready())return false;const item=this.state.choices[index];if(!item)return false;if(item.disabled){if(['practice','replay'].includes(this.state.scene))this.select(index);this.emit('sound',{id:17});return false;}this.select(index);this.confirm();return true;}
+  choose(index) {if(!this.ready())return false;const item=this.state.choices[index];if(!item)return false;if(this.state.scene==='practice'&&this.practiceEnabled&&this.practiceMenu){this.practiceMenu.selection=index;const action=this.practiceMenu.activate(item.id);this.syncPracticeRows();if(action)this.practiceAction(action);return true;}if(item.disabled){if(['practice','replay'].includes(this.state.scene))this.select(index);this.emit('sound',{id:17});return false;}this.select(index);this.confirm();return true;}
+  syncPracticeRows(){if(this.state.scene!=='practice'||!this.practiceMenu)return;this.refreshChoices();this.state.selection=this.practiceMenu.selection;this.state.notice=this.practiceMenu.notice;}
+  practiceAction(action){
+    if(!action||this.state.scene!=='practice'||!this.practiceEnabled)return;
+    if(action.type==='cancel'){this.cancel();return;}
+    if(action.type==='start'){
+      this.practiceSettings={...action.params};this.run.practice={...action.params};this.run.stage=action.params.stage+1;this.run.difficulty=action.difficulty;
+      this.emit('sound',{id:7});this.animate();this.emit('fadeMusic',{seconds:6});this.wait(40,()=>this.start());
+    }
+  }
   cancel() {
     const s=this.state;if(s.scene==='playing'||s.scene==='ending'||s.scene==='demo')return;
     this.emit('sound',{id:9});
@@ -283,8 +302,8 @@ export class TitleScenes {
         s.events.push({type:'confirm',interrupt:6});
         const selected=s.selection;
         this.wait(20,()=>{
-          if(selected===0||selected===2){this.run.mode=selected===2?'practice':'story';this.enter('difficulty',this.remember.difficulty);}
-          else if(selected===1){this.run.mode='extra';this.run.difficulty=4;this.run.stage=7;this.enter('difficulty',0);}
+          if(selected===0||selected===2){delete this.run.practice;this.run.mode=selected===2?'practice':'story';this.enter('difficulty',this.remember.difficulty);}
+          else if(selected===1){delete this.run.practice;this.run.mode='extra';this.run.difficulty=4;this.run.stage=7;this.enter('difficulty',0);}
           else if(selected===3)this.enter('replay',this.remember.replay);
           else if(selected===4)this.enter('player-data',0,{dataPage:0,dataDifficulty:1});
           else if(selected===5)this.enter('music-room',this.remember.music);
@@ -295,7 +314,7 @@ export class TitleScenes {
       case 'difficulty':this.animate();this.run.difficulty=item.id;if(this.run.mode!=='extra')this.remember.difficulty=s.selection;this.wait(14,()=>this.enter('character',this.remember.character));break;
       case 'character':this.animate();this.run.character=s.selection;this.remember.character=s.selection;this.wait(14,()=>{this.enter('shot',this.remember.shot);if(this.state.choices[this.state.selection]?.disabled)this.move(1);});break;
       case 'shot':this.animate();this.run.shot=s.selection;this.remember.shot=s.selection;if(this.run.mode==='practice')this.wait(10,()=>this.enter('practice',this.remember.practice,{readyAt:11}));else {this.emit('fadeMusic',{seconds:1});this.run.stage=this.run.mode==='extra'?7:1;this.wait(40,()=>this.start());}break;
-      case 'practice':if(item){this.animate();this.emit('fadeMusic',{seconds:6});this.run.stage=item.id;this.remember.practice=s.selection;this.wait(40,()=>this.start());}break;
+      case 'practice':if(this.practiceEnabled&&this.practiceMenu){const action=this.practiceMenu.activate(item?.id);this.syncPracticeRows();if(action)this.practiceAction(action);}else if(item){this.animate();this.emit('fadeMusic',{seconds:6});this.run.stage=item.id;this.remember.practice=s.selection;this.wait(40,()=>this.start());}break;
       case 'replay':if(item){this.remember.replay=s.selection;const replay=this.replaySlots()[s.selection],first=replay.stages[0]?.number??1;this.enter('replay-stage',first-1,{replay,fileIndex:s.selection,readyAt:15});}break;
       case 'replay-stage':if(item){this.animate();this.emit('fadeMusic',{seconds:6});const replay=s.replay,stage=item.id;this.wait(32,()=>{this.enter('playing',0,{readyAt:0});this.emit('playReplay',{id:replay.id,stage});});}break;
       case 'music-room':if(item){
@@ -328,7 +347,7 @@ export class TitleScenes {
   pauseAction(action,context) {
     if(action==='retry'){
       const run={...this.run,...context},stage=run.mode==='practice'?run.stage:run.mode==='extra'?7:1;
-      this.run={mode:run.mode,character:run.character,shot:run.shot,difficulty:run.difficulty,stage};
+      this.run={mode:run.mode,character:run.character,shot:run.shot,difficulty:run.difficulty,stage,...(run.practice?{practice:{...run.practice}}:{})};
       this.enter('playing',0,{readyAt:0});this.emit('retry',{...this.run});
     }
     else if(action==='save-exit')this.emit('saveExit');

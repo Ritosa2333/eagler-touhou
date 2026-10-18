@@ -1,0 +1,9 @@
+{
+  "schema": "th12-common-source/1",
+  "repository": "https://github.com/YomotsuHisami/eagler-touhou",
+  "revision": "608729a1637231d392e9fe97c09551f5b311dc54",
+  "subdirectory": "common",
+  "files": {
+    "include/eagler/thprac/PracticeSpeed.hpp": "d2918548210a26aaae6211771bd4d28213453693e998c24b55c1e79851fb01fd"
+  }
+}

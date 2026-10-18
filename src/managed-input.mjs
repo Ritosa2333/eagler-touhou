@@ -1,5 +1,14 @@
 // The Launcher owns remapping. Sample its semantic pad snapshot on the game
 // tick, so a browser rendering frame never becomes an authoritative input tick.
+export function keyboardCode(raw){
+  if(typeof raw.code==='string'&&raw.code&&!['Unidentified','Process'].includes(raw.code))return raw.code;
+  const names={Up:'ArrowUp',Down:'ArrowDown',Left:'ArrowLeft',Right:'ArrowRight',' ':'Space',Spacebar:'Space',Esc:'Escape',Shift:raw.location===2?'ShiftRight':'ShiftLeft',Control:raw.location===2?'ControlRight':'ControlLeft'};
+  if(names[raw.key])return names[raw.key];
+  if(/^(?:Arrow(?:Up|Down|Left|Right)|Escape|Enter|Tab|Backspace|F(?:[1-9]|1[0-2]))$/.test(raw.key??''))return raw.key;
+  if(/^[a-z]$/i.test(raw.key??''))return 'Key'+raw.key.toUpperCase();if(/^[0-9]$/.test(raw.key??''))return 'Digit'+raw.key;
+  const n=raw.keyCode??raw.which;if(n>=65&&n<=90)return 'Key'+String.fromCharCode(n);if(n>=48&&n<=57)return 'Digit'+String.fromCharCode(n);if(n>=112&&n<=123)return 'F'+(n-111);
+  return ({8:'Backspace',9:'Tab',13:'Enter',16:raw.location===2?'ShiftRight':'ShiftLeft',17:raw.location===2?'ControlRight':'ControlLeft',27:'Escape',32:'Space',37:'ArrowLeft',38:'ArrowUp',39:'ArrowRight',40:'ArrowDown'})[n]??'';
+}
 export class ManagedInput {
   constructor(environment=window){this.environment=environment;this.epoch=Number(new URL(environment.location.href).searchParams.get('runtimeEpoch'));}
   owner(name,schema){
@@ -9,7 +18,7 @@ export class ManagedInput {
   key(raw,down,source,dispatch){
     const owner=this.owner('__eaglerKeyboardMapping','eagler-touhou/keyboard-input/1');
     if(typeof owner?.map!=='function')return false;
-    const events=owner.map({code:raw.code,key:raw.key??'',keyCode:raw.keyCode??0,location:raw.location??0,repeat:!!raw.repeat,altKey:!!raw.altKey,metaKey:!!raw.metaKey,ctrlKey:!!raw.ctrlKey,launcherOwnsFocus:!!raw.launcherOwnsFocus},down,source,'standard');
+    const events=owner.map({code:keyboardCode(raw),key:raw.key??'',keyCode:raw.keyCode??0,location:raw.location??0,repeat:!!raw.repeat,altKey:!!raw.altKey,metaKey:!!raw.metaKey,ctrlKey:!!raw.ctrlKey,launcherOwnsFocus:!!raw.launcherOwnsFocus},down,source,'standard');
     if(events===null)return false;
     if(!Array.isArray(events)||events.some(event=>typeof event?.code!=='string'||typeof event.down!=='boolean'))throw Error('启动器键盘映射无效');
     for(const event of events)dispatch(event.code,event.down,'host');return true;

@@ -3,6 +3,34 @@
 
 // C linkage is the browser/native boundary. All game objects remain typed C++.
 extern "C" {
+void th12_practice_enabled(int);
+void th12_practice_reset(int);
+int th12_practice_configure(const int32_t*,int);
+int th12_practice_start(int,int,int,int);
+int th12_practice_prepare_replay(int);
+void th12_practice_replay(int);
+void th12_practice_tools(int);
+void th12_practice_speed(int,int,int,int);
+double th12_practice_interval(int,int,int,int);
+const char* th12_practice_state();
+int th12_practice_state_size();
+int th12_practice_boss_music();
+int th12_practice_everlasting_bgm();
+int th12_practice_damage_begin(int,int,int,int);
+void th12_practice_damage_reset();
+int th12_practice_damage_transition(int,int);
+int th12_practice_damage_load(const int32_t*,int);
+const int32_t* th12_practice_damage_stage(int);
+int th12_practice_damage_stage_words(int);
+const char* th12_practice_damage_state();
+int th12_practice_damage_state_size();
+const char* th12_presentation_motion();
+int th12_presentation_motion_size();
+void th12_motion(int mode,int x,int y);
+const int32_t* th12_motion_result();
+int th12_player_state();
+int th12_player_instance();
+float th12_player_speed(int focused);
 int th12_load_ecl(const uint8_t*, int);
 int th12_load_msg(int, const uint8_t*, int);
 int th12_load_std(const uint8_t*, int);

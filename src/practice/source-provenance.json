@@ -1,0 +1,61 @@
+{
+  "schema": "th12-thprac-source/1",
+  "canonicalBase": "b40dfb5c55bec2ebbfa4bdcabdb877a5f9500f27",
+  "referenceSha256": "95be43b0efd25d73931e1e71de624a5097f7c576f2f7ccd64ed94cdf59a8ee6b",
+  "officialRevision": "72f20e99dbf5b74319db7aaec25202d23d584486",
+  "officialSource": "https://github.com/touhouworldcup/thprac/tree/72f20e99dbf5b74319db7aaec25202d23d584486",
+  "definitionsSha256": "b31deda2fab54c5879cf18b90d15c75558d5d2ee633c313e068bad4f245bf4c4",
+  "sections": 71,
+  "chapters": 43,
+  "siteFingerprints": 1405,
+  "retailFiles": [
+    {
+      "name": "stage01.ecl",
+      "bytes": 80008,
+      "sha256": "5d0b8c46296ffd84f89379a4d7ee0e510068d8ed0d8672d841327ff38657895d"
+    },
+    {
+      "name": "stage02.ecl",
+      "bytes": 79320,
+      "sha256": "ce19b58da3ea113cd7597ef9aebc16ba64ee5b4b280757ab5b2c7e23d5f77eb1"
+    },
+    {
+      "name": "stage03.ecl",
+      "bytes": 93080,
+      "sha256": "ad1294cf0e56e596cfd665b98f4cd8355d495068de276475d6108a726e6dd763"
+    },
+    {
+      "name": "stage04.ecl",
+      "bytes": 80868,
+      "sha256": "7686722459a68faa19b36f2cc4304ea064ce919d0aba5be981987beb05443b2a"
+    },
+    {
+      "name": "stage05.ecl",
+      "bytes": 89080,
+      "sha256": "ecc5b7c2c161c810e2a57309185264192b8089a16d9c7338999887381351da80"
+    },
+    {
+      "name": "stage06.ecl",
+      "bytes": 108300,
+      "sha256": "593702a90e700dd7f251239de3525e7ae0de2ebe796ebd8f3b0e481bf4d78f11"
+    },
+    {
+      "name": "stage07.ecl",
+      "bytes": 56940,
+      "sha256": "dc5173a0188428a80937447484e9ebc40374854fa072979530eab306480c3fe9"
+    },
+    {
+      "name": "stage07boss.ecl",
+      "bytes": 109416,
+      "sha256": "d3b0d9a88c5246e55922ea53a4bbc2a69d293c1778f2e30a6fdca7faf1b093e4"
+    }
+  ],
+  "evidence": {
+    "sourceExtraction": "generated",
+    "compilation": "not-recorded-here",
+    "runtime": "not-run",
+    "lifecycle": "not-run",
+    "device": "not-run",
+    "integration": "isolated-experiment"
+  }
+}

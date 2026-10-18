@@ -51,6 +51,7 @@ class VM {
   std::array<float, 3> rotationVelocity_{};
   std::array<float, 2> scaleVelocity_{}, scrollVelocity_{};
   std::vector<Interpolation> interpolations_;
+  uint32_t presentationRevision_ = 1;
   void report(Runtime& r, int op, const char* why);
   uint32_t random32(Runtime& r, bool forceGame = false);
   float unit(Runtime& r);
@@ -75,6 +76,7 @@ class VM {
   void advance(Runtime& r);
 
 public:
+  uint32_t presentationRevision() const { return presentationRevision_; }
   const State& state() const;
   State& control(); // explicit native custom-update hooks, never rendering
   Diagnostic diagnostics() const;

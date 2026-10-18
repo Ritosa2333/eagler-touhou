@@ -1,4 +1,5 @@
 #include "ItemPresentation.hpp"
+#include "PresentationTracking.hpp"
 #include "GameState.hpp"
 #include "UfoEffects.hpp"
 #include <unordered_set>
@@ -289,6 +290,8 @@ void ItemPresentation::itemTail(anm_logic::Scene& scene, const item_system::Enti
   auto* record = ensureItem(scene, entity);
   if (!record)
     return;
+  if (record->aggregate && record->lastVisualAge == 0)
+    presentation::discontinuity(0x20000000u + entity.id);
   if (!record->aggregate) {
     if (auto* node = scene.find(record->body); node && (node->vm.state().flags & 1))
       scene.tickEmbedded(record->body);

@@ -80,11 +80,12 @@ struct Interpolation {
   }
 };
 struct State {
+  uint32_t presentationRevision=1;
   const Program* program=nullptr;size_t pc=0;int clock=0,previousClock=-1,callbackCount=0,transitionAge=0,shakeMode=0,shakeAge=0,renderHint=0,backgroundMode=0;float clockTime=0,shakeTime=0;
   uint32_t flags=1;Camera camera{};Interpolation positionTrack{},directionTrack{},upTrack{},fogTrack{};
   void reset(const Program& p,const Camera& initial={}){*this={};program=&p;camera=initial;}
   bool visibleLayer(int layer)const{return !(flags&8)&&((flags&1)||layer<8||layer>11);}
-  bool seekLabel(int label){if(!program)return false;for(size_t i=0;i+1<program->commands.size();++i)if(program->commands[i].opcode==16&&program->commands[i].I(0)==label){pc=i+1;clock=program->commands[pc].time;previousClock=clock-1;clockTime=clock;return true;}return false;}
+  bool seekLabel(int label){if(!program)return false;for(size_t i=0;i+1<program->commands.size();++i)if(program->commands[i].opcode==16&&program->commands[i].I(0)==label){++presentationRevision;pc=i+1;clock=program->commands[pc].time;previousClock=clock-1;clockTime=clock;return true;}return false;}
   void normalizeEye(){const double n=std::sqrt(double(camera.direction[0])*camera.direction[0]+double(camera.direction[1])*camera.direction[1]+double(camera.direction[2])*camera.direction[2]);for(int i=0;i<3;++i)camera.eyeOffset[i]=n?float(double(camera.direction[i])/n):0;}
   void updateShake(float delta){
     if(shakeMode==0||shakeMode==3||shakeMode==4||shakeMode>7)return;
@@ -101,6 +102,7 @@ struct State {
     if(!((flags&4)&&transitionAge>=30)){
       world.tickObjects();bool stopped=false;int budget=0;
       while(pc<program->commands.size()&&program->commands[pc].time<=clock){if(++budget>4096){world.unsupported(-1,"STD instruction budget");return false;}const auto& c=program->commands[pc];++pc;
+        if(c.opcode==2||c.opcode==4||c.opcode==6||c.opcode==7||c.opcode==8||c.opcode==12||c.opcode==17)++presentationRevision;
         switch(c.opcode){
           case 0:--pc;stopped=true;break;
           case 1:pc=program->offsets.at(c.words[0]);clock=c.I(1);previousClock=clock-1;clockTime=clock;continue;

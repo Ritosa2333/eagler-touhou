@@ -1,4 +1,5 @@
 #include "GameSession.hpp"
+#include "AdaptedInput.hpp"
 #include "CameraEffects.hpp"
 #include "EnemyCallbacks.hpp"
 #include "FriendlyPool.hpp"
@@ -7,8 +8,11 @@
 #include "ItemPresentation.hpp"
 #include "LaserWorld.hpp"
 #include "StageFlow.hpp"
+#include "Practice.hpp"
+#include "PracticeDamageSources.hpp"
 namespace th12 {
 void selectStage(int number) {
+  practice::stageSelected();
   gameSpeed = animationScene.runtime.delta = 1;
   resetCameraEffects();
   laserManager.reset(&laserWorld);
@@ -32,6 +36,8 @@ void selectStage(int number) {
   backgroundEnemyOrigin = {};
 }
 void startGame(int c, int s, int d, int seed, const int* replayInitial, const SessionCarry* carry) {
+  if (!carry) practice::resetTracker();
+  adaptedMotion = {};
   gameSpeed = animationScene.runtime.delta = 1;
   sound_system::queue.reset();
   character = std::clamp(c, 0, 2);
@@ -57,7 +63,7 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial, const Se
   previousHeld = fireFrame = 0;
   dialogue = spell = ended = 0;
   bossHud = {};
-  bossMusic = false;
+  bossMusic = practice::bossMusic();
   musicSerial = 0;
   oracleFixtureFlags = 0;
   messageVM.reset();
@@ -144,6 +150,10 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial, const Se
   consumeUfoPresentation();
   initializeStageAnimations();
   initializePlayerAnimation();
+  // Restore selected token-side / real transition damage ownership before
+  // synchronous main ECL can consume either state.
+  practice::applyBirth();
+  practice::damage::onBirth(stageNumber);
   spawn("main", 0, 0, 10000, 0, 0);
   // Native birth sets20000. Enemy18 of the input0 tick only clears it;
   // the first regular main update belongs to input1, without shifting Replay.

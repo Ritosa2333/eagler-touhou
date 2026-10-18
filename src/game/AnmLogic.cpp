@@ -230,6 +230,9 @@ void VM::writeFloat(Command& c, size_t i, float n) {
     return;
   if (c.mask & (1u << i)) {
     if (auto* p = floatVariable(nativeInt(asFloat(c.words[i])))) {
+      if (p == &state_.x || p == &state_.y || p == &state_.z ||
+          p == &state_.rx || p == &state_.ry || p == &state_.rotation)
+        ++presentationRevision_;
       *p = n;
       return;
     }
@@ -402,6 +405,17 @@ bool VM::command(Command& c, Runtime& r) {
   auto I = [&](size_t i) { return readInt(c, i, r); };
   auto F = [&](size_t i) { return readFloat(c, i, r); };
   const int op = c.op;
+  // Explicit authored writes are boundaries; continuous VM tracks/velocities
+  // are advanced elsewhere. Do not read operands again for this sidecar.
+  switch (op) {
+  case 3: case 48: case 49: case 50: case 51: case 52: case 61: case 62:
+  case 65: case 66: case 67: case 68: case 72: case 73: case 76: case 77:
+  case 80: case 83: case 84: case 85: case 89: case 101: case 102:
+  case 103: case 104: case 105: case 106: case 108: case 110:
+    ++presentationRevision_;
+    break;
+  default: break;
+  }
   if (op >= 6 && op <= 27) {
     const bool fp = op & 1, three = op >= 18;
     const int action = three ? (op - 18) / 2 + 1 : (op - 6) / 2;
@@ -908,6 +922,7 @@ Diagnostic VM::diagnostics() const {
 
 bool VM::bind(Registry& registry, int bank, int script, Runtime& runtime,
               const std::array<float, 3>* initialScriptPosition) {
+  ++presentationRevision_;
   // Reset preserves only engine position in the native VM, not domain,
   // local variables, colors or interpolation state (0x402520).
   const auto engine = std::array<float, 3>{state_.engineX, state_.engineY, state_.engineZ};
@@ -944,6 +959,7 @@ bool VM::bind(Registry& registry, int bank, int script, Runtime& runtime,
 }
 
 bool VM::rebindWithoutReset(Registry& registry, int bank, int script, Runtime& runtime) {
+  ++presentationRevision_;
   // Native 0x454ee0 keeps locals, RNG-domain flags, transforms, velocities
   // and active interpolators. It resets script timer and flip flags only.
   registry_ = &registry;
@@ -971,6 +987,7 @@ bool VM::rebindWithoutReset(Registry& registry, int bank, int script, Runtime& r
 }
 
 void VM::interrupt(int code) {
+  ++presentationRevision_;
   pendingInterrupt_ = int16_t(code);
 }
 

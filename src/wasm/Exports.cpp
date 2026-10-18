@@ -1,5 +1,9 @@
 #include "../game/GameSession.hpp"
 #include "Api.hpp"
+#include "../game/AdaptedInput.hpp"
+#include "../game/PresentationMotion.hpp"
+#include "../game/Practice.hpp"
+#include "../game/PracticeDamageSources.hpp"
 // Stable WebAssembly C ABI. The game implementation is C++.
 #include "../game/EnemyCallbacks.hpp"
 #include "../game/GameState.hpp"
@@ -10,6 +14,40 @@
 #include "../game/SpellHistory.hpp"
 
 extern "C" {
+void th12_practice_enabled(int enabled) { th12::practice::setEnabled(enabled!=0); }
+void th12_practice_reset(int clearTools) { th12::practice::reset(clearTools!=0); }
+int th12_practice_configure(const int32_t* words,int count) { return th12::practice::configure(words,count)?1:0; }
+int th12_practice_start(int c,int shot,int difficulty,int seed) { return th12::practice::start(c,shot,difficulty,seed); }
+int th12_practice_prepare_replay(int difficulty) { return th12::practice::prepareReplay(difficulty)?1:0; }
+void th12_practice_replay(int replay) { th12::practice::setReplay(replay!=0); }
+void th12_practice_tools(int mask) { th12::practice::setTools(uint32_t(mask)); }
+void th12_practice_speed(int fps,int slow,int fast,int debug) { th12::practice::setSpeed(fps,slow,fast,debug!=0); }
+double th12_practice_interval(int replay,int fast,int slow,int debug) { return th12::practice::interval(replay!=0,fast!=0,slow!=0,debug!=0); }
+const char* th12_practice_state() { return th12::practice::snapshot().c_str(); }
+int th12_practice_state_size() { return th12::practice::snapshotSize(); }
+int th12_practice_boss_music() { return th12::practice::bossMusic()?1:0; }
+int th12_practice_everlasting_bgm() { return th12::practice::everlastingBgm()?1:0; }
+int th12_practice_damage_begin(int replay,int practice,int c,int shot) { return th12::practice::damage::begin(replay!=0,practice!=0,c,shot)?1:0; }
+void th12_practice_damage_reset() { th12::practice::damage::reset(); }
+int th12_practice_damage_transition(int from,int to) { return th12::practice::damage::armTransition(from,to)?1:0; }
+int th12_practice_damage_load(const int32_t* words,int count) { return th12::practice::damage::load(words,count)?1:0; }
+const int32_t* th12_practice_damage_stage(int stage) { return th12::practice::damage::stageWords(stage).data(); }
+int th12_practice_damage_stage_words(int stage) { return int(th12::practice::damage::stageWords(stage).size()); }
+const char* th12_practice_damage_state() { return th12::practice::damage::snapshot().c_str(); }
+int th12_practice_damage_state_size() { return th12::practice::damage::snapshotSize(); }
+const char* th12_presentation_motion() { return th12::capturePresentationMotion().c_str(); }
+int th12_presentation_motion_size() { return int(th12::presentationMotionBuffer.size()); }
+void th12_motion(int mode,int x,int y) {
+  if(mode<0||mode>4||std::abs(int64_t(x))>0x100000||std::abs(int64_t(y))>0x100000)mode=0;
+  th12::adaptedMotion.begin(mode,x,y);
+}
+const int32_t* th12_motion_result() { return th12::adaptedMotion.result.data(); }
+int th12_player_state() { return th12::playerState; }
+int th12_player_instance() { return int(th12::phasePlayerCounters[0]); }
+float th12_player_speed(int focused) {
+  const auto& s=th12::loadouts[th12::character*2+th12::shot];
+  return (focused?s.focus:s.speed)*th12::playerBomb.speedMultiplier*th12::gameSpeed;
+}
 int th12_load_spell_history(const int32_t* words, int count) { return th12::loadSpellHistory(words, count) ? 1 : 0; }
 const char* th12_spell_history() { return th12::captureSpellHistory().c_str(); }
 int th12_spell_history_size() { return int(th12::spellHistorySnapshotBuffer.size()); }

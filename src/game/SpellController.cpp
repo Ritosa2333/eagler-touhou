@@ -1,11 +1,13 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "GameState.hpp"
+#include "Practice.hpp"
 
 namespace th12 {
 void tickSpell() {
   auto* spellBoss = primaryBoss();
   const auto spellTick = spellState.tick(
-      playerBomb.active, py / 128.f, spellBoss ? spellBoss->x : 0, spellBoss ? spellBoss->y : 0, gameSpeed);
+      playerBomb.active, py / 128.f, spellBoss ? spellBoss->x : 0, spellBoss ? spellBoss->y : 0,
+      gameSpeed, practice::tool(practice::TimeLock));
   if (!spellTick.valid)
     ++unsupported[986];
   spell = spellState.active();

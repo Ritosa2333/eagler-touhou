@@ -1,10 +1,12 @@
 """Read-only retail presentation tables; output remains in ignored local assets."""
-import pathlib,struct,json,hashlib,sys,math
+import pathlib,struct,json,hashlib,os,math
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT.parent/'tools/python'))
 import pefile
-dest=ROOT/'site/assets'
-exe=ROOT.parent/'th12/th12.exe'
+original=pathlib.Path(os.environ.get('TH12_ORIGINAL',ROOT/'local/original')).expanduser().resolve()
+retail=pathlib.Path(os.environ.get('TH12_RETAIL',ROOT/'local/retail')).expanduser().resolve()
+dest=pathlib.Path(os.environ.get('TH12_ASSETS',ROOT/'site/assets')).expanduser().resolve()
+dest.mkdir(parents=True,exist_ok=True)
+exe=original/'th12.exe'
 identity=json.loads((ROOT/'local/content-identity.json').read_text())
 PINNED_EXE_SHA256='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
 if hashlib.sha256(exe.read_bytes()).hexdigest()!=PINNED_EXE_SHA256 or identity['files']['th12.exe']['sha256']!=PINNED_EXE_SHA256:
@@ -21,7 +23,7 @@ atlases['bullet']['types']=types
 (dest/'atlases.json').write_text(json.dumps(atlases,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
 
 def decode_std(name):
-    b=(ROOT/'local/retail'/f'{name}.std').read_bytes()
+    b=(retail/f'{name}.std').read_bytes()
     u16=lambda o:struct.unpack_from('<H',b,o)[0]
     u32=lambda o:struct.unpack_from('<I',b,o)[0]
     vec=lambda o:list(struct.unpack_from('<fff',b,o))
@@ -61,7 +63,7 @@ for stage in range(1,8):
     name=f'stage{stage:02d}';print(name,*decode_std(name))
 bank_maps={}
 for stage in range(1,8):
-    name=f'stage{stage:02d}';raw=(ROOT/'local/retail'/f'{name}.ecl').read_bytes();p=raw.index(b'ANIM')+4
+    name=f'stage{stage:02d}';raw=(retail/f'{name}.ecl').read_bytes();p=raw.index(b'ANIM')+4
     count=struct.unpack_from('<I',raw,p)[0];p+=4;names=[]
     for i in range(count):
         end=raw.index(0,p);names.append(raw[p:end].decode('shift_jis'));p=end+1

@@ -27,18 +27,15 @@ workspace/
   tools/             可选本地分析与构建工具，不提交
 ```
 
-使用自己的 TH12 1.00b 和 thtk 12 在 `local/retail/` 准备数据，再运行：
+使用自己的 TH12 1.00b、thtk 12 与公开 Python 依赖准备资源：
 
 ```sh
-python scripts/prepare-assets.py
-python scripts/prepare-presentation.py
-python scripts/prepare-music.py
-python scripts/prepare-menu-assets.py
-python scripts/reverse/sample-sound-queue.py
-node scripts/build-corpus.mjs
+node scripts/prepare-retail.mjs --original="自己的安装目录" --thdat="thdat路径" --python="Python路径"
 ```
 
-资源处理的 Python 依赖包括 Pillow、pefile 和 imageio-ffmpeg；原版 x86 隔离执行使用
+完整路径与输出说明见 [CONTENT_PREPARATION.md](CONTENT_PREPARATION.md)。资源准备只读文件，
+不执行原版程序、游戏模拟或行为采样器。
+资源处理的 Python 依赖包括 Pillow、pefile 和 imageio-ffmpeg；独立的原版 x86 行为研究使用
 Unicorn 2.1.4；反编译工具的依赖见 `scripts/reverse/requirements.txt`。
 输出只进入被忽略的 `local/`、`artifacts/`、`site/assets/` 和 `site/replays/`。
 

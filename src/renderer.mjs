@@ -7,6 +7,8 @@ import {asciiGlyphs} from './ascii-presentation.mjs';
 import {fpsTextDescriptors} from './fps-presentation.mjs';
 import {stageClearText} from './stage-clear-presentation.mjs';
 import {readCoreDrawSchedule,orderPresentation} from './draw-scheduler.mjs';
+import {localizedHex,localizedFontFamily} from './localization/loader.mjs';
+import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
 export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10;if(size>40)exact[40]=score*10;return exact;}
 export function readCoreBossHud(core){
   if(!core._th12_boss_hud||!core._th12_boss_hud_size)return null;
@@ -24,7 +26,8 @@ export function bossHealthRectangles(s){
   return rectangles;
 }
 export function animationBankName(bank,stage=1){const suffix=String(stage).padStart(2,'0');return ['bullet','enemy','stgenm'+suffix,'stgenm'+suffix+'m','pl00','pl01','pl02','front','text','st'+suffix+'logo','stage'+suffix,'ascii'][bank]??null;}
-export function decodeMessageHex(hex){if(typeof hex!=='string'||hex.length%2||!/^[0-9a-f]*$/i.test(hex))throw Error('对话字符数据无效');return new TextDecoder('shift-jis').decode(Uint8Array.from(hex.match(/../g)??[],v=>parseInt(v,16)));}
+function originalMessageHex(hex){if(typeof hex!=='string'||hex.length%2||!/^[0-9a-f]*$/i.test(hex))throw Error('对话字符数据无效');return new TextDecoder('shift-jis').decode(Uint8Array.from(hex.match(/../g)??[],v=>parseInt(v,16)));}
+export function decodeMessageHex(hex){return localizedHex('dialogue',hex)?.text??originalMessageHex(hex);}
 export function readCoreMessage(core){if(!core._th12_message||!core._th12_message_size)return null;const ptr=core._th12_message(),size=core._th12_message_size();if(!Number.isInteger(size)||size<0||size>1024*1024||ptr<0||ptr+size>core.HEAPU8.byteLength)throw Error('对话状态记录无效');if(!size)return null;return JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(ptr,ptr+size)).replace(/\0+$/,''));}
 export function readCoreBackground(core){
   if(!core._th12_background||!core._th12_background_size)return null;
@@ -41,7 +44,7 @@ export function beamSegmentVertices(x,y,angle,length,width,start,end){const dx=M
 export function dialogueMetrics(width=354,height=17){return {width,height,sourceWidth:Math.min(1024,2*width+22),sourceHeight:36};}
 export function messageTextPoses(message,logicalPoses,atlases){
   const roots=logicalPoses.filter(p=>p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4),colors=[0xf8f08f,0x8088ff,0xd8d8d8],records=message?.textRecords??(message?.textHex??[]).map(textHex=>({textHex,offset:0,spacing:0,style:(message.flags>>1)&1,color:colors[message.speaker]??colors[2]}));
-  const make=(p,slot)=>{const record=records[slot];if(!record?.textHex||!p.a.visible)return null;const text=decodeMessageHex(record.textHex),sprite=atlases.text.sprites[slot];return {...p,dialogue:true,text,record,metrics:dialogueMetrics(sprite.w,sprite.h)};};
+  const make=(p,slot)=>{let record=records[slot];if(!record?.textHex||!p.a.visible)return null;const translation=localizedHex('dialogue',record.textHex,{entry:message?.entry}),text=translation?.text??originalMessageHex(record.textHex),sprite=atlases.text.sprites[slot];if(translation)record={...record,offset:translation.offset??record.offset,spacing:translation.spacing??record.spacing,localizedWidths:translation.byteWidths};return {...p,dialogue:true,text,record,metrics:dialogueMetrics(sprite.w,sprite.h)};};
   if(roots.length)return roots.map(p=>make(p,p.a.sprite)).filter(Boolean);
   if(!message?.active)return [];
   // Older cores have no logical text VMs. Coordinates below come from the
@@ -166,7 +169,7 @@ export class Renderer {
     this.fogColor=gl.getUniformLocation(p,'fogColor');
     const solid=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,solid);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);this.solid={texture:solid,w:1,h:1};
     gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-    this.uploadCount=0;this.drawCount=0;this.lastFrame=-1;this.point=null;this.stageSurfaceCopied=false;this.stageSurfaceComposited=false;this.stageSurfaceAvailable=false;this.surfaceCopyError=0;
+    this.uploadCount=0;this.drawCount=0;this.lastFrame=-1;this.presentationEpoch=0;this.point=null;this.stageSurfaceCopied=false;this.stageSurfaceComposited=false;this.stageSurfaceAvailable=false;this.surfaceCopyError=0;
   }
   async prepare(){
     await this.loadAtlases(['pl00','pl01','pl02','bullet','enemy','front','ascii','text']);await this.prepareStage(1);
@@ -208,7 +211,8 @@ export class Renderer {
       :quadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,!!options.pixel),du=options.u||0,dv=options.v||0;
     const endX=sx+sw*(options.uvScaleX??1),endY=sy+sh*(options.uvScaleY??1);
     const uv=[[sx/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,endY/texture.h+dv],[sx/texture.w+du,endY/texture.h+dv]];
-    for(const i of [0,1,2,0,2,3])this.batch.push(...corners[i],uv[i][0],texture.flipY?1-uv[i][1]:uv[i][1],...tint,alpha,1,0);
+    const offset=options.presentationOffset??[0,0];
+    for(const i of [0,1,2,0,2,3])this.batch.push(corners[i][0]+offset[0],corners[i][1]+offset[1],uv[i][0],texture.flipY?1-uv[i][1]:uv[i][1],...tint,alpha,1,0);
   }
   texture(texture,point=false,addressFlags=null){const g=this.gl,wrapU=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&1?g.REPEAT:g.CLAMP_TO_EDGE,wrapV=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&2?g.REPEAT:g.CLAMP_TO_EDGE;if(this.current!==texture||this.point!==point||this.wrapU!==wrapU||this.wrapV!==wrapV){this.flush();this.current=texture;this.point=point;this.wrapU=wrapU;this.wrapV=wrapV;g.bindTexture(g.TEXTURE_2D,texture.texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,wrapU);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,wrapV);}}
   mesh(p){
@@ -275,8 +279,11 @@ export class Renderer {
     const x=p.x+Math.cos(p.angle)*p.length/2,y=p.y+Math.sin(p.angle)*p.length/2;
     this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,x,y,p.width,p.length,p.angle+Math.PI/2,p.alpha,p.tint,p.a.blend,{u:p.u,v:p.v});
   }
-  state(a,x,y,angle=0,scale=1,alpha=1,screenShake=[0,0]){
+  state(a,x,y,angle=0,scale=1,alpha=1,screenShake=[0,0],presentationOffset=[0,0]){
     if(!a.visible)return;
+    // Native mode0 floors/rounds its authored current corners. Apply the
+    // owner offset after that boundary to retain high-refresh subpixels.
+    if(a.mode!==0&&a.mode!==1){x+=presentationOffset[0];y+=presentationOffset[1];}
     if(a.mode===18||a.mode===20){
       // Native mode18 (opcode108),45cbaa ->45d0a0, uses an untextured
       // gradient quad for the two halves of the selection highlight.
@@ -288,7 +295,7 @@ export class Renderer {
     }
     if(a.mode===14){if(a.alpha<=0)return;const color=[a.r,a.g,a.b,a.alpha*alpha],corners=quadCorners(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.geometryWidth*a.sy*scale,a.rotation+angle);this.solidTriangles(corners.map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],a.blend);return;}
     if(a.mode===15||a.mode===16){const count=a.geometryCount;if(count<3||count>512)return;const primary=a.primaryColor??[a.r,a.g,a.b,a.alpha],center=[primary[0],primary[1],primary[2],primary[3]*alpha],edge=[a.r2,a.g2,a.b2,a.alpha2*alpha];if(a.mode===16){if(center[3]>0)this.solidLineStrip(outlineVertices(x+a.x,y+a.y,Math.fround(a.geometryRadius*a.sx*scale),a.rotation+angle,count,center),a.blend);return;}if(center[3]<=0&&edge[3]<=0)return;const vertices=circleVertices(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.rotation+angle,count,center,edge),indices=[];for(let i=1;i<=count;i++)indices.push(0,i,i+1);this.solidTriangles(vertices,indices,a.blend);return;}
-    const s=this.atlases[a.name]?.sprites[a.sprite];if(!s||a.alpha<=0)return;this.region(a.name,s.entry,s.x,s.y,s.w,s.h,x+a.x,y+a.y,(a.nativeWidth!==undefined&&a.nativeWidth!==-1?a.nativeWidth:s.w)*scale*a.sx,(a.nativeHeight!==undefined&&a.nativeHeight!==-1?a.nativeHeight:s.h)*scale*a.sy,a.rotate?a.rotation+angle:0,a.alpha*alpha,[a.r,a.g,a.b],a.blend,{anchorX:a.anchorX,anchorY:a.anchorY,u:a.u,v:a.v,uvScaleX:a.uvScaleX,uvScaleY:a.uvScaleY,pixel:a.mode===0,nativeMode:a.mode,screenShake,point:a.point});
+    const s=this.atlases[a.name]?.sprites[a.sprite];if(!s||a.alpha<=0)return;this.region(a.name,s.entry,s.x,s.y,s.w,s.h,x+a.x,y+a.y,(a.nativeWidth!==undefined&&a.nativeWidth!==-1?a.nativeWidth:s.w)*scale*a.sx,(a.nativeHeight!==undefined&&a.nativeHeight!==-1?a.nativeHeight:s.h)*scale*a.sy,a.rotate?a.rotation+angle:0,a.alpha*alpha,[a.r,a.g,a.b],a.blend,{anchorX:a.anchorX,anchorY:a.anchorY,u:a.u,v:a.v,uvScaleX:a.uvScaleX,uvScaleY:a.uvScaleY,pixel:a.mode===0,nativeMode:a.mode,screenShake,point:a.point,presentationOffset:a.mode===0||a.mode===1?presentationOffset:undefined});
   }
   animation(name,id,age,x,y,angle=0,scale=1,variant=null,options={}){const {alpha=1,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))this.state(a,x,y,angle,scale,alpha);}
   text(text,x,y,scale=1,tint=[1,1,1]){for(const c of String(text)){const s=this.atlases.ascii.sprites[c.charCodeAt(0)-32];if(s)this.region('ascii',s.entry,s.x,s.y,s.w,s.h,x+s.w*scale/2,y+s.h*scale/2,s.w*scale,s.h*scale,0,1,tint);x+=14*scale;}}
@@ -305,9 +312,10 @@ export class Renderer {
     // a presentation fallback until the original GDI texture oracle is sampled.
     const cache=raster?.menu?(this.menuTextTextures??=new Map()):this.dialogueTextures;
     const key=JSON.stringify([text,record,metrics,raster]);if(cache.has(key))return cache.get(key);
-    const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${raster?.fontWeight??(style===2?700:serif?600:400)} ${raster?.fontPixelHeight??(style===2?15:32)}px "${raster?.fontFamily??(serif?'ＭＳ 明朝':'ＭＳ ゴシック')}", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';ctx.textAlign=raster?.align??'left';
+    const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${raster?.fontWeight??(style===2?700:serif?600:400)} ${raster?.fontPixelHeight??(style===2?15:32)}px "${localizedFontFamily()??raster?.fontFamily??(serif?'ＭＳ 明朝':'ＭＳ ゴシック')}", "Eagler Unicode", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';ctx.textAlign=raster?.align??'left';
     const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{const y=raster?.sourceY??2;ctx.fillStyle='#000';for(const [dx,dy]of raster?.outlineOffsets??[[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,y+dy-2);ctx.fillStyle=foreground;ctx.fillText(text,x,y);};
-    if(spacing){const bytes=Uint8Array.from(record.textHex.match(/../g)??[],v=>parseInt(v,16));for(let i=0;i<bytes.length;i+=2)draw(new TextDecoder('shift-jis').decode(bytes.slice(i,i+2)),2*offset+i*spacing);}
+    if(spacing&&record.localizedWidths){let advance=0;[...text].forEach((character,i)=>{draw(character,2*offset+advance*spacing);advance+=record.localizedWidths[i];});}
+    else if(spacing){const bytes=Uint8Array.from(record.textHex.match(/../g)??[],v=>parseInt(v,16));for(let i=0;i<bytes.length;i+=2)draw(new TextDecoder('shift-jis').decode(bytes.slice(i,i+2)),2*offset+i*spacing);}
     else draw(text,raster?.sourceX??2*offset+2);
     const g=this.gl,texture=g.createTexture();this.flush();g.bindTexture(g.TEXTURE_2D,texture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,canvas);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
     const result={texture,w:canvas.width,h:canvas.height};cache.set(key,result);if(cache.size>(raster?.menu?96:16)){const oldest=cache.keys().next().value,old=cache.get(oldest);cache.delete(oldest);g.deleteTexture(old.texture);}return result;
@@ -363,31 +371,37 @@ export class Renderer {
     for(const text of fpsTextDescriptors({currentFps:fps}))this.nativeText(text);
     this.flush();
   }
-  render(core,fps={}){
-    this.begin();const originalHud=readCoreHud(core),h=fps.scoreLowDigit?[...originalHud]:originalHud,frame=h[0];if(fps.scoreLowDigit){h[3]+=fps.scoreLowDigit;if(h.length>40)h[40]+=fps.scoreLowDigit;}if(frame<this.lastFrame)this.animations=new AnimationSampler(this.atlases);this.lastFrame=frame;this.animations.beginFrame();
+  resetPresentation(){
+    // Call on start/restart, stage load, replay seek, pause/resume, focus
+    // loss or any host discontinuity; the host also discards its old pair.
+    this.presentationEpoch++;this.lastFrame=-1;this.animations=new AnimationSampler(this.atlases);
+  }
+  capturePresentation(core,fps={}){
+    const h=[...readCoreHud(core)],frame=h[0];if(fps.scoreLowDigit){h[3]+=fps.scoreLowDigit;if(h.length>40)h[40]+=fps.scoreLowDigit;}if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
-    const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);
-    const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0];g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
-    this.primitive(g.TRIANGLES);if(background.authoritative||(core._th12_background_visible?.()??true))for(const triangle of background.triangles){const texture=this.textures.get(triangle.bank+':'+triangle.entry);if(!texture)continue;this.material(triangle.blend);this.texture(texture,triangle.point);for(const p of triangle.vertices)this.batch.push(p.x,p.y,p.u/texture.w,p.v/texture.h,p.r,p.g,p.b,p.alpha,p.depth,p.fog);}
-    this.flush();
+    const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0],backgroundVisible=background.authoritative||(core._th12_background_visible?.()??true);
     const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
     const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
-    const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride);
+    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
+    const bytes=core.HEAPU8.slice(ptr,ptr+count*stride*4),f=new Float32Array(bytes.buffer,bytes.byteOffset,count*stride),v=new Int32Array(bytes.buffer,bytes.byteOffset,count*stride),records=[];
     const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
     for(const text of spellTextDescriptors(spell,logicalPoses))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:45,clipped:false,order:poses.length});
     for(const text of [...bossTimerDescriptors(bossHud),...spellResultDescriptors(spell,logicalPoses)])poses.push({nativeText:text,drawPriority:44,clip:2,order:poses.length});
-    for(const text of ufoTextPoses(readCoreUfo(core))){const priority=ufoTextRenderPriority(text);poses.push({nativeText:text,drawPriority:priority,clip:priority===22?2:0,order:poses.length});}
+    const ufo=readCoreUfo(core);
+    for(const text of ufoTextPoses(ufo)){const priority=ufoTextRenderPriority(text),attached=!!ufo?.enemyId&&text.font===2&&text.drawFlag===1&&text.colorARGB===0xc080ffc0;
+      poses.push({nativeText:text,drawPriority:priority,clip:priority===22?2:0,owner:attached?ufo.enemyId:0,presentationKey:attached?'ufo-countdown:'+ufo.enemyId:undefined,order:poses.length});}
     for(const text of fpsTextDescriptors(fps))poses.push({nativeText:text,drawPriority:text.drawPriority,clip:0,order:poses.length});
     if(fps.stageClear){const text=stageClearText(h,logicalPoses,fps.practice);if(text)poses.push({nativeText:text,drawPriority:69,clip:0,order:poses.length});}
-    const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,order:poses.length});};
+    const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options,owner=Number.isInteger(sampling.entityId)?sampling.entityId:0;let child=0;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,owner,presentationKey:owner?'sample:'+owner+':'+id+':'+child++:undefined,order:poses.length});};
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;
+      records.push({x,y,owner:entityId,bank:v[k+4],animation,kind,color,age,interrupt});
       if(stride>=12&&logicalOwners.has(entityId))continue;
       const options={entityId,seed:entityId?entityId&65535:0x1234,alpha,...(interrupt?{interrupt}: {}),...(kind===1?{drawPriority:31,clipped:true}:kind===3?{drawPriority:27,clipped:true}:kind===4?{drawPriority:24,clipped:true}:{})};
       if(kind===12)poses.push({a:{layer:12},x,y,angle,scale,width:alpha,start:color>>>0,end:animation>>>0,beamTrail:true,order:poses.length});
       else if(kind===13)poses.push({a:{layer:13},x,y,angle,scale,alpha:1,start:color>>>0,end:animation>>>0,trail:true,order:poses.length});
       else if(kind===4||kind===5||kind===2||kind===7)add(player,animation,age,x,y,angle,scale,null,options);
-      else if(kind===6){const {alpha:opacity,...sampling}=options,a=this.animations.sample(player,animation,age,null,sampling);if(a)poses.push({a,x,y,angle,scale,alpha:opacity,beam:true,order:poses.length});}
+      else if(kind===6){const {alpha:opacity,...sampling}=options,a=this.animations.sample(player,animation,age,null,sampling);if(a)poses.push({a,x,y,angle,scale,alpha:opacity,beam:true,owner:entityId,presentationKey:'beam:'+entityId,order:poses.length});}
       else if(kind===1){const type=this.atlases.bullet.types?.[Math.floor(color/16)],variant=type?.colors[color%16];if(type)add('bullet',stride>=12?animation:type.script,age,x,y,angle,scale,variant,options);}
       else if(kind===3)add('bullet',animation>=165?animation:166+color,age,x,y,angle,scale,null,options);
       else {const bank=v[k+4],name=bank===0?'bullet':bank===1?'enemy':bank===2?'stgenm'+stageSuffix:bank===3?'stgenm'+stageSuffix+'m':null;if(name&&this.atlases[name])add(name,animation,age,x,y,angle,scale,null,options);}
@@ -406,14 +420,38 @@ export class Renderer {
     for(let i=0;i<8;i++){add('front',13+i,frame,0,0,0,1,null,{alpha:1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,h[5],h[21])});add('front',21+i,frame,0,0,0,1,null,{alpha:1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,h[6],h[22])});}
     if(h.length>25&&!logicalPoses.some(p=>p.a.name==='front'&&(p.owner>>>16)===0xfffe))for(let i=0;i<3;i++){const color=h[23+i]|0;add('front',80,frame,0,0,0,1,null,{alpha:1,drawPriority:44,clipped:true,interrupts:[7+i,color?9+color:13,color?2:3]});}
     add('front',69+h[19],frame,0,0,0,1,null,{alpha:1,clipped:false});
+    const nativeMotion=fps.presentationContinuity===false?null:readCorePresentationMotion(core),playerState=core._th12_player_state?.()??nativeMotion?.playerState;
+    if(fps.alwaysHitbox&&playerState===1&&!logicalPoses.some(p=>p.owner===0xffff0020)){
+      // Sample only at the fixed capture boundary, at a static authored age.
+      // No core focus VM is created, focused input is not changed, and the
+      // original focus77 -> child76 sprite supplies the visible marker.
+      const visible=a=>a.visible&&a.sprite>=0,marker=this.animations.sampleAll('bullet',77,0,null,{entityId:'always-hitbox-static',seed:0x1234}).find(visible)
+        ??this.animations.sampleAll('bullet',76,0,null,{entityId:'always-hitbox-child-static',seed:0x1234}).find(visible);
+      if(marker)poses.push({owner:0xffff0000,presentationKey:'player-hitbox',x:h[1]+224,y:h[2]+16,angle:0,scale:1,alpha:1,drawPriority:24,clip:2,order:poses.length,a:{...marker,x:0,y:0,alpha:1}});
+    }
+    const ordered=orderPresentation(poses,schedule);
+    this.animations.endFrame();
+    return {epoch:this.presentationEpoch,frame,stage,hud:h,background,logicalBackground,nativeMotion,backgroundVisible,screenShake,hasStageSurface:!!logicalBackground?.loaded,poses:ordered,records,motion:capturePresentationOwners(h,records,ordered)};
+  }
+  render(core,fps={}){
+    // Ordinary 60 Hz callers retain current-endpoint rendering.
+    return this.renderPresentation(null,this.capturePresentation(core,{...fps,presentationContinuity:false}),1);
+  }
+  renderPresentation(previous,current,interpolationAlpha=1){
+    const endpoint=interpolatePresentation(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
+      source=this.stageBackgrounds.get(endpoint.stage),background=source&&endpoint.logicalBackground!==current.logicalBackground&&endpoint.logicalBackground?.loaded
+        ?source.geometry(endpoint.logicalBackground.frame,endpoint.logicalBackground):endpoint.background;
+    this.begin();const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);
+    g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
+    this.primitive(g.TRIANGLES);if(backgroundVisible)for(const triangle of background.triangles){const texture=this.textures.get(triangle.bank+':'+triangle.entry);if(!texture)continue;this.material(triangle.blend);this.texture(texture,triangle.point);for(const p of triangle.vertices)this.batch.push(p.x,p.y,p.u/texture.w,p.v/texture.h,p.r,p.g,p.b,p.alpha,p.depth,p.fog);}
+    this.flush();
     let currentClip=1;
-    const hasStageSurface=!!logicalBackground?.loaded;
-    for(const originalPose of orderPresentation(poses,schedule)){
+    for(const originalPose of endpoint.poses){
       if(hasStageSurface)this.stageSurface(originalPose.drawPriority,screenShake,currentClip);
       const p=shakePresentation(originalPose,screenShake);
       if(p.clip!==currentClip){this.flush();if(p.clip){g.enable(g.SCISSOR_TEST);if(p.clip===2)g.scissor(13,0,422,480);else g.scissor(32,16,384,448);}else g.disable(g.SCISSOR_TEST);currentClip=p.clip;}
-      if(p.nativeText)this.nativeText(p.nativeText,p.screenShake);else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend,{nativeMode:1,screenShake:p.screenShake});}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,p.screenShake);
+      if(p.nativeText)this.nativeText(p.nativeText,p.screenShake);else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend,{nativeMode:1,screenShake:p.screenShake,presentationOffset:p.presentationOffset});}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,p.screenShake,p.presentationOffset);
     }
-    this.flush();g.disable(g.SCISSOR_TEST);this.animations.endFrame();return [...h];
+    this.flush();g.disable(g.SCISSOR_TEST);return [...h];
   }
 }

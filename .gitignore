@@ -11,6 +11,8 @@ site/replays/
 site/runtime/core.mjs
 site/runtime/core.wasm
 site/runtime/build.json
+site/runtime/vorbis.mjs
+site/runtime/vorbis.wasm
 tools/replay-verifier/golden/
 tools/replay-verifier/corpus.json
 tools/replay-verifier/subsystem-golden.json
