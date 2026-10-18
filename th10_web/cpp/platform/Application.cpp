@@ -249,10 +249,8 @@ void Application::multiplayer_fail(const char* reason){
 u32 Application::multiplayer_spectator_catchup_budget()const{
     if(!multiplayer_active()||!state.netplay_runtime.Spectator()||!world||world->loading)return 1;
     const auto& playback=state.netplay_runtime.StagePlaybackController();
-    if(state.netplay_runtime.StagePlaybackReady())
-        return playback.Seeking()||(playback.Following()&&playback.Edge()>playback.Position()+1)?4:1;
-    const auto backlog=state.netplay_runtime.SpectatorBacklog();
-    return backlog>8?4:backlog>4?2:1;
+    if(!state.netplay_runtime.StagePlaybackReady())return 1;
+    return playback.FastForwarding()?4:1;
 }
 
 i32 Application::multiplayer_update(){
@@ -458,8 +456,7 @@ i32 Application::multiplayer_update(){
             // The shared controller restores a new checkpoint before its first
             // input, including during uninterrupted live following.
             if(!world||world->loading||state.pending_screen!=value.screen)return false;
-            const bool followingCatchup=playback.Following()&&playback.Edge()>playback.Position()+1;
-            world->suppress_spectator_audio(seeking||followingCatchup);
+            world->suppress_spectator_audio(seeking);
             if(!world->begin_netplay_frame(packet.frame)){
                 world->suppress_spectator_audio(false);return false;
             }
