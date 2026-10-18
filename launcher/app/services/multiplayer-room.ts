@@ -171,6 +171,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let launchedSpectatorSerial = 0,
     spectatorResumeSerial = 0;
   let resourceRetrySpectatorSerial = 0;
+  let appliedStartSerial = 0;
   let spectatorRetryTimer: ReturnType<typeof setTimeout> | null = null;
   function cancelSpectatorRetry() {
     if (spectatorRetryTimer !== null) cancel(spectatorRetryTimer);
@@ -564,8 +565,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         const probe = record(message.roomProbe);
         if (probe)
           void ports.network.receive({ type: 'room-probe-config', iceServers: probe.iceServers });
-        state.startSerial = Math.max(0, Number(record(message.room)?.startSerial) || 0);
+        state.startSerial = Math.max(state.startSerial, Number(record(message.room)?.startSerial) || 0);
         applySnapshot(message.room);
+        // Reconnecting players may have missed the one-shot start message.
+        // A spectator still needs explicit admission before loading its stream.
+        if (room?.phase === 'starting' && state.seat != null) void launch(state.startSerial);
         if (autoSeat) {
           autoSeat = false;
           const empty = room?.seats?.slice(0, room.playerCount).findIndex((seat) => !seat) ?? -1;
@@ -574,10 +578,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       } else if (message.type === 'start') {
         applySnapshot(message.room);
         const serial = Number(message.serial) || 0;
-        if (serial > state.startSerial) {
+        if (Number.isInteger(serial) && serial > 0 && serial >= state.startSerial) {
           state.startSerial = serial;
           publish();
-          if (state.seat != null || state.spectatorRequested) void launch();
+          if (state.seat != null || state.spectatorRequested) void launch(serial);
         }
       } else if (message.type === 'spectator-start') {
         cancelSpectatorRetry();
@@ -657,6 +661,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.spectatorRequested = false;
     state.roomSettingsOpen = false;
     state.startSerial = 0;
+    appliedStartSerial = 0;
     launchedSpectatorSerial = spectatorResumeSerial = resourceRetrySpectatorSerial = 0;
     state.launchBusy = false;
     state.checkBusy = false;
@@ -1133,14 +1138,16 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       config,
     );
   }
-  async function launch() {
+  async function launch(startSerial?: number) {
     if (
       !room ||
       !product ||
       state.launchBusy ||
+      (startSerial !== undefined && (startSerial <= appliedStartSerial || startSerial !== state.startSerial)) ||
       (ports.isLaunched() && !ports.canLaunchFromTitle?.())
     )
       return;
+    if (startSerial !== undefined) appliedStartSerial = startSerial;
     const owned = context();
     state.launchBusy = true;
     publish();
