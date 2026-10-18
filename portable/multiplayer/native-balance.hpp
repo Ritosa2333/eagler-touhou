@@ -1,4 +1,4 @@
-#include "../../th15_web/cpp/game/EnemyCallbacks.hpp"
+#include "../../web/cpp/game/EnemyCallbacks.hpp"
 struct BalanceRuntimeHost final:EnemyRuntimeHost {
  EnemyVisualHost* animations()override{return nullptr;}
  int after_script(EnemyRuntime&,float)override{return 0;}int collide_and_damage(EnemyRuntime&,float)override{return 0;}

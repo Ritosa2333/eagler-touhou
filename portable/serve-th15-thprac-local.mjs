@@ -2,7 +2,7 @@
 import {createServer} from 'node:http';
 import {readFile,readdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
-const root=resolve(import.meta.dirname,'../th15_web');
+const root=resolve(import.meta.dirname,'../web');
 const build=resolve(root,'artifacts/thprac-purple-browser-check');
 const assets=resolve(root,'artifacts/thprac-private-assets');
 const fonts=(await readdir(resolve(assets,'fonts'))).filter(n=>n.endsWith('.bin'));

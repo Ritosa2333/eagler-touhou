@@ -4,7 +4,7 @@ import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 const option=name=>{const i=process.argv.indexOf(name);return i<0?null:process.argv[i+1];};
 const root=option('--capture-root'),report=option('--report');if(!root||!report)throw Error('Use --capture-root original-directory --report report.json');
-const path=resolve('th15_web/artifacts/native-process-replay/native-replay-frames.bin'),raw=readFileSync(path),sha=b=>createHash('sha256').update(b).digest('hex');
+const path=resolve('web/artifacts/native-process-replay/native-replay-frames.bin'),raw=readFileSync(path),sha=b=>createHash('sha256').update(b).digest('hex');
 assert.equal(sha(raw),'f1a6b014632a699fd016111612915e88781e975029ed54844103423c2d4d396c','Pinned independent original-process capture');
 const stages=new Map();let owner=1,clock=0,last=null,frozenRows=0,loadingRows=0;
 for(let at=0;at<raw.length;at+=64){

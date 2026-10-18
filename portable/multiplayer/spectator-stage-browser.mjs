@@ -8,7 +8,7 @@ const root=resolve(import.meta.dirname,'../..');
 const launcher=resolve(process.env.TH15_LAUNCHER_ROOT);
 const {default:puppeteer}=await import(pathToFileURL(createRequire(resolve(launcher,'package.json')).resolve('puppeteer-core')));
 const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/chromium-executable.mjs')));
-const runtime=resolve(root,'th15_web/artifacts/sdl-multiplayer/spectator-stage');
+const runtime=resolve(root,'web/artifacts/sdl-multiplayer/spectator-stage');
 const futureTicks=600;
 if(!process.env.TH15_TEST_ARCHIVE)throw Error('Set TH15_TEST_ARCHIVE');
 const archive=await readFile(process.env.TH15_TEST_ARCHIVE);

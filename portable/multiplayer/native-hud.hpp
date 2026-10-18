@@ -1,4 +1,4 @@
-#include "../../th15_web/cpp/game/MultiplayerHud.hpp"
+#include "../../web/cpp/game/MultiplayerHud.hpp"
 struct HudCapture final:HudDrawServices {
  std::vector<HudTextDraw> texts;bool hud_text(const HudTextDraw& v)override{texts.push_back(v);return true;}
  unsigned count(const std::string& v)const{unsigned n=0;for(const auto& t:texts)n+=t.text==v;return n;}

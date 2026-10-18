@@ -1,5 +1,5 @@
 #include "native-world.hpp"
-#include "../../th15_web/cpp/game/MultiplayerChapterReward.hpp"
+#include "../../web/cpp/game/MultiplayerChapterReward.hpp"
 int main(int argc,char** argv){
  require(argc==2,"Retail archive required");RetailAssets files(argv[1]);
  for(unsigned count:{2u,3u}){

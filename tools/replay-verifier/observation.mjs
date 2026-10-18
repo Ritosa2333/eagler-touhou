@@ -2,7 +2,7 @@ import {resolve} from 'node:path';
 import {pathToFileURL, fileURLToPath} from 'node:url';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-const common=resolve(process.env.EAGLER_COMMON_ROOT||fileURLToPath(new URL('../../../eagler-common',import.meta.url)));
+const common=resolve(process.env.EAGLER_COMMON_ROOT||fileURLToPath(new URL('../../../../common',import.meta.url)));
 const {TraceCapture}=await import(pathToFileURL(resolve(common,'testkit/replay-verifier/capture-file.mjs')));
 const sha=b=>createHash('sha256').update(b).digest('hex');
 export const categories=['player','economy','rng','entities'];
