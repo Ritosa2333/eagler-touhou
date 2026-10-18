@@ -46,6 +46,7 @@ export function parseReplay(source) {
   }
   if(offset!==size)throw Error('录像包含未识别的解压尾部');
   return {name:new TextDecoder('shift-jis').decode(data.subarray(0,8)).trim(),character,shot,difficulty,practice:!!(data[10]&1),stages,data,
+    timestamp:Number(d.getBigInt64(12,true)),scoreStored:d.getInt32(20,true),slowdown:d.getFloat32(84,true),finalStage:d.getUint32(104,true),continues:d.getInt32(108,true),
     recordedFps(stage,cursor){return recordedReplayFps(data,stages.find(s=>s.number===stage),cursor);},
     input(stage,frame){const s=stages.find(s=>s.number===stage);if(!s||frame<0||frame>=s.frames)return null;const p=s.inputOffset+frame*6;return {held:d.getUint16(p,true),pressed:d.getUint16(p+2,true),released:d.getUint16(p+4,true)};}};
 }

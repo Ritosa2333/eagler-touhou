@@ -69,8 +69,11 @@ Entity* Manager::spawn(const SpawnRequest& r) {
     return nullptr;
   }
   // Native increments before searching the 16-slot pool, including failed token births.
-  if (r.type >= 10 && r.type <= 15)
+  if (r.type >= 10 && r.type <= 15) {
     ++tokenSideCounter;
+    if (onSpawnSound)
+      onSpawnSound(55, r.position, true);
+  }
   Entity* e = nullptr;
   if (r.type == 9) {
     e = &entities[ordinaryCapacity + tokenCapacity + smallPointCursor];
@@ -122,6 +125,8 @@ Entity* Manager::spawn(const SpawnRequest& r) {
   e->bucketA = r.bucketA;
   e->bucketB = r.bucketB;
   e->multiplier = r.multiplier;
+  if (r.type >= 16 && onSpawnSound)
+    onSpawnSound(50, r.position, false);
   return e;
 }
 

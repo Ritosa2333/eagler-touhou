@@ -90,6 +90,8 @@ static void beginClear() {
   laserManager.reset(&laserWorld);
   itemManager.reset();
   resetItemPresentation();
+  sound_system::queue.stop(21);
+  sound_system::queue.stop(54);
   bossHud = {};
   dialogue = 0;
 }

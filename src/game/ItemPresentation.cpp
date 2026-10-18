@@ -149,6 +149,8 @@ void ItemPresentation::inventoryEvent(anm_logic::Scene& scene,
 
 void ItemPresentation::visualEvent(anm_logic::Scene& scene, const ufo_system::VisualEvent& event) {
   using Visual = ufo_system::VisualEventKind;
+  if (event.kind == Visual::Summoned)
+    sound_system::queue.play(52, 0, false); // Native44a9ef precedes positioned loop54.
   if (event.kind == Visual::Summoned || event.kind == Visual::FillCompleted ||
       event.kind == Visual::DeathBurst)
     sound_system::queue.play(event.sound, event.position.x);
@@ -234,6 +236,8 @@ void ItemPresentation::event(anm_logic::Scene& scene, const item_system::Event& 
     }
     break;
   case K::AnimationRebind: {
+    if (entity.type >= 13 && entity.type <= 15)
+      sound_system::queue.play(53, entity.position.x); // Native4264dd, actual colour change.
     const auto old = items_.find(entity.id);
     const bool alreadyBound = old != items_.end() && scene.find(old->second.body);
     if (auto* record = ensureItem(scene, entity)) {

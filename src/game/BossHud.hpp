@@ -10,6 +10,7 @@ struct BossHud {
   std::array<float, 4> markers{};
   std::array<uint32_t, 4> colors{};
   uint64_t name = 0;
+  uint64_t itemNotice = 0; // Native HUD+6c6c, shared item/Extend notification.
   std::array<uint64_t, 10> stars{};
   int timerSeconds = -1, timerHundredths = 0, previousTimerSeconds = -1;
   bool timerVisible = false;

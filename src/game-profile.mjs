@@ -1,16 +1,18 @@
 const CONFIG='/savesth12/th12.cfg',SCORES='/savesth12/scoreth12.dat';
 const encoder=new TextEncoder(),decoder=new TextDecoder();
 export const DEFAULT_SETTINGS=Object.freeze({bgmVolume:100,seVolume:80,
+  joyButtons:Object.freeze({shoot:0,bomb:1,focus:2,pause:4,skip:3}),
   keyMap:Object.freeze({up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight',shoot:'KeyZ',bomb:'KeyX',focus:'ShiftLeft',pause:'Escape',skip:'ControlLeft'})});
 export function normalizeSettings(value={}) {
   const keyMap={...DEFAULT_SETTINGS.keyMap};
+  const joyButtons={...DEFAULT_SETTINGS.joyButtons};for(const key of Object.keys(joyButtons))if(Number.isInteger(value.joyButtons?.[key])&&value.joyButtons[key]>=0&&value.joyButtons[key]<32)joyButtons[key]=value.joyButtons[key];
   for(const key of Object.keys(keyMap))if(typeof value.keyMap?.[key]==='string'&&/^(?:Arrow(?:Up|Down|Left|Right)|Key[A-Z]|Digit[0-9]|Space|Enter|Escape|Shift(?:Left|Right)|Control(?:Left|Right))$/.test(value.keyMap[key]))keyMap[key]=value.keyMap[key];
   const volume=(value,fallback)=>Number.isFinite(value)?Math.max(0,Math.min(100,Math.round(value/5)*5)):fallback;
-  return {bgmVolume:volume(value.bgmVolume,100),seVolume:volume(value.seVolume,80),keyMap};
+  return {bgmVolume:volume(value.bgmVolume,100),seVolume:volume(value.seVolume,80),keyMap,joyButtons};
 }
 const loadoutKey=(character,shot)=>character*2+shot;
 const practiceKey=(character,shot,difficulty)=>`${loadoutKey(character,shot)}:${difficulty}`;
-function freshData(){return {schema:'th12-web-score/1',scores:[],spellRecords:{},clears:{},practice:{},music:[],lastName:'PLAYER',playSeconds:0};}
+function freshData(){return {schema:'th12-web-score/1',scores:[],spellRecords:{},clears:{},practice:{},music:[],endingsSeen:[],lastName:'PLAYER',playSeconds:0,nativeTotals:{}};}
 function validRun(r){return r&&[r.character,r.shot,r.difficulty,r.stage,r.score].every(Number.isInteger)&&r.character>=0&&r.character<3&&r.shot>=0&&r.shot<2&&r.difficulty>=0&&r.difficulty<5&&r.stage>=1&&r.stage<=7&&r.score>=0;}
 const nonnegative=(value,fallback=0)=>Number.isFinite(value)?Math.max(0,value):fallback;
 const count=value=>Math.min(99999,Math.trunc(nonnegative(value)));
@@ -43,9 +45,10 @@ export class GameProfile {
         if(value.schema!==schema)throw Error('unknown profile format');
         if(path===CONFIG)this.settings=normalizeSettings(value.settings);
         else{
-          const base=freshData();for(const key of ['clears','practice','spellRecords'])if(value[key]&&typeof value[key]==='object'&&!Array.isArray(value[key]))base[key]=value[key];
+          const base=freshData();for(const key of ['clears','practice','spellRecords','nativeTotals'])if(value[key]&&typeof value[key]==='object'&&!Array.isArray(value[key]))base[key]=value[key];
           base.scores=Array.isArray(value.scores)?value.scores.filter(validRun).slice(0,420).map(normalizedRun):[];
           base.music=Array.isArray(value.music)?[...new Set(value.music.filter(id=>/^th12_\d\d$/.test(id)))]:[];
+          base.endingsSeen=Array.isArray(value.endingsSeen)?[...new Set(value.endingsSeen.filter(id=>Number.isInteger(id)&&id>=0&&id<12))]:[];
           if(typeof value.lastName==='string')base.lastName=value.lastName.slice(0,8);
           if(Array.isArray(value.nativeSpellHistory)&&value.nativeSpellHistory.length===1792&&value.nativeSpellHistory.every(n=>Number.isInteger(n)&&n>=0&&n<=99999))base.nativeSpellHistory=value.nativeSpellHistory;
           if(Number.isFinite(value.playSeconds))base.playSeconds=Math.max(0,value.playSeconds);
@@ -69,6 +72,15 @@ export class GameProfile {
     if(stage<=6){const key=practiceKey(character,shot,difficulty);this.data.practice[key]=Math.max(this.data.practice[key]??1,stage);}
   }
   unlockMusic(id){if(/^th12_\d\d$/.test(id)&&!this.data.music.includes(id))this.data.music.push(id);}
+  recordEndingSeen(id){if(Number.isInteger(id)&&id>=0&&id<12&&!this.data.endingsSeen.includes(id))this.data.endingsSeen.push(id);}
+  nativeTotals(character,shot,difficulty){
+    const key=practiceKey(character,shot,difficulty),existing=this.data.nativeTotals[key];if(existing)return existing;
+    const summary=this.dataSummary({character,shot,difficulty});
+    return this.data.nativeTotals[key]={playCount:summary.runs,playFrames:Math.round(summary.playSeconds*60),clearCount:summary.clears};
+  }
+  recordPlayStart(character,shot,difficulty){const t=this.nativeTotals(character,shot,difficulty);t.playCount=Math.min(99999,(t.playCount||0)+1);}
+  recordPlayFrame(character,shot,difficulty){const t=this.nativeTotals(character,shot,difficulty);t.playFrames=(t.playFrames||0)+1;}
+  recordClear(character,shot,difficulty){const t=this.nativeTotals(character,shot,difficulty);t.clearCount=Math.min(99999,(t.clearCount||0)+1);}
   rankings(character,shot,difficulty,stage=0){
     return this.data.scores.filter(r=>matchesRun(r,{character,shot,difficulty})&&r.ranked!==false&&
       !nonnegative(r.continueCount??r.continues)&&r.mode!=='replay'&&r.mode!=='demo'&&

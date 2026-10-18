@@ -10,6 +10,7 @@ export class MusicPlayer {
     this.pending=new Map();
     this.source=null;
     this.request=0;
+    this.track=null;this.offset=0;this.startedAt=0;this.paused=false;this.fadeState=null;
   }
 
   load(track) {
@@ -38,16 +39,51 @@ export class MusicPlayer {
 
   stop() {
     this.request++;
-    const source=this.source;
-    this.source=null;
-    if(source){try{source.stop();}catch{}}
+    this.track=null;this.offset=0;this.paused=false;this.fadeState=null;
+    this.detach();
   }
 
-  setVolume(value){this.volume=Math.max(0,Math.min(1,value));if(this.gain)this.gain.gain.value=this.volume;}
-  fade(seconds=1){if(this.gain){const now=this.context.currentTime;this.gain.gain.cancelScheduledValues(now);this.gain.gain.setValueAtTime(this.gain.gain.value,now);this.gain.gain.linearRampToValueAtTime(0,now+Math.max(0,seconds));}}
+  detach() {
+    const source=this.source;
+    this.source=null;const gain=this.gain;this.gain=null;
+    if(source){source.onended=null;try{source.stop();}catch{}source.disconnect();}
+    gain?.disconnect();
+  }
+
+  setVolume(value){value=Math.max(0,Math.min(1,value));if(value===this.volume)return;this.volume=value;this.fadeState=null;if(this.gain){this.gain.gain.cancelScheduledValues(this.context.currentTime);this.gain.gain.value=value;}}
+  fade(seconds=1){
+    const now=this.context.currentTime,from=this.fadeLevel(now);
+    this.fadeState={from,start:now,duration:Math.max(0,seconds)};
+    this.scheduleFade();
+  }
+  //4666c0 fades the DirectSound volume to-5000 and then stops. The audible
+  //gain is exponential in that decibel ramp, rather than linear amplitude.
+  fadeLevel(now=this.context.currentTime){const f=this.fadeState;if(!f)return this.volume;const t=Math.min(1,Math.max(0,now-f.start)/Math.max(f.duration,Number.EPSILON));return !f.from||t>=1?0:f.from*Math.pow(Math.pow(10,-2.5)/f.from,t);}
+  scheduleFade(){
+    if(!this.gain||!this.fadeState)return;
+    const now=this.context.currentTime,from=this.fadeLevel(now),end=this.fadeState.start+this.fadeState.duration;
+    const gain=this.gain.gain;gain.cancelScheduledValues(now);gain.setValueAtTime(from,now);
+    if(from>0&&end>now){gain.exponentialRampToValueAtTime(Math.pow(10,-2.5),end);gain.setValueAtTime(0,end);}
+  }
+  offsetAt(seconds){const track=this.track,length=(track?.loopEnd??0)-(track?.loopStart??0);return length>0&&seconds>=track.loopEnd?track.loopStart+(seconds-track.loopStart)%length:seconds;}
+  pause(){
+    if(!this.track||this.paused)return;
+    const now=this.context.currentTime;
+    if(this.source)this.offset=this.offsetAt(this.offset+Math.max(0,now-this.startedAt));
+    if(this.fadeState)this.fadeState={from:this.fadeLevel(now),start:now,duration:Math.max(0,this.fadeState.start+this.fadeState.duration-now)};
+    this.paused=true;++this.request;this.detach();
+  }
+  async resume(isCurrent=()=>true){
+    if(!this.paused||!this.track)return false;
+    const track=this.track,offsetSeconds=this.offset,fade=this.fadeState;
+    const played=await this.play(track,isCurrent,{offsetSeconds});
+    if(played&&fade){this.fadeState={...fade,start:this.context.currentTime};this.scheduleFade();}
+    return played;
+  }
 
   async play(track,isCurrent=()=>true,{offsetSeconds=0}={}) {
     this.stop();
+    this.track=track;this.offset=this.offsetAt(Number.isFinite(offsetSeconds)?Math.max(0,offsetSeconds):0);
     const request=this.request;
     if(!isCurrent())return false;
     let buffer;
@@ -67,10 +103,9 @@ export class MusicPlayer {
     gain.connect(this.context.destination);
     source.onended=()=>{if(this.source===source)this.source=null;};
     this.source=source;
-    const seconds=Number.isFinite(offsetSeconds)?Math.max(0,offsetSeconds):0;
-    const length=track.loopEnd-track.loopStart;
-    const offset=length>0&&seconds>=track.loopEnd?track.loopStart+(seconds-track.loopStart)%length:seconds;
-    source.start(0,offset);
+    this.startedAt=this.context.currentTime;
+    source.start(0,this.offset);
+    this.scheduleFade();
     return true;
   }
 }

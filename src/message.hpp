@@ -29,7 +29,7 @@ struct File {
   }
 };
 inline std::string decrypt(const Byte* p,size_t size){std::string result;uint8_t key=0x77,step=7;for(size_t i=0;i<size;i++){const uint8_t c=p[i]^key;key+=step;step+=0x10;if(!c)break;result.push_back(char(c));}return result;}
-struct Command {int op=0;const Byte* payload=nullptr;size_t size=0;int integer(size_t at=0)const{return at+4<=size?read<int32_t>(payload+at):0;}};
+struct Command {int op=0;const Byte* payload=nullptr;size_t size=0;bool waitSound=false;int integer(size_t at=0)const{return at+4<=size?read<int32_t>(payload+at):0;}};
 struct TextRecord {
   std::string bytes;int offset=0,spacing=0,style=0;uint32_t color=0xf8f08f;
 };
@@ -73,7 +73,7 @@ struct VM {
       if(pc+4>file->data.size()){active=false;failed=true;return;}
       const auto* p=file->data.data()+pc;const uint32_t length=4+p[3];if(length>file->data.size()-pc){active=false;failed=true;return;}
       if(clock<read<uint16_t>(p)){previousClock=clock;++clock;++age;return;}
-      const Command command{p[2],p+4,p[3]};
+      Command command{p[2],p+4,p[3]};
       textActions.clear();
       if(command.op==0){active=false;emit(command);++age;return;}
       if(command.op==10){if(command.size)flags=(flags&~1u)|(command.payload[0]&1u);}
@@ -81,6 +81,7 @@ struct VM {
         if(wait<=0){wait=command.integer();previousWait=wait-1;}
         previousWait=wait;--wait;
         if(!(pressed&0x80001)&&wait>0&&!((flags&1)&&(held&0x200))){++age;return;}
+        command.waitSound=(pressed&0x80001)||wait<=0;
         wait=0;previousWait=-1;line=textInitialized=0;
       }else if(command.op==12)typingDelay=1;
       else if(command.op==26)flags|=2;

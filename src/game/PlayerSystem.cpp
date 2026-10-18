@@ -69,6 +69,9 @@ std::function<void(int, u32, float, float)>
 namespace {
 std::unordered_map<uint64_t, int> bombDeliveredInterrupts;
 std::array<float, 3> respawnClearOrigin{}; // Native Player+a08, saved death position.
+// Stage primitive handles occupy c00000000+slot. A Bomb must never replace
+// one of those embedded VMs or let Stage12 advance its backdrop a second time.
+constexpr uint64_t BombBackdropKeyBase = 0x7800000000000000ull;
 } // namespace
 std::vector<PlayerClearOperation> playerClearOperations(int state, int age) {
   if ((state == 1 && age < 30) || (state == 0 && age >= 30))
@@ -105,6 +108,7 @@ Enemy* playerTarget(float, float, float, u32);
 void explodeReimuBOrb(pw::ReimuBOrb& orb) {
   if (!orb.active)
     return;
+  sound_system::queue.play(28, orb.x); // Native408047, each orb's burst.
   // Native4084a8 queues this pulse for a damage-triggered individual burst.
   // The full timeout burst owns one shared pulse in408380 instead.
   if (playerBomb.age < 200)
@@ -155,6 +159,9 @@ bool startPlayerBomb() {
   phasePlayerCounters[1] += loadout == 0 ? 2u : 1u;
   playerBomb.x = px / 128.f;
   playerBomb.y = py / 128.f;
+  sound_system::queue.play(46, playerBomb.x); // Native406c6c, common declaration before loadout.
+  // Native46a83e uses the player's pan; the other constructors use453d90.
+  sound_system::queue.play(loadout == 5 ? 31 : 51, playerBomb.x, loadout == 0);
   if (loadout == 3) {
     playerBomb.marisaB.begin(nextProjectileId++, playerBomb.x, playerBomb.y);
     const auto& b = playerBomb.marisaB;
@@ -193,7 +200,7 @@ bool startPlayerBomb() {
   {
     // Native407250/408eba bind front1 synchronously after the player's main
     // VM. Its independent handle receives IRQ1 when the Bomb stops.
-    const auto key = 0xc00000000ull + nextDetachedAnimation++;
+    const auto key = BombBackdropKeyBase + nextDetachedAnimation++;
     auto* backdrop =
         animationScene.bind(key, 0x50000000u, 7, 1, anm_logic::Membership::Primary,
                             playerBomb.x + 224, playerBomb.y + 16, {}, false, nullptr, 0, 0, 23);
@@ -262,6 +269,7 @@ void tickPlayerBomb() {
     if (age == 0)
       playerDamageSources.circle(playerBomb.x, playerBomb.y, 16, .35555556416511536f, 180, 13);
     if (age == 180) {
+      sound_system::queue.play(6, 0, false); // Native408f53, frog burst.
       cameraEffects.shake(4, 1, 60, 10); // Actual408f89 profile8.
       playerDamageSources.circle(playerBomb.x, playerBomb.y, 80, 20, 100, 80);
     }
@@ -385,9 +393,10 @@ void tickPlayerBomb() {
           if (orb.sourceSlot >= 0) {
             auto& s = playerDamageSources.sources[orb.sourceSlot];
             if (s.id == orb.sourceId) {
-              if (s.accumulated >= 300)
+              if (s.accumulated >= 300) {
                 explodeReimuBOrb(orb);
-              else {
+                sound_system::queue.play(28, orb.x); // Native408473 adds a second request.
+              } else {
                 s.x = orb.x;
                 s.y = orb.y;
               }
@@ -418,8 +427,10 @@ void tickPlayerBomb() {
       playerBomb.visuals.clear();
       return;
     }
-    if (age == 240)
+    if (age == 240) {
       animationScene.interrupt(playerBomb.backgroundAnimation, 1);
+      sound_system::queue.play(46, 0, false); // Native408be4, wind release.
+    }
     if (age < 240)
       playerBomb.rectangles.push_back({true, 0, 224, 384, 448});
     if (!playerBomb.visuals.empty()) {
@@ -464,6 +475,7 @@ bool tickPlayerBombEffect(int profile, u32 id) {
       return true;
     }
     if (emitter.age % 4 == 0) {
+      sound_system::queue.play(28, playerBomb.x); // Native46a364, repeated beam volleys.
       auto offsets = emitter.fire();
       for (float offset : offsets) {
         pw::ReimuABeam beam;
@@ -575,6 +587,8 @@ void initializeFriendlyProjectile(Projectile& b, const ShotSpec& s) {
   b.extraCallback = s.extraCallback;
   b.hitWidth = s.w;
   b.hitHeight = s.spawn == 2 ? 0 : s.h;
+  if (s.spawn == 2)
+    sound_system::queue.play(21, px / 128.f); // Native43a699, Marisa A option laser.
   if (friendlyBirthHook)
     friendlyBirthHook(b);
 }
@@ -660,6 +674,7 @@ void updateFriendlyProjectile(Projectile& b) {
       b.weapon.interrupt = 1;
       b.weapon.visualAge = 0;
       b.weapon.impactDuration = 8;
+      sound_system::queue.stop(21); // Native43a7cd, release the option laser's loop.
       if (friendlyInterruptHook) {
         friendlyInterruptHook(b, 1, false);
         friendlyInterruptHook(b, 1, true);

@@ -65,15 +65,33 @@ void tickItems(bool focus) {
     itemPresentationEvent(event);
     using K = item_system::EventKind;
     switch (event.kind) {
-    case K::CollectOrdinary:
-      sound_system::queue.play(38, event.entity.position.x); // Common426da4 pickup tail.
+    case K::CollectOrdinary: {
+      const auto before = resources;
       item_system::collectOrdinary(resources, event.entity, itemFrame.player);
+      const int type = event.entity.type;
+      if (type == 3 || type == 8 || before.power / before.powerStep != power / resources.powerStep)
+        sound_system::queue.play(13, event.entity.position.x);
+      if ((type == 6 && before.lives < 8) ||
+          (type == 4 && before.lives < 8 && before.lifeFragments >= 4)) {
+        sound_system::queue.play(18, 0, false);
+        showExtendNotice();
+      }
+      if ((type == 7 && before.bombs < 9) ||
+          (type == 5 && before.bombs < 9 && before.bombFragments >= 3))
+        sound_system::queue.play(48, 0, false);
+      sound_system::queue.play(38, event.entity.position.x); // Common426da4 pickup tail.
       eventBits |= 64;
       break;
+    }
     case K::CollectAggregate:
       sound_system::queue.play(39, event.entity.position.x);
+      {
+        const int previous = power / resources.powerStep;
+        item_system::collectAggregate(resources, event.entity);
+        for (int level = previous; level < power / resources.powerStep; ++level)
+          sound_system::queue.play(13, event.entity.position.x);
+      }
       sound_system::queue.play(38, event.entity.position.x);
-      item_system::collectAggregate(resources, event.entity);
       eventBits |= 64;
       break;
     case K::CollectToken:

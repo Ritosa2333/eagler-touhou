@@ -10,6 +10,7 @@ import json
 import pathlib
 import shutil
 import struct
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 RETAIL = ROOT / 'local/retail'
@@ -119,8 +120,87 @@ def music_comments(path):
     return result
 
 
+def spell_names():
+    """Read ECL spell-start records as bytes, without running their scripts."""
+    result = {}
+    for path in sorted(RETAIL.glob('*.ecl')):
+        data = path.read_bytes()
+        count = struct.unpack_from('<H', data, 16)[0]
+        table = 36 + struct.unpack_from('<H', data, 6)[0]
+        offsets = [struct.unpack_from('<I', data, table + sub * 4)[0] for sub in range(count)]
+        for start in offsets:
+            cursor = start + 16
+            end = min([other for other in offsets if other > start] + [len(data)])
+            while cursor + 16 <= end:
+                opcode, length = struct.unpack_from('<HH', data, cursor + 4)
+                if length < 16 or cursor + length > end:
+                    break
+                if opcode in (422, 428, 437, 438, 439) and length >= 33:
+                    base = struct.unpack_from('<i', data, cursor + 16)[0]
+                    size = struct.unpack_from('<i', data, cursor + 28)[0]
+                    if 0 < size <= length - 32:
+                        title = decrypt_text(data[cursor + 32:cursor + 32 + size])
+                        for difficulty in range(5):
+                            if not data[cursor + 10] & (1 << difficulty):
+                                continue
+                            card = base + (difficulty if opcode == 437 else difficulty - 1 if opcode == 438 else difficulty - 2 if opcode == 439 else 0)
+                            if 0 <= card <= 112:
+                                result[str(card)] = {'title': title, 'byteLength': len(title.encode('cp932'))}
+                cursor += length
+    return result
+
+
+def music_warning():
+    """Read MusicRoom's eight warning-line pointers from the pinned PE image."""
+    data = (ROOT.parent / 'th12/th12.exe').read_bytes()
+    if hashlib.sha256(data).hexdigest() != PINNED_EXE_SHA256:
+        raise ValueError('Menu strings support the pinned TH12 1.00b executable')
+    pe = struct.unpack_from('<I', data, 0x3c)[0]
+    count, optional_size = struct.unpack_from('<H', data, pe + 6)[0], struct.unpack_from('<H', data, pe + 20)[0]
+    image_base = struct.unpack_from('<I', data, pe + 24 + 28)[0]
+    sections = pe + 24 + optional_size
+
+    def offset(address):
+        rva = address - image_base
+        for i in range(count):
+            header = sections + i * 40
+            size, start, raw_size, raw = struct.unpack_from('<IIII', data, header + 8)
+            if start <= rva < start + max(size, raw_size):
+                return raw + rva - start
+        raise ValueError('Native Music Room string points outside the image')
+
+    table = offset(0x4b33c0)
+    lines = []
+    for i in range(8):
+        start = offset(struct.unpack_from('<I', data, table + i * 4)[0])
+        lines.append(data[start:data.index(0, start)].decode('cp932'))
+    return {'lines': lines, 'colorRGB': 0xff8080, 'nativeTable': '0x4b33c0'}
+
+
+def add_menu_metadata(resource):
+    resource['spellNames'] = spell_names()
+    resource['musicWarning'] = music_warning()
+    return resource
+
+
+def prepare_loading_metadata(resource):
+    #Small bootstrap manifest: the original splash/loading atlas can draw
+    #before title/stage textures, the Wasm runtime or sound data are ready.
+    atlas = json.loads((DEST / 'atlases.json').read_text('utf-8'))['ascii']
+    output = {'schema': 'th12-loading-resources/1', 'atlases': {'ascii': atlas, 'sig': resource['atlases']['sig']},
+              'originalExeSha256': PINNED_EXE_SHA256, 'localOnly': True}
+    (DEST / 'loading-resources.json').write_text(json.dumps(output, ensure_ascii=False, separators=(',', ':'), allow_nan=False), 'utf-8')
+
+
 def main():
     DEST.mkdir(parents=True, exist_ok=True)
+    if '--metadata-only' in sys.argv:
+        target = DEST / 'menu-resources.json'
+        resource = add_menu_metadata(json.loads(target.read_text('utf-8')))
+        target.write_text(json.dumps(resource, ensure_ascii=False, separators=(',', ':'), allow_nan=False), 'utf-8')
+        prepare_loading_metadata(resource)
+        print('Prepared local spell-name and Music Room warning metadata.', flush=True)
+        return
     decoder = shared_anm_decoder()
     atlases = {}
     for bank in ['sig', 'staff', *[f'e{i:02d}' for i in range(12)]]:
@@ -152,6 +232,8 @@ def main():
                            'reason': 'No original manual document is present in supplied retail files.'},
                 'provenance': {'originalResourcePayload': True, 'localOnly': True,
                                'wholePresentationOracle': False}}
+    add_menu_metadata(resource)
+    prepare_loading_metadata(resource)
     (DEST / 'menu-resources.json').write_text(json.dumps(resource, ensure_ascii=False, separators=(',', ':'), allow_nan=False), 'utf-8')
     print(f'Prepared {len(resource["musicComments"])} music comments, 12 endings, credits and four retail demos.', flush=True)
 

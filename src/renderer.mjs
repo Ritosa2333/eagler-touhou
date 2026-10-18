@@ -192,7 +192,11 @@ export class Renderer {
       this.textures.set(name+':'+index,{texture,w:bitmap.width,h:bitmap.height,defaultWrap:wrap});bitmap.close();
     }));
   }
-  begin(){const g=this.gl;g.viewport(0,0,640,480);g.clearColor(.035,.035,.055,1);g.clear(g.COLOR_BUFFER_BIT);g.bindVertexArray(this.vao);g.bindBuffer(g.ARRAY_BUFFER,this.buffer);this.drawCount=0;this.uploadCount=0;this.current=null;this.batch=[];this.batchMode=g.TRIANGLES;this.blend=-1;this.stageSurfaceCopied=false;this.stageSurfaceComposited=false;this.stageSurfaceAvailable=false;this.surfaceCopyError=0;this.material(0);}
+  unloadAtlases(names){
+    this.flush();const prefixes=names.map(name=>name+':');
+    for(const [key,texture]of this.textures)if(prefixes.some(prefix=>key.startsWith(prefix))){if(this.current===texture)this.current=null;this.gl.deleteTexture(texture.texture);this.textures.delete(key);}
+  }
+  begin(clearColor=[.035,.035,.055,1]){const g=this.gl;g.viewport(0,0,640,480);g.clearColor(...clearColor);g.clear(g.COLOR_BUFFER_BIT);g.bindVertexArray(this.vao);g.bindBuffer(g.ARRAY_BUFFER,this.buffer);this.drawCount=0;this.uploadCount=0;this.current=null;this.batch=[];this.batchMode=g.TRIANGLES;this.blend=-1;this.stageSurfaceCopied=false;this.stageSurfaceComposited=false;this.stageSurfaceAvailable=false;this.surfaceCopyError=0;this.material(0);}
   flush(){if(!this.batch.length)return;const g=this.gl;g.bindTexture(g.TEXTURE_2D,this.current.texture);g.bufferData(g.ARRAY_BUFFER,new Float32Array(this.batch),g.STREAM_DRAW);g.drawArrays(this.batchMode,0,this.batch.length/10);this.drawCount++;this.uploadCount++;this.batch.length=0;}
   primitive(mode){if(this.batchMode!==mode){this.flush();this.batchMode=mode;}}
   material(blend){if(this.blend===blend)return;this.flush();const g=this.gl;const factors=[[g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA],[g.SRC_ALPHA,g.ONE],[g.ZERO,g.ONE_MINUS_SRC_COLOR],[g.ONE,g.ZERO],[g.ONE_MINUS_DST_COLOR,g.ONE_MINUS_SRC_ALPHA],[g.DST_COLOR,g.ZERO],[g.ONE_MINUS_SRC_COLOR,g.ONE_MINUS_SRC_ALPHA]];g.blendFunc(...(factors[blend]||factors[0]));this.blend=blend;}
@@ -297,21 +301,54 @@ export class Renderer {
     // Original 44e56f..44e5c6 selects 32px GDI MS Gothic (400) / MS Mincho
     // (600), then text rendering reduces by two. Browser rasterization remains
     // a presentation fallback until the original GDI texture oracle is sampled.
-    const key=JSON.stringify([text,record,metrics,raster]);if(this.dialogueTextures.has(key))return this.dialogueTextures.get(key);
+    const cache=raster?.menu?(this.menuTextTextures??=new Map()):this.dialogueTextures;
+    const key=JSON.stringify([text,record,metrics,raster]);if(cache.has(key))return cache.get(key);
     const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${raster?.fontWeight??(style===2?700:serif?600:400)} ${raster?.fontPixelHeight??(style===2?15:32)}px "${raster?.fontFamily??(serif?'ＭＳ 明朝':'ＭＳ ゴシック')}", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';ctx.textAlign=raster?.align??'left';
     const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{const y=raster?.sourceY??2;ctx.fillStyle='#000';for(const [dx,dy]of raster?.outlineOffsets??[[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,y+dy-2);ctx.fillStyle=foreground;ctx.fillText(text,x,y);};
     if(spacing){const bytes=Uint8Array.from(record.textHex.match(/../g)??[],v=>parseInt(v,16));for(let i=0;i<bytes.length;i+=2)draw(new TextDecoder('shift-jis').decode(bytes.slice(i,i+2)),2*offset+i*spacing);}
     else draw(text,raster?.sourceX??2*offset+2);
     const g=this.gl,texture=g.createTexture();this.flush();g.bindTexture(g.TEXTURE_2D,texture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,canvas);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
-    const result={texture,w:canvas.width,h:canvas.height};this.dialogueTextures.set(key,result);if(this.dialogueTextures.size>16){const oldest=this.dialogueTextures.keys().next().value,old=this.dialogueTextures.get(oldest);this.dialogueTextures.delete(oldest);g.deleteTexture(old.texture);}return result;
+    const result={texture,w:canvas.width,h:canvas.height};cache.set(key,result);if(cache.size>(raster?.menu?96:16)){const oldest=cache.keys().next().value,old=cache.get(oldest);cache.delete(oldest);g.deleteTexture(old.texture);}return result;
   }
   dialogueLine(p){if(!p.text||p.a.alpha<=0)return;const texture=this.dialogueTexture(p.text,p.record,p.metrics,p.raster);this.material(p.a.blend??0);this.texture(texture,!!p.a.point);this.primitive(this.gl.TRIANGLES);const points=p.a.mode===0||p.a.mode===1?nativeQuadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY,p.a.mode,p.screenShake):quadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY),uv=[[0,0],[1,0],[1,1],[0,1]];for(const i of [0,1,2,0,2,3])this.batch.push(...points[i],...uv[i],p.a.r??1,p.a.g??1,p.a.b??1,p.a.alpha*p.alpha,1,0);}
-  renderMenu(poses,texts=[],fps=null,{overlay=false,shade=0}={}) {
+  capturePauseField(){
+    //4356d0 /4609d0 downsamples only the384x448 field to text sprite71's
+    //128x128 RGB565 rectangle. HUD is never part of the paused blur.
+    const g=this.gl;this.flush();g.disable(g.SCISSOR_TEST);
+    let target=this.textures.get('text:1');
+    if(!this.pauseFramebuffer){
+      const texture=g.createTexture();g.bindTexture(g.TEXTURE_2D,texture);g.texStorage2D(g.TEXTURE_2D,1,g.RGB565,512,512);
+      g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
+      target={texture,w:512,h:512,defaultWrap:g.CLAMP_TO_EDGE,flipY:true};this.textures.set('text:1',target);
+      this.pauseFramebuffer=g.createFramebuffer();g.bindFramebuffer(g.DRAW_FRAMEBUFFER,this.pauseFramebuffer);g.framebufferTexture2D(g.DRAW_FRAMEBUFFER,g.COLOR_ATTACHMENT0,g.TEXTURE_2D,texture,0);
+    }
+    g.bindFramebuffer(g.READ_FRAMEBUFFER,null);g.bindFramebuffer(g.DRAW_FRAMEBUFFER,this.pauseFramebuffer);
+    g.blitFramebuffer(32,16,416,464,0,384,128,512,g.COLOR_BUFFER_BIT,g.LINEAR);
+    g.bindFramebuffer(g.FRAMEBUFFER,null);this.current=null;this.point=null;
+  }
+  renderPauseBackdrop(poses,capture=false){
+    const g=this.gl;this.flush();if(capture)this.capturePauseField();g.disable(g.SCISSOR_TEST);g.uniform3fv(this.fogColor,[0,0,0]);
+    //432260 copies the invisible79 VM's RGB to text81's captured-field draw.
+    //Its20-frame tint changes only the playfield, leaving the HUD untouched.
+    const tint=poses.find(a=>a.script===79);
+    if(tint)this.solidTriangles([[32,16],[416,16],[416,464],[32,464]].map(([x,y])=>({x,y,color:[tint.r,tint.g,tint.b,1]})),[0,1,2,0,2,3],5);
+    for(const a of poses)if(a.script!==79)this.state(a,0,0);
+    this.flush();
+  }
+  renderMenu(poses,texts=[],fps=null,{overlay=false,shade=0,clearColor}={}) {
     const g=this.gl;
-    if(!overlay)this.begin();
+    if(!overlay)this.begin(clearColor);
     g.disable(g.SCISSOR_TEST);g.uniform3fv(this.fogColor,[0,0,0]);
     if(shade>0)this.solidTriangles([[0,0],[640,0],[640,480],[0,480]].map(([x,y])=>({x,y,color:[0,0,0,shade]})),[0,1,2,0,2,3],0);
-    for(const pose of orderPresentation(poses))this.state(pose.a??pose,pose.x??0,pose.y??0,0,1,pose.alpha??1);
+    for(const pose of orderPresentation(poses)){
+      const a=pose.a??pose,payload=a.menuText;
+      if(!payload){this.state(a,pose.x??0,pose.y??0,0,1,pose.alpha??1);continue;}
+      if(!a.visible||a.alpha<=0)continue;
+      const sprite=this.atlases[a.name]?.sprites[a.sprite],width=payload.width??sprite?.w??512,height=payload.height??sprite?.h??17;
+      this.dialogueLine({text:payload.text,x:(pose.x??0)+a.x,y:(pose.y??0)+a.y,alpha:pose.alpha??1,a,
+        metrics:{width,height,sourceWidth:width*2,sourceHeight:height*2},record:{style:0,color:0xffffff,offset:0,spacing:0},
+        raster:{menu:true,fontFamily:'ＭＳ ゴシック',fontWeight:400,fontPixelHeight:32,sourceX:0,sourceY:0,foregroundColor:payload.colorRGB??0xffffff,outlineOffsets:[[2,2],[-2,2],[2,-2],[-2,-2]],align:'left'}});
+    }
     for(const text of texts) {
       if(text.font!==undefined)this.nativeText(text);
       else {

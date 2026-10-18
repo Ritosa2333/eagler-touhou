@@ -9,6 +9,9 @@ uint64_t enemyAnimationKey(u32 id, int slot) {
 void configureAnimations() {
   animationScene.runtime.gameRandom32 = []() { return random.next32(); };
   animationScene.runtime.displayRandom32 = []() { return displayRandom.next32(); };
+  itemManager.onSpawnSound = [](int id, item_system::Vec2 position, bool positioned) {
+    sound_system::queue.play(id, position.x, positioned);
+  };
 }
 void bindEnemyAnimation(Enemy& e, int slot, int script) {
   if (slot < 0 || slot >= 16) {
@@ -58,6 +61,12 @@ uint64_t bindScreenAnimation(int bank, int script, int layer) {
   animationScene.bind(key, 0xe0000000u + serial, bank, script, anm_logic::Membership::Primary, 0, 0,
                       {}, false, nullptr, 0, 0, layer);
   return key;
+}
+void showExtendNotice() {
+  // 422cff ->420f90(4): a successful life award replaces HUD+6c6c with
+  // front47. Its original ANM supplies the glyph, position, scale and110ticks.
+  animationScene.remove(bossHud.itemNotice);
+  bossHud.itemNotice = bindScreenAnimation(7, 47);
 }
 void startMessageAnimations() {
   messageAnimationKeys = {};
@@ -177,6 +186,12 @@ void messageCommand(const message_system::Command& command) {
     for (int slot = 3; slot < 7; slot++)
       interrupt(slot, 3);
     break;
+  case 11:
+    // Native42086e sounds on confirmation or the wait expiring. Ctrl's
+    // skip branch420855 advances the text without issuing this sound.
+    if (command.waitSound)
+      sound_system::queue.play(0, 0, false);
+    break;
   case 19:
     bossMusic = true;
     ++musicSerial; // Native42089d queues stage-specific slot1, even when muted.
@@ -206,6 +221,7 @@ void messageCommand(const message_system::Command& command) {
       interrupt(action.slot + 3, action.interrupt);
 }
 void startSpellAnimations() {
+  sound_system::queue.play(34, 0, false); // Native40e235, spell declaration.
   spellAnimationKeys = {};
   const auto bindings = spell_system::startBindings(stageNumber, bossHud.checkpoint);
   for (size_t i = 0; i < bindings.size() && i < spellAnimationKeys.size(); i++)
@@ -228,6 +244,8 @@ void endSpellAnimations(const spell_system::Result& result) {
   animationScene.remove(spellAnimationKeys[3]);
   spellAnimationKeys[3] = spellAnimationKeys[5] = 0;
   const bool captured = result.kind == spell_system::ResultKind::Captured;
+  if (captured)
+    sound_system::queue.play(48, 0, false); // Native40e70a, successful capture only.
   const auto digits = spell_system::resultDigits(result.bonusDisplayed);
   for (const auto& binding : spell_system::resultBindings(captured, result.bonusDisplayed)) {
     const auto key =

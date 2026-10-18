@@ -19,7 +19,7 @@ class Track {
     if(options.interrupts){this.commandsAtTime();for(const code of options.interrupts){this.interrupt(code);this.commandsAtTime();}}
     else if(options.interrupt||variant){this.commandsAtTime();this.interrupt(options.interrupt??2);}
   }
-  random32(forceGame=false){if(forceGame||!this.displayRng)this.owner.unresolvedGameRandom.add(this.name+':'+this.id);const a=((this.seed^0x9630)-0x6553)&65535;this.seed=((a<<2)|(a>>>14))&65535;const b=((this.seed^0x9630)-0x6553)&65535;this.seed=((b<<2)|(b>>>14))&65535;return ((a<<16)|b)>>>0;}
+  random32(forceGame=false){if(forceGame||!this.displayRng)this.owner.unresolvedGameRandom.add(this.name+':'+this.id);else if(this.owner.displayRandom32)return this.owner.displayRandom32()>>>0;const a=((this.seed^0x9630)-0x6553)&65535;this.seed=((a<<2)|(a>>>14))&65535;const b=((this.seed^0x9630)-0x6553)&65535;this.seed=((b<<2)|(b>>>14))&65535;return ((a<<16)|b)>>>0;}
   random(){
     if(!this.displayRng)this.owner.unresolvedGameRandom.add(this.name+':'+this.id);
     // A deterministic local display fallback. Shared retail display-RNG scheduling is not verified.
@@ -154,7 +154,7 @@ class Track {
   sample(age){age=Math.max(0,Math.min(100000,age|0));while(this.tickCount<=age)this.tick();return this.frames[0];}
 }
 export class AnimationSampler {
-  constructor(atlases){this.atlases=atlases;this.tracks=new Map();this.unimplemented=new Set();this.unresolvedGameRandom=new Set();}
+  constructor(atlases,{displayRandom32=null}={}){this.atlases=atlases;this.displayRandom32=displayRandom32;this.tracks=new Map();this.unimplemented=new Set();this.unresolvedGameRandom=new Set();}
   beginFrame(){this.usedTracks=new Set();}
   endFrame(){if(this.usedTracks){for(const key of this.tracks.keys())if(!this.usedTracks.has(key))this.tracks.delete(key);this.usedTracks=null;}}
   sample(name,id,age=0,variant=null,options={}){
@@ -176,6 +176,7 @@ export class AnimationSampler {
 export class MenuAnimation {
   constructor(sampler,name,id,options={}) {
     this.track=new Track(sampler,name,id,null,options);
+    this.visibility=new Map();this.positions=new Map();this.texts=new Map();
     this.track.commandsAtTime();
   }
   interrupt(code,{recursive=true,immediate=false,script=null}={}) {
@@ -185,12 +186,27 @@ export class MenuAnimation {
     };
     visit(this.track);
   }
-  tick(){this.track.tick();}
+  tick(){this.track.tick();for(const position of this.positions.values())if(position.frames>0&&position.age<position.frames)position.age++;}
   setSprite(script,sprite){const visit=track=>{if(track.id===script)track.state.sprite=sprite;for(const child of track.children)visit(child);};visit(this.track);}
+  setVisible(script,visible){this.visibility.set(script,visible);}
+  setText(script,payload){this.texts.set(script,payload);}
+  setPosition(script,x=null,y=null,frames=0){
+    let pose=this.poses().find(p=>p.script===script);
+    if(!pose){const find=track=>track.id===script?track.state:track.children.map(find).find(Boolean);pose=find(this.track);}if(!pose)return;
+    const prior=this.positions.get(script);if(prior?.toX===(x??pose.x)&&prior?.toY===(y??pose.y))return;
+    this.positions.set(script,{fromX:pose.x,fromY:pose.y,toX:x??pose.x,toY:y??pose.y,overrideX:x!==null,overrideY:y!==null,frames,age:0});
+  }
+  get alive(){const visit=track=>!track.ended||track.children.some(visit);return visit(this.track);}
   poses(){
     const root=this.track.frames[0];if(!root)return [];
     const output=[];
-    const visit=state=>{output.push({...state,children:undefined});for(const child of state.children)visit(child);};
+    const visit=state=>{
+      const pose={...state,children:undefined},position=this.positions.get(state.script);
+      if(this.visibility.has(state.script))pose.visible=this.visibility.get(state.script)&&state.visible;
+      if(position){const t=position.frames>0?Math.min(1,position.age/position.frames):1;if(position.overrideX)pose.x=position.fromX+(position.toX-position.fromX)*t;if(position.overrideY)pose.y=position.fromY+(position.toY-position.fromY)*t;}
+      if(this.texts.has(state.script))pose.menuText=this.texts.get(state.script);
+      output.push(pose);for(const child of state.children)visit(child);
+    };
     visit(root);return output;
   }
 }

@@ -127,6 +127,8 @@ public:
   int tokenSideCounter = 0, smallPointCursor = 0, smallPointSpawns = 0;
   uint32_t poolMisses = 0, unsupportedTypes = 0;
   std::vector<Event> events;
+  // Native427423 /427a65. Optional so standalone item rules remain host-independent.
+  std::function<void(int, Vec2, bool)> onSpawnSound;
   void reset(int side = 0);
   Entity* find(uint32_t id);
   const Entity* find(uint32_t id) const;

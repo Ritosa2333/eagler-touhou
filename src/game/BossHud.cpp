@@ -34,6 +34,9 @@ void tickBossHud() {
   }
   bossHud.timerVisible = visible && bossHud.timerSeconds >= 0;
   if (bossHud.timerVisible && bossHud.timerSeconds != bossHud.previousTimerSeconds) {
+    // Native41e2a8 only sounds on a decreasing second, below10.
+    if (bossHud.timerSeconds < bossHud.previousTimerSeconds && bossHud.timerSeconds < 10)
+      sound_system::queue.play(bossHud.timerSeconds < 5 ? 12 : 11, 0, false);
     const int irq = bossHud.timerSeconds < 5 ? 9 : bossHud.timerSeconds < 10 ? 8 : 7;
     for (int i = 0; i < 2; ++i) {
       animationScene.interrupt(bossHud.timerDigits[i], irq);
