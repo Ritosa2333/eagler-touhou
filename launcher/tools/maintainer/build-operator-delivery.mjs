@@ -2,7 +2,7 @@
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { createReadStream, existsSync } from "node:fs";
-import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rename, rm, rmdir, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -118,7 +118,7 @@ try {
 } finally {
   await rm(operationRoot, { recursive: true, force: true });
   try {
-    await rm(incompleteRoot);
+    await rmdir(incompleteRoot);
   } catch (error) {
     if (!["ENOENT", "ENOTEMPTY", "EPERM"].includes(error?.code)) throw error;
   }

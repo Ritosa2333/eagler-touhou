@@ -99,7 +99,7 @@ function syntheticNetwork() {
     retry(peer) {retries.push(peer);}, retries, values, flags: capabilities, get subscriberCount() {return listeners.size;},
     async publish() {await act(() => {revision++; for (const fn of listeners) fn();});}};
 }
-function fixture({product = 'th06mp', locale = 'en', created = true} = {}) {
+function fixture({product = 'th06mp', locale = 'en', created = true, checkGame = null} = {}) {
   const persistent = new Storage(), session = new Storage(), sockets = [], events = [], preparations = [], timers = new Map(), decisions = owners.createDecisionStore(); let timer = 0;
   persistent.setItem(owners.multiplayerDisplayNameStorageKey, 'Alice');
   const identity = owners.createMultiplayerIdentityStore({persistentStorage: persistent, sessionStorage: session, randomWords: () => [1234567, 7654321]});
@@ -109,7 +109,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true} = {}) {
     settings: () => settings, setMovementMode: value => {settings.touchMovementMode = value;}, translate: (key, params) => t(locale, key, params), notify: message => events.push(['notify', message]),
     prepareResources: (context, report) => {const task = deferred(); preparations.push({context, report, ...task}); return task.promise;},
     preparationFailed: error => events.push(['prepare-error', error]), beginManualImport: context => events.push(['import', context]),
-    launch: async context => events.push(['launch', context]), checkGame: async context => events.push(['check', context]), operationFailed: (...args) => events.push(['operation-error', ...args]),
+    launch: async context => events.push(['launch', context]), checkGame: async context => {events.push(['check', context]); if (checkGame) await checkGame(context);}, operationFailed: (...args) => events.push(['operation-error', ...args]),
     isLaunched: () => false, routes: Object.fromEntries(['restore', 'enter', 'settleInvite', 'leave'].map(kind => [kind, value => events.push([kind, value])])),
     network: {reset: reconnecting => events.push(['network-reset', reconnecting]), receive: value => events.push(['network-receive', value]), minimumRtt: () => 43},
     online: () => true, visible: () => true, random: () => 0, setTimeout: (fn, delay) => {timers.set(++timer, {fn, delay}); return timer;}, clearTimeout: id => timers.delete(id)});
@@ -277,9 +277,13 @@ for (const locale of ['zh-CN', 'en']) test(`Original ${locale} preparation rende
   await f.report({loaded: 137, total: 1000});
   assert.equal(n('.mp-seat-resource-label').textContent, t(locale, 'room.peerDownloading', {percent: 14}));
   assert.equal(f.socket.sent.findLast(message => message.type === 'resource-progress').percent, 10, 'Wire percent buckets do not replace local precise display');
-  await click('#mpReady'); assert.equal(f.service.getSnapshot().ready, true);
+  // Current-program preparation must finish before a Ready intent is sent.
+  await click('#mpReady'); assert.equal(f.service.getSnapshot().ready, false);
+  assert.equal(f.socket.sent.some(message => message.type === 'set-ready' && message.ready), false);
   await click('#mpRoomResourceCancel'); assert.equal(f.preparations[0].context.signal.aborted, true); assert.equal(f.events.filter(([kind]) => kind === 'import').length, 1);
   assert.equal(f.service.getSnapshot().ready, false); assert.equal(n('#mpReady').disabled, true); compare(f, {panel: {kind: 'personal'}});
+  await act(() => f.preparations[0].resolve());
+  assert.equal(f.socket.sent.some(message => message.type === 'set-ready' && message.ready), false, 'cancelled preparation cannot complete a stale Ready intent');
   await click('#mpRoomResourceRetry'); assert.equal(f.preparations.length, 2); assert.equal(n('#mpReady').disabled, false);
   await act(() => f.preparations.at(-1).reject(Error('Synthetic transfer rejected'))); assert.equal(n('#mpRoomPhase').title, 'Synthetic transfer rejected');
   await click('#mpRoomResourceRetry'); assert.equal(f.preparations.length, 3);
@@ -331,15 +335,19 @@ test('Real game-settings buttons preserve optimistic count/difficulty, synchroni
 });
 
 test('Ready/start gates use synchronized occupied seats and check-game calls real preparation/runtime port', async () => {
-  const f = await fixture().live(), {m} = await mountRoom(f, {panel: {kind: 'personal'}});
+  const checked = deferred();
+  const f = await fixture({checkGame: () => checked.promise}).live(), {m} = await mountRoom(f, {panel: {kind: 'personal'}});
   assert.equal(n('#mpReady').disabled, false, 'Preparation alone must not disable ready');
-  await click('#mpReady'); assert.equal(f.socket.sent.at(-1).type, 'set-ready'); assert.equal(n('#mpStartGame').hidden, false); assert.equal(n('#mpStartGame').disabled, true);
+  await click('#mpReady');
+  assert.equal(f.socket.sent.some(message => message.type === 'set-ready'), false, 'Ready waits for actual preparation completion');
+  await act(() => f.preparations[0].resolve());
+  assert.equal(f.socket.sent.at(-1).type, 'set-ready'); assert.equal(n('#mpStartGame').hidden, false); assert.equal(n('#mpStartGame').disabled, true);
   assert.equal(n('#mpCheckGame').disabled, true);
   await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0, ready: true}, {clientId: 'peer12345', name: 'B', loadout: 2, ready: true}]});
   assert.equal(n('#mpStartGame').disabled, false); await click('#mpStartGame'); assert.equal(f.socket.sent.at(-1).type, 'start');
   await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0, ready: true}, {clientId: 'peer12345', name: 'B', loadout: 2, ready: true, offline: true}]}); assert.equal(n('#mpStartGame').disabled, true);
   await f.receive(); await click('#mpCheckGame'); assert.equal(f.service.getSnapshot().checkBusy, true); assert.equal(n('#mpReady').disabled, true); assert.equal(n('#mpCheckGame').textContent, t('en', 'multiplayer.checkingGame'));
-  await act(() => f.preparations[0].resolve()); assert.equal(f.events.filter(([kind]) => kind === 'check').length, 1); assert.equal(f.service.getSnapshot().checkBusy, false);
+  await act(() => checked.resolve()); assert.equal(f.events.filter(([kind]) => kind === 'check').length, 1); assert.equal(f.service.getSnapshot().checkBusy, false);
   await m.update({context: {...defaultContext, th09NetworkOverlayOpen: true}}); assert.equal(n('#mpCheckGame').hidden, true);
   await act(() => f.socket.close(1006)); assert.equal(n('#mpReady').disabled, true); assert.equal(n('#mpStandUp').disabled, false); assert.equal(n('#mpLoadoutNextSeat').disabled, false);
 });

@@ -84,6 +84,7 @@ test('React refresh stages and verifies a coherent artifact before replacing any
         await mkdir(resolve(maintenance, path, '..'), {recursive: true});
         await cp(resolve(project, path), resolve(maintenance, path), {recursive: true});
       }
+      await cp(resolve(project, '../common/contracts'), resolve(temporary, 'common/contracts'), {recursive: true});
       await symlink(resolve(project, 'node_modules'), resolve(maintenance, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
       const compiled = await ensureContractsBuild({project: maintenance});
       const inherited = resolve(maintenance, '.cache/build/browser/assets/contracts');
