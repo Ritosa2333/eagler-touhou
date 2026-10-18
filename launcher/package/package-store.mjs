@@ -18,6 +18,12 @@ const PACKAGE_OBJECT_ARRAYBUFFER_LIMIT = 96 * 1024 * 1024;
 
 const GENERATION_ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/i;
 
+function assertExpectedGeneration(installation, expectedGenerationId) {
+  if (expectedGenerationId !== undefined && (installation?.currentGeneration ?? null) !== expectedGenerationId) {
+    throw new Error('Package changed before background update');
+  }
+}
+
 function assertGame(game) {
   if (!isGameId(game)) throw new Error("invalid package game id");
 }
@@ -303,6 +309,7 @@ export async function readCurrentPackageGeneration(game, { gameVersion = "origin
 export async function stagePendingPackageGeneration(generation, {
   source = null,
   operationId,
+  expectedGenerationId,
   webLockHeld = false,
   now = Date.now(),
   staleMs = PENDING_STALE_MS,
@@ -321,6 +328,7 @@ export async function stagePendingPackageGeneration(generation, {
     const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
     const generations = transaction.objectStore(PACKAGE_GENERATIONS);
     const current = await requestResult(installs.get(slot));
+    assertExpectedGeneration(current, expectedGenerationId);
     if (current?.pendingGeneration && current.pendingOperationId !== operationId) {
       const started = Number(current.pendingStartedAt) || 0;
       const fresh = started > 0 && now - started < staleMs;
@@ -458,7 +466,7 @@ export async function putPendingPackageObject(game, generationId, fileId, value,
   }, indexedDBFactory);
 }
 
-export async function commitPendingPackageGeneration(game, generationId, { operationId, source = null, gameVersion = "original", indexedDBFactory } = {}) {
+export async function commitPendingPackageGeneration(game, generationId, { operationId, source = null, expectedGenerationId, gameVersion = "original", indexedDBFactory } = {}) {
   const slot = packageInstallationKey(game, gameVersion);
   const key = generationKey(game, generationId);
   assertOperationId(operationId);
@@ -475,6 +483,9 @@ export async function commitPendingPackageGeneration(game, generationId, { opera
     if (installation?.pendingGeneration !== generationId || installation.pendingOperationId !== operationId) {
       throw new Error("pending generation ownership changed");
     }
+    // Compare and switch current in this same durable transaction. Web Locks
+    // are an optimization; an update waiting for staging may already be stale.
+    assertExpectedGeneration(installation, expectedGenerationId);
     const nextSource = source ?? installation.pendingSource ?? installation.source ?? "local";
     if (!new Set(["local", "remote"]).has(nextSource)) throw new Error("invalid installation source");
     const committed = {

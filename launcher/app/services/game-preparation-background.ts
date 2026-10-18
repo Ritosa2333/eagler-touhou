@@ -58,13 +58,15 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
       // A previous worker may have completed an object after its Runtime closed.
       const latest = await acquisition.readCurrent(game, {gameVersion});
       if (!currentOgg()) return;
-      if (latest.generation && sameBase(loaded, latest.generation)) generation = latest.generation;
+      if (!latest.generation || !sameBase(loaded, latest.generation)) return;
+      generation = latest.generation;
       for (const id of remaining.filter(id => !resources.files[id]?.objectId)) {
         if (!currentOgg()) return;
         try {
           if (!generation.files[id]?.objectId) {
             const result = await acquisition.installPublished(game, {catalog, catalogUrl, gameVersion,
-              addFileIds: [id], preserveLocalSource: true, fetchImpl: acquisition.getPackageFetch(game)});
+              addFileIds: [id], preserveLocalSource: true, expectedGenerationId: generation.id,
+              fetchImpl: acquisition.getPackageFetch(game)});
             generation = result.generation;
             // The transaction intentionally finishes when close happens mid-fetch.
             await acquisition.refreshInstalled(game);

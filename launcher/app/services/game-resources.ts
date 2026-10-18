@@ -41,6 +41,7 @@ export async function ensureRequiredSharedResources(generation: InstalledPackage
     throw new GameDataAcquisitionError('安装包缺少运行所需的共享字体，请更新游戏资源');
   }
   const result = await installPackageFromRemote(next, {descriptorUrl: published.descriptorUrl,
+    expectedGenerationId: generation.id,
     desiredFileIds: current => {
       if (current.generation?.id !== generation.id) throw new Error('游戏安装已变化，请重新启动');
       return desiredFilesForPublishedPackage(next, {current: current.generation});
@@ -136,7 +137,7 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
     onMusicDownloadActivity?.(true);
     onProgress?.({stage: 'music', message: t('music.preparingInitialOgg')});
     const result = await acquisition.installPublished(generation.game, {catalog, catalogUrl, gameVersion,
-      addFileIds: initial, preserveLocalSource: true,
+      addFileIds: initial, preserveLocalSource: true, expectedGenerationId: generation.id,
       signal: linked.signal,
       fetchImpl: acquisition.getPackageFetch(generation.game),
       onProgress: progress => onProgress?.({stage: 'music', message: t('music.preparingInitialOggProgress', {...progress}), completed: progress.completed, total: progress.total})});

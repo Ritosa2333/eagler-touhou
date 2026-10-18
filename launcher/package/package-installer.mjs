@@ -91,11 +91,11 @@ async function invalidReusableFileIds(current, descriptor, desiredFileIds) {
   return [...invalid];
 }
 
-async function stageWhenAvailable(generation, { source, operationId: owner, signal, webLockHeld = false }) {
+async function stageWhenAvailable(generation, { source, operationId: owner, signal, expectedGenerationId, webLockHeld = false }) {
   while (true) {
     throwIfAborted(signal);
     try {
-      return await stagePendingPackageGeneration(generation, { source, operationId: owner, webLockHeld });
+      return await stagePendingPackageGeneration(generation, { source, operationId: owner, expectedGenerationId, webLockHeld });
     } catch (error) {
       if (error?.name !== "PackageMutationBusyError") throw error;
       // Web Locks serialize current browsers. IndexedDB remains the durable
@@ -130,14 +130,18 @@ async function installPackageFromAcquisitionExclusive({
   source,
   acquire,
   reuseCurrent = source === "remote",
+  expectedGenerationId,
   onProgress = null,
   signal = null,
 }, webLockHeld = false) {
   const gameVersion = descriptorGameVersion(descriptor);
   const storeOptions = { gameVersion };
-  const currentResult = reuseCurrent
+  const currentResult = reuseCurrent || expectedGenerationId !== undefined
     ? await readCurrentPackageGeneration(descriptor.game, storeOptions)
     : { installation: null, generation: null };
+  if (expectedGenerationId !== undefined && (currentResult.generation?.id ?? null) !== expectedGenerationId) {
+    throw new Error('Package changed before background update');
+  }
   const resolvedSource = typeof source === "function" ? await source(currentResult) : source;
   const resolvedDesiredFileIds = typeof desiredFileIds === "function"
     ? await desiredFileIds(currentResult)
@@ -166,7 +170,7 @@ async function installPackageFromAcquisitionExclusive({
   });
   const owner = operationId();
   throwIfAborted(signal);
-  await stageWhenAvailable(plan.generation, { source: resolvedSource, operationId: owner, signal, webLockHeld });
+  await stageWhenAvailable(plan.generation, { source: resolvedSource, operationId: owner, signal, expectedGenerationId, webLockHeld });
   const heartbeat = setInterval(() => {
     void refreshPendingPackageOperation(descriptor.game, plan.generation.id, owner, storeOptions).catch(() => {});
   }, 30_000);
@@ -233,7 +237,7 @@ async function installPackageFromAcquisitionExclusive({
     // transaction has committed, the operation is complete and later aborts
     // do not masquerade as a rollback.
     throwIfAborted(signal);
-    const installation = await commitPendingPackageGeneration(descriptor.game, generation.id, { ...storeOptions, source: resolvedSource, operationId: owner });
+    const installation = await commitPendingPackageGeneration(descriptor.game, generation.id, { ...storeOptions, source: resolvedSource, operationId: owner, expectedGenerationId });
     clearInterval(heartbeat);
     return { installation, generation: (await readCurrentPackageGeneration(descriptor.game, storeOptions)).generation };
   } catch (error) {
@@ -294,6 +298,7 @@ export async function installPackageFromRemote(descriptor, {
   fetchImpl = globalThis.fetch,
   onProgress = null,
   signal = null,
+  expectedGenerationId,
 } = {}) {
   if (typeof descriptorUrl !== "string" && !(descriptorUrl instanceof URL)) throw new Error("remote Descriptor URL required");
   if (typeof fetchImpl !== "function") throw new Error("fetch unavailable");
@@ -303,6 +308,7 @@ export async function installPackageFromRemote(descriptor, {
     desiredFileIds,
     source,
     reuseCurrent: true,
+    expectedGenerationId,
     signal,
     acquire: async (_fileId, declaration) => {
       const url = new URL(declaration.source, base);
