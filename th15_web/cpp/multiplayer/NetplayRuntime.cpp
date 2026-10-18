@@ -153,9 +153,12 @@ bool NetplayRuntime::DrainSpectator(){
     if(stage_received_){
         if(stage_playback_.History().Ended())return true;
         if(transport_.Failed())return Fail(transport_.LastError().c_str());
-        if(stage_playback_.Ready()&&!stage_playback_.WaitingForLiveInput())
-            spectator_deadline_=now_ms_+15'000;
-        if(now_ms_>=spectator_deadline_)return Fail("TH15 spectator stage stream stalled; players are unaffected");
+        // A quiet confirmed frontier can mean the source deliberately
+        // paused. Keep admission/bootstrap bounded, then use transport
+        // failure or closure to detect a dead relay instead of game-frame
+        // silence.
+        if(!stage_playback_.Ready()&&now_ms_>=spectator_deadline_)
+            return Fail("TH15 spectator stage stream stalled; players are unaffected");
         return true;
     }
     if(spectator_frames_.empty()){
