@@ -56,7 +56,7 @@ const capturedInputs=new Map();
 function observed(path){const bytes=readFileSync(path),digest=createHash('sha256').update(bytes).digest('hex');if(capturedInputs.has(path)&&capturedInputs.get(path)!==digest)throw Error('Source changed during build; rebuild: '+path);capturedInputs.set(path,digest);return bytes;}
 common.push('-I'+resolve(netplayRoot,'include'));
 const flags=[...common,...(thcrap?['-DTH_ENABLE_THCRAP=1']:[]),'-std=c++17','-fno-exceptions','-fno-rtti'],linkFlags=multiplayer?['-lwebsocket']:[];
-printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input')),flags});
+await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input')),flags});
 if(printPlan){console.log(JSON.stringify({game,profile,variant:multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':'normal',outputDirectory:out,flags,linkFlags,sources},null,2));process.exit(0);}
 const netplayHeaders=multiplayer?headers(resolve(netplayRoot,'include')):[];
 const fixtureHeaders=multiplayerFixtures?headers(resolve(workspace,'portable/multiplayer')):[];
