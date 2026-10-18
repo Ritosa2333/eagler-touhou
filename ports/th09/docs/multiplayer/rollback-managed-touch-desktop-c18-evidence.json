@@ -1,0 +1,4032 @@
+{
+  "schema": "th09-managed-touch-launcher-summary/v1",
+  "generatedAt": "2026-10-11T09:40:45.133Z",
+  "analyzer": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-summary.mjs",
+    "bytes": 42404,
+    "sha256": "ee1186fc978050f05d8be86c08a95aac83117af966b1e4fd800aed951d91638e",
+    "argv": [
+      "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-summary.mjs",
+      "docs/multiplayer/rollback-managed-touch-desktop-c18-evidence.json",
+      "th09_web/artifacts/multiplayer-tests/managed-touch-desktop-stick-c18-report.json"
+    ]
+  },
+  "methods": {
+    "digest": "Input/source SHA hashes raw file bytes. OrderedJsonSha256 uses UTF-8 JSON with recursively sorted object keys; array order and encoded special numbers are retained.",
+    "quantiles": "Linear interpolation at (n - 1) * q; >50 and >100 ms are strict. Empty/invalid measurements remain explicit.",
+    "qualification": "All failed/incomplete runs and phases remain. All raw callback adjacency, including censored boundaries, is retained separately from the named continuous subset. State anchors reset at recorded boundaries; censored spans and diagnostics remain, and any incomplete frame evidence prevents final integration qualification. No good-segment subset qualifies an incomplete phase.",
+    "clocks": "Callback entries and sampled new states use distinct child performance.now boundaries. Host pointer times and Node dispatch times remain separate; no host-minus-child or Node-minus-page latency.",
+    "progress": "Positively observed session-frame and presentation progress, not static repeated presentation. Gaps are between observable states and may span multiple underlying presentations.",
+    "coverage": "Owner/hook/getter checks are observed boundaries only. Cached original references or transient changes between checks are not ruled out. Ring loss/errors invalidate completeness globally; recorded internal discontinuities split state continuity and remain reported.",
+    "scope": "CDP-generated source through real Launcher/native properties; not a physical-finger delay, rAF request dispatch trace, single-tick CPU measurement, multiplayer rollback benchmark, no-hitch acceptance, or causal comparison across differently timed/frequency phases.",
+    "instrumentation": "Diagnostic wrappers, getters and snapshots add uncalibrated work; no performance improvement is inferred from these observations."
+  },
+  "runs": [
+    {
+      "input": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-desktop-stick-c18-report.json",
+        "bytes": 1746987,
+        "sha256": "d255a519c496ae49bed2baca96f450795e453ee963f3648c471d3fdb61e0963d"
+      },
+      "schema": "th09-managed-touch-hosted-integration/v1",
+      "runLabel": "managed-touch-desktop-stick-c18",
+      "platform": "desktop",
+      "movement": "joystick-free",
+      "cpuRate": 4,
+      "platformScope": "Desktop Chromium with mobile/touch emulation and declared CDP CPU throttle; not a physical phone.",
+      "startedAt": "2026-10-11T09:31:47.261Z",
+      "endedAt": "2026-10-11T09:35:20.290Z",
+      "driverPassed": false,
+      "driverFailure": {
+        "message": "Error: Timed out: documented launch warning / actual launch boundary",
+        "stack": "Error: Timed out: documented launch warning / actual launch boundary\n    at until (file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/managed-touch-launcher-browser.mjs:72:8)\n    at async file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/managed-touch-launcher-browser.mjs:451:2",
+        "cause": null
+      },
+      "driverGoals": {},
+      "sourceBefore": [
+        {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs",
+          "bytes": 49798,
+          "sha256": "a2230862e3ba06bf9021a26bf82c37a802cef8c76f6278ef8d190d3da33445cc"
+        },
+        {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-server.mjs",
+          "bytes": 33062,
+          "sha256": "384af56e6f31d0454ed235316e84bdb85bb52c41ee6a112034ba640fb1f162fe"
+        },
+        {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-probe.mjs",
+          "bytes": 27074,
+          "sha256": "01e142e935d0050703ef1d8fab8ad1fa92bcf33198060b17b05e8eed5f3489de"
+        }
+      ],
+      "sourceAfter": [
+        {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs",
+          "bytes": 49798,
+          "sha256": "a2230862e3ba06bf9021a26bf82c37a802cef8c76f6278ef8d190d3da33445cc"
+        },
+        {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-server.mjs",
+          "bytes": 33062,
+          "sha256": "384af56e6f31d0454ed235316e84bdb85bb52c41ee6a112034ba640fb1f162fe"
+        },
+        {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-probe.mjs",
+          "bytes": 27074,
+          "sha256": "01e142e935d0050703ef1d8fab8ad1fa92bcf33198060b17b05e8eed5f3489de"
+        }
+      ],
+      "sourceStableClaim": true,
+      "sourceIdentityRowsValid": true,
+      "sourceIdentityRowsEqual": true,
+      "sourceIdentityScope": "Recorded before/after byte identities compared; this analyzer does not reread or replace frozen source/artifact files.",
+      "environment": {
+        "browserVersion": "155.0.8059.39",
+        "deviceBrowser": {
+          "ua": "Mozilla/5.0 (Linux; Android 11; TH09 desktop emulation) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.8059.39 Mobile Safari/537.36",
+          "maxTouchPoints": 1,
+          "devicePixelRatio": 1,
+          "screen": {
+            "width": 412,
+            "height": 844,
+            "orientation": "portrait-primary"
+          },
+          "viewport": {
+            "width": 412,
+            "height": 844,
+            "visualWidth": 412,
+            "visualHeight": 844
+          },
+          "timeOrigin": 1791711108784.3,
+          "visibility": "visible",
+          "focus": true
+        },
+        "audio": "none BGM resolved and checked in real Game settings; record actual SFX AudioContext separately",
+        "failureState": {
+          "frames": 1,
+          "href": "http://127.0.0.1:63286/runtime/th09/th09.html?hosted=1&managedData=1&gameGeneration=gen-mv3mjxh5-ea532090b0d9&runtimeVariant=normal&runtimeEpoch=1",
+          "sampledAt": 208136.70000004768,
+          "timeOrigin": 1791711108784.3,
+          "owned": true,
+          "visible": false,
+          "documentVisibility": "visible",
+          "documentFocus": false,
+          "runtimeSampledAt": 39318.80000001192,
+          "runtimeTimeOrigin": 1791711277602.9,
+          "startupMarks": [],
+          "commandAudit": {
+            "events": [],
+            "overflow": false
+          },
+          "runtime": false,
+          "epoch": 1,
+          "title": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "session": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "touch": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "rollback": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "options": null,
+          "audioState": null,
+          "error": "EAGLER_RUNTIME_SESSION_SUPERSEDED",
+          "overlay": false,
+          "bridge": "undefined",
+          "calledAt": 210013.3086,
+          "returnedAt": 210031.567
+        },
+        "launchFlow": {
+          "name": "current-settings-start-game-auto-prepare",
+          "primaryLabel": "Start game"
+        },
+        "acceptedWarnings": [
+          "music.noneLaunchWarning"
+        ]
+      },
+      "serverIdentity": {
+        "schema": "th09/managed-touch-launcher-inputs/1",
+        "recordedIdentityJsonSha256": "241a430253105e513321791e70cfbaf07306a1117a6f73da63a171853aab8594",
+        "ui": {
+          "sourceRoot": "D:\\workspace\\eagler\\worktrees\\launcher-th09-input-activity-4x",
+          "root": "D:\\workspace\\eagler\\worktrees\\launcher-th09-input-activity-4x\\.cache\\build\\ui-th09-activity-candidate-c1\\client",
+          "artifactId": "1d607295335cf04a3877b560a81608bb62b2956e676579e3feb56d73b4b22960",
+          "fileCount": 106,
+          "filesOrderedJsonSha256": "884a700c3f256eb4efade842cf83135ab29ce8325ebf4e099623ece8c6ac3523"
+        },
+        "runtimes": {
+          "normal": {
+            "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler",
+            "variant": "normal",
+            "inventory": {
+              "bytes": 1959,
+              "sha256": "b0bbd426bd602b02a05bc105b7e18f299cb7cf6dd4680b1157c0028d54a9920c",
+              "mtimeMs": 1791697074006.1387,
+              "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler\\runtime-files.json",
+              "role": "runtime-inventory"
+            },
+            "version": {
+              "game": "th09",
+              "build": "037c9cd52e70e2c8e8ee516c",
+              "builtAt": "2026-10-11T03:52:10.728Z"
+            },
+            "fileCount": 14,
+            "filesOrderedJsonSha256": "6225317e5b205058853cccb76edabe5a322ec649e84648c362fe01b78bc80933",
+            "wasm": {
+              "bytes": 2827907,
+              "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
+            },
+            "managed": {
+              "bytes": 21364,
+              "sha256": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4"
+            }
+          },
+          "multiplayer": {
+            "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler-multiplayer",
+            "variant": "multiplayer",
+            "inventory": {
+              "bytes": 1959,
+              "sha256": "ddd2c76cec41a918a2ae292e459c9e2b193cd311dcc5b62bd427c189f903d5df",
+              "mtimeMs": 1791697074287.62,
+              "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler-multiplayer\\runtime-files.json",
+              "role": "runtime-inventory"
+            },
+            "version": {
+              "game": "th09",
+              "build": "037c9cd52e70e2c8e8ee516c",
+              "builtAt": "2026-10-11T03:52:10.728Z"
+            },
+            "fileCount": 14,
+            "filesOrderedJsonSha256": "419f3bdb0ded3bf736fa3288b765976d8a25e0d7fe90ee2ac92e1ab840d8f09f",
+            "wasm": {
+              "bytes": 2827907,
+              "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
+            },
+            "managed": {
+              "bytes": 21364,
+              "sha256": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4"
+            }
+          }
+        },
+        "content": {
+          "data": {
+            "bytes": 88180006,
+            "sha256": "73a344a2cb7b1113831058010758f03d6d20e7710d889a95f249046fb8fa5ea0",
+            "mtimeMs": 1128708642000,
+            "path": "D:\\workspace\\eagler\\th09-eagler\\[th09] 东方花映塚 (日文版)\\th09.dat",
+            "role": "retail-data"
+          },
+          "vanillaFont": {
+            "bytes": 8990160,
+            "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+            "mtimeMs": 1789873418000,
+            "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\msgothic.ttc",
+            "role": "vanilla-font"
+          },
+          "unicodeFont": {
+            "bytes": 5105508,
+            "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+            "mtimeMs": 1786873854725.8916,
+            "path": "D:\\workspace\\eagler\\dependencies\\unifont-15.1.05\\unifont-15.1.05.otf",
+            "role": "unicode-font"
+          }
+        },
+        "hostManifestSha256": "941648d14cea73edce510b9c013761bf902fd312b9f5f9fac3d95b9400eb715f",
+        "inputCheck": {
+          "checked": 181,
+          "stable": true,
+          "mismatches": []
+        },
+        "trackedInputCount": 181,
+        "trackedInputsJsonSha256": "0ad65ccf48e65a87d84b2b8534d55ff9c8d83d40ddeaac6a578b4e2e5aeb5471",
+        "probe": {
+          "target": "/fonts/blend.bin",
+          "source": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler\\fonts\\blend.bin",
+          "sha256": "cd7099994c1d25a9526fba4422c518b38fbb4e7ac9940288adc0c0ddef2106eb",
+          "timeoutMs": 30000,
+          "explicitlyInjected": true
+        }
+      },
+      "failures": {
+        "pageErrors": {
+          "count": 0,
+          "orderedJsonSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "first": [],
+          "last": []
+        },
+        "consoleErrors": {
+          "count": 12,
+          "orderedJsonSha256": "1f509e75c68323693482d7911abe1791dbda18d6fe6d655890080e4270c6fa31",
+          "first": [
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+          ],
+          "last": [
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Failed to load resource: net::ERR_CONNECTION_TIMED_OUT",
+            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+          ]
+        },
+        "requestsFailed": {
+          "count": 6,
+          "orderedJsonSha256": "f6cae9645447639b1f84a3608e135d637b6ba393e49ae1f90cb4f6caaeeae307",
+          "first": [
+            {
+              "url": "http://127.0.0.1:63286/runtime/th09/th09.html?hosted=1",
+              "failure": {
+                "errorText": "net::ERR_ABORTED"
+              },
+              "nodeAt": 18560.1806,
+              "timing": {
+                "startTime": 1791711125341.919,
+                "domainLookupStart": -1,
+                "domainLookupEnd": -1,
+                "connectStart": -1,
+                "secureConnectionStart": -1,
+                "connectEnd": -1,
+                "requestStart": 0.488,
+                "responseStart": 7.761,
+                "responseEnd": 123.353
+              }
+            },
+            {
+              "url": "http://127.0.0.1:63286/th09.dat",
+              "failure": {
+                "errorText": "net::ERR_ABORTED"
+              },
+              "nodeAt": 18893.2599,
+              "timing": {
+                "startTime": 1791711125425.107,
+                "domainLookupStart": -1,
+                "domainLookupEnd": -1,
+                "connectStart": -1,
+                "secureConnectionStart": -1,
+                "connectEnd": -1,
+                "requestStart": 0.459,
+                "responseStart": 6.369,
+                "responseEnd": 375.954
+              }
+            },
+            {
+              "url": "http://127.0.0.1:63286/runtime/th09/th09.html?hosted=1",
+              "failure": {
+                "errorText": "net::ERR_ABORTED"
+              },
+              "nodeAt": 35476.9171,
+              "timing": {
+                "startTime": 1791711142344.625,
+                "domainLookupStart": -1,
+                "domainLookupEnd": -1,
+                "connectStart": -1,
+                "secureConnectionStart": -1,
+                "connectEnd": -1,
+                "requestStart": 0.479,
+                "responseStart": 23.621,
+                "responseEnd": 30.687
+              }
+            }
+          ],
+          "last": [
+            {
+              "url": "http://127.0.0.1:63286/th09.dat",
+              "failure": {
+                "errorText": "net::ERR_ABORTED"
+              },
+              "nodeAt": 35556.2627,
+              "timing": {
+                "startTime": 1791711142373.862,
+                "domainLookupStart": -1,
+                "domainLookupEnd": -1,
+                "connectStart": -1,
+                "secureConnectionStart": -1,
+                "connectEnd": -1,
+                "requestStart": 0.439,
+                "responseStart": 49.958,
+                "responseEnd": 80.142
+              }
+            },
+            {
+              "url": "http://127.0.0.1:63286/runtime/th09/shared-netplay.mjs",
+              "failure": {
+                "errorText": "net::ERR_CONNECTION_TIMED_OUT"
+              },
+              "nodeAt": 51237.6085,
+              "timing": {
+                "startTime": 0,
+                "domainLookupStart": -1,
+                "domainLookupEnd": -1,
+                "connectStart": -1,
+                "secureConnectionStart": -1,
+                "connectEnd": -1,
+                "requestStart": -1,
+                "responseStart": -1,
+                "responseEnd": -1
+              }
+            },
+            {
+              "url": "http://gc.kis.v2.scr.kaspersky-labs.com/E5FE9A4A-F1BD-4857-A3C5-FA310EAE49D6/F3E605BA-80C1-435E-890B-5968CEF8C917/shutdown/pagehide?tm=2026-10-11T09%3A34%3A37.264Z",
+              "failure": {
+                "errorText": "net::ERR_ABORTED"
+              },
+              "nodeAt": 170390.3468,
+              "timing": {
+                "startTime": 0,
+                "domainLookupStart": -1,
+                "domainLookupEnd": -1,
+                "connectStart": -1,
+                "secureConnectionStart": -1,
+                "connectEnd": -1,
+                "requestStart": -1,
+                "responseStart": -1,
+                "responseEnd": -1
+              }
+            }
+          ]
+        },
+        "failureUi": {
+          "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+          "alerts": [
+            "Runtime ready timed out"
+          ],
+          "status": [
+            "Changes save automatically in this browser.",
+            "Waiting for resource inspection.Check again"
+          ],
+          "buttons": [
+            "",
+            "Donate",
+            "Less motion",
+            "Notice",
+            "Show debug information",
+            "Language",
+            "Before You Start",
+            "06",
+            "07",
+            "08",
+            "09",
+            "10",
+            "11",
+            "15",
+            "20",
+            "06",
+            "07",
+            "08",
+            "09",
+            "10",
+            "Donate to support hosting",
+            "",
+            "›",
+            "Download",
+            "Import",
+            "Download",
+            "Japanese (original)",
+            "None",
+            "Check again",
+            "Start game",
+            "Import"
+          ],
+          "settingsInputAudit": [
+            {
+              "type": "pointerdown",
+              "at": 12598,
+              "trusted": true,
+              "target": "INPUT",
+              "id": "_r_1d_-touch",
+              "inputType": "checkbox",
+              "checked": false,
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "pointerType": "touch",
+              "pointerId": 2,
+              "x": 365,
+              "y": 300,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "INPUT",
+                  "id": "_r_1d_-touch",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "LABEL",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 12608.600000023842,
+                "defaultPrevented": false,
+                "checked": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 12756.200000047684,
+                "defaultPrevented": false,
+                "checked": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "pointerup",
+              "at": 12731.5,
+              "trusted": true,
+              "target": "INPUT",
+              "id": "_r_1d_-touch",
+              "inputType": "checkbox",
+              "checked": false,
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "pointerType": "touch",
+              "pointerId": 2,
+              "x": 365,
+              "y": 300,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "INPUT",
+                  "id": "_r_1d_-touch",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "LABEL",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 12735.800000011921,
+                "defaultPrevented": false,
+                "checked": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 12756.300000011921,
+                "defaultPrevented": false,
+                "checked": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "mousedown",
+              "at": 13005.200000047684,
+              "trusted": true,
+              "target": "INPUT",
+              "id": "_r_1d_-touch",
+              "inputType": "checkbox",
+              "checked": false,
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "x": 365,
+              "y": 300,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "INPUT",
+                  "id": "_r_1d_-touch",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "LABEL",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 13007.100000023842,
+                "defaultPrevented": false,
+                "checked": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 13873.600000023842,
+                "defaultPrevented": false,
+                "checked": true,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "mouseup",
+              "at": 13040.900000035763,
+              "trusted": true,
+              "target": "INPUT",
+              "id": "_r_1d_-touch",
+              "inputType": "checkbox",
+              "checked": false,
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "x": 365,
+              "y": 300,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "INPUT",
+                  "id": "_r_1d_-touch",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "LABEL",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 13041.700000047684,
+                "defaultPrevented": false,
+                "checked": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 13875.600000023842,
+                "defaultPrevented": false,
+                "checked": true,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "click",
+              "at": 13049.100000023842,
+              "trusted": true,
+              "target": "INPUT",
+              "id": "_r_1d_-touch",
+              "inputType": "checkbox",
+              "checked": true,
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "pointerType": "touch",
+              "pointerId": 2,
+              "x": 365,
+              "y": 300,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "INPUT",
+                  "id": "_r_1d_-touch",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "LABEL",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 13050.400000035763,
+                "defaultPrevented": false,
+                "checked": true,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 14136.400000035763,
+                "defaultPrevented": false,
+                "checked": true,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "input",
+              "at": 13160.200000047684,
+              "trusted": true,
+              "target": "INPUT",
+              "id": "_r_1d_-touch",
+              "inputType": "checkbox",
+              "checked": true,
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "INPUT",
+                  "id": "_r_1d_-touch",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "LABEL",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 13162.700000047684,
+                "defaultPrevented": false,
+                "checked": true,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 14139.5,
+                "defaultPrevented": false,
+                "checked": true,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "change",
+              "at": 13363.900000035763,
+              "trusted": true,
+              "target": "INPUT",
+              "id": "_r_1d_-touch",
+              "inputType": "checkbox",
+              "checked": true,
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "INPUT",
+                  "id": "_r_1d_-touch",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "LABEL",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 13365.300000011921,
+                "defaultPrevented": false,
+                "checked": true,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 14143.400000035763,
+                "defaultPrevented": false,
+                "checked": true,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "pointerdown",
+              "at": 14846.100000023842,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 366,
+              "y": 344,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 14848.5,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 15063.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "mousedown",
+              "at": 14854.300000011921,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "x": 366,
+              "y": 344,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 14857.300000011921,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 15063.800000011921,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "pointerup",
+              "at": 14879.300000011921,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 366,
+              "y": 344,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 14882.5,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 15063.900000035763,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "mouseup",
+              "at": 14886,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "x": 366,
+              "y": 344,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 14891.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 15228.5,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "click",
+              "at": 14898.400000035763,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 366,
+              "y": 344,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DETAILS",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FORM",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": true
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_7_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 14900,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 15230.300000011921,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "pointerdown",
+              "at": 20286.80000001192,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 239,
+              "y": 290,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 20288.200000047684,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 20779.200000047684,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "mousedown",
+              "at": 20293.600000023842,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "x": 239,
+              "y": 290,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 20294.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 20779.900000035763,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "pointerup",
+              "at": 20313.600000023842,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 239,
+              "y": 290,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 20314.900000035763,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 20780.600000023842,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "mouseup",
+              "at": 20320.700000047684,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "x": 239,
+              "y": 290,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 20321.900000035763,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 21192.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "click",
+              "at": 20324.400000035763,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 239,
+              "y": 290,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 20324.900000035763,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 21194.30000001192,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "pointerdown",
+              "at": 21575.30000001192,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 241,
+              "y": 459,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 21577.600000023842,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 22077.600000023842,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "mousedown",
+              "at": 21585.100000023842,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "x": 241,
+              "y": 459,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 21586.30000001192,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 22081.600000023842,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "pointerup",
+              "at": 21614.400000035763,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 241,
+              "y": 459,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 21615.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 22081.600000023842,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "mouseup",
+              "at": 21625.30000001192,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "x": 241,
+              "y": 459,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 21625.5,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 22526.80000001192,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "click",
+              "at": 21629.80000001192,
+              "trusted": true,
+              "target": "SPAN",
+              "id": "",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 241,
+              "y": 459,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 21632.5,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 22527.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "change",
+              "at": 21689.400000035763,
+              "trusted": false,
+              "target": "SELECT",
+              "id": "_r_22_-movement",
+              "inputType": "select-one",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "SELECT",
+                  "id": "_r_22_-movement",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "SPAN",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FIELDSET",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 21960,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 22528.30000001192,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "pointerdown",
+              "at": 22865,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 331.67999267578125,
+              "y": 488.1199951171875,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_23_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 22866.200000047684,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 23605.400000035763,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "mousedown",
+              "at": 22869.100000023842,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "x": 331,
+              "y": 488,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_23_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 22870.100000023842,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 23608.100000023842,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "pointerup",
+              "at": 22900.900000035763,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 331.67999267578125,
+              "y": 488.1199951171875,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_23_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 22901.900000035763,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 23609.600000023842,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "mouseup",
+              "at": 22905.900000035763,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "x": 331,
+              "y": 488,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_23_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 22906.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 23862.900000035763,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "click",
+              "at": 22910.5,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 331,
+              "y": 488,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_23_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 22911.5,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 23863.5,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1"
+              }
+            },
+            {
+              "type": "pointerdown",
+              "at": 24472.30000001192,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 129.82000732421875,
+              "y": 463,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FOOTER",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 24475.5,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 24726.600000023842,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "mousedown",
+              "at": 24480.700000047684,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "x": 129,
+              "y": 463,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FOOTER",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 24482,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 24726.600000023842,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "pointerup",
+              "at": 24515.700000047684,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 129.82000732421875,
+              "y": 463,
+              "detail": 0,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FOOTER",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 24518,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 24726.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "mouseup",
+              "at": 24523.900000035763,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "x": 129,
+              "y": 463,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FOOTER",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 24525.30000001192,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 25064,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            },
+            {
+              "type": "click",
+              "at": 24532.600000023842,
+              "trusted": true,
+              "target": "BUTTON",
+              "id": "",
+              "inputType": "button",
+              "isConnected": true,
+              "url": "http://127.0.0.1:63286/play/th09?uiLocale=en&touchLayout=1",
+              "settingsPresent": true,
+              "pointerType": "mouse",
+              "pointerId": 1,
+              "x": 129,
+              "y": 463,
+              "detail": 1,
+              "defaultPrevented": false,
+              "focused": true,
+              "path": [
+                {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "FOOTER",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "_r_21_-tools",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "radix-_r_1g_",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "BODY",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                },
+                {
+                  "tag": "HTML",
+                  "id": "",
+                  "href": null,
+                  "product": null,
+                  "settings": false
+                }
+              ],
+              "microtask": {
+                "at": 24535.700000047684,
+                "defaultPrevented": false,
+                "isConnected": true
+              },
+              "nextTask": {
+                "at": 25064.30000001192,
+                "defaultPrevented": false,
+                "isConnected": true,
+                "url": "http://127.0.0.1:63286/play/th09?uiLocale=en"
+              }
+            }
+          ],
+          "switches": [
+            {
+              "id": "_r_2g_-touch",
+              "checked": true,
+              "ariaChecked": "true"
+            },
+            {
+              "id": "_r_2g_-always-hitbox",
+              "checked": false,
+              "ariaChecked": "false"
+            },
+            {
+              "id": "_r_2g_-magnifier",
+              "checked": false,
+              "ariaChecked": "false"
+            },
+            {
+              "id": "_r_2g_-fps",
+              "checked": false,
+              "ariaChecked": "false"
+            }
+          ],
+          "selects": [
+            {
+              "id": "",
+              "value": "en",
+              "disabled": false,
+              "options": [
+                {
+                  "value": "zh-CN",
+                  "text": "Simplified Chinese"
+                },
+                {
+                  "value": "en",
+                  "text": "English"
+                }
+              ]
+            },
+            {
+              "id": "_r_2g_-language",
+              "value": "ja",
+              "disabled": true,
+              "options": [
+                {
+                  "value": "ja",
+                  "text": "Japanese (original)"
+                }
+              ]
+            },
+            {
+              "id": "_r_2g_-music",
+              "value": "none",
+              "disabled": true,
+              "options": [
+                {
+                  "value": "none",
+                  "text": "None"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "cleanup": {
+        "probeRestored": null,
+        "errors": [],
+        "serverClean": true,
+        "sourceAudit": {
+          "checked": 181,
+          "stable": true,
+          "mismatches": []
+        },
+        "serverEvidence": {
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-desktop-stick-c18\\server\\server-stopped.json",
+          "bytes": 554,
+          "sha256": "f9e8a1209b7da618a6ccf2b55bca1c8c979ec99cb1f18ae5e97cbfcd0002290c"
+        },
+        "serverErrors": []
+      },
+      "sourceDispatch": {
+        "available": true,
+        "nodeClockOnly": true,
+        "rows": {
+          "count": 2,
+          "orderedJsonSha256": "d74a539571812b41267935c7a78f13f471c4f545d8d2ddf2957606920a50b34d",
+          "first": [
+            {
+              "seq": 0,
+              "type": "touchStart",
+              "points": [
+                {
+                  "id": 11,
+                  "x": 365,
+                  "y": 300,
+                  "radiusX": 4,
+                  "radiusY": 4,
+                  "force": 0.8
+                }
+              ],
+              "plannedAt": 14401.9045,
+              "calledAt": 14402.337,
+              "returnedAt": 14518.7686,
+              "error": null
+            },
+            {
+              "seq": 1,
+              "type": "touchEnd",
+              "points": [],
+              "plannedAt": 14599.1535,
+              "calledAt": 14599.1965,
+              "returnedAt": 15255.6151,
+              "error": null
+            }
+          ],
+          "last": [
+            {
+              "seq": 0,
+              "type": "touchStart",
+              "points": [
+                {
+                  "id": 11,
+                  "x": 365,
+                  "y": 300,
+                  "radiusX": 4,
+                  "radiusY": 4,
+                  "force": 0.8
+                }
+              ],
+              "plannedAt": 14401.9045,
+              "calledAt": 14402.337,
+              "returnedAt": 14518.7686,
+              "error": null
+            },
+            {
+              "seq": 1,
+              "type": "touchEnd",
+              "points": [],
+              "plannedAt": 14599.1535,
+              "calledAt": 14599.1965,
+              "returnedAt": 15255.6151,
+              "error": null
+            }
+          ]
+        },
+        "errors": [],
+        "byType": {
+          "touchStart": 1,
+          "touchEnd": 1
+        },
+        "phaseAssignment": "Injection rows have no probe phase id; Node times are not converted to host/child clocks or assigned to phases."
+      },
+      "phasePlans": {
+        "baselineGesture": null,
+        "queueGesture": null,
+        "afterResourceGesture": null
+      },
+      "resource": {
+        "request": null,
+        "beforeReleaseEvents": {
+          "count": 0,
+          "orderedJsonSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "first": [],
+          "last": []
+        },
+        "beforeReleaseMatchingEvents": [],
+        "finalMatchingEvents": [
+          {
+            "at": 172409.80000001192,
+            "timeOrigin": 1791711108784.3,
+            "epoch": 1,
+            "event": "error",
+            "error": "EAGLER_RUNTIME_SESSION_SUPERSEDED"
+          }
+        ],
+        "clockScope": "Server, Node driver and host event times remain their original fields; no cross-clock duration is derived."
+      },
+      "stages": [
+        {
+          "name": "host-preflight",
+          "nodeAt": 1280.9415,
+          "profile": "web-development",
+          "engineRebuilt": false
+        },
+        {
+          "name": "real-ui-ready",
+          "nodeAt": 29078.8626,
+          "platform": "desktop",
+          "movement": "joystick-free",
+          "cpuRate": 4
+        },
+        {
+          "name": "real-product-start-requested",
+          "nodeAt": 29976.8122
+        },
+        {
+          "name": "retained-failure",
+          "nodeAt": 210001.0652,
+          "error": "Error: Timed out: documented launch warning / actual launch boundary"
+        }
+      ],
+      "runtimeEvents": {
+        "count": 1,
+        "orderedJsonSha256": "9bca99c5bb568ed6f6ef5f027b19300777091acca89e1fc81732917fe039d609",
+        "first": [
+          {
+            "at": 172409.80000001192,
+            "timeOrigin": 1791711108784.3,
+            "epoch": 1,
+            "event": "error",
+            "error": "EAGLER_RUNTIME_SESSION_SUPERSEDED"
+          }
+        ],
+        "last": [
+          {
+            "at": 172409.80000001192,
+            "timeOrigin": 1791711108784.3,
+            "epoch": 1,
+            "event": "error",
+            "error": "EAGLER_RUNTIME_SESSION_SUPERSEDED"
+          }
+        ]
+      },
+      "snapshots": {
+        "probe": {
+          "available": false
+        },
+        "failureProbe": {
+          "available": false
+        },
+        "resourceProbe.beforeReleaseProbe": {
+          "available": false
+        },
+        "disposed": {
+          "available": false
+        }
+      },
+      "selectedSnapshot": null,
+      "snapshotScope": "partial/failure fallback; never promoted to final PASS; snapshots are not concatenated",
+      "analysisIssues": [
+        "no retained probe snapshot"
+      ],
+      "phases": [],
+      "cleanupQualified": false,
+      "driverGoalFieldsTrue": false,
+      "movementPhasesQualified": false,
+      "finalIntegrationQualified": false
+    }
+  ],
+  "summary": {
+    "runs": 1,
+    "driverPassed": 0,
+    "finalIntegrationQualified": 0,
+    "analysisFailures": 1,
+    "comparison": "No performance ranking, phase pooling, FPS claim or causal A/B ratio is computed."
+  }
+}

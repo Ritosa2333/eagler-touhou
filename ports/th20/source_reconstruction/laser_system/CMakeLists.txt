@@ -1,0 +1,8 @@
+add_library(th20_laser_system STATIC controller.cpp base.cpp type3.cpp type1.cpp type1_frame.cpp type1_cancellation.cpp type1_collision.cpp type1_measure.cpp type0.cpp type0_frame.cpp type0_commands.cpp type0_bounce.cpp type0_cancellation.cpp type0_collision.cpp type0_measure.cpp type2.cpp entry_adapter.cpp)
+target_compile_features(th20_laser_system PUBLIC cxx_std_20)
+target_sources(th20_laser_system PRIVATE spawn.cpp)
+target_sources(th20_laser_system PRIVATE erase_all.cpp)
+target_sources(th20_laser_system PRIVATE type2_reemit.cpp)
+target_sources(th20_laser_system PRIVATE type2_path.cpp type2_frame.cpp type2_commands.cpp type2_cancellation.cpp type2_collision.cpp type2_measure.cpp)
+target_compile_options(th20_laser_system PRIVATE /W4 /utf-8 /fp:strict /arch:SSE2)
+target_link_libraries(th20_laser_system PUBLIC th20_sprite_renderer th20_runtime_state th20_game_session th20_core_scheduler th20_gameplay)

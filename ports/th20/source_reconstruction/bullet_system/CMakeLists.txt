@@ -1,0 +1,6 @@
+add_library(th20_bullet_system STATIC state.cpp controller.cpp cancellation.cpp drop_items.cpp frame.cpp movement.cpp advance.cpp bounds.cpp metadata.cpp style_data.cpp style.cpp extended_commands.cpp shot_pattern.cpp shoot.cpp player_collision.cpp enemy_spawn.cpp laser_spawn.cpp item_adapter.cpp entry_adapter.cpp)
+target_compile_features(th20_bullet_system PUBLIC cxx_std_20)
+target_sources(th20_bullet_system PRIVATE stage_reset.cpp)
+target_sources(th20_bullet_system PRIVATE player_cancellation.cpp)
+target_compile_options(th20_bullet_system PRIVATE /W4 /utf-8 /fp:strict /arch:SSE2)
+target_link_libraries(th20_bullet_system PUBLIC th20_sprite_renderer th20_runtime_state th20_game_session th20_core_scheduler th20_gameplay th20_audio_runtime th20_damage_regions th20_effect_system th20_player_entity)

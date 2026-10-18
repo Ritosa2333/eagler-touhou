@@ -1,0 +1,205 @@
+{
+  "schema": "th09/mobile-rollback-validation/1",
+  "declaredAt": "2026-10-11",
+  "status": "declared-before-new-builds-and-browser-runs",
+  "scope": "Authored modern C++/Web only; nig-only operations; all builds, browsers, tests and Node evidence commands serialized by root. CPU throttling on desktop Chromium is not Android/iOS device acceptance.",
+  "ownership": {
+    "sourceRoot": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x",
+    "branch": "experiment/mobile-rollback-4x",
+    "parentCommit": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
+    "baselineRoot": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+    "commonRoot": "D:/workspace/eagler/worktrees/th09-rollback-input-batch-common",
+    "commonCommit": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e"
+  },
+  "hypothesis": "TH09 converts relative finger gestures to a held absolute field target. Mode 0 currently erases predicted analog inputs. Retaining the last actual target/vector may avoid unnecessary corrections while preserving full rollback for real target, vector, release and metadata differences. Held phases and moving phases must be reported separately; continuous motion may still correct every frame.",
+  "candidate": {
+    "productionFile": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+    "change": "Enable existing common directTouchIsAbsolute semantics for mode 0 and remove its analog-clearing override.",
+    "preserved": {
+      "adonisMode": 0,
+      "inputDelayFrames": 0,
+      "historyFrames": 8,
+      "logicalHz": 60,
+      "fullWorldRollback": true,
+      "buttonPredictionMask": "shot/charge, focus, direction; no Bomb/menu/touchBomb",
+      "directionPredictionLimitFrames": 3,
+      "informationPacing": true,
+      "wireLayoutAndActualCapture": true
+    },
+    "otherHypotheses": "Managed hosted touch queue and browser scheduling remain separate source audit candidates. No production queue, relay, pacing-shadow, restore-chain or audio changes in this comparison."
+  },
+  "baselines": {
+    "release": {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-release",
+      "wasmSha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577"
+    },
+    "diagnostic": {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-live",
+      "wasmSha256": "59364fa88a9a23913fe2d808ae6e303790dcb1c1533f5e4d4e5893d14fde4877"
+    }
+  },
+  "components": {
+    "required": [
+      "held DirectTouch and Joystick across bounded prediction history",
+      "unchanged target/vector does not create a correction",
+      "real target/vector/release/legal metadata/button differences retain complete FrameInput comparison and earliest correction",
+      "prediction bound, once-only capture and no resampling during recovery",
+      "invalid input rejection, original session/Adonis/world journal contracts"
+    ]
+  },
+  "deterministicGate": {
+    "frames": 900,
+    "mode": 0,
+    "inputDelayFrames": 0,
+    "requestedInputDelay": 8,
+    "deliveryClock": "frontier if explicitly implemented and audited; otherwise report iteration delay and do not call it measured rollback depth",
+    "cpuRate": 4,
+    "scope": "Two rollback worlds plus a complete exact-input reference in one throttled renderer; manual ticks, no game FPS claim",
+    "stimuli": [
+      "normal rate-limited relative drag with 150% sensitivity",
+      "continuous moves, reversals, stationary held finger, UP, recontact, cancel, two-finger focus and fire",
+      "free-direction joystick with reversal and neutral"
+    ],
+    "sequence": [
+      {
+        "label": "mobile-rollback-touch-deep-b1",
+        "build": "baseline-diagnostic",
+        "profile": "direct"
+      },
+      {
+        "label": "mobile-rollback-touch-deep-c1",
+        "build": "candidate-diagnostic",
+        "profile": "direct"
+      },
+      {
+        "label": "mobile-rollback-stick-deep-c1",
+        "build": "candidate-diagnostic",
+        "profile": "joystick"
+      }
+    ],
+    "required": [
+      "complete endpoint and confirmed captures",
+      "both peers' identical confirmed input stream",
+      "exact spectator world hash and 48-field audit",
+      "framebuffer equality",
+      "Replay bytes including motion metadata equality",
+      "report actual analog active/changed target/vector frames and physical movement, not merely nonzero mode"
+    ]
+  },
+  "releaseSeries": {
+    "sequence": [
+      {
+        "label": "mobile-rollback-relay39-b1",
+        "build": "baseline"
+      },
+      {
+        "label": "mobile-rollback-relay39-c1",
+        "build": "candidate"
+      },
+      {
+        "label": "mobile-rollback-relay39-c2",
+        "build": "candidate"
+      },
+      {
+        "label": "mobile-rollback-relay39-b2",
+        "build": "baseline"
+      }
+    ],
+    "parameters": {
+      "frames": 1800,
+      "bodyFrontier": [
+        180,
+        1800
+      ],
+      "mode": 0,
+      "inputDelayFrames": 0,
+      "historyFrames": 8,
+      "cpuRatesBySide": [
+        1,
+        4
+      ],
+      "headed": true,
+      "nativeGpu": true,
+      "sourceClock": "independent page performance.now/setTimeout; never advanced by logical frames",
+      "sourceRateHz": 60,
+      "profile": "repeatable continuous drag/reversal/hold/up/recontact/cancel with fire/focus, fixed phase offset by seat",
+      "touchSensitivity": 1.5,
+      "unlimited": false,
+      "transport": "independent relay",
+      "oneWayDelayMs": 39,
+      "jitterMs": 5,
+      "dropEvery": 0,
+      "audioOutput": true,
+      "hostLoad": true,
+      "rafDiagnostics": true,
+      "rafAnomaly": true,
+      "relayTrace": true,
+      "networkTrace": false,
+      "liveCost": false,
+      "cpuProfile": false
+    },
+    "inputComparison": "Planned source schedule is identical across runs. Actual logical captured tape is preserved, not forced to match across wall-clock runs. Within each run both peers must agree on every compared confirmed prefix."
+  },
+  "conditionalFollowups": [
+    {
+      "label": "mobile-rollback-burst120-c1",
+      "condition": "Candidate correctness gates pass and baseline series completes",
+      "frames": 1800,
+      "cpuRatesBySide": [
+        1,
+        4
+      ],
+      "sourceRateHz": 120,
+      "transport": "relay",
+      "baseDelayMs": 39,
+      "jitterMs": 5,
+      "burst": {
+        "atMs": 20000,
+        "forMs": 500,
+        "extraDelayMs": 120
+      }
+    },
+    {
+      "label": "mobile-rollback-direct120-c1",
+      "condition": "Candidate correctness gates pass; inspect actual selected ICE route",
+      "frames": 900,
+      "cpuRatesBySide": [
+        1,
+        4
+      ],
+      "sourceRateHz": 120,
+      "transport": "RTC",
+      "expectedPath": "direct",
+      "injectedDelayMs": 0,
+      "jitterMs": 0,
+      "dropEvery": 0,
+      "scope": "Actual local direct RTC; not public NAT/TURN or mobile radio evidence."
+    }
+  ],
+  "measurements": {
+    "primary": [
+      "continuous body-end-closed new-state completed-observation intervals using sampledAtMs",
+      "separately labelled RAF timestamp intervals",
+      "body Hz and counts above 25/50/100/250 ms, worst event retained",
+      "native call distribution and total, correction/resimulation/wait counts",
+      "held/moving/lifted phase correction and recovery work",
+      "all planned/submitted/coalesced/not-ready/captured/presented source observations",
+      "complete 12-byte native wire values and duplicate-history consistency",
+      "actual local position/motion changes observed only at new frontiers"
+    ],
+    "responseScope": "Scheduled synthetic pointer event -> native touch ABI submission -> first observed local wire after capture -> callback completing a new-frontier renderer submission. Latest-event participation is not per-MOVE physical pixel latency, remote ACK or true phone input-to-photon.",
+    "limitations": [
+      "desktop CPU throttle is not named mobile hardware",
+      "native ABI input bypasses Launcher/iOS hosted command queue",
+      "single shared host may have compiler/browser/OS/GPU interference",
+      "frame-delay correctness is not relay performance",
+      "held prediction cannot know unreceived turns/releases and cannot remove all correction cost"
+    ]
+  },
+  "retention": {
+    "oldEvidence": "Do not edit original frozen source, builds or evidence. New work and reports stay in new worktree.",
+    "failures": "Retain all failed attempts, raw results, stdout/stderr and source/build identities. Fix a concrete defect before any declared rerun; no choosing quiet winners.",
+    "decision": "Correctness is mandatory. Report all performance runs and uncertainty; do not call the smooth-gameplay goal achieved solely from lower correction counts, desktop averages or partial input coverage.",
+    "publication": "Local commits only; no push, merge or deployment."
+  }
+}

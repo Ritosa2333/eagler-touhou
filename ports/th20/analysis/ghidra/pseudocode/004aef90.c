@@ -1,0 +1,92 @@
+/* Entry: 0x004aef90; symbol: FUN_004aef90; body bytes: 883 */
+
+undefined4 * __fastcall FUN_004aef90(undefined4 *param_1)
+
+{
+  char **ppcVar1;
+  int *unaff_FS_OFFSET;
+  int local_10;
+  undefined1 *puStack_c;
+  undefined4 local_8;
+  
+  local_8 = 0xffffffff;
+  puStack_c = &LAB_0056989d;
+  local_10 = *unaff_FS_OFFSET;
+  ppcVar1 = (char **)(DAT_005b25c0 ^ (uint)&stack0xfffffffc);
+  *unaff_FS_OFFSET = (int)&local_10;
+  FUN_0041fd20(param_1);
+  local_8 = 0;
+  *param_1 = &PTR_FUN_0057062c;
+  FUN_004aedf0(param_1 + 4);
+  FUN_004aedf0(param_1 + 0xb);
+  FUN_004aed50(param_1 + 0x12);
+  param_1[0x14] = 0;
+  param_1[0x15] = 0;
+  param_1[0x16] = 0;
+  param_1[0x17] = 0;
+  param_1[0x18] = 0;
+  param_1[0x19] = 0;
+  param_1[0x1a] = 0;
+  param_1[0x1b] = 0;
+  param_1[0x1c] = 0;
+  param_1[0x1d] = 0;
+  param_1[0x1e] = 0;
+  param_1[0x1f] = 0;
+  param_1[0x20] = 0;
+  param_1[0x21] = 0;
+  param_1[0x22] = 0;
+  param_1[0x23] = 0;
+  FUN_00425cc0(param_1 + 0x24);
+  FUN_004aee40(param_1 + 0x25);
+  FUN_004aeda0(param_1 + 0x2f);
+  FUN_00425cc0(param_1 + 0x32);
+  FUN_00425cc0(param_1 + 0x33);
+  FUN_004aee40(param_1 + 0x34);
+  FUN_00425cc0(param_1 + 0x3e);
+  FUN_00425cc0(param_1 + 0x3f);
+  FUN_00425cc0(param_1 + 0x40);
+  FUN_00425cc0(param_1 + 0x41);
+  FUN_00425cc0(param_1 + 0x42);
+  FUN_00425cc0(param_1 + 0x43);
+  FUN_00425cc0(param_1 + 0x44);
+  FUN_00425cc0(param_1 + 0x45);
+  FUN_00425cc0(param_1 + 0x46);
+  param_1[0x47] = 0;
+  param_1[0x48] = 0;
+  param_1[0x49] = 0;
+  param_1[0x4a] = 0;
+  param_1[0x4b] = 0;
+  param_1[0x4c] = 0;
+  param_1[0x4d] = 0;
+  param_1[0x4e] = 0;
+  FUN_00425cc0(param_1 + 0x4f);
+  FUN_00422d90(param_1 + 0x50);
+  param_1[0x54] = 0;
+  param_1[0x56] = 0;
+  param_1[0x57] = 0;
+  param_1[0x58] = 0;
+  param_1[0x59] = 0;
+  param_1[0x5a] = 0;
+  param_1[0x5b] = 0;
+  param_1[0x5c] = 0;
+  param_1[0x5d] = 0;
+  param_1[0x5e] = 0;
+  param_1[0x5f] = 0;
+  param_1[0x60] = 0;
+  FUN_0040bc20(param_1 + 0x61,8,4,FUN_004aece0);
+  FUN_004aebf0(param_1 + 0x69);
+  FUN_00422d90(param_1 + 0x6a);
+  param_1[0x6e] = 0;
+  param_1[0x6f] = 0;
+  param_1[0x70] = 0;
+  param_1[0x71] = 0;
+  param_1[0x72] = 0;
+  param_1[0x73] = 0;
+  FUN_0040bc20(param_1 + 0x74,0x54,3,FUN_004aeb40);
+  param_1[0xb4] = 0;
+  std::_Adl_verify_range<char*,char_const*>((char **)"initialize FrontInf\n",ppcVar1);
+  DAT_005c06a4 = param_1;
+  *unaff_FS_OFFSET = local_10;
+  return param_1;
+}
+

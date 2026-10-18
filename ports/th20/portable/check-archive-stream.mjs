@@ -1,0 +1,10 @@
+import {execFileSync} from 'node:child_process';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {WASI} from 'node:wasi';
+const root=resolve(import.meta.dirname,'..'),sdk=resolve(root,'tools/emsdk'),out=resolve(root,'artifacts/shared-platform-validation');mkdirSync(out,{recursive:true});
+const sources=['portable/archive-stream-check.cpp',...['Archive','Lzss','ResourceCrypt'].map(n=>'th08_web/cpp/game/'+n+'.cpp')];
+execFileSync('python',[resolve(sdk,'install/emscripten/emcc.py'),'-O2','-std=c++17','-fno-exceptions','-sDEFAULT_TO_CXX=1',...sources.map(n=>resolve(root,n)),'-sSTANDALONE_WASM=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=268435456','-o',resolve(out,'archive-stream.wasm')],{env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten')},windowsHide:true,stdio:'inherit'});
+const wasi=new WASI({version:'preview1',args:[],env:{},preopens:{'/assets':resolve(root,'[th08] 东方永夜抄 (日文版)')},returnOnExit:true}),module=await WebAssembly.compile(readFileSync(resolve(out,'archive-stream.wasm'))),instance=await WebAssembly.instantiate(module,{wasi_snapshot_preview1:wasi.wasiImport});
+const bytes=readFileSync(resolve(root,'[th08] 东方永夜抄 (日文版)/th08.dat')),pointer=instance.exports.test_input(bytes.length);if(!pointer)throw Error('Archive test input too large');new Uint8Array(instance.exports.memory.buffer,pointer,bytes.length).set(bytes);
+const code=wasi.start(instance);if(code)throw Error('Stream archive comparison failed: '+code);writeFileSync(resolve(out,'archive-stream.json'),JSON.stringify({passed:true,checks:['every original DAT entry, encrypted and decrypted bytes','bounded stream reads','payload short read','index short read','truncated header','failed-open state reset']},null,2));

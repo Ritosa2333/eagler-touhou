@@ -1,0 +1,20 @@
+/* Native Replay seeking is read-only. All online connection, calibration,
+   failure and return UI is owned by the standard eagler-touhou frontend. */
+.th11-mp-replay-seek {
+  color: #f5f1ec;
+  font: 15px/1.5 "Yu Mincho", "MS PMincho", "Noto Serif CJK JP", serif;
+  text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+  color-scheme: dark;
+  position: fixed;
+  left: 50%;
+  top: 9%;
+  transform: translateX(-50%);
+  z-index: 24;
+  width: max-content;
+  max-width: 90%;
+  padding: 8px 14px;
+  background: #09070bdd;
+  text-align: center;
+  white-space: pre-line;
+  pointer-events: none;
+}

@@ -1,0 +1,5 @@
+The actual loading scene (`0x61c`, original global `0x5c4d2c`) is source code, including factory `0x4d85c0`, constructor/destructor, worker startup, update/draw scheduling and blocking ANM loading. It directly uses the recovered sprite, audio, text and game-session modules. `0x4dd730` preserves the scene shutdown order.
+
+Unknown resource/cache/gameplay owners are explicit required interfaces in `startup.hpp`. This module compiles into a static library but those definitions still prevent complete independent engine linkage. The loading worker itself has not been validated against a fully initialized original game.
+
+`named_spawn_tests/` validates original `0x450c70` and `0x450cb0` against `sprite_renderer/named_spawn.cpp`: 4,096 cases and 24,576 passing byte/list/handle checks. It includes both original group choices with the `0x48` stride, all flag combinations from 0 through 31, placement and layer options, and stem-name branches. Evidence files are documentary and excluded from production targets.

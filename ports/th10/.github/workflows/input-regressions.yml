@@ -1,0 +1,58 @@
+name: Input regressions
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - '.github/workflows/input-regressions.yml'
+      - 'th10_web/cpp/game/**'
+      - 'th10_web/cpp/platform/**'
+      - 'portable/check-menu-input.mjs'
+      - 'portable/check-presentation-input.mjs'
+      - 'portable/make-dependencies.mjs'
+      - 'portable/ending-controls-check.cpp'
+      - 'tests/*input-test.cpp'
+      - 'tests/make-dependencies.test.mjs'
+      - 'third_party/eagler-common'
+  pull_request:
+    paths:
+      - '.github/workflows/input-regressions.yml'
+      - 'th10_web/cpp/game/**'
+      - 'th10_web/cpp/platform/**'
+      - 'portable/check-menu-input.mjs'
+      - 'portable/check-presentation-input.mjs'
+      - 'portable/make-dependencies.mjs'
+      - 'portable/ending-controls-check.cpp'
+      - 'tests/*input-test.cpp'
+      - 'tests/make-dependencies.test.mjs'
+      - 'third_party/eagler-common'
+  workflow_dispatch:
+
+jobs:
+  input:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify and extract the pinned WASI SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="$RUNNER_TEMP/wasi-sdk.deb"
+          curl --fail --location --retry 2 --max-time 300 --output "$package" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb
+          echo "09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package" | sha256sum --check
+          dpkg-deb --extract "$package" "$RUNNER_TEMP/th10-wasi-sdk"
+          echo "WASI_SDK_PATH=$RUNNER_TEMP/th10-wasi-sdk/opt/wasi-sdk" >> "$GITHUB_ENV"
+      - name: Actual input consumers and alignment checks
+        run: |
+          node --test tests/make-dependencies.test.mjs
+          node portable/check-menu-input.mjs
+          node portable/check-presentation-input.mjs
+          TH10_TEST_UBSAN=1 node portable/check-menu-input.mjs
+          TH10_TEST_UBSAN=1 node portable/check-presentation-input.mjs

@@ -1,0 +1,10 @@
+import {execFileSync} from 'node:child_process';
+import {readFileSync,writeFileSync} from 'node:fs';
+import {WASI} from 'node:wasi';
+const path='artifacts/frame-cadence.wasm';
+execFileSync('../toolchains/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe',['--target=wasm32-wasip1','-O2','-std=c++17','-Iportable','portable/check-frame-cadence.cpp','-o',path],{windowsHide:true});
+const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
+const {instance}=await WebAssembly.instantiate(readFileSync(path),{wasi_snapshot_preview1:wasi.wasiImport});
+if(wasi.start(instance))throw Error('Cadence regression');
+const result={passed:true,displayHz:[15,20,30,60,90,120,144,165],seconds:60,missedDeadlinePolicy:'skip-expired-single-tick',maxTicksPerCallback:1,pauseClearsDebt:true};
+writeFileSync('artifacts/frame-cadence.json',JSON.stringify(result,null,2));console.log(result);

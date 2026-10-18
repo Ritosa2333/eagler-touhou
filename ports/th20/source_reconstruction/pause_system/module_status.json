@@ -1,0 +1,122 @@
+{
+  "status": "compiled_source_module_with_explicit_owner_dependencies",
+  "full_game_equivalence": false,
+  "source_hashes": {
+    "source_reconstruction/pause_system/capture.cpp": "6cf27640f83308e2281d223675095446985680528dc1c3e635b80216ac35295f",
+    "source_reconstruction/pause_system/cursor_history.cpp": "0468b8c5093b8cde9d9a037458152d86769587d6bc471adb770d02dbb70be210",
+    "source_reconstruction/pause_system/draw.cpp": "b8823c9bcc02519ad2c248f491cfb0e52c78dbb660c3390abfd80d6d8389cd4c",
+    "source_reconstruction/pause_system/draw_entries.cpp": "b63125be352e0cac6993ba21d07e9a7c3abdfe05a36dfd81cf3590c2ad24dfa3",
+    "source_reconstruction/pause_system/draw_ranking.cpp": "62f105d755020c87fd10370435f3747aad0207cd43bda5a5d1996dbab4fa125a",
+    "source_reconstruction/pause_system/environment.cpp": "7a4b14d22439c58d82c030649b86f41dd9d835e1a97d6924c3fd665250d1ad06",
+    "source_reconstruction/pause_system/lifecycle.cpp": "b2d97d37310411d331719b75503fcfdf2490d0a5f37a9594dce6ea211cf66989",
+    "source_reconstruction/pause_system/menu.cpp": "ea825a6c009aa1eab0634b111326822731cc9032c0001c3170949486a4d10405",
+    "source_reconstruction/pause_system/menu_queries.cpp": "a0f8c07540a502cef42e5be7774a87a9a6048f5cc8afcf9d21dea7f9c3d3a7ba",
+    "source_reconstruction/pause_system/owner_adapter.cpp": "aa42658b16cf0579b2aa5bcced38281c41a38bc245cc30528f17e662dd98f81e",
+    "source_reconstruction/pause_system/ranking.cpp": "c29fafedaf7790d7475e0d4bb1a14eae05b76c68f5cc949ab6202610fc7ef7b9",
+    "source_reconstruction/pause_system/resume.cpp": "f8d14df9828b087e305ac23d5201ff0b10c2924abd790058920192674d595361",
+    "source_reconstruction/pause_system/transitions.cpp": "02b00ea14ed2d949473cf265d5a7a9d7fc1bb1c05a5bac36193d50e20f287124",
+    "source_reconstruction/pause_system/capture.hpp": "2e0eeb09b0bdfed8b29411bab7805745e6893ae4ee38f51a291af0f7f772d88b",
+    "source_reconstruction/pause_system/draw.hpp": "8a86d4d3ea5205bf5a9eaec06471e0fe343710acd015aa7b26c81f59c0b0b9c5",
+    "source_reconstruction/pause_system/draw_constants.hpp": "f69d79790923a34924055519645d5a4dc1a93bf16567cae41d2d19ca6231f92a",
+    "source_reconstruction/pause_system/menu_support.hpp": "33de267c8ea2a4ca9d580cf02147fde820afbf13831863d1fa83d96868c55ef8",
+    "source_reconstruction/pause_system/pause.hpp": "4c42f00cc623e9ee8d64d8922382e0317d4a70ccd1562aa14e069d1c5cf37a42",
+    "source_reconstruction/pause_system/CMakeLists.txt": "6931c11ce2147967a324f529c10983006c1252fad51d3377d38afc073089200f",
+    "source_reconstruction/pause_system/oracle/compare.cpp": "06a4f292a93d1f9b915c9e31dc41495111fc410c0b359db8d2eac2c1b686c707",
+    "source_reconstruction/pause_system/oracle/CMakeLists.txt": "7993fff6a0d561fca79563064f756119da64d436942b5f999633c1f6d780bf88"
+  },
+  "evidence_map": {
+    "lifecycle.cpp": [
+      "0x004e1ce0",
+      "0x004e1e90",
+      "0x004e5980",
+      "0x004e6b80"
+    ],
+    "transitions.cpp": [
+      "0x004e6a90",
+      "0x004e69a0",
+      "0x004e5d60",
+      "0x004e5bd0",
+      "0x004e59e0",
+      "0x004e5f30",
+      "0x004e58f0",
+      "0x004e58a0",
+      "0x004e20d0"
+    ],
+    "capture.cpp": [
+      "0x0044be40",
+      "0x004e60c0",
+      "0x004e6600",
+      "0x004e6530",
+      "0x0044fa70"
+    ],
+    "cursor_history.cpp": [
+      "0x004c60b0",
+      "0x004c6010",
+      "0x004e1ab0",
+      "0x004c5160",
+      "0x004c59c0"
+    ],
+    "ranking.cpp": [
+      "0x004e6250",
+      "0x0050f170",
+      "0x0050f2f0"
+    ],
+    "menu.cpp": [
+      "0x004e2260"
+    ],
+    "draw.cpp": [
+      "0x004e4d50"
+    ],
+    "draw_entries.cpp": [
+      "0x004e5020",
+      "0x004e5240",
+      "0x004e5390",
+      "0x004e54c0"
+    ],
+    "draw_ranking.cpp": [
+      "0x004e5620"
+    ]
+  },
+  "original_va": [
+    "0x004e1ce0",
+    "0x004e1e90",
+    "0x004e5980",
+    "0x004e6b80",
+    "0x004e6a90",
+    "0x004e69a0",
+    "0x004e5d60",
+    "0x004e5bd0",
+    "0x004e59e0",
+    "0x004e5f30",
+    "0x004e58f0",
+    "0x004e58a0",
+    "0x004e20d0",
+    "0x0044be40",
+    "0x004e60c0",
+    "0x004e6600",
+    "0x004e6530",
+    "0x0044fa70",
+    "0x004c60b0",
+    "0x004c6010",
+    "0x004e1ab0",
+    "0x004c5160",
+    "0x004c59c0",
+    "0x004e6250",
+    "0x0050f170",
+    "0x0050f2f0",
+    "0x004e2260",
+    "0x004e4d50",
+    "0x004e5020",
+    "0x004e5240",
+    "0x004e5390",
+    "0x004e54c0",
+    "0x004e5620"
+  ],
+  "cpu_validation": "cpu_validation.json",
+  "unrecovered_game_symbols": [],
+  "limitations": [
+    "Menu state machine and owning lifecycle compile but lack whole-body CPU comparison",
+    "Capture noise preserves original transposed width/height traversal; original COM comparison pending",
+    "Draw routines have separate validation by shared Sprite oracle; inspect that report"
+  ]
+}

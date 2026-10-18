@@ -1,0 +1,190 @@
+entry entry0 {
+    version: 8,
+    name: "front/logo/st03logo.png",
+    filename: "front/logo/st03logo@st03logo@0.png",
+    format: 5,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 1,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 320,
+    THTXZero: 0,
+    w_max: 768,
+    h_max: 512,
+    sprites: {
+        sprite0: { x: 0, y: 0, w: 512, h: 64 },
+        sprite1: { x: 0, y: 144, w: 512, h: 64 },
+        sprite2: { x: 0, y: 208, w: 512, h: 64 },
+        sprite3: { x: 0, y: 64, w: 512, h: 48 },
+        sprite4: { x: 256, y: 112, w: 256, h: 32 }
+    }
+}
+
+script script0 {
+    ins_304(22);
+    ins_313(2);
+    ins_400(0.0f, 256.0f, 0.0f);
+    ins_500(script3);
+    ins_500(script4);
+    ins_500(script5);
+    ins_500(script6);
+    ins_500(script7);
++420: // 420
+    ins_1();
+}
+
+script script1 {
+    ins_300(sprite5);
+    ins_304(23);
+    ins_313(2);
+    ins_311(1);
+    ins_307(1);
+    ins_421(1, 2);
+    ins_302(0);
+    ins_400(384.0f, 896.0f, 0.0f);
++60: // 60
+    ins_407(60, 4, -384.0f, 896.0f, 0.0f);
++260: // 320
+    ins_409(20, 0, 0);
+    ins_407(20, 1, -384.0f, 896.0f, 0.0f);
++20: // 340
+    ins_1();
+}
+
+script script2 {
+    ins_300(sprite6);
+    ins_304(35);
+    ins_313(2);
+    ins_311(1);
+    ins_307(1);
+    ins_421(1, 2);
+    ins_302(0);
+    ins_403(0);
+    ins_400(832.0f, 928.0f, 0.0f);
++60: // 60
+    ins_407(60, 4, 64.0f, 928.0f, 0.0f);
+    ins_409(60, 0, 255);
++260: // 320
+    ins_409(20, 0, 0);
+    ins_407(20, 1, 64.0f, 928.0f, 0.0f);
++20: // 340
+    ins_1();
+}
+
+script script3 {
+    ins_304(23);
+    ins_313(2);
+    ins_300(sprite0);
+    ins_307(1);
+    ins_421(0, 0);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
++60: // 60
+    ins_403(255);
++260: // 320
+    ins_403(0);
++60: // 380
+    ins_1();
+}
+
+script script4 {
+    ins_304(23);
+    ins_313(2);
+    ins_300(sprite1);
+    ins_307(1);
+    ins_421(0, 0);
+    ins_402(8.0f, 8.0f);
+    ins_412(60, 4, 1.0f, 1.0f);
+    ins_403(0);
+    ins_409(60, 0, 255);
++60: // 60
+    ins_403(0);
++260: // 320
+    ins_403(255);
+    ins_409(60, 0, 0);
+    ins_412(60, 1, 0.8f, 0.8f);
++60: // 380
+    ins_1();
+}
+
+script script5 {
+    ins_304(23);
+    ins_313(2);
+    ins_300(sprite2);
+    ins_307(1);
+    ins_421(0, 0);
+    ins_402(8.0f, 8.0f);
+    ins_412(60, 1, 1.0f, 1.0f);
+    ins_403(0);
+    ins_409(60, 0, 255);
++60: // 60
+    ins_403(0);
++260: // 320
+    ins_403(255);
+    ins_409(60, 0, 0);
+    ins_412(60, 4, 0.6f, 0.6f);
++60: // 380
+    ins_1();
+}
+
+script script6 {
+    ins_304(23);
+    ins_313(2);
+    ins_300(sprite3);
+    ins_307(1);
+    ins_400(0.0f, 50.0f, 0.0f);
+    ins_403(0);
++110: // 110
+    ins_409(50, 0, 255);
+    ins_402(1.2f, 1.2f);
+    ins_412(270, 4, 1.0f, 1.0f);
++210: // 320
+    ins_409(60, 0, 0);
++60: // 380
+    ins_1();
+}
+
+script script7 {
+    ins_304(23);
+    ins_313(2);
+    ins_311(1);
+    ins_300(sprite4);
+    ins_307(1);
+    ins_400(0.0f, -48.0f, 0.0f);
+    ins_403(0);
++20: // 20
+    ins_409(60, 0, 255);
++300: // 320
+    ins_409(60, 0, 0);
++60: // 380
+    ins_1();
+}
+
+
+entry entry1 {
+    version: 8,
+    name: "front/logo/st03logo.png",
+    filename: "front/logo/st03logo@st03logo@1.png",
+    format: 5,
+    width: 1024,
+    height: 64,
+    yOffset: 448,
+    memoryPriority: 0,
+    lowResScale: 1,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 768,
+    THTXHeight: 64,
+    THTXZero: 0,
+    w_max: 768,
+    h_max: 512,
+    sprites: {
+        sprite5: { x: 0, y: 0, w: 768, h: 32 },
+        sprite6: { x: 0, y: 32, w: 768, h: 32 }
+    }
+}
+
+

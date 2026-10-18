@@ -1,0 +1,48 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {acceptTh09MatchStats as accept,th09PlayerStats as stats} from '../src/th09-room-stats.mjs';
+test('whole-match wins accumulate, confirmed minutes accumulate across matches, duplicate results and room lifetime', () => {
+  const room={id:'th09mp-1234',lobby:{startSerial:1}},run={lobbyClientIds:['host','guest']};
+  const report=(frames,extra={})=>({serial:1,start:0,frames,...extra});
+  assert.equal(accept(room,run,'guest',report(3600,{winner:0})),false);
+  assert.equal(accept(room,run,'host',report(3600,{winner:2})),false);
+  assert.equal(accept(room,run,'host',report(3600)),true);
+  assert.deepEqual(stats(room,'host'),{wins:0,losses:0,minutes:1});
+  assert.equal(accept(room,run,'host',report(7100,{winner:1})),true);
+  assert.deepEqual(stats(room,'host'),{wins:0,losses:1,minutes:1});
+  assert.deepEqual(stats(room,'guest'),{wins:1,losses:0,minutes:1});
+  assert.equal(accept(room,run,'host',report(7100,{winner:1})),false);
+  assert.equal(accept(room,run,'host',report(7300)),false);
+  assert.equal(accept(room,run,'host',report(0,{start:7200})),true);
+  assert.deepEqual(stats(room,'host'),{wins:0,losses:1,minutes:1});
+  assert.deepEqual(stats(room,'guest'),{wins:1,losses:0,minutes:1});
+  assert.equal(accept(room,run,'host',report(0,{start:7200})),false);
+  assert.equal(accept(room,run,'host',report(3600,{start:7200})),true);
+  assert.equal(accept(room,run,'host',report(4000,{start:7200,winner:0})),true);
+  assert.deepEqual(stats(room,'host'),{wins:1,losses:1,minutes:3});
+  assert.equal(accept(room,run,'host',report(7100,{winner:1})),false);
+  room.lobby.startSerial=2;
+  assert.deepEqual(stats(room,'host'),{wins:1,losses:1,minutes:3});
+  assert.equal(accept(room,run,'host',report(8000,{start:12000,winner:0})),false);
+  assert.equal(accept(room,{lobbyClientIds:['host','new']},'host',{serial:2,start:0,frames:3600,winner:0}),true);
+  assert.deepEqual(stats(room,'host'),{wins:2,losses:1,minutes:4});
+  assert.deepEqual(stats(room,'new'),{wins:0,losses:1,minutes:1});
+  assert.deepEqual(stats({id:'th09mp-5678'},'host'),{wins:0,losses:0,minutes:0});
+  assert.equal(stats({id:'th08mp-1234'},'host'),undefined);
+});
+
+test('partial minutes survive character changes and duplicate progress is not counted twice', () => {
+  const room={id:'th09mp-1234',lobby:{startSerial:1}},run={lobbyClientIds:['host','guest']};
+  const report={serial:1,start:0,frames:1800};
+  assert.equal(accept(room,run,'host',report),true);
+  assert.equal(accept(room,run,'host',report),false);
+  assert.equal(accept(room,run,'host',{...report,frames:1700}),false);
+  assert.equal(stats(room,'host').minutes,0);
+  room.lobby.startSerial=2;
+  const next={lobbyClientIds:['host','guest']};
+  assert.equal(accept(room,next,'host',{serial:2,start:0,frames:1800}),true);
+  assert.equal(stats(room,'host').minutes,1);
+  assert.equal(stats(room,'guest').minutes,1);
+  assert.equal(accept(room,next,'host',{serial:2,start:0,frames:1800,winner:0}),true);
+  assert.deepEqual(stats(room,'host'),{wins:1,losses:0,minutes:1});
+});

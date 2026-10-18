@@ -1,0 +1,40 @@
+{
+  "source_directory": "E:\\BaiduNetdiskDownload\\PCGAME-Touhou.Kinjoukyou.Fossilized.Wonders-P2P\\Touhou.Kinjoukyou.Fossilized.Wonders",
+  "files": [
+    {
+      "name": "custom.exe",
+      "size": 141312,
+      "sha256": "261fb74f64b8a9908b128d30d59af64c59e2c37f6f917ee6646f4c3e42d50f33"
+    },
+    {
+      "name": "omake.txt",
+      "size": 12564,
+      "sha256": "947e5bbffb248f68a45a80fb8f521ea06f6cdc23a5d7e85a7aac575d4d351372"
+    },
+    {
+      "name": "readme.txt",
+      "size": 1835,
+      "sha256": "f70617daacb7bd974af8e21aeb270c6df240120ff6202d3308a18f61c1f5abc1"
+    },
+    {
+      "name": "st01.ecl",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "th20.dat",
+      "size": 150943726,
+      "sha256": "9db8d7c43fbacec95614163d4c3e1d254e82169f8550177ee849831130590494"
+    },
+    {
+      "name": "th20.exe",
+      "size": 1858560,
+      "sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897"
+    },
+    {
+      "name": "thbgm.dat",
+      "size": 429790784,
+      "sha256": "a067fe223e7c51c50c9fd5356c0521742762ce951f53ff99f8abbcc9b8e9cff0"
+    }
+  ]
+}

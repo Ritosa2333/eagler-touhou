@@ -1,0 +1,38 @@
+entry entry0 {
+    version: 8,
+    name: "loading/sig1280.png",
+    filename: "loading/sig1280@sig@0.png",
+    format: 1,
+    width: 2048,
+    height: 1024,
+    memoryPriority: 10,
+    lowResScale: 1,
+    jpeg_quality: 90,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1280,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite0: { x: 0, y: 0, w: 1280, h: 960 }
+    }
+}
+
+script script0 {
+-1:
+    ins_300(sprite0);
+    ins_431(1);
+    ins_307(1);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_404(0, 0, 0);
+    ins_408(10, 0, 255, 255, 255);
+    ins_313(2);
+10:
+    ins_2();
+}
+
+

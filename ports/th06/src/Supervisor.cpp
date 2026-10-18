@@ -1,0 +1,1255 @@
+#include "Supervisor.hpp"
+#include "AnmManager.hpp"
+#include "AsciiManager.hpp"
+#include "Chain.hpp"
+#include "ChainPriorities.hpp"
+#include "Ending.hpp"
+#include "FileSystem.hpp"
+#include "GameErrorContext.hpp"
+#include "GameManager.hpp"
+#include "GameWindow.hpp"
+#include "MainMenu.hpp"
+#include "MusicRoom.hpp"
+#include "PracticeRuntime.hpp"
+#include "ReplayManager.hpp"
+#include "ResultScreen.hpp"
+#include "Rng.hpp"
+#include "SoundPlayer.hpp"
+#include "TextHelper.hpp"
+#include "i18n.hpp"
+#include "inttypes.hpp"
+#include "utils.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
+#endif
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/NetplaySideEffects.hpp"
+#endif
+
+#include <SDL3/SDL.h>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
+Supervisor g_Supervisor;
+#ifdef __EMSCRIPTEN__
+static i32 g_WebStartupPhase = 0;
+static u64 g_WebStartupImageShownAt = 0;
+static void DrawStartupBranding()
+{
+    size_t bytes=0;
+    void* pixels=SDL_LoadFile("/eagler-startup.rgba",&bytes);
+    if(!pixels)return;
+    if(bytes!=1280*960*4){SDL_free(pixels);return;}
+    auto* gfx=g_GfxBackend;
+    const auto texture=gfx->CreateTexture();g_AnmManager->SetCurrentTexture(texture);
+    gfx->SetTextureImage(1280,960,PIXEL_RGBA,PIXEL_UNSIGNED_BYTE,pixels);SDL_free(pixels);
+    VertexTex1DiffuseXyz vertices[4]{};
+    vertices[0].position={0,0,0};vertices[1].position={640,0,0};
+    vertices[2].position={0,480,0};vertices[3].position={640,480,0};
+    vertices[0].textureUV={0,0};vertices[1].textureUV={1,0};
+    vertices[2].textureUV={0,1};vertices[3].textureUV={1,1};
+    // The copy-texture path leaves MODULATE active. White diffuse keeps the
+    // branding pixels identical without changing that shared color-op state.
+    for (auto &vertex : vertices) vertex.diffuse=ColorData(0xFFFFFFFF);
+
+    // Draw this one-off overlay through the same state owner as normal ANM
+    // quads. Leaving stack-backed pointers in the graphics backend bypasses
+    // AnmManager's cached vertex-array state and can poison later draws.
+    const bool restoreFog=g_Supervisor.DisableFog()!=0;
+    g_AnmManager->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
+    g_AnmManager->SetVertexAttributes(VERTEX_ATTR_TEX_COORD|VERTEX_ATTR_DIFFUSE);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_POSITION,sizeof(vertices[0]),&vertices[0].position);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_TEX_COORD,sizeof(vertices[0]),&vertices[0].textureUV);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_DIFFUSE,sizeof(vertices[0]),&vertices[0].diffuse);
+    g_AnmManager->SetDepthMask(false);
+    g_AnmManager->BackendDrawCall();
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_POSITION,sizeof(g_AnmManager->vertexBuffer[0]),
+                                      &g_AnmManager->vertexBuffer[0].position);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_TEX_COORD,sizeof(g_AnmManager->vertexBuffer[0]),
+                                      &g_AnmManager->vertexBuffer[0].textureUV);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_DIFFUSE,sizeof(g_AnmManager->vertexBuffer[0]),
+                                      &g_AnmManager->vertexBuffer[0].diffuse);
+    g_AnmManager->SetVertexAttributes(VERTEX_ATTR_TEX_COORD);
+    g_AnmManager->UpdateDirtyStates();
+    g_AnmManager->SetCurrentTexture(0);gfx->DeleteTexture(texture);g_AnmManager->SetCurrentSprite(nullptr);
+    g_AnmManager->SetCurrentBlendMode(0xff);
+    if (restoreFog) g_Supervisor.EnableFog();
+}
+i32 Supervisor::DrawStartupLogo()
+{
+    if (!g_WebStartupPhase) return 0;
+    if (g_WebStartupPhase == 2)
+    {
+        // Prepare the menu while the startup picture is already visible.
+        const ZunResult result = FinishWebStartup(&g_Supervisor);
+        if (result != ZUN_SUCCESS) { g_WebStartupPhase = 0; return -1; }
+        g_WebStartupPhase = 3;
+    }
+    if (g_WebStartupPhase == 3)
+    {
+        if (SDL_GetTicks() - g_WebStartupImageShownAt < 2000) return 1;
+        g_AnmManager->ReleaseSurface(0);
+        g_WebStartupPhase = 0;
+        EM_ASM({ performance.mark('eagler-startup-menu-ready'); });
+        return 0;
+    }
+    g_GfxBackend->BeginFrame();
+    g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
+    DrawStartupBranding();
+    g_GfxBackend->EndFrame();
+    g_GfxBackend->SwapBuffers();
+    g_WebStartupImageShownAt = SDL_GetTicks();
+    g_Supervisor.startupTimeBeforeMenuMusic = g_WebStartupImageShownAt;
+    EM_ASM({ performance.mark('eagler-startup-image'); });
+    g_WebStartupPhase = 2;
+    return 1;
+}
+
+static char g_WebMidiPaths[32][256] = {};
+
+static bool IsWebOggMode()
+{
+    return EM_ASM_INT({ return Module.touhouMusicMode === 'ogg'; }) != 0;
+}
+
+static bool HasWebOggForMidi(const char *midiPath)
+{
+    char oggPath[256];
+    std::strncpy(oggPath, midiPath, sizeof(oggPath) - 1);
+    oggPath[sizeof(oggPath) - 1] = '\0';
+    char *extension = std::strrchr(oggPath, '.');
+    if (!extension || extension + 4 >= oggPath + sizeof(oggPath))
+    {
+        return false;
+    }
+    std::strcpy(extension, ".ogg");
+    SDL_IOStream *stream = FileSystem::OpenFileStream(oggPath, "rb");
+    if (!stream)
+    {
+        return false;
+    }
+    SDL_CloseIO(stream);
+    return true;
+}
+
+static void NotifyWebMidiFallback(const char *path)
+{
+    EM_ASM({
+        if (window.parent !== window) {
+            window.parent.postMessage({ protocol: 'eagler-touhou/1', game: 'th06',
+                event: 'midi-fallback', path: UTF8ToString($0) }, location.origin);
+        }
+    }, path);
+}
+#endif
+ControllerMapping g_ControllerMapping = {
+    (i16)SDL_GAMEPAD_BUTTON_SOUTH,
+    (i16)SDL_GAMEPAD_BUTTON_EAST,
+    (i16)SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,
+    (i16)SDL_GAMEPAD_BUTTON_START,
+    (i16)SDL_GAMEPAD_BUTTON_DPAD_UP,
+    (i16)SDL_GAMEPAD_BUTTON_DPAD_DOWN,
+    (i16)SDL_GAMEPAD_BUTTON_DPAD_LEFT,
+    (i16)SDL_GAMEPAD_BUTTON_DPAD_RIGHT,
+    (i16)SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,
+};
+SDL_Surface *g_TextBufferSurface;
+u16 g_LastFrameInput;
+u16 g_CurFrameInput;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+u16 g_LastFrameGameInputs[TH06_MULTI_MAX_PLAYERS] = {};
+u16 g_CurFrameGameInputs[TH06_MULTI_MAX_PLAYERS] = {};
+#endif
+u16 g_IsEigthFrameOfHeldInput;
+u16 g_NumOfFramesInputsWereHeld;
+
+ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
+{
+
+    //    if (g_SoundPlayer.backgroundMusic != NULL)
+    //    {
+    //        g_SoundPlayer.backgroundMusic->UpdateFadeOut();
+    //    }
+    g_LastFrameInput = g_CurFrameInput;
+    g_CurFrameInput = Controller::GetInput();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A multiplayer-capable binary must still behave exactly like ordinary
+    // TH06 before a room/driver installs synchronized logical lanes. Once
+    // NetplayInput owns the lanes it performs this current/previous handoff
+    // itself before the simulation chain and Supervisor must not overwrite it.
+    if (!Netplay::Input::PlayerButtonOverridesActive())
+    {
+        const bool multiplayerGameplay = MultiplayerGameplay::IsMultiplayer();
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            g_LastFrameGameInputs[playerId] = g_CurFrameGameInputs[playerId];
+            // Multiplayer Player lanes are authoritative-only.  A short gap
+            // before the netplay driver installs synchronized overrides must
+            // never mirror this machine's keyboard/controller state into P1.
+            // g_CurFrameInput stays untouched so local Result/Menu UI still
+            // receives ordinary hardware input after gameplay retires.
+            g_CurFrameGameInputs[playerId] =
+                !multiplayerGameplay && playerId == 0 ? g_CurFrameInput : 0;
+        }
+    }
+#endif
+    g_IsEigthFrameOfHeldInput = 0;
+    if (g_LastFrameInput == g_CurFrameInput)
+    {
+        if (0x1e <= g_NumOfFramesInputsWereHeld)
+        {
+            if (g_NumOfFramesInputsWereHeld % 8 == 0)
+            {
+                g_IsEigthFrameOfHeldInput = 1;
+            }
+            if (0x26 <= g_NumOfFramesInputsWereHeld)
+            {
+                g_NumOfFramesInputsWereHeld = 0x1e;
+            }
+        }
+        g_NumOfFramesInputsWereHeld++;
+    }
+    else
+    {
+        g_NumOfFramesInputsWereHeld = 0;
+    }
+
+    if (s->wantedState != s->curState)
+    {
+        s->wantedState2 = s->wantedState;
+        switch (s->wantedState)
+        {
+        case SUPERVISOR_STATE_INIT:
+        REINIT_MAINMENU:
+            s->curState = SUPERVISOR_STATE_MAINMENU;
+            if (MainMenu::RegisterChain(0) != ZUN_SUCCESS)
+            {
+                return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+            }
+            break;
+        case SUPERVISOR_STATE_MAINMENU:
+            switch (s->curState)
+            {
+            case SUPERVISOR_STATE_EXITSUCCESS:
+                return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+            case SUPERVISOR_STATE_GAMEMANAGER:
+                if (GameManager::RegisterChain() != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                break;
+            case SUPERVISOR_STATE_EXITERROR:
+                return CHAIN_CALLBACK_RESULT_EXIT_GAME_ERROR;
+            case SUPERVISOR_STATE_RESULTSCREEN:
+                if (ResultScreen::RegisterChain(0) != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                break;
+            case SUPERVISOR_STATE_MUSICROOM:
+                if (MusicRoom::RegisterChain() != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                break;
+            case SUPERVISOR_STATE_ENDING:
+                GameManager::CutChain();
+                if (Ending::RegisterChain() != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                break;
+            }
+            break;
+
+        case SUPERVISOR_STATE_RESULTSCREEN:
+            switch (s->curState)
+            {
+            case SUPERVISOR_STATE_EXITSUCCESS:
+                return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+            case SUPERVISOR_STATE_MAINMENU:
+                s->curState = SUPERVISOR_STATE_INIT;
+                goto REINIT_MAINMENU;
+            }
+            break;
+        case SUPERVISOR_STATE_GAMEMANAGER:
+            switch (s->curState)
+            {
+            case SUPERVISOR_STATE_EXITSUCCESS:
+                return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+
+            case SUPERVISOR_STATE_MAINMENU:
+            RETURN_TO_MENU_FROM_GAME:
+                GameManager::CutChain();
+                s->curState = SUPERVISOR_STATE_INIT;
+                ReplayManager::SaveReplay(NULL, NULL);
+                goto REINIT_MAINMENU;
+
+            case SUPERVISOR_STATE_RESULTSCREEN_FROMGAME:
+                GameManager::CutChain();
+                if (ResultScreen::RegisterChain(true) != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                break;
+            case SUPERVISOR_STATE_GAMEMANAGER_REINIT:
+                GameManager::CutChain();
+                // Normal stage progression also uses REINIT and must keep one
+                // multi-stage Replay recording alive.  thprac Restart marks
+                // only its own REINIT as a fresh attempt; retire the previous
+                // recorder here, after GameManager has stopped recording and
+                // before RegisterChain can reuse stale stage/input pointers.
+                if (PracticeRuntime::ConsumeReplayResetOnReinit())
+                    ReplayManager::SaveReplay(NULL, NULL);
+                if (GameManager::RegisterChain() != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                if (s->curState == SUPERVISOR_STATE_MAINMENU)
+                {
+                    goto RETURN_TO_MENU_FROM_GAME;
+                }
+                s->curState = SUPERVISOR_STATE_GAMEMANAGER;
+                break;
+            case SUPERVISOR_STATE_GAMEMANAGER_RESTART:
+                // TH07's Pause -> R path is a new attempt, not a stage
+                // transition. Story restarts from Stage 1; Extra/Practice
+                // restart their current stage. Keep the established browser
+                // transport alive; the netplay driver retires this gameplay
+                // generation and starts the rebuilt GameManager at frame zero.
+                GameManager::CutChain();
+                if (!g_GameManager.isInPracticeMode && g_GameManager.difficulty < EXTRA)
+                    g_GameManager.currentStage = 0;
+                else
+                    g_GameManager.currentStage--;
+                ReplayManager::SaveReplay(NULL, NULL);
+                if (GameManager::RegisterChain() != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                s->curState = SUPERVISOR_STATE_GAMEMANAGER;
+                break;
+            case SUPERVISOR_STATE_MAINMENU_REPLAY:
+                GameManager::CutChain();
+                s->curState = SUPERVISOR_STATE_INIT;
+                ReplayManager::SaveReplay(NULL, NULL);
+                s->curState = SUPERVISOR_STATE_MAINMENU;
+                if (MainMenu::RegisterChain(1) != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                break;
+
+            case 10:
+                GameManager::CutChain();
+                if (Ending::RegisterChain() != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+                break;
+            }
+            break;
+        case SUPERVISOR_STATE_RESULTSCREEN_FROMGAME:
+            switch (s->curState)
+            {
+            case SUPERVISOR_STATE_EXITSUCCESS:
+                ReplayManager::SaveReplay(NULL, NULL);
+                return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+            case SUPERVISOR_STATE_MAINMENU:
+                s->curState = SUPERVISOR_STATE_INIT;
+                ReplayManager::SaveReplay(NULL, NULL);
+                goto REINIT_MAINMENU;
+            }
+            break;
+        case SUPERVISOR_STATE_MUSICROOM:
+            switch (s->curState)
+            {
+            case SUPERVISOR_STATE_EXITSUCCESS:
+                return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+
+            case SUPERVISOR_STATE_MAINMENU:
+                s->curState = SUPERVISOR_STATE_INIT;
+                goto REINIT_MAINMENU;
+            }
+            break;
+        case SUPERVISOR_STATE_ENDING:
+            switch (s->curState)
+            {
+            case SUPERVISOR_STATE_EXITSUCCESS:
+                return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+            case SUPERVISOR_STATE_MAINMENU:
+                s->curState = SUPERVISOR_STATE_INIT;
+                goto REINIT_MAINMENU;
+            case SUPERVISOR_STATE_RESULTSCREEN_FROMGAME:
+                if (ResultScreen::RegisterChain(true) != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
+                }
+            }
+            break;
+        }
+        g_CurFrameInput = g_LastFrameInput = g_IsEigthFrameOfHeldInput = 0;
+    }
+
+    s->wantedState = s->curState;
+    s->calcCount++;
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ChainCallbackResult Supervisor::OnDraw(Supervisor *s)
+{
+    AnmManager *anmm1 = g_AnmManager;
+    anmm1->currentSprite = NULL;
+
+    AnmManager *anmm2 = g_AnmManager;
+    anmm2->currentTextureHandle = 0;
+
+    AnmManager *anmm4 = g_AnmManager;
+    anmm4->currentBlendMode = 0xff;
+
+    Supervisor::DrawFpsCounter();
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+// BOOL CALLBACK Supervisor::ControllerCallback(LPCDIDEVICEOBJECTINSTANCEA lpddoi, LPVOID pvRef)
+// {
+//     LPVOID pvRefBackup;
+//     DIPROPRANGE diprange;
+//     pvRefBackup = pvRef;
+//
+//     if (lpddoi->dwType & DIDFT_AXIS)
+//     {
+//         diprange.diph.dwSize = sizeof(diprange);
+//         diprange.diph.dwHeaderSize = sizeof(diprange.diph);
+//         diprange.diph.dwHow = DIPH_BYID;
+//         diprange.diph.dwObj = lpddoi->dwType;
+//         diprange.lMin = -1000;
+//         diprange.lMax = 1000;
+//
+//         if (g_Supervisor.controller->SetProperty(DIPROP_RANGE, &diprange.diph) < 0)
+//         {
+//             return FALSE;
+//         }
+//     }
+//     return TRUE;
+// }
+
+ZunResult Supervisor::RegisterChain()
+{
+    ChainElem *chain;
+    Supervisor *supervisor = &g_Supervisor;
+
+    supervisor->wantedState = 0;
+    supervisor->curState = -1;
+    supervisor->calcCount = 0;
+
+    chain = g_Chain.CreateElem((ChainCallback)Supervisor::OnUpdate);
+    chain->arg = supervisor;
+    chain->addedCallback = (ChainAddedCallback)Supervisor::AddedCallback;
+    chain->deletedCallback = (ChainDeletedCallback)Supervisor::DeletedCallback;
+    if (g_Chain.AddToCalcChain(chain, TH_CHAIN_PRIO_CALC_SUPERVISOR) != 0)
+    {
+        return ZUN_ERROR;
+    }
+
+    chain = g_Chain.CreateElem((ChainCallback)Supervisor::OnDraw);
+    chain->arg = supervisor;
+    g_Chain.AddToDrawChain(chain, TH_CHAIN_PRIO_DRAW_SUPERVISOR);
+
+    return ZUN_SUCCESS;
+}
+
+ZunResult Supervisor::AddedCallback(Supervisor *s)
+{
+    i32 i;
+
+    for (i = 0; i < (i32)(sizeof(s->pbg3Archives) / sizeof(s->pbg3Archives[0])); i++)
+    {
+        s->pbg3Archives[i] = NULL;
+    }
+
+    g_Pbg3Archives = s->pbg3Archives;
+    if (s->LoadPbg3(IN_PBG3_INDEX, TH_IN_DAT_FILE))
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load %s", TH_IN_DAT_FILE);
+        return ZUN_ERROR;
+    }
+
+    g_AnmManager->LoadSurface(0, "data/title/th06logo.jpg");
+    s->startupTimeBeforeMenuMusic = SDL_GetTicks();
+#ifndef __EMSCRIPTEN__
+    // TH07 reallyportable keeps its startup logo in a self-contained render
+    // phase for up to three seconds. Merely swapping twice, as the old D3D
+    // double-buffer workaround did, lets TH06's first render-only frame clear
+    // the logo before the first simulation update. Use complete frame
+    // boundaries and keep the logo visible until the original startup delay
+    // has elapsed, while retaining TH07's input-to-skip behavior.
+    while (SDL_GetTicks() - s->startupTimeBeforeMenuMusic < 3000)
+    {
+        SDL_Event event;
+        bool skip = false;
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_EVENT_QUIT)
+            {
+                SDL_PushEvent(&event);
+                skip = true;
+            }
+            if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN ||
+                event.type == SDL_EVENT_FINGER_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+            {
+                skip = true;
+            }
+        }
+        if (skip)
+        {
+            break;
+        }
+
+        g_GfxBackend->BeginFrame();
+        g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
+        g_GfxBackend->EndFrame();
+        g_GfxBackend->SwapBuffers();
+        SDL_Delay(16);
+    }
+#else
+    // Yield a real logo frame before preparing the remaining resources.
+    // Completion resumes Title immediately, without a timed splash delay.
+    g_WebStartupPhase = 1;
+    return ZUN_SUCCESS;
+}
+ZunResult Supervisor::FinishWebStartup(Supervisor *s)
+{
+#endif
+
+#ifndef __EMSCRIPTEN__
+    g_AnmManager->ReleaseSurface(0);
+#endif
+#ifdef __EMSCRIPTEN__
+    // Avoid browser-main-thread JPEG decode stalls during menu/result scene
+    // changes. These immutable backgrounds are decoded once at startup and
+    // then borrowed by LoadSurface() for later scene transitions.
+    (void)g_AnmManager->PreloadTransitionSurface("data/title/title00.jpg");
+    (void)g_AnmManager->PreloadTransitionSurface("data/title/select00.jpg");
+    (void)g_AnmManager->PreloadTransitionSurface("data/result/music.jpg");
+    (void)g_AnmManager->PreloadTransitionSurface("data/result/result.jpg");
+#endif
+    Supervisor::SetupDInput(s);
+
+    s->midiOutput = new MidiOutput();
+
+    // Replacing a seeding method that used win32 timeGetTime
+    g_Rng.Initialize((u16)std::time(NULL));
+
+    g_SoundPlayer.InitSoundBuffers();
+    if (g_AnmManager->LoadAnm(ANM_FILE_TEXT, "data/text.anm", ANM_OFFSET_TEXT) != 0)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load data/text.anm");
+        return ZUN_ERROR;
+    }
+
+    if (AsciiManager::RegisterChain() != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_ASCIIMANAGER_INIT_FAILED);
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: AsciiManager initialization failed");
+        return ZUN_ERROR;
+    }
+
+    s->unk198 = 0;
+    g_AnmManager->SetupVertexBuffer();
+
+    if (TextHelper::CreateTextBuffer() != ZUN_SUCCESS)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: text buffer initialization failed");
+        return ZUN_ERROR;
+    }
+
+    s->ReleasePbg3(IN_PBG3_INDEX);
+    if (g_Supervisor.LoadPbg3(MD_PBG3_INDEX, TH_MD_DAT_FILE) != 0)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load %s", TH_MD_DAT_FILE);
+        return ZUN_ERROR;
+    }
+
+    return ZUN_SUCCESS;
+}
+
+ZunResult Supervisor::SetupDInput(Supervisor *supervisor)
+{
+    //    HINSTANCE hInst;
+    //
+    //    hInst = (HINSTANCE)GetWindowLongA(supervisor->hwndGameWindow, GWL_HINSTANCE);
+    //    if (supervisor->cfg.opts >> GCOS_NO_DIRECTINPUT_PAD & 1)
+    //    {
+    //        return ZUN_ERROR;
+    //    }
+    //
+    //    if (DirectInput8Create(hInst, DIRECTINPUT_VERSION, IID_IDirectInput8A, (LPVOID *)&supervisor->dinputIface,
+    //    NULL) <
+    //        0)
+    //    {
+    //        supervisor->dinputIface = NULL;
+    //        GameErrorContext::Log(&g_GameErrorContext, TH_ERR_DIRECTINPUT_NOT_AVAILABLE);
+    //        return ZUN_ERROR;
+    //    }
+    //
+    //    if (supervisor->dinputIface->CreateDevice(GUID_SysKeyboard, &supervisor->keyboard, NULL) < 0)
+    //    {
+    //        if (supervisor->dinputIface)
+    //        {
+    //            supervisor->dinputIface->Release();
+    //            supervisor->dinputIface = NULL;
+    //        }
+    //        GameErrorContext::Log(&g_GameErrorContext, TH_ERR_DIRECTINPUT_NOT_AVAILABLE);
+    //        return ZUN_ERROR;
+    //    }
+    //
+    //    if (supervisor->keyboard->SetDataFormat(&c_dfDIKeyboard) < 0)
+    //    {
+    //        if (supervisor->keyboard)
+    //        {
+    //            supervisor->keyboard->Release();
+    //            supervisor->keyboard = NULL;
+    //        }
+    //
+    //        if (supervisor->dinputIface)
+    //        {
+    //            supervisor->dinputIface->Release();
+    //            supervisor->dinputIface = NULL;
+    //        }
+    //
+    //        GameErrorContext::Log(&g_GameErrorContext, TH_ERR_DIRECTINPUT_SETDATAFORMAT_NOT_AVAILABLE);
+    //        return ZUN_ERROR;
+    //    }
+    //
+    //    if (supervisor->keyboard->SetCooperativeLevel(supervisor->hwndGameWindow,
+    //                                                  DISCL_NONEXCLUSIVE | DISCL_FOREGROUND | DISCL_NOWINKEY) < 0)
+    //    {
+    //        if (supervisor->keyboard)
+    //        {
+    //            supervisor->keyboard->Release();
+    //            supervisor->keyboard = NULL;
+    //        }
+    //
+    //        if (supervisor->dinputIface)
+    //        {
+    //            supervisor->dinputIface->Release();
+    //            supervisor->dinputIface = NULL;
+    //        }
+    //
+    //        GameErrorContext::Log(&g_GameErrorContext, TH_ERR_DIRECTINPUT_SETCOOPERATIVELEVEL_NOT_AVAILABLE);
+    //        return ZUN_ERROR;
+    //    }
+    //
+    //    supervisor->keyboard->Acquire();
+    g_GameErrorContext.Log(TH_ERR_DIRECTINPUT_INITIALIZED);
+
+    int numSticks = 0;
+    SDL_JoystickID *sticks = SDL_GetGamepads(&numSticks);
+    for (int i = 0; i < numSticks; i++)
+    {
+        if ((supervisor->gameController = SDL_OpenGamepad(sticks[i])) != NULL)
+        {
+
+            break;
+        }
+    }
+    SDL_free(sticks);
+
+    //    supervisor->dinputIface->EnumDevices(DI8DEVCLASS_GAMECTRL, Supervisor::EnumGameControllersCb, NULL,
+    //                                         DIEDFL_ATTACHEDONLY);
+    //    if (supervisor->controller)
+    //    {
+    //        supervisor->controller->SetDataFormat(&c_dfDIJoystick2);
+    //        supervisor->controller->SetCooperativeLevel(supervisor->hwndGameWindow, DISCL_EXCLUSIVE |
+    //        DISCL_FOREGROUND);
+    //
+    //        g_Supervisor.controllerCaps.dwSize = sizeof(g_Supervisor.controllerCaps);
+    //
+    //        supervisor->controller->GetCapabilities(&g_Supervisor.controllerCaps);
+    //        supervisor->controller->EnumObjects(Supervisor::ControllerCallback, NULL, DIDFT_ALL);
+    //
+    //        GameErrorContext::Log(&g_GameErrorContext, TH_ERR_PAD_FOUND);
+    //    }
+    return ZUN_SUCCESS;
+}
+
+// BOOL CALLBACK Supervisor::EnumGameControllersCb(LPCDIDEVICEINSTANCEA pdidInstance, LPVOID pContext)
+// {
+//     HRESULT result;
+//
+//     if (!g_Supervisor.controller)
+//     {
+//         result = g_Supervisor.dinputIface->CreateDevice(pdidInstance->guidInstance, &g_Supervisor.controller, NULL);
+//         if (result < 0)
+//         {
+//             return TRUE;
+//         }
+//     }
+//     return FALSE;
+// }
+
+ZunResult Supervisor::DeletedCallback(Supervisor *s)
+{
+    i32 pbg3Idx;
+
+    //    g_AnmManager->ReleaseVertexBuffer();
+    for (pbg3Idx = 0; pbg3Idx < ARRAY_SIZE_SIGNED(s->pbg3Archives); pbg3Idx += 1)
+    {
+        s->ReleasePbg3(pbg3Idx);
+    }
+    g_AnmManager->ReleaseAnm(0);
+    AsciiManager::CutChain();
+    g_SoundPlayer.StopBGM();
+    if (s->midiOutput != NULL)
+    {
+        s->midiOutput->StopPlayback();
+        delete s->midiOutput;
+        s->midiOutput = NULL;
+    }
+    ReplayManager::SaveReplay(NULL, NULL);
+    TextHelper::ReleaseTextBuffer();
+    //    if (s->keyboard != NULL)
+    //    {
+    //        s->keyboard->Unacquire();
+    //    }
+    //    if (s->keyboard != NULL)
+    //    {
+    //        s->keyboard->Release();
+    //        s->keyboard = NULL;
+    //    }
+    //    if (s->controller != NULL)
+    //    {
+    //        s->controller->Unacquire();
+    //    }
+    if (s->gameController != NULL)
+    {
+        SDL_CloseGamepad(s->gameController);
+        s->gameController = NULL;
+    }
+    //    if (s->dinputIface != NULL)
+    //    {
+    //        s->dinputIface->Release();
+    //        s->dinputIface = NULL;
+    //    }
+    return ZUN_SUCCESS;
+}
+
+void Supervisor::DrawFpsCounter()
+{
+    u32 curTime;
+    float framerate;
+    float elapsed;
+    float fps;
+    ZunVec3 fpsCounterPos;
+
+    static u32 g_NumFramesSinceLastTime = 0;
+    static u32 g_LastTime = SDL_GetTicks();
+    static char g_FpsCounterBuffer[256];
+
+    curTime = SDL_GetTicks();
+    g_NumFramesSinceLastTime = g_NumFramesSinceLastTime + 1 + (u32)g_Supervisor.cfg.frameskipConfig;
+    if (500 <= curTime - g_LastTime)
+    {
+        elapsed = (curTime - g_LastTime) / 1000.f;
+        fps = g_NumFramesSinceLastTime / elapsed;
+        g_LastTime = curTime;
+        g_NumFramesSinceLastTime = 0;
+        sprintf(g_FpsCounterBuffer, "%.02ffps", fps);
+        if (g_GameManager.isInMenu != 0)
+        {
+            framerate = 60.f / g_Supervisor.framerateMultiplier;
+            g_Supervisor.unk1b8 = g_Supervisor.unk1b8 + framerate;
+
+            if (framerate * .89999998f < fps)
+                g_Supervisor.unk1b4 = g_Supervisor.unk1b4 + framerate;
+            else if (framerate * 0.69999999f < fps)
+                g_Supervisor.unk1b4 = framerate * .8f + g_Supervisor.unk1b4;
+            else if (framerate * 0.5f < fps)
+                g_Supervisor.unk1b4 = framerate * .6f + g_Supervisor.unk1b4;
+            else
+                g_Supervisor.unk1b4 = framerate * .5f + g_Supervisor.unk1b4;
+        }
+    }
+    if (!g_Supervisor.isInEnding)
+    {
+        fpsCounterPos.x = 512.0;
+        fpsCounterPos.y = 464.0;
+        fpsCounterPos.z = 0.0;
+        g_AsciiManager.AddString(&fpsCounterPos, g_FpsCounterBuffer);
+    }
+    return;
+}
+
+void Supervisor::TickTimer(i32 *frames, f32 *subframes)
+{
+    if (this->framerateMultiplier <= 0.99f)
+    {
+        *subframes = *subframes + this->effectiveFramerateMultiplier;
+        if (*subframes >= 1.0f)
+        {
+            *frames = *frames + 1;
+            *subframes = *subframes - 1.0f;
+        }
+    }
+    else
+    {
+        *frames = *frames + 1;
+    }
+}
+
+// Fog is a per-draw state: 3D stage objects are fogged, while 2D overlay and
+// effect quads (spellcard background, popups, ...) render clear of it. This
+// mirrors the TH07 reallyportable mechanism.
+i32 Supervisor::EnableFog()
+{
+    g_AnmManager->FlushVertexBuffer();
+    if (this->fogEnabled != 1)
+    {
+        this->fogEnabled = 1;
+        g_GfxBackend->Enable(CAPS_FOG);
+        return 1;
+    }
+    return 0;
+}
+
+i32 Supervisor::DisableFog()
+{
+    g_AnmManager->FlushVertexBuffer();
+    if (this->fogEnabled)
+    {
+        this->fogEnabled = 0;
+        g_GfxBackend->Disable(CAPS_FOG);
+        return 1;
+    }
+    return 0;
+}
+
+void Supervisor::ReleasePbg3(i32 pbg3FileIdx)
+{
+    if (this->pbg3Archives[pbg3FileIdx] == NULL)
+    {
+        return;
+    }
+
+    delete this->pbg3Archives[pbg3FileIdx];
+    this->pbg3Archives[pbg3FileIdx] = NULL;
+}
+
+i32 Supervisor::LoadPbg3(i32 pbg3FileIdx, const char *filename)
+{
+    if (this->pbg3Archives[pbg3FileIdx] == NULL || strcmp(filename, this->pbg3ArchiveNames[pbg3FileIdx]) != 0)
+    {
+        this->ReleasePbg3(pbg3FileIdx);
+        this->pbg3Archives[pbg3FileIdx] = new Pbg3Archive();
+        utils::DebugPrint("%s open ...\n", filename);
+        if (this->pbg3Archives[pbg3FileIdx]->Load(filename) != 0)
+        {
+            std::strcpy(this->pbg3ArchiveNames[pbg3FileIdx], filename);
+
+            char verPath[128];
+            std::sprintf(verPath, "ver%.4x.dat", GAME_VERSION);
+            i32 res = this->pbg3Archives[pbg3FileIdx]->FindEntry(verPath);
+            if (res < 0)
+            {
+                g_GameErrorContext.Fatal("error : データのバージョンが違います\n");
+                return 1;
+            }
+        }
+        else
+        {
+            delete this->pbg3Archives[pbg3FileIdx];
+            // Let's really make sure this is null by nulling twice. I assume
+            // there's some kind of inline function here, like it's actually
+            // calling this->pbg3Archives.delete(pbg3FileIdx), followed by a
+            // manual nulling?
+            this->pbg3Archives[pbg3FileIdx] = NULL;
+            this->pbg3Archives[pbg3FileIdx] = NULL;
+        }
+    }
+    return 0;
+}
+
+ZunResult Supervisor::LoadConfig(const char *path)
+{
+    const GameConfiguration *data;
+    const auto hasStreamedBgm = []() {
+        SDL_IOStream *stream = FileSystem::OpenFileStream("bgm/th06_01.wav", "rb");
+        if (stream == NULL)
+        {
+            stream = FileSystem::OpenFileStream("bgm/th06_01.ogg", "rb");
+        }
+        if (stream == NULL)
+        {
+            return false;
+        }
+        SDL_CloseIO(stream);
+        return true;
+    };
+
+    std::memset(&g_Supervisor.cfg, 0, sizeof(GameConfiguration));
+    g_Supervisor.cfg.opts = g_Supervisor.cfg.opts | (1 << GCOS_USE_D3D_HW_TEXTURE_BLENDING);
+    data = (GameConfiguration *)FileSystem::OpenPath(path, 1);
+    if (data == NULL)
+    {
+        g_Supervisor.cfg.lifeCount = 2;
+        g_Supervisor.cfg.bombCount = 3;
+        g_Supervisor.cfg.colorMode16bit = 0;
+        g_Supervisor.cfg.version = GAME_VERSION;
+        g_Supervisor.cfg.padXAxis = 600;
+        g_Supervisor.cfg.padYAxis = 600;
+        if (hasStreamedBgm())
+        {
+            g_Supervisor.cfg.musicMode = WAV;
+        }
+        else
+        {
+            g_Supervisor.cfg.musicMode = MIDI;
+            utils::DebugPrint(TH_ERR_NO_WAVE_FILE);
+        }
+        g_Supervisor.cfg.playSounds = 1;
+        g_Supervisor.cfg.defaultDifficulty = 1;
+        g_Supervisor.cfg.windowed = true;
+        g_Supervisor.cfg.frameskipConfig = 0;
+        g_Supervisor.cfg.controllerMapping = g_ControllerMapping;
+        g_GameErrorContext.Log(TH_ERR_CONFIG_NOT_FOUND);
+    }
+    else
+    {
+        g_Supervisor.cfg = *data;
+        if ((g_Supervisor.cfg.lifeCount >= 5) || (g_Supervisor.cfg.bombCount >= 4) ||
+            (g_Supervisor.cfg.colorMode16bit >= 2) || (g_Supervisor.cfg.musicMode >= 3) ||
+            (g_Supervisor.cfg.defaultDifficulty >= 5) || (g_Supervisor.cfg.playSounds >= 2) ||
+            (g_Supervisor.cfg.windowed >= 2) || (g_Supervisor.cfg.frameskipConfig >= 3) ||
+            (g_Supervisor.cfg.version != GAME_VERSION) || (g_LastFileSize != 0x38))
+        {
+            g_Supervisor.cfg.lifeCount = 2;
+            g_Supervisor.cfg.bombCount = 3;
+            g_Supervisor.cfg.colorMode16bit = 0;
+            g_Supervisor.cfg.version = GAME_VERSION;
+            g_Supervisor.cfg.padXAxis = 600;
+            g_Supervisor.cfg.padYAxis = 600;
+            if (hasStreamedBgm())
+            {
+                g_Supervisor.cfg.musicMode = WAV;
+            }
+            else
+            {
+                g_Supervisor.cfg.musicMode = MIDI;
+                utils::DebugPrint(TH_ERR_NO_WAVE_FILE);
+            }
+            g_Supervisor.cfg.playSounds = 1;
+            g_Supervisor.cfg.defaultDifficulty = 1;
+            g_Supervisor.cfg.windowed = true;
+            g_Supervisor.cfg.frameskipConfig = 0;
+            g_Supervisor.cfg.controllerMapping = g_ControllerMapping;
+            std::memset(&g_Supervisor.cfg.opts, 0, sizeof(GameConfigOptsShifts));
+            g_Supervisor.cfg.opts |= (1 << GCOS_USE_D3D_HW_TEXTURE_BLENDING);
+            g_GameErrorContext.Log(TH_ERR_CONFIG_CORRUPTED);
+        }
+        g_ControllerMapping = g_Supervisor.cfg.controllerMapping;
+        free((void *)data);
+    }
+#ifdef __EMSCRIPTEN__
+    // eagler-touhou chooses the original MIDI/WAV mode at run time. OGG is an
+    // alternative resource format handled by SoundPlayer's WAV path.
+    const int webMusicMode = EM_ASM_INT({
+        return Module.touhouMusicMode === 'none' ? 0 :
+               Module.touhouMusicMode === 'midi' ? 2 :
+               (Module.touhouMusicMode === 'wav' || Module.touhouMusicMode === 'ogg' ? 1 : -1);
+    });
+    if (webMusicMode == OFF || webMusicMode == MIDI || webMusicMode == WAV)
+    {
+        g_Supervisor.cfg.musicMode = static_cast<MusicMode>(webMusicMode);
+    }
+#endif
+    if (((this->cfg.opts >> GCOS_DONT_USE_VERTEX_BUF) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_NO_VERTEX_BUFFER);
+    }
+    if (((this->cfg.opts >> GCOS_DONT_USE_FOG) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_NO_FOG);
+    }
+    if (((this->cfg.opts >> GCOS_FORCE_16BIT_COLOR_MODE) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_USE_16BIT_TEXTURES);
+    }
+    if (this->RedrawWholeFrame())
+    {
+        g_GameErrorContext.Log(TH_ERR_FORCE_BACKBUFFER_CLEAR);
+    }
+    if (((this->cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_DONT_RENDER_ITEMS);
+    }
+    if (((this->cfg.opts >> GCOS_SUPPRESS_USE_OF_GOROUD_SHADING) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_NO_GOURAUD_SHADING);
+    }
+    if (((this->cfg.opts >> GCOS_TURN_OFF_DEPTH_TEST) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_NO_DEPTH_TESTING);
+    }
+    if (((this->cfg.opts >> GCOS_FORCE_60FPS) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_FORCE_60FPS_MODE);
+        this->vsyncEnabled = 0;
+    }
+    if (((this->cfg.opts >> GCOS_NO_COLOR_COMP) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_NO_TEXTURE_COLOR_COMPOSITING);
+    }
+    if (((this->cfg.opts >> GCOS_NO_COLOR_COMP) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_LAUNCH_WINDOWED);
+    }
+    if (((this->cfg.opts >> GCOS_REFERENCE_RASTERIZER_MODE) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_FORCE_REFERENCE_RASTERIZER);
+    }
+    if (((this->cfg.opts >> GCOS_NO_DIRECTINPUT_PAD) & 1) != 0)
+    {
+        g_GameErrorContext.Log(TH_ERR_DO_NOT_USE_DIRECTINPUT);
+    }
+    if (FileSystem::WriteDataToFile(path, &g_Supervisor.cfg, sizeof(GameConfiguration)) != 0)
+    {
+        g_GameErrorContext.Fatal(TH_ERR_FILE_CANNOT_BE_EXPORTED, path);
+        g_GameErrorContext.Fatal(TH_ERR_FOLDER_HAS_WRITE_PROTECT_OR_DISK_FULL);
+        return ZUN_ERROR;
+    }
+
+    return ZUN_SUCCESS;
+}
+
+bool Supervisor::ReadMidiFile(u32 midiFileIdx, const char *path)
+{
+    // Return conventions seem opposite of normal? But they're never used anyway
+    #ifdef __EMSCRIPTEN__
+    if (midiFileIdx < ARRAY_SIZE(g_WebMidiPaths))
+    {
+        std::strncpy(g_WebMidiPaths[midiFileIdx], path, sizeof(g_WebMidiPaths[midiFileIdx]) - 1);
+        g_WebMidiPaths[midiFileIdx][sizeof(g_WebMidiPaths[midiFileIdx]) - 1] = '\0';
+    }
+    #endif
+    if (g_Supervisor.cfg.musicMode == MIDI
+        #ifdef __EMSCRIPTEN__
+        || IsWebOggMode()
+        #endif
+    )
+    {
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->ReadFileData(midiFileIdx, path);
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+ZunResult Supervisor::PlayMidiFile(i32 midiFileIdx)
+{
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+        return ZUN_SUCCESS;
+#endif
+    bool useMidi = g_Supervisor.cfg.musicMode == MIDI;
+    #ifdef __EMSCRIPTEN__
+    if (IsWebOggMode() && midiFileIdx >= 0 && midiFileIdx < ARRAY_SIZE(g_WebMidiPaths) &&
+        !HasWebOggForMidi(g_WebMidiPaths[midiFileIdx]))
+    {
+        useMidi = true;
+        NotifyWebMidiFallback(g_WebMidiPaths[midiFileIdx]);
+    }
+    #endif
+    if (useMidi)
+    {
+#ifdef __EMSCRIPTEN__
+        if (IsWebOggMode())
+        {
+            g_SoundPlayer.StopBGM();
+        }
+#endif
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->StopPlayback();
+            g_Supervisor.midiOutput->ParseFile(midiFileIdx);
+            g_Supervisor.midiOutput->Play();
+        }
+
+        return ZUN_SUCCESS;
+    }
+
+    return ZUN_ERROR;
+}
+
+ZunResult Supervisor::PlayAudio(const char *path)
+{
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+        return ZUN_SUCCESS;
+#endif
+    char wavName[256];
+    char wavPos[256];
+    char *pathExtension;
+
+    bool useMidi = g_Supervisor.cfg.musicMode == MIDI;
+    #ifdef __EMSCRIPTEN__
+    if (IsWebOggMode() && !HasWebOggForMidi(path))
+    {
+        useMidi = true;
+        NotifyWebMidiFallback(path);
+    }
+    #endif
+    if (useMidi)
+    {
+#ifdef __EMSCRIPTEN__
+        if (IsWebOggMode())
+        {
+            g_SoundPlayer.StopBGM();
+        }
+#endif
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->StopPlayback();
+            g_Supervisor.midiOutput->LoadFile(path);
+            g_Supervisor.midiOutput->Play();
+        }
+    }
+    else if (g_Supervisor.cfg.musicMode == WAV)
+    {
+#ifdef __EMSCRIPTEN__
+        if (IsWebOggMode() && g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->StopPlayback();
+        }
+#endif
+        std::strcpy(wavName, path);
+        std::strcpy(wavPos, path);
+        pathExtension = std::strrchr(wavName, L'.');
+        pathExtension[1] = 'w';
+        pathExtension[2] = 'a';
+        pathExtension[3] = 'v';
+        pathExtension = std::strrchr(wavPos, L'.');
+        pathExtension[1] = 'p';
+        pathExtension[2] = 'o';
+        pathExtension[3] = 's';
+        g_SoundPlayer.LoadWav(wavName);
+        if (g_SoundPlayer.LoadPos(wavPos) < ZUN_SUCCESS)
+        {
+            g_SoundPlayer.PlayBGM(false);
+        }
+        else
+        {
+            g_SoundPlayer.PlayBGM(true);
+        }
+    }
+    else
+    {
+        return ZUN_ERROR;
+    }
+    return ZUN_SUCCESS;
+}
+
+ZunResult Supervisor::StopAudio()
+{
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+        return ZUN_SUCCESS;
+#endif
+#ifdef __EMSCRIPTEN__
+    if (IsWebOggMode())
+    {
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->StopPlayback();
+        }
+        g_SoundPlayer.StopBGM();
+        return ZUN_SUCCESS;
+    }
+#endif
+    if (g_Supervisor.cfg.musicMode == MIDI)
+    {
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->StopPlayback();
+        }
+    }
+    else
+    {
+        if (g_Supervisor.cfg.musicMode == WAV)
+        {
+            g_SoundPlayer.StopBGM();
+        }
+        else
+        {
+            return ZUN_ERROR;
+        }
+    }
+
+    return ZUN_SUCCESS;
+}
+
+ZunResult Supervisor::FadeOutMusic(f32 fadeOutSeconds)
+{
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+        return ZUN_SUCCESS;
+#endif
+#ifdef __EMSCRIPTEN__
+    if (IsWebOggMode())
+    {
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->SetFadeOut(1000.0f * fadeOutSeconds);
+        }
+        g_SoundPlayer.FadeOut(this->effectiveFramerateMultiplier > 0.0f &&
+                                      this->effectiveFramerateMultiplier < 1.0f
+                                  ? fadeOutSeconds / this->effectiveFramerateMultiplier
+                                  : fadeOutSeconds);
+        return ZUN_SUCCESS;
+    }
+#endif
+    if (g_Supervisor.cfg.musicMode == MIDI)
+    {
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->SetFadeOut(1000.0f * fadeOutSeconds);
+        }
+    }
+    else
+    {
+        if (g_Supervisor.cfg.musicMode == WAV)
+        {
+            if (this->effectiveFramerateMultiplier == 0.0f)
+            {
+                g_SoundPlayer.FadeOut(fadeOutSeconds);
+            }
+            else
+            {
+                if (this->effectiveFramerateMultiplier > 1.0f)
+                {
+                    g_SoundPlayer.FadeOut(fadeOutSeconds);
+                }
+                else
+                {
+                    g_SoundPlayer.FadeOut(fadeOutSeconds / this->effectiveFramerateMultiplier);
+                }
+            }
+        }
+        else
+        {
+            return ZUN_ERROR;
+        }
+    }
+
+    return ZUN_SUCCESS;
+}

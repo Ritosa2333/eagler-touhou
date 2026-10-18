@@ -1,0 +1,249 @@
+ANM: st02wl.anm
+Std_unknown: 0
+
+ENTRY:
+    Id: 0
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 0 200 1024 128 0
+
+    QUAD:
+        Type: 0
+        Script_index: 3
+        Position: 0 0 200
+        Padding: 0
+        Width: 1024
+        Height: 128
+
+
+ENTRY:
+    Id: 1
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 0 200 1024 128 0
+
+    QUAD:
+        Type: 0
+        Script_index: 2
+        Position: 0 0 200
+        Padding: 0
+        Width: 1024
+        Height: 128
+
+
+ENTRY:
+    Id: 2
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 0 200 1024 128 0
+
+    QUAD:
+        Type: 0
+        Script_index: 1
+        Position: 0 0 200
+        Padding: 0
+        Width: 1024
+        Height: 128
+
+
+ENTRY:
+    Id: 3
+    Unknown: 1
+    Position: 0 0 0
+    Depth: 0
+    Width: 0
+    Height: 0
+    TH20_extra: 0 200 1024 128 0
+
+    QUAD:
+        Type: 0
+        Script_index: 0
+        Position: 0 0 200
+        Padding: 0
+        Width: 1024
+        Height: 128
+
+
+ENTRY:
+    Id: 4
+    Unknown: 3
+    Position: 0 0 0
+    Depth: 64
+    Width: 0
+    Height: 0
+    TH20_extra: 210 75 500 508 50
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: 100 20 50
+        Padding: 0
+        Width: 128
+        Height: 128
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: -100 20 50
+        Padding: 0
+        Width: -128
+        Height: 128
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: 150 200 100
+        Padding: 0
+        Width: 128
+        Height: 128
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: -150 200 100
+        Padding: 0
+        Width: -128
+        Height: 128
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: 100 300 50
+        Padding: 0
+        Width: 128
+        Height: 128
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: -100 300 50
+        Padding: 0
+        Width: -128
+        Height: 128
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: 250 400 100
+        Padding: 0
+        Width: 128
+        Height: 128
+
+    QUAD:
+        Type: 0
+        Script_index: 4
+        Position: -250 400 100
+        Padding: 0
+        Width: -128
+        Height: 128
+
+
+INSTANCE: 0 256 0 -128 0
+INSTANCE: 4 256 0 -128 0
+INSTANCE: 1 256 0 0 0
+INSTANCE: 2 256 0 128 0
+INSTANCE: 3 256 0 256 0
+INSTANCE: 0 256 0 384 0
+INSTANCE: 4 256 0 384 0
+INSTANCE: 1 256 0 512 0
+INSTANCE: 2 256 0 640 0
+INSTANCE: 3 256 0 768 0
+INSTANCE: 0 256 0 896 0
+INSTANCE: 4 256 0 896 0
+INSTANCE: 1 256 0 1024 0
+INSTANCE: 2 256 0 1152 0
+INSTANCE: 3 256 0 1280 0
+INSTANCE: 0 256 0 1408 0
+INSTANCE: 4 256 0 1408 0
+INSTANCE: 1 256 0 1536 0
+INSTANCE: 2 256 0 1664 0
+INSTANCE: 3 256 0 1792 0
+INSTANCE: 0 256 0 1920 0
+INSTANCE: 4 256 0 1920 0
+INSTANCE: 1 256 0 2048 0
+INSTANCE: 2 256 0 2176 0
+INSTANCE: 3 256 0 2304 0
+INSTANCE: 0 256 0 2432 0
+INSTANCE: 4 256 0 2432 0
+INSTANCE: 1 256 0 2560 0
+INSTANCE: 2 256 0 2688 0
+INSTANCE: 3 256 0 2816 0
+
+SCRIPT:
+    ins_6(0.0f, 0.0f, -1.0f);
+    ins_7(0.62831855f);
+    ins_14(0, 5, 2);
+    ins_14(1, 6, 3);
+    ins_20(1600.0f);
+    ins_8(#000000ff, 100.0f, 400.0f);
+    ins_9(740, 0, #304010ff, 400.0f, 1400.0f);
+    ins_4(0.0f, 150.0f, 50.0f);
+    ins_2(0.0f, 0.0f, 60.0f);
+    ins_3(686, 0, 0.0f, 512.0f, 10.0f);
+686:
+    ins_2(0.0f, 0.0f, 10.0f);
+    ins_3(686, 0, 0.0f, 512.0f, 10.0f);
+1372:
+    ins_2(0.0f, 0.0f, 10.0f);
+    ins_3(686, 0, 0.0f, 512.0f, 10.0f);
+2058:
+    ins_2(0.0f, 0.0f, 10.0f);
+    ins_3(686, 0, 0.0f, 512.0f, 10.0f);
+2744:
+    ins_2(0.0f, 0.0f, 10.0f);
+    ins_3(686, 0, 0.0f, 512.0f, 10.0f);
+3430:
+    ins_2(0.0f, 0.0f, 10.0f);
+    ins_3(686, 0, 0.0f, 512.0f, 10.0f);
+4116:
+    ins_2(0.0f, 0.0f, 10.0f);
+    ins_3(686, 0, 0.0f, 512.0f, 10.0f);
+    ins_9(540, 0, #000000ff, 400.0f, 1400.0f);
+    ins_5(540, 1, 0.0f, 150.0f, 30.0f);
+    ins_3(540, 1, 0.0f, 1024.0f, 60.0f);
+4656:
+    ins_2(0.0f, 512.0f, 60.0f);
+    ins_3(400, 0, 0.0f, 1024.0f, 60.0f);
+5056:
+    ins_2(0.0f, 512.0f, 60.0f);
+    ins_3(400, 0, 0.0f, 1024.0f, 60.0f);
+5456:
+    ins_2(0.0f, 512.0f, 60.0f);
+    ins_3(400, 0, 0.0f, 1024.0f, 60.0f);
+5856:
+    ins_2(0.0f, 512.0f, 60.0f);
+    ins_3(400, 0, 0.0f, 1024.0f, 60.0f);
+6256:
+    ins_2(0.0f, 512.0f, 60.0f);
+    ins_3(400, 0, 0.0f, 1024.0f, 60.0f);
+6656:
+    ins_2(0.0f, 512.0f, 60.0f);
+    ins_3(400, 0, 0.0f, 1024.0f, 60.0f);
+    ins_3(400, 0, 0.0f, 1536.0f, 60.0f);
+7056:
+    ins_2(0.0f, 1024.0f, 60.0f);
+    ins_1(860, 6656);
+    ins_16(1);
+    ins_14(0, 5, 2);
+    ins_14(1, 6, 3);
+    ins_20(1600.0f);
+    ins_19(1);
+    ins_2(0.0f, 1024.0f, 60.0f);
+    ins_4(0.0f, 150.0f, 30.0f);
+    ins_2(0.0f, 1024.0f, 60.0f);
+    ins_5(10, 0, 0.0f, 150.0f, 30.0f);
+    ins_8(#000000ff, 400.0f, 1400.0f);
+    ins_9(540, 0, #000000ff, 400.0f, 1400.0f);
+    ins_3(800, 0, 0.0f, 1536.0f, 60.0f);
+7856:
+    ins_2(0.0f, 1024.0f, 60.0f);
+    ins_1(1136, 7056);

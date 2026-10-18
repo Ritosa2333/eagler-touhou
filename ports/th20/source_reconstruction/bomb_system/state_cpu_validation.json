@@ -1,0 +1,10 @@
+{
+"status":"passed",
+"checks":68387,
+"failed":0,
+"state_cpp_sha256":"664bc16223061d1481e6e0115640378c36775c445e531fd30da4752764ea313e",
+"bomb_hpp_sha256":"6e5566f548ceaeb1c34039072b50df0e3635b2e603ffccc7c90dca831975a738",
+"scope":"12000 randomized original477f40,477f60,477ff0,478260 comparisons including full storage and integer overflow; original478190 lists of0..64 entities including iterator cleanup;8192 secondary-owner487bb0 transition cases",
+"limitations":["Bomb lifecycle, character subclasses, rendering and trigger integration are not exercised here"],
+"failure_examples":[]
+}

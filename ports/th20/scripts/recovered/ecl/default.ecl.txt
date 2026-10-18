@@ -1,0 +1,1179 @@
+
+void BossDead2()
+{
+    ins_1002(0);
+    ins_502(156);
+    ins_516(5);
+    ins_404([-9998.0f], 0.4f);
+    ins_300("Ecl_EtBreak2_ni", 0.0f, 0.0f, 9999, 0, 0);
+    ins_525();
++60: //60
+    ins_613();
+    ins_523();
+    ins_517(30, 12, 0);
+    ins_307(1, 25);
+    ins_307(1, 57);
+    ins_516(5);
+    ins_512(-1);
+    ins_1();
+    return;
+}
+
+void BossEscapeNoDead()
+{
+    ins_502(156);
+    ins_1002(1);
+    ins_523();
+    ins_505();
+    ins_511(100000);
+    ins_303(1, -1);
+    ins_303(2, -1);
+    ins_621(0.0f, 15732608);
+    ins_512(-1);
+    ins_502(16);
+    ins_401(60, 4, -224.0f, -80.0f);
+    ins_23(60);
+    ins_1();
+    return;
+}
+
+void BossEscapeSpell()
+{
+    ins_514(0, -1, 0, "");
+    ins_514(1, -1, 0, "");
+    ins_502(156);
+    ins_1002(1);
+    ins_523();
+    ins_505();
+    ins_525();
+    ins_511(100000);
+    ins_303(1, -1);
+    ins_303(2, -1);
+    ins_512(-1);
+    ins_502(16);
+    ins_401(60, 4, -224.0f, -80.0f);
+    ins_23(60);
+    ins_1();
+    return;
+}
+
+void BossInterval()
+{
+    ins_513();
+    ins_21();
+    ins_573();
+    unless ([-9986] == 0) goto BossInterval_208 @ 0;
+    ins_615(640.0f);
+    goto BossInterval_228 @ 0;
+BossInterval_208:
+    ins_616(640.0f);
+BossInterval_228:
+    ins_523();
+    ins_624(0);
+    ins_539();
+    ins_516(27);
+    ins_526(0.0f);
+    ins_404(0.0f, 0.0f);
+    ins_405(0, 0, 0.0f, 0.0f);
+    ins_401(0, 0, 0.0f, 0.0f);
+    [-9949] = 0;
+    [-9948] = 0;
+    [-9947] = 1;
+    ins_516(27);
+    ins_515(90);
+    unless ([-9986] == 0) goto BossInterval_692 @ 0;
+    ins_615(640.0f);
+    goto BossInterval_712 @ 0;
+BossInterval_692:
+    ins_616(640.0f);
+BossInterval_712:
+    ins_23(90);
+    ins_505();
+    return;
+}
+
+void BossItem()
+{
+    var A, B, C;
+    unless ([-9986] == 0) goto BossItem_240 @ 0;
+    ins_506();
+    ins_507(1, $B);
+    ins_507(2, $C);
+    ins_508(64.0f, 64.0f);
+    ins_510($A);
+    ins_509();
+BossItem_240:
+    return;
+}
+
+void BossItemPhase()
+{
+    var A, B, C, D;
+    unless ([-9986] == 0) goto BossItemPhase_240 @ 0;
+    ins_506();
+    ins_510($C);
+    ins_507(1, $A);
+    ins_507(2, $B);
+    ins_508(%D, %D);
+    ins_509();
+BossItemPhase_240:
+    return;
+}
+
+void BossItemPhase2()
+{
+    var A, B, C, D;
+    unless ([-9986] == 0) goto BossItemPhase2_220 @ 0;
+    ins_506();
+    ins_507(1, $B);
+    ins_507(2, $C);
+    ins_508(%D, %D);
+    ins_509();
+BossItemPhase2_220:
+    return;
+}
+
+void BossItemPhase3()
+{
+    var A, B, C;
+    unless ([-9986] == 0) goto BossItemPhase3_240 @ 0;
+    ins_506();
+    ins_510(6);
+    ins_507(1, $A);
+    ins_507(2, $B);
+    ins_508(%C, %C);
+    ins_509();
+BossItemPhase3_240:
+    return;
+}
+
+void DeadAttack1()
+{
+    [-9981.0f] = 3.0f;
+    [-9985] = 3;
+    [-9984] = 5;
+    ins_424(0);
+    ins_300("DeadAttackEt1", 0.0f, 0.0f, 10, 10, 0);
+    return;
+}
+
+void DeadAttack2()
+{
+    [-9981.0f] = 3.0f;
+    [-9985] = 5;
+    [-9984] = 4;
+    ins_424(0);
+    ins_300("DeadAttackEt1", 0.0f, 0.0f, 10, 10, 0);
+    return;
+}
+
+void DeadAttackEt1()
+{
+    var A;
+    ins_502(32);
+    ins_600(0);
+    ins_607(0, 0);
+    ins_602(0, 7, 2);
+    ins_606(0, 1, 1);
+    ins_604(0, 0.0f, 0.05235988f);
+    ins_605(0, [-9981.0f], 1.0f);
+    ins_609(0, 0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    $A = [-9985];
+    goto DeadAttackEt1_364 @ 0;
+DeadAttackEt1_324:
+    ins_601(0);
+    ins_23([-9984]);
+DeadAttackEt1_364:
+    if ($A--) goto DeadAttackEt1_324 @ 0;
+    ins_1();
+}
+
+void DebugSkipFunc()
+{
+    ins_901();
+    return;
+}
+
+void DebugSkipStopFunc()
+{
+    ins_902();
+    return;
+}
+
+void Ecl_EtBreak()
+{
+    var A;
+    %A = 16.0f;
+    ins_502(32);
+    goto Ecl_EtBreak_216 @ 1;
+Ecl_EtBreak_120:
+    ins_615(%A);
+    %A;
++1: //1
+    10;
+    ins_51();
+    ins_45(%A);
+Ecl_EtBreak_216:
+    if (%A < 640.0f) goto Ecl_EtBreak_120 @ 0;
+    ins_1();
+}
+
+void Ecl_EtBreak2()
+{
+    var A;
+    %A = 16.0f;
+    ins_502(32);
+    goto Ecl_EtBreak2_216 @ 1;
+Ecl_EtBreak2_120:
+    ins_615(%A);
+    %A;
++1: //1
+    6;
+    ins_51();
+    ins_45(%A);
+Ecl_EtBreak2_216:
+    if (%A < 640.0f) goto Ecl_EtBreak2_120 @ 0;
+    ins_1();
+}
+
+void Ecl_EtBreak2_ni()
+{
+    var A;
+    %A = 16.0f;
+    ins_502(32);
+    goto Ecl_EtBreak2_ni_216 @ 1;
+Ecl_EtBreak2_ni_120:
+    ins_616(%A);
+    %A;
++1: //1
+    6;
+    ins_51();
+    ins_45(%A);
+Ecl_EtBreak2_ni_216:
+    if (%A < 640.0f) goto Ecl_EtBreak2_ni_120 @ 0;
+    ins_1();
+}
+
+void Ecl_EtBreak_ni()
+{
+    var A;
+    %A = 16.0f;
+    ins_502(32);
+    goto Ecl_EtBreak_ni_216 @ 1;
+Ecl_EtBreak_ni_120:
+    ins_616(%A);
+    %A;
++1: //1
+    10;
+    ins_51();
+    ins_45(%A);
+Ecl_EtBreak_ni_216:
+    if (%A < 640.0f) goto Ecl_EtBreak_ni_120 @ 0;
+    ins_1();
+}
+
+void EffChargePoint()
+{
+    var A, B, C;
+    ins_302(1);
+    ins_303($B, 151 + $C);
+    ins_319($B, %A);
+    ins_516(54);
+    return;
+}
+
+void EffChargePoint2()
+{
+    var A, B, C, D, E;
+    ins_302(1);
+    ins_303($C, 151 + $D);
+    ins_319($C, %A);
+    ins_303($C + 1, 151 + $E);
+    ins_319($C + 1, %A + %B);
+    ins_516(54);
+    return;
+}
+
+void EffChargePoint3()
+{
+    var A, B, C, D, E, F;
+    ins_302(1);
+    ins_303($C, 151 + $D);
+    ins_319($C, %A + %B);
+    ins_303($C + 1, 151 + $E);
+    ins_319($C + 1, %A);
+    ins_303($C + 2, 151 + $F);
+    ins_319($C + 2, %A - %B);
+    ins_516(54);
+    return;
+}
+
+void MainBossSpell()
+{
+    ins_524(43);
+    ins_622(1);
++10: //10
+    ins_518(-1);
++1: //11
+    ins_301("Boss", 144.0f, -16.0f, 40, 1000, 1);
+    ins_520();
+    ins_524(81);
+    ins_23(170);
+    ins_518(-2);
+    ins_519();
+    return;
+}
+
+void MainBossSpell2()
+{
+    ins_524(43);
+    ins_622(1);
++10: //10
+    ins_518(-1);
++1: //11
+    ins_301("BossSpell", 144.0f, -16.0f, 40, 1000, 1);
+    ins_520();
+    ins_524(81);
+    ins_23(170);
+    ins_518(-2);
+    ins_519();
+    return;
+}
+
+void MainMBossSpell()
+{
+    ins_524(22);
++10: //10
+    ins_518(-3);
++1: //11
+    ins_301("MBoss", 144.0f, -16.0f, 40, 1000, 1);
+    ins_520();
+    ins_524(81);
+    ins_23(100);
+    ins_518(-2);
+    ins_519();
+    return;
+}
+
+void NoEnemyDebug()
+{
+    goto NoEnemyDebug_80 @ 0;
+NoEnemyDebug_60:
+    ins_23(1000);
+NoEnemyDebug_80:
+    if (1) goto NoEnemyDebug_60 @ 0;
+    return;
+}
+
+void StoneAttackLevel_B1()
+{
+!E67
+    2.0f;
+!N67
+    2.5f;
+!H67
+    2.5f;
+!L67
+    2.5f;
+!E67
+    4;
+!N67
+    8;
+!H67
+    8;
+!L67
+    8;
+!*
+    @StoneAttackLevel_B_func([-1], 1, [-2.0f], 2.5f, 160);
+    ins_1();
+}
+
+void StoneAttackLevel_B2()
+{
+!E67
+    2.0f;
+!N67
+    2.5f;
+!H67
+    2.5f;
+!L67
+    2.5f;
+!E67
+    6;
+!N67
+    12;
+!H67
+    12;
+!L67
+    12;
+!*
+    @StoneAttackLevel_B_func([-1], 1, [-2.0f], 2.5f, 150);
+    ins_1();
+}
+
+void StoneAttackLevel_B3()
+{
+!E67
+    2.0f;
+!N67
+    2.5f;
+!H67
+    2.5f;
+!L67
+    2.5f;
+!E67
+    8;
+!N67
+    16;
+!H67
+    16;
+!L67
+    16;
+!*
+    @StoneAttackLevel_B_func([-1], 1, [-2.0f], 2.5f, 140);
+    ins_1();
+}
+
+void StoneAttackLevel_B4()
+{
+!E67
+    2.5f;
+!N67
+    3.0f;
+!H67
+    3.0f;
+!L67
+    3.0f;
+!E67
+    10;
+!N67
+    24;
+!H67
+    24;
+!L67
+    24;
+!*
+    @StoneAttackLevel_B_func([-1], 1, [-2.0f], 3.0f, 130);
+    ins_1();
+}
+
+void StoneAttackLevel_B5()
+{
+!E67
+    3.0f;
+!N67
+    3.3f;
+!H67
+    3.3f;
+!L67
+    3.3f;
+!E67
+    12;
+!N67
+    32;
+!H67
+    32;
+!L67
+    32;
+!*
+    @StoneAttackLevel_B_func([-1], 1, [-2.0f], 3.3f, 130);
+    ins_1();
+}
+
+void StoneAttackLevel_B_func(var A, var B, var C, var D, var E)
+{
+    ins_502(35);
+    ins_343(1);
+    ins_23(60);
+    goto StoneAttackLevel_B_func_524 @ 0;
+StoneAttackLevel_B_func_120:
+    ins_600(0);
+    ins_607(0, 3);
+    ins_602(0, 7, 5);
+    ins_606(0, $A, $B);
+    ins_604(0, [-9998.0f], 0.34906584f);
+    ins_605(0, %C, %D);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_603(0, [-9987.0f] * 32.0f, 0.0f);
+    unless ([-9875] == 0) goto StoneAttackLevel_B_func_504 @ 0;
+    ins_601(0);
+StoneAttackLevel_B_func_504:
+    ins_23($E);
+StoneAttackLevel_B_func_524:
+    if (1) goto StoneAttackLevel_B_func_120 @ 0;
+    return;
+}
+
+void StoneAttackLevel_G1()
+{
+!E67
+    30;
+!N67
+    16;
+!H67
+    16;
+!L67
+    16;
+!*
+    @StoneAttackLevel_G_func(1, 1, 2.0f, 2.0f, [-1]);
+    ins_1();
+}
+
+void StoneAttackLevel_G2()
+{
+!E67
+    22;
+!N67
+    15;
+!H67
+    15;
+!L67
+    15;
+!*
+    @StoneAttackLevel_G_func(1, 1, 2.0f, 2.0f, [-1]);
+    ins_1();
+}
+
+void StoneAttackLevel_G3()
+{
+!E67
+    20;
+!N67
+    14;
+!H67
+    14;
+!L67
+    14;
+!*
+    @StoneAttackLevel_G_func(1, 1, 2.0f, 3.0f, [-1]);
+    ins_1();
+}
+
+void StoneAttackLevel_G4()
+{
+!E67
+    18;
+!N67
+    13;
+!H67
+    13;
+!L67
+    13;
+!*
+    @StoneAttackLevel_G_func(1, 1, 2.0f, 3.0f, [-1]);
+    ins_1();
+}
+
+void StoneAttackLevel_G5()
+{
+!E67
+    16;
+!N67
+    14;
+!H67
+    14;
+!L67
+    14;
+!E67
+    1;
+!N67
+    2;
+!H67
+    2;
+!L67
+    2;
+!*
+    @StoneAttackLevel_G_func([-1], 1, 2.0f, 3.5f, [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_G_func(var A, var B, var C, var D, var E)
+{
+    ins_502(35);
+    ins_343(1);
+    ins_23(60);
+    goto StoneAttackLevel_G_func_524 @ 0;
+StoneAttackLevel_G_func_120:
+    ins_600(0);
+    ins_607(0, 8);
+    ins_602(0, 7, 12);
+    ins_606(0, $A, $B);
+    ins_604(0, 0.0f, 3.1415927f);
+    ins_605(0, %C, %D);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_603(0, [-9987.0f] * 32.0f, 0.0f);
+    unless ([-9875] == 0) goto StoneAttackLevel_G_func_504 @ 0;
+    ins_601(0);
+StoneAttackLevel_G_func_504:
+    ins_23($E);
+StoneAttackLevel_G_func_524:
+    if (1) goto StoneAttackLevel_G_func_120 @ 0;
+    return;
+}
+
+void StoneAttackLevel_R1()
+{
+!E67
+    2.8f;
+!N67
+    3.3f;
+!H67
+    3.3f;
+!L67
+    3.3f;
+!E67
+    2;
+!N67
+    4;
+!H67
+    4;
+!L67
+    4;
+!*
+    @StoneAttackLevel_R_func(1, [-1], [-2.0f], 2.0f, 120);
+    ins_1();
+}
+
+void StoneAttackLevel_R2()
+{
+!E67
+    2.8f;
+!N67
+    3.3f;
+!H67
+    3.3f;
+!L67
+    3.3f;
+!E67
+    2;
+!N67
+    4;
+!H67
+    4;
+!L67
+    4;
+!*
+    @StoneAttackLevel_R_func(1, [-1], [-2.0f], 2.0f, 100);
+    ins_1();
+}
+
+void StoneAttackLevel_R3()
+{
+!E67
+    2.8f;
+!N67
+    3.3f;
+!H67
+    3.3f;
+!L67
+    3.3f;
+!E67
+    2;
+!N67
+    4;
+!H67
+    4;
+!L67
+    4;
+!*
+    @StoneAttackLevel_R_func(1, [-1], [-2.0f], 2.0f, 80);
+    ins_1();
+}
+
+void StoneAttackLevel_R4()
+{
+!E67
+    3.0f;
+!N67
+    3.5f;
+!H67
+    3.5f;
+!L67
+    3.5f;
+!E67
+    2;
+!N67
+    4;
+!H67
+    4;
+!L67
+    4;
+!*
+    @StoneAttackLevel_R_func(1, [-1], [-2.0f], 2.0f, 60);
+    ins_1();
+}
+
+void StoneAttackLevel_R5()
+{
+!E67
+    3.0f;
+!N67
+    3.5f;
+!H67
+    3.5f;
+!L67
+    3.5f;
+!E67
+    4;
+!N67
+    4;
+!H67
+    4;
+!L67
+    4;
+!E67
+    1;
+!N67
+    3;
+!H67
+    3;
+!L67
+    3;
+!*
+    @StoneAttackLevel_R_func([-1], [-2], [-3.0f], 2.0f, 70);
+    ins_1();
+}
+
+void StoneAttackLevel_R_func(var A, var B, var C, var D, var E)
+{
+    ins_502(35);
+    ins_343(1);
+    ins_23(60);
+    ins_600(0);
+    ins_607(0, 1);
+    ins_602(0, 7, 1);
+    ins_606(0, $A, $B);
+    ins_604(0, 1.5707964f, 0.34906584f);
+    ins_605(0, %C, %D);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    goto StoneAttackLevel_R_func_524 @ 0;
+StoneAttackLevel_R_func_320:
+    ins_603(0, [-9987.0f] * 32.0f, 0.0f);
+    unless ([-9875] == 0) goto StoneAttackLevel_R_func_504 @ 0;
+    ins_601(0);
+StoneAttackLevel_R_func_504:
+    ins_23($E);
+StoneAttackLevel_R_func_524:
+    if (1) goto StoneAttackLevel_R_func_320 @ 0;
+    return;
+}
+
+void StoneAttackLevel_Y1()
+{
+!E67
+    320;
+!N67
+    160;
+!H67
+    160;
+!L67
+    160;
+!E67
+    2;
+!N67
+    4;
+!H67
+    4;
+!L67
+    4;
+!*
+    @StoneAttackLevel_Y_func([-1], 1, 3.3f, 2.0f, [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y2()
+{
+!E67
+    300;
+!N67
+    150;
+!H67
+    150;
+!L67
+    150;
+!E67
+    2;
+!N67
+    4;
+!H67
+    4;
+!L67
+    4;
+!*
+    @StoneAttackLevel_Y_func([-1], 1, 3.3f, 2.0f, [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y3()
+{
+!E67
+    180;
+!N67
+    140;
+!H67
+    140;
+!L67
+    140;
+!E67
+    2;
+!N67
+    4;
+!H67
+    4;
+!L67
+    4;
+!*
+    @StoneAttackLevel_Y_func([-1], 1, 3.3f, 3.0f, [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y4()
+{
+!E67
+    170;
+!N67
+    130;
+!H67
+    130;
+!L67
+    130;
+!E67
+    4;
+!N67
+    6;
+!H67
+    6;
+!L67
+    6;
+!*
+    @StoneAttackLevel_Y_func([-1], 1, 3.4f, 3.0f, [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y5()
+{
+!E67
+    160;
+!N67
+    130;
+!H67
+    130;
+!L67
+    130;
+!E67
+    4;
+!N67
+    8;
+!H67
+    8;
+!L67
+    8;
+!*
+    @StoneAttackLevel_Y_func([-1], 1, 3.5f, 3.5f, [-2]);
+    ins_1();
+}
+
+void StoneAttackLevel_Y_func(var A, var B, var C, var D, var E)
+{
+    ins_502(35);
+    ins_343(1);
+    ins_23(60);
+    goto StoneAttackLevel_Y_func_984 @ 0;
+StoneAttackLevel_Y_func_120:
+    ins_600(0);
+    ins_607(0, 0);
+    ins_602(0, 7, 12);
+    ins_606(0, $A, $B);
+    ins_604(0, 0.0f, 0.34906584f);
+    ins_605(0, %C, %D);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_603(0, [-9987.0f] * 32.0f, 0.0f);
+    unless ([-9875] == 0) goto StoneAttackLevel_Y_func_504 @ 0;
+    ins_601(0);
+StoneAttackLevel_Y_func_504:
+    ins_23($E);
+    ins_600(0);
+    ins_607(0, 0);
+    ins_602(0, 7, 12);
+    ins_606(0, $A - 1, $B);
+    ins_604(0, 0.0f, 0.34906584f);
+    ins_605(0, %C, %D);
+    ins_611(0, 0, 1, 1, -9999994, -9999994.0f, -9999994.0f);
+    ins_603(0, [-9987.0f] * 32.0f, 0.0f);
+    unless ([-9875] == 0) goto StoneAttackLevel_Y_func_964 @ 0;
+    ins_601(0);
+StoneAttackLevel_Y_func_964:
+    ins_23($E);
+StoneAttackLevel_Y_func_984:
+    if (1) goto StoneAttackLevel_Y_func_120 @ 0;
+    return;
+}
+
+void StoneB()
+{
+    var A, B, C, D;
+    ins_502(3);
+    ins_302(2);
+    ins_306(0, 283);
+    ins_329(0, 0.0f, 0.0f);
+    ins_330(0, 60, 3, 1.0f, 1.0f);
+    ins_516(53);
+    ins_23(1);
+    ins_1001(1);
+    ins_500(48.0f, 48.0f);
+    ins_501(32.0f, 32.0f);
+    ins_23(60);
+    ins_503(3);
+    ins_504(0.0f, 128.0f, 300.0f, 100.0f);
+    %A = _f(0);
+    $C = 2000000;
+    goto StoneB_1392 @ 0;
+StoneB_448:
+    $D = 180;
+    goto StoneB_892 @ 0;
+StoneB_512:
+    %A = _f(0);
+    unless ([-9881] == 0) goto StoneB_656 @ 0;
+    goto StoneB_936 @ 0;
+StoneB_656:
+    unless (([-9874.0f] >= _f(0)) && ([-9874.0f] < _f(64))) goto StoneB_872 @ 0;
+    %A = _f(1);
+    goto StoneB_936 @ 0;
+StoneB_872:
+    ins_23(1);
+StoneB_892:
+    if ($D--) goto StoneB_512 @ 0;
+StoneB_936:
+    unless ([-9881] == 0) goto StoneB_1040 @ 0;
+    goto StoneB_1436 @ 0;
+StoneB_1040:
+    unless (%A == _f(0)) goto StoneB_1192 @ 0;
+    ins_412(60, 4, 2.0f);
+    ins_23(1);
+    goto StoneB_1392 @ 0;
+StoneB_1192:
+    ins_87(%B, [-9963.0f], [-9962.0f], [-9997.0f], [-9996.0f]);
+    ins_404(%B + ([-9987.0f] * 1.5707964f), 2.0f);
+    ins_445(60, 4, 0.0f);
+    ins_23(60);
+StoneB_1392:
+    if ($C--) goto StoneB_448 @ 0;
+StoneB_1436:
+    ins_505();
+    ins_401(300, 1, [-9997.0f], -64.0f);
+    goto StoneB_1528 @ 0;
+StoneB_1508:
+    ins_23(1000);
+StoneB_1528:
+    if (1) goto StoneB_1508 @ 0;
+    ins_1();
+}
+
+void StoneG()
+{
+    var A, B, C, D;
+    ins_502(3);
+    ins_302(2);
+    ins_306(0, 305);
+    ins_329(0, 0.0f, 0.0f);
+    ins_330(0, 60, 3, 1.0f, 1.0f);
+    ins_516(53);
+    ins_23(1);
+    ins_1001(3);
+    ins_500(48.0f, 48.0f);
+    ins_501(32.0f, 32.0f);
+    ins_23(60);
+    ins_503(3);
+    ins_504(0.0f, 128.0f, 300.0f, 100.0f);
+    %A = _f(0);
+    $C = 2000000;
+    goto StoneG_1392 @ 0;
+StoneG_448:
+    $D = 180;
+    goto StoneG_892 @ 0;
+StoneG_512:
+    %A = _f(0);
+    unless ([-9881] == 0) goto StoneG_656 @ 0;
+    goto StoneG_936 @ 0;
+StoneG_656:
+    unless (([-9874.0f] >= _f(0)) && ([-9874.0f] < _f(64))) goto StoneG_872 @ 0;
+    %A = _f(1);
+    goto StoneG_936 @ 0;
+StoneG_872:
+    ins_23(1);
+StoneG_892:
+    if ($D--) goto StoneG_512 @ 0;
+StoneG_936:
+    unless ([-9881] == 0) goto StoneG_1040 @ 0;
+    goto StoneG_1436 @ 0;
+StoneG_1040:
+    unless (%A == _f(0)) goto StoneG_1192 @ 0;
+    ins_412(60, 4, 2.0f);
+    ins_23(1);
+    goto StoneG_1392 @ 0;
+StoneG_1192:
+    ins_87(%B, [-9963.0f], [-9962.0f], [-9997.0f], [-9996.0f]);
+    ins_404(%B + ([-9987.0f] * 1.5707964f), 2.0f);
+    ins_445(60, 4, 0.0f);
+    ins_23(60);
+StoneG_1392:
+    if ($C--) goto StoneG_448 @ 0;
+StoneG_1436:
+    ins_505();
+    ins_401(300, 1, [-9997.0f], -64.0f);
+    goto StoneG_1528 @ 0;
+StoneG_1508:
+    ins_23(1000);
+StoneG_1528:
+    if (1) goto StoneG_1508 @ 0;
+    ins_1();
+}
+
+void StoneR()
+{
+    var A, B, C, D;
+    ins_502(3);
+    ins_302(2);
+    ins_306(0, 272);
+    ins_329(0, 0.0f, 0.0f);
+    ins_330(0, 60, 3, 1.0f, 1.0f);
+    ins_516(53);
+    ins_23(1);
+    ins_1001(0);
+    ins_500(48.0f, 48.0f);
+    ins_501(32.0f, 32.0f);
+    ins_23(60);
+    ins_503(3);
+    ins_504(0.0f, 128.0f, 300.0f, 100.0f);
+    %A = _f(0);
+    $C = 2000000;
+    goto StoneR_1392 @ 0;
+StoneR_448:
+    $D = 180;
+    goto StoneR_892 @ 0;
+StoneR_512:
+    %A = _f(0);
+    unless ([-9881] == 0) goto StoneR_656 @ 0;
+    goto StoneR_936 @ 0;
+StoneR_656:
+    unless (([-9874.0f] >= _f(0)) && ([-9874.0f] < _f(64))) goto StoneR_872 @ 0;
+    %A = _f(1);
+    goto StoneR_936 @ 0;
+StoneR_872:
+    ins_23(1);
+StoneR_892:
+    if ($D--) goto StoneR_512 @ 0;
+StoneR_936:
+    unless ([-9881] == 0) goto StoneR_1040 @ 0;
+    goto StoneR_1436 @ 0;
+StoneR_1040:
+    unless (%A == _f(0)) goto StoneR_1192 @ 0;
+    ins_412(60, 4, 2.0f);
+    ins_23(1);
+    goto StoneR_1392 @ 0;
+StoneR_1192:
+    ins_87(%B, [-9963.0f], [-9962.0f], [-9997.0f], [-9996.0f]);
+    ins_404(%B + ([-9987.0f] * 1.5707964f), 2.0f);
+    ins_445(60, 4, 0.0f);
+    ins_23(60);
+StoneR_1392:
+    if ($C--) goto StoneR_448 @ 0;
+StoneR_1436:
+    ins_505();
+    ins_401(300, 1, [-9997.0f], -64.0f);
+    goto StoneR_1528 @ 0;
+StoneR_1508:
+    ins_23(1000);
+StoneR_1528:
+    if (1) goto StoneR_1508 @ 0;
+    ins_1();
+}
+
+void StoneY()
+{
+    var A, B, C, D;
+    ins_502(3);
+    ins_302(2);
+    ins_306(0, 294);
+    ins_329(0, 0.0f, 0.0f);
+    ins_330(0, 60, 3, 1.0f, 1.0f);
+    ins_516(53);
+    ins_23(1);
+    ins_1001(2);
+    ins_500(48.0f, 48.0f);
+    ins_501(32.0f, 32.0f);
+    ins_23(60);
+    ins_503(3);
+    ins_504(0.0f, 128.0f, 300.0f, 100.0f);
+    %A = _f(0);
+    $C = 2000000;
+    goto StoneY_1392 @ 0;
+StoneY_448:
+    $D = 180;
+    goto StoneY_892 @ 0;
+StoneY_512:
+    %A = _f(0);
+    unless ([-9881] == 0) goto StoneY_656 @ 0;
+    goto StoneY_936 @ 0;
+StoneY_656:
+    unless (([-9874.0f] >= _f(0)) && ([-9874.0f] < _f(64))) goto StoneY_872 @ 0;
+    %A = _f(1);
+    goto StoneY_936 @ 0;
+StoneY_872:
+    ins_23(1);
+StoneY_892:
+    if ($D--) goto StoneY_512 @ 0;
+StoneY_936:
+    unless ([-9881] == 0) goto StoneY_1040 @ 0;
+    goto StoneY_1436 @ 0;
+StoneY_1040:
+    unless (%A == _f(0)) goto StoneY_1192 @ 0;
+    ins_412(60, 4, 2.0f);
+    ins_23(1);
+    goto StoneY_1392 @ 0;
+StoneY_1192:
+    ins_87(%B, [-9963.0f], [-9962.0f], [-9997.0f], [-9996.0f]);
+    ins_404(%B + ([-9987.0f] * 1.5707964f), 2.0f);
+    ins_445(60, 4, 0.0f);
+    ins_23(60);
+StoneY_1392:
+    if ($C--) goto StoneY_448 @ 0;
+StoneY_1436:
+    ins_505();
+    ins_401(300, 1, [-9997.0f], -64.0f);
+    goto StoneY_1528 @ 0;
+StoneY_1508:
+    ins_23(1000);
+StoneY_1528:
+    if (1) goto StoneY_1508 @ 0;
+    ins_1();
+}
+
+void et_ofs_r()
+{
+    var A, B, C, D;
+    ins_81(%C, %D, [-9998.0f], %B * [-9999.0f]);
+    ins_603($A, %C, %D);
+    return;
+}
+
+void test()
+{
+    var A, B;
+!HL67
+    ins_87(%A, [-9997.0f] + _f(16), [-9996.0f] - _f(40), -%B, 448.0f);
+!NHL67
+    ins_404([-9989.0f], 0.0f);
+    ins_405(60, 0, [-9989.0f] + ([-9987.0f] * 0.5235988f), 2.0f);
+!E67
+    ins_404([-9981.0f] + ([-9987.0f] * 0.5235988f), 0.0f);
+    ins_405(60, 0, -9999994.0f, 2.0f);
+!*
+    return;
+}
+
+void test2()
+{
+    var A, B;
+    return;
+}

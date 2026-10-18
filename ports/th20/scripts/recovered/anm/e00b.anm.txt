@@ -1,0 +1,182 @@
+entry entry0 {
+    version: 8,
+    name: "ending/ebg00.png",
+    filename: "ending/ebg00@e00b@0.png",
+    format: 3,
+    width: 1024,
+    height: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1024,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite0: { x: 0, y: 0, w: 1024, h: 960 }
+    }
+}
+
+script -252 script0 {
+    ins_304(30);
+    ins_313(2);
+    ins_500(script2);
+    ins_500(script3);
++60: // 60
+    ins_3();
+    ins_5(1);
++60: // 120
+    ins_1();
+}
+
+script script1 {
+    ins_304(30);
+    ins_313(2);
+    ins_500(script4);
+    ins_500(script5);
++60: // 60
+    ins_3();
+    ins_5(1);
++60: // 120
+    ins_1();
+}
+
+script script2 {
+    ins_300(sprite0);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry1 {
+    version: 8,
+    name: "ending/ebg00.png",
+    filename: "ending/ebg00@e00b@1.png",
+    format: 3,
+    width: 256,
+    height: 1024,
+    xOffset: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite1: { x: 0, y: 0, w: 256, h: 960 }
+    }
+}
+
+script script3 {
+    ins_300(sprite1);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(1024.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry2 {
+    version: 8,
+    name: "ending/e00b.png",
+    filename: "ending/e00b@e00b@2.png",
+    format: 3,
+    width: 1024,
+    height: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1024,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite2: { x: 0, y: 0, w: 1024, h: 960 }
+    }
+}
+
+script script4 {
+    ins_300(sprite2);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry3 {
+    version: 8,
+    name: "ending/e00b.png",
+    filename: "ending/e00b@e00b@3.png",
+    format: 3,
+    width: 256,
+    height: 1024,
+    xOffset: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite3: { x: 0, y: 0, w: 256, h: 960 }
+    }
+}
+
+script script5 {
+    ins_300(sprite3);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(1024.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+

@@ -1,0 +1,64 @@
+#pragma once
+
+#include "inttypes.hpp"
+
+enum TouhouButton
+{
+    TH_BUTTON_SHOOT = 1 << 0,
+    TH_BUTTON_BOMB = 1 << 1,
+    TH_BUTTON_FOCUS = 1 << 2,
+    TH_BUTTON_MENU = 1 << 3,
+    TH_BUTTON_UP = 1 << 4,
+    TH_BUTTON_DOWN = 1 << 5,
+    TH_BUTTON_LEFT = 1 << 6,
+    TH_BUTTON_RIGHT = 1 << 7,
+    TH_BUTTON_SKIP = 1 << 8,
+    TH_BUTTON_Q = 1 << 9,
+    TH_BUTTON_S = 1 << 10,
+    TH_BUTTON_HOME = 1 << 11,
+    TH_BUTTON_ENTER = 1 << 12,
+    TH_BUTTON_D = 1 << 13, // only used for cheat code
+    TH_BUTTON_RESET = 1 << 14,
+
+    TH_BUTTON_UP_LEFT = TH_BUTTON_UP | TH_BUTTON_LEFT,
+    TH_BUTTON_UP_RIGHT = TH_BUTTON_UP | TH_BUTTON_RIGHT,
+    TH_BUTTON_DOWN_LEFT = TH_BUTTON_DOWN | TH_BUTTON_LEFT,
+    TH_BUTTON_DOWN_RIGHT = TH_BUTTON_DOWN | TH_BUTTON_RIGHT,
+    TH_BUTTON_DIRECTION = TH_BUTTON_DOWN | TH_BUTTON_RIGHT | TH_BUTTON_UP | TH_BUTTON_LEFT,
+
+    TH_BUTTON_SELECTMENU = TH_BUTTON_ENTER | TH_BUTTON_SHOOT,
+    TH_BUTTON_RETURNMENU = TH_BUTTON_MENU | TH_BUTTON_BOMB,
+    TH_BUTTON_WRONG_CHEATCODE = TH_BUTTON_SHOOT | TH_BUTTON_BOMB | TH_BUTTON_MENU | TH_BUTTON_Q |
+                                TH_BUTTON_S | TH_BUTTON_ENTER,
+    TH_BUTTON_ANY = 0xFFFF,
+};
+
+#define IS_PRESSED_RAW(key) ((g_CurFrameRawInput & (key)) != 0)
+#define IS_PRESSED_GAME(key) ((g_CurFrameGameInput & (key)) != 0)
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#define IS_PRESSED_PLAYER(player, key) \
+    ((g_CurFrameGameInputs[(player)->initParam] & (key)) != 0)
+#define WAS_PRESSED_PLAYER(player, key)                                      \
+    (((g_CurFrameGameInputs[(player)->initParam] & (key)) != 0) &&          \
+     ((g_CurFrameGameInputs[(player)->initParam] & (key)) !=                \
+      (g_LastFrameGameInputs[(player)->initParam] & (key))))
+#else
+#define IS_PRESSED_PLAYER(player, key) IS_PRESSED_GAME(key)
+#define WAS_PRESSED_PLAYER(player, key) WAS_PRESSED_GAME(key)
+#endif
+#define WAS_PRESSED_RAW(key)                                                                       \
+    (IS_PRESSED_RAW(key) && ((g_CurFrameRawInput & (key)) != (g_LastFrameRawInput & (key))))
+#define WAS_PRESSED_GAME(key)                                                                      \
+    (IS_PRESSED_GAME(key) && ((g_CurFrameGameInput & (key)) != (g_LastFrameGameInput & (key))))
+#define IS_EIGHTH(key) (((g_CurFrameRawInput & (key)) != 0) && (g_IsEighthFrameOfHeldInput != 0))
+#define WAS_PRESSED_RAW_AND_IS_EIGHTH(key) (WAS_PRESSED_RAW(key) || IS_EIGHTH(key))
+
+namespace Controller
+{
+u16 GetControllerInput(u16 buttons);
+u8 *GetControllerState();
+u16 GetInput();
+void ResetKeyboard();
+void SetEnterSuppressed(bool suppressed);
+u32 SetButton(u16* outButtons, i32 controllerButton, u32 thButton);
+} // namespace Controller

@@ -1,0 +1,473 @@
+#include <eagler/netplay/AdonisStartup.hpp>
+#include <eagler/netplay/AdonisConnection.hpp>
+#include <eagler/netplay/AdonisSpectatorTiming.hpp>
+#include <cassert>
+#include <cstdio>
+#include <deque>
+#ifdef _MSC_VER
+#include <crtdbg.h>
+#endif
+
+using namespace Netplay;
+struct Link : PeerTransport {
+    struct Packet {std::uint64_t due;std::vector<std::uint8_t> bytes;};
+    Link* other=nullptr;
+    std::deque<Packet> incoming;
+    std::uint64_t now=0,delay=35'000;
+    unsigned fast=0,control=0,dropEvery=0;
+    std::vector<std::uint64_t> probeTimes;
+    bool dead=false,closed=false,blocked=false,dropAccept=false,dropCommit=false,dropAck=false;
+    bool disconnected=false,suspended=false,recovering=false;
+    bool IsOpen()const override{return !dead&&!closed;}
+    bool Failed()const override{return dead;}
+    bool Disconnected()const override{return disconnected;}
+    bool CalibrationSuspended()const override{return suspended;}
+    bool Recovering()const override{return recovering;}
+    std::size_t BufferedAmount()const override{return 0;}
+    bool Send(const std::uint8_t* bytes,std::size_t size,bool reliable){
+        if(dead||blocked)return false;
+        assert(size==64 && AdonisStartup::IsPacket(bytes,size));
+        if(bytes[4]==2)probeTimes.push_back(now);
+        if(reliable){
+            ++control;
+            bool* once=bytes[4]==6?&dropAccept:bytes[4]==7?&dropCommit:bytes[4]==8?&dropAck:nullptr;
+            if(once&&*once){*once=false;return true;}
+        }else if(++fast && dropEvery && fast%dropEvery==0)return true;
+        other->incoming.push_back({now+(reliable?1'000:delay),{bytes,bytes+size}});return true;
+    }
+    bool SendTo(std::uint8_t,const std::uint8_t* p,std::size_t n)override{return Send(p,n,false);}
+    bool SendRepairTo(std::uint8_t,const std::uint8_t*,std::size_t)override{assert(false);return false;}
+    bool SendControl(const std::uint8_t* p,std::size_t n)override{return Send(p,n,true);}
+    bool Poll(std::vector<std::uint8_t>* out)override{
+        for(auto i=incoming.begin();i!=incoming.end();++i)if(i->due<=now){*out=std::move(i->bytes);incoming.erase(i);return true;}
+        return false;
+    }
+};
+SessionConfig config(unsigned side){SessionConfig c;c.sessionId=0x901;c.gameplayAbi=42;c.gameId=9;c.seed=314;c.playerCount=2;c.localPlayer=side;return c;}
+static bool pump(AdonisStartup& s,Link& l,std::uint64_t now){
+    l.now=now;std::vector<std::uint8_t> wire;
+    for(unsigned n=0;n<256&&l.Poll(&wire);++n)if(!s.Receive(l,wire.data(),wire.size(),now))return false;
+    return s.Tick(l,now);
+}
+static AdonisStartup::Choice run(AdonisMode mode,std::uint32_t request,unsigned reserve=2,
+                                unsigned loss=0,bool controls=false,bool asymmetric=false,std::uint64_t oneWayUs=35'000){
+    Link a,b;a.other=&b;b.other=&a;a.dropEvery=b.dropEvery=loss;
+    a.delay=b.delay=oneWayUs;
+    if(asymmetric){a.delay=5'000;b.delay=65'000;}
+    if(controls){a.dropCommit=true;b.dropAccept=true;b.dropAck=true;}
+    AdonisStartup left,right;assert(left.Begin(config(0),0,mode,request,reserve));assert(right.Begin(config(1),0,mode,request,reserve));
+    unsigned progress=0;
+    for(std::uint64_t t=0;t<10'000'000;t+=1'000){
+        a.now=b.now=t;assert(pump(left,a,t)&&pump(right,b,t));
+        // Measurement never commits early or invents a value from no samples.
+        if(left.Ready()||right.Ready()){
+            assert(left.Probes()==129&&right.Probes()==129);
+            assert(t>=a.probeTimes.back()+216'000&&t>=b.probeTimes.back()+216'000);
+        }
+        if(left.Ready()&&right.Ready()){
+            if(++progress==800)break; // delayed/duplicate commit and echo packets survive handoff
+        }
+    }
+    assert(left.Ready()&&right.Ready());
+    auto l=left.Selected(),r=right.Selected();assert(l.delay==r.delay&&l.fullDelay==r.fullDelay&&l.prediction==r.prediction);
+    assert(left.Local().received+left.Local().lost==120&&right.Local().received+right.Local().lost==120);
+    assert(a.probeTimes.size()==129&&b.probeTimes.size()==129&&a.control&&b.control);
+    assert(a.probeTimes.front()>=AdonisStartup::StabilizeUs+1'000);
+    assert(b.probeTimes.front()>=AdonisStartup::StabilizeUs+1'000);
+    for(const auto* times:{&a.probeTimes,&b.probeTimes})for(unsigned i=1;i<times->size();++i)
+        assert((*times)[i]-(*times)[i-1]==16'000);
+    assert(left.Local().minUs<=left.Local().meanUs&&left.Local().meanUs<=left.Local().maxUs);
+    assert(l.delay==(request==AdonisStartup::Automatic?l.fullDelay-l.prediction:request));
+    const auto available=l.fullDelay-(request==AdonisStartup::Automatic?1u:0u);
+    assert(l.prediction==(mode==AdonisMode::Hybrid?std::min(available,reserve):0));
+    std::printf("startup mode=%u requested=%u reserve=%u loss=%u asymmetric=%u -> B=%u D=%u P=%u PASS\n",
+        unsigned(mode),request,reserve,loss,unsigned(asymmetric),l.fullDelay,l.delay,l.prediction);
+    return l;
+}
+static void stabilization_restarts_after_disconnect(){
+    Link a,b;a.other=&b;b.other=&a;
+    AdonisStartup left,right;
+    assert(left.Begin(config(0),0,AdonisMode::Delay,AdonisStartup::Automatic));
+    assert(right.Begin(config(1),0,AdonisMode::Delay,AdonisStartup::Automatic));
+    for(std::uint64_t t=0;t<=1'700'000;t+=1'000){
+        a.closed=t>=500'000&&t<700'000;a.now=b.now=t;
+        assert(pump(left,a,t)&&pump(right,b,t));
+        if(t<1'700'000)assert(a.probeTimes.empty());
+    }
+    assert(a.probeTimes.size()==1&&a.probeTimes.front()==1'700'000);
+    assert(!left.Ready());
+}
+static void mismatches(){
+    for(unsigned kind=0;kind<5;++kind){
+        Link a,b;a.other=&b;b.other=&a;AdonisStartup l,r;auto c=config(1);
+        if(kind==3)c.gameplayAbi++;if(kind==4)c.seed++;
+        assert(l.Begin(config(0),0,AdonisMode::Hybrid,AdonisStartup::Automatic));
+        assert(r.Begin(c,0,kind==0?AdonisMode::Delay:AdonisMode::Hybrid,kind==1?3:AdonisStartup::Automatic,kind==2?1:2));
+        bool failed=false;
+        for(unsigned t=0;t<1'000'000&&!failed;t+=1000){a.now=b.now=t;failed=!pump(l,a,t)||!pump(r,b,t);}
+        assert(failed&&!l.Ready()&&!r.Ready());
+    }
+}
+static void failure_and_reuse(){
+    Link a,b;a.other=&b;b.other=&a;AdonisStartup l;assert(l.Begin(config(0),0,AdonisMode::Delay,AdonisStartup::Automatic));
+    assert(l.Tick(a,0));const auto stale=b.incoming.front().bytes;
+    assert(l.Tick(a,10'000'000));
+    assert(l.Tick(a,AdonisStartup::PeerWaitUs)&&l.State()==AdonisStartup::Stage::Unavailable&&!l.Failed());
+    auto c=config(1);c.sessionId++;
+    assert(l.Begin(c,0,AdonisMode::Hybrid,AdonisStartup::Automatic));
+    assert(l.Receive(b,stale.data(),stale.size(),1'000)&&!l.Ready());
+    auto bad=stale;bad[8]=std::uint8_t(c.sessionId);bad[5]=0;bad[6]=2;bad[7]=2;
+    assert(!l.Receive(b,bad.data(),bad.size()-1,2'000));
+    assert(l.Begin(c,0,AdonisMode::Hybrid,AdonisStartup::Automatic));
+    assert(l.Receive(b,bad.data(),bad.size(),1'000));assert(l.Tick(b,1'000));
+    assert(l.Tick(b,601'000)&&l.State()==AdonisStartup::Stage::Measuring&&!l.Failed());
+    assert(l.Begin(c,0,AdonisMode::Hybrid,AdonisStartup::Automatic));
+    assert(!l.Ready()&&l.Probes()==0&&l.Local().received==0);
+}
+static void allowance(){
+    for(unsigned p:{0u,1u,2u}){
+        AdonisPhase phase;assert(phase.Reset(90,0,2,p));
+        for(unsigned f=0;f<80;++f){const auto due=1'000'000+f*16667ull;phase.ObserveDue(f,due);phase.ObserveArrival(1,f,due+20'000);AdonisPhaseSample sample;phase.PollLocalSample(&sample);}
+        const auto expected=p==2?0.0:p==1?3.333:8.0;
+        assert(std::abs(phase.TakeDelayMs()-expected)<.001);
+    }
+}
+struct MeshLink:PeerTransport{
+    struct Pending{std::uint64_t at;std::vector<std::uint8_t> bytes;};
+    unsigned seat=0,count=3,probes[3]{};
+    std::uint64_t now=0,acceptAfter=0;
+    MeshLink* peers[3]{};
+    std::deque<Pending> incoming;
+    bool dropSlowInput=false,dropCommit=false,dropAck=false,dropRestart=false,dropRetry=false;
+    bool IsOpen()const override{return true;}
+    bool Failed()const override{return false;}
+    bool Forward(unsigned peer,const std::uint8_t* p,std::size_t n,bool control){
+        assert(peer<count&&peer!=seat&&n==64&&p[3]==4&&p[5]==seat&&p[56]==count);
+        if(!control){
+            assert(p[57]==peer);
+            if(p[4]==2)++probes[peer];
+            if(dropSlowInput&&seat&&peer)return true;
+        }else{
+            assert(p[57]==255);
+            if(p[4]==6&&peer==0&&now<acceptAfter)return true;
+            if(p[4]==7&&peer==2&&dropCommit){dropCommit=false;return true;}
+            if(p[4]==8&&peer==0&&dropAck){dropAck=false;return true;}
+            if(p[4]==10&&dropRestart){dropRestart=false;return true;}
+            if(p[4]==9&&dropRetry){dropRetry=false;return true;}
+        }
+        const auto delay=seat&&peer?(seat==1?50'000u:70'000u):1'000u;
+        peers[peer]->incoming.push_back({now+delay,{p,p+n}});
+        if(control)peers[peer]->incoming.push_back({now+delay+1'000,{p,p+n}});
+        return true;
+    }
+    bool SendTo(std::uint8_t peer,const std::uint8_t* p,std::size_t n)override{return Forward(peer,p,n,false);}
+    bool SendRepairTo(std::uint8_t,const std::uint8_t*,std::size_t)override{return false;}
+    bool SendControl(const std::uint8_t* p,std::size_t n)override{
+        for(unsigned peer=0;peer<count;++peer)if(peer!=seat)Forward(peer,p,n,true);
+        return true;
+    }
+    bool Poll(std::vector<std::uint8_t>* out)override{
+        for(auto i=incoming.begin();i!=incoming.end();++i)if(i->at<=now){*out=i->bytes;incoming.erase(i);return true;}
+        return false;
+    }
+    std::size_t BufferedAmount()const override{return 0;}
+};
+static void mesh(AdonisMode mode,std::uint32_t request,bool missingLink=false){
+    std::array<MeshLink,3> links{};std::array<AdonisStartup,3> startup{};
+    for(unsigned seat=0;seat<3;++seat){
+        auto& link=links[seat];link.seat=seat;link.dropSlowInput=missingLink;
+        for(unsigned peer=0;peer<3;++peer)link.peers[peer]=&links[peer];
+        auto c=config(seat);c.playerCount=3;
+        assert(startup[seat].Begin(c,0,mode,request));
+    }
+    links[0].dropCommit=true;links[2].dropAck=true;
+    links[2].acceptAfter=4'000'000; // Host must wait for the third acceptance.
+    bool failed=false;
+    for(std::uint64_t now=0;now<(missingLink?20'000'000u:6'000'000u)&&!failed;now+=1'000){
+        for(auto& link:links)link.now=now;
+        for(unsigned seat=0;seat<3;++seat){
+            std::vector<std::uint8_t> bytes;
+            while(links[seat].Poll(&bytes))if(!startup[seat].Receive(links[seat],bytes.data(),bytes.size(),now)){failed=true;break;}
+            if(!failed&&!startup[seat].Tick(links[seat],now))failed=true;
+        }
+        if(now<links[2].acceptAfter)assert(!startup[0].Ready());
+    }
+    if(missingLink){assert(!failed&&!startup[0].Ready());for(auto& s:startup)assert(s.State()==AdonisStartup::Stage::Unavailable);return;}
+    assert(!failed);
+    const auto choice=startup[0].Selected();assert(choice.fullDelay==4);
+    assert(choice.delay==(request==AdonisStartup::Automatic?(mode==AdonisMode::Hybrid?2u:4u):request));
+    for(unsigned seat=0;seat<3;++seat){
+        assert(startup[seat].Ready()&&startup[seat].Selected().delay==choice.delay);
+        assert(startup[seat].Probes()==129&&startup[seat].Replies()==120);
+        assert(startup[seat].ReportFor(1).p95Us>=120'000&&startup[seat].ReportFor(2).p95Us>=120'000);
+        for(unsigned peer=0;peer<3;++peer)if(peer!=seat){
+            assert(links[seat].probes[peer]==129&&startup[seat].LinkTo(peer).received==120);
+            assert(startup[seat].ReportFor(peer)==startup[peer].Local());
+        }
+    }
+}
+static void connection_owner(){
+    Link a,b;a.other=&b;b.other=&a;a.dropCommit=true;b.dropAck=true;
+    AdonisConnection host(a),peer(b);auto c=config(0);c.gameId=8;auto d=c;d.localPlayer=1;
+    host.Prepare(c,AdonisMode::Hybrid,true,0,2);peer.Prepare(d,AdonisMode::Hybrid,true,0,2);
+    assert(host.Pump(0,false)&&peer.Pump(0,false)&&a.fast==0&&b.fast==0);
+    bool hello=false;
+    for(std::uint64_t now=1000;now<7'000'000;now+=1000){
+        a.now=b.now=now;assert(host.Pump(now,true)&&peer.Pump(now,true));
+        if(host.NeedsApply()){host.Applied();SessionPacket packet;packet.sessionId=c.sessionId;
+            packet.seed=c.seed;packet.gameplayAbi=c.gameplayAbi;packet.gameId=c.gameId;
+            packet.playerCount=2;packet.senderPlayer=0;packet.phase=SessionPhase::Hello;
+            std::vector<std::uint8_t> wire;assert(EncodeSessionPacket(packet,&wire));b.incoming.push_back({now+1000,wire});hello=true;}
+        if(peer.NeedsApply())peer.Applied();
+    }
+    assert(hello&&!host.Waiting()&&!peer.Waiting()&&host.Status()[1]==5&&peer.Status()[1]==5);
+    std::vector<std::uint8_t> wire;SessionPacket packet;
+    assert(peer.Poll(&wire)&&DecodeSessionPacket(wire.data(),wire.size(),&packet)&&packet.senderPlayer==0);
+    auto timing=MakeAdonisSpectatorTiming(host.Startup(),c,true);auto bytes=timing.Encode();AdonisSpectatorTiming decoded;
+    assert(bytes.size()==40&&AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+    assert(decoded.delay==1&&decoded.prediction==2&&decoded.rttP95Us==70'000);
+    bytes[6]=9;assert(!AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+    const auto choice=host.Startup().Selected();
+    a.closed=true;
+    assert(host.Pump(7'001'000,true)&&!host.Failed());
+    assert(host.Startup().Ready()&&!host.Waiting());
+    a.closed=false;
+    assert(host.Pump(7'002'000,true)&&host.Startup().Ready());
+    assert(host.Startup().Selected().delay==choice.delay);
+    // A terminal wire failure remains fatal to gameplay, not to calibration.
+    a.dead=true;
+    assert(host.Pump(7'003'000,true)&&host.Failed());
+    assert(host.Startup().Ready()&&!host.Startup().Failed());
+    assert(host.Status()[1]==5&&host.Startup().Selected().delay==choice.delay);
+}
+static std::vector<std::uint8_t> connection_input_wire(const SessionConfig& c,unsigned sender,bool withInput=false){
+    InputPacket packet;packet.sessionId=c.sessionId;packet.senderPlayer=sender;packet.playerCount=c.playerCount;
+    packet.sequence=3;packet.ackSequence=2;packet.latestFrame=packet.ackFrame=59;packet.senderFrame=60;
+    if(withInput){packet.firstInputFrame=59;packet.inputCount=1;packet.inputs[0]=FrameInput(1);}
+    std::vector<std::uint8_t> bytes;assert(EncodeInputPacket(packet,&bytes));return bytes;
+}
+static std::vector<std::uint8_t> connection_session_wire(const SessionConfig& c,unsigned sender,
+                                                        SessionPhase phase=SessionPhase::Hello){
+    SessionPacket packet;packet.sessionId=c.sessionId;packet.seed=c.seed;packet.gameplayAbi=c.gameplayAbi;
+    packet.gameId=c.gameId;packet.playerCount=c.playerCount;packet.senderPlayer=sender;packet.phase=phase;
+    std::vector<std::uint8_t> bytes;assert(EncodeSessionPacket(packet,&bytes));return bytes;
+}
+static std::vector<std::uint8_t> connection_phase_wire(const SessionConfig& c,unsigned sender,unsigned target){
+    AdonisPhaseSample sample;sample.sessionId=c.sessionId;sample.senderPlayer=sender;sample.targetPlayer=target;
+    sample.frame=64;sample.waitCount=16;sample.waitUs=16000;
+    std::vector<std::uint8_t> bytes;assert(EncodeAdonisPhaseSample(sample,&bytes));return bytes;
+}
+static std::vector<std::uint8_t> connection_calibration_wire(SessionConfig c,unsigned sender){
+    Link a,b;a.other=&b;b.other=&a;c.localPlayer=sender;
+    AdonisStartup startup;assert(startup.Begin(c,0,AdonisMode::Delay,1));assert(startup.Tick(a,0));
+    assert(b.incoming.size()==1);return b.incoming.front().bytes;
+}
+static void connection_retired_generation(){
+    Link a,b;a.other=&b;b.other=&a;
+    auto old=config(0);old.gameId=10;auto next=old;++next.sessionId;++next.seed;++next.gameplayAbi;
+    auto oldPeer=old,nextPeer=next;oldPeer.localPlayer=nextPeer.localPlayer=1;
+    AdonisConnection host(a),peer(b);
+    host.Prepare(next,AdonisMode::Delay,false,1,2,&old);
+    peer.Prepare(nextPeer,AdonisMode::Delay,false,1,2,&oldPeer);
+    // Retire() can succeed while its first reliable ACK is refused. That
+    // cached ACK, an older input tail, HELLO/READY and phase advice can all
+    // arrive after the next world's Prepare, before its calibration commits.
+    const std::vector<std::vector<std::uint8_t>> oldPackets{
+        connection_input_wire(old,1),connection_input_wire(old,1,true),
+        connection_session_wire(old,1),connection_session_wire(old,1,SessionPhase::Ready),
+        connection_phase_wire(old,1,0),connection_calibration_wire(old,1)};
+    for(const auto& bytes:oldPackets)a.incoming.push_back({0,bytes});
+    const auto hello=connection_session_wire(next,1);
+    a.incoming.push_back({0,hello});
+    assert(host.Pump(0,false)&&host.Waiting()&&a.incoming.size()==oldPackets.size()+1);
+    for(std::uint64_t now=0;now<7'000'000;now+=1000){
+        a.now=b.now=now;
+        // The slower peer is still loading and can keep retrying retirement.
+        // Neither those ACKs nor its old calibration HELLO can open new input.
+        if(now<2'000'000&&now%100'000==0)a.incoming.push_back({now,oldPackets.front()});
+        assert(host.Pump(now,true)&&peer.Pump(now,now>=2'000'000));
+        if(now<2'000'000)assert(host.Waiting()&&!host.Startup().Ready()&&host.Startup().Probes()==0);
+        if(host.NeedsApply())host.Applied();
+        if(peer.NeedsApply())peer.Applied();
+    }
+    assert(!host.Failed()&&!peer.Failed()&&!host.Waiting()&&!peer.Waiting());
+    assert(host.Startup().Replies()==120&&peer.Startup().Replies()==120);
+    assert(host.Startup().Selected().delay==1&&peer.Startup().Selected().delay==1);
+    // The current generation's deferred HELLO retains its exact bytes/order;
+    // no retired input reaches the downstream SessionChannel or new core.
+    std::vector<std::uint8_t> bytes;assert(host.Poll(&bytes)&&bytes==hello);assert(!host.Poll(&bytes));
+    const auto input=connection_input_wire(next,1,true);a.incoming.push_back({a.now,input});
+    assert(host.Poll(&bytes)&&bytes==input);
+
+    // ADP uses broadcast control. A valid report between the other two seats
+    // is also harmless retired traffic, even though its target is not local.
+    Link x,y;x.other=&y;y.other=&x;auto oldMesh=old,nextMesh=next;
+    oldMesh.playerCount=nextMesh.playerCount=3;
+    AdonisConnection mesh(x);mesh.Prepare(nextMesh,AdonisMode::Delay,false,1,2,&oldMesh);
+    x.incoming.push_back({0,connection_phase_wire(oldMesh,1,2)});
+    assert(mesh.Pump(0,true)&&mesh.Waiting()&&!mesh.Startup().Ready()&&x.incoming.empty());
+}
+static void connection_rejects_unretired_or_malformed_packets(){
+    auto old=config(0);old.gameId=10;auto next=old;++next.sessionId;++next.seed;++next.gameplayAbi;
+    const auto rejected=[&](const std::vector<std::uint8_t>& bytes,const SessionConfig* retired){
+        Link a,b;a.other=&b;b.other=&a;AdonisConnection host(a);
+        host.Prepare(next,AdonisMode::Delay,false,1,2,retired);a.incoming.push_back({0,bytes});
+        assert(!host.Pump(0,true)&&host.Failed()&&!host.Startup().Ready()&&!host.NeedsApply());
+    };
+    const auto ack=connection_input_wire(old,1);
+    rejected(ack,nullptr); // all existing consumers retain the strict default
+    rejected(connection_input_wire(next,1),&old); // even current ACK-only input is too early
+    rejected(connection_input_wire(next,1,true),&old);
+    rejected(connection_input_wire(old,0),&old); // local-seat forgery
+    auto unknown=old;unknown.sessionId+=100;
+    rejected(connection_input_wire(unknown,1),&old);
+    rejected(connection_session_wire(unknown,1),&old);
+    rejected(connection_phase_wire(unknown,1,0),&old);
+    auto wrong=old;wrong.playerCount=3;
+    rejected(connection_input_wire(wrong,1),&old);
+    rejected(connection_input_wire(wrong,2),&old);
+    rejected(connection_session_wire(wrong,1),&old);
+    rejected(connection_session_wire(old,0),&old);
+    wrong=old;++wrong.seed;rejected(connection_session_wire(wrong,1),&old);
+    wrong=old;++wrong.gameplayAbi;rejected(connection_session_wire(wrong,1),&old);
+    wrong=old;++wrong.gameId;rejected(connection_session_wire(wrong,1),&old);
+    rejected(connection_phase_wire(old,0,1),&old);
+    rejected(connection_phase_wire(old,1,2),&old); // third seat absent from the retired mesh
+    rejected(connection_phase_wire(next,1,0),&old);
+    for(auto bytes:{ack,connection_input_wire(old,1,true),connection_session_wire(old,1),
+                    connection_phase_wire(old,1,0),connection_calibration_wire(old,1)}){
+        bytes.pop_back();rejected(bytes,&old); // an old ID cannot exempt malformed framing/payload
+    }
+    auto badPhase=connection_phase_wire(old,1,0);badPhase[12]=65;rejected(badPhase,&old);
+    rejected(connection_input_wire(next,1),&next); // a current descriptor is never a retired exception
+    wrong=old;wrong.localPlayer=1;rejected(ack,&wrong);
+    wrong=old;wrong.playerCount=3;rejected(ack,&wrong);
+    wrong=old;++wrong.gameId;rejected(ack,&wrong);
+    // Reuse/clear cannot accidentally carry this one-generation exception
+    // into a fresh lobby which has never retired a session on this wire.
+    for(bool clear:{false,true}){
+        Link a,b;a.other=&b;b.other=&a;AdonisConnection host(a);
+        host.Prepare(next,AdonisMode::Delay,false,1,2,&old);
+        if(clear)host.Clear();
+        host.Prepare(next,AdonisMode::Delay,false,1,2);a.incoming.push_back({0,ack});
+        assert(!host.Pump(0,true)&&host.Failed()&&!host.Startup().Ready());
+    }
+}
+static void connection_waits_for_loading_peer(){
+    // RTC can be healthy while a slower endpoint is still creating its world.
+    // The local resource-ready time must not consume the measurement deadline.
+    for(unsigned slowSeat:{0u,1u,2u}){
+        Link a,b;a.other=&b;b.other=&a;
+        AdonisConnection host(a),peer(b);
+        host.Prepare(config(0),AdonisMode::Delay,true,0,2);
+        peer.Prepare(config(1),AdonisMode::Delay,true,0,2);
+        for(std::uint64_t now=0;now<18'000'000;now+=1000){
+            a.now=b.now=now;
+            a.closed=b.closed=slowSeat==2&&now<12'000'000;
+            assert(host.Pump(now,slowSeat!=0||now>=12'000'000));
+            assert(peer.Pump(now,slowSeat!=1||now>=12'000'000));
+            if(now<13'000'000){assert(a.probeTimes.empty()&&b.probeTimes.empty());}
+            if(host.NeedsApply())host.Applied();
+            if(peer.NeedsApply())peer.Applied();
+        }
+        assert(!host.Waiting()&&!peer.Waiting());
+        assert(host.Startup().Replies()==120&&peer.Startup().Replies()==120);
+    }
+}
+static void interrupted_mesh(unsigned count,unsigned slowSeat,AdonisMode mode,std::uint32_t delay){
+    std::array<MeshLink,3> links{};std::array<AdonisStartup,3> startup{};
+    std::vector<std::uint8_t> stale;
+    for(unsigned seat=0;seat<count;++seat){
+        links[seat].seat=seat;links[seat].count=count;
+        for(unsigned peer=0;peer<count;++peer)links[seat].peers[peer]=&links[peer];
+        auto c=config(seat);c.playerCount=count;assert(startup[seat].Begin(c,0,mode,delay));
+    }
+    links[0].dropRestart=true;links[slowSeat].dropRetry=true;
+    for(std::uint64_t now=0;now<12'000'000;now+=1000){
+        for(auto& link:links)link.now=now;
+        for(unsigned seat=0;seat<count;++seat){
+            if(seat==slowSeat&&now>=1'700'000&&now<2'400'000)continue;
+            std::vector<std::uint8_t> bytes;
+            while(links[seat].Poll(&bytes)){
+                if(stale.empty()&&bytes[4]==3)stale=bytes;
+                assert(startup[seat].Receive(links[seat],bytes.data(),bytes.size(),now));
+            }
+            if(now>=2'500'000&&!stale.empty()&&seat==(stale[5]^1u) && count==2){
+                // Old echoes may arrive indefinitely after a retry.
+                assert(startup[seat].Receive(links[seat],stale.data(),stale.size(),now));
+            }
+            assert(startup[seat].Tick(links[seat],now));
+            if(startup[seat].Ready())assert(startup[seat].Attempt()>=2&&startup[seat].Replies()>=96);
+        }
+    }
+    const auto choice=startup[0].Selected();
+    for(unsigned seat=0;seat<count;++seat){
+        assert(startup[seat].Ready()&&!startup[seat].Failed());
+        assert(startup[seat].Attempt()==startup[0].Attempt());
+        assert(startup[seat].Selected().delay==choice.delay&&startup[seat].Selected().prediction==choice.prediction);
+        if(delay!=AdonisStartup::Automatic)assert(choice.delay==delay);
+    }
+}
+void spectator_timing_identity(){
+    for(const unsigned game:{8u,10u,11u,15u}){
+        AdonisSpectatorTiming timing;
+        timing.game=game;timing.mode=1;timing.delay=1;timing.fullDelay=1;
+        timing.sessionId=123;timing.gameplayAbi=456;timing.rttP95Us=32000;
+        timing.samples=120;timing.automatic=true;
+        auto bytes=timing.Encode();AdonisSpectatorTiming decoded;
+        assert(bytes.size()==40);
+        assert(AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+        assert(decoded.game==game&&decoded.mode==1&&decoded.prediction==0);
+        assert(decoded.sessionId==timing.sessionId&&decoded.gameplayAbi==timing.gameplayAbi);
+        bytes[1]='9';assert(!AdonisSpectatorTiming::IsPacket(bytes.data(),bytes.size()));
+        assert(!AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+        timing.prediction=1;assert(timing.Encode().empty());
+        timing.prediction=0;timing.mode=2;
+        assert((game==15)==timing.Encode().empty());
+    }
+}
+int main(){
+#ifdef _MSC_VER
+    _CrtSetReportMode(_CRT_ASSERT,_CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT,_CRTDBG_FILE_STDERR);
+    _set_abort_behavior(0,_WRITE_ABORT_MSG|_CALL_REPORTFAULT);
+#endif
+    spectator_timing_identity();
+    connection_owner();
+    connection_retired_generation();
+    connection_rejects_unretired_or_malformed_packets();
+    connection_waits_for_loading_peer();
+    for(unsigned count:{2u,3u})for(unsigned seat=0;seat<count;++seat)
+        for(auto mode:{AdonisMode::Delay,AdonisMode::Hybrid})for(auto delay:{AdonisStartup::Automatic,0u,9u})
+            interrupted_mesh(count,seat,mode,delay);
+    // Original conversion boundaries; in particular the user's 32 ms link
+    // must no longer receive an additional mandatory queued frame.
+    for(const auto [rtt,frames]:{std::pair{1u,1u},{32'000u,1u},{33'333u,1u},{33'334u,2u},{90'000u,3u},{100'002u,4u},{140'000u,5u}}){
+        AdonisStartup::Report report{rtt,120,0};
+        const auto pure=AdonisStartup::Choose(report,report,AdonisMode::Delay,AdonisStartup::Automatic,2);
+        const auto hybrid=AdonisStartup::Choose(report,report,AdonisMode::Hybrid,AdonisStartup::Automatic,2);
+        assert(pure.delay==frames&&pure.fullDelay==frames);
+        assert(hybrid.delay==std::max(1u,frames-std::min(frames-1,2u))&&hybrid.prediction==std::min(frames-1,2u));
+        const auto manual=AdonisStartup::Choose(report,report,AdonisMode::Hybrid,0,2);
+        assert(manual.delay==0&&manual.prediction==std::min(frames,2u));
+    }
+    const auto low=run(AdonisMode::Hybrid,AdonisStartup::Automatic,2,0,true,false,16'000);
+    assert(low.fullDelay==1&&low.delay==1&&low.prediction==0);
+    const auto pure=run(AdonisMode::Delay,AdonisStartup::Automatic);
+    const auto hybrid=run(AdonisMode::Hybrid,AdonisStartup::Automatic);
+    assert(pure.fullDelay==hybrid.fullDelay&&pure.delay==hybrid.delay+2);
+    run(AdonisMode::Hybrid,AdonisStartup::Automatic,1,23,true,true);
+    run(AdonisMode::Delay,AdonisStartup::Automatic,2,31,true);
+    for(unsigned d:{0u,1u,9u})for(auto m:{AdonisMode::Delay,AdonisMode::Hybrid})run(m,d);
+    stabilization_restarts_after_disconnect();mismatches();allowance();failure_and_reuse();
+    mesh(AdonisMode::Delay,AdonisStartup::Automatic);
+    mesh(AdonisMode::Hybrid,AdonisStartup::Automatic);
+    mesh(AdonisMode::Hybrid,0);mesh(AdonisMode::Delay,9);
+    mesh(AdonisMode::Hybrid,AdonisStartup::Automatic,true);
+    Link a,b;a.other=&b;b.other=&a;AdonisStartup s;
+    assert(!s.Begin(config(0),0,AdonisMode::Hybrid,10));
+    assert(!s.Begin(config(0),0,AdonisMode::Hybrid,0,3));
+    assert(s.Begin(config(0),1,AdonisMode::Delay,0));assert(!s.Tick(a,0));
+    assert(s.Begin(config(0),0,AdonisMode::Delay,0));assert(s.Tick(a,AdonisStartup::PeerWaitUs)&&s.State()==AdonisStartup::Stage::Unavailable);
+    std::puts("Actual input lane, two-sided immutable choice, lost control repair, manual D, reserve and failure gates PASS");
+}

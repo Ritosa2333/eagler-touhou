@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>TH09 presentation development harness</title>
+<style>body{background:#16161a;color:white;font:14px sans-serif}canvas{width:640px;height:480px}pre{white-space:pre-wrap}</style>
+<canvas id="canvas" width="640" height="480"></canvas><p><button id="start">Run internal presentation test</button></p><pre id="status">Development harness</pre>
+<script type="module">
+import createModule from '/probe.mjs';
+const canvas=document.querySelector('canvas'),status=document.querySelector('#status'),decoder=new TextDecoder();
+window.testErrors=[];
+window.addEventListener('error',e=>testErrors.push(String(e.error??e.message)));
+window.addEventListener('unhandledrejection',e=>testErrors.push(String(e.reason)));
+window.openProbe=async(a=0,b=1,mode=0,diff=1,title=false)=>{
+ const core=window.core=await createModule({canvas,printErr:s=>{testErrors.push(s);console.error(s);}});
+ if(typeof window.onProbeModuleReady==='function')await window.onProbeModuleReady(core);
+ const music=await(await fetch('/music.json')).json();core.FS.mkdir('/music');core.FS.mkdir('/fonts');
+ const names=['th09.dat','cp932.bin','blend.bin','msgothic.ttc',...music.map(n=>'music/'+n)];
+ let cursor=0,loaded=0;await Promise.all(Array.from({length:4},async()=>{while(cursor<names.length){const name=names[cursor++],response=await fetch('/'+name);if(!response.ok)throw Error(name+': '+response.status);const destination=['cp932.bin','blend.bin','msgothic.ttc'].includes(name)?'/fonts/'+name:'/'+name;core.FS.writeFile(destination,new Uint8Array(await response.arrayBuffer()),{canOwn:true});status.textContent=`Assets ${++loaded}/${names.length}`;}}));
+ window.probeError=()=>{const b=core.HEAPU8.subarray(core._th09_probe_error());return decoder.decode(b.subarray(0,b.indexOf(0)));};
+ window.probeStatus=()=>Array.from(core.HEAP32.subarray(core._th09_probe_status()/4,core._th09_probe_status()/4+16));
+ window.step=(keys=0)=>{if(!core._th09_probe_tick(keys))throw Error(probeError());return probeStatus();};
+ window.sessionStatus=()=>Array.from(core.HEAP32.subarray(core._th09_session_status()/4,core._th09_session_status()/4+8));
+ window.titleStatus=()=>Array.from(core.HEAP32.subarray(core._th09_title_status()/4,core._th09_title_status()/4+8));
+ if(!(title?core._th09_title_open():core._th09_probe_open(a,b,mode,diff)))throw Error(probeError());window.ready=true;status.textContent='C++ match initialized';return probeStatus();
+};
+window.tickMany=(frames,keys=0)=>{for(let i=0;i<frames;++i)step(keys);return probeStatus();};
+document.querySelector('#start').onclick=async()=>{try{await openProbe();let previous=0,keys=0;const mapping={KeyZ:1,KeyX:2,ShiftLeft:4,Escape:8,ArrowUp:16,ArrowDown:32,ArrowLeft:64,ArrowRight:128,Enter:4096};addEventListener('keydown',e=>{if(mapping[e.code]){e.preventDefault();keys|=mapping[e.code];}});addEventListener('keyup',e=>keys&=~(mapping[e.code]??0));function frame(t){if(t-previous>=1000/60){previous=t;status.textContent=JSON.stringify(step(keys));}requestAnimationFrame(frame);}requestAnimationFrame(frame);}catch(e){status.textContent=e.stack;throw e;}};
+</script>

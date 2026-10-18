@@ -1,0 +1,8 @@
+add_library(th20_hud_system STATIC core.cpp icons.cpp notifications.cpp environment.cpp lifecycle.cpp dialogue_lifetime.cpp entry_adapter.cpp enable.cpp update.cpp draw.cpp feedback_draw.cpp)
+target_sources(th20_hud_system PRIVATE dialogue_geometry.cpp dialogue_constructor.cpp enemy_cleanup.cpp dialogue_text.cpp dialogue_script.cpp)
+target_sources(th20_hud_system PRIVATE scoring.cpp)
+target_sources(th20_hud_system PRIVATE stage_track.cpp)
+target_compile_features(th20_hud_system PUBLIC cxx_std_20)
+target_compile_options(th20_hud_system PRIVATE /W4 /utf-8 /fp:strict /arch:SSE2)
+target_include_directories(th20_hud_system PRIVATE ../../native_recovered ../../include ../core_scheduler)
+target_link_libraries(th20_hud_system PUBLIC th20_sprite_renderer th20_runtime_core th20_game_session)

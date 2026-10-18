@@ -1,0 +1,52 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "web-ci-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "TH_EXTERNAL_ASSETS": "ON",
+        "TH_ENABLE_THPRAC": "OFF",
+        "TH_ENABLE_THCRAP": "OFF",
+        "TH_WEB_MUSIC": "BASE"
+      }
+    },
+    {
+      "name": "web-ci-normal",
+      "inherits": "web-ci-base",
+      "displayName": "Web CI - ordinary",
+      "binaryDir": "${sourceDir}/build/ci-web-normal",
+      "cacheVariables": {
+        "TH_ENABLE_NETPLAY": "OFF",
+        "TH_ENABLE_MULTIPLAYER_GAMEPLAY": "OFF"
+      }
+    },
+    {
+      "name": "web-ci-netplay",
+      "inherits": "web-ci-base",
+      "displayName": "Web CI - netplay",
+      "binaryDir": "${sourceDir}/build/ci-web-netplay",
+      "cacheVariables": {
+        "TH_ENABLE_NETPLAY": "ON",
+        "TH_ENABLE_MULTIPLAYER_GAMEPLAY": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "web-ci-normal",
+      "configurePreset": "web-ci-normal"
+    },
+    {
+      "name": "web-ci-netplay",
+      "configurePreset": "web-ci-netplay"
+    }
+  ]
+}

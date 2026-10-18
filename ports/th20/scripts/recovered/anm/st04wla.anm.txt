@@ -1,0 +1,1064 @@
+entry entry0 {
+    version: 8,
+    name: "background/stage04/st04a00.png",
+    filename: "background/stage04/st04a00@st04wla@0.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 11,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite0: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script0 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(255);
+    ins_426(-0.001f);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script1 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script2 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_437(5);
+    ins_401(1.5707964f, 0.0f, 1.5707964f);
+    ins_426(0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script3 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_401(0.0f, 0.0f, 1.5707964f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script4 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_437(5);
+    ins_401(1.5707964f, 0.0f, 1.5707964f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script5 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_401(0.0f, 0.0f, 1.5707964f);
+    ins_426(0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script6 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_426(-0.005f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script7 {
+    ins_302(8);
+    ins_300(sprite0);
+    ins_437(5);
+    ins_401(0.0f, -1.5707964f, 1.5707964f);
+    ins_426(0.005f);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+
+entry entry1 {
+    version: 8,
+    name: "background/stage04/st04b00.png",
+    filename: "background/stage04/st04b00@st04wla@1.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite1: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script8 {
+    ins_302(8);
+    ins_300(sprite1);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script9 {
+    ins_302(8);
+    ins_300(sprite1);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script10 {
+    ins_302(8);
+    ins_300(sprite1);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+
+entry entry2 {
+    version: 8,
+    name: "background/stage04/st04c00.png",
+    filename: "background/stage04/st04c00@st04wla@2.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite2: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script11 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite2);
+    ins_305(1);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+script script12 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite2);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_305(1);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+script script13 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite2);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_305(1);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+
+entry entry3 {
+    version: 8,
+    name: "background/stage04b/st04a00.png",
+    filename: "background/stage04b/st04a00@st04wla@3.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite3: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script14 {
+    ins_302(8);
+    ins_300(sprite3);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(255);
+    ins_426(-0.001f);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script15 {
+    ins_302(8);
+    ins_300(sprite3);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script16 {
+    ins_302(8);
+    ins_300(sprite3);
+    ins_437(5);
+    ins_401(1.5707964f, 0.0f, 1.5707964f);
+    ins_426(0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script17 {
+    ins_302(8);
+    ins_300(sprite3);
+    ins_401(0.0f, 0.0f, 1.5707964f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script18 {
+    ins_302(8);
+    ins_300(sprite3);
+    ins_437(5);
+    ins_401(1.5707964f, 0.0f, 1.5707964f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script19 {
+    ins_302(8);
+    ins_300(sprite3);
+    ins_401(0.0f, 0.0f, 1.5707964f);
+    ins_426(0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script20 {
+    ins_302(8);
+    ins_300(sprite3);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_426(-0.005f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script21 {
+    ins_302(8);
+    ins_300(sprite3);
+    ins_437(5);
+    ins_401(0.0f, -1.5707964f, 1.5707964f);
+    ins_426(0.005f);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+
+entry entry4 {
+    version: 8,
+    name: "background/stage04b/st04b00.png",
+    filename: "background/stage04b/st04b00@st04wla@4.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite4: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script22 {
+    ins_302(8);
+    ins_300(sprite4);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script23 {
+    ins_302(8);
+    ins_300(sprite4);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script24 {
+    ins_302(8);
+    ins_300(sprite4);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+
+entry entry5 {
+    version: 8,
+    name: "background/stage04b/st04c00.png",
+    filename: "background/stage04b/st04c00@st04wla@5.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite5: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script25 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite5);
+    ins_305(1);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+script script26 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite5);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_305(1);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+script script27 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite5);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_305(1);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+
+entry entry6 {
+    version: 8,
+    name: "background/stage04c/st04a00.png",
+    filename: "background/stage04c/st04a00@st04wla@6.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite6: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script28 {
+    ins_302(8);
+    ins_300(sprite6);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(255);
+    ins_426(-0.001f);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script29 {
+    ins_302(8);
+    ins_300(sprite6);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script30 {
+    ins_302(8);
+    ins_300(sprite6);
+    ins_437(5);
+    ins_401(1.5707964f, 0.0f, 1.5707964f);
+    ins_426(0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script31 {
+    ins_302(8);
+    ins_300(sprite6);
+    ins_401(0.0f, 0.0f, 1.5707964f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script32 {
+    ins_302(8);
+    ins_300(sprite6);
+    ins_437(5);
+    ins_401(1.5707964f, 0.0f, 1.5707964f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script33 {
+    ins_302(8);
+    ins_300(sprite6);
+    ins_401(0.0f, 0.0f, 1.5707964f);
+    ins_426(0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script34 {
+    ins_302(8);
+    ins_300(sprite6);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_426(-0.005f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script35 {
+    ins_302(8);
+    ins_300(sprite6);
+    ins_437(5);
+    ins_401(0.0f, -1.5707964f, 1.5707964f);
+    ins_426(0.005f);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+
+entry entry7 {
+    version: 8,
+    name: "background/stage04c/st04b00.png",
+    filename: "background/stage04c/st04b00@st04wla@7.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite7: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script36 {
+    ins_302(8);
+    ins_300(sprite7);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script37 {
+    ins_302(8);
+    ins_300(sprite7);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script38 {
+    ins_302(8);
+    ins_300(sprite7);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+
+entry entry8 {
+    version: 8,
+    name: "background/stage04c/st04c00.png",
+    filename: "background/stage04c/st04c00@st04wla@8.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite8: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script39 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite8);
+    ins_305(1);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+script script40 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite8);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_305(1);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+script script41 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite8);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_305(1);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+
+entry entry9 {
+    version: 8,
+    name: "background/stage04d/st04a00.png",
+    filename: "background/stage04d/st04a00@st04wla@9.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite9: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script42 {
+    ins_302(8);
+    ins_300(sprite9);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(255);
+    ins_426(-0.001f);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script43 {
+    ins_302(8);
+    ins_300(sprite9);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script44 {
+    ins_302(8);
+    ins_300(sprite9);
+    ins_437(5);
+    ins_401(1.5707964f, 0.0f, 1.5707964f);
+    ins_426(0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script45 {
+    ins_302(8);
+    ins_300(sprite9);
+    ins_401(0.0f, 0.0f, 1.5707964f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script46 {
+    ins_302(8);
+    ins_300(sprite9);
+    ins_437(5);
+    ins_401(1.5707964f, 0.0f, 1.5707964f);
+    ins_426(-0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script47 {
+    ins_302(8);
+    ins_300(sprite9);
+    ins_401(0.0f, 0.0f, 1.5707964f);
+    ins_426(0.001f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script48 {
+    ins_302(8);
+    ins_300(sprite9);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_426(-0.005f);
+    ins_403(255);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script49 {
+    ins_302(8);
+    ins_300(sprite9);
+    ins_437(5);
+    ins_401(0.0f, -1.5707964f, 1.5707964f);
+    ins_426(0.005f);
+    ins_404(64, 64, 64);
++6300: // 6300
+    ins_408(600, 0, 255, 255, 255);
++600: // 6900
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+
+entry entry10 {
+    version: 8,
+    name: "background/stage04d/st04b00.png",
+    filename: "background/stage04d/st04b00@st04wla@10.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite10: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script50 {
+    ins_302(8);
+    ins_300(sprite10);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script51 {
+    ins_302(8);
+    ins_300(sprite10);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+script script52 {
+    ins_302(8);
+    ins_300(sprite10);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_403(255);
+    ins_404(32, 32, 32);
++520: // 520
+    ins_408(300, 0, 255, 255, 255);
++600: // 1120
+    ins_5(8);
+    ins_404(255, 255, 255);
+    ins_3();
+}
+
+
+entry entry11 {
+    version: 8,
+    name: "background/stage04d/st04c00.png",
+    filename: "background/stage04d/st04c00@st04wla@11.png",
+    format: 1,
+    width: 512,
+    height: 512,
+    memoryPriority: 0,
+    lowResScale: 0,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 512,
+    THTXHeight: 512,
+    THTXZero: 0,
+    w_max: 512,
+    h_max: 512,
+    sprites: {
+        sprite11: { x: 0, y: 0, w: 512, h: 512 }
+    }
+}
+
+script script53 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite11);
+    ins_305(1);
+    ins_401(0.0f, 1.5707964f, 0.0f);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+script script54 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite11);
+    ins_401(0.0f, 0.0f, 0.0f);
+    ins_305(1);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+script script55 {
+    ins_302(8);
+    ins_303(1);
+    ins_300(sprite11);
+    ins_401(1.5707964f, 0.0f, 0.0f);
+    ins_305(1);
+    ins_403(32);
++60: // 60
+    ins_5(8);
+    ins_3();
+}
+
+

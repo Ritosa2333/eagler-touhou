@@ -1,0 +1,2 @@
+// Compact independent RGB coverage classes without changing measured pixels.
+export function packCoverage(bytes,bits){if(!Number.isInteger(bits)||bits<1||bits>8)throw Error('Invalid coverage width');const out=Buffer.alloc(Math.ceil(bytes.length*bits/8)),mask=(1<<bits)-1;for(let n=0;n<bytes.length;++n){if(bytes[n]>mask)throw Error('Coverage class exceeds width');const bit=n*bits,p=bit>>>3,shift=bit&7;out[p]|=bytes[n]<<shift;if(shift+bits>8)out[p+1]|=bytes[n]>>>(8-shift);}return out;}

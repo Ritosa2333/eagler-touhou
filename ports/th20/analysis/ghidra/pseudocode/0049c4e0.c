@@ -1,0 +1,9 @@
+/* Entry: 0x0049c4e0; symbol: FUN_0049c4e0; body bytes: 22 */
+
+void __thiscall FUN_0049c4e0(void *this,undefined4 param_1)
+
+{
+  *(undefined4 *)((int)this + 8) = param_1;
+  return;
+}
+

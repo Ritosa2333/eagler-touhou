@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile,writeFile,readdir} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {launchBrowser} from '../../../th10_web/scripts/native/browser-launch.mjs';
+import {root,sha,report} from '../cpp/helpers.mjs';
+const assets=(await readdir(resolve(root,'reference/assets'))).filter(n=>!n.endsWith('.dat'));
+const fonts=(await readdir(resolve(root,'assets/sdl-native/fonts'))).filter(n=>/^(font[0-7]|cp932|blend4444)\.bin$/.test(n));
+const songs=(await readdir(resolve(root,'assets/music'))).filter(n=>n.endsWith('.ogg'));
+
+test('Actual title menus and four-character late-stage practice return to title',{timeout:900000},async()=>{
+ const files=new Map([['/module.mjs',resolve(root,'artifacts/sdl-application/th15-application.mjs')],['/th15-application.wasm',resolve(root,'artifacts/sdl-application/th15-application.wasm')],...assets.map(n=>['/assets/'+n,resolve(root,'reference/assets',n)]),...fonts.map(n=>['/fonts/'+n,resolve(root,'assets/sdl-native/fonts',n)]),...songs.map(n=>['/music/'+n,resolve(root,'assets/music',n)])]);
+ const html='<!doctype html><title>TH15 application integration development</title><canvas id="canvas" width="640" height="480"></canvas><script type="module">import create from "/module.mjs";window.fixture=await create({canvas:document.querySelector("canvas")});</script>';
+ const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','require-corp');if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}const file=files.get(path);if(!file){res.writeHead(404).end();return;}res.setHeader('Content-Type',path.endsWith('.mjs')?'text/javascript':path.endsWith('.wasm')?'application/wasm':'application/octet-stream');res.end(await readFile(file));}catch(e){res.writeHead(500).end(String(e));}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;const errors=[],observations=[];
+ try{
+  browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});const page=await browser.newPage();page.on('pageerror',e=>errors.push(String(e)));const url='http://127.0.0.1:'+server.address().port+'/';const prepare=async()=>{await page.goto(url);await page.waitForFunction(()=>window.fixture,{timeout:90000});
+  await page.evaluate(async({assets,fonts,songs})=>{const c=fixture;for(const dir of ['assets','fonts','music'])c.FS.mkdir('/'+dir);for(const [dir,names] of [['assets',assets],['fonts',fonts],['music',songs]])for(const name of names){const response=await fetch('/'+dir+'/'+name);if(!response.ok)throw Error('Missing '+name);c.FS.writeFile('/'+dir+'/'+name,new Uint8Array(await response.arrayBuffer()));}c.FS.mkdir('/save');c.FS.mount(c.IDBFS,{},'/save');await new Promise((ok,no)=>c.FS.syncfs(true,e=>e?no(e):ok()));},{assets,fonts,songs});};
+
+
+  const setupControls=()=>{const c=fixture;window.decode=p=>new TextDecoder().decode(c.HEAPU8.subarray(p,c.HEAPU8.indexOf(0,p)));window.state=()=>Array.from(c.HEAP32.subarray(c._application_state()/4,c._application_state()/4+16));window.checkpoint=()=>Array.from(c.HEAP32.subarray(c._application_checkpoint_state()/4,c._application_checkpoint_state()/4+9));window.step=(held=0,pressed=0)=>{if(!c._application_step(held,pressed,0,60,0))throw Error(decode(c._application_error())+' state='+state());return state();};window.frames=n=>{for(let i=0;i<n;i++)step();};window.key=k=>{step(k,k);step();};window.waitMenu=(screen,limit=350)=>{for(let n=0;n<limit;n++){const s=step();if(s[0]===0&&s[8]===screen&&s[9]===2)return s;}throw Error('Menu timed out '+screen+' '+state());};window.choose=(cursor,screen)=>{c._application_title_select(cursor);key(1);return waitMenu(screen);};if(!c._application_initialize(0))throw Error(decode(c._application_error()));waitMenu(1);};
+
+  await prepare();await page.evaluate(setupControls);
+  await page.evaluate(()=>{choose(4,11);for(let i=0;i<3;i++)key(32);for(let i=0;i<3;i++)key(128);for(const k of 'HEARTLAND'){fixture._application_keyboard_key(k.charCodeAt(0),1);frames(2);fixture._application_keyboard_key(k.charCodeAt(0),0);frames(2);}key(2);waitMenu(1);});
+  for(const [cursor,screen,kind]of[[5,14,'music'],[4,11,'records'],[3,12,'replays'],[6,3,'options']]){
+   const value=await page.evaluate(({cursor,screen,kind})=>{choose(cursor,screen);frames(25);if(kind==='music'){key(32);key(1);frames(30);key(1);frames(30);}if(kind==='records'){key(1);frames(25);}return {kind,state:state(),music:decode(fixture._application_music())};},{cursor,screen,kind});observations.push(value);assert.equal(value.state[8],screen);if(kind==='music')assert.equal(value.music,'th15_02.wav');await page.locator('canvas').screenshot({path:resolve(root,'artifacts/cpp/verification/application-menu-'+kind+'.png')});await page.evaluate(screen=>{key(2);if(screen===3)key(2);waitMenu(1);frames(20);},screen);assert.equal(await page.evaluate(()=>decode(fixture._application_music())),'th15_01.wav');
+  }
+  await page.evaluate(()=>{fixture._application_title_select(7);key(1);frames(40);if(state()[8]!==17)throw Error('Manual missing '+state());key(1);frames(30);key(2);frames(30);key(2);waitMenu(1);});
+  for(const [character,stage]of[[0,4],[1,1],[2,5],[3,6]]){
+   const entry=await page.evaluate(({character,stage})=>{choose(2,6);choose(1,7);choose(character,9);fixture._application_title_select(stage-1);key(1);for(let n=0;n<250&&state()[0]!==1;n++)step();if(state()[0]!==1)throw Error('Practice launch failed '+state());fixture._application_test_protection(900);for(let n=0;n<400;n++)step(9,n===0?1:0);return {state:state(),music:decode(fixture._application_music())};},{character,stage});assert.equal(entry.state[4],character);assert.equal(entry.state[2],stage);assert.equal(entry.state[12]&0x30,0x10);assert.equal(entry.state[0],1);await page.locator('canvas').screenshot({path:resolve(root,'artifacts/cpp/verification/application-practice-'+character+'-'+stage+'.png')});
+   const returned=await page.evaluate(()=>{key(256);frames(30);if(state()[14]!==1)throw Error('Practice pause missing '+state());key(0x10000);waitMenu(1);frames(20);return {state:state(),music:decode(fixture._application_music())};});assert.equal(returned.state[8],1);assert.equal(returned.state[10],2);assert.equal(returned.state[4],character);assert.equal(returned.music,'th15_01.wav');observations.push({kind:'practice',character,stage,entry,returned});
+  }
+  assert.deepEqual(errors,[]);report('sdl-application-menus-practice',{passed:true,wasmSha256:sha(await readFile(resolve(root,'artifacts/sdl-application/th15-application.wasm'))),observations,scope:'Actual application original record/font grid, Music Room title restoration, replay catalog, options, manual and four-character Practice entries including stages 4/5/6; pause Q returns title with the Practice row selected, matching original destination 4. Test-only protection isolates unattended render/lifecycle checks; this is not a natural boss clear.'});await page.evaluate(()=>fixture._application_close());
+ }finally{await browser?.close();await new Promise(r=>server.close(r));}
+});

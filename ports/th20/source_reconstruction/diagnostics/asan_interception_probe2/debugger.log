@@ -1,0 +1,32 @@
+source_pid=25132
+debug: ====================================================================
+Warning!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+AddressSanitizer (ASan) interception failed for a targeted function.
+Please file a bug report which includes your Windows build number.
+This is listed as 'OS Version' in the command output from 
+systeminfo.
+====================================================================
+
+Explicit ASAN interception compatibility probe: continuing its announced diagnostic breakpoint; this run is not a complete sanitizer validation.
+unhandled exception=0xe073616e at=77A8E702 thread=24000
+  parameter[0]=0x1fddc0
+  0x77a8e702
+  0x77a8e702
+  0x23361e
+  0x2336a3
+  0x6c692bf0
+  0x6c693f6d
+  0x6c697733
+  0x30bb29
+  0x2b3cf3
+  0x34ec81
+  0x2b132d
+  0x30c0ad
+  0x30c3d0
+  0x235127
+  0x233eb7
+  0x231b22
+  0x77677ba9
+  0x77e9c3ab
+  0x77e9c32f
+exit_code=0xe073616e

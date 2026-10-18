@@ -1,0 +1,455 @@
+entry entry0 {
+    version: 8,
+    name: "ending/ebg01.png",
+    filename: "ending/ebg01@e00a6@0.png",
+    format: 3,
+    width: 1024,
+    height: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1024,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite0: { x: 0, y: 0, w: 1024, h: 960 }
+    }
+}
+
+script -150 script0 {
+    ins_304(30);
+    ins_313(2);
+    ins_500(script5);
+    ins_500(script6);
++60: // 60
+    ins_3();
+    ins_5(1);
++60: // 120
+    ins_1();
+}
+
+script script1 {
+    ins_304(30);
+    ins_313(2);
+    ins_500(script7);
+    ins_500(script8);
++60: // 60
+    ins_3();
+    ins_5(1);
++60: // 120
+    ins_1();
+}
+
+script script2 {
+    ins_304(30);
+    ins_313(2);
+    ins_500(script9);
+    ins_500(script10);
++60: // 60
+    ins_3();
+    ins_5(1);
++60: // 120
+    ins_1();
+}
+
+script script3 {
+    ins_304(30);
+    ins_313(2);
+    ins_500(script12);
+    ins_500(script11);
++60: // 60
+    ins_3();
+    ins_5(1);
++60: // 120
+    ins_1();
+}
+
+script script4 {
+    ins_304(30);
+    ins_313(2);
+    ins_500(script14);
+    ins_500(script13);
++60: // 60
+    ins_3();
+    ins_5(1);
++60: // 120
+    ins_1();
+}
+
+script script5 {
+    ins_300(sprite0);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry1 {
+    version: 8,
+    name: "ending/ebg01.png",
+    filename: "ending/ebg01@e00a6@1.png",
+    format: 3,
+    width: 256,
+    height: 1024,
+    xOffset: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite1: { x: 0, y: 0, w: 256, h: 960 }
+    }
+}
+
+script script6 {
+    ins_300(sprite1);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(1024.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry2 {
+    version: 8,
+    name: "ending/e00a0c.png",
+    filename: "ending/e00a0c@e00a6@2.png",
+    format: 3,
+    width: 1024,
+    height: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1024,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite2: { x: 0, y: 0, w: 1024, h: 960 }
+    }
+}
+
+script script7 {
+    ins_300(sprite2);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry3 {
+    version: 8,
+    name: "ending/e00a0c.png",
+    filename: "ending/e00a0c@e00a6@3.png",
+    format: 3,
+    width: 256,
+    height: 1024,
+    xOffset: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite3: { x: 0, y: 0, w: 256, h: 960 }
+    }
+}
+
+script script8 {
+    ins_300(sprite3);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(1024.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry4 {
+    version: 8,
+    name: "ending/ebg05.png",
+    filename: "ending/ebg05@e00a6@4.png",
+    format: 3,
+    width: 1024,
+    height: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1024,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite4: { x: 0, y: 0, w: 1024, h: 960 }
+    }
+}
+
+script script9 {
+    ins_300(sprite4);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry5 {
+    version: 8,
+    name: "ending/ebg05.png",
+    filename: "ending/ebg05@e00a6@5.png",
+    format: 3,
+    width: 256,
+    height: 1024,
+    xOffset: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite5: { x: 0, y: 0, w: 256, h: 960 }
+    }
+}
+
+script script10 {
+    ins_300(sprite5);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(1024.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry6 {
+    version: 8,
+    name: "ending/e00a6a.png",
+    filename: "ending/e00a6a@e00a6@6.png",
+    format: 3,
+    width: 256,
+    height: 1024,
+    xOffset: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite6: { x: 0, y: 0, w: 256, h: 960 }
+    }
+}
+
+script script11 {
+    ins_300(sprite6);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(1024.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry7 {
+    version: 8,
+    name: "ending/e00a6a.png",
+    filename: "ending/e00a6a@e00a6@7.png",
+    format: 3,
+    width: 1024,
+    height: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1024,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite7: { x: 0, y: 0, w: 1024, h: 960 }
+    }
+}
+
+script script12 {
+    ins_300(sprite7);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry8 {
+    version: 8,
+    name: "ending/e00a6b.png",
+    filename: "ending/e00a6b@e00a6@8.png",
+    format: 3,
+    width: 256,
+    height: 1024,
+    xOffset: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 256,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite8: { x: 0, y: 0, w: 256, h: 960 }
+    }
+}
+
+script script13 {
+    ins_300(sprite8);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(1024.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+
+entry entry9 {
+    version: 8,
+    name: "ending/e00a6b.png",
+    filename: "ending/e00a6b@e00a6@9.png",
+    format: 3,
+    width: 1024,
+    height: 1024,
+    memoryPriority: 0,
+    lowResScale: 1,
+    jpeg_quality: 100,
+    hasData: 1,
+    THTXFormat: 1,
+    THTXWidth: 1024,
+    THTXHeight: 960,
+    THTXZero: 0,
+    w_max: 1280,
+    h_max: 960,
+    sprites: {
+        sprite9: { x: 0, y: 0, w: 1024, h: 960 }
+    }
+}
+
+script script14 {
+    ins_300(sprite9);
+    ins_421(1, 1);
+    ins_304(30);
+    ins_313(2);
+    ins_400(0.0f, 0.0f, 0.0f);
+    ins_403(0);
+    ins_409(20, 0, 255);
++60: // 60
+    ins_3();
+    ins_5(1);
+    ins_409(60, 0, 0);
++60: // 120
+    ins_1();
+}
+
+

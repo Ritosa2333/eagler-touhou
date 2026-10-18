@@ -1,0 +1,17 @@
+{
+  "status":"passed",
+  "source_sha256":"a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "vm_cpp_sha256":"6877bc504a6cb2007cc9e5f408f9da6798f2b55998309c0a1e673427d3028be3",
+  "vm_hpp_sha256":"d808a37d482747435342aaafc43957d4b2b7cf877de727f52fd146e7362b3ae5",
+  "math_cpp_sha256":"6c3adba17d8eb1fe8a15cbf00b4346d839706ee120c010dde19e817aea794d4b",
+  "math_hpp_sha256":"62f946d14aa323a262426e89507e468b33acebb5f2da256cbfd9c169c78f2048",
+  "cpu_compare_sha256":"5436644c0a5caff21485735299234d81991b99ba3820e94a899953c53bcbb7f2",
+  "failed":0,
+  "comparisons":{"async_call_setup":640,"interpolator_update":16320,"opcode_0":20,"opcode_1":20,"opcode_12":3,"opcode_13":3,"opcode_14":3,"opcode_17":60,"opcode_18":60,"opcode_19":60,"opcode_20":60,"opcode_21":60,"opcode_22":20,"opcode_23":500,"opcode_24":300,"opcode_30":20,"opcode_31":20,"opcode_40":300,"opcode_41":300,"opcode_42":900,"opcode_43":300,"opcode_44":900,"opcode_45":300,"opcode_46":300,"opcode_47":300,"opcode_50":250,"opcode_51":394,"opcode_52":250,"opcode_53":394,"opcode_54":250,"opcode_55":394,"opcode_56":250,"opcode_57":394,"opcode_58":250,"opcode_59":250,"opcode_60":394,"opcode_61":250,"opcode_62":394,"opcode_63":250,"opcode_64":394,"opcode_65":250,"opcode_66":394,"opcode_67":250,"opcode_68":394,"opcode_69":250,"opcode_70":394,"opcode_71":250,"opcode_72":250,"opcode_73":250,"opcode_74":250,"opcode_75":250,"opcode_76":250,"opcode_77":250,"opcode_78":300,"opcode_79":508,"opcode_80":508,"opcode_81":500,"opcode_82":512,"opcode_83":300,"opcode_84":300,"opcode_85":300,"opcode_86":500,"opcode_87":500,"opcode_88":505,"opcode_89":500,"opcode_90":500,"opcode_91":850,"opcode_92":850,"opcode_93":1000,"opcode_94":500,"opcode_95":500,"opcode_96":512,"opcode_97":512,"root_call_return":1,"synchronous_call_return":400},
+  "total":41067,
+  "original_entry_point_executed":false,
+  "original_imports_resolved":["GetCurrentThreadId"],
+  "scope":"Synthetic instruction states: return codes, time bits, sub/IP, SP/BP, 4096 stack bytes, mutable instruction headers, full 56-byte interpolation records, and RNG state. Includes synchronous return and asynchronous call setup; allocator/traversal ownership tested separately in source_tests.cpp",
+  "limitations":["No entity opcode, game-variable or complete-game validation","Async spawning allocation and task-list traversal are source-only tests, not original-CPU comparisons","Original CRT NaN transcendental probe faulted in isolated image; only new-CRT NaN classification is tested for sin/cos/sqrt. Basic float/angle opcodes have explicit NaN comparisons","Original RNG lock is exercised nested on one thread; cross-thread ordering not verified","Invalid-stack behavior and CPU exception/errno delivery are outside equivalence"],
+  "failure_examples":[]
+}

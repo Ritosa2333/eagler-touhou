@@ -1,0 +1,112 @@
+{
+  "recordedAt": "2026-10-18T02:13:13.368Z",
+  "launcherSource": "main",
+  "sources": [
+    {
+      "target": "launcher",
+      "ref": "main",
+      "head": "d0c136487442e0648bb24aa903e37a32461ce358",
+      "remoteHead": "d0c136487442e0648bb24aa903e37a32461ce358",
+      "synchronized": true
+    },
+    {
+      "target": "common",
+      "ref": "main",
+      "head": "0b236bfccf2a1eb9d4a9e227ad049abfb4e68345",
+      "remoteHead": "0b236bfccf2a1eb9d4a9e227ad049abfb4e68345",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th06",
+      "ref": "eagler",
+      "head": "b76c49719e097856e13dacdc0833093a9610a1fc",
+      "remoteHead": "b76c49719e097856e13dacdc0833093a9610a1fc",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th07",
+      "ref": "eagler",
+      "head": "73c85f9f2e39cd477837284f2b27944d3014488f",
+      "remoteHead": "73c85f9f2e39cd477837284f2b27944d3014488f",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th08",
+      "ref": "eagler",
+      "head": "f81d08c0fec870d58ece6e1fb6e03ad7ca0ca543",
+      "remoteHead": "f81d08c0fec870d58ece6e1fb6e03ad7ca0ca543",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th08-mp",
+      "ref": "eagler-mp",
+      "head": "ed28bff70dd7075d028944869b4b8083aff52db8",
+      "remoteHead": "ed28bff70dd7075d028944869b4b8083aff52db8",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th09",
+      "ref": "eagler",
+      "head": "9d3cc8b03ad7eba97db4f46f92d1933b704c7fd8",
+      "remoteHead": "9d3cc8b03ad7eba97db4f46f92d1933b704c7fd8",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th10",
+      "ref": "eagler",
+      "head": "abf87c4530d31b606a3b798695e6856e3f502d21",
+      "remoteHead": "abf87c4530d31b606a3b798695e6856e3f502d21",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th10-mp",
+      "ref": "eagler-mp",
+      "head": "7715de406318eeffcabd433c0af32942e0f00359",
+      "remoteHead": "7715de406318eeffcabd433c0af32942e0f00359",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th11",
+      "ref": "eagler",
+      "head": "e56c615b017da907f6b4d88335f49a12580ee129",
+      "remoteHead": "e56c615b017da907f6b4d88335f49a12580ee129",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th11-mp",
+      "ref": "eagler-mp",
+      "head": "31087ffd4d7a69d9e33d4f22b93eda902795deb7",
+      "remoteHead": "31087ffd4d7a69d9e33d4f22b93eda902795deb7",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th15",
+      "ref": "eagler",
+      "head": "a9e4432818548356731c6983ec72ff009c26f300",
+      "remoteHead": "a9e4432818548356731c6983ec72ff009c26f300",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th15-mp",
+      "ref": "eagler-mp",
+      "head": "9288b48eef5aa1dfd51c3dffaba118b8f15f7cc7",
+      "remoteHead": "9288b48eef5aa1dfd51c3dffaba118b8f15f7cc7",
+      "synchronized": true
+    },
+    {
+      "target": "ports/th20",
+      "ref": "eagler",
+      "head": "27d34505a28d174c1d213feaf251a58482248fc1",
+      "remoteHead": "27d34505a28d174c1d213feaf251a58482248fc1",
+      "synchronized": true
+    }
+  ],
+  "originalRepositoriesPreserved": true,
+  "defaultCommon": "common/",
+  "neutralContracts": "common/contracts/",
+  "services": [
+    "services/relay/",
+    "services/turn/",
+    "services/telemetry/"
+  ]
+}

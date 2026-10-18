@@ -1,0 +1,4286 @@
+{
+  "schema": "th09-information-pacing-shadow-summary-v1",
+  "purpose": "Post-execution extraction of fixed evidence. No original raw reads, model rerun, new warning thresholds, or counterfactual game simulation.",
+  "createdAt": "2026-10-11T02:55:25.871Z",
+  "sourceEvidence": {
+    "path": "docs/multiplayer/rollback-information-pacing-shadow-evidence.json",
+    "bytes": 11695729,
+    "sha256": "e08302b1efce870057e8197eb8d17d10f66f20d133c3939fe3433356b54fda6c"
+  },
+  "extractionSource": {
+    "path": "th09_web\\tests\\multiplayer\\summarize-information-pacing-shadow.mjs",
+    "sha256": "50dae38eb02b14c92c97bc424ac071a71d61f49ad870c5a239f7d89444472bda"
+  },
+  "executionRecord": {
+    "path": "docs/multiplayer/rollback-information-pacing-shadow-execution.json",
+    "bytes": 5237,
+    "sha256": "6fc153d803571bd725e1550d359cf8562b34cff30e9692b4899ab501e44fa85e"
+  },
+  "syntaxRecord": {
+    "path": "docs/multiplayer/rollback-information-pacing-shadow-syntax.json",
+    "bytes": 519,
+    "sha256": "30ab8746044047875459b2c4df57c24c15244394efd3d505b987884afa211933"
+  },
+  "analyzer": {
+    "path": "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs",
+    "bytes": 32764,
+    "sha256": "d0c0cb5eea57b89b138b3f53ce8d763789a1325bea680818543fc31fb99674e9"
+  },
+  "plan": {
+    "path": "docs/multiplayer/rollback-information-pacing-shadow-plan.json",
+    "bytes": 9982,
+    "sha256": "3c242cc7974c9cd546a43bd6dd6c8aa70fbc0f8a8103d17e5b4bef27e3361139"
+  },
+  "interpretation": {
+    "funnel": "Sequential descriptive gate counts; exclusion totals depend on gate order and are not causal attribution.",
+    "support": "Four conditional survivors gate the residual forecast, not the retrospective strict-opportunity flag; warm history is a distinct gate.",
+    "censor": "No-warning/right-censored/contaminated gaps are not true negatives or proof of no room for improvement.",
+    "cohorts": "Original continuous F boundaries. Gap assignment uses first warning or gap start; closure may fall outside its assigned cohort.",
+    "clocks": "All event examples remain in one peer Page performance clock; no cross-clock subtraction.",
+    "online": "Whole-report diagnostic eligibility is retrospective. Unflagged fields do not isolate a network cause."
+  },
+  "results": [
+    {
+      "id": "relay39_burst_response",
+      "status": "analyzed",
+      "integrity": {
+        "expected": {
+          "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay-burst-response-01-report.json",
+          "bytes": 21525676,
+          "sha256": "09bb173bee138e05916d0557c0a42d5797c6be200e4825e97e42695063582376"
+        },
+        "actual": {
+          "bytes": 21525676,
+          "sha256": "09bb173bee138e05916d0557c0a42d5797c6be200e4825e97e42695063582376"
+        }
+      },
+      "peers": [
+        {
+          "side": 0,
+          "status": "analyzed",
+          "clock": {
+            "name": "Page performance.now()",
+            "timesRelativeToMeasureStarted": true,
+            "measureStarted": 12122.590000003576,
+            "timeOrigin": null,
+            "timeOriginAvailability": "The selected old RAF snapshots do not export timeOrigin; no cross-clock subtraction is performed."
+          },
+          "boundary": {
+            "complete": true,
+            "startSampleIndex": 390,
+            "endSampleIndexExclusive": 3986,
+            "bodyRange": [
+              390,
+              3986
+            ],
+            "requestedFrontierRange": [
+              180,
+              1800
+            ],
+            "rule": "First native F crossings; full original order and terminal/tail remain in point rows."
+          },
+          "sourceValidation": {
+            "valid": true,
+            "errors": {
+              "count": 0,
+              "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "items": [],
+              "omitted": 0
+            },
+            "sampleCount": 3997,
+            "pacingCount": 3997,
+            "validReadBracketCount": 3997,
+            "duplicateReadFrameIndices": [],
+            "contextErrors": {
+              "count": 0,
+              "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "items": [],
+              "omitted": 0
+            }
+          },
+          "evidenceQualificationScope": "Whole-report RAF validity and timeline structure/order errors are retrospective evidence gates, not reconstructed online signals. Future A gap durations do not feed forward warning calculations.",
+          "unmeasured": {
+            "pumpTiming": true,
+            "receiveBudgetExit": true,
+            "remainingQueuePerPump": true,
+            "browserPerInputArrival": true,
+            "remoteProducerTiming": true,
+            "cause": "Information-source-unidentified; unflagged observed fields do not isolate a network cause."
+          },
+          "warmup": {
+            "minimumEligibleHistoryGaps": 16,
+            "historyLimit": 32,
+            "firstWarmObservation": {
+              "sampleIndex": 336,
+              "cohort": "prefix",
+              "F": 154,
+              "A": 150,
+              "B": 4,
+              "Q": 4,
+              "Qfull": 4,
+              "R": 0,
+              "networkScaleMilli": 1000,
+              "effectiveScaleMilli": 1000,
+              "ageMs": [
+                0,
+                8.609999984502792
+              ],
+              "eligibleHistoryCount": 16,
+              "conditionalSurvivors": 16,
+              "estimate": "supported",
+              "residualNominalMs": 26.39249999821186,
+              "holdSafeMs": 50,
+              "rampSafeMs": 80.68528194400548,
+              "warning": "none",
+              "closureQualification": "local-observation-contaminated",
+              "geometry": "unnecessary-warning-proxy",
+              "nextAProgressDelayMs": [
+                6.375,
+                15.979999989271164
+              ],
+              "originalThresholdLeadMs": [
+                null,
+                null
+              ],
+              "prebrakeCandidate": true,
+              "positiveLeadModelOpportunity": false,
+              "runningGapFlags": [],
+              "wholeGapFlags": [
+                "replayWorkOrDebt",
+                "correctionStarted"
+              ]
+            },
+            "maximumEligibleHistoryCount": 32,
+            "finalEligibleHistoryCount": 32,
+            "admittedGapCount": 958
+          },
+          "ranges": {
+            "all": {
+              "originalPredeclaredSummary": {
+                "samples": 3997,
+                "gapsAssigned": 1541,
+                "stateCounts": {
+                  "actualAlreadyCoversFrontier": 3,
+                  "noPredictionRoom": 15,
+                  "noOneFrameReserve": 48,
+                  "targetFromObservedBAboveOne": 814,
+                  "observedNetworkScaleAboveOne": 498,
+                  "prebrakeCandidates": 3024
+                },
+                "pointWarnings": {
+                  "none": 3955,
+                  "predicted-bridgeable": 2,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 40
+                },
+                "estimateStates": {
+                  "left-censored": 6,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 330,
+                  "conditional-tail-unsupported": 159,
+                  "supported": 3502
+                },
+                "localObservationFlags": {
+                  "readBracketUnavailable": 0,
+                  "sampleGap": 0,
+                  "nativeWork": 1,
+                  "replayWorkOrDebt": 354,
+                  "correctionStarted": 354,
+                  "rafRequestWait": 0,
+                  "lifecycleNotVisible": 0,
+                  "loopInterruptedOrPaused": 0,
+                  "rafDiagnosticInvalid": 0,
+                  "readBracketWide": 0,
+                  "lifecycleUnavailable": 0,
+                  "loopStateUnavailable": 0,
+                  "clockOrder": 0
+                },
+                "firstWarningPerGap": {
+                  "count": 36,
+                  "byWarning": {
+                    "none": 0,
+                    "predicted-bridgeable": 2,
+                    "predicted-beyond-ramp": 0,
+                    "overdue-unknown": 34
+                  },
+                  "closureQualification": {
+                    "unclassified": 0,
+                    "observed-fields-unflagged": 28,
+                    "local-observation-contaminated": 8,
+                    "right-censored-no-next-A": 0,
+                    "clock-unavailable": 0
+                  },
+                  "qualifiedGeometry": {
+                    "unknown": 0,
+                    "unnecessary-warning-proxy": 28,
+                    "model-bridgeable": 0,
+                    "beyond-ramp-model": 0,
+                    "interval-overlap-unknown": 0
+                  },
+                  "usefulPrethresholdModelOpportunities": 0,
+                  "unnecessaryWarningProxy": 28,
+                  "originalThresholdLeadLowerMs": {
+                    "observed": 1,
+                    "missing": 35,
+                    "min": -0.009999990463256836,
+                    "p50": -0.009999990463256836,
+                    "p90": -0.009999990463256836,
+                    "p99": -0.009999990463256836,
+                    "max": -0.009999990463256836
+                  },
+                  "originalNetworkBrakeLeadLowerMs": {
+                    "observed": 1,
+                    "missing": 35,
+                    "min": 9.859999984502792,
+                    "p50": 9.859999984502792,
+                    "p90": 9.859999984502792,
+                    "p99": 9.859999984502792,
+                    "max": 9.859999984502792
+                  }
+                },
+                "gapAccounting": {
+                  "closed": 1540,
+                  "rightCensored": 1,
+                  "leftCensored": 1,
+                  "admittedToTraining": 958,
+                  "excludedFromTraining": 583,
+                  "wholeGapFlags": {
+                    "readBracketUnavailable": 0,
+                    "sampleGap": 0,
+                    "nativeWork": 1,
+                    "replayWorkOrDebt": 582,
+                    "correctionStarted": 582,
+                    "rafRequestWait": 0,
+                    "lifecycleNotVisible": 0,
+                    "loopInterruptedOrPaused": 0,
+                    "rafDiagnosticInvalid": 0,
+                    "readBracketWide": 0,
+                    "lifecycleUnavailable": 0,
+                    "loopStateUnavailable": 0,
+                    "clockOrder": 0
+                  },
+                  "noWarnings": 1505,
+                  "retrospectiveModelOpportunityWithNoWarning": 1
+                },
+                "distributions": {
+                  "B": {
+                    "observed": 3997,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 4,
+                    "p90": 5,
+                    "p99": 7,
+                    "max": 8
+                  },
+                  "Q": {
+                    "observed": 3997,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 4,
+                    "p90": 5,
+                    "p99": 5,
+                    "max": 8
+                  },
+                  "R": {
+                    "observed": 3997,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0,
+                    "p90": 0,
+                    "p99": 0,
+                    "max": 0
+                  },
+                  "safeHoldMs": {
+                    "observed": 3997,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 50,
+                    "p90": 66.66666666666667,
+                    "p99": 83.33333333333334,
+                    "max": 118.2
+                  },
+                  "safeRampMs": {
+                    "observed": 3997,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 80.68528194400548,
+                    "p90": 114.01861527733881,
+                    "p99": 122.67827827353011,
+                    "max": 214.0186152773388
+                  },
+                  "additionalSafeModelMs": {
+                    "observed": 3997,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 30.68528194400548,
+                    "p90": 47.35194861067214,
+                    "p99": 47.35194861067214,
+                    "max": 97.35194861067212
+                  },
+                  "observationGapMs": {
+                    "observed": 3996,
+                    "missing": 1,
+                    "min": 0.2900000214576721,
+                    "p50": 7.609999984502792,
+                    "p90": 9.415000021457672,
+                    "p99": 12.574999988079071,
+                    "max": 38.36500000953674
+                  },
+                  "readBracketMs": {
+                    "observed": 3997,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0.009999990463256836,
+                    "p90": 0.015000015497207642,
+                    "p99": 0.034999996423721313,
+                    "max": 0.75
+                  },
+                  "nominalAgeMs": {
+                    "observed": 3991,
+                    "missing": 6,
+                    "min": 1.2974999994039536,
+                    "p50": 10.747500002384186,
+                    "p90": 25.83500000834465,
+                    "p99": 48.38000001013279,
+                    "max": 148.4525000154972
+                  }
+                }
+              },
+              "policyCandidateFunnel": [
+                {
+                  "stage": "all-points",
+                  "remaining": 3997,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "A-below-F",
+                  "remaining": 3994,
+                  "excludedAtThisStage": 3
+                },
+                {
+                  "stage": "more-than-one-frame-prediction-room",
+                  "remaining": 3946,
+                  "excludedAtThisStage": 48
+                },
+                {
+                  "stage": "no-current-or-prior-observed-brake",
+                  "remaining": 3024,
+                  "excludedAtThisStage": 922
+                },
+                {
+                  "stage": "running-gap-observed-fields-unflagged",
+                  "remaining": 2315,
+                  "excludedAtThisStage": 709
+                }
+              ],
+              "candidateEstimateStates": {
+                "allPoints": {
+                  "left-censored": 6,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 330,
+                  "conditional-tail-unsupported": 159,
+                  "supported": 3502
+                },
+                "prebrakeCandidates": {
+                  "left-censored": 3,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 252,
+                  "conditional-tail-unsupported": 50,
+                  "supported": 2719
+                },
+                "currentGapUnflaggedPrebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 50,
+                  "conditional-tail-unsupported": 40,
+                  "supported": 2225
+                }
+              },
+              "currentGapUnflaggedPrebrakeWarnings": {
+                "none": 2273,
+                "predicted-bridgeable": 2,
+                "predicted-beyond-ramp": 0,
+                "overdue-unknown": 40
+              },
+              "retrospectivelyBridgeablePoints": {
+                "count": 7,
+                "qualification": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 2,
+                  "local-observation-contaminated": 5,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "funnel": [
+                  {
+                    "stage": "geometric-next-A-interval-between-safe-hold-and-ramp",
+                    "remaining": 7,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "prebrake-candidate",
+                    "remaining": 3,
+                    "excludedAtThisStage": 4
+                  },
+                  {
+                    "stage": "at-least-16-eligible-history-gaps",
+                    "remaining": 2,
+                    "excludedAtThisStage": 1
+                  },
+                  {
+                    "stage": "not-left-censored",
+                    "remaining": 2,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "closed-and-observed-fields-unflagged",
+                    "remaining": 1,
+                    "excludedAtThisStage": 1
+                  },
+                  {
+                    "stage": "strictly-positive-original-B-threshold-lead",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  }
+                ],
+                "strictOpportunities": 1,
+                "strictOpportunityGaps": 1,
+                "strictOpportunitiesWithWarning": 0,
+                "strictOpportunitiesWithoutWarning": 1,
+                "examples": [
+                  {
+                    "sampleIndex": 7,
+                    "cohort": "prefix",
+                    "F": 5,
+                    "A": 1,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1000,
+                    "ageMs": [
+                      1.3650000095367432,
+                      39.76500001549721
+                    ],
+                    "eligibleHistoryCount": 0,
+                    "conditionalSurvivors": 0,
+                    "estimate": "insufficient-history",
+                    "residualNominalMs": null,
+                    "holdSafeMs": 50,
+                    "rampSafeMs": 80.68528194400548,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      52.104999989271164,
+                      62.96500000357628
+                    ],
+                    "originalThresholdLeadMs": [
+                      6.109999984502792,
+                      15.814999997615814
+                    ],
+                    "prebrakeCandidate": true,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ],
+                    "wholeGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  },
+                  {
+                    "sampleIndex": 9,
+                    "cohort": "prefix",
+                    "F": 6,
+                    "A": 1,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1000,
+                    "ageMs": [
+                      17.180000007152557,
+                      55.58000001311302
+                    ],
+                    "eligibleHistoryCount": 0,
+                    "conditionalSurvivors": 0,
+                    "estimate": "insufficient-history",
+                    "residualNominalMs": null,
+                    "holdSafeMs": 33.333333333333336,
+                    "rampSafeMs": 47.386702052733796,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      36.28999999165535,
+                      47.150000005960464
+                    ],
+                    "originalThresholdLeadMs": [
+                      -9.705000013113022,
+                      0
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ],
+                    "wholeGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  },
+                  {
+                    "sampleIndex": 2642,
+                    "cohort": "body",
+                    "F": 1208,
+                    "A": 1203,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 0,
+                    "networkScaleMilli": 1333,
+                    "effectiveScaleMilli": 1333,
+                    "ageMs": [
+                      0,
+                      7.4749999940395355
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 27.57999999821186,
+                    "holdSafeMs": 44.43333333333334,
+                    "rampSafeMs": 59.44515273032929,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      45.810000002384186,
+                      56.20000001788139
+                    ],
+                    "originalThresholdLeadMs": [
+                      -7.4749999940395355,
+                      0
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  }
+                ]
+              },
+              "firstWarningOnly": {
+                "count": 36,
+                "warningTypes": {
+                  "none": 0,
+                  "predicted-bridgeable": 2,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 34
+                },
+                "qualifications": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 28,
+                  "local-observation-contaminated": 8,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "qualifiedGeometry": {
+                  "unknown": 0,
+                  "unnecessary-warning-proxy": 28,
+                  "model-bridgeable": 0,
+                  "beyond-ramp-model": 0,
+                  "interval-overlap-unknown": 0
+                },
+                "strictOpportunities": 0
+              },
+              "noWarningGapRetrospective": {
+                "gaps": 1505,
+                "rightCensored": 1,
+                "withStoredStrictOpportunity": 1,
+                "examples": [
+                  {
+                    "sampleIndex": 3603,
+                    "cohort": "body",
+                    "F": 1635,
+                    "A": 1631,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1002,
+                    "ageMs": [
+                      0,
+                      9.979999989271164
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 33.34749999642372,
+                    "holdSafeMs": 50.1,
+                    "rampSafeMs": 80.6854814118696,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      51.59000000357628,
+                      58.20500001311302
+                    ],
+                    "originalThresholdLeadMs": [
+                      5.0450000166893005,
+                      23.540000021457672
+                    ],
+                    "prebrakeCandidate": true,
+                    "positiveLeadModelOpportunity": true,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  }
+                ]
+              },
+              "finalCensoredRows": 1
+            },
+            "body": {
+              "originalPredeclaredSummary": {
+                "samples": 3596,
+                "gapsAssigned": 1388,
+                "stateCounts": {
+                  "actualAlreadyCoversFrontier": 0,
+                  "noPredictionRoom": 15,
+                  "noOneFrameReserve": 45,
+                  "targetFromObservedBAboveOne": 728,
+                  "observedNetworkScaleAboveOne": 447,
+                  "prebrakeCandidates": 2732
+                },
+                "pointWarnings": {
+                  "none": 3554,
+                  "predicted-bridgeable": 2,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 40
+                },
+                "estimateStates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 155,
+                  "supported": 3441
+                },
+                "localObservationFlags": {
+                  "readBracketUnavailable": 0,
+                  "sampleGap": 0,
+                  "nativeWork": 0,
+                  "replayWorkOrDebt": 248,
+                  "correctionStarted": 248,
+                  "rafRequestWait": 0,
+                  "lifecycleNotVisible": 0,
+                  "loopInterruptedOrPaused": 0,
+                  "rafDiagnosticInvalid": 0,
+                  "readBracketWide": 0,
+                  "lifecycleUnavailable": 0,
+                  "loopStateUnavailable": 0,
+                  "clockOrder": 0
+                },
+                "firstWarningPerGap": {
+                  "count": 36,
+                  "byWarning": {
+                    "none": 0,
+                    "predicted-bridgeable": 2,
+                    "predicted-beyond-ramp": 0,
+                    "overdue-unknown": 34
+                  },
+                  "closureQualification": {
+                    "unclassified": 0,
+                    "observed-fields-unflagged": 28,
+                    "local-observation-contaminated": 8,
+                    "right-censored-no-next-A": 0,
+                    "clock-unavailable": 0
+                  },
+                  "qualifiedGeometry": {
+                    "unknown": 0,
+                    "unnecessary-warning-proxy": 28,
+                    "model-bridgeable": 0,
+                    "beyond-ramp-model": 0,
+                    "interval-overlap-unknown": 0
+                  },
+                  "usefulPrethresholdModelOpportunities": 0,
+                  "unnecessaryWarningProxy": 28,
+                  "originalThresholdLeadLowerMs": {
+                    "observed": 1,
+                    "missing": 35,
+                    "min": -0.009999990463256836,
+                    "p50": -0.009999990463256836,
+                    "p90": -0.009999990463256836,
+                    "p99": -0.009999990463256836,
+                    "max": -0.009999990463256836
+                  },
+                  "originalNetworkBrakeLeadLowerMs": {
+                    "observed": 1,
+                    "missing": 35,
+                    "min": 9.859999984502792,
+                    "p50": 9.859999984502792,
+                    "p90": 9.859999984502792,
+                    "p99": 9.859999984502792,
+                    "max": 9.859999984502792
+                  }
+                },
+                "gapAccounting": {
+                  "closed": 1388,
+                  "rightCensored": 0,
+                  "leftCensored": 0,
+                  "admittedToTraining": 930,
+                  "excludedFromTraining": 458,
+                  "wholeGapFlags": {
+                    "readBracketUnavailable": 0,
+                    "sampleGap": 0,
+                    "nativeWork": 0,
+                    "replayWorkOrDebt": 458,
+                    "correctionStarted": 458,
+                    "rafRequestWait": 0,
+                    "lifecycleNotVisible": 0,
+                    "loopInterruptedOrPaused": 0,
+                    "rafDiagnosticInvalid": 0,
+                    "readBracketWide": 0,
+                    "lifecycleUnavailable": 0,
+                    "loopStateUnavailable": 0,
+                    "clockOrder": 0
+                  },
+                  "noWarnings": 1352,
+                  "retrospectiveModelOpportunityWithNoWarning": 1
+                },
+                "distributions": {
+                  "B": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 2,
+                    "p50": 4,
+                    "p90": 5,
+                    "p99": 7,
+                    "max": 8
+                  },
+                  "Q": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 4,
+                    "p90": 5,
+                    "p99": 5,
+                    "max": 6
+                  },
+                  "R": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0,
+                    "p90": 0,
+                    "p99": 0,
+                    "max": 0
+                  },
+                  "safeHoldMs": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 50,
+                    "p90": 66.66666666666667,
+                    "p99": 77.80000000000001,
+                    "max": 118.2
+                  },
+                  "safeRampMs": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 80.68528194400548,
+                    "p90": 114.01861527733881,
+                    "p99": 120.12144151797924,
+                    "max": 147.3519985440804
+                  },
+                  "additionalSafeModelMs": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 30.68528194400548,
+                    "p90": 47.35194861067214,
+                    "p99": 47.35194861067214,
+                    "max": 64.0186152773388
+                  },
+                  "observationGapMs": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 0.2900000214576721,
+                    "p50": 7.615000009536743,
+                    "p90": 9.314999997615814,
+                    "p99": 12.550000011920929,
+                    "max": 25.804999977350235
+                  },
+                  "readBracketMs": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0.009999990463256836,
+                    "p90": 0.015000015497207642,
+                    "p99": 0.030000001192092896,
+                    "max": 0.09000000357627869
+                  },
+                  "nominalAgeMs": {
+                    "observed": 3596,
+                    "missing": 0,
+                    "min": 1.2974999994039536,
+                    "p50": 10.780000001192093,
+                    "p90": 25.872500002384186,
+                    "p99": 48.38000001013279,
+                    "max": 148.4525000154972
+                  }
+                }
+              },
+              "policyCandidateFunnel": [
+                {
+                  "stage": "all-points",
+                  "remaining": 3596,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "A-below-F",
+                  "remaining": 3596,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "more-than-one-frame-prediction-room",
+                  "remaining": 3551,
+                  "excludedAtThisStage": 45
+                },
+                {
+                  "stage": "no-current-or-prior-observed-brake",
+                  "remaining": 2732,
+                  "excludedAtThisStage": 819
+                },
+                {
+                  "stage": "running-gap-observed-fields-unflagged",
+                  "remaining": 2236,
+                  "excludedAtThisStage": 496
+                }
+              ],
+              "candidateEstimateStates": {
+                "allPoints": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 155,
+                  "supported": 3441
+                },
+                "prebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 50,
+                  "supported": 2682
+                },
+                "currentGapUnflaggedPrebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 40,
+                  "supported": 2196
+                }
+              },
+              "currentGapUnflaggedPrebrakeWarnings": {
+                "none": 2194,
+                "predicted-bridgeable": 2,
+                "predicted-beyond-ramp": 0,
+                "overdue-unknown": 40
+              },
+              "retrospectivelyBridgeablePoints": {
+                "count": 5,
+                "qualification": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 2,
+                  "local-observation-contaminated": 3,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "funnel": [
+                  {
+                    "stage": "geometric-next-A-interval-between-safe-hold-and-ramp",
+                    "remaining": 5,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "prebrake-candidate",
+                    "remaining": 2,
+                    "excludedAtThisStage": 3
+                  },
+                  {
+                    "stage": "at-least-16-eligible-history-gaps",
+                    "remaining": 2,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "not-left-censored",
+                    "remaining": 2,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "closed-and-observed-fields-unflagged",
+                    "remaining": 1,
+                    "excludedAtThisStage": 1
+                  },
+                  {
+                    "stage": "strictly-positive-original-B-threshold-lead",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  }
+                ],
+                "strictOpportunities": 1,
+                "strictOpportunityGaps": 1,
+                "strictOpportunitiesWithWarning": 0,
+                "strictOpportunitiesWithoutWarning": 1,
+                "examples": [
+                  {
+                    "sampleIndex": 2642,
+                    "cohort": "body",
+                    "F": 1208,
+                    "A": 1203,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 0,
+                    "networkScaleMilli": 1333,
+                    "effectiveScaleMilli": 1333,
+                    "ageMs": [
+                      0,
+                      7.4749999940395355
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 27.57999999821186,
+                    "holdSafeMs": 44.43333333333334,
+                    "rampSafeMs": 59.44515273032929,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      45.810000002384186,
+                      56.20000001788139
+                    ],
+                    "originalThresholdLeadMs": [
+                      -7.4749999940395355,
+                      0
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  },
+                  {
+                    "sampleIndex": 3034,
+                    "cohort": "body",
+                    "F": 1378,
+                    "A": 1374,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1100,
+                    "effectiveScaleMilli": 1100,
+                    "ageMs": [
+                      0,
+                      8.995000004768372
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 26.382500007748604,
+                    "holdSafeMs": 55.00000000000001,
+                    "rampSafeMs": 85.21629992443795,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      70.33000001311302,
+                      82.89500001072884
+                    ],
+                    "originalThresholdLeadMs": [
+                      7.014999985694885,
+                      25.560000002384186
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  },
+                  {
+                    "sampleIndex": 3035,
+                    "cohort": "body",
+                    "F": 1378,
+                    "A": 1374,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1093,
+                    "effectiveScaleMilli": 1093,
+                    "ageMs": [
+                      7.0250000059604645,
+                      16.020000010728836
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 28,
+                    "estimate": "supported",
+                    "residualNominalMs": 19.714999988675117,
+                    "holdSafeMs": 54.65,
+                    "rampSafeMs": 84.92790286344561,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      63.30500000715256,
+                      75.87000000476837
+                    ],
+                    "originalThresholdLeadMs": [
+                      -0.010000020265579224,
+                      18.53499999642372
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  }
+                ]
+              },
+              "firstWarningOnly": {
+                "count": 36,
+                "warningTypes": {
+                  "none": 0,
+                  "predicted-bridgeable": 2,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 34
+                },
+                "qualifications": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 28,
+                  "local-observation-contaminated": 8,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "qualifiedGeometry": {
+                  "unknown": 0,
+                  "unnecessary-warning-proxy": 28,
+                  "model-bridgeable": 0,
+                  "beyond-ramp-model": 0,
+                  "interval-overlap-unknown": 0
+                },
+                "strictOpportunities": 0
+              },
+              "noWarningGapRetrospective": {
+                "gaps": 1352,
+                "rightCensored": 0,
+                "withStoredStrictOpportunity": 1,
+                "examples": [
+                  {
+                    "sampleIndex": 3603,
+                    "cohort": "body",
+                    "F": 1635,
+                    "A": 1631,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1002,
+                    "ageMs": [
+                      0,
+                      9.979999989271164
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 33.34749999642372,
+                    "holdSafeMs": 50.1,
+                    "rampSafeMs": 80.6854814118696,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      51.59000000357628,
+                      58.20500001311302
+                    ],
+                    "originalThresholdLeadMs": [
+                      5.0450000166893005,
+                      23.540000021457672
+                    ],
+                    "prebrakeCandidate": true,
+                    "positiveLeadModelOpportunity": true,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  }
+                ]
+              },
+              "finalCensoredRows": 0
+            }
+          },
+          "firstWarningExamples": {
+            "predicted-bridgeable": [
+              {
+                "sampleIndex": 2755,
+                "cohort": "body",
+                "F": 1250,
+                "A": 1246,
+                "B": 4,
+                "Q": 4,
+                "Qfull": 4,
+                "R": 0,
+                "networkScaleMilli": 1000,
+                "effectiveScaleMilli": 1000,
+                "ageMs": [
+                  14.109999984502792,
+                  23.724999994039536
+                ],
+                "eligibleHistoryCount": 32,
+                "conditionalSurvivors": 18,
+                "estimate": "supported",
+                "residualNominalMs": 57.917500019073486,
+                "holdSafeMs": 50,
+                "rampSafeMs": 80.68528194400548,
+                "warning": "predicted-bridgeable",
+                "closureQualification": "observed-fields-unflagged",
+                "geometry": "unnecessary-warning-proxy",
+                "nextAProgressDelayMs": [
+                  0,
+                  9.090000003576279
+                ],
+                "originalThresholdLeadMs": [
+                  null,
+                  null
+                ],
+                "prebrakeCandidate": true,
+                "positiveLeadModelOpportunity": false,
+                "runningGapFlags": [],
+                "wholeGapFlags": []
+              },
+              {
+                "sampleIndex": 2816,
+                "cohort": "body",
+                "F": 1278,
+                "A": 1274,
+                "B": 4,
+                "Q": 4,
+                "Qfull": 4,
+                "R": 0,
+                "networkScaleMilli": 1000,
+                "effectiveScaleMilli": 1000,
+                "ageMs": [
+                  13.924999982118607,
+                  23.03499999642372
+                ],
+                "eligibleHistoryCount": 32,
+                "conditionalSurvivors": 13,
+                "estimate": "supported",
+                "residualNominalMs": 58.355000019073486,
+                "holdSafeMs": 50,
+                "rampSafeMs": 80.68528194400548,
+                "warning": "predicted-bridgeable",
+                "closureQualification": "observed-fields-unflagged",
+                "geometry": "unnecessary-warning-proxy",
+                "nextAProgressDelayMs": [
+                  0,
+                  8.945000022649765
+                ],
+                "originalThresholdLeadMs": [
+                  null,
+                  null
+                ],
+                "prebrakeCandidate": true,
+                "positiveLeadModelOpportunity": false,
+                "runningGapFlags": [],
+                "wholeGapFlags": []
+              }
+            ],
+            "predicted-beyond-ramp": [],
+            "overdue-unknown": [
+              {
+                "sampleIndex": 520,
+                "cohort": "body",
+                "F": 239,
+                "A": 235,
+                "B": 4,
+                "Q": 4,
+                "Qfull": 4,
+                "R": 0,
+                "networkScaleMilli": 1000,
+                "effectiveScaleMilli": 1001,
+                "ageMs": [
+                  30.109999984502792,
+                  37.9549999833107
+                ],
+                "eligibleHistoryCount": 32,
+                "conditionalSurvivors": 0,
+                "estimate": "conditional-tail-unsupported",
+                "residualNominalMs": null,
+                "holdSafeMs": 50.05,
+                "rampSafeMs": 80.68533187741372,
+                "warning": "overdue-unknown",
+                "closureQualification": "observed-fields-unflagged",
+                "geometry": "unnecessary-warning-proxy",
+                "nextAProgressDelayMs": [
+                  0,
+                  8.555000007152557
+                ],
+                "originalThresholdLeadMs": [
+                  null,
+                  null
+                ],
+                "prebrakeCandidate": true,
+                "positiveLeadModelOpportunity": false,
+                "runningGapFlags": [],
+                "wholeGapFlags": []
+              },
+              {
+                "sampleIndex": 578,
+                "cohort": "body",
+                "F": 266,
+                "A": 262,
+                "B": 4,
+                "Q": 4,
+                "Qfull": 4,
+                "R": 0,
+                "networkScaleMilli": 1000,
+                "effectiveScaleMilli": 1000,
+                "ageMs": [
+                  29.224999994039536,
+                  38.01000002026558
+                ],
+                "eligibleHistoryCount": 32,
+                "conditionalSurvivors": 1,
+                "estimate": "conditional-tail-unsupported",
+                "residualNominalMs": null,
+                "holdSafeMs": 50,
+                "rampSafeMs": 80.68528194400548,
+                "warning": "overdue-unknown",
+                "closureQualification": "observed-fields-unflagged",
+                "geometry": "unnecessary-warning-proxy",
+                "nextAProgressDelayMs": [
+                  0,
+                  8.655000001192093
+                ],
+                "originalThresholdLeadMs": [
+                  null,
+                  null
+                ],
+                "prebrakeCandidate": true,
+                "positiveLeadModelOpportunity": false,
+                "runningGapFlags": [],
+                "wholeGapFlags": []
+              }
+            ]
+          }
+        },
+        {
+          "side": 1,
+          "status": "analyzed",
+          "clock": {
+            "name": "Page performance.now()",
+            "timesRelativeToMeasureStarted": true,
+            "measureStarted": 4773.469999998808,
+            "timeOrigin": null,
+            "timeOriginAvailability": "The selected old RAF snapshots do not export timeOrigin; no cross-clock subtraction is performed."
+          },
+          "boundary": {
+            "complete": true,
+            "startSampleIndex": 369,
+            "endSampleIndexExclusive": 3888,
+            "bodyRange": [
+              369,
+              3888
+            ],
+            "requestedFrontierRange": [
+              180,
+              1800
+            ],
+            "rule": "First native F crossings; full original order and terminal/tail remain in point rows."
+          },
+          "sourceValidation": {
+            "valid": true,
+            "errors": {
+              "count": 0,
+              "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "items": [],
+              "omitted": 0
+            },
+            "sampleCount": 3897,
+            "pacingCount": 3897,
+            "validReadBracketCount": 3897,
+            "duplicateReadFrameIndices": [],
+            "contextErrors": {
+              "count": 0,
+              "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "items": [],
+              "omitted": 0
+            }
+          },
+          "evidenceQualificationScope": "Whole-report RAF validity and timeline structure/order errors are retrospective evidence gates, not reconstructed online signals. Future A gap durations do not feed forward warning calculations.",
+          "unmeasured": {
+            "pumpTiming": true,
+            "receiveBudgetExit": true,
+            "remainingQueuePerPump": true,
+            "browserPerInputArrival": true,
+            "remoteProducerTiming": true,
+            "cause": "Information-source-unidentified; unflagged observed fields do not isolate a network cause."
+          },
+          "warmup": {
+            "minimumEligibleHistoryGaps": 16,
+            "historyLimit": 32,
+            "firstWarmObservation": {
+              "sampleIndex": 314,
+              "cohort": "prefix",
+              "F": 154,
+              "A": 152,
+              "B": 2,
+              "Q": 6,
+              "Qfull": 6,
+              "R": 0,
+              "networkScaleMilli": 1000,
+              "effectiveScaleMilli": 999,
+              "ageMs": [
+                0,
+                13.125
+              ],
+              "eligibleHistoryCount": 16,
+              "conditionalSurvivors": 16,
+              "estimate": "supported",
+              "residualNominalMs": 24.735000014305115,
+              "holdSafeMs": 83.25000000000001,
+              "rampSafeMs": 147.35194861067214,
+              "warning": "none",
+              "closureQualification": "observed-fields-unflagged",
+              "geometry": "unnecessary-warning-proxy",
+              "nextAProgressDelayMs": [
+                11.069999992847443,
+                24.00499999523163
+              ],
+              "originalThresholdLeadMs": [
+                null,
+                null
+              ],
+              "prebrakeCandidate": true,
+              "positiveLeadModelOpportunity": false,
+              "runningGapFlags": [],
+              "wholeGapFlags": []
+            },
+            "maximumEligibleHistoryCount": 32,
+            "finalEligibleHistoryCount": 32,
+            "admittedGapCount": 1114
+          },
+          "ranges": {
+            "all": {
+              "originalPredeclaredSummary": {
+                "samples": 3897,
+                "gapsAssigned": 1551,
+                "stateCounts": {
+                  "actualAlreadyCoversFrontier": 16,
+                  "noPredictionRoom": 9,
+                  "noOneFrameReserve": 29,
+                  "targetFromObservedBAboveOne": 77,
+                  "observedNetworkScaleAboveOne": 84,
+                  "prebrakeCandidates": 3789
+                },
+                "pointWarnings": {
+                  "none": 3811,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 86
+                },
+                "estimateStates": {
+                  "left-censored": 4,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 310,
+                  "conditional-tail-unsupported": 131,
+                  "supported": 3452
+                },
+                "localObservationFlags": {
+                  "readBracketUnavailable": 0,
+                  "sampleGap": 2,
+                  "nativeWork": 134,
+                  "replayWorkOrDebt": 276,
+                  "correctionStarted": 241,
+                  "rafRequestWait": 0,
+                  "lifecycleNotVisible": 0,
+                  "loopInterruptedOrPaused": 0,
+                  "rafDiagnosticInvalid": 0,
+                  "readBracketWide": 0,
+                  "lifecycleUnavailable": 0,
+                  "loopStateUnavailable": 0,
+                  "clockOrder": 0
+                },
+                "firstWarningPerGap": {
+                  "count": 63,
+                  "byWarning": {
+                    "none": 0,
+                    "predicted-bridgeable": 0,
+                    "predicted-beyond-ramp": 0,
+                    "overdue-unknown": 63
+                  },
+                  "closureQualification": {
+                    "unclassified": 0,
+                    "observed-fields-unflagged": 54,
+                    "local-observation-contaminated": 9,
+                    "right-censored-no-next-A": 0,
+                    "clock-unavailable": 0
+                  },
+                  "qualifiedGeometry": {
+                    "unknown": 0,
+                    "unnecessary-warning-proxy": 54,
+                    "model-bridgeable": 0,
+                    "beyond-ramp-model": 0,
+                    "interval-overlap-unknown": 0
+                  },
+                  "usefulPrethresholdModelOpportunities": 0,
+                  "unnecessaryWarningProxy": 54,
+                  "originalThresholdLeadLowerMs": {
+                    "observed": 3,
+                    "missing": 60,
+                    "min": -0.010000020265579224,
+                    "p50": -0.009999990463256836,
+                    "p90": 3.2349999845027924,
+                    "p99": 3.2349999845027924,
+                    "max": 3.2349999845027924
+                  },
+                  "originalNetworkBrakeLeadLowerMs": {
+                    "observed": 1,
+                    "missing": 62,
+                    "min": 10.069999992847443,
+                    "p50": 10.069999992847443,
+                    "p90": 10.069999992847443,
+                    "p99": 10.069999992847443,
+                    "max": 10.069999992847443
+                  }
+                },
+                "gapAccounting": {
+                  "closed": 1550,
+                  "rightCensored": 1,
+                  "leftCensored": 1,
+                  "admittedToTraining": 1114,
+                  "excludedFromTraining": 437,
+                  "wholeGapFlags": {
+                    "readBracketUnavailable": 0,
+                    "sampleGap": 2,
+                    "nativeWork": 198,
+                    "replayWorkOrDebt": 379,
+                    "correctionStarted": 370,
+                    "rafRequestWait": 0,
+                    "lifecycleNotVisible": 0,
+                    "loopInterruptedOrPaused": 0,
+                    "rafDiagnosticInvalid": 0,
+                    "readBracketWide": 0,
+                    "lifecycleUnavailable": 0,
+                    "loopStateUnavailable": 0,
+                    "clockOrder": 0
+                  },
+                  "noWarnings": 1488,
+                  "retrospectiveModelOpportunityWithNoWarning": 1
+                },
+                "distributions": {
+                  "B": {
+                    "observed": 3897,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 3,
+                    "p90": 3,
+                    "p99": 6,
+                    "max": 8
+                  },
+                  "Q": {
+                    "observed": 3897,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 5,
+                    "p90": 6,
+                    "p99": 7,
+                    "max": 8
+                  },
+                  "R": {
+                    "observed": 3897,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0,
+                    "p90": 0,
+                    "p99": 0,
+                    "max": 7
+                  },
+                  "safeHoldMs": {
+                    "observed": 3897,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 66.66666666666667,
+                    "p90": 83.33333333333334,
+                    "p99": 100,
+                    "max": 180.48333333333332
+                  },
+                  "safeRampMs": {
+                    "observed": 3897,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 114.01861527733881,
+                    "p90": 147.35194861067214,
+                    "p99": 180.68528194400548,
+                    "max": 230.30037243643173
+                  },
+                  "additionalSafeModelMs": {
+                    "observed": 3897,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 47.48528194400548,
+                    "p90": 64.18528194400547,
+                    "p99": 80.88528194400548,
+                    "max": 97.35194861067212
+                  },
+                  "observationGapMs": {
+                    "observed": 3896,
+                    "missing": 1,
+                    "min": 0.3499999940395355,
+                    "p50": 7.4749999940395355,
+                    "p90": 13.805000007152557,
+                    "p99": 19.225000023841858,
+                    "max": 83.60999998450279
+                  },
+                  "readBracketMs": {
+                    "observed": 3897,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0.009999990463256836,
+                    "p90": 0.17999997735023499,
+                    "p99": 0.2199999988079071,
+                    "max": 3.469999998807907
+                  },
+                  "nominalAgeMs": {
+                    "observed": 3893,
+                    "missing": 4,
+                    "min": 0.7749999910593033,
+                    "p50": 9.002499982714653,
+                    "p90": 23.310000002384186,
+                    "p99": 40.55750001966953,
+                    "max": 146.7124999910593
+                  }
+                }
+              },
+              "policyCandidateFunnel": [
+                {
+                  "stage": "all-points",
+                  "remaining": 3897,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "A-below-F",
+                  "remaining": 3881,
+                  "excludedAtThisStage": 16
+                },
+                {
+                  "stage": "more-than-one-frame-prediction-room",
+                  "remaining": 3852,
+                  "excludedAtThisStage": 29
+                },
+                {
+                  "stage": "no-current-or-prior-observed-brake",
+                  "remaining": 3789,
+                  "excludedAtThisStage": 63
+                },
+                {
+                  "stage": "running-gap-observed-fields-unflagged",
+                  "remaining": 3113,
+                  "excludedAtThisStage": 676
+                }
+              ],
+              "candidateEstimateStates": {
+                "allPoints": {
+                  "left-censored": 4,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 310,
+                  "conditional-tail-unsupported": 131,
+                  "supported": 3452
+                },
+                "prebrakeCandidates": {
+                  "left-censored": 1,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 308,
+                  "conditional-tail-unsupported": 94,
+                  "supported": 3386
+                },
+                "currentGapUnflaggedPrebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 57,
+                  "conditional-tail-unsupported": 86,
+                  "supported": 2970
+                }
+              },
+              "currentGapUnflaggedPrebrakeWarnings": {
+                "none": 3027,
+                "predicted-bridgeable": 0,
+                "predicted-beyond-ramp": 0,
+                "overdue-unknown": 86
+              },
+              "retrospectivelyBridgeablePoints": {
+                "count": 1,
+                "qualification": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 1,
+                  "local-observation-contaminated": 0,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "funnel": [
+                  {
+                    "stage": "geometric-next-A-interval-between-safe-hold-and-ramp",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "prebrake-candidate",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "at-least-16-eligible-history-gaps",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "not-left-censored",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "closed-and-observed-fields-unflagged",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "strictly-positive-original-B-threshold-lead",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  }
+                ],
+                "strictOpportunities": 1,
+                "strictOpportunityGaps": 1,
+                "strictOpportunitiesWithWarning": 0,
+                "strictOpportunitiesWithoutWarning": 1,
+                "examples": [
+                  {
+                    "sampleIndex": 3032,
+                    "cohort": "body",
+                    "F": 1395,
+                    "A": 1391,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 997,
+                    "ageMs": [
+                      13.445000022649765,
+                      24.875
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 13,
+                    "estimate": "supported",
+                    "residualNominalMs": 21.587499991059303,
+                    "holdSafeMs": 49.85,
+                    "rampSafeMs": 80.68528194400548,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      50.25999999046326,
+                      64.36499997973442
+                    ],
+                    "originalThresholdLeadMs": [
+                      2.0399999916553497,
+                      14.609999984502792
+                    ],
+                    "prebrakeCandidate": true,
+                    "positiveLeadModelOpportunity": true,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  }
+                ]
+              },
+              "firstWarningOnly": {
+                "count": 63,
+                "warningTypes": {
+                  "none": 0,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 63
+                },
+                "qualifications": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 54,
+                  "local-observation-contaminated": 9,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "qualifiedGeometry": {
+                  "unknown": 0,
+                  "unnecessary-warning-proxy": 54,
+                  "model-bridgeable": 0,
+                  "beyond-ramp-model": 0,
+                  "interval-overlap-unknown": 0
+                },
+                "strictOpportunities": 0
+              },
+              "noWarningGapRetrospective": {
+                "gaps": 1488,
+                "rightCensored": 1,
+                "withStoredStrictOpportunity": 1,
+                "examples": [
+                  {
+                    "sampleIndex": 3032,
+                    "cohort": "body",
+                    "F": 1395,
+                    "A": 1391,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 997,
+                    "ageMs": [
+                      13.445000022649765,
+                      24.875
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 13,
+                    "estimate": "supported",
+                    "residualNominalMs": 21.587499991059303,
+                    "holdSafeMs": 49.85,
+                    "rampSafeMs": 80.68528194400548,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      50.25999999046326,
+                      64.36499997973442
+                    ],
+                    "originalThresholdLeadMs": [
+                      2.0399999916553497,
+                      14.609999984502792
+                    ],
+                    "prebrakeCandidate": true,
+                    "positiveLeadModelOpportunity": true,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  }
+                ]
+              },
+              "finalCensoredRows": 1
+            },
+            "body": {
+              "originalPredeclaredSummary": {
+                "samples": 3519,
+                "gapsAssigned": 1397,
+                "stateCounts": {
+                  "actualAlreadyCoversFrontier": 11,
+                  "noPredictionRoom": 9,
+                  "noOneFrameReserve": 29,
+                  "targetFromObservedBAboveOne": 77,
+                  "observedNetworkScaleAboveOne": 84,
+                  "prebrakeCandidates": 3416
+                },
+                "pointWarnings": {
+                  "none": 3437,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 82
+                },
+                "estimateStates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 127,
+                  "supported": 3392
+                },
+                "localObservationFlags": {
+                  "readBracketUnavailable": 0,
+                  "sampleGap": 0,
+                  "nativeWork": 99,
+                  "replayWorkOrDebt": 167,
+                  "correctionStarted": 132,
+                  "rafRequestWait": 0,
+                  "lifecycleNotVisible": 0,
+                  "loopInterruptedOrPaused": 0,
+                  "rafDiagnosticInvalid": 0,
+                  "readBracketWide": 0,
+                  "lifecycleUnavailable": 0,
+                  "loopStateUnavailable": 0,
+                  "clockOrder": 0
+                },
+                "firstWarningPerGap": {
+                  "count": 61,
+                  "byWarning": {
+                    "none": 0,
+                    "predicted-bridgeable": 0,
+                    "predicted-beyond-ramp": 0,
+                    "overdue-unknown": 61
+                  },
+                  "closureQualification": {
+                    "unclassified": 0,
+                    "observed-fields-unflagged": 53,
+                    "local-observation-contaminated": 8,
+                    "right-censored-no-next-A": 0,
+                    "clock-unavailable": 0
+                  },
+                  "qualifiedGeometry": {
+                    "unknown": 0,
+                    "unnecessary-warning-proxy": 53,
+                    "model-bridgeable": 0,
+                    "beyond-ramp-model": 0,
+                    "interval-overlap-unknown": 0
+                  },
+                  "usefulPrethresholdModelOpportunities": 0,
+                  "unnecessaryWarningProxy": 53,
+                  "originalThresholdLeadLowerMs": {
+                    "observed": 3,
+                    "missing": 58,
+                    "min": -0.010000020265579224,
+                    "p50": -0.009999990463256836,
+                    "p90": 3.2349999845027924,
+                    "p99": 3.2349999845027924,
+                    "max": 3.2349999845027924
+                  },
+                  "originalNetworkBrakeLeadLowerMs": {
+                    "observed": 1,
+                    "missing": 60,
+                    "min": 10.069999992847443,
+                    "p50": 10.069999992847443,
+                    "p90": 10.069999992847443,
+                    "p99": 10.069999992847443,
+                    "max": 10.069999992847443
+                  }
+                },
+                "gapAccounting": {
+                  "closed": 1397,
+                  "rightCensored": 0,
+                  "leftCensored": 0,
+                  "admittedToTraining": 1081,
+                  "excludedFromTraining": 316,
+                  "wholeGapFlags": {
+                    "readBracketUnavailable": 0,
+                    "sampleGap": 0,
+                    "nativeWork": 147,
+                    "replayWorkOrDebt": 261,
+                    "correctionStarted": 252,
+                    "rafRequestWait": 0,
+                    "lifecycleNotVisible": 0,
+                    "loopInterruptedOrPaused": 0,
+                    "rafDiagnosticInvalid": 0,
+                    "readBracketWide": 0,
+                    "lifecycleUnavailable": 0,
+                    "loopStateUnavailable": 0,
+                    "clockOrder": 0
+                  },
+                  "noWarnings": 1336,
+                  "retrospectiveModelOpportunityWithNoWarning": 1
+                },
+                "distributions": {
+                  "B": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 3,
+                    "p90": 3,
+                    "p99": 6,
+                    "max": 8
+                  },
+                  "Q": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 5,
+                    "p90": 6,
+                    "p99": 7,
+                    "max": 8
+                  },
+                  "R": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0,
+                    "p90": 0,
+                    "p99": 1,
+                    "max": 7
+                  },
+                  "safeHoldMs": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 66.66666666666667,
+                    "p90": 83.33333333333334,
+                    "p99": 99.8,
+                    "max": 180.48333333333332
+                  },
+                  "safeRampMs": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 114.01861527733881,
+                    "p90": 147.35194861067214,
+                    "p99": 180.68528194400548,
+                    "max": 230.30037243643173
+                  },
+                  "additionalSafeModelMs": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 47.48528194400548,
+                    "p90": 64.18528194400547,
+                    "p99": 80.88528194400548,
+                    "max": 89.6839806499888
+                  },
+                  "observationGapMs": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0.35999998450279236,
+                    "p50": 7.5,
+                    "p90": 13.674999982118607,
+                    "p99": 18.80000001192093,
+                    "max": 38.20999997854233
+                  },
+                  "readBracketMs": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0.009999990463256836,
+                    "p90": 0.17500001192092896,
+                    "p99": 0.20500001311302185,
+                    "max": 0.8100000023841858
+                  },
+                  "nominalAgeMs": {
+                    "observed": 3519,
+                    "missing": 0,
+                    "min": 0.7749999910593033,
+                    "p50": 8.989999994635582,
+                    "p90": 23.509999990463257,
+                    "p99": 40.55750001966953,
+                    "max": 146.7124999910593
+                  }
+                }
+              },
+              "policyCandidateFunnel": [
+                {
+                  "stage": "all-points",
+                  "remaining": 3519,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "A-below-F",
+                  "remaining": 3508,
+                  "excludedAtThisStage": 11
+                },
+                {
+                  "stage": "more-than-one-frame-prediction-room",
+                  "remaining": 3479,
+                  "excludedAtThisStage": 29
+                },
+                {
+                  "stage": "no-current-or-prior-observed-brake",
+                  "remaining": 3416,
+                  "excludedAtThisStage": 63
+                },
+                {
+                  "stage": "running-gap-observed-fields-unflagged",
+                  "remaining": 3002,
+                  "excludedAtThisStage": 414
+                }
+              ],
+              "candidateEstimateStates": {
+                "allPoints": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 127,
+                  "supported": 3392
+                },
+                "prebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 90,
+                  "supported": 3326
+                },
+                "currentGapUnflaggedPrebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 82,
+                  "supported": 2920
+                }
+              },
+              "currentGapUnflaggedPrebrakeWarnings": {
+                "none": 2920,
+                "predicted-bridgeable": 0,
+                "predicted-beyond-ramp": 0,
+                "overdue-unknown": 82
+              },
+              "retrospectivelyBridgeablePoints": {
+                "count": 1,
+                "qualification": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 1,
+                  "local-observation-contaminated": 0,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "funnel": [
+                  {
+                    "stage": "geometric-next-A-interval-between-safe-hold-and-ramp",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "prebrake-candidate",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "at-least-16-eligible-history-gaps",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "not-left-censored",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "closed-and-observed-fields-unflagged",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "strictly-positive-original-B-threshold-lead",
+                    "remaining": 1,
+                    "excludedAtThisStage": 0
+                  }
+                ],
+                "strictOpportunities": 1,
+                "strictOpportunityGaps": 1,
+                "strictOpportunitiesWithWarning": 0,
+                "strictOpportunitiesWithoutWarning": 1,
+                "examples": [
+                  {
+                    "sampleIndex": 3032,
+                    "cohort": "body",
+                    "F": 1395,
+                    "A": 1391,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 997,
+                    "ageMs": [
+                      13.445000022649765,
+                      24.875
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 13,
+                    "estimate": "supported",
+                    "residualNominalMs": 21.587499991059303,
+                    "holdSafeMs": 49.85,
+                    "rampSafeMs": 80.68528194400548,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      50.25999999046326,
+                      64.36499997973442
+                    ],
+                    "originalThresholdLeadMs": [
+                      2.0399999916553497,
+                      14.609999984502792
+                    ],
+                    "prebrakeCandidate": true,
+                    "positiveLeadModelOpportunity": true,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  }
+                ]
+              },
+              "firstWarningOnly": {
+                "count": 61,
+                "warningTypes": {
+                  "none": 0,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 61
+                },
+                "qualifications": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 53,
+                  "local-observation-contaminated": 8,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "qualifiedGeometry": {
+                  "unknown": 0,
+                  "unnecessary-warning-proxy": 53,
+                  "model-bridgeable": 0,
+                  "beyond-ramp-model": 0,
+                  "interval-overlap-unknown": 0
+                },
+                "strictOpportunities": 0
+              },
+              "noWarningGapRetrospective": {
+                "gaps": 1336,
+                "rightCensored": 0,
+                "withStoredStrictOpportunity": 1,
+                "examples": [
+                  {
+                    "sampleIndex": 3032,
+                    "cohort": "body",
+                    "F": 1395,
+                    "A": 1391,
+                    "B": 4,
+                    "Q": 4,
+                    "Qfull": 4,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 997,
+                    "ageMs": [
+                      13.445000022649765,
+                      24.875
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 13,
+                    "estimate": "supported",
+                    "residualNominalMs": 21.587499991059303,
+                    "holdSafeMs": 49.85,
+                    "rampSafeMs": 80.68528194400548,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      50.25999999046326,
+                      64.36499997973442
+                    ],
+                    "originalThresholdLeadMs": [
+                      2.0399999916553497,
+                      14.609999984502792
+                    ],
+                    "prebrakeCandidate": true,
+                    "positiveLeadModelOpportunity": true,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  }
+                ]
+              },
+              "finalCensoredRows": 0
+            }
+          },
+          "firstWarningExamples": {
+            "predicted-bridgeable": [],
+            "predicted-beyond-ramp": [],
+            "overdue-unknown": [
+              {
+                "sampleIndex": 336,
+                "cohort": "prefix",
+                "F": 165,
+                "A": 161,
+                "B": 4,
+                "Q": 4,
+                "Qfull": 4,
+                "R": 0,
+                "networkScaleMilli": 1000,
+                "effectiveScaleMilli": 998,
+                "ageMs": [
+                  47.064999997615814,
+                  58.98999997973442
+                ],
+                "eligibleHistoryCount": 24,
+                "conditionalSurvivors": 0,
+                "estimate": "conditional-tail-unsupported",
+                "residualNominalMs": null,
+                "holdSafeMs": 49.9,
+                "rampSafeMs": 80.68528194400548,
+                "warning": "overdue-unknown",
+                "closureQualification": "observed-fields-unflagged",
+                "geometry": "unnecessary-warning-proxy",
+                "nextAProgressDelayMs": [
+                  9.060000002384186,
+                  18.935000002384186
+                ],
+                "originalThresholdLeadMs": [
+                  null,
+                  null
+                ],
+                "prebrakeCandidate": true,
+                "positiveLeadModelOpportunity": false,
+                "runningGapFlags": [],
+                "wholeGapFlags": []
+              },
+              {
+                "sampleIndex": 433,
+                "cohort": "body",
+                "F": 209,
+                "A": 206,
+                "B": 3,
+                "Q": 5,
+                "Qfull": 5,
+                "R": 0,
+                "networkScaleMilli": 1000,
+                "effectiveScaleMilli": 997,
+                "ageMs": [
+                  27.36999997496605,
+                  38.65999999642372
+                ],
+                "eligibleHistoryCount": 32,
+                "conditionalSurvivors": 1,
+                "estimate": "conditional-tail-unsupported",
+                "residualNominalMs": null,
+                "holdSafeMs": 66.46666666666667,
+                "rampSafeMs": 114.01861527733881,
+                "warning": "overdue-unknown",
+                "closureQualification": "observed-fields-unflagged",
+                "geometry": "unnecessary-warning-proxy",
+                "nextAProgressDelayMs": [
+                  0,
+                  11.070000022649765
+                ],
+                "originalThresholdLeadMs": [
+                  null,
+                  null
+                ],
+                "prebrakeCandidate": true,
+                "positiveLeadModelOpportunity": false,
+                "runningGapFlags": [],
+                "wholeGapFlags": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "relay125_steady",
+      "status": "analyzed",
+      "integrity": {
+        "expected": {
+          "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
+          "bytes": 28866220,
+          "sha256": "d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770"
+        },
+        "actual": {
+          "bytes": 28866220,
+          "sha256": "d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770"
+        }
+      },
+      "peers": [
+        {
+          "side": 0,
+          "status": "analyzed",
+          "clock": {
+            "name": "Page performance.now()",
+            "timesRelativeToMeasureStarted": true,
+            "measureStarted": 8127.30499997735,
+            "timeOrigin": null,
+            "timeOriginAvailability": "The selected old RAF snapshots do not export timeOrigin; no cross-clock subtraction is performed."
+          },
+          "boundary": {
+            "complete": true,
+            "startSampleIndex": 573,
+            "endSampleIndexExclusive": 5745,
+            "bodyRange": [
+              573,
+              5745
+            ],
+            "requestedFrontierRange": [
+              180,
+              1800
+            ],
+            "rule": "First native F crossings; full original order and terminal/tail remain in point rows."
+          },
+          "sourceValidation": {
+            "valid": true,
+            "errors": {
+              "count": 0,
+              "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "items": [],
+              "omitted": 0
+            },
+            "sampleCount": 5765,
+            "pacingCount": 5765,
+            "validReadBracketCount": 5765,
+            "duplicateReadFrameIndices": [],
+            "contextErrors": {
+              "count": 0,
+              "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "items": [],
+              "omitted": 0
+            }
+          },
+          "evidenceQualificationScope": "Whole-report RAF validity and timeline structure/order errors are retrospective evidence gates, not reconstructed online signals. Future A gap durations do not feed forward warning calculations.",
+          "unmeasured": {
+            "pumpTiming": true,
+            "receiveBudgetExit": true,
+            "remainingQueuePerPump": true,
+            "browserPerInputArrival": true,
+            "remoteProducerTiming": true,
+            "cause": "Information-source-unidentified; unflagged observed fields do not isolate a network cause."
+          },
+          "warmup": {
+            "minimumEligibleHistoryGaps": 16,
+            "historyLimit": 32,
+            "firstWarmObservation": {
+              "sampleIndex": 356,
+              "cohort": "prefix",
+              "F": 112,
+              "A": 107,
+              "B": 5,
+              "Q": 3,
+              "Qfull": 3,
+              "R": 0,
+              "networkScaleMilli": 1373,
+              "effectiveScaleMilli": 1373,
+              "ageMs": [
+                0,
+                8.08500000834465
+              ],
+              "eligibleHistoryCount": 16,
+              "conditionalSurvivors": 16,
+              "estimate": "supported",
+              "residualNominalMs": 27.992499992251396,
+              "holdSafeMs": 45.76666666666667,
+              "rampSafeMs": 60.40176128925554,
+              "warning": "none",
+              "closureQualification": "local-observation-contaminated",
+              "geometry": "unnecessary-warning-proxy",
+              "nextAProgressDelayMs": [
+                15.224999994039536,
+                24.209999978542328
+              ],
+              "originalThresholdLeadMs": [
+                -8.08500000834465,
+                0
+              ],
+              "prebrakeCandidate": false,
+              "positiveLeadModelOpportunity": false,
+              "runningGapFlags": [],
+              "wholeGapFlags": [
+                "replayWorkOrDebt",
+                "correctionStarted"
+              ]
+            },
+            "maximumEligibleHistoryCount": 32,
+            "finalEligibleHistoryCount": 32,
+            "admittedGapCount": 1083
+          },
+          "ranges": {
+            "all": {
+              "originalPredeclaredSummary": {
+                "samples": 5765,
+                "gapsAssigned": 1672,
+                "stateCounts": {
+                  "actualAlreadyCoversFrontier": 3,
+                  "noPredictionRoom": 6,
+                  "noOneFrameReserve": 394,
+                  "targetFromObservedBAboveOne": 5746,
+                  "observedNetworkScaleAboveOne": 5754,
+                  "prebrakeCandidates": 6
+                },
+                "pointWarnings": {
+                  "none": 5765,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 0
+                },
+                "estimateStates": {
+                  "left-censored": 19,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 337,
+                  "conditional-tail-unsupported": 209,
+                  "supported": 5200
+                },
+                "localObservationFlags": {
+                  "readBracketUnavailable": 0,
+                  "sampleGap": 0,
+                  "nativeWork": 0,
+                  "replayWorkOrDebt": 380,
+                  "correctionStarted": 380,
+                  "rafRequestWait": 0,
+                  "lifecycleNotVisible": 0,
+                  "loopInterruptedOrPaused": 0,
+                  "rafDiagnosticInvalid": 0,
+                  "readBracketWide": 0,
+                  "lifecycleUnavailable": 0,
+                  "loopStateUnavailable": 0,
+                  "clockOrder": 0
+                },
+                "firstWarningPerGap": {
+                  "count": 0,
+                  "byWarning": {
+                    "none": 0,
+                    "predicted-bridgeable": 0,
+                    "predicted-beyond-ramp": 0,
+                    "overdue-unknown": 0
+                  },
+                  "closureQualification": {
+                    "unclassified": 0,
+                    "observed-fields-unflagged": 0,
+                    "local-observation-contaminated": 0,
+                    "right-censored-no-next-A": 0,
+                    "clock-unavailable": 0
+                  },
+                  "qualifiedGeometry": {
+                    "unknown": 0,
+                    "unnecessary-warning-proxy": 0,
+                    "model-bridgeable": 0,
+                    "beyond-ramp-model": 0,
+                    "interval-overlap-unknown": 0
+                  },
+                  "usefulPrethresholdModelOpportunities": 0,
+                  "unnecessaryWarningProxy": 0,
+                  "originalThresholdLeadLowerMs": {
+                    "observed": 0,
+                    "missing": 0,
+                    "min": null,
+                    "p50": null,
+                    "p90": null,
+                    "p99": null,
+                    "max": null
+                  },
+                  "originalNetworkBrakeLeadLowerMs": {
+                    "observed": 0,
+                    "missing": 0,
+                    "min": null,
+                    "p50": null,
+                    "p90": null,
+                    "p99": null,
+                    "max": null
+                  }
+                },
+                "gapAccounting": {
+                  "closed": 1671,
+                  "rightCensored": 1,
+                  "leftCensored": 1,
+                  "admittedToTraining": 1083,
+                  "excludedFromTraining": 589,
+                  "wholeGapFlags": {
+                    "readBracketUnavailable": 0,
+                    "sampleGap": 0,
+                    "nativeWork": 0,
+                    "replayWorkOrDebt": 588,
+                    "correctionStarted": 588,
+                    "rafRequestWait": 0,
+                    "lifecycleNotVisible": 0,
+                    "loopInterruptedOrPaused": 0,
+                    "rafDiagnosticInvalid": 0,
+                    "readBracketWide": 0,
+                    "lifecycleUnavailable": 0,
+                    "loopStateUnavailable": 0,
+                    "clockOrder": 0
+                  },
+                  "noWarnings": 1672,
+                  "retrospectiveModelOpportunityWithNoWarning": 0
+                },
+                "distributions": {
+                  "B": {
+                    "observed": 5765,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 6,
+                    "p90": 6,
+                    "p99": 7,
+                    "max": 8
+                  },
+                  "Q": {
+                    "observed": 5765,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 2,
+                    "p90": 3,
+                    "p99": 3,
+                    "max": 8
+                  },
+                  "R": {
+                    "observed": 5765,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0,
+                    "p90": 0,
+                    "p99": 0,
+                    "max": 0
+                  },
+                  "safeHoldMs": {
+                    "observed": 5765,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 25.55,
+                    "p90": 45.1,
+                    "p99": 53.76666666666667,
+                    "max": 116.66666666666667
+                  },
+                  "safeRampMs": {
+                    "observed": 5765,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 30.091275266306504,
+                    "p90": 59.934383529537236,
+                    "p99": 64.51152852497933,
+                    "max": 214.0186152773388
+                  },
+                  "additionalSafeModelMs": {
+                    "observed": 5765,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 4.337738740579471,
+                    "p90": 15.011819396995953,
+                    "p99": 15.559165183549567,
+                    "max": 97.35194861067212
+                  },
+                  "observationGapMs": {
+                    "observed": 5764,
+                    "missing": 1,
+                    "min": 0.38499999046325684,
+                    "p50": 7.629999995231628,
+                    "p90": 8.724999994039536,
+                    "p99": 10.625,
+                    "max": 27.83500000834465
+                  },
+                  "readBracketMs": {
+                    "observed": 5765,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0.004999995231628418,
+                    "p90": 0.010000020265579224,
+                    "p99": 0.019999980926513672,
+                    "max": 0.2550000250339508
+                  },
+                  "nominalAgeMs": {
+                    "observed": 5746,
+                    "missing": 19,
+                    "min": 1.280000001192093,
+                    "p50": 11.814999982714653,
+                    "p90": 27.71500000357628,
+                    "p99": 49.38750000298023,
+                    "max": 88.22249999642372
+                  }
+                }
+              },
+              "policyCandidateFunnel": [
+                {
+                  "stage": "all-points",
+                  "remaining": 5765,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "A-below-F",
+                  "remaining": 5762,
+                  "excludedAtThisStage": 3
+                },
+                {
+                  "stage": "more-than-one-frame-prediction-room",
+                  "remaining": 5368,
+                  "excludedAtThisStage": 394
+                },
+                {
+                  "stage": "no-current-or-prior-observed-brake",
+                  "remaining": 6,
+                  "excludedAtThisStage": 5362
+                },
+                {
+                  "stage": "running-gap-observed-fields-unflagged",
+                  "remaining": 6,
+                  "excludedAtThisStage": 0
+                }
+              ],
+              "candidateEstimateStates": {
+                "allPoints": {
+                  "left-censored": 19,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 337,
+                  "conditional-tail-unsupported": 209,
+                  "supported": 5200
+                },
+                "prebrakeCandidates": {
+                  "left-censored": 6,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 0,
+                  "supported": 0
+                },
+                "currentGapUnflaggedPrebrakeCandidates": {
+                  "left-censored": 6,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 0,
+                  "supported": 0
+                }
+              },
+              "currentGapUnflaggedPrebrakeWarnings": {
+                "none": 6,
+                "predicted-bridgeable": 0,
+                "predicted-beyond-ramp": 0,
+                "overdue-unknown": 0
+              },
+              "retrospectivelyBridgeablePoints": {
+                "count": 32,
+                "qualification": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 20,
+                  "local-observation-contaminated": 12,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "funnel": [
+                  {
+                    "stage": "geometric-next-A-interval-between-safe-hold-and-ramp",
+                    "remaining": 32,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "prebrake-candidate",
+                    "remaining": 4,
+                    "excludedAtThisStage": 28
+                  },
+                  {
+                    "stage": "at-least-16-eligible-history-gaps",
+                    "remaining": 0,
+                    "excludedAtThisStage": 4
+                  },
+                  {
+                    "stage": "not-left-censored",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "closed-and-observed-fields-unflagged",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "strictly-positive-original-B-threshold-lead",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  }
+                ],
+                "strictOpportunities": 0,
+                "strictOpportunityGaps": 0,
+                "strictOpportunitiesWithWarning": 0,
+                "strictOpportunitiesWithoutWarning": 0,
+                "examples": [
+                  {
+                    "sampleIndex": 0,
+                    "cohort": "prefix",
+                    "F": 0,
+                    "A": 0,
+                    "B": 0,
+                    "Q": 8,
+                    "Qfull": 8,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1000,
+                    "ageMs": [
+                      null,
+                      null
+                    ],
+                    "eligibleHistoryCount": 0,
+                    "conditionalSurvivors": 0,
+                    "estimate": "left-censored",
+                    "residualNominalMs": null,
+                    "holdSafeMs": 116.66666666666667,
+                    "rampSafeMs": 214.0186152773388,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      152.5,
+                      167.75499999523163
+                    ],
+                    "originalThresholdLeadMs": [
+                      75.85499998927116,
+                      85.15999999642372
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  },
+                  {
+                    "sampleIndex": 1,
+                    "cohort": "prefix",
+                    "F": 0,
+                    "A": 0,
+                    "B": 0,
+                    "Q": 8,
+                    "Qfull": 8,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1000,
+                    "ageMs": [
+                      null,
+                      null
+                    ],
+                    "eligibleHistoryCount": 0,
+                    "conditionalSurvivors": 0,
+                    "estimate": "left-censored",
+                    "residualNominalMs": null,
+                    "holdSafeMs": 116.66666666666667,
+                    "rampSafeMs": 214.0186152773388,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      145.49500000476837,
+                      160.75
+                    ],
+                    "originalThresholdLeadMs": [
+                      68.84999999403954,
+                      78.1550000011921
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  },
+                  {
+                    "sampleIndex": 2,
+                    "cohort": "prefix",
+                    "F": 0,
+                    "A": 0,
+                    "B": 0,
+                    "Q": 8,
+                    "Qfull": 8,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1000,
+                    "ageMs": [
+                      null,
+                      null
+                    ],
+                    "eligibleHistoryCount": 0,
+                    "conditionalSurvivors": 0,
+                    "estimate": "left-censored",
+                    "residualNominalMs": null,
+                    "holdSafeMs": 116.66666666666667,
+                    "rampSafeMs": 214.0186152773388,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      137.8250000178814,
+                      153.08000001311302
+                    ],
+                    "originalThresholdLeadMs": [
+                      61.18000000715256,
+                      70.48500001430511
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": [
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  }
+                ]
+              },
+              "firstWarningOnly": {
+                "count": 0,
+                "warningTypes": {
+                  "none": 0,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 0
+                },
+                "qualifications": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 0,
+                  "local-observation-contaminated": 0,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "qualifiedGeometry": {
+                  "unknown": 0,
+                  "unnecessary-warning-proxy": 0,
+                  "model-bridgeable": 0,
+                  "beyond-ramp-model": 0,
+                  "interval-overlap-unknown": 0
+                },
+                "strictOpportunities": 0
+              },
+              "noWarningGapRetrospective": {
+                "gaps": 1672,
+                "rightCensored": 1,
+                "withStoredStrictOpportunity": 0,
+                "examples": []
+              },
+              "finalCensoredRows": 1
+            },
+            "body": {
+              "originalPredeclaredSummary": {
+                "samples": 5172,
+                "gapsAssigned": 1506,
+                "stateCounts": {
+                  "actualAlreadyCoversFrontier": 0,
+                  "noPredictionRoom": 1,
+                  "noOneFrameReserve": 344,
+                  "targetFromObservedBAboveOne": 5162,
+                  "observedNetworkScaleAboveOne": 5172,
+                  "prebrakeCandidates": 0
+                },
+                "pointWarnings": {
+                  "none": 5172,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 0
+                },
+                "estimateStates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 196,
+                  "supported": 4976
+                },
+                "localObservationFlags": {
+                  "readBracketUnavailable": 0,
+                  "sampleGap": 0,
+                  "nativeWork": 0,
+                  "replayWorkOrDebt": 292,
+                  "correctionStarted": 292,
+                  "rafRequestWait": 0,
+                  "lifecycleNotVisible": 0,
+                  "loopInterruptedOrPaused": 0,
+                  "rafDiagnosticInvalid": 0,
+                  "readBracketWide": 0,
+                  "lifecycleUnavailable": 0,
+                  "loopStateUnavailable": 0,
+                  "clockOrder": 0
+                },
+                "firstWarningPerGap": {
+                  "count": 0,
+                  "byWarning": {
+                    "none": 0,
+                    "predicted-bridgeable": 0,
+                    "predicted-beyond-ramp": 0,
+                    "overdue-unknown": 0
+                  },
+                  "closureQualification": {
+                    "unclassified": 0,
+                    "observed-fields-unflagged": 0,
+                    "local-observation-contaminated": 0,
+                    "right-censored-no-next-A": 0,
+                    "clock-unavailable": 0
+                  },
+                  "qualifiedGeometry": {
+                    "unknown": 0,
+                    "unnecessary-warning-proxy": 0,
+                    "model-bridgeable": 0,
+                    "beyond-ramp-model": 0,
+                    "interval-overlap-unknown": 0
+                  },
+                  "usefulPrethresholdModelOpportunities": 0,
+                  "unnecessaryWarningProxy": 0,
+                  "originalThresholdLeadLowerMs": {
+                    "observed": 0,
+                    "missing": 0,
+                    "min": null,
+                    "p50": null,
+                    "p90": null,
+                    "p99": null,
+                    "max": null
+                  },
+                  "originalNetworkBrakeLeadLowerMs": {
+                    "observed": 0,
+                    "missing": 0,
+                    "min": null,
+                    "p50": null,
+                    "p90": null,
+                    "p99": null,
+                    "max": null
+                  }
+                },
+                "gapAccounting": {
+                  "closed": 1506,
+                  "rightCensored": 0,
+                  "leftCensored": 0,
+                  "admittedToTraining": 1029,
+                  "excludedFromTraining": 477,
+                  "wholeGapFlags": {
+                    "readBracketUnavailable": 0,
+                    "sampleGap": 0,
+                    "nativeWork": 0,
+                    "replayWorkOrDebt": 477,
+                    "correctionStarted": 477,
+                    "rafRequestWait": 0,
+                    "lifecycleNotVisible": 0,
+                    "loopInterruptedOrPaused": 0,
+                    "rafDiagnosticInvalid": 0,
+                    "readBracketWide": 0,
+                    "lifecycleUnavailable": 0,
+                    "loopStateUnavailable": 0,
+                    "clockOrder": 0
+                  },
+                  "noWarnings": 1506,
+                  "retrospectiveModelOpportunityWithNoWarning": 0
+                },
+                "distributions": {
+                  "B": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 4,
+                    "p50": 6,
+                    "p90": 6,
+                    "p99": 7,
+                    "max": 8
+                  },
+                  "Q": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 2,
+                    "p90": 3,
+                    "p99": 3,
+                    "max": 4
+                  },
+                  "R": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0,
+                    "p90": 0,
+                    "p99": 0,
+                    "max": 0
+                  },
+                  "safeHoldMs": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 25.55,
+                    "p90": 45.1,
+                    "p99": 53.76666666666667,
+                    "max": 80.65
+                  },
+                  "safeRampMs": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 30.091275266306504,
+                    "p90": 59.934383529537236,
+                    "p99": 64.51152852497933,
+                    "max": 97.84486185831267
+                  },
+                  "additionalSafeModelMs": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 4.337738740579471,
+                    "p90": 15.011819396995953,
+                    "p99": 15.559165183549567,
+                    "max": 28.694944940196777
+                  },
+                  "observationGapMs": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 0.5450000166893005,
+                    "p50": 7.629999995231628,
+                    "p90": 8.665000021457672,
+                    "p99": 10.594999998807907,
+                    "max": 27.83500000834465
+                  },
+                  "readBracketMs": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0.004999995231628418,
+                    "p90": 0.010000020265579224,
+                    "p99": 0.015000015497207642,
+                    "max": 0.0949999988079071
+                  },
+                  "nominalAgeMs": {
+                    "observed": 5172,
+                    "missing": 0,
+                    "min": 1.280000001192093,
+                    "p50": 11.830000013113022,
+                    "p90": 27.725000008940697,
+                    "p99": 49.42249998450279,
+                    "max": 88.22249999642372
+                  }
+                }
+              },
+              "policyCandidateFunnel": [
+                {
+                  "stage": "all-points",
+                  "remaining": 5172,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "A-below-F",
+                  "remaining": 5172,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "more-than-one-frame-prediction-room",
+                  "remaining": 4828,
+                  "excludedAtThisStage": 344
+                },
+                {
+                  "stage": "no-current-or-prior-observed-brake",
+                  "remaining": 0,
+                  "excludedAtThisStage": 4828
+                },
+                {
+                  "stage": "running-gap-observed-fields-unflagged",
+                  "remaining": 0,
+                  "excludedAtThisStage": 0
+                }
+              ],
+              "candidateEstimateStates": {
+                "allPoints": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 196,
+                  "supported": 4976
+                },
+                "prebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 0,
+                  "supported": 0
+                },
+                "currentGapUnflaggedPrebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 0,
+                  "supported": 0
+                }
+              },
+              "currentGapUnflaggedPrebrakeWarnings": {
+                "none": 0,
+                "predicted-bridgeable": 0,
+                "predicted-beyond-ramp": 0,
+                "overdue-unknown": 0
+              },
+              "retrospectivelyBridgeablePoints": {
+                "count": 24,
+                "qualification": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 19,
+                  "local-observation-contaminated": 5,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "funnel": [
+                  {
+                    "stage": "geometric-next-A-interval-between-safe-hold-and-ramp",
+                    "remaining": 24,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "prebrake-candidate",
+                    "remaining": 0,
+                    "excludedAtThisStage": 24
+                  },
+                  {
+                    "stage": "at-least-16-eligible-history-gaps",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "not-left-censored",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "closed-and-observed-fields-unflagged",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "strictly-positive-original-B-threshold-lead",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  }
+                ],
+                "strictOpportunities": 0,
+                "strictOpportunityGaps": 0,
+                "strictOpportunitiesWithWarning": 0,
+                "strictOpportunitiesWithoutWarning": 0,
+                "examples": [
+                  {
+                    "sampleIndex": 702,
+                    "cohort": "body",
+                    "F": 220,
+                    "A": 215,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 0,
+                    "networkScaleMilli": 1513,
+                    "effectiveScaleMilli": 1513,
+                    "ageMs": [
+                      7.175000011920929,
+                      15.680000007152557
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 20.4375,
+                    "holdSafeMs": 50.43333333333334,
+                    "rampSafeMs": 63.11139209129402,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      54.125,
+                      61.83500000834465
+                    ],
+                    "originalThresholdLeadMs": [
+                      -15.680000007152557,
+                      -7.175000011920929
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  },
+                  {
+                    "sampleIndex": 837,
+                    "cohort": "body",
+                    "F": 263,
+                    "A": 258,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 0,
+                    "networkScaleMilli": 1227,
+                    "effectiveScaleMilli": 1227,
+                    "ageMs": [
+                      0,
+                      7.939999997615814
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 27.895000010728836,
+                    "holdSafeMs": 40.900000000000006,
+                    "rampSafeMs": 56.45916518354957,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      45.57500001788139,
+                      53.360000014305115
+                    ],
+                    "originalThresholdLeadMs": [
+                      -7.939999997615814,
+                      0
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  },
+                  {
+                    "sampleIndex": 1126,
+                    "cohort": "body",
+                    "F": 353,
+                    "A": 348,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 0,
+                    "networkScaleMilli": 1333,
+                    "effectiveScaleMilli": 1333,
+                    "ageMs": [
+                      0,
+                      7.930000007152557
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 32.85999999940395,
+                    "holdSafeMs": 44.43333333333334,
+                    "rampSafeMs": 59.44515273032929,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      46.724999994039536,
+                      54.25999999046326
+                    ],
+                    "originalThresholdLeadMs": [
+                      -7.930000007152557,
+                      0
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  }
+                ]
+              },
+              "firstWarningOnly": {
+                "count": 0,
+                "warningTypes": {
+                  "none": 0,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 0
+                },
+                "qualifications": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 0,
+                  "local-observation-contaminated": 0,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "qualifiedGeometry": {
+                  "unknown": 0,
+                  "unnecessary-warning-proxy": 0,
+                  "model-bridgeable": 0,
+                  "beyond-ramp-model": 0,
+                  "interval-overlap-unknown": 0
+                },
+                "strictOpportunities": 0
+              },
+              "noWarningGapRetrospective": {
+                "gaps": 1506,
+                "rightCensored": 0,
+                "withStoredStrictOpportunity": 0,
+                "examples": []
+              },
+              "finalCensoredRows": 0
+            }
+          },
+          "firstWarningExamples": {
+            "predicted-bridgeable": [],
+            "predicted-beyond-ramp": [],
+            "overdue-unknown": []
+          }
+        },
+        {
+          "side": 1,
+          "status": "analyzed",
+          "clock": {
+            "name": "Page performance.now()",
+            "timesRelativeToMeasureStarted": true,
+            "measureStarted": 3432.469999998808,
+            "timeOrigin": null,
+            "timeOriginAvailability": "The selected old RAF snapshots do not export timeOrigin; no cross-clock subtraction is performed."
+          },
+          "boundary": {
+            "complete": true,
+            "startSampleIndex": 561,
+            "endSampleIndexExclusive": 5729,
+            "bodyRange": [
+              561,
+              5729
+            ],
+            "requestedFrontierRange": [
+              180,
+              1800
+            ],
+            "rule": "First native F crossings; full original order and terminal/tail remain in point rows."
+          },
+          "sourceValidation": {
+            "valid": true,
+            "errors": {
+              "count": 0,
+              "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "items": [],
+              "omitted": 0
+            },
+            "sampleCount": 5749,
+            "pacingCount": 5749,
+            "validReadBracketCount": 5749,
+            "duplicateReadFrameIndices": [],
+            "contextErrors": {
+              "count": 0,
+              "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "items": [],
+              "omitted": 0
+            }
+          },
+          "evidenceQualificationScope": "Whole-report RAF validity and timeline structure/order errors are retrospective evidence gates, not reconstructed online signals. Future A gap durations do not feed forward warning calculations.",
+          "unmeasured": {
+            "pumpTiming": true,
+            "receiveBudgetExit": true,
+            "remainingQueuePerPump": true,
+            "browserPerInputArrival": true,
+            "remoteProducerTiming": true,
+            "cause": "Information-source-unidentified; unflagged observed fields do not isolate a network cause."
+          },
+          "warmup": {
+            "minimumEligibleHistoryGaps": 16,
+            "historyLimit": 32,
+            "firstWarmObservation": {
+              "sampleIndex": 374,
+              "cohort": "prefix",
+              "F": 121,
+              "A": 116,
+              "B": 5,
+              "Q": 3,
+              "Qfull": 3,
+              "R": 0,
+              "networkScaleMilli": 1333,
+              "effectiveScaleMilli": 1333,
+              "ageMs": [
+                0,
+                7.819999992847443
+              ],
+              "eligibleHistoryCount": 16,
+              "conditionalSurvivors": 16,
+              "estimate": "supported",
+              "residualNominalMs": 27.570000007748604,
+              "holdSafeMs": 44.43333333333334,
+              "rampSafeMs": 59.44515273032929,
+              "warning": "none",
+              "closureQualification": "local-observation-contaminated",
+              "geometry": "unnecessary-warning-proxy",
+              "nextAProgressDelayMs": [
+                25.319999992847443,
+                40.66499999165535
+              ],
+              "originalThresholdLeadMs": [
+                -7.819999992847443,
+                0
+              ],
+              "prebrakeCandidate": false,
+              "positiveLeadModelOpportunity": false,
+              "runningGapFlags": [],
+              "wholeGapFlags": [
+                "replayWorkOrDebt",
+                "correctionStarted"
+              ]
+            },
+            "maximumEligibleHistoryCount": 32,
+            "finalEligibleHistoryCount": 32,
+            "admittedGapCount": 905
+          },
+          "ranges": {
+            "all": {
+              "originalPredeclaredSummary": {
+                "samples": 5749,
+                "gapsAssigned": 1598,
+                "stateCounts": {
+                  "actualAlreadyCoversFrontier": 3,
+                  "noPredictionRoom": 4,
+                  "noOneFrameReserve": 264,
+                  "targetFromObservedBAboveOne": 5651,
+                  "observedNetworkScaleAboveOne": 5710,
+                  "prebrakeCandidates": 9
+                },
+                "pointWarnings": {
+                  "none": 5749,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 0
+                },
+                "estimateStates": {
+                  "left-censored": 15,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 359,
+                  "conditional-tail-unsupported": 174,
+                  "supported": 5201
+                },
+                "localObservationFlags": {
+                  "readBracketUnavailable": 0,
+                  "sampleGap": 1,
+                  "nativeWork": 45,
+                  "replayWorkOrDebt": 580,
+                  "correctionStarted": 394,
+                  "rafRequestWait": 0,
+                  "lifecycleNotVisible": 0,
+                  "loopInterruptedOrPaused": 0,
+                  "rafDiagnosticInvalid": 0,
+                  "readBracketWide": 0,
+                  "lifecycleUnavailable": 0,
+                  "loopStateUnavailable": 0,
+                  "clockOrder": 0
+                },
+                "firstWarningPerGap": {
+                  "count": 0,
+                  "byWarning": {
+                    "none": 0,
+                    "predicted-bridgeable": 0,
+                    "predicted-beyond-ramp": 0,
+                    "overdue-unknown": 0
+                  },
+                  "closureQualification": {
+                    "unclassified": 0,
+                    "observed-fields-unflagged": 0,
+                    "local-observation-contaminated": 0,
+                    "right-censored-no-next-A": 0,
+                    "clock-unavailable": 0
+                  },
+                  "qualifiedGeometry": {
+                    "unknown": 0,
+                    "unnecessary-warning-proxy": 0,
+                    "model-bridgeable": 0,
+                    "beyond-ramp-model": 0,
+                    "interval-overlap-unknown": 0
+                  },
+                  "usefulPrethresholdModelOpportunities": 0,
+                  "unnecessaryWarningProxy": 0,
+                  "originalThresholdLeadLowerMs": {
+                    "observed": 0,
+                    "missing": 0,
+                    "min": null,
+                    "p50": null,
+                    "p90": null,
+                    "p99": null,
+                    "max": null
+                  },
+                  "originalNetworkBrakeLeadLowerMs": {
+                    "observed": 0,
+                    "missing": 0,
+                    "min": null,
+                    "p50": null,
+                    "p90": null,
+                    "p99": null,
+                    "max": null
+                  }
+                },
+                "gapAccounting": {
+                  "closed": 1597,
+                  "rightCensored": 1,
+                  "leftCensored": 1,
+                  "admittedToTraining": 905,
+                  "excludedFromTraining": 693,
+                  "wholeGapFlags": {
+                    "readBracketUnavailable": 0,
+                    "sampleGap": 1,
+                    "nativeWork": 74,
+                    "replayWorkOrDebt": 688,
+                    "correctionStarted": 639,
+                    "rafRequestWait": 0,
+                    "lifecycleNotVisible": 0,
+                    "loopInterruptedOrPaused": 0,
+                    "rafDiagnosticInvalid": 0,
+                    "readBracketWide": 0,
+                    "lifecycleUnavailable": 0,
+                    "loopStateUnavailable": 0,
+                    "clockOrder": 0
+                  },
+                  "noWarnings": 1598,
+                  "retrospectiveModelOpportunityWithNoWarning": 0
+                },
+                "distributions": {
+                  "B": {
+                    "observed": 5749,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 6,
+                    "p90": 6,
+                    "p99": 7,
+                    "max": 8
+                  },
+                  "Q": {
+                    "observed": 5749,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 2,
+                    "p90": 3,
+                    "p99": 4,
+                    "max": 8
+                  },
+                  "R": {
+                    "observed": 5749,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0,
+                    "p90": 0,
+                    "p99": 2,
+                    "max": 5
+                  },
+                  "safeHoldMs": {
+                    "observed": 5749,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 24.666666666666668,
+                    "p90": 44.900000000000006,
+                    "p99": 63,
+                    "max": 116.66666666666667
+                  },
+                  "safeRampMs": {
+                    "observed": 5749,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 29.22282405494117,
+                    "p90": 59.789938353494826,
+                    "p99": 90.79645404034414,
+                    "max": 214.0186152773388
+                  },
+                  "additionalSafeModelMs": {
+                    "observed": 5749,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 4.400017832332228,
+                    "p90": 15.33334147207109,
+                    "p99": 27.216674805404438,
+                    "max": 97.35194861067212
+                  },
+                  "observationGapMs": {
+                    "observed": 5748,
+                    "missing": 1,
+                    "min": 0.4350000023841858,
+                    "p50": 7.58500000834465,
+                    "p90": 11.859999984502792,
+                    "p99": 17.490000009536743,
+                    "max": 72.09000000357628
+                  },
+                  "readBracketMs": {
+                    "observed": 5749,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0.005000025033950806,
+                    "p90": 0.16499999165534973,
+                    "p99": 0.1850000023841858,
+                    "max": 1.6149999797344208
+                  },
+                  "nominalAgeMs": {
+                    "observed": 5734,
+                    "missing": 15,
+                    "min": 0.7974999994039536,
+                    "p50": 12.60750000178814,
+                    "p90": 31.975000008940697,
+                    "p99": 48.04749998450279,
+                    "max": 80.92749997973442
+                  }
+                }
+              },
+              "policyCandidateFunnel": [
+                {
+                  "stage": "all-points",
+                  "remaining": 5749,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "A-below-F",
+                  "remaining": 5746,
+                  "excludedAtThisStage": 3
+                },
+                {
+                  "stage": "more-than-one-frame-prediction-room",
+                  "remaining": 5482,
+                  "excludedAtThisStage": 264
+                },
+                {
+                  "stage": "no-current-or-prior-observed-brake",
+                  "remaining": 9,
+                  "excludedAtThisStage": 5473
+                },
+                {
+                  "stage": "running-gap-observed-fields-unflagged",
+                  "remaining": 0,
+                  "excludedAtThisStage": 9
+                }
+              ],
+              "candidateEstimateStates": {
+                "allPoints": {
+                  "left-censored": 15,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 359,
+                  "conditional-tail-unsupported": 174,
+                  "supported": 5201
+                },
+                "prebrakeCandidates": {
+                  "left-censored": 3,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 2,
+                  "conditional-tail-unsupported": 0,
+                  "supported": 4
+                },
+                "currentGapUnflaggedPrebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 0,
+                  "supported": 0
+                }
+              },
+              "currentGapUnflaggedPrebrakeWarnings": {
+                "none": 0,
+                "predicted-bridgeable": 0,
+                "predicted-beyond-ramp": 0,
+                "overdue-unknown": 0
+              },
+              "retrospectivelyBridgeablePoints": {
+                "count": 16,
+                "qualification": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 10,
+                  "local-observation-contaminated": 6,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "funnel": [
+                  {
+                    "stage": "geometric-next-A-interval-between-safe-hold-and-ramp",
+                    "remaining": 16,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "prebrake-candidate",
+                    "remaining": 2,
+                    "excludedAtThisStage": 14
+                  },
+                  {
+                    "stage": "at-least-16-eligible-history-gaps",
+                    "remaining": 0,
+                    "excludedAtThisStage": 2
+                  },
+                  {
+                    "stage": "not-left-censored",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "closed-and-observed-fields-unflagged",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "strictly-positive-original-B-threshold-lead",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  }
+                ],
+                "strictOpportunities": 0,
+                "strictOpportunityGaps": 0,
+                "strictOpportunitiesWithWarning": 0,
+                "strictOpportunitiesWithoutWarning": 0,
+                "examples": [
+                  {
+                    "sampleIndex": 0,
+                    "cohort": "prefix",
+                    "F": 0,
+                    "A": 0,
+                    "B": 0,
+                    "Q": 8,
+                    "Qfull": 8,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1000,
+                    "ageMs": [
+                      null,
+                      null
+                    ],
+                    "eligibleHistoryCount": 0,
+                    "conditionalSurvivors": 0,
+                    "estimate": "left-censored",
+                    "residualNominalMs": null,
+                    "holdSafeMs": 116.66666666666667,
+                    "rampSafeMs": 214.0186152773388,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      179.2300000190735,
+                      194.5450000166893
+                    ],
+                    "originalThresholdLeadMs": [
+                      117.49000000953674,
+                      125.41000002622604
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": [
+                      "sampleGap",
+                      "nativeWork",
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  },
+                  {
+                    "sampleIndex": 1,
+                    "cohort": "prefix",
+                    "F": 0,
+                    "A": 0,
+                    "B": 0,
+                    "Q": 8,
+                    "Qfull": 8,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1000,
+                    "ageMs": [
+                      null,
+                      null
+                    ],
+                    "eligibleHistoryCount": 0,
+                    "conditionalSurvivors": 0,
+                    "estimate": "left-censored",
+                    "residualNominalMs": null,
+                    "holdSafeMs": 116.66666666666667,
+                    "rampSafeMs": 214.0186152773388,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      176.59000000357628,
+                      191.9050000011921
+                    ],
+                    "originalThresholdLeadMs": [
+                      114.84999999403954,
+                      122.77000001072884
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": [
+                      "sampleGap",
+                      "nativeWork",
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  },
+                  {
+                    "sampleIndex": 2,
+                    "cohort": "prefix",
+                    "F": 0,
+                    "A": 0,
+                    "B": 0,
+                    "Q": 8,
+                    "Qfull": 8,
+                    "R": 0,
+                    "networkScaleMilli": 1000,
+                    "effectiveScaleMilli": 1000,
+                    "ageMs": [
+                      null,
+                      null
+                    ],
+                    "eligibleHistoryCount": 0,
+                    "conditionalSurvivors": 0,
+                    "estimate": "left-censored",
+                    "residualNominalMs": null,
+                    "holdSafeMs": 116.66666666666667,
+                    "rampSafeMs": 214.0186152773388,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      167.9500000178814,
+                      183.2650000154972
+                    ],
+                    "originalThresholdLeadMs": [
+                      106.21000000834465,
+                      114.13000002503395
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": [
+                      "sampleGap",
+                      "nativeWork",
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  }
+                ]
+              },
+              "firstWarningOnly": {
+                "count": 0,
+                "warningTypes": {
+                  "none": 0,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 0
+                },
+                "qualifications": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 0,
+                  "local-observation-contaminated": 0,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "qualifiedGeometry": {
+                  "unknown": 0,
+                  "unnecessary-warning-proxy": 0,
+                  "model-bridgeable": 0,
+                  "beyond-ramp-model": 0,
+                  "interval-overlap-unknown": 0
+                },
+                "strictOpportunities": 0
+              },
+              "noWarningGapRetrospective": {
+                "gaps": 1598,
+                "rightCensored": 1,
+                "withStoredStrictOpportunity": 0,
+                "examples": []
+              },
+              "finalCensoredRows": 1
+            },
+            "body": {
+              "originalPredeclaredSummary": {
+                "samples": 5168,
+                "gapsAssigned": 1435,
+                "stateCounts": {
+                  "actualAlreadyCoversFrontier": 0,
+                  "noPredictionRoom": 4,
+                  "noOneFrameReserve": 242,
+                  "targetFromObservedBAboveOne": 5091,
+                  "observedNetworkScaleAboveOne": 5144,
+                  "prebrakeCandidates": 4
+                },
+                "pointWarnings": {
+                  "none": 5168,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 0
+                },
+                "estimateStates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 164,
+                  "supported": 5004
+                },
+                "localObservationFlags": {
+                  "readBracketUnavailable": 0,
+                  "sampleGap": 0,
+                  "nativeWork": 34,
+                  "replayWorkOrDebt": 476,
+                  "correctionStarted": 299,
+                  "rafRequestWait": 0,
+                  "lifecycleNotVisible": 0,
+                  "loopInterruptedOrPaused": 0,
+                  "rafDiagnosticInvalid": 0,
+                  "readBracketWide": 0,
+                  "lifecycleUnavailable": 0,
+                  "loopStateUnavailable": 0,
+                  "clockOrder": 0
+                },
+                "firstWarningPerGap": {
+                  "count": 0,
+                  "byWarning": {
+                    "none": 0,
+                    "predicted-bridgeable": 0,
+                    "predicted-beyond-ramp": 0,
+                    "overdue-unknown": 0
+                  },
+                  "closureQualification": {
+                    "unclassified": 0,
+                    "observed-fields-unflagged": 0,
+                    "local-observation-contaminated": 0,
+                    "right-censored-no-next-A": 0,
+                    "clock-unavailable": 0
+                  },
+                  "qualifiedGeometry": {
+                    "unknown": 0,
+                    "unnecessary-warning-proxy": 0,
+                    "model-bridgeable": 0,
+                    "beyond-ramp-model": 0,
+                    "interval-overlap-unknown": 0
+                  },
+                  "usefulPrethresholdModelOpportunities": 0,
+                  "unnecessaryWarningProxy": 0,
+                  "originalThresholdLeadLowerMs": {
+                    "observed": 0,
+                    "missing": 0,
+                    "min": null,
+                    "p50": null,
+                    "p90": null,
+                    "p99": null,
+                    "max": null
+                  },
+                  "originalNetworkBrakeLeadLowerMs": {
+                    "observed": 0,
+                    "missing": 0,
+                    "min": null,
+                    "p50": null,
+                    "p90": null,
+                    "p99": null,
+                    "max": null
+                  }
+                },
+                "gapAccounting": {
+                  "closed": 1435,
+                  "rightCensored": 0,
+                  "leftCensored": 0,
+                  "admittedToTraining": 855,
+                  "excludedFromTraining": 580,
+                  "wholeGapFlags": {
+                    "readBracketUnavailable": 0,
+                    "sampleGap": 0,
+                    "nativeWork": 60,
+                    "replayWorkOrDebt": 576,
+                    "correctionStarted": 528,
+                    "rafRequestWait": 0,
+                    "lifecycleNotVisible": 0,
+                    "loopInterruptedOrPaused": 0,
+                    "rafDiagnosticInvalid": 0,
+                    "readBracketWide": 0,
+                    "lifecycleUnavailable": 0,
+                    "loopStateUnavailable": 0,
+                    "clockOrder": 0
+                  },
+                  "noWarnings": 1435,
+                  "retrospectiveModelOpportunityWithNoWarning": 0
+                },
+                "distributions": {
+                  "B": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 4,
+                    "p50": 6,
+                    "p90": 6,
+                    "p99": 7,
+                    "max": 8
+                  },
+                  "Q": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 2,
+                    "p90": 3,
+                    "p99": 4,
+                    "max": 4
+                  },
+                  "R": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0,
+                    "p90": 0,
+                    "p99": 2,
+                    "max": 5
+                  },
+                  "safeHoldMs": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 24.450000000000003,
+                    "p90": 44.43333333333334,
+                    "p99": 61.650000000000006,
+                    "max": 81.35
+                  },
+                  "safeRampMs": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 28.990565193423265,
+                    "p90": 59.44515273032929,
+                    "p99": 89.9803043622262,
+                    "max": 98.00906476769555
+                  },
+                  "additionalSafeModelMs": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 4.400017832332228,
+                    "p90": 15.298458589644177,
+                    "p99": 26.758725408213962,
+                    "max": 30.68528194400548
+                  },
+                  "observationGapMs": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 0.4350000023841858,
+                    "p50": 7.590000003576279,
+                    "p90": 11.495000004768372,
+                    "p99": 17.3299999833107,
+                    "max": 36.49000000953674
+                  },
+                  "readBracketMs": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 0,
+                    "p50": 0.005000025033950806,
+                    "p90": 0.16499999165534973,
+                    "p99": 0.1850000023841858,
+                    "max": 1.574999988079071
+                  },
+                  "nominalAgeMs": {
+                    "observed": 5168,
+                    "missing": 0,
+                    "min": 0.7974999994039536,
+                    "p50": 12.749999985098839,
+                    "p90": 32.11250001192093,
+                    "p99": 48.26250000298023,
+                    "max": 80.92749997973442
+                  }
+                }
+              },
+              "policyCandidateFunnel": [
+                {
+                  "stage": "all-points",
+                  "remaining": 5168,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "A-below-F",
+                  "remaining": 5168,
+                  "excludedAtThisStage": 0
+                },
+                {
+                  "stage": "more-than-one-frame-prediction-room",
+                  "remaining": 4926,
+                  "excludedAtThisStage": 242
+                },
+                {
+                  "stage": "no-current-or-prior-observed-brake",
+                  "remaining": 4,
+                  "excludedAtThisStage": 4922
+                },
+                {
+                  "stage": "running-gap-observed-fields-unflagged",
+                  "remaining": 0,
+                  "excludedAtThisStage": 4
+                }
+              ],
+              "candidateEstimateStates": {
+                "allPoints": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 164,
+                  "supported": 5004
+                },
+                "prebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 0,
+                  "supported": 4
+                },
+                "currentGapUnflaggedPrebrakeCandidates": {
+                  "left-censored": 0,
+                  "current-clock-unavailable": 0,
+                  "insufficient-history": 0,
+                  "conditional-tail-unsupported": 0,
+                  "supported": 0
+                }
+              },
+              "currentGapUnflaggedPrebrakeWarnings": {
+                "none": 0,
+                "predicted-bridgeable": 0,
+                "predicted-beyond-ramp": 0,
+                "overdue-unknown": 0
+              },
+              "retrospectivelyBridgeablePoints": {
+                "count": 11,
+                "qualification": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 10,
+                  "local-observation-contaminated": 1,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "funnel": [
+                  {
+                    "stage": "geometric-next-A-interval-between-safe-hold-and-ramp",
+                    "remaining": 11,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "prebrake-candidate",
+                    "remaining": 0,
+                    "excludedAtThisStage": 11
+                  },
+                  {
+                    "stage": "at-least-16-eligible-history-gaps",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "not-left-censored",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "closed-and-observed-fields-unflagged",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  },
+                  {
+                    "stage": "strictly-positive-original-B-threshold-lead",
+                    "remaining": 0,
+                    "excludedAtThisStage": 0
+                  }
+                ],
+                "strictOpportunities": 0,
+                "strictOpportunityGaps": 0,
+                "strictOpportunitiesWithWarning": 0,
+                "strictOpportunitiesWithoutWarning": 0,
+                "examples": [
+                  {
+                    "sampleIndex": 593,
+                    "cohort": "body",
+                    "F": 190,
+                    "A": 185,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 0,
+                    "networkScaleMilli": 1333,
+                    "effectiveScaleMilli": 1333,
+                    "ageMs": [
+                      0,
+                      7.0250000059604645
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 34.019999995827675,
+                    "holdSafeMs": 44.43333333333334,
+                    "rampSafeMs": 59.44515273032929,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      48.05000001192093,
+                      53.92500001192093
+                    ],
+                    "originalThresholdLeadMs": [
+                      -7.0250000059604645,
+                      0
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  },
+                  {
+                    "sampleIndex": 1003,
+                    "cohort": "body",
+                    "F": 319,
+                    "A": 314,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 0,
+                    "networkScaleMilli": 1333,
+                    "effectiveScaleMilli": 1333,
+                    "ageMs": [
+                      0,
+                      4.385000020265579
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 32,
+                    "estimate": "supported",
+                    "residualNominalMs": 34.94499999284744,
+                    "holdSafeMs": 44.43333333333334,
+                    "rampSafeMs": 59.44515273032929,
+                    "warning": "none",
+                    "closureQualification": "observed-fields-unflagged",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      46.064999997615814,
+                      53.68499997258186
+                    ],
+                    "originalThresholdLeadMs": [
+                      -4.385000020265579,
+                      0
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [],
+                    "wholeGapFlags": []
+                  },
+                  {
+                    "sampleIndex": 1604,
+                    "cohort": "body",
+                    "F": 507,
+                    "A": 502,
+                    "B": 5,
+                    "Q": 3,
+                    "Qfull": 3,
+                    "R": 3,
+                    "networkScaleMilli": 1333,
+                    "effectiveScaleMilli": 1333,
+                    "ageMs": [
+                      0,
+                      17.59000000357628
+                    ],
+                    "eligibleHistoryCount": 32,
+                    "conditionalSurvivors": 30,
+                    "estimate": "supported",
+                    "residualNominalMs": 28.947500005364418,
+                    "holdSafeMs": 44.43333333333334,
+                    "rampSafeMs": 59.44515273032929,
+                    "warning": "none",
+                    "closureQualification": "local-observation-contaminated",
+                    "geometry": "model-bridgeable",
+                    "nextAProgressDelayMs": [
+                      47.00999999046326,
+                      57.889999985694885
+                    ],
+                    "originalThresholdLeadMs": [
+                      -17.59000000357628,
+                      0
+                    ],
+                    "prebrakeCandidate": false,
+                    "positiveLeadModelOpportunity": false,
+                    "runningGapFlags": [
+                      "nativeWork",
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ],
+                    "wholeGapFlags": [
+                      "nativeWork",
+                      "replayWorkOrDebt",
+                      "correctionStarted"
+                    ]
+                  }
+                ]
+              },
+              "firstWarningOnly": {
+                "count": 0,
+                "warningTypes": {
+                  "none": 0,
+                  "predicted-bridgeable": 0,
+                  "predicted-beyond-ramp": 0,
+                  "overdue-unknown": 0
+                },
+                "qualifications": {
+                  "unclassified": 0,
+                  "observed-fields-unflagged": 0,
+                  "local-observation-contaminated": 0,
+                  "right-censored-no-next-A": 0,
+                  "clock-unavailable": 0
+                },
+                "qualifiedGeometry": {
+                  "unknown": 0,
+                  "unnecessary-warning-proxy": 0,
+                  "model-bridgeable": 0,
+                  "beyond-ramp-model": 0,
+                  "interval-overlap-unknown": 0
+                },
+                "strictOpportunities": 0
+              },
+              "noWarningGapRetrospective": {
+                "gaps": 1435,
+                "rightCensored": 0,
+                "withStoredStrictOpportunity": 0,
+                "examples": []
+              },
+              "finalCensoredRows": 0
+            }
+          },
+          "firstWarningExamples": {
+            "predicted-bridgeable": [],
+            "predicted-beyond-ramp": [],
+            "overdue-unknown": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "status":"passed",
+  "checks":3308,
+  "files":73,
+  "entries":667,
+  "sprites":5447,
+  "scripts":2795,
+  "animation_file_cpp_sha256":"a2666d012fd9ce955b3f19184ace11781a8f290504f54a18ddc6c1ad149c60a5",
+  "scope":"All real ANM preloads; writable archive bytes, counts compared against independently recovered DSL, real allocations and self-linked templates",
+  "limitations":["Source integration test, not original-CPU preloader ABI comparison","No Direct3D postload or live-animation teardown exercised"]
+}

@@ -1,0 +1,29 @@
+{
+  "status": "source_pairing_review_only_no_runtime_execution",
+  "checks": {
+    "player_scalar_new_nothrow_under_lock1": true,
+    "player_null_check_before_zero_and_placement": true,
+    "title_scalar_new_nothrow_under_lock1": true,
+    "title_null_check_before_zero_and_placement": true,
+    "curve_node_malloc_and_placement": true,
+    "curve_node_free": true,
+    "effect_update_disabled": true,
+    "effect_draw_disabled_then_enable": true,
+    "callback_owner_scalar_delete": true
+  },
+  "source_sha256": {
+    "player_entity/initialize.cpp": "5fa65d5a69a39c4b2b3176609f49ced1d7392261120940beacdbabd4b4dcbfb7",
+    "title_system/lifecycle.cpp": "dfecd3f098c84d4426aee68656e68e4c272c99b6f72a7c8a6d842ab88b4ee473",
+    "laser_system/type2.cpp": "a7fb29bb5ceaa4a142554ff742d7a93752a6deade1b88e8c566b908de72a0b63",
+    "effect_system/lifecycle.cpp": "ae5d4126e43f81990958111f117ac8e2d8911677accb4e2b7c2edef527f04a81",
+    "runtime_core/runtime_core.cpp": "c48e39ddcbf088a11ee13db31f97a3d24290b3aa3d9ef24de2a575290bb43b60",
+    "runtime_core/callback_owner.hpp": "22ace0c017ecce7632344de83e5a1a97cab1e3ef1f3bef0f8d613615990960d4",
+    "player_entity/initialize_adapter.cpp": "5e7767963f6c93bcfbdbb7414d009ff3bbcb1cd1def851129667496f29feb0a9",
+    "platform_window/scene_transitions.cpp": "596a0e70840aede9a8639127b0485c392bea1f4bb7545a793f6b4fdbdb23020b"
+  },
+  "limits": [
+    "Checks capture reviewed source structure, not runtime memory safety.",
+    "No production file was edited, no engine was built, and no game was run by this review.",
+    "The reported repeated-demo crash remains under independent runtime investigation."
+  ]
+}

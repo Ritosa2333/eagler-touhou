@@ -1,0 +1,99 @@
+=================================================================
+==25132==ERROR: AddressSanitizer: heap-use-after-free on address 0x04c22704 at pc 0x0030bb29 bp 0x001fe8c4 sp 0x001fe8b8
+WRITE of size 4 at 0x04c22704 thread T0
+    #0 0x30bb28 in th20::source::scheduler::Iterator::advance(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:48
+    #1 0x2b3cf2 in th20::source::gameplay::update_enemy_controller(class th20::source::gameplay::EnemyController &, class th20::source::gameplay::EnemyFrameServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_frame.cpp:71
+    #2 0x34ec80 in th20::source::gameplay::`anonymous namespace'::GameEnemyServices::update_enemy D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:103
+    #3 0x2b132c in th20::source::gameplay::EnemyController::update_callback(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy.cpp:44
+    #4 0x30c0ac in th20::source::scheduler::`anonymous namespace'::dispatch D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:152
+    #5 0x30c3cf in th20::source::scheduler::dispatch_update(struct th20::source::scheduler::State &, struct th20::source::scheduler::Environment &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:180
+    #6 0x235126 in th20::source::program_entry::`anonymous namespace'::update_frame D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\frame_schedulers.cpp:34
+    #7 0x233eb6 in th20::source::program_entry::recovered_win_main(struct HINSTANCE__*, struct HINSTANCE__*, char *, int) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\program_entry.cpp:111
+    #8 0x231b21 in invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:102
+    #9 0x231b21 in _scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288
+    #10 0x77677ba8  (C:\WINDOWS\System32\KERNEL32.DLL+0x6b817ba8)
+    #11 0x77e9c3aa  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec3aa)
+    #12 0x77e9c32e  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec32e)
+
+0x04c22704 is located 132 bytes inside of 1064-byte region [0x04c22680,0x04c22aa8)
+freed by thread T0 here:
+    #0 0x6c68e9c3  (D:\AIWorkspace\Touhou20Reconstruction\build_source_asan\source_game\RelWithDebInfo\clang_rt.asan_dynamic-i386.dll+0x1003e9c3)
+    #1 0x30b316 in th20::source::runtime::release_bytes(void *) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\runtime_core\runtime_core.cpp:43
+    #2 0x2af017 in th20::source::gameplay::retire_enemy(class th20::source::gameplay::Enemy *) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_entity.cpp:43
+    #3 0x34e87a in th20::source::gameplay::`anonymous namespace'::GameEnemyServices::retire_entity D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:106
+    #4 0x2b3ce4 in th20::source::gameplay::update_enemy_controller(class th20::source::gameplay::EnemyController &, class th20::source::gameplay::EnemyFrameServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_frame.cpp:69
+    #5 0x34ec80 in th20::source::gameplay::`anonymous namespace'::GameEnemyServices::update_enemy D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:103
+    #6 0x2b132c in th20::source::gameplay::EnemyController::update_callback(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy.cpp:44
+    #7 0x30c0ac in th20::source::scheduler::`anonymous namespace'::dispatch D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:152
+    #8 0x30c3cf in th20::source::scheduler::dispatch_update(struct th20::source::scheduler::State &, struct th20::source::scheduler::Environment &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:180
+    #9 0x235126 in th20::source::program_entry::`anonymous namespace'::update_frame D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\frame_schedulers.cpp:34
+    #10 0x233eb6 in th20::source::program_entry::recovered_win_main(struct HINSTANCE__*, struct HINSTANCE__*, char *, int) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\program_entry.cpp:111
+    #11 0x231b21 in invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:102
+    #12 0x231b21 in _scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288
+    #13 0x77677ba8  (C:\WINDOWS\System32\KERNEL32.DLL+0x6b817ba8)
+    #14 0x77e9c3aa  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec3aa)
+    #15 0x77e9c32e  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec32e)
+
+previously allocated by thread T0 here:
+    #0 0x6c68eb07  (D:\AIWorkspace\Touhou20Reconstruction\build_source_asan\source_game\RelWithDebInfo\clang_rt.asan_dynamic-i386.dll+0x1003eb07)
+    #1 0x30a898 in th20::source::runtime::allocate_bytes(unsigned int) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\runtime_core\runtime_core.cpp:38
+    #2 0x2af2d3 in th20::source::gameplay::spawn_enemy(class th20::source::gameplay::EnemyController &, char const *, struct th20::source::gameplay::SpawnParameters const &, class th20::source::gameplay::Enemy *) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_entity.cpp:35
+    #3 0x3501e3 in th20::source::gameplay::`anonymous namespace'::AnimationServices::create_enemy D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_animation_adapter.cpp:28
+    #4 0x3cba37 in th20::source::gameplay::spawn_enemy_from_opcode(class th20::source::gameplay::EnemyOpcodeReader &, class th20::source::gameplay::EnemyAnimationOpcodeServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_animation.cpp:24
+    #5 0x3ca200 in th20::source::gameplay::execute_enemy_animation_opcode(class th20::source::gameplay::EnemyOpcodeReader &, class th20::source::gameplay::EnemyAnimationOpcodeServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_animation.cpp:48
+    #6 0x350483 in th20::source::gameplay::execute_enemy_animation_opcode(class th20::source::gameplay::EnemyOpcodeReader &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_animation_adapter.cpp:34
+    #7 0x34f598 in th20::source::gameplay::execute_enemy_opcode(struct th20::source::gameplay::EnemyState &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_dispatch.cpp:9
+    #8 0x2ae9eb in th20::source::gameplay::Enemy::execute_opcode(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_entity.cpp:56
+    #9 0x3c0fea in th20::source::gameplay::ScriptManager::tick(float, struct th20::source::gameplay::EnemyVmEnvironment &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_vm.cpp:285
+    #10 0x34f1c9 in th20::source::gameplay::unrecovered::tick_enemy_scripts_0053e2b0(void *, float) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_entity_adapter.cpp:25
+    #11 0x34e8c5 in th20::source::gameplay::`anonymous namespace'::GameEnemyUpdateServices::run_scripts D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:81
+    #12 0x3c29cb in th20::source::gameplay::advance_enemy_scripts(struct th20::source::gameplay::EnemyState &, class th20::source::gameplay::EnemyUpdateServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_update.cpp:61
+    #13 0x3c3431 in th20::source::gameplay::update_enemy_state(struct th20::source::gameplay::EnemyState &, class th20::source::gameplay::EnemyUpdateServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_update.cpp:72
+    #14 0x34eca0 in th20::source::gameplay::`anonymous namespace'::GameEnemyFrameServices::update_entity_state D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:92
+    #15 0x2b416e in th20::source::gameplay::update_enemy_with_time_scale(void *, class th20::source::gameplay::EnemyFrameServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_frame.cpp:50
+    #16 0x2b3c92 in th20::source::gameplay::update_enemy_controller(class th20::source::gameplay::EnemyController &, class th20::source::gameplay::EnemyFrameServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_frame.cpp:68
+    #17 0x34ec80 in th20::source::gameplay::`anonymous namespace'::GameEnemyServices::update_enemy D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:103
+    #18 0x2b132c in th20::source::gameplay::EnemyController::update_callback(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy.cpp:44
+    #19 0x30c0ac in th20::source::scheduler::`anonymous namespace'::dispatch D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:152
+    #20 0x30c3cf in th20::source::scheduler::dispatch_update(struct th20::source::scheduler::State &, struct th20::source::scheduler::Environment &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:180
+    #21 0x235126 in th20::source::program_entry::`anonymous namespace'::update_frame D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\frame_schedulers.cpp:34
+    #22 0x233eb6 in th20::source::program_entry::recovered_win_main(struct HINSTANCE__*, struct HINSTANCE__*, char *, int) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\program_entry.cpp:111
+    #23 0x231b21 in invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:102
+    #24 0x231b21 in _scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288
+    #25 0x77677ba8  (C:\WINDOWS\System32\KERNEL32.DLL+0x6b817ba8)
+    #26 0x77e9c3aa  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec3aa)
+    #27 0x77e9c32e  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec32e)
+
+SUMMARY: AddressSanitizer: heap-use-after-free D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:48 in th20::source::scheduler::Iterator::advance(void)
+Shadow bytes around the buggy address:
+  0x30984490: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x309844a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x309844b0: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x309844c0: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x309844d0: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+=>0x309844e0:[fd]fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x309844f0: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x30984500: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x30984510: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x30984520: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x30984530: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+  Shadow gap:              cc

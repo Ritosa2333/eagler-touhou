@@ -1,0 +1,12 @@
+{
+  "schema":"th11/world-selected-state/v1",
+  "input":["effective-held","effective-pressed"],
+  "clocks":["complete-world-transaction-index"],
+  "categories":{
+    "economy":"12 original uint32 bit patterns at the mapped economy addresses",
+    "player":"15 byte-exact ranges of the original player motion owner",
+    "rng":"Original gameplay RNG seed/reserved/call-count bytes",
+    "entities":"Active enemy count and active bullet count"
+  },
+  "scope":"Current WASI game core, complete stored Demo input fixtures and natural long replay lifecycle. No all-owner, browser, GPU/audio or presentation purity claim."
+}

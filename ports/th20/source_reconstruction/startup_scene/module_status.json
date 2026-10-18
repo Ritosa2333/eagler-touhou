@@ -1,0 +1,30 @@
+{
+  "status": "compiled_source_module",
+  "full_game_equivalence": false,
+  "original_va": [
+    "0x004d7ea0",
+    "0x004d7ef0",
+    "0x004d7fd0",
+    "0x004d80f0",
+    "0x004d8160",
+    "0x004d8220",
+    "0x004d82c0",
+    "0x004d8350",
+    "0x004d8560",
+    "0x004d85a0",
+    "0x004d85b0",
+    "0x004d85c0",
+    "0x004dd730",
+    "0x004515e0",
+    "0x004a7700"
+  ],
+  "source_hashes": {
+    "source_reconstruction/startup_scene/startup.hpp": "3b35e25588f420cb9ea482132556573f56a36e2bff387bf0e74cfc0222dd78e8",
+    "source_reconstruction/startup_scene/startup.cpp": "89d564051d9f4668054d402b7474e1b7eb82d9e6636c08e5571326960493bd96",
+    "source_reconstruction/startup_scene/data_constants.hpp": "b6c7b18282fc49d8d7ba58b9f57e3bee446c11163a48da7df9b0b97f719c7ab9",
+    "source_reconstruction/startup_scene/CMakeLists.txt": "4f88160341621a6023ee52b1accba15dbbf72a293dfbf40efbd02fb9b40397cb",
+    "source_reconstruction/startup_scene/extract_evidence.py": "e525d8c10503a7a32ef262d46b0d48eb0249673f60cf5178e04848bac7be5fd7",
+    "source_reconstruction/startup_scene/record_evidence.py": "8728f3b1699bb5414e3cdfb79a1519a284a3654435e2a956827481de0022ece2"
+  },
+  "cpu_validation": null
+}

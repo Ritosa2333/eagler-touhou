@@ -1,0 +1,47 @@
+#pragma code_page(65001)
+#include <windows.h>
+// Data-only resources recovered as editable source, no EXE embedding.
+
+LANGUAGE 17, 1
+203 DIALOGEX 0, 0, 164, 170, 0
+STYLE 0x80c808c9
+EXSTYLE 0x00000008
+CAPTION "東方錦上京"
+FONT 8, "MS Shell Dlg", 400, 0, 1
+BEGIN
+    CONTROL "解像度を選択してください", -1, "Static", 0x50020000, 7, 3, 111, 8, 0x00000000, 0
+    CONTROL "ボーダーレスウィンドウ DOT by DOT（推奨）", 207, "Button", 0x50000009, 7, 16, 150, 10, 0x00000000, 0
+    CONTROL "ボーダーレスウィンドウ 最大表示", 208, "Button", 0x50000009, 7, 28, 131, 10, 0x00000000, 0
+    CONTROL "フルスクリーン 1280×960", 209, "Button", 0x50000009, 7, 40, 111, 10, 0x00000000, 0
+    CONTROL "フルスクリーン  960×720", 210, "Button", 0x50000009, 7, 52, 111, 10, 0x00000000, 0
+    CONTROL "フルスクリーン  640×480", 211, "Button", 0x50000009, 7, 64, 111, 10, 0x00000000, 0
+    CONTROL "ウィンドウ     2560×1920", 212, "Button", 0x50000009, 7, 76, 111, 10, 0x00000000, 0
+    CONTROL "ウィンドウ     1920×1440", 213, "Button", 0x50000009, 7, 88, 111, 10, 0x00000000, 0
+    CONTROL "ウィンドウ     1280×960", 214, "Button", 0x50000009, 7, 100, 111, 10, 0x00000000, 0
+    CONTROL "ウィンドウ      960×720", 215, "Button", 0x50000009, 7, 112, 111, 10, 0x00000000, 0
+    CONTROL "ウィンドウ      640×480", 216, "Button", 0x50000009, 7, 124, 111, 10, 0x00000000, 0
+    CONTROL "起動時に毎回訊ねる", 202, "Button", 0x50010003, 7, 138, 111, 14, 0x00000000, 0
+    CONTROL "ゲーム起動", 206, "Button", 0x50010001, 54, 153, 50, 14, 0x00000000, 0
+END
+
+LANGUAGE 17, 1
+204 DIALOGEX 0, 0, 170, 170, 0
+STYLE 0x80c808c9
+EXSTYLE 0x00000000
+CAPTION "TH19"
+FONT 8, "MS Shell Dlg", 400, 0, 1
+BEGIN
+    CONTROL "Choose resolution.", -1, "Static", 0x50020000, 7, 3, 111, 8, 0x00000000, 0
+    CONTROL "Borderless Window DOT by DOT（Recommend）", 207, "Button", 0x50000009, 7, 16, 160, 10, 0x00000000, 0
+    CONTROL "Borderless Window ", 208, "Button", 0x50000009, 7, 28, 131, 10, 0x00000000, 0
+    CONTROL "Full Screen 1280×960", 209, "Button", 0x50000009, 7, 40, 111, 10, 0x00000000, 0
+    CONTROL "Full Screen  960×720", 210, "Button", 0x50000009, 7, 52, 111, 10, 0x00000000, 0
+    CONTROL "Full Screen  640×480", 211, "Button", 0x50000009, 7, 64, 111, 10, 0x00000000, 0
+    CONTROL "Window     2560×1920", 212, "Button", 0x50000009, 7, 76, 111, 10, 0x00000000, 0
+    CONTROL "Window     1920×1440", 213, "Button", 0x50000009, 7, 88, 111, 10, 0x00000000, 0
+    CONTROL "Window     1280×960", 214, "Button", 0x50000009, 7, 100, 111, 10, 0x00000000, 0
+    CONTROL "Window      960×720", 215, "Button", 0x50000009, 7, 112, 111, 10, 0x00000000, 0
+    CONTROL "Window      640×480", 216, "Button", 0x50000009, 7, 124, 111, 10, 0x00000000, 0
+    CONTROL "Ask each startup time", 202, "Button", 0x50010003, 7, 138, 111, 14, 0x00000000, 0
+    CONTROL "Play", 206, "Button", 0x50010001, 60, 153, 50, 14, 0x00000000, 0
+END

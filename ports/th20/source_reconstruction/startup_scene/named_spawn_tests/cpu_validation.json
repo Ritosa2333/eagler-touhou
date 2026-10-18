@@ -1,0 +1,14 @@
+{
+  "passed": 24576,
+  "failed": 0,
+  "cases": 4096,
+  "original_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "full_game_equivalence": false,
+  "failures": [],
+  "source_hashes": {
+    "source_reconstruction/sprite_renderer/named_spawn.hpp": "4f1f115a0dedf04075916c3843265d461148e112d6f59f5051b257edf7a0dde1",
+    "source_reconstruction/sprite_renderer/named_spawn.cpp": "c41a41f9e210294486f6622be0585353e0cc886eaad977ba4c27640e7e5cefd9",
+    "source_reconstruction/startup_scene/named_spawn_tests/compare.cpp": "6609fe4c49cc99319f2acbf1d5ab0816a2cb3cfe05005af7745f272521b78d55",
+    "source_reconstruction/startup_scene/named_spawn_tests/CMakeLists.txt": "c64932d34f715bce81b07eb62d21899f2b8e61bc7aa487751d8345fb15d91411"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "./",
+  "name": "东方地灵殿网页版",
+  "short_name": "地灵殿",
+  "description": "东方地灵殿，支持触控与离线游玩。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0d0c",
+  "theme_color": "#10100f"
+}

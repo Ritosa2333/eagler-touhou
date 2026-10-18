@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "kind": "th09-continuous-frontier-window-harness-regression",
+  "recordedDateUtc": "2026-10-11",
+  "repository": {
+    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+    "branch": "experiment/rollback-4x",
+    "baseHead": "5d4b7f0a1cc047143e3f5da5ed3749ad5af9b897",
+    "commitState": "Uncommitted task changes at verification; local-only, no browser run, build, push or deployment."
+  },
+  "scope": "Pure Node post-processing repair for smoothness reports. It corrects a false gap introduced by frame filtering after rollback. It does not change game, input, transport, audio or browser scheduling and does not establish a new performance result.",
+  "testedSources": {
+    "harness": {
+      "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "bytes": 56624,
+      "sha256": "598c057dec10d6e265ad94ce3316498f405a994a582a97525177b494ae5f2126",
+      "scope": "Tested window-integration revision before any later scheduler-probe integration; this identity is not silently updated when the harness changes."
+    },
+    "helper": {
+      "path": "th09_web/tests/multiplayer/smoothness-window.mjs",
+      "bytes": 9583,
+      "sha256": "9c46c45b275b5b57912a62c58dbc309dfe3eec2bff6b788a2370ce6c214c0546"
+    },
+    "contracts": {
+      "path": "th09_web/tests/multiplayer/smoothness-window.test.mjs",
+      "bytes": 10714,
+      "sha256": "133ea710aca8128ca2d85c2db60e74d93cd54eea799e3043b92e809756f8bbeb"
+    }
+  },
+  "implementation": {
+    "schema": "continuous-prediction-frontier-v1",
+    "body": "Contiguous original sample indices [first F >= 180, first F >= limit). No SessionPhase or rewound-next filter is applied.",
+    "frontier": "Use complete per-sample networkPacing[][5] (native PredictionFrontier = max(next,replayEnd)). If unavailable, use explicitly labelled observed next high-water only, nativeFrontierComplete=false and window.complete=false. Captures never selects a boundary.",
+    "closedProgress": "Throughput and cumulative correction/resimulation/capture deltas use endpoint minus start. The terminal marker closes elapsed time and optional new-state gaps; its callback cost belongs to tail while the start callback cost belongs to body.",
+    "presentation": "Top-level gap fields retain body-only renderer-submission/RAF timestamp semantics. window.formalWithEndBoundary adds terminal closure. New-state observations require increasing submission count and frontier, with next equal to the observed frontier.",
+    "retention": "Original report samples remain untouched. Newly generated reports preserve the exact old calculation under legacySummary, add summaryMethod, and use the corrected helper under summary. Existing frozen reports are never rewritten.",
+    "incomplete": "Missing start/end, missing native frontier, duplicate or invalid pacing data, and counter/frontier/time regression remain explicit. No closed throughput or endpoint counter delta is reported for an invalid epoch or unobserved terminal marker.",
+    "costs": "window.segments partitions all sampled callback costs exactly once into startup, body and tail and also reports allObserved. Cross-boundary new-state intervals and observed silence to an endpoint without a new state remain visible.",
+    "phase": "scenes remains a compatibility alias of sessionPhases. Both are SessionPhase, not internal MatchScene; non-Match phases are retained.",
+    "timing": "callbackCompletionGapMs is post-native sampledAt between renderer submissions, not total observer callback return. None of these measurements is physical scanout or acoustic acceptance.",
+    "identity": "The harness hashes smoothness-window.mjs before the run and checks the same hash before the success report."
+  },
+  "validation": {
+    "runtime": {
+      "node": "v24.13.0",
+      "environment": "nig Windows workspace; no browser, build or CPU-throttle command",
+      "runtimeCommandId": "QUS6TDG50JLxHmaHSs9LsjJj"
+    },
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "th09_web/tests/multiplayer/smoothness-window.test.mjs"
+      ],
+      "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+      "environment": {
+        "TH09_SMOOTHNESS_WINDOW_RAW": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json"
+      }
+    },
+    "final": {
+      "nigCommandId": "fY1jfVlJAuGUjRj6s7kTdhJQ",
+      "exitCode": 0,
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "skipped": 0,
+      "nodeTestDurationMs": 429.6898,
+      "nigElapsedMs": 913
+    },
+    "contracts": [
+      "Tail rollback cannot re-enter the formal body or manufacture a callback gap.",
+      "Rollback below the lower frame bound, non-Match phases, native work and a real 120 ms new-state gap are retained.",
+      "Captures ahead of simulation never chooses boundaries; native F may exceed a current replay cursor.",
+      "Endpoint counters close progress, endpoint work stays in tail, and start work stays in body.",
+      "Unobserved terminal crossing is right-censored; closed throughput/counter delta are null.",
+      "Missing/partial native F uses only labelled next high-water and never claims complete native evidence.",
+      "Counter resets and native frontier regression remain invalid-epoch evidence.",
+      "No new endpoint renderer submission leaves the observed new-state silence visible.",
+      "Missing start, empty samples and malformed input cannot fabricate a complete formal window.",
+      "Frozen relay125 recalculation agrees with independent prior evidence; the exact legacy calculation and all raw bytes remain unchanged."
+    ],
+    "retainedInitialFailure": {
+      "nigCommandId": "UYFs8UMNneDtQZL2MhIsWp84",
+      "exitCode": 1,
+      "tests": 10,
+      "pass": 9,
+      "fail": 1,
+      "nodeTestDurationMs": 502.218,
+      "failedContract": "missing native F uses only labelled observed cursor high-water and never claims complete frontier evidence",
+      "reason": "The synthetic fallback fixture mistakenly lowered renderer submission count from 5 to 4 on a tail rollback. The helper correctly marked the observation epoch invalid, so the assertion requiring closedBoundaryAvailable=true failed.",
+      "change": "Fixed only that synthetic tail row to frontier=5 and present=5 while next rewinds to 4 and captures remains 13. Helper code and rejection rules were unchanged.",
+      "significance": "This was a malformed regression fixture, not a game/performance failure; it is retained rather than hidden by the passing rerun."
+    },
+    "syntax": {
+      "nigCommandId": "fjOzl45UQCT5zdvk9nn6nqR4",
+      "nodeCheckExitCodes": [
+        0,
+        0,
+        0
+      ],
+      "files": [
+        "smoothness-browser.mjs",
+        "smoothness-window.mjs",
+        "smoothness-window.test.mjs"
+      ],
+      "combinedCommandExit": 1,
+      "reason": "All three syntax checks passed; a separate raw string comparison between Git LF bytes and working CRLF bytes returned false."
+    },
+    "sourceRegionAudit": {
+      "nigCommandId": "uHq-j1fg2OcgsdPiTa4BBXwi",
+      "exitCode": 0,
+      "headBlobCrLfCount": 0,
+      "workingFileCrLfCount": 589,
+      "region": "Existing page-side multiplayer setup and onGameFrame measurement block, through the call immediately before Profiler setup",
+      "gitBlobRegionBytes": 5824,
+      "workingRegionBytes": 5891,
+      "normalizedLfIdentical": true,
+      "normalizedLfSha256": "9415929b2131c6bd2bb7755f10bb2643b337ee9056e63f6b41d71a77da6dc285",
+      "scope": "The region's authored code is unchanged; byte comparison requires the repository's LF versus working-tree CRLF distinction."
+    }
+  },
+  "rawRegression": {
+    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
+    "bytes": 28866220,
+    "sha256": "d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770",
+    "rawShaReadBeforeAndAfterEqual": true,
+    "rawResultJsonBeforeAndAfterEqual": true,
+    "legacySummaryDeepEqualToFrozenRawSummary": true,
+    "independentEvidence": "docs/multiplayer/rollback-chain-release-relay125-transport-evidence.json",
+    "originalRun": "Existing scalar release, two peers CPU[1,4], D0, 1800 wall-clock-input frames, relay planned 125 +/- 5 ms each direction. No new browser execution was performed for this regression.",
+    "peers": [
+      {
+        "side": 0,
+        "startSampleIndex": 573,
+        "endSampleIndexExclusive": 5745,
+        "bodyCallbacks": 5172,
+        "boundaryElapsedMs": 39893.165,
+        "frontierDelta": 1620,
+        "logicHz": 40.608460120903636,
+        "corrections": 292,
+        "resimulated": 1764,
+        "captures": 1620,
+        "bodyRafTimestampGapMaxMs": 25.794999999998254,
+        "bodyNativeWorkMaxMs": 4.174999982118607,
+        "formalWithEndNewStateGaps": 1620,
+        "formalWithEndNewStateRafGapMaxMs": 41.1349999999984,
+        "endpointHasNewState": true,
+        "tailCallbacks": 20,
+        "nativeMatchesObservedNextHighWater": true
+      },
+      {
+        "side": 1,
+        "startSampleIndex": 561,
+        "endSampleIndexExclusive": 5729,
+        "bodyCallbacks": 5168,
+        "boundaryElapsedMs": 39885.905,
+        "frontierDelta": 1620,
+        "logicHz": 40.61585163981992,
+        "corrections": 299,
+        "resimulated": 1740,
+        "captures": 1620,
+        "bodyRafTimestampGapMaxMs": 25.104999999999563,
+        "bodyNativeWorkMaxMs": 14.189999997615814,
+        "formalWithEndNewStateGaps": 1620,
+        "formalWithEndNewStateRafGapMaxMs": 44.69500000000335,
+        "endpointHasNewState": true,
+        "tailCallbacks": 20,
+        "nativeMatchesObservedNextHighWater": true,
+        "legacyRafTimestampGapMaxMs": 83.73500000000058,
+        "legacyRendererSubmissionGapMaxMs": 99.18
+      }
+    ],
+    "falseGap": "P2 old per-row next filter excluded samples 5729..5738 after first reaching 1800, then retained sample 5739 when next rewound to 1799. Its 83.735 ms RAF and 99.180 ms renderer gaps joined non-adjacent observations. The old values remain visible in the frozen raw and legacySummary; they are not a newly observed callback stall."
+  },
+  "consumers": {
+    "inspectedCommandIds": [
+      "wUbjfKcgWYscW-QDGCVT2dUc",
+      "UKn1V9Xv-1_kfF-KRwo9AKkm"
+    ],
+    "retainedFields": [
+      {
+        "path": "th09_web/tests/multiplayer/export-menu-evidence.mjs",
+        "use": "summary[side].scenes.includes(3)",
+        "result": "scenes alias retained with all SessionPhase values in the continuous body"
+      },
+      {
+        "path": "th09_web/tests/multiplayer/summarize-smoothness-comparison.mjs",
+        "use": "lastFrame-firstFrame, elapsedMs, resimulated, waitCallbacks",
+        "result": "Frame delta and elapsed now share the closed endpoint definition"
+      },
+      {
+        "path": "th09_web/tests/multiplayer/summarize-rollback4x.mjs",
+        "use": "logicHz, callbackWorkMs and presentationGapMs distributions",
+        "result": "Field shapes and body-only gap distributions retained"
+      },
+      {
+        "path": "th09_web/tests/multiplayer/analyze-direct-startup.mjs",
+        "use": "logicHz, effectivePresentationGapMs and stored summary",
+        "result": "Field shapes retained; body-only new-state gap is distinct from explicit endpoint closure"
+      },
+      {
+        "path": "th09_web/tests/multiplayer/summarize-endurance.mjs",
+        "use": "stores summary object",
+        "result": "New schema and window metadata remain in stored summary"
+      },
+      {
+        "path": "th09_web/tests/multiplayer/analyze-release-response.mjs",
+        "use": "stores raw.summary[side]",
+        "result": "No edit; frozen input reports stay original"
+      },
+      {
+        "path": "th09_web/tests/multiplayer/analyze-relay125-transport.mjs",
+        "use": "stores raw.summary[side]; exact frozen raw identity gate",
+        "result": "No edit; independent corrected baseline remains frozen"
+      }
+    ],
+    "limitation": "Historical aggregators do not enforce the new summary schema. An A/B comparison must use the same schema and boundary definition, or explicitly use legacySummary. Missing/invalid/incomplete windows must not be treated as accepted performance by a consumer."
+  },
+  "limits": [
+    "The earlier genuine relay39 active roughly 1.4 second RAF wait is unrelated to this false-filter-gap repair and remains unresolved.",
+    "Only the already retained relay125 raw report was recomputed; no new throughput, deeper rollback speedup, CPU4 native-rAF smoothness, network reliability, audio continuity or direct-route acceptance follows.",
+    "The terminal marker is deliberately excluded from body cost but retained in tail and allObserved. Cumulative endpoint deltas therefore do not describe exactly the same callback-cost cohort.",
+    "Without complete native frontier evidence, the labelled next high-water view remains an observation, not proof of replayEnd or a new simulation epoch.",
+    "A summary complete flag concerns its measurement boundaries/evidence, not product smoothness acceptance."
+  ]
+}

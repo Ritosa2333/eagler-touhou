@@ -1,0 +1,64 @@
+{
+  "probe": "th20_web/replay-probe/replay-probe.html",
+  "fixture": "th20_02.rpy (6 stages, difficulty 3, finished_stage 8)",
+  "fingerprint": "fnv1a of per-frame [player.x*1024, player.y*1024, player.state, scene], one hash per 300 frames",
+  "baseline_build": "pre-fix deployed generation runtime/th20/2e442ee670d3a29711a9e7e311ca630e240c5780ee52e709b6ea1b5c10765db5 (built 2026-09-29 17:15, before the input-isolation fix)",
+  "current_build": "th20_web/artifacts/sdl3 (sha256 25ae65e999ac6bad3b8829a3419a23c7acf59b3841fda04ba49d70218fd0098b)",
+  "quick_matrix_6000_frames": {
+    "reference_blocks": [
+      2959860018, 1382049344, 3628134177, 2122067671, 4020797737,
+      2785426269, 2722683631, 3152775492, 2572133319, 2800440136,
+      865194295, 2435011166, 1101389733, 3040660420, 637532730,
+      4178497854, 3165778386, 1553744498, 964917869, 4233773432
+    ],
+    "current_none": {"first_diff_frame": null, "identical": true, "final_replay_cursor": 6209, "final_stage": 1},
+    "current_key_mash": {"first_diff_frame": null, "identical": true, "final_replay_cursor": 6209, "final_stage": 1},
+    "current_arrow_cycle": {"first_diff_frame": null, "identical": true, "final_replay_cursor": 6209, "final_stage": 1},
+    "current_key_slow": {"first_diff_frame": null, "identical": true, "final_replay_cursor": 6209, "final_stage": 1},
+    "current_touch_all": {"first_diff_frame": null, "identical": true, "final_replay_cursor": 6209, "final_stage": 1},
+    "current_touch_drag": {"first_diff_frame": null, "identical": true, "final_replay_cursor": 6209, "final_stage": 1},
+    "baseline_key_mash": {"first_diff_frame": 0, "identical": false, "final_replay_cursor": 7696, "final_stage": 2}
+  },
+  "dialogue_matrix_20000_frames": {
+    "reference_build": "current",
+    "reference_blocks": [
+      2959860018, 1382049344, 3628134177, 2122067671, 4020797737,
+      2785426269, 2722683631, 3152775492, 2572133319, 2800440136,
+      865194295, 2435011166, 1101389733, 3040660420, 637532730,
+      4178497854, 3165778386, 1553744498, 964917869, 4233773432,
+      1000663555, 702097944, 1395278034, 4175577507, 2512406031,
+      3548256437, 165424210, 3520558019, 3530496888, 1321587225,
+      3705294380, 712324945, 2182369292, 1609841265, 3557964302,
+      2932871210, 2569279698, 3217343618, 2532410726, 2915652037,
+      1501589594, 3622802266, 3286036314, 2915652037, 2915652037,
+      2915652037, 2915652037, 3996950938, 2915652037, 875137178,
+      2915652037, 2915652037, 2915652037, 2915652037, 2915652037,
+      2915652037, 2915652037, 2915652037, 2915652037, 2915652037,
+      2915652037, 2915652037, 2915652037, 2915652037, 2915652037,
+      2882822110, 671962745
+    ],
+    "dialogue_windows": [[7014, 7281], [15184, 19494]],
+    "stage_change_frame": 19805,
+    "results": [
+      {"build": "current", "input": "none", "identical": true, "final_replay_cursor": 195, "final_stage": 2},
+      {"build": "current", "input": "key-mash", "identical": true, "final_replay_cursor": 195, "final_stage": 2},
+      {"build": "current", "input": "arrow-cycle", "identical": true, "final_replay_cursor": 195, "final_stage": 2},
+      {"build": "current", "input": "touch-all", "identical": true, "final_replay_cursor": 195, "final_stage": 2},
+      {"build": "baseline", "input": "none", "identical": true, "final_replay_cursor": 195, "final_stage": 2,
+       "note": "the pre-fix build is simulation-identical when no live input arrives"},
+      {"build": "baseline", "input": "key-mash", "identical": false, "first_diff_frame": 0, "final_replay_cursor": 2160, "final_stage": 4,
+       "note": "hosted keyboard (launcher on-screen controls and physical keys) drives the replay fast-forward, so playback races the recording"},
+      {"build": "baseline", "input": "touch-fire", "identical": true, "final_replay_cursor": 195, "final_stage": 2,
+       "note": "the gesture path was already suppressed during playback; the surviving hole was the hosted-keyboard path"}
+    ]
+  },
+  "oracle": {
+    "installed_exe": "C:/Program Files (x86)/上海アリス幻樂団/東方錦上京/th20.exe",
+    "file_sha256": "e6c4371e214c95dd4dbcaaf6818c79c5e89881270f65b62b8c3c965b65851e2d",
+    "manifest_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+    "whole_file_matches_manifest": false,
+    "code_range_bytes_compared": 1483899,
+    "code_range_bytes_differing": 0,
+    "note": "the installed image is the pinned 1.00c code with non-code bytes rewritten; no MSVC toolchain exists in this environment, so the native oracle comparison executables (source_reconstruction/*/oracle, title_system/replay_format_probe.cpp) could not be built or run"
+  }
+}

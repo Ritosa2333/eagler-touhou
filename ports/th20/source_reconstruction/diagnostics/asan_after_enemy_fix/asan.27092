@@ -1,0 +1,53 @@
+=================================================================
+==27092==ERROR: AddressSanitizer: alloc-dealloc-mismatch (operator new vs free) on 0x48e288e0
+    #0 0x6c5ee9d6  (D:\AIWorkspace\Touhou20Reconstruction\build_source_asan\source_game\RelWithDebInfo\clang_rt.asan_dynamic-i386.dll+0x1003e9d6)
+    #1 0xa7b116 in th20::source::runtime::release_bytes(void *) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\runtime_core\runtime_core.cpp:43
+    #2 0xafee7b in th20::source::laser::Laser::~Laser(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\laser_system\base.cpp:11
+    #3 0xafad4d in th20::source::laser::Type0Laser::~Type0Laser(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\laser_system\type0.cpp:15
+    #4 0xafb00a in th20::source::laser::Type0Laser::`scalar deleting dtor'(unsigned int) (D:\AIWorkspace\Touhou20Reconstruction\build_source_asan\source_game\RelWithDebInfo\th20_source.exe+0x55b00a)
+    #5 0xaf0b45 in th20::source::laser::destroy_laser(class th20::source::laser::Laser *) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\laser_system\controller.cpp:31
+    #6 0xaf1410 in th20::source::laser::Controller::update(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\laser_system\controller.cpp:47
+    #7 0xaf14eb in th20::source::laser::`anonymous namespace'::update_callback D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\laser_system\controller.cpp:14
+    #8 0xa7beac in th20::source::scheduler::`anonymous namespace'::dispatch D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:152
+    #9 0xa7c1cf in th20::source::scheduler::dispatch_update(struct th20::source::scheduler::State &, struct th20::source::scheduler::Environment &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:180
+    #10 0x9a5126 in th20::source::program_entry::`anonymous namespace'::update_frame D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\frame_schedulers.cpp:34
+    #11 0x9a3eb6 in th20::source::program_entry::recovered_win_main(struct HINSTANCE__*, struct HINSTANCE__*, char *, int) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\program_entry.cpp:111
+    #12 0x9a1b21 in invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:102
+    #13 0x9a1b21 in _scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288
+    #14 0x77677ba8  (C:\WINDOWS\System32\KERNEL32.DLL+0x6b817ba8)
+    #15 0x77e9c3aa  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec3aa)
+    #16 0x77e9c32e  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec32e)
+
+0x48e288e0 is located 0 bytes inside of 60-byte region [0x48e288e0,0x48e2891c)
+allocated by thread T0 here:
+    #0 0xa7ecec in operator new(unsigned int, struct std::nothrow_t const &) D:\a\_work\1\s\src\vctools\crt\asan\llvm\compiler-rt\lib\asan\asan_win_new_scalar_nothrow_thunk.cpp:40
+    #1 0xafb69a in th20::source::laser::Type0Laser::initialize(struct th20::source::laser::Type0Parameters const &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\laser_system\type0.cpp:33
+    #2 0xafb8a2 in th20::source::laser::spawn_type0(class th20::source::laser::Controller &, struct th20::source::laser::Type0Parameters const &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\laser_system\type0.cpp:37
+    #3 0xafa93c in th20::source::laser::spawn_laser(class th20::source::laser::Controller &, unsigned int, void const *) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\laser_system\spawn.cpp:8
+    #4 0xac54f3 in th20::source::gameplay::`anonymous namespace'::Host::create D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_laser_adapter.cpp:8
+    #5 0xb47e60 in th20::source::gameplay::execute_enemy_laser_opcode(class th20::source::gameplay::EnemyOpcodeReader &, class th20::source::gameplay::EnemyLaserOpcodeServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_laser.cpp:16
+    #6 0xac55c3 in th20::source::gameplay::execute_enemy_laser_opcode(class th20::source::gameplay::EnemyOpcodeReader &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_laser_adapter.cpp:15
+    #7 0xabf540 in th20::source::gameplay::execute_enemy_opcode(struct th20::source::gameplay::EnemyState &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_opcode_dispatch.cpp:13
+    #8 0xa1e9eb in th20::source::gameplay::Enemy::execute_opcode(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_entity.cpp:56
+    #9 0xb30dca in th20::source::gameplay::ScriptManager::tick(float, struct th20::source::gameplay::EnemyVmEnvironment &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_vm.cpp:285
+    #10 0xabefb9 in th20::source::gameplay::unrecovered::tick_enemy_scripts_0053e2b0(void *, float) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_entity_adapter.cpp:25
+    #11 0xabe6b5 in th20::source::gameplay::`anonymous namespace'::GameEnemyUpdateServices::run_scripts D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:81
+    #12 0xb327ab in th20::source::gameplay::advance_enemy_scripts(struct th20::source::gameplay::EnemyState &, class th20::source::gameplay::EnemyUpdateServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_update.cpp:61
+    #13 0xb33211 in th20::source::gameplay::update_enemy_state(struct th20::source::gameplay::EnemyState &, class th20::source::gameplay::EnemyUpdateServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_update.cpp:72
+    #14 0xabea90 in th20::source::gameplay::`anonymous namespace'::GameEnemyFrameServices::update_entity_state D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:92
+    #15 0xa23f8e in th20::source::gameplay::update_enemy_with_time_scale(void *, class th20::source::gameplay::EnemyFrameServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_frame.cpp:50
+    #16 0xa23aa2 in th20::source::gameplay::update_enemy_controller(class th20::source::gameplay::EnemyController &, class th20::source::gameplay::EnemyFrameServices &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_frame.cpp:68
+    #17 0xabea70 in th20::source::gameplay::`anonymous namespace'::GameEnemyServices::update_enemy D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy_adapter.cpp:103
+    #18 0xa2113c in th20::source::gameplay::EnemyController::update_callback(void) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\gameplay\enemy.cpp:46
+    #19 0xa7beac in th20::source::scheduler::`anonymous namespace'::dispatch D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:152
+    #20 0xa7c1cf in th20::source::scheduler::dispatch_update(struct th20::source::scheduler::State &, struct th20::source::scheduler::Environment &) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\core_scheduler\scheduler.cpp:180
+    #21 0x9a5126 in th20::source::program_entry::`anonymous namespace'::update_frame D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\frame_schedulers.cpp:34
+    #22 0x9a3eb6 in th20::source::program_entry::recovered_win_main(struct HINSTANCE__*, struct HINSTANCE__*, char *, int) D:\AIWorkspace\Touhou20Reconstruction\source_reconstruction\program_entry\program_entry.cpp:111
+    #23 0x9a1b21 in invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:102
+    #24 0x9a1b21 in _scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288
+    #25 0x77677ba8  (C:\WINDOWS\System32\KERNEL32.DLL+0x6b817ba8)
+    #26 0x77e9c3aa  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec3aa)
+    #27 0x77e9c32e  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x4b2ec32e)
+
+SUMMARY: AddressSanitizer: alloc-dealloc-mismatch (D:\AIWorkspace\Touhou20Reconstruction\build_source_asan\source_game\RelWithDebInfo\clang_rt.asan_dynamic-i386.dll+0x1003e9d6) 
+==27092==HINT: if you don't care about these errors you may set ASAN_OPTIONS=alloc_dealloc_mismatch=0

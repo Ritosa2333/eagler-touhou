@@ -1,0 +1,397 @@
+{
+  "format": "T15G-v3",
+  "source": "TH15 1.00b original 46f6a0 CreateFontA parameters (quality 2); offline GDI ARGB4444 coverage",
+  "fonts": [
+    {
+      "handle": 100,
+      "parameters": [
+        24,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        17
+      ],
+      "faceBytes": "826c827220835383568362834e",
+      "face": "ＭＳ ゴシック",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 101,
+      "parameters": [
+        28,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        17
+      ],
+      "faceBytes": "826c827220835383568362834e",
+      "face": "ＭＳ ゴシック",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 102,
+      "parameters": [
+        32,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        17
+      ],
+      "faceBytes": "826c827220835383568362834e",
+      "face": "ＭＳ ゴシック",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 103,
+      "parameters": [
+        40,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        17
+      ],
+      "faceBytes": "826c827220835383568362834e",
+      "face": "ＭＳ ゴシック",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 104,
+      "parameters": [
+        32,
+        0,
+        0,
+        0,
+        600,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        17
+      ],
+      "faceBytes": "826c82722096be92a9",
+      "face": "ＭＳ 明朝",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 105,
+      "parameters": [
+        40,
+        0,
+        0,
+        0,
+        600,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        17
+      ],
+      "faceBytes": "826c82722096be92a9",
+      "face": "ＭＳ 明朝",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 106,
+      "parameters": [
+        15,
+        0,
+        0,
+        0,
+        700,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        17
+      ],
+      "faceBytes": "826c827220835383568362834e",
+      "face": "ＭＳ ゴシック",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 107,
+      "parameters": [
+        15,
+        0,
+        0,
+        0,
+        700,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        17
+      ],
+      "faceBytes": "826c82722096be92a9",
+      "face": "ＭＳ 明朝",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 110,
+      "parameters": [
+        36,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        1
+      ],
+      "faceBytes": "83818343838a8349",
+      "face": "メイリオ",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 111,
+      "parameters": [
+        42,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        1
+      ],
+      "faceBytes": "83818343838a8349",
+      "face": "メイリオ",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 112,
+      "parameters": [
+        48,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        1
+      ],
+      "faceBytes": "83818343838a8349",
+      "face": "メイリオ",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 113,
+      "parameters": [
+        60,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        1
+      ],
+      "faceBytes": "83818343838a8349",
+      "face": "メイリオ",
+      "selectedFace": "MS Gothic"
+    },
+    {
+      "handle": 116,
+      "parameters": [
+        16,
+        0,
+        0,
+        0,
+        400,
+        0,
+        0,
+        0,
+        128,
+        0,
+        0,
+        2,
+        1
+      ],
+      "faceBytes": "83818343838a8349",
+      "face": "メイリオ",
+      "selectedFace": "MS Gothic"
+    }
+  ],
+  "modes": [
+    {
+      "fallback": 0,
+      "defaultFont": 0,
+      "styles": [
+        2,
+        4,
+        6,
+        7,
+        3,
+        5,
+        6,
+        7,
+        1
+      ]
+    },
+    {
+      "fallback": 1,
+      "defaultFont": 8,
+      "styles": [
+        10,
+        4,
+        12,
+        7,
+        11,
+        5,
+        12,
+        7,
+        9
+      ]
+    }
+  ],
+  "coverageClasses": 7,
+  "fontSources": [
+    {
+      "file": "msgothic.ttc",
+      "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+    }
+  ],
+  "files": [
+    {
+      "file": "cp932.bin",
+      "bytes": 131072,
+      "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+    },
+    {
+      "file": "blend4444.bin",
+      "bytes": 32768,
+      "sha256": "036cdc177d4ad0321dd2ef5c912e85211722d4777443f27bf63193ee6655e907"
+    },
+    {
+      "file": "font0.bin",
+      "bytes": 4378552,
+      "sha256": "e1165d26d409aea0e4079e4241f54ba315fdf8089913003510b032de6a0fa784"
+    },
+    {
+      "file": "font1.bin",
+      "bytes": 5798390,
+      "sha256": "0b8c7c1d059b1b032f4caa9623082fe377588c479376d86fae6662197729b32d"
+    },
+    {
+      "file": "font2.bin",
+      "bytes": 7439486,
+      "sha256": "0a246ccff8096ec8588d96da35c9f6c7d2615988ce16bd50d1cc653ebbb2e41a"
+    },
+    {
+      "file": "font3.bin",
+      "bytes": 11466955,
+      "sha256": "22ca2c3e38224250347ef1409960ba9fc49da07f3d8c6980576a0cf120ac48f8"
+    },
+    {
+      "file": "font4.bin",
+      "bytes": 7697901,
+      "sha256": "b10a1ce9f4e8be74f86fb8dc469f55f898d73283ee5de64b679de5c1815f8d10"
+    },
+    {
+      "file": "font5.bin",
+      "bytes": 11790111,
+      "sha256": "2ccfc852476cb3626a08a96b77a047f68cdea4ecf94740305bb36e377e190e39"
+    },
+    {
+      "file": "font6.bin",
+      "bytes": 1720202,
+      "sha256": "46d5f7765aa156ef72c2fd9762b8447d9a1a9d919c133dec15200a73bd48fea4"
+    },
+    {
+      "file": "font7.bin",
+      "bytes": 1720202,
+      "sha256": "183410ba6f811bc5678381ea2c697e4bf310aae55f100295991f7736c0c2ca1f"
+    },
+    {
+      "file": "font8.bin",
+      "bytes": 9354959,
+      "sha256": "88ac653e8333058b7497ac4ac44b91e6ccf7e6eb65ae0ef5f0de4bb25c6f3fca"
+    },
+    {
+      "file": "font9.bin",
+      "bytes": 12518962,
+      "sha256": "b184ec7f3cda9796b63acf58b5e4638f9637b2e1bcb7c2cb67a76429c6db424d"
+    },
+    {
+      "file": "font10.bin",
+      "bytes": 16225412,
+      "sha256": "1d7a27a55446134b5ef74a2665406b92a5c5e25d0d5380adf6589fbd18d9adca"
+    },
+    {
+      "file": "font11.bin",
+      "bytes": 24955630,
+      "sha256": "ff592a3501eb59ca82569b0f47b0db2b48be73ff0489288c633d58debc2e3d51"
+    },
+    {
+      "file": "font12.bin",
+      "bytes": 2044086,
+      "sha256": "83fe50d57a2a966baca3d64a175cb9fb8581fbc296ff6167e0a6b649e6690ea3"
+    }
+  ],
+  "coverageBits": 3,
+  "defaultFallback": false
+}

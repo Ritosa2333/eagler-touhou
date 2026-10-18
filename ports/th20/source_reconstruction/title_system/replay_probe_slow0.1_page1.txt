@@ -1,0 +1,12 @@
+original_sha256=a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897
+resource_sha256=07a00087014921f2f53a7dede1d5bd0b39b1b49b9cc71af6ac776d1c40badb48
+decoded_sha256=6ac3f43a0509d81848e2ef0b596351c13f86c02efccdeafe09016f818a07742d
+page=1
+timestamp=1753828590
+character=0
+stone=0
+difficulty=1
+finished_stage=2
+slowdown_bits=3dcccccd
+format=%s  %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s%s %s %2.1f%%
+native_access_violation original_va=5482f0 address=a0000000 eip=ef82f0

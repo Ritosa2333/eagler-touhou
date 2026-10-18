@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {launchBrowser} from '../../../th10_web/scripts/native/browser-launch.mjs';
+import {root,report,sha} from '../cpp/helpers.mjs';
+import {launcherServer,startLauncherPage,runtimeFrame,rpc} from './launcher-fixture.mjs';
+
+test('Final launcher exports real Pointdevice checkpoints and restores the complete save ZIP in an independent browser',{timeout:600000},async()=>{
+ const server=await launcherServer();let browser;const errors=[],observations=[];let debugPage;
+ try{
+  browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+  const open=async()=>{const p=await startLauncherPage(browser,{viewport:{width:1100,height:800}});p.on('pageerror',e=>errors.push(String(e)));await p.goto(server.url);await p.locator('#changelogConfirm').click();await p.locator('button[data-game="th15"]').click();return p;};
+  const page=await open();debugPage=page;await page.locator('#launch').click();await page.waitForFunction(()=>!!document.querySelector('#gameFrame')?.contentWindow?.Module?._th15_probe_state?.(),null,{timeout:150000});const runtime=runtimeFrame(page);
+  await runtime.waitForFunction(()=>{const c=Module,p=c._th15_probe_state();return c.HEAP32[p/4]===0&&c.HEAP32[p/4+8]===1&&c.HEAP32[p/4+9]===2;});
+  await runtime.evaluate(()=>{Module._th15_loop_stop();Module._th15_keys_clear();});
+  const advance=n=>runtime.evaluate(n=>{for(let i=0;i<n;i++)if(!Module._th15_probe_tick())throw Error('Application tick failed');const p=Module._th15_probe_state();return Array.from(Module.HEAP32.subarray(p/4,p/4+16));},n);
+  const state=()=>advance(0);
+  const key=async code=>{await rpc(page,'keyboard',{code,down:true});await advance(3);await rpc(page,'keyboard',{code,down:false});return advance(3);};
+  const menu=async screen=>{for(let i=0;i<250;i++){const s=await state();if(s[0]===0&&s[8]===screen&&s[9]===2)return s;await advance(1);}throw Error('Missing native menu '+screen);};
+  await key('KeyZ');await menu(5);assert.equal((await state())[10],0);await key('KeyZ');await menu(6);while((await state())[10]!==1)await key('ArrowDown');await key('KeyZ');await menu(7);await key('KeyZ');await advance(240);let s=await state();assert.equal(s[0],1);assert.equal(s[12]&0x300,0x100);
+  await rpc(page,'sync');let stored=(await rpc(page,'list')).files;assert.ok(stored.some(f=>f.path==='autosave/save0_1.dat'),'native ECL chapter writes an actual checkpoint');
+  const checkpoint=Buffer.from((await rpc(page,'read',{path:'autosave/save0_1.dat'})).bytes);assert.ok(checkpoint.length>96);assert.equal(checkpoint.readUInt32LE(0),0x62353174);
+  await key('Escape');await advance(25);await key('KeyQ');await menu(1);await advance(20);while((await state())[10]!==8)await key('ArrowUp');await key('KeyZ');await runtime.evaluate(()=>Module._th15_loop_start());await page.waitForFunction(()=>!document.body.classList.contains('player-active'));await page.locator('button[data-game="th15"]').click();
+  await page.waitForFunction(()=>!document.querySelector('#main').classList.contains('card-layout-motion'));
+  const downloadPromise=page.waitForEvent('download');downloadPromise.catch(()=>{});await page.locator('#saveFileTool [data-action="export-save"]').first().click();const download=await downloadPromise;assert.ok(download.suggestedFilename().endsWith('.zip'));const zip=await readFile(await download.path());
+  const entries=await page.evaluate(bytes=>Object.fromEntries(Object.entries(fflate.unzipSync(new Uint8Array(bytes))).map(([name,data])=>[name,Array.from(data)])),Array.from(zip));
+  assert.deepEqual(Buffer.from(entries['autosave/save0_1.dat']),checkpoint);assert.ok(entries['scoreth15.dat']?.length);assert.ok(entries['th15.cfg']?.length);observations.push({kind:'real-checkpoint-export',files:Object.keys(entries),checkpointBytes:checkpoint.length,checkpointSha256:sha(checkpoint),zipBytes:zip.length});
+  // A separate browser context starts with an empty IndexedDB. Import must not rely on the old iframe.
+  const recipient=await open();await recipient.locator('#saveFileTool [data-action="import-save"]').first().click();const chooserPromise=recipient.waitForEvent('filechooser');await recipient.getByRole('button',{name:'继续导入',exact:true}).click();const chooser=await chooserPromise;assert.match(await recipient.locator('#fileInput').getAttribute('accept'),/\.zip/);await chooser.setFiles({name:download.suggestedFilename(),mimeType:'application/zip',buffer:zip});
+  await recipient.waitForFunction(()=>document.body.innerText.includes('已导入 3 个文件'),null,{timeout:180000});
+  const secondDownloadPromise=recipient.waitForEvent('download');await recipient.locator('#saveFileTool [data-action="export-save"]').first().click();const secondDownload=await secondDownloadPromise;const secondZip=await readFile(await secondDownload.path());const restored=await recipient.evaluate(bytes=>Object.fromEntries(Object.entries(fflate.unzipSync(new Uint8Array(bytes))).map(([name,data])=>[name,Array.from(data)])),Array.from(secondZip));assert.deepEqual(restored,entries);
+  await recipient.locator('#launch').click();await recipient.waitForFunction(()=>!!document.querySelector('#gameFrame')?.contentWindow?.Module?._th15_probe_state?.(),null,{timeout:150000});const fresh=runtimeFrame(recipient);await fresh.waitForFunction(()=>{const c=Module,p=c._th15_probe_state();return c.HEAP32[p/4]===0&&c.HEAP32[p/4+8]===1&&c.HEAP32[p/4+9]===2;});await fresh.evaluate(()=>{Module._th15_loop_stop();Module._th15_keys_clear();});
+  const tickFresh=n=>fresh.evaluate(n=>{for(let i=0;i<n;i++)if(!Module._th15_probe_tick())throw Error('Imported application tick failed');const p=Module._th15_probe_state();return Array.from(Module.HEAP32.subarray(p/4,p/4+16));},n);
+  const freshKey=async code=>{await rpc(recipient,'keyboard',{code,down:true});await tickFresh(3);await rpc(recipient,'keyboard',{code,down:false});return tickFresh(3);};
+  const freshMenu=async screen=>{for(let i=0;i<250;i++){const s=await tickFresh(0);if(s[0]===0&&s[8]===screen&&s[9]===2)return s;await tickFresh(1);}throw Error('Imported native menu unavailable '+screen);};
+  await freshKey('KeyZ');await freshMenu(5);await freshKey('KeyZ');await freshMenu(6);while((await tickFresh(0))[10]!==1)await freshKey('ArrowDown');await freshKey('KeyZ');await freshMenu(7);await freshKey('KeyZ');await freshMenu(21);await freshKey('KeyZ');await tickFresh(350);const resumed=await tickFresh(0);assert.equal(resumed[0],1);assert.equal(resumed[12]&0x300,0x100);assert.ok(resumed[5]>0);observations.push({kind:'independent-context-native-continue',state:resumed});assert.deepEqual(errors,[]);
+  await writeFile(resolve(root,'artifacts/cpp/verification/launcher-save-roundtrip.zip'),zip);report('sdl-launcher-save-roundtrip',{passed:true,completeGame:false,observations,scope:'Actual final launcher ZIP picker, natural stage-1 Pointdevice checkpoint, complete score/config/checkpoint export, import into isolated browser storage, byte-exact cold re-export and native ContinuePrompt resume. Uses real production input protocol with development frame stepping; mobile hardware and whole-game completion remain separate.'});
+ }catch(e){if(debugPage){await debugPage.screenshot({path:resolve(root,'artifacts/cpp/verification/launcher-save-failure.png')});await writeFile(resolve(root,'artifacts/cpp/verification/launcher-save-failure.json'),JSON.stringify({error:String(e),observations,hitProbe:await debugPage.evaluate(()=>{const b=document.querySelector('#saveFileTool [data-action="export-save"]');if(!b)return null;const r=b.getBoundingClientRect();return {hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,250),point:[r.x+r.width/2,r.y+r.height/2],inert:document.querySelector('.tools')?.inert};}),text:await debugPage.evaluate(()=>document.body.innerText)},null,2));}throw e;}finally{await browser?.close();await server.close();}
+});

@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "specimen_sha256": "a274b45fe6ec53511718bb328c2ff169a74e67f95d1b0c74d97d348b955a0897",
+  "passed": 222014,
+  "failed": 0,
+  "counts": {
+    "A1R5G5B5_helper": 65536,
+    "A4R4G4B4_helper": 65536,
+    "A8R3G3B2_helper": 65536,
+    "A8R8G8B8_helper": 20000,
+    "missing_surface": 2,
+    "null_accumulator": 4,
+    "surface_format_0": 600,
+    "surface_format_21": 600,
+    "surface_format_22": 600,
+    "surface_format_23": 600,
+    "surface_format_25": 600,
+    "surface_format_26": 600,
+    "surface_format_28": 600,
+    "surface_format_29": 600,
+    "surface_format_894720068": 600
+  },
+  "scope": "Three complete 16-bit helper domains, 20000 32-bit helper samples, null accumulators; all output bytes including guards/padding and COM method trace for four supported formats, UNKNOWN alias, four unsupported formats, positive/negative and odd pitches, zero/one dimensions, full/zero/mixed alpha, ignored HRESULT failures, null surfaces.",
+  "source_hashes": {
+    "source_reconstruction/sprite_renderer/texture_edges.hpp": "58f8a39c01d7adc13c9cc5f26e7ac58a85d107c94249454b1a9197ef54fe1811",
+    "source_reconstruction/sprite_renderer/texture_edges.cpp": "abe76949531175b6c4a5d7869e30f26494721d2b3c7b28498c7d6d59511adcde",
+    "source_reconstruction/platform_window/texture_edges_tests/compare.cpp": "dd467c209da05bfce2afdf6bd5f497b1ed5d54d996a04f852e8b88b80b75481b"
+  },
+  "original_addresses": [
+    "0x00451640",
+    "0x00451700",
+    "0x004517c0",
+    "0x00451880",
+    "0x00451910"
+  ],
+  "production_uses_original_machine_code": false,
+  "full_game_equivalence_proved": false
+}

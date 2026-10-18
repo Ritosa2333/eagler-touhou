@@ -1,0 +1,6 @@
+{
+  "diagnostic_sites_with_constant_allocation": 115,
+  "unique_wrappers": 96,
+  "unique_diagnostic_types": 96,
+  "scope": "Observed constant allocation sizes correlated to source diagnostic strings; no member layout inference"
+}
