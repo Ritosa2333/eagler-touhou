@@ -246,9 +246,12 @@ bool NetplayRuntime::DrainSpectator(){
     }
     if(spectator_frames_.empty()){
         if(transport_.Failed())return Fail(transport_.LastError().c_str());
-        if(spectator_stage_playback_.Ready()&&!spectator_stage_playback_.WaitingForLiveInput())
-            spectator_deadline_=now_ms_+15'000;
-        if(now_ms_>=spectator_deadline_)return Fail("TH11 spectator stream ended or stalled; players are unaffected");
+        // A quiet confirmed frontier is not a transport failure: the source
+        // may be paused while the read-only viewer remains live-following.
+        // Keep the bounded admission/bootstrap deadline until Ready, then use
+        // transport health/closure as the liveness signal.
+        if(!spectator_stage_playback_.Ready()&&now_ms_>=spectator_deadline_)
+            return Fail("TH11 spectator stream ended or stalled; players are unaffected");
     }return true;
 }
 bool NetplayRuntime::FeedSpectator(std::uint32_t frame){

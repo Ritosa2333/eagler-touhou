@@ -15,7 +15,11 @@
   const playerCount = Number(params.get("players") || 2);
   const relay = String(params.get("relay") || "");
   const stageTransition = !spectator && params.get("stage") === "1";
-  const runtimeBuild = "build-web-th07-netplay-replay-audit";
+  const requestedRuntimeBuild = params.get("runtimeBuild") || "build-web-th07-netplay-replay-audit";
+  const runtimeBuildParts = requestedRuntimeBuild.split("/");
+  const runtimeBuild = runtimeBuildParts.every(part =>
+    part && part !== "." && part !== ".." && /^[A-Za-z0-9._-]+$/.test(part))
+    ? runtimeBuildParts.join("/") : "build-web-th07-netplay-replay-audit";
   const iframe = document.getElementById("runtime");
   const status = document.getElementById("status");
   const wasmUrl = `/${runtimeBuild}/th07.wasm`;

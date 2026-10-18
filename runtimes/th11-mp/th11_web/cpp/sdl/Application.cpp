@@ -267,10 +267,10 @@ struct Application:StageResourceEffects {
             return true;
         };
         auto& playback=netplay.StagePlayback();
-        const bool catching_up=playback.Seeking()||(playback.Following()&&playback.Edge()>playback.Position()+1);
-        audio.spectator_silent(playback.Paused()||catching_up);
+        const bool fast_forwarding=playback.FastForwarding();
+        audio.spectator_silent(playback.Paused()||fast_forwarding);
         auto tick=[&](const Netplay::SpectatorFramePacket& packet,bool historical){
-            audio.spectator_silent(historical||catching_up);
+            audio.spectator_silent(historical||fast_forwarding);
             if(!multiplayer_world||packet.frame!=session.multiplayer_frame)return false;
             std::array<MultiplayerInput,3> inputs{};
             if(!multiplayer::InputLanes::Decode(packet.inputs.data(),netplay.Setup().player_count,inputs)||
@@ -281,9 +281,8 @@ struct Application:StageResourceEffects {
             return true;
         };
         const auto begin=SDL_GetTicksNS();
-        const bool ok=playback.Step(restore,tick,[&]{return SDL_GetTicksNS()-begin>=4000000;},catching_up?32:1);
-        audio.spectator_silent(playback.Paused()||playback.Seeking()||
-            (playback.Following()&&playback.Edge()>playback.Position()+1));
+        const bool ok=playback.Step(restore,tick,[&]{return SDL_GetTicksNS()-begin>=4000000;},fast_forwarding?32:1);
+        audio.spectator_silent(playback.Paused()||playback.Seeking());
         return ok;
     }
     bool multiplayer_pump(bool capture_follows=false){
@@ -1211,7 +1210,7 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
                 // subtracted every due tick before the CPU gate could stop
                 // the loop, silently losing two/three-tick catch-up offers.
                 const auto ticks=exact_cadence.advance(app.netplay.PacedElapsed(delta));
-                const bool stage_seeking=app.netplay.StagePlaybackReady()&&app.netplay.StagePlayback().Seeking();
+                const bool stage_seeking=app.netplay.StagePlaybackReady()&&app.netplay.StagePlayback().FastForwarding();
                 const bool seeking=stage_seeking||(app.netplay.Playback()&&app.netplay.NextFrame()<app.multiplayer_seek_target);
                 const auto seek_target=stage_seeking?app.netplay.StagePlayback().Target():app.multiplayer_seek_target;
                 const unsigned budget=seeking?120:ticks;

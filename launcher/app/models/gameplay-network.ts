@@ -3,6 +3,7 @@ import type {ProductId} from '../../src/contracts/product-catalog.mts';
 import {RuntimeSessionSupersededError, type RuntimeService} from '../services/runtime';
 import {readRuntimeNetplay, type RuntimeNetplaySnapshot, type RuntimePeerTransport, type RuntimePeerQuality} from './gameplay-network/native-snapshot';
 import {formatNetplayDiagnostics, type NetplayDisplayContext} from './gameplay-network/diagnostic-lines';
+import {parseSpectatorPlayback} from '../../src/launcher/spectator-playback.mts';
 
 export interface GameplayNetworkContext extends NetplayDisplayContext {
   product: ProductId; spectator: boolean; replayViewer: boolean;
@@ -115,7 +116,12 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
         if (now() >= deadline) {finish(new Error(options.translate('room.gameplayPathTimeout'))); return;}
         const net = read(), state = options.context();
         if (net?.failed) {finish(new Error(net.error || options.translate('room.unavailable'))); return;}
-        if (net?.peerState && describeNetplayConnection({spectator: net.spectator, failed: net.failed, nativeFailed: net.nativeFailed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState, playerCount: state.playerCount, localPlayer: state.player, webSocketOpenState: 1}).hidden) {finish(); return;}
+        const current = runtime.getSnapshot();
+        // An open spectator socket precedes checkpoint installation. Keep the
+        // initial bounded reconstruction hidden until native reports completion.
+        const restoreReady = !net?.spectator || current.game === 'th09' ||
+          (() => {const playback = parseSpectatorPlayback(current.runtimeInfo?.spectatorPlayback); return !!playback && !playback.seeking;})();
+        if (restoreReady && net?.peerState && describeNetplayConnection({spectator: net.spectator, failed: net.failed, nativeFailed: net.nativeFailed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState, playerCount: state.playerCount, localPlayer: state.player, webSocketOpenState: 1}).hidden) {finish(); return;}
         wait.timer = timers.setTimeout(poll, 250);
       }; poll();
     });

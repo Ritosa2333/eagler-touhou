@@ -99,6 +99,14 @@ function identityPlan(input: FilePreparationInput, acquired: PackageAcquisitionR
   return {game, runtimeVariant, generation: acquired.generation, entry, publishedRuntime,
     ...(!host ? {localCatalogRuntime: true} : !publishedRuntime ? {runtimeHost: host} : {}), configure: {music: 'none'}};
 }
+async function initialGamePlan(input: GamePreparationInput, acquired: PackageAcquisitionResult): Promise<RuntimePlan> {
+  const plan = identityPlan(input, acquired);
+  // Required base files belong to the DATA identity. Complete a legacy font
+  // upgrade before the Runtime pins that descriptor; ready may only add optional files.
+  plan.generation = await ensureRequiredSharedResources(plan.generation, input.acquisition, input.signal);
+  checkPreparationAbort(input.signal);
+  return plan;
+}
 function effectiveMusic(input: GamePreparationInput, generation: InstalledPackageGeneration | null, host: SiteManifest | null) {
   const {settings, acquisition} = input, hosted = host?.games[settings.gameId];
   return resolveEffectiveMusicMode({audio: settings.context.musicAvailability.audio,
@@ -134,7 +142,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
 }
 async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, guard: () => void): Promise<PreparedGamePlan> {
   const {settings, acquisition, translate: t} = input, metadata = acquisition.getMetadata(), host = metadata.siteManifest;
-  let generation = await ensureRequiredSharedResources(initial.generation, acquisition, input.signal), music = effectiveMusic(input, generation, host), language = settings.language;
+  let generation = initial.generation, music = effectiveMusic(input, generation, host), language = settings.language;
   const catalog = buildLanguageCatalog({languageOptions: host?.games[settings.gameId]?.languageOptions,
     legacyLanguages: host?.games[settings.gameId]?.languages, offlineEntries: settings.context.languages,
     generation, translate: t, priority: languagePriority});
@@ -201,7 +209,7 @@ export async function prepareGameCheck(input: GamePreparationInput & {
   runtime: RuntimeService; signal: AbortSignal; multiplayer: {kind: 'preflight'};
 }): Promise<PreparedGamePlan> {
   const acquired = await input.acquisition.acquire(requestFor(input, true)); checkPreparationAbort(input.signal);
-  const initial = identityPlan(input, acquired);
+  const initial = await initialGamePlan(input, acquired);
   input.onRuntimePlan?.(structuredClone(initial)); checkPreparationAbort(input.signal);
   let prepared: PreparedGamePlan | null = null, epoch: number | null = null, backgroundStarted = false;
   const unsubscribe = input.runtime.subscribe(() => {
@@ -231,7 +239,10 @@ export async function prepareGame(input: GamePreparationInput & {runtime: Runtim
   if (!input.runtime.prepareWithReady) throw new Error('Game preparation requires the native-ready Runtime continuation');
   if (input.multiplayer?.kind === 'preflight') throw new Error('Use the exclusive Runtime game-check owner for preflight');
   const acquired = await input.acquisition.acquire(requestFor(input, true)); checkPreparationAbort(input.signal);
-  const initial = identityPlan(input, acquired);
+  const initial = await initialGamePlan(input, acquired);
+  if (input.multiplayer?.kind === 'room') initial.multiplayerProgram = {
+    generation: new URL(input.multiplayer.options.netplayUrl).searchParams.get('runtimeGeneration') ?? undefined,
+  };
   input.onRuntimePlan?.(structuredClone(initial)); checkPreparationAbort(input.signal);
   let prepared: PreparedGamePlan | null = null;
   const runtimeSnapshot = await input.runtime.prepareWithReady(initial, async epoch => {

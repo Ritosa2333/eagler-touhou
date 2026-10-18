@@ -21,6 +21,7 @@ export interface MultiplayerLobbySeat {
   stats?: Th09PlayerStats;
   loadout: number;
   ready: boolean;
+  runtimeGeneration?: string;
   offline: boolean;
   controlMode: ReturnType<typeof multiplayerControlMode>;
   mobileDevice: boolean;
@@ -54,6 +55,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   predictionLimit: number;
   settingsVersion: number;
   phase: 'lobby' | 'starting' | 'running';
+  runtimeGeneration?: string;
   spectators: MultiplayerLobbySpectator[];
   spectatorCount: number;
   spectatorTimeline?: boolean;
@@ -181,6 +183,8 @@ export function normalizeMultiplayerLobbySnapshot(
       stats: parseTh09PlayerStats(seat.stats),
       loadout,
       ready: !!seat.ready,
+      ...(typeof seat.runtimeGeneration === 'string' && /^[a-f0-9]{64}$/.test(seat.runtimeGeneration)
+        ? {runtimeGeneration: seat.runtimeGeneration} : {}),
       offline: !!seat.offline,
       controlMode: multiplayerControlMode(seat.controlMode),
       mobileDevice: seat.mobileDevice === true,
@@ -215,6 +219,8 @@ export function normalizeMultiplayerLobbySnapshot(
     predictionLimit,
     settingsVersion,
     phase,
+    ...(typeof source.runtimeGeneration === 'string' && /^[a-f0-9]{64}$/.test(source.runtimeGeneration)
+      ? {runtimeGeneration: source.runtimeGeneration} : {}),
     spectators,
     spectatorCount,
     ...(source.spectatorTimeline === true ? { spectatorTimeline: true } : {}),

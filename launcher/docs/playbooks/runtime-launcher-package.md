@@ -67,7 +67,7 @@ Keep ordinary and MP storage roots separate. Keep DATA separate from Replay/save
 
 ### Installed launches and background updates
 
-Complete installed DATA and complete verified Runtime programs launch locally
+Ordinary installed DATA and complete verified Runtime programs launch locally
 before any online update check. `prepareRuntimeLaunch` first asks the cache
 authority for `localOnly` preparation. Main's `runtime-program-sw.js` is scoped
 to `runtime/`; Launcher documents remain outside its control. Isolated App
@@ -92,6 +92,51 @@ room is back in its lobby; lobby restart reuses the room launch owner.
 Canonical Package Store
 serialization checks the expected generation inside the mutation queue so a late
 background update cannot overwrite a newer import from another tab.
+
+### Required resources before native DATA identity
+
+Complete required Package resources before the Runtime pins its DATA generation.
+`prepareGame` and `prepareGameCheck` resolve legacy shared-dependency upgrades
+before native preparation. Never replace the Package descriptor or base-file
+identity in a native-ready continuation. Ready-time optional resource additions
+must remain within the already selected descriptor and preserve loaded base
+objects. A different base publication needs a new preparation/session.
+
+This is a Launcher lifecycle invariant, not a TH11-specific workaround. Current
+`requiredShared` products are TH08, TH09, TH10, TH11, TH15 and TH20. TH06/TH07 do
+not currently use that upgrade branch. Complete installations retain local
+startup without a metadata wait; an incomplete old installation needs its
+missing dependency before gameplay. File-only access keeps its separate path.
+Runtime program prefetch can overlap acquisition, but must not bind an older
+DATA/Package identity before required resources are resolved.
+
+`tests/test-runtime-shared-font-upgrade-browser.mjs` covers actual IndexedDB
+upgrade and preparation order for those six products using synthetic Packages
+and a substituted native endpoint. It verifies existing DATA/language/OGG object
+reuse and no repeated metadata read once complete. Native TH11 old-Package
+startup and complete-install offline reload were separately verified; the six
+synthetic cases do not establish native startup for every title.
+
+Live Multiplayer is an exception to offline-first program selection. Room
+preparation and each ready intent fetch the Runtime Manifest and finish the
+exact current MP generation before reporting readiness, including deployments
+without an App Shell worker. A failed manifest/current download cannot select
+an older complete program. The room advertises program-version support and
+records each ready player's generation. Different or missing identities cannot
+join a versioned start. The relay pins that generation to the run and verifies
+it again on signaling and gameplay connections. The Launcher carries the room
+agreement into the initial Runtime plan, before native ready/configure, and
+checks that the publication still matches it before opening the game. A release
+between readiness and launch therefore blocks startup and requires renewed
+room preparation, rather than mixing programs. The short **Check game** path
+also verifies the current MP program synchronously. Local MP Replay/file access
+retains offline selection. Room popup deferral does not skip these checks.
+
+Deploy the frontend and relay together. A new versioned client refuses readiness
+on an old relay without this capability; a legacy client with no program
+identity cannot mix with a versioned ready player. Entirely unversioned legacy
+or development rooms retain their existing protocol. This is immutable program
+agreement between supported clients, not attestation against modified clients.
 
 Missing/corrupt local programs retain whole-generation recovery and verified
 HTTP fallback; first installation still needs its required resources. The
@@ -134,6 +179,10 @@ drops for WebKit's known offline-emulation issue
 ([upstream #42775](https://github.com/microsoft/playwright/issues/42775)).
 Synthetic browser fixtures establish cache
 and network behavior; native title and device acceptance remain separate.
+Use `--multiplayer` on the offline-first browser fixture for the separate MP
+root and foreground failure cases. `tests/test-relay-runtime-version.mjs`
+verifies real local relay readiness/start and signaling/gameplay gates without
+running spectator scenarios.
 
 Source diagnostics such as Presentation Lab use an isolated build/package
 profile. Instrumented WASM, `audit_*` exports, diagnostic workbench files and

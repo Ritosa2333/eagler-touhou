@@ -62,10 +62,17 @@ for(const multiplayer of [false,true]){
     const wasi=new WASI({version:'preview1',args:[variant],env:{},returnOnExit:true});
     const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});
     const code=wasi.start(instance);if(code!==0)throw Error(`${variant} failed: ${code}`);
+    const ending=resolve(out,variant+'-ending-controls.wasm');
+    const endingTest=compile('portable/ending-controls-check.cpp',variant+'-ending-controls',variantFlags);
+    execFileSync(compiler,[...linkFlags,...objects.filter(object=>!object.endsWith(variant+'-test.o')),endingTest,'-o',ending],{cwd:root,stdio:'inherit'});
+    const endingWasi=new WASI({version:'preview1',args:[variant],env:{},returnOnExit:true});
+    const {instance:endingInstance}=await WebAssembly.instantiate(readFileSync(ending),{wasi_snapshot_preview1:endingWasi.wasiImport});
+    if(endingWasi.start(endingInstance)!==0)throw Error(`${variant} first-view Ending controls failed`);
+
 }
 writeFileSync(metadataPath,JSON.stringify({passed:true,runtime:'wasm32-wasip1',node:process.version,
     compiler:execFileSync(compiler,['--version'],{encoding:'utf8'}).trim(),compileFlags:flags,softfloatFlags,linkFlags,sanitized,
     bindingCompileFlags:[...flags.filter(flag=>flag!=='-Werror'),'-I','../../common/include'],
-    variants:['ordinary','multiplayer'],productionExecution:['GameInput::update_raw','TitleMenu::update_prompt','TitleMenu::update_main','MusicRoom::update','Results::update_pause','EndingScript::update'],bindingGuards:bindings,
+    variants:['ordinary','multiplayer'],productionExecution:['GameInput::update_raw','TitleMenu::update_prompt','TitleMenu::update_main','MusicRoom::update','Results::update_pause','EndingScript::update','Ending::update (first-view Z/Enter/Ctrl fixture)'],bindingGuards:bindings,
     dependencyScope:'Clang -MMD non-system source/header closure plus this driver; SDK system headers/libraries excluded',
     sources:Object.fromEntries([...dependencies].sort().map(path=>[relative(root,path).replaceAll('\\','/'),createHash('sha256').update(readFileSync(path)).digest('hex')]))},null,2)+'\n');

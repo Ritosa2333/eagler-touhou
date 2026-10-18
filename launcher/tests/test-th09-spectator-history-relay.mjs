@@ -42,6 +42,19 @@ try{
   assert.equal(viewer.binary.length,5);assert.equal(viewer.closed,false);assert.equal(joined.closed,false);
   p0.ws.send(packet('input',next+1,version));await wait(()=>joined.binary.length===3&&viewer.binary.length===6,'continued live input');
   assert.equal(new DataView(joined.binary[2].buffer).getUint32(8,true),next+1);
+  let returning=joined;
+  for(let attempt=0;attempt<2;++attempt){
+    const admissions=late.json.filter(m=>m.type==='spectator-start').length;
+    send(late,{type:'leave-spectator'});send(late,{type:'spectate'});
+    await wait(()=>late.json.filter(m=>m.type==='spectator-start').length>admissions,'same-run readmission');
+    const reopened=await open(base+'&spectator=history_late&member=history_member_late');
+    await wait(()=>returning.closed,'leaving the spectator seat releases its old receiver');
+    await wait(()=>reopened.binary.length>=2,'returning spectator receives current match');
+    const inputFrames=reopened.binary.flatMap(bytes=>bytes[2]===83&&bytes[3]===80
+      ?Array.from({length:bytes.length/46},(_,i)=>new DataView(bytes.buffer,bytes.byteOffset+i*46,46).getUint32(8,true)):[]);
+    assert.deepEqual(inputFrames,[next,next+1]);assert.equal(viewer.closed,false);assert.equal(p0.closed,false);
+    returning=reopened;
+  }
   for(const socket of sockets)socket.close();await wait(()=>sockets.every(socket=>socket.readyState===3),'scenario cleanup');sockets.length=0;
   }
   console.log('Late spectator receives current match only; existing viewer retains its own earlier input; both continue live PASS');

@@ -108,7 +108,7 @@ export interface MultiplayerRoomPorts {
   prepareResources(
     context: RoomOperationContext,
     report: (progress: RoomPreparationProgress) => void,
-  ): Promise<void>;
+  ): Promise<{runtimeGeneration: string} | void>;
   preparationFailed(error: unknown, context: RoomOperationContext): void;
   beginManualImport(context: RoomOperationContext): void;
   /** Main app6830 clears manual install-only recovery before an accepted retry. */
@@ -170,6 +170,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let ownerController = new AbortController();
   let launchedSpectatorSerial = 0,
     spectatorResumeSerial = 0;
+  let resourceRetrySpectatorSerial = 0;
   let spectatorRetryTimer: ReturnType<typeof setTimeout> | null = null;
   function cancelSpectatorRetry() {
     if (spectatorRetryTimer !== null) cancel(spectatorRetryTimer);
@@ -188,6 +189,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let preparation: { epoch: number; controller: AbortController; task: Promise<void> } | null =
     null;
   let movementDecision: Promise<boolean> | null = null;
+  let preparedRuntimeGeneration: string | undefined;
+  let runtimeVersionsSupported = false;
   let pendingLoadout: { socket: RoomSocket | null; seat: number; index: number } | null = null;
   let reportedSocket: RoomSocket | null = null,
     reportedResourceKey = '',
@@ -241,6 +244,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ownerLocal() &&
       state.connected &&
       state.ready &&
+      state.preparation?.status === 'ready' &&
+      (!preparedRuntimeGeneration || (runtimeVersionsSupported &&
+        room?.seats?.slice(0, room.playerCount).every(seat => seat?.runtimeGeneration === preparedRuntimeGeneration))) &&
       room?.phase === 'lobby' &&
       Array.isArray(room.seats) &&
       room.seats.slice(0, room.playerCount).every((seat) => seat && !seat.offline && seat.ready);
@@ -310,13 +316,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     }
     publish();
   }
-  function prepareResources(): Promise<void> {
+  function prepareResources(refresh = false): Promise<void> {
     if (!room || !product || disposed) return Promise.resolve();
-    if (preparation?.epoch === epoch) return preparation.task;
+    if (preparation?.epoch === epoch && !(refresh && state.preparation?.status === 'ready')) return preparation.task;
     const controller = new AbortController(),
       owned = context(controller.signal);
     const taskOwner = { epoch, controller, task: Promise.resolve() };
     preparation = taskOwner;
+    preparedRuntimeGeneration = undefined;
     reportedResourceKey = '';
     reportProgress({ status: 'preparing', stage: 'package', percent: null, error: '' });
     taskOwner.task = Promise.resolve()
@@ -325,9 +332,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           if (owned.isCurrent()) reportProgress(progress);
         }),
       )
-      .then(() => {
-        if (owned.isCurrent())
+      .then((result) => {
+        if (owned.isCurrent()) {
+          if (result && !/^[a-f0-9]{64}$/.test(result.runtimeGeneration)) throw new Error(ports.translate('multiplayer.runtimeCheckFailed'));
+          preparedRuntimeGeneration = result?.runtimeGeneration;
           reportProgress({ status: 'ready', stage: 'runtime', percent: 100, error: '' });
+        }
       })
       .catch((error) => {
         if (!owned.isCurrent()) return;
@@ -417,6 +427,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       inputDelayAuto: normalized.inputDelayAuto ?? false,
       predictionReserve: normalized.predictionReserve ?? 2,
       timing: normalized.timing ?? null,
+      runtimeGeneration: normalized.runtimeGeneration,
       adonisMode: normalized.adonisMode ?? 0,
     });
     state.seat = normalized.localSeat;
@@ -482,6 +493,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const next = ports.createSocket(relay.url);
     state.directorySupported = false;
     state.controlModesSupported = false;
+    runtimeVersionsSupported = false;
     ports.network.reset(reconnecting);
     socket = next;
     socketRoom = relay.roomId;
@@ -546,6 +558,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         if (record(message.roomDirectory)?.version === 1) state.directorySupported = true;
         if (record(message.roomDirectory)?.controlModes === true)
           state.controlModesSupported = true;
+        if (record(message.roomDirectory)?.runtimeVersions === true) runtimeVersionsSupported = true;
         intent = 'join';
         ports.routes.settleInvite();
         const probe = record(message.roomProbe);
@@ -631,6 +644,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     ownerController = new AbortController();
     preparation?.controller.abort();
     preparation = null;
+    preparedRuntimeGeneration = undefined;
     state.preparation = null;
     reportedSocket = null;
     reportedResourceKey = '';
@@ -643,7 +657,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.spectatorRequested = false;
     state.roomSettingsOpen = false;
     state.startSerial = 0;
-    launchedSpectatorSerial = spectatorResumeSerial = 0;
+    launchedSpectatorSerial = spectatorResumeSerial = resourceRetrySpectatorSerial = 0;
     state.launchBusy = false;
     state.checkBusy = false;
   }
@@ -827,6 +841,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function leaveSpectator() {
     cancelSpectatorRetry();
+    resourceRetrySpectatorSerial = 0;
     if (
       !room?.synced ||
       !state.connected ||
@@ -882,9 +897,17 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ownedEpoch = epoch;
     if (ready && ['cancelled', 'importing'].includes(state.preparation?.status || '')) return;
     if (ready && !(await ensureMovementAllowed())) return;
+    if (ready) {
+      await prepareResources(true);
+      if (!current(ownedEpoch) || state.preparation?.status !== 'ready') return;
+      if (preparedRuntimeGeneration && !runtimeVersionsSupported) {
+        ports.notify(ports.translate('multiplayer.runtimeRelayUpgrade'));
+        return;
+      }
+    }
     if (!current(ownedEpoch) || state.seat == null || room.phase !== 'lobby' || pendingLoadout)
       return;
-    if (send({ type: 'set-ready', ready, ...input() })) {
+    if (send({ type: 'set-ready', ready, ...input(), ...(ready && preparedRuntimeGeneration ? {runtimeGeneration: preparedRuntimeGeneration} : {}) })) {
       state.ready = ready;
       publish();
     }
@@ -1039,6 +1062,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   function runtimeOptions(): MultiplayerRuntimeOptions {
     if (!room || !product || pendingLoadout)
       throw new Error(ports.translate('multiplayer.roomStateInvalid'));
+    if (preparedRuntimeGeneration && (!runtimeVersionsSupported || !room.runtimeGeneration))
+      throw new Error(ports.translate('multiplayer.runtimeCheckFailed'));
     const config = policy()!,
       spectator = state.seat == null && state.spectatorRequested;
     if (!spectator && (state.seat == null || state.seat < 0 || state.seat >= room.playerCount))
@@ -1049,6 +1074,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       runId: state.startSerial,
       role: spectator ? { spectator: clientId } : { player: state.seat! },
       memberId: ports.memberId(),
+      runtimeGeneration: room.runtimeGeneration,
     });
     const seen = new Set<number>();
     const primary = config.loadouts.flatMap((loadout, index) => {
@@ -1120,11 +1146,15 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     publish();
     try {
       await prepareResources();
-      if (
-        !owned.isCurrent() ||
-        ['cancelled', 'importing'].includes(state.preparation?.status || '')
-      )
+      if (!owned.isCurrent()) return;
+      if (state.preparation?.status !== 'ready') {
+        // Remember only a real launch that was stopped by missing resources.
+        // Room state alone does not authorize starting a spectator Runtime.
+        if (state.spectatorRequested && state.seat == null)
+          resourceRetrySpectatorSerial = state.startSerial;
         return;
+      }
+      resourceRetrySpectatorSerial = 0;
       if (state.seat != null && !(await ensureMovementAllowed())) return;
       if (!owned.isCurrent()) return;
       const options = runtimeOptions();
@@ -1161,7 +1191,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       await prepareResources();
       if (
         !owned.isCurrent() ||
-        ['cancelled', 'importing'].includes(state.preparation?.status || '')
+        state.preparation?.status !== 'ready'
       )
         return;
       await ports.checkGame(owned);
@@ -1202,9 +1232,16 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function retryPreparation() {
     if (!room || !['cancelled', 'failed'].includes(state.preparation?.status || '')) return;
+    const owned = context(), spectatorSerial = resourceRetrySpectatorSerial;
     ports.beforePreparationRetry?.();
     preparation = null;
-    void prepareResources();
+    void prepareResources().then(() => {
+      if (!owned.isCurrent() || !spectatorSerial || resourceRetrySpectatorSerial !== spectatorSerial ||
+          state.startSerial !== spectatorSerial || !state.spectatorRequested || state.seat != null ||
+          room?.phase === 'lobby' || state.preparation?.status !== 'ready' || state.launchBusy || ports.isLaunched()) return;
+      resourceRetrySpectatorSerial = 0;
+      void launch();
+    });
   }
   function cancelImport() {
     // Main app9720–9723: failed import returns this existing preparation to

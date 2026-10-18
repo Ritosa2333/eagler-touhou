@@ -65,6 +65,7 @@ export interface LauncherState {
 }
 
 export interface MultiplayerRoomState {
+  runtimeGeneration?: string;
   visibility?: 'public' | 'private';
   disableCheatMovement?: boolean;
   challengeMode?: boolean;

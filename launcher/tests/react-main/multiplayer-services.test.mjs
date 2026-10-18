@@ -184,6 +184,34 @@ async function joinedRoom(extra = {}) {
   return fixture;
 }
 
+test('room program versions refresh before readiness and pin the agreed generation into transport', async () => {
+  let preparations=0;
+  const f=await joinedRoom({prepareResources:async()=>{preparations++;return {runtimeGeneration:hash};}}),socket=f.sockets[0],id=f.identity.lobbyClientId('th06mp');
+  socket.message({type:'state',roomDirectory:{runtimeVersions:true},room:roomState(id)});
+  await f.service.toggleReady();
+  assert.equal(preparations,2,'ready rechecks the current publication after lobby precache');
+  assert.equal(socket.sent.findLast(m=>m.type==='set-ready').runtimeGeneration,hash);
+  const seats=[{clientId:id,loadout:0,ready:true,runtimeGeneration:hash},{clientId:'guest12345',loadout:1,ready:true,runtimeGeneration:'b'.repeat(64)}];
+  socket.message({type:'state',room:roomState(id,{seats})});assert.equal(f.service.getSnapshot().canStart,false);
+  seats[1].runtimeGeneration=hash;
+  socket.message({type:'state',room:roomState(id,{seats})});assert.equal(f.service.getSnapshot().canStart,true);
+  socket.message({type:'start',serial:1,room:roomState(id,{seats,phase:'starting',runtimeGeneration:hash})});await flush();
+  const launch=f.events.find(([kind])=>kind==='launch');assert.ok(launch);
+  assert.equal(new URL(launch[1].runtimeOptions.netplayUrl).searchParams.get('runtimeGeneration'),hash);
+  socket.message({type:'state',room:roomState(id,{seats})});assert.equal(f.service.getSnapshot().room.runtimeGeneration,undefined,'next lobby cannot retain the last run identity');
+  f.service.dispose();
+});
+
+test('room program versions block old relay readiness and failed preparation launch', async () => {
+  const old=await joinedRoom({prepareResources:async()=>({runtimeGeneration:hash})});
+  await old.service.toggleReady();assert.equal(old.service.getSnapshot().ready,false);
+  assert.equal(old.events.some(([kind,value])=>kind==='notify'&&value==='multiplayer.runtimeRelayUpgrade'),true);
+  assert.equal(old.sockets[0].sent.some(m=>m.type==='set-ready'&&m.ready),false);old.service.dispose();
+  const failed=await joinedRoom({prepareResources:async()=>{throw new Error('new program incomplete');}});
+  await failed.service.toggleReady();await failed.service.launch();
+  assert.equal(failed.service.getSnapshot().ready,false);assert.equal(failed.events.some(([kind])=>kind==='launch'),false);failed.service.dispose();
+});
+
 test('host spectator moves bind the target, wait for relay state and preserve membership', async () => {
   const f=await joinedRoom(), socket=f.sockets[0], id=f.identity.lobbyClientId('th06mp');
   const seats=[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}];
@@ -292,12 +320,12 @@ test('room package cancel aborts only package work, unreaddies, prevents launch,
     if (attempts === 1) await new Promise(resolve => {finish = resolve;});
   }});
   const {service, sockets, events} = fixture, socket = sockets[0];
-  await service.toggleReady(); assert.equal(service.getSnapshot().ready, true);
+  const readiness=service.toggleReady();await flush();assert.equal(service.getSnapshot().ready,false,'pending preparation cannot ready');
   service.cancelPreparation();
   assert.equal(preparationContext.signal.aborted, true); assert.equal(service.getSnapshot().preparation.status, 'cancelled');
-  assert.equal(service.getSnapshot().ready, false); assert.equal(socket.sent.findLast(message => message.type === 'set-ready').ready, false);
+  assert.equal(service.getSnapshot().ready, false); assert.equal(socket.sent.some(message => message.type === 'set-ready'&&message.ready), false);
   assert.equal(events.filter(([kind]) => kind === 'import').length, 1);
-  const launch = service.launch(); finish(); await launch;
+  const launch = service.launch(); finish(); await Promise.all([launch,readiness]);
   assert.equal(events.some(([kind]) => kind === 'launch'), false);
   report({status: 'ready', stage: 'runtime', percent: 100, error: ''});
   assert.equal(service.getSnapshot().preparation.status, 'cancelled', 'late aborted progress cannot overwrite cancellation');
@@ -335,29 +363,32 @@ function preparationFixture({installed = true, worker = null, installError, noCa
     baseUrl: 'https://launcher.invalid/', translate: key => key,
     activeWorker: async () => {events.push(['worker']); return worker;}, dependencies: {
       createTracker: options => {onChange = options.onChange; return {xhrFetch: async () => {throw new Error('fixture installer does not request bytes');}};},
-      prepareRuntime: async (...args) => {events.push(['runtime', ...args]); return {url: '', generation: '', cached: true};},
+      prepareRuntime: async (...args) => {events.push(['runtime', ...args]); return {url: '', generation: hash, cached: true};},
     }});
   return {service, events, progress, controller, context, report: value => progress.push(value), emit: snapshot => onChange(snapshot)};
 }
 
-test('room preparation uses canonical package-only install and skips duplicate Runtime HTTP without active worker', async () => {
-  const fixture = preparationFixture({installed: false}); await fixture.service.prepare(fixture.context, fixture.report);
+test('room preparation uses canonical package-only install and verifies current Runtime without app-shell worker', async () => {
+  const fixture = preparationFixture({installed: false}); const prepared=await fixture.service.prepare(fixture.context, fixture.report);
   const install = fixture.events.find(([kind]) => kind === 'install');
   assert.deepEqual(install[2].addComponents, []); assert.equal(install[2].signal, fixture.context.signal);
   assert.equal(install[2].selectedComponentEntries, undefined, 'room preparation does not acquire optional language/music');
   assert.equal(fixture.events.filter(([kind]) => kind === 'read').length, 2, 'canonical install is re-read before ready');
-  assert.equal(fixture.events.some(([kind]) => kind === 'runtime'), false);
+  const runtime=fixture.events.find(([kind])=>kind==='runtime');
+  assert.equal(runtime[2].requireCurrent,true);assert.equal(runtime[2].worker,undefined);
+  assert.equal(prepared.runtimeGeneration,hash);
   assert.equal(fixture.progress.at(-1).stage, 'runtime');
   assert.equal(fixture.progress.some(value => value.status === 'ready'), false, 'room owner alone publishes final readiness');
 });
 
-test('room preparation precaches only with real worker port and ignores aborted tracker callbacks', async () => {
+test('room preparation verifies the current generation with its real worker and ignores aborted tracker callbacks', async () => {
   const worker = {postMessage() {}}; const fixture = preparationFixture({worker});
   await fixture.service.prepare(fixture.context, fixture.report);
   assert.equal(fixture.events.some(([kind]) => kind === 'install'), false);
   const runtime = fixture.events.find(([kind]) => kind === 'runtime');
   assert.equal(runtime[1], 'runtime/th06/mp.html'); assert.equal(runtime[2].worker, worker);
   assert.equal(runtime[2].baseUrl, 'https://launcher.invalid/');
+  assert.equal(runtime[2].requireCurrent,true);
   const count = fixture.progress.length; fixture.controller.abort();
   fixture.emit({active: [{loaded: 50, total: 100, title: 'late'}]});
   assert.equal(fixture.progress.length, count);
@@ -563,6 +594,52 @@ test('TH09 spectator invite joins without seating and waits for authoritative sp
   assert.ok(launched);
   assert.equal(launched[1].runtimeOptions.netplaySpectator, true);
   f.service.dispose();
+});
+
+for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th15mp'])
+test(`${product} resumes an admitted spectator launch after explicit resource recovery`,async()=>{
+ let installed=false;
+ const f=roomFixture({prepareResources:async()=>{if(!installed)throw Error('DATA missing');}});
+ f.service.enterRoom(product,'1234',false);await flush();const socket=f.sockets[0];socket.open();
+ const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4,
+  predictionLimit:product==='th11mp'?12:product==='th15mp'?0:8,adonisMode:product==='th15mp'?1:0,
+  seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}]});
+ socket.message({type:'state',room});f.service.spectate();
+ socket.message({type:'spectator-start',serial:4,room});await flush();
+ assert.equal(f.events.filter(e=>e[0]==='launch').length,0);assert.equal(f.service.getSnapshot().preparation.status,'failed');
+ installed=true;f.service.retryPreparation();await flush();
+ const launched=f.events.filter(e=>e[0]==='launch');assert.equal(launched.length,1,'resource recovery continues the already admitted launch');
+ assert.equal(launched[0][1].runtimeOptions.netplaySpectator,true);
+ f.service.setImporting(true);f.service.cancelImport();f.service.retryPreparation();await flush();
+ assert.equal(f.events.filter(e=>e[0]==='launch').length,1,'a completed/exited same-run viewer is not restarted by another resource retry');
+ f.service.dispose();
+});
+
+test('spectator resource recovery requires a pending authorized launch and current observer role',async()=>{
+ for(const mode of ['not-admitted','left-role','left-room','failed-again']){
+  let installed=false;const f=roomFixture({prepareResources:async()=>{if(!installed)throw Error('DATA missing');}});
+  f.service.enterRoom('th09mp','1234',false);await flush();const socket=f.sockets[0];socket.open();
+  const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4});
+  socket.message({type:'state',room});f.service.spectate();
+  if(mode!=='not-admitted'){socket.message({type:'spectator-start',serial:4,room});await flush();}
+  if(mode==='left-role')f.service.leaveSpectator();
+  if(mode==='left-room')f.service.leave();
+  installed=mode!=='failed-again';f.service.retryPreparation();await flush();
+  assert.equal(f.events.filter(e=>e[0]==='launch').length,0,mode);f.service.dispose();
+ }
+});
+
+test('an in-flight spectator resource retry cannot launch after role departure or owner disposal',async()=>{
+ for(const action of ['leave-role','dispose']){
+  let recovering=false,finish;
+  const f=roomFixture({prepareResources:async()=>{if(!recovering)throw Error('DATA missing');await new Promise(resolve=>finish=resolve);}});
+  f.service.enterRoom('th09mp','1234',false);await flush();const socket=f.sockets[0];socket.open();
+  const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4});
+  socket.message({type:'state',room});f.service.spectate();socket.message({type:'spectator-start',serial:4,room});await flush();
+  recovering=true;f.service.retryPreparation();await flush();assert.equal(typeof finish,'function');
+  if(action==='leave-role')f.service.leaveSpectator();else f.service.dispose();
+  finish();await flush();assert.equal(f.events.filter(e=>e[0]==='launch').length,0,action);f.service.dispose();
+ }
 });
 
 test('TH09 stream startup race retries the same match without a next-match warning', async () => {

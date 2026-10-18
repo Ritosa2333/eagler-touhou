@@ -20,6 +20,9 @@ interface LaunchOptions {
   worker?: WorkerLike | null | PromiseLike<WorkerLike | null>;
   exclude?: readonly string[];
   timeoutMs?: number;
+  /** Online multiplayer must verify the current publication before navigation. */
+  requireCurrent?: boolean;
+  expectedGeneration?: string;
   onProgress?: (progress: RuntimeDownloadProgress) => void;
 }
 async function digest(bytes: ArrayBuffer): Promise<string> {
@@ -77,14 +80,17 @@ export async function runtimeProgramWorker(base: string): Promise<WorkerLike | n
     }), 5000, null);
   } catch { return null; }
 }
-/** Complete local programs are selected without a network barrier. A deferred
+/** Ordinary local programs are selected without a network barrier. A deferred
  * check may stage a different complete generation; it never redirects this
- * launch or reports an update whose bytes failed verification. */
+ * launch or reports an update whose bytes failed verification. Online MP uses
+ * requireCurrent and optionally a room agreement, with no old-program fallback. */
 export async function prepareRuntimeLaunch(runtime: string, {
   baseUrl = new URL("./", globalThis.location.href).href,
   fetchImpl = globalThis.fetch.bind(globalThis), worker, exclude = [], timeoutMs = 8000,
-  onProgress,
+  requireCurrent = false, expectedGeneration, onProgress,
 }: LaunchOptions = {}): Promise<PreparedRuntime> {
+  if (expectedGeneration !== undefined && !/^[a-f0-9]{64}$/.test(expectedGeneration)) throw new Error('Invalid agreed Runtime generation');
+  requireCurrent ||= expectedGeneration !== undefined;
   const base = new URL("./", baseUrl);
   const requested = new URL(runtime, base);
   if (requested.origin !== base.origin || !requested.pathname.startsWith(base.pathname)) {
@@ -149,7 +155,7 @@ export async function prepareRuntimeLaunch(runtime: string, {
     const capability = await message(target, { type: RUNTIME_CAPABILITIES }, 2000);
     capable = capability?.ok === true && capability.protocol === RUNTIME_CACHE_PROTOCOL;
     importCapable = capable && capability?.importFiles === true;
-    if (capable && capability?.localOnly === true) {
+    if (!requireCurrent && capable && capability?.localOnly === true) {
       const local = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,localOnly:true,exclude:[...exclude]}, 120000, reportProgress), null);
       if (local) {
         let checking: Promise<RuntimeUpdate | null> | undefined;
@@ -164,16 +170,22 @@ export async function prepareRuntimeLaunch(runtime: string, {
     }
   }
   const manifest = await latest();
+  const group = manifest && findRuntimeGroup(manifest, path);
+  if (requireCurrent && (!group || exclude.includes(group.current.generation))) {
+    throw new Error('联机程序版本检查失败，请联网并重试准备资源。');
+  }
+  if (expectedGeneration && group?.current.generation !== expectedGeneration) {
+    throw new Error('联机程序已有更新，请返回房间，双方重新准备资源后再开始。');
+  }
   if (target && capable) {
     const result = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,
       ...(manifest ? {catalog:manifest} : {}),exclude:[...exclude]},120000,reportProgress),manifest);
-    if (result) return result;
+    if (result && (!requireCurrent || result.generation === group!.current.generation)) return result;
     // Storage restrictions must not prevent a verified ordinary HTTP launch.
   }
-  const group = manifest && findRuntimeGroup(manifest, path);
   if (!group) throw new Error("Runtime is unavailable online and no complete offline copy was prepared");
   let lastError: unknown;
-  for (const descriptor of [group.current, ...group.previous]) {
+  for (const descriptor of requireCurrent ? [group.current] : [group.current, ...group.previous]) {
     if (exclude.includes(descriptor.generation)) continue;
     try {
       const actual = await digest(new TextEncoder().encode(canonicalRuntimePayload(descriptor.entry, descriptor.files)).buffer);

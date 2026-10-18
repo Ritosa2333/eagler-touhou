@@ -61,11 +61,23 @@ try{
   const late2=await open(`room=${id}&lobby=${prefix}later&member=${prefix}member_later`);send(late2,{type:'spectate'});await wait(()=>room(host)?.spectatorCount===3,'second admission');
   const current=await open(base+`&spectator=${prefix}later&member=${prefix}member_later`);await wait(()=>current.binary.length===3,'latest stage only');
   assert.deepEqual(current.binary.map(b=>b[2]===83?b.readUInt32LE(20):b.readUInt32LE(16)),[next,next,next+1]);
+  let returning=current;
+  for(let attempt=0;attempt<2;++attempt){
+    const admissions=late2.json.filter(m=>m.type==='spectator-start').length;
+    send(late2,{type:'leave-spectator'});send(late2,{type:'spectate'});
+    await wait(()=>late2.json.filter(m=>m.type==='spectator-start').length>admissions,'same-run spectator readmission');
+    const reopened=await open(base+`&spectator=${prefix}later&member=${prefix}member_later`);
+    await wait(()=>returning.closed,'leaving the spectator seat releases its old receiver');
+    await wait(()=>reopened.binary.length===3,'returning observer receives a fresh current-stage bootstrap');
+    assert.deepEqual(reopened.binary.map(b=>b[2]===83?b.readUInt32LE(20):b.readUInt32LE(16)),[next,next,next+1]);
+    assert.equal(reopened.closed,false);assert.equal(p0.closed,false);assert.equal(p1.closed,false);
+    returning=reopened;
+  }
   // A gap kills only the optional stream. Both players retain their route.
-  upload(p0,input(marker,900));await wait(()=>early.closed&&viewer.closed&&current.closed,'bad stream closes viewers');
+  upload(p0,input(marker,900));await wait(()=>early.closed&&viewer.closed&&returning.closed,'bad stream closes viewers');
   assert.equal(p0.closed,false);assert.equal(p1.closed,false);p0.ws.send(new Uint8Array([0xe7,1,9,8,7]));
   await wait(()=>p1.binary.some(b=>b.equals(Buffer.from([9,8,7]))),'player traffic survives');
   for(const s of sockets)s.close();await wait(()=>sockets.every(s=>s.readyState===3),'cleanup');sockets.length=0;
  }
- console.log('PASS six cooperative products: native-gated admission, current-stage prefix, Boss dependency, explicit entry frontier, stage rollover and player failure isolation');
+ console.log('PASS six cooperative products: native-gated admission, current-stage prefix, Boss dependency, explicit entry frontier, stage rollover, repeated same-run spectator return and player failure isolation');
 }finally{for(const s of sockets)s.close();child.kill();}

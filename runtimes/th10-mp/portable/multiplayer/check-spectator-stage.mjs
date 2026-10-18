@@ -16,12 +16,13 @@ const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(workspace,'work
 if(!existsSync(resolve(launcher,'server/netplay-relay.mjs')))
  throw Error('Missing launcher relay at '+resolve(launcher,'server/netplay-relay.mjs'));
 const fixtures=process.argv.includes('--fixtures'),stage2Only=process.argv.includes('--stage2-only'),profile=fixtures?'multiplayer-fixtures':'multiplayer';
+const lifecycleOnly=process.argv.includes('--lifecycle-only');
 const playersIndex=process.argv.indexOf('--players');
 const playersValue=process.argv.find(value=>value.startsWith('--players='))?.slice(10)??
  (playersIndex>=0?process.argv[playersIndex+1]:2);
 const players=Number(playersValue);
 if(![2,3].includes(players))throw Error('Spectator player count must be 2 or 3');
-const buildRoot=resolve(root,'th10_web/artifacts',profile);
+const buildRoot=resolve(process.env.TH10_MP_BUILD_ROOT||resolve(root,'th10_web/artifacts',profile));
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 if(build.profile!==profile||sha(resolve(buildRoot,'th10-sdl.wasm'))!==build.sha256)throw Error('Wrong/stale spectator build');
@@ -52,7 +53,7 @@ try{
   const result=await new Promise((done,reject)=>{
    const child=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,'check-spectator-stage.py'),
     '--url','http://127.0.0.1:'+httpPort+'/','--relay','ws://127.0.0.1:'+relayPort,
-    '--output',output,'--mode',mode,'--players',String(players),...(stage2Only?['--stage2-only']:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
+    '--output',output,'--mode',mode,'--players',String(players),...(stage2Only?['--stage2-only']:[]),...(lifecycleOnly?['--lifecycle-only']:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
    child.stdout.on('data',bytes=>process.stdout.write(bytes));child.stderr.on('data',bytes=>process.stderr.write(bytes));
    child.once('error',reject);child.once('exit',(code,signal)=>done({code,signal}));
   });

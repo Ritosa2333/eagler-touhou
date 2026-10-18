@@ -11,10 +11,11 @@ import {buildRuntimeProgramWorkerSource} from '../lib/frontend-assets.mjs';
 import {authoredSourcesPlugin} from './react-main/authored-sources.mjs';
 import {canonicalRuntimePayload, RUNTIME_MANIFEST_SCHEMA, RUNTIME_PROTOCOL} from '../lib/contracts/runtime-generations.mjs';
 
-const project=resolve(import.meta.dirname,'..'),mount='/nested/',root='runtime/th08/',requests=[];
+const variant=process.argv.includes('--multiplayer')?'multiplayer':'normal';
+const project=resolve(import.meta.dirname,'..'),mount='/nested/',root=variant==='multiplayer'?'runtime/th08mp/':'runtime/th08/',requests=[];
 const engine=process.argv.find(value=>value.startsWith('--engine='))?.slice('--engine='.length)||'chromium';
 if(!['chromium','firefox','webkit'].includes(engine))throw Error('Unknown browser engine: '+engine);
-const out=resolve(project,'artifacts/validation/runtime-offline-first',engine);await mkdir(out,{recursive:true});
+const out=resolve(project,'artifacts/validation/runtime-offline-first',...(variant==='multiplayer'?['multiplayer',engine]:[engine]));await mkdir(out,{recursive:true});
 const hash=body=>createHash('sha256').update(body).digest('hex');
 function generation(version) {
   const bodies={
@@ -86,7 +87,13 @@ try {
     window.api=await import('./api.mjs');window.events=[];
     addEventListener('message',e=>{if(e.source===document.querySelector('iframe').contentWindow)events.push(e.data);});
   });
-  const prepare=()=>page.evaluate(async()=>{window.prepared=await api.prepareRuntimeLaunch('runtime/th08/game.html');return {url:prepared.url,generation:prepared.generation,cached:prepared.cached};});
+  const prepare=options=>page.evaluate(async({entry,options})=>{window.prepared=await api.prepareRuntimeLaunch(entry,options);return {url:prepared.url,generation:prepared.generation,cached:prepared.cached};},{entry:root+'game.html',options});
+  const blocked=async(options,pattern)=>{
+    // Catch deliberate failures inside the page. Firefox reports a rejected
+    // evaluate promise as pageerror before the driver handles assert.rejects.
+    const reason=await page.evaluate(async({entry,options})=>{try{await api.prepareRuntimeLaunch(entry,options);return null;}catch(error){return error.message;}},{entry:root+'game.html',options});
+    assert.equal(typeof reason,'string','multiplayer preparation must reject');assert.match(reason,pattern);
+  };
   let visit=0;
   const navigate=async version=>{
     // Real launches have a fresh epoch parameter. Force distinct navigations in
@@ -107,6 +114,7 @@ try {
   assert.equal(requests.some(path=>path.endsWith('runtime-manifest.json')),false);
   assert.equal(await page.evaluate(()=>prepared.checkForUpdate()),null);
   report.push('offline launch runs HTML, module and WASM without a manifest response');
+  await blocked({requireCurrent:true},/版本检查失败/);
   await offline(false);requests.length=0;
   await prepare();assert.equal(requests.length,0,'warm launch consults local authority only');
   assert.equal(await page.evaluate(()=>prepared.checkForUpdate()),null);
@@ -119,10 +127,15 @@ try {
   await page.waitForFunction(()=>performance.getEntriesByType('resource').some(e=>e.name.endsWith('runtime-manifest.json')));
   for(let attempts=0;!releaseBytes&&attempts<300;attempts++)await new Promise(r=>setTimeout(r,10));
   assert.ok(releaseBytes,'background download reached held WASM');
+  // The multiplayer preparation shares staging work but cannot resolve to A.
+  await page.evaluate(async entry=>{window.strictState='pending';window.strictPreparing=api.prepareRuntimeLaunch(entry,{requireCurrent:true}).then(value=>{window.strictState=value;return value;});},root+'game.html');
+  assert.equal(await page.evaluate(()=>strictState),'pending');
   assert.equal(await page.evaluate(()=>updateState),'pending');
   assert.equal((await prepare()).generation,A.descriptor.generation);await navigate('a');
   holdBytes=false;releaseBytes();
   const ready=await page.evaluate(()=>updating);assert.equal(ready.generation,B.descriptor.generation);
+  assert.equal((await page.evaluate(()=>strictPreparing)).generation,B.descriptor.generation);
+  await blocked({requireCurrent:true,expectedGeneration:A.descriptor.generation},/双方重新准备/);
   assert.equal(await page.evaluate(()=>events[0].version),'a','running document stays on old program');
   assert.equal((await prepare()).generation,B.descriptor.generation);await navigate('b');
   report.push('incomplete successor stays invisible; verified successor is ready for next launch');
@@ -130,6 +143,7 @@ try {
   current=C;corrupt=true;await prepare();
   assert.equal(await page.evaluate(()=>prepared.checkForUpdate()),null,'failed integrity check announces no update');
   assert.equal((await prepare()).generation,B.descriptor.generation);
+  await blocked({requireCurrent:true},/integrity|mismatch/i);
   report.push('corrupt successor leaves last complete program launchable');
   corrupt=false;
   assert.equal((await page.evaluate(()=>prepared.checkForUpdate())).generation,C.descriptor.generation);
@@ -144,6 +158,7 @@ try {
   assert.deepEqual(errors,[]);
   report.push('persisted complete cache survives Launcher reload');
   const outageMode=emulationSupported?'browser-offline-plus-origin-drop':'origin-connection-drop';
-  await writeFile(resolve(out,'report.json'),JSON.stringify({passed:true,engine,version:browser.version(),outageMode,probeError,deviceAirplaneModeVerified:false,report},null,2));
+  report.push('multiplayer blocks offline, wrong agreement and corrupt current generations; waits for complete successor');
+  await writeFile(resolve(out,'report.json'),JSON.stringify({passed:true,engine,variant,version:browser.version(),outageMode,probeError,deviceAirplaneModeVerified:false,report},null,2));
   console.log(JSON.stringify({passed:true,engine,outageMode,report}));
 } finally {releaseBytes?.();await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

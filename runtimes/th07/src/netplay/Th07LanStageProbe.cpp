@@ -5079,10 +5079,8 @@ int RunCalcChain()
             Fail("spectator transport");
             return -1;
         }
-        const bool catchingUp = g_SpectatorPlayback.Seeking() ||
-            (g_SpectatorPlayback.Following() &&
-             g_SpectatorPlayback.Edge() > g_SpectatorPlayback.Position() + 1);
-        const std::uint64_t catchUpStartedNs = catchingUp ? SDL_GetTicksNS() : 0;
+        const bool fastForwarding = g_SpectatorPlayback.FastForwarding();
+        const std::uint64_t catchUpStartedNs = fastForwarding ? SDL_GetTicksNS() : 0;
         const bool stepped = g_SpectatorPlayback.Step(
             [](const SpectatorStageEvent &checkpoint) {
                 return RestoreSpectatorCheckpoint(checkpoint);
@@ -5093,15 +5091,15 @@ int RunCalcChain()
                 FrameDecision decision;
                 decision.canAdvance = true;
                 decision.inputs = packet.inputs;
-                const int result = SimulateFrame(packet.frame, decision, seeking || catchingUp);
+                const int result = SimulateFrame(packet.frame, decision, seeking || fastForwarding);
                 if (result == 0 || result == -1)
                     return false;
                 ++g_SimFrame;
                 return true;
             },
             [&] {
-                return catchingUp && SDL_GetTicksNS() - catchUpStartedNs >= 4000000u;
-            }, catchingUp ? 32u : 1u);
+                return fastForwarding && SDL_GetTicksNS() - catchUpStartedNs >= 4000000u;
+            }, fastForwarding ? 32u : 1u);
         if (!stepped)
         {
             Fail("spectator native restore or tick failed");

@@ -788,6 +788,8 @@ function lobbySnapshot(room) {
     predictionLimit: room.lobby.predictionLimit,
     settingsVersion: room.lobby.settingsVersion,
     phase: room.lobby.phase,
+    ...(room.lobby.phase !== 'lobby' && room.runs.get(String(room.lobby.startSerial))?.runtimeGeneration
+      ? {runtimeGeneration: room.runs.get(String(room.lobby.startSerial)).runtimeGeneration} : {}),
     startSerial: room.lobby.startSerial,
     spectators,
     spectatorCount: spectators.length,
@@ -808,6 +810,7 @@ function lobbySnapshot(room) {
             mobileDevice: seat.mobileDevice === true,
             resource: seat.resource || null,
             ready: !!seat.ready && seat.readyVersion === room.lobby.settingsVersion,
+            ...(seat.runtimeGeneration ? {runtimeGeneration: seat.runtimeGeneration} : {}),
             readyVersion: Number(seat.readyVersion) || 0,
             offline: !room.lobbyClients.has(seat.clientId),
           }
@@ -964,7 +967,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   sendLobby(socket, {
     type: 'state',
     room: lobbySnapshot(room),
-    roomDirectory: { version: 1, controlModes: true },
+    roomDirectory: { version: 1, controlModes: true, runtimeVersions: true },
     roomProbe: { iceServers: iceServersFor(roomId, 'lobby-probe', 0) },
   });
   if (pendingDisconnect) broadcastLobby(room);
@@ -1096,6 +1099,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         touchEnabled: typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined,
         mobileDevice: message.mobileDevice === true,
         ready: preserveReady,
+        runtimeGeneration: previousEntry?.runtimeGeneration,
         readyVersion: preserveReady ? room.lobby.settingsVersion : 0,
         resource: previousEntry?.resource || null,
       };
@@ -1144,6 +1148,15 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
 
     if (message.type === 'leave-spectator') {
       const changed = room.lobby.spectators.delete(clientId);
+      for (const run of room.runs.values()) {
+        // Retire this membership's receiver before a new admission can claim
+        // it. The old socket's delayed close must not release its successor.
+        run.admittedSpectators.delete(clientId);
+        run.claimedSpectators.delete(clientId);
+        const receiver = run.spectatorClients.get(clientId);
+        run.spectatorClients.delete(clientId);
+        receiver?.close(1000, 'spectator left');
+      }
       if (changed) broadcastLobby(room);
       return;
     }
@@ -1164,8 +1177,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
 
     const seat = lobbySeatOf(room, clientId);
     if (message.type === 'quick-chat') {
-      const spectator =
-        roomId.startsWith('th09mp-') && seat < 0 && room.lobby.spectators.has(clientId);
+      const spectator = seat < 0 && room.lobby.spectators.has(clientId);
       if (
         (seat < 0 && !spectator) ||
         (room.lobby.phase === 'lobby' && !roomId.startsWith('th09mp-')) ||
@@ -1314,6 +1326,20 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
     if (message.type === 'set-ready') {
+      // Versioned clients opt this room into exact immutable-program agreement.
+      // An old client with no identity cannot join a versioned start.
+      const generation = message.runtimeGeneration;
+      const versioned = generation !== undefined || room.lobby.seats.some(entry => entry?.runtimeGeneration);
+      if (message.ready && versioned &&
+          (typeof generation !== 'string' || !/^[a-f0-9]{64}$/.test(generation) ||
+           room.lobby.seats.some(entry => entry && entry !== occupant && entry.ready && entry.runtimeGeneration !== generation))) {
+        occupant.ready = false;
+        occupant.readyVersion = 0;
+        sendLobby(socket, {type:'error', code:'runtime-version', error:'联机程序版本不一致，请双方取消准备后重新准备，旧版页面请刷新。'});
+        sendLobby(socket, {type:'state', room:lobbySnapshot(room)});
+        broadcastLobby(room);
+        return;
+      }
       if (
         room.lobby.disableCheatMovement &&
         message.ready &&
@@ -1332,6 +1358,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined;
       occupant.mobileDevice = message.mobileDevice === true;
       occupant.ready = !!message.ready;
+      if (message.ready) occupant.runtimeGeneration = generation;
       occupant.readyVersion = occupant.ready ? room.lobby.settingsVersion : 0;
       broadcastLobby(room);
       return;
@@ -1453,6 +1480,11 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         return;
       }
       const activeSeats = room.lobby.seats.slice(0, room.lobby.playerCount);
+      const runtimeGeneration = activeSeats.find(entry => entry?.runtimeGeneration)?.runtimeGeneration;
+      if (runtimeGeneration && activeSeats.some(entry => entry?.runtimeGeneration !== runtimeGeneration)) {
+        sendLobby(socket, {type:'error', code:'runtime-version', error:'联机程序版本不一致，请双方取消准备后重新准备，旧版页面请刷新。'});
+        return;
+      }
       if (
         room.lobby.disableCheatMovement &&
         activeSeats.some(
@@ -1525,6 +1557,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       run.lobbyClientIds = activeSeats.map((entry) => entry.clientId);
       const seatedClients = new Set(activeSeats.map((entry) => entry.clientId));
       run.playerCount = room.lobby.playerCount;
+      run.runtimeGeneration = runtimeGeneration;
       run.admittedSpectators = new Set(
         [...room.lobby.spectators.keys()].filter(
           (id) => room.lobbyClients.has(id) && !seatedClients.has(id),
@@ -1772,6 +1805,10 @@ server.on('connection', (socket, request) => {
   }
   const existingRoom = rooms.get(roomId);
   const existingRun = existingRoom?.runs.get(runId);
+  if (existingRun?.runtimeGeneration && url.searchParams.get('runtimeGeneration') !== existingRun.runtimeGeneration) {
+    socket.close(1008, 'runtime version mismatch');
+    return;
+  }
   if (
     existingRun?.memberIds ||
     existingRoom?.lobbyClients.size ||

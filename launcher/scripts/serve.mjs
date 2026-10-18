@@ -38,9 +38,10 @@ const host = process.env.EAGLER_TOUHOU_HOST || "127.0.0.1";
 const port = Number.parseInt(process.argv[2] || process.env.EAGLER_TOUHOU_PORT || "8130", 10);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("端口号无效");
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const root = resolve(process.argv[3] || resolve(project, ".."));
+const sourceWorkspace = workspaceRoot();
+const root = resolve(process.argv[3] || sourceWorkspace);
 assertSafeDevelopmentServerScope({ host, project, root });
-const sourceDevelopmentServer = root === resolve(project, "..");
+const sourceDevelopmentServer = root === sourceWorkspace;
 const servedApp = sourceDevelopmentServer ? project : root;
 // This development server has always served the root mount. Nested React
 // artifacts belong to a matching mounted Host/static server, never this root.

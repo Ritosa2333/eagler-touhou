@@ -142,12 +142,12 @@ bool NetplayRuntime::DrainSpectatorFrames(){
     if(transport_.Failed()){
         spectator_error_=transport_.LastError();return false;
     }
-    // Network silence cannot invalidate a local pause or reconstruction of
-    // already received history. Start the normal grace period again when
-    // this viewer actually needs another live input.
-    if(spectator_stage_playback_.Ready()&&!spectator_stage_playback_.WaitingForLiveInput())
-        spectator_deadline_=network_now_+15'000;
-    if(network_now_>=spectator_deadline_){spectator_error_="Spectator input stream stalled; players are unaffected";return false;}
+    // Once bootstrap is complete, a quiet confirmed frontier can mean the
+    // source deliberately paused. Use transport failure/closure to detect a
+    // dead relay; keep the bounded deadline only for admission/bootstrap.
+    if(!spectator_stage_playback_.Ready()&&network_now_>=spectator_deadline_){
+        spectator_error_="Spectator input stream stalled; players are unaffected";return false;
+    }
     return true;
 }
 

@@ -278,7 +278,7 @@ function playerOpen() {return env.document.querySelector('#player')?.getAttribut
 function commands() {return mounted.outbound.map(value => value.command);}
 function currentUrl() {const loc = mounted.router.state.location; return loc.pathname + loc.search + loc.hash;}
 async function tick() {await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 20));});}
-async function until(predicate, message) {const deadline = Date.now() + 2500; while (!predicate() && Date.now() < deadline) await tick(); assert.ok(predicate(), `${message}; evidence=${JSON.stringify({url: currentUrl(), playerOpen: playerOpen(), routerState: mounted.router.state.location.state, order: mounted.order, fetches: mounted.fetches.map(x => x.url), status: env.document.querySelector('#status')?.textContent, startup: env.document.querySelector('#startupError')?.textContent, body: env.document.body.textContent.slice(-1600)})}`);}
+async function until(predicate, message, timeoutMs = 2500) {const deadline = Date.now() + timeoutMs; while (!predicate() && Date.now() < deadline) await tick(); assert.ok(predicate(), `${message}; evidence=${JSON.stringify({url: currentUrl(), playerOpen: playerOpen(), routerState: mounted.router.state.location.state, order: mounted.order, fetches: mounted.fetches.map(x => x.url), status: env.document.querySelector('#status')?.textContent, startup: api.getTestSession()?.startupError.getSnapshot(), runtime: api.getTestSession()?.getRuntime()?.getSnapshot(), body: env.document.body.textContent.slice(-1600)})}`);}
 async function click(selector) {await React.act(async () => {node(selector).click();}); await tick();}
 async function back() {await React.act(async () => {void mounted.router.navigate(-1);}); await tick();}
 async function start() {
@@ -851,12 +851,13 @@ test('actual BrowserLauncher: running save import overwrite refusal leaves the p
 
 function importPackageFile(game = 'th06') {
   const data = new Uint8Array([1, 2, 3]), hash = createHash('sha256').update(data).digest('hex');
-  const files = Object.fromEntries([['game-data', `${game}.data`, `/${game}.data`], ['font', 'msgothic.ttc', '/msgothic.ttc'], ['unicode', 'unifont.otf', '/unifont.otf']]
+  const dataTarget=api.PRODUCT_GAMES[game].package.dataTarget,dataSource=dataTarget.slice(1);
+  const files = Object.fromEntries([['game-data', dataSource, dataTarget], ['font', 'msgothic.ttc', '/msgothic.ttc'], ['unicode', 'unifont.otf', '/unifont.otf']]
     .map(([id, source, target]) => [id, {source, target, revision: `${id}-r1`, bytes: data.length, sha256: hash}]));
   const descriptor = {schema: 'eagler-touhou/package/1', game, revision: 'synthetic-import-r1',
     runtimeRequirement: {protocol: 'eagler-touhou/1', target: game, dataFile: 'game-data', dataLayout: `sha256-${'b'.repeat(64)}`},
     files, base: {files: ['game-data', 'font', 'unicode']}, components: {}};
-  const archive = zipSync({'package.json': strToU8(JSON.stringify(descriptor)), [`${game}.data`]: data, 'msgothic.ttc': data, 'unifont.otf': data}, {level: 0});
+  const archive = zipSync({'package.json': strToU8(JSON.stringify(descriptor)), [dataSource]: data, 'msgothic.ttc': data, 'unifont.otf': data}, {level: 0});
   return new NativeFile([archive], `${game}.zip`, {type: 'application/zip'});
 }
 async function selectImport(file) {
@@ -1983,3 +1984,46 @@ test('actual BrowserLauncher: spectator toolbar exits playback into the existing
   assert.equal(socket.closes.length, 0, 'room membership survives playback exit');
   assert.equal(env.document.querySelector('#playbackExit'), null);
 });
+
+for (const game of ['th06','th07','th08','th09','th10','th11','th15']) {
+ test(`actual BrowserLauncher: ${game} spectator return uses a fresh Runtime and settles its loading cover`, async () => {
+  const product=game+'mp',invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true});
+  const host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
+  const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,seedPackages:[game],seedStorage(storage){
+   storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none',options:{touchEnabled:false,thpracEnabled:false}}));
+  }});
+  await until(()=>f.sockets.length>0,'room socket');const socket=f.sockets[0],session=api.getTestSession();
+  const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,
+   predictionLimit:game==='th11'?12:game==='th15'?0:8,...(game==='th15'?{adonisMode:1}:{}),
+   startSerial:4,spectatorTimeline:true,seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[]};
+  await React.act(async()=>{socket.open();socket.message({type:'state',room});socket.message({type:'spectator-start',serial:4,room});});
+  let previousEpoch=null,previousDocument=null;
+  for(let attempt=0;attempt<3;++attempt){
+   if(attempt)await React.act(async()=>{void session.room.service.launch();});
+   await until(()=>f.outbound.filter(m=>m.command==='launch').length===attempt+1||session.startupError.getSnapshot().open,'spectator launch acknowledged',15_000);
+   assert.equal(session.startupError.getSnapshot().open,false,session.startupError.getSnapshot().detail);
+   const current=session.getRuntime().getSnapshot();
+   assert.notEqual(current.epoch,previousEpoch);assert.notEqual(f.native.document,previousDocument);
+   assert.equal(f.native.options.netplaySpectator,true);
+   f.native.Module={eaglerOptions:{netplayMode:'lan'}};
+   f.native[api.multiplayerConfigForProduct(product).peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
+   f.native.__eaglerNetplaySpectator=true;f.native.__eaglerNetplayTransport='spectator';
+   if(previousEpoch!==null){
+    await React.act(async()=>f.native.emit('first-frame',{epoch:previousEpoch}));
+    assert.equal(session.getRuntime().getSnapshot().firstFrame,false,'a retired epoch cannot uncover the new Runtime');
+   }
+   await React.act(async()=>f.native.emit('first-frame'));
+   if(game!=='th09'){
+    const playback={version:1,run:'run_4',revision:1,min:0,position:30,received:1200,edge:1190,target:900,paused:false,seeking:true,following:false,ended:false,nodes:[]};
+    await React.act(async()=>f.native.emit('runtime-info',{spectatorPlayback:playback}));
+    assert.notEqual(session.getSnapshot().roomLaunchStage,null,'initial accelerated reconstruction remains covered');
+    await React.act(async()=>f.native.emit('runtime-info',{spectatorPlayback:{...playback,revision:2,position:900,seeking:false}}));
+   }
+   await until(()=>session.getSnapshot().roomLaunchStage===null,'current first frame and receiver settle the loading cover');
+   previousEpoch=current.epoch;previousDocument=f.native.document;
+   await click('#playbackExit');await until(()=>!playerOpen(),'spectator returns to room');
+   assert.equal(f.native.location.href,'about:blank');assert.equal(socket.closes.length,0);
+   assert.equal(session.room.service.getSnapshot().room.code,'1234');
+  }
+ });
+}

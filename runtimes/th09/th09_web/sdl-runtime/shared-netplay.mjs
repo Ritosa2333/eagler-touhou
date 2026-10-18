@@ -252,8 +252,14 @@ export class SharedNetplay {
       // No silent frozen viewer if the host/upload disappears without a close
       // reaching this socket. This affects the viewer only, never the players.
       if (this.spectator && this.timelineExperiment) this.drainSpectatorHistory();
-      if (this.spectator && this.prepared && (!this.inGameSelection||this.spectatorTape.started) && !(this.timelineExperiment ? this.spectatorTape.ended : this.spectatorEnded) && performance.now() - this.spectatorReceiveAt >= 15000)
-        throw Error('TH09 观战确认帧流中断，玩家对局不受影响');
+      // Keep a bound on an initial admission that never receives its first
+      // checkpoint. Once a valid stream has begun, an open transport may be
+      // intentionally idle while a source game or its tab is paused. Actual
+      // socket close, transport failure and malformed packets are handled by
+      // the transport state and receive validation above.
+      if (this.spectator && this.prepared && this.timelineExperiment && !this.inGameSelection &&
+          !this.spectatorTape.started && performance.now() - this.spectatorReceiveAt >= 15000)
+        throw Error('TH09 观战首个对局帧等待超时，玩家对局不受影响');
       if (!this.spectator) this.flushSpectators();
     } catch (error) { this.close(String(error?.message || error)); }
     finally {

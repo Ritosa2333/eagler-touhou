@@ -13,8 +13,8 @@ export interface RoomPreparationOptions {
   metadataReady(): Promise<unknown>;
   baseUrl: string;
   translate: Translate;
-  /** Host awaits its real app-shell readiness, then reads only the explicitly
-   * selected deployment scope. No scope/worker means no duplicate HTTP precache. */
+  /** Prefer this deployment's worker. The shared helper can also establish the
+   * runtime-only authority or verify immutable HTTP when caching is unavailable. */
   activeWorker(): Promise<RuntimeWorker | null>;
   dependencies?: {
     createTracker?: typeof createNetworkActivityTracker;
@@ -22,14 +22,14 @@ export interface RoomPreparationOptions {
   };
 }
 
-/** Main app800–858: package-only install followed by worker-aware Runtime
- * precache. This adapter never starts a game, changes options, selects optional
+/** Package-only install followed by current Multiplayer program preparation.
+ * This adapter never starts a game, changes options, selects optional
  * music/language, or creates another Package Store. Room owner holds the task. */
 export function createRoomPreparation(options: RoomPreparationOptions) {
   const {acquisition, translate: t} = options;
   const createTracker = options.dependencies?.createTracker ?? createNetworkActivityTracker;
   const prepareRuntime = options.dependencies?.prepareRuntime ?? prepareRuntimeLaunch;
-  async function prepare(context: RoomOperationContext, report: (value: RoomPreparationProgress) => void): Promise<void> {
+  async function prepare(context: RoomOperationContext, report: (value: RoomPreparationProgress) => void): Promise<{runtimeGeneration: string} | void> {
     const game = gameIdForProduct(context.product);
     let stage: 'package' | 'runtime' = 'package';
     const tracker = createTracker({fetchImpl: acquisition.fetchImpl, onChange: snapshot => {
@@ -66,12 +66,15 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
     if (!acquisition.getMetadata().siteManifest) {try {await options.metadataReady();} catch {}}
     if (!context.isCurrent()) return;
     const host = acquisition.getMetadata().siteManifest;
+    if (!host) throw new Error(t('multiplayer.runtimeCheckFailed'));
     const runtime = host?.games[game]?.multiplayerRuntime;
+    if (!runtime) throw new Error(t('multiplayer.runtimeCheckFailed'));
     if (typeof runtime === 'string' && runtime && host?.shared.runtimeManifest) {
       let worker: RuntimeWorker | null = null;
       try {worker = await options.activeWorker();} catch {}
       if (!context.isCurrent()) return;
-      if (worker) await prepareRuntime(runtime, {worker, baseUrl: options.baseUrl, fetchImpl: acquisition.fetchImpl});
+      const prepared = await prepareRuntime(runtime, {worker: worker ?? undefined, baseUrl: options.baseUrl, fetchImpl: acquisition.fetchImpl, requireCurrent: true});
+      if (context.isCurrent()) return {runtimeGeneration: prepared.generation};
     }
     // The owning room service publishes ready only after this real task resolves
     // and its epoch/abort check still passes.

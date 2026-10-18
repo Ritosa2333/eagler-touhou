@@ -4,9 +4,10 @@ import test, {before, after} from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
 import {mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
-import {resolve} from 'node:path';
+import {relative, resolve} from 'node:path';
 import {createServer} from 'node:net';
 import {readReactFrontendArtifact} from '../../lib/react-frontend-artifact.mjs';
+import {workspaceRoot} from '../../lib/workspace-layout.mjs';
 let work, artifact, environment;
 before(async () => {
   await mkdir(resolve('.cache'), {recursive: true});
@@ -64,6 +65,19 @@ test('selected React root serves real routes and retirement worker and rejects o
     assert.match(host.headers.get('content-type'), /application\/json/);
     const module = artifact.browserEntrypoints.find(path => path.startsWith('assets/'));
     assert.equal((await fetch(server.base + '/' + module)).status, 200);
+  } finally {await server.stop();}
+});
+
+test('source server resolves workspace URLs consistently from a nested Launcher worktree', async () => {
+  const fixture=resolve(work,'workspace-runtime.js'),body='export const workspaceRuntime = true;\n';
+  await writeFile(fixture,body);
+  const path=relative(workspaceRoot(),fixture).replaceAll('\\','/');
+  assert.ok(!path.startsWith('../'));
+  const server=await start();
+  try {
+    const response=await fetch(server.base+'/'+path);
+    assert.equal(response.status,200,'source-layout URLs must use the declared workspace root');
+    assert.equal(await response.text(),body);
   } finally {await server.stop();}
 });
 
