@@ -6,6 +6,14 @@
 
 ## 准备
 
+本地多人驱动从同仓库 `services/relay/src/netplay-relay.mjs` 启动 Relay，从 `launcher/` 读取共用前端与协议辅助器。外置服务源码可通过 `EAGLER_RELAY_ROOT` 显式选择。
+
+TH11 的启动器场景驱动通过房间里的回滚开关选择实测纯延迟，并在结果中记录 `pure-delay`。有界回滚使用本作 `rollback-browser-acceptance.mjs` 的对应场景验收，两种时序分别保存结果。
+
+TH11 回滚驱动通过 `TH11_TEST_FONT` 与 `TH11_TEST_UNICODE_FONT` 接收共用字体，按正常 `configure.sharedResources` 接口安装，并把字体哈希纳入验收输入身份。
+
+主动断线场景完整保留 Console 与 native 错误。驱动在明确关闭通道之后，将同席位 native 已确认的对应关闭通知单独记录；其他时间、来源与内容的错误继续使验收失败。
+
 使用两个独立客户端；本作支持三人时补三人检查。先用稳定通道完成完整连接流程，再加入网络延迟、抖动和断线。记录实际 WebRTC／Relay 路径、构建和设备。
 
 所有玩家资源就绪后，测量实际输入通道、确认时序参数，再从第 0 帧开局。实现说明见[联机架构](../architecture/netplay.md)与[回滚架构](../architecture/rollback.md)。

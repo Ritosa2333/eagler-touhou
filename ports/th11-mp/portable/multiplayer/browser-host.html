@@ -74,8 +74,8 @@ window.host={
       }
     };
   },
-  async configure(options){
-    await this.request('configure',{language:this.language,music:'none',options});
+  async configure(options,sharedResources=window.acceptanceSharedResources??[]){
+    await this.request('configure',{language:this.language,music:'none',options,sharedResources});
   },
   async launch(){await this.request('launch');},
   key(code,down){return this.request('keyboard',{code,down,repeat:false});},

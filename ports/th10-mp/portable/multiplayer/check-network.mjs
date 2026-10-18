@@ -6,7 +6,8 @@ import {resolve} from 'node:path';
 
 const root=resolve(import.meta.dirname,'../..');
 const workspace=resolve(process.env.EAGLER_WORKSPACE||root+'/../..');
-const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(workspace,'eagler-touhou'));
+const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../launcher'));
+const relayEntry=resolve(process.env.EAGLER_RELAY_ROOT||resolve(root,'../../services/relay'),'src/netplay-relay.mjs');
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const retry=process.argv.includes('--retry'),death=process.argv.includes('--p1-death');
 const rescueDeath=process.argv.includes('--p1-rescue-death');
@@ -23,7 +24,7 @@ const report={passed:false,wasm:build.sha256,sourceDigest:build.sourceDigest,ret
 const port=()=>new Promise((done,reject)=>{const server=createServer();server.once('error',reject);server.listen(0,'127.0.0.1',()=>{const value=server.address().port;server.close(error=>error?reject(error):done(value));});});
 const httpPort=await port(),relayPort=await port();let server,relay;
 try{
- relay=fork(resolve(launcher,'server/netplay-relay.mjs'),[],{cwd:launcher,
+ relay=fork(relayEntry,[],{cwd:launcher,
   env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),
    EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RELAY_DROP_FIRST_INPUT_PER_EDGE:'1'},stdio:['ignore','pipe','pipe','ipc']});
  relay.stderr.on('data',bytes=>process.stderr.write(bytes));
