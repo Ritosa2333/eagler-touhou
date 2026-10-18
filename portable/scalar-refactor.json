@@ -1,729 +1,729 @@
 {
   "th08": [
     {
-      "file": "th08_web\\cpp\\game\\AnmExecutor.cpp",
+      "file": "web\\cpp\\game\\AnmExecutor.cpp",
       "binary": 5,
       "truncate": 3
     },
     {
-      "file": "th08_web\\cpp\\game\\AnmRenderer.cpp",
+      "file": "web\\cpp\\game\\AnmRenderer.cpp",
       "binary": 22,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\AnmResource.cpp",
+      "file": "web\\cpp\\game\\AnmResource.cpp",
       "binary": 6,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\AnmText.cpp",
+      "file": "web\\cpp\\game\\AnmText.cpp",
       "binary": 0,
       "truncate": 3
     },
     {
-      "file": "th08_web\\cpp\\game\\AsciiManager.cpp",
+      "file": "web\\cpp\\game\\AsciiManager.cpp",
       "binary": 3,
       "truncate": 4
     },
     {
-      "file": "th08_web\\cpp\\game\\BackgroundObjects.cpp",
+      "file": "web\\cpp\\game\\BackgroundObjects.cpp",
       "binary": 16,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\BackgroundScript.cpp",
+      "file": "web\\cpp\\game\\BackgroundScript.cpp",
       "binary": 6,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\BulletCancel.cpp",
+      "file": "web\\cpp\\game\\BulletCancel.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\BulletCreation.cpp",
+      "file": "web\\cpp\\game\\BulletCreation.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\BulletDrawing.cpp",
+      "file": "web\\cpp\\game\\BulletDrawing.cpp",
       "binary": 6,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\BulletMotion.cpp",
+      "file": "web\\cpp\\game\\BulletMotion.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\BulletPattern.cpp",
+      "file": "web\\cpp\\game\\BulletPattern.cpp",
       "binary": 11,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\BulletScoreCancel.cpp",
+      "file": "web\\cpp\\game\\BulletScoreCancel.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\BulletTemplates.cpp",
+      "file": "web\\cpp\\game\\BulletTemplates.cpp",
       "binary": 0,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\BulletUpdate.cpp",
+      "file": "web\\cpp\\game\\BulletUpdate.cpp",
       "binary": 7,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\Camera.cpp",
+      "file": "web\\cpp\\game\\Camera.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\DamageRegions.cpp",
+      "file": "web\\cpp\\game\\DamageRegions.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\Dialogue.cpp",
+      "file": "web\\cpp\\game\\Dialogue.cpp",
       "binary": 2,
       "truncate": 2
     },
     {
-      "file": "th08_web\\cpp\\game\\EclAnimation.cpp",
+      "file": "web\\cpp\\game\\EclAnimation.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclEmitter.cpp",
+      "file": "web\\cpp\\game\\EclEmitter.cpp",
       "binary": 6,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclInterpolation.cpp",
+      "file": "web\\cpp\\game\\EclInterpolation.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclLaser.cpp",
+      "file": "web\\cpp\\game\\EclLaser.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclMotion.cpp",
+      "file": "web\\cpp\\game\\EclMotion.cpp",
       "binary": 13,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclNative.cpp",
+      "file": "web\\cpp\\game\\EclNative.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclNativeProjectiles.cpp",
+      "file": "web\\cpp\\game\\EclNativeProjectiles.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclSpawn.cpp",
+      "file": "web\\cpp\\game\\EclSpawn.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclTimeline.cpp",
+      "file": "web\\cpp\\game\\EclTimeline.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EclVariables.cpp",
+      "file": "web\\cpp\\game\\EclVariables.cpp",
       "binary": 3,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\EclVm.cpp",
+      "file": "web\\cpp\\game\\EclVm.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EffectBomb.cpp",
+      "file": "web\\cpp\\game\\EffectBomb.cpp",
       "binary": 12,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EffectGeometry.cpp",
+      "file": "web\\cpp\\game\\EffectGeometry.cpp",
       "binary": 18,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EffectSpace.cpp",
+      "file": "web\\cpp\\game\\EffectSpace.cpp",
       "binary": 19,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EffectSystem.cpp",
+      "file": "web\\cpp\\game\\EffectSystem.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EffectTransforms.cpp",
+      "file": "web\\cpp\\game\\EffectTransforms.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\Ending.cpp",
+      "file": "web\\cpp\\game\\Ending.cpp",
       "binary": 1,
       "truncate": 2
     },
     {
-      "file": "th08_web\\cpp\\game\\EnemyContact.cpp",
+      "file": "web\\cpp\\game\\EnemyContact.cpp",
       "binary": 10,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EnemyDamage.cpp",
+      "file": "web\\cpp\\game\\EnemyDamage.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EnemyDrawing.cpp",
+      "file": "web\\cpp\\game\\EnemyDrawing.cpp",
       "binary": 15,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EnemyFamiliars.cpp",
+      "file": "web\\cpp\\game\\EnemyFamiliars.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EnemyKinematics.cpp",
+      "file": "web\\cpp\\game\\EnemyKinematics.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\EnemyNameAtlas.cpp",
+      "file": "web\\cpp\\game\\EnemyNameAtlas.cpp",
       "binary": 0,
       "truncate": 4
     },
     {
-      "file": "th08_web\\cpp\\game\\EnemySimulation.cpp",
+      "file": "web\\cpp\\game\\EnemySimulation.cpp",
       "binary": 1,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\EnemySystem.cpp",
+      "file": "web\\cpp\\game\\EnemySystem.cpp",
       "binary": 0,
       "truncate": 3
     },
     {
-      "file": "th08_web\\cpp\\game\\GameMath.cpp",
+      "file": "web\\cpp\\game\\GameMath.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\GameplayControl.cpp",
+      "file": "web\\cpp\\game\\GameplayControl.cpp",
       "binary": 0,
       "truncate": 4
     },
     {
-      "file": "th08_web\\cpp\\game\\GameplayStart.cpp",
+      "file": "web\\cpp\\game\\GameplayStart.cpp",
       "binary": 0,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\GameValues.cpp",
+      "file": "web\\cpp\\game\\GameValues.cpp",
       "binary": 0,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\GraphicsMath.cpp",
+      "file": "web\\cpp\\game\\GraphicsMath.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\GuiController.cpp",
+      "file": "web\\cpp\\game\\GuiController.cpp",
       "binary": 2,
       "truncate": 4
     },
     {
-      "file": "th08_web\\cpp\\game\\GuiView.cpp",
+      "file": "web\\cpp\\game\\GuiView.cpp",
       "binary": 1,
       "truncate": 3
     },
     {
-      "file": "th08_web\\cpp\\game\\ItemPool.cpp",
+      "file": "web\\cpp\\game\\ItemPool.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\ItemRewards.cpp",
+      "file": "web\\cpp\\game\\ItemRewards.cpp",
       "binary": 0,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\ItemSystem.cpp",
+      "file": "web\\cpp\\game\\ItemSystem.cpp",
       "binary": 0,
       "truncate": 4
     },
     {
-      "file": "th08_web\\cpp\\game\\ItemUpdate.cpp",
+      "file": "web\\cpp\\game\\ItemUpdate.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\LaserRuntime.cpp",
+      "file": "web\\cpp\\game\\LaserRuntime.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\LoadingScreen.cpp",
+      "file": "web\\cpp\\game\\LoadingScreen.cpp",
       "binary": 6,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\MusicControl.cpp",
+      "file": "web\\cpp\\game\\MusicControl.cpp",
       "binary": 1,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\MusicRoom.cpp",
+      "file": "web\\cpp\\game\\MusicRoom.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerBombAlice.cpp",
+      "file": "web\\cpp\\game\\PlayerBombAlice.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerBombObjects.cpp",
+      "file": "web\\cpp\\game\\PlayerBombObjects.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerBombPatterns.cpp",
+      "file": "web\\cpp\\game\\PlayerBombPatterns.cpp",
       "binary": 10,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerBombReimu.cpp",
+      "file": "web\\cpp\\game\\PlayerBombReimu.cpp",
       "binary": 13,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerBombRemilia.cpp",
+      "file": "web\\cpp\\game\\PlayerBombRemilia.cpp",
       "binary": 15,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerBombSakuya.cpp",
+      "file": "web\\cpp\\game\\PlayerBombSakuya.cpp",
       "binary": 11,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerBombYoumu.cpp",
+      "file": "web\\cpp\\game\\PlayerBombYoumu.cpp",
       "binary": 11,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerBombYuyuko.cpp",
+      "file": "web\\cpp\\game\\PlayerBombYuyuko.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerCollision.cpp",
+      "file": "web\\cpp\\game\\PlayerCollision.cpp",
       "binary": 20,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerGauge.cpp",
+      "file": "web\\cpp\\game\\PlayerGauge.cpp",
       "binary": 0,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerGraze.cpp",
+      "file": "web\\cpp\\game\\PlayerGraze.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerLife.cpp",
+      "file": "web\\cpp\\game\\PlayerLife.cpp",
       "binary": 2,
       "truncate": 1
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerMotion.cpp",
+      "file": "web\\cpp\\game\\PlayerMotion.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerMovement.cpp",
+      "file": "web\\cpp\\game\\PlayerMovement.cpp",
       "binary": 13,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerOptions.cpp",
+      "file": "web\\cpp\\game\\PlayerOptions.cpp",
       "binary": 21,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerScene.cpp",
+      "file": "web\\cpp\\game\\PlayerScene.cpp",
       "binary": 0,
       "truncate": 3
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerSetup.cpp",
+      "file": "web\\cpp\\game\\PlayerSetup.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerShotDraw.cpp",
+      "file": "web\\cpp\\game\\PlayerShotDraw.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerShotHit.cpp",
+      "file": "web\\cpp\\game\\PlayerShotHit.cpp",
       "binary": 6,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerShots.cpp",
+      "file": "web\\cpp\\game\\PlayerShots.cpp",
       "binary": 7,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\PlayerShotUpdate.cpp",
+      "file": "web\\cpp\\game\\PlayerShotUpdate.cpp",
       "binary": 8,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\ReplayExport.cpp",
+      "file": "web\\cpp\\game\\ReplayExport.cpp",
       "binary": 1,
       "truncate": 2
     },
     {
-      "file": "th08_web\\cpp\\game\\ReplayRecording.cpp",
+      "file": "web\\cpp\\game\\ReplayRecording.cpp",
       "binary": 0,
       "truncate": 3
     },
     {
-      "file": "th08_web\\cpp\\game\\ResultView.cpp",
+      "file": "web\\cpp\\game\\ResultView.cpp",
       "binary": 1,
       "truncate": 2
     },
     {
-      "file": "th08_web\\cpp\\game\\SpellBackground.cpp",
+      "file": "web\\cpp\\game\\SpellBackground.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\SpellDrawing.cpp",
+      "file": "web\\cpp\\game\\SpellDrawing.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\SpellUpdate.cpp",
+      "file": "web\\cpp\\game\\SpellUpdate.cpp",
       "binary": 7,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\Timer.cpp",
+      "file": "web\\cpp\\game\\Timer.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\TitleView.cpp",
+      "file": "web\\cpp\\game\\TitleView.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th08_web\\cpp\\game\\UiMenus.cpp",
+      "file": "web\\cpp\\game\\UiMenus.cpp",
       "binary": 0,
       "truncate": 8
     }
   ],
   "th10": [
     {
-      "file": "th10_web\\cpp\\game\\AnmCapture.cpp",
+      "file": "web\\cpp\\game\\AnmCapture.cpp",
       "binary": 0,
       "truncate": 4
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmDistortion.cpp",
+      "file": "web\\cpp\\game\\AnmDistortion.cpp",
       "binary": 12,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmFile.cpp",
+      "file": "web\\cpp\\game\\AnmFile.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmInterpreter.cpp",
+      "file": "web\\cpp\\game\\AnmInterpreter.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmManager.cpp",
+      "file": "web\\cpp\\game\\AnmManager.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmProjection.cpp",
+      "file": "web\\cpp\\game\\AnmProjection.cpp",
       "binary": 9,
       "truncate": 1
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmRegistry.cpp",
+      "file": "web\\cpp\\game\\AnmRegistry.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmRenderer.cpp",
+      "file": "web\\cpp\\game\\AnmRenderer.cpp",
       "binary": 7,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmResources.cpp",
+      "file": "web\\cpp\\game\\AnmResources.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmScript.cpp",
+      "file": "web\\cpp\\game\\AnmScript.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmText.cpp",
+      "file": "web\\cpp\\game\\AnmText.cpp",
       "binary": 0,
       "truncate": 5
     },
     {
-      "file": "th10_web\\cpp\\game\\AnmVariables.cpp",
+      "file": "web\\cpp\\game\\AnmVariables.cpp",
       "binary": 0,
       "truncate": 3
     },
     {
-      "file": "th10_web\\cpp\\game\\BombFrame.cpp",
+      "file": "web\\cpp\\game\\BombFrame.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\BulletCancellation.cpp",
+      "file": "web\\cpp\\game\\BulletCancellation.cpp",
       "binary": 13,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\BulletEmitter.cpp",
+      "file": "web\\cpp\\game\\BulletEmitter.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\BulletFeatures.cpp",
+      "file": "web\\cpp\\game\\BulletFeatures.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\BulletFrame.cpp",
+      "file": "web\\cpp\\game\\BulletFrame.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\Camera.cpp",
+      "file": "web\\cpp\\game\\Camera.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\CommonResources.cpp",
+      "file": "web\\cpp\\game\\CommonResources.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\EclContext.cpp",
+      "file": "web\\cpp\\game\\EclContext.cpp",
       "binary": 0,
       "truncate": 5
     },
     {
-      "file": "th10_web\\cpp\\game\\EclInterpreter.cpp",
+      "file": "web\\cpp\\game\\EclInterpreter.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\EclStack.cpp",
+      "file": "web\\cpp\\game\\EclStack.cpp",
       "binary": 0,
       "truncate": 1
     },
     {
-      "file": "th10_web\\cpp\\game\\EnemyAnimationCommands.cpp",
+      "file": "web\\cpp\\game\\EnemyAnimationCommands.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\EnemyCommands.cpp",
+      "file": "web\\cpp\\game\\EnemyCommands.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\EnemyMovement.cpp",
+      "file": "web\\cpp\\game\\EnemyMovement.cpp",
       "binary": 10,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\EnemyProjectileCommands.cpp",
+      "file": "web\\cpp\\game\\EnemyProjectileCommands.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\EnemySpawnCommands.cpp",
+      "file": "web\\cpp\\game\\EnemySpawnCommands.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\EnemyStateCommands.cpp",
+      "file": "web\\cpp\\game\\EnemyStateCommands.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\FogInterpolation.cpp",
+      "file": "web\\cpp\\game\\FogInterpolation.cpp",
       "binary": 0,
       "truncate": 1
     },
     {
-      "file": "th10_web\\cpp\\game\\GraphicsMath.cpp",
+      "file": "web\\cpp\\game\\GraphicsMath.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\GuiDraw.cpp",
+      "file": "web\\cpp\\game\\GuiDraw.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\GuiFrame.cpp",
+      "file": "web\\cpp\\game\\GuiFrame.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\Interpolation.cpp",
+      "file": "web\\cpp\\game\\Interpolation.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\ItemDraw.cpp",
+      "file": "web\\cpp\\game\\ItemDraw.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\ItemFrame.cpp",
+      "file": "web\\cpp\\game\\ItemFrame.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\LaserCancellation.cpp",
+      "file": "web\\cpp\\game\\LaserCancellation.cpp",
       "binary": 20,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\LaserCommands.cpp",
+      "file": "web\\cpp\\game\\LaserCommands.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\LaserFrame.cpp",
+      "file": "web\\cpp\\game\\LaserFrame.cpp",
       "binary": 11,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\Movement.cpp",
+      "file": "web\\cpp\\game\\Movement.cpp",
       "binary": 7,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\MusicRoom.cpp",
+      "file": "web\\cpp\\game\\MusicRoom.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\PlayerCollision.cpp",
+      "file": "web\\cpp\\game\\PlayerCollision.cpp",
       "binary": 7,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\PlayerDamage.cpp",
+      "file": "web\\cpp\\game\\PlayerDamage.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\PlayerDraw.cpp",
+      "file": "web\\cpp\\game\\PlayerDraw.cpp",
       "binary": 7,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\PlayerFrame.cpp",
+      "file": "web\\cpp\\game\\PlayerFrame.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\PlayerLifecycle.cpp",
+      "file": "web\\cpp\\game\\PlayerLifecycle.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\PlayerResources.cpp",
+      "file": "web\\cpp\\game\\PlayerResources.cpp",
       "binary": 9,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\PlayerShooting.cpp",
+      "file": "web\\cpp\\game\\PlayerShooting.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\ResultsDraw.cpp",
+      "file": "web\\cpp\\game\\ResultsDraw.cpp",
       "binary": 5,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\ScorePopups.cpp",
+      "file": "web\\cpp\\game\\ScorePopups.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\StageHints.cpp",
+      "file": "web\\cpp\\game\\StageHints.cpp",
       "binary": 5,
       "truncate": 2
     },
     {
-      "file": "th10_web\\cpp\\game\\StageRenderer.cpp",
+      "file": "web\\cpp\\game\\StageRenderer.cpp",
       "binary": 18,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\StageScript.cpp",
+      "file": "web\\cpp\\game\\StageScript.cpp",
       "binary": 3,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\Timer.cpp",
+      "file": "web\\cpp\\game\\Timer.cpp",
       "binary": 1,
       "truncate": 1
     },
     {
-      "file": "th10_web\\cpp\\game\\TitleClear.cpp",
+      "file": "web\\cpp\\game\\TitleClear.cpp",
       "binary": 4,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\TitleDraw.cpp",
+      "file": "web\\cpp\\game\\TitleDraw.cpp",
       "binary": 1,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\TitleReplays.cpp",
+      "file": "web\\cpp\\game\\TitleReplays.cpp",
       "binary": 2,
       "truncate": 0
     },
     {
-      "file": "th10_web\\cpp\\game\\TitleScores.cpp",
+      "file": "web\\cpp\\game\\TitleScores.cpp",
       "binary": 1,
       "truncate": 0
     }

@@ -49,19 +49,19 @@ function makeFixture() {
     return absolute;
   }
   const source = Buffer.from('packager source identity');
-  write('th08_web/cpp/game/AnmRenderer.cpp', 'TH08 game marker');
-  write('th08_web/cpp/game/source.cpp', source);
-  write('th08_web/sdl-runtime/th08.html', '<!doctype html><head></head><body></body>');
-  write('th08_web/sdl-runtime/shell.mjs', 'export const shell = true;');
-  write('th08_web/sdl-runtime/startup-branding.mjs', 'export const branding = true;');
-  write('th08_web/sdl-runtime/eagler-host.mjs', 'export const host = true;');
-  write('th08_web/sdl-runtime/directory-keyboard.mjs', 'export const keyboard = true;');
+  write('web/cpp/game/AnmRenderer.cpp', 'TH08 game marker');
+  write('web/cpp/game/source.cpp', source);
+  write('web/sdl-runtime/th08.html', '<!doctype html><head></head><body></body>');
+  write('web/sdl-runtime/shell.mjs', 'export const shell = true;');
+  write('web/sdl-runtime/startup-branding.mjs', 'export const branding = true;');
+  write('web/sdl-runtime/eagler-host.mjs', 'export const host = true;');
+  write('web/sdl-runtime/directory-keyboard.mjs', 'export const keyboard = true;');
   write('third_party/eagler-common/browser/adonis-calibration.mjs', 'export const calibration = true;');
-  write('th08_web/sdl-runtime/multiplayer-host.mjs', 'export const multiplayer = true;');
-  write('th08_web/sdl-runtime/save-storage.mjs', 'export const storage = true;');
-  write('th08_web/sdl-runtime/practice.mjs', 'export const practice = true;');
-  write('th08_web/sdl-runtime/practice-config.mjs', 'export const practiceConfig = true;');
-  write('th08_web/sdl-runtime/practice-sections.mjs', 'export const practiceSections = true;');
+  write('web/sdl-runtime/multiplayer-host.mjs', 'export const multiplayer = true;');
+  write('web/sdl-runtime/save-storage.mjs', 'export const storage = true;');
+  write('web/sdl-runtime/practice.mjs', 'export const practice = true;');
+  write('web/sdl-runtime/practice-config.mjs', 'export const practiceConfig = true;');
+  write('web/sdl-runtime/practice-sections.mjs', 'export const practiceSections = true;');
   write('portable/browser/motion-replay.mjs', 'export const replay = true;');
   write('private-fonts/blend.bin', Buffer.from([1, 2, 3]));
   write('private-fonts/cp932.bin', Buffer.from([4, 5]));
@@ -71,7 +71,7 @@ function makeFixture() {
     {variant: 'multiplayer', profile: 'multiplayer', diagnostic: false, exports: []},
     {variant: 'normal', profile: 'presentation-lab', diagnostic: true, exports: TH08_PRESENTATION_LAB_EXPORTS},
   ]) {
-    const buildRoot = resolve(root, 'th08_web/artifacts', profile);
+    const buildRoot = resolve(root, 'web/artifacts', profile);
     const wasm = makeWasm(exports);
     const loader = Buffer.from('loader:' + profile);
     write(resolve(buildRoot, 'th08-sdl.wasm'), wasm);
@@ -87,7 +87,7 @@ function makeFixture() {
       version: '3.4.1-sdl3',
       features: {thprac: true, languages: true, focusHitbox: false},
       architecture: {loop: 'test'},
-      sourceFiles: {'th08_web/cpp/game/source.cpp': sha256(source)},
+      sourceFiles: {'web/cpp/game/source.cpp': sha256(source)},
       exports: exports.map(name => ({name, kind: 'function'})),
       sha256: sha256(wasm),
       loaderSha256: sha256(loader),
@@ -103,13 +103,13 @@ test('package plans isolate ordinary, multiplayer and presentation-lab outputs',
     const normal = resolvePackagePlan(root, []);
     const multiplayer = resolvePackagePlan(root, ['--multiplayer']);
     const lab = resolvePackagePlan(root, ['--presentation-lab']);
-    assert.equal(normal.buildRoot, resolve(root, 'th08_web/artifacts/sdl3'));
+    assert.equal(normal.buildRoot, resolve(root, 'web/artifacts/sdl3'));
     assert.equal(normal.out, resolve(root, 'build-eagler'));
-    assert.equal(multiplayer.buildRoot, resolve(root, 'th08_web/artifacts/multiplayer'));
+    assert.equal(multiplayer.buildRoot, resolve(root, 'web/artifacts/multiplayer'));
     assert.equal(multiplayer.out, resolve(root, 'build-eagler-multiplayer'));
     assert.equal(multiplayer.variant, 'multiplayer');
     assert.notEqual(normal.out, multiplayer.out);
-    assert.equal(lab.buildRoot, resolve(root, 'th08_web/artifacts/presentation-lab'));
+    assert.equal(lab.buildRoot, resolve(root, 'web/artifacts/presentation-lab'));
     assert.equal(lab.out, resolve(root, 'artifacts/presentation-lab/runtime'));
     assert.throws(() => resolvePackagePlan(root, ['--multiplayer', '--presentation-lab']), /separate build variants/);
   } finally {
@@ -140,7 +140,7 @@ test('ordinary, multiplayer and diagnostic packages retain their manifests and f
     assert.equal(multiplayerManifest.variant, 'multiplayer');
     assert.equal(multiplayerManifest.features.multiplayer, true);
     assert.equal(multiplayerManifest.execution.sha256,
-      JSON.parse(readFileSync(resolve(root, 'th08_web/artifacts/multiplayer/build.json'), 'utf8')).sha256);
+      JSON.parse(readFileSync(resolve(root, 'web/artifacts/multiplayer/build.json'), 'utf8')).sha256);
 
     for (const directory of [normal.out, multiplayer.out, lab.out]) {
       const manifestBytes = readFileSync(resolve(directory, 'manifest.json'));
@@ -172,8 +172,8 @@ test('ordinary, multiplayer and diagnostic packages retain their manifests and f
 test('packaging rejects build-variant, export-inventory and binary-hash mismatches before output', () => {
   const {root, fonts, dispose} = makeFixture();
   try {
-    const buildPath = resolve(root, 'th08_web/artifacts/multiplayer/build.json');
-    const sourcePath = resolve(root, 'th08_web/cpp/game/source.cpp');
+    const buildPath = resolve(root, 'web/artifacts/multiplayer/build.json');
+    const sourcePath = resolve(root, 'web/cpp/game/source.cpp');
     const build = JSON.parse(readFileSync(buildPath, 'utf8'));
     writeFileSync(buildPath, JSON.stringify({...build, variant: 'normal'}));
     assert.throws(() => packageEagler({root, fonts, args: ['--multiplayer']}), /profile or variant/);

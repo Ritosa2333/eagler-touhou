@@ -7,7 +7,7 @@ import {resolve} from 'node:path';
 const root=resolve(import.meta.dirname,'../..');
 function plan(args){return JSON.parse(execFileSync(process.execPath,[resolve(root,'portable/build.mjs'),'--th08','--print-plan',...args],{encoding:'utf8'}));}
 function exports(profile){
-  const bytes=readFileSync(resolve(root,'th08_web/artifacts',profile,'th08-sdl.wasm'));
+  const bytes=readFileSync(resolve(root,'web/artifacts',profile,'th08-sdl.wasm'));
   return new Set(WebAssembly.Module.exports(new WebAssembly.Module(bytes)).map(entry=>entry.name));
 }
 test('fixture owner is separate from ordinary and production multiplayer source plans',()=>{
@@ -48,9 +48,9 @@ test('network admission exports are multiplayer-only, not fixture-only',()=>{
   }
 });
 test('diagnostic native headers participate in fixture identity only',()=>{
-  const fixture=JSON.parse(readFileSync(resolve(root,'th08_web/artifacts/multiplayer-fixtures/build.json')));
-  const production=JSON.parse(readFileSync(resolve(root,'th08_web/artifacts/multiplayer/build.json')));
-  const ordinary=JSON.parse(readFileSync(resolve(root,'th08_web/artifacts/sdl3/build.json')));
+  const fixture=JSON.parse(readFileSync(resolve(root,'web/artifacts/multiplayer-fixtures/build.json')));
+  const production=JSON.parse(readFileSync(resolve(root,'web/artifacts/multiplayer/build.json')));
+  const ordinary=JSON.parse(readFileSync(resolve(root,'web/artifacts/sdl3/build.json')));
   for(const file of [...['enemy','screen','pools','resources','world'].map(name=>'portable/multiplayer/'+name+'-journal-fixture.hpp'),'portable/multiplayer/correction-fixture.hpp']){
     assert.ok(fixture.sourceFiles[file],file+' missing from fixture source inventory');
     assert.ok(!production.sourceFiles[file],file+' leaked into production source identity');

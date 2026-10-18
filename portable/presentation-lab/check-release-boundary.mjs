@@ -5,8 +5,8 @@ import {resolve} from 'node:path';
 import {TH08_PRESENTATION_LAB_EXPORTS} from './native-abi.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
-const diagnosticBuildRoot=resolve(root,'th08_web/artifacts/presentation-lab');
-const productionBuildRoot=resolve(root,'th08_web/artifacts/sdl3');
+const diagnosticBuildRoot=resolve(root,'web/artifacts/presentation-lab');
+const productionBuildRoot=resolve(root,'web/artifacts/sdl3');
 const diagnosticRuntime=resolve(root,'artifacts/presentation-lab/runtime');
 assert.notEqual(diagnosticBuildRoot,productionBuildRoot);
 assert.notEqual(diagnosticRuntime,resolve(root,'build-eagler'));

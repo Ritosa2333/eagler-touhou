@@ -8,7 +8,7 @@ import {SourceTextModule,SyntheticModule,createContext} from 'node:vm';
 // Execute the complete shell ESM, including its actual message listener and
 // async command queue. Only native/platform dependencies are mocked. Override
 // TH08_SHELL_UNDER_TEST to run the queue regression against a frozen old shell.
-const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../th08_web/sdl-runtime');
+const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../web/sdl-runtime');
 const sourcePath=process.env.TH08_SHELL_UNDER_TEST||resolve(runtime,'shell.mjs');
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
 const gate=()=>{let release;const promise=new Promise(resolve=>{release=resolve;});return {promise,release};};

@@ -2,9 +2,9 @@
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Native correction diagnostics must not enter production
 #endif
-#include "../../th08_web/cpp/multiplayer/WorldJournal.hpp"
-#include "../../th08_web/cpp/multiplayer/AudioEvents.hpp"
-#include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
+#include "../../web/cpp/multiplayer/WorldJournal.hpp"
+#include "../../web/cpp/multiplayer/AudioEvents.hpp"
+#include "../../web/cpp/platform/BrowserRuntime.hpp"
 #include <cstdio>
 
 namespace th08::multiplayer::fixture {

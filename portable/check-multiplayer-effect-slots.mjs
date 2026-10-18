@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { WASI } from 'node:wasi';
 
 const root = resolve(import.meta.dirname, '..');
-const cpp = resolve(root, 'th08_web/cpp');
+const cpp = resolve(root, 'web/cpp');
 const sdk = process.env.WASI_SDK_PATH ?? [
   resolve(root, '../toolchains/wasi-sdk-34.0-x86_64-windows'),
   resolve(root, '../../toolchains/wasi-sdk-34.0-x86_64-windows'),

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const out='th08_web/artifacts/architecture-candidate/validation',base='http://127.0.0.1:8095';mkdirSync(out,{recursive:true});
-const replay=readFileSync('th08_web/artifacts/cpp/campaign/character0-final/original.rpy'),browser=await launchBrowser(),context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const out='web/artifacts/architecture-candidate/validation',base='http://127.0.0.1:8095';mkdirSync(out,{recursive:true});
+const replay=readFileSync('web/artifacts/cpp/campaign/character0-final/original.rpy'),browser=await launchBrowser(),context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];
 page.on('pageerror',e=>errors.push(e.stack));
 async function open(){await page.goto(base+'/?debug=1');await page.locator('.game[data-game="th08"]').tap();await page.locator('#launch').tap();await page.waitForFunction(()=>document.querySelector('#gameFrame')?.contentWindow?.__th08Runtime?.app,null,{timeout:120000});const f=page.frames().find(f=>f.url().includes('/runtime/th08/'));await f.waitForFunction(()=>__th08Runtime.status()[9]>330);if(await page.locator('#touchHelpClose').isVisible())await page.locator('#touchHelpClose').tap();return f;}
 try{

@@ -6,7 +6,7 @@ import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 const root=resolve(import.meta.dirname,'../..');
 const selected=process.argv.find(arg=>arg.startsWith('--case='))?.slice(7)||'all';
-const buildRoot=resolve(root,'th08_web/artifacts/multiplayer-fixtures');
+const buildRoot=resolve(root,'web/artifacts/multiplayer-fixtures');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 if(build.variant!=='multiplayer-fixtures'||sha(resolve(buildRoot,'th08-sdl.wasm'))!==build.sha256)throw Error('Wrong/stale fixture build');

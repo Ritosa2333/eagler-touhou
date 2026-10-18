@@ -19,7 +19,7 @@ parser.add_argument('--output', type=Path, required=True)
 args = parser.parse_args()
 args.output.parent.mkdir(parents=True, exist_ok=True)
 report = {'passed': False, 'scope': __doc__}
-build = json.loads((ROOT/'th08_web/artifacts/multiplayer/build.json').read_text())
+build = json.loads((ROOT/'web/artifacts/multiplayer/build.json').read_text())
 report['wasmSha256'] = build['sha256']
 if any(e['name'].startswith('mp_fixture_') for e in build['exports']):
     raise RuntimeError('fixture exports leaked into real MP build')

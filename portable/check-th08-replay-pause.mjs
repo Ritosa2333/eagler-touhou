@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const base=process.env.TEST_URL??'http://127.0.0.1:8095',out='th08_web/artifacts/architecture-candidate/validation';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const base=process.env.TEST_URL??'http://127.0.0.1:8095',out='web/artifacts/architecture-candidate/validation';
 const slot=Number(process.env.SLOT??1),occupied=process.env.OCCUPIED==='1',replayPath='replay/th8_'+String(slot).padStart(2,'0')+'.rpy';
 assert(slot>=1&&slot<=15);
 mkdirSync(out,{recursive:true});

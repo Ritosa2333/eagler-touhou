@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/multiplayer/NetworkFrameSchedule.hpp"
+#include "../web/cpp/multiplayer/NetworkFrameSchedule.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>

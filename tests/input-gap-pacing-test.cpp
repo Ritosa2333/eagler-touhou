@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/multiplayer/InputGapPacing.hpp"
+#include "../web/cpp/multiplayer/InputGapPacing.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdio>

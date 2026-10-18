@@ -2,8 +2,8 @@
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Native pool ownership fixture must not enter production
 #endif
-#include "../../th08_web/cpp/multiplayer/PoolsJournal.hpp"
-#include "../../th08_web/cpp/game/GameplayScene.hpp"
+#include "../../web/cpp/multiplayer/PoolsJournal.hpp"
+#include "../../web/cpp/game/GameplayScene.hpp"
 
 namespace th08::multiplayer::fixture {
 inline const u32* pools_journal_probe(GameplayScene& game,GameplaySession& session){

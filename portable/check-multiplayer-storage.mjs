@@ -3,11 +3,11 @@ import {spawnSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {initializeSaveStorage,migrateLegacySaves} from '../th08_web/sdl-runtime/save-storage.mjs';
+import {initializeSaveStorage,migrateLegacySaves} from '../web/sdl-runtime/save-storage.mjs';
 
 const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
-const shell=readFileSync(resolve(root,'th08_web/sdl-runtime/shell.mjs'),'utf8');
-const fileHost=readFileSync(resolve(root,'th08_web/cpp/sdl/FileHost.cpp'),'utf8');
+const shell=readFileSync(resolve(root,'web/sdl-runtime/shell.mjs'),'utf8');
+const fileHost=readFileSync(resolve(root,'web/cpp/sdl/FileHost.cpp'),'utf8');
 assert.match(shell,/import \{initializeSaveStorage,migrateLegacySaves\} from '\.\/save-storage\.mjs'/);
 assert.match(shell,/storage=await initializeSaveStorage\(\{game,runtimeVariant,setCompiledVariant:value=>core\.sdl_files_variant\(value\)/);
 assert.match(shell,/await migrateLegacySaves\(storage,\{indexedDB,filesystem:Module\.FS,sync/);

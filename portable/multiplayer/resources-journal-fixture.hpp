@@ -2,7 +2,7 @@
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Native resource ownership fixture must not enter production
 #endif
-#include "../../th08_web/cpp/multiplayer/ResourcesJournal.hpp"
+#include "../../web/cpp/multiplayer/ResourcesJournal.hpp"
 
 namespace th08::multiplayer::fixture {
 inline std::vector<u8> resource_journal_anm(i16 opcode=37,u16 mask=0,u32 destination=7,u32 input=42){

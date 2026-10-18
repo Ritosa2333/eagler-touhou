@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/multiplayer/NetworkFailure.hpp"
+#include "../web/cpp/multiplayer/NetworkFailure.hpp"
 #include <cassert>
 #include <cstring>
 #include <string>

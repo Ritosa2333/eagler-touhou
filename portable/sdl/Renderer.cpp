@@ -2,7 +2,7 @@
 #include "Shaders.hpp"
 #include "ResampleShader.hpp"
 #ifdef TH_MULTIPLAYER_FIXTURES
-#include "../../th08_web/cpp/multiplayer/MotionCadenceProbe.hpp"
+#include "../../web/cpp/multiplayer/MotionCadenceProbe.hpp"
 #endif
 #include <emscripten.h>
 #include <algorithm>

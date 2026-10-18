@@ -17,7 +17,7 @@ const cCompiler = resolve(sdk, 'bin', process.platform === 'win32' ? 'clang.exe'
 const out = resolve(root, 'artifacts/multiplayer-tests');
 const wasm = resolve(out, 'player-resources.wasm');
 mkdirSync(out, { recursive: true });
-const softfloat = resolve(root, 'th08_web/cpp/third_party/softfloat.c');
+const softfloat = resolve(root, 'web/cpp/third_party/softfloat.c');
 const softfloatObject = resolve(out, 'player-resources-softfloat.o');
 execFileSync(cCompiler, [
   '--target=wasm32-wasip1', '-O2', '-std=c11', '-DSOFTFLOAT_FAST_INT64',
@@ -27,13 +27,13 @@ execFileSync(compiler, [
   '--target=wasm32-wasip1', '-O2', '-std=c++17', '-Wall', '-Wextra', '-Werror',
   '-fno-exceptions', '-fno-rtti', '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1',
   '-Wl,-z,stack-size=1048576',
-  '-I' + resolve(root, 'th08_web/cpp/multiplayer'),
-  '-I' + resolve(root, 'th08_web/cpp/game'),
-  resolve(root, 'th08_web/cpp/game/Arithmetic.cpp'),
-  resolve(root, 'th08_web/cpp/game/GameGauge.cpp'),
-  resolve(root, 'th08_web/cpp/game/GameValues.cpp'),
-  resolve(root, 'th08_web/cpp/game/Rng.cpp'),
-  resolve(root, 'th08_web/cpp/multiplayer/PlayerResources.cpp'),
+  '-I' + resolve(root, 'web/cpp/multiplayer'),
+  '-I' + resolve(root, 'web/cpp/game'),
+  resolve(root, 'web/cpp/game/Arithmetic.cpp'),
+  resolve(root, 'web/cpp/game/GameGauge.cpp'),
+  resolve(root, 'web/cpp/game/GameValues.cpp'),
+  resolve(root, 'web/cpp/game/Rng.cpp'),
+  resolve(root, 'web/cpp/multiplayer/PlayerResources.cpp'),
   resolve(root, 'tests/player-resources-test.cpp'),
   softfloatObject,
   '-o', wasm,
