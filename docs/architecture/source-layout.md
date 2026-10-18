@@ -23,6 +23,8 @@ TH20 的当前源码树保留浏览器程序的构建输入、Runtime、验证�
 
 跨作依赖统一维护：ImGui 位于 `common/third_party/imgui/`，浏览器加载与启动辅助器位于 `tools/browser/`。版本相同的第三方源码共用一份，各作编译参数保留自己的功能选择。根 `.github/workflows/` 调度有效 CI。
 
+浏览器辅助器先读取 Launcher 的 Node Playwright，未安装该模块时使用本机 Python Playwright 自带的驱动。两种 Node 模块解析错误均进入同一回退入口。
+
 [自动适配检查](../../tools/ports/README.md)按源码所有者核对实际编译输入与接口。完整目录可读为：
 
 ```text

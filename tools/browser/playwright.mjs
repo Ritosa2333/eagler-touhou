@@ -9,7 +9,7 @@ export async function loadPlaywright({preferPython = false} = {}) {
     const require = createRequire(new URL('../../launcher/package.json',import.meta.url));
     return await import(pathToFileURL(require.resolve('playwright')).href);
   }}
-  catch (error) {if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;}
+  catch (error) {if (!['ERR_MODULE_NOT_FOUND','MODULE_NOT_FOUND'].includes(error.code)) throw error;}
   const module = execFileSync(process.env.PYTHON || 'python', ['-c',
     "import pathlib,playwright; print(pathlib.Path(playwright.__file__).parent/'driver'/'package'/'index.mjs')"], {encoding:'utf8',windowsHide:true}).trim();
   return import(pathToFileURL(module).href);

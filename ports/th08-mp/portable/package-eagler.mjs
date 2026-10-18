@@ -13,7 +13,7 @@ export function sha256(bytes) {
 }
 
 export function resolvePackagePlan(root, args = []) {
-  const game = existsSync(resolve(root, 'web/cpp/game/AnmRenderer.cpp')) ? 'th08' : 'th10';
+  const game = 'th08';
   const presentationLab = args.includes('--presentation-lab');
   const multiplayer = args.includes('--multiplayer');
   if (presentationLab && multiplayer) {

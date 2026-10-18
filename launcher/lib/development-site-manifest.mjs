@@ -41,7 +41,7 @@ async function musicDeclaration(declaration, mode, sourceRoot) {
   };
 }
 
-export async function createDevelopmentSiteManifestFromContent(content, { netplayRelay, sourceRoot = project, games: selectedGames } = {}) {
+export async function createDevelopmentSiteManifestFromContent(content, { netplayRelay, sourceRoot = project, games: selectedGames, publishManifest = value => value } = {}) {
   const games = {};
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     if (selectedGames && !selectedGames.includes(game)) continue;
@@ -71,7 +71,7 @@ export async function createDevelopmentSiteManifestFromContent(content, { netpla
     };
   }
 
-  return validateSiteManifest({
+  return validateSiteManifest(publishManifest({
     schema: SITE_MANIFEST_SCHEMA,
     protocol: HOST_PROTOCOL,
     profile: "web-development",
@@ -82,7 +82,7 @@ export async function createDevelopmentSiteManifestFromContent(content, { netpla
       ...(netplayRelay ? { netplayRelay } : {}),
     },
     games,
-  });
+  }));
 }
 
 export async function createDevelopmentSiteManifest(options = {}) {

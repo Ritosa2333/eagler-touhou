@@ -16,7 +16,7 @@ export function resolvePackagePlan(root, args = []) {
   if (args.includes('--multiplayer-fixtures')) {
     throw Error('Multiplayer fixture binaries are diagnostic-only and cannot be packaged.');
   }
-  const game = existsSync(resolve(root, 'web/cpp/game/AnmRenderer.cpp')) ? 'th08' : 'th10';
+  const game = 'th10';
   const presentationLab = args.includes('--presentation-lab');
   const multiplayer = args.includes('--multiplayer');
   if (presentationLab && multiplayer) {

@@ -19,7 +19,7 @@ npm --prefix launcher run build
 npm --prefix launcher run dev:workspace
 ```
 
-资源目录至少有 `th07.dat`。默认 `thcrap`、`thprac` 关闭。`build-runtime` 已生成 Launcher 使用的 Runtime，无额外端口打包命令。产物为 `ports/th07/build/web/normal/Release/` 和 `ports/th07/build/web/multiplayer/Release/`，各含 `th07.html`、`th07.js`、`th07.data`。Host 在 <http://127.0.0.1:8130/>。多人房间需另开终端启动 Relay：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。需要游戏配乐时，将原版 `thbgm.dat` 放入 `ports/th07/assets/`，或将已准备的曲目放入 `ports/th07/assets-ogg/bgm-ogg/`。
+资源目录至少有 `th07.dat`。默认 `thcrap`、`thprac` 关闭。`build-runtime` 已生成 Launcher 使用的 Runtime，无额外端口打包命令。产物为 `ports/th07/build/web/normal/` 和 `ports/th07/build/web/multiplayer/`，各含 `th07.html`、`th07.js`、`th07.data`。Host 在 <http://127.0.0.1:8130/>。多人房间需另开终端启动 Relay：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。需要游戏配乐时，将原版 `thbgm.dat` 放入 `ports/th07/assets/`，或将已准备的曲目放入 `ports/th07/assets-ogg/bgm-ogg/`。
 
 ## 源码与验证
 

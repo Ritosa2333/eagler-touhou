@@ -62,7 +62,7 @@ for (const [game, entry] of Object.entries(manifest.games)) {
 }
 const multiplayerRuntimeOwners = {
   th06: "../ports/th06/build/web/multiplayer/th06.html",
-  th07: "../ports/th07/build/web/multiplayer/Release/th07.html",
+  th07: "../ports/th07/build/web/multiplayer/th07.html",
   th08: "../ports/th08-mp/build-eagler-multiplayer/th08.html",
   th09: "../ports/th09/web/build-eagler-multiplayer/th09.html",
   th10: "../ports/th10-mp/build-eagler-multiplayer/th10.html",
@@ -79,7 +79,7 @@ for (const [game, owner] of Object.entries(multiplayerRuntimeOwners)) {
 }
 for (const [game, owner] of Object.entries({
   th06: "../ports/th06/build/web/normal/th06.html",
-  th07: "../ports/th07/build/web/normal/Release/th07.html",
+  th07: "../ports/th07/build/web/normal/th07.html",
 })) {
   assert.equal(resolve(project, manifest.games[game].runtime.split("?")[0]), resolve(project, owner),
     `${game}: normal development Runtime must use the root recipe default output`);

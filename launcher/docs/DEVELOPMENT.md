@@ -43,6 +43,10 @@ EAGLER_DEVELOPMENT_GAMES=th10 npm start
 
 打开 <http://127.0.0.1:8130/>，导入 TH10 游戏数据后启动。修改前端后重新运行 `npm run build`；修改游戏后重新编译、打包。
 
+开发服务器按内容目录中实际完整存在的音乐文件集提供音乐选项。DATA 已准备、OGG 尚未准备时，可先使用无背景音乐模式运行游戏。
+
+DATA、音乐和共用字体可位于工作树之外。服务器为清单明确声明的文件分配同源下载地址，独立工作树复用本机资源时无需复制素材。
+
 PowerShell 中先用 `$env:EAGLER_FONT_ROOT='C:\path\to\fonts'` 或 `$env:EAGLER_DEVELOPMENT_GAMES='th10'` 设置相应变量，再运行该行的 `node` 或 `npm` 命令。
 
 ## 5. 增加作品或模式
