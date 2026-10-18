@@ -16,6 +16,8 @@ constexpr int LayerPriority[32] = {4,  6,  8,  9,  11, 13, 16, 17, 18, 19, 20, 2
                                    34, 36, 38, 41, 42, 50, 51, 52, 63, 64, -1, -1, 14, 39, 66, 65};
 int drawPriority(const anm_logic::Node& node) {
   if (node.membership == anm_logic::Membership::Embedded) {
+    if (node.owner == 0xfffe0200u)
+      return 59; //41d322 installs41f8e0/41efb0 after the full-window frame draw.
     if (node.owner == 0xffff0000u)
       return 24; // 435be3 registers437670;437600 draws Player+14 directly.
     if ((node.owner & 0xffff0000u) == 0xfffe0000u)

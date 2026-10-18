@@ -22,6 +22,45 @@ void recordBossCountdown(int limit, int phaseAge) {
 void tickBossHud() {
   const auto* boss = primaryBoss();
   const bool visible = boss && !dialogue;
+  //41d8d0 binds ascii0 once;41ebcd/41effc hide it for Enemy flags21.
+  //This display VM has no game-random instructions or damage queries.
+  constexpr uint64_t indicatorKey = 0x7200000000000002ull;
+  if (!animationScene.find(indicatorKey) && animationScene.registry.bank(11)) {
+    animationScene.bind(indicatorKey, 0xfffe0200u, 11, 0,
+                        anm_logic::Membership::Embedded, 0, 0, {}, false, nullptr, 0, 0, 22);
+    bossHud.enemyIndicator = indicatorKey;
+  }
+  const bool indicatorVisible = boss && !(boss->flags & 0x21u);
+  if (indicatorVisible) {
+    //41ec0a..41ee28 uses different thresholds during a spell.
+    const bool activeSpell = spellState.active();
+    const int thresholds[] = {activeSpell ? 2000 : 700, activeSpell ? 1000 : 400,
+                              activeSpell ? 400 : 200};
+    int irq = 0;
+    const int phase = bossHud.enemyIndicatorPhase;
+    if (phase < 3 && boss->life < thresholds[phase]) {
+      irq = 7 + phase;
+      ++bossHud.enemyIndicatorPhase;
+    } else if (phase == 3 && boss->life > thresholds[2]) {
+      irq = 10;
+      bossHud.enemyIndicatorPhase = 0;
+    }
+    if (irq)
+      animationScene.interrupt(indicatorKey, irq);
+    animationScene.tickEmbedded(indicatorKey);
+    //41ee3b positions the glyph at (Boss.x+224,480). The alpha falls
+    //from255 to64 over the last64px toward the player's horizontal axis.
+    animationScene.position(indicatorKey, float(double(boss->x) + 224.), 480);
+    if (auto* node = animationScene.find(indicatorKey)) {
+      auto& state = node->vm.control();
+      const float distance = std::abs(float(double(boss->x) - px / 128.f));
+      const uint32_t alpha = boss->x < -192 || boss->x > 192 ? 0u
+                             : distance >= 64 ? 255u
+                                              : uint32_t(64 - int(double(distance) * -191. / 64.));
+      state.primary = (state.primary & 0x00ffffffu) | (alpha << 24);
+    }
+  }
+  animationScene.drawEnabled(indicatorKey, indicatorVisible);
   // HUD+4b50/+5004 are direct embedded ascii3/4 VMs, ticked by HUD25.
   for (int i = 0; i < 2; ++i) {
     const auto key = 0x7200000000000000ull + i;

@@ -11,6 +11,8 @@ struct BossHud {
   std::array<uint32_t, 4> colors{};
   uint64_t name = 0;
   uint64_t itemNotice = 0; // Native HUD+6c6c, shared item/Extend notification.
+  uint64_t enemyIndicator = 0; // HUD+678c, embedded ascii0 below the field.
+  int enemyIndicatorPhase = 0; // HUD+6d18 bits1..2, life-dependent blink state.
   std::array<uint64_t, 10> stars{};
   int timerSeconds = -1, timerHundredths = 0, previousTimerSeconds = -1;
   bool timerVisible = false;

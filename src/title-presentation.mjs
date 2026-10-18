@@ -1,12 +1,12 @@
 import {AnimationSampler,MenuAnimation} from './animation.mjs';
-import {MENU_SCRIPTS,musicComment} from './menu-resources.mjs';
+import {musicComment} from './menu-resources.mjs';
 import {CHARACTERS,DIFFICULTIES} from './title-scenes.mjs';
-import {nativeQuadCorners} from './renderer.mjs';
 import {nativeDataHeaderScripts,nativePlayerDataScripts,nativeNameHeaderScripts,nativeNameDescriptors,nativeScoreDescriptors,nativePauseScoreDescriptors,nativeDataTotalDescriptors,nativeSpellDescriptors,NATIVE_DATA_LAYOUT} from './native-data-presentation.mjs';
 import {nativeReplayListDescriptors,nativeReplayStageDescriptors,nativePracticeDescriptors,nativeReplayNameDescriptors,nativePauseReplayListDescriptors,nativePauseReplayNameDescriptors,NATIVE_REPLAY_LAYOUT} from './native-replay-presentation.mjs';
 
 const MENU_ROOTS={title:0,options:1,'key-config':2,difficulty:131,character:143};
 const HEADINGS={difficulty:110,character:111,shot:112,replay:113,'replay-stage':113,'player-data':114,'music-room':115,'replay-save':117,practice:118};
+const SNOW_SCENES=new Set(['difficulty','character','shot','practice','replay','replay-stage','player-data','music-room','name','replay-save']);
 const pausedName=state=>state.scene==='name'&&state.nameContext==='pause';
 const popupPage=state=>['pause','pause-confirm','continue','result-menu'].includes(state.scene)||pausedName(state)||state.scene==='replay-save'&&state.nameContext==='pause';
 const ascii=(text,x,y,colorARGB=0xffffffff,font=1)=>({text:String(text),x,y,font,colorARGB,scaleX:1,scaleY:1,alignX:1,alignY:1});
@@ -20,8 +20,12 @@ export const MANUAL_PAGES=[
 
 export class TitlePresentation {
   constructor(renderer,resources,profile){
-    this.renderer=renderer;this.resources=resources;this.profile=profile;this.sampler=new AnimationSampler(renderer.atlases);this.bindings=new Map();this.retiring=[];this.serial=-1;this.intro=false;this.scene=null;this.heading=null;
+    this.renderer=renderer;this.resources=resources;this.profile=profile;this.displaySeed=0x1234;
+    // ascii20 starts16 flowers, then loops its last spawn; each lives300 ticks.
+    // They share the presentation random stream, separate from gameplay.
+    this.sampler=new AnimationSampler(renderer.atlases,{displayRandom32:()=>this.nextDisplayRandom()});this.bindings=new Map();this.retiring=[];this.serial=-1;this.intro=false;this.scene=null;this.heading=null;
   }
+  nextDisplayRandom(){const a=((this.displaySeed^0x9630)-0x6553)&65535,b=((a<<2)|(a>>>14))&65535,c=((b^0x9630)-0x6553)&65535;this.displaySeed=((c<<2)|(c>>>14))&65535;return ((a<<16)|c)>>>0;}
   bind(key,script,bank='title'){if(this.bindings.has(key))this.remove(key);const vm=new MenuAnimation(this.sampler,bank,script);this.bindings.set(key,vm);return vm;}
   remove(key){const vm=this.bindings.get(key);if(vm){if(!vm.retirementStarted)vm.interrupt(1);vm.retirementStarted=true;this.retiring.push({vm,age:0});this.bindings.delete(key);}}
   preservePane(key){const pane=this.bindings.get('pane');if(pane){this.remove(key);this.bindings.set(key,pane);this.bindings.delete('pane');}}
@@ -33,6 +37,11 @@ export class TitlePresentation {
   setHeading(script){if(this.heading===script&&this.bindings.has('heading'))return;this.remove('heading');this.heading=script;if(script!==undefined)this.bind('heading',script);}
   enter(state){
     const previous=this.scene;this.serial=state.serial;this.scene=state.scene;this.initialSelection=false;this.pendingPopupScript=null;
+    // Native Title+66c keeps ascii20 across the selection pages
+    // (444cb0,446711,447191,4480f5,4493b7), retiring it on return/start.
+    if(SNOW_SCENES.has(state.scene)&&!popupPage(state)){
+      if(!this.bindings.has('snow'))this.bind('snow',20,'ascii');
+    }else this.remove('snow');
     if(state.scene==='pause-confirm'&&this.bindings.has('popup')){
       const row=state.context?.mode==='replay'?94+state.pauseSelection:90+state.pauseSelection;
       this.bindings.get('popup').interrupt(6,{script:row});return;
@@ -82,7 +91,8 @@ export class TitlePresentation {
       if(['difficulty','character','shot'].includes(state.scene)){this.select(state,{type:'ready',selectionInterrupt:17+state.selection});this.initialSelection=true;}
       if(state.scene==='practice')this.bind('practice-highlight',120);
       if(state.scene==='music-room'){
-        for(const id of MENU_SCRIPTS.music.headers)this.bind('music-'+id,id);
+        //449360 binds heading115, tracks211+ and text41..48 only.
+        //206..210 belong to Player Data, including its four arrows.
         for(let i=0;i<state.choices.length;i++){const vm=this.bind('track-'+i,211+i);vm.setText(211+i,{text:this.trackTitle(state,i),width:512,height:18});vm.interrupt(i===state.selection?2:3);}
         for(let i=0;i<8;i++)this.bind('comment-'+i,41+i,'text');
         this.musicSelection=state.selection;this.musicCommentId=null;this.commentUpdate=null;
@@ -194,31 +204,6 @@ export class TitlePresentation {
     }else for(const name of [...this.bindings.keys()])if(name.startsWith('data-row-'))this.remove(name);
   }
   titleLogo(code){this.bindings.get('background')?.interrupt(code,{immediate:true});}
-  hitTest(state,x,y){
-    const ids=new Map(),scene=state.scene,put=(scripts,row)=>scripts.forEach(id=>ids.set(id,row));
-    if(scene==='title')state.choices.forEach((_,i)=>put([3+i,11+i],i));
-    else if(scene==='options')state.choices.forEach((_,i)=>put([19+i,24+i],i));
-    else if(scene==='key-config')state.choices.forEach((_,i)=>put([45+i,52+i],i));
-    else if(scene==='difficulty')state.choices.forEach((_,i)=>put([state.run.mode==='extra'?125:126+i],i));
-    else if(scene==='character')state.choices.forEach((_,i)=>put([133+i,140+i],i));
-    else if(scene==='shot'){const loadout=state.run.character+(state.run.mode==='extra'?3:0);state.choices.forEach((_,i)=>put([144+loadout*2+i,181+loadout*2+i],i));}
-    else if(scene==='pause')state.choices.forEach((_,i)=>put([(state.context?.mode==='replay'?94:90)+i],i));
-    else if(scene==='pause-confirm')state.choices.forEach((_,i)=>put([100+i],i));
-    else if(scene==='continue')state.choices.forEach((_,i)=>put([107+i],i));
-    else if(scene==='result-menu')state.choices.forEach((_,i)=>put([113+i],i));
-    const bank=['pause','pause-confirm','continue','result-menu'].includes(scene)?'front':'title';
-    for(const vm of this.bindings.values())for(const a of vm.poses()){
-      if(a.name!==bank||!ids.has(a.script)||!a.visible||a.alpha<.05)continue;
-      const sprite=this.renderer.atlases[bank]?.sprites[a.sprite];if(!sprite)continue;
-      const corners=nativeQuadCorners(a.x,a.y,sprite.w*a.sx,sprite.h*a.sy,a.rotation??0,a.anchorX,a.anchorY,a.mode),xs=corners.map(p=>p[0]),ys=corners.map(p=>p[1]);
-      if(x>=Math.min(...xs)-4&&x<=Math.max(...xs)+4&&y>=Math.min(...ys)-4&&y<=Math.max(...ys)+4)return ids.get(a.script);
-    }
-    if(scene==='music-room'&&x>=56&&x<=576&&y>=96&&y<296)return (state.musicTop||0)+Math.floor((y-96)/20);
-    if(scene==='name'){const gx=pausedName(state)?112:212,gy=pausedName(state)?320:360;if(x>=gx&&x<gx+234&&y>=gy&&y<gy+112)return Math.floor((y-gy)/16)*13+Math.floor((x-gx)/18);}
-    const list=scene==='replay-save'&&state.nameContext==='pause'?[48,64,15,416]:['replay-save','replay'].includes(scene)?[58,80,15,608]:scene==='replay-stage'?[220,128,18,440]:scene==='practice'?[296,216,18,530]:null;
-    if(list&&x>=list[0]&&x<=list[3]&&y>=list[1])return Math.floor((y-list[1])/list[2])+(scene==='replay'?Math.floor(state.selection/25)*25:0);
-    return -1;
-  }
   poses(){return [...this.bindings.values(),...this.retiring.map(item=>item.vm)].flatMap(vm=>vm.poses().map(a=>({a,x:0,y:0,alpha:1})));}
   texts(state){
     const output=[],scene=state.scene,selected=state.selection,run=state.run;

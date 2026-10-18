@@ -277,9 +277,11 @@ export class Renderer {
   }
   state(a,x,y,angle=0,scale=1,alpha=1,screenShake=[0,0]){
     if(!a.visible)return;
-    if(a.mode===20){
-      // Native45cbaa ->45d0a0 colors the two right vertices with primary
-      // and the two left vertices with secondary, then rotates the quad.
+    if(a.mode===18||a.mode===20){
+      // Native mode18 (opcode108),45cbaa ->45d0a0, uses an untextured
+      // gradient quad for the two halves of the selection highlight.
+      // The right vertices carry primary color, the left secondary color;
+      // the gradient rotates together with the quad.
       const right=a.primaryColor??[a.r,a.g,a.b,a.alpha],left=[a.r2,a.g2,a.b2,a.alpha2],points=quadCorners(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.geometryWidth*a.sy*scale,a.rotation+angle);
       const colors=[left,right,right,left].map(c=>[c[0],c[1],c[2],c[3]*alpha]);
       this.solidTriangles(points.map(([x,y],i)=>({x,y,color:colors[i]})),[0,1,2,0,2,3],a.blend);return;

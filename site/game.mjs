@@ -102,6 +102,9 @@ function recordingConfig(){
 }
 
 async function begin(settings,replay=null,id=null){
+  //A fresh story run (including every Retry path) starts at stage1.
+  //Only Practice retains its selected stage; Extra always starts stage7.
+  settings={...settings,stage:replay?settings.stage??1:settings.mode==='practice'?settings.stage??1:settings.mode==='extra'?7:1};
   busy=true;loadingScreen.startResources();
   if(session&&!session.replay)await saveProfile();
   clearKeys();stopEffects();ending=null;pendingResult=null;
@@ -257,14 +260,14 @@ async function actions(){
       stopEffects();
       if(core._th12_continue_game()!==1)throw Error('续关失败');
       session.previous=0;session.clock=0;session.cursor=0;session.recorder=null;session.resultRecorded=false;session.continues=readJSON('stage_flow').continueCount;audio.musicSerial=core._th12_music_serial();clearKeys();await playMusic(stageMusic[session.stage]);
-    }else if(action.type==='retry')await begin({mode:session?.mode??action.mode,character:session?.character??action.character,shot:session?.shot??action.shot,difficulty:session?.difficulty??action.difficulty,stage:session?.mode==='practice'?session.stage:session?.mode==='extra'?7:1});
+    }else if(action.type==='retry')await begin({mode:action.mode,character:action.character,shot:action.shot,difficulty:action.difficulty,stage:action.stage});
     else if(action.type==='quit'){audio.music?.stop();notice('已结束。按 Z 返回标题。');}
   }
   if(model.state.scene==='title'&&!loadingScreen.startup&&loadingScreen.waiting)loadingScreen.completeResources();
 }
 function choices(){
   const state=model.state;if(choiceSerial===state.serial&&$('choices').dataset.selection===String(state.selection))return;choiceSerial=state.serial;
-  $('choices').dataset.selection=state.selection;$('choices').replaceChildren(...state.choices.map((choice,index)=>{const button=document.createElement('button');button.textContent=choice.label;button.disabled=choice.disabled;button.setAttribute('aria-current',index===state.selection?'true':'false');button.onclick=()=>{audioReady().catch(console.warn);model.choose(index);};return button;}));
+  $('choices').dataset.selection=state.selection;$('choices').replaceChildren(...state.choices.map((choice,index)=>{const option=document.createElement('div');option.textContent=choice.label;option.setAttribute('role','option');option.setAttribute('aria-selected',String(index===state.selection));option.setAttribute('aria-disabled',String(!!choice.disabled));return option;}));
 }
 function present(){
   const scene=model.state.scene;canvas.dataset.scene=scene;canvas.dataset.stage=String(session?.stage??0);canvas.dataset.replayCursor=String(session?.cursor??0);
@@ -318,12 +321,6 @@ window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(
 window.addEventListener('keyup',e=>eventKey(e.code,false));
 window.addEventListener('blur',()=>{if(ready&&model.state.scene==='playing'){model.openPause(resultData(false));}clearKeys();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearKeys();});
-canvas.addEventListener('pointerdown',e=>{
-  if(!ready)return;audioReady().catch(console.warn);canvas.focus();
-  const x=(e.clientX-canvas.getBoundingClientRect().left)*640/canvas.clientWidth,y=(e.clientY-canvas.getBoundingClientRect().top)*480/canvas.clientHeight,s=model.state;
-  if(!['playing','demo','ending'].includes(s.scene)&&s.choices.length){const row=presentation.hitTest(s,x,y);if(row>=0&&row<s.choices.length)model.choose(row);}
-});
-for(const button of document.querySelectorAll('#touch button')){button.onpointerdown=e=>{e.preventDefault();button.setPointerCapture(e.pointerId);eventKey(button.dataset.key,true);};for(const type of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(type,()=>eventKey(button.dataset.key,false));}
 $('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.querySelector('.viewport').requestFullscreen();};
 $('manual').onclick=()=>{if(session&&model.state.scene==='playing'){model.openPause(resultData(false));}model.key('F1',true);};
 $('import').onchange=async()=>{try{const file=$('import').files[0];if(!file)return;if(file.size>64*1024*1024)throw Error('录像过大');const b=new Uint8Array(await file.arrayBuffer()),r=parseReplay(b),id='th12_import_'+Date.now()+'.rpy';await store.write('/savesth12/replay/'+id,b);corpus.push(replayMetadata(r,{id}));model.setCorpus(corpus);notice('录像已导入，可从 Replay 选择');}catch(error){notice(error.message);}finally{$('import').value='';}};

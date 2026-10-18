@@ -12,7 +12,9 @@ void tickMessage(int held, int pressed) {
           {command.op, frame + 1, {command.payload, command.payload + command.size}});
     if (command.op == 21) {
       stage_award::add(score, stage_award::base(stageNumber));
-      bindScreenAnimation(8, 85);
+      //421350 reads HUD+6d44, loaded from front.anm by41d250.
+      //text85 is a captured-field effect, not the clear message.
+      bindScreenAnimation(7, 85);
       // Native420aa4 returns to the practice results before final bonuses.
       // Legacy standalone/replay mode retains its established award behavior.
       if (!fullGamePractice())

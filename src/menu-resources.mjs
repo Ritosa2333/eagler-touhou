@@ -18,7 +18,7 @@ export const MENU_SCRIPTS=freeze({
     shotWeaponNames:[[181,182],[183,184],[185,186],[187,188],[189,190],[191,192]],
     headings:{difficulty:110,character:111,shot:112,replay:113,result:114,music:115,options:116,replaySave:117,practiceStage:118}},
   result:{headers:[193,194,195,196,197,198,199,200,201,202],totals:[203,204,205]},
-  music:{headers:[206,207,208,209,210],firstLine:211,lineCount:22,selectedInterrupt:2,inactiveInterrupt:3},
+  music:{heading:115,firstLine:211,lineCount:22,selectedInterrupt:2,inactiveInterrupt:3},
   interrupts:{retire:1,selected:2,unselected:3,hide:6,enable:28,disable:27},
   evidence:{titleConstructor:'0x43f483',musicRoom:'0x449360',endingSelection:'0x410d76',endingInterpreter:'0x411420'}
 });

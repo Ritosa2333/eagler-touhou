@@ -326,7 +326,11 @@ export class TitleScenes {
     }
   }
   pauseAction(action,context) {
-    if(action==='retry'){this.enter('playing',0,{readyAt:0});this.emit('retry',{...context});}
+    if(action==='retry'){
+      const run={...this.run,...context},stage=run.mode==='practice'?run.stage:run.mode==='extra'?7:1;
+      this.run={mode:run.mode,character:run.character,shot:run.shot,difficulty:run.difficulty,stage};
+      this.enter('playing',0,{readyAt:0});this.emit('retry',{...this.run});
+    }
     else if(action==='save-exit')this.emit('saveExit');
     else this.returnTitle();
   }

@@ -117,6 +117,7 @@ class Track {
       case 102:{const n=I(0),range=I(1),random=this.random32(true);if(!range){this.owner.unimplemented.add('102-native-division-by-zero');this.ended=true;break;}s.sprite=n+random%(range>>>0);s.visible=true;break;}
       case 103:s.mode=14;s.geometryRadius=F(0);s.geometryWidth=F(1);break;
       case 104:case 105:s.mode=c.op===104?15:16;s.geometryRadius=F(0);s.geometryCount=I(1);break;
+      case 108:s.mode=18;s.geometryRadius=F(0);s.geometryWidth=F(1);break;
       case 110:s.mode=20;s.geometryRadius=F(0);s.geometryWidth=F(1);break;
       default:this.owner.unimplemented.add('opcode-'+c.op);break;
     }

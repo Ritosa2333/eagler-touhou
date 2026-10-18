@@ -10,7 +10,8 @@ export function stageClearAward(h,practice=false){
   return stage===7?base+(points+(power+(bombs+lives*2)*150)*100)*100:base;
 }
 export function stageClearText(h,poses,practice=false){
-  const clear=poses.find(p=>p.a?.name==='text'&&p.a.sprite===77&&p.a.visible);
+  //421350 binds front85;41f040 borrows its alpha for the reward digits.
+  const clear=poses.find(p=>p.a?.name==='front'&&p.a.sprite===70&&p.a.visible);
   if(!clear)return null;
   const alpha=Math.max(0,Math.min(255,Math.round(clear.a.alpha*255)));
   return {text:stageClearAward(h,practice).toLocaleString('en-US'),font:3,x:224,y:200,z:0,scaleX:1,scaleY:1,alignX:0,alignY:0,colorARGB:((alpha<<24)|0xffffff)>>>0};

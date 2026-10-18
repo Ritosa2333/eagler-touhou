@@ -21,6 +21,13 @@ float global(Enemy& e, int id, bool floating) {
     return float(i32(e.variables[id + 9985]));
   if (id >= -9981 && id <= -9978)
     return asfloat(e.variables[id + 9985]);
+  if (id >= -9939 && id <= -9936) {
+    // 41a1b4..41a1fc reads the live primary boss's float variables, not
+    // the copies inherited at birth. Murasa's warp ghost reads the target
+    // from slots 2/3 only after the boss has finished its departure jitter.
+    const auto* boss = primaryBoss();
+    return boss ? asfloat(boss->variables[id + 9943]) : 0;
+  }
   if (id >= -9935 && id <= -9932)
     return asfloat(e.variables[id + 9943]);
   switch (id) {
@@ -179,6 +186,11 @@ void store(Context& c, Enemy& e, int id, float value, bool isFloat) {
     c.locals[id / 4] = raw;
   else if (id >= -9985 && id <= -9978)
     e.variables[id + 9985] = raw;
+  else if (id >= -9939 && id <= -9936) {
+    // 41a5c8..41a608 exposes the same boss variables as writable aliases.
+    if (auto* boss = primaryBoss())
+      boss->variables[id + 9943] = raw;
+  }
   else if (id >= -9935 && id <= -9932)
     e.variables[id + 9943] = raw;
   else

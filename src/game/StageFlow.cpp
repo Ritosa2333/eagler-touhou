@@ -92,6 +92,7 @@ static void beginClear() {
   resetItemPresentation();
   sound_system::queue.stop(21);
   sound_system::queue.stop(54);
+  animationScene.remove(bossHud.enemyIndicator);
   bossHud = {};
   dialogue = 0;
 }
