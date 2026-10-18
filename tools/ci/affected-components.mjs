@@ -30,7 +30,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const builds = JSON.parse(await readFile(resolve(root, 'launcher/config/runtime-builds.json'), 'utf8'));
   const base = process.env.EAGLER_CI_BASE || '';
   const files = /^[a-f0-9]{40,64}$/i.test(base) && !/^0+$/.test(base)
-    ? execFileSync('git', ['diff', '--name-only', '--no-renames', '-z', base, 'HEAD', '--'], {cwd: root, encoding: 'utf8'}).split('\0').filter(Boolean)
+    // A whole-repository import exceeds Node's default 1 MiB stdout buffer.
+    ? execFileSync('git', ['diff', '--name-only', '--no-renames', '-z', base, 'HEAD', '--'], {cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024}).split('\0').filter(Boolean)
     : null;
   const affected = affectedComponents(files, workspace, builds);
   const result = JSON.stringify(affected);
