@@ -68,7 +68,7 @@ if(process.argv.includes('--run-wasm')){
     return {stdout,stderr,...command};
   }
   try{
-    const game=resolve(root,'th11_web/cpp/game'),common=resolve(root,'third_party/eagler-common');
+    const game=resolve(root,'web/cpp/game'),common=resolve(root,'../../common');
     const names=['Stage.cpp','StageDraw.cpp','StageScript.cpp','StageResource.cpp','StageRollback.cpp','ScreenFade.cpp','ScreenDeformation.cpp','ScreenDeformationPool.cpp','EnemyAnimations.cpp','EclContext.cpp','Movement.cpp','AnmVm.cpp','AnmInterpreter.cpp','AnmGeometry.cpp','AnmProjection.cpp','AnmRenderer.cpp','AnmManager.cpp','AnmRollback.cpp','Interpolation.cpp','FogInterpolation.cpp','GraphicsMath.cpp','SceneCamera.cpp'];
     const sources=names.map(name=>resolve(game,name)).concat(resolve(import.meta.dirname,'anm-stage-batching.cpp'));
     const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(resolve(dir,entry.name)):[resolve(dir,entry.name)]);

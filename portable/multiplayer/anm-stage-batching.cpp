@@ -1,8 +1,8 @@
 // Real StageDraw / AnmRenderer submission oracle; ordinary and MP use one fixture.
 // The legacy loop below is frozen from StageDraw.cpp before the narrow setter edit.
 // GPU rasterization and browser performance are deliberately outside this gate.
-#include "../../th11_web/cpp/game/Stage.hpp"
-#include "../../th11_web/cpp/game/AnmRenderer.hpp"
+#include "../../web/cpp/game/Stage.hpp"
+#include "../../web/cpp/game/AnmRenderer.hpp"
 #include <array>
 #include <cstdio>
 #include <cstdlib>

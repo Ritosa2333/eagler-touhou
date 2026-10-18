@@ -1,8 +1,8 @@
 // Real screen deformation / ANM / renderer / journal component oracle.
 // Vector values are typed snapshots; neither STL nor polymorphic headers are copied.
-#include "../../th11_web/cpp/game/ScreenDeformation.hpp"
-#include "../../th11_web/cpp/game/ScreenDeformationPool.hpp"
-#include "../../th11_web/cpp/game/AnmRenderer.hpp"
+#include "../../web/cpp/game/ScreenDeformation.hpp"
+#include "../../web/cpp/game/ScreenDeformationPool.hpp"
+#include "../../web/cpp/game/AnmRenderer.hpp"
 #ifdef TH11_MULTIPLAYER
 #include <eagler/netplay/RollbackJournal.hpp>
 #endif

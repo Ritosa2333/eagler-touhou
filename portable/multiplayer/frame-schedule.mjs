@@ -67,9 +67,9 @@ if(process.argv.includes('--run-wasm')){
     return {stdout,stderr,...command};
   }
   try{
-    const common=resolve(root,'third_party/eagler-common');
+    const common=resolve(root,'../../common');
     const sources=[resolve(import.meta.dirname,'frame-schedule.cpp')];
-    const headers=[resolve(root,'th11_web/cpp/multiplayer/FrameSchedule.hpp'),
+    const headers=[resolve(root,'web/cpp/multiplayer/FrameSchedule.hpp'),
       resolve(root,'portable/sdl/FrameCadence.hpp'),
       resolve(common,'include/eagler/netplay/PendingFrameSchedule.hpp'),
       resolve(common,'include/eagler/netplay/FrameBudget.hpp')];

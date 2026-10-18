@@ -50,17 +50,17 @@ function withFixture(multiplayer, body) {
   };
   const binary = wasm(['th11_initialize', ...(multiplayer ? MULTIPLAYER_EXPORTS : [])]);
   const build = buildFor(binary, multiplayer);
-  const buildDir = 'th11_web/artifacts/' + plan.profile + '/';
+  const buildDir = 'web/artifacts/' + plan.profile + '/';
   put('source.cpp', '// source\n');
   put(buildDir + 'build.json', JSON.stringify(build));
   put(buildDir + 'th11-sdl.wasm', binary);
   put(buildDir + 'th11-sdl.mjs', '// loader\n');
-  put('th11_web/sdl-runtime/managed.html', '<html><head></head><body></body></html>');
+  put('web/sdl-runtime/managed.html', '<html><head></head><body></body></html>');
   // Exercise the real variant-dependent imports, not a build-info-only stub.
-  put('th11_web/sdl-runtime/shell.mjs',
-    readFileSync(new URL('../../th11_web/sdl-runtime/shell.mjs', import.meta.url), 'utf8'));
+  put('web/sdl-runtime/shell.mjs',
+    readFileSync(new URL('../../web/sdl-runtime/shell.mjs', import.meta.url), 'utf8'));
   for (const name of ['startup-branding.mjs', 'managed.css', 'keyboard.mjs', 'directory-keyboard.mjs',
-    'eagler-host.mjs', 'multiplayer.mjs', 'multiplayer.css']) put('th11_web/sdl-runtime/' + name, '// shell\n');
+    'eagler-host.mjs', 'multiplayer.mjs', 'multiplayer.css']) put('web/sdl-runtime/' + name, '// shell\n');
   put('portable/browser/motion-replay.mjs', '// replay\n');
   put('portable/browser/multiplayer-replay.mjs', '// mp replay\n');
   put('third_party/eagler-common/browser/adonis-calibration.mjs', '// calibration\n');
@@ -154,12 +154,12 @@ test('closed runtime inventories include the complete MP browser module closure 
 test('bad hashes, stale sources, calibration and shell mismatches leave existing output untouched', () => {
   for (const kind of ['wasm', 'source', 'calibration', 'inputBridge', 'factory']) withFixture(true, fixture => {
     fixture.put('build-eagler-multiplayer/manifest.json', 'previous generation');
-    if (kind === 'wasm') fixture.put('th11_web/artifacts/multiplayer/th11-sdl.wasm', wasm(['wrong']));
+    if (kind === 'wasm') fixture.put('web/artifacts/multiplayer/th11-sdl.wasm', wasm(['wrong']));
     if (kind === 'source') fixture.put('source.cpp', '// changed\n');
     if (kind === 'calibration') fixture.put('third_party/eagler-common/browser/adonis-calibration.mjs', '// changed\n');
     if (kind === 'inputBridge') fixture.put('third_party/eagler-common/browser/direct-input-bridge.mjs','// changed\n');
-    if (kind === 'factory') fixture.put('th11_web/sdl-runtime/shell.mjs',
-      readFileSync(resolve(fixture.root, 'th11_web/sdl-runtime/shell.mjs'), 'utf8').replace('/*TH11_MULTIPLAYER_FACTORY*/', ''));
+    if (kind === 'factory') fixture.put('web/sdl-runtime/shell.mjs',
+      readFileSync(resolve(fixture.root, 'web/sdl-runtime/shell.mjs'), 'utf8').replace('/*TH11_MULTIPLAYER_FACTORY*/', ''));
     assert.throws(() => fixture.package(), /identity mismatch|modified source|calibration module|input bridge|factory marker/);
     assert.equal(readFileSync(resolve(fixture.plan.out, 'manifest.json'), 'utf8'), 'previous generation');
     assert.deepEqual(readdirSync(fixture.plan.out), ['manifest.json']);

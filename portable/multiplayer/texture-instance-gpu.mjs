@@ -56,7 +56,7 @@ async function command(label,program,args,env=process.env){
 let browser=null,server=null;
 save();
 try{
-  const sdl=resolve(root,'portable/sdl'),imgui=resolve(root,'th11_web/cpp/third_party/imgui');
+  const sdl=resolve(root,'portable/sdl'),imgui=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'third_party/imgui');
   const fixture=resolve(import.meta.dirname,'texture-instance-gpu.cpp');
   const sdk=resolve(option('--emsdk',process.env.EMSDK||resolve(root,'../../toolchains/emsdk')));
   const emcc=['upstream/emscripten/emcc.py','install/emscripten/emcc.py'].map(name=>resolve(sdk,name)).find(existsSync);

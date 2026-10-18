@@ -1,7 +1,7 @@
 // Real TextRaster + TextureImage + common journal oracle. No SDL/GL emulation.
 // CPU pixels are compared exactly, including regions untouched by later text.
-#include "../../th11_web/cpp/game/TextRaster.hpp"
-#include "../../th11_web/cpp/sdl/TextureRollback.hpp"
+#include "../../web/cpp/game/TextRaster.hpp"
+#include "../../web/cpp/sdl/TextureRollback.hpp"
 #ifdef TH11_MULTIPLAYER
 #include <eagler/netplay/RollbackJournal.hpp>
 #endif
