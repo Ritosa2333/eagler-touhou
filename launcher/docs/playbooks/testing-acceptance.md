@@ -64,6 +64,20 @@ it may not regenerate or bless its own expected output. If a divergence proves
 a title-core gameplay defect, the acceptance record must name the upstream/core
 fix as well as any downstream Eagler propagation.
 
+## Test-support integration
+
+`npm run test:support` checks the browser harness adapters, isolated Package
+module staging, current keyboard owner and local HTTP serving. Root CI runs it
+in the UI behavior job, whose full Git checkout supplies independent historical
+scenario inputs. These checks do not run native games or establish WebKit or
+multiplayer acceptance. Keep historical scenario assertions as evidence without
+freezing current production source or an obsolete full test file.
+
+An isolated Package server uses `--parent-stdin` with a parent-owned pipe. Close
+the pipe and wait for exit before finishing the harness; Windows forced process
+termination cannot run cleanup handlers. Check both port release and removal of
+the owned temporary site.
+
 <!-- knowledge-id: K-TEST-003 -->
 ## Structured bring-up diagnostics
 

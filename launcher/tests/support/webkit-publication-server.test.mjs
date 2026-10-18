@@ -10,6 +10,8 @@ import {createServer} from 'node:net';
 import {request} from 'node:http';
 import {brotliDecompressSync, gunzipSync} from 'node:zlib';
 import {webkitPublicationServerArguments} from './webkit-publication-server.mjs';
+import {normalizeSourceText} from '../react-main/source-text.mjs';
+import {staticContentCacheControl} from '../../server/static-content-policy.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
@@ -20,33 +22,41 @@ function restore(source) {
 }
 
 const deploymentMarker = {format: 'eagler-touhou-deployment/1', frontend: {kind: 'react', mountPath: '/'}, appShell: null};
+test('immutable Runtime cache policy supports both Windows and POSIX filesystem paths', () => {
+  for (const separator of ['/', '\\']) {
+    const path = value => value.replaceAll('/', separator);
+    assert.equal(staticContentCacheControl(path(`site/runtime/th07/${'a'.repeat(64)}/probe.wasm`)), 'public, max-age=31536000, immutable');
+    for (const mutable of ['site/runtime/th07/current/probe.wasm', 'site/shared/probe.otf', 'site/index.html']) {
+      assert.equal(staticContentCacheControl(path(mutable)), 'public, max-age=0, must-revalidate');
+    }
+  }
+});
 async function markerRoot(action) {
   const root = await mkdtemp(resolve(tmpdir(), 'webkit-selector-contract-'));
   try {await writeFile(resolve(root, 'deployment.json'), JSON.stringify(deploymentMarker)); await action(root);}
   finally {await rm(root, {recursive: true, force: true});}
 }
 
-test('main command is exact; React selects the exact supplied packaged root and keeps explicit loopback confinement', async () => markerRoot(async root => {
-  for (const environment of [{}, {EAGLER_FRONTEND: 'main'}]) assert.deepEqual(webkitPublicationServerArguments(root, 23456, environment), ['scripts/serve.mjs', '23456', root]);
+test('default serving selects the exact verified package; retired frontend settings cannot bypass it', async () => markerRoot(async root => {
+  for (const environment of [{}, ...['main', 'react', 'unknown'].map(EAGLER_FRONTEND => ({EAGLER_FRONTEND}))]) assert.deepEqual(webkitPublicationServerArguments(root, 23456, environment), ['scripts/serve-static.mjs', root, '23456']);
   for (const host of [undefined, '127.0.0.1', 'localhost', '::1']) assert.deepEqual(webkitPublicationServerArguments(root, 23456,
     {EAGLER_FRONTEND: 'react', ...(host ? {EAGLER_TOUHOU_HOST: host} : {})}), ['scripts/serve-static.mjs', root, '23456']);
   for (const host of ['0.0.0.0', '::', 'example.com']) assert.throws(() => webkitPublicationServerArguments(root, 23456,
     {EAGLER_FRONTEND: 'react', EAGLER_TOUHOU_HOST: host}), /non-loopback/);
   assert.throws(() => webkitPublicationServerArguments(project, 23456, {EAGLER_FRONTEND: 'react'}), /not the source project/);
-  assert.throws(() => webkitPublicationServerArguments(root, 23456, {EAGLER_FRONTEND: 'unknown'}), /must be main or react/);
 }));
 
-test('incompatible dynamic services fail closed only in selected React mode; fixture metadata settings cannot select a synthesis server', async () => markerRoot(async root => {
+test('packaged serving rejects dynamic overrides and never selects a metadata synthesis server', async () => markerRoot(async root => {
   for (const extra of [{EAGLER_ENABLE_THCRAP: '1'}, {EAGLER_TOUHOU_ARTWORK_DIR: '/external/artwork'}]) {
     assert.throws(() => webkitPublicationServerArguments(root, 23456, {EAGLER_FRONTEND: 'react', ...extra}), /dynamic thcrap\/artwork overrides/);
-    assert.deepEqual(webkitPublicationServerArguments(root, 23456, extra), ['scripts/serve.mjs', '23456', root]);
+    assert.throws(() => webkitPublicationServerArguments(root, 23456, extra), /dynamic thcrap\/artwork overrides/);
   }
   assert.deepEqual(webkitPublicationServerArguments(root, 23456, {EAGLER_FRONTEND: 'react', EAGLER_LAUNCHER_FIXTURE_INPUTS: '/never/read.json'}), ['scripts/serve-static.mjs', root, '23456']);
 }));
 
-test('selected publication identity, root mount and no isolated worker are required; main reads no publication marker', async () => markerRoot(async root => {
+test('publication identity, root mount and no isolated worker are required by default', async () => markerRoot(async root => {
   const missing = resolve(root, 'missing');
-  assert.deepEqual(webkitPublicationServerArguments(missing, 23456, {}), ['scripts/serve.mjs', '23456', missing]);
+  assert.throws(() => webkitPublicationServerArguments(missing, 23456, {}), /ENOENT/);
   assert.throws(() => webkitPublicationServerArguments(missing, 23456, {EAGLER_FRONTEND: 'react'}), /ENOENT/);
   for (const marker of [{...deploymentMarker, frontend: {kind: 'main', mountPath: '/'}}, {...deploymentMarker, frontend: {kind: 'react', mountPath: '/nested/'}}, {...deploymentMarker, appShell: {origin: 'https://different.test'}}]) {
     await writeFile(resolve(root, 'deployment.json'), JSON.stringify(marker));
@@ -55,7 +65,7 @@ test('selected publication identity, root mount and no isolated worker are requi
 }));
 
 test('wrapper reverses exactly to pinned; packaging, verification, original Python arguments/game loop/environment/cleanup are untouched', async () => {
-  const source = await readFile(resolve(project, wrapper), 'utf8');
+  const source = normalizeSourceText(await readFile(resolve(project, wrapper), 'utf8'));
   const original = execFileSync('git', ['show', `${baseline}:${wrapper}`], {cwd: project, encoding: 'utf8'});
   assert.equal(restore(source), original);
   const verify = source.indexOf('await run(process.execPath, ["scripts/verify-server-build.mjs", output]);');
@@ -130,7 +140,7 @@ test('production static server preserves MIME/cache/ETag/HEAD/compression/redire
       const directory = await raw(server.base, '/nested?probe=1'); assert.equal(directory.status, 308); assert.equal(directory.headers.location, '/nested/?probe=1'); assert.equal(directory.headers['cache-control'], 'no-store');
       const legacy = await raw(server.base, '/eagler-touhou/'); assert.equal(legacy.status, 302); assert.equal(legacy.headers.location, '/');
       const retired = await raw(server.base, '/eagler-touhou/app-shell-sw.js'); assert.equal(retired.status, 200); assert.equal(retired.headers['service-worker-allowed'], '/eagler-touhou/'); assert.equal(retired.headers['cache-control'], 'no-store');
-      assert.equal((await raw(server.base, '/favicon.ico')).status, 204);
+      assert.equal((await raw(server.base, '/favicon.ico')).status, 404, 'static serving must not fabricate absent artwork');
       for (const path of ['/missing.html', '/missing.wasm', '/app.js', '/assets/launcher/app.mjs', '/public/index.html', '/site-manifest.json', '/release-catalog.json', '/app-shell-sw.js', '/%2e%2e%2foutside']) {
         const response = await raw(server.base, path); assert.equal(response.status, 404, path); assert.equal(response.body.toString(), 'Not found');
       }

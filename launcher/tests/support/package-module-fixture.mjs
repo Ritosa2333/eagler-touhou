@@ -88,14 +88,17 @@ export async function preparePackageModuleFixture({project = defaultProject} = {
   } catch (error) {await dispose(); throw error;}
 }
 
-export async function runPackageModuleFixtureServer(port, {project = defaultProject, environment = process.env} = {}) {
+export async function runPackageModuleFixtureServer(port, {project = defaultProject, environment = process.env, parentInput = null} = {}) {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Package fixture port must be between 1 and 65535');
   const host = environment.EAGLER_TOUHOU_HOST || '127.0.0.1';
   // Reject a non-loopback request before compilation or staging begins.
   assertSafeDevelopmentServerScope({host, project, root: resolve(tmpdir(), 'eagler-package-modules')});
   let fixture, child, stopping = false;
-  const stop = () => {stopping = true; child?.kill();};
+  const stop = () => {if (stopping) return; stopping = true; child?.kill();};
   process.once('SIGTERM', stop); process.once('SIGINT', stop);
+  // Windows terminate() cannot run Node signal handlers. A parent-owned pipe
+  // supplies a portable lifetime boundary, including unexpected parent exit.
+  if (parentInput) {parentInput.once('end', stop); parentInput.once('error', stop); parentInput.resume(); if (parentInput.readableEnded) stop();}
   try {
     fixture = await preparePackageModuleFixture({project});
     assertSafeDevelopmentServerScope({host, project, root: fixture.root});
@@ -110,11 +113,12 @@ export async function runPackageModuleFixtureServer(port, {project = defaultProj
     });
   } finally {
     process.removeListener('SIGTERM', stop); process.removeListener('SIGINT', stop);
+    if (parentInput) {parentInput.removeListener('end', stop); parentInput.removeListener('error', stop); parentInput.pause();}
     child?.kill(); await fixture?.dispose();
   }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  if (process.argv.length !== 3) throw new Error('usage: package-module-fixture.mjs PORT');
-  await runPackageModuleFixtureServer(Number(process.argv[2]));
+  if (![3, 4].includes(process.argv.length) || (process.argv.length === 4 && process.argv[3] !== '--parent-stdin')) throw new Error('usage: package-module-fixture.mjs PORT [--parent-stdin]');
+  await runPackageModuleFixtureServer(Number(process.argv[2]), {parentInput: process.argv[3] === '--parent-stdin' ? process.stdin : null});
 }

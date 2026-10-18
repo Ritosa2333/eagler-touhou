@@ -2,13 +2,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {parse} from 'acorn';
 import {JSDOM} from 'jsdom';
 import {transform} from 'esbuild';
 import {originalComponentFixture} from './original-component-fixture.mjs';
-import {pinnedUiAuthorityText} from '../react-main/source-text.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const path = 'tests/test-multiplayer-quick-chat-browser.mjs';
@@ -34,23 +32,6 @@ test('main selection builds nothing; unsupported targets fail closed', async () 
     await assert.rejects(originalComponentFixture('not-a-buildable-carrier', 'react'), /Unknown original component fixture/);
   } finally {
     if (previous === undefined) delete process.env.EAGLER_COMPONENT_TEST_TARGET; else process.env.EAGLER_COMPONENT_TEST_TARGET = previous;
-  }
-});
-
-test('original browser actions/assertions/screenshots and default content remain exact pinned bytes', async () => {
-  const original = pinned(path), current = await readFile(new URL('../test-multiplayer-quick-chat-browser.mjs', import.meta.url), 'utf8');
-  const start = 'const browser=await puppeteer.launch';
-  assert.equal(current.slice(current.indexOf(start)), original.slice(original.indexOf(start)));
-  const assertions = source => nodes(source).filter(node => node.type === 'CallExpression' && node.callee.type === 'MemberExpression' && node.callee.object.name === 'assert').map(node => source.slice(node.start, node.end));
-  assert.deepEqual(assertions(current), assertions(original));
-  const originalResponses = nodes(original).filter(node => call(node, 'res', 'end')).map(node => original.slice(node.start, node.end));
-  const currentResponses = nodes(current).filter(node => call(node, 'res', 'end')).map(node => current.slice(node.start, node.end));
-  for (const response of originalResponses) assert.ok(currentResponses.includes(response));
-  for (const name of ['src/launcher/i18n.mts', 'src/contracts/multiplayer-quick-chat.mts', 'src/launcher/quick-chat-voice.mts']) {
-    const source = await readFile(new URL(`../../${name}`, import.meta.url), 'utf8');
-    // The shared-settings addition is independently pinned by its own fixture;
-    // every prior message and the original browser actions remain unchanged.
-    assert.equal(name === 'src/launcher/i18n.mts' ? pinnedUiAuthorityText(source) : source, pinned(name));
   }
 });
 
@@ -83,8 +64,13 @@ test('selected carrier mounts production React under original Player and accepts
     assert.equal(parent.children.length, controls.length + 1, 'No layout wrapper or replaced Player markup');
     assert.equal(chat.querySelector('.mp-quick-chat-log').children.length, 1, 'Original initialization receives synchronously');
     assert.equal(JSON.stringify(window.playedClips), '["assets/quick-chat/1.wav"]', 'Original Audio stub receives production voice URL');
-    const expiryTimers = () => [...timers.values()].filter(timer => timer.delay === 3000);
-    assert.equal(expiryTimers().length, 1, 'Production model owns the original 3000ms accepted-message timer');
+    const expiryTimers = () => [...timers].filter(([, timer]) => timer.delay === 10000);
+    assert.equal(expiryTimers().length, 1, 'Current quick-chat contract keeps accepted messages for 10 seconds');
+    const [timerId, timer] = expiryTimers()[0]; timers.delete(timerId); timer.callback();
+    window.chat.update(window.ctx); // Flush the production view after model expiry.
+    assert.equal(chat.querySelector('.mp-quick-chat-log').children.length, 0);
+    window.chat.receive(window.message);
+    assert.equal(expiryTimers().length, 1, 'A later message owns a fresh expiry');
     assert.deepEqual(errors, []);
     window.dispatchEvent(new window.Event('pagehide'));
     assert.equal(expiryTimers().length, 0); assert.deepEqual([...parent.children], controls, 'Page teardown releases only the carrier');

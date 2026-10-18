@@ -1,91 +1,59 @@
-/** Original keyboard harness setup only. Synthetic DOM/protocol ports; no
- * browser, candidate Runtime, SDL state, multiplayer or confirmed-hash proof. */
+/** Current keyboard fixture wiring only. Synthetic DOM/protocol ports; no
+ * candidate Runtime, SDL state, multiplayer or confirmed-hash proof. */
 import test, {before, after} from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {readFile, mkdir, mkdtemp, writeFile, rm, access} from 'node:fs/promises';
+import {readFile, mkdir, mkdtemp, writeFile, rm} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
-import {runInNewContext} from 'node:vm';
-import {buildOriginalComponentFixture, originalComponentFixture} from './original-component-fixture.mjs';
+import {buildOriginalComponentFixture} from './original-component-fixture.mjs';
 import {installMountedDom} from '../react-main/mounted-dom-environment.mjs';
 const project=fileURLToPath(new URL('../../',import.meta.url)), path='tests/test-keyboard-ownership-browser.py';
-let fixture, adapter, work, env, HostedKeyboard, launcherPreparation;
-const fingerprint=async path=>createHash('sha256').update(await readFile(path)).digest('hex');
+const python=source=>execFileSync(process.env.PYTHON||'python',['-c',source],{cwd:project,encoding:'utf8',env:{...process.env,PYTHONDONTWRITEBYTECODE:'1'}});
+const fingerprint=async path=>createHash('sha256').update(await readFile(resolve(project,path))).digest('hex');
+let fixture,adapter,work,env;
 before(async()=>{
   await mkdir(resolve(project,'.cache'),{recursive:true});work=await mkdtemp(resolve(project,'.cache/keyboard-adapter-'));
-  // Compile the default-handler oracle from source using the canonical launcher
-  // configuration. Never import or read the shared, potentially stale cache.
-  const output=resolve(work,'.cache/build/browser/assets');
-  await assert.rejects(access(output),{code:'ENOENT'});
-  const sources=['tsconfig.launcher.json','src/launcher/app.mts','src/launcher/hosted-keyboard.mts'];
-  const beforeHashes=await Promise.all(sources.map(path=>fingerprint(resolve(project,path))));
-  execFileSync(process.execPath,[resolve(project,'node_modules/typescript/bin/tsc'),'-p',resolve(project,'tsconfig.launcher.json'),'--outDir',output,'--pretty','false'],{cwd:project,stdio:'pipe'});
-  assert.deepEqual(await Promise.all(sources.map(path=>fingerprint(resolve(project,path)))),beforeHashes,'oracle sources changed during compilation');
-  launcherPreparation={cold:true,sources:Object.fromEntries(sources.map((path,index)=>[path,beforeHashes[index]])),
-    outputs:Object.fromEntries(await Promise.all(['app.mjs','hosted-keyboard.mjs'].map(async name=>[name,await fingerprint(resolve(output,'launcher',name))])))};
-  ({HostedKeyboard}=await import(pathToFileURL(resolve(output,'launcher/hosted-keyboard.mjs')).href));
+  const sources=['app/services/player-keyboard.ts','src/launcher/hosted-keyboard.mts','src/launcher/touch-runtime-protocol.mts'];
+  const beforeHashes=await Promise.all(sources.map(fingerprint));
   fixture=await buildOriginalComponentFixture('keyboard-ownership');
+  assert.deepEqual(await Promise.all(sources.map(fingerprint)),beforeHashes,'fixture compilation must not change its input owners');
   const file=resolve(work,'fixture.mjs');await writeFile(file,fixture.module);
   env=installMountedDom();adapter=await import(pathToFileURL(file).href);
 });
-after(async()=>{try {if(env){assert.deepEqual(env.errors,[]);env.close();}} finally {if(work) await rm(work,{recursive:true,force:true});}});
-function hostHtml(react) {
-  return execFileSync('python3',['-c',`
-import ast,json
-from pathlib import Path
-source=Path(${JSON.stringify(path)}).read_text()
-node=next(n for n in ast.parse(source).body if isinstance(n,ast.FunctionDef) and n.name=='host_html')
-context={'ROOT':Path(${JSON.stringify(react ? '/no-main-launcher-cache' : work)}),'FIXTURE':{'module':'selected'} if ${react ? 'True':'False'} else None,'json':json}
-exec(compile(ast.Module(body=[node],type_ignores=[]),'keyboard-host-setup','exec'),context)
-print(context['host_html']('th06').decode())
-`],{cwd:project,encoding:'utf8'});
+after(async()=>{try{if(env){assert.deepEqual(env.errors,[]);env.close();}}finally{if(work)await rm(work,{recursive:true,force:true});}});
+
+function hostHtml(){
+  return python(`import ast,json\nfrom pathlib import Path\ns=Path('${path}').read_text();t=ast.parse(s)\nf=next(n for n in t.body if isinstance(n,ast.FunctionDef) and n.name=='host_html')\ncontext={'json':json}\nexec(compile(ast.Module(body=[f],type_ignores=[]),'keyboard-host-setup','exec'),context)\nprint(context['host_html']('th06').decode())`);
 }
-test('default oracle is compiled into cold isolated output before import and never consumes the shared cache',async t=>{
-  assert.equal(launcherPreparation.cold,true);
-  for(const hash of Object.values(launcherPreparation.outputs)) assert.match(hash,/^[a-f0-9]{64}$/);
-  const html=hostHtml(false),compiled=await readFile(resolve(work,'.cache/build/browser/assets/launcher/app.mjs'),'utf8');
-  const start=compiled.indexOf('const hostedKeyboard'),end=compiled.indexOf('function preventPlayerBrowserGesture',start);
-  assert.ok(start>=0&&end>start);assert.ok(html.includes(compiled.slice(start,end)));
-  t.diagnostic(JSON.stringify(launcherPreparation));
-});
-test('explicit selection bundles the actual keyboard owner/shared protocol without original application bootstrap',async()=>{
-  assert.equal(await originalComponentFixture('keyboard-ownership','main'),null);
-  await assert.rejects(originalComponentFixture('keyboard-ownership','invalid'),/main or react/);
-  for(const path of ['app/services/player-keyboard.ts','src/launcher/hosted-keyboard.mts','src/launcher/touch-runtime-protocol.mts','src/launcher/touch-function-key.mts']) assert.ok(fixture.inputs.includes(path),path);
+
+test('keyboard fixture bundles current owners without a retired application or inherited Launcher cache',()=>{
+  for(const path of ['app/services/player-keyboard.ts','src/launcher/hosted-keyboard.mts','src/launcher/touch-runtime-protocol.mts','src/launcher/touch-function-key.mts'])assert.ok(fixture.inputs.includes(path),path);
   assert.equal(fixture.inputs.some(path=>path.endsWith('/app.mts')||path.includes('original-bootstrap')),false);
-  const html=hostHtml(true);assert.match(html,/installKeyboardOwnershipFixture/);assert.doesNotMatch(html,/const hostedKeyboard =/);
-  assert.match(html,/frame.src='\/runtime\/\+?/); // Runtime URL is checked byte-for-byte below as well.
+  assert.equal(typeof adapter.installKeyboardOwnershipFixture,'function');
+  assert.equal(typeof adapter.createFunctionKeyOwner,'function');
 });
-test('every original scenario/engine/probe/relay action and assertion remains byte-identical',async()=>{
-  const baseline=execFileSync('git',['show','edee9633:'+path],{cwd:project,encoding:'utf8'}),current=await readFile(resolve(project,path),'utf8');
-  const marker='def admit_lobby(';
-  assert.equal(current.slice(current.indexOf(marker)),baseline.slice(baseline.indexOf(marker)));
-  const info=JSON.parse(execFileSync('python3',['-c',`
-import ast,json,subprocess
-from pathlib import Path
-old=subprocess.check_output(['git','show','edee9633:${path}'],text=True); new=Path('${path}').read_text()
-def assertions(source):
- return [ast.get_source_segment(source,n) for n in ast.walk(ast.parse(source)) if isinstance(n,ast.Assert)]
-print(json.dumps({'count':len(assertions(old)),'same':assertions(old)==assertions(new)}))
-`],{cwd:project,encoding:'utf8'}));
+
+test('Python harness selects the production keyboard even with the historical default target and exposes its real module URL',()=>{
+  const result=JSON.parse(python(`import json,sys,os\nfrom pathlib import Path\nsys.path.insert(0,'tests')\nfrom support.original_component_fixture import original_component_fixture\nos.environ['EAGLER_COMPONENT_TEST_TARGET']='main'\nf=original_component_fixture(Path.cwd(),'keyboard-ownership',target='react')\nprint(json.dumps({'inputs':f['inputs'],'module':bool(f['module'])}))`));
+  assert.equal(result.module,true);assert.ok(result.inputs.includes('app/services/player-keyboard.ts'));
+  const html=hostHtml();
+  assert.match(html,/from '\/__original-component-fixture\.mjs'/);
+  assert.match(html,/frame\.src='\/runtime\/'.*runtimeVariant=multiplayer&runtimeEpoch=1/);
+  assert.doesNotMatch(html,/const hostedKeyboard|\/modules\//);
+});
+
+test('keyboard harness resolves fonts and candidate runtimes from its supplied repository roots',()=>{
+  const paths=JSON.parse(python(`import ast,json,http.server\nfrom pathlib import Path\nfrom urllib.parse import urlparse\ns=Path('${path}').read_text();tree=ast.parse(s)\nnode=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='Handler')\nscope={'http':http,'ROOT':Path.cwd(),'urlparse':urlparse}\nexec(compile(ast.Module(body=[node],type_ignores=[]),'keyboard-resource-routing','exec'),scope)\nHandler=scope['Handler'];custom=Path.cwd()/'unused-custom-input'\nHandler.repositories={'th06':custom/'game-source'};Handler.runtimes={'th06':custom/'candidate-runtime'}\nh=Handler.__new__(Handler)\nprint(json.dumps([h.translate_path('/assets/th06/msgothic.ttc'),h.translate_path('/runtime/th06/th06.wasm')]))`));
+  assert.deepEqual(paths,[resolve(project,'unused-custom-input/game-source/assets/msgothic.ttc'),resolve(project,'unused-custom-input/candidate-runtime/th06.wasm')]);
+});
+
+test('native keyboard scenarios retain their independent pre-migration assertions',()=>{
+  const info=JSON.parse(python(`import ast,json,subprocess\nfrom pathlib import Path\nold=subprocess.check_output(['git','show','edee9633:${path}'],text=True);new=Path('${path}').read_text()\ndef assertions(s):return [ast.get_source_segment(s,n) for n in ast.walk(ast.parse(s)) if isinstance(n,ast.Assert)]\nprint(json.dumps({'count':len(assertions(old)),'same':assertions(old)==assertions(new)}))`));
   assert.ok(info.count>0);assert.equal(info.same,true);
-  const originalRuntimeLine=baseline.split('\n').find(line=>line.startsWith('frame.src='));
-  assert.ok(current.includes(originalRuntimeLine));
 });
-test('default compiled handlers have their missing canonical inert function owner and clear on pagehide',()=>{
-  const html=hostHtml(false),start=html.indexOf('const hostedKeyboard ='),end=html.indexOf('const pending=',start);
-  assert.ok(start>0&&end>start);const handlers={},messages=[];let touchSends=0;
-  const ports={HostedKeyboard,window:{addEventListener:(name,fn)=>handlers[name]=fn},document:{addEventListener(){}},
-    state:{launched:true,game:'th06'},player:{classList:{contains:()=>true}},frame:{contentWindow:{}},protocol:'eagler-touhou/1',
-    releaseHeldTouchFire(){},touchRuntimeMessageContext:()=>({game:'th06',epoch:1}),deliverRuntimeInput:(_,message)=>messages.push(message)};
-  runInNewContext(html.slice(start,end),ports);
-  assert.throws(()=>handlers.pagehide(),/touchFunctionOwner/);
-  ports.touchFunctionOwner=adapter.createFunctionKeyOwner(()=>{touchSends++;throw new Error('Unexpected held fixture touch key');});
-  handlers.pagehide();assert.equal(touchSends,0);assert.equal(messages.at(-1).command,'keyboard-clear');
-  assert.match(html,/createFunctionKeyOwner\(\(\)=>\{throw new Error\('Keyboard fixture unexpectedly acquired host touch input'\)/);
-});
+
 test('compiled production keyboard attaches to original fixture elements and uses the real canonical delivery boundary',()=>{
   const {document,window}=env;document.body.innerHTML='<div id="player" class="open"><iframe id="runtime"></iframe></div><button id="control">Launcher control</button>';
   const player=document.getElementById('player'),frame=document.getElementById('runtime'),control=document.getElementById('control');

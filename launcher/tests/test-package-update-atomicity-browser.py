@@ -8,7 +8,7 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-from support.package_module_fixture import package_module_server_command
+from support.package_module_fixture import package_module_server_command, stop_package_module_server
 
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -44,6 +44,7 @@ def main() -> int:
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         text=True,
+        stdin=subprocess.PIPE,
     )
     try:
         wait_http(url)
@@ -665,12 +666,7 @@ def main() -> int:
         print(json.dumps({"pass": True, **result}, ensure_ascii=False))
         return 0
     finally:
-        http.terminate()
-        try:
-            http.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            http.kill()
-            http.wait(timeout=5)
+        stop_package_module_server(http)
 
 
 if __name__ == "__main__":

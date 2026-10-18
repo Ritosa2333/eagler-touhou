@@ -20,10 +20,11 @@ from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import sync_playwright
 from support.original_component_fixture import original_component_fixture
+from support.workspace_layout import REPOSITORIES
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = original_component_fixture(ROOT, "keyboard-ownership")
+FIXTURE = original_component_fixture(ROOT, "keyboard-ownership", target="react")
 
 
 def free_port():
@@ -33,17 +34,8 @@ def free_port():
 
 
 def host_html(game):
-    if FIXTURE:
-        imports = "import { installKeyboardOwnershipFixture, createFunctionKeyOwner } from '/__original-component-fixture.mjs';"
-        handlers = "const keyboardFixture = installKeyboardOwnershipFixture({state, frame, player, touchRuntimeMessageContext, releaseHeldTouchFire, touchFunctionOwner});"
-    else:
-        app = (ROOT / ".cache/build/browser/assets/launcher/app.mjs").read_text(encoding="utf-8")
-        start = app.index("const hostedKeyboard = new HostedKeyboard();")
-        end = app.index("function preventPlayerBrowserGesture", start)
-        handlers = "const keyboardFixture = null;\n" + app[start:end]
-        imports = """import { HostedKeyboard } from '/modules/hosted-keyboard.mjs';
-import { deliverRuntimeInput } from '/modules/touch-runtime-protocol.mjs';
-import { createFunctionKeyOwner } from '/modules/touch-function-key.mjs';"""
+    imports = "import { installKeyboardOwnershipFixture, createFunctionKeyOwner } from '/__original-component-fixture.mjs';"
+    handlers = "const keyboardFixture = installKeyboardOwnershipFixture({state, frame, player, touchRuntimeMessageContext, releaseHeldTouchFire, touchFunctionOwner});"
     return ('''<!doctype html><meta charset="utf-8"><title>Keyboard ownership regression</title>
 <div id="player" class="open"><iframe id="runtime" width="640" height="480"></iframe></div>
 <button id="control">Launcher control</button><pre id="status">boot</pre>
@@ -91,7 +83,7 @@ frame.src='/runtime/'+game+'/'+game+'.html?hosted=1&runtimeVariant=multiplayer&r
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     runtimes = {}
-    workspace = None
+    repositories = {}
 
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -119,10 +111,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return str(ROOT / "missing")
         if parts[0] == "runtime" and len(parts) >= 3:
             return str(self.runtimes[parts[1]].joinpath(*parts[2:]))
-        if parts[0] == "modules":
-            return str((ROOT / ".cache/build/browser/assets/launcher").joinpath(*parts[1:]))
         if parts[0] == "assets" and len(parts) >= 3:
-            return str((self.workspace / (parts[1] + "-eagler") / "assets").joinpath(*parts[2:]))
+            return str((self.repositories[parts[1]] / "assets").joinpath(*parts[2:]))
         return super().translate_path(path)
 
     def log_message(self, *_):
@@ -307,14 +297,14 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     Handler.runtimes = {"th06": args.th06_runtime.resolve(), "th07": args.th07_runtime.resolve()}
-    Handler.workspace = args.workspace.resolve()
+    Handler.repositories = {game: args.workspace.resolve() / REPOSITORIES[game] for game in Handler.runtimes}
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Handler, directory=str(ROOT)))
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     port = free_port()
     env = dict(os.environ, EAGLER_NETPLAY_RELAY_HOST="127.0.0.1", EAGLER_NETPLAY_RELAY_PORT=str(port),
                EAGLER_NETPLAY_STUN_URLS="")
-    relay = subprocess.Popen(["node", "server/netplay-relay.mjs"], cwd=ROOT, env=env,
+    relay = subprocess.Popen(["node", "src/netplay-relay.mjs"], cwd=args.workspace.resolve() / REPOSITORIES["relay"], env=env,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     try:
         deadline = time.monotonic() + 10

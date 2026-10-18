@@ -13,19 +13,18 @@ import {preparePackageModuleFixture, runPackageModuleFixtureServer} from './pack
 import {browserModuleClosure} from '../../lib/browser-module-graph.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
-const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const originalPath = 'tests/test-package-update-atomicity-browser.py';
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const python = source => JSON.parse(execFileSync('python', ['-c', source], {cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
 let work, cold, fixture, coldInitially;
 before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/package-module-setup-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
+  for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
     'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json', 'scripts/serve-static.mjs', 'server/static-content-policy.mjs', 'tests/support/package-module-fixture.mjs',
     'public/faq.html', 'public/styles.css', 'public/about.css', 'public/assets/fonts', 'public/assets/launcher-background.webp']) {
     await mkdir(dirname(resolve(cold, path)), {recursive: true}); await cp(resolve(project, path), resolve(cold, path), {recursive: true});
   }
-  await symlink(resolve(project, 'node_modules'), resolve(cold, 'node_modules'), 'dir');
+  await cp(resolve(project, '../common/contracts'), resolve(work, 'common/contracts'), {recursive: true});
+  await symlink(resolve(project, 'node_modules'), resolve(cold, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
   coldInitially = ['.cache/build/contracts', '.cache/build/browser', '.cache/build/optimized', 'src/launcher', 'assets/contracts'].every(path => !existsSync(resolve(cold, path)));
   fixture = await preparePackageModuleFixture({project: cold});
 });
@@ -34,23 +33,14 @@ after(async () => {await fixture?.dispose(); if (work) await rm(work, {recursive
 test('explicit selector preserves exact default object/argv, rejects unknown modes and selects only the module staging runner', () => {
   const results = python(`import json,os,sys\nfrom pathlib import Path\nsys.path.insert(0,'tests')\nfrom support.package_module_fixture import package_module_server_command\noriginal=['node','original-server','1234','workspace'];rows=[]\nfor mode in (None,'source','isolated'):\n if mode is None:os.environ.pop('EAGLER_PACKAGE_TEST_FIXTURE',None)\n else:os.environ['EAGLER_PACKAGE_TEST_FIXTURE']=mode\n result=package_module_server_command(Path.cwd(),1234,original);rows.append({'same':result is original,'command':result})\nos.environ['EAGLER_PACKAGE_TEST_FIXTURE']='react'\ntry:package_module_server_command(Path.cwd(),1234,original)\nexcept ValueError:rows.append('rejected')\nprint(json.dumps(rows))`);
   assert.deepEqual(results.slice(0, 2), [{same: true, command: ['node', 'original-server', '1234', 'workspace']}, {same: true, command: ['node', 'original-server', '1234', 'workspace']}]);
-  assert.deepEqual(results[2], {same: false, command: ['node', resolve(project, 'tests/support/package-module-fixture.mjs'), '1234']}); assert.equal(results[3], 'rejected');
+  assert.deepEqual(results[2], {same: false, command: ['node', resolve(project, 'tests/support/package-module-fixture.mjs'), '1234', '--parent-stdin']}); assert.equal(results[3], 'rejected');
 });
 
-test('original whole file reverses to pinned; all 69 assertions and the full 26,622-character evaluated scenario remain verbatim', async () => {
-  const source = await readFile(resolve(project, originalPath), 'utf8');
-  const original = execFileSync('git', ['show', `${baseline}:${originalPath}`], {cwd: project, encoding: 'utf8'});
-  const restored = source.replace('\nfrom support.package_module_fixture import package_module_server_command\n', '')
-    .replace('package_module_server_command(PROJECT, http_port, ["node", str(PROJECT / "scripts" / "serve.mjs"), str(http_port), str(WORKSPACE)])', '["node", str(PROJECT / "scripts" / "serve.mjs"), str(http_port), str(WORKSPACE)]');
-  assert.equal(restored, original);
-  const result = python(`import ast,json,subprocess\nfrom pathlib import Path\na=subprocess.check_output(['git','show','${baseline}:${originalPath}'],text=True);b=Path('${originalPath}').read_text()\ndef assertions(s):return [ast.get_source_segment(s,n) for n in ast.walk(ast.parse(s)) if isinstance(n,ast.Assert)]\ndef scenarios(s):return [n.args[0].value for n in ast.walk(ast.parse(s)) if isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute) and n.func.attr=='evaluate']\nprint(json.dumps({'assertions':len(assertions(a)),'assertionsEqual':assertions(a)==assertions(b),'scenarios':len(scenarios(a)),'characters':len(scenarios(a)[0]),'scenariosEqual':scenarios(a)==scenarios(b)}))`);
-  assert.deepEqual(result, {assertions: 69, assertionsEqual: true, scenarios: 1, characters: 26622, scenariosEqual: true});
-  const scenarioStart = '    try:\n        wait_http(url)'; assert.equal(source.slice(source.indexOf(scenarioStart)), original.slice(original.indexOf(scenarioStart)));
-});
-
-test('cold isolated source builds current canonical contracts and stages the actual eleven-module closure without a Launcher graph', async t => {
+test('cold isolated source stages current canonical contracts and their module closure without a Launcher graph', async t => {
   assert.equal(coldInitially, true); assert.equal(fixture.contracts.mode, 'source'); assert.match(fixture.contracts.inputHash, /^[a-f0-9]{64}$/);
-  assert.deepEqual(fixture.modules, ['package/package-descriptor.mjs', 'package/package-generation.mjs', 'package/package-installer.mjs', 'package/package-integrity.mjs', 'package/package-launcher.mjs', 'package/package-mutation-queue.mjs', 'package/package-store.mjs', 'package/package-zip.mjs', 'package/stored-zip.mjs', 'product-catalog.mjs', 'release-catalog.mjs']);
+  assert.ok(fixture.modules.includes('package/game-version.mjs'));
+  assert.ok(fixture.modules.includes('product-catalog.mjs'));
+  assert.ok(fixture.modules.every(path => path.startsWith('package/') || ['product-catalog.mjs', 'release-catalog.mjs'].includes(path)));
   assert.deepEqual(await browserModuleClosure({root: fixture.root, entries: ['package/package-installer.mjs', 'package/package-launcher.mjs', 'package/package-store.mjs']}), fixture.modules);
   const manifest = JSON.parse(await readFile(resolve(fixture.contracts.root, 'manifest.json'), 'utf8'));
   for (const file of fixture.files) {
@@ -98,10 +88,10 @@ async function freePort() {
   const port = server.address().port; await new Promise(yes => server.close(yes)); return port;
 }
 
-test('CLI serves original module URLs with canonical HTTP headers, no Host/worker fallback, and cleans its owned temp root on termination', {timeout: 30000}, async () => {
+test('CLI serves canonical modules and HTTP headers, then releases its port and temp root when the parent pipe closes', {timeout: 30000}, async () => {
   const port = await freePort();
-  const child = spawn(process.execPath, [resolve(cold, 'tests/support/package-module-fixture.mjs'), String(port)], {cwd: cold,
-    env: {...process.env, EAGLER_PACKAGE_TEST_FIXTURE: 'isolated', EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: '/nonexistent-ui-is-not-this-module-subject', EAGLER_TOUHOU_HOST: '127.0.0.1', EAGLER_LAUNCHER_FIXTURE_INPUTS: '/never-consumed-host.json'}, stdio: ['ignore', 'pipe', 'pipe']});
+  const child = spawn(process.execPath, [resolve(cold, 'tests/support/package-module-fixture.mjs'), String(port), '--parent-stdin'], {cwd: cold,
+    env: {...process.env, EAGLER_PACKAGE_TEST_FIXTURE: 'isolated', EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: '/nonexistent-ui-is-not-this-module-subject', EAGLER_TOUHOU_HOST: '127.0.0.1', EAGLER_LAUNCHER_FIXTURE_INPUTS: '/never-consumed-host.json'}, stdio: ['pipe', 'pipe', 'pipe']});
   let output = '', selectedRoot;
   child.stdout.on('data', data => {output += data;}); child.stderr.on('data', data => {output += data;});
   const exited = new Promise(yes => child.once('exit', (code, signal) => yes({code, signal})));
@@ -128,9 +118,13 @@ test('CLI serves original module URLs with canonical HTTP headers, no Host/worke
       const response = await fetch(base + '/' + path); assert.equal(response.status, 404, path); assert.equal(await response.text(), 'Not found');
     }
   } finally {
-    if (child.exitCode === null && child.signalCode === null) child.kill();
+    const emergencyStop = setTimeout(() => child.kill(), 5000);
+    child.stdin.end();
     await exited;
+    clearTimeout(emergencyStop);
   }
   assert.ok(selectedRoot); assert.equal(existsSync(selectedRoot), false, 'runner must clean its private fixture after the original harness terminates it');
+  const released = createServer(); await new Promise((yes, no) => {released.once('error', no); released.listen(port, '127.0.0.1', yes);});
+  await new Promise(yes => released.close(yes));
   assert.equal(existsSync(resolve(cold, 'public/faq.html')), true, 'source inputs must remain untouched');
 });

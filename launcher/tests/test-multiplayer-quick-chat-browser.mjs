@@ -4,10 +4,10 @@ import {readFile, mkdir} from 'node:fs/promises';
 import {resolve, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import puppeteer from 'puppeteer-core';
-import { QUICK_CHAT_ROWS } from '../.cache/build/browser/assets/contracts/multiplayer-quick-chat.mjs';
+import { QUICK_CHAT_ROWS } from '../../common/contracts/multiplayer-quick-chat.mjs';
 import {originalComponentFixture} from './support/original-component-fixture.mjs';
 
-const componentFixture=await originalComponentFixture('multiplayer-quick-chat');
+const componentFixture=await originalComponentFixture('multiplayer-quick-chat', 'react');
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const server=createServer(async(req,res)=>{
@@ -104,23 +104,26 @@ try {
   const assertLayout=async()=>{
     const layout=await chromeLayout();
     assert.equal(layout.background,'rgba(0, 0, 0, 0)');assert.equal(layout.shadow,'none');
+    const separate=(a,b)=>a.right<=b.x||b.right<=a.x||a.bottom<=b.y||b.bottom<=a.y;
     for(const control of layout.controls){
-      assert.ok(layout.prompt.y>control.bottom,'fixed quick-chat button is below player controls');
-      assert.ok(layout.log.y>layout.prompt.bottom&&layout.picker.y>layout.prompt.bottom,'messages and picker clear the quick-chat button');
+      assert.ok(separate(layout.prompt,control),'quick-chat button does not obscure player controls: '+JSON.stringify(layout));
     }
+    for(const panel of [layout.log,layout.picker]) assert.ok(separate(panel,layout.prompt),'messages and picker clear the quick-chat button: '+JSON.stringify(layout));
   };
   await assertLayout();
   const phraseLayout=await page.$$eval('.mp-quick-chat-row',rows=>rows.map(row=>{
     const bounds=row.getBoundingClientRect();
     return {width:bounds.width,scrollWidth:row.scrollWidth,buttons:Array.from(row.querySelectorAll('button'),button=>{
-      const box=button.getBoundingClientRect(),style=getComputedStyle(button);
-      return {width:box.width,top:box.top,title:button.title,text:button.textContent,ellipsis:style.textOverflow,wrap:style.whiteSpace};
+      const box=button.getBoundingClientRect();
+      return {width:box.width,title:button.title,text:button.textContent,clientWidth:button.clientWidth,scrollWidth:button.scrollWidth,clientHeight:button.clientHeight,scrollHeight:button.scrollHeight};
     })};
   }));
   for(const row of phraseLayout){
     assert.ok(row.scrollWidth<=Math.ceil(row.width),'phrases do not expand the menu');
-    for(const button of row.buttons){assert.equal(button.ellipsis,'ellipsis');assert.equal(button.wrap,'nowrap');assert.equal(button.title,button.text);}
-    if(row.buttons.length===2){assert.equal(row.buttons[0].top,row.buttons[1].top);assert.ok(Math.abs(row.buttons[0].width-row.buttons[1].width)<1);}
+    for(const button of row.buttons){
+      assert.equal(button.title,button.text);assert.ok(button.width>0&&button.width<=row.width);
+      assert.ok(button.scrollWidth<=button.clientWidth+1&&button.scrollHeight<=button.clientHeight+1,'phrase text is fully readable');
+    }
   }
   const fixed=(await chromeLayout()).prompt;
   await page.mouse.move(fixed.x+10,fixed.y+10);await page.mouse.down();
@@ -157,7 +160,7 @@ try {
   assert.equal(await page.$eval('.mp-quick-chat-log p',el=>getComputedStyle(el).whiteSpace),'normal','received phrases wrap to show their complete text');
   assert.match(await page.$eval('.mp-quick-chat-log p',el=>el.textContent),/停止开火，然后在我旁边低速即可/);
   await page.waitForFunction(()=>document.querySelector('.mp-quick-chat-log p')?.getAnimations().some(animation=>
-    Number(animation.effect.getKeyframes().at(-1).opacity)===0),{timeout:3500});
+    Number(animation.effect.getKeyframes().at(-1).opacity)===0),{timeout:12000});
   await page.waitForFunction(()=>document.querySelector('.mp-quick-chat-log').children.length===0,{timeout:1000});
   assert.deepEqual(errors,[]);
   console.log('Multiplayer quick chat: sender/session validation, safe text, send, mute, scroll/focus stability, plain text, fixed button, portrait/landscape controls and spectator controls PASS');

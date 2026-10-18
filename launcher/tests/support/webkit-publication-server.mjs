@@ -1,17 +1,15 @@
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {frontendSelection} from '../../lib/react-frontend-artifact.mjs';
 import {assertSafeDevelopmentServerScope} from '../../lib/development-server-scope.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 
 /** Call only after the original verify-server-build step accepts this output.
  * Select the server command, never copy files or rewrite publication metadata.
- * Main retains its exact original command and source-server behavior. */
+ * The current frontend has one publication path. Do not start a source server
+ * which could synthesize missing packaged metadata. */
 export function webkitPublicationServerArguments(output, port, environment = process.env) {
-  const original = ['scripts/serve.mjs', String(port), output];
-  if (frontendSelection(environment) !== 'react') return original;
   if (resolve(output) === resolve(project)) throw new Error('WebKit publication must be the verified packaged output, not the source project');
   const host = environment.EAGLER_TOUHOU_HOST || '127.0.0.1';
   assertSafeDevelopmentServerScope({host, project, root: output});
