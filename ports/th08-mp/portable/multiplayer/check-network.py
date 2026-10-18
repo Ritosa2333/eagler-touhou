@@ -45,7 +45,15 @@ def observe(page):
         rng=call(page,'multiplayerSmoke.rngState()')
         if rng is not None:result['rng']=rng
     return result
+def physical_buttons(page,buttons):
+    return call(page,'''buttons=>{for(const [mask,code] of [[1,'KeyZ'],[2,'KeyX'],[4,'ShiftLeft'],[8,'Escape'],[16,'ArrowUp'],[32,'ArrowDown'],[64,'ArrowLeft'],[128,'ArrowRight'],[16384,'KeyR']])multiplayerSmoke.key(code,!!(buttons&mask));return true;}''',buttons)
+
 def capture(page,seat,frame):
+    if args.mode!='packets' and not args.analog:
+        # The connected production driver owns capture AND channel publication.
+        # Only device controls are supplied by the external browser test.
+        frame=call(page,'multiplayerSmoke.netStatus()')[13]
+        return physical_buttons(page,input_for(seat,frame))
     buttons=input_for(seat,frame)
     if frame==0 and seat==0:
         # Live v3 frame zero carries the host's route bootstrap; the native
@@ -78,11 +86,15 @@ with sync_playwright() as pw:
     try:
         for count in ([2,3] if args.players=='all' else [int(args.players)]):
             contexts=[];pages=[]
+            paired_oracles=bool(args.background_index or args.bomb_lazy or args.shot_sparse or args.record_sparse or args.texture_coalesce or args.world_instancing)
+            # Exact render controls keep each endpoint's local viewpoint.
+            # Remote-player alpha intentionally differs between player seats.
+            oracle_seats=([0,0] if paired_oracles else [0])+list(range(1,count)) if args.mode=='packets' else []
             case={'players':count,'passed':False,'phase':'boot','checkpoints':[]};report['cases'].append(case);save()
             try:
-                for endpoint in range(count+(2 if args.mode=='packets' and (args.background_index or args.bomb_lazy or args.shot_sparse or args.record_sparse or args.texture_coalesce or args.world_instancing) else 1 if args.mode=='packets' else 0)):
+                for endpoint in range(count+len(oracle_seats)):
                     case['bootEndpoint']=endpoint;case['bootStep']='context';save()
-                    seat=endpoint if endpoint<count else 0
+                    seat=endpoint if endpoint<count else oracle_seats[endpoint-count]
                     context=browser.new_context(service_workers='block');contexts.append(context)
                     if args.mode=='relay':context.add_init_script("Object.defineProperty(globalThis,'RTCPeerConnection',{value:undefined,configurable:true})")
                     page=context.new_page();pages.append(page)
@@ -104,9 +116,9 @@ with sync_playwright() as pw:
                                 if source!=target:apply(page,wire)
                         if phase==1:
                             for page in pages:assert call(page,'multiplayerSmoke.markReady()')
-                        for exact in oracles:
+                        for exact,exact_seat in zip(oracles,oracle_seats):
                             for source,wire in enumerate(packets):
-                                if source!=0:apply(exact,wire)
+                                if source!=exact_seat:apply(exact,wire)
                             if phase==1:assert call(exact,'multiplayerSmoke.markReady()')
                 else:
                     room='audit-'+uuid.uuid4().hex[:14]
@@ -157,13 +169,28 @@ with sync_playwright() as pw:
                     queue=[]
                     end=900 if args.bomb_lifecycle else 380
                     for frame in range(end):
+                        # A time-sliced correction can return before its owed
+                        # forward tick. Drain that already captured slot before
+                        # injecting the next test frame; never resample it.
+                        for page in pages:
+                            before=call(page,'multiplayerSmoke.netStatus()')
+                            if before[3]!=frame:
+                                for continuation in range(64):
+                                    after=call(page,'multiplayerSmoke.reconcile()')
+                                    if after[3]<frame:call(page,'multiplayerSmoke.ticks(1)')
+                                    after=call(page,'multiplayerSmoke.netStatus()')
+                                    assert after[3]<=frame and after[13]==frame,(frame,before,after)
+                                    if after[3]==frame:break
+                                case.setdefault('correctionContinuations',[]).append({'frame':frame,'beforeNext':before[3],'afterNext':after[3],'capture':after[13],'callbacks':continuation+1})
+                                assert after[3]==frame,(frame,before,after)
                         for seat,page in enumerate(pages):
                             if not capture(page,seat,frame):
                                 case['captureRejected']={'seat':seat,'frame':frame,'state':observe(page),'error':call(page,'multiplayerSmoke.networkError()')};save()
                                 raise AssertionError(f'Input capture rejected at frame {frame}, seat {seat}')
-                        for exact in oracles:
-                            assert capture(exact,0,frame)
-                            for seat in range(1,count):apply(exact,call(pages[seat],'v=>multiplayerSmoke.inputPacket(...v)',[0,frame,frame+1]))
+                        for exact,exact_seat in zip(oracles,oracle_seats):
+                            assert capture(exact,exact_seat,frame)
+                            for seat in range(count):
+                                if seat!=exact_seat:apply(exact,call(pages[seat],'v=>multiplayerSmoke.inputPacket(...v)',[exact_seat,frame,frame+1]))
                             call(exact,'multiplayerSmoke.ticks(1)')
                         if args.background_index or args.bomb_lazy or args.shot_sparse or args.record_sparse or args.texture_coalesce or args.world_instancing:
                             reference=call(oracle,'multiplayerSmoke.canonical()')
@@ -205,7 +232,10 @@ with sync_playwright() as pw:
                     assert all(v['driver'][3]>0 and v['driver'][4]>0 for v in values[:count]),values
                     assert values[-1]['driver'][3]==0,values
                     images=[call(page,'multiplayerSmoke.frameDigest()') for page in pages+oracles]
-                    case['framebufferHashes']=images;save();assert len(set(images))==1,images
+                    case['framebufferHashes']=images;case['framebufferSeats']=list(range(count))+oracle_seats;save()
+                    for seat in range(count):
+                        matching=[images[count+i] for i,owner in enumerate(oracle_seats) if owner==seat]
+                        assert matching and all(image==images[seat] for image in matching),(seat,images,oracle_seats)
                     # Exhaust the production driver's real prediction window.
                     # Polling the next frame must freeze Update/Draw but keep
                     # servicing the independent real-time MIDI owner.
@@ -251,8 +281,7 @@ with sync_playwright() as pw:
                             if n[10]==0 or n[3]<120:
                                 buttons=8 if seat==0 and n[10]==0 and n[3]==400 else 16384 if seat==0 and n[10]==0 and n[3]==410 else 0
                                 if n[2]:
-                                    if n[3]==0 and seat==0:call(page,'multiplayerSmoke.captureInput(0,0,2,8188,-8192,0)')
-                                    else:call(page,'v=>multiplayerSmoke.capture(...v)',[n[3],buttons])
+                                    physical_buttons(page,buttons)
                                 call(page,'multiplayerSmoke.ticks(1)')
                             else:call(page,'multiplayerSmoke.reconcile()')
                             n=call(page,'multiplayerSmoke.netStatus()')

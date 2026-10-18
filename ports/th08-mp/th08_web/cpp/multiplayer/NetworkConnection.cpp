@@ -188,7 +188,10 @@ bool NetworkConnection::CanRetire()const{
     if(!net.CanRetire()||(enabled&&!channel.CanRetire(net.core_,net.LastFrame())))return false;
     // Publication is bounded per pump. Queue the final confirmed frame before
     // replacing the input history, so viewers can consume the native Restart.
-    return !enabled||net.Spectator()||net.Generation()!=0||net.Setup().local_player!=0||
+    // A legacy startup may never create a restorable spectator checkpoint.
+    // Without a publisher there is no observer terminal frame to flush, and
+    // this optional stream must not strand P1 in the retiring player run.
+    return !enabled||net.Spectator()||net.Generation()!=0||net.Setup().local_player!=0||!spectator_publisher_started||
         spectator_publish_failed||transport.SpectatorState()<=0||spectator_publisher.Published()>net.LastFrame();
 }
 bool NetworkConnection::Retire(){
