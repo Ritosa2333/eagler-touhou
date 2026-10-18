@@ -6,16 +6,27 @@ import {spawn} from 'node:child_process';
 import {resolve,extname} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {createRequire} from 'node:module';
+import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'../..');
-const launcher=resolve(process.env.TH15_LAUNCHER_ROOT||resolve(root,'../th15-multiplayer-launcher'));
+const launcher=resolve(process.env.TH15_LAUNCHER_ROOT||resolve(root,'../../launcher'));
+const relayEntry=resolve(process.env.EAGLER_RELAY_ROOT||resolve(root,'../../services/relay'),'src/netplay-relay.mjs');
 const puppeteer=createRequire(resolve(launcher,'package.json'))('puppeteer-core');
 const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/chromium-executable.mjs')));
 const runtime=resolve(root,'build-eagler-multiplayer');
-const out=resolve(root,'web/artifacts/sdl-multiplayer/browser-test');await mkdir(out,{recursive:true});
+const out=resolve(process.argv.find(value=>value.startsWith('--output='))?.slice(9)||resolve(root,'web/artifacts/sdl-multiplayer/browser-test'));await mkdir(out,{recursive:true});
 if(!process.env.TH15_TEST_ARCHIVE)throw Error('Set TH15_TEST_ARCHIVE to the Japanese TH15 1.00b archive');
 const archive=await readFile(process.env.TH15_TEST_ARCHIVE);
+const fonts=[['msgothic.ttc',process.env.TH15_TEST_FONT||process.env.EAGLER_DEVELOPMENT_VANILLA_FONT],
+ ['unifont.otf',process.env.TH15_TEST_UNICODE_FONT||process.env.EAGLER_DEVELOPMENT_UNICODE_FONT]];
+for(const [name,file] of fonts)if(!file)throw Error('Missing explicit shared font: '+name);
+const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+await writeFile(resolve(out,'inputs.json'),JSON.stringify({scope:'TH15 MP production Runtime, pure-delay 2P/3P, spectator and offline Replay',
+ driver:{file:import.meta.filename,sha256:sha(await readFile(new URL(import.meta.url)))},
+ archive:{file:process.env.TH15_TEST_ARCHIVE,sha256:sha(archive)},
+ fonts:await Promise.all(fonts.map(async([name,file])=>({name,file,sha256:sha(await readFile(file))}))),
+ runtime:JSON.parse(await readFile(resolve(runtime,'runtime-files.json'),'utf8'))},null,2)+'\n');
 let options=[],relayLog='',browser;
-const relay=spawn(process.execPath,[resolve(launcher,'server/netplay-relay.mjs')],{cwd:launcher,
+const relay=spawn(process.execPath,[relayEntry],{cwd:launcher,
  env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''},windowsHide:true,stdio:['ignore','pipe','pipe']});
 relay.stderr.on('data',b=>relayLog+=b);
 const relayPort=await new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error('Relay startup timeout '+relayLog)),10000);relay.stdout.on('data',b=>{relayLog+=b;const match=relayLog.match(/listening ws:\/\/127\.0\.0\.1:(\d+)/);if(match){clearTimeout(timer);yes(Number(match[1]));}});relay.once('exit',code=>no(Error('Relay exited '+code)));});
@@ -24,10 +35,11 @@ window.events=[];window.ready=new Set();window.__eaglerPrepareManagedRuntimeData
 window.addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1'){events.push(e.data);if(e.data.event==='ready')ready.add(e.data.epoch);}});
 window.addRuntime=seat=>{const f=document.createElement('iframe');f.id='p'+seat;f.src='/runtime/th15.html?managedData=1&hosted=1&runtimeEpoch='+(seat+1);document.body.append(f);};
 window.rpc=(seat,command,fields={})=>new Promise((yes,no)=>{const f=document.querySelector('#p'+seat),request=crypto.randomUUID();const timer=setTimeout(()=>{removeEventListener('message',listen);no(Error('RPC '+command+' timeout'));},60000);function listen(e){if(e.source===f.contentWindow&&e.data?.request===request){clearTimeout(timer);removeEventListener('message',listen);e.data.ok?yes(e.data):no(Error(e.data.error));}}addEventListener('message',listen);f.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th15',epoch:seat+1,request,command,...fields},location.origin);});
-window.launchRuntime=async seat=>{const o=await(await fetch('/options')).json();await rpc(seat,'configure',{music:'none',options:o[seat]});await rpc(seat,'launch');};
+window.launchRuntime=async seat=>{const o=await(await fetch('/options')).json();await rpc(seat,'configure',{music:'none',sharedResources:[{path:'/msgothic.ttc',url:'/shared/msgothic.ttc'},{path:'/unifont.otf',url:'/shared/unifont.otf'}],options:o[seat]});await rpc(seat,'launch');};
 </script>`;
 const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;
  if(path==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
+ const font=fonts.find(([name])=>path==='/shared/'+name);if(font){res.end(await readFile(font[1]));return;}
  if(path==='/data'){res.end(archive);return;}if(path==='/options'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(options));return;}
  if(!path.startsWith('/runtime/')||path.includes('..')){res.writeHead(404).end();return;}
  const file=resolve(runtime,path.slice(9));if(!file.startsWith(runtime+'\\')&&!file.startsWith(runtime+'/'))throw Error('Unsafe path');
