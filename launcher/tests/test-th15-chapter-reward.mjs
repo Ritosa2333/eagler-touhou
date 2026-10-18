@@ -12,7 +12,7 @@ assert.equal(buildMultiplayerRuntimeOptions(input,config).netplayChapterThreshol
 assert.equal(buildMultiplayerRuntimeOptions({...input,chapterThreshold:5000000},config).netplayChapterThreshold,5000000);
 for(const value of [499999,500001,5250000])assert.throws(()=>buildMultiplayerRuntimeOptions({...input,chapterThreshold:value},config));
 assert.throws(()=>buildMultiplayerRuntimeOptions({...input,url:'ws://localhost/?room=th11mp-1234&run=1',chapterThreshold:1250000},config));
-const relay=spawn(process.execPath,['server/netplay-relay.mjs'],{cwd:new URL('../',import.meta.url),env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''},windowsHide:true,stdio:['ignore','pipe','pipe']});
+const relay=spawn(process.execPath,['../services/relay/src/netplay-relay.mjs'],{cwd:new URL('../',import.meta.url),env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''},windowsHide:true,stdio:['ignore','pipe','pipe']});
 let logs='';relay.stderr.on('data',b=>logs+=b);const sockets=[];
 function next(socket,predicate=()=>true){return new Promise((yes,no)=>{const timer=setTimeout(()=>{clean();no(Error('Relay reply timeout '+logs));},6000);const receive=e=>{const m=JSON.parse(e.data);if(predicate(m)){clean();yes(m);}};const clean=()=>{clearTimeout(timer);socket.removeEventListener('message',receive);};socket.addEventListener('message',receive);});}
 async function send(socket,message,predicate){const reply=next(socket,predicate);socket.send(JSON.stringify(message));return reply.catch(error=>{error.message+=` command=${JSON.stringify(message)}`;throw error;});}

@@ -135,7 +135,7 @@ prediction。Relay 支持某个 marker 不代表具体 Runtime 的 timing codec
 公共 codec、确认发布 journal、接收历史与播放策略分别位于 `eagler-common`
 的 `SpectatorStageProtocol.hpp`、`SpectatorStagePublisher.hpp`、
 `SpectatorStageHistory.hpp`、`SpectatorStagePlayback.hpp`。Relay 使用
-`server/spectator-stages.mjs`。仅接受 `6/7/8/A/B/F`，不接管 TH09。
+`services/relay/src/spectator-stages.mjs` (仓库根目录)。仅接受 `6/7/8/A/B/F`，不接管 TH09。
 
 | 偏移 | 长度 | 内容 |
 | --- | --- | --- |
@@ -368,10 +368,10 @@ TH09 已消费的本地档案目前没有总字节上限，会随会话增长；
 Launcher 仓库：
 
 - `src/contracts/{product-catalog,runtime-protocol,adapter-capabilities}.mts`
-- `app/services/{multiplayer-room,runtime}.ts`、`server/netplay-relay.mjs`
-- `server/{spectator-frame,relay-flow-control,room-directory}.mjs`
+- `app/services/{multiplayer-room,runtime}.ts`、`services/relay/src/netplay-relay.mjs` (仓库根目录)
+- `services/relay/src/{spectator-frame,relay-flow-control,room-directory}.mjs` (仓库根目录)
 - `tests/test-{th09-spectator-frame,th09-spectator-history-relay,spectator-stop-relay}.mjs`
-- `server/tests/test-th09-spectator-timeline.mjs`
+- `services/relay/tests/test-th09-spectator-timeline.mjs` (仓库根目录)
 - `tests/browser/test-th09-spectator-{directory,panel,timeline,continuity}.mjs`
 
 工作区 TH09：`th09-eagler/th09_web/` 下的

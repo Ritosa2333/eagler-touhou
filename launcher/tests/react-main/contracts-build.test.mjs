@@ -22,10 +22,11 @@ function run(cwd, code, environment = {}) {
 }
 before(async () => {
   work = await mkdtemp(resolve(project, '.cache/contracts-only-test-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
+  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
     await mkdir(resolve(cold, path, '..'), {recursive: true});
     await cp(resolve(project, path), resolve(cold, path), {recursive: true});
   }
+  await cp(resolve(project,'../common/contracts'),resolve(work,'common/contracts'),{recursive:true});
   await symlink(resolve(project, 'node_modules'), resolve(cold, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
   api = await import(pathToFileURL(resolve(cold, 'lib/contracts-build.mjs')).href);
 });
@@ -64,7 +65,7 @@ test('classic worker resolver uses the exact shared canonical compiler and expor
 });
 
 test('source changes produce a new immutable generation while the old import stays coherent', async () => {
-  const old = await api.ensureContractsBuild(), source = resolve(cold, 'src/contracts/product-catalog.mts');
+  const old = await api.ensureContractsBuild(), source = resolve(work, 'common/contracts/product-catalog.mjs');
   await writeFile(source, await readFile(source, 'utf8') + '\nexport const CONTRACTS_ONLY_REFRESH_PROBE = "fresh";\n');
   const next = await api.ensureContractsBuild();
   assert.notEqual(next.inputHash, old.inputHash); assert.equal(existsSync(old.contractsDirectory), true);
@@ -84,7 +85,7 @@ test('source contracts ignore both stale Launcher cache and borrowed publication
 });
 
 test('source drift during compilation discards staging rather than publishing mixed bytes', async () => {
-  const cache = resolve(cold, '.cache/build/contracts'), source = resolve(cold, 'src/contracts/product-catalog.mts');
+  const cache = resolve(cold, '.cache/build/contracts'), source = resolve(work, 'common/contracts/product-catalog.mjs');
   const previous = (await readdir(cache)).filter(name => !name.startsWith('.'));
   await writeFile(source, await readFile(source, 'utf8') + '\nexport const CONTRACTS_ONLY_DRIFT_START = true;\n');
   const compiling = run(cold, `import{ensureContractsBuild}from'./lib/contracts-build.mjs';import{loadCompiledContract}from'./lib/contracts/load-compiled-contract.mjs';const result=await ensureContractsBuild();const contract=await loadCompiledContract('product-catalog');console.log(JSON.stringify({hash:result.inputHash,drift:contract.CONTRACTS_ONLY_DRIFT_END}));`);
@@ -106,6 +107,7 @@ test('published-only Node distribution reads contracts and worker without source
   await mkdir(resolve(distribution, 'lib'), {recursive: true}); await mkdir(resolve(distribution, 'assets'), {recursive: true});
   await cp(resolve(cold, 'lib/contracts'), resolve(distribution, 'lib/contracts'), {recursive: true});
   await cp(resolve(cold, 'lib/contracts-build.mjs'), resolve(distribution, 'lib/contracts-build.mjs'));
+  await cp(resolve(cold, 'lib/shared-contract-sources.mjs'), resolve(distribution, 'lib/shared-contract-sources.mjs'));
   await cp(built.contractsDirectory, resolve(distribution, 'assets/contracts'), {recursive: true});
   const result = JSON.parse(await run(distribution, `import{readFile}from'node:fs/promises';import{DEFAULT_PRODUCT_ID}from'./lib/contracts/product-catalog.mjs';import{resolveRuntimeGenerationWorkerSource,ensureContractsBuild}from'./lib/contracts-build.mjs';console.log(JSON.stringify({product:DEFAULT_PRODUCT_ID,worker:(await readFile(await resolveRuntimeGenerationWorkerSource(),'utf8')).includes('EaglerRuntimeGenerations'),mode:(await ensureContractsBuild()).mode}));`, {EAGLER_FRONTEND: 'react'}));
   assert.deepEqual(result, {product: 'th06', worker: true, mode: 'prebuilt'});

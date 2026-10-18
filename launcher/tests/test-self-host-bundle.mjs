@@ -102,7 +102,7 @@ for (const target of targets.keys()) {
     ["test-", "test_", "test.", "run-", "audit-", "profile-", "playwright", "webkit"]
       .some(prefix => segment.startsWith(prefix)));
   assert.equal(maintainerOnly, false, `maintainer/test file leaked into self-host bundle: ${target}`);
-  assert.notEqual(target, "server/netplay-relay.mjs", "relay server must not be bundled into the static self-host bundle");
+  assert.notEqual(target, "../services/relay/src/netplay-relay.mjs", "relay server must not be bundled into the static self-host bundle");
 }
 
 // Exercise the actual packaged boundary, not only the source-checkout

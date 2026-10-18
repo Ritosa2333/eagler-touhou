@@ -33,6 +33,7 @@ import {
 import { DEFAULT_GAME_OPTIONS } from "../.cache/build/browser/assets/launcher/game-preferences.mjs";
 import { RUNTIME_CONFIGURE_OPTION_BEHAVIOR } from "../lib/contracts/runtime-protocol.mjs";
 import { REPOSITORY_NODE_TESTS, WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
+import { RELAY_NODE_TESTS } from "../../services/relay/scripts/test-plan.mjs";
 
 assert.ok(REQUIRED_ADAPTER_CAPABILITIES.some(item => item.id === "touch-controls"));
 assert.ok(REQUIRED_ADAPTER_CAPABILITIES.some(item => item.id === "always-hitbox"));
@@ -171,6 +172,7 @@ assert.deepEqual(titleSpecificRuntimeAssetParameters, ["Th06AssetDirectory", "Th
 
 const repositoryGates = new Set(REPOSITORY_NODE_TESTS);
 const workspaceGates = new Set(WORKSPACE_NODE_TESTS);
+const relayGates = new Set(RELAY_NODE_TESTS);
 for (const item of REQUIRED_ADAPTER_CAPABILITIES) {
   assert.equal(item.declaration, undefined, `${item.id}: required capability must not become a product opt-out`);
   assert.ok(Array.isArray(item.verification) && item.verification.length > 0, `${item.id}: required capability needs named verification ownership`);
@@ -178,9 +180,10 @@ for (const item of REQUIRED_ADAPTER_CAPABILITIES) {
     const separator = gate.indexOf(":");
     assert.ok(separator > 0, `${item.id}: malformed verification gate ${gate}`);
     const scope = gate.slice(0, separator), name = gate.slice(separator + 1);
-    assert.ok(["repository", "workspace", "runtime", "browser"].includes(scope), `${item.id}: unknown verification scope ${scope}`);
+    assert.ok(["repository", "workspace", "relay", "runtime", "browser"].includes(scope), `${item.id}: unknown verification scope ${scope}`);
     if (scope === "repository") assert.ok(repositoryGates.has(name), `${item.id}: repository gate is not scheduled: ${name}`);
     if (scope === "workspace") assert.ok(workspaceGates.has(name), `${item.id}: workspace gate is not scheduled: ${name}`);
+    if (scope === "relay") assert.ok(relayGates.has(name), `${item.id}: standalone relay gate is not scheduled: ${name}`);
   }
 }
 for (const item of OPTIONAL_PRODUCT_CAPABILITIES) {
@@ -193,9 +196,10 @@ for (const item of OPTIONAL_PRODUCT_CAPABILITIES) {
     const separator = gate.indexOf(":");
     assert.ok(separator > 0, `${item.id}: malformed verification gate ${gate}`);
     const scope = gate.slice(0, separator), name = gate.slice(separator + 1);
-    assert.ok(["repository", "workspace", "runtime", "browser"].includes(scope), `${item.id}: unknown verification scope ${scope}`);
+    assert.ok(["repository", "workspace", "relay", "runtime", "browser"].includes(scope), `${item.id}: unknown verification scope ${scope}`);
     if (scope === "repository") assert.ok(repositoryGates.has(name), `${item.id}: repository gate is not scheduled: ${name}`);
     if (scope === "workspace") assert.ok(workspaceGates.has(name), `${item.id}: workspace gate is not scheduled: ${name}`);
+    if (scope === "relay") assert.ok(relayGates.has(name), `${item.id}: standalone relay gate is not scheduled: ${name}`);
   }
 }
 assert.deepEqual(

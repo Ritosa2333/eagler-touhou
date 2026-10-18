@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const serviceRoot = path.resolve(process.env.EAGLER_RELAY_ROOT || path.join(__dirname, '../../../services/relay'));
 
 function requireDirectoryEnv(name, description) {
   const raw = process.env[name];
@@ -12,6 +13,11 @@ function requireDirectoryEnv(name, description) {
 }
 
 function requireHostFile(relativePath, description) {
+  const servicePath = relativePath === 'server/render-coturn-config.cjs'
+    ? path.join(serviceRoot, '../turn/render-coturn-config.cjs')
+    : relativePath.startsWith('server/') ? path.join(serviceRoot, 'src', relativePath.slice(7)) : null;
+  if (servicePath && fs.existsSync(servicePath)) return servicePath;
+  if (servicePath && process.env.EAGLER_RELAY_ROOT) throw new Error(`Independent service is missing ${description}: ${servicePath}`);
   const root = requireDirectoryEnv(
     'TH_EAGLER_HOST_ROOT',
     'an eagler-touhou checkout with its Host integration files',
@@ -24,6 +30,12 @@ function requireHostFile(relativePath, description) {
 }
 
 function requireHostNodeModule(moduleName) {
+  if (fs.existsSync(path.join(serviceRoot, 'src/netplay-relay.mjs'))) {
+    const resolved = require.resolve(moduleName, {paths: [serviceRoot]});
+    const relative = path.relative(serviceRoot, resolved);
+    if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error(`Relay module resolved outside its service: ${resolved}`);
+    return require(resolved);
+  }
   const root = requireDirectoryEnv(
     'TH_EAGLER_HOST_ROOT',
     'an eagler-touhou checkout with its Node dependencies installed',

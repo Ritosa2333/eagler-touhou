@@ -29,6 +29,7 @@ before(async () => {
     'tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json', 'vite.config.ts', 'react-router.config.ts']) {
     await cp(resolve(path), resolve(coldSource, path), {recursive: true});
   }
+  await cp(resolve('../common/contracts'), resolve(work, 'common/contracts'), {recursive: true});
   // Change only authored Markdown. Pre-generated HTML deliberately remains
   // stale so the real build must use main's content compiler, not copy it.
   for (const file of ['docs/FAQ.md', 'content/FIRST_USE_NOTICE.md', 'content/MULTIPLAYER.md']) {

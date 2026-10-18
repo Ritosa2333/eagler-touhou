@@ -7,15 +7,22 @@
 ```sh
 git clone --filter=blob:none --sparse <fork-url> eagler-touhou
 cd eagler-touhou
-git sparse-checkout set launcher
+git sparse-checkout set launcher common/contracts services
 git switch -c <branch>
 npm --prefix launcher ci --ignore-scripts
+npm --prefix services/relay ci --ignore-scripts
 npm --prefix launcher run vendor
 npm --prefix launcher run check
 npm --prefix launcher run dev:ui-rewrite
 ```
 
-这一流程不要求获取游戏源码、SDK 或 DATA。普通 `npm start` 是具备游戏内容的工作区联调入口。
+这一流程不要求获取游戏源码、SDK 或 DATA。公共协议和服务源码用于保留启动器的真实集成测试。普通 `npm start` 是具备游戏内容的工作区联调入口。
+
+## 修改独立服务
+
+Relay 只需要 `services/relay/` 和 `common/contracts/`，可在服务目录运行 `npm ci`、`npm test`、`npm run build` 和 `npm run package -- <新目录>`。生产发布包只安装其自身锁定的 `ws` 依赖，启动不需要 Launcher、前端缓存或 TypeScript 编译器。其他壳按服务的 [协议说明](../services/relay/docs/protocol.md) 接入。
+
+`services/telemetry/` 是无第三方依赖的 HTTP 服务。`services/turn/` 保存 coturn 配置渲染和部署支持。它们均有独立 CI 检查。启动器保留的 `server/netplay-relay.mjs` 仅为旧本地探针的转发入口，实际服务只维护在 `services/relay/src/`。
 
 ## 修改作品或 common
 
@@ -42,9 +49,9 @@ common 改动需要验证全部实际消费者。根 CI 汇总保留的适配检
 
 ## 迁移候选限制
 
-当前导入点不包含原工作区尚未提交的旁观修改。需要在其完成后按来源提交刷新，并逐处保留本仓库的路径适配。不要用整目录覆盖或在原工作区改依赖来同步。
+原工作区已提交的旁观与版本校验改动已按来源刷新。继续同步时逐处保留本仓库路径适配，不用整目录覆盖或在原工作区改依赖。
 
-最新本地验收及具体阻塞见 [迁移候选验收记录](migration/acceptance-20261018.md)。
+搬迁后的验收及具体阻塞见 [搬迁验收记录](migration/move-acceptance-20261018.md)。
 
 旧上游分支不能直接合并到整个 monorepo。先核对上游提交范围，再按对应组件形成候选补丁或执行有明确前缀的导入，并复核普通版/MP 行为。
 

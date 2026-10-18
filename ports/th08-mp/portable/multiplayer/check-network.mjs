@@ -89,10 +89,10 @@ try{
  console.log('TH08 spectator request '+JSON.stringify(report.spectatorRequest));
  const port=await free(),relayPort=await free();
  if(modes.some(m=>m!=='packets')){
-  const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../eagler-multiplayer'));
-  const file=resolve(launcher,'server/netplay-relay.mjs');if(!existsSync(file))throw Error('Relay missing');
+  const service=resolve(process.env.EAGLER_RELAY_ROOT||resolve(root,'../../services/relay'));
+  const file=resolve(service,'src/netplay-relay.mjs');if(!existsSync(file))throw Error('Relay missing: '+file);
   report.relay={path:file,sha256:hash(file)};
-  relay=fork(file,[],{cwd:launcher,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe','ipc']});
+  relay=fork(file,[],{cwd:service,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe','ipc']});
   await ready(relay,'relay listening');
  }
  server=fork(resolve(import.meta.dirname,'serve.mjs'),[],{cwd:root,env:{...process.env,PORT:String(port),TH08_MP_FIXTURES:fixtures?'1':'0'},stdio:['ignore','pipe','pipe','ipc']});await ready(server);

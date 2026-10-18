@@ -329,7 +329,7 @@ export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
     verification: ["repository:tests/test-format-adapter-coverage.mjs", "repository:tests/test-language-publication-contract.mjs"],
     summary: "downloadable language packages through the product-declared preparation adapter" },
   { id: "multiplayer", class: "optional", owner: "product", declaration: "multiplayer",
-    verification: ["repository:tests/test-netplay-relay-product-policy.mjs", "repository:tests/test-multiplayer-runtime-options.mjs", "browser:tests/test-multiplayer-replay-launcher-browser.py", "browser:tests/test-th07mp-ui.py"],
+    verification: ["relay:tests/test-netplay-relay-product-policy.mjs", "repository:tests/test-multiplayer-runtime-options.mjs", "browser:tests/test-multiplayer-replay-launcher-browser.py", "browser:tests/test-th07mp-ui.py"],
     summary: "multiplayer Runtime and room/loadout bounds; product-catalog validation requires multiplayerRuntime and multiplayer metadata to move together" },
   { id: "focus-hitbox", class: "optional", owner: "product", declaration: "features.focusHitbox",
     verification: ["repository:tests/test-product-catalog.mjs", "repository:tests/test-host-manifest.mjs", "workspace:tests/test-shell-protocol.mjs"],

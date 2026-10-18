@@ -20,4 +20,12 @@ test('shared common changes schedule every declared Runtime consumer', () => {
   for (const entry of Object.values(builds.games)) for (const variant of Object.values(entry.variants))
     assert(affected.includes(workspace.repositories[variant.workspaceRepository ?? entry.workspaceRepository]));
   assert(affected.includes('common'));
+  for (const name of ['relay', 'turn', 'telemetry']) assert(affected.includes(workspace.repositories[name]));
+});
+
+test('standalone service changes schedule their own gate and Launcher integration', () => {
+  for (const name of ['relay', 'turn', 'telemetry']) {
+    const directory = workspace.repositories[name];
+    assert.deepEqual(affectedComponents([directory + '/README.md'], workspace, builds), ['launcher', directory].sort());
+  }
 });

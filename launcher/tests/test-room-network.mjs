@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRoomNetwork, recordProbeSample, freshProbeMetric } from '../.cache/build/browser/assets/launcher/room-network.mjs';
-import { roomProbeEnvelope } from '../server/room-probe-policy.mjs';
+import { roomProbeEnvelope } from '../../services/relay/src/room-probe-policy.mjs';
 
 const blank = { rtt: null, jitter: null, state: 'checking', at: 0 };
 const first = recordProbeSample(blank, 24, 0);

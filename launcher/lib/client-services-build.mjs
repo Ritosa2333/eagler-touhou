@@ -8,6 +8,7 @@ import {createHash} from 'node:crypto';
 import {resolvePublicOrRepositorySource} from './public-source.mjs';
 import {resolveRuntimeGenerationWorkerSource} from './contracts-build.mjs';
 import {localModuleClosure} from './browser-module-graph.mjs';
+import {sharedContractInputs,copySharedContractOutputs} from './shared-contract-sources.mjs';
 const project = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const output = resolve(project, '.cache/build/browser');
 async function sources(directory) {
@@ -26,7 +27,7 @@ export async function ensureClientServicesBuild({force=false}={}) {
   const expected = new Set(files.filter(path => !path.endsWith('.d.mts')).map(path =>
     'assets/' + relative(resolve(project, 'src'), path).replaceAll('\\', '/').replace(/\.mts$/, '.mjs')));
   const hash = createHash('sha256');
-  for (const path of [...files, fileURLToPath(import.meta.url), resolve(project,'tsconfig.launcher.json'), resolve(project,'package-lock.json')]) {
+  for (const path of [...files, ...sharedContractInputs(project), fileURLToPath(import.meta.url), resolve(project,'lib/shared-contract-sources.mjs'), resolve(project,'tsconfig.launcher.json'), resolve(project,'package-lock.json')]) {
     hash.update(relative(project,path)); hash.update(await readFile(path));
   }
   const identity = hash.digest('hex'), state = resolve(project,'.cache/client-services-build.json');
@@ -48,6 +49,7 @@ export async function ensureClientServicesBuild({force=false}={}) {
       const child=spawn(process.execPath,[resolve(project,'node_modules/typescript/bin/tsc'),'-p','tsconfig.launcher.json','--pretty','false'],{cwd:project,stdio:'inherit'});
       child.once('error',no);child.once('exit',code=>code===0?yes():no(Error(`Client service compilation failed (${code})`)));
     });
+    await copySharedContractOutputs(project,resolve(output,'assets'));
     const generated=[];
     async function collect(directory,prefix='') {
       for (const entry of await readdir(directory,{withFileTypes:true})) {

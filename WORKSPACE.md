@@ -1,5 +1,13 @@
-# Monorepo migration candidate
+# Monorepo workspace
 
-launcher/ owns the frontend and build recipes. common/ is the single shared project source. ports/ preserves title and MP source boundaries.
+- `launcher/`: frontend and Runtime/content build recipes, imported from original main.
+- `ports/`: title sources, preserving existing ordinary and MP ownership.
+- `common/`: the single default shared runtime source. Neutral client/service definitions live in `common/contracts/` with their own inherited license.
+- `services/relay/`: independent room, signaling, fallback and spectator service.
+- `services/turn/`: coturn configuration and operations support.
+- `services/telemetry/`: independent bounded telemetry service.
+- `tools/`: shared build and CI tooling. Root `.github/workflows/` is authoritative.
 
-This candidate excludes ongoing uncommitted spectator work. Do not publish or replace current development entries before the final refresh and acceptance.
+Read `launcher/config/workspace.json` for directory owners and `launcher/config/runtime-builds.json` for build recipes. Old imported branch names are historical identities, not selectors for monorepo development branches.
+
+Sources were committed, pushed and refreshed before the move. Original repositories and complete histories remain. Final cutover depends on the [post-move acceptance](docs/migration/move-acceptance-20261018.md), including explicit failed and unproven behaviors.

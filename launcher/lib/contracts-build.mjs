@@ -5,6 +5,7 @@ import {spawn} from 'node:child_process';
 import {relative, resolve} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import {fileURLToPath, pathToFileURL} from 'node:url';
+import {sharedContractInputs,copySharedContractOutputs} from './shared-contract-sources.mjs';
 
 const defaultProject = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const activeBuilds = new Map();
@@ -20,9 +21,10 @@ async function sources(directory) {
   return result.sort();
 }
 async function identity(project) {
-  const inputs = [...await sources(resolve(project, 'src/contracts')),
+  const inputs = [...await sources(resolve(project, 'src/contracts')), ...sharedContractInputs(project),
     resolve(project, 'tsconfig.launcher.json'), resolve(project, 'tsconfig.contracts.json'),
     resolve(project, 'lib/contracts-build.mjs'), resolve(project, 'lib/frontend-assets.mjs'),
+    resolve(project, 'lib/shared-contract-sources.mjs'),
     resolve(project, 'node_modules/typescript/package.json'), resolve(project, 'node_modules/esbuild/package.json')];
   const entries = await Promise.all(inputs.map(async path => [relative(project, path).replaceAll('\\', '/'), digest(await readFile(path))]));
   return {hash: digest(JSON.stringify(entries)), entries,
@@ -64,6 +66,7 @@ async function compile(project, staging) {
     let output = ''; child.stdout.on('data', data => {output += data;}); child.stderr.on('data', data => {output += data;});
     child.once('error', no); child.once('exit', code => code === 0 ? yes() : no(new Error(`Contracts-only TypeScript build failed (${code}):\n${output}`)));
   });
+  await copySharedContractOutputs(project,resolve(staging,'assets'),{contractsOnly:true});
   // This existing pure helper compiles only the canonical worker contract. It
   // never initializes the Launcher module graph or calls optimizeLauncher.
   const {buildRuntimeGenerationWorkerSource} = await import(pathToFileURL(resolve(project, 'lib/frontend-assets.mjs')).href);

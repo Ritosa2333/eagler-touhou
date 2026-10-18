@@ -1,0 +1,17 @@
+{
+  "name": "eagler-netplay-relay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "engines": {"node": ">=22.13"},
+  "scripts": {
+    "start": "node src/netplay-relay.mjs",
+    "test": "node scripts/check.mjs",
+    "check": "node scripts/check.mjs",
+    "build": "node scripts/build.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "dependencies": {"ws": "8.21.3"},
+  "devDependencies": {"esbuild": "0.28.2"}
+}

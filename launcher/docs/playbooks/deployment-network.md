@@ -47,7 +47,7 @@ Preserve protocol-specific proxy behavior. A static-site routing cleanup must no
 
 `shared.netplayTelemetry` optionally enables same-origin selected-ICE-pair
 statistics in the Launcher. `src/launcher/netplay-telemetry.mts` samples every
-15 seconds. `server/netplay-telemetry.mjs` is a separate loopback HTTP service,
+15 seconds. `services/telemetry/src/netplay-telemetry.mjs` (仓库根目录) is a separate loopback HTTP service,
 configured with `EAGLER_NETPLAY_TELEMETRY_PORT`, `EAGLER_NETPLAY_TELEMETRY_ORIGIN`
 and `EAGLER_NETPLAY_TELEMETRY_STATE`. Proxy `/netplay-stats/` to that service.
 The GET page and `/summary` expose aggregates; POST `/sample` admits bounded
@@ -69,11 +69,11 @@ historical direct/TURN proportions.
 ### Relay/TURN deployment and incident verification
 
 Build relay services with
-`node tools/maintainer/build-netplay-relay.mjs OUTPUT_DIRECTORY`. Ship both
+`node services/relay/scripts/package.mjs NEW_OUTPUT_DIRECTORY` (从仓库根目录运行). Ship both
 `netplay-relay.mjs` and `nickname-worker.mjs` together and install the pinned `ws`
 dependency. The worker is a separate bundle beside the relay; a single-file
 upload omits nickname moderation. Public nicknames require Node.js 22.13+ and
-the private settings in `tools/maintainer/operator-delivery/relay.env.example`.
+the private settings in `services/relay/deploy/relay.env.example` (仓库根目录).
 Keep the API key outside frontend artifacts and the SQLite state outside the
 static root, writable only by the service user. A stopped-service file copy or
 SQLite backup must preserve approvals, 24-hour cooldowns and pending review jobs. Enabling

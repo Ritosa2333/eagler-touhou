@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {parseMeasuredNetplayTiming,resolveAdonisPredictionReserve} from '../lib/contracts/netplay-timing.mjs';
 import {buildMultiplayerRuntimeOptions} from '../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs';
 import {normalizeMultiplayerLobbySnapshot} from '../.cache/build/browser/assets/launcher/multiplayer-lobby-snapshot.mjs';
-import {isSpectatorFrameForRoom} from '../server/spectator-frame.mjs';
+import {isSpectatorFrameForRoom} from '../../services/relay/src/spectator-frame.mjs';
 
 const timing={phase:'ready',automatic:true,adonisMode:2,inputDelay:1,fullDelay:3,
   predictionReserve:2,rttP95Us:90000,samples:117,lost:5,route:'rtc'};

@@ -88,6 +88,7 @@ if (workspaceAudit) {
   const gameOwners = [...new Set(Object.values(config.games).flatMap(entry =>
     Object.values(entry.variants).map(variant => variant.workspaceRepository ?? entry.workspaceRepository)))];
   gameOwners.push('common');
+  gameOwners.push(...['relay','turn','telemetry'].filter(owner=>WORKSPACE_REPOSITORIES[owner]));
   workspaceChecked = [
     WORKSPACE_REPOSITORIES.launcher,
     ...gameOwners.map(owner => `${WORKSPACE_REPOSITORIES[owner]} tracked files`),
@@ -96,7 +97,7 @@ if (workspaceAudit) {
     const repo = WORKSPACE_REPOSITORIES[owner];
     const root = workspacePath(owner);
     if (!isGitWorkingTree(root)) throw new Error(`workspace publication audit requires a Git-owned source component: ${repo}`);
-    const tracked = execFileSync("git", ["-C", root, "ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
+    const tracked = execFileSync("git", ["-C", root, "ls-files", "--cached", "--others", "--exclude-standard", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
     for (const file of tracked) {
       if (forbiddenExtensions.has(extname(file).toLowerCase())) failures.push(`${repo}/${file}`);
       else if (/(^|\/)assets(?:-ogg)?\//i.test(file)&&!await reviewed(`${repo}/${file}`)) failures.push(`${repo}/${file} (unreviewed or changed source asset/evidence)`);

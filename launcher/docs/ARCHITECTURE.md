@@ -543,7 +543,7 @@ Relay services are operational/server infrastructure, not static self-host bundl
 content. Host configuration may point at a WebSocket Relay; TURN remains
 server-managed rather than pretending to be a static-site setting.
 
-`server/netplay-relay.mjs` is the single source owner for the shared product-
+`services/relay/src/netplay-relay.mjs` (仓库根目录) is the single source owner for the shared product-
 neutral lobby, signaling, route-barrier and emergency WebSocket relay service. Lobby
 readiness is bound to a monotonically increasing settings version; match-affecting
 changes invalidate prior ready acknowledgements, offline grace seats never satisfy
@@ -565,7 +565,7 @@ transport retains it. Credentials are excluded from room/directory broadcasts.
 Deploy the matching Launcher and relay together; clients that omit `member`
 cannot join the secured lobby. Standalone transport sessions without a lobby
 retain their separate legacy protocol and do not authorize a lobby-owned run.
-`server/relay-flow-control.mjs` owns per-message and per-connection traffic
+`services/relay/src/relay-flow-control.mjs` (仓库根目录) owns per-message and per-connection traffic
 budgets plus the shared outgoing queue budget, including retained delayed sends.
 The WebSocket decoder limits reassembled messages to 64 KiB; gameplay accepts
 16 KiB and lobby/signaling accepts 32 KiB before copying or parsing. Signaling
@@ -586,9 +586,9 @@ broadcasts immediately, while additional mutations inside a
 one trailing broadcast, bounding fan-out amplification without adding latency
 to ordinary updates; event-like payloads such as start and quick-chat remain
 immediate.
-`server/render-coturn-config.cjs` and `server/coturn.env.example` own its coturn
+`services/turn/render-coturn-config.cjs` and `services/turn/turn.env.example` (仓库根目录) own its coturn
 deployment support. Runtime repositories may integration-test against these
-Host-owned services, but must not carry private copies of the server
+independent services, but must not carry private copies of the server
 implementation or its npm dependency tree. Room namespaces use the declared
 Multiplayer product identity (current examples are `th06mp-*` / `th07mp-*`) and
 consume player-count/difficulty/loadout bounds directly from

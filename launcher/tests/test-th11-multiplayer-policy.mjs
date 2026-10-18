@@ -7,7 +7,7 @@ import {PRODUCT_GAMES, multiplayerConfigForProduct, multiplayerInputTimingPolicy
   isMultiplayerProductId, gameIdForProduct} from '../lib/contracts/product-catalog.mjs';
 import {buildMultiplayerRuntimeOptions} from '../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs';
 import {normalizeMultiplayerLobbySnapshot} from '../.cache/build/browser/assets/launcher/multiplayer-lobby-snapshot.mjs';
-import {isSpectatorFrameForRoom} from '../server/spectator-frame.mjs';
+import {isSpectatorFrameForRoom} from '../../services/relay/src/spectator-frame.mjs';
 
 const game=PRODUCT_GAMES.th11, policy=multiplayerConfigForProduct('th11mp');
 assert.equal(isMultiplayerProductId('th11mp'),true);
@@ -100,7 +100,7 @@ async function verifyRelayCase(count,requestedMode,automatic,code){
     });
   });
   const root=fileURLToPath(new URL('..',import.meta.url));
-  const relay=spawn(process.execPath,[fileURLToPath(new URL('../server/netplay-relay.mjs',import.meta.url))],{
+  const relay=spawn(process.execPath,[fileURLToPath(new URL('../../services/relay/src/netplay-relay.mjs',import.meta.url))],{
     cwd:root,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:''},
     stdio:['ignore','pipe','pipe'],
   });

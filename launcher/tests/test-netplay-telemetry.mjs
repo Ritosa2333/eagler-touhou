@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createTelemetryStore, validateSample, startTelemetryServer, capacityModel } from '../server/netplay-telemetry.mjs';
+import { createTelemetryStore, validateSample, startTelemetryServer, capacityModel } from '../../services/telemetry/src/netplay-telemetry.mjs';
 import { createNetplayTelemetry } from '../.cache/build/browser/assets/launcher/netplay-telemetry.mjs';
 let at=0,tx=100,rx=200,pair='pair',path='host',fail=false;
 const pc={getStats:async()=>{if(fail)throw Error('closed');return new Map([

@@ -17,6 +17,9 @@
     "th15mp": "ports/th15-mp",
     "th10mp": "ports/th10-mp",
     "common": "common",
-    "th08mp": "ports/th08-mp"
+    "th08mp": "ports/th08-mp",
+    "relay": "services/relay",
+    "turn": "services/turn",
+    "telemetry": "services/telemetry"
   }
 }

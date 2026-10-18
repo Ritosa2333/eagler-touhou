@@ -380,7 +380,7 @@ unlimited touch / touch / normal (touch disabled or either joystick mode).
 The relay derives this from declared touch settings, advertises support, and
 publishes updates. Empty seats and legacy peers with unknown settings have no caption.
 
-`server/room-directory.mjs` is owned by the shared netplay relay. The same relay
+`services/relay/src/room-directory.mjs` (仓库根目录) is owned by the shared netplay relay. The same relay
 URL from Site Manifest accepts `?directory=1&member=<anonymous-browser-id>` and
 sends version-1 `directory` messages. Snapshots expose room code/product,
 capacity, occupancy, difficulty, ready status and spectator count. With public
@@ -392,7 +392,7 @@ Snapshots echo the selected `product`. The directory shows a loading indicator
 until the requested filter's snapshot arrives, and only then shows an empty
 state when there are no rooms. Earlier filter replies cannot settle a new filter.
 
-Public nickname authority lives in `server/public-nicknames.mjs`, reached through
+Public nickname authority lives in `services/relay/src/public-nicknames.mjs` (仓库根目录), reached through
 `nickname-service.mjs` and a dedicated worker. SQLite and provider requests never
 run on the relay event loop. Enable `EAGLER_NETPLAY_PUBLIC_NICKNAMES=1` with a
 private absolute `EAGLER_NETPLAY_NICKNAME_STATE` and server-only
@@ -405,7 +405,7 @@ spellings share durable approval/refusal results; incomplete/provider-error
 responses never approve a nickname. Review uses the context of publicly displayed
 game nicknames in mainland China. Political figures, political propaganda and
 related disguises are refused alongside abusive/sexual/scam/official-impersonation
-names. `server/nickname-policy.mjs` owns the prompt, policy version and a small
+names. `services/relay/src/nickname-policy.mjs` (仓库根目录) owns the prompt, policy version and a small
 deterministic reserved-name guard. Changing that policy version quarantines old
 cached approvals and existing profile names until re-reviewed; a quarantined
 name cannot retain its old rename cooldown or appear in public snapshots.
@@ -559,12 +559,12 @@ its start. Earlier local matches belong only to viewers who received them.
   declarations and per-product room/loadout bounds.
 - `src/contracts/adapter-capabilities.mts`: profile-required
   Multiplayer obligations and legacy compatibility classification.
-- `server/netplay-relay.mjs`: shared relay policy; derives room
+- `services/relay/src/netplay-relay.mjs` (仓库根目录): shared relay policy; derives room
   product policy from the declared product prefix and uses generic service
   configuration.
 - `src/launcher/multiplayer-relay-url.mts` and
   `network-diagnostics.mts`: shared transport URL/diagnostics ownership.
-- `tests/test-netplay-relay-product-policy.mjs` and
+- `services/relay/tests/test-netplay-relay-product-policy.mjs` (仓库根目录) and
   `test-netplay-service-config.mjs`: product-policy and deployment-namespace
   gates.
 - `tests/test-th09-mixed-entry-launcher-browser.py`

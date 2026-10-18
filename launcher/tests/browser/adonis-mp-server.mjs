@@ -57,7 +57,7 @@ window.host={events,open(){iframe=document.createElement('iframe');iframe.style=
   try{const out=new Uint8Array(core.memory.buffer,p,b.length+1);out.set(b);out[b.length]=0;core.sdl_key(p,+down);}finally{free(p);}},
 };
 </script>`;
-const relay=spawn(process.execPath,[fileURLToPath(new URL('../../server/netplay-relay.mjs',import.meta.url))],{env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+const relay=spawn(process.execPath,[fileURLToPath(new URL('../../../services/relay/src/netplay-relay.mjs',import.meta.url))],{env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
 relay.stdout.on('data',b=>process.stdout.write(b));relay.stderr.on('data',b=>process.stderr.write(b));
 const mime={'.mjs':'text/javascript','.js':'text/javascript','.html':'text/html','.json':'application/json','.wasm':'application/wasm'};
 const server=createServer((req,res)=>{

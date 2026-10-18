@@ -15,6 +15,11 @@ def require_directory_env(name: str, description: str) -> Path:
 
 
 def require_host_relay() -> tuple[Path, Path]:
+    service = Path(os.environ.get("EAGLER_RELAY_ROOT", Path(__file__).resolve().parents[3] / "services/relay")).resolve()
+    if (service / "src/netplay-relay.mjs").is_file():
+        return service, service / "src/netplay-relay.mjs"
+    if os.environ.get("EAGLER_RELAY_ROOT"):
+        raise RuntimeError(f"EAGLER_RELAY_ROOT is missing src/netplay-relay.mjs: {service}")
     root = require_directory_env(
         "TH_EAGLER_HOST_ROOT",
         "an eagler-touhou checkout containing server/netplay-relay.mjs",

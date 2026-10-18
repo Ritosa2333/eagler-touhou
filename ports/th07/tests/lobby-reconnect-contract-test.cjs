@@ -23,7 +23,9 @@ function waitListening(child) {
 }
 
 async function connect(clientId) {
-  const socket = new WebSocket(`ws://127.0.0.1:${port}/?room=lobbycontract&lobby=${clientId}`);
+  // Reconnect retains the private membership as well as the public client ID.
+  const query = new URLSearchParams({room:'th07mp-34567891',lobby:clientId,member:'private_member_'+clientId});
+  const socket = new WebSocket(`ws://127.0.0.1:${port}/?${query}`);
   const messages = [];
   const waiters = [];
   socket.addEventListener('message', event => {

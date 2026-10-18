@@ -15,7 +15,7 @@ async function until(check,message){
 async function service(t){
   const port=await new Promise((done,reject)=>{const p=createServer();p.once('error',reject);
     p.listen(0,'127.0.0.1',()=>{const value=p.address().port;p.close(error=>error?reject(error):done(value));});});
-  const child=spawn(process.execPath,['server/netplay-relay.mjs'],{cwd:root,windowsHide:true,
+  const child=spawn(process.execPath,['../services/relay/src/netplay-relay.mjs'],{cwd:root,windowsHide:true,
     env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'1000'},
     stdio:['ignore','pipe','pipe']});
   let log='';child.stdout.on('data',b=>{log+=b;});child.stderr.on('data',b=>{log+=b;});

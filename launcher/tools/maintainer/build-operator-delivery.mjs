@@ -8,7 +8,8 @@ import { fileURLToPath } from "node:url";
 
 import { verifyReleaseBundle } from "../../lib/release-bundle-verifier.mjs";
 import { verifyReleaseManifest } from "../../lib/release-manifest.mjs";
-import {buildNetplayRelay} from './build-netplay-relay.mjs';
+import {buildNetplayRelay} from '../../../services/relay/scripts/build.mjs';
+import {writeRelayPackage} from '../../../services/relay/scripts/package.mjs';
 import {
   assertHostedSiteMatchesOperatorProfile,
   validateOperatorProfile,
@@ -43,34 +44,6 @@ function run(command, args, cwd = project, stdio = "inherit") {
       ? resolvePromise()
       : reject(new Error(`${command} failed (${signal || code})`)));
   });
-}
-
-async function writeRelayPackage(target) {
-  const rootLock = JSON.parse(await readFile(resolve(project, "package-lock.json"), "utf8"));
-  const ws = rootLock.packages?.["node_modules/ws"];
-  if (!ws?.version || !ws.resolved || !ws.integrity) throw new Error("root package-lock does not contain a pinned ws package");
-  const packageJson = {
-    name: "eagler-touhou-netplay-relay",
-    private: true,
-    version: "0.0.0",
-    type: "module",
-    engines: { node: ">=22.13" },
-    scripts: { start: "node server/netplay-relay.mjs" },
-    dependencies: { ws: rootLock.packages[""].dependencies.ws },
-  };
-  const packageLock = {
-    name: packageJson.name,
-    version: packageJson.version,
-    lockfileVersion: 3,
-    requires: true,
-    packages: {
-      "": { ...packageJson, scripts: undefined },
-      "node_modules/ws": ws,
-    },
-  };
-  delete packageLock.packages[""].scripts;
-  await writeFile(resolve(target, "package.json"), `${JSON.stringify(packageJson, null, 2)}\n`);
-  await writeFile(resolve(target, "package-lock.json"), `${JSON.stringify(packageLock, null, 2)}\n`);
 }
 
 async function copyFile(source, target) {
@@ -116,17 +89,13 @@ try {
     resolve(candidate, "services/nginx/nginx.migration-window.conf.example"));
   await copyFile(resolve(assets, "nginx.final-https.conf.example"),
     resolve(candidate, "services/nginx/nginx.final-https.conf.example"));
-  await copyFile(resolve(assets, "relay.env.example"), resolve(candidate, "services/relay/relay.env.example"));
-  await copyFile(resolve(assets, "eagler-netplay-relay.service"),
+  await copyFile(resolve(project, "../services/relay/deploy/relay.env.example"), resolve(candidate, "services/relay/relay.env.example"));
+  await copyFile(resolve(project, "../services/relay/deploy/eagler-netplay-relay.service"),
     resolve(candidate, "services/relay/eagler-netplay-relay.service"));
 
   const mappings = [
-    ["server/room-probe-policy.mjs", "services/relay/server/room-probe-policy.mjs"],
-    ["server/spectator-frame.mjs", "services/relay/server/spectator-frame.mjs"],
-    ["lib/contracts/load-compiled-contract.mjs", "services/relay/lib/contracts/load-compiled-contract.mjs"],
-    ["lib/contracts/product-catalog.mjs", "services/relay/lib/contracts/product-catalog.mjs"],
-    ["server/render-coturn-config.cjs", "services/turn/render-coturn-config.cjs"],
-    ["server/coturn.env.example", "services/turn/turn.env.example"],
+    ["../services/turn/render-coturn-config.cjs", "services/turn/render-coturn-config.cjs"],
+    ["../services/turn/turn.env.example", "services/turn/turn.env.example"],
     ["scripts/verify-origin-cutover.mjs", "services/verify/verify-origin-cutover.mjs"],
     ["scripts/verify-hsts-cutover.mjs", "services/verify/verify-hsts-cutover.mjs"],
     ["tools/maintainer/verify-public-relay-fallback.mjs", "services/verify/verify-public-relay-fallback.mjs"],
@@ -134,8 +103,6 @@ try {
   ];
   for (const [source, target] of mappings) await copyFile(resolve(project, source), resolve(candidate, target));
   await buildNetplayRelay(resolve(candidate, 'services/relay/server'));
-  await copyFile(resolve(hosted, "assets/contracts/product-catalog.mjs"),
-    resolve(candidate, "services/relay/assets/contracts/product-catalog.mjs"));
   await writeRelayPackage(resolve(candidate, "services/relay"));
 
   const operatorManifest = await writeOperatorIntegrity(candidate, {

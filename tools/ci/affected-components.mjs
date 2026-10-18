@@ -6,12 +6,14 @@ import {pathToFileURL} from 'node:url';
 export function affectedComponents(files, workspace, builds) {
   const runtimes = [...new Set(Object.entries(workspace.repositories)
     .filter(([key, value]) => value.startsWith('ports/')).map(([, value]) => value))];
-  const all = ['launcher', workspace.repositories.common, ...runtimes];
+  const services=Object.values(workspace.repositories).filter(value=>value.startsWith('services/'));
+  const all = ['launcher', workspace.repositories.common, ...runtimes, ...services];
   if (files === null) return all.sort();
   const affected = new Set(['launcher']);
   if (files.some(file => file.startsWith('common/') || file.startsWith('tools/') ||
       file.startsWith('.github/') || file.startsWith('launcher/config/'))) return all.sort();
   for (const directory of runtimes) if (files.some(file => file === directory || file.startsWith(directory + '/'))) affected.add(directory);
+  for (const directory of services) if (files.some(file => file === directory || file.startsWith(directory + '/'))) affected.add(directory);
   // Ordinary and MP fixes require semantic review together, even when the
   // source branches were imported into two directories.
   for (const entry of Object.values(builds.games)) {

@@ -49,15 +49,16 @@ before any write beyond the declared output capacity.
 
 ## Host integration dependencies
 
-Relay/coturn/browser integration tests execute the canonical Host implementation
-rather than a repository-private server copy. Set:
+Relay/coturn/browser integration tests execute the independent services. The
+monorepo resolves them under `services/`; an external service checkout can use:
 
 ```sh
-TH_EAGLER_HOST_ROOT=/path/to/eagler-touhou
+EAGLER_RELAY_ROOT=/path/to/services/relay
 ```
 
-The Host checkout must contain `server/netplay-relay.mjs`; Node-based relay
-tests also require the Host Node dependencies to be installed. Cross-game
+The Relay root must contain `src/netplay-relay.mjs` and its own installed Node
+dependencies. The coturn renderer lives in sibling `../turn/`. Old standalone
+checkouts can still use `TH_EAGLER_HOST_ROOT` for the historical layout. Cross-game
 spectator smoke that exercises TH06 additionally requires:
 
 ```sh

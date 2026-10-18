@@ -8,7 +8,7 @@ import {PRODUCT_GAMES, multiplayerConfigForProduct, multiplayerInputTimingPolicy
   isMultiplayerProductId, gameIdForProduct} from '../lib/contracts/product-catalog.mjs';
 import {buildMultiplayerRuntimeOptions} from '../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs';
 import {normalizeMultiplayerLobbySnapshot} from '../.cache/build/browser/assets/launcher/multiplayer-lobby-snapshot.mjs';
-import {isSpectatorFrameForRoom} from '../server/spectator-frame.mjs';
+import {isSpectatorFrameForRoom} from '../../services/relay/src/spectator-frame.mjs';
 import {loadRuntimeBuildConfig, getRuntimeBuildProfile} from '../lib/runtime-build-profiles.mjs';
 import {DEVELOPMENT_CONTENT} from '../lib/development-content.mjs';
 import {projectRelativeWorkspacePath} from '../lib/workspace-layout.mjs';
@@ -100,7 +100,7 @@ const port=await new Promise((resolve,reject)=>{
   });
 });
 const root=fileURLToPath(new URL('..',import.meta.url));
-const relay=spawn(process.execPath,[fileURLToPath(new URL('../server/netplay-relay.mjs',import.meta.url))],{
+const relay=spawn(process.execPath,[fileURLToPath(new URL('../../services/relay/src/netplay-relay.mjs',import.meta.url))],{
   cwd:root,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:''},
   stdio:['ignore','pipe','pipe'],
 });

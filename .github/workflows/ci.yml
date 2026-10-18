@@ -35,7 +35,11 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        sparse-checkout: launcher
+        sparse-checkout: 'launcher
+
+          common/contracts
+
+          services'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
@@ -48,6 +52,7 @@ jobs:
         cache-dependency-path: launcher/requirements-ci.txt
     - run: npm ci --ignore-scripts
     - run: python -m pip install --requirement requirements-ci.txt
+    - run: npm --prefix ../services/relay ci --ignore-scripts
     - run: npm run check
     defaults:
       run:
@@ -173,9 +178,10 @@ jobs:
       run: cmake --build --preset web-ci-${{ matrix.variant }} --parallel
     - name: Verify source-only Web output
       shell: bash
-      run: "test -s build/ci-web-${{ matrix.variant }}/th06.html\ntest -s build/ci-web-${{ matrix.variant }}/th06.js\ntest -s build/ci-web-${{\
-        \ matrix.variant }}/th06.wasm\nif find build/ci-web-${{ matrix.variant }} -type f \\( -iname '*.dat' -o -iname '*.data' \\) -print -quit\
-        \ | grep -q .; then\n  echo 'error: source-only Web CI produced original-game DATA' >&2\n  exit 1\nfi\n"
+      run: "test -s build/ci-web-${{ matrix.variant }}/th06.html\ntest -s build/ci-web-${{ matrix.variant }}/th06.js\ntest\
+        \ -s build/ci-web-${{ matrix.variant }}/th06.wasm\nif find build/ci-web-${{ matrix.variant }} -type f \\( -iname '*.dat'\
+        \ -o -iname '*.data' \\) -print -quit | grep -q .; then\n  echo 'error: source-only Web CI produced original-game\
+        \ DATA' >&2\n  exit 1\nfi\n"
     needs:
     - scope
     if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th06') }}
@@ -204,8 +210,8 @@ jobs:
       run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
     - name: Check Python and integration script syntax
       shell: bash
-      run: "python3 -m py_compile tests/*.py audit/source-contracts/*.py scripts/convert_bgm_ogg.py\nfor file in tests/*.cjs; do\n  node --check\
-        \ \"$file\"\ndone\n"
+      run: "python3 -m py_compile tests/*.py audit/source-contracts/*.py scripts/convert_bgm_ogg.py\nfor file in tests/*.cjs;\
+        \ do\n  node --check \"$file\"\ndone\n"
     - name: Compile and run core behavior tests
       run: bash scripts/run-core-tests.sh
     needs:
@@ -250,9 +256,10 @@ jobs:
       run: cmake --build --preset web-ci-${{ matrix.variant }} --parallel
     - name: Verify source-only Web output
       shell: bash
-      run: "test -s build/ci-web-${{ matrix.variant }}/th07.html\ntest -s build/ci-web-${{ matrix.variant }}/th07.js\ntest -s build/ci-web-${{\
-        \ matrix.variant }}/th07.wasm\nif find build/ci-web-${{ matrix.variant }} -type f \\( -iname '*.dat' -o -iname '*.data' \\) -print -quit\
-        \ | grep -q .; then\n  echo 'error: source-only Web CI produced original-game DATA' >&2\n  exit 1\nfi\n"
+      run: "test -s build/ci-web-${{ matrix.variant }}/th07.html\ntest -s build/ci-web-${{ matrix.variant }}/th07.js\ntest\
+        \ -s build/ci-web-${{ matrix.variant }}/th07.wasm\nif find build/ci-web-${{ matrix.variant }} -type f \\( -iname '*.dat'\
+        \ -o -iname '*.data' \\) -print -quit | grep -q .; then\n  echo 'error: source-only Web CI produced original-game\
+        \ DATA' >&2\n  exit 1\nfi\n"
     needs:
     - scope
     if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th07') }}
@@ -522,10 +529,11 @@ jobs:
         '
     - name: Optimized owner tests with assertions enabled
       shell: bash
-      run: "set -euo pipefail\nmkdir -p artifacts/performance-regressions\nflags=(-std=c++17 -O2 -UNDEBUG -Wall -Wextra -Werror -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1\
-        \ -I../../common/include)\nfor test in rollback-pool presentation-cache; do\n  g++ \"${flags[@]}\" \"tests/${test}-test.cpp\" -o \"artifacts/performance-regressions/${test}\"\
-        \n  \"artifacts/performance-regressions/${test}\"\ndone\ng++ \"${flags[@]}\" tests/rollback-pool-capture-test.cpp ../../common/src/netplay/RollbackJournal.cpp\
-        \ -o artifacts/performance-regressions/rollback-pool-capture\nartifacts/performance-regressions/rollback-pool-capture\n"
+      run: "set -euo pipefail\nmkdir -p artifacts/performance-regressions\nflags=(-std=c++17 -O2 -UNDEBUG -Wall -Wextra -Werror\
+        \ -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -I../../common/include)\nfor test in rollback-pool presentation-cache; do\n \
+        \ g++ \"${flags[@]}\" \"tests/${test}-test.cpp\" -o \"artifacts/performance-regressions/${test}\"\n  \"artifacts/performance-regressions/${test}\"\
+        \ndone\ng++ \"${flags[@]}\" tests/rollback-pool-capture-test.cpp ../../common/src/netplay/RollbackJournal.cpp -o artifacts/performance-regressions/rollback-pool-capture\n\
+        artifacts/performance-regressions/rollback-pool-capture\n"
     - name: Pool capture address and undefined-behavior checks
       shell: bash
       run: 'set -euo pipefail
@@ -567,10 +575,12 @@ jobs:
     - name: Verify and extract the official pinned WASI SDK
       id: wasi_sdk
       shell: bash
-      run: "set -euo pipefail\npackage=\"$HOME/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb\"\nmkdir -p \"$HOME/.cache\" \"$RUNNER_TEMP/th10-wasi-sdk\"\
-        \nif [ ! -f \"$package\" ]; then\n  curl --fail --location --retry 2 --max-time 300 --output \"$package\" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb\n\
-        fi\necho \"09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package\" | sha256sum --check\ndpkg-deb --extract \"$package\"\
-        \ \"$RUNNER_TEMP/th10-wasi-sdk\"\necho \"WASI_SDK_PATH=$RUNNER_TEMP/th10-wasi-sdk/opt/wasi-sdk\" >> \"$GITHUB_ENV\"\n"
+      run: "set -euo pipefail\npackage=\"$HOME/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb\"\nmkdir -p \"$HOME/.cache\" \"\
+        $RUNNER_TEMP/th10-wasi-sdk\"\nif [ ! -f \"$package\" ]; then\n  curl --fail --location --retry 2 --max-time 300 --output\
+        \ \"$package\" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb\n\
+        fi\necho \"09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package\" | sha256sum --check\ndpkg-deb\
+        \ --extract \"$package\" \"$RUNNER_TEMP/th10-wasi-sdk\"\necho \"WASI_SDK_PATH=$RUNNER_TEMP/th10-wasi-sdk/opt/wasi-sdk\"\
+        \ >> \"$GITHUB_ENV\"\n"
     - name: Actual wasm32 multiplayer owner regressions
       run: 'node portable/check-multiplayer-rules.mjs
 
@@ -615,10 +625,11 @@ jobs:
     - name: Compile title rollback and channel diagnostics against the pin
       if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
       shell: bash
-      run: "set -euo pipefail\nmkdir -p artifacts/performance-regressions\nflags=(--target=wasm32-wasip1 -O2 -std=c++17 -Wall -Wextra -Werror\
-        \ -fno-exceptions -fno-rtti -ffp-contract=off -fno-strict-aliasing -DTH_NATIVE_PLATFORM=1 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -I../../common/include\
-        \ -Ith10_web/cpp/multiplayer)\nfor source in RollbackState NetworkExports; do\n  \"$WASI_SDK_PATH/bin/clang++\" \"${flags[@]}\" -c \"\
-        th10_web/cpp/multiplayer/${source}.cpp\" -o \"artifacts/performance-regressions/${source}.o\"\ndone\n"
+      run: "set -euo pipefail\nmkdir -p artifacts/performance-regressions\nflags=(--target=wasm32-wasip1 -O2 -std=c++17 -Wall\
+        \ -Wextra -Werror -fno-exceptions -fno-rtti -ffp-contract=off -fno-strict-aliasing -DTH_NATIVE_PLATFORM=1 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1\
+        \ -I../../common/include -Ith10_web/cpp/multiplayer)\nfor source in RollbackState NetworkExports; do\n  \"$WASI_SDK_PATH/bin/clang++\"\
+        \ \"${flags[@]}\" -c \"th10_web/cpp/multiplayer/${source}.cpp\" -o \"artifacts/performance-regressions/${source}.o\"\
+        \ndone\n"
     needs:
     - scope
     if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
@@ -708,6 +719,9 @@ jobs:
     - ports_th10_mp_performance_regressions_wasm-owner-regressions
     - ports_th10_mp_presentation_lab_source-contract
     - ports_th10_mp_replay_verifier_golden-integrity
+    - relay
+    - telemetry
+    - turn
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-node@v7
@@ -717,4 +731,69 @@ jobs:
       env:
         EAGLER_RESULTS: ${{ toJSON(needs) }}
       run: node -e "const jobs=JSON.parse(process.env.EAGLER_RESULTS); const failed=Object.entries(jobs).filter(([,job])=>['failure','cancelled'].includes(job.result));
-        if(jobs.scope.result!=='success'||jobs.check.result!=='success'||failed.length)process.exit(1); console.log('Applicable checks completed');"
+        if(jobs.scope.result!=='success'||jobs.check.result!=='success'||failed.length)process.exit(1); console.log('Applicable
+        checks completed');"
+  relay:
+    name: services/relay
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/relay') }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'services/relay
+
+          common/contracts'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: npm ci --ignore-scripts
+    - run: npm test
+    - run: npm run build
+    - run: npm run package -- artifacts/package
+    - run: npm --prefix artifacts/package ci --omit=dev --ignore-scripts
+    - run: node tests/test-netplay-relay-product-policy.mjs
+      env:
+        EAGLER_TEST_RELAY_PATH: artifacts/package/server/netplay-relay.mjs
+    defaults:
+      run:
+        working-directory: services/relay
+  telemetry:
+    name: services/telemetry
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/telemetry') }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'services/telemetry
+
+          common/contracts'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: npm test
+    defaults:
+      run:
+        working-directory: services/telemetry
+  turn:
+    name: services/turn
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/turn') }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'services/turn
+
+          common/contracts'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: node tests/test-netplay-service-config.mjs
+    defaults:
+      run:
+        working-directory: services/turn
