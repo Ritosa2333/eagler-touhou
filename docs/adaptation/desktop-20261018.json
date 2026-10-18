@@ -1,0 +1,1203 @@
+{
+  "schema": "eagler-touhou/desktop-acceptance-summary/1",
+  "baseline": "85a86bb98f27007b8984da5068d197421563145e",
+  "date": "2026-10-18/19",
+  "browser": "145.0.7632.6",
+  "scope": "Desktop Chromium production Runtime, protocol-host ordinary sessions and actual Launcher MP rooms. Checks are partial capability coverage. Physical devices are deferred. Further acceptance stopped at user request.",
+  "reports": {
+    "ordinary": {
+      "localEvidence": "ordinary-gamepad-fixed/report.json",
+      "sha256": "81c3f6d5db6280d7878def9488b4c2a8b6762b64780ae3364535bb270c68cada",
+      "harnessSha256": "fcbd071d07a65aa7ad17a8410c07cafe9d26fc6a6caf95e2db994ee228d83a41",
+      "startedAt": "2026-10-18T15:48:23.930Z",
+      "finishedAt": "2026-10-18T15:51:20.749Z"
+    },
+    "th09-restart-fixed": {
+      "localEvidence": "th09-restart-fixed/report.json",
+      "sha256": "e0a74df8f7cffe962c2ed7aa09826e12c327c90df045b8d7a16e4c88d4d8ed79",
+      "harnessSha256": "fcbd071d07a65aa7ad17a8410c07cafe9d26fc6a6caf95e2db994ee228d83a41",
+      "startedAt": "2026-10-18T15:59:19.979Z",
+      "finishedAt": "2026-10-18T15:59:46.823Z"
+    },
+    "2p-rtc": {
+      "localEvidence": "rooms-2p-rtc-gamepad-fixed/report.json",
+      "sha256": "b6e15f5b6899cac13ea7b5ea397539ba5e76855cd9cdbb5346c8b7aa60e90d75",
+      "harnessSha256": "64a4ee90b20a1760dfc0dded87c4214bee15295c151659996cb8b19fee60bdfb",
+      "startedAt": "2026-10-18T15:44:37.837Z",
+      "finishedAt": "2026-10-18T15:48:22.905Z"
+    },
+    "2p-relay": {
+      "localEvidence": "rooms-all-2p-relay-lifecycle/report.json",
+      "sha256": "51cef48a7a28e4d8751b4ef875fc5e8f9f78681d8ebd480223df83646a8d6aa0",
+      "harnessSha256": "b9c1d5791b840f19710ebeabf5783a1e6b25c2fa732420d7d0871eb023ea70f7",
+      "startedAt": "2026-10-18T15:08:57.442Z",
+      "finishedAt": "2026-10-18T15:11:42.981Z"
+    },
+    "3p-rtc": {
+      "localEvidence": "rooms-3p-rtc-process-isolation/report.json",
+      "sha256": "eaef6b22cbde560b2f82d735c6c168bd374d335b91f65fc96fa6eeadaaa81776",
+      "harnessSha256": "7bd417cbc6bf169371719e9ecc0f3ee159b8fe603f289a4a1a5c8d73e82edab3",
+      "startedAt": "2026-10-18T15:26:43.498Z",
+      "finishedAt": "2026-10-18T15:33:05.577Z"
+    },
+    "3p-relay": {
+      "localEvidence": "rooms-3p-relay-process-isolation/report.json",
+      "sha256": "cff74d3a4816f09aeea9ad221b44970cb74dc8233f152761a3dc366d1a4d83c4",
+      "harnessSha256": "7bd417cbc6bf169371719e9ecc0f3ee159b8fe603f289a4a1a5c8d73e82edab3",
+      "startedAt": "2026-10-18T15:34:05.440Z",
+      "finishedAt": "2026-10-18T15:37:23.104Z"
+    }
+  },
+  "targets": [
+    {
+      "game": "th06",
+      "variant": "normal",
+      "wasm": {
+        "th06.wasm": {
+          "bytes": 2061933,
+          "sha256": "68e99669933757d1913f78f155cb956735eddece61e531d2adb01cdf0436457f"
+        }
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "BUILD-04"
+          ]
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-01"
+          ]
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true,
+          "checks": [
+            "RUNTIME-02"
+          ]
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-03"
+          ]
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-02"
+          ]
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-01"
+          ]
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-04",
+            "INPUT-06"
+          ]
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-06"
+          ]
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-03",
+            "SAVE-04",
+            "RUNTIME-01"
+          ]
+        }
+      ]
+    },
+    {
+      "game": "th07",
+      "variant": "normal",
+      "wasm": {
+        "th07.wasm": {
+          "bytes": 2431275,
+          "sha256": "d0cdd9c04c4d23664c1beb41f88c49a0037d1c67bf4f7ad85f979c06c7df88cf"
+        }
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "BUILD-04"
+          ]
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-01"
+          ]
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true,
+          "checks": [
+            "RUNTIME-02"
+          ]
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-03"
+          ]
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-02"
+          ]
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-01"
+          ]
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-04",
+            "INPUT-06"
+          ]
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-06"
+          ]
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-03",
+            "SAVE-04",
+            "RUNTIME-01"
+          ]
+        }
+      ]
+    },
+    {
+      "game": "th08",
+      "variant": "normal",
+      "wasm": {
+        "th08-sdl.wasm": {
+          "bytes": 3460550,
+          "sha256": "ec778c1d508cfec6ce2958116d2bb0a09bb2c22ff40b25f1291acfd2ccbe37b0"
+        }
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "BUILD-04"
+          ]
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-01"
+          ]
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true,
+          "checks": [
+            "RUNTIME-02"
+          ]
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-03"
+          ]
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-02"
+          ]
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-01"
+          ]
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "failed",
+          "complete": false,
+          "checks": [
+            "INPUT-04",
+            "INPUT-06"
+          ]
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-06"
+          ]
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-03",
+            "SAVE-04",
+            "RUNTIME-01"
+          ]
+        }
+      ]
+    },
+    {
+      "game": "th09",
+      "variant": "normal",
+      "wasm": {
+        "th09.wasm": {
+          "bytes": 2853844,
+          "sha256": "bdefe5ad91fa441a562f0bf9a26faed1ea17b84390b218f907b343bc7096a4d7"
+        }
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "BUILD-04"
+          ]
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-01"
+          ]
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true,
+          "checks": [
+            "RUNTIME-02"
+          ]
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-03"
+          ]
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-02"
+          ]
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-01"
+          ]
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-04",
+            "INPUT-06"
+          ]
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-06"
+          ]
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-03",
+            "SAVE-04",
+            "RUNTIME-01"
+          ]
+        }
+      ]
+    },
+    {
+      "game": "th10",
+      "variant": "normal",
+      "wasm": {
+        "th10-sdl.wasm": {
+          "bytes": 3352364,
+          "sha256": "cfc1a04c362d7e69e57082cbf0f20e5ead170da3b59168f8daafb24c5b10152b"
+        }
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "BUILD-04"
+          ]
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-01"
+          ]
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true,
+          "checks": [
+            "RUNTIME-02"
+          ]
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-03"
+          ]
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-02"
+          ]
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-01"
+          ]
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-04",
+            "INPUT-06"
+          ]
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-06"
+          ]
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-03",
+            "SAVE-04",
+            "RUNTIME-01"
+          ]
+        }
+      ]
+    },
+    {
+      "game": "th11",
+      "variant": "normal",
+      "wasm": {
+        "th11-sdl.wasm": {
+          "bytes": 3065691,
+          "sha256": "b14f623a0ad886e5a711807864f1f2e1b5e30a2396b4dbbc5f235bcce07eb0fc"
+        }
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "BUILD-04"
+          ]
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-01"
+          ]
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true,
+          "checks": [
+            "RUNTIME-02"
+          ]
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-03"
+          ]
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-02"
+          ]
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-01"
+          ]
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-04",
+            "INPUT-06"
+          ]
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-06"
+          ]
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-03",
+            "SAVE-04",
+            "RUNTIME-01"
+          ]
+        }
+      ]
+    },
+    {
+      "game": "th15",
+      "variant": "normal",
+      "wasm": {
+        "th15.wasm": {
+          "bytes": 3611234,
+          "sha256": "e4fa53031e41e3d54909f0dc40a60dee0c7f4e8d41d91bfb2cd4ff2f2262c43a"
+        }
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "BUILD-04"
+          ]
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-01"
+          ]
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true,
+          "checks": [
+            "RUNTIME-02"
+          ]
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-03"
+          ]
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-02"
+          ]
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-01"
+          ]
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "failed",
+          "complete": false,
+          "checks": [
+            "INPUT-04",
+            "INPUT-06"
+          ]
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-06"
+          ]
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-03",
+            "SAVE-04",
+            "RUNTIME-01"
+          ]
+        }
+      ]
+    },
+    {
+      "game": "th20",
+      "variant": "normal",
+      "wasm": {
+        "th20-sdl.wasm": {
+          "bytes": 2765430,
+          "sha256": "ed1f75db61750729afbaa4654e2be4a12b6c9187e346bb3cf3966c38aae82826"
+        }
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "BUILD-04"
+          ]
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-01"
+          ]
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true,
+          "checks": [
+            "RUNTIME-02"
+          ]
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-03"
+          ]
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-02"
+          ]
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-01"
+          ]
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "INPUT-04",
+            "INPUT-06"
+          ]
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "RUNTIME-06"
+          ]
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false,
+          "checks": []
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false,
+          "checks": [
+            "SAVE-03",
+            "SAVE-04",
+            "RUNTIME-01"
+          ]
+        }
+      ]
+    },
+    {
+      "game": "th06",
+      "variant": "multiplayer",
+      "cases": {
+        "2p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            183,
+            183
+          ],
+          "returnedToRoom": true,
+          "gamepad": [
+            {
+              "passed": true,
+              "error": ""
+            },
+            {
+              "passed": true,
+              "error": ""
+            }
+          ]
+        },
+        "2p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            182,
+            181
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            193,
+            193,
+            192
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            183,
+            183,
+            183
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        }
+      },
+      "buildScope": "Recorded real-room production builds"
+    },
+    {
+      "game": "th07",
+      "variant": "multiplayer",
+      "cases": {
+        "2p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            181,
+            181
+          ],
+          "returnedToRoom": true,
+          "gamepad": [
+            {
+              "passed": true,
+              "error": ""
+            },
+            {
+              "passed": true,
+              "error": ""
+            }
+          ]
+        },
+        "2p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            180,
+            180
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            195,
+            194,
+            196
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            181,
+            180,
+            180
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        }
+      },
+      "buildScope": "Recorded real-room production builds"
+    },
+    {
+      "game": "th08",
+      "variant": "multiplayer",
+      "cases": {
+        "2p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            185,
+            185
+          ],
+          "returnedToRoom": true,
+          "gamepad": [
+            {
+              "passed": true,
+              "error": ""
+            },
+            {
+              "passed": true,
+              "error": ""
+            }
+          ]
+        },
+        "2p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            189,
+            189
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            188,
+            188,
+            188
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            191,
+            191,
+            191
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        }
+      },
+      "buildScope": "Recorded real-room production builds"
+    },
+    {
+      "game": "th09",
+      "variant": "multiplayer",
+      "cases": {
+        "2p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            591,
+            591
+          ],
+          "returnedToRoom": true,
+          "gamepad": [
+            {
+              "passed": true,
+              "error": ""
+            },
+            {
+              "passed": true,
+              "error": ""
+            }
+          ]
+        },
+        "2p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            585,
+            585
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        }
+      },
+      "buildScope": "TH09 multiplayer cases precede the shared R fix and do not verify its new multiplayer behavior"
+    },
+    {
+      "game": "th10",
+      "variant": "multiplayer",
+      "cases": {
+        "2p-rtc": {
+          "casePassed": false,
+          "nativeFrames": [
+            191,
+            191
+          ],
+          "returnedToRoom": true,
+          "gamepad": [
+            {
+              "passed": false,
+              "error": "frame.evaluate: Error: Production gamepad policy port is not enabled"
+            },
+            {
+              "passed": false,
+              "error": "frame.evaluate: Error: Production gamepad policy port is not enabled"
+            }
+          ]
+        },
+        "2p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            191,
+            191
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            186,
+            185,
+            186
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            189,
+            190,
+            189
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        }
+      },
+      "buildScope": "Recorded real-room production builds"
+    },
+    {
+      "game": "th11",
+      "variant": "multiplayer",
+      "cases": {
+        "2p-rtc": {
+          "casePassed": false,
+          "nativeFrames": [
+            182,
+            181
+          ],
+          "returnedToRoom": true,
+          "gamepad": [
+            {
+              "passed": false,
+              "error": "frame.evaluate: Error: Production gamepad policy port is not enabled"
+            },
+            {
+              "passed": false,
+              "error": "frame.evaluate: Error: Production gamepad policy port is not enabled"
+            }
+          ]
+        },
+        "2p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            191,
+            192
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            194,
+            194,
+            195
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            190,
+            191,
+            191
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        }
+      },
+      "buildScope": "Recorded real-room production builds"
+    },
+    {
+      "game": "th15",
+      "variant": "multiplayer",
+      "cases": {
+        "2p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            191,
+            190
+          ],
+          "returnedToRoom": true,
+          "gamepad": [
+            {
+              "passed": true,
+              "error": ""
+            },
+            {
+              "passed": true,
+              "error": ""
+            }
+          ]
+        },
+        "2p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            190,
+            188
+          ],
+          "returnedToRoom": false,
+          "gamepad": []
+        },
+        "3p-rtc": {
+          "casePassed": true,
+          "nativeFrames": [
+            187,
+            190,
+            188
+          ],
+          "returnedToRoom": true,
+          "gamepad": []
+        },
+        "3p-relay": {
+          "casePassed": true,
+          "nativeFrames": [
+            180,
+            182,
+            180
+          ],
+          "returnedToRoom": false,
+          "gamepad": []
+        }
+      },
+      "buildScope": "Recorded real-room production builds"
+    }
+  ]
+}

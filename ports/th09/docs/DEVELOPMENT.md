@@ -2,6 +2,8 @@
 
 当前适配记录见[TH09 适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。TH09 多人入口为对战模式。
 
+暂停菜单的 R 键进入本作现有 Retry 流程，保留菜单退场时序，再按当前机体、难度与开局参数重建本局。普通版与对战版使用同一入口，联机时按已确认输入同步处理；运行验收比较暂停前后的原生局帧，并检查重开后继续推进。
+
 ## 构建并在 Launcher 启动
 
 需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 TH09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制；其余私有字体资源来自已有字体资源包。

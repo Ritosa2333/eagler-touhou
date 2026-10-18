@@ -7,6 +7,7 @@ void InGameMenus::update_pause(const InputFrame& input){
     const auto close=[&](i32 state){services.menu_sound(10);m.state=state;for(u32 n=0;n<7;++n)if(m.animations[n].visible)m.animations[n].pendingInterrupt=2;m.frames=0;};
     if((keys&8)&&m.state!=3){close(3);m.animations[7].pendingInterrupt=1;}
     if((keys&0x200)&&m.state!=8)close(8);
+    if((keys&0x4000)&&m.state!=9)close(9);
     if(m.state==0){for(u32 n=0;n<7;++n)start(m.animations[n],i32(n)+1);interrupt(m,0,3,1);resources.sprite(AnimationFile::ascii,m.animations[6],services.difficulty+125);m.state=1;m.frames=0;}
     const i32 state=m.state;
     if(state==1||state==2){

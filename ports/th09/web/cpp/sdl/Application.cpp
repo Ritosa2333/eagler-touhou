@@ -983,7 +983,7 @@ TH09_EXPORT("th09_probe_menu_barrier") const u32* th09_probe_menu_barrier(){
     InGameMenus menus(probe->resources,services);bool valid=true;
     for(unsigned kind=0;kind<3;++kind)for(i32 state=0;state<=9;++state)
     for(i32 age:{0,3,4,19,20,21})for(u32 flags:{0u,1u,8u,9u})
-    for(i32 continues:{0,3})for(u16 keys:{u16(0),u16(1),u16(8),u16(16),u16(32),u16(0x200),u16(0x1001),u16(0x208)}){
+    for(i32 continues:{0,3})for(u16 keys:{u16(0),u16(1),u16(8),u16(16),u16(32),u16(0x200),u16(0x1001),u16(0x208),u16(0x4000),u16(0x4208)}){
         menus.pause={};menus.game_over={};menus.match_end={};services.action=-1;
         services.game_flags=flags;services.continues=continues;
         InputFrame input;input.pressed=keys;bool barrier=false;

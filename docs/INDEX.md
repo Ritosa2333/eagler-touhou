@@ -1,6 +1,6 @@
 # 文档总表
 
-共 203 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 204 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -13,6 +13,7 @@
 | 文档总表 | [docs/INDEX.md](INDEX.md) | 文档总表 |
 | 适配指南 | [docs/adaptation/README.md](adaptation/README.md) | 适配一个游戏 |
 | 适配指南 | [docs/adaptation/build.md](adaptation/build.md) | 源码与构建 |
+| 适配指南 | [docs/adaptation/desktop-20261018.md](adaptation/desktop-20261018.md) | 桌面逐作运行记录 |
 | 适配指南 | [docs/adaptation/input.md](adaptation/input.md) | 键盘、手柄与触控 |
 | 适配指南 | [docs/adaptation/localization.md](adaptation/localization.md) | 语言与练习 |
 | 适配指南 | [docs/adaptation/multiplayer.md](adaptation/multiplayer.md) | 多人接入与规则 |
