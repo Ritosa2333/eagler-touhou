@@ -4,7 +4,8 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * acceptance. Authorities: lobby.mts and app440–780/6796–6849/7552–7940. */
 import test, {before, after} from 'node:test';
 import assert from 'node:assert/strict';
-import {execFileSync} from 'node:child_process';
+import {execFileSync, spawn} from 'node:child_process';
+import {WebSocket} from 'ws';
 import {runInNewContext} from 'node:vm';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -279,14 +280,14 @@ test('room restores created directory session and dispose preserves reload stora
   service.dispose(); assert.ok(session.getItem(owner.multiplayerRoomSessionStorageKey('th06mp')));
 });
 
-test('room serial/reconnect/terminal handling uses actual adapter calls and rejects old sockets', async () => {
+test('room serial/reconnect/terminal handling distinguishes observed rounds from applied starts and rejects old sockets', async () => {
   const fixture = await joinedRoom(), {service, sockets, clock, identity, events} = fixture;
   const snapshot = roomState(identity.lobbyClientId('th06mp'), {startSerial: 7});
   sockets[0].message({type: 'state', room: snapshot});
   sockets[0].message({type: 'start', serial: 7, room: snapshot}); await flush();
-  assert.equal(events.filter(([kind]) => kind === 'launch').length, 0);
-  sockets[0].message({type: 'start', serial: 8, room: snapshot}); await flush();
   assert.equal(events.filter(([kind]) => kind === 'launch').length, 1);
+  sockets[0].message({type: 'start', serial: 8, room: snapshot}); await flush();
+  assert.equal(events.filter(([kind]) => kind === 'launch').length, 2);
   const previous = sockets[0]; previous.close(1006); clock.tick(650);
   assert.equal(sockets.length, 2); sockets[1].open();
   const before = service.getSnapshot().startSerial; previous.message({type: 'start', serial: 1000, room: snapshot});
@@ -294,6 +295,77 @@ test('room serial/reconnect/terminal handling uses actual adapter calls and reje
   sockets[1].close(4009); assert.equal(service.getSnapshot().room, null);
   assert.equal(events.findLast(([kind]) => kind === 'leave')[1].message, 'lobby.conflict');
   clock.tick(10000); assert.equal(sockets.length, 2); service.dispose();
+});
+
+test('a reconnect snapshot recovers a missed player start exactly once', async () => {
+  const f = await joinedRoom(), id = f.identity.lobbyClientId('th06mp');
+  f.sockets[0].close(1006); f.clock.tick(650);
+  const socket = f.sockets[1]; socket.open();
+  const room = roomState(id, {phase:'starting',startSerial:1});
+  socket.message({type:'state',room}); await flush();
+  assert.equal(f.events.filter(([kind])=>kind==='launch').length,1);
+  socket.message({type:'state',room}); socket.message({type:'start',serial:1,room}); await flush();
+  assert.equal(f.events.filter(([kind])=>kind==='launch').length,1);
+  socket.close(1006); f.clock.tick(650); f.sockets[2].open();
+  f.sockets[2].message({type:'state',room}); await flush();
+  assert.equal(f.events.filter(([kind])=>kind==='launch').length,1);
+  f.service.dispose();
+});
+
+test('room snapshots do not start a lobby, an already running round or an unadmitted spectator', async () => {
+  for (const phase of ['lobby','running','playing']) {
+    const f=await joinedRoom(), id=f.identity.lobbyClientId('th06mp');
+    f.sockets[0].message({type:'state',room:roomState(id,{phase,startSerial:1})}); await flush();
+    assert.equal(f.events.some(([kind])=>kind==='launch'),false,phase); f.service.dispose();
+  }
+  const f=await joinedRoom();
+  f.sockets[0].message({type:'state',room:roomState('other-host',{phase:'starting',startSerial:1,seats:[{clientId:'other-host'},null]})});await flush();
+  assert.equal(f.events.some(([kind])=>kind==='launch'),false);f.service.dispose();
+});
+
+test('live relay reconnect recovers a lost start without a duplicate Runtime launch', {timeout:15000}, async () => {
+  const relay=spawn(process.execPath,['src/netplay-relay.mjs'],{cwd:resolve(project,'../services/relay'),windowsHide:true,
+    stdio:['ignore','pipe','pipe'],env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''}});
+  let log='', f; const sockets=[];
+  const wait=async(predicate,label)=>{const deadline=Date.now()+5000;while(Date.now()<deadline){if(predicate())return;await new Promise(resolve=>setTimeout(resolve,20));}throw Error(label+': '+log);};
+  relay.stdout.on('data',data=>{log+=data;});relay.stderr.on('data',data=>{log+=data;});
+  try {
+    await wait(()=>/listening ws:\/\/127\.0\.0\.1:(\d+)/.test(log),'relay startup');
+    const port=/listening ws:\/\/127\.0\.0\.1:(\d+)/.exec(log)[1], url=`ws://127.0.0.1:${port}/`;
+    const host=new WebSocket(url+'?'+new URLSearchParams({room:'th06mp-6432',lobby:'host-public-id',member:'host-private-member'}));
+    sockets.push(host);const hostMessages=[];host.on('message',data=>hostMessages.push(JSON.parse(String(data))));
+    await wait(()=>hostMessages.some(message=>message.type==='state'),'host join');
+    host.send(JSON.stringify({type:'take-seat',seat:0,loadout:0,name:'host',movementMode:'keyboard'}));
+    let dropped=false, connections=0;
+    f=roomFixture({relayUrl:()=>url,prepareResources:async()=>({runtimeGeneration:hash}),setTimeout,clearTimeout,
+      createSocket:address=>{
+        const socket=new WebSocket(address), attempt=++connections;sockets.push(socket);
+        return {get readyState(){return socket.readyState;},send:value=>socket.send(value),close:(...args)=>socket.close(...args),
+          addEventListener:(type,listener)=>socket.addEventListener(type,event=>{
+            if(type==='message'&&attempt===1){
+              const message=JSON.parse(String(event.data));
+              if(message.type==='state'&&message.room?.phase==='starting')return;
+              if(message.type==='start'){dropped=true;socket.terminate();return;}
+            }
+            listener(event);
+          })};
+      }});
+    f.service.enterRoom('th06mp','6432',false);
+    await wait(()=>f.service.getSnapshot().connected,'guest join');
+    await f.service.takeSeat(1);await wait(()=>f.service.getSnapshot().seat===1,'guest seat');
+    host.send(JSON.stringify({type:'set-ready',ready:true,movementMode:'keyboard',runtimeGeneration:hash}));
+    await f.service.toggleReady();await wait(()=>{const room=f.service.getSnapshot().room;return room?.seats.slice(0,room.playerCount).every(seat=>seat?.ready);},'ready');
+    host.send(JSON.stringify({type:'start',inputDelay:0}));
+    await wait(()=>dropped&&connections===2&&f.events.some(([kind])=>kind==='launch'),'reconnected launch');
+    assert.equal(f.service.getSnapshot().room.phase,'starting');assert.equal(f.service.getSnapshot().startSerial,1);
+    assert.equal(f.events.filter(([kind])=>kind==='launch').length,1);
+    sockets.at(-1).terminate();await wait(()=>connections===3&&f.service.getSnapshot().connected,'second reconnect');
+    await wait(()=>f.service.getSnapshot().room?.synced,'second snapshot');
+    assert.equal(f.events.filter(([kind])=>kind==='launch').length,1);
+  } finally {
+    f?.service.dispose();for(const socket of sockets)socket.terminate();relay.kill();
+    if(relay.exitCode===null)await new Promise(resolve=>relay.once('exit',resolve));
+  }
 });
 
 test('room preflight waits the real preparation and check ports, coalesces clicks, and ignores stale completion', async () => {

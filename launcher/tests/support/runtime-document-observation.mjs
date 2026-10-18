@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 export function runtimeDocumentObservationScript(env = process.env) {
   const mode = env.EAGLER_RUNTIME_TEST_OBSERVATION ?? 'attribute';
   if (mode !== 'attribute' && mode !== 'document') throw new Error('EAGLER_RUNTIME_TEST_OBSERVATION must be attribute or document');
-  return mode === 'document' ? readFileSync(new URL('./runtime-document-observation.js', import.meta.url), 'utf8') : null;
+  // Python reads this shared initializer with universal newlines as well.
+  return mode === 'document' ? readFileSync(new URL('./runtime-document-observation.js', import.meta.url), 'utf8').replaceAll('\r\n', '\n') : null;
 }
 
 export async function installRuntimeDocumentObservation(page) {

@@ -1,7 +1,7 @@
 import {Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation} from 'react-router';
 import {useRef, type ReactNode} from 'react';
 import {BrowserLauncher} from './BrowserLauncher';
-import {OriginalBootstrapHead, OriginalPreloads, OriginalModuleRequestMark, OriginalBootstrapTail} from './components/startup/OriginalBootstrap';
+import {OriginalBootstrapHead, OriginalPreloads, OriginalModuleRequestMark, OriginalBootstrapTail, useDocumentUiLocale} from './components/startup/OriginalBootstrap';
 import {AppShellDeploymentMeta} from './components/startup/AppShellDeploymentMeta';
 import {InitialLauncher, InitialDocumentBody, OriginalNoscript} from './components/startup/InitialLauncher';
 import '../public/styles.css';
@@ -11,7 +11,7 @@ import './components/launcher/lobby-options.css';
 import './components/launcher/shared-options.css';
 export function Layout({children}: {children: ReactNode}) {
   const {pathname} = useLocation();
-  const locale = /\/en\.html\/?$/.test(pathname) ? "en" : "zh-CN";
+  const locale = useDocumentUiLocale();
   const lobby = /\/(?:lobby|lobby\.html)\/?$/.test(pathname);
   // Original boot owns removal. Keep this initial prop constant so later SPA
   // route renders cannot reintroduce the document's retired loading gate.

@@ -8,12 +8,13 @@ import {fileURLToPath} from 'node:url';
 import {JSDOM} from 'jsdom';
 import {runtimeDocumentObservationScript} from './runtime-document-observation.mjs';
 import {runtimeGenerationEntry} from '../../lib/contracts/runtime-generations.mjs';
+import {normalizeSourceText} from '../react-main/source-text.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const child = 'tests/browser/launcher-playwright-webkit.py';
 const wrapper = 'tests/browser/test-playwright-webkit-gate.mjs';
-const source = readFileSync(new URL('../../' + child, import.meta.url), 'utf8');
+const source = normalizeSourceText(readFileSync(new URL('../../' + child, import.meta.url), 'utf8'));
 const pinned = path => execFileSync('git', ['show', `${baseline}:${path}`], {cwd: project, encoding: 'utf8'});
 const python = text => JSON.parse(execFileSync('python', ['-c', text], {cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
 const helper = 'globalThis.__originalRuntimeDocumentObservation';
@@ -37,7 +38,7 @@ function evaluate(window, text) {return JSON.parse(JSON.stringify(window.eval(`(
 
 test('only helper setup and two URL inputs change; full Python source and separate server adapter reverse to pinned', () => {
   assert.equal(restore(source), original);
-  assert.equal(readFileSync(new URL('../../' + wrapper, import.meta.url), 'utf8')
+  assert.equal(normalizeSourceText(readFileSync(new URL('../../' + wrapper, import.meta.url), 'utf8'))
     .replace('import { webkitPublicationServerArguments } from \"../support/webkit-publication-server.mjs\";\n', '')
     .replace('webkitPublicationServerArguments(output, port)', '[\"scripts/serve.mjs\", String(port), output]'), pinned(wrapper));
   assert.equal(observations.length, 2);

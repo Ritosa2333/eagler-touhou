@@ -54,8 +54,8 @@ export function createStaticThcrapPack({ pack, resources }) {
   for (const resource of resources) {
     const targetPath = assertTargetPath(resource?.targetPath || resource?.mountPath, game);
     const bytes = assertBytes(resource?.bytes, `${targetPath} bytes`);
-    if (entries.has(targetPath)) throw new Error(`duplicate thcrap target path: ${targetPath}`);
     const entryName = targetPath.slice(1);
+    if (entries.has(entryName)) throw new Error(`duplicate thcrap target path: ${targetPath}`);
     entries.set(entryName, bytes);
     files.push({
       path: targetPath,

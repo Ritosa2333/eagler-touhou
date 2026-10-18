@@ -90,8 +90,13 @@ cannot be restarted by a stale notification. Existing dialogs and operations
 finish before the update prompt appears. Live room matches defer it until the
 room is back in its lobby; lobby restart reuses the room launch owner.
 Canonical Package Store
-serialization checks the expected generation inside the mutation queue so a late
-background update cannot overwrite a newer import from another tab.
+serialization checks the expected generation when claiming staging and again in
+the IndexedDB transaction that switches current. Web Locks reduce contention;
+the durable condition also protects browsers without them. Startup and background
+OGG acquisition and required-font upgrades carry the installation generation they
+intend to extend, so an older Runtime cannot replace a newer import from another tab.
+Only the current launched Runtime epoch may consume an update-notification key;
+a retired program check cannot suppress its successor's prompt.
 
 ### Required resources before native DATA identity
 

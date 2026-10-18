@@ -136,6 +136,7 @@ export async function installPublishedPackage(game, {
   else if (published.descriptor.gameVersion === "beauty") throw new Error(`${game}: original catalog declares a beauty Package`);
   const installed = await installPackageFromRemote(published.descriptor, {
     descriptorUrl: published.descriptorUrl,
+    expectedGenerationId: expectedGenerationId ?? undefined,
     // Resolve preservation policy inside the installer's per-game mutation
     // queue. Otherwise a queued import/update can advance current after these
     // decisions were calculated and then be silently dropped.

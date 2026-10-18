@@ -413,7 +413,7 @@ test('main-derived decision store: occupied request is not replaced; secondary/c
   store.setNavigationDecisionOpen(false); const pending = store.askDecision({}); store.dispose(); assert.equal(await pending, 'cancel');
 });
 
-test('synthetic mounted decisions: secondary and hidden Cancel retain original focus/Enter/returnValue semantics without history', async () => {
+test('synthetic mounted decisions: secondary and hidden Cancel retain focus and native button activation without history', {timeout:15000}, async () => {
   await mountEntry(['/?game=th06'], {realDecisions: true});
   node('#libraryBack').focus(); const originalFocus = env.document.activeElement, key = mounted.router.state.location.key;
   let first;
@@ -421,8 +421,10 @@ test('synthetic mounted decisions: secondary and hidden Cancel retain original f
   const firstDialog = node('#decisionDialog');
   assert.equal(env.document.querySelectorAll('#decisionDialog').length, 1); assert.equal(firstDialog.dataset.options, '3');
   assert.equal(env.document.activeElement, node('#decisionCancel'));
-  await React.act(async () => {node('#decisionConfirm').dispatchEvent(new env.window.KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true}));});
-  assert.ok(node('#decisionDialog').open, 'Enter does not confirm unless explicitly enabled');
+  const implicitEnter = new env.window.KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true});
+  await React.act(async () => {firstDialog.dispatchEvent(implicitEnter);});
+  assert.equal(implicitEnter.defaultPrevented, true);
+  assert.ok(node('#decisionDialog').open, 'Enter outside a button cannot implicitly confirm');
   await click('#decisionSecondary'); assert.equal(await first, 'secondary'); assert.equal(firstDialog.open, false); assert.equal(firstDialog.returnValue, 'secondary');
   assert.equal(env.document.activeElement, originalFocus); assert.equal(mounted.router.state.location.key, key);
   let second;
@@ -430,7 +432,14 @@ test('synthetic mounted decisions: secondary and hidden Cancel retain original f
   const secondDialog = node('#decisionDialog');
   assert.equal(node('#decisionCancel').hidden, true); assert.equal(secondDialog.dataset.options, '2');
   assert.equal(env.document.activeElement, node('#decisionConfirm'));
-  await React.act(async () => {node('#decisionConfirm').dispatchEvent(new env.window.KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true}));});
+  await React.act(async () => {
+    const enter = new env.window.KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true});
+    node('#decisionConfirm').dispatchEvent(enter);
+    assert.equal(enter.defaultPrevented, false);
+    // jsdom does not synthesize the browser's key-to-button activation.
+    // Actual Tab/Enter/Space is covered by test-confirmation-keyboard.mjs.
+    node('#decisionConfirm').click();
+  });
   assert.equal(await second, 'confirm'); assert.equal(secondDialog.open, false); assert.equal(secondDialog.returnValue, 'confirm');
   assert.equal(mounted.router.state.location.key, key); assert.equal(env.document.activeElement, originalFocus);
 });

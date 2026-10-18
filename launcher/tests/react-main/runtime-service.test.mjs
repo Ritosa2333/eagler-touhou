@@ -343,6 +343,22 @@ test('runtime: offline launch checks updates only after ACK and notifies only fo
   const source=f.service.getSnapshot().source;finish({url:baseUrl+'runtime/th06/new/entry.html',generation:'new'});await flush();
   assert.deepEqual(notices,['th06']);assert.equal(f.service.getSnapshot().source,source);assert.equal(f.service.getSnapshot().codeGeneration,'old');
 });
+for (const order of ['retired-first', 'current-first']) test(`runtime: ${order} program checks cannot consume another epoch's update notice`, async () => {
+  const checks=[],calls=[];
+  const f=fixture({onUpdateReady:(game,epoch)=>calls.push({game,epoch}),prepareCode:async()=>({
+    url:baseUrl+'runtime/th06/local/entry.html',generation:'old',cached:true,
+    checkForUpdate:()=>new Promise(resolve=>checks.push(resolve)),
+  })});
+  const launch=async()=>{await f.prepare(managedPlan('th06'));const pending=f.service.launch();await flush();f.ack('launch');await pending;};
+  await launch();const retiredEpoch=f.service.getSnapshot().epoch;
+  await f.service.close({discardUnsaved:true});await launch();const currentEpoch=f.service.getSnapshot().epoch;
+  assert.notEqual(retiredEpoch,currentEpoch);assert.equal(checks.length,2);
+  const update={url:baseUrl+'runtime/th06/new/entry.html',generation:'new'};
+  if(order==='retired-first'){checks[0](update);await flush();assert.deepEqual(calls,[]);checks[1](update);}
+  else {checks[1](update);await flush();checks[0](update);}
+  await flush();assert.deepEqual(calls,[{game:'th06',epoch:currentEpoch}]);
+});
+
 test('runtime: offline local package resolves the owning worker program before exact document binding', async () => {
   const worker = {postMessage() {}};
   const f = fixture({worker: Promise.resolve(worker)}), plan = managedPlan('th06');

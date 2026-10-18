@@ -19,6 +19,7 @@ export function installPackageFromAcquisition(options: {
   source: "local" | "remote";
   acquire(fileId: string, declaration: PackageFileDeclaration): Promise<ArrayBuffer | ArrayBufferView | Blob | null>;
   reuseCurrent?: boolean;
+  expectedGenerationId?: string | null;
   onProgress?: ((progress: PackageInstallProgress) => void) | null;
 }): Promise<InstalledPackageResult>;
 
@@ -29,6 +30,7 @@ export function installParsedPackageZip(
 
 export function installPackageFromRemote(descriptor: PackageDescriptor, options: {
   descriptorUrl: string;
+  expectedGenerationId?: string | null;
   desiredFileIds?: readonly string[] | ((current: CurrentPackageGeneration) => readonly string[]);
   source?: "local" | "remote" | ((current: CurrentPackageGeneration) => "local" | "remote");
   fetchImpl?: typeof fetch;

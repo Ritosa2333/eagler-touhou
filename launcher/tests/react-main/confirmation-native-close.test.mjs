@@ -148,7 +148,9 @@ test('warning, destructive and three-way configurations share motion, safe input
         n('#decisionConfirm').dispatchEvent(enter);
         dialog.dispatchEvent(new env.window.MouseEvent('click', {bubbles: true, clientX: -1, clientY: -1}));
       });
-      assert.equal(enter.defaultPrevented, true); assert.equal(dialog.open, true); assert.equal(f.settled.length, before);
+      // Dispatching a synthetic key does not activate native buttons in jsdom.
+      // The handler must leave the real browser's focused-button activation intact.
+      assert.equal(enter.defaultPrevented, false); assert.equal(dialog.open, true); assert.equal(f.settled.length, before);
       await React.act(async () => dialog.dispatchEvent(new env.window.Event('cancel', {cancelable: true})));
       assert.equal(dialog.open, true); assert.equal(dialog.classList.contains('closing'), true);
       assert.equal(getComputedStyle(dialog).animation, 'decision-shell-out 170ms cubic-bezier(.4,0,1,1) both');

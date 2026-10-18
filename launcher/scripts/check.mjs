@@ -79,8 +79,12 @@ const pythonFiles = sourceFiles.filter(file => extname(file) === ".py");
 // TypeScript Launcher source is an authoritative source tree. The canonical
 // gate always recompiles it so strict type-checking cannot be skipped merely
 // because generated output happens to look fresh on disk.
-await run(process.execPath, ["scripts/build-launcher.mjs", "--force"]);
+// Check authored generated pages before a build can silently refresh them.
 await run(process.execPath, ["scripts/build-content-pages.mjs", "--check"]);
+for (const config of ['tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json']) {
+  await run(process.execPath, [resolve(project, 'node_modules/typescript/bin/tsc'), '-p', config]);
+}
+await run(process.execPath, ["scripts/build-launcher.mjs", "--force"]);
 
 await runPool(javascriptFiles.map(file => [process.execPath, ["--check", file]]));
 if (pythonFiles.length) await run("python", ["scripts/check-python-syntax.py", ...pythonFiles]);

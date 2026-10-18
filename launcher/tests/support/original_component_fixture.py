@@ -11,8 +11,9 @@ from pathlib import Path
 import subprocess
 
 
-def original_component_fixture(project: Path, name: str) -> dict | None:
-    target = os.environ.get("EAGLER_COMPONENT_TEST_TARGET", "main")
+def original_component_fixture(project: Path, name: str, *, target: str | None = None) -> dict | None:
+    if target is None:
+        target = os.environ.get("EAGLER_COMPONENT_TEST_TARGET", "main")
     if target not in ("main", "react"):
         raise ValueError("EAGLER_COMPONENT_TEST_TARGET must be main or react")
     if target == "main":

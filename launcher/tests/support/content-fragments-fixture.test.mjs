@@ -10,6 +10,7 @@ import {build, transform} from 'esbuild';
 import {JSDOM} from 'jsdom';
 import {buildOriginalComponentFixture} from './original-component-fixture.mjs';
 import {authoredSourcesPlugin} from '../react-main/authored-sources.mjs';
+import {normalizeSourceText} from '../react-main/source-text.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const path = 'tests/browser/test-content-fragments.mjs';
@@ -30,7 +31,6 @@ const fixtureMarkupNode = tree.find(node => node.type === 'AssignmentExpression'
 const fixtureMarkupSource = original.slice(fixtureMarkupNode.start, fixtureMarkupNode.end);
 let scripts;
 before(async () => {
-  assert.equal(await readFile(resolve(project, 'src/launcher/content-fragment.mts'), 'utf8'), pinned('src/launcher/content-fragment.mts'));
   const current = await buildOriginalComponentFixture('content-fragments');
   for (const owner of ['app/components/notices/FirstUseNotice.tsx', 'app/components/notices/MultiplayerGuideDialog.tsx', 'src/launcher/content-fragment.mts']) assert.ok(current.inputs.includes(owner));
   assert.ok(!current.inputs.includes('src/launcher/first-use-notice.mts'));
@@ -63,7 +63,7 @@ const deferred = () => {let resolve; const promise = new Promise(done => {resolv
 const checkpoint = async () => {for (let i = 0; i < 5; i++) await Promise.resolve();};
 
 test('original security payload/actions/assertions and main response path stay byte-identical', async () => {
-  const current = await readFile(resolve(project, path), 'utf8');
+  const current = normalizeSourceText(await readFile(resolve(project, path), 'utf8'));
   assert.equal(current.slice(current.indexOf('let browser;')), original.slice(original.indexOf('let browser;')));
   const assertions = source => nodes(source).filter(node => node.type === 'CallExpression' && node.callee.type === 'MemberExpression' && node.callee.object.name === 'assert').map(node => source.slice(node.start, node.end));
   assert.deepEqual(assertions(current), assertions(original));

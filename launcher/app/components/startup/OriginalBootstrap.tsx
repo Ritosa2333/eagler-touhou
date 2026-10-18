@@ -14,6 +14,15 @@ function subscribeLocale(listener: () => void) {
   return () => window.removeEventListener('eagler-ui-locale-change', listener);
 }
 
+export function useDocumentUiLocale(): UiLocale {
+  const {pathname} = useLocation();
+  const publishedLocale: UiLocale = /\/en\.html\/?$/.test(pathname) ? 'en' : 'zh-CN';
+  return useSyncExternalStore(subscribeLocale, () => {
+    const value = document.documentElement.dataset.uiLocale;
+    return isUiLocale(value) ? value : publishedLocale;
+  }, () => publishedLocale);
+}
+
 // ES5 dispatch only: the original compatibility gate must precede the modern
 // bundle. Static SPA fallback HTML serves both original document contexts.
 const dispatch = `(function(){var lobby=/\\/(?:lobby|lobby\\.html)\\/?$/.test(location.pathname);document.documentElement.setAttribute('data-original-entry',lobby?'lobby':'library');if(lobby){document.documentElement.setAttribute('data-lobby-boot','loading');}else{${original.library.compatibility}\n${original.library.script}\n}}());`;
@@ -25,11 +34,7 @@ const sharedLobbyPreloadCss = original.library.css.replaceAll('#eaglerPreload', 
 /** Source-extracted original pre-module safety gate and preload presentation. */
 export function OriginalBootstrapHead() {
   const {pathname} = useLocation();
-  const publishedLocale: UiLocale = /\/en\.html\/?$/.test(pathname) ? 'en' : 'zh-CN';
-  const locale = useSyncExternalStore(subscribeLocale, () => {
-    const value = document.documentElement.dataset.uiLocale;
-    return isUiLocale(value) ? value : publishedLocale;
-  }, () => publishedLocale);
+  const locale = useDocumentUiLocale();
   const lobby = /\/(?:lobby|lobby\.html)\/?$/.test(pathname);
   const title = lobby ? `${translate(locale, 'lobby.title')} ~ EAGLER TOUHOU` : translate(locale, 'site.documentTitle');
   const description = translate(locale, 'site.description');

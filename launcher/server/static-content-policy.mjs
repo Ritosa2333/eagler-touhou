@@ -38,6 +38,7 @@ export function staticContentCompressible(path, bytes) {
 }
 
 export function staticContentCacheControl(path) {
+  path = path.replaceAll('\\', '/');
   const extension = extname(path).toLowerCase();
   const immutableRuntime = /(?:^|\/)runtime\/(?:[A-Za-z0-9_-]+\/)+[a-f0-9]{64}\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(path) &&
     !path.split("/").some(part => part === ".." || part === ".");

@@ -54,7 +54,7 @@
 - 力求完美体验。解决了原 portable 分支中出现的 弹幕抖动、弹幕运动不流畅、闪烁、单线程切换音乐卡顿、手机卡顿 等大量问题。
 - 支持高刷新率（>60Hz），th09 除外。\[感谢 [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
 
-不同作品的适配情况有所不同，见[作品进度表](docs/TOUHOU_PROGRESS.md)。
+不同作品的适配情况有所不同，见[作品进度表](../docs/TOUHOU_PROGRESS.md)。
 
 ### 输入设置
 

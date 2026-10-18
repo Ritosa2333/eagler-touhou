@@ -990,7 +990,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       if (!snapshot.multiplayerPreflight && pendingUpdate?.epoch === token.id) {
         codeUpdate = null;
         void pendingUpdate.check().then(ready => {
-          if (!ready || disposed || updateNotices.has(ready.url)) return;
+          if (!ready || disposed || snapshot.epoch !== token.id || !snapshot.launched ||
+              snapshot.game !== plan.game || updateNotices.has(ready.url)) return;
           updateNotices.add(ready.url);options.onUpdateReady?.(plan.game, token.id);
         }).catch(() => {});
       }

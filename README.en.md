@@ -13,7 +13,7 @@
 </div>
 
 > [!TIP]
-> For game support, see the [Game Restoration and Adaptation Progress](launcher/docs/TOUHOU_PROGRESS.md).<br>
+> For game support, see the [Game Restoration and Adaptation Progress](docs/TOUHOU_PROGRESS.md).<br>
 > If you have started working on a game, submit an Issue or PR to update the table.<br>
 > If you are interested in reverse engineering the original games or adapting official games and Touhou fangames, join our [QQ group](https://qm.qq.com/q/eeUrxIltug?from=tim). We also have a developer group.
 
@@ -35,7 +35,7 @@ While preserving the original game experience, including some original bugs:
 
 ![The Eagler Touhou Launcher and game management interface](launcher/docs/assets/readme/launcher.webp)
 
-- Run games in the browser with keyboard, gamepad, and touch controls. See the [game progress table](launcher/docs/TOUHOU_PROGRESS.md) for support by title.
+- Run games in the browser with keyboard, gamepad, and touch controls. See the [game progress table](docs/TOUHOU_PROGRESS.md) for support by title.
 - Import and export original-format saves and Replays. Inputs supported by the original format remain interoperable; adaptation inputs that it cannot record use extension data.
 - Aims for a polished experience. It fixes numerous issues inherited from the original portable branches, including jittery bullets, uneven bullet movement, flickering, music stutters when switching tracks in single-threaded mode, and poor performance on phones.
 - Supports refresh rates above 60 Hz, except for th09. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
