@@ -33,10 +33,23 @@ try {
     assert.ok(state.description);
     assert.ok(state.cards >= 4);
   }
-  await page.select("#uiLanguageSelect", "zh-CN");
-  await page.waitForFunction(() => document.documentElement.lang === "zh-CN" && location.pathname.endsWith("/"));
   assert.equal([...fontRequests].some(path => path.includes("-deferred.woff2")), false,
     `initial localized entries fetched deferred font subsets: ${[...fontRequests].join(", ")}`);
+  // Follow the actual Router link while retaining the English session/document.
+  await page.evaluate(() => {
+    window.__localeRouteDocument = 'same-document';
+    document.querySelector('.shelf-lobby-link').click();
+  });
+  await page.waitForFunction(() => location.pathname.endsWith('/lobby.html'));
+  await page.waitForSelector('.lobby-main');
+  assert.deepEqual(await page.evaluate(() => ({lang:document.documentElement.lang,
+    locale:document.documentElement.dataset.uiLocale,marker:window.__localeRouteDocument})),
+    {lang:'en',locale:'en',marker:'same-document'});
+  assert.match(await page.title(),/Multiplayer lobby/);
+  await page.evaluate(() => history.back());
+  await page.waitForFunction(() => location.pathname.endsWith('/en.html') && document.documentElement.lang === 'en');
+  await page.select("#uiLanguageSelect", "zh-CN");
+  await page.waitForFunction(() => document.documentElement.lang === "zh-CN" && location.pathname.endsWith("/"));
   await page.evaluate(() => window.dispatchEvent(new PointerEvent("pointerdown")));
   await page.waitForFunction(() => {
     const link = document.querySelector('link[data-deferred-ui-fonts]');

@@ -28,6 +28,7 @@
     "test:runtime-fonts:browser": "node tests/test-runtime-fonts-browser.mjs",
     "test:local-replay-th0xmp:browser": "python tests/browser/test-local-replay-th0xmp.py",
     "test:game-update-dialog:browser": "node tests/test-game-update-dialog-browser.mjs",
+    "test:confirmation-keyboard:browser": "node tests/browser/test-confirmation-keyboard.mjs",
     "test:always-hitbox:browser": "node tests/test-always-hitbox-browser.mjs",
     "test:hitbox-visuals:workspace": "node tests/test-hitbox-native-visuals.mjs",
     "test:local-replay-recorded:browser": "node tests/browser/test-local-replay-recorded.mjs",

@@ -84,7 +84,7 @@ export function ConfirmationDialog({open, title, message, confirmText, cancelTex
     data-confirm-on-enter={String(confirmOnEnter)} onCancel={event => {event.preventDefault(); close('cancel');}}
     onAnimationEnd={event => {if (event.animationName === 'decision-card-out') finishRef.current?.();}}
     onKeyDown={event => {
-      if (event.key !== 'Enter' || event.target === cancelRef.current) return;
+      if (event.key !== 'Enter' || event.defaultPrevented || event.target instanceof HTMLButtonElement) return;
       event.preventDefault();
       if (confirmOnEnter) confirmRef.current?.click();
     }}>
