@@ -398,10 +398,16 @@ int main(){
     assert(playback.Complete()&&!playback.PlaybackFrame(3,7));
     auto original=bytes;bytes[8]=7;assert(!playback.Load(bytes.data(),bytes.size()));
     assert(playback.Complete());assert(playback.Encode(bytes)&&bytes==original);
-    for(const auto* path:{"../replay/th10_01.rpy","replay/../../a.rpy","replay/a/b.rpy","replay/a\\b.rpy","replay/a:r.rpy","replay/a.rpyx"})
+    // The imported Runtime supports one Replay subdirectory. Keep rejecting
+    // deeper nesting and ambiguous directory components under that contract.
+    for(const auto* path:{"../replay/th10_01.rpy","replay/../../a.rpy","replay/a/b/c.rpy",
+        "replay//a.rpy","replay/./a.rpy","replay/a./b.rpy","replay/a /b.rpy",
+        "replay/a\\b.rpy","replay/a:r.rpy","replay/a.rpyx"})
         assert(!ReplayArchive::SafePath(path));
     assert(ReplayArchive::SafePath("replay/th10_01.rpy"));
+    assert(ReplayArchive::SafePath("replay/a/b.rpy"));
     assert(tape.RequestSave("replay/th10_01.rpy","TEST",2,100,0,7));
+    assert(tape.RequestSave("replay/a/b.rpy","TEST",2,100,0,7));
     const auto request=tape.save;assert(!tape.RequestSave("../../bad.rpy","TEST",2,100,0,7));
     assert(std::memcmp(&request,&tape.save,sizeof(request))==0);
     check_terminal_stage();
