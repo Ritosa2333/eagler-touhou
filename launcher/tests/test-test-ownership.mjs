@@ -15,7 +15,7 @@ import {
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const packageJson = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
 const explicit = new Set(Object.values(packageJson.scripts || {}).flatMap(command =>
-  [...String(command).matchAll(/(?:^|\s)(tests\/[A-Za-z0-9_./-]+\.(?:mjs|py|ps1))(?=\s|$)/g)].map(match => match[1])
+  [...String(command).matchAll(/(?:^|\s)(tests\/[A-Za-z0-9_./*-]+\.(?:mjs|py|ps1))(?=\s|$)/g)].map(match => match[1])
 ));
 const planned = new Set([
   ...REPOSITORY_NODE_TESTS, ...REPOSITORY_PYTHON_TESTS,
@@ -27,14 +27,16 @@ async function collect(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = resolve(directory, entry.name);
     if (entry.isDirectory()) files.push(...await collect(path));
-    else if (/^test.*\.(?:mjs|py|ps1)$/i.test(entry.name)) files.push(relative(root, path).replaceAll("\\", "/"));
+    else if (/^(?:test.*|.*\.test)\.(?:mjs|py|ps1)$/i.test(entry.name)) files.push(relative(root, path).replaceAll("\\", "/"));
   }
   return files;
 }
 
 const exempt = new Set(["tests/test-plan.mjs"]);
 const executableTests = (await collect(resolve(root, "tests"))).filter(file => !exempt.has(file));
-const unowned = executableTests.filter(file => !planned.has(file) && !explicit.has(file));
+const explicitPatterns = [...explicit].map(pattern => new RegExp('^' + pattern.split('*')
+  .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') + '$'));
+const unowned = executableTests.filter(file => !planned.has(file) && !explicitPatterns.some(pattern => pattern.test(file)));
 assert.deepEqual(unowned, [], `tests without a declared lane: ${unowned.join(", ")}`);
 
 console.log(JSON.stringify({ testOwnership: "PASS", executableTests: executableTests.length }));
