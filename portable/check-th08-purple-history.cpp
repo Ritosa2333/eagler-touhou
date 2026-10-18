@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/game/PracticeHistoryDigits.hpp"
+#include "../web/cpp/game/PracticeHistoryDigits.hpp"
 #include <cassert>
 #include <cmath>
 #include <string>

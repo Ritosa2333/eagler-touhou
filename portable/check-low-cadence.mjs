@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {writeFileSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 const game=process.argv.includes('--th08')?'th08':'th10',port=game==='th08'?8095:8093,browser=await launchBrowser(),rows=[];
 try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.stack));
@@ -21,9 +21,9 @@ try{
   const before=await sample(),outputBefore=await outputSample();await page.waitForTimeout(3000);const after=await sample(),outputAfter=await outputSample();
   await page.evaluate(game=>window['__'+game+'Runtime'].core.sdl_loop_stop(),game);
   const seconds=(after.time-before.time)/1000,logicHz=(after.logic-before.logic)/seconds,audioRate=(after.mixed-before.mixed)/seconds;
-  rows.push({displayHz:hz,logicHz,audioRate,before,after,outputBefore,outputAfter});console.log(JSON.stringify(rows.at(-1)));writeFileSync(`${game}_web/artifacts/architecture-candidate/validation/low-cadence-progress.json`,JSON.stringify(rows,null,2));
+  rows.push({displayHz:hz,logicHz,audioRate,before,after,outputBefore,outputAfter});console.log(JSON.stringify(rows.at(-1)));writeFileSync(`web/artifacts/architecture-candidate/validation/low-cadence-progress.json`,JSON.stringify(rows,null,2));
   assert(outputAfter.blocks>outputBefore.blocks,'Actual browser audio callbacks must run');assert.equal(outputAfter.zeroBlocks-outputBefore.zeroBlocks,0,'No empty browser output blocks during title music');
   const expectedLogic=Math.min(60,hz);assert(logicHz>expectedLogic-3&&logicHz<expectedLogic+3,'Logic follows original single-tick scheduler without catch-up');assert(audioRate>41000&&audioRate<47500,'PCM refill keeps pace with 44100 Hz playback');assert.equal(after.error,0);assert(after.rms>0);
  }
- assert.deepEqual(errors,[]);writeFileSync(`${game}_web/artifacts/architecture-candidate/validation/low-cadence.json`,JSON.stringify({passed:true,rows,errors},null,2));console.log(JSON.stringify({game,rows}));
+ assert.deepEqual(errors,[]);writeFileSync(`web/artifacts/architecture-candidate/validation/low-cadence.json`,JSON.stringify({passed:true,rows,errors},null,2));console.log(JSON.stringify({game,rows}));
 }finally{await browser.close();}

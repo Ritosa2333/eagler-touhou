@@ -7,7 +7,7 @@ const root=resolve(import.meta.dirname,'../..'),out=resolve(root,'artifacts/touc
 const compiler=[
  process.env.WASI_SDK_BIN&&resolve(process.env.WASI_SDK_BIN,'clang++.exe'),
  resolve(root,'../toolchains/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe'),
- resolve(root,'th10_web/tools/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe'),
+ resolve(root,'web/tools/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe'),
 ].filter(Boolean).find(existsSync);
 if(!compiler)throw Error('WASI clang++ not found; set WASI_SDK_BIN or install the workspace wasi-sdk-34.0 toolchain');
 const built=spawnSync(compiler,['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti','-mexec-model=reactor','-Wl,--no-entry','-Wl,--export-memory',resolve(import.meta.dirname,'touch-bomb-check.cpp'),'-o',resolve(out,'verify.wasm')],{encoding:'utf8',windowsHide:true});

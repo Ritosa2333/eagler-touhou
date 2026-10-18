@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/game/Archive.hpp"
+#include "../web/cpp/game/Archive.hpp"
 #include <cstdio>
 #include <cstdlib>
 using namespace th08;

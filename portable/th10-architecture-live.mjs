@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const out='th10_web/artifacts/architecture-candidate/validation',base='http://127.0.0.1:8093';mkdirSync(out,{recursive:true});
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const out='web/artifacts/architecture-candidate/validation',base='http://127.0.0.1:8093';mkdirSync(out,{recursive:true});
 const browser=await launchBrowser(),context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[],health=[];
 page.on('pageerror',e=>errors.push(e.stack));await page.exposeFunction('recordHealth',data=>health.push(data));
 await page.addInitScript(()=>{window.addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1'&&e.data.event==='frame-health')window.recordHealth(e.data);});});

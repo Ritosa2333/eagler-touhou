@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/game/BulletState.hpp"
+#include "../web/cpp/game/BulletState.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -27,7 +27,7 @@ struct BrowserRuntime {
         bool in_game()const{return true;}
     } app;
 };
-#include "../th08_web/cpp/sdl/PracticeHitbox.inc"
+#include "../web/cpp/sdl/PracticeHitbox.inc"
 }
 int main(){
     auto runtime=std::make_unique<th08::BrowserRuntime>();auto& game=runtime->app.game;

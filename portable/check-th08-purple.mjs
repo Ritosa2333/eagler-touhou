@@ -6,16 +6,16 @@ import {commonInclude} from './common-root.mjs';
 const root=resolve(import.meta.dirname,'..');
 const sdk=process.env.EMSDK??resolve(root,'tools/emsdk');
 const emcc=resolve(sdk,'install/emscripten/emcc.py');
-const out=resolve(root,'th08_web/artifacts/purple-check');
+const out=resolve(root,'web/artifacts/purple-check');
 mkdirSync(out,{recursive:true});
 const temporary=resolve(out,'temp');mkdirSync(temporary,{recursive:true});
 const env={...process.env,TEMP:temporary,TMP:temporary,EMSDK:sdk,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten')};
 const cases={
- config:['th08_web/cpp/game/PracticeConfig.cpp'],
+ config:['web/cpp/game/PracticeConfig.cpp'],
  input:[],history:[],hitbox:[],rsqrt:[],speed:[],
- score:['th08_web/cpp/game/SpellHistory.cpp'],
- ecl:['th08_web/cpp/game/EclProgram.cpp'],
- graphics:['th08_web/artifacts/sdl3/objects/cpp_game_GraphicsMath.cpp.o','th08_web/artifacts/sdl3/objects/cpp_game_GameMath.cpp.o','th08_web/artifacts/sdl3/objects/cpp_game_Arithmetic.cpp.o','th08_web/artifacts/sdl3/objects/softfloat.o'],
+ score:['web/cpp/game/SpellHistory.cpp'],
+ ecl:['web/cpp/game/EclProgram.cpp'],
+ graphics:['web/artifacts/sdl3/objects/cpp_game_GraphicsMath.cpp.o','web/artifacts/sdl3/objects/cpp_game_GameMath.cpp.o','web/artifacts/sdl3/objects/cpp_game_Arithmetic.cpp.o','web/artifacts/sdl3/objects/softfloat.o'],
 };
 for(const [name,dependencies] of Object.entries(cases)){
  for(const path of dependencies)if(!existsSync(resolve(root,path)))throw Error(`Build SDL3 first: missing ${path}`);

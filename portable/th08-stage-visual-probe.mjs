@@ -1,8 +1,8 @@
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const out='th08_web/artifacts/stage-visual';mkdirSync(out,{recursive:true});
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const out='web/artifacts/stage-visual';mkdirSync(out,{recursive:true});
 const startStage=Number(process.env.STAGE??1),tag=process.env.TAG??'before',base=process.env.TEST_URL??'http://127.0.0.1:8088';
 const browser=await launchBrowser(),page=await browser.newPage({viewport:{width:640,height:480}}),errors=[];
 page.on('pageerror',e=>errors.push(e.stack));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log(m.type(),m.text().slice(0,300));});
@@ -16,7 +16,7 @@ try{
   const wait=n=>{for(let i=0;i<n;i++)step();},key=k=>{for(let i=0;i<3;i++)step(k);wait(42);};
   const title=()=>({scene:c.status(r.app,0),screen:c.status(r.app,8),cursor:c.status(r.app,9)});
   const trace=()=>Array.from(new Uint32Array(c.memory.buffer,c.trace(r.app),68));window.probe={c,r,step,wait,key,title,trace};wait(100);
- },Array.from(readFileSync('th08_web/artifacts/cpp/campaign/character0-final/original.rpy')));
+ },Array.from(readFileSync('web/artifacts/cpp/campaign/character0-final/original.rpy')));
  for(const input of [16,16,16,16,16,1,1]){console.log('menu',await page.evaluate(k=>{probe.key(k);return probe.title();},input));}
  await page.screenshot({path:out+'/'+tag+'-menu.png'});
  console.log('start',await page.evaluate(stage=>{for(let i=1;i<stage;i++)probe.key(32);probe.key(1);probe.key(1);return {menu:probe.title(),trace:probe.trace().slice(0,11)};},startStage));

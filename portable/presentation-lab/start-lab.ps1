@@ -21,7 +21,7 @@ try {
         & $node portable/package-eagler.mjs --presentation-lab
         if ($LASTEXITCODE) { throw "Lab packaging failed: $LASTEXITCODE" }
     }
-    $buildFile = if ($Snapshot) { "artifacts/presentation-lab/builds/$Snapshot/build.json" } else { 'th08_web/artifacts/presentation-lab/build.json' }
+    $buildFile = if ($Snapshot) { "artifacts/presentation-lab/builds/$Snapshot/build.json" } else { 'web/artifacts/presentation-lab/build.json' }
     $buildIdentity = Get-Content $buildFile -Raw | ConvertFrom-Json
     $existing = $null
     try { $existing = Invoke-RestMethod ($url + 'build.json') -TimeoutSec 2 } catch {}

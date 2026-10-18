@@ -56,9 +56,9 @@ public:
 };\n`;
 const rsqrtData=read('thprac_th08_rsqrt.h').replace('#pragma once\n','').replace('#include <cstdint>\n','').replace('const uint8_t th08_rsqrt_data','inline constexpr uint8_t th08_rsqrt_data').split('\n').map(line=>line.trimEnd()).join('\n');
 const files={
- 'th08_web/cpp/game/PracticeLicense.hpp':`${preamble}#pragma once\nnamespace th08 {inline constexpr const char* practice_license=${JSON.stringify(readFileSync(resolve(upstream,'LICENCE'),'utf8'))};}\n`,
- 'th08_web/cpp/sdl/PracticeHitbox.inc':preamble+hitboxLayout+hitbox,
- 'th08_web/cpp/game/PracticeRsqrtTables.hpp':preamble+'#pragma once\n#include <cstdint>\n#include <cstring>\n#include <cstdlib>\n#include <cmath>\n#include <vector>\nnamespace th08 {\n'+rsqrtData+'\n'+rsqrt+'}\n',
+ 'web/cpp/game/PracticeLicense.hpp':`${preamble}#pragma once\nnamespace th08 {inline constexpr const char* practice_license=${JSON.stringify(readFileSync(resolve(upstream,'LICENCE'),'utf8'))};}\n`,
+ 'web/cpp/sdl/PracticeHitbox.inc':preamble+hitboxLayout+hitbox,
+ 'web/cpp/game/PracticeRsqrtTables.hpp':preamble+'#pragma once\n#include <cstdint>\n#include <cstring>\n#include <cstdlib>\n#include <cmath>\n#include <vector>\nnamespace th08 {\n'+rsqrtData+'\n'+rsqrt+'}\n',
 };
 for(const p of Object.keys(files))files[p]=files[p].split('\n').map(line=>line.trimEnd()).join('\n').trimEnd()+'\n';
 if(process.argv.includes('--write')){for(const[p,v]of Object.entries(files))writeFileSync(resolve(root,p),v);console.log('Generated TH08 purple shared tools');}

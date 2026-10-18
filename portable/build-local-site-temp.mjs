@@ -6,7 +6,7 @@ const root=resolve(process.env.TH08_RUNTIME_ROOT??resolve(import.meta.dirname,'.
 const runtime=resolve(process.env.TH08_VALIDATION_RUNTIME??resolve(root,'build-eagler'));
 const template=process.env.TH08_VALIDATION_BASE_SITE;
 if(!template)throw Error('Set TH08_VALIDATION_BASE_SITE to a prepared Host site with a TH08 runtime entry');
-const site=resolve(process.env.TH08_VALIDATION_SITE??resolve(root,'th08_web/artifacts',`local-import-site-${Date.now()}`));
+const site=resolve(process.env.TH08_VALIDATION_SITE??resolve(root,'web/artifacts',`local-import-site-${Date.now()}`));
 try { await stat(site); throw Error('Use a new TH08_VALIDATION_SITE directory'); }
 catch(error) { if(error.code!=='ENOENT')throw error; }
 const manifest=JSON.parse(await readFile(resolve(template,'host-manifest.json'),'utf8'));

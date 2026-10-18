@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 const base=process.env.TEST_URL??'http://127.0.0.1:8090';
-const output=process.env.AUDIO_REPORT??'th10_web/artifacts/sdl3/music-continuity-before.json';
+const output=process.env.AUDIO_REPORT??'web/artifacts/sdl3/music-continuity-before.json';
 const browser=await launchBrowser();
 try {
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.stack));
