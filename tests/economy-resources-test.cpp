@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/game/GameEconomy.hpp"
+#include "../web/cpp/game/GameEconomy.hpp"
 #include <cassert>
 #include <cstdio>
 

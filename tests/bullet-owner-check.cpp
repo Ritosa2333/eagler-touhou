@@ -2,9 +2,9 @@
 // Actual spawn, commands, features, update and authored Draw run against original
 // bullet.anm. This is not ECL gameplay, a browser/GPU test or a game-FPS claim.
 #include "game-resource-fixture.hpp"
-#include "../th10_web/cpp/game/BulletEmitter.hpp"
-#include "../th10_web/cpp/game/HighRefresh.hpp"
-#include "../th10_web/cpp/platform/GameplayData.hpp"
+#include "../web/cpp/game/BulletEmitter.hpp"
+#include "../web/cpp/game/HighRefresh.hpp"
+#include "../web/cpp/platform/GameplayData.hpp"
 using namespace th10;
 using namespace th10_test;
 // Only response/effect outcomes excluded by scope are stubbed. Fail closed if

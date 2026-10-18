@@ -12,7 +12,7 @@ import {WASI} from 'node:wasi';
 // expression. No captured assets, duplicate renderer or timing threshold.
 // Usage: WASI_SDK_PATH=/path/to/wasi-sdk node portable/check-anm-billboard.mjs
 // TH10_TEST_UBSAN=1 instruments C++ only; third-party SoftFloat is excluded.
-// See docs/anm-billboard-check.md for the independently retained baseline fault.
+// Baseline details: https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/ports/th10-mp/docs/anm-billboard-check.md
 // TH10_TEST_SOFTFLOAT_UBSAN=1 additionally instruments that backend and records
 // failed results. It requires TH10_TEST_UBSAN=1; it is not a default pass lane.
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
@@ -42,13 +42,13 @@ function compile(source,name,compileFlags=flags){
     return object;
 }
 if(backendSanitized)softfloatFlags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
-const common=[compile('th10_web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags),
-    ...['Arithmetic','GameMath'].map(name=>compile(`th10_web/cpp/game/${name}.cpp`,name))];
-const backendHash=createHash('sha256').update(readFileSync(resolve(root,'th10_web/cpp/rebuild/third_party/softfloat.c'))).digest('hex');
+const common=[compile('web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags),
+    ...['Arithmetic','GameMath'].map(name=>compile(`web/cpp/game/${name}.cpp`,name))];
+const backendHash=createHash('sha256').update(readFileSync(resolve(root,'web/cpp/rebuild/third_party/softfloat.c'))).digest('hex');
 const baselineBackendFinding=backendHash==='2d7fed55bea49ff38635f93770e99345ef7f86721b9fa5b9eeec2d829fe5d12b'
     ?{passed:false,kind:'known-independent-baseline-observation',sourceSha256:backendHash,
         location:'softfloat.c:8692',reason:'zero significand shifts by 64 in softfloat_normSubnormalExtF80Sig',
-        documentation:'docs/anm-billboard-check.md'}:null;
+        documentation:'https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/ports/th10-mp/docs/anm-billboard-check.md'}:null;
 const sanitizer={enabled:sanitized,softfloatIncluded:backendSanitized,
     scope:backendSanitized?'C++ test/production arithmetic and third-party SoftFloat':sanitized?'C++ test/production arithmetic only; third-party SoftFloat excluded':'none',
     baselineBackendFinding};
@@ -58,7 +58,7 @@ for(const multiplayer of [false,true]){
     const variant=multiplayer?'multiplayer':'ordinary';
     const variantFlags=[...flags,...(multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[])];
     const test=compile('tests/anm-billboard-test.cpp',variant,variantFlags);
-    const projection=compile('th10_web/cpp/game/AnmProjection.cpp',variant+'-projection',variantFlags);
+    const projection=compile('web/cpp/game/AnmProjection.cpp',variant+'-projection',variantFlags);
     const wasm=resolve(out,variant+'.wasm');
     execFileSync(compiler,[...linkFlags,test,projection,...common,'-o',wasm],{cwd:root,stdio:'inherit'});
     const wasi=new WASI({version:'preview1',args:[variant],env:{},returnOnExit:true});

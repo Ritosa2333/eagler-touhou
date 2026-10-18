@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),game=process.argv.includes('--th08')?'th08':'th10',version=game==='th08'?8:10,synthetic=process.argv.includes('--synthetic');
-const files=game==='th10'?['title','menu','stage1','bomb','pause','resume'].map(n=>`th10_web/artifacts/browser-quality-chs/pixels/${n}.json`):synthetic?['th08_web/artifacts/native/d3d-pixels/cases.json']:['th08_web/artifacts/native/game-pixels/cases.json'];
+const files=game==='th10'?['title','menu','stage1','bomb','pause','resume'].map(n=>`web/artifacts/browser-quality-chs/pixels/${n}.json`):synthetic?['web/artifacts/native/d3d-pixels/cases.json']:['web/artifacts/native/game-pixels/cases.json'];
 const fixtures=files.flatMap(n=>JSON.parse(readFileSync(resolve(root,n)))),browser=await launchBrowser(),results={};
 try{for(const backend of ['baseline','sdl']){
- const page=await browser.newPage();await page.route('**/runtime/**',r=>{const name=new URL(r.request().url()).pathname.slice('/runtime/'.length);if(name.includes('..'))throw Error('Invalid fixture module');return r.fulfill({contentType:'text/javascript',body:readFileSync(resolve(root,'th10_web/runtime',name))});});await page.route('**/test.html',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><canvas id="screen" width="640" height="480"></canvas>'}));
- await page.route('**/fixture.mjs',r=>r.fulfill({contentType:'text/javascript',body:readFileSync(resolve(root,'th10_web/artifacts/sdl3/fixture.mjs'))}));await page.route('**/fixture.wasm',r=>r.fulfill({contentType:'application/wasm',body:readFileSync(resolve(root,'th10_web/artifacts/sdl3/fixture.wasm'))}));
- await page.route('**/baseline.mjs',r=>r.fulfill({contentType:'text/javascript',body:readFileSync(resolve(root,game==='th08'?'th08_web/artifacts/sdl3/baseline/webgl.mjs':'th10_web/artifacts/sdl3/baseline/runtime/webgl.mjs'))}));
+ const page=await browser.newPage();await page.route('**/runtime/**',r=>{const name=new URL(r.request().url()).pathname.slice('/runtime/'.length);if(name.includes('..'))throw Error('Invalid fixture module');return r.fulfill({contentType:'text/javascript',body:readFileSync(resolve(root,'web/runtime',name))});});await page.route('**/test.html',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><canvas id="screen" width="640" height="480"></canvas>'}));
+ await page.route('**/fixture.mjs',r=>r.fulfill({contentType:'text/javascript',body:readFileSync(resolve(root,'web/artifacts/sdl3/fixture.mjs'))}));await page.route('**/fixture.wasm',r=>r.fulfill({contentType:'application/wasm',body:readFileSync(resolve(root,'web/artifacts/sdl3/fixture.wasm'))}));
+ await page.route('**/baseline.mjs',r=>r.fulfill({contentType:'text/javascript',body:readFileSync(resolve(root,game==='th08'?'web/artifacts/sdl3/baseline/webgl.mjs':'web/artifacts/sdl3/baseline/runtime/webgl.mjs'))}));
  await page.goto('http://127.0.0.1:8093/test.html');results[backend]=await page.evaluate(async({fixtures,version,backend})=>{
   const decode=b=>Uint8Array.from(atob(b),c=>c.charCodeAt(0)),rows=[];
   let c,canvas=document.querySelector('canvas');if(backend==='sdl'){const{loadSDLModule}=await import('/runtime/sdl-module.mjs');c=(await loadSDLModule('/fixture.mjs',await(await fetch('/fixture.wasm')).arrayBuffer(),canvas)).exports;}
@@ -34,5 +34,5 @@ try{for(const backend of ['baseline','sdl']){
    rows.push({name:f.name,hashes});if(backend==='baseline'){render.gl.getExtension('WEBGL_lose_context')?.loseContext();canvas.remove();}else c.fixture_destroy();
   }return rows;
  },{fixtures,version,backend});await page.close();}
- const passed=JSON.stringify(results.baseline)===JSON.stringify(results.sdl);writeFileSync(resolve(root,game+'_web/artifacts/sdl3/render'+(synthetic?'-synthetic':'')+'.json'),JSON.stringify({passed,frames:fixtures.length*3,...results},null,2));assert(passed,'SDL pixels differ; inspect report');console.log('PASS '+game+' '+fixtures.length+' scenes / '+fixtures.length*3+' frames');
+ const passed=JSON.stringify(results.baseline)===JSON.stringify(results.sdl);writeFileSync(resolve(root,'web/artifacts/sdl3/render'+(synthetic?'-synthetic':'')+'.json'),JSON.stringify({passed,frames:fixtures.length*3,...results},null,2));assert(passed,'SDL pixels differ; inspect report');console.log('PASS '+game+' '+fixtures.length+' scenes / '+fixtures.length*3+' frames');
 }finally{await browser.close();}

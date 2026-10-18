@@ -42,13 +42,13 @@ function compile(source,flags=compileFlags){
   }
   objects.set(source,object);return object;
 }
-const softfloat=compile('th10_web/cpp/rebuild/third_party/softfloat.c',softfloatFlags);
+const softfloat=compile('web/cpp/rebuild/third_party/softfloat.c',softfloatFlags);
 // MP-only isolated tests: observer callbacks abort; this is not a live-motion test.
 // compile() records the stub/header closure in the existing dependency hashes.
 const observerStub=compile('tests/live-motion-disabled-stub.cpp');
-const gameSources=['AnmRenderer','Arithmetic','GameMath'].map(name=>`th10_web/cpp/game/${name}.cpp`);
+const gameSources=['AnmRenderer','Arithmetic','GameMath'].map(name=>`web/cpp/game/${name}.cpp`);
 const engineSources=['AnmVm','AnmInterpreter','AnmVariables','AnmFile','Timer','Interpolation','Rng']
-  .map(name=>`th10_web/cpp/game/${name}.cpp`);
+  .map(name=>`web/cpp/game/${name}.cpp`);
 for(const [name,sources] of [
   ['subpixel-check',['portable/subpixel-check.cpp',...gameSources]],
   ['anm-dense-engine',['tests/anm-dense-engine-benchmark.cpp',...gameSources,...engineSources,

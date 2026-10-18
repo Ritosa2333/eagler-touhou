@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/PlayerPresentation.hpp"
+#include "../web/cpp/multiplayer/PlayerPresentation.hpp"
 #include <cassert>
 
 int main(){

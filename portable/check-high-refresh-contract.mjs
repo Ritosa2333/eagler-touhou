@@ -2,23 +2,23 @@ import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8').replaceAll('\r','');
-const host=read('th10_web/cpp/sdl/ApplicationHost.cpp');
-const app=read('th10_web/cpp/platform/Application.cpp');
-const appFrames=read('th10_web/cpp/platform/ApplicationFrames.cpp');
-const anim=read('th10_web/cpp/platform/AnimationEngine.cpp');
-const worldPlayer=read('th10_web/cpp/platform/WorldPlayer.cpp');
-const bullets=read('th10_web/cpp/game/BulletFrame.cpp');
-const items=read('th10_web/cpp/game/ItemDraw.cpp');
-const lasers=read('th10_web/cpp/game/LaserFrame.cpp');
-const high=read('th10_web/cpp/game/HighRefresh.hpp');
-const startup=read('th10_web/cpp/game/StartupScreen.cpp');
-const effects=read('th10_web/cpp/platform/ScreenEffects.cpp');
-const backgrounds=read('th10_web/cpp/platform/Backgrounds.cpp');
-const popupGame=read('th10_web/cpp/game/ScorePopups.cpp');
-const popupPlatform=read('th10_web/cpp/platform/WorldPopups.cpp');
-const resultsDraw=read('th10_web/cpp/game/ResultsDraw.cpp');
-const guiDraw=read('th10_web/cpp/game/GuiDraw.cpp');
-const hud=read('th10_web/cpp/platform/Hud.cpp');
+const host=read('web/cpp/sdl/ApplicationHost.cpp');
+const app=read('web/cpp/platform/Application.cpp');
+const appFrames=read('web/cpp/platform/ApplicationFrames.cpp');
+const anim=read('web/cpp/platform/AnimationEngine.cpp');
+const worldPlayer=read('web/cpp/platform/WorldPlayer.cpp');
+const bullets=read('web/cpp/game/BulletFrame.cpp');
+const items=read('web/cpp/game/ItemDraw.cpp');
+const lasers=read('web/cpp/game/LaserFrame.cpp');
+const high=read('web/cpp/game/HighRefresh.hpp');
+const startup=read('web/cpp/game/StartupScreen.cpp');
+const effects=read('web/cpp/platform/ScreenEffects.cpp');
+const backgrounds=read('web/cpp/platform/Backgrounds.cpp');
+const popupGame=read('web/cpp/game/ScorePopups.cpp');
+const popupPlatform=read('web/cpp/platform/WorldPopups.cpp');
+const resultsDraw=read('web/cpp/game/ResultsDraw.cpp');
+const guiDraw=read('web/cpp/game/GuiDraw.cpp');
+const hud=read('web/cpp/platform/Hud.cpp');
 
 // BEGIN CADENCE SOURCE CONTRACT
 // Ordinary callbacks offer at most one retail tick. The shared loop may also
@@ -56,7 +56,7 @@ assert.doesNotMatch(multiplayerCadence,/cadence\.debt\s*(?:=|\+=)/);
 // END CADENCE SOURCE CONTRACT
 // Keep the host call paired with the API of the actually pinned dependency.
 const channelHeader=read('../../common/include/eagler/netplay/SessionChannel.hpp');
-const networkExports=read('th10_web/cpp/multiplayer/NetworkExports.cpp');
+const networkExports=read('web/cpp/multiplayer/NetworkExports.cpp');
 for(const method of ['IntervalScale','FrameLead']){
  assert(channelHeader.includes(`double ${method}() const`),'Missing pinned channel API: '+method);
  assert(networkExports.includes(`.Channel().${method}()`),'Pacing diagnostics must use pinned channel API: '+method);

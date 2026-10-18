@@ -1,8 +1,8 @@
-#include "../th10_web/cpp/game/GameInput.hpp"
-#include "../th10_web/cpp/game/TitleMain.hpp"
-#include "../th10_web/cpp/game/MusicRoom.hpp"
-#include "../th10_web/cpp/game/Results.hpp"
-#include "../th10_web/cpp/game/Ending.hpp"
+#include "../web/cpp/game/GameInput.hpp"
+#include "../web/cpp/game/TitleMain.hpp"
+#include "../web/cpp/game/MusicRoom.hpp"
+#include "../web/cpp/game/Results.hpp"
+#include "../web/cpp/game/Ending.hpp"
 
 #include <cassert>
 #include <cstdio>

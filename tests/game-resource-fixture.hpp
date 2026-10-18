@@ -2,10 +2,10 @@
 // Shared support for optional, locally supplied retail-data CPU diagnostics.
 // No game resources are embedded. File access is read-only and all unsupported
 // host/animation/render paths fail closed rather than silently approximating.
-#include "../th10_web/cpp/platform/FileSystem.hpp"
-#include "../th10_web/cpp/game/AnmResources.hpp"
-#include "../th10_web/cpp/game/AnmRenderer.hpp"
-#include "../th10_web/cpp/game/TexturePlatform.hpp"
+#include "../web/cpp/platform/FileSystem.hpp"
+#include "../web/cpp/game/AnmResources.hpp"
+#include "../web/cpp/game/AnmRenderer.hpp"
+#include "../web/cpp/game/TexturePlatform.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <eagler/netplay/SparsePoolCapture.hpp>
 #include <algorithm>

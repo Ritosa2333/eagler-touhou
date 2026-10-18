@@ -33,11 +33,11 @@ if (sanitized) console.log('Audio-only UBSan: C++ and unmodified SoftFloat instr
 execFileSync(compiler, [
   '--target=wasm32-wasip1', '-O2', '-x', 'c', '-std=c11',
   '-DSOFTFLOAT_FAST_INT64', '-DINLINE_LEVEL=5', ...sanitizerFlags, '-c',
-  resolve(root, 'th10_web/cpp/rebuild/third_party/softfloat.c'), '-o', softfloat,
+  resolve(root, 'web/cpp/rebuild/third_party/softfloat.c'), '-o', softfloat,
 ], { cwd: root, windowsHide: true, stdio: 'inherit' });
 const economySources = [
-  'tests/economy-resources-test.cpp', 'th10_web/cpp/game/GameEconomy.cpp',
-  'th10_web/cpp/game/Timer.cpp', 'th10_web/cpp/game/Arithmetic.cpp',
+  'tests/economy-resources-test.cpp', 'web/cpp/game/GameEconomy.cpp',
+  'web/cpp/game/Timer.cpp', 'web/cpp/game/Arithmetic.cpp',
 ].map(path => resolve(root, path));
 for (const [name, sources, flags = []] of [
   ['callback-work-timing', [resolve(root,'tests/callback-work-timing-test.cpp')],
@@ -50,27 +50,27 @@ for (const [name, sources, flags = []] of [
     resolve(common,'src/netplay/RollbackJournal.cpp')]],
   ['multiplayer-balance', [
     resolve(root,'tests/multiplayer-balance-test.cpp'),
-    resolve(root,'th10_web/cpp/game/Arithmetic.cpp'),softfloat,
+    resolve(root,'web/cpp/game/Arithmetic.cpp'),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['session-setup', [
     resolve(root,'tests/multiplayer-session-test.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
+    resolve(root,'web/cpp/multiplayer/SessionSetup.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['input-lanes', [
     resolve(common,'src/netplay/NetplayProtocol.cpp'),
     resolve(root,'tests/multiplayer-input-lanes-test.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/InputLanes.cpp'),
-    resolve(root,'th10_web/cpp/game/GameInput.cpp'),
+    resolve(root,'web/cpp/multiplayer/InputLanes.cpp'),
+    resolve(root,'web/cpp/game/GameInput.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['multiplayer-session-records', [
-    ...['tests/multiplayer-session-records-test.cpp','th10_web/cpp/multiplayer/SessionRecords.cpp',
-      'th10_web/cpp/game/ScoreData.cpp','th10_web/cpp/game/Rng.cpp',
-      'th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+    ...['tests/multiplayer-session-records-test.cpp','web/cpp/multiplayer/SessionRecords.cpp',
+      'web/cpp/game/ScoreData.cpp','web/cpp/game/Rng.cpp',
+      'web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['netplay-runtime', [
     resolve(root,'tests/netplay-runtime-test.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
+    resolve(root,'web/cpp/multiplayer/NetplayRuntime.cpp'),
+    resolve(root,'web/cpp/multiplayer/SessionSetup.cpp'),
     resolve(common,'src/netplay/NetplayProtocol.cpp'),
     resolve(common,'src/netplay/NetplayCore.cpp'),
     resolve(common,'src/netplay/NetplaySession.cpp'),
@@ -79,32 +79,32 @@ for (const [name, sources, flags = []] of [
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['multiplayer-rules-compatibility', [
     resolve(root,'tests/multiplayer-rules-compatibility-test.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
+    resolve(root,'web/cpp/multiplayer/NetplayRuntime.cpp'),
+    resolve(root,'web/cpp/multiplayer/SessionSetup.cpp'),
     ...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel']
       .map(name=>resolve(common,'src/netplay',name+'.cpp')),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['netplay-generation', [
     resolve(root,'tests/netplay-generation-test.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
+    resolve(root,'web/cpp/multiplayer/NetplayRuntime.cpp'),
+    resolve(root,'web/cpp/multiplayer/SessionSetup.cpp'),
     ...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','BrowserPeerTransport']
       .map(name=>resolve(common,'src/netplay',name+'.cpp')),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['multiplayer-replay-archive', [
     resolve(root,'tests/multiplayer-replay-archive-test.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/ReplayArchive.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
-    resolve(root,'th10_web/cpp/game/ApplicationConfig.cpp'),
+    resolve(root,'web/cpp/multiplayer/ReplayArchive.cpp'),
+    resolve(root,'web/cpp/multiplayer/NetplayRuntime.cpp'),
+    resolve(root,'web/cpp/multiplayer/SessionSetup.cpp'),
+    resolve(root,'web/cpp/game/ApplicationConfig.cpp'),
     ...['InputReplay','NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','BrowserPeerTransport']
       .map(name=>resolve(common,'src/netplay',name+'.cpp')),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['presentation-cache', [resolve(root,'tests/presentation-cache-test.cpp')],
     ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['background-projection-cache', [
-    ...['tests/background-projection-cache-test.cpp','th10_web/cpp/game/GraphicsMath.cpp',
-      'th10_web/cpp/game/Arithmetic.cpp','th10_web/cpp/game/GameMath.cpp']
+    ...['tests/background-projection-cache-test.cpp','web/cpp/game/GraphicsMath.cpp',
+      'web/cpp/game/Arithmetic.cpp','web/cpp/game/GameMath.cpp']
       .map(path=>resolve(root,path)),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-ffp-contract=off','-fno-strict-aliasing']],
   ['player-presentation', [resolve(root,'tests/player-presentation-test.cpp')],
@@ -112,8 +112,8 @@ for (const [name, sources, flags = []] of [
   ['touch-input-frontier', [resolve(root,'tests/touch-input-frontier-test.cpp')],
     ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['camera-math-cache', [
-    ...['tests/camera-math-cache-test.cpp','th10_web/cpp/game/GraphicsMath.cpp',
-      'th10_web/cpp/game/Arithmetic.cpp','th10_web/cpp/game/GameMath.cpp']
+    ...['tests/camera-math-cache-test.cpp','web/cpp/game/GraphicsMath.cpp',
+      'web/cpp/game/Arithmetic.cpp','web/cpp/game/GameMath.cpp']
       .map(path=>resolve(root,path)),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-ffp-contract=off','-fno-strict-aliasing']],
   ['common-sparse-pool', [
@@ -129,22 +129,22 @@ for (const [name, sources, flags = []] of [
     resolve(common,'src/netplay/RollbackJournal.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['hint-owner-lifetime', [
-    ...['tests/hint-owner-lifetime-test.cpp','th10_web/cpp/game/StageHints.cpp',
-      'th10_web/cpp/game/UpdateChain.cpp','th10_web/cpp/game/AnmRegistry.cpp',
-      'th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+    ...['tests/hint-owner-lifetime-test.cpp','web/cpp/game/StageHints.cpp',
+      'web/cpp/game/UpdateChain.cpp','web/cpp/game/AnmRegistry.cpp',
+      'web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
     resolve(common,'src/netplay/RollbackJournal.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_NATIVE_PLATFORM=1']],
   ['scene-owner-lifetime', [
-    ...['tests/scene-owner-lifetime-test.cpp','th10_web/cpp/game/ProjectileSystems.cpp',
-      'th10_web/cpp/game/GameObjectResources.cpp','th10_web/cpp/game/UpdateChain.cpp']
+    ...['tests/scene-owner-lifetime-test.cpp','web/cpp/game/ProjectileSystems.cpp',
+      'web/cpp/game/GameObjectResources.cpp','web/cpp/game/UpdateChain.cpp']
       .map(path=>resolve(root,path)),
     resolve(common,'src/netplay/RollbackJournal.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_NATIVE_PLATFORM=1']],
   ['session-effect-owner-lifetime', [
-    ...['tests/session-effect-owner-lifetime-test.cpp','th10_web/cpp/game/GameSessionResources.cpp',
-      'th10_web/cpp/game/GameSession.cpp','th10_web/cpp/game/GameObjectResources.cpp',
-      'th10_web/cpp/game/UpdateChain.cpp','th10_web/cpp/game/Timer.cpp',
-      'th10_web/cpp/game/AnmRegistry.cpp','th10_web/cpp/game/Arithmetic.cpp']
+    ...['tests/session-effect-owner-lifetime-test.cpp','web/cpp/game/GameSessionResources.cpp',
+      'web/cpp/game/GameSession.cpp','web/cpp/game/GameObjectResources.cpp',
+      'web/cpp/game/UpdateChain.cpp','web/cpp/game/Timer.cpp',
+      'web/cpp/game/AnmRegistry.cpp','web/cpp/game/Arithmetic.cpp']
       .map(path=>resolve(root,path)),softfloat,
     resolve(common,'src/netplay/RollbackJournal.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_NATIVE_PLATFORM=1','-fno-strict-aliasing']],
@@ -154,21 +154,21 @@ for (const [name, sources, flags = []] of [
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['audio-events', [
     resolve(root,'tests/multiplayer-audio-events-test.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/AudioEvents.cpp'),
-    resolve(root,'th10_web/cpp/game/AudioManager.cpp'),
-    resolve(root,'th10_web/cpp/game/Arithmetic.cpp'),softfloat,
+    resolve(root,'web/cpp/multiplayer/AudioEvents.cpp'),
+    resolve(root,'web/cpp/game/AudioManager.cpp'),
+    resolve(root,'web/cpp/game/Arithmetic.cpp'),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['audio-native-equivalence', [
     resolve(root,'tests/multiplayer-audio-native-equivalence-test.cpp'),
-    resolve(root,'th10_web/cpp/multiplayer/AudioEvents.cpp'),
-    resolve(root,'th10_web/cpp/game/AudioManager.cpp'),
-    resolve(root,'th10_web/cpp/game/Arithmetic.cpp'),softfloat,
+    resolve(root,'web/cpp/multiplayer/AudioEvents.cpp'),
+    resolve(root,'web/cpp/game/AudioManager.cpp'),
+    resolve(root,'web/cpp/game/Arithmetic.cpp'),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['dense-item-audio', [
-    ...['tests/multiplayer-dense-item-audio-test.cpp','th10_web/cpp/multiplayer/AudioEvents.cpp',
-      'th10_web/cpp/game/AudioManager.cpp','th10_web/cpp/game/ItemFrame.cpp',
-      'th10_web/cpp/game/GameEconomy.cpp','th10_web/cpp/game/Timer.cpp',
-      'th10_web/cpp/game/GameMath.cpp','th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+    ...['tests/multiplayer-dense-item-audio-test.cpp','web/cpp/multiplayer/AudioEvents.cpp',
+      'web/cpp/game/AudioManager.cpp','web/cpp/game/ItemFrame.cpp',
+      'web/cpp/game/GameEconomy.cpp','web/cpp/game/Timer.cpp',
+      'web/cpp/game/GameMath.cpp','web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['common-simulation-frontier', [
     resolve(common,'tests/simulation-frontier-test.cpp'),
@@ -210,21 +210,21 @@ for (const [name, sources, flags = []] of [
     resolve(common, 'src/netplay/RollbackJournal.cpp'),
   ]],
   ...[false,true].map(multiplayer=>['enemy-native-drops-'+(multiplayer?'multiplayer':'normal'),[
-    ...['tests/enemy-native-drops-test.cpp','th10_web/cpp/game/EnemyDrops.cpp',
-      'th10_web/cpp/game/GameEconomy.cpp','th10_web/cpp/game/Timer.cpp',
-      'th10_web/cpp/game/Rng.cpp','th10_web/cpp/game/GameMath.cpp',
-      'th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+    ...['tests/enemy-native-drops-test.cpp','web/cpp/game/EnemyDrops.cpp',
+      'web/cpp/game/GameEconomy.cpp','web/cpp/game/Timer.cpp',
+      'web/cpp/game/Rng.cpp','web/cpp/game/GameMath.cpp',
+      'web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
   ],multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[]]),
   ['economy-normal', [...economySources, softfloat]],
   ['economy-multiplayer', [...economySources, softfloat], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['item-ownership', [
-    ...['tests/item-ownership-test.cpp','th10_web/cpp/multiplayer/ItemOwnership.cpp',
-      'th10_web/cpp/game/ItemFrame.cpp','th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+    ...['tests/item-ownership-test.cpp','web/cpp/multiplayer/ItemOwnership.cpp',
+      'web/cpp/game/ItemFrame.cpp','web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['item-native-resources', [
-    ...['tests/item-native-resources-test.cpp','th10_web/cpp/game/ItemFrame.cpp',
-      'th10_web/cpp/game/GameEconomy.cpp','th10_web/cpp/game/Timer.cpp',
-      'th10_web/cpp/game/GameMath.cpp','th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+    ...['tests/item-native-resources-test.cpp','web/cpp/game/ItemFrame.cpp',
+      'web/cpp/game/GameEconomy.cpp','web/cpp/game/Timer.cpp',
+      'web/cpp/game/GameMath.cpp','web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
 ]) {
   if (audioOnly && !audioSuites.has(name)) continue;
@@ -239,7 +239,7 @@ for (const [name, sources, flags = []] of [
     '-Wl,-z,stack-size=1048576',
     '-I' + resolve(common, 'include'),
     '-I' + resolve(common, 'tests/fixtures/include'),
-    resolve(root, 'th10_web/cpp/multiplayer/CooperativeRules.cpp'),
+    resolve(root, 'web/cpp/multiplayer/CooperativeRules.cpp'),
     ...sources,
     '-o', wasm,
   ], { cwd: root, windowsHide: true, stdio: 'inherit' });

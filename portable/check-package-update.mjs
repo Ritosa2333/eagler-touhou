@@ -3,14 +3,14 @@ import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {readFileSync, mkdirSync, writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 
 const argument=(key,fallback)=>process.argv.includes(key)?process.argv[process.argv.indexOf(key)+1]:fallback;
-const site=resolve(argument('--site','th10_web/artifacts/architecture-candidate/site'));
-const output=resolve(argument('--out','th10_web/artifacts/package-update-check'));
+const site=resolve(argument('--site','web/artifacts/architecture-candidate/site'));
+const output=resolve(argument('--out','web/artifacts/package-update-check'));
 const expectFailure=process.argv.includes('--expect-failure'),base='http://127.0.0.1:8093';
 mkdirSync(output,{recursive:true});
-const oldDescriptor=JSON.parse(readFileSync('th10_web/artifacts/sdl-release-3.1.0-previous/site/packages/th10/package.json','utf8'));
+const oldDescriptor=JSON.parse(readFileSync('web/artifacts/sdl-release-3.1.0-previous/site/packages/th10/package.json','utf8'));
 const expected=JSON.parse(readFileSync(resolve(site,'packages/th10/package.json'),'utf8'));
 let server,browser;
 async function stopServer(){if(server&&!server.killed){const stopped=once(server,'exit');server.kill();await stopped;}server=null;}
@@ -43,7 +43,7 @@ try {
     await page.locator('#decisionCancel').click();
     await page.waitForFunction(()=>document.querySelector('#gameFrame')?.contentWindow?.__th10Runtime?.app,null,{timeout:120000});
     const frame=page.frames().find(frame=>frame.url().includes('/runtime/th10/'));
-    const replay=Array.from(readFileSync('th10_web/artifacts/sdl3/motion/recording.rpyx'));
+    const replay=Array.from(readFileSync('web/artifacts/sdl3/motion/recording.rpyx'));
     await frame.evaluate(async bytes=>{await __th10Runtime.command({command:'write',path:'replay/th10_24.rpyx',bytes});await __th10Runtime.stop();},replay);
     await page.waitForFunction(()=>!document.querySelector('#player').classList.contains('open'));
     await page.reload();
@@ -68,7 +68,7 @@ try {
     await page.waitForFunction(()=>document.querySelector('#gameFrame')?.contentWindow?.__th10Runtime?.app,null,{timeout:120000});
     const frame=page.frames().find(frame=>frame.url().includes('/runtime/th10/'));
     const saved=await frame.evaluate(()=>__th10Runtime.command({command:'read',path:'replay/th10_24.rpyx'}));
-    assert(Buffer.from(saved.bytes).equals(readFileSync('th10_web/artifacts/sdl3/motion/recording.rpyx')));
+    assert(Buffer.from(saved.bytes).equals(readFileSync('web/artifacts/sdl3/motion/recording.rpyx')));
     report.checks.push('Chinese update succeeds','Unchanged DATA/music reused without downloads','Replay preserved byte-for-byte','Updated game launches');
     await frame.evaluate(()=>__th10Runtime.stop());
     assert.equal(report.errors.length,0,report.errors.join('\n'));

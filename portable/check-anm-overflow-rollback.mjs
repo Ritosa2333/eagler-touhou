@@ -54,9 +54,9 @@ mkdirSync(out,{recursive:true});
 const receiptPath=resolve(out,'receipt.json');
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const rel=path=>relative(root,path).replaceAll('\\','/');
-const platform=resolve(root,'th10_web/cpp/platform');
+const platform=resolve(root,'web/cpp/platform');
 const engineSource=resolve(platform,'AnimationEngine.cpp');
-const legacyDirectory=resolve(out,'counterfactual/th10_web/cpp/platform');
+const legacyDirectory=resolve(out,'counterfactual/web/cpp/platform');
 const legacySource=resolve(legacyDirectory,'AnimationEngine.cpp');
 const testSource=resolve(root,'tests/anm-overflow-rollback-test.cpp');
 const receipt={
@@ -152,8 +152,8 @@ const gameNames=[
 ];
 const platformNames=['AnimationResources','TransitionResources','Textures','FileSystem','Callbacks','Graphics'];
 const sharedSources=[
-    ...gameNames.map(name=>'th10_web/cpp/game/'+name+'.cpp'),
-    ...platformNames.map(name=>'th10_web/cpp/platform/'+name+'.cpp'),
+    ...gameNames.map(name=>'web/cpp/game/'+name+'.cpp'),
+    ...platformNames.map(name=>'web/cpp/platform/'+name+'.cpp'),
     resolve(commonRoot,'src/netplay/RollbackJournal.cpp').replaceAll('\\','/'),
     'tests/live-motion-disabled-stub.cpp'
 ];
@@ -161,8 +161,8 @@ const units=[
     // This pre-existing TU has an unused read_le template. Keep -Werror and
     // all unit warnings; suppress only that existing TU's template warning.
     ...sharedSources.map((source,index)=>({name:'shared-'+index+'-'+source.split('/').at(-1).replace('.cpp',''),source:resolve(root,source),
-        flags:source==='th10_web/cpp/platform/AnimationResources.cpp'?[...baseFlags,'-Wno-unused-template']:baseFlags})),
-    {name:'shared-softfloat',source:resolve(root,'th10_web/cpp/rebuild/third_party/softfloat.c'),flags:softfloatFlags},
+        flags:source==='web/cpp/platform/AnimationResources.cpp'?[...baseFlags,'-Wno-unused-template']:baseFlags})),
+    {name:'shared-softfloat',source:resolve(root,'web/cpp/rebuild/third_party/softfloat.c'),flags:softfloatFlags},
     {name:'candidate-test',source:testSource,flags:baseFlags},
     {name:'candidate-engine',source:engineSource,flags:baseFlags},
     {name:'legacy-test',source:testSource,flags:[...baseFlags,'-DTH10_ANM_OVERFLOW_ROLLBACK_LEGACY=1']},

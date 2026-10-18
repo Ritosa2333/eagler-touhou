@@ -40,8 +40,8 @@ const receiptPath=resolve(out,'receipt.json');
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const normalized=text=>text.replace(/\r\n/g,'\n');
 const rel=path=>relative(root,path).replaceAll('\\','/');
-const platform=resolve(root,'th10_web/cpp/platform');
-const legacy=resolve(out,'legacy/th10_web/cpp/platform');
+const platform=resolve(root,'web/cpp/platform');
+const legacy=resolve(out,'legacy/web/cpp/platform');
 mkdirSync(legacy,{recursive:true});
 const oldHeader=resolve(legacy,'Callbacks.hpp'),oldSource=resolve(legacy,'Callbacks.cpp');
 writeFileSync(oldHeader,LEGACY_HEADER);writeFileSync(oldSource,LEGACY_SOURCE);
@@ -123,7 +123,7 @@ if(sanitized)baseFlags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
 const testSource=resolve(root,'tests/callback-rollback-test.cpp');
 const units=[
-    {name:'shared-update-chain',source:resolve(root,'th10_web/cpp/game/UpdateChain.cpp'),flags:baseFlags},
+    {name:'shared-update-chain',source:resolve(root,'web/cpp/game/UpdateChain.cpp'),flags:baseFlags},
     {name:'shared-journal',source:resolve(root,'../../common/src/netplay/RollbackJournal.cpp'),flags:baseFlags},
     {name:'candidate-test',source:testSource,flags:[...baseFlags,'-I',platform]},
     {name:'candidate-callbacks',source:resolve(platform,'Callbacks.cpp'),flags:[...baseFlags,'-I',platform]},

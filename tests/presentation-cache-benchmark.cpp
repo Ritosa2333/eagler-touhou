@@ -1,6 +1,6 @@
 // Fixture-free cache microbenchmark. It does not measure game FPS or a phone.
 #ifndef TH10_CACHE_HEADER
-#define TH10_CACHE_HEADER "../th10_web/cpp/multiplayer/PresentationCache.hpp"
+#define TH10_CACHE_HEADER "../web/cpp/multiplayer/PresentationCache.hpp"
 #endif
 #include TH10_CACHE_HEADER
 #include <array>

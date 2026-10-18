@@ -27,7 +27,7 @@ const flags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Wer
 if(sanitized)flags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
-const interpreterPath=resolve(root,'th10_web/cpp/game/AnmInterpreter.cpp');
+const interpreterPath=resolve(root,'web/cpp/game/AnmInterpreter.cpp');
 const interpreter=readFileSync(interpreterPath,'utf8');
 const animate=interpreter.slice(interpreter.indexOf('void animate('),interpreter.indexOf('// 0x43ee30.'))
     .replace(/#else\s*const auto rate=number\(\*env\.rate\);\s*#endif/g,'#endif');
@@ -47,8 +47,8 @@ function compile(source,name,compileFlags=flags){
     }
     return object;
 }
-const common=[compile('th10_web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags),
-    ...['Arithmetic'].map(name=>compile(`th10_web/cpp/game/${name}.cpp`,name))];
+const common=[compile('web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags),
+    ...['Arithmetic'].map(name=>compile(`web/cpp/game/${name}.cpp`,name))];
 for(const multiplayer of [false,true]){
     const variant=multiplayer?'multiplayer':'ordinary';
     const variantFlags=[...flags,...(multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[])];
@@ -60,7 +60,7 @@ for(const multiplayer of [false,true]){
     const code=wasi.start(instance);if(code!==0)throw Error(`${variant} failed: ${code}`);
     const integration=compile('tests/anm-uv-integration-test.cpp',variant+'-integration',variantFlags);
     const engine=['AnmVm','AnmInterpreter','AnmVariables','AnmFile','Timer','Interpolation','Rng','GameMath']
-        .map(name=>compile(`th10_web/cpp/game/${name}.cpp`,variant+'-'+name,variantFlags));
+        .map(name=>compile(`web/cpp/game/${name}.cpp`,variant+'-'+name,variantFlags));
     const integrationWasm=resolve(out,variant+'-integration.wasm');
     execFileSync(compiler,[...linkFlags,integration,...engine,...common,'-o',integrationWasm],{cwd:root,stdio:'inherit'});
     const integrationWasi=new WASI({version:'preview1',args:[variant+'-integration'],env:{},returnOnExit:true});

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {bindOutsideTouches} from '../th10_web/sdl-runtime/eagler-host.mjs';
+import {bindOutsideTouches} from '../web/sdl-runtime/eagler-host.mjs';
 
 test('outside gestures cross canvas without duplicate input and end once',()=>{
  const listeners=new Map(),calls=[];

@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/LiveMotionObservation.hpp"
+#include "../web/cpp/multiplayer/LiveMotionObservation.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include <cstdlib>
 

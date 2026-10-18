@@ -2,12 +2,12 @@
 // --multiplayer-fixtures. Every fixture changes an explicit initial condition
 // at a fully confirmed boundary, then the real game tick/input/rollback code
 // performs the behavior under test. No custom simulation or golden update.
-#include "../../th10_web/cpp/platform/Application.hpp"
-#include "../../th10_web/cpp/multiplayer/PlayerCollisionBroadphase.hpp"
-#include "../../th10_web/cpp/game/PlayerFrame.hpp"
-#include "../../th10_web/cpp/game/Dialogue.hpp"
-#include "../../th10_web/cpp/game/HighRefresh.hpp"
-#include "../../th10_web/cpp/platform/Credits.hpp"
+#include "../../web/cpp/platform/Application.hpp"
+#include "../../web/cpp/multiplayer/PlayerCollisionBroadphase.hpp"
+#include "../../web/cpp/game/PlayerFrame.hpp"
+#include "../../web/cpp/game/Dialogue.hpp"
+#include "../../web/cpp/game/HighRefresh.hpp"
+#include "../../web/cpp/platform/Credits.hpp"
 
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #error Multiplayer fixtures cannot enter an ordinary build

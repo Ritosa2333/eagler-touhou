@@ -43,13 +43,13 @@ const errorInfo=error=>({
   stack:String(error?.stack||'').slice(0,8192),
 });
 const expectedDependencies=[
-  'th10_web/cpp/game/Arithmetic.hpp','th10_web/cpp/game/Types.hpp',
+  'web/cpp/game/Arithmetic.hpp','web/cpp/game/Types.hpp',
   'portable/numeric/ExactFloat.hpp','portable/numeric/ScalarMath.hpp',
-  'th10_web/cpp/rebuild/third_party/softfloat.c',
+  'web/cpp/rebuild/third_party/softfloat.c',
 ];
 const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
 assert.equal(manifest.schema,1);
-assert.equal(manifest.source,'th10_web/cpp/game/Arithmetic.cpp');
+assert.equal(manifest.source,'web/cpp/game/Arithmetic.cpp');
 assert.equal(manifest.snapshot,'tests/fixtures/arithmetic-flatten/Arithmetic.cpp');
 assert.equal(manifest.candidate.attribute,'__attribute__((flatten)) ');
 assert.deepEqual(manifest.candidate.operators,['+','-','*','/']);
@@ -135,7 +135,7 @@ function compilerPlan() {
 }
 const plan=compilerPlan();
 const bridgeObject=resolve(buildDir,'bridge.o'),softfloatObject=resolve(buildDir,'softfloat.o');
-const softfloatSource=resolve(root,'th10_web/cpp/rebuild/third_party/softfloat.c');
+const softfloatSource=resolve(root,'web/cpp/rebuild/third_party/softfloat.c');
 const variants=['reference','candidate'].map(name=>({
   name,tree:resolve(buildDir,name,'source'),
   arithmetic:resolve(buildDir,name,'source',manifest.source),

@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/NetplayRuntime.hpp"
+#include "../web/cpp/multiplayer/NetplayRuntime.hpp"
 #include <cassert>
 #include <vector>
 

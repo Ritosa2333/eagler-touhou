@@ -14,8 +14,8 @@
 [[]th08[]]*/
 [[]th10[]]*/
 /thcrap/
-th10_web/assets/sdl-native/*.ttc
-th10_web/assets/sdl-native/*.ttf
+web/assets/sdl-native/*.ttc
+web/assets/sdl-native/*.ttf
 *.exe
 *.dll
 *.wasm

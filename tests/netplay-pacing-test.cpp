@@ -3,9 +3,9 @@
 #include <eagler/netplay/PendingFrameSchedule.hpp>
 #include <eagler/netplay/InputGapPacing.hpp>
 #include <eagler/netplay/NetplayCore.hpp>
-#include "../th10_web/cpp/multiplayer/NetworkInputGapPacing.hpp"
-#include "../th10_web/cpp/multiplayer/NetworkFrameSchedule.hpp"
-#include "../th10_web/cpp/multiplayer/RecoveryBudget.hpp"
+#include "../web/cpp/multiplayer/NetworkInputGapPacing.hpp"
+#include "../web/cpp/multiplayer/NetworkFrameSchedule.hpp"
+#include "../web/cpp/multiplayer/RecoveryBudget.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdio>

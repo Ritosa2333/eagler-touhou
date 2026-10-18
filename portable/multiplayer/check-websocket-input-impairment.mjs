@@ -15,7 +15,7 @@ const {installWebSocketInputImpairment}=createRequire(import.meta.url)('./websoc
 const sources=['websocket-input-impairment.cjs','check-websocket-input-impairment.mjs',
  '../../third_party/eagler-common/src/netplay/BrowserPeerTransport.cpp',
  '../../third_party/eagler-common/src/netplay/NetplayProtocol.cpp',
- '../../th10_web/cpp/multiplayer/netplay/NetplayProtocolConfig.hpp'];
+ '../../web/cpp/multiplayer/netplay/NetplayProtocolConfig.hpp'];
 const inventory=()=>Object.fromEntries(sources.map(path=>[path,
  createHash('sha256').update(readFileSync(new URL(path,import.meta.url))).digest('hex')]));
 const before=inventory();
