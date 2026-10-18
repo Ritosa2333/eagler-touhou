@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>星莲船 Web 接入预览</title>
+<style>body{margin:0;background:#101118;color:#dfdce7;font:14px system-ui,sans-serif}main{max-width:960px;margin:24px auto;padding:0 16px}h1{font-size:22px}p{line-height:1.6;color:#aaa6b6}button,select{font:inherit;padding:8px 12px;border:1px solid #555063;border-radius:6px;background:#262330;color:inherit;margin-right:8px}#state{color:#b6d4b4}iframe{display:block;width:100%;aspect-ratio:4/3;border:1px solid #4b4657;margin-top:18px;background:black}pre{white-space:pre-wrap;max-height:180px;overflow:auto;color:#aaa6b6;font-size:12px}</style></head>
+<body><main><h1>星莲船 Web 接入预览</h1><p>这里用于人工检查新的启动、资源和存档接口。当前只接入桌面键盘／手柄与完整音乐加载；其余适配仍在进行。</p>
+<button id="start">启动接入版本</button><select id="music"><option value="ogg">完整音乐</option><option value="none">无音乐</option></select><button id="files" disabled>查看浏览器存档列表</button><p id="state" role="status">等待启动。方向键、Z、X、Shift 与 Esc 的操作保持不变。</p><div id="game"></div><pre id="details"></pre>
+<script type="module" src="./adapter-preview.mjs"></script></main></body></html>

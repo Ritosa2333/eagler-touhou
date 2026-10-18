@@ -149,8 +149,8 @@ export function nativeQuadCorners(x,y,w,h,angle=0,anchorX=0,anchorY=0,mode=0,off
     [f(f(x+a*c-b*s)+offset[0]),f(f(y+a*s+b*c)+offset[1])]);
 }
 export class Renderer {
-  constructor(canvas,atlases){
-    this.canvas=canvas;this.atlases=atlases;this.textures=new Map();this.dialogueTextures=new Map();this.batch=[];this.current=null;this.blend=0;this.animations=new AnimationSampler(atlases);this.stageBackgrounds=new Map();this.stageJobs=new Map();this.requestedStage=1;
+  constructor(canvas,atlases,{fetcher=(...args)=>globalThis.fetch(...args)}={}){
+    this.fetch=fetcher;this.canvas=canvas;this.atlases=atlases;this.textures=new Map();this.dialogueTextures=new Map();this.batch=[];this.current=null;this.blend=0;this.animations=new AnimationSampler(atlases);this.stageBackgrounds=new Map();this.stageJobs=new Map();this.requestedStage=1;
     const gl=this.gl=canvas.getContext('webgl2',{alpha:false,antialias:false});if(!gl)throw Error('浏览器需要支持 WebGL 2');
     const compile=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;};
     const p=gl.createProgram();gl.attachShader(p,compile(gl.VERTEX_SHADER,`#version 300 es
@@ -175,7 +175,7 @@ export class Renderer {
     if(!Number.isInteger(stage)||stage<1||stage>7)throw Error('关卡编号无效');
     this.requestedStage=stage;
     if(!this.stageJobs.has(stage)){const name='stage'+String(stage).padStart(2,'0'),enemy='stgenm'+String(stage).padStart(2,'0'),logo='st'+String(stage).padStart(2,'0')+'logo';
-      const job=(async()=>{const response=await fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]));this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
+      const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]));this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
     const background=await this.stageJobs.get(stage);if(this.requestedStage===stage)this.background=background;return background;
   }
   async loadAtlases(names){
@@ -184,7 +184,7 @@ export class Renderer {
     // gets its own generated image, so images never silently overwrite others.
     const entries=[];for(const name of names){const atlas=this.atlases[name];if(!atlas)throw Error('动画资源不存在 '+name);for(let index=0;index<atlas.entries.length;index++){const e=atlas.entries[index];if(e.image&&!this.textures.has(name+':'+index))entries.push({name,index,e});}}
     for(let start=0;start<entries.length;start+=8)await Promise.all(entries.slice(start,start+8).map(async({name,index,e})=>{
-      const response=await fetch('/assets/'+e.image);if(!response.ok)throw Error('贴图加载失败 '+e.image);
+      const response=await this.fetch('/assets/'+e.image);if(!response.ok)throw Error('贴图加载失败 '+e.image);
       const bitmap=await createImageBitmap(await response.blob(),{premultiplyAlpha:'none',colorSpaceConversion:'none'}),texture=gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bitmap);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);const wrap=gl.REPEAT; // Native4514c5/4514db defaults both texture axes to WRAP1.

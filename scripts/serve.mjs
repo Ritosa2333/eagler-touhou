@@ -4,8 +4,10 @@ const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8'
 http.createServer((req,res)=>{
   try{
     if(!['GET','HEAD'].includes(req.method)){res.writeHead(405).end();return;}
-    const url=new URL(req.url,'http://localhost'),decoded=decodeURIComponent(url.pathname),prefix=decoded.startsWith('/src/')?path.join(root,'src'):site;
-    const relative=decoded.startsWith('/src/')?decoded.slice(5):decoded==='/'?'index.html':decoded.slice(1),file=path.resolve(prefix,relative);
+    const url=new URL(req.url,'http://localhost'),decoded=decodeURIComponent(url.pathname);
+    // Maintainer-only mounts. They remain outside the code-only Runtime bundle.
+    const mount=[['/__eagler-runtime/',path.join(root,'build-eagler')],['/__eagler-content/',path.join(root,'artifacts/eagler-content')],['/src/',path.join(root,'src')]].find(([prefix])=>decoded.startsWith(prefix));
+    const prefix=mount?.[1]??site,relative=mount?decoded.slice(mount[0].length):decoded==='/'?'index.html':decoded.slice(1),file=path.resolve(prefix,relative);
     if(!file.startsWith(prefix+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404).end('Not found');return;}
     const stats=fs.statSync(file);res.setHeader('Content-Type',types[path.extname(file)]||'application/octet-stream');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Cache-Control','no-cache');res.setHeader('Accept-Ranges','bytes');
     let start=0,end=stats.size-1;const range=req.headers.range?.match(/^bytes=(\d+)-(\d*)$/);

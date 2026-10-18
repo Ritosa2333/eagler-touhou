@@ -1,40 +1,46 @@
 import createCore from './runtime/core.mjs';
-import {Renderer} from '/src/renderer.mjs';
-import {TitleScenes} from '/src/title-scenes.mjs';
-import {TitlePresentation} from '/src/title-presentation.mjs';
-import {validateMenuResources,selectEnding} from '/src/menu-resources.mjs';
-import {EndingTimeline} from '/src/ending-timeline.mjs';
-import {GameProfile} from '/src/game-profile.mjs';
-import {openStore} from '/src/storage.mjs';
-import {StageLoader,stageMusic,bossMusic} from '/src/stage-loader.mjs';
-import {MusicPlayer} from '/src/music.mjs';
-import {SoundPlayer,nativeMusicGain} from '/src/sound-player.mjs';
-import {readCoreSoundEvents} from '/src/sound-events.mjs';
-import {parseReplay,replayInputEnded} from '/src/replay.mjs';
-import {startReplayStage} from '/src/replay-session.mjs';
-import {ReplayRecorder,defaultReplayConfig} from '/src/replay-recorder.mjs';
-import {createFrameRateMeter} from '/src/fps-presentation.mjs';
-import {decodeSpellTitle} from '/src/spell-presentation.mjs';
-import {LoadingPresentation} from '/src/loading-presentation.mjs';
+import {Renderer} from '../src/renderer.mjs';
+import {TitleScenes} from '../src/title-scenes.mjs';
+import {TitlePresentation} from '../src/title-presentation.mjs';
+import {validateMenuResources,selectEnding} from '../src/menu-resources.mjs';
+import {EndingTimeline} from '../src/ending-timeline.mjs';
+import {GameProfile} from '../src/game-profile.mjs';
+import {openStore} from '../src/storage.mjs';
+import {StageLoader,stageMusic,bossMusic} from '../src/stage-loader.mjs';
+import {MusicPlayer} from '../src/music.mjs';
+import {SoundPlayer,nativeMusicGain} from '../src/sound-player.mjs';
+import {readCoreSoundEvents} from '../src/sound-events.mjs';
+import {parseReplay,replayInputEnded} from '../src/replay.mjs';
+import {startReplayStage} from '../src/replay-session.mjs';
+import {ReplayRecorder,defaultReplayConfig} from '../src/replay-recorder.mjs';
+import {createFrameRateMeter} from '../src/fps-presentation.mjs';
+import {decodeSpellTitle} from '../src/spell-presentation.mjs';
+import {LoadingPresentation} from '../src/loading-presentation.mjs';
+import {RuntimeAssets} from '../src/managed-data.mjs';
+import {installManagedShell} from '../src/managed-shell.mjs';
+import {ManagedInput} from '../src/managed-input.mjs';
 
-const $=id=>document.getElementById(id),canvas=$('screen'),keys=new Set(),meter=createFrameRateMeter(),TICK=1000/60;
+const $=id=>document.getElementById(id),canvas=$('screen'),keys=new Set(),hostKeys=new Set(),meter=createFrameRateMeter(),TICK=1000/60;
+const assets=new RuntimeAssets(),keyDown=code=>keys.has(code)||hostKeys.has(code);
+const managedInput=new ManagedInput();
+let emit=()=>{},launched=false,terminated=false,runtimeMusic='ogg',runtimeOptions={limitPresentationTo60:false},firstFrame=false,lastPresentation=0,renderedFrames=0,healthAt=0,maxFrameGap=0,backgrounded=document.hidden;
 let core,renderer,loader,profile,store,resources,model,presentation,loadingScreen,corpus=[],musicIndex=[],soundIndex=[],session=null,ending=null,ready=false,busy=false,fatalError=false,last=0,accumulator=0,previousUI=0,previousPadUI=0,pendingKeys=0,pendingPressed=0,choiceSerial=-1,lastReplay=null,pendingResult=null,joyCaptureRelease=false;
 const audio={context:null,music:null,track:null,pendingTrack:null,musicPaused:false,request:0,effects:null,effectsReady:null,musicSerial:-1};
 const decoder=new TextDecoder();
 const readJSON=name=>{const p=core['_th12_'+name](),size=core['_th12_'+name+'_size']();return JSON.parse(decoder.decode(core.HEAPU8.subarray(p,p+size)));};
 const hud=()=>[...new Float32Array(core.HEAPU8.buffer,core._th12_hud(),core._th12_hud_size())];
-async function bytes(url){const r=await fetch(url);if(!r.ok)throw Error('资源加载失败 '+url);return new Uint8Array(await r.arrayBuffer());}
+async function bytes(url){const r=await assets.fetch(url);if(!r.ok)throw Error('资源加载失败 '+url);return new Uint8Array(await r.arrayBuffer());}
 function notice(text=''){$('notice').textContent=text;}
-function fail(error){fatalError=true;busy=true;notice('运行中断：'+error.message);console.error(error);}
-function clearKeys(){keys.clear();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);}
+function fail(error){fatalError=true;busy=true;notice('运行中断：'+error.message);console.error(error);emit({event:'error',message:error.message});}
+function clearKeys(){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);}
 
 function input(){
-  const map=profile.settings.keyMap,held=(name,defaults=[])=>keys.has(map[name])||defaults.some(code=>keys.has(code));
+  const map=profile.settings.keyMap,held=(name,defaults=[])=>keyDown(map[name])||defaults.some(keyDown);
   let native=0;
   if(held('up'))native|=16;if(held('down'))native|=32;if(held('left'))native|=64;if(held('right'))native|=128;
   if(held('shoot'))native|=1;if(held('bomb'))native|=2;if(held('focus',['ShiftRight']))native|=8;if(held('skip',['ControlRight']))native|=512;
   native|=pendingKeys&0x2ff;
-  let ui=native|pendingKeys;if(keys.has('Escape')||held('pause'))ui|=256;if(keys.has('Enter'))ui|=0x80000;if(keys.has('KeyR'))ui|=0x200000;
+  let ui=native|pendingKeys;if(keyDown('Escape')||held('pause'))ui|=256;if(keyDown('Enter'))ui|=0x80000;if(keyDown('KeyR'))ui|=0x200000;
   const pressed=(ui&~previousUI)|pendingPressed;previousUI=ui;
   pendingKeys=pendingPressed=0;
   return {held:native,ui,pressed};
@@ -50,6 +56,7 @@ function padInput(){
     else if(buttons.length&&model.captureGamepad(buttons[0])){joyCaptureRelease=true;clearKeys();}
     return {value:0,capturing:true};
   }
+  const mapped=assets.managed?managedInput.pad():null;if(mapped!==null)return {value:mapped,capturing:false};
   if(!p)return {value:0,capturing:false};
   let value=0;if(p.axes[0]<-.3||p.buttons[14]?.pressed)value|=64;if(p.axes[0]>.3||p.buttons[15]?.pressed)value|=128;
   if(p.axes[1]<-.3||p.buttons[12]?.pressed)value|=16;if(p.axes[1]>.3||p.buttons[13]?.pressed)value|=32;
@@ -58,10 +65,10 @@ function padInput(){
 }
 async function audioReady(){
   const Audio=window.AudioContext??window.webkitAudioContext;if(!Audio)return;
-  audio.context??=new Audio();
+  audio.context??=(assets.managed&&window.parent.__touhouAudioContext)||new Audio();
   audio.music??=new MusicPlayer({context:audio.context,readBytes:file=>bytes('/assets/music/'+file)});
   audio.effects??=new SoundPlayer({context:audio.context,index:soundIndex,readBytes:file=>bytes('/assets/'+file),volume:profile.settings.seVolume});
-  audio.music.setVolume(nativeMusicGain(profile.settings.bgmVolume));
+  audio.music.setVolume(runtimeMusic==='none'?0:nativeMusicGain(profile.settings.bgmVolume));
   audio.effects.setVolume(profile.settings.seVolume);
   // One shared load prevents repeated key presses from decoding the whole bank
   // again. Events arriving during decode retain their channel until it is ready.
@@ -72,9 +79,9 @@ async function audioReady(){
 async function playMusic(id,{offsetSeconds=0}={}){
   audio.track=id;audio.pendingTrack=null;audio.musicPaused=false;const request=++audio.request;
   if(session&&!session.replay)profile.unlockMusic(id);
-  if(!audio.context||!audio.music)return;
+  if(runtimeMusic==='none'||!audio.context||!audio.music)return;
   const track=musicIndex.find(t=>t.id===id);if(!track)throw Error('音乐不存在 '+id);
-  audio.music.setVolume(nativeMusicGain(profile.settings.bgmVolume));
+  audio.music.setVolume(runtimeMusic==='none'?0:nativeMusicGain(profile.settings.bgmVolume));
   audio.pendingTrack=id;
   try{await audio.music.play(track,()=>request===audio.request,{offsetSeconds});}
   finally{if(request===audio.request)audio.pendingTrack=null;}
@@ -92,7 +99,7 @@ async function resumeAudio(){
 }
 function loadSpellHistory(){const words=profile.spellHistoryWords(),p=core._malloc(words.length*4);try{new Int32Array(core.HEAPU8.buffer,p,words.length).set(words);if(core._th12_load_spell_history(p,words.length)!==1)throw Error('符卡记录载入失败');}finally{core._free(p);}}
 function saveProfile(){profile.updateSpellHistory(readJSON('spell_history').records);return profile.save().catch(error=>notice('记录保存失败：'+error.message));}
-async function prepareStage(stage,{demo=false}={}){await renderer.prepareStage(stage);if(!await loader.load(stage))throw Error('关卡准备被取消');if(audio.context){const tracks=demo?[]:musicIndex.filter(t=>[stageMusic[stage],bossMusic[stage]].includes(t.id));await Promise.all([audio.music.preload(tracks),audio.effectsReady]);}}
+async function prepareStage(stage,{demo=false}={}){await renderer.prepareStage(stage);if(!await loader.load(stage))throw Error('关卡准备被取消');if(audio.context){const tracks=demo||runtimeMusic==='none'?[]:musicIndex.filter(t=>[stageMusic[stage],bossMusic[stage]].includes(t.id));await Promise.all([audio.music.preload(tracks),audio.effectsReady]);}}
 function recordedHeader(flow){const h=flow.recordHeader;if(!h)throw Error('缺少关卡开始记录');return {number:flow.stage,seed:h.seed,initial:{x:h.x,y:h.y,power:h.power,lives:h.lives,bombs:h.bombs,score:h.scoreStored,pointValue:h.pointValueStored,lifeFragments:h.lifeFragments,bombFragments:h.bombFragments,ufoColors:h.ufoColors,rank:h.rank,nativeGlobals:h.nativeGlobals}};}
 function recordStage(){const flow=readJSON('stage_flow');session.recorder?.recordStage(recordedHeader(flow));session.resultKey=null;session.spellCount=0;}
 function recordingConfig(){
@@ -250,7 +257,7 @@ async function actions(){
     else if(action.type==='titleLogo')presentation.titleLogo(action.interrupt);
     else if(action.type==='fadeMusic')audio.music?.fade(action.seconds);
     else if(action.type==='resume'){clearKeys();await resumeAudio();}
-    else if(action.type==='settings'){await profile.saveSettings(action.settings);audio.music?.setVolume(nativeMusicGain(profile.settings.bgmVolume));audio.effects?.setVolume(profile.settings.seVolume);if(!audio.music?.source&&audio.track&&!audio.musicPaused&&!audio.pendingTrack)await playMusic(audio.track);}
+    else if(action.type==='settings'){await profile.saveSettings(action.settings);audio.music?.setVolume(runtimeMusic==='none'?0:nativeMusicGain(profile.settings.bgmVolume));audio.effects?.setVolume(profile.settings.seVolume);if(!audio.music?.source&&audio.track&&!audio.musicPaused&&!audio.pendingTrack)await playMusic(audio.track);}
     else if(action.type==='saveName')await recordRunOnce(action.result,action.name);
     else if(action.type==='saveReplay')await saveReplay(action);
     else if(action.type==='saveExit')completeRun(false);
@@ -261,7 +268,7 @@ async function actions(){
       if(core._th12_continue_game()!==1)throw Error('续关失败');
       session.previous=0;session.clock=0;session.cursor=0;session.recorder=null;session.resultRecorded=false;session.continues=readJSON('stage_flow').continueCount;audio.musicSerial=core._th12_music_serial();clearKeys();await playMusic(stageMusic[session.stage]);
     }else if(action.type==='retry')await begin({mode:action.mode,character:action.character,shot:action.shot,difficulty:action.difficulty,stage:action.stage});
-    else if(action.type==='quit'){audio.music?.stop();notice('已结束。按 Z 返回标题。');}
+    else if(action.type==='quit'){audio.music?.stop();stopEffects();if(assets.managed){await syncRuntime();ready=launched=false;terminated=true;emit({event:'exit',code:0,status:'success'});}else notice('已结束。按 Z 返回标题。');}
   }
   if(model.state.scene==='title'&&!loadingScreen.startup&&loadingScreen.waiting)loadingScreen.completeResources();
 }
@@ -290,37 +297,50 @@ function tick(){
   // worker has replaced or reinitialised the session. Never tick that old
   // session (its recorder may already have finished) during this UI tick.
   if(model.actions.some(a=>['start','playReplay','demo','continue','retry','resume','returnTitle','saveExit'].includes(a.type)))return;
-  if(['playing','demo'].includes(model.state.scene))gameTick({held:sampled.held|(pad&~256)});
+  if(['playing','demo'].includes(model.state.scene))gameTick({held:sampled.held|(pad&0x2ff&~256)});
 }
 function frame(now){
+  if(terminated)return;
+  if(backgrounded||fatalError){last=now;accumulator=0;requestAnimationFrame(frame);return;}
+  if(runtimeOptions.limitPresentationTo60&&now-lastPresentation<TICK-.5){requestAnimationFrame(frame);return;}
+  lastPresentation=now;
   const elapsed=Math.max(0,Math.min(250,now-last));last=now;meter.frame(now);
   try{if(!fatalError){
     loadingScreen?.advance(elapsed);
     if(loadingScreen?.startup||loadingScreen?.waiting){loadingScreen.renderBase(meter.value);}
     else if(ready&&!busy){
-      const rate=session?.replay&&model.state.scene==='playing'&&(keys.has(profile.settings.keyMap.skip)||keys.has('ControlRight')||(previousPadUI&512))?4:1;accumulator+=elapsed*rate;
+      const rate=session?.replay&&model.state.scene==='playing'&&(keyDown(profile.settings.keyMap.skip)||keyDown('ControlRight')||(previousPadUI&512))?4:1;accumulator+=elapsed*rate;
       for(let count=0;accumulator>=TICK&&count<8*rate&&!busy;count++){accumulator-=TICK;tick();if(model.actions.length){busy=true;actions().catch(fail).finally(()=>{if(!fatalError)busy=false;last=performance.now();accumulator=0;});break;}}
       if(loadingScreen.waiting)loadingScreen.renderBase(meter.value);else{present();loadingScreen.renderOverlay();}
     }else if(ready){present();loadingScreen.renderOverlay();}
   }}catch(error){fail(error);}
+  if(ready&&launched){
+    renderedFrames++;maxFrameGap=Math.max(maxFrameGap,elapsed);
+    if(!firstFrame){firstFrame=true;emit({event:'first-frame'});healthAt=now;renderedFrames=0;maxFrameGap=0;}
+    if(now-healthAt>=1000){emit({event:'frame-health',fps:renderedFrames*1000/(now-healthAt),maxGapMs:maxFrameGap});emit({event:'audio-health',backend:'WebAudio',contextState:audio.context?.state??'uninitialized',musicMode:runtimeMusic,voices:audio.effects?.voices.size??0});healthAt=now;renderedFrames=0;maxFrameGap=0;}
+  }
   requestAnimationFrame(frame);
 }
-function eventKey(code,down){
+function eventKey(code,down,source='local'){
   if(!ready)return;
+  const sourceKeys=source==='host'?hostKeys:keys,wasHeld=keyDown(code);
+  if(down&&wasHeld){sourceKeys.add(code);return;}
   if(model.state.captureJoy){
-    model.key(code,down);if(!down)keys.delete(code);
+    model.key(code,down);if(!down)sourceKeys.delete(code);
     if(!model.state.captureJoy){joyCaptureRelease=true;clearKeys();}
     if(down)audioReady().catch(error=>notice('音频：'+error.message));return;
   }
-  if(down){keys.add(code);let pressed=0;const bits={up:16,down:32,left:64,right:128,shoot:1,bomb:2,focus:8,pause:256,skip:512};for(const [name,bit]of Object.entries(bits))if(profile.settings.keyMap[name]===code)pressed|=bit;if(code==='Escape')pressed|=256;if(code==='Enter')pressed|=0x80000;if(code==='KeyR')pressed|=0x200000;pendingKeys|=pressed;pendingPressed|=pressed;}
-  else keys.delete(code);
+  if(down){sourceKeys.add(code);let pressed=0;const bits={up:16,down:32,left:64,right:128,shoot:1,bomb:2,focus:8,pause:256,skip:512};for(const [name,bit]of Object.entries(bits))if(profile.settings.keyMap[name]===code)pressed|=bit;if(code==='Escape')pressed|=256;if(code==='Enter')pressed|=0x80000;if(code==='KeyR')pressed|=0x200000;pendingKeys|=pressed;pendingPressed|=pressed;}
+  else {sourceKeys.delete(code);if(keyDown(code))return;}
   if(model.state.captureJoy||code==='F1')model.key(code,down);
   if(down)audioReady().catch(error=>notice('音频：'+error.message));
 }
-window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target?.tagName))return;if(e.code==='F1'||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Escape'].includes(e.code))e.preventDefault();if(!e.repeat)eventKey(e.code,true);});
-window.addEventListener('keyup',e=>eventKey(e.code,false));
-window.addEventListener('blur',()=>{if(ready&&model.state.scene==='playing'){model.openPause(resultData(false));}clearKeys();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)clearKeys();});
+window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target?.tagName))return;if(assets.managed&&managedInput.key(e,true,'physical',eventKey)){e.preventDefault();return;}if(e.code==='F1'||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Escape'].includes(e.code))e.preventDefault();if(!e.repeat)eventKey(e.code,true);});
+window.addEventListener('keyup',e=>{if(assets.managed&&managedInput.key(e,false,'physical',eventKey)){e.preventDefault();return;}eventKey(e.code,false);});
+window.addEventListener('blur',()=>{if(ready&&model.state.scene==='playing'){model.openPause(resultData(false));pauseAudio();}clearKeys();if(assets.managed)syncRuntime().catch(fail);});
+document.addEventListener('visibilitychange',()=>{backgrounded=document.hidden;clearKeys();if(backgrounded){if(ready&&model.state.scene==='playing')model.openPause(resultData(false));pauseAudio();syncRuntime().catch(fail);}else if(ready&&!['pause','pause-confirm'].includes(model.state.scene))resumeAudio().catch(fail);});
+window.addEventListener('pagehide',()=>{backgrounded=true;clearKeys();audio.music?.pause();audio.effects?.pause();syncRuntime().catch(console.error);});
+canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeys();audio.music?.stop();stopEffects();fail(Error('图形环境已失效，请退出并重新启动游戏'));});
 $('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.querySelector('.viewport').requestFullscreen();};
 $('manual').onclick=()=>{if(session&&model.state.scene==='playing'){model.openPause(resultData(false));}model.key('F1',true);};
 $('import').onchange=async()=>{try{const file=$('import').files[0];if(!file)return;if(file.size>64*1024*1024)throw Error('录像过大');const b=new Uint8Array(await file.arrayBuffer()),r=parseReplay(b),id='th12_import_'+Date.now()+'.rpy';await store.write('/savesth12/replay/'+id,b);corpus.push(replayMetadata(r,{id}));model.setCorpus(corpus);notice('录像已导入，可从 Replay 选择');}catch(error){notice(error.message);}finally{$('import').value='';}};
@@ -329,14 +349,14 @@ $('export-replay').onclick=()=>{if(!lastReplay)return;const url=URL.createObject
 async function initialize(){
   //The first visible page is the original sig.anm splash. Bootstrap only
   //needs its small resource manifest, not the runtime or all stage assets.
-  const bootResponse=await fetch('/assets/loading-resources.json');if(!bootResponse.ok)throw Error('原版加载画面资源缺失，请更新本地菜单资源');
+  const bootResponse=await assets.fetch('/assets/loading-resources.json');if(!bootResponse.ok)throw Error('原版加载画面资源缺失，请更新本地菜单资源');
   const boot=await bootResponse.json();
   if(boot.schema!=='th12-loading-resources/1'||!boot.atlases?.sig||!boot.atlases?.ascii)throw Error('原版加载画面资源无效');
-  renderer=new Renderer(canvas,boot.atlases);loadingScreen=new LoadingPresentation(renderer);
+  renderer=new Renderer(canvas,boot.atlases,{fetcher:assets.fetch});loadingScreen=new LoadingPresentation(renderer);
   await renderer.loadAtlases(['sig']);loadingScreen.beginStartup();last=performance.now();meter.reset(last);requestAnimationFrame(frame);
   await renderer.loadAtlases(['ascii']);loadingScreen.showIndicator();
-  store=await openStore();profile=await new GameProfile(store).load();
-  const [atlases,menus,index,music,sounds]=await Promise.all(['/assets/atlases.json','/assets/menu-resources.json','/replays/index.json','/assets/music-index.json','/assets/sound-index.json'].map(async url=>{const r=await fetch(url);if(!r.ok)throw Error('资源清单加载失败');return r.json();}));
+  store??=await openStore();profile=await new GameProfile(store).load();
+  const [atlases,menus,index,music,sounds]=await Promise.all(['/assets/atlases.json','/assets/menu-resources.json','/replays/index.json','/assets/music-index.json','/assets/sound-index.json'].map(async url=>{if(assets.managed&&url==='/replays/index.json')return {fixtures:[]};const r=url.startsWith('/assets/')?await assets.fetch(url):await fetch(url);if(!r.ok)throw Error('资源清单加载失败');return r.json();}));
   resources=validateMenuResources(menus);musicIndex=music;soundIndex=sounds;Object.assign(atlases,resources.atlases);
   Object.assign(renderer.atlases,atlases);await renderer.prepare();await renderer.loadAtlases(['title','title_v','staff',...resources.endings.map(e=>e.bank)]);
   core=await createCore();if(!core._th12_start_full_game||!core._th12_load_spell_history)throw Error('请更新完整游戏核心');loader=new StageLoader(core,atlases,file=>bytes('/assets/'+file));
@@ -348,7 +368,25 @@ async function initialize(){
   }));
   for(const path of await store.list())if(path.endsWith('.rpy'))try{const b=await store.read(path),r=parseReplay(b),id=path.split('/').at(-1);corpus=corpus.filter(f=>f.id!==id);corpus.push(replayMetadata(r,{id}));}catch(error){console.warn(error.message);}
   model=new TitleScenes({profile,corpus,settings:profile.settings,musicTracks:resources.musicComments});presentation=new TitlePresentation(renderer,resources,profile);
+  if(assets.managed&&window.parent.__touhouAudioContext)audioReady().catch(error=>notice('音频：'+error.message));
   await loadingScreen.waitForStartup();await actions();loadingScreen.endStartup();ready=true;last=performance.now();meter.reset(last);accumulator=0;
-  window.__th12Game={ready:()=>ready,state:()=>({scene:model.view(),session:session?{mode:session.mode,stage:session.stage,cursor:session.cursor}:null,flow:session?readJSON('stage_flow'):null}),profile:()=>profile.data,start:settings=>{model.run={...settings};model.enter('playing',0,{readyAt:0});return begin(settings);},model:()=>model,present};
+  if(!assets.managed)window.__th12Game={ready:()=>ready,state:()=>({scene:model.view(),session:session?{mode:session.mode,stage:session.stage,cursor:session.cursor}:null,flow:session?readJSON('stage_flow'):null}),profile:()=>profile.data,start:settings=>{model.run={...settings};model.enter('playing',0,{readyAt:0});return begin(settings);},model:()=>model,present};
 }
-initialize().catch(fail);
+async function syncRuntime(){if(launched&&profile){if(core)await saveProfile();else await profile.save();}await store?.sync();}
+async function launchRuntime(){
+  if(terminated)throw Error('此运行会话已结束，请从启动器重新打开');
+  if(launched)throw Error('游戏已启动');launched=true;firstFrame=false;
+  try{await initialize();if(runtimeOptions.replayPath){const id=runtimeOptions.replayPath.split('/').at(-1);await playReplay(id);model.enter('playing',0,{readyAt:0});}emit({event:'runtime-info',renderer:'WebGL2',architecture:'C++20 / WebAssembly',version:'0.3.0-cpp',integration:'initial',completeAdapter:false});}
+  catch(error){launched=false;throw error;}
+}
+async function bootstrap(){
+  if(!assets.managed){await launchRuntime();return;}
+  document.documentElement.dataset.managed='true';
+  emit=installManagedShell({
+    get store(){return store;},running:()=>launched,configure:async settings=>{runtimeOptions=settings.options;runtimeMusic=settings.music;},
+    resources:items=>assets.install(items,message=>emit(message)),launch:launchRuntime,
+    key:(code,down,message)=>{if(!managedInput.key(message,down,message.inputSource==='physical'?'physical':'virtual',eventKey))eventKey(code,down,'host');},clearKeyboard:clearKeys,cancelTouch:()=>{},sync:syncRuntime,
+  },window,{announceReady:false});
+  store=await openStore();await assets.prepare();emit.ready();
+}
+bootstrap().catch(fail);

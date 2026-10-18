@@ -51,6 +51,8 @@ ctest --test-dir artifacts/native --output-on-failure
 
 ## 还原边界
 
+`main` 的 Eagler Touhou 平台接入进度、包边界及尚未完成项见 [Web 适配](docs/WEB_ADAPTATION.md)。
+
 `experiments` 保留单关行为与画面修复版本；`main` 增加完整游戏流程：原版标题与选择菜单、
 六面连续游玩、Extra、Practice、Replay、成绩与符卡履历、音乐室、设置、闲置 Demo、
 暂停／续关／重试、十二种结局及staff、名字与录像保存。
