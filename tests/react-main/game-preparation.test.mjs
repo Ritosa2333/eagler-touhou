@@ -129,7 +129,7 @@ function runtimeFixture(order = [], overrides = {}) {
     fetchImpl: async () => {throw new Error('Unexpected Runtime network');},
     onLocalResourceProgress: overrides.onLocalResourceProgress,
     dependencies: {
-      prepareCode: async entry => ({url:new URL(entry,baseUrl).href,generation:'a'.repeat(64),cached:true}),
+      prepareCode: overrides.prepareCode ?? (async entry => ({url:new URL(entry,baseUrl).href,generation:'a'.repeat(64),cached:true})),
       readData: async value => {dataReads.push(value); return api.readManagedRuntimeData(value, {readObject: async () => ({data: bytes.buffer})});},
       readResource: overrides.readResource ?? (async (value, id) => api.readManagedRuntimeResource(value, id, {readObject: async () => ({data: bytes.buffer})})),
       retainGeneration: async (game, id) => {retained.push({game, id});}, releaseGeneration: async () => {},
@@ -142,6 +142,14 @@ function gameInput(fixture, state = settingsFixture(), extra = {}) {
   return {productId: 'th06', settings: state.snapshot, acquisition: fixture.acquisition, baseUrl, translate: t,
     touchLayout: null, prepareMidi: async () => {}, ...extra};
 }
+
+test('room program version policy reaches code preparation before native ready and configure', async () => {
+  const calls=[],f=acquisitionFixture(),state=settingsFixture({productId:'th06mp'});
+  const r=runtimeFixture([],{prepareCode:async(entry,options)=>{calls.push(options);return {url:new URL(entry,baseUrl).href,generation:hash,cached:true};}});
+  const prepared=await api.prepareGame(gameInput(f,state,{productId:'th06mp',runtime:r.service,multiplayer:{kind:'room',options:{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?runtimeGeneration='+hash,netplayPlayer:0,netplayPlayerCount:2,netplaySeed:1,netplayDifficulty:0}}}));
+  assert.equal(calls.length,1);assert.equal(calls[0].requireCurrent,true);assert.equal(calls[0].expectedGeneration,hash);
+  assert.deepEqual(prepared.plan.multiplayerProgram,{generation:hash});
+});
 
 test('main 5890: local current is chosen without initializing or waiting for remote metadata', async () => {
   const f = acquisitionFixture({initialize: async () => {throw new Error('Must not be reached');}});

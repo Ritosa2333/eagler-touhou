@@ -16,6 +16,7 @@ const relayRoleParams = Object.freeze([
   "chapterThreshold",
   "prankMode",
   "difficulty",
+  "runtimeGeneration",
 ]);
 
 export interface MultiplayerLobbyRelayUrl {
@@ -91,12 +92,14 @@ export function buildMultiplayerGameplayRelayUrl(
     runId,
     role,
     memberId,
+    runtimeGeneration,
   }: {
     product: string;
     roomCode: string;
     runId: number;
     role: MultiplayerGameplayRelayRole;
     memberId?: string;
+    runtimeGeneration?: string;
   },
 ): string {
   const url = relayUrl(baseUrl);
@@ -104,6 +107,10 @@ export function buildMultiplayerGameplayRelayUrl(
   url.searchParams.set("room", multiplayerTransportRoomId(product, roomCode));
   url.searchParams.set("run", String(Math.max(0, Math.trunc(Number(runId) || 0))));
   if (memberId) url.searchParams.set("member", memberId);
+  if (runtimeGeneration) {
+    if (!/^[a-f0-9]{64}$/.test(runtimeGeneration)) throw new TypeError('invalid Runtime generation');
+    url.searchParams.set('runtimeGeneration', runtimeGeneration);
+  }
   if ("spectator" in role) url.searchParams.set("spectator", role.spectator);
   else url.searchParams.set("player", String(role.player));
   return url.href;

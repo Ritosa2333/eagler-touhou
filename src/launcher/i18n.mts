@@ -327,6 +327,8 @@ const entries = [
   ["gameNotice.creditAfter", " 大大的逆向。", " for the reverse engineering."],
   ["gameNotice.repo", "该游戏的 Github 仓库", "This game's GitHub repository"],
   ["settings.title", "设置", "Settings"],
+  ["multiplayer.runtimeCheckFailed", "联机程序版本检查失败，请联网并重试准备资源。", "Could not verify the multiplayer program. Connect and retry resource preparation."],
+  ["multiplayer.runtimeRelayUpgrade", "联机服务暂不支持程序版本校验，请更新服务后重试。", "The multiplayer service needs an update to verify program versions."],
   ["settings.shareSingleplayer", "共用单机设置", "Share single-player settings"],
   ["settings.shareSingleplayerHint", "开启时，语言、音乐、显示和触控设置与单机同步；存档和录像始终独立。", "When enabled, language, music, display, and touch settings follow single-player; saves and replays remain separate."],
   ["settings.save", "存档", "Save"], ["settings.replay", "录像", "Replay"],

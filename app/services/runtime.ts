@@ -110,6 +110,8 @@ export interface RuntimePlan {
   developmentRuntimeHost?: SiteManifest;
   runtimeHost?: SiteManifest;
   localCatalogRuntime?: boolean;
+  /** Room agreement is available before native ready/configure. */
+  multiplayerProgram?: {generation?: string};
   /** Exact current wire payload. Adonis options are passed through, never inferred. */
   configure: RuntimeCommandPayloads['configure'];
   /** Package resource IDs selected by the acquisition owner, excluding DATA/code. */
@@ -841,7 +843,16 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
             const prepared = await deps.prepareCode(entry, { baseUrl,
               fetchImpl: (input, init) => network.fetch(input, init, packageNetworkMetadata(plan.game, input, baseUrl, options.translate)),
               onProgress: progress => programProgress(progressToken, progress),
-              exclude: excluded, worker: offlineWorker || options.worker });
+              exclude: excluded, worker: offlineWorker || options.worker,
+              // Replay/file access remains usable offline. Room launches and
+              // the short multiplayer check must finish current-code validation.
+              ...(plan.runtimeVariant === 'multiplayer' && !plan.fileOnly &&
+                (checkOwner || plan.multiplayerProgram || plan.configure.options?.netplayMode === 'lan') ? {
+                  requireCurrent: true,
+                  expectedGeneration: plan.multiplayerProgram?.generation ?? (plan.configure.options?.netplayMode === 'lan'
+                    ? new URL(String(plan.configure.options.netplayUrl)).searchParams.get('runtimeGeneration') ?? undefined
+                    : undefined),
+                } : {}) });
             assertOperation(); assertCurrent(token);
             entry = prepared.url; codeGeneration = prepared.generation;
             codeUpdate = prepared.checkForUpdate ? {epoch:token.id,check:prepared.checkForUpdate} : null;
@@ -877,7 +888,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         const final = structuredClone(await onReady(token.id));
         assertOperation(); assertCurrent(token);
         if (final.game !== plan.game || final.runtimeVariant !== plan.runtimeVariant || final.entry !== plan.entry ||
-            final.publishedRuntime !== plan.publishedRuntime) throw new Error('Ready continuation changed the Runtime identity');
+            final.publishedRuntime !== plan.publishedRuntime ||
+            JSON.stringify(final.multiplayerProgram) !== JSON.stringify(plan.multiplayerProgram)) throw new Error('Ready continuation changed the Runtime identity');
         if (final.configure.options?.multiplayerPreflight && !checkOwner) throw new Error('Multiplayer preflight requires the game-check owner');
         const loaded = plan.generation;
         if (!loaded && final.generation) throw new Error('Ready continuation changed preload DATA ownership');

@@ -184,6 +184,34 @@ async function joinedRoom(extra = {}) {
   return fixture;
 }
 
+test('room program versions refresh before readiness and pin the agreed generation into transport', async () => {
+  let preparations=0;
+  const f=await joinedRoom({prepareResources:async()=>{preparations++;return {runtimeGeneration:hash};}}),socket=f.sockets[0],id=f.identity.lobbyClientId('th06mp');
+  socket.message({type:'state',roomDirectory:{runtimeVersions:true},room:roomState(id)});
+  await f.service.toggleReady();
+  assert.equal(preparations,2,'ready rechecks the current publication after lobby precache');
+  assert.equal(socket.sent.findLast(m=>m.type==='set-ready').runtimeGeneration,hash);
+  const seats=[{clientId:id,loadout:0,ready:true,runtimeGeneration:hash},{clientId:'guest12345',loadout:1,ready:true,runtimeGeneration:'b'.repeat(64)}];
+  socket.message({type:'state',room:roomState(id,{seats})});assert.equal(f.service.getSnapshot().canStart,false);
+  seats[1].runtimeGeneration=hash;
+  socket.message({type:'state',room:roomState(id,{seats})});assert.equal(f.service.getSnapshot().canStart,true);
+  socket.message({type:'start',serial:1,room:roomState(id,{seats,phase:'starting',runtimeGeneration:hash})});await flush();
+  const launch=f.events.find(([kind])=>kind==='launch');assert.ok(launch);
+  assert.equal(new URL(launch[1].runtimeOptions.netplayUrl).searchParams.get('runtimeGeneration'),hash);
+  socket.message({type:'state',room:roomState(id,{seats})});assert.equal(f.service.getSnapshot().room.runtimeGeneration,undefined,'next lobby cannot retain the last run identity');
+  f.service.dispose();
+});
+
+test('room program versions block old relay readiness and failed preparation launch', async () => {
+  const old=await joinedRoom({prepareResources:async()=>({runtimeGeneration:hash})});
+  await old.service.toggleReady();assert.equal(old.service.getSnapshot().ready,false);
+  assert.equal(old.events.some(([kind,value])=>kind==='notify'&&value==='multiplayer.runtimeRelayUpgrade'),true);
+  assert.equal(old.sockets[0].sent.some(m=>m.type==='set-ready'&&m.ready),false);old.service.dispose();
+  const failed=await joinedRoom({prepareResources:async()=>{throw new Error('new program incomplete');}});
+  await failed.service.toggleReady();await failed.service.launch();
+  assert.equal(failed.service.getSnapshot().ready,false);assert.equal(failed.events.some(([kind])=>kind==='launch'),false);failed.service.dispose();
+});
+
 test('host spectator moves bind the target, wait for relay state and preserve membership', async () => {
   const f=await joinedRoom(), socket=f.sockets[0], id=f.identity.lobbyClientId('th06mp');
   const seats=[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}];
@@ -292,12 +320,12 @@ test('room package cancel aborts only package work, unreaddies, prevents launch,
     if (attempts === 1) await new Promise(resolve => {finish = resolve;});
   }});
   const {service, sockets, events} = fixture, socket = sockets[0];
-  await service.toggleReady(); assert.equal(service.getSnapshot().ready, true);
+  const readiness=service.toggleReady();await flush();assert.equal(service.getSnapshot().ready,false,'pending preparation cannot ready');
   service.cancelPreparation();
   assert.equal(preparationContext.signal.aborted, true); assert.equal(service.getSnapshot().preparation.status, 'cancelled');
-  assert.equal(service.getSnapshot().ready, false); assert.equal(socket.sent.findLast(message => message.type === 'set-ready').ready, false);
+  assert.equal(service.getSnapshot().ready, false); assert.equal(socket.sent.some(message => message.type === 'set-ready'&&message.ready), false);
   assert.equal(events.filter(([kind]) => kind === 'import').length, 1);
-  const launch = service.launch(); finish(); await launch;
+  const launch = service.launch(); finish(); await Promise.all([launch,readiness]);
   assert.equal(events.some(([kind]) => kind === 'launch'), false);
   report({status: 'ready', stage: 'runtime', percent: 100, error: ''});
   assert.equal(service.getSnapshot().preparation.status, 'cancelled', 'late aborted progress cannot overwrite cancellation');
@@ -335,29 +363,32 @@ function preparationFixture({installed = true, worker = null, installError, noCa
     baseUrl: 'https://launcher.invalid/', translate: key => key,
     activeWorker: async () => {events.push(['worker']); return worker;}, dependencies: {
       createTracker: options => {onChange = options.onChange; return {xhrFetch: async () => {throw new Error('fixture installer does not request bytes');}};},
-      prepareRuntime: async (...args) => {events.push(['runtime', ...args]); return {url: '', generation: '', cached: true};},
+      prepareRuntime: async (...args) => {events.push(['runtime', ...args]); return {url: '', generation: hash, cached: true};},
     }});
   return {service, events, progress, controller, context, report: value => progress.push(value), emit: snapshot => onChange(snapshot)};
 }
 
-test('room preparation uses canonical package-only install and skips duplicate Runtime HTTP without active worker', async () => {
-  const fixture = preparationFixture({installed: false}); await fixture.service.prepare(fixture.context, fixture.report);
+test('room preparation uses canonical package-only install and verifies current Runtime without app-shell worker', async () => {
+  const fixture = preparationFixture({installed: false}); const prepared=await fixture.service.prepare(fixture.context, fixture.report);
   const install = fixture.events.find(([kind]) => kind === 'install');
   assert.deepEqual(install[2].addComponents, []); assert.equal(install[2].signal, fixture.context.signal);
   assert.equal(install[2].selectedComponentEntries, undefined, 'room preparation does not acquire optional language/music');
   assert.equal(fixture.events.filter(([kind]) => kind === 'read').length, 2, 'canonical install is re-read before ready');
-  assert.equal(fixture.events.some(([kind]) => kind === 'runtime'), false);
+  const runtime=fixture.events.find(([kind])=>kind==='runtime');
+  assert.equal(runtime[2].requireCurrent,true);assert.equal(runtime[2].worker,undefined);
+  assert.equal(prepared.runtimeGeneration,hash);
   assert.equal(fixture.progress.at(-1).stage, 'runtime');
   assert.equal(fixture.progress.some(value => value.status === 'ready'), false, 'room owner alone publishes final readiness');
 });
 
-test('room preparation precaches only with real worker port and ignores aborted tracker callbacks', async () => {
+test('room preparation verifies the current generation with its real worker and ignores aborted tracker callbacks', async () => {
   const worker = {postMessage() {}}; const fixture = preparationFixture({worker});
   await fixture.service.prepare(fixture.context, fixture.report);
   assert.equal(fixture.events.some(([kind]) => kind === 'install'), false);
   const runtime = fixture.events.find(([kind]) => kind === 'runtime');
   assert.equal(runtime[1], 'runtime/th06/mp.html'); assert.equal(runtime[2].worker, worker);
   assert.equal(runtime[2].baseUrl, 'https://launcher.invalid/');
+  assert.equal(runtime[2].requireCurrent,true);
   const count = fixture.progress.length; fixture.controller.abort();
   fixture.emit({active: [{loaded: 50, total: 100, title: 'late'}]});
   assert.equal(fixture.progress.length, count);

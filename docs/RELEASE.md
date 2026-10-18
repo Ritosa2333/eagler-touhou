@@ -112,6 +112,16 @@ Site assembly:
 5. verifies the complete site;
 6. publishes only the final candidate across the release-output boundary.
 
+Runtime font-table removal does not remove shared font dependencies. Every
+published Package Descriptor must keep all targets from the product catalog's
+`requiredShared` in `base.files`, including TH09's `/msgothic.ttc` and
+`/unifont.otf`. Check this against the Launcher generation being deployed,
+including when publishing only a frontend or reusing existing descriptors.
+Updating Runtime files or download availability alone does not establish this
+contract. The 2026-10-17 beta TH09 incident omitted `shared-unifont` from its
+base descriptor even though the resource node had the file; complete assembly
+and `verify:server` already enforce the required targets.
+
 App Shell generation also includes every present catalog-owned game cover and
 site icon, even when rebuilding from an explicit sealed frontend graph. Artwork
 stays Host-owned and is not added to the repository frontend graph. Each cached

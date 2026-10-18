@@ -69,6 +69,21 @@ Use separate runtime/build identity, URL or package identity, room/session state
 and Replay semantics where required. Shared UI/service helpers are the default;
 product facts such as loadout/difficulty bounds stay in the catalog.
 
+Published room programs must finish current-generation preparation before ready.
+`runtimeGeneration` identifies the verified immutable MP program, separately
+from installed DATA and room `settingsVersion`. The relay advertises
+`roomDirectory.runtimeVersions`, compares ready identities, pins the agreed
+identity to each run and rejects signaling/gameplay URLs with another or missing
+identity. New versioned clients refuse readiness on old relays; legacy peers
+without an identity cannot mix with versioned peers. Entirely unversioned legacy
+development rooms retain the old protocol. The initial Launcher Runtime plan
+must carry the agreement before loading HTML, since native configure arrives
+later. A publication change after ready blocks that launch; reenter the room and
+prepare again. Ordinary offline startup, local MP Replay/file access and deferred
+DATA update notices do not authorize an old program for a live room. See
+[Runtime, Launcher and Package](runtime-launcher-package.md) for the shared
+selection policy and targeted tests.
+
 The TH07MP reference layering is:
 
 1. protocol: version, HELLO/READY, frame numbering, input, confirmation and targeted relay envelopes;

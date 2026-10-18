@@ -119,6 +119,22 @@ assert.equal(await same.checkForUpdate(),null,'identical manifests do not announ
 const offlineCopy=await prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl:async()=>{throw new Error('Offline')},worker:offlineFirstWorker});
 assert.equal(await offlineCopy.checkForUpdate(),null,'failed background check stays quiet');
 
+// Multiplayer never opens an old cached/fallback generation when publication
+// validation or the complete current download fails.
+offline=false;bad=false;requests.length=0;messages.length=0;
+const currentMp=await prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl,worker,requireCurrent:true});
+assert.equal(currentMp.generation,B.descriptor.generation,'stale worker result is rejected before verified HTTP recovery');
+assert.equal(currentMp.checkForUpdate,undefined);
+assert.equal(messages.some(value=>value.localOnly),false,'MP has no offline-first shortcut');
+await assert.rejects(prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl,worker,requireCurrent:true,expectedGeneration:A.descriptor.generation}),/双方重新准备/);
+offline=true;messages.length=0;
+await assert.rejects(prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl,worker,requireCurrent:true}),/版本检查失败/);
+assert.equal(messages.some(value=>value.type===RUNTIME_PREPARE),false,'offline MP must not open a cached older program');
+offline=false;bad=true;
+await assert.rejects(prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl,worker,requireCurrent:true}),/integrity mismatch/);
+bad=false;
+assert.equal((await prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl,worker:null,requireCurrent:true,expectedGeneration:B.descriptor.generation})).generation,B.descriptor.generation);
+
 const fontBodies = {"game.html":"font fixture", "fonts/blend4444.bin":"font bytes"};
 const fontFiles = Object.entries(fontBodies).map(([path,body])=>({path,bytes:Buffer.byteLength(body),sha256:hash(body)}));
 const fontDescriptor = {entry:"game.html",files:fontFiles,generation:hash(canonicalRuntimePayload("game.html",fontFiles))};
@@ -136,4 +152,4 @@ await prepareRuntimeLaunch(root+"game.html",{baseUrl,fetchImpl:fontFetch,worker:
 assert.deepEqual(fontModes,[["game.html","error"],["fonts/blend4444.bin","follow"]]);
 corruptFont=true;
 await assert.rejects(prepareRuntimeLaunch(root+"game.html",{baseUrl,fetchImpl:fontFetch,worker:null}),/integrity mismatch/);
-console.log("Launcher offline-first, verified background updates, whole-generation fallback, bounded downloads and DATA identity separation: PASS");
+console.log("Launcher offline-first, verified background updates, strict MP versions, whole-generation fallback, bounded downloads and DATA identity separation: PASS");
