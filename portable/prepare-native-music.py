@@ -9,7 +9,7 @@ base = root / f'{game}_web/assets/sdl-native'
 out = base / 'music'
 out.mkdir(parents=True, exist_ok=True)
 if game == 'th08':
-    raw = (root / 'th08_web/reference/thbgm.fmt').read_bytes()
+    raw = (root / 'web/reference/thbgm.fmt').read_bytes()
     tracks = []
     for p in range(0, len(raw)-51, 52):
         if not raw[p]: break
@@ -20,8 +20,8 @@ if game == 'th08':
     assert len(tracks) == 21
     (base / 'music-layout.json').write_text(json.dumps(tracks, indent=2))
     for name in ['cp932', 'blend']:
-        (base / (name+'.bin')).write_bytes(gzip.decompress((root / ('th08_web/assets/cpp/fonts/'+name+'.bin.gz')).read_bytes()))
-    shutil.copyfile(root / 'th10_web/assets/sdl-native/msgothic.ttc', base / 'msgothic.ttc')
+        (base / (name+'.bin')).write_bytes(gzip.decompress((root / ('web/assets/cpp/fonts/'+name+'.bin.gz')).read_bytes()))
+    shutil.copyfile(root / 'web/assets/sdl-native/msgothic.ttc', base / 'msgothic.ttc')
     original = root / '[th08] 东方永夜抄 (日文版)/thbgm.dat'
     with original.open('rb') as source: (base / 'thbgm-header.dat').write_bytes(source.read(16))
 else:

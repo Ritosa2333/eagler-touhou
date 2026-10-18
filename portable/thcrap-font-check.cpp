@@ -1,5 +1,5 @@
 // Test-only font-host fixture: production exports and game content stay untouched.
-#include "../th10_web/cpp/sdl/FontHost.cpp"
+#include "../web/cpp/sdl/FontHost.cpp"
 #include <cassert>
 #include <iostream>
 namespace th10::Localization {

@@ -3,8 +3,8 @@ import {createServer} from 'node:http';
 import {readFileSync,existsSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve,extname} from 'node:path';
 import assert from 'node:assert/strict';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const root=resolve(import.meta.dirname,'..'),out=resolve(root,'th10_web/artifacts/purple-check',process.env.TH10_PRACTICE_SECTION?'section-'+process.env.TH10_PRACTICE_SECTION:'baseline');
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const root=resolve(import.meta.dirname,'..'),out=resolve(root,'web/artifacts/purple-check',process.env.TH10_PRACTICE_SECTION?'section-'+process.env.TH10_PRACTICE_SECTION:'baseline');
 const data=process.env.TH10_RETAIL_DATA,fonts=process.env.TH10_SHARED_FONTS;
 assert(data&&fonts,'Set TH10_RETAIL_DATA and TH10_SHARED_FONTS');mkdirSync(out,{recursive:true});
 const parent=`<!doctype html><style>html,body{margin:0}iframe{width:100vw;height:100vh;border:0}</style><script>window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/retail.data')).arrayBuffer()});</script><iframe src='/runtime/th10.html?managedData=1&runtimeEpoch=1&gameGeneration=private-test'></iframe>`;
@@ -62,7 +62,7 @@ try{
  assert.equal((await practiceStatus())[0],1,'practice tuning must reopen after touch cancellation');
  evidence.practiceTouch={widgetOwnership:true,twoFingerCancel:true,reentry:true};
  if(process.env.TH10_PRACTICE_SECTION){
-  const {sections}=await import('../th10_web/sdl-runtime/practice-sections.mjs');const id=Number(process.env.TH10_PRACTICE_SECTION);const section=sections.find(s=>s.id===id),stage=section?.stage??Math.floor((id-10000)/100)-1;
+  const {sections}=await import('../web/sdl-runtime/practice-sections.mjs');const id=Number(process.env.TH10_PRACTICE_SECTION);const section=sections.find(s=>s.id===id),stage=section?.stage??Math.floor((id-10000)/100)-1;
   evidence.section=id;await frame.evaluate(({id,stage})=>{const r=window.__th10Runtime,words=[1,stage,0,id,1,0,0,0,9,100,10000,130,-1,0,1];const p=r.core.graphics_allocate(120);try{new Float64Array(r.core.memory.buffer,p,15).set(words);if(!r.core.practice_configure(r.app,p,15,true))throw Error('practice config rejected');}finally{r.core.graphics_free(p);}}, {id,stage});
  }
  if(evidence.section)await press('KeyZ');

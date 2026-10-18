@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const out='th10_web/artifacts/architecture-candidate/validation',base=process.env.TH10_TEST_URL||'http://127.0.0.1:8093';mkdirSync(out,{recursive:true});
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const out='web/artifacts/architecture-candidate/validation',base=process.env.TH10_TEST_URL||'http://127.0.0.1:8093';mkdirSync(out,{recursive:true});
 const browser=await launchBrowser(),context=await browser.newContext({viewport:{width:1000,height:800}}),page=await context.newPage(),errors=[],http=[],health=[];
 page.on('pageerror',e=>errors.push(e.stack));page.on('response',r=>{if(r.status()>=400)http.push([r.status(),r.url()]);});
 await page.exposeFunction('recordHealth',data=>health.push(data));

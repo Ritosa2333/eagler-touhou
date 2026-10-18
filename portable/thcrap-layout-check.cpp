@@ -1,7 +1,7 @@
 #ifdef TH11_LAYOUT_PROOF
 #include "ThcrapLayout.hpp"
 #else
-#include "../th10_web/cpp/sdl/ThcrapLayout.hpp"
+#include "../web/cpp/sdl/ThcrapLayout.hpp"
 #endif
 #include <cassert>
 #include <iostream>

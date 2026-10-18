@@ -20,8 +20,8 @@ let blind=region(sss,'    void RenderBlindView(','// EHOOK_ST(SSS_th15_ass');
 blind=blind.replace('int dx_ver, DWORD device,','Application& app,').replace('ReadImage(dx_ver, device, "blind.png", (char*)blind_file, sizeof(blind_file))','practice_blind_image(app, blind_file, sizeof(blind_file))');
 if(/ReadImage|DWORD|dx_ver/.test(blind))throw Error('Unmapped blind image boundary');
 const files={
- 'th10_web/cpp/game/PracticeLicense.hpp':`${preamble}#pragma once\nnamespace th10 {inline constexpr const char* practice_license=${JSON.stringify(readFileSync(resolve(upstream,'LICENCE'),'utf8'))};}\n`,
- 'th10_web/cpp/sdl/PracticeBlind.inc':preamble+blindOptions+blind,
+ 'web/cpp/game/PracticeLicense.hpp':`${preamble}#pragma once\nnamespace th10 {inline constexpr const char* practice_license=${JSON.stringify(readFileSync(resolve(upstream,'LICENCE'),'utf8'))};}\n`,
+ 'web/cpp/sdl/PracticeBlind.inc':preamble+blindOptions+blind,
 };
 if(process.argv.includes('--write')){for(const[p,v]of Object.entries(files))writeFileSync(resolve(root,p),v);console.log('Generated TH10 purple shared tools');}
 else if(process.argv.includes('--check')){for(const[p,v]of Object.entries(files))if(!existsSync(resolve(root,p))||readFileSync(resolve(root,p),'utf8').replaceAll('\r\n','\n').trimEnd()!==v.trimEnd())throw Error('Stale shared tools: '+p);console.log('Purple shared tool extraction verified');}

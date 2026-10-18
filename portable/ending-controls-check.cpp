@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/game/Ending.hpp"
+#include "../web/cpp/game/Ending.hpp"
 #include <cassert>
 #include <cstdio>
 #include <vector>
