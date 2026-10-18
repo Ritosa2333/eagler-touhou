@@ -56,7 +56,7 @@ if(thprac)source.push(...['imgui.cpp','imgui_draw.cpp','imgui_tables.cpp','imgui
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
 const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(imgui),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(commonInclude,'eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp'),resolve(commonInclude,'eagler/text/RuntimeFontRaster.hpp')].sort();
 if(multiplayer)headers.push(...headerFiles(resolve(netplayCommon,'include')));
-printRuntimeInputs({workspace,root,sources:source,headers,flags:common});
+await printRuntimeInputs({workspace,root,sources:source,headers,flags:common});
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
 const settings=JSON.stringify([common,headerHash]);
