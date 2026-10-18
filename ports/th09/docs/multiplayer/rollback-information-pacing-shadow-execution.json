@@ -6,7 +6,7 @@
   "nodeElapsedMs": 838,
   "command": [
     "node",
-    "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs"
+    "web/tests/multiplayer/analyze-information-pacing-shadow.mjs"
   ],
   "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
   "nodeExecutable": "C:\\Program Files\\nodejs\\node.exe",

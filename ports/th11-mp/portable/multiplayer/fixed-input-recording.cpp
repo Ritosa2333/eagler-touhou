@@ -2,7 +2,7 @@
 // authentic recording of the candidate binary. Re-encode via real native
 // validation/writer; preserve every input bit and chapter. Runtime build
 // identity checks remain enabled and no user's source Replay is overwritten.
-#include "../../th11_web/cpp/multiplayer/ReplayArchive.hpp"
+#include "../../web/cpp/multiplayer/ReplayArchive.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

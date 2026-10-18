@@ -478,7 +478,7 @@ def freeze(args):
     dest=args.output/'frozen';dest.mkdir(parents=True,exist_ok=False)
     profile='multiplayer' if args.production else 'multiplayer-fixtures'
     runtime_root=args.runtime_root.resolve() if args.runtime_root else ROOT
-    build=runtime_root/'th08_web/artifacts'/profile
+    build=runtime_root/'web/artifacts'/profile
     info=json.loads((build/'build.json').read_text())
     if bool(info['diagnostic'])==args.production or info['variant']!=profile or digest(build/'th08-sdl.wasm')!=info['sha256']:raise ValueError('Wrong measurement build')
     if digest(build/'th08-sdl.mjs')!=info['loaderSha256']:raise ValueError('Stale fixture loader')
@@ -487,7 +487,7 @@ def freeze(args):
     source={ROOT/'portable/multiplayer/smoke.html':'index.html',ROOT/'portable/multiplayer/smoke.mjs':'smoke-source.mjs',
       ROOT/'portable/multiplayer/performance-hook.mjs':'performance-hook.mjs',Path(__file__):'measure-smoothness.py',
       ROOT/'portable/multiplayer/performance-lobby.mjs':'performance-lobby.mjs',
-      runtime_root/'th08_web/sdl-runtime/multiplayer-host.mjs':'multiplayer-host.mjs',
+      runtime_root/'web/sdl-runtime/multiplayer-host.mjs':'multiplayer-host.mjs',
       runtime_root/'third_party/eagler-common/browser/adonis-calibration.mjs':'adonis-calibration.mjs',
       build/'th08-sdl.mjs':'th08-sdl.mjs',build/'th08-sdl.wasm':'th08-sdl.wasm',build/'build.json':'runtime-build.json',
       ROOT/'third_party/eagler-common/testkit/rtc-input-impairment.cjs':'rtc-input-impairment.cjs',

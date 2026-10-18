@@ -8,6 +8,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  */
 import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
+import {readUiHistoryText} from '../support/ui-history.mjs';
 import {execFileSync} from 'node:child_process';
 import {runInNewContext} from 'node:vm';
 import {mkdir, mkdtemp, readFile, rm} from 'node:fs/promises';
@@ -1450,7 +1451,7 @@ for (const locale of ['en', 'zh-CN']) test(`actual BrowserLauncher: room Cancel/
 let pinnedRoomImportSource;
 function pinnedRoomImportEligible(status, kind) {
   if (!pinnedRoomImportSource) {
-    const source = execFileSync('git', ['show', 'edee9633e5e3ee79cd2e1aa334f84f6caf755090:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
+    const source = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/app.mts');
     const start = source.indexOf('function roomPreparationForImport('), end = source.indexOf('\n}', start);
     assert.ok(start > 0 && end > start);
     pinnedRoomImportSource = transformSync(source.slice(start, end + 2), {loader: 'ts', format: 'cjs'}).code;
@@ -1540,7 +1541,7 @@ function capturePreparationTimers() {
 let pinnedDirectTimeoutSource;
 async function pinnedDirectTimeoutUnlocks(message, current = true) {
   if (!pinnedDirectTimeoutSource) {
-    const source = execFileSync('git', ['show', 'edee9633e5e3ee79cd2e1aa334f84f6caf755090:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
+    const source = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/app.mts');
     const start = source.indexOf('const runtimeReady = waitForRuntimeReady(runtimeSession, t("runtime.gameLoadTimeout")).catch(error => {');
     const end = source.indexOf('\n  });', start); assert.ok(start > 0 && end > start);
     pinnedDirectTimeoutSource = source.slice(start, end + '\n  });'.length);
@@ -1630,7 +1631,7 @@ for (const scenario of ['managed timeout', 'native error', 'closed timeout']) te
 let pinnedDirectoryEntrySource;
 function pinnedDirectoryEntry({product, code, created}) {
   if (!pinnedDirectoryEntrySource) {
-    const source = execFileSync('git', ['show', 'edee9633e5e3ee79cd2e1aa334f84f6caf755090:src/launcher/lobby.mts'], {cwd: project, encoding: 'utf8'});
+    const source = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/lobby.mts');
     const start = source.indexOf('function enterRoom('), end = source.indexOf('\n// The launcher link', start);
     assert.ok(start > 0 && end > start);
     pinnedDirectoryEntrySource = transformSync(source.slice(start, end), {loader: 'ts', format: 'cjs'}).code;
@@ -1752,11 +1753,11 @@ const terminalPinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 let pinnedTerminalCloseSource, pinnedTerminalMessages;
 function pinnedTerminalClose({code, fromDirectory, launched = false, locale = 'en', storageBlocked = false}) {
   if (!pinnedTerminalCloseSource) {
-    const source = execFileSync('git', ['show', `${terminalPinnedMain}:src/launcher/app.mts`], {cwd: project, encoding: 'utf8'});
+    const source = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/app.mts');
     const start = source.indexOf('  socket.addEventListener("close", event => {', source.indexOf('function mpConnectLobby('));
     const end = source.indexOf('\n  socket.addEventListener("error",', start);
     assert.ok(start > 0 && end > start); pinnedTerminalCloseSource = source.slice(start, end);
-    const i18n = execFileSync('git', ['show', `${terminalPinnedMain}:src/launcher/i18n.mts`], {cwd: project, encoding: 'utf8'});
+    const i18n = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/i18n.mts');
     pinnedTerminalMessages = Object.fromEntries([...i18n.matchAll(/^\s*(\["lobby\.(?:expired|gone|replaced|conflict|removed)".*?\]),?$/gm)]
       .map(match => {const row = JSON.parse(match[1]); return [row[0], {'zh-CN': row[1], en: row[2]}];}));
     assert.equal(Object.keys(pinnedTerminalMessages).length, 5);

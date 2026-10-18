@@ -14,7 +14,7 @@ const directoryGames = Object.entries(PRODUCT_GAMES)
   .sort();
 for (const game of directoryGames) {
   const directory = resolve(game === 'th10' && process.argv[2] ? process.argv[2]
-    : game === 'th09' ? workspacePath(game, 'th09_web', 'build-eagler')
+    : game === 'th09' ? workspacePath(game, 'web', 'build-eagler')
     : workspacePath(game, 'build-eagler'));
   const manifest = JSON.parse(await readFile(resolve(directory, 'runtime-files.json'), 'utf8'));
   const names = runtimeFileNames(game, manifest.files);
@@ -51,7 +51,7 @@ for (const game of directoryGames) {
   assert.ok(Array.isArray(PRODUCT_GAMES[game].requiredShared), `${game}: directory Runtime must declare shared-resource requirements`);
 }
 const portableTh10Layout = JSON.parse(await readFile(
-  workspacePath('th10','th10_web','assets','sdl-native','music-layout.json'),
+  workspacePath('th10','web','assets','sdl-native','music-layout.json'),
   'utf8',
 ));
 assert.deepEqual(portableTh10Layout, TH10_MUSIC_LAYOUT.map(row => ({...row})),

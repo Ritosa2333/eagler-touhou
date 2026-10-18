@@ -3,7 +3,7 @@
   "scope": "Component bit-equivalence gate for standard Wasm SIMD in the miniaudio/stb translation unit with unchanged scalar SoundEffects.o. Not a 4x live/release smoothness or physical audio continuity result.",
   "conclusion": "All tested PCM bytes, public state bytes, return values, frame counts and stream digests match exactly under the production Emscripten compiler and Binaryen optimizer. In this component run, SIMD warm-mix, first-mix and first-read elapsed totals are higher, while continuous reading and clamp totals are lower. All opposing samples are retained. No release/browser/4x improvement is inferred.",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-audio-simd-emscripten-01/report.json",
+    "path": "web/artifacts/multiplayer-tests/rollback4x-chain-audio-simd-emscripten-01/report.json",
     "bytes": 19479476,
     "sha256": "553b4adb97ec5899ff13addc03a62e9777d156b8b6fd5005952af5ede4c36662",
     "retained": true,
@@ -39,32 +39,32 @@
   "sourceInference": "Default network characters [0,1] with selector=-1 can choose cue2/th09_01 or cue3/th09_00b. Both are full-read by default; the prior live report did not record the selected cue.",
   "identities": {
     "runner": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\run-audio-simd-equivalence.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\run-audio-simd-equivalence.mjs",
       "bytes": 25094,
       "sha256": "d60d2b6aee35b27077970f0bc504b96c8ff4425aa7800da13db493025152e9f2"
     },
     "test": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
       "bytes": 11854,
       "sha256": "a377c9f94e00829246dc1c5936ea43d8f799bc2a1c6c18b27e891fb9b8b013a4"
     },
     "soundDefinitions": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\game\\SoundEffects.cpp",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\SoundEffects.cpp",
       "bytes": 3116,
       "sha256": "caf7681ea78c8ec607272df48e953db561e5e61f6efad96efdb5e00ca3e7e50e"
     },
     "soundHeader": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\game\\SoundEffects.hpp",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\SoundEffects.hpp",
       "bytes": 957,
       "sha256": "b02e997ea186141117ebbd49d6fbb4fb7e82d07555e63ea95e12977f2e36f162"
     },
     "typesHeader": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\game\\Types.hpp",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\Types.hpp",
       "bytes": 626,
       "sha256": "b33c9a661d4cec5faa48d1b25fa75a6be0ab9cbbae2102155cd598c11394898f"
     },
     "audioBaseline": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\sdl\\AudioDevice.cpp",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\sdl\\AudioDevice.cpp",
       "bytes": 9992,
       "sha256": "471ac3614ea7907417f7f9d728464b1864de8a35ace75b13fdd4f36ef32400a9"
     },
@@ -89,7 +89,7 @@
       "sha256": "d14ba95cdce1ef7dc9ad3ac74949ca5db38b27378ee30f30a23cf26f9e875a11"
     },
     "format": {
-      "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\thbgm.fmt",
+      "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\thbgm.fmt",
       "bytes": 1005,
       "sha256": "005a233bd4cd332cab5fe78508b1400929090bd6949610440e7d93308fbd5b8c"
     },
@@ -109,7 +109,7 @@
       "sha256": "db69eba1281791798c9dd85390a4c73492bc82ddf00d8ebc28c99e1a58c2a87e"
     },
     "soundDefinitionsObject": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
       "bytes": 5198,
       "sha256": "4fc489fd1860dade268eb05589ad937fae187068c6d2fe17dfd28eec55b4cdbe"
     }
@@ -118,235 +118,235 @@
     "wav": [
       {
         "name": "se_plst00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_plst00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_plst00.wav",
         "bytes": 3596,
         "sha256": "3af00e5bc936626bb52cc14b472ca726269a30ab5a6d44d482437fc0611c233f"
       },
       {
         "name": "se_enep00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_enep00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_enep00.wav",
         "bytes": 115584,
         "sha256": "e81bf126739df5e0dc3fdaada135a65738bfc82e37b0ae97654ebe413d27abb2"
       },
       {
         "name": "se_pldead00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_pldead00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_pldead00.wav",
         "bytes": 60852,
         "sha256": "571c1272aa9ea1d82779f897021226959888f6a915a7b20fdab59de3af6df2b8"
       },
       {
         "name": "se_power0.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_power0.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_power0.wav",
         "bytes": 73004,
         "sha256": "e6224a927ab1c601cb7381a0d575434ead05e207eb1ce000a822a354629df12f"
       },
       {
         "name": "se_power1.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_power1.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_power1.wav",
         "bytes": 30412,
         "sha256": "0817535be3608754e065b289753fcd7a7cb7f5b0591e2888dd95afb4d259556e"
       },
       {
         "name": "se_tan00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_tan00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_tan00.wav",
         "bytes": 15100,
         "sha256": "f29bffaef4186fb2ba2bf8d1ecbe1c689f036bb9d742606465268229686da87e"
       },
       {
         "name": "se_tan01.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_tan01.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_tan01.wav",
         "bytes": 15100,
         "sha256": "50579bd19596b5dd0258e63a3c27b395d0c75ad9a5a1eb5f9ca612e89a26ead6"
       },
       {
         "name": "se_tan02.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_tan02.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_tan02.wav",
         "bytes": 11708,
         "sha256": "790d9c5759912489aa2ad94c9df25a08f999ea2fb40dde2e7a370f866c8645f0"
       },
       {
         "name": "se_ok00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_ok00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_ok00.wav",
         "bytes": 10876,
         "sha256": "78ca9f9fdfe69ff24581c8c2a3c226e5b62eff175330f9bef25a49b490e46815"
       },
       {
         "name": "se_cancel00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_cancel00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_cancel00.wav",
         "bytes": 13652,
         "sha256": "ca2ea7b33553c10458a943303ee90a8fb8bd24f483f92903e6612fe753d45294"
       },
       {
         "name": "se_select00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_select00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_select00.wav",
         "bytes": 1146,
         "sha256": "3e4face4547ffde93b387e5d64183179d718a1c4ebff1c34fc98f94c945592a3"
       },
       {
         "name": "se_gun00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_gun00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_gun00.wav",
         "bytes": 134694,
         "sha256": "08b2ef872dcf04ce23f12559399640d3064283cf33f69b4b02b6490a557a9a0e"
       },
       {
         "name": "se_cat00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_cat00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_cat00.wav",
         "bytes": 84260,
         "sha256": "2ce7c84a41a87b94980b3076b6060e325a8a4f4e97f7024836e0689197a99123"
       },
       {
         "name": "se_lazer00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_lazer00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_lazer00.wav",
         "bytes": 22182,
         "sha256": "d9a3c2a404a1ca06c344c8efe5f8a912dc5c1265ce6ddd653d14a92d6d0aa9f7"
       },
       {
         "name": "se_lazer01.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_lazer01.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_lazer01.wav",
         "bytes": 24182,
         "sha256": "21c5c1d0eb8635564a4cc620a3c0437b8042c3b2f4723322d3ba7b7afa8ccaab"
       },
       {
         "name": "se_enep01.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_enep01.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_enep01.wav",
         "bytes": 230300,
         "sha256": "4f24499e56320d672061076a3e63b0a0466c82baf83974ea3f8f84420096521a"
       },
       {
         "name": "se_damage00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_damage00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_damage00.wav",
         "bytes": 6772,
         "sha256": "65005a55fc76953ae5953a158a9cf3ef8970bf69552328ebbc9f2d073db1a8f6"
       },
       {
         "name": "se_kira00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_kira00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_kira00.wav",
         "bytes": 35222,
         "sha256": "3e00ab7cef811a3ee71252a4968183750a558e04a873f81f451477edd8a61666"
       },
       {
         "name": "se_kira01.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_kira01.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_kira01.wav",
         "bytes": 21940,
         "sha256": "efc36ce49509bdadf4e8587f71b54f6162c8516091ca84c100fee2f8816ef632"
       },
       {
         "name": "se_kira02.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_kira02.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_kira02.wav",
         "bytes": 25782,
         "sha256": "e4399c45fa320195b97279378a10223801559294d1b2c91bf0ad0d7f6981516d"
       },
       {
         "name": "se_extend.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_extend.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_extend.wav",
         "bytes": 70188,
         "sha256": "1cf15b01b3480309c6e469ffe1aa80f1aa36b3b34de3535260190e0fb7c9b722"
       },
       {
         "name": "se_graze.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_graze.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_graze.wav",
         "bytes": 4542,
         "sha256": "cca0bb46e2936548e582ebd94c995174f3a565839f32ac2950bba9459b1499e9"
       },
       {
         "name": "se_pause.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_pause.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_pause.wav",
         "bytes": 133676,
         "sha256": "5d69f408049765fb1e4c3361b5dd8e49e646adba63767b7995cdf9dd7625f235"
       },
       {
         "name": "se_cardget.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_cardget.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_cardget.wav",
         "bytes": 222864,
         "sha256": "825b2e9657219a3800add15dde3346ba95455c10e55fa7953b5c547816ac96ab"
       },
       {
         "name": "se_damage01.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_damage01.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_damage01.wav",
         "bytes": 27028,
         "sha256": "ea007e46843e724aed7454be86229f6b00b97c9a5464a58bd7d3c364f80254a8"
       },
       {
         "name": "se_timeout2.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_timeout2.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_timeout2.wav",
         "bytes": 19388,
         "sha256": "7223e92514a21ea2ca7a5a99f715afaa4b9d324de0db7f081b6046eb6ce600c2"
       },
       {
         "name": "se_invalid.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_invalid.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_invalid.wav",
         "bytes": 62950,
         "sha256": "e747b6b52e036fc1e6141da79eaeefecb0bd1dee555aa6a7cf50d77de252c967"
       },
       {
         "name": "se_slash.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_slash.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_slash.wav",
         "bytes": 54782,
         "sha256": "0b81607ea9f2f7edd72cd92114548ee3f075c834c0ec3451062dd382501e806a"
       },
       {
         "name": "se_charge00.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_charge00.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_charge00.wav",
         "bytes": 44308,
         "sha256": "b009c1f5ebabad20f8a1e6979c8ae64827140da525b2c6dd7110dbf2e77b693f"
       },
       {
         "name": "se_charge01b.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_charge01b.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_charge01b.wav",
         "bytes": 10854,
         "sha256": "f66f4e13866d01275c0945b444085158585e9033b6056eca83f6c7f5530fdc7e"
       },
       {
         "name": "se_exattack.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_exattack.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_exattack.wav",
         "bytes": 9808,
         "sha256": "99c962e41c0b5c8090b78ca0423e58c2e799f02811db78630f50ce5c997c2d3a"
       },
       {
         "name": "se_eterase.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_eterase.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_eterase.wav",
         "bytes": 5780,
         "sha256": "22bf3a201d95dc810f0feda7c14e6a09fb3e57c0e7313da273e096a2b9bc7dd6"
       },
       {
         "name": "se_gosp.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_gosp.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_gosp.wav",
         "bytes": 51956,
         "sha256": "bfd9af4b320dca80d24a833b27a9c5f6ff3d8dfb3eaeee57fbaf747f1cfbbb4b"
       },
       {
         "name": "se_life1.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_life1.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_life1.wav",
         "bytes": 93796,
         "sha256": "9e74155cd9bb94d7d58f9c2a556b94e9a8cf13f9d2d806ac289ea2ac368640af"
       },
       {
         "name": "se_playerdead.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_playerdead.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_playerdead.wav",
         "bytes": 133260,
         "sha256": "8a04493a33c976b8387d8da26832a985180bc42b253e44edbb1297571f644c90"
       },
       {
         "name": "se_chargeup.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_chargeup.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_chargeup.wav",
         "bytes": 94318,
         "sha256": "be0e22647b6455e8b8dbf993c55613ca850511f6a059d1214924bd6e574d8a9c"
       },
       {
         "name": "se_warning.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_warning.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_warning.wav",
         "bytes": 251870,
         "sha256": "0633070b7a9eabccd572ff3c4a49a09c0c967631bcbd3ae25265983a90f73fed"
       },
       {
         "name": "se_timestop0.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_timestop0.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_timestop0.wav",
         "bytes": 115694,
         "sha256": "b74793967cf7ea3f31bbcc8c45fc24d57ece4f3fec31cf1b8dce02982f2ecd48"
       },
       {
         "name": "se_powerup.wav",
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\se_powerup.wav",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\se_powerup.wav",
         "bytes": 77278,
         "sha256": "03f727d2fd30aff2460e5f54f0c3341799f6dbfb50258a25cb39ea80f68af2d9"
       }
@@ -359,7 +359,7 @@
         "introFrames": 218336,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_00.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00.ogg",
         "bytes": 1757496,
         "sha256": "316c5ae8a2492bcf9b8e39dafb537ebe7ea4e70fb9fd9dd52b7f281deadf458e"
       },
@@ -370,7 +370,7 @@
         "introFrames": 481024,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_00b.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00b.ogg",
         "bytes": 3470198,
         "sha256": "3bfe666bf744a3709c9fc991b45a179da88d9dc21ecd7ba87026fa8939552b8a"
       },
@@ -381,7 +381,7 @@
         "introFrames": 187968,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_00c.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00c.ogg",
         "bytes": 1623421,
         "sha256": "bd7808c1ee0a66f344b2b876638b42413b6e1743db00b07b91ba43c36179add7"
       },
@@ -392,7 +392,7 @@
         "introFrames": 377472,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_01.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_01.ogg",
         "bytes": 4154589,
         "sha256": "0ccbf94d0ece753ac97c24659d1bd28bf305b68f3c8db0de54ed435f2da73d9b"
       },
@@ -403,7 +403,7 @@
         "introFrames": 208272,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_02.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_02.ogg",
         "bytes": 3330544,
         "sha256": "fa259e5ba48ebb683b6bb1ef86866bc0a752e7616b1ed5c03e2927d72d7443fe"
       },
@@ -414,7 +414,7 @@
         "introFrames": 478464,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_05.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_05.ogg",
         "bytes": 4329700,
         "sha256": "16bc29037f448813168ee318b209c21f2b1697054244e7de128a379e2219b5b5"
       },
@@ -425,7 +425,7 @@
         "introFrames": 449536,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_07.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_07.ogg",
         "bytes": 4326338,
         "sha256": "e8def2e9acfe65f679effcff3c657e87441f4fcd9e4762ccdf051938d27ed762"
       },
@@ -436,7 +436,7 @@
         "introFrames": 186560,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th07_09.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th07_09.ogg",
         "bytes": 3768596,
         "sha256": "b6b5982b28234ad292ef57c5b013dd48b193c80a3cf85898d9eb4f91a93d6b99"
       },
@@ -447,7 +447,7 @@
         "introFrames": 672256,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th07_10_b.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th07_10_b.ogg",
         "bytes": 4254555,
         "sha256": "ff042456fa3f8cc211665698437f9f55473dea8a371cf4d67172b30731cb5dc9"
       },
@@ -458,7 +458,7 @@
         "introFrames": 704320,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_08_2.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_08_2.ogg",
         "bytes": 4871445,
         "sha256": "ffa52aa2aef9474bb509363e0ae03e2bb3a4510546a40b719f4813ec1d591b8d"
       },
@@ -469,7 +469,7 @@
         "introFrames": 631360,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_09.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_09.ogg",
         "bytes": 4577477,
         "sha256": "c89d14b131c6f893ba2b280338ea521de09870f3670d833682cc4b23a3187857"
       },
@@ -480,7 +480,7 @@
         "introFrames": 167936,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th08_12.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th08_12.ogg",
         "bytes": 3203611,
         "sha256": "713f8becb676cc83229cd11f455be786b82cd3cc9de2c22b16371d600a0c4498"
       },
@@ -491,7 +491,7 @@
         "introFrames": 248832,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_10.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_10.ogg",
         "bytes": 2949875,
         "sha256": "353c27aa5fbfa7e08ecb0a37c34f8f62ae3a45d3cd906dee38f2e1da043609b6"
       },
@@ -502,7 +502,7 @@
         "introFrames": 269056,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_11.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_11.ogg",
         "bytes": 6959581,
         "sha256": "d2f92da2940b7f830ccb8a23e8398df1795ec16063bef0b8fbbbcb9789bc8f0b"
       },
@@ -513,7 +513,7 @@
         "introFrames": 272704,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_12.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_12.ogg",
         "bytes": 3258330,
         "sha256": "87162fc05c0cd396825b0c80430e530736382b81e7131849631ab84271a0caae"
       },
@@ -524,7 +524,7 @@
         "introFrames": 474560,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_13.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_13.ogg",
         "bytes": 4190716,
         "sha256": "e8339d3f5dbf3a2a450ab54fb937e20fa121550874eca101fb93c7a0a3806f9a"
       },
@@ -535,7 +535,7 @@
         "introFrames": 99744,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_14.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_14.ogg",
         "bytes": 1270677,
         "sha256": "d05ef899b591d9f12a3f84bd9a1ff7ec1978b7eb1b4de71b9963f2b3ddcc52ef"
       },
@@ -546,7 +546,7 @@
         "introFrames": 865696,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_15.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_15.ogg",
         "bytes": 989967,
         "sha256": "b1a7981b546dd373cc8375a6f4688b5e4562c7418095572070ff6fc894bc48bc"
       },
@@ -557,7 +557,7 @@
         "introFrames": 222080,
         "channels": 2,
         "rate": 44100,
-        "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_17.ogg",
+        "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_17.ogg",
         "bytes": 2825216,
         "sha256": "6e631a0b7e09a7eea653fb77229b174594c8e3676db3ebf8885968e6b0cc7e64"
       }
@@ -838,19 +838,19 @@
     {
       "name": "scalar",
       "object": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o",
         "bytes": 537715,
         "sha256": "e674af00c07c0bfa2476cfe9e93cf777897da6179eab0ef87aace777af222530"
       },
       "wasm": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.wasm",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.wasm",
         "bytes": 232956,
         "sha256": "d3934862a9b779056bad267d027705bad74d88f6796472ad788f9ecd72b32589"
       },
       "instantiateAndInitializeMs": 62.931399999997666,
       "runtime": "emscripten-nodefs",
       "loader": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.mjs",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.mjs",
         "bytes": 66376,
         "sha256": "885658d6f88e10c27381083a4d58194a0911ea93fed68b56248ebde8e2f2131e"
       },
@@ -1026,19 +1026,19 @@
     {
       "name": "simd",
       "object": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o",
         "bytes": 559722,
         "sha256": "f403a42bda5ae8f071c2ba4996109c347b75b20151f4eac2fc3fcd7938ee93e0"
       },
       "wasm": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.wasm",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.wasm",
         "bytes": 246204,
         "sha256": "63c33acae96b7d5c7958ca003a37e8575ca17db54b2c248ce1f47ade91223796"
       },
       "instantiateAndInitializeMs": 26.868600000001607,
       "runtime": "emscripten-nodefs",
       "loader": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.mjs",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.mjs",
         "bytes": 66372,
         "sha256": "7d9ef9241586feb8d94967023712037289c33118ea6092980339dc6461a7c18d"
       },
@@ -1229,9 +1229,9 @@
         "-DTH_ENABLE_THCRAP=1",
         "-DTH09_DEVELOPMENT_HARNESS=0",
         "-c",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\game\\SoundEffects.cpp",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\SoundEffects.cpp",
         "-o",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o"
       ],
       "command": {
         "executable": "python",
@@ -1248,9 +1248,9 @@
           "-DTH_ENABLE_THCRAP=1",
           "-DTH09_DEVELOPMENT_HARNESS=0",
           "-c",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\game\\SoundEffects.cpp",
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\SoundEffects.cpp",
           "-o",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o"
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o"
         ]
       },
       "elapsedMs": 291.0135,
@@ -1277,9 +1277,9 @@
         "-DTH09_DEVELOPMENT_HARNESS=0",
         "-Rpass=(loop-vectorize|slp-vectorizer)",
         "-c",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
         "-o",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o"
       ],
       "command": {
         "executable": "python",
@@ -1297,9 +1297,9 @@
           "-DTH09_DEVELOPMENT_HARNESS=0",
           "-Rpass=(loop-vectorize|slp-vectorizer)",
           "-c",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
           "-o",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o"
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o"
         ]
       },
       "elapsedMs": 13388.5898,
@@ -1368,7 +1368,7 @@
         }
       ],
       "warnings": [
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\../../../portable/sdl/third_party/stb_vorbis.h:1404:75: warning: pointer comparison always evaluates to false [-Wtautological-compare]"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\../../../portable/sdl/third_party/stb_vorbis.h:1404:75: warning: pointer comparison always evaluates to false [-Wtautological-compare]"
       ]
     },
     {
@@ -1399,10 +1399,10 @@
         "-sINVOKE_RUN=0",
         "-sEXIT_RUNTIME=0",
         "-lnodefs.js",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
         "-o",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.mjs"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.mjs"
       ],
       "command": {
         "executable": "python",
@@ -1432,10 +1432,10 @@
           "-sINVOKE_RUN=0",
           "-sEXIT_RUNTIME=0",
           "-lnodefs.js",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.o",
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
           "-o",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.mjs"
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\scalar.mjs"
         ]
       },
       "elapsedMs": 2446.5247,
@@ -1463,9 +1463,9 @@
         "-msimd128",
         "-Rpass=(loop-vectorize|slp-vectorizer)",
         "-c",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
         "-o",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o"
       ],
       "command": {
         "executable": "python",
@@ -1484,9 +1484,9 @@
           "-msimd128",
           "-Rpass=(loop-vectorize|slp-vectorizer)",
           "-c",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\audio-simd-equivalence.cpp",
           "-o",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o"
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o"
         ]
       },
       "elapsedMs": 14043.644800000002,
@@ -1496,7 +1496,7 @@
       "sourceCounts": {
         "portable/sdl/third_party/stb_vorbis.h": 33,
         "portable/sdl/third_party/miniaudio.h": 250,
-        "th09_web/tests/multiplayer/audio-simd-equivalence.cpp": 4
+        "web/tests/multiplayer/audio-simd-equivalence.cpp": 4
       },
       "remarks": [
         {
@@ -3334,28 +3334,28 @@
           "loopWidth": null
         },
         {
-          "source": "th09_web/tests/multiplayer/audio-simd-equivalence.cpp",
+          "source": "web/tests/multiplayer/audio-simd-equivalence.cpp",
           "line": 163,
           "column": 45,
           "message": "vectorized loop (vectorization width: 4, interleaved count: 1) [-Rpass=loop-vectorize]",
           "loopWidth": 4
         },
         {
-          "source": "th09_web/tests/multiplayer/audio-simd-equivalence.cpp",
+          "source": "web/tests/multiplayer/audio-simd-equivalence.cpp",
           "line": 179,
           "column": 13,
           "message": "vectorized loop (vectorization width: 4, interleaved count: 1) [-Rpass=loop-vectorize]",
           "loopWidth": 4
         },
         {
-          "source": "th09_web/tests/multiplayer/audio-simd-equivalence.cpp",
+          "source": "web/tests/multiplayer/audio-simd-equivalence.cpp",
           "line": 179,
           "column": 42,
           "message": "vectorized loop (vectorization width: 4, interleaved count: 1) [-Rpass=loop-vectorize]",
           "loopWidth": 4
         },
         {
-          "source": "th09_web/tests/multiplayer/audio-simd-equivalence.cpp",
+          "source": "web/tests/multiplayer/audio-simd-equivalence.cpp",
           "line": 180,
           "column": 90,
           "message": "vectorized loop (vectorization width: 4, interleaved count: 1) [-Rpass=loop-vectorize]",
@@ -3510,7 +3510,7 @@
         }
       ],
       "warnings": [
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\../../../portable/sdl/third_party/stb_vorbis.h:1404:75: warning: pointer comparison always evaluates to false [-Wtautological-compare]"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\../../../portable/sdl/third_party/stb_vorbis.h:1404:75: warning: pointer comparison always evaluates to false [-Wtautological-compare]"
       ]
     },
     {
@@ -3541,10 +3541,10 @@
         "-sINVOKE_RUN=0",
         "-sEXIT_RUNTIME=0",
         "-lnodefs.js",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
         "-o",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.mjs"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.mjs"
       ],
       "command": {
         "executable": "python",
@@ -3574,10 +3574,10 @@
           "-sINVOKE_RUN=0",
           "-sEXIT_RUNTIME=0",
           "-lnodefs.js",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.o",
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\SoundEffects.scalar.o",
           "-o",
-          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.mjs"
+          "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-audio-simd-emscripten-01\\simd.mjs"
         ]
       },
       "elapsedMs": 3183.6695,
@@ -24833,7 +24833,7 @@
   ],
   "priorFailedAttempts": [
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-audio-simd-equivalence-01/report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-chain-audio-simd-equivalence-01/report.json",
       "bytes": 33274,
       "sha256": "e6aa9fbd6936436624792f031f8a5d26bacb41029e56da77a35fcd1a3698eb3c",
       "passed": false,
@@ -24852,7 +24852,7 @@
       ]
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-audio-simd-equivalence-02/report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-chain-audio-simd-equivalence-02/report.json",
       "bytes": 132829,
       "sha256": "0f4ab709e5be7ce602de3f1a87c2d00c80c956e335f3f9aebe56781d18394ab7",
       "passed": false,

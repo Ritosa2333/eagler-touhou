@@ -1,122 +1,15 @@
-**Eagler branch:**
-Hosted Web Runtime protocol, browser integration, persistence, touch, practice and multiplayer details are documented in [README_EAGLER.md](README_EAGLER.md).
+# 東方紅魔郷 TH06
 
----
+本目录包含 TH06 的 SDL3 / Web 源码，以及普通版与回滚多人版实现。普通、多人是独立构建变体；运行时配方中的 thprac 可配置，默认关闭。
 
-[![Discord][discord-badge]][discord] <- click here to join discord server.
+**适配明细：** [本游戏适配表](./ADAPTATION.md) · [全项目适配总览与分类](../../docs/adaptation/README.md)
 
-[discord]: https://discord.gg/VyGwAjrh9a
-[discord-badge]: https://img.shields.io/discord/1147558514840064030?color=%237289DA&logo=discord&logoColor=%23FFFFFF
+## 构建
 
-This is the readme for the portable fork of EoSD. For the readme of the decomp project, see [here](https://github.com/GensokyoClub/th06/blob/master/README.md).
+CMake Web CI 预设：`web-ci-normal` 或 `web-ci-netplay`。
 
-EoSD-portable is a port of Touhou 6 using SDL3 and OpenGL/GLES.
-This enables theoretical portability to any system supported by SDL3, with Linux, Windows, macOS, and Web targets in scope.
-Builds for the BSDs and other Unices are also almost certainly possible, but may require some slight modifications to the build system.
+快速步骤和源码布局见[开发指南](docs/DEVELOPMENT.md)。源码编译后，由仓库根目录发布流程组装启动器包。
 
-### Platform Requirements
+## 资源
 
-- SDL3, SDL3_image, and SDL3_ttf support
-- C++20 standard library support
-- A little endian architecture (though big endian support is currently being worked on)
-- OpenGL ES 1.1, OpenGL 1.3, or GL 2.1 / GL ES 2.0 / WebGL support
-
-### Dependencies
-
-EoSD-portable has the following dependencies:
-
-- `SDL3`
-- `SDL3_image`
-- `SDL3_ttf`
-- `libasound` (Optional and Linux-only, enables MIDI support. This will almost always be present as part of a desktop distro.)
-
-On Windows and macOS, MIDI support uses the system APIs and needs no extra dependencies.
-
-In addition, building uses [`premake5`](https://premake.github.io/download) and a compiler that supports C++20.
-
-#### Building
-
-In the repository root directory, run `premake5` with the desired build system as an argument (a list can be seen by running `premake5 --help`).
-This will output the build files to the `build` directory, and then compilation may be done with the desired build system.
-
-##### Build Options (Use with Premake Invocation)
-`--no-asoundlib`: On Linux, doesn't build MIDI support. Removes libasound as a dev and runtime dependency
-`--use-c23-embed`: Uses `#embed` for resource inclusion instead of a lua script in the Premake file.
-
-##### Build Example (Debian-based Linux)
-
-Obtain dependencies:
-
-`sudo apt install build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libasound2-dev`
-
-Generate makefile:
-
-`premake5 gmake`
-
-Compile:
-
-`cd build && make -j16`
-
-##### Build Example (macOS)
-
-Install the Xcode Command Line Tools (provides the compiler), if not already present:
-
-`xcode-select --install`
-
-Obtain dependencies (using [Homebrew](https://brew.sh)):
-
-`brew install premake sdl2 sdl2_image sdl2_ttf`
-
-Generate makefile:
-
-`premake5 gmake`
-
-Compile:
-
-`cd build && make -j16`
-
-### Use
-
-EoSD-portable is designed to be a drop-in replacement for the vanilla EoSD binary.
-You will also need to add a font to your game directory with the filename `msgothic.ttc`.
-This may be the actual MS Gothic, taken from a Windows machine, or a compatible font such as Kochi Gothic.
-EoSD-portable uses the Japanese filenames (e.g. 紅魔郷CM.DAT, 東方紅魔郷.cfg). English and other patches, static or thcrap, do not currently work.
-A Japanese locale is not required.
-
-### SDL3 Web build (reallyportable branch)
-
-The Web target follows the SDL3 callback and GLES3 architecture used by the
-TH07 reallyportable port. Initialize the pinned submodules, put legally
-obtained game files in the ignored `assets/` directory as described in
-`PORTING.md`, then configure with the Emscripten CMake toolchain:
-
-```sh
-git submodule update --init --recursive
-emcmake cmake -S . -B build-web -G Ninja
-cmake --build build-web
-```
-
-Serve `build-web/` over HTTP; opening the generated HTML directly from disk is
-not supported. The generated `.data` bundle contains original game assets and
-must not be committed or redistributed.
-
-For repository CI or source-only compile validation, use the checked-in CMake
-presets instead. They set `TH_EXTERNAL_ASSETS=ON`, so they compile/link the real
-Web Runtime without requiring original game resources and do not produce a
-playable asset bundle:
-
-```sh
-emcmake cmake -G Ninja --preset web-ci-normal
-cmake --build --preset web-ci-normal --parallel
-
-emcmake cmake -G Ninja --preset web-ci-netplay
-cmake --build --preset web-ci-netplay --parallel
-```
-
-# Decomp Credits
-
-We would like to extend our thanks to the following individuals for their
-invaluable contributions:
-
-- @EstexNT for porting the [`var_order` pragma](scripts/pragma_var_order.cpp) to
-  MSVC7.
+仓库不附带原版可执行文件、游戏数据、音乐、存档或 Replay。运行包需要本地合法取得的原版资源；按开发指南准备对应文件。

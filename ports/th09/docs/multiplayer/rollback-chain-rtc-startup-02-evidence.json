@@ -1,12 +1,12 @@
 {
   "version": 1,
   "input": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-rtc-startup-02-failure.json",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-rtc-startup-02-failure.json",
     "bytes": 80844304,
     "sha256": "461a961e36f27b88f1db69333f223841abcea9b8238b889016977e4884396120"
   },
   "analyzer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\analyze-startup-transport.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-startup-transport.mjs",
     "sha256": "16941bcc4e6645fc2c8f890b624a0e76247e62375f7dde170a903dfc0c85b37e"
   },
   "identity": {
@@ -60,7 +60,7 @@
     "startupTrace": true,
     "relayInputDiagnostics": false
   },
-  "originalError": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(results.every(r=>r.route===(fallback?'relay':'rtc')))\n\n    at file:///D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/tests/multiplayer/smoothness-browser.mjs:397:39\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
+  "originalError": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(results.every(r=>r.route===(fallback?'relay':'rtc')))\n\n    at file:///D:/workspace/eagler/worktrees/th09-rollback-4x/web/tests/multiplayer/smoothness-browser.mjs:397:39\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
   "originalPageErrors": [],
   "clock": {
     "reference": "Relay performance.now in milliseconds",
@@ -100,7 +100,7 @@
   },
   "relay": {
     "sourceIdentity": {
-      "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+      "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
       "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
       "probeSha256": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
       "fixtureSha256": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",

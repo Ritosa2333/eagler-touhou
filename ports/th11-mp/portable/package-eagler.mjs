@@ -26,7 +26,7 @@ export function resolvePackagePlan(root, args = []) {
     game: GAME, multiplayer, profile: multiplayer ? 'multiplayer' : 'sdl3',
     variant: multiplayer ? 'multiplayer' : 'normal',
     out: process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
-    buildRoot: resolve(root, 'th11_web/artifacts', multiplayer ? 'multiplayer' : 'sdl3'),
+    buildRoot: resolve(root, 'web/artifacts', multiplayer ? 'multiplayer' : 'sdl3'),
   };
 }
 
@@ -120,7 +120,7 @@ export function packageEagler({
   }
   validateNativeCapabilities(new WebAssembly.Module(packaged.get(GAME + '-sdl.wasm')), build, plan);
 
-  const shellRoot = resolve(root, 'th11_web/sdl-runtime');
+  const shellRoot = resolve(root, 'web/sdl-runtime');
   const runtimeNames = ['startup-branding.mjs', 'shell.mjs', 'managed.css', 'keyboard.mjs',
     'directory-keyboard.mjs', 'eagler-host.mjs', ...(multiplayer ? ['multiplayer.mjs', 'multiplayer.css'] : [])];
   const html = readFileSync(resolve(shellRoot, 'managed.html'), 'utf8')

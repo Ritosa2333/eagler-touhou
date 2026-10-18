@@ -11,7 +11,7 @@ const launcher=resolve(process.env.TH15_LAUNCHER_ROOT||resolve(root,'../th15-mul
 const puppeteer=createRequire(resolve(launcher,'package.json'))('puppeteer-core');
 const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/chromium-executable.mjs')));
 const runtime=resolve(root,'build-eagler-multiplayer');
-const out=resolve(root,'th15_web/artifacts/sdl-multiplayer/browser-test');await mkdir(out,{recursive:true});
+const out=resolve(root,'web/artifacts/sdl-multiplayer/browser-test');await mkdir(out,{recursive:true});
 if(!process.env.TH15_TEST_ARCHIVE)throw Error('Set TH15_TEST_ARCHIVE to the Japanese TH15 1.00b archive');
 const archive=await readFile(process.env.TH15_TEST_ARCHIVE);
 let options=[],relayLog='',browser;

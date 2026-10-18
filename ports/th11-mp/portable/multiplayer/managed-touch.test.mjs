@@ -11,7 +11,7 @@ import {SourceTextModule,SyntheticModule,createContext} from 'node:vm';
 // MP session seam are mocks: this is reception/ownership evidence, not a
 // browser/native gameplay or physical touch latency test. The only source
 // substitution is the same TH11_BUILD_INFO variant stamp used by packaging.
-const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../../th11_web/sdl-runtime');
+const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../../web/sdl-runtime');
 const sourcePath=process.env.TH11_SHELL_UNDER_TEST||resolve(runtime,'shell.mjs');
 const source=readFileSync(sourcePath,'utf8');
 const stamp="/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false,multiplayer:false}";

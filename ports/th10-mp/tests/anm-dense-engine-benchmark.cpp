@@ -1,8 +1,8 @@
 // Resource-free CPU workload using TH10's real 32-bit ANM interpreter,
 // arithmetic, renderer, VM layout and rollback journal. No game resources,
 // GPU, SDL, network transport, ECL simulation or mobile FPS are measured.
-#include "../th10_web/cpp/game/AnmRenderer.hpp"
-#include "../th10_web/cpp/multiplayer/RollbackPoolCapture.hpp"
+#include "../web/cpp/game/AnmRenderer.hpp"
+#include "../web/cpp/multiplayer/RollbackPoolCapture.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <eagler/netplay/SparsePoolCapture.hpp>
 #include <algorithm>

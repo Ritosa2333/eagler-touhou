@@ -11,8 +11,8 @@ const outArg=process.argv.find(s=>s.startsWith('--out='));
 const out=resolve(root,outArg?outArg.slice(6):'artifacts/multiplayer-rollback-managers/o2-01');
 if(existsSync(resolve(out,'receipt.json')))throw Error('Output receipt already exists; use a new --out= directory');
 mkdirSync(out,{recursive:true});
-const common=resolve(root,'third_party/eagler-common');
-const game=resolve(root,'th11_web/cpp/game');
+const common=resolve(root,'../../common');
+const game=resolve(root,'web/cpp/game');
 const names=['BulletManager','ItemManager','BulletAppearance','BulletLaunch','BulletMotion','BulletTransforms','Movement','EnemyState',
     'AnmVm','AnmInterpreter','AnmGeometry','AnmProjection','AnmRenderer','AnmManager','AnmRollback','Interpolation','GraphicsMath','SceneCamera'];
 const sources=[...names.map(s=>resolve(game,s+'.cpp')),resolve(common,'src/netplay/RollbackJournal.cpp'),resolve(import.meta.dirname,'rollback-managers-test.cpp')];

@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Authored CSS cascade proof, not browser geometry/rendering. Resolve the real
  * legacy and shared shell selectors, media, specificity and shorthand resets
  * against equivalent DOM. Motion declarations are intentionally replaced by
@@ -18,7 +19,7 @@ import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
-const pinned = path => execFileSync('git', ['show', `edee9633e5e3ee79cd2e1aa334f84f6caf755090:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', path);
 const read = path => readFileSync(resolve(project, path), 'utf8');
 const oldCss = pinned('public/styles.css'), newCss = read('app/components/notices/informational-dialog.css');
 const legacy = /\.(?:apple-refresh-(?:dialog|window)|donation-(?:dialog|window)|multiplayer-guide-(?:dialog|window))\b/;

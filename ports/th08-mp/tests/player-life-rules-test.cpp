@@ -1,6 +1,6 @@
 #include "PlayerLife.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-#include "../th08_web/cpp/multiplayer/CooperativeResources.hpp"
+#include "../web/cpp/multiplayer/CooperativeResources.hpp"
 #endif
 #include <cassert>
 #include <cstdio>

@@ -1,9 +1,9 @@
 // Real menu state machines with asset-free animations and fake storage/audio.
 // This is not visual/device or native-execution parity evidence.
-#include "../th15_web/cpp/game/PauseMenu.hpp"
-#include "../th15_web/cpp/game/TitleReplaySave.hpp"
-#include "../th15_web/cpp/game/SessionCompletion.hpp"
-#include "../th15_web/cpp/game/EnemyCommands.hpp"
+#include "../web/cpp/game/PauseMenu.hpp"
+#include "../web/cpp/game/TitleReplaySave.hpp"
+#include "../web/cpp/game/SessionCompletion.hpp"
+#include "../web/cpp/game/EnemyCommands.hpp"
 #include <cassert>
 #include <iostream>
 using namespace th15;

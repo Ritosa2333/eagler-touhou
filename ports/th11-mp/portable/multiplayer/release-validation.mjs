@@ -17,7 +17,7 @@ const git=path=>{const x=spawnSync('git',['-C',path,'rev-parse','HEAD'],{encodin
 const report={schema:'th11-formal-web-build/1',startedAt:new Date().toISOString(),completedAt:null,
  passed:false,root,output:out,variant:ordinary?'ordinary':'multiplayer',flags:{optimization:lto?'O3':'O2',linkTime:lto,simdExperiment,fastMath:false,fpContract:'off',developmentHarness:0,jobs:4},
  command:[process.execPath,'portable/build.mjs',...(ordinary?[]:['--multiplayer']),...(lto?['--lto']:[]),...(simdExperiment?['--simd-experiment']:[])],exitCode:null,
- head:git(root),commonHead:git(resolve(root,'third_party/eagler-common')),artifacts:{}};
+ head:git(root),commonHead:git(resolve(root,'../../common')),artifacts:{}};
 const save=()=>writeFileSync(resolve(out,'receipt.json'),JSON.stringify(report,null,2)+'\n');
 save();let stdout='',stderr='';
 try{
@@ -28,7 +28,7 @@ try{
   child.once('error',reject);child.once('exit',(code,signal)=>{report.exitCode=code;report.signal=signal;accept();});
  });
  if(report.exitCode!==0)throw Error('Formal build failed; original logs retained');
- const built=resolve(root,'th11_web/artifacts',ordinary?'sdl3':'multiplayer');
+ const built=resolve(root,'web/artifacts',ordinary?'sdl3':'multiplayer');
  for(const name of ['build.json','th11-sdl.mjs','th11-sdl.wasm','th11-sdl.mjs.symbols']){
   const source=resolve(built,name),bytes=readFileSync(source);copyFileSync(source,resolve(out,name));
   report.artifacts[name]={sha256:hash(bytes),bytes:bytes.length};

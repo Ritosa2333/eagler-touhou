@@ -1,112 +1,42 @@
-# Purple THPrac shared tools
+# 共用 thprac 工具
 
-`eagler::thprac` is an optional C++17 source-level component, following the
-netplay library model. Include `<eagler/thprac/PracticeInput.hpp>`,
-`PracticeKeyMonitor.hpp` and `PracticeSpeed.hpp` directly. Types are in
-`eagler::thprac`; no title forwarding headers are needed.
+`eagler::thprac` 提供输入、按键统计、速度控制和移动端面板组件。游戏保留自己的练习项目、ECL 修改、资源、Replay 和状态生命周期。
 
-The authority is the purple tools already adopted in TH08/10/11/15, extracted
-without changes to key masks, 60-frame APS accounting, CSV, auto-shoot,
-disable-key ordering, fast-retry or logical speed arithmetic. Retain the
-attached MIT notice (Ack, 2022) when redistributing.
+## 1. 接入
 
-## UI integration
+CMake 使用 `eagler::thprac`。脚本构建把 `common/include` 加入头文件搜索路径，并把所用头文件和 `.inc` 纳入构建缓存指纹。
 
-The `.inc` files are textual source components included once in the title's
-private UI namespace after ImGui and standard-library headers. They intentionally
-do not create global singleton owners or introduce an SDL dependency:
+| 文件 | 接入位置 |
+| --- | --- |
+| [`PracticeInput.hpp`](../include/eagler/thprac/PracticeInput.hpp) | 逻辑输入、自动射击与禁用键顺序 |
+| [`PracticeKeyMonitor.hpp`](../include/eagler/thprac/PracticeKeyMonitor.hpp) | 会话拥有的按键统计、60 帧 APS 与 CSV |
+| [`PracticeSpeed.hpp`](../include/eagler/thprac/PracticeSpeed.hpp) | 逻辑速度；显示插值仍由绘制层负责 |
+| [`PracticeKeyHud.inc`](../include/eagler/thprac/PracticeKeyHud.inc) | 绑定会话的 `key_monitor` |
+| [`PracticeReaction.inc`](../include/eagler/thprac/PracticeReaction.inc) | 提供平台时钟、频率、计数器与随机数 |
+| [`PracticeSpeed.inc`](../include/eagler/thprac/PracticeSpeed.inc) | 保留各作的重置标志和 UI 生命周期 |
 
-- `PracticeKeyHud.inc`: bind `key_monitor` to the session's shared monitor.
-  Original purple drawing order, layout and colors are preserved.
-- `PracticeReaction.inc`: provide `PracticeCounter::QuadPart`,
-  `practice_counter_frequency`, `practice_counter_now` and
-  `practice_random_generator` using the platform clock/RNG.
-- `PracticeSpeed.inc`: uses the shared speed type. TH08 passes its existing
-  reset flag as the optional third argument; other titles retain existing
-  static UI lifetime. This is simulation speed, not high-refresh presentation.
-- All localized UI strings continue through the title's `label(practice_...)`
-  binding, so Launcher language and THPrac language stay synchronized.
+`.inc` 在 ImGui 和标准库头文件之后，包含进作品自己的 UI 命名空间。界面文字通过作品的 `label(practice_...)` 与启动器语言同步。
 
-Game-specific F12 membership, cheats, ECL patches, warp data, completion,
-Replay ownership, graphics hooks, resources, and catch-up caps are **not** shared.
-TH08/10 and TH11/15 deliberately retain their different `PracticeCadence` caps.
-TH06/07 remain separate consumers until their purple migration is accepted;
-do not replace their blue implementation merely to force common ownership.
+## 2. 移动端面板
 
-## Build and release
+启动器通过 `touch-controls` 传入 `thpracMobilePanelsEnabled`、`thpracMobilePanelsVisible`。用 [`PracticeMobilePanels.hpp`](../include/eagler/thprac/PracticeMobilePanels.hpp) 的 `show`、`begin` 包装原窗口；折叠时也配对 `ImGui::End`。
 
-### Mobile panel presentation
+一个移动端入口控制面板组，窗口初次打开与重新打开时折叠。统计、录像和玩法更新在可见性判断之外执行。`captures_advanced` 只在高级面板展开时捕获游戏输入。
 
-`PracticeMobilePanels.hpp` is an optional ImGui-only presentation adapter,
-usable by both blue and purple consumers. Launcher sends the boolean fields
-`thpracMobilePanelsEnabled` and `thpracMobilePanelsVisible` through the existing
-`touch-controls` command. One mobile entry opens the group; each native window
-starts collapsed and its header toggles the original body. Reopening resets
-collapse state. Missing fields preserve desktop behavior.
+[`PracticePointer.hpp`](../include/eagler/thprac/PracticePointer.hpp) 在按下时决定手势归属；游戏拖动跨过面板标题仍归游戏。失焦、触摸取消和会话重置时清理手势。折叠标题由直接触摸操作，键盘与手柄继续遵守原窗口导航。
 
-Use `show` and `begin` in place of each window's visibility check and `Begin`;
-always pair with `ImGui::End`, including a collapsed body. `draw_tool` gates
-draw-list indicators without changing their original geometry. Counters,
-recording, reaction/result timing and gameplay updates must remain outside
-these visibility gates. `captures_advanced` captures gameplay only while the
-mobile advanced body is expanded. Native pointer hit-testing must include
-these header windows, not only the old fullscreen menu.
+## 3. 各作保留的差异
 
-Mobile cheat rows use native `checkbox` widgets with the title's existing
-mutation, Replay and lifecycle guards. This does not redefine F-key membership
-or migrate a blue title to purple. Assisted Replay saving is title-owned:
-allow the original save path and retain Practice metadata, while warning that
-playback does not reapply live cheats and may desynchronize. Never deliberately
-damage the Replay file or bypass Replay input/mutation restrictions.
+TH08/10/11/15 使用抽取的紫版工具。TH06/07 保留自己的实现和构建开关。F12 项目、作弊、warp、catch-up 上限与回放标记在作品层维护；练习录像保留辅助元数据，播放时显示其使用条件。
 
-`tests/thprac-mobile-panels.cpp` exercises collapsed windows, actual mouse
-press/release expansion, input capture, reopening and desktop fallback against
-an ImGui implementation, including padding-free outer windows, equal-sized
-side-by-side upper-left cheat/settings headers, and one-pixel black button
-borders on cheat/settings/status headers. A phone visual/device pass is still required.
-Folded windows and fold/unfold headers are excluded from keyboard/gamepad
-navigation; game-menu swipes and confirm inputs cannot open them. Direct touch
-still toggles them, while native expanded-body navigation policy is preserved.
-`PracticePointer.hpp` assigns trainer gesture ownership only at pointer-down;
-game drags crossing a header remain game-owned, while menu drags retain their
-release outside the window. Reset it on focus loss, touch cancellation and
-session reset. `tests/thprac-pointer-test.cpp` covers crossing, release,
-multi-finger isolation and cancellation.
+## 4. 验证与更新
 
-CMake consumers link `eagler::thprac`. Script-based consumers add `include` to
-their compiler search path and hash all shared headers/`.inc` inputs into their
-object cache and build report. Ordinary builds use only header types, not ImGui
-or reaction/HUD sources.
+先运行 [common 测试](../README.md)，再运行受影响作品的输入、速度、面板及练习构建检查，最后填写[语言与练习适配项](../../docs/adaptation/localization.md)。移动端记录应包含面板展开、折叠和多指操作。
 
-Use `EAGLER_COMMON_ROOT` for an unpublished local authority. Release consumers
-must pin a published common commit in `third_party/eagler-common` before shipping.
-Never push a consumer gitlink referring to an unpublished commit.
-
-Run the common regression, title source checks, and each consumer's ON/OFF
-builds. A successful compile does not establish mobile rendering equivalence.
-
-Regenerate/verify the shared extraction with:
+在 `common/` 中检查抽取源：
 
 ```sh
-node tools/generate-purple-thprac.mjs <thprac-purple-source> --check
+node tools/generate-purple-thprac.mjs /path/to/thprac-purple --check
 ```
 
-`--write` updates only the shared extraction. Consumer generators check this
-authority and regenerate only their own title hooks/resources. Thus title
-regeneration cannot silently restore deleted private copies.
-
-## Initial extraction bases
-
-TH08 `5852561`, TH10 `84dd04f`, TH11 `3f74853`, TH15 `09affbe`.
-The local migration is isolated in each `experiment/common-purple-thprac`
-worktree. The common library is based on `cedb710`. Consumer promotion and
-published dependency pins remain separate from this extraction validation.
-
-Validation at extraction: all 34 common tests pass (Release assertions enabled),
-all four full THPrac builds pass; TH10/11/15 ordinary OFF builds pass. TH08
-retains its existing always-built practice adapter rather than introducing a
-new OFF policy. All four title generators and the central purple generator
-pass source checks. TH08 input/speed and TH15 APS/CSV/input/cadence executable
-regressions pass. Phone visual/device checks and promotion to daily integration
-branches are not claimed by these gates. Published experiment consumers pin
-common `25d678c` through the Goan114 fork; TH11 registers its common submodule.
+`--write` 更新公共抽取；作品生成器更新作品自己的 hook 与资源。保留 [Ack 的 MIT 许可](../include/eagler/thprac/THPRAC-LICENSE.txt)。

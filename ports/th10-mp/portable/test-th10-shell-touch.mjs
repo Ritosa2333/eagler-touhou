@@ -11,7 +11,7 @@ import {SourceTextModule,SyntheticModule,createContext} from 'node:vm';
 // branding and the optional Practice UI are stand-ins. No game simulation is
 // inferred from these tests. TH10_SHELL_UNDER_TEST accepts a frozen old shell
 // for a real queue regression control; all unchanged helpers use this checkout.
-const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../th10_web/sdl-runtime');
+const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../web/sdl-runtime');
 const sourcePath=process.env.TH10_SHELL_UNDER_TEST||resolve(runtime,'shell.mjs');
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
 const gate=()=>{let release;const promise=new Promise(resolve=>{release=resolve;});return {promise,release};};

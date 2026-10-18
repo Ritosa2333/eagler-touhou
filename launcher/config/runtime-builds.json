@@ -83,7 +83,7 @@
     },
     "th09": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["th09_web/scripts/build-sdl.mjs", "--release"] },
+      "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl.mjs", "--release"] },
       "workspaceRepository": "th09",
       "variants": {
         "normal": { "features": { "thcrap": true, "thprac": false }, "cache": {} },
@@ -123,13 +123,13 @@
     },
     "th15": {
       "builder": "prebuilt",
-      "sourceBuild": { "kind": "node", "build": ["th15_web/scripts/build-sdl-application.mjs", "--release"], "practiceFlag": "--thprac", "commonInputs": ["include/eagler/text/RuntimeFontRaster.hpp"] },
+      "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl-application.mjs", "--release"], "practiceFlag": "--thprac", "commonInputs": ["include/eagler/text/RuntimeFontRaster.hpp"] },
       "workspaceRepository": "th15",
       "variants": {
         "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
         "multiplayer": {
           "workspaceRepository": "th15mp",
-          "sourceBuild": { "build": ["th15_web/scripts/build-sdl-application.mjs", "--release", "--multiplayer"] },
+          "sourceBuild": { "build": ["web/scripts/build-sdl-application.mjs", "--release", "--multiplayer"] },
           "features": { "thcrap": true, "thprac": false },
           "cache": {}
         }

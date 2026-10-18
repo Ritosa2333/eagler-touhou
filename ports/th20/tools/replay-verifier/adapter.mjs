@@ -1,6 +1,6 @@
 import {resolve} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
-const common=process.env.EAGLER_COMMON_ROOT??fileURLToPath(new URL('../../../eagler-common/',import.meta.url));
+const common=process.env.EAGLER_COMMON_ROOT??fileURLToPath(new URL('../../../../common/',import.meta.url));
 const {digestCanonicalJson,recordsFromSegments}=await import(pathToFileURL(resolve(common,'testkit/replay-verifier/adapter.mjs')));
 export const fields=['active','stage','replayFrame','stageClock','secondaryClock','gameFlags','input','pressed','released','rng','rngState','playerXBits','playerYBits','playerState','fixedX','fixedY','focused','scoreLow','scoreHigh','power','lives','lifeFragments','bombFragments','bombs','sessionFlags','dialogue','speed0','speed1','speed2','speed3','graze','logicalScaleBits','pointValue','specialItems','pointRatio','overlayMeter'];
 export function ticksFromRows(rows){

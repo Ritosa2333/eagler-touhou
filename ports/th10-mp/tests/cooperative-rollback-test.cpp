@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/CooperativeRules.hpp"
+#include "../web/cpp/multiplayer/CooperativeRules.hpp"
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/RollbackJournal.hpp>
 

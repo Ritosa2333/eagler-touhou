@@ -14,5 +14,5 @@ for(const [file,info] of Object.entries(JSON.parse(index).files)){
  const to=resolve(out,file);mkdirSync(dirname(to),{recursive:true});writeFileSync(to,bytes);
 }
 writeFileSync(resolve(out,'runtime-files.json'),index);
-const build=readFileSync(resolve(root,'th08_web/artifacts/presentation-lab/build.json'));writeFileSync(resolve(out,'build.json'),build);
+const build=readFileSync(resolve(root,'web/artifacts/presentation-lab/build.json'));writeFileSync(resolve(out,'build.json'),build);
 console.log(JSON.stringify({snapshot:name,out,wasm:JSON.parse(build).sha256}));

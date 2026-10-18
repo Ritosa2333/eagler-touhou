@@ -14,7 +14,7 @@ const out=resolve(root,'artifacts/replay-verifier/daily-'+id);
 if(existsSync(out))throw Error('Daily run directory already exists; preserve earlier evidence');
 mkdirSync(out,{recursive:true});
 const hash=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
-const buildPath=resolve(root,'th10_web/artifacts/presentation-lab/build.json');
+const buildPath=resolve(root,'web/artifacts/presentation-lab/build.json');
 const build=JSON.parse(readFileSync(buildPath));
 const runtime=resolve(root,'artifacts/presentation-lab/runtime');
 const fixtureRoot=resolve(process.env.TH10_REPLAY_FIXTURE_ROOT||resolve(root,'tools/replay-verifier/fixtures/original'));

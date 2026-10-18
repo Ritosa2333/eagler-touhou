@@ -7,22 +7,22 @@
   "conclusion": ["Controlled CPU4 depth-8/D0 correctness PASS; actual-network and native-rAF acceptance remain untested.","This single candidate does not measure enemy-index speedup. Adverse native-call tails, warmup, recovery continuations and confirmation tails are retained.","Compiler-named/Java/Node candidates consumed CPU; no individual call is attributed to them, and their task identity is unproven."],
   "rawArtifacts": [
     {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-cleanup.json",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-cleanup.json",
       "bytes": 38,
       "sha256": "755e68727451536a617967592959c2b45853ec0490e947b244ef69ef2d07ad15"
     },
     {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-invocation.json",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-invocation.json",
       "bytes": 3621,
       "sha256": "751011570e6422c4b81ff77aa51921031f7ce6078f17fb2a2e0bad3a585e1228"
     },
     {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-process.log",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-process.log",
       "bytes": 2055,
       "sha256": "05ce7a6ef9496919fde629ba622cb6f531a7b8fa310b82b49fe11c35eaf9633b"
     },
     {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-report.json",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-deep8-cpu4-01-report.json",
       "bytes": 4663577,
       "sha256": "cbc6492eb54c225eaeefa31b428ac537eff7382e348c957f368b4b8207eab77f"
     }
@@ -33,18 +33,18 @@
     "elapsedMs": 466466.6513,
     "status": 0,
     "signal": null,
-    "args": ["th09_web/tests/multiplayer/peer-browser.mjs"],
+    "args": ["web/tests/multiplayer/peer-browser.mjs"],
     "head": "5d4b7f0a1cc047143e3f5da5ed3749ad5af9b897",
     "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
     "monitoredSourceIdentityStable": true,
     "monitoredIdentity": {
-      "th09_web/tests/multiplayer/peer-browser.mjs": "a7cf46dfe2550fec3f7ebe2d5e991453dbbe23c658a602e0e69afddd7a428aa5",
-      "th09_web/tests/multiplayer/host-load-probe.mjs": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
-      "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-      "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-      "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-      "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-      "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6"
+      "web/tests/multiplayer/peer-browser.mjs": "a7cf46dfe2550fec3f7ebe2d5e991453dbbe23c658a602e0e69afddd7a428aa5",
+      "web/tests/multiplayer/host-load-probe.mjs": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+      "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+      "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+      "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+      "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+      "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6"
     },
     "identityError": null,
     "stderrBytes": 0,
@@ -54,12 +54,12 @@
     }
   },
   "artifact": {
-    "directory": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-live",
+    "directory": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-live",
     "kind": "th09-presentation-harness",
     "builtAt": "2026-10-11T01:50:54.603Z",
     "completeGame": false,
     "audioSimd": false,
-    "compilerFlags": ["-O2","-g0","-std=c++17","-ffp-contract=off","-fno-strict-aliasing","-fno-exceptions","-fno-rtti","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\sdl","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer","-DTH_NATIVE_PLATFORM=1","-DTH_ENABLE_THCRAP=1","-DTH09_DEVELOPMENT_HARNESS=1","--use-port=sdl3","--use-port=sdl3_ttf"],
+    "compilerFlags": ["-O2","-g0","-std=c++17","-ffp-contract=off","-fno-strict-aliasing","-fno-exceptions","-fno-rtti","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\sdl","-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer","-DTH_NATIVE_PLATFORM=1","-DTH_ENABLE_THCRAP=1","-DTH09_DEVELOPMENT_HARNESS=1","--use-port=sdl3","--use-port=sdl3_ttf"],
     "sourceCompilerFlags": {},
     "wasmBytes": 3155589,
     "loadedIdentity": {
@@ -157,7 +157,7 @@
   "costDefinitions": {
     "sampleColumns": ["nextBefore","nextAfter","correctionsDelta","resimulatedDelta","nativeCallMs","returnCode","aliveBullets","sessionPhase","requestedRestoreDepth","aliveEnemies"],
     "unit": "elapsed performance.now milliseconds around one _th09_game_tick call; includes descheduling and invoked platform work, not CPU process time",
-    "source": "th09_web/tests/multiplayer/peer-browser.mjs:123-139,155-170",
+    "source": "web/tests/multiplayer/peer-browser.mjs:123-139,155-170",
     "legacy": "Filter ALL rows by nextBefore >= 180 && nextBefore < 1800. This is non-contiguous under rollback and can re-enter during the confirmation tail.",
     "continuous": "For each peer scan rows in original call order with H=max(H,nextBefore,nextAfter). Include the first row reaching H>=180, through the first row reaching H>=1800; separately retain every later row until the harness confirms both peers at 1800. Also report the combined interval.",
     "endpoints": "Left crossing row is included; its nextBefore<180 is not a post-left-endpoint rollback omission. Tail rows can still correct/replay below 1800 after first reaching it.",

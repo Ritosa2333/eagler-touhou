@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {core,memory} from '../../th11_web/tests/cpp/helpers.mjs';
+import {core,memory} from '../../web/tests/cpp/helpers.mjs';
 export async function inspectReplay(input,{signal}={}) {
   signal?.throwIfAborted();const c=await core(),raw=typeof input==='string'?readFileSync(input):Buffer.from(input),p=c.allocate(raw.length),r=c.replay_create();memory(c,p,raw.length).set(raw);
   assert.equal(c.replay_open(r,p,raw.length),1,'Valid TH11 replay');

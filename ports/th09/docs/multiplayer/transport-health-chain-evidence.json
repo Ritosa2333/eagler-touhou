@@ -1,7 +1,7 @@
 {
   "schema": "th09/transport-health-evidence/1",
   "generator": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\summarize-transport-health.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\summarize-transport-health.mjs",
     "sha256": "8aec11fa4198575af8b8b997dde75331c56eb96d95b9b9abee024bcd09263601"
   },
   "explicitSources": [
@@ -33,7 +33,7 @@
     {
       "name": "rollback-transport-health-relay-none-01",
       "raw": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback-transport-health-relay-none-01-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback-transport-health-relay-none-01-report.json",
         "sha256": "3dbe5667f3d420b948c5c2fef8ce2be6bc32cf3f55143f8a03e51401e94aecd9",
         "bytes": 8914350,
         "originalPassed": false,
@@ -270,37 +270,37 @@
         "expectedCommonHead": "43add4dc9085c65468f7ab15428c00206cbe3834",
         "files": [
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-browser.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-browser.mjs",
             "bytes": 33670,
             "sha256": "c52534f75eaa4c15ea828a47b64efa6d2aed4939d28024e65fb96f5e22ba5a20"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-fixture.mjs",
             "bytes": 17696,
             "sha256": "90cb3d5d43eaccb4f0abc574dbf717037bc9009b71967c8aca9838fcc81493b6"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-controller.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-controller.mjs",
             "bytes": 2154,
             "sha256": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-fixture.mjs",
             "bytes": 2102,
             "sha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-probe.mjs",
             "bytes": 13692,
             "sha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\host-load-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\host-load-probe.mjs",
             "bytes": 11201,
             "sha256": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th10_web\\scripts\\native\\browser-launch.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\scripts\\native\\browser-launch.mjs",
             "bytes": 1461,
             "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
           },
@@ -310,7 +310,7 @@
             "sha256": "64a66f9bbb31accf5e88b64893a6b62eef40b1060e0c0c0e303b10114197a42f"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
             "bytes": 57525,
             "sha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c"
           }
@@ -358,7 +358,7 @@
           }
         },
         "relaySource": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa",
           "fixtureSha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919",
@@ -3870,7 +3870,7 @@
     {
       "name": "rollback-transport-health-rtc-none-01",
       "raw": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback-transport-health-rtc-none-01-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback-transport-health-rtc-none-01-report.json",
         "sha256": "ebc8d613e682d8ba5f6ce1ab219a60b61a7ec94b1e07c4e3af563f853926cf3a",
         "bytes": 6077506,
         "originalPassed": false,
@@ -4101,37 +4101,37 @@
         "expectedCommonHead": "43add4dc9085c65468f7ab15428c00206cbe3834",
         "files": [
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-browser.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-browser.mjs",
             "bytes": 33670,
             "sha256": "c52534f75eaa4c15ea828a47b64efa6d2aed4939d28024e65fb96f5e22ba5a20"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-fixture.mjs",
             "bytes": 17696,
             "sha256": "90cb3d5d43eaccb4f0abc574dbf717037bc9009b71967c8aca9838fcc81493b6"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-controller.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-controller.mjs",
             "bytes": 2154,
             "sha256": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-fixture.mjs",
             "bytes": 2102,
             "sha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-probe.mjs",
             "bytes": 13692,
             "sha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\host-load-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\host-load-probe.mjs",
             "bytes": 11201,
             "sha256": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th10_web\\scripts\\native\\browser-launch.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\scripts\\native\\browser-launch.mjs",
             "bytes": 1461,
             "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
           },
@@ -4141,7 +4141,7 @@
             "sha256": "64a66f9bbb31accf5e88b64893a6b62eef40b1060e0c0c0e303b10114197a42f"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
             "bytes": 57525,
             "sha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c"
           }
@@ -4189,7 +4189,7 @@
           }
         },
         "relaySource": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa",
           "fixtureSha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919",
@@ -7313,7 +7313,7 @@
     {
       "name": "rollback-transport-health-relay-block-01",
       "raw": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback-transport-health-relay-block-01-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback-transport-health-relay-block-01-report.json",
         "sha256": "e54509e7d57d9f3482141134240c943cc46a679102f52609aed64446c797bf2c",
         "bytes": 8825920,
         "originalPassed": false,
@@ -7526,37 +7526,37 @@
         "expectedCommonHead": "43add4dc9085c65468f7ab15428c00206cbe3834",
         "files": [
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-browser.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-browser.mjs",
             "bytes": 33670,
             "sha256": "c52534f75eaa4c15ea828a47b64efa6d2aed4939d28024e65fb96f5e22ba5a20"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-fixture.mjs",
             "bytes": 17696,
             "sha256": "90cb3d5d43eaccb4f0abc574dbf717037bc9009b71967c8aca9838fcc81493b6"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-controller.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-controller.mjs",
             "bytes": 2154,
             "sha256": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-fixture.mjs",
             "bytes": 2102,
             "sha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-probe.mjs",
             "bytes": 13692,
             "sha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\host-load-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\host-load-probe.mjs",
             "bytes": 11201,
             "sha256": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th10_web\\scripts\\native\\browser-launch.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\scripts\\native\\browser-launch.mjs",
             "bytes": 1461,
             "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
           },
@@ -7566,7 +7566,7 @@
             "sha256": "64a66f9bbb31accf5e88b64893a6b62eef40b1060e0c0c0e303b10114197a42f"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
             "bytes": 57525,
             "sha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c"
           }
@@ -7614,7 +7614,7 @@
           }
         },
         "relaySource": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa",
           "fixtureSha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919",
@@ -11554,7 +11554,7 @@
     {
       "name": "rollback-transport-health-rtc-block-01",
       "raw": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback-transport-health-rtc-block-01-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback-transport-health-rtc-block-01-report.json",
         "sha256": "26535b389eaabbe4bcbd3a03ff344df8a8e8efe84c40cbecda3d10b8bccea90f",
         "bytes": 6124182,
         "originalPassed": false,
@@ -11796,37 +11796,37 @@
         "expectedCommonHead": "43add4dc9085c65468f7ab15428c00206cbe3834",
         "files": [
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-browser.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-browser.mjs",
             "bytes": 33670,
             "sha256": "c52534f75eaa4c15ea828a47b64efa6d2aed4939d28024e65fb96f5e22ba5a20"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-fixture.mjs",
             "bytes": 17696,
             "sha256": "90cb3d5d43eaccb4f0abc574dbf717037bc9009b71967c8aca9838fcc81493b6"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-controller.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-controller.mjs",
             "bytes": 2154,
             "sha256": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-fixture.mjs",
             "bytes": 2102,
             "sha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-probe.mjs",
             "bytes": 13692,
             "sha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\host-load-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\host-load-probe.mjs",
             "bytes": 11201,
             "sha256": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th10_web\\scripts\\native\\browser-launch.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\scripts\\native\\browser-launch.mjs",
             "bytes": 1461,
             "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
           },
@@ -11836,7 +11836,7 @@
             "sha256": "64a66f9bbb31accf5e88b64893a6b62eef40b1060e0c0c0e303b10114197a42f"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
             "bytes": 57525,
             "sha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c"
           }
@@ -11884,7 +11884,7 @@
           }
         },
         "relaySource": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa",
           "fixtureSha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919",
@@ -15537,7 +15537,7 @@
     {
       "name": "rollback-transport-health-relay-burst-01",
       "raw": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback-transport-health-relay-burst-01-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback-transport-health-relay-burst-01-report.json",
         "sha256": "b2fe3d7840b7c8629bd1fdcaf64054adf57b6f661a4eeed06afdc471e3b3e375",
         "bytes": 8852333,
         "originalPassed": false,
@@ -15750,37 +15750,37 @@
         "expectedCommonHead": "43add4dc9085c65468f7ab15428c00206cbe3834",
         "files": [
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-browser.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-browser.mjs",
             "bytes": 33670,
             "sha256": "c52534f75eaa4c15ea828a47b64efa6d2aed4939d28024e65fb96f5e22ba5a20"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\transport-health-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-fixture.mjs",
             "bytes": 17696,
             "sha256": "90cb3d5d43eaccb4f0abc574dbf717037bc9009b71967c8aca9838fcc81493b6"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-controller.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-controller.mjs",
             "bytes": 2154,
             "sha256": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-fixture.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-fixture.mjs",
             "bytes": 2102,
             "sha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-transport-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-probe.mjs",
             "bytes": 13692,
             "sha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\host-load-probe.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\host-load-probe.mjs",
             "bytes": 11201,
             "sha256": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th10_web\\scripts\\native\\browser-launch.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\scripts\\native\\browser-launch.mjs",
             "bytes": 1461,
             "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
           },
@@ -15790,7 +15790,7 @@
             "sha256": "64a66f9bbb31accf5e88b64893a6b62eef40b1060e0c0c0e303b10114197a42f"
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
             "bytes": 57525,
             "sha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c"
           }
@@ -15838,7 +15838,7 @@
           }
         },
         "relaySource": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa",
           "fixtureSha256": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919",

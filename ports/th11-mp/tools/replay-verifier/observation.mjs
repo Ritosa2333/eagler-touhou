@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-const common = resolve(process.env.EAGLER_COMMON_ROOT || fileURLToPath(new URL('../../../eagler-common', import.meta.url)));
+const common = resolve(process.env.EAGLER_COMMON_ROOT || fileURLToPath(new URL('../../../../common',import.meta.url)));
 const {TraceCapture} = await import(pathToFileURL(resolve(common, 'testkit/replay-verifier/capture-file.mjs')));
 export const economyAddresses = [0x4a56e4,0x4a56e8,0x4a56f0,0x4a56f4,0x4a5718,0x4a571c,0x4a5720,0x4a5744,0x4a5748,0x4a574c,0x4a5754,0x4a576c];
 export const motionFields = [[0,0x87c,12],[12,0x888,8],[20,0x890,16],[36,0x8a0,12],[48,0x8ac,12],[60,0x8b8,8],[68,0x914,8],[76,0x91c,12],[88,0x8d20,4],[92,0x95c,4],[96,0x8ba0,16],[112,0x8bc8,4],[116,0x8bc4,4],[120,0x7c90,4],[124,0x8c14,4]];

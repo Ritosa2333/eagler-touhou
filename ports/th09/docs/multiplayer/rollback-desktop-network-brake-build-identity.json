@@ -23,41 +23,41 @@
       "sourceCount": 275,
       "changed": [
         {
-          "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+          "path": "web/cpp/multiplayer/RollbackSession.cpp",
           "frozen": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
           "candidate": "198776ef3209f4d02c6954f4864648d0308355bd4477ee937e7924a26b47709d"
         }
       ],
       "frozen": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\build.json",
           "bytes": 87059,
           "sha256": "86da4a062d000b3b4f238f823dee07d5fcaa5137e229778c3e9bc5a8eaabc21f"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\th09.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\th09.wasm",
           "bytes": 2827907,
           "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\th09.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\th09.mjs",
           "bytes": 257184,
           "sha256": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3"
         }
       },
       "candidate": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\th09_web\\artifacts\\desktop-network-brake-release-c1\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\web\\artifacts\\desktop-network-brake-release-c1\\build.json",
           "bytes": 87055,
           "sha256": "d0413f4b1afaca0c8932d349e5341f437d77063aa8222b253a895915866e182d"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\th09_web\\artifacts\\desktop-network-brake-release-c1\\th09.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\web\\artifacts\\desktop-network-brake-release-c1\\th09.wasm",
           "bytes": 2827901,
           "sha256": "f0e04a7069fe3aeaf4ab52018aa8d1b944811cad0cc7b4dc17d9f9d7e1b9ae7b"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\th09_web\\artifacts\\desktop-network-brake-release-c1\\th09.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\web\\artifacts\\desktop-network-brake-release-c1\\th09.mjs",
           "bytes": 257184,
           "sha256": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3"
         }
@@ -68,7 +68,7 @@
   "invocations": [
     {
       "identity": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-network-brake-build-release-c1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\web\\artifacts\\multiplayer-tests\\desktop-network-brake-build-release-c1-invocation.json",
         "bytes": 65073,
         "sha256": "01c86a658d6e515677812e0f269bd81ee2863c5169a876ec0315cc9d1671b344"
       },
@@ -76,7 +76,7 @@
       "elapsedMs": 50559.2387,
       "sourceStable": true,
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-network-brake-build-release-c1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-network-brake-4x\\web\\artifacts\\multiplayer-tests\\desktop-network-brake-build-release-c1-process.log",
         "bytes": 8309,
         "sha256": "69116430b293e273a2e21bd855a0048b7c30d37d254b6bc1e8b416691e99ff6d"
       },
@@ -84,7 +84,7 @@
         "scope": "Desktop isolated information-pacing build only; no browser/device/phone",
         "candidate": "Start smooth network interval braking one prediction frame earlier, B−3 target",
         "semanticSourceChanges": 1,
-        "changedSource": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+        "changedSource": "web/cpp/multiplayer/RollbackSession.cpp",
         "baselineBuildSources": 275,
         "baselineWasmSha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
         "release": true,

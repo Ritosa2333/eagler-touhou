@@ -1,7 +1,7 @@
 {
   "schema": "th09-graphics-qualified-window-context/v1",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-failure.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-failure.json",
     "bytes": 71766293,
     "sha256": "9c7ffe42fab18919260f6a9811d1c143e1992138957a46b667c08b7dfdc64812"
   },
@@ -20,7 +20,7 @@
     {
       "side": 0,
       "artifact": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-P1-scheduler-trace.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-P1-scheduler-trace.json",
         "bytes": 45036852,
         "sha256": "c3c366ce355deeca3de986d075bf676af6e8ca273ebabb3034a31a8803d2b2ae"
       },
@@ -1391,7 +1391,7 @@
     {
       "side": 1,
       "artifact": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-P2-scheduler-trace.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-P2-scheduler-trace.json",
         "bytes": 45052301,
         "sha256": "f0a905656eaa76274d648c8f98c17c0996fadd3beb26f65ac6835fa5a4f5312a"
       },

@@ -3,12 +3,12 @@
   "scope": "Offline attribution of the complete V8 sampling windows of one diagnostic live session, not release acceptance or a process CPU benchmark.",
   "inputs": {
     "report": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-report.json",
       "bytes": 46482148,
       "sha256": "e3b6ba7445638c72b69b9a7e85ab6ecb65041f3e3859753d6f8d533c3804e08d"
     },
     "analyzer": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\analyze-live-audio-profile.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-live-audio-profile.mjs",
       "bytes": 14061,
       "sha256": "5cb9b70931886e353d8b23d51b6f3b1603d8a58bf9ffdcb134050b842f50cabf"
     }
@@ -1548,7 +1548,7 @@
   "currentMusicAssets": {
     "scope": "Current fixture metadata read after capture; the raw live report does not record the selected music cue or music asset hashes.",
     "format": {
-      "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\reference\\assets\\thbgm.fmt",
+      "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\thbgm.fmt",
       "bytes": 1005,
       "sha256": "005a233bd4cd332cab5fe78508b1400929090bd6949610440e7d93308fbd5b8c"
     },
@@ -1562,7 +1562,7 @@
         "durationSeconds": 71.10385487528345,
         "fullF32Bytes": 25085440,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_00.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00.ogg",
           "bytes": 1757496,
           "sha256": "316c5ae8a2492bcf9b8e39dafb537ebe7ea4e70fb9fd9dd52b7f281deadf458e",
           "channels": 2,
@@ -1578,7 +1578,7 @@
         "durationSeconds": 134.71637188208618,
         "fullF32Bytes": 47527936,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_00b.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00b.ogg",
           "bytes": 3470198,
           "sha256": "3bfe666bf744a3709c9fc991b45a179da88d9dc21ecd7ba87026fa8939552b8a",
           "channels": 2,
@@ -1594,7 +1594,7 @@
         "durationSeconds": 70.39492063492064,
         "fullF32Bytes": 24835328,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_00c.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00c.ogg",
           "bytes": 1623421,
           "sha256": "bd7808c1ee0a66f344b2b876638b42413b6e1743db00b07b91ba43c36179add7",
           "channels": 2,
@@ -1610,7 +1610,7 @@
         "durationSeconds": 159.73006802721088,
         "fullF32Bytes": 56352768,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_01.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_01.ogg",
           "bytes": 4154589,
           "sha256": "0ccbf94d0ece753ac97c24659d1bd28bf305b68f3c8db0de54ed435f2da73d9b",
           "channels": 2,
@@ -1626,7 +1626,7 @@
         "durationSeconds": 130.20190476190476,
         "fullF32Bytes": 45935232,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_02.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_02.ogg",
           "bytes": 3330544,
           "sha256": "fa259e5ba48ebb683b6bb1ef86866bc0a752e7616b1ed5c03e2927d72d7443fe",
           "channels": 2,
@@ -1642,7 +1642,7 @@
         "durationSeconds": 148.6483446712018,
         "fullF32Bytes": 52443136,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_05.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_05.ogg",
           "bytes": 4329700,
           "sha256": "16bc29037f448813168ee318b209c21f2b1697054244e7de128a379e2219b5b5",
           "channels": 2,
@@ -1658,7 +1658,7 @@
         "durationSeconds": 166.25487528344672,
         "fullF32Bytes": 58654720,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_07.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_07.ogg",
           "bytes": 4326338,
           "sha256": "e8def2e9acfe65f679effcff3c657e87441f4fcd9e4762ccdf051938d27ed762",
           "channels": 2,
@@ -1674,7 +1674,7 @@
         "durationSeconds": 141.1526530612245,
         "fullF32Bytes": 49798656,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th07_09.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th07_09.ogg",
           "bytes": 3768596,
           "sha256": "b6b5982b28234ad292ef57c5b013dd48b193c80a3cf85898d9eb4f91a93d6b99",
           "channels": 2,
@@ -1690,7 +1690,7 @@
         "durationSeconds": 159.07410430839002,
         "fullF32Bytes": 56121344,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th07_10_b.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th07_10_b.ogg",
           "bytes": 4254555,
           "sha256": "ff042456fa3f8cc211665698437f9f55473dea8a371cf4d67172b30731cb5dc9",
           "channels": 2,
@@ -1706,7 +1706,7 @@
         "durationSeconds": 178.73850340136053,
         "fullF32Bytes": 63058944,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_08_2.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_08_2.ogg",
           "bytes": 4871445,
           "sha256": "ffa52aa2aef9474bb509363e0ae03e2bb3a4510546a40b719f4813ec1d591b8d",
           "channels": 2,
@@ -1722,7 +1722,7 @@
         "durationSeconds": 170.32272108843537,
         "fullF32Bytes": 60089856,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_09.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_09.ogg",
           "bytes": 4577477,
           "sha256": "c89d14b131c6f893ba2b280338ea521de09870f3670d833682cc4b23a3187857",
           "channels": 2,
@@ -1738,7 +1738,7 @@
         "durationSeconds": 120.9643537414966,
         "fullF32Bytes": 42676224,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th08_12.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th08_12.ogg",
           "bytes": 3203611,
           "sha256": "713f8becb676cc83229cd11f455be786b82cd3cc9de2c22b16371d600a0c4498",
           "channels": 2,
@@ -1754,7 +1754,7 @@
         "durationSeconds": 109.64770975056689,
         "fullF32Bytes": 38683712,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_10.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_10.ogg",
           "bytes": 2949875,
           "sha256": "353c27aa5fbfa7e08ecb0a37c34f8f62ae3a45d3cd906dee38f2e1da043609b6",
           "channels": 2,
@@ -1770,7 +1770,7 @@
         "durationSeconds": 254.51972789115646,
         "fullF32Bytes": 89794560,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_11.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_11.ogg",
           "bytes": 6959581,
           "sha256": "d2f92da2940b7f830ccb8a23e8398df1795ec16063bef0b8fbbbcb9789bc8f0b",
           "channels": 2,
@@ -1786,7 +1786,7 @@
         "durationSeconds": 117.67002267573696,
         "fullF32Bytes": 41513984,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_12.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_12.ogg",
           "bytes": 3258330,
           "sha256": "87162fc05c0cd396825b0c80430e530736382b81e7131849631ab84271a0caae",
           "channels": 2,
@@ -1802,7 +1802,7 @@
         "durationSeconds": 159.99709750566893,
         "fullF32Bytes": 56446976,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_13.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_13.ogg",
           "bytes": 4190716,
           "sha256": "e8339d3f5dbf3a2a450ab54fb937e20fa121550874eca101fb93c7a0a3806f9a",
           "channels": 2,
@@ -1818,7 +1818,7 @@
         "durationSeconds": 49.480272108843536,
         "fullF32Bytes": 17456640,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_14.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_14.ogg",
           "bytes": 1270677,
           "sha256": "d05ef899b591d9f12a3f84bd9a1ff7ec1978b7eb1b4de71b9963f2b3ddcc52ef",
           "channels": 2,
@@ -1834,7 +1834,7 @@
         "durationSeconds": 38.33469387755102,
         "fullF32Bytes": 13524480,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_15.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_15.ogg",
           "bytes": 989967,
           "sha256": "b1a7981b546dd373cc8375a6f4688b5e4562c7418095572070ff6fc894bc48bc",
           "channels": 2,
@@ -1850,7 +1850,7 @@
         "durationSeconds": 112.44770975056689,
         "fullF32Bytes": 39671552,
         "ogg": {
-          "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\music\\th09_17.ogg",
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_17.ogg",
           "bytes": 2825216,
           "sha256": "6e631a0b7e09a7eea653fb77229b174594c8e3676db3ebf8885968e6b0cc7e64",
           "channels": 2,
@@ -1863,7 +1863,7 @@
     {
       "side": "P1",
       "input": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-P1.cpuprofile",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-P1.cpuprofile",
         "bytes": 655240,
         "sha256": "6f34141fc8862b51ab90cd3b562439a602dbb7c34719c4a08770bd57b7d56bb2"
       },
@@ -3418,7 +3418,7 @@
     {
       "side": "P2",
       "input": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-P2.cpuprofile",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-P2.cpuprofile",
         "bytes": 842374,
         "sha256": "ea78048bf59e5c34f900d3df1ba666cbe98cb9d1a537a72f798bca2373582fc5"
       },

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {webcrypto} from 'node:crypto';
-import {configureMultiplayer,validateMultiplayerOptions,updateNetworkDiagnostics,networkError} from '../../th08_web/sdl-runtime/multiplayer-host.mjs';
+import {configureMultiplayer,validateMultiplayerOptions,updateNetworkDiagnostics,networkError} from '../../web/sdl-runtime/multiplayer-host.mjs';
 
 const base={netplayMode:'lan',netplayUrl:'wss://relay.test/peer?room=th08mp-demo&run=1&player=0',
  netplayPlayerCount:2,netplayPlayer:0,netplaySeed:1234,netplayDifficulty:1,

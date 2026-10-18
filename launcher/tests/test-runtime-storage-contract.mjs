@@ -1,3 +1,4 @@
+import {selectedPortGames} from './support/port-selection.mjs';
 /**
  * L3/module: execute the actual inline preload shell scripts with mocked DOM/FS.
  * Preconditions: source shells; no game assets or browser required.
@@ -63,7 +64,7 @@ function harness(source, game) {
       data:{protocol:HOST_PROTOCOL,game,epoch,command,request:`test-${replies.length}`, ...payload}})};
 }
 
-for (const [game, shell] of Object.entries(shells)) {
+for (const [game, shell] of Object.entries(shells).filter(([game]) => selectedPortGames(preloadGames).includes(game))) {
   const html=await readFile(shell,"utf8");
   const source=html.match(/<script>\s*([\s\S]*?)<\/script>/)?.[1];
   assert.ok(source,`${game}: inline source`);

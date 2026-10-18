@@ -327,7 +327,7 @@ try{
   const manifest=JSON.parse(readFileSync(resolve(runtime,'manifest.json'))),inventory=JSON.parse(readFileSync(resolve(runtime,'runtime-files.json')));
   assert.equal(manifest.product,'th11mp');assert.equal(manifest.variant,'multiplayer');
   const wasm=fileIdentity(resolve(runtime,'th11-sdl.wasm'));assert.equal(wasm.sha256,manifest.execution.sha256,'Actual WASM agrees with untouched manifest');
-  report.identity={game:gitIdentity(root),common:gitIdentity(resolve(root,'third_party/eagler-common')),launcher:gitIdentity(launcher),
+  report.identity={game:gitIdentity(root),common:gitIdentity(resolve(root,'../../common')),launcher:gitIdentity(launcher),
     archive:fileIdentity(archive),manifest:fileIdentity(resolve(runtime,'manifest.json')),inventory:fileIdentity(resolve(runtime,'runtime-files.json')),
     wasm,loader:fileIdentity(resolve(runtime,'th11-sdl.mjs')),shell:fileIdentity(resolve(runtime,'shell.mjs')),
     relay:fileIdentity(relayFile),catalog:fileIdentity(catalogFile),runtimeOptions:fileIdentity(optionsFile),relayUrl:fileIdentity(relayUrlFile),

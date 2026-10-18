@@ -7,7 +7,7 @@ const sdk=process.env.WASI_SDK_PATH??resolve(root,'../../toolchains/wasi-sdk-34.
 const compiler=resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++');
 if(!existsSync(compiler))throw Error('Set WASI_SDK_PATH to the installed WASI SDK');
 const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:true});
-const title=resolve(root,'th08_web/cpp/multiplayer'),wasm=resolve(out,'audio-events.wasm');
+const title=resolve(root,'web/cpp/multiplayer'),wasm=resolve(out,'audio-events.wasm');
 execFileSync(compiler,['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti',
   '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-I'+title,'-Wl,-z,stack-size=1048576',
   resolve(title,'AudioEvents.cpp'),resolve(root,'tests/audio-events-test.cpp'),'-o',wasm],{windowsHide:true,stdio:'inherit'});

@@ -26,7 +26,7 @@ import urllib.parse
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-RELAY_ROOT = ROOT.parent / "eagler-touhou"
+from integration_support import require_host_relay
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -203,8 +203,9 @@ def main() -> int:
         relay_command = ["node"]
         if args.relay_diagnostics:
             relay_command += ["--import", (ROOT / "tests/netplay-relay-timing-probe.mjs").as_uri()]
-        relay = subprocess.Popen([*relay_command, str(RELAY_ROOT / "server/netplay-relay.mjs")],
-                                 cwd=RELAY_ROOT, env=env, stdout=relay_log, stderr=relay_log)
+        relay_root, relay_script = require_host_relay()
+        relay = subprocess.Popen([*relay_command, str(relay_script)],
+                                 cwd=relay_root, env=env, stdout=relay_log, stderr=relay_log)
         try:
             deadline = time.monotonic() + 10
             while True:
@@ -239,7 +240,7 @@ def main() -> int:
                         if args.input_latency:
                             context.add_init_script((ROOT / "tests/netplay-input-latency-probe.cjs").read_text(encoding="utf-8"))
                         if args.rtc_input_delay_ms is not None:
-                            injector = (ROOT / "third_party/eagler-common/testkit/rtc-input-impairment.cjs").read_text(encoding="utf-8")
+                            injector = (Path(os.environ.get("EAGLER_COMMON_ROOT", ROOT.parent.parent / "common")) / "testkit/rtc-input-impairment.cjs").read_text(encoding="utf-8")
                             settings = json.dumps({"oneWayMs": args.rtc_input_delay_ms,
                                                    "jitterMs": args.rtc_input_jitter_ms,
                                                    "blackoutMs": args.rtc_input_blackout_ms,

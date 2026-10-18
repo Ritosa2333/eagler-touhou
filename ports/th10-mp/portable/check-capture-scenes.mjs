@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {writeFileSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 const browser=await launchBrowser(),results={};
 try {
  for(const [name,port]of [['previous',8088],['candidate',8095]]){
@@ -25,5 +25,5 @@ try {
  assert.deepEqual(results.candidate.rows,results.previous.rows,'Pause blur/dim/resume pixels must remain identical');
  assert(results.candidate.stats[16]>3,'Actual pause must use GPU filtering');
  assert.equal(results.candidate.stats[3],results.candidate.initialReadBytes,'Only startup driver validation may read GPU pixels');
- writeFileSync('th08_web/artifacts/architecture-candidate/validation/capture-scenes.json',JSON.stringify({passed:true,results},null,2));console.log({passed:true,previousReadBytes:results.previous.stats[3],candidateReadBytes:results.candidate.stats[3]});
+ writeFileSync('web/artifacts/architecture-candidate/validation/capture-scenes.json',JSON.stringify({passed:true,results},null,2));console.log({passed:true,previousReadBytes:results.previous.stats[3],candidateReadBytes:results.candidate.stats[3]});
 }finally{await browser.close();}

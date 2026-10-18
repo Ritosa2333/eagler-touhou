@@ -2,8 +2,8 @@
 // Mirrors upstream thprac ReplaySaveParam/ReplayLoadParam for th10 ('USER' /
 // 'PRAC' block holding THPracParam::GetJson()) and the THGuiRep State(1/2/3)
 // candidate lifecycle used by the title replay menu.
-#include "../th10_web/cpp/game/PracticeConfig.hpp"
-#include "../th10_web/cpp/game/PracticeSections.hpp"
+#include "../web/cpp/game/PracticeConfig.hpp"
+#include "../web/cpp/game/PracticeSections.hpp"
 #include "../portable/input/MotionTrack.hpp"
 #include <cassert>
 #include <cstring>

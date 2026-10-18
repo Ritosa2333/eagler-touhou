@@ -1,8 +1,8 @@
 #pragma once
-#include "../../th15_web/cpp/game/GameBattle.hpp"
-#include "../../th15_web/cpp/game/StageAssets.hpp"
-#include "../../th15_web/cpp/game/Archive.hpp"
-#include "../../th15_web/cpp/game/ChapterReward.hpp"
+#include "../../web/cpp/game/GameBattle.hpp"
+#include "../../web/cpp/game/StageAssets.hpp"
+#include "../../web/cpp/game/Archive.hpp"
+#include "../../web/cpp/game/ChapterReward.hpp"
 #include <cstdio>
 #include <fstream>
 #include <iterator>

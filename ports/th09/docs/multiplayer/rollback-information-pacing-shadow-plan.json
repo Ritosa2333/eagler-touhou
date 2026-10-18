@@ -15,7 +15,7 @@
   "inputs": [
     {
       "id": "relay39_burst_response",
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay-burst-response-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay-burst-response-01-report.json",
       "bytes": 21525676,
       "sha256": "09bb173bee138e05916d0557c0a42d5797c6be200e4825e97e42695063582376",
       "identityWitness": "docs/multiplayer/rollback-chain-release-burst-response-evidence.json",
@@ -38,7 +38,7 @@
     },
     {
       "id": "relay125_steady",
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
       "bytes": 28866220,
       "sha256": "d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770",
       "identityWitness": "docs/multiplayer/rollback-chain-release-relay125-transport-evidence.json",
@@ -113,7 +113,7 @@
     "containsOriginalPlan": true
   },
   "execution": {
-    "analyzerPath": "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs",
+    "analyzerPath": "web/tests/multiplayer/analyze-information-pacing-shadow.mjs",
     "rawReadsAuthorizedAtDeclaration": false,
     "inlineContractChecks": "Before raw reads, validate zero/cap/phase-plateau/ramp-inversion and interval classification contracts. These are not game tests."
   }

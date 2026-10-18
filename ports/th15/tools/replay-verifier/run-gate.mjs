@@ -1,7 +1,7 @@
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-const here=fileURLToPath(new URL('./',import.meta.url)),common=resolve(process.env.EAGLER_COMMON_ROOT||fileURLToPath(new URL('../../../eagler-common',import.meta.url)));
+const here=fileURLToPath(new URL('./',import.meta.url)),common=resolve(process.env.EAGLER_COMMON_ROOT||fileURLToPath(new URL('../../../../common',import.meta.url)));
 const {options,compareFileSuite,acceptFileSuite}=await import(pathToFileURL(resolve(common,'testkit/replay-verifier/file-suite.mjs')));
 const args=options(),corpus=JSON.parse(readFileSync(resolve(here,'corpus.json')));
 if(!args['capture-root'])throw Error('Use --capture-root directory [--lane quick|daily|all] [--golden-root directory] [--report file]');

@@ -1,16 +1,16 @@
 // Upgrade from the committed old cache-first worker using its actual Launcher
 // lifecycle. One idle tab upgrades while another active tab keeps its document.
 import assert from 'node:assert/strict';
-import {execFileSync} from 'node:child_process';
 import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {build} from 'esbuild';
 import puppeteer from 'puppeteer-core';
 import {APP_SHELL_RETIREMENT_WORKER} from '../../lib/app-shell-retirement.mjs';
+import {readUiHistoryText} from '../support/ui-history.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
-const prior = path => execFileSync('git', ['-c', `safe.directory=${project.replaceAll('\\', '/').replace(/\/$/, '')}`, 'show', `8bdf6dbf4a81032f0725cc841b86d03e1465fe07:${path}`], {cwd: project, encoding: 'utf8'});
+const prior = path => readUiHistoryText('8bdf6dbf4a81032f0725cc841b86d03e1465fe07', path);
 const client = await build({stdin: {contents: prior('src/launcher/app-shell-client.mts') + `
 window.busy = true;
 window.shell = createAppShellClient({shouldDeferReload: () => window.busy});

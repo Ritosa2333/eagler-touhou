@@ -7,7 +7,7 @@
       "suite": "session",
       "passed": true,
       "identity": {
-        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/session-report.json",
+        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/session-report.json",
         "bytes": 26457,
         "sha256": "8877b4f0d6c2b2ca6fa3cb84cc5ce3d345f491d4f4bbb3dfaa91df201eca8aba"
       },
@@ -18,7 +18,7 @@
       "suite": "adonis",
       "passed": true,
       "identity": {
-        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/adonis-report.json",
+        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/adonis-report.json",
         "bytes": 26630,
         "sha256": "4b0505d150bbcfbe4c5f3afa35eaf3540c573201225922873847da3527422102"
       },
@@ -29,7 +29,7 @@
       "suite": "mobile-prediction",
       "passed": true,
       "identity": {
-        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/mobile-prediction-report.json",
+        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/mobile-prediction-report.json",
         "bytes": 26641,
         "sha256": "73d98fff32b0d1ff2384cdfd746b6abb5c4ad13589b12bd2adc13c0ca6008390"
       },
@@ -40,7 +40,7 @@
       "suite": "frame-schedule",
       "passed": true,
       "identity": {
-        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/frame-schedule-report.json",
+        "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/web/artifacts/multiplayer-tests/desktop-recovery-tail-components-c1/frame-schedule-report.json",
         "bytes": 25582,
         "sha256": "152646ab9ec96aedff42d42ddcefffa83c01a13a1ebdb01012a5a18b34c15fda"
       },
@@ -50,7 +50,7 @@
   ],
   "oracle": {
     "raw": {
-      "path": "th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-joystick-h8-oracle-c1-report.json",
+      "path": "web/artifacts/multiplayer-tests/desktop-recovery-tail-joystick-h8-oracle-c1-report.json",
       "bytes": 1912992,
       "sha256": "942aa23bd1f6635f3df74360a7e74eceed421a021c927d6ff761dbb1e1ee3c99"
     },

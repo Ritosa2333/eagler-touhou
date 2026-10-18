@@ -19,7 +19,7 @@ const suites={
 const names=process.argv.slice(2);
 if(!names.length||names.some(name=>!Object.hasOwn(suites,name)))throw Error('Choose '+Object.keys(suites).join(', '));
 const sha=b=>createHash('sha256').update(b).digest('hex');
-const buildPath=resolve(root,'th08_web/artifacts/multiplayer-fixtures/build.json');
+const buildPath=resolve(root,'web/artifacts/multiplayer-fixtures/build.json');
 const build=JSON.parse(readFileSync(buildPath,'utf8'));
 const verify=()=>Object.entries(build.sourceFiles).every(([name,expected])=>sha(readFileSync(resolve(root,name)))===expected);
 if(!verify())throw Error('Fixture source drift before run');

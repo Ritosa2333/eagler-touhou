@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
@@ -55,7 +56,7 @@ export async function runChecks(repo: string) {
   async function check(name: string, run: () => void | Promise<void>) {
     await run(); cases.push({name, status: 'passed'}); console.log(`PASS ${name}`);
   }
-  const originalHtml = execFileSync('git', ['show', `${pinnedMain}:public/index.html`], {cwd: repo, encoding: 'utf8'});
+  const originalHtml = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'public/index.html');
   await check('shared parser exports the same policy and uses a four-second lifespan', () => {
     assert.equal(contentPolicy.SITE_NOTICE_DURATION_MS, 4_000);
     for (const name of ['parseSiteNoticeText', 'siteNoticeBrandAsset', 'SITE_NOTICE_DURATION_MS', 'SITE_NOTICE_STORAGE_KEY', 'SITE_NOTICE_DISMISSED_KEY'] as const) {
@@ -319,6 +320,6 @@ export async function runChecks(repo: string) {
   });
   gestureDom.window.close();
   return {status: 'passed', checkedAt: new Date().toISOString(), repo, pinnedMain,
-    sourceSha256: createHash('sha256').update(execFileSync('git', ['show', `${pinnedMain}:src/launcher/site-notice.mts`], {cwd: repo})).digest('hex'),
+    sourceSha256: createHash('sha256').update(Buffer.from(readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/site-notice.mts'))).digest('hex'),
     kind: 'Node + jsdom mounted regression; no browser or visual screenshot verification', cases};
 }

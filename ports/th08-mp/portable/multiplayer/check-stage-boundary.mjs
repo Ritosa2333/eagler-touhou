@@ -4,7 +4,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 const root=resolve(import.meta.dirname,'../..');
-const buildRoot=resolve(root,'th08_web/artifacts/multiplayer-fixtures');
+const buildRoot=resolve(root,'web/artifacts/multiplayer-fixtures');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 const hash=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
 const verify=()=>{if(build.variant!=='multiplayer-fixtures'||hash(resolve(buildRoot,'th08-sdl.wasm'))!==build.sha256)throw Error('Mismatched build');for(const [name,sha] of Object.entries(build.sourceFiles))if(hash(resolve(root,name))!==sha)throw Error('Stale source: '+name);};

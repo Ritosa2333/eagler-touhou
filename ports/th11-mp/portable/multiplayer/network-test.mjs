@@ -22,12 +22,12 @@ function run(label,program,args,options){
 }
 async function suite(){
 const root=resolve(import.meta.dirname,'../..');
-const common=resolve(root,'third_party/eagler-common'),native=resolve(root,'th11_web/cpp/multiplayer');
+const common=resolve(root,'../../common'),native=resolve(root,'web/cpp/multiplayer');
 const sdk=process.env.WASI_SDK_ROOT||'D:/workspace/eagler/toolchains/wasi-sdk-34.0-x86_64-windows';
 const compiler=resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++');
 mkdirSync(out,{recursive:true});
 const sources=[...readdirSync(resolve(common,'src/netplay')).filter(p=>p.endsWith('.cpp')).map(p=>resolve(common,'src/netplay',p)),
- ...['SessionSetup.cpp','InputLanes.cpp','NetplayRuntime.cpp','ReplayArchive.cpp'].map(p=>join(native,p)),resolve(import.meta.dirname,'network-protocol.cpp'),resolve(import.meta.dirname,'network-rollback.cpp'),resolve(root,'th11_web/cpp/game/GameInput.cpp')];
+ ...['SessionSetup.cpp','InputLanes.cpp','NetplayRuntime.cpp','ReplayArchive.cpp'].map(p=>join(native,p)),resolve(import.meta.dirname,'network-protocol.cpp'),resolve(import.meta.dirname,'network-rollback.cpp'),resolve(root,'web/cpp/game/GameInput.cpp')];
 const wasm=resolve(out,'network-protocol.wasm');
 const build=run('network-compile',compiler,['--target=wasm32-wasip1','-std=c++17','-O2','-g0','-DTH11_MULTIPLAYER=1','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti',
  '-I'+resolve(common,'include'),'-I'+native,...sources,'-Wl,-z,stack-size=2097152','-Wl,--max-memory=268435456','-o',wasm],
@@ -51,7 +51,7 @@ const tail=run('spectator-tail',process.execPath,[resolve(common,'tests/browser-
 if(tail.status)throw Error(tail.stdout+tail.stderr);console.log(tail.stdout.trim());
 if(nativeOnly){console.log('PASS TH11 native network suite (browser capability checks intentionally pending)');return;}
 const browser=resolve(out,'browser');mkdirSync(browser,{recursive:true});
-for(const [source,name] of [[resolve(root,'th11_web/sdl-runtime/multiplayer.mjs'),'multiplayer.mjs'],
+for(const [source,name] of [[resolve(root,'web/sdl-runtime/multiplayer.mjs'),'multiplayer.mjs'],
  [resolve(root,'portable/browser/multiplayer-replay.mjs'),'multiplayer-replay.mjs'],[resolve(common,'browser/adonis-calibration.mjs'),'adonis-calibration.mjs']])copyFileSync(source,resolve(browser,name));
 const {multiplayerBuildWords,validateMultiplayerOptions,multiplayerSetupWords}=await import(pathToFileURL(resolve(browser,'multiplayer.mjs')));
 const {inspectMultiplayerReplay,multiplayerReplayPath}=await import(pathToFileURL(resolve(browser,'multiplayer-replay.mjs')));
@@ -139,14 +139,14 @@ if(process.argv.includes('--run-suite')){
  const save=()=>writeFileSync(resolve(out,'receipt.json'),JSON.stringify(receipt,null,2)+'\n');
  save();
  try{
-  const common=resolve(root,'third_party/eagler-common'),native=resolve(root,'th11_web/cpp/multiplayer'),game=resolve(root,'th11_web/cpp/game');
+  const common=resolve(root,'../../common'),native=resolve(root,'web/cpp/multiplayer'),game=resolve(root,'web/cpp/game');
   const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]);
   const files=[...walk(resolve(common,'include')),...walk(resolve(common,'src/netplay')),
    ...walk(resolve(common,'tests/fixtures/include')),...['calibration-retirement-test.cpp','session-channel-test.cpp','adonis-startup-test.cpp','browser-peer-spectator-tail.test.mjs'].map(p=>resolve(common,'tests',p)),
    ...['SessionSetup.cpp','SessionSetup.hpp','InputLanes.cpp','InputLanes.hpp','NetplayRuntime.cpp','NetplayRuntime.hpp','ReplayArchive.cpp','ReplayArchive.hpp'].map(p=>resolve(native,p)),
    ...walk(game).filter(p=>/\.(h|hpp|inc)$/.test(p)),resolve(game,'GameInput.cpp'),
    resolve(import.meta.filename),resolve(import.meta.dirname,'network-protocol.cpp'),resolve(import.meta.dirname,'network-rollback.cpp')];
-  if(!nativeOnly)files.push(resolve(root,'th11_web/sdl-runtime/multiplayer.mjs'),resolve(root,'portable/browser/multiplayer-replay.mjs'),resolve(common,'browser/adonis-calibration.mjs'));
+  if(!nativeOnly)files.push(resolve(root,'web/sdl-runtime/multiplayer.mjs'),resolve(root,'portable/browser/multiplayer-replay.mjs'),resolve(common,'browser/adonis-calibration.mjs'));
   const observed=new Map([...new Set(files)].map(path=>[path,hash(readFileSync(path))]));
   receipt.sourceFiles=Object.fromEntries([...observed].sort(([a],[b])=>a.localeCompare(b)).map(([path,digest])=>[relative(root,path).replaceAll('\\','/'),digest]));
   receipt.sourceDigest=hash(JSON.stringify(receipt.sourceFiles));

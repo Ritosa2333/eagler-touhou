@@ -1,5 +1,5 @@
-#include "../th10_web/cpp/game/AnmProjection.hpp"
-#include "../th10_web/cpp/game/GameMath.hpp"
+#include "../web/cpp/game/AnmProjection.hpp"
+#include "../web/cpp/game/GameMath.hpp"
 #include <array>
 #include <cerrno>
 #include <cstdio>

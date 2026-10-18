@@ -1,57 +1,15 @@
-This repo is uploaded on behalf of [@SteinsGateON](https://space.bilibili.com/34714121).
+# 東方風神録 TH10
 
-# TH10 portable
+本目录包含 TH10 的 C++ / SDL3 Web 实现。普通版 Runtime 配方启用 thprac 与 thcrap；多人源码位于 `ports/th10-mp/`。
 
-This branch contains the source-only TH10 3.5.1 C++/SDL3 portable and Web implementation.
+**适配明细：** [本游戏适配表](./ADAPTATION.md) · [全项目适配总览与分类](../../docs/adaptation/README.md)
 
-## Layout
+## 构建
 
-- `th10_web/`: TH10 game, SDL runtime, launcher integration, documentation, and source tests.
-- `portable/`: shared GLES renderer, numeric compatibility code, input code, build orchestration, and validation tools.
-- `tools/`: the pinned Emscripten installer and its metadata.
+`portable/build.mjs --thprac`。
 
-## Build
+快速步骤和源码布局见[开发指南](docs/DEVELOPMENT.md)。源码编译后，由仓库根目录发布流程组装启动器包。
 
-Install the pinned toolchain, then build the browser runtime:
+## 资源
 
-```powershell
-python tools/download-emscripten.py
-node portable/build.mjs --th10
-```
-
-Build outputs are written below `th10_web/artifacts/` and are intentionally not tracked.
-
-## Presentation Lab
-
-[Presentation Lab](portable/presentation-lab/README.md) is wired as an isolated
-TH10 diagnostic workbench and uses the shared v1 contract from the pinned
-`eagler-common` submodule. Fixed-tick control and normalized ANM submission
-evidence are available; title-wide owner and state coverage remains incomplete,
-so clean sweeps intentionally report purity `unknown` rather than pass.
-
-Run the normal source gate after presentation changes:
-
-```powershell
-node portable/check-high-refresh-contract.mjs
-node portable/check-presentation-purity.mjs
-node --test third_party/eagler-common/testkit/presentation-lab/controller-core.test.mjs third_party/eagler-common/testkit/presentation-lab/release-contract.test.mjs
-```
-
-Build and start the isolated workbench with
-`./portable/presentation-lab/start-lab.ps1 -Build`. The script starts only the
-loopback server; it does not open a browser.
-
-## Replay logic verification
-
-The [TH10 Replay verifier](tools/replay-verifier/README.md) publishes
-content-addressed original traces for a fast four-Demo gate and complete
-Lunatic/Extra daily regression. Normal checks do not require the retail
-executable; regenerating an oracle is a separate advanced maintenance task.
-
-## Assets and licensing
-
-This repository does not include original Touhou executable, data, music, replay, or save files. A runnable package must be assembled locally from files you are legally allowed to use.
-
-## License
-
-This project is licensed under the MIT License.
+仓库不附带原版可执行文件、游戏数据、音乐、存档或 Replay。运行包需要本地合法取得的原版资源；按开发指南准备对应文件。

@@ -1,29 +1,23 @@
-# Eagler Touhou Operator Delivery
+# Eagler Touhou 部署包
 
-This is an operator deployment bundle generated from one verified formal Release.
-Automated operators and coding agents must read `AGENTS.md` before acting.
+此包由一个已验证的 Release 生成。自动化部署先读 `AGENTS.md`，部署者按下面顺序操作。
 
-- Deploy `site/` as the static web root.
-- TH06 and TH07 contain Japanese, Simplified Chinese and English.
-- TH08 currently contains Japanese only.
-- DATA, MIDI and OGG are included in the Hosted site.
-- Netplay is disabled until the operator deploys and configures its own Relay.
-- The external import fallback and HTTP-to-HTTPS migration capability are
-  intentionally retained by the current internal profile.
-- `verification-report.json` records the evidence level inherited from the
-  formal Release. Build/structure PASS is not browser or gameplay acceptance.
+## 1. 校验
 
-Before deployment, verify the untouched delivery from its root:
+在交接包根目录运行：
 
 ```sh
 sha256sum --check operator-checksums.txt
 ```
 
-Use `services/nginx/nginx.migration-window.conf.example` during the migration
-window. Exact HTTP `/migrate.html` must remain reachable and HSTS must remain
-disabled. After migration is retired, remove the capability with
-`services/configure-deployed-site.mjs`, switch to the final HTTPS example and
-enable one-year HSTS.
+在 `verification-report.json` 查看构建身份与已执行的检查，在站点描述符中查看本包的作品、语言和音乐。
 
-Import-mode files and offline game ZIPs are intentionally not included in this
-Operator delivery; they remain outputs of the source formal Release.
+## 2. 部署站点
+
+把 `site/` 的副本用作静态 Web 根目录。按 `services/README.md` 配置 HTTPS，需要多人时配置自己的 Relay。
+
+迁移 HTTP 浏览器数据期间使用 `services/nginx/nginx.migration-window.conf.example`，保留 HTTP `/migrate.html` 可访问并关闭 HSTS。迁移结束后，用 `services/configure-deployed-site.mjs` 移除迁移配置，切换最终 HTTPS 配置并开启一年 HSTS。
+
+## 3. 验证
+
+完成配置检查与对应切换验证，再在浏览器中安装、启动游戏并测试离线重开。多人站点完成 Relay 两项探测和真实房间连接。保留上一个可用站点副本。

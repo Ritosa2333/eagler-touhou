@@ -10,7 +10,7 @@ const report={passed:false,profiles:[]};
 const output=resolve(root,'artifacts/multiplayer-tests/build-isolation.json');
 try{
  for(const profile of ['sdl3','multiplayer','multiplayer-fixtures']){
-  const folder=resolve(root,'th10_web/artifacts',profile);
+  const folder=resolve(root,'web/artifacts',profile);
   const build=JSON.parse(readFileSync(resolve(folder,'build.json')));
   const wasm=resolve(folder,'th10-sdl.wasm');
   assert.equal(build.profile,profile);assert.equal(sha(wasm),build.sha256);

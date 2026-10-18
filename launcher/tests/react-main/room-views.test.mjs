@@ -7,11 +7,11 @@ import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
-import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {installMountedDom} from './mounted-dom-environment.mjs';
+import {readUiHistoryText} from '../support/ui-history.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url)), require = createRequire(resolve(project, 'package.json'));
 const {build, transform} = require('esbuild'), pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
@@ -24,7 +24,7 @@ const act = fn => React.act(async () => {await fn?.(); for (let i = 0; i < 12; i
 const defaultContext = {launched: false, th09NetworkOverlayOpen: false, launchStage: null, touchEnabled: false, touchMovementMode: 'joystick'};
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client')); ({MemoryRouter} = await import('react-router'));
-  originalHTML = pinned('public/index.html'); const mainSource = execFileSync('git', ['show', '8bdf6dbf4a81032f0725cc841b86d03e1465fe07:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
+  originalHTML = pinned('public/index.html'); const mainSource = readUiHistoryText('8bdf6dbf4a81032f0725cc841b86d03e1465fe07', 'src/launcher/app.mts');
   // Retain origin/main's separately accepted editable-name block with main's
   // updated room timing renderer. Both inputs are committed legacy authorities.
   const nameBlock = text => text.slice(text.indexOf('  const nameInput = $("#mpDisplayName");', text.indexOf('function renderMpRoom()')), text.indexOf('  const spectator = $("#mpUnseatedNote");', text.indexOf('function renderMpRoom()')));

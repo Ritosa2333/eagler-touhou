@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
-import {createBoundedRelaySender} from '../../../launcher-th11-rollback/services/netplay/relay-flow-control.mjs';
+import {createBoundedRelaySender} from '../../../../services/relay/src/relay-flow-control.mjs';
 import {installRelayTimingObserver} from './relay-timing-observer.mjs';
 
 test('observer preserves real relay bytes, timer delay, cancellation and non-game timers',()=>{

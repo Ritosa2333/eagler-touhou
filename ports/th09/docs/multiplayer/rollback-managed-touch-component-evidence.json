@@ -4,7 +4,7 @@
   "scope": "Actual managed listeners with controlled dependencies and stub native, plus production C++ TouchController component. Not real Launcher/device, elapsed input latency, whole game or FPS acceptance.",
   "candidate": {
     "invocation": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-queue-c1-invocation.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-queue-c1-invocation.json",
       "bytes": 2753,
       "sha256": "b6ea780a04e1a60b3c7e7af60fa349b99dd065d496dbe8b794b9e5ee01982d29"
     },
@@ -15,7 +15,7 @@
       "status": 0,
       "signal": null,
       "args": [
-        "th09_web/tests/server/managed-touch-queue.test.mjs"
+        "web/tests/server/managed-touch-queue.test.mjs"
       ],
       "runLabel": "managed-touch-queue-c1",
       "head": "63127575d43ea5ef35b317ff8137b00a1ab5b1cc",
@@ -23,18 +23,18 @@
       "scriptSha256": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
       "scriptAfterSha256": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
       "identityBefore": {
-        "th09_web/tests/server/managed-touch-queue.test.mjs": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
-        "th09_web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
-        "th09_web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
-        "th09_web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "web/tests/server/managed-touch-queue.test.mjs": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
+        "web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
+        "web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
         "docs/multiplayer/rollback-managed-touch-validation-plan.json": "e70679b3c7a128144b62cd2251266c714360863532c20bcd8de974761d2c239a",
         "docs/multiplayer/rollback-managed-touch-hosted-integration-addendum.json": "91b8c6c465a60c6ff3bf2b1aac324e4bc157f6b2a1a6b3fd16ac4bc00ccd02de"
       },
       "identityAfter": {
-        "th09_web/tests/server/managed-touch-queue.test.mjs": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
-        "th09_web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
-        "th09_web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
-        "th09_web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "web/tests/server/managed-touch-queue.test.mjs": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
+        "web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
+        "web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
         "docs/multiplayer/rollback-managed-touch-validation-plan.json": "e70679b3c7a128144b62cd2251266c714360863532c20bcd8de974761d2c239a",
         "docs/multiplayer/rollback-managed-touch-hosted-integration-addendum.json": "91b8c6c465a60c6ff3bf2b1aac324e4bc157f6b2a1a6b3fd16ac4bc00ccd02de"
       },
@@ -49,22 +49,22 @@
         "invocationStyle": "node test-module (node:test automatic runner)",
         "notPhoneOrElapsedLatency": true
       },
-      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-queue-c1-process.log",
+      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-queue-c1-process.log",
       "logSha256": "fda16e72cbf4bf0a8ba9bda2507316b7a4f9926894f6f224cc674fb9f6462381",
       "stdoutBytes": 59871,
       "stderrBytes": 0
     },
     "log": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-queue-c1-process.log",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-queue-c1-process.log",
       "bytes": 59871,
       "sha256": "fda16e72cbf4bf0a8ba9bda2507316b7a4f9926894f6f224cc674fb9f6462381"
     },
     "sources": {
       "sourcePaths": {
-        "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-        "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-        "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-        "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+        "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+        "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+        "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+        "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
       },
       "sourceIdentity": {
         "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -95,10 +95,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -154,10 +154,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -444,10 +444,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -584,10 +584,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -764,10 +764,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -807,10 +807,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -851,10 +851,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -918,10 +918,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -1074,10 +1074,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -1200,10 +1200,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -1341,10 +1341,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -1453,10 +1453,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -1565,10 +1565,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -1711,10 +1711,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -2104,10 +2104,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -2374,10 +2374,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -2644,10 +2644,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -2976,10 +2976,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -3055,10 +3055,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -3151,10 +3151,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -3197,10 +3197,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
@@ -3253,7 +3253,7 @@
   },
   "baseline": {
     "invocation": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-queue-b1-invocation.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-queue-b1-invocation.json",
       "bytes": 3081,
       "sha256": "bbc6ffdff3ef4e37b89d3b8be72ee6d55e0e480bd659ca4137ff3526a77cb5cc"
     },
@@ -3264,7 +3264,7 @@
       "status": 0,
       "signal": null,
       "args": [
-        "th09_web/tests/server/managed-touch-queue.test.mjs"
+        "web/tests/server/managed-touch-queue.test.mjs"
       ],
       "runLabel": "managed-touch-queue-b1",
       "head": "63127575d43ea5ef35b317ff8137b00a1ab5b1cc",
@@ -3272,18 +3272,18 @@
       "scriptSha256": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
       "scriptAfterSha256": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
       "identityBefore": {
-        "th09_web/tests/server/managed-touch-queue.test.mjs": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
-        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
-        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
-        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "web/tests/server/managed-touch-queue.test.mjs": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
+        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
         "docs/multiplayer/rollback-managed-touch-validation-plan.json": "e70679b3c7a128144b62cd2251266c714360863532c20bcd8de974761d2c239a",
         "docs/multiplayer/rollback-managed-touch-hosted-integration-addendum.json": "91b8c6c465a60c6ff3bf2b1aac324e4bc157f6b2a1a6b3fd16ac4bc00ccd02de"
       },
       "identityAfter": {
-        "th09_web/tests/server/managed-touch-queue.test.mjs": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
-        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
-        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
-        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "web/tests/server/managed-touch-queue.test.mjs": "9fef92e2f198dd77f87dfd8daaeaac638d2e51eae14acb4475a25ebeb4f67151",
+        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
         "docs/multiplayer/rollback-managed-touch-validation-plan.json": "e70679b3c7a128144b62cd2251266c714360863532c20bcd8de974761d2c239a",
         "docs/multiplayer/rollback-managed-touch-hosted-integration-addendum.json": "91b8c6c465a60c6ff3bf2b1aac324e4bc157f6b2a1a6b3fd16ac4bc00ccd02de"
       },
@@ -3298,22 +3298,22 @@
         "invocationStyle": "node test-module (node:test automatic runner)",
         "notPhoneOrElapsedLatency": true
       },
-      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-queue-b1-process.log",
+      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-queue-b1-process.log",
       "logSha256": "96f6e57c23dcb6931fd74b074f539e7334d437bfe955167351b17b7925f6198e",
       "stdoutBytes": 66314,
       "stderrBytes": 0
     },
     "log": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-queue-b1-process.log",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-queue-b1-process.log",
       "bytes": 66314,
       "sha256": "96f6e57c23dcb6931fd74b074f539e7334d437bfe955167351b17b7925f6198e"
     },
     "sources": {
       "sourcePaths": {
-        "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-        "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-        "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-        "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+        "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+        "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+        "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+        "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
       },
       "sourceIdentity": {
         "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -3344,10 +3344,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -3403,10 +3403,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -3648,10 +3648,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -3766,10 +3766,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -3901,10 +3901,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -4029,10 +4029,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -4220,10 +4220,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -4349,10 +4349,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -4673,10 +4673,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -4782,10 +4782,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -4905,10 +4905,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -5039,10 +5039,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -5173,10 +5173,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -5341,10 +5341,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -5691,10 +5691,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -5961,10 +5961,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -6231,10 +6231,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -6509,10 +6509,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -6752,10 +6752,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -7011,10 +7011,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -7057,10 +7057,10 @@
           "synthetic": true
         },
         "sourcePaths": {
-          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/managed.mjs",
-          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/directory-keyboard.mjs",
-          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/sdl-runtime/motion-replay.mjs",
-          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/server/managed-touch-queue.test.mjs"
+          "managed": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/managed.mjs",
+          "keyboard": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/directory-keyboard.mjs",
+          "replay": "file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/sdl-runtime/motion-replay.mjs",
+          "test": "file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/server/managed-touch-queue.test.mjs"
         },
         "sourceIdentity": {
           "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
@@ -7314,7 +7314,7 @@
   },
   "native": {
     "invocation": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-native-c1-invocation.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-native-c1-invocation.json",
       "bytes": 2392,
       "sha256": "fcc5d19463f1d3de0a44b304ff46126558c8700abbf03d8a7efaf30750e52c63"
     },
@@ -7325,7 +7325,7 @@
       "status": 0,
       "signal": null,
       "args": [
-        "th09_web/tests/multiplayer/run-tests.mjs",
+        "web/tests/multiplayer/run-tests.mjs",
         "touch-controller"
       ],
       "runLabel": "managed-touch-native-c1",
@@ -7334,15 +7334,15 @@
       "scriptSha256": "edd3738ecc2301c46ec60a283e45911a3caa6a4274b97d137f1cd57adeb35c0d",
       "scriptAfterSha256": "edd3738ecc2301c46ec60a283e45911a3caa6a4274b97d137f1cd57adeb35c0d",
       "identityBefore": {
-        "th09_web/tests/multiplayer/run-tests.mjs": "edd3738ecc2301c46ec60a283e45911a3caa6a4274b97d137f1cd57adeb35c0d",
-        "th09_web/tests/multiplayer/touch-controller.cpp": "23c9175f20155ebe363e1a80e2538a07a124dfae0ecc8d970c3365e6d156c985",
+        "web/tests/multiplayer/run-tests.mjs": "edd3738ecc2301c46ec60a283e45911a3caa6a4274b97d137f1cd57adeb35c0d",
+        "web/tests/multiplayer/touch-controller.cpp": "23c9175f20155ebe363e1a80e2538a07a124dfae0ecc8d970c3365e6d156c985",
         "portable/input/TouchController.hpp": "d70c7ce6890f7693f9d51cb601bee9d9cd30336bb15147c5570772e8f83c8028",
         "portable/input/touch-bomb-check.cpp": "79e7c55e9aaa47a329ab9da9223bb4ceb964bcd2e9b3204016bf5e0271a60fc2",
         "docs/multiplayer/rollback-managed-touch-validation-plan.json": "e70679b3c7a128144b62cd2251266c714360863532c20bcd8de974761d2c239a"
       },
       "identityAfter": {
-        "th09_web/tests/multiplayer/run-tests.mjs": "edd3738ecc2301c46ec60a283e45911a3caa6a4274b97d137f1cd57adeb35c0d",
-        "th09_web/tests/multiplayer/touch-controller.cpp": "23c9175f20155ebe363e1a80e2538a07a124dfae0ecc8d970c3365e6d156c985",
+        "web/tests/multiplayer/run-tests.mjs": "edd3738ecc2301c46ec60a283e45911a3caa6a4274b97d137f1cd57adeb35c0d",
+        "web/tests/multiplayer/touch-controller.cpp": "23c9175f20155ebe363e1a80e2538a07a124dfae0ecc8d970c3365e6d156c985",
         "portable/input/TouchController.hpp": "d70c7ce6890f7693f9d51cb601bee9d9cd30336bb15147c5570772e8f83c8028",
         "portable/input/touch-bomb-check.cpp": "79e7c55e9aaa47a329ab9da9223bb4ceb964bcd2e9b3204016bf5e0271a60fc2",
         "docs/multiplayer/rollback-managed-touch-validation-plan.json": "e70679b3c7a128144b62cd2251266c714360863532c20bcd8de974761d2c239a"
@@ -7356,18 +7356,18 @@
         "noBrowser": true,
         "noTimingClaim": true
       },
-      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-native-c1-process.log",
+      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-native-c1-process.log",
       "logSha256": "8f1602859e1e295a78cad3600163e4fa4efaba24fda3917b055b08e4eb32c120",
       "stdoutBytes": 172,
       "stderrBytes": 167
     },
     "log": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-native-c1-process.log",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-native-c1-process.log",
       "bytes": 339,
       "sha256": "8f1602859e1e295a78cad3600163e4fa4efaba24fda3917b055b08e4eb32c120"
     },
     "report": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-native-c1\\touch-controller-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-native-c1\\touch-controller-report.json",
       "bytes": 25923,
       "sha256": "5c1fb0bcdbfca1ff3c3a7b5ecbab495da5a3aa2dabafe0c5215a5ef27acf104f"
     },
@@ -7387,7 +7387,7 @@
     "Native C++ component assertions do not validate the managed-to-WASM integration"
   ],
   "source": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-component-summary.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-component-summary.mjs",
     "bytes": 4570,
     "sha256": "b620148b59bd407932b0d9bf6d1dab77f23db8ebc3ebecffb0d0c7fd7a2610a3"
   }

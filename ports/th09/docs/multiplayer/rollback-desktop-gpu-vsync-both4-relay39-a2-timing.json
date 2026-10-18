@@ -1,7 +1,7 @@
 {
   "schema": "th09-gpu-vsync-raf-timing-context/v1",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-gpu-vsync-both4-relay39-a2-report.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-gpu-vsync-both4-relay39-a2-report.json",
     "bytes": 39168047,
     "sha256": "3bcc7978288707e56e1603f7e2b30d4a3df942644d0b3e298dc08318affea3bf"
   },

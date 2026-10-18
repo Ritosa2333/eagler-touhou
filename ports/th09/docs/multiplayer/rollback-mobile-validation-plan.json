@@ -13,7 +13,7 @@
   },
   "hypothesis": "TH09 converts relative finger gestures to a held absolute field target. Mode 0 currently erases predicted analog inputs. Retaining the last actual target/vector may avoid unnecessary corrections while preserving full rollback for real target, vector, release and metadata differences. Held phases and moving phases must be reported separately; continuous motion may still correct every frame.",
   "candidate": {
-    "productionFile": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+    "productionFile": "web/cpp/multiplayer/RollbackSession.cpp",
     "change": "Enable existing common directTouchIsAbsolute semantics for mode 0 and remove its analog-clearing override.",
     "preserved": {
       "adonisMode": 0,
@@ -30,11 +30,11 @@
   },
   "baselines": {
     "release": {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-release",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-release",
       "wasmSha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577"
     },
     "diagnostic": {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-live",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-live",
       "wasmSha256": "59364fa88a9a23913fe2d808ae6e303790dcb1c1533f5e4d4e5893d14fde4877"
     }
   },

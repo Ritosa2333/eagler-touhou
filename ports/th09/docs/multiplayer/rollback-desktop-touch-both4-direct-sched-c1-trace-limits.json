@@ -4,7 +4,7 @@
     {
       "side": 0,
       "artifact": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-P1-scheduler-trace.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-P1-scheduler-trace.json",
         "bytes": 25668050,
         "sha256": "ad1a333b617b145ac8c501e83b3ec25de1696aac74d985a9facd48a3e6adf296"
       },
@@ -391,7 +391,7 @@
     {
       "side": 1,
       "artifact": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-P2-scheduler-trace.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-P2-scheduler-trace.json",
         "bytes": 26982597,
         "sha256": "1ae09a3f2e1079a4a5b364609979e98d363d5286a14a631ace630c21c84fe7ab"
       },

@@ -265,11 +265,10 @@ export const PRODUCT_CONTENT = Object.freeze({
         markerFiles: Object.freeze(["th20.data", "bgm-ogg/th20_01.ogg"]),
       }),
     }),
-    // Free-form Runtime mount-contract identity, assigned by the port author's
-    // convention (package-launcher.mjs / package-architecture.mjs):
-    //   "sha256-" + sha256(JSON.stringify({ files: [{ filename }, ...] }))
-    // over the TH20 managed mounts. TH20's BGM is now the /bgm-ogg OGG set, so
-    // the retained managed data mount is just the primary archive.
+    // Stable identity for the managed TH20 data mounts. Compute it as
+    // sha256(JSON.stringify({ files: [{ filename }, ...] })) over the exact
+    // virtual file paths. TH20's BGM is now the /bgm-ogg OGG set, so the
+    // retained managed data mount is just the primary archive.
     //   sha256(JSON.stringify({files:[{filename:"/game/th20.dat"}]}))
     dataLayout: "sha256-60a03469dc592e88413c1d9a4d8fd90b109a486b8edac3c837002238e9a73800",
     music: Object.freeze({

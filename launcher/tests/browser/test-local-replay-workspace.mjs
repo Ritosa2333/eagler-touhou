@@ -14,10 +14,10 @@ const {chromium}=await import(pathToFileURL(driver));
 import {authoredSourcesPlugin} from '../react-main/authored-sources.mjs';
 const project=resolve(fileURLToPath(new URL('../../',import.meta.url))),workspace=resolve(project,'../..');
 const nativeRoot=resolve(workspace,'th11-eagler'),out=resolve(project,'artifacts/replay-workspace/ui');mkdirSync(out,{recursive:true});
-const nativeBuild=resolve(nativeRoot,'th11_web/artifacts/sdl3'),fonts=resolve(nativeRoot,'build-eagler/fonts');
+const nativeBuild=resolve(nativeRoot,'web/artifacts/sdl3'),fonts=resolve(nativeRoot,'build-eagler/fonts');
 const dataDirectory=readdirSync(nativeRoot).find(name=>existsSync(resolve(nativeRoot,name,'th11.dat')));
 assert.ok(dataDirectory,'TH11 game data is required');
-const fixtures=readdirSync(resolve(nativeRoot,'th11_web/reference/assets')).filter(name=>/^demo.*\.rpy$/.test(name)).sort().map((name,i)=>({path:`replay/th11_ud${String(i).padStart(4,'0')}.rpy`,file:resolve(nativeRoot,'th11_web/reference/assets',name)}));
+const fixtures=readdirSync(resolve(nativeRoot,'web/reference/assets')).filter(name=>/^demo.*\.rpy$/.test(name)).sort().map((name,i)=>({path:`replay/th11_ud${String(i).padStart(4,'0')}.rpy`,file:resolve(nativeRoot,'web/reference/assets',name)}));
 const resources=new Map([['/native.mjs',resolve(nativeBuild,'th11-sdl.mjs')],['/native.wasm',resolve(nativeBuild,'th11-sdl.wasm')],['/game.dat',resolve(nativeRoot,dataDirectory,'th11.dat')],
  ...readdirSync(fonts).map(name=>['/fonts/'+name,resolve(fonts,name)]),...fixtures.map(f=>['/'+f.path,f.file]),
  ...['local-replay.mjs','local-replay-native.mjs'].map(name=>['/'+name,resolve(workspace,'eagler-common/browser',name)])]);

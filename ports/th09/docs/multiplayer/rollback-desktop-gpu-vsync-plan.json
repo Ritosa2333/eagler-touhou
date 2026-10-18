@@ -5,12 +5,12 @@
   "baseline": {
     "wasmSha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
     "originalDriver": {
-      "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "path": "web/tests/multiplayer/smoothness-browser.mjs",
       "sha256": "23790f4409b8ec835d47f21c1d8293280acd37f084d1ba8b7d94d6a1b04bf1ff",
       "bytes": 79424
     },
     "archivedDriver": {
-      "path": "th09_web/artifacts/multiplayer-tests/smoothness-browser-before-gpu-vsync-23790f44.mjs",
+      "path": "web/artifacts/multiplayer-tests/smoothness-browser-before-gpu-vsync-23790f44.mjs",
       "sha256": "23790f4409b8ec835d47f21c1d8293280acd37f084d1ba8b7d94d6a1b04bf1ff",
       "bytes": 79424
     }

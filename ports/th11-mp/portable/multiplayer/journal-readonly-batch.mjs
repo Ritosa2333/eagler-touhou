@@ -15,7 +15,7 @@ if(process.argv.includes('--run-wasi')){
   if(at<0||!process.argv[at+1])throw Error('Fresh --output required');
   const out=resolve(process.argv[at+1]);if(existsSync(resolve(out,'receipt.json')))throw Error('Existing receipt');
   mkdirSync(out,{recursive:true});
-  const common=resolve(root,'third_party/eagler-common'),sdk=resolve(root,'../../toolchains/emsdk');
+  const common=resolve(root,'../../common'),sdk=resolve(root,'../../toolchains/emsdk');
   const source=resolve(common,'src/netplay/RollbackJournal.cpp'),header=resolve(common,'include/eagler/netplay/RollbackJournal.hpp');
   const fixtures=[resolve(common,'tests/rollback-journal-test.cpp'),resolve(common,'tests/rollback-readonly-batch-test.cpp')];
   const sha=f=>createHash('sha256').update(readFileSync(f)).digest('hex');

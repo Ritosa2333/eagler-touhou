@@ -12,7 +12,7 @@ const diag=argument('--diagnostic',resolve(root,'artifacts/multiplayer-ui/202610
 const archive=argument('--archive',process.env.TH11_TEST_ARCHIVE||resolve(workspace,'th11-eagler/[th11] 东方地灵殿 (汉化版+日文版)/th11.dat'));
 const music=argument('--music',resolve(workspace,'games/web-content/th11/music'));
 const output=argument('--output',resolve(diag,'native-audio-late.json'));
-const files=new Map([['/multiplayer.mjs',resolve(diag,'multiplayer.mjs')],['/multiplayer.wasm',resolve(diag,'multiplayer.wasm')],['/host.mjs',resolve(root,'th11_web/sdl-runtime/eagler-host.mjs')],['/th11.dat',archive]]);
+const files=new Map([['/multiplayer.mjs',resolve(diag,'multiplayer.mjs')],['/multiplayer.wasm',resolve(diag,'multiplayer.wasm')],['/host.mjs',resolve(root,'web/sdl-runtime/eagler-host.mjs')],['/th11.dat',archive]]);
 for(const n of ['font0.bin','font1.bin','font2.bin','font3.bin','cp932.bin','blend4444.bin'])files.set('/fonts/'+n,resolve(root,'build-eagler-multiplayer/fonts',n));
 for(const n of ['th11_00.ogg','th11_15.ogg'])files.set('/music/'+n,resolve(music,n));
 const server=createServer((req,res)=>{const p=new URL(req.url,'http://localhost').pathname;if(p==='/'){res.setHeader('Content-Type','text/html');res.end('<canvas id="canvas" width="640" height="480"></canvas>');return;}if(!files.has(p)){res.writeHead(404).end();return;}res.setHeader('Content-Type',p.endsWith('.mjs')?'text/javascript':p.endsWith('.wasm')?'application/wasm':'application/octet-stream');res.end(readFileSync(files.get(p)));});

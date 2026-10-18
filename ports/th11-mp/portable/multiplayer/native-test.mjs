@@ -8,8 +8,8 @@ const sdk=process.env.WASI_SDK_ROOT||'D:/workspace/eagler/toolchains/wasi-sdk-34
 const compiler=resolve(sdk,'bin/clang++.exe');
 const out=resolve(root,'artifacts/multiplayer-native');mkdirSync(out,{recursive:true});
 const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]);
-const all=walk(resolve(root,'th11_web/cpp/game'));
-const common=resolve(root,'third_party/eagler-common');
+const all=walk(resolve(root,'web/cpp/game'));
+const common=resolve(root,'../../common');
 const sources=[...all.filter(p=>p.endsWith('.cpp')),resolve(common,'src/netplay/RollbackJournal.cpp'),resolve(import.meta.dirname,'native-gameplay.cpp')];
 const headers=[...all.filter(p=>/\.(hpp|inc)$/.test(p)),...walk(resolve(root,'portable/sdl')).filter(p=>p.endsWith('.hpp')),...walk(import.meta.dirname).filter(p=>p.endsWith('.hpp')&&basename(p).startsWith('native-'))];
 const hash=b=>createHash('sha256').update(b).digest('hex');

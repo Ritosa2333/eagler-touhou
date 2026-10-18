@@ -12,7 +12,7 @@ const env = { ...process.env, EM_CONFIG: process.env.EM_CONFIG ?? resolve(sdk, '
 execFileSync('python', [resolve(sdk, 'install/emscripten/emcc.py'),
   resolve(root, 'tests/th07-purple-menu.cpp'),
   ...['imgui.cpp', 'imgui_draw.cpp', 'imgui_widgets.cpp', 'imgui_tables.cpp', 'imgui_freetype.cpp'].map(file => resolve(imgui, file)),
-  '-I' + resolve(root, 'src'), '-I' + resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(root, '../../eagler-common'), 'include'), '-I' + imgui, '-DIMGUI_DISABLE_WIN32_FUNCTIONS', '-DTH_ENABLE_THPRAC',
+  '-I' + resolve(root, 'src'), '-I' + resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(root, '../../common'), 'include'), '-I' + imgui, '-DIMGUI_DISABLE_WIN32_FUNCTIONS', '-DTH_ENABLE_THPRAC',
   '--use-port=sdl3_ttf', '-include', 'cstdint', '-Wno-nontrivial-memcall', '-O1', '-std=c++17', '-sDEFAULT_TO_CXX=1',
   '-sALLOW_MEMORY_GROWTH=1', '-sENVIRONMENT=node', '-o', resolve(out, 'menu.js')],
   { cwd: root, env, windowsHide: true, stdio: 'inherit' });
@@ -31,7 +31,7 @@ const enemy = readFileSync(resolve(root, 'src/EnemyManager.cpp'), 'utf8');
 assert(/if \(!PracticeRuntime::OverlayEnemyInvincible\(\)\)\s+enemy->life -= damage;\s+enemy->lastDamage = damage;/.test(enemy));
 console.log('TH07 F12/U/F8/Tab bridge and native enemy subtraction source boundary PASS');
 execFileSync('python', [resolve(sdk, 'install/emscripten/emcc.py'), resolve(root, 'tests/th07-purple-input.cpp'),
-  '-I' + resolve(root, 'src'), '-I' + resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(root, '../../eagler-common'), 'include'), '-O1', '-std=c++17', '-sDEFAULT_TO_CXX=1', '-sENVIRONMENT=node',
+  '-I' + resolve(root, 'src'), '-I' + resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(root, '../../common'), 'include'), '-O1', '-std=c++17', '-sDEFAULT_TO_CXX=1', '-sENVIRONMENT=node',
   '-o', resolve(out, 'input.js')], { cwd: root, env, windowsHide: true, stdio: 'inherit' });
 execFileSync(process.execPath, [resolve(out, 'input.js')], { cwd: root, env, windowsHide: true, stdio: 'inherit' });
 const controller = readFileSync(resolve(root, 'src/Controller.cpp'), 'utf8');

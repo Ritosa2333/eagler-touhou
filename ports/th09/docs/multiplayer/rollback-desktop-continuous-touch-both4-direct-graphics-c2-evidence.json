@@ -23,7 +23,7 @@
       },
       "errors": [],
       "artifact": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-continuous-touch-both4-direct-graphics-c2-P1-scheduler-trace.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\desktop-continuous-touch-both4-direct-graphics-c2-P1-scheduler-trace.json",
         "bytes": 41657328,
         "sha256": "fdf40e84df7879b0d8a88a1111affe7ffeb4bacf018f8596f6005a290c553e4c"
       }
@@ -51,7 +51,7 @@
       },
       "errors": [],
       "artifact": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-continuous-touch-both4-direct-graphics-c2-P2-scheduler-trace.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\desktop-continuous-touch-both4-direct-graphics-c2-P2-scheduler-trace.json",
         "bytes": 41245968,
         "sha256": "a75e71cb4e7ddd943e5ad1bdd85791e098b2e9cddf6d4b7fa006bc42c3d9fc0b"
       }
@@ -60,7 +60,7 @@
   "schema": "th09-both4-render-work-evidence/v1",
   "scope": "Desktop only, artificial native-ABI joystick, no physical phone or Launcher multiplayer qualification. Uncalibrated added diagnostic numeric copies. No production code change between these runs.",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c2-report.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c2-report.json",
     "bytes": 31015079,
     "sha256": "d34892775465704c27aca89245b2c6adda904f97fa677f35f2ca8b3d0c2795f6"
   },

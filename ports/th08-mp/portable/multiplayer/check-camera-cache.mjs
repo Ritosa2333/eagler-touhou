@@ -19,16 +19,16 @@ const reportPath=resolve(out,'report.json');
 writeFileSync(reportPath,JSON.stringify({passed:false,phase:'not-completed',scope:'Camera cache build/oracle pending'},null,2)+'\n');
 execFileSync(cCompiler,[
   '--target=wasm32-wasip1','-O2','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5',
-  '-c',resolve(root,'th08_web/cpp/third_party/softfloat.c'),'-o',object,
+  '-c',resolve(root,'web/cpp/third_party/softfloat.c'),'-o',object,
 ],{windowsHide:true,stdio:'inherit'});
 execFileSync(compiler,[
   '--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti','-ffp-contract=off',
   '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_CAMERA_CACHE_TEST=1','-Wl,-z,stack-size=1048576',
-  '-I'+resolve(root,'th08_web/cpp/game'),
-  resolve(root,'th08_web/cpp/game/Arithmetic.cpp'),
-  resolve(root,'th08_web/cpp/game/GameMath.cpp'),
-  resolve(root,'th08_web/cpp/game/GraphicsMath.cpp'),
-  resolve(root,'th08_web/cpp/game/Camera.cpp'),
+  '-I'+resolve(root,'web/cpp/game'),
+  resolve(root,'web/cpp/game/Arithmetic.cpp'),
+  resolve(root,'web/cpp/game/GameMath.cpp'),
+  resolve(root,'web/cpp/game/GraphicsMath.cpp'),
+  resolve(root,'web/cpp/game/Camera.cpp'),
   resolve(root,'portable/multiplayer/camera-cache-test.cpp'),object,'-o',wasm,
 ],{windowsHide:true,stdio:'inherit'});
 const bytes=readFileSync(wasm);

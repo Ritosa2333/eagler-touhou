@@ -29,7 +29,7 @@ for (const [game, directory, suffix] of [
   ["th06", "th06-eagler", ["src", "FileSystem.cpp"]],
   ["th08", "th08-eagler", ["build-eagler"]],
   ["th10", "th10-eagler", ["build-eagler"]],
-  ["th09", "th09-eagler", ["th09_web", "build-eagler"]],
+  ["th09", "th09-eagler", ["web", "build-eagler"]],
 ]) {
   assert.equal(resolve(launcherRoot(), projectRelativeWorkspacePath(game, ...suffix)),
     resolve(workspaceRoot(), configuration.repositories[game], ...suffix));

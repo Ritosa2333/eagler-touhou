@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {compareTraces} from '../../../eagler-common/testkit/replay-verifier/compare.mjs';
-import * as common from '../../../eagler-common/testkit/replay-verifier/adapter.mjs';
+import {compareTraces} from '../../../../common/testkit/replay-verifier/compare.mjs';
+import * as common from '../../../../common/testkit/replay-verifier/adapter.mjs';
 import {recordsFromLongRows} from './legacy-oracle-adapter.mjs';
 
 const fixture = {replaySha256: 'a'.repeat(64)};

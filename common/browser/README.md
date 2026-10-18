@@ -1,109 +1,36 @@
-# Browser keyboard ownership
+# 浏览器共享模块
 
-## Shared spectator timeline
+`browser/` 保存游戏 Runtime、Launcher 可复用的浏览器代码。模块源文件在这里维护；需要嵌入旧版独立 Shell 或目录 Runtime 时，用 `tools/` 中的同步脚本生成副本。
 
-`spectator-timeline-view.mjs` owns the title-neutral timeline DOM, scoped visual
-rules, range editing, node-marker layout, touch-compatible expand/collapse, and
-pause/play/live/seek actions. TH09 keeps its historical default IDs and supplies
-its native adapter and score portal; cooperative Runtime supplies its own
-labels, nodes, and playback bridge. `stage` markers use the match appearance and
-`boss` markers use the round appearance. The view does not own playback state or
-invent title-specific round/score behavior.
+## 开始
 
-Create it with `createSpectatorTimelineView({document?, mount?, idPrefix?,
-onAction, labels?, icons?})`. The returned `slots.summary` and
-`slots.duration` retain the default IDs `spectatorScore` and
-`spectatorMatchDuration`; leaving `summaryText` unset preserves a React portal
-or other adapter-owned summary. `updateLabels(labels, icons?)` supports locale
-changes. Model updates never optimistically change playback state. A drag keeps
-its original visible bounds and thumb while native state advances, then clamps
-its seek against the latest edge. Pointer cancellation does not seek. Rejected
-actions remain visible for the current run until another action or run replaces
-them.
+从仓库根目录进入 `common/`。模块使用原生 ECMAScript，无需安装包：
 
-The module injects one ref-counted style element per document. Every selector is
-scoped by `.spectator-timeline` and uses classes rather than fixed IDs, so an
-adapter may choose another `idPrefix` without breaking layout. Generated Runtime
-copies are byte-for-byte copies of the common module:
-
-```powershell
-node tools/sync-spectator-timeline-view.mjs --target PATH/TO/sdl-runtime/spectator-timeline-view.mjs
-node tools/sync-spectator-timeline-view.mjs --check PATH/TO/sdl-runtime/spectator-timeline-view.mjs
+```sh
+cd common
 node --test browser/spectator-timeline-view.test.mjs
+node --test tests/browser-keyboard-owners.test.mjs tests/keyboard-input-bridge.test.mjs tests/direct-input-bridge-test.mjs
 ```
 
-## Startup branding
+## 组件与同步
 
-`startup-branding.mjs` and `startup-wordmark.svg` own the TH06–TH09 startup
-overlay. Generate the self-contained directory module or inline shell block
-with `node tools/sync-startup-branding.mjs TARGET ...`; `--check` detects drift.
-The glyph and yin-yang paths come from the original Eagler wordmark. Per-title
-colors share optical bounds: right edge 628, logo top 112, build bottom 141 on
-the 640×480 game canvas. No external font is required.
+| 组件 | 源码 | 生成到消费者 | 检查 |
+| --- | --- | --- | --- |
+| 键盘物理按键归属 | `browser/keyboard-owners.mjs`、`browser/keyboard-input-bridge.mjs` | `node tools/sync-browser-keyboard.mjs TARGET.html ...` | 同命令加 `--check`；运行 `node --test tests/browser-keyboard-owners.test.mjs tests/keyboard-input-bridge.test.mjs` |
+| 目录 Runtime 键盘 | `browser/directory-keyboard.mjs` | `node tools/sync-directory-keyboard.mjs TARGET.mjs ...` | 同命令加 `--check` |
+| 旁观时间轴 | `browser/spectator-timeline-view.mjs` | `node tools/sync-spectator-timeline-view.mjs --target TARGET.mjs` | 同命令加 `--check`；运行 `node --test browser/spectator-timeline-view.test.mjs` |
+| TH06–TH09 启动画面 | `browser/startup-branding.mjs`、`browser/startup-wordmark.svg` | `node tools/sync-startup-branding.mjs TARGET ...` | 同命令加 `--check` |
+| TH10、TH11、TH15、TH20 开发者署名 | `browser/startup-developers.mjs`、`browser/startup-developers.svg`、`browser/StartupBranding.hpp` | `node tools/sync-startup-developers.mjs TITLE_REPOSITORY ...` | 同命令加 `--check` |
 
-Adapters pass their build timestamp and mount the generated transparent pixels
-before showing the startup picture. Each renderer draws the separate texture
-after its startup background and before authored animations/covers. Original
-game images and archives are never modified. TH06/TH07 stamp UTC at link time;
-TH08/TH09 record the native build timestamp in their build/package metadata.
+将 `TARGET` 替换为相应 Runtime 文件或 Shell 的路径。同步后把消费者改动与 common 源码一起检查；`--check` 用于确认生成副本没有漂移。
 
-TH10/TH11/TH15/TH20 use `startup-developers.svg` (Georgia Italic serif paths and
-a white/transparent yin-yang with a cutout eye), `startup-developers.mjs`, and `StartupBranding.hpp`.
-Run `node tools/sync-startup-developers.mjs REPOSITORY ...` (or `--check`) to
-generate each title's self-contained shell module and renderer helper. The
-complete “EAGLER ☯ TOUHOU Developers” line is centered below the studio credit,
-220 logical pixels wide, with no shadow. Build time is right-aligned at (628,472)
-in the bottom-right corner of the full game canvas, UTC+8.
-All signature lettering is stored as SVG paths: builds and browsers require no
-Georgia font file, font package, or font download. The small build timestamp
-uses the browser's local serif fallback without loading a font resource.
-Native build metadata owns that timestamp. Retail images are not inputs to the
-transparent texture generator. The native signature VM controls the credit's
-RGB/alpha and draw lifetime; later scene layers still cover it. TH11/TH15 keep
-their isolated signature ANMs ticking during the existing two-second startup
-hold while menu preparation completes. This does not advance gameplay logic.
-The helper restores renderer state and never reads back the game framebuffer.
+## 其他模块
 
-`keyboard-owners.mjs` owns physical-key identity and release reconciliation.
-The title adapter maps events to bits and decides pulse/lifecycle policy.
-The Launcher has its own session-scoped protocol owner: it returns the original
-DOWN identity when forwarding a release to an older or newer Runtime.
+- `playback-clock.mjs`、`spectator-playback.mjs`：回放时钟与旁观播放状态。
+- `local-replay.mjs`、`local-replay-native.mjs`：浏览器与原生端的本地 Replay 桥接。
+- `save-sync.mjs`：浏览器存档同步。
+- `direct-input-bridge.mjs`、`browser-gamepad-input.hpp`：触摸与手柄输入桥接。
 
-Known modifier sides and Arrow/Numpad aliases remain independent. An UP with no
-physical code or location releases every matching logical owner. This can stop
-the remaining physically held modifier on a keyboard that loses all identity;
-it prevents an arbitrary owner from staying stuck indefinitely. Fresh DOWN
-restores input. A repeat with no observed owner cannot restore cancelled input.
+对应行为测试在 [`tests/`](../tests/)；需要确认所有接入副本时，运行相关同步脚本的 `--check`。
 
-Standalone Emscripten shells embed generated source so older game pins do not
-need a new external JavaScript dependency. Never edit the generated block:
-
-```powershell
-node tools/sync-browser-keyboard.mjs TH06-SHELL.html TH07-SHELL.html
-node tools/sync-browser-keyboard.mjs --check TH06-SHELL.html TH07-SHELL.html
-node tests/browser-keyboard-owners.test.mjs
-```
-
-`--check` is the cross-title drift gate; the behavior test also runs through
-CTest when Node is available. Game-specific tests execute the actual shell
-handlers, and Launcher browser integration checks confirmed per-seat input.
-
-Directory Runtimes use `directory-keyboard.mjs` with the same physical owner
-algorithm. It retains the resolved DOWN code, reconciles an ambiguous UP against
-its actual evidence, merges native and hosted owners, and publishes only changed
-codes. `clear()` advances a generation and prevents orphan repeats from rearming.
-The title still owns its bindings and practice hotkeys. Updated C++ hosts use the
-presence of `Module.resetBrowserKeyboard` to choose this browser owner instead of
-OR-ing SDL's independent cached keyboard state. C++ lifecycle clears invoke that
-hook and also reset SDL; older shells retain their SDL fallback.
-
-The self-contained generated directory module is an explicit source dependency,
-listed in the title packager and Launcher product catalog. Generate it with:
-
-```powershell
-node tools/sync-directory-keyboard.mjs PATH/TO/sdl-runtime/directory-keyboard.mjs
-```
-
-The generator also supports `--check`. TH08/TH09/TH10 follow-up changes on
-2026-10-01 were reviewed as source only; builds and tests were not run at the
-user's request. TH06/TH07 verification does not cover this directory bridge.
+下一步：[公共库开发入口](../../docs/README.md)。

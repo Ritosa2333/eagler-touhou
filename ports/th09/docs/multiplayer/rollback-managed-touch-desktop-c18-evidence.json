@@ -2,13 +2,13 @@
   "schema": "th09-managed-touch-launcher-summary/v1",
   "generatedAt": "2026-10-11T09:40:45.133Z",
   "analyzer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-summary.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-summary.mjs",
     "bytes": 42404,
     "sha256": "ee1186fc978050f05d8be86c08a95aac83117af966b1e4fd800aed951d91638e",
     "argv": [
-      "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-summary.mjs",
+      "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-summary.mjs",
       "docs/multiplayer/rollback-managed-touch-desktop-c18-evidence.json",
-      "th09_web/artifacts/multiplayer-tests/managed-touch-desktop-stick-c18-report.json"
+      "web/artifacts/multiplayer-tests/managed-touch-desktop-stick-c18-report.json"
     ]
   },
   "methods": {
@@ -24,7 +24,7 @@
   "runs": [
     {
       "input": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-desktop-stick-c18-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-desktop-stick-c18-report.json",
         "bytes": 1746987,
         "sha256": "d255a519c496ae49bed2baca96f450795e453ee963f3648c471d3fdb61e0963d"
       },
@@ -39,40 +39,40 @@
       "driverPassed": false,
       "driverFailure": {
         "message": "Error: Timed out: documented launch warning / actual launch boundary",
-        "stack": "Error: Timed out: documented launch warning / actual launch boundary\n    at until (file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/managed-touch-launcher-browser.mjs:72:8)\n    at async file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/managed-touch-launcher-browser.mjs:451:2",
+        "stack": "Error: Timed out: documented launch warning / actual launch boundary\n    at until (file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/managed-touch-launcher-browser.mjs:72:8)\n    at async file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/managed-touch-launcher-browser.mjs:451:2",
         "cause": null
       },
       "driverGoals": {},
       "sourceBefore": [
         {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs",
           "bytes": 49798,
           "sha256": "a2230862e3ba06bf9021a26bf82c37a802cef8c76f6278ef8d190d3da33445cc"
         },
         {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-server.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-server.mjs",
           "bytes": 33062,
           "sha256": "384af56e6f31d0454ed235316e84bdb85bb52c41ee6a112034ba640fb1f162fe"
         },
         {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-probe.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-probe.mjs",
           "bytes": 27074,
           "sha256": "01e142e935d0050703ef1d8fab8ad1fa92bcf33198060b17b05e8eed5f3489de"
         }
       ],
       "sourceAfter": [
         {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs",
           "bytes": 49798,
           "sha256": "a2230862e3ba06bf9021a26bf82c37a802cef8c76f6278ef8d190d3da33445cc"
         },
         {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-server.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-server.mjs",
           "bytes": 33062,
           "sha256": "384af56e6f31d0454ed235316e84bdb85bb52c41ee6a112034ba640fb1f162fe"
         },
         {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-probe.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-probe.mjs",
           "bytes": 27074,
           "sha256": "01e142e935d0050703ef1d8fab8ad1fa92bcf33198060b17b05e8eed5f3489de"
         }
@@ -195,13 +195,13 @@
         },
         "runtimes": {
           "normal": {
-            "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler",
+            "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler",
             "variant": "normal",
             "inventory": {
               "bytes": 1959,
               "sha256": "b0bbd426bd602b02a05bc105b7e18f299cb7cf6dd4680b1157c0028d54a9920c",
               "mtimeMs": 1791697074006.1387,
-              "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler\\runtime-files.json",
+              "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler\\runtime-files.json",
               "role": "runtime-inventory"
             },
             "version": {
@@ -221,13 +221,13 @@
             }
           },
           "multiplayer": {
-            "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler-multiplayer",
+            "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler-multiplayer",
             "variant": "multiplayer",
             "inventory": {
               "bytes": 1959,
               "sha256": "ddd2c76cec41a918a2ae292e459c9e2b193cd311dcc5b62bd427c189f903d5df",
               "mtimeMs": 1791697074287.62,
-              "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler-multiplayer\\runtime-files.json",
+              "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler-multiplayer\\runtime-files.json",
               "role": "runtime-inventory"
             },
             "version": {
@@ -259,7 +259,7 @@
             "bytes": 8990160,
             "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
             "mtimeMs": 1789873418000,
-            "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\msgothic.ttc",
+            "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\msgothic.ttc",
             "role": "vanilla-font"
           },
           "unicodeFont": {
@@ -280,7 +280,7 @@
         "trackedInputsJsonSha256": "0ad65ccf48e65a87d84b2b8534d55ff9c8d83d40ddeaac6a578b4e2e5aeb5471",
         "probe": {
           "target": "/fonts/blend.bin",
-          "source": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler\\fonts\\blend.bin",
+          "source": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler\\fonts\\blend.bin",
           "sha256": "cd7099994c1d25a9526fba4422c518b38fbb4e7ac9940288adc0c0ddef2106eb",
           "timeoutMs": 30000,
           "explicitlyInjected": true
@@ -3847,7 +3847,7 @@
           "mismatches": []
         },
         "serverEvidence": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-desktop-stick-c18\\server\\server-stopped.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-desktop-stick-c18\\server\\server-stopped.json",
           "bytes": 554,
           "sha256": "f9e8a1209b7da618a6ccf2b55bca1c8c979ec99cb1f18ae5e97cbfcd0002290c"
         },

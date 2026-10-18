@@ -22,7 +22,7 @@ const playersValue=process.argv.find(value=>value.startsWith('--players='))?.sli
  (playersIndex>=0?process.argv[playersIndex+1]:2);
 const players=Number(playersValue);
 if(![2,3].includes(players))throw Error('Spectator player count must be 2 or 3');
-const buildRoot=resolve(process.env.TH10_MP_BUILD_ROOT||resolve(root,'th10_web/artifacts',profile));
+const buildRoot=resolve(process.env.TH10_MP_BUILD_ROOT||resolve(root,'web/artifacts',profile));
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 if(build.profile!==profile||sha(resolve(buildRoot,'th10-sdl.wasm'))!==build.sha256)throw Error('Wrong/stale spectator build');

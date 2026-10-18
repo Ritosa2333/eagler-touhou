@@ -5,8 +5,8 @@ import {resolve} from 'node:path';
 const root=resolve(import.meta.dirname,'..'),sdk=process.env.TH15_EMSDK;
 if(!sdk)throw Error('TH15_EMSDK required');
 const compiler=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);
-const out=resolve(root,'th15_web/artifacts/thprac-check');mkdirSync(out,{recursive:true});
-const sources=readdirSync(resolve(root,'th15_web/cpp/game')).filter(p=>p.endsWith('.cpp')).map(p=>resolve(root,'th15_web/cpp/game',p));
+const out=resolve(root,'web/artifacts/thprac-check');mkdirSync(out,{recursive:true});
+const sources=readdirSync(resolve(root,'web/cpp/game')).filter(p=>p.endsWith('.cpp')).map(p=>resolve(root,'web/cpp/game',p));
 const target=resolve(out,'menus.cjs'),response=resolve(out,'menus.rsp.utf-8');
 // Mechanical compiler response file keeps the full typed game link below the
 // Windows command-line limit. No SDL/native platform stubs replace menu owners.

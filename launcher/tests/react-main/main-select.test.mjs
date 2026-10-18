@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Executed pinned controller is the oracle. Synthetic DOM only: native browser
  * layout/top-layer focus and keyboard activation remain separate acceptance. */
 import test, {before, after, afterEach} from 'node:test';
@@ -12,7 +13,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 const project=fileURLToPath(new URL('../../',import.meta.url));
 let env, React, createRoot, api, work;const mounts=[];
-const pinned=path=>execFileSync('git',['show',`edee9633e5e3ee79cd2e1aa334f84f6caf755090:${path}`],{cwd:project,encoding:'utf8'});
+const pinned=path=>readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090',path);
 before(async()=>{
  env=installMountedDom();React=await import('react');({createRoot}=await import('react-dom/client'));
  await mkdir(resolve(project,'.cache'),{recursive:true});work=await mkdtemp(resolve(project,'.cache/main-select-test-')); const outfile=resolve(work,'actual.mjs');

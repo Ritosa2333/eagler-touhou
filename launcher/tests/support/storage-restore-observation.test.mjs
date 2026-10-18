@@ -1,8 +1,9 @@
+import {execFileSync} from 'node:child_process';
+import {readUiHistoryText} from './ui-history.mjs';
 /** Setup/identity/synthetic-dispatch only; never launches a browser or Runtime. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import vm from 'node:vm';
 import {JSDOM} from 'jsdom';
@@ -11,8 +12,9 @@ const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const path = 'tests/test-runtime-storage-conformance.py';
 const source = readFileSync(new URL('./storage-restore-observation.js', import.meta.url), 'utf8');
-const python = code => JSON.parse(execFileSync('python', ['-c', code], {cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
-const pieces = python(`import ast,json,subprocess\nfrom pathlib import Path\na=subprocess.check_output(['git','show','${baseline}:${path}'],text=True);b=Path('${path}').read_text()\ndef parts(s):\n t=ast.parse(s);inject=next(n.value.value for n in ast.walk(t) if isinstance(n,ast.Assign) and any(isinstance(k,ast.Name) and k.id=='RESTORE_FAILURE_SCRIPT' for k in n.targets));strings=[n.value for n in ast.walk(t) if isinstance(n,ast.Constant) and isinstance(n.value,str)];events=next(s for s in strings if s.startswith('(() => {') and 'window.__storageEvents = []' in s);method=next(n for n in ast.walk(t) if isinstance(n,ast.FunctionDef) and n.name=='run_restore_failure');return {'injector':inject,'events':events,'assertions':[ast.get_source_segment(s,n) for n in ast.walk(method) if isinstance(n,ast.Assert)]}\nprint(json.dumps({'original':parts(a),'current':parts(b)}))`);
+const python = code => JSON.parse(execFileSync('python', ['-'], {input: code, cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
+const originalSource = readUiHistoryText(baseline, path);
+const pieces = python(`import ast,json\nfrom pathlib import Path\na=${JSON.stringify(originalSource)};b=Path('${path}').read_text()\ndef parts(s):\n t=ast.parse(s);inject=next(n.value.value for n in ast.walk(t) if isinstance(n,ast.Assign) and any(isinstance(k,ast.Name) and k.id=='RESTORE_FAILURE_SCRIPT' for k in n.targets));strings=[n.value for n in ast.walk(t) if isinstance(n,ast.Constant) and isinstance(n.value,str)];events=next(s for s in strings if s.startswith('(() => {') and 'window.__storageEvents = []' in s);method=next(n for n in ast.walk(t) if isinstance(n,ast.FunctionDef) and n.name=='run_restore_failure');return {'injector':inject,'events':events,'assertions':[ast.get_source_segment(s,n) for n in ast.walk(method) if isinstance(n,ast.Assert)]}\nprint(json.dumps({'original':parts(a),'current':parts(b)}))`);
 const init = (game = 'th06') => `(${source})(${JSON.stringify({game, runtimeName: `${game}.html`})})`;
 const error = epoch => ({protocol: 'eagler-touhou/1', game: 'th06', epoch, event: 'error', error: 'Local save restore failed: injected restore failure'});
 function fixture({arm = true, bind = true, url = '/runtime/th06/th06.html?runtimeEpoch=7'} = {}) {

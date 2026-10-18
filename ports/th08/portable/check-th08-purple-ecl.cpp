@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/game/EclProgram.hpp"
+#include "../web/cpp/game/EclProgram.hpp"
 #include <cassert>
 #include <vector>
 using namespace th08;

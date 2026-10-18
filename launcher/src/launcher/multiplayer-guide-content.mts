@@ -9,6 +9,7 @@ const GUIDE_GAMES = Object.freeze([
   Object.freeze({ id: "th06", short: "TH06", title: "红魔乡" }),
   Object.freeze({ id: "th07", short: "TH07", title: "妖妖梦" }),
   Object.freeze({ id: "th08", short: "TH08", title: "永夜抄" }),
+  Object.freeze({ id: "th09", short: "TH09", title: "花映塚" }),
   Object.freeze({ id: "th10", short: "TH10", title: "风神录" }),
   Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),
   Object.freeze({ id: "th15", short: "TH15", title: "绀珠传" }),

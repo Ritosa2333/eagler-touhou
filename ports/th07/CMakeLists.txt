@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/../../common"
+    CACHE PATH "Shared monorepo common source")
+
 option(TH_EXTERNAL_ASSETS "Do not bundle assets (on platforms that bundle them) and use the user/executable directories instead" OFF)
 option(TH_WEB_SHARED_FONT "Let the Web host install runtime fonts instead of embedding them" OFF)
 option(TH_WEB_PROFILE_NAMES "Keep optimized Web function names for diagnostic CPU profiles" OFF)
@@ -15,12 +18,12 @@ option(TH_ENABLE_THCRAP "Build the archived thcrap localization integration" OFF
 option(TH_ENABLE_NETPLAY "Build the isolated TH07 rollback-netplay core" OFF)
 option(TH_ENABLE_MULTIPLAYER_GAMEPLAY "Build TH07 multiplayer gameplay without requiring a transport" OFF)
 option(TH_DEV_TOOLS "Enable developer-only tools such as F5 fast-forward" OFF)
-set(THPRAC_IMGUI_ROOT "${CMAKE_SOURCE_DIR}/../thprac-reallyportable/thprac/src/3rdParties/ImGui" CACHE PATH "Dear ImGui 1.82 source used by the desktop thprac integration")
+set(THPRAC_IMGUI_ROOT "${EAGLER_COMMON_ROOT}/third_party/imgui" CACHE PATH "Dear ImGui 1.82 source used by the desktop thprac integration")
 set(TH_WEB_MUSIC "BASE" CACHE STRING "Bundled Web music payload: BASE, MIDI, WAV, or OGG")
 set_property(CACHE TH_WEB_MUSIC PROPERTY STRINGS BASE MIDI WAV OGG)
 set(TH07_ASSET_ROOT "${CMAKE_SOURCE_DIR}/assets" CACHE PATH "TH07 original asset directory")
 set(TH07_OGG_ROOT "${CMAKE_SOURCE_DIR}/assets-ogg" CACHE PATH "TH07 generated OGG asset directory")
-set(TH_UNIFONT_FILE "${CMAKE_SOURCE_DIR}/../dependencies/unifont-15.1.05/unifont-15.1.05.otf" CACHE FILEPATH "GNU Unifont OTF used by localized text and thprac")
+set(TH_UNIFONT_FILE "${CMAKE_SOURCE_DIR}/../../dependencies/unifont-15.1.05/unifont-15.1.05.otf" CACHE FILEPATH "GNU Unifont OTF used by localized text and thprac")
 if((TH_ENABLE_THCRAP OR TH_ENABLE_THPRAC) AND NOT EXISTS "${TH_UNIFONT_FILE}")
     message(FATAL_ERROR "GNU Unifont is required: ${TH_UNIFONT_FILE}")
 endif()
@@ -92,8 +95,6 @@ else()
     list(APPEND SOURCES src/LocalizationStub.cpp)
 endif()
 
-set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/../../common"
-    CACHE PATH "Shared monorepo common source")
 if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
     message(FATAL_ERROR "TH07 requires common source at ${EAGLER_COMMON_ROOT}")
 endif()

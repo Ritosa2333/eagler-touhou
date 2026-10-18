@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/InputLanes.hpp"
+#include "../web/cpp/multiplayer/InputLanes.hpp"
 
 #include <cassert>
 #include <cmath>

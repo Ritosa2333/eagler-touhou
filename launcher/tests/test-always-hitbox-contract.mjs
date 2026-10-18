@@ -9,13 +9,13 @@ import {runNativeCpp} from './support/native-cpp.mjs';
 const th06Options = fs.readFileSync(workspacePath("th06", "src/EaglerOptions.hpp"), "utf8");
 const th06Player = fs.readFileSync(workspacePath("th06", "src/Player.cpp"), "utf8");
 const player = fs.readFileSync(workspacePath("th07", "src/Player.cpp"), "utf8");
-const th08Shell = fs.readFileSync(workspacePath("th08", "th08_web/sdl-runtime/shell.mjs"), "utf8");
-const th08Host = fs.readFileSync(workspacePath("th08", "th08_web/cpp/sdl/GameHost.cpp"), "utf8");
-const th08Form = fs.readFileSync(workspacePath("th08", "th08_web/cpp/game/PlayerForm.cpp"), "utf8");
-const th08Scene = fs.readFileSync(workspacePath("th08", "th08_web/cpp/game/PlayerScene.hpp"), "utf8");
-const th10Exports = fs.readFileSync(workspacePath("th10", "th10_web/cpp/platform/ApplicationExports.cpp"), "utf8");
-const th10World = fs.readFileSync(workspacePath("th10", "th10_web/cpp/platform/WorldPlayer.cpp"), "utf8");
-const th10Movement = fs.readFileSync(workspacePath("th10", "th10_web/cpp/game/PlayerMovement.cpp"), "utf8");
+const th08Shell = fs.readFileSync(workspacePath("th08", "web/sdl-runtime/shell.mjs"), "utf8");
+const th08Host = fs.readFileSync(workspacePath("th08", "web/cpp/sdl/GameHost.cpp"), "utf8");
+const th08Form = fs.readFileSync(workspacePath("th08", "web/cpp/game/PlayerForm.cpp"), "utf8");
+const th08Scene = fs.readFileSync(workspacePath("th08", "web/cpp/game/PlayerScene.hpp"), "utf8");
+const th10Exports = fs.readFileSync(workspacePath("th10", "web/cpp/platform/ApplicationExports.cpp"), "utf8");
+const th10World = fs.readFileSync(workspacePath("th10", "web/cpp/platform/WorldPlayer.cpp"), "utf8");
+const th10Movement = fs.readFileSync(workspacePath("th10", "web/cpp/game/PlayerMovement.cpp"), "utf8");
 const coveredGames = new Set();
 
 if (!th06Options.includes("AlwaysShowHitbox()") ||
@@ -53,9 +53,9 @@ if (!th10Exports.includes('application_touch_display') ||
 }
 coveredGames.add("th10");
 
-const th11Shell = fs.readFileSync(workspacePath('th11','th11_web/sdl-runtime/shell.mjs'),'utf8');
-const th11Host = fs.readFileSync(workspacePath('th11','th11_web/cpp/sdl/Application.cpp'),'utf8');
-const th11Battle = fs.readFileSync(workspacePath('th11','th11_web/cpp/game/GameBattle.cpp'),'utf8');
+const th11Shell = fs.readFileSync(workspacePath('th11','web/sdl-runtime/shell.mjs'),'utf8');
+const th11Host = fs.readFileSync(workspacePath('th11','web/cpp/sdl/Application.cpp'),'utf8');
+const th11Battle = fs.readFileSync(workspacePath('th11','web/cpp/game/GameBattle.cpp'),'utf8');
 assert.match(th11Shell, /th11_always_hitbox\(/, 'th11: shell forwards the display option');
 assert.match(th11Host, /session\.always_hitbox=on!=0/, 'th11: native display option owner');
 assert.match(th11Battle, /!always_hitbox\|\|draw_hitbox/, 'th11: optional standalone hitbox drawing');
@@ -64,10 +64,10 @@ coveredGames.add('th11');
 
 for (const game of ['th09','th15','th20']) {
   const hostFile = game==='th09'?'Application.cpp':game==='th15'?'BrowserRuntime.cpp':'HitboxDisplay.cpp';
-  const host = fs.readFileSync(workspacePath(game,`${game}_web/cpp/sdl`,hostFile),'utf8');
+  const host = fs.readFileSync(workspacePath(game,`web/cpp/sdl`,hostFile),'utf8');
   const symbol=game==='th20'?'sdl_always_hitbox':`${game}_always_hitbox`;
   assert.ok(host.includes(symbol), `${game}: native option endpoint`);
-  const drawPath = game==='th09'?'th09_web/cpp/game/GameBattle.cpp':game==='th15'?'th15_web/cpp/game/PlayerDraw.cpp':'th20_web/cpp/sdl/HitboxDisplay.cpp';
+  const drawPath = game==='th09'?'web/cpp/game/GameBattle.cpp':game==='th15'?'web/cpp/game/PlayerDraw.cpp':'web/cpp/sdl/HitboxDisplay.cpp';
   const draw=fs.readFileSync(workspacePath(game,drawPath),'utf8');
   assert.match(draw,/hitbox\(|hitbox_display\.sample|select_animation_template/,`${game}: standalone native marker`);
   if(game!=='th09')assert.doesNotMatch(draw,/execute_animation\(|\.tick\(|\.create\(/,`${game}: drawing must not execute or allocate game animation`);
@@ -77,7 +77,7 @@ for (const game of ['th09','th15','th20']) {
 // Run each actual directory-shell option adapter with native ABI spies. This
 // catches a missing shell call even when the C++ display implementation exists.
 for(const game of ['th08','th09','th10','th11','th15','th20']){
-  const file=workspacePath(game,`${game}_web/sdl-runtime`,game==='th09'?'managed.mjs':'shell.mjs');
+  const file=workspacePath(game,`web/sdl-runtime`,game==='th09'?'managed.mjs':'shell.mjs');
   const source=fs.readFileSync(file,'utf8'), ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
   const name=['th08','th10','th20'].includes(game)?'applyOptions':'apply';
   const declaration=ast.body.find(node=>node.type==='FunctionDeclaration'&&node.id?.name===name);
@@ -97,8 +97,8 @@ for(const game of ['th08','th09','th10','th11','th15','th20']){
 // dependency owners. Configure-before-title and subsequent scenes must inherit
 // the option, even when there is no World at configuration time.
 for(const owner of ['th10','th10mp']){
-const exports=fs.readFileSync(workspacePath(owner,'th10_web/cpp/platform/ApplicationExports.cpp'),'utf8');
-const th10App=fs.readFileSync(workspacePath(owner,'th10_web/cpp/platform/Application.cpp'),'utf8');
+const exports=fs.readFileSync(workspacePath(owner,'web/cpp/platform/ApplicationExports.cpp'),'utf8');
+const th10App=fs.readFileSync(workspacePath(owner,'web/cpp/platform/Application.cpp'),'utf8');
 const setter=exports.match(/void application_touch_display\([^\n]+/)?.[0];
 const ensure=th10App.slice(th10App.indexOf('bool Application::ensure_world()'),th10App.indexOf('void Application::advance_loading()'));
 assert.ok(setter&&ensure);

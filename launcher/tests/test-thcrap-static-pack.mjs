@@ -4,6 +4,10 @@ import {readFile} from 'node:fs/promises';
 import {transform} from 'esbuild';
 import { createStaticThcrapPack, staticLanguagePackPath } from "../server/thcrap-static-pack.mjs";
 
+// Exercise the ZIP date under a negative UTC offset, where UTC midnight on
+// 1980-01-01 would otherwise become a local date in 1979.
+process.env.TZ = "America/Los_Angeles";
+
 const bytes = Buffer.from("ETL1\0\0\0\0", "ascii");
 const pack = createStaticThcrapPack({
   pack: { game: "th06", language: "lang_zh-hans", title: "简体中文", assets: [{ path: "th06/stages.js", crc32: 1 }] },
@@ -14,6 +18,7 @@ assert.equal(pack.catalog.pack.runtimeVersion, "independent");
 assert.equal(pack.fileName, "lang_zh-hans.zip");
 assert.equal(pack.catalog.pack.url, "language/lang_zh-hans.zip");
 assert.equal(staticLanguagePackPath("lang_en"), "language/lang_en.zip");
+assert.equal(pack.archive[12] | (pack.archive[13] << 8), 0x21); // ZIP DOS date: 1980-01-01
 const unpacked = unzipSync(pack.archive);
 assert.deepEqual(Buffer.from(unpacked["thcrap/th06/localization/stages.etl"]), bytes);
 

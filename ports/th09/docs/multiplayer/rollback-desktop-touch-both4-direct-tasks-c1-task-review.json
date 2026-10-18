@@ -6,7 +6,7 @@
     "sha256": "bf4294e90fb4ef23ee39edd7d6522666a6ac8baebac8c527a15a5a02e620fe19"
   },
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-report.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-report.json",
     "bytes": 29685068,
     "sha256": "c19307e11c86183f3d6816078814a7da6cc091874ec77990cdd16bfdc42adb54"
   },

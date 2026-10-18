@@ -12,7 +12,7 @@ const output = option('--output') ? resolve(option('--output')) : null;
 const maxTicks = option('--max-ticks') ? Number(option('--max-ticks')) : null;
 if (!option('--expected') || !option('--actual')) throw Error('Usage: --expected <result.json> --actual <result.json> [--output <comparison.json>]');
 if (maxTicks !== null && (!Number.isSafeInteger(maxTicks) || maxTicks < 1)) throw Error('Invalid --max-ticks');
-const workspace = resolve(dirname(fileURLToPath(import.meta.url)), '../../..'), commonRoot = resolve(workspace, 'eagler-common');
+const workspace = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..'), commonRoot = resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(workspace, 'common'));
 const {compareTraces} = await import(pathToFileURL(resolve(commonRoot, 'testkit/replay-verifier/compare.mjs')));
 const common = await import(pathToFileURL(resolve(commonRoot, 'testkit/replay-verifier/adapter.mjs')));
 

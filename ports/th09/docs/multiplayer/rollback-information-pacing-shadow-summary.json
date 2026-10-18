@@ -8,7 +8,7 @@
     "sha256": "e08302b1efce870057e8197eb8d17d10f66f20d133c3939fe3433356b54fda6c"
   },
   "extractionSource": {
-    "path": "th09_web\\tests\\multiplayer\\summarize-information-pacing-shadow.mjs",
+    "path": "web\\tests\\multiplayer\\summarize-information-pacing-shadow.mjs",
     "sha256": "50dae38eb02b14c92c97bc424ac071a71d61f49ad870c5a239f7d89444472bda"
   },
   "executionRecord": {
@@ -22,7 +22,7 @@
     "sha256": "30ab8746044047875459b2c4df57c24c15244394efd3d505b987884afa211933"
   },
   "analyzer": {
-    "path": "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs",
+    "path": "web/tests/multiplayer/analyze-information-pacing-shadow.mjs",
     "bytes": 32764,
     "sha256": "d0c0cb5eea57b89b138b3f53ce8d763789a1325bea680818543fc31fb99674e9"
   },
@@ -45,7 +45,7 @@
       "status": "analyzed",
       "integrity": {
         "expected": {
-          "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay-burst-response-01-report.json",
+          "path": "web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay-burst-response-01-report.json",
           "bytes": 21525676,
           "sha256": "09bb173bee138e05916d0557c0a42d5797c6be200e4825e97e42695063582376"
         },
@@ -2272,7 +2272,7 @@
       "status": "analyzed",
       "integrity": {
         "expected": {
-          "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
+          "path": "web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
           "bytes": 28866220,
           "sha256": "d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770"
         },

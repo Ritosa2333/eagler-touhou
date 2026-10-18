@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Main-derived transport/model tests with synthetic sockets, clocks, storage,
  * preparation and Runtime ports. No live relay, game, networking or persistence
@@ -527,7 +528,7 @@ test('original initial non-MP invite fallback selects default MP without changin
 
 const pinnedMainRevision = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 function pinnedRoomRetry({status, attempt, present = true}) {
-  const source = execFileSync('git', ['show', `${pinnedMainRevision}:src/launcher/app.mts`], {cwd: project, encoding: 'utf8'});
+  const source = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/app.mts');
   const start = source.indexOf('$("#mpRoomResourceRetry").addEventListener("click", () => {');
   assert.ok(start > 0); const end = source.indexOf('\n});', start); assert.ok(end > start);
   const events = [], room = {}, sandbox = {mpUiState: {room: present ? room : null},

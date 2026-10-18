@@ -1,3 +1,4 @@
+import {readUiHistoryText} from './ui-history.mjs';
 /** Carrier setup only. No browser, layout, native focus/input or animation gate. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +11,7 @@ import {originalComponentFixture} from './original-component-fixture.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const path = 'tests/test-multiplayer-quick-chat-browser.mjs';
-const pinned = name => execFileSync('git', ['show', `${baseline}:${name}`], {cwd: project, encoding: 'utf8'});
+const pinned = name => readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', name);
 function nodes(source) {
   const result = [];
   function visit(node) {

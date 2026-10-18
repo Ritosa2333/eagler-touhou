@@ -1,9 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {affectedComponents} from './affected-components.mjs';
+import {affectedComponents,nodeBuildTargets} from './affected-components.mjs';
 const workspace = JSON.parse(await readFile(new URL('../../launcher/config/workspace.json', import.meta.url), 'utf8'));
 const builds = JSON.parse(await readFile(new URL('../../launcher/config/runtime-builds.json', import.meta.url), 'utf8'));
+
+test('source build matrix follows actual recipes and retains both shared-source product modes',()=>{
+  assert.deepEqual(nodeBuildTargets(['launcher'],workspace,builds),[]);
+  const affected=affectedComponents(['ports/th08/web/cpp/game/Player.cpp'],workspace,builds);
+  assert.deepEqual(nodeBuildTargets(affected,workspace,builds).map(({game,variant})=>`${game}/${variant}`),['th08/normal','th08/multiplayer']);
+  const targets=nodeBuildTargets(affectedComponents(null,workspace,builds),workspace,builds);
+  assert.equal(targets.filter(target=>target.game==='th09').length,2);
+  assert.equal(targets.filter(target=>target.game==='th20').length,1);
+  assert.ok(targets.every(target=>!['th06','th07'].includes(target.game)));
+});
 test('Launcher-only contribution does not schedule native consumers', () => {
   assert.deepEqual(affectedComponents(['launcher/app/routes/home.tsx'], workspace, builds), ['launcher']);
 });

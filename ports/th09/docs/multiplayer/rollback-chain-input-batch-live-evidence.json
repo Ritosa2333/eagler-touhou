@@ -2,7 +2,7 @@
   "version": 1,
   "scope": "Offline input-send batching evidence. Original raw reports and their failure flags remain authoritative.",
   "analyzer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\analyze-input-send-batch.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-input-send-batch.mjs",
     "sha256": "eeb3c36d11c451792b4ed42dee372410088f4ecf36b8b23873aaa37b9a33ccb3"
   },
   "definitions": {
@@ -17,7 +17,7 @@
   "reports": [
     {
       "source": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-none-02-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-none-02-report.json",
         "sha256": "63a1997798609a598d5256e77775eb6df58b042ff7a810ef59ba00241c2b58a7",
         "bytes": 39268580
       },
@@ -16426,7 +16426,7 @@
     },
     {
       "source": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-input-batch-simd-live-relay-none-01-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-input-batch-simd-live-relay-none-01-report.json",
         "sha256": "6fd99bbb29d3244f67db2632468ced5b040a26a063f35bc70d1d53ad0c7a170d",
         "bytes": 34170121
       },
@@ -20729,7 +20729,7 @@
   ],
   "review": {
     "sourceAnalysis": {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-input-batch-simd-live-packet-analysis-01.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-chain-input-batch-simd-live-packet-analysis-01.json",
       "sha256": "a8d80451adbf1761e35621e315ffb5d867d2b00a86f2638174979c687631d81b",
       "bytes": 481171
     },

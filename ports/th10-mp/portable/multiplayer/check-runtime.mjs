@@ -26,8 +26,8 @@ const normal=['check-rollback','check-rollback-3p','check-rollback-bomb',
 const fixtures=['check-native-fixtures','check-generation','check-dense','check-replay','check-replay-completion','check-replay-audio','check-touch','check-ghost-presentation','check-presentation-rollback','check-player-cadence'];
 const tests=selected??(profile==='multiplayer'?normal:fixtures);
 if(!tests.length||tests.some(name=>![...normal,...fixtures].includes(name)))throw Error('Unknown runtime test');
-const buildPath=resolve(root,'th10_web/artifacts',profile,'build.json');
-const wasmPath=resolve(root,'th10_web/artifacts',profile,'th10-sdl.wasm');
+const buildPath=resolve(root,'web/artifacts',profile,'build.json');
+const wasmPath=resolve(root,'web/artifacts',profile,'th10-sdl.wasm');
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const build=JSON.parse(readFileSync(buildPath));
 if(build.sha256!==sha(wasmPath)||build.profile!==profile)throw Error('Stale/mixed build');

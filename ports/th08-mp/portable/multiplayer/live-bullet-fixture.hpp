@@ -2,8 +2,8 @@
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Native Bullet byte oracle must not enter production
 #endif
-#include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
-#include "../../th08_web/cpp/multiplayer/PoolsJournal.hpp"
+#include "../../web/cpp/platform/BrowserRuntime.hpp"
+#include "../../web/cpp/multiplayer/PoolsJournal.hpp"
 namespace th08::multiplayer::fixture {
 inline const u32* live_bullet_probe(BrowserRuntime& runtime){
     static u32 out[10]{};std::fill(out,out+10,0);out[0]=1;

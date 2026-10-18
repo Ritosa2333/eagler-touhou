@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const out='th08_web/artifacts/architecture-candidate/validation';mkdirSync(out,{recursive:true});
-const route=process.argv.includes('--extra')?'extra':process.argv.includes('--finalb')?'finalb-practice':'character0-final',replay=readFileSync('th08_web/artifacts/cpp/campaign/'+route+'/original.rpy');
-const cached=process.argv.includes('--cached-baseline')?JSON.parse(readFileSync('th08_web/artifacts/sdl3/replay-baseline-'+route+'.json')):null;
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const out='web/artifacts/architecture-candidate/validation';mkdirSync(out,{recursive:true});
+const route=process.argv.includes('--extra')?'extra':process.argv.includes('--finalb')?'finalb-practice':'character0-final',replay=readFileSync('web/artifacts/cpp/campaign/'+route+'/original.rpy');
+const cached=process.argv.includes('--cached-baseline')?JSON.parse(readFileSync('web/artifacts/sdl3/replay-baseline-'+route+'.json')):null;
 if(cached)assert.equal(cached.passed,true);
 const browser=await launchBrowser(),all=cached?{baseline:cached.native}:{};
 try{for(const native of cached?[true]:[false,true]){
@@ -11,7 +11,7 @@ try{for(const native of cached?[true]:[false,true]){
  if(!native){
   await page.route('**/probe.html',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><canvas id="screen" width="640" height="480"></canvas>'}));
   await page.route('**/probe.mjs',r=>r.fulfill({contentType:'text/javascript',body:readFileSync('portable/th08-probe-page.mjs')}));
-  await page.route('**/probe-game.wasm',r=>r.fulfill({contentType:'application/wasm',body:readFileSync('th08_web/artifacts/sdl-release/site/game.wasm')}));
+  await page.route('**/probe-game.wasm',r=>r.fulfill({contentType:'application/wasm',body:readFileSync('web/artifacts/sdl-release/site/game.wasm')}));
   await page.route('**/probe-replay.rpy',r=>r.fulfill({body:replay}));
   await page.goto('http://127.0.0.1:8092/probe.html');await page.evaluate(async()=>{const{createProbe}=await import('/probe.mjs');window.probe=await createProbe({sdl:true,replay:true});});
  }else{
@@ -34,6 +34,6 @@ try{for(const native of cached?[true]:[false,true]){
  assert(done,'Replay must finish');assert.equal(errors.length,0);all[native?'native':'baseline']={ticks,rows,errors};await page.screenshot({path:out+'/replay-'+route+'-'+native+'.png'});await context.close();
  }
  assert.equal(all.native.ticks,all.baseline.ticks);assert.deepEqual(all.native.rows,all.baseline.rows,'Replay state, RNG, player and score must remain identical');
- const build=JSON.parse(readFileSync('th08_web/artifacts/architecture-candidate/site/manifest.json'));
+ const build=JSON.parse(readFileSync('web/artifacts/architecture-candidate/site/manifest.json'));
  writeFileSync(out+'/replay-'+route+'.json',JSON.stringify({passed:true,route,wasm:build.execution.sha256,ticks:all.native.ticks,samples:all.native.rows.length,stages:[...new Set(all.native.rows.map(r=>r.state[1]))],baseline:'2.2.1 release'+(cached?' (previously verified trace cache)':''),native:all.native}));console.log(JSON.stringify({passed:true,route,wasm:build.execution.sha256,ticks:all.native.ticks,samples:all.native.rows.length}));
 }catch(error){writeFileSync(out+'/replay-'+route+'-failure.json',JSON.stringify({error:error.stack,all}));throw error;}finally{await browser.close();}

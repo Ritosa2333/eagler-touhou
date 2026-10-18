@@ -1,6 +1,6 @@
-#include "../../th11_web/cpp/game/BulletManager.hpp"
-#include "../../th11_web/cpp/game/ItemManager.hpp"
-#include "../../th11_web/cpp/game/AnmRenderer.hpp"
+#include "../../web/cpp/game/BulletManager.hpp"
+#include "../../web/cpp/game/ItemManager.hpp"
+#include "../../web/cpp/game/AnmRenderer.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <cstdio>
 #include <cstdlib>

@@ -1,5 +1,5 @@
-#include "../th10_web/cpp/game/GameInput.hpp"
-#include "../th10_web/cpp/game/Presentation.hpp"
+#include "../web/cpp/game/GameInput.hpp"
+#include "../web/cpp/game/Presentation.hpp"
 
 #include <cassert>
 #include <cstdio>

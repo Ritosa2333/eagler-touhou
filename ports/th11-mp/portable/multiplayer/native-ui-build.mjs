@@ -14,7 +14,7 @@ const sha=x=>createHash('sha256').update(x).digest('hex');
 const evidence={phase,diagnostic:true,transport:false,originalExecutable:false,head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),fixtureSha256:sha(readFileSync(resolve(here,'native-ui-fixture.cpp'))),sources:{},builds:{}};
 for(const mp of (process.argv.includes('--mp-only')?[true]:[false,true])){
  const name=mp?'multiplayer':'ordinary';
- const report=JSON.parse(readFileSync(resolve(root,'th11_web/artifacts',mp?'multiplayer':'sdl3','build.json')));
+ const report=JSON.parse(readFileSync(resolve(root,'web/artifacts',mp?'multiplayer':'sdl3','build.json')));
  const thprac=!mp&&!!report.features?.thprac;
  const plan=JSON.parse(execFileSync(process.execPath,['portable/build.mjs',...(mp?['--multiplayer']:[]),...(thprac?['--thprac']:[]),'--print-plan'],{cwd:root,encoding:'utf8'}));
  const flags=plan.flags.map(x=>x==='-DTH11_DEVELOPMENT_HARNESS=0'?'-DTH11_DEVELOPMENT_HARNESS=1':x);

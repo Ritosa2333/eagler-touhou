@@ -1,7 +1,7 @@
 // Real LaserManager/Line/Infinite/cut/ANM/renderer component oracle.
 // External world effects and resource lifetimes remain separate owners.
-#include "../../th11_web/cpp/game/LaserManager.hpp"
-#include "../../th11_web/cpp/game/AnmRenderer.hpp"
+#include "../../web/cpp/game/LaserManager.hpp"
+#include "../../web/cpp/game/AnmRenderer.hpp"
 #ifdef TH11_MULTIPLAYER
 #include <eagler/netplay/RollbackJournal.hpp>
 #endif

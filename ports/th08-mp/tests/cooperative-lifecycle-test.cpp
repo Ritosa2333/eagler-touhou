@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/multiplayer/CooperativeLifecycle.hpp"
+#include "../web/cpp/multiplayer/CooperativeLifecycle.hpp"
 #include <cstdio>
 using namespace th08::multiplayer;
 namespace {

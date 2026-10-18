@@ -8,7 +8,7 @@ const option=name=>{const i=process.argv.indexOf(name);return i<0?null:process.a
 const id=option('--case'),lane=option('--lane')||'all',out=resolve(option('--output')||resolve(repo,'artifacts/replay-verifier/oracle'));
 const ids=id?[id]:lane==='all'?Object.values(corpus.suites).flat():corpus.suites[lane];if(!ids)throw Error('Unknown suite');
 mkdirSync(out,{recursive:true});
-const sha=b=>createHash('sha256').update(b).digest('hex'),core=resolve(repo,'th11_web/artifacts/cpp/game-core-test.wasm'),coreSha256=sha(readFileSync(core));
+const sha=b=>createHash('sha256').update(b).digest('hex'),core=resolve(repo,'web/artifacts/cpp/game-core-test.wasm'),coreSha256=sha(readFileSync(core));
 for(const name of ids){
   const fixture=corpus.cases.find(c=>c.id===name);if(!fixture)throw Error('Unknown case '+name);
   const replay=resolve(repo,fixture.source);if(fixture.replaySha256&&sha(readFileSync(replay))!==fixture.replaySha256)throw Error('Replay identity mismatch');
@@ -16,7 +16,7 @@ for(const name of ids){
   for(const key of ['TH11_WORLD_LIMIT','TH11_WORLD_RESUME','TH11_WORLD_NATIVE_RESUME','TH11_WORLD_CHECKPOINT','TH11_WORLD_FILE','TH11_WORLD_STAGE','TH11_WORLD_CAMPAIGN'])delete env[key];
   if(fixture.kind!=='demo')Object.assign(env,{TH11_WORLD_FILE:replay,TH11_WORLD_STAGE:String(fixture.kind==='extra'?7:1),TH11_WORLD_CAMPAIGN:'1'});
   console.log('Original/Candidate:',name);const log=createWriteStream(resolve(out,name+'.log'));
-  const child=spawn(process.execPath,['--test','th11_web/tests/cpp/world-replays.test.mjs'],{cwd:repo,env,windowsHide:true,stdio:['ignore','pipe','pipe']});
+  const child=spawn(process.execPath,['--test','web/tests/cpp/world-replays.test.mjs'],{cwd:repo,env,windowsHide:true,stdio:['ignore','pipe','pipe']});
   child.stdout.pipe(log,{end:false});child.stderr.pipe(log,{end:false});
   const code=await new Promise((accept,reject)=>{child.on('error',reject);child.on('exit',accept);});await new Promise(accept=>log.end(accept));
   if(sha(readFileSync(core))!==coreSha256)throw Error('Core changed during oracle run');

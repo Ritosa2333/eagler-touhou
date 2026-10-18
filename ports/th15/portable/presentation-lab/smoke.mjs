@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {launchBrowser} from '../../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../../tools/browser/launch.mjs';
 const browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
 const page=await browser.newPage(),errors=[];page.on('pageerror',e=>{errors.push(String(e));console.error(String(e));});page.on('console',m=>{if(m.type()==='error')console.error(m.text());});
 try{
@@ -34,5 +34,5 @@ try{
  await page.getByRole('button',{name:'限制 60 Hz',exact:true}).click();
  assert.equal(await page.getByRole('button',{name:'限制 60 Hz',exact:true}).getAttribute('class'),'primary');
  await page.getByRole('button',{name:'高刷（默认）',exact:true}).click();
- await page.screenshot({path:new URL('../../th15_web/artifacts/presentation-lab/workbench.png',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1'),fullPage:true});
+ await page.screenshot({path:new URL('../../web/artifacts/presentation-lab/workbench.png',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1'),fullPage:true});
 }finally{await browser.close();}

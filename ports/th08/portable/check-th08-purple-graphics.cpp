@@ -1,5 +1,5 @@
-#include "../th08_web/cpp/game/GraphicsMath.hpp"
-#include "../th08_web/cpp/game/PracticeRsqrtTables.hpp"
+#include "../web/cpp/game/GraphicsMath.hpp"
+#include "../web/cpp/game/PracticeRsqrtTables.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstring>

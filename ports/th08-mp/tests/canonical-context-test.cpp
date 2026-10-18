@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/multiplayer/CanonicalContext.hpp"
+#include "../web/cpp/multiplayer/CanonicalContext.hpp"
 #include <cassert>
 #include <cstdio>
 #include <utility>

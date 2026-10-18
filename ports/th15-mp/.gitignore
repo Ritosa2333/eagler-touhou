@@ -41,8 +41,8 @@ score*.dat
 **/tools/python/
 **/tools/playwright-browsers/
 **/tools/architecture/typescript/node_modules/
-**/th15_web/tools/
-**/th10_web/tools/
+**/web/tools/
+**/web/tools/
 tools/architecture/python/
 
 /build-eagler-multiplayer/

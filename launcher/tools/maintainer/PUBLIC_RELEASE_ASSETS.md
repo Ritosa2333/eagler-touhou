@@ -1,63 +1,30 @@
-# Public project Release assets
+# 公开下载附件
 
-The formal Eagler Touhou Release bundle is not itself a public GitHub Release
-payload. It can contain Hosted output, game Packages and offline ZIPs derived
-from legally-owned originals. Those artifacts remain private/operator-owned.
+从同一个已验证的[正式 Release](../../docs/RELEASE.md)生成两份不含原版游戏资源的下载包：
 
-The public project Release should instead publish two resource-free assets
-derived from the same verified formal candidate:
+| 文件 | 读者与内容 |
+| --- | --- |
+| `EaglerTouhou-SelfHost.zip` | 自托管用户；Host 工具、前端、可再分发共用资源、Runtime Release 与游戏资源目录 |
+| `EaglerTouhou-Runtime.zip` | 集成与升级；同一套 `runtime-release/` |
+| `SHA256SUMS.txt` | 下载校验 |
+| `release-assets.json` | 产物与源 Release 的身份关系 |
 
-1. `EaglerTouhou-SelfHost.zip` - the recommended download for
-   ordinary self-host operators. It contains the portable Host tooling,
-   compiled Launcher, redistributable shared resources, the verified
-   `runtime-release/`, and one empty `games/<game>` directory for every formal
-   game currently registered by the Product Catalog. The bundle builder derives
-   that set from the catalog; this document is not a second product registry.
-2. `EaglerTouhou-Runtime.zip` - the standalone Runtime Release for
-   advanced operators and integration/update work. It contains a canonical
-   top-level `runtime-release/` directory and no original game resources.
+## 1. 生成
 
-Generate both, plus `SHA256SUMS.txt`, with:
+在 `launcher/` 中运行，替换输入和新的输出目录：
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass `
-  -File tools/maintainer/build-github-release-assets.ps1 `
-  -Candidate D:\Releases\candidate `
-  -OutputDirectory D:\ReleaseAssets\0.1.0
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools/maintainer/build-github-release-assets.ps1 -Candidate D:/Releases/candidate -OutputDirectory D:/ReleaseAssets/version
 ```
 
-The script first verifies the complete formal candidate, then verifies and
-extracts its `runtime-release/`. It delegates the Self-host asset to
-`build-self-host-bundle.ps1` and emits `release-assets.json` with the source
-Release identity. The Runtime ZIP is only a transport envelope around that
-same verified Runtime Release; it does not rebuild Runtime files.
+工具先验证正式候选，再派生两个附件。游戏原始文件、含 DATA 的 Hosted 站点、离线游戏包和用户数据属于独立的私有交付内容。
 
-Never publish any of the following as public project assets:
+## 2. 检查首次安装
 
-- a formal release candidate directory as a whole;
-- `hosted-site/` when it contains generated original-game resources;
-- `game-package/`;
-- `offline-zip/` game-content packages;
-- legally-owned original game directories;
-- user saves, Replays, credentials, private server configuration, or logs.
+将待验证站点部署到已确认的测试地址。在 `launcher/` 中用 `node scripts/list-product-games.mjs` 查看作品列表，然后对每个本次发布作品运行：
 
-## Staging before production promotion
-
-Static deployment verification is necessary but does not prove a real browser
-can complete first installation. After an explicitly authorized staging
-deployment, run the browser/package probe from a fresh Chromium session for
-every formal Product Catalog game. Use `node scripts/list-product-games.mjs`
-to obtain the current set. For example:
-
-```powershell
-node tools/maintainer/verify-public-first-install.mjs https://staging.example.invalid/ --game=th06
-node tools/maintainer/verify-public-first-install.mjs https://staging.example.invalid/ --game=th07
+```sh
+node tools/maintainer/verify-public-first-install.mjs https://staging.example.com/ --game=th06
 ```
 
-The probe requires the remote Package installation to commit a current
-generation in IndexedDB and then requires the Runtime to emit a real
-`first-frame`. A green static `verify:deployed` result does not replace this
-browser-level gate.
-
-These maintainers tools create and verify local/public-staging artifacts only.
-They do not upload to GitHub and do not authorize a production cutover.
+检查结果应包含 IndexedDB 安装 generation 提交、Runtime 就绪和实际首帧。把测试环境与结果放进发布记录，审阅附件和公开说明后再发布。

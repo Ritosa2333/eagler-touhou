@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Mounted actual RuntimeDiagnostics + createRuntimeDiagnostics, synthetic DOM,
  * authenticated-runtime ports and bounded scheduling inputs only. No browser,
  * CSS-pixel, live performance, transport or calibration-report claim.
@@ -14,7 +15,7 @@ import {installMountedDom} from './mounted-dom-environment.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const pinned = path => execFileSync('git', ['show', `${pinnedMain}:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', path);
 const preferenceKey = 'eagler-touhou-runtime-diagnostics-v1';
 const runtimeIds = ['runtimeBrowserDiag', 'runtimeAudioDiag', 'runtimeRendererDiag', 'runtimeGapDiag'];
 const netplayIds = ['runtimeNetplaySessionDiag', 'runtimeNetplayInputDelayDiag', 'runtimeNetplayRouteDiag',

@@ -6,13 +6,13 @@
   "scope": "Local desktop evidence only. A summary is not a phone/WAN guarantee; raw file hashes identify each attempt, including failures. See ADONIS-EXPERIMENT.md.",
   "builds": [
     {
-      "directory": "th09_web/artifacts/sdl-adonis",
+      "directory": "web/artifacts/sdl-adonis",
       "kind": "th09-presentation-harness",
       "sha256": "b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905",
       "bytes": 2823361
     },
     {
-      "directory": "th09_web/artifacts/sdl-adonis-release",
+      "directory": "web/artifacts/sdl-adonis-release",
       "kind": "th09-native-web-release-candidate",
       "sha256": "480fe94192741332ee5393d5bbe679e42fda2e3b2287096b74c1ac740449d27a",
       "bytes": 2799665
@@ -20,7 +20,7 @@
   ],
   "records": [
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-baseline-peer-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-baseline-peer-report.json",
       "sha256": "68d8aca81c82c50447111800f5d9b598b798e7dea915e899ba4b426f306d999b",
       "passed": true,
       "parameters": {
@@ -122,7 +122,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-baseline-rtc-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-baseline-rtc-report.json",
       "sha256": "ae2132d47e248f61f111f5d67fc223e01b1be5ca7ba63d6a55ff104cbbe2a7a6",
       "passed": true,
       "correctnessPassed": true,
@@ -254,7 +254,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay-endurance-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-delay-endurance-report.json",
       "sha256": "15e4ce7b8a65251db18a18c2b363cb35ce035a23d2919c828303904c15cae0da",
       "passed": true,
       "parameters": {
@@ -358,7 +358,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay-peer-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-delay-peer-report.json",
       "sha256": "4d98c8d66272ffefdef6d3a8acd6a82bfa79507724a1c3d80a9345c4e9e1a686",
       "passed": true,
       "parameters": {
@@ -460,14 +460,14 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay-rtc-failure.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-delay-rtc-failure.json",
       "sha256": "8e8bf457132b132a7693fbc5b98db03b0c6a18cd050375f7261223bb23a0161a",
       "passed": false,
       "error": "page.evaluate: Error: Simulation slowed by recovery: 16033.509999990463 ms",
       "result": {}
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay4-rtc-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-delay4-rtc-report.json",
       "sha256": "528adbf602b3b510a7b12347452fd0aad22e3e56ca60ea81d3863bd492dc0ce0",
       "passed": true,
       "correctnessPassed": true,
@@ -599,7 +599,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-delay5-rtc-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-delay5-rtc-report.json",
       "sha256": "5f4d07a8cedfeb14f2cdceb6418ffafe4fee489cf5185bc0ea7e164672d2d2cf",
       "passed": true,
       "correctnessPassed": true,
@@ -731,14 +731,14 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-hybrid-endurance-failure.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-hybrid-endurance-failure.json",
       "sha256": "481093895666a5054c89481e9b9515295446ff4e3acb9b86cac5c07df443b33a",
       "passed": false,
       "error": "page.evaluate: Error: Results path was not exercised",
       "result": {}
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-hybrid-endurance12k-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-hybrid-endurance12k-report.json",
       "sha256": "304a77efe535e66561aee7cae9e1ae5e5f6657bb3c55dcfef131dc4d4744cb27",
       "passed": true,
       "parameters": {
@@ -842,7 +842,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-hybrid-peer-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-hybrid-peer-report.json",
       "sha256": "9f440522007019e66abd6b21bf1dc81cfdd04866accf621e2413e3c858c1e3b4",
       "passed": true,
       "parameters": {
@@ -944,7 +944,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-hybrid-rtc-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-hybrid-rtc-report.json",
       "sha256": "56667791595f3a1136a9df13c0a520ea655992721b5a93cd17efab63a881a19a",
       "passed": true,
       "correctnessPassed": true,
@@ -1076,7 +1076,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-report.json",
       "sha256": "f40e8c60c46110d9fd0e21bcc28f7bcb8b78f8aa6f3cf411d2acee5f411057f6",
       "passed": true,
       "wasm": "91f03ef87269fa0d9a68e3643f9d648831503cf4970999bb62acbf7bdd58ac00",
@@ -1084,7 +1084,7 @@
       "result": {}
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-baseline-relay-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-room-baseline-relay-report.json",
       "sha256": "6775123cd7ee921ff9e99aa8463c479df8ff7bcacc1bf99dff2604875b64e72c",
       "passed": true,
       "correctnessPassed": true,
@@ -1216,14 +1216,14 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-delay5-relay-failure.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-room-delay5-relay-failure.json",
       "sha256": "14bc3045ff1b7b3a4017bbe1879aef1f5429bab9f876054cf817f11e54f15212",
       "passed": false,
       "error": "AssertionError [ERR_ASSERTION]: Simulation slowed by recovery: 23988.53499996662 ms",
       "result": {}
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-delay5-relay-repeat-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-room-delay5-relay-repeat-report.json",
       "sha256": "4bd176d63c6d24e90989e5c7af1649fbea5afc459f98144c82b513e7b64b42bd",
       "passed": true,
       "correctnessPassed": true,
@@ -1355,7 +1355,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-delay5-relay-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-room-delay5-relay-report.json",
       "sha256": "cb9103e93a8a3569b89adcb6a4a8801de4a9903e6f4be70934c8e536208f3a33",
       "passed": false,
       "correctnessPassed": true,
@@ -1487,7 +1487,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-delay5-rtc-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-room-delay5-rtc-report.json",
       "sha256": "f589990cf1ec15ebc2aef657c550f3111cf15cfa34f68a76f76e2705e070fdc3",
       "passed": true,
       "correctnessPassed": true,
@@ -1619,7 +1619,7 @@
       }
     },
     {
-      "file": "th09_web/artifacts/multiplayer-tests/adonis-room-hybrid-release-rtc-report.json",
+      "file": "web/artifacts/multiplayer-tests/adonis-room-hybrid-release-rtc-report.json",
       "sha256": "5a8a3991423f23575e32b1a306bed0afec35287bdfccc655a04199ab834a0e01",
       "passed": true,
       "correctnessPassed": true,

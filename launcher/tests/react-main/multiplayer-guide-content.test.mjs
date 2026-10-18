@@ -5,21 +5,26 @@ import test, {before, after} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
-import {execFileSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {JSDOM} from 'jsdom';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
+import {readUiHistoryText} from '../support/ui-history.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
-const pinned = name => execFileSync('git', ['show', `8bdf6dbf4a81032f0725cc841b86d03e1465fe07:src/launcher/${name}`], {cwd: project, encoding: 'utf8'});
+const pinned = name => readUiHistoryText('8bdf6dbf4a81032f0725cc841b86d03e1465fe07', `src/launcher/${name}`);
 const original = pinned('multiplayer-guide.mts');
 const originalBuilder = original.slice(original.indexOf('interface AuthoredGuideGroup'), original.indexOf('function isDialogElement'));
+const th09CatalogEntry = '  Object.freeze({ id: "th09", short: "TH09", title: "花映塚" }),\n';
 const th15CatalogEntry = '  Object.freeze({ id: "th15", short: "TH15", title: "绀珠传" }),\n';
-// The controller remains the pinned implementation; the authored title catalog
-// intentionally gains TH15. Apply the same catalog extension to the oracle.
-const extendCatalog = source => source.replace('  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),\n',
-  '  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),\n' + th15CatalogEntry);
+// The shared guide gained its TH09 and TH15 player-facing tabs after the
+// original controller was pinned. Extend only those catalog entries in the
+// transformation oracle; the sanitizer and interaction behavior stay pinned.
+const extendCatalog = source => source
+  .replace('  Object.freeze({ id: "th08", short: "TH08", title: "永夜抄" }),\n',
+    '  Object.freeze({ id: "th08", short: "TH08", title: "永夜抄" }),\n' + th09CatalogEntry)
+  .replace('  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),\n',
+    '  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),\n' + th15CatalogEntry);
 let api, work, inputs;
 before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true});
@@ -78,14 +83,14 @@ function execute(builder, sanitizer, html, initialGameId) {
       assert.equal(left.defaultPrevented, true); capture('left wraps focus only');
       const right = new window.KeyboardEvent('keydown', {key: 'ArrowRight', bubbles: true, cancelable: true}); document.activeElement.dispatchEvent(right);
       assert.equal(right.defaultPrevented, true); capture('right wraps focus only');
-      for (const game of ['th06', 'th07', 'th08', 'th10', 'th11', 'th15']) {target.scrollTop = 123; tabs.querySelector(`[data-game="${game}"]`).click(); capture(`click ${game}`);}
+      for (const game of ['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th15']) {target.scrollTop = 123; tabs.querySelector(`[data-game="${game}"]`).click(); capture(`click ${game}`);}
       const disclosure = target.querySelector('.multiplayer-rule-panel[data-game="th10"] details'); disclosure.open = true; capture('native disclosure state');
       for (const game of ['th08', 'unknown', '', 'th10']) {target.scrollTop = 234; guide.dispatchEvent(new window.CustomEvent('mp-guide-select-game', {detail: game})); capture(`select ${game}`);}
     }
     return {sanitized, trace};
   } finally {window.close();}
 }
-for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 'th07', 'th08', 'th10', 'th11', 'th15', 'unknown', '']) test(`pinned executed guide transformation: ${name}, initial=${game || '(empty)'}`, () => {
+for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th15', 'unknown', '']) test(`pinned executed guide transformation: ${name}, initial=${game || '(empty)'}`, () => {
   const expected = execute(api.pinnedBuilder, api.pinnedSanitizer, html, game);
   const actual = execute(api.buildRuleGuide, api.renderContentFragment, html, game);
   assert.deepEqual(actual, expected);
@@ -98,9 +103,13 @@ for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 't
   if (['authored', 'headings', 'hostile'].includes(name)) {
     const initial = new JSDOM(actual.trace[0].html).window;
     try {
-      assert.equal(initial.document.querySelectorAll('.multiplayer-rule-game-tab').length, 6);
+      assert.equal(initial.document.querySelectorAll('.multiplayer-rule-game-tab').length, 7);
       assert.equal(initial.document.querySelectorAll('details[open]').length, 0);
-      assert.equal(initial.document.querySelector('[aria-selected="true"]').dataset.game, ['th06', 'th07', 'th08', 'th10', 'th11', 'th15'].includes(game) ? game : 'th07');
+      assert.equal(initial.document.querySelector('[aria-selected="true"]').dataset.game, ['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th15'].includes(game) ? game : 'th07');
+      assert.equal(initial.document.querySelector('.multiplayer-rule-panel[data-game="th09"] .multiplayer-rule-disclosure-specific').textContent,
+        name === 'authored'
+          ? '本作特有规则TH09 为双人对战，不使用上方的合作规则。创建房间后，将四位房间码发给另一位玩家；双方在游戏内选择角色后，由房主开始对局。支持 Easy、Normal、Hard 和 Lunatic 难度，可选 16 个角色。房间支持观战。对局结束后可在 Replay 管理器中查看或导出录像；本作还提供按对手整理对局记录和自动保存录像的设置。操作使用方向键、射击、Bomb、低速等游戏输入。可在控制设置中选择适合本地键盘的 TH09 按键布局，或绑定手柄。'
+          : '本作特有规则无');
       if (name === 'authored' && game === 'th15') {
         const rules = initial.document.querySelector('.multiplayer-rule-panel[data-game="th15"] .multiplayer-rule-disclosure-specific').textContent;
         for (const text of ['1,500,000', '1,250,000', '0.02 Power', '0.03 Power', '2.00 Power', '280', '铃仙', '只显示自己的判定点']) assert.ok(rules.includes(text), `Missing TH15 rule: ${text}`);

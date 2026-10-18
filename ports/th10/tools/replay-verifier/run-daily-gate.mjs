@@ -18,7 +18,7 @@ function options(argv) {
 const args = options(process.argv.slice(2));
 if (!args['capture-root']) throw Error('usage: node run-daily-gate.mjs --capture-root <lunatic-and-extra-directory> [--golden-root <published-golden>] [--common-root <eagler-common>] [--report <file>]');
 const captureRoot = resolve(args['capture-root']);
-const commonRoot = resolve(args['common-root'] ?? process.env.EAGLER_COMMON_ROOT ?? join(here, '..', '..', '..', 'eagler-common'));
+const commonRoot = resolve(args['common-root'] ?? process.env.EAGLER_COMMON_ROOT ?? join(here, '..', '..', '..', '..', 'common'));
 const {compareTraces} = await import(pathToFileURL(join(commonRoot, 'testkit', 'replay-verifier', 'compare.mjs')));
 const common = await import(pathToFileURL(join(commonRoot, 'testkit', 'replay-verifier', 'adapter.mjs')));
 const golden = await loadGoldenManifest(args['golden-root']);

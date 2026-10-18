@@ -53,11 +53,11 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
   }),
   games: Object.freeze({
     th06: Object.freeze({
-      runtime: `${ws("th06", "build-web-eagler-thprac-test", "th06.html")}?hosted=1&v=audio-music-modes-1`,
-      multiplayerRuntime: `${ws("th06", "build-web-netplay-th06", "th06.html")}?hosted=1&v=th06-netplay-local-2`,
+      runtime: `${ws("th06", "build", "web", "normal", "th06.html")}?hosted=1&v=audio-music-modes-1`,
+      multiplayerRuntime: `${ws("th06", "build", "web", "multiplayer", "th06.html")}?hosted=1&v=th06-netplay-local-2`,
       data: Object.freeze({
-        source: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.data")) : ws("th06", "build-web-eagler-thprac-test", "th06.data"),
-        runtimeScript: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.js")) : ws("th06", "build-web-eagler-thprac-test", "th06.js"),
+        source: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.data")) : ws("th06", "build", "web", "normal", "th06.data"),
+        runtimeScript: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.js")) : ws("th06", "build", "web", "normal", "th06.js"),
       }),
       music: availableMusic({
         wav: Object.freeze({
@@ -71,11 +71,11 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       }, th06ContentRoot),
     }),
     th07: Object.freeze({
-      runtime: `${ws("th07", "build-web-eagler-thprac", "th07.html")}?hosted=1&v=audio-music-modes-1`,
-      multiplayerRuntime: `${ws("th07", "build-web-th07-netplay", "th07.html")}?hosted=1&v=th07-netplay-local-2`,
+      runtime: `${ws("th07", "build", "web", "normal", "Release", "th07.html")}?hosted=1&v=audio-music-modes-1`,
+      multiplayerRuntime: `${ws("th07", "build", "web", "multiplayer", "Release", "th07.html")}?hosted=1&v=th07-netplay-local-2`,
       data: Object.freeze({
-        source: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.data")) : ws("th07", "build-web-eagler-thprac", "th07.data"),
-        runtimeScript: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.js")) : ws("th07", "build-web-eagler-thprac", "th07.js"),
+        source: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.data")) : ws("th07", "build", "web", "normal", "Release", "th07.data"),
+        runtimeScript: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.js")) : ws("th07", "build", "web", "normal", "Release", "th07.js"),
       }),
       music: availableMusic({
         wav: Object.freeze({ base: th07ContentRoot ? `${projectRelativePath(th07ContentRoot)}/` : wsDir("th07", "assets"), ...PRODUCT_CONTENT.th07.music.wav }),
@@ -87,6 +87,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
     }),
     th08: Object.freeze({
       runtime: `${ws("th08", "build-eagler", "th08.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th08mp", "build-eagler-multiplayer", "th08.html")}?hosted=1`,
       data: Object.freeze(th08DataFile ? {
         source: projectRelativePath(th08DataFile),
         layout: PRODUCT_CONTENT.th08.dataLayout,
@@ -105,8 +106,8 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       } : {}),
     }),
     th09: Object.freeze({
-      runtime: `${ws("th09", "th09_web", "build-eagler", "th09.html")}?hosted=1`,
-      multiplayerRuntime: `${ws("th09", "th09_web", "build-eagler-multiplayer", "th09.html")}?hosted=1`,
+      runtime: `${ws("th09", "web", "build-eagler", "th09.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th09", "web", "build-eagler-multiplayer", "th09.html")}?hosted=1`,
       data: Object.freeze({
         source: th09ContentRoot
           ? projectRelativePath(resolve(th09ContentRoot, "th09.data"))
@@ -122,6 +123,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
     }),
     th10: Object.freeze({
       runtime: `${ws("th10", "build-eagler", "th10.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th10mp", "build-eagler-multiplayer", "th10.html")}?hosted=1`,
       data: Object.freeze(th10ContentRoot ? {
         source: projectRelativePath(resolve(th10ContentRoot, "th10.data")),
         layout: PRODUCT_CONTENT.th10.dataLayout,

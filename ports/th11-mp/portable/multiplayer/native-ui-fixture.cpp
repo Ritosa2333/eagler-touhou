@@ -1,4 +1,4 @@
-#include "../../th11_web/cpp/sdl/Application.cpp"
+#include "../../web/cpp/sdl/Application.cpp"
 // Diagnostic-only TU. Linked instead of production Application.o; never packaged.
 static bool fixture_freeze_ghost=false;
 static bool fixture_record_io=false;

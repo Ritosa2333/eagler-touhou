@@ -14,9 +14,9 @@ test('ordinary build excludes multiplayer implementation and shared netplay code
   const normal = plan();
   assert.equal(normal.variant, 'normal');
   assert.equal(normal.profile, 'sdl3');
-  assert.equal(normal.outputDirectory, resolve(root, game + '_web/artifacts/sdl3'));
+  assert.equal(normal.outputDirectory, resolve(root, 'web/artifacts/sdl3'));
   assert(!normal.flags.some(flag => /TH_ENABLE_(MULTIPLAYER_GAMEPLAY|NETPLAY)/.test(flag)));
-  assert(!normal.sources.some(source => /multiplayer|eagler-common\/src\/netplay/.test(source)));
+  assert(!normal.sources.some(source => /multiplayer|common\/src\/netplay/.test(source)));
   assert.deepEqual(normal.linkFlags, []);
 });
 
@@ -29,8 +29,8 @@ test('multiplayer build has its own output, macros and pinned shared implementat
   assert(mp.flags.includes('-DTH_ENABLE_NETPLAY=1'));
   for (const component of ['NetplayCore', 'NetplayProtocol', 'NetplaySession',
     'RollbackJournal', 'BrowserPeerTransport', 'WebSocketTransport']) {
-    const source = '../third_party/eagler-common/src/netplay/' + component + '.cpp';
-    assert.equal(mp.sources.filter(item => item === source).length, 1, component);
+    const source = resolve(root,'../../common/src/netplay',component+'.cpp');
+    assert.equal(mp.sources.filter(item => resolve(root,'web',item) === source).length, 1, component);
   }
   assert(mp.linkFlags.includes('-lwebsocket'));
 });

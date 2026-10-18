@@ -84,7 +84,7 @@ export function createStaticThcrapPack({ pack, resources }) {
   for (const [path, bytes] of [...entries.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     orderedEntries[path] = bytes;
   }
-  const archive = zipSync(orderedEntries, { level: 6, mtime: new Date("1980-01-01T00:00:00Z") });
+  const archive = zipSync(orderedEntries, { level: 6, mtime: new Date(1980, 0, 1, 0, 0, 0) });
   const digest = sha256(archive);
   const fileName = `${language}.zip`;
   return Object.freeze({

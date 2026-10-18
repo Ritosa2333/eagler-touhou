@@ -3,7 +3,7 @@
   "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
   "analysisKind": "Offline reanalysis of the four frozen B/E/E/B raw reports, not new browser performance runs.",
   "syntax": {
-    "command": "node --check th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+    "command": "node --check web/tests/multiplayer/analyze-enemy-index-series.mjs",
     "command_id": "dX2c_F5YjjhKeWUVcJQnhP4K",
     "elapsed_ms": 582,
     "exit_code": 0,
@@ -36,30 +36,30 @@
   },
   "attempts": [
     {
-      "command": "node th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+      "command": "node web/tests/multiplayer/analyze-enemy-index-series.mjs",
       "commandId": "AGeNJFbkEtkdYzHHQN4Hvln6",
       "exitCode": 1,
       "source": {
-        "path": "th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+        "path": "web/tests/multiplayer/analyze-enemy-index-series.mjs",
         "bytes": 49515,
         "sha256": "17451405470a55f7c36a98fdfadb4a4e7020366ab2ba020d96306e6c099ab54c"
       },
       "reason": "Pretty-printed evidence exceeded the 524288-byte output cap. The analyzer refused omission or truncation and did not create target evidence.",
-      "log": "th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-series-analysis-01-command.json"
+      "log": "web/artifacts/multiplayer-tests/rollback4x-enemy-index-series-analysis-01-command.json"
     },
     {
-      "command": "node th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+      "command": "node web/tests/multiplayer/analyze-enemy-index-series.mjs",
       "commandId": "3i5tr0PRSAmEJz-SE6N0DkTw",
       "exitCode": 0,
       "source": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\analyze-enemy-index-series.mjs",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-enemy-index-series.mjs",
         "bytes": 49508,
         "sha256": "6b5eebf03b19058175527c798f2c3c1b0432304144059af0dafcd742292dabf9",
         "available": true
       },
       "comparisonAvailable": true,
       "requiredFailures": [],
-      "log": "th09_web/artifacts/multiplayer-tests/rollback4x-enemy-index-series-analysis-02-command.json"
+      "log": "web/artifacts/multiplayer-tests/rollback4x-enemy-index-series-analysis-02-command.json"
     }
   ],
   "repair": {

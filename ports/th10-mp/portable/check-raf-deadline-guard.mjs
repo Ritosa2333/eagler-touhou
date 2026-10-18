@@ -33,12 +33,12 @@ const common=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'
 const inputEntries=[
   ['portable/check-raf-deadline-guard.mjs',runnerPath],
   ['portable/check-raf-deadline-guard.cpp',resolve(root,'portable/check-raf-deadline-guard.cpp')],
-  ['th10_web/cpp/sdl/RafDeadlineGuard.hpp',resolve(root,'th10_web/cpp/sdl/RafDeadlineGuard.hpp')],
+  ['web/cpp/sdl/RafDeadlineGuard.hpp',resolve(root,'web/cpp/sdl/RafDeadlineGuard.hpp')],
   // The policy test does not compile ApplicationHost. Preserve the adapter
   // paired with this result so a later actual-game test can prove its identity.
-  ['th10_web/cpp/sdl/ApplicationHost.cpp',resolve(root,'th10_web/cpp/sdl/ApplicationHost.cpp')],
-  ['th10_web/cpp/multiplayer/NetworkFrameSchedule.hpp',
-    resolve(root,'th10_web/cpp/multiplayer/NetworkFrameSchedule.hpp')],
+  ['web/cpp/sdl/ApplicationHost.cpp',resolve(root,'web/cpp/sdl/ApplicationHost.cpp')],
+  ['web/cpp/multiplayer/NetworkFrameSchedule.hpp',
+    resolve(root,'web/cpp/multiplayer/NetworkFrameSchedule.hpp')],
   ['portable/sdl/PresentationCadence.hpp',resolve(root,'portable/sdl/PresentationCadence.hpp')],
   ['portable/sdl/FrameCadence.hpp',resolve(root,'portable/sdl/FrameCadence.hpp')],
   ['eagler-common/include/eagler/netplay/PendingFrameSchedule.hpp',

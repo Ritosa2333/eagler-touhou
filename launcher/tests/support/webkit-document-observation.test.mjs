@@ -1,3 +1,4 @@
+import {readUiHistoryText} from './ui-history.mjs';
 /** Setup/source/DOM observations only: never imports or launches Playwright,
  * packages native games, or establishes WebKit/input/storage acceptance. */
 import test from 'node:test';
@@ -15,8 +16,8 @@ const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const child = 'tests/browser/launcher-playwright-webkit.py';
 const wrapper = 'tests/browser/test-playwright-webkit-gate.mjs';
 const source = normalizeSourceText(readFileSync(new URL('../../' + child, import.meta.url), 'utf8'));
-const pinned = path => execFileSync('git', ['show', `${baseline}:${path}`], {cwd: project, encoding: 'utf8'});
-const python = text => JSON.parse(execFileSync('python', ['-c', text], {cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
+const pinned = path => readUiHistoryText(baseline, path);
+const python = text => JSON.parse(execFileSync('python', ['-'], {input: text, cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
 const helper = 'globalThis.__originalRuntimeDocumentObservation';
 const prefix = `${helper} ? ${helper}.url(document.getElementById('gameFrame')) : `;
 const original = pinned(child);
@@ -42,7 +43,7 @@ test('only helper setup and two URL inputs change; full Python source and separa
     .replace('import { webkitPublicationServerArguments } from \"../support/webkit-publication-server.mjs\";\n', '')
     .replace('webkitPublicationServerArguments(output, port)', '[\"scripts/serve.mjs\", String(port), output]'), pinned(wrapper));
   assert.equal(observations.length, 2);
-  const result = python(`import ast,json,subprocess\nfrom pathlib import Path\na=subprocess.check_output(['git','show','${baseline}:${child}'],text=True);b=Path('${child}').read_text()\ndef segments(s,kind): return [ast.get_source_segment(s,n) for n in ast.walk(ast.parse(s)) if isinstance(n,kind)]\ndef predicates(s): return [ast.get_source_segment(s,n.test) for n in ast.walk(ast.parse(s)) if isinstance(n,(ast.If,ast.While))]\nprint(json.dumps({'asserts':len(segments(a,ast.Assert)),'raises':len(segments(a,ast.Raise)),'predicates':len(predicates(a)),'allRaisesEqual':segments(a,ast.Raise)==segments(b,ast.Raise),'allPredicatesEqual':predicates(a)==predicates(b)}))`);
+  const result = python(`import ast,json\nfrom pathlib import Path\na=${JSON.stringify(original)};b=Path('${child}').read_text()\ndef segments(s,kind): return [ast.get_source_segment(s,n) for n in ast.walk(ast.parse(s)) if isinstance(n,kind)]\ndef predicates(s): return [ast.get_source_segment(s,n.test) for n in ast.walk(ast.parse(s)) if isinstance(n,(ast.If,ast.While))]\nprint(json.dumps({'asserts':len(segments(a,ast.Assert)),'raises':len(segments(a,ast.Raise)),'predicates':len(predicates(a)),'allRaisesEqual':segments(a,ast.Raise)==segments(b,ast.Raise),'allPredicatesEqual':predicates(a)==predicates(b)}))`);
   assert.equal(result.asserts, 0); assert.equal(result.raises, 12); assert.equal(result.predicates, 33);
   assert.equal(result.allRaisesEqual, true); assert.equal(result.allPredicatesEqual, true);
   const suffix = '        # Second launch must come from the installed Package Store.';

@@ -9,7 +9,7 @@ if(!existsSync(compiler))throw Error('Set WASI_SDK_PATH to the installed WASI SD
 const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:true});
 const wasm=resolve(out,'file-events.wasm');
 execFileSync(compiler,['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti',
- '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-Wl,-z,stack-size=1048576',resolve(root,'th08_web/cpp/multiplayer/FileEvents.cpp'),
+ '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-Wl,-z,stack-size=1048576',resolve(root,'web/cpp/multiplayer/FileEvents.cpp'),
  resolve(root,'tests/file-events-test.cpp'),'-o',wasm],{windowsHide:true,stdio:'inherit'});
 const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
 const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});

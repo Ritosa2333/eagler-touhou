@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'..'),game='th15';
 const multiplayer=process.argv.includes('--multiplayer');
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,multiplayer?'build-eagler-multiplayer':'build-eagler');
-const buildRoot=resolve(root,'th15_web',process.env.TH15_OUTPUT||(multiplayer?'artifacts/sdl-multiplayer':'artifacts/sdl-release'));
+const buildRoot=resolve(root,'web',process.env.TH15_OUTPUT||(multiplayer?'artifacts/sdl-multiplayer':'artifacts/sdl-release'));
 const fonts=process.env.EAGLER_FONT_ROOT;
 if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private directory containing cp932.bin');
 const hash=b=>createHash('sha256').update(b).digest('hex');
@@ -27,7 +27,7 @@ const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}
 for(const file of walk(out))if(!allowed.has(relative(out,file).replaceAll('\\','/')))throw Error('Unexpected Runtime file: '+file);
 function put(name,bytes){const file=resolve(out,name);mkdirSync(dirname(file),{recursive:true});writeFileSync(file,bytes);}
-const shellRoot=resolve(root,'th15_web/sdl-runtime');
+const shellRoot=resolve(root,'web/sdl-runtime');
 put('th15.html',readFileSync(resolve(shellRoot,'managed.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">').replace('src="managed.mjs"','src="shell.mjs"'));
 const version='1.0.3-eagler-'+build.sha256.slice(0,12);
 const marker="/*TH15_BUILD_INFO*/{version:'development-incomplete',completeGame:false}";

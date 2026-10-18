@@ -1,0 +1,37 @@
+{
+  "schema": "eagler-touhou/shared-port-checks/1",
+  "gates": [
+    {
+      "id": "package-store",
+      "level": "module",
+      "checks": ["PACKAGE-01", "PACKAGE-02", "PACKAGE-03", "PACKAGE-04", "PACKAGE-06"],
+      "files": ["launcher/tests/test-package-store-contract.mjs", "launcher/tests/test-package-generation-conditions.mjs", "launcher/tests/test-runtime-preparation.mjs"]
+    },
+    {
+      "id": "launcher-input-owners",
+      "level": "module",
+      "checks": ["INPUT-02", "INPUT-03", "INPUT-05"],
+      "files": ["launcher/tests/react-main/player-keyboard.test.mjs", "launcher/tests/react-main/keyboard-mapping.test.mjs", "launcher/tests/react-main/gamepad-mapping.test.mjs", "launcher/tests/react-main/gamepad-matrix.test.mjs"]
+    },
+    {
+      "id": "shared-touch-controls",
+      "level": "module",
+      "checks": ["TOUCH-17", "TOUCH-18", "TOUCH-19"],
+      "files": ["launcher/tests/react-main/player-touch.test.mjs", "launcher/tests/react-main/touch-native.test.mjs", "launcher/tests/react-main/touch-editor-selects.test.mjs"]
+    },
+    {
+      "id": "normal-presentation",
+      "level": "source-contract",
+      "variants": ["normal"],
+      "checks": ["DISPLAY-01", "DISPLAY-02", "DISPLAY-03"],
+      "files": ["launcher/tests/test-native-frame-pacing.mjs", "launcher/tests/test-mobile-frame-pacing.mjs", "launcher/tests/test-presentation-contract-coverage.mjs"]
+    },
+    {
+      "id": "preload-replay-storage",
+      "level": "module",
+      "games": ["th06", "th07"],
+      "checks": ["REPLAY-04", "REPLAY-05", "SAVE-01", "SAVE-02", "SAVE-03", "SAVE-06"],
+      "files": ["launcher/tests/test-replay-extension-contract.mjs", "launcher/tests/test-runtime-storage-contract.mjs"]
+    }
+  ]
+}

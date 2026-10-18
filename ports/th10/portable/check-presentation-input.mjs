@@ -23,7 +23,7 @@ const flags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Wer
     '-DTH_NATIVE_PLATFORM=1','-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-strict-aliasing'];
 if(sanitized)flags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
-const binding=resolve(root,'th10_web/cpp/platform/ApplicationPresentation.cpp');
+const binding=resolve(root,'web/cpp/platform/ApplicationPresentation.cpp');
 if(!readFileSync(binding,'utf8').replace(/\s+/g,'').includes('pressed_keys=&a.input.player_profiles[0].input.raw_pressed;'))
     throw Error('AppPresentation must bind the real 16-bit raw_pressed word directly.');
 const dependencies=new Set([sourceDependencyTool,resolve(root,'portable/check-presentation-input.mjs'),resolve(root,'portable/make-dependencies.mjs'),binding]);
@@ -45,10 +45,10 @@ for(const multiplayer of [false]){
     // Existing platform sources are not warning-clean, so keep errors strict
     // for fixture/game sources without upgrading legacy platform warnings.
     const bindingFlags=[...variantFlags.filter(flag=>flag!=='-Werror'),'-I',resolve(root,'../../common/include')];
-    for(const source of ["th10_web/cpp/platform/ApplicationPresentation.cpp"])
+    for(const source of ["web/cpp/platform/ApplicationPresentation.cpp"])
         compile(source,variant+'-binding-'+source.split('/').at(-1).replace('.cpp',''),bindingFlags);
     const objects=[compile('tests/presentation-input-test.cpp',variant+'-test',variantFlags),
-        ...['GameInput','Presentation'].map(name=>compile(`th10_web/cpp/game/${name}.cpp`,variant+'-'+name,variantFlags))];
+        ...['GameInput','Presentation'].map(name=>compile(`web/cpp/game/${name}.cpp`,variant+'-'+name,variantFlags))];
     const wasm=resolve(out,variant+'.wasm');
     execFileSync(compiler,[...linkFlags,...objects,'-o',wasm],{cwd:root,stdio:'inherit'});
     const wasi=new WASI({version:'preview1',args:[variant],env:{},returnOnExit:true});

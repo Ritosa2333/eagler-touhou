@@ -13,7 +13,7 @@ const plan=JSON.parse(execFileSync(process.execPath,[resolve(root,'portable/buil
 const python=process.env.TH_PYTHON||'python',emcc=resolve(sdk,'upstream/emscripten/emcc.py');
 const run=(args,name)=>{const path=resolve(out,name+'.rsp.utf-8');writeFileSync(path,responseFileContents(args));execFileSync(python,[emcc,'@'+path],{cwd:root,env:{...process.env,EMSDK:sdk,EM_CONFIG:resolve(sdk,'.emscripten')},stdio:'inherit',windowsHide:true});};
 const fixture=resolve(out,'fixture.o');run([...plan.flags,'-c',resolve(import.meta.dirname,'AudioOutputFixture.cpp'),'-o',fixture],'compile');
-const objects=plan.sources.map(source=>resolve(root,'th11_web/artifacts/multiplayer/objects',relative(root,resolve(root,source)).replaceAll('\\','_').replaceAll('/','_').replaceAll(':','_').replaceAll('.','_')+'.o'));
+const objects=plan.sources.map(source=>resolve(root,'web/artifacts/multiplayer/objects',relative(root,resolve(root,source)).replaceAll('\\','_').replaceAll('/','_').replaceAll(':','_').replaceAll('.','_')+'.o'));
 run([...plan.flags,...plan.linkFlags,'--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sEXPORTED_FUNCTIONS=_malloc,_free',...objects,fixture,'-o',resolve(out,'audio.mjs')],'link');
 const archive=process.env.TH11_TEST_ARCHIVE;if(!archive)throw Error('Set TH11_TEST_ARCHIVE to the private TH11 archive.');
 const launcher=process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../eagler-touhou');

@@ -1,5 +1,5 @@
-#include "../th10_web/cpp/multiplayer/NetplayRuntime.hpp"
-#include "../th10_web/cpp/multiplayer/InputLanes.hpp"
+#include "../web/cpp/multiplayer/NetplayRuntime.hpp"
+#include "../web/cpp/multiplayer/InputLanes.hpp"
 
 #include <cassert>
 #include <limits>

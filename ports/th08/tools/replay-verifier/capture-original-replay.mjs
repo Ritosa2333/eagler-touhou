@@ -9,7 +9,7 @@ const option = name => {
   return index < 0 ? undefined : process.argv[index + 1];
 };
 const replayPath = resolve(option('--replay') ?? '');
-const oracleRoot = resolve(option('--oracle-root') ?? 'D:/workspace/东方测试.zip/TouhouDev/th08_web');
+const oracleRoot = resolve(option('--oracle-root') ?? 'D:/workspace/东方测试.zip/TouhouDev/web');
 const output = resolve(option('--output') ?? 'artifacts/replay-verifier/original-replay/result.json');
 const rowsPath = resolve(option('--rows') ?? output.replace(/\.json$/i, '.rows.jsonl'));
 const startStage = Number(option('--start-stage') ?? 0);

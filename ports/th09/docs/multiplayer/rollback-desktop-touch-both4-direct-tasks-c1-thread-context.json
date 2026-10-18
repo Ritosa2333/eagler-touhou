@@ -15,7 +15,7 @@
     {
       "side": 0,
       "trace": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P1-scheduler-trace.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P1-scheduler-trace.json",
         "bytes": 37130407,
         "sha256": "7e6d167c0aca1249b948d0cf0f4e12c7e4a0313154302a4a35f6f23de205452e"
       },
@@ -4698,7 +4698,7 @@
     {
       "side": 1,
       "trace": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P2-scheduler-trace.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P2-scheduler-trace.json",
         "bytes": 36020016,
         "sha256": "eb48934a32ae80fd70a63b53d0aebdf880b6c51c4926cda4b4b2712f84da58b7"
       },

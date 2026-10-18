@@ -1,5 +1,5 @@
-#include "../th08_web/cpp/multiplayer/ReplayArchive.hpp"
-#include "../th08_web/cpp/multiplayer/InputSample.hpp"
+#include "../web/cpp/multiplayer/ReplayArchive.hpp"
+#include "../web/cpp/multiplayer/InputSample.hpp"
 #include "support/previous-rule-contract.hpp"
 #include <cassert>
 #include <cstdio>

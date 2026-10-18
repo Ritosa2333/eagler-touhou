@@ -14,7 +14,7 @@ if(existsSync(out))throw Error('Quick directory already exists; preserve earlier
 mkdirSync(out,{recursive:true});
 const hash=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const runtime=resolve(root,'artifacts/presentation-lab/runtime');
-const build=JSON.parse(readFileSync(resolve(root,'th10_web/artifacts/presentation-lab/build.json')));
+const build=JSON.parse(readFileSync(resolve(root,'web/artifacts/presentation-lab/build.json')));
 const golden=resolve(root,'tools/replay-verifier/golden/manifest.json');
 const report={schema:'th10/replay-quick-run/v1',id,passed:false,phase:'starting',pid:process.pid,
   wasm:build.sha256,sourceDigest:build.sourceDigest,runtimeInventory:hash(resolve(runtime,'runtime-files.json')),

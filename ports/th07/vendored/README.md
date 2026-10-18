@@ -1,10 +1,11 @@
-# vendored
+# 第三方构建依赖
 
-SDL is pinned to the official SDL 3.4.12 release commit
-`f87239e71e42da91ca317a12eefb82cfbf3393eb`. The former
-`0a61b59af1eec0c89b06b13bd4fd0f2ecdc3aff6` audio-buffer fork commit is
-not available from the configured official remote. TH07's Web audio buffer
-request now lives in `src/SoundPlayer.cpp`, using
-`SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES`; no private SDL modification is required.
+本目录通过子模块引入 SDL、SDL_image 和 SDL_ttf，供 SDL3 / Emscripten 构建使用。版本由仓库 gitlink 固定；SDL 使用官方 3.4.12 提交 `f87239e71e42da91ca317a12eefb82cfbf3393eb`。
 
-For whatever reason, Emscripten doesn't include SDL3_image in its ports. Therefore this is required for building with SDL3 on Emscripten. Also I figured I might as well build SDL and SDL_ttf as well, so those are included as well.
+从本作目录初始化依赖：
+
+```sh
+git submodule update --init --recursive
+```
+
+Web 音频缓冲设置在 `src/SoundPlayer.cpp` 中通过 `SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES` 提供。构建步骤见[开发指南](../docs/DEVELOPMENT.md)。

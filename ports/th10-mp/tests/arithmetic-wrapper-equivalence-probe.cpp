@@ -1,7 +1,7 @@
 // Isolated Emscripten oracle. Link this object unchanged into two modules,
 // each with exactly one Arithmetic.cpp object and the same production SoftFloat.o.
 // No test shim, normalized production hash, or alternative arithmetic backend.
-#include "../th10_web/cpp/game/Arithmetic.hpp"
+#include "../web/cpp/game/Arithmetic.hpp"
 #include <emscripten/emscripten.h>
 #include <array>
 #include <cerrno>

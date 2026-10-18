@@ -1,7 +1,7 @@
 {
   "schema": "th09-burst-gap-network-context/v1",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-burst160-c2-report.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-burst160-c2-report.json",
     "bytes": 35669804,
     "sha256": "54974090a3dab5ad47d1c010d440cadb6a758a3ac7a09631bd02d7584760878c"
   },

@@ -1,6 +1,6 @@
 // Real TH11 ANM owners, interpreter, geometry and common byte journal.
 // This component oracle does not claim full-world or browser performance coverage.
-#include "../../th11_web/cpp/game/AnmManager.hpp"
+#include "../../web/cpp/game/AnmManager.hpp"
 #ifdef TH11_MULTIPLAYER
 #include <eagler/netplay/RollbackJournal.hpp>
 #endif

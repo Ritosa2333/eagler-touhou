@@ -1,3 +1,4 @@
+import {readUiHistoryText} from './ui-history.mjs';
 /** Current keyboard fixture wiring only. Synthetic DOM/protocol ports; no
  * candidate Runtime, SDL state, multiplayer or confirmed-hash proof. */
 import test, {before, after} from 'node:test';
@@ -10,7 +11,7 @@ import {fileURLToPath, pathToFileURL} from 'node:url';
 import {buildOriginalComponentFixture} from './original-component-fixture.mjs';
 import {installMountedDom} from '../react-main/mounted-dom-environment.mjs';
 const project=fileURLToPath(new URL('../../',import.meta.url)), path='tests/test-keyboard-ownership-browser.py';
-const python=source=>execFileSync(process.env.PYTHON||'python',['-c',source],{cwd:project,encoding:'utf8',env:{...process.env,PYTHONDONTWRITEBYTECODE:'1'}});
+const python=source=>execFileSync(process.env.PYTHON||'python',['-'],{input:source,cwd:project,encoding:'utf8',env:{...process.env,PYTHONDONTWRITEBYTECODE:'1'}});
 const fingerprint=async path=>createHash('sha256').update(await readFile(resolve(project,path))).digest('hex');
 let fixture,adapter,work,env;
 before(async()=>{
@@ -50,7 +51,8 @@ test('keyboard harness resolves fonts and candidate runtimes from its supplied r
 });
 
 test('native keyboard scenarios retain their independent pre-migration assertions',()=>{
-  const info=JSON.parse(python(`import ast,json,subprocess\nfrom pathlib import Path\nold=subprocess.check_output(['git','show','edee9633:${path}'],text=True);new=Path('${path}').read_text()\ndef assertions(s):return [ast.get_source_segment(s,n) for n in ast.walk(ast.parse(s)) if isinstance(n,ast.Assert)]\nprint(json.dumps({'count':len(assertions(old)),'same':assertions(old)==assertions(new)}))`));
+  const baseline=readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090',path);
+  const info=JSON.parse(python(`import ast,json\nfrom pathlib import Path\nold=${JSON.stringify(baseline)};new=Path('${path}').read_text()\ndef assertions(s):return [ast.get_source_segment(s,n) for n in ast.walk(ast.parse(s)) if isinstance(n,ast.Assert)]\nprint(json.dumps({'count':len(assertions(old)),'same':assertions(old)==assertions(new)}))`));
   assert.ok(info.count>0);assert.equal(info.same,true);
 });
 

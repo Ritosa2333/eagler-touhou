@@ -1,4 +1,4 @@
-import {chromium} from 'file:///D:/workspace/东方测试.zip/TouhouDev/th10_web/node_modules/playwright/index.mjs';
+import {chromium} from 'file:///D:/workspace/东方测试.zip/TouhouDev/web/node_modules/playwright/index.mjs';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
@@ -7,7 +7,7 @@ try{
   const context=await browser.newContext({viewport:{width:800,height:600},hasTouch:true,isMobile:true});
   const page=await context.newPage();
   await page.setContent('<meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;width:100%;height:100%}canvas{position:absolute;left:80px;top:60px;width:640px;height:480px;touch-action:none}</style><canvas></canvas>');
-  const source=readFileSync('D:/workspace/eagler/worktrees/'+game+'-eagler-portable/'+game+'_web/sdl-runtime/eagler-host.mjs','utf8');
+  const source=readFileSync('D:/workspace/eagler/worktrees/'+game+'-eagler-portable/'+'web/sdl-runtime/eagler-host.mjs','utf8');
   await page.evaluate(async source=>{
    const {bindOutsideTouches}=await import(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));
    window.calls=[];window.native=[];

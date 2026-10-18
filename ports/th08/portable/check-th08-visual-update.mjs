@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const base='http://127.0.0.1:8095',out='th08_web/artifacts/architecture-candidate/validation';
-const previous=JSON.parse(readFileSync('th08_web/artifacts/sdl-release/site/packages/th08/package.json'));
-const next=JSON.parse(readFileSync('th08_web/artifacts/architecture-candidate/site/packages/th08/package.json'));
-const replay=readFileSync('th08_web/artifacts/cpp/campaign/character0-final/original.rpy');
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const base='http://127.0.0.1:8095',out='web/artifacts/architecture-candidate/validation';
+const previous=JSON.parse(readFileSync('web/artifacts/sdl-release/site/packages/th08/package.json'));
+const next=JSON.parse(readFileSync('web/artifacts/architecture-candidate/site/packages/th08/package.json'));
+const replay=readFileSync('web/artifacts/cpp/campaign/character0-final/original.rpy');
 assert.notEqual(previous.revision,next.revision);assert.deepEqual(previous.files,next.files,'Visual patch reuses all DATA and music');
 const browser=await launchBrowser(),page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),report={passed:false,errors:[],requests:[]};
 page.on('pageerror',e=>report.errors.push(e.message));page.on('request',r=>report.requests.push(new URL(r.url()).pathname));

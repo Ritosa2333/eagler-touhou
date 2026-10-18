@@ -11,7 +11,7 @@ const build=JSON.parse(readFileSync(resolve(plan.outputDirectory,'build.json'),'
 const sha=b=>createHash('sha256').update(b).digest('hex');
 for(const [file,expected] of Object.entries(build.sourceFiles))if(sha(readFileSync(resolve(root,file)))!==expected)throw Error('Rebuild changed production source '+file);
 const out=resolve(plan.outputDirectory,'spectator-stage');mkdirSync(out,{recursive:true});
-const sdl=resolve(root,'th11_web/cpp/sdl'),sdk=resolve(process.env.EMSDK||resolve(root,'../../toolchains/emsdk'));
+const sdl=resolve(root,'web/cpp/sdl'),sdk=resolve(process.env.EMSDK||resolve(root,'../../toolchains/emsdk'));
 const emcc=['upstream','install'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);
 if(!emcc)throw Error('Missing Emscripten');
 let source=readFileSync(resolve(sdl,'Application.cpp'),'utf8').replace('#include "MultiplayerRollback.inc"',()=>readFileSync(resolve(sdl,'MultiplayerRollback.inc'),'utf8'));
@@ -37,14 +37,14 @@ source=source.replace(/#include "([^"]+)"/g,(_,p)=>'#include "'+resolve(sdl,p).r
 source+='\nextern "C" EMSCRIPTEN_KEEPALIVE int th11_spectator_lab_next(){auto& a=th11::sdl::app;if(!a.session.battle||a.session.state.stage!=1)return 0;a.session.battle->completion.state.next_stage=2;a.session.battle->completion.state.exit=th11::StageExit::NextStage;return 1;}\n';
 // Project exactly the existing semantic hash inputs, including its portable
 // ECL cursors. This diagnostic emits values, never native object bytes.
-const nativeHash=readFileSync(resolve(root,'th11_web/cpp/game/MultiplayerBattle.cpp'),'utf8');
+const nativeHash=readFileSync(resolve(root,'web/cpp/game/MultiplayerBattle.cpp'),'utf8');
 let words=nativeHash.slice(nativeHash.indexOf('u32 GameBattle::mp_hash()const noexcept{'),nativeHash.indexOf('return hash;',nativeHash.indexOf('u32 GameBattle::mp_hash()const noexcept{')));
 words=words.slice(words.indexOf('auto flt='));
 const names=['mp_options','pilots','mp_tick','mp_fragments','mp_wipe_frames','mp_rank','economy','frame','resources','animations','spell_flags','spell_id','spell_bonus','spell_elapsed','enemy_environment','transitioning','transition_started','stage_active','transition_timer','stage','enemies','mp_damage_remainders','bullets','items','lasers'];
 words=words.replace(new RegExp('(?<![.\\w])('+names.join('|')+')\\b','g'),'battle_owner.$1');
 source+='\nextern "C" EMSCRIPTEN_KEEPALIVE const unsigned* th11_spectator_lab_words(){using namespace th11;auto& a=th11::sdl::app;static std::vector<u32> out;out={0};if(!a.session.battle)return out.data();auto& battle_owner=*a.session.battle;auto word=[&](u32 v){out.push_back(v);};'+words+'word(a.session.multiplayer_frame);word(u32(a.session.state.phase));out[0]=u32(out.size()-1);return out.data();}\n';
 const fixture=resolve(out,'Application.cpp');writeFileSync(fixture,source);
-const objects=plan.sources.filter(p=>p!=='th11_web/cpp/sdl/Application.cpp').map(p=>resolve(plan.outputDirectory,'objects',p.replaceAll('\\','_').replaceAll('/','_').replaceAll(':','_').replaceAll('.','_')+'.o'));
+const objects=plan.sources.filter(p=>p!=='web/cpp/sdl/Application.cpp').map(p=>resolve(plan.outputDirectory,'objects',p.replaceAll('\\','_').replaceAll('/','_').replaceAll(':','_').replaceAll('.','_')+'.o'));
 for(const file of objects)if(!existsSync(file))throw Error('Missing production object '+file);
 const flags=[...plan.flags,...plan.linkFlags,'--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0','-sEXPORTED_FUNCTIONS=_malloc,_free',...objects,fixture,'-o',resolve(out,'th11-sdl.mjs')];
 const rsp=resolve(out,'link.rsp.utf-8');writeFileSync(rsp,responseFileContents(flags));

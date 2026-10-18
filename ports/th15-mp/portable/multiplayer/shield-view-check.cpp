@@ -1,5 +1,5 @@
 #include "native-world.hpp"
-#include "../../th15_web/cpp/game/ScreenViews.hpp"
+#include "../../web/cpp/game/ScreenViews.hpp"
 #include <algorithm>
 struct ShieldGraphics final:ZunGraphics {
  touhou::graphics::PipelineState state;u32 submitted=0;

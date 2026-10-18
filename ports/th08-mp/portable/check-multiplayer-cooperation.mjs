@@ -10,7 +10,7 @@ const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:t
 const wasm=resolve(out,'cooperative-lifecycle.wasm');
 execFileSync(compiler,['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti',
   '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-Wl,-z,stack-size=1048576',
-  resolve(root,'th08_web/cpp/multiplayer/CooperativeLifecycle.cpp'),
+  resolve(root,'web/cpp/multiplayer/CooperativeLifecycle.cpp'),
   resolve(root,'tests/cooperative-lifecycle-test.cpp'),'-o',wasm],{windowsHide:true,stdio:'inherit'});
 const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
 const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});

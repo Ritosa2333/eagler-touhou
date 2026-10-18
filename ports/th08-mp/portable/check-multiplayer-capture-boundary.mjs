@@ -5,11 +5,11 @@ import {WASI} from 'node:wasi';
 const root=resolve(import.meta.dirname,'..'),common=resolve(root,'../../common');
 const sdk=process.env.WASI_SDK_PATH??resolve(root,'../../toolchains/wasi-sdk-34.0-x86_64-windows');
 const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:true});
-const title=resolve(root,'th08_web/cpp/multiplayer');
+const title=resolve(root,'web/cpp/multiplayer');
 let connection=resolve(title,'NetworkConnection.cpp');
 if(process.argv.includes('--baseline')){
   connection=resolve(out,'capture-boundary-baseline.cpp');
-  writeFileSync(connection,execFileSync('git',['show','HEAD:th08_web/cpp/multiplayer/NetworkConnection.cpp'],{cwd:root}));
+  writeFileSync(connection,execFileSync('git',['show','HEAD:web/cpp/multiplayer/NetworkConnection.cpp'],{cwd:root}));
 }
 const wasm=resolve(out,process.argv.includes('--baseline')?'capture-boundary-baseline.wasm':'capture-boundary.wasm');
 execFileSync(resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++'),['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti',

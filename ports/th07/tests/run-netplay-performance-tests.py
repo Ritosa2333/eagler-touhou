@@ -6,10 +6,13 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-COMMON = ROOT / "third_party" / "eagler-common"
+sys.path.insert(0, str(ROOT.parent.parent / "tools/build"))
+from emscripten_sdk import cpp_command
+COMMON = Path(os.environ.get("EAGLER_COMMON_ROOT", ROOT.parent.parent / "common"))
 COMMON_CORE = str(COMMON / "src/netplay/NetplayCore.cpp")
 COMMON_PROTOCOL = str(COMMON / "src/netplay/NetplayProtocol.cpp")
 COMMON_JOURNAL = str(COMMON / "src/netplay/RollbackJournal.cpp")
@@ -51,9 +54,9 @@ def main() -> int:
     args = parser.parse_args()
     report = {"status": "PASS", "tests": []}
     env = os.environ.copy()
-    emsdk = ROOT.parent / "toolchains/emsdk"
-    env["EM_CONFIG"] = str(emsdk / ".emscripten")
-    empp = str(emsdk / "upstream/emscripten" / ("em++.exe" if os.name == "nt" else "em++"))
+    empp = []
+    if args.toolchain != "native":
+        empp, env = cpp_command(ROOT.parent.parent)
     try:
         with tempfile.TemporaryDirectory(prefix="th07-netplay-tests-") as directory:
             for toolchain in (("native", "wasm") if args.toolchain == "both" else (args.toolchain,)):
@@ -61,7 +64,7 @@ def main() -> int:
                     if args.cases and name not in args.cases:
                         continue
                     executable = Path(directory) / (name + (".cjs" if toolchain == "wasm" else ".exe"))
-                    command = [empp if toolchain == "wasm" else "g++", "-std=c++17", "-O2", "-UNDEBUG",
+                    command = [*(empp if toolchain == "wasm" else [os.environ.get("CXX", "g++")]), "-std=c++17", "-O2", "-UNDEBUG",
                                "-Wall", "-Wextra", "-Isrc", "-I", str(COMMON / "include"),
                                *sources, "-o", str(executable)]
                     if name in ("bullet-live-prev", "item-presentation", "compact-bullet-snapshot", "live-bullet-snapshot", "dormant-bullet"):

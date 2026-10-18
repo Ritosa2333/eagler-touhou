@@ -1,5 +1,5 @@
 // Package TH09's retail archive and the independently prepared 19 OGG tracks.
-// Run th09/th09_web/scripts/prepare-assets.py with the original game first, or
+// Run th09/web/scripts/prepare-retail-assets.mjs with the original game and a font root first, or
 // place the resulting music directory under the original game's assets-ogg/.
 import { copyFile, mkdir, open, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -23,7 +23,7 @@ if (header.toString('ascii') !== 'PBGZ') throw Error('TH09 retail archive is not
 const musicRoots = [
   resolve(original, 'assets-ogg/music'),
   resolve(original, 'music'),
-  resolve(import.meta.dirname, '../../th09/th09_web/assets/sdl-native/music'),
+  resolve(import.meta.dirname, '../../th09/web/assets/sdl-native/music'),
 ];
 const names = PRODUCT_CONTENT.th09.music.ogg.files;
 let musicRoot = null;

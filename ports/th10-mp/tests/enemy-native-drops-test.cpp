@@ -1,5 +1,5 @@
-#include "../th10_web/cpp/game/Enemy.hpp"
-#include "../th10_web/cpp/game/EnemyDrops.hpp"
+#include "../web/cpp/game/Enemy.hpp"
+#include "../web/cpp/game/EnemyDrops.hpp"
 #include <array>
 #include <cassert>
 #include <vector>

@@ -23,7 +23,7 @@ const runtimeSha256=path=>createHash('sha256').update(readFileSync(join(runtimeD
 const runtimeIdentity={directory:resolve(runtimeDir),manifestSha256:runtimeSha256('runtime-files.json'),
   wasmSha256:runtimeFiles.files['th09.wasm']?.sha256,sharedNetplaySha256:runtimeFiles.files['shared-netplay.mjs']?.sha256,
   spectatorTimelineSha256:runtimeFiles.files['spectator-timeline.mjs']?.sha256,version:JSON.parse(readFileSync(join(runtimeDir,'version.json'),'utf8'))};
-const out=resolve(process.env.TH09_SPECTATOR_TEST_OUTPUT||'D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/artifacts/spectator-panel-20261014',label);
+const out=resolve(process.env.TH09_SPECTATOR_TEST_OUTPUT||'D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/artifacts/spectator-panel-20261014',label);
 if(existsSync(out))throw Error('Test output already exists');mkdirSync(out,{recursive:true});
 const importFixturePath=resolve(process.env.TH09_SPECTATOR_IMPORT_TEMP_DIR||'D:/workspace/eagler/.codex-tmp/spectator-panel-20261018/import-fixtures',label,'th09.dat');
 let importFixtureCreated=false,importFixtureMethod='';

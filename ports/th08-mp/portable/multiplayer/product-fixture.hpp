@@ -1,7 +1,7 @@
 // Product acceptance setup/observation only; never linked by a normal Runtime.
 #pragma once
-#include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
-#include "../../th08_web/cpp/platform/PlatformDevices.hpp"
+#include "../../web/cpp/platform/BrowserRuntime.hpp"
+#include "../../web/cpp/platform/PlatformDevices.hpp"
 #include <algorithm>
 #include <memory>
 #include <cstdio>

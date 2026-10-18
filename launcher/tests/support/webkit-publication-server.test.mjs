@@ -1,3 +1,4 @@
+import {readUiHistoryText} from './ui-history.mjs';
 /** Server setup/HTTP only. No original browser/native scenario is executed. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -66,7 +67,7 @@ test('publication identity, root mount and no isolated worker are required by de
 
 test('wrapper reverses exactly to pinned; packaging, verification, original Python arguments/game loop/environment/cleanup are untouched', async () => {
   const source = normalizeSourceText(await readFile(resolve(project, wrapper), 'utf8'));
-  const original = execFileSync('git', ['show', `${baseline}:${wrapper}`], {cwd: project, encoding: 'utf8'});
+  const original = readUiHistoryText(baseline, wrapper);
   assert.equal(restore(source), original);
   const verify = source.indexOf('await run(process.execPath, ["scripts/verify-server-build.mjs", output]);');
   const serve = source.indexOf('webkitPublicationServerArguments(output, port)');

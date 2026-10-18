@@ -3,11 +3,11 @@ import {execFileSync} from 'node:child_process';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
-const root=resolve(import.meta.dirname,'..'),out=resolve(root,'th10_web/artifacts/purple-check');
+const root=resolve(import.meta.dirname,'..'),out=resolve(root,'web/artifacts/purple-check');
 mkdirSync(out,{recursive:true});
 const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:20*1024*1024});
-let patch=git(['diff','--no-ext-diff','--binary','HEAD','--','portable','th10_web/cpp','th10_web/sdl-runtime']);
-for(const file of git(['ls-files','--others','--exclude-standard','-z','--','portable','th10_web/cpp','th10_web/sdl-runtime']).split('\0').filter(Boolean)){
+let patch=git(['diff','--no-ext-diff','--binary','HEAD','--','portable','web/cpp','web/sdl-runtime']);
+for(const file of git(['ls-files','--others','--exclude-standard','-z','--','portable','web/cpp','web/sdl-runtime']).split('\0').filter(Boolean)){
  try{git(['diff','--no-index','--no-ext-diff','--binary','--','NUL',file]);}
  catch(error){if(error.status!==1)throw error;patch+=String(error.stdout).replaceAll('a/NUL','a/'+file);}
 }

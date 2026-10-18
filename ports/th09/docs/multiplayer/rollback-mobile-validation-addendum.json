@@ -13,19 +13,19 @@
   },
   "builds": {
     "baselineRelease": {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-release",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-release",
       "wasm": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577"
     },
     "baselineDiagnostic": {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-live",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-live",
       "wasm": "59364fa88a9a23913fe2d808ae6e303790dcb1c1533f5e4d4e5893d14fde4877"
     },
     "candidateRelease": {
-      "path": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched",
+      "path": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-release-matched",
       "wasm": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
     },
     "candidateDiagnostic": {
-      "path": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-live-matched",
+      "path": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-live-matched",
       "wasm": "f0fe104e03cf4c10617c16c8c08897784a83b02d5e8eeeabf8c2ee1e7e9e58cb"
     },
     "identityGate": "rollback-mobile-build-matched-evidence.json: 275 native input files, 274 identical, only RollbackSession.cpp changed. Exact header bytes restored after first comparison detected checkout line endings. First builds/failed comparison retained; both final Wasm digests equal initial candidate Wasm digests."

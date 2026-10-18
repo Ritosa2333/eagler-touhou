@@ -2,7 +2,7 @@
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Native ownership fixture must not enter production
 #endif
-#include "../../th08_web/cpp/multiplayer/EnemyJournal.hpp"
+#include "../../web/cpp/multiplayer/EnemyJournal.hpp"
 #include <memory>
 
 namespace th08::multiplayer::fixture {

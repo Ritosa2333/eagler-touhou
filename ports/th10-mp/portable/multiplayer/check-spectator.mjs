@@ -8,7 +8,7 @@ const root=resolve(import.meta.dirname,'../..');
 const workspace=resolve(process.env.EAGLER_WORKSPACE||root+'/../..');
 const launcher=resolve(process.env.EAGLER_LAUNCHER_ROOT||resolve(workspace,'worktrees/eagler-multiplayer'));
 const fixtures=process.argv.includes('--fixtures'),profile=fixtures?'multiplayer-fixtures':'multiplayer';
-const buildRoot=resolve(root,'th10_web/artifacts',profile);
+const buildRoot=resolve(root,'web/artifacts',profile);
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 if(build.profile!==profile||sha(resolve(buildRoot,'th10-sdl.wasm'))!==build.sha256)throw Error('Wrong/stale spectator build');

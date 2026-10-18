@@ -1,5 +1,5 @@
-#include "../../th08_web/cpp/game/Arithmetic.hpp"
-#include "../../th10_web/cpp/game/Arithmetic.hpp"
+#include "../../web/cpp/game/Arithmetic.hpp"
+#include "../../web/cpp/game/Arithmetic.hpp"
 #include "ExactFloat.hpp"
 #include <cstring>
 #include <initializer_list>

@@ -1,5 +1,5 @@
-#include "../../th11_web/cpp/multiplayer/ReplayArchive.hpp"
-#include "../../th11_web/cpp/multiplayer/ReplayStorage.hpp"
+#include "../../web/cpp/multiplayer/ReplayArchive.hpp"
+#include "../../web/cpp/multiplayer/ReplayStorage.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <unordered_set>

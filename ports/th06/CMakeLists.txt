@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/../../common"
+    CACHE PATH "Shared monorepo common source")
+
 option(TH_EXTERNAL_ASSETS "Do not bundle original game assets" OFF)
 option(TH_DEV_TOOLS "Enable developer-only tools (e.g. F5 logic fast-forward). Keep OFF in release builds." OFF)
 option(TH_WEB_SHARED_FONT "Let the Web host install runtime fonts instead of embedding them" OFF)
@@ -13,12 +16,12 @@ option(TH_ENABLE_THPRAC "Build the archived thprac integration" OFF)
 option(TH_ENABLE_THCRAP "Build the archived thcrap localization integration" OFF)
 option(TH_ENABLE_NETPLAY "Build the isolated TH06 rollback-netplay runtime" OFF)
 option(TH_ENABLE_MULTIPLAYER_GAMEPLAY "Build TH06 multiplayer gameplay without requiring a transport" OFF)
-set(THPRAC_IMGUI_ROOT "${CMAKE_SOURCE_DIR}/../thprac-reallyportable/thprac/src/3rdParties/ImGui" CACHE PATH "Dear ImGui 1.82 source used by the optional desktop thprac integration")
+set(THPRAC_IMGUI_ROOT "${EAGLER_COMMON_ROOT}/third_party/imgui" CACHE PATH "Dear ImGui 1.82 source used by the optional desktop thprac integration")
 set(TH_WEB_MUSIC "BASE" CACHE STRING "Bundled Web music payload: BASE, MIDI, WAV, or OGG")
 set_property(CACHE TH_WEB_MUSIC PROPERTY STRINGS BASE MIDI WAV OGG)
 set(TH06_ASSET_ROOT "${CMAKE_SOURCE_DIR}/assets" CACHE PATH "TH06 original asset directory")
 set(TH06_OGG_ROOT "${CMAKE_SOURCE_DIR}/assets-ogg" CACHE PATH "TH06 generated OGG asset directory")
-set(TH_UNIFONT_FILE "${CMAKE_SOURCE_DIR}/../dependencies/unifont-15.1.05/unifont-15.1.05.otf" CACHE FILEPATH "GNU Unifont OTF used by localized text and thprac")
+set(TH_UNIFONT_FILE "${CMAKE_SOURCE_DIR}/../../dependencies/unifont-15.1.05/unifont-15.1.05.otf" CACHE FILEPATH "GNU Unifont OTF used by localized text and thprac")
 if((TH_ENABLE_THCRAP OR TH_ENABLE_THPRAC) AND NOT EXISTS "${TH_UNIFONT_FILE}")
     message(FATAL_ERROR "GNU Unifont is required: ${TH_UNIFONT_FILE}")
 endif()
@@ -99,12 +102,7 @@ else()
     list(APPEND TH06_SOURCES src/LocalizationStub.cpp)
 endif()
 
-set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/../../common"
-    CACHE PATH "Shared monorepo common source")
-if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
-    message(FATAL_ERROR "TH06 requires common source at ${EAGLER_COMMON_ROOT}")
-endif()
-include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
+
 
 if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     list(APPEND TH06_SOURCES
@@ -116,8 +114,6 @@ endif()
 # Keep the ordinary TH06 binary free of netplay objects.  As with TH07, the
 # normal and multiplayer runtimes are produced from separate build trees by
 # toggling these options rather than by runtime-disabling a single fat binary.
-set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/../../common"
-    CACHE PATH "Shared monorepo common source")
 if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
     message(FATAL_ERROR "TH06 requires common source at ${EAGLER_COMMON_ROOT}")
 endif()

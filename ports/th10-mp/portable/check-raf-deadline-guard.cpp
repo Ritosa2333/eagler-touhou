@@ -1,5 +1,5 @@
-#include "../th10_web/cpp/sdl/RafDeadlineGuard.hpp"
-#include "../th10_web/cpp/multiplayer/NetworkFrameSchedule.hpp"
+#include "../web/cpp/sdl/RafDeadlineGuard.hpp"
+#include "../web/cpp/multiplayer/NetworkFrameSchedule.hpp"
 #include "sdl/PresentationCadence.hpp"
 #include <algorithm>
 #include <cmath>

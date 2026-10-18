@@ -8,7 +8,7 @@ const args=process.argv.slice(2),check=args.includes('--check');
 for(const root of args.filter(x=>x!=='--check')){
   const game=root.match(/th\d+/)?.[0];if(!game)throw Error('Expected title repository');
   for(const [file,content] of [
-    [`${game}_web/sdl-runtime/startup-branding.mjs`,'// Generated from eagler-common/browser/startup-developers.{mjs,svg}.\nconst STARTUP_DEVELOPERS='+JSON.stringify(svg)+';\n'+module],
+    [`web/sdl-runtime/startup-branding.mjs`,'// Generated from eagler-common/browser/startup-developers.{mjs,svg}.\nconst STARTUP_DEVELOPERS='+JSON.stringify(svg)+';\n'+module],
     ['portable/sdl/StartupBranding.hpp','// Generated from eagler-common/browser/StartupBranding.hpp.\n'+header],
   ]){
     const path=resolve(root,file);

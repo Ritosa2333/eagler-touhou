@@ -1,317 +1,53 @@
-# Self-hosting reference
+# 自托管参考
 
-This document owns the operator-facing behavior contract for a generated
-Eagler Touhou site. It intentionally does not prescribe an operating system,
-Web server, TLS implementation, CDN, process manager, firewall, container
-runtime or rollback mechanism.
+本文说明 Host 输入、配置、生成的静态站点和部署要求。构建步骤见[自托管指南](SELF_HOSTING.md)。
 
-For the shortest workflow, start with [Self-hosting](SELF_HOSTING.md).
+## 输入与配置
 
-## Persistent inputs and generated output
+Host 读取 `runtime-release/`、Product Catalog 中每个注册游戏的 `games/<game-id>/`、可选 `shared/` 字体和可选 `eagler-touhou.config.json`。Runtime Release 必须匹配当前 Launcher Catalog。Host 构建包含所有注册游戏；单作开发使用 workspace 开发服务器。
 
-Persistent operator inputs:
-
-```text
-eagler-touhou.config.json
-games/th06/
-games/th07/
-games/th08/
-games/th10/
-```
-
-Project/release input:
-
-```text
-runtime-release/
-```
-
-Reusable local state:
-
-```text
-.cache/python/
-.cache/tools/thtk/
-.cache/generated/
-```
-
-Disposable generated output:
-
-```text
-dist/site/
-dist/external-site/
-dist/import-site/
-dist/import/
-```
-
-`dist/external-site/` is present only after the operator derives External mode
-from `dist/site/`. It is disposable generated output, like the other `dist/`
-directories.
-
-Do not edit generated site files. Change the persistent configuration or input
-resources and regenerate.
-
-## Host configuration
-
-`eagler-touhou.config.json` uses the `eagler-touhou/host-config/1` schema:
+配置 schema 为 `eagler-touhou/host-config/1`：
 
 ```json
 {
   "schema": "eagler-touhou/host-config/1",
-  "netplay": {
-    "relay": "wss://relay.example.com/eagler-netplay/"
-  },
+  "netplay": { "relay": "wss://relay.example.org/" },
   "externalImportSource": {
-    "url": "https://downloads.example.com/touhou-packages",
-    "hint": "Optional instructions or access code"
+    "url": "https://downloads.example.org/packages/",
+    "hint": "Download a package and import it in the Launcher."
   }
 }
 ```
 
-Both values are optional.
+两个配置项均可选。`netplay.relay` 设置站点 WebSocket 地址。`externalImportSource` 提供玩家手动下载 Package 的链接；它与外置资源模式分开配置。默认文件为 [`config/eagler-touhou.config.example.json`](../config/eagler-touhou.config.example.json)。
 
-- Without `netplay.relay`, single-player remains valid and multiplayer has no
-  configured WebSocket fallback.
-- `netplay.relay` must be a `ws://` or `wss://` URL.
-- `externalImportSource.url` must be HTTPS when configured. It only gives the
-  Launcher an operator-provided external link; the Launcher does not silently
-  download third-party game packages.
-- TURN credentials do not belong in this file. TURN/STUN information is owned
-  by the signaling/relay service and may be supplied dynamically.
+## 生成模式
 
-Run `npm run host:doctor` to validate the local Host inputs and show optional
-service warnings.
+| 模式 | Launcher 与 Runtime | 游戏 Package | 玩家操作 |
+| --- | --- | --- | --- |
+| `hosted` | 发布 | 发布在同一站点 | 从站点安装 |
+| `external` | 发布在玩家访问的站点 | 重定向到配对的 Hosted 源站 | 从站点安装 |
+| `import` | 发布 | 不发布在站点 | 导入游戏 Package ZIP |
 
-## Hosted, External, and Import modes
+`npm run host:build` 生成完整 Hosted 站点 `dist/site/`。`npm run package:external-site` 从其构建配套 External 站点。`npm run import` 生成 `dist/import-site/`，并在 `dist/import/` 下为每个注册游戏生成一个 ZIP。输入变化后，重新构建这些输出目录。
 
-The generated site has three canonical game-content delivery modes.
+External 部署使用同一 Hosted 版本构建的站点配对。重定向、CORS、Range 请求及配对发布步骤见[外置资源模式](EXTERNAL_RESOURCE_MODE.md)。
 
-### `hosted`
+## 静态托管
 
-`npm run host:build` produces `dist/site/`. The site may publish deployer-
-generated game DATA, Package metadata and selected optional components such as
-OGG/language resources together with the Launcher and App-managed Runtime.
+将文件发布到站点配置的挂载路径。服务器返回正确的 JavaScript、WebAssembly 和 Web App Manifest 内容类型，保留请求查询参数，并支持站点缓存策略。HTML、JSON 清单和 App Shell worker 需要重新验证；带版本的 Runtime 与 Package 资源可设为 immutable 缓存。`npm run verify:server -- dist/site` 检查本地目录；`npm run verify:deployed -- https://example.com/` 检查公开部署。
 
-### `import`
+External 模式中，玩家站将 `/games/**` 和 `/shared/**` 重定向到资源源站；资源源站允许玩家站 HTTPS Origin 并保留字节范围响应。公开站点验证器会按 External 模式检查这些路径。
 
-`npm run import` first prepares a verified hosted generation from the current
-inputs, reusing valid expensive `.cache/generated/` intermediates where the
-underlying producers permit it. It then derives:
+离线使用要求 HTTPS 或浏览器信任的 loopback 源站。玩家需先安装 Launcher Shell、所选 Runtime 和游戏 Package，该游戏才可离线运行。Relay 是独立 WebSocket 服务；完整检出可在 `launcher/` 运行 `npm run relay`。自托管包提供 Host 工作流，Relay 需单独部署和启动。
 
-```text
-dist/import-site/
-dist/import/th06.zip
-dist/import/th07.zip
-dist/import/th08.zip
-```
+## 本地验证
 
-The Import site publishes the Launcher and App-managed Runtime but not the
-hosted original game payload. The ZIPs use the same canonical Package
-Descriptor format as hosted installation.
-
-If `dist/site/` is already a verified hosted generation for the current game,
-Runtime Release, configuration and music inputs, Import reuses it instead of
-rebuilding the hosted base. Maintainers can force that base to be rebuilt with
-`npm run import -- --rebuild-hosted-base`.
-
-`import-only` and `import-partial` are historical read-compatibility values,
-not new production modes.
-
-### `external`
-
-`npm run package:external-site -- --source=dist/site --output=dist/external-site --runtime-release=runtime-release --profile=web-release-external` derives an External site from a verified Hosted site. It keeps the Launcher and each selected game's Runtime HTML, JavaScript, and WebAssembly in the generated site, together with the Release Catalog and Package Descriptors. It omits `games/` and `shared/` payload files. The serving infrastructure must redirect those same-origin payload routes to an external HTTPS origin. See [`EXTERNAL_RESOURCE_MODE.md`](EXTERNAL_RESOURCE_MODE.md) for routing and verification requirements.
-
-The Hosted source remains the complete resource-origin artifact and must be
-deployed together with its derived External site. The External guide owns the
-operator procedure; this reference only defines the generated-artifact
-boundary.
-
-## Static Web-server behavior
-
-The generated site can be served by nginx, Caddy, Apache, IIS, an object store,
-a CDN, a container, a NAS, or another HTTP server. The implementation is the
-operator's choice; the observable behavior is the contract.
-
-At minimum:
-
-- public use should be HTTPS or another browser-defined secure context;
-- `.wasm` must use `application/wasm`;
-- JavaScript/ES modules must use a JavaScript MIME type;
-- HTML, JSON and other unversioned entry resources must be able to revalidate;
-- content-versioned immutable resources may receive long cache lifetimes;
-- query parameters used for content identity must remain part of the cache key;
-- the server must not add headers that break the required iframe, WASM, audio
-  or Service Worker behavior;
-- the generated directory must be published as one coherent revision rather
-  than mixing files from different builds.
-
-`examples/deployment/` contains non-authoritative examples. They demonstrate
-expected HTTP behavior and are not installers or infrastructure APIs.
-
-After deployment, verify the actual public URL rather than assuming the server
-configuration is correct:
-
-```text
+```sh
+npm run host:doctor
+npm run host:build
+npm run verify:server -- dist/site
 npm run verify:deployed -- https://example.com/
 ```
 
-## App Shell and offline behavior
-
-`dist/site/app-shell-sw.js` is deployment-specific generated output. The Host
-build includes the Launcher module closure and App-owned Runtime bootstrap
-files required for the selected deployment.
-
-If only the Launcher/App Shell changes and the rest of a generated site remains
-the intended deployment, maintainers may refresh its frontend/App Shell and
-then verify the result using the corresponding repository commands. Generated
-game DATA, OGG and language resources must not be edited in place.
-
-## WebSocket Relay
-
-The static self-host bundle deliberately does **not** contain the project's
-Relay server implementation. Static hosting and multiplayer signaling are
-separate deployment concerns.
-
-The repository owns the reference Relay implementation at:
-
-```text
-server/netplay-relay.mjs
-```
-
-A source checkout can run it with:
-
-```text
-npm run relay
-```
-
-An operator may instead run an independently deployed compatible Relay and set
-its `ws://` / `wss://` URL in `eagler-touhou.config.json`. A reverse proxy such
-as `/eagler-netplay/` is only one possible topology; it is not required by the
-static site format.
-
-### Relay abuse limits
-
-The reference relay enforces source-IP limits before room allocation. Random
-`member`/`lobby` IDs, forged Origin headers, and switching to signaling or binary
-relay sockets do not reset these limits. The defaults are:
-
-| Environment variable | Default | Purpose |
-| --- | --- | --- |
-| `EAGLER_NETPLAY_MAX_ROOMS_PER_IP` | 2 | Simultaneously retained rooms created by one IP |
-| `EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE` | 60 | WebSocket upgrades admitted by the guard per IP per rolling minute |
-| `EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP` | 32 | Concurrent WebSockets per IP, across all roles |
-| `EAGLER_NETPLAY_MAX_ROOMS` | 512 | Total retained rooms |
-| `EAGLER_NETPLAY_MAX_CONNECTIONS` | 2048 | Total concurrent WebSockets |
-| `EAGLER_NETPLAY_MAX_TRACKED_ADDRESSES` | 10000 | Bound on address accounting memory |
-
-Values must be positive integers. There is no room creation count or time-window
-limit. Deleting a room immediately releases its concurrent-room quota, allowing
-another room to be created. Disconnected rooms still within the existing
-reconnection grace period retain their quota until deleted; reconnecting to the
-same room does not consume another slot. Joining an existing room does not
-consume a new-room quota. Shared networks/NAT share an IP quota; operators
-can adjust these values to their expected usage.
-
-The rolling window counts upgrades admitted by the guard, including upgrades
-that subsequently fail. Requests rejected because a connection or rate quota
-is already full do not extend the window. Closing a socket releases its
-concurrent-connection slot; it does not remove its rolling-window entry.
-An upgrade rejected by the guard receives HTTP 429. Room-allocation rejection
-closes the WebSocket with code 4008; the lobby also receives a `rate-limited`
-error. Idle address records are swept every minute once their connection,
-room and rolling-window counts are all empty. At the address-record cap, new
-addresses are rejected until records can be reclaimed.
-
-The implementation owner is `server/relay-abuse-guard.mjs`; integration with
-every socket role and room deletion belongs to `server/netplay-relay.mjs`.
-`tests/test-relay-abuse-guard.mjs` runs in the default repository gate and
-verifies proxy trust, rolling windows, quota release and cross-role enforcement.
-
-For a reverse proxy, configure `EAGLER_NETPLAY_TRUSTED_PROXIES` as a comma-separated
-list of the proxy's **exact peer IP addresses**, for example `127.0.0.1,::1` for a
-local proxy. Set/overwrite `X-Real-IP` with the actual client address at that
-trusted proxy (for Nginx: `proxy_set_header X-Real-IP $remote_addr;`). A trusted
-proxy connection without a valid single-IP header is rejected. Headers from
-other peers are ignored; `X-Forwarded-For` is not used. Bind the relay to the
-proxy-facing interface and restrict direct external access to its port.
-
-Restart the relay service after deploying the server changes and environment
-configuration. Publishing the static launcher alone does not apply this patch.
-Limits are local to one relay process and reset on restart. Multiple replicas
-need shared accounting or equivalent limits at a common edge. These quotas
-bound anonymous automation; they do not authenticate humans or prevent an
-attacker with multiple source IPs from filling public seats. Private rooms are
-hidden from the directory, not password-protected.
-
-## TURN / STUN
-
-TURN is server-managed and optional. WebRTC direct/STUN is attempted according
-to the multiplayer service configuration, and the configured WebSocket Relay
-remains a fallback path where supported.
-
-The repository contains coturn-related helpers for maintainers/operators who
-choose that implementation, but the self-host tooling does not install coturn,
-open ports, create service users, modify firewalls or write system
-configuration. Those actions are infrastructure-specific.
-
-## HTTP to HTTPS origin migration
-
-HTTP and HTTPS are different browser origins. During a migration window, old
-HTTP-origin data can be transferred only while the exact old-origin migration
-document remains reachable.
-
-The Launcher advertises migration only when the generated Site Manifest
-contains:
-
-```json
-{
-  "originMigration": { "mode": "http-to-https" }
-}
-```
-
-During that window:
-
-- do not enable HSTS yet;
-- ordinary HTTP navigation should redirect cleanly to HTTPS;
-- the exact HTTP `/migrate.html` document must remain reachable without an
-  earlier permanent redirect or HSTS upgrade;
-- migration is an explicit user action, not something inferred from a normal
-  HTTP visit.
-
-Validate the two origins with:
-
-```text
-npm run verify:migration-cutover -- http://example.com/ https://example.com/
-```
-
-After the migration window:
-
-1. remove `originMigration` from the Host configuration used to generate the
-   site;
-2. regenerate and publish the site;
-3. enable the final HTTPS/HSTS policy in the operator's own edge/Web-server
-   configuration;
-4. validate the real public behavior.
-
-The project's final HSTS verifier expects at least a one-year policy and no
-remaining migration capability:
-
-```text
-npm run verify:hsts-cutover -- http://example.com/ https://example.com/
-```
-
-The project does not prescribe how nginx, Caddy, a CDN or another edge product
-expresses those rules. `includeSubDomains` and preload are separate operator
-commitments and are not enabled by the project automatically.
-
-## Updating and rollback
-
-Self-host updates are rebuilds:
-
-1. update the project or unpack a newer self-host bundle;
-2. preserve `games/` and `eagler-touhou.config.json`;
-3. run `npm run host:build` or `npm run import`;
-4. publish the newly verified generated directory as one revision.
-
-Rollback is likewise infrastructure-owned: publish a previously verified site
-revision using the operator's normal deployment mechanism. Eagler Touhou does
-not impose a `current` symlink, rsync layout, container strategy, or a specific
-server-side release manager.
+源码检出中的部署示例位于 [`examples/deployment/`](../examples/deployment/)。按运营者服务器配置调整后，使用以上命令验证公开站点。

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
-const game=existsSync(new URL('../th08_web/cpp/game/AnmRenderer.cpp',import.meta.url))?'th08':'th10';
-const {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,resourcePath,ensureSharedFontAlias,installResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError}=await import('../'+game+'_web/sdl-runtime/eagler-host.mjs');
+const game=existsSync(new URL('../web/cpp/game/AnmRenderer.cpp',import.meta.url))?'th08':'th10';
+const {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,resourcePath,ensureSharedFontAlias,installResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError}=await import('../'+'web/sdl-runtime/eagler-host.mjs');
 const base='http://localhost/runtime/'+game+'/entry.html';
 function filesystem(){
  const files=new Map();return {files,FS:{mkdirTree(){},writeFile(path,bytes){files.set(path,bytes);}}};
@@ -45,7 +45,7 @@ test('background audio detaches SDL browser output and reconnects before Runtime
  calls.length=0;assert.equal(await resumeRuntimeAudio(Module,core,()=>true),true);assert.deepEqual(events,['disconnect','connect']);assert.deepEqual(calls,[0]);
 });
 test('shell startup cannot leave Runtime paused when AudioContext is already running',()=>{
- const shell=readFileSync(new URL('../'+game+'_web/sdl-runtime/shell.mjs',import.meta.url),'utf8').replaceAll('\r','');
+ const shell=readFileSync(new URL('../'+'web/sdl-runtime/shell.mjs',import.meta.url),'utf8').replaceAll('\r','');
  assert.match(shell,/if\(forcePause\)core\.sdl_loop_pause\(1\);\s*return resumeRuntimeAudio/);
  assert.doesNotMatch(shell,/if\(!forcePause&&\(!context\|\|context\.state==='running'\)\)return true/);
 });

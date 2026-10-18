@@ -26,7 +26,7 @@ const phaseGroups=phaseKeys.map(key=>{
     const items=group??find(definitions);assert(items,key);return [key,items];
 });
 const commonArg = process.argv.find(x=>x.startsWith('--common='));
-const commonRoot = commonArg ? resolve(commonArg.slice('--common='.length)) : resolve(root,'third_party/eagler-common');
+const commonRoot = commonArg ? resolve(commonArg.slice('--common='.length)) : resolve(root,'../../common');
 const reaction = readFileSync(resolve(commonRoot,'include/eagler/thprac/PracticeReaction.inc'),'utf8');
 const reactionKeys = [...reaction.matchAll(/practice_(TH\w+)/g)].map(m=>m[1]);
 const speed=readFileSync(resolve(commonRoot,'include/eagler/thprac/PracticeSpeed.inc'),'utf8');

@@ -35,8 +35,8 @@ function compile(source,name,compileFlags=flags){
     }
     return object;
 }
-const common=[compile('th10_web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags),
-    ...['Arithmetic','GameMath'].map(name=>compile(`th10_web/cpp/game/${name}.cpp`,name))];
+const common=[compile('web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags),
+    ...['Arithmetic','GameMath'].map(name=>compile(`web/cpp/game/${name}.cpp`,name))];
 for(const multiplayer of [false,true]){
     const variant=multiplayer?'multiplayer':'ordinary';
     const test=compile('tests/anm-trig-input-test.cpp',variant,[...flags,...(multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[])]);

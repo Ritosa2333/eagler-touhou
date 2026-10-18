@@ -137,7 +137,7 @@ save();
 try{
  if(argumentError)throw Error(argumentError);
  const defaultProfile=process.env.TH10_MP_PROFILE||'multiplayer';
- const buildRoot=resolve(buildArg||process.env.TH10_MP_BUILD_ROOT||resolve(root,'th10_web/artifacts',defaultProfile));
+ const buildRoot=resolve(buildArg||process.env.TH10_MP_BUILD_ROOT||resolve(root,'web/artifacts',defaultProfile));
  const buildPath=resolve(buildRoot,'build.json'),build=JSON.parse(readFileSync(buildPath));
  if(build.variant!=='multiplayer'||!['multiplayer','multiplayer-fixtures'].includes(build.profile))throw Error('Wrong multiplayer build/profile');
  const wasmPath=resolve(buildRoot,'th10-sdl.wasm'),modulePath=resolve(buildRoot,'th10-sdl.mjs');

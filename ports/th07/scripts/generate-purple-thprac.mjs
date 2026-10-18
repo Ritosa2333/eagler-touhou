@@ -41,7 +41,7 @@ const labels = [...new Set(labelKeys)].map(key => {
   return `inline constexpr const char* purple_${key}[3]{${glossary[key].map(value => JSON.stringify(value)).join(',')}};`;
 }).join('\n');
 const banner = `// Generated from purple THPrac (MIT), TH07 source sha256 ${sha(source)}.\n`;
-const common = resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(root, '../../eagler-common'));
+const common = resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(root, '../../common'));
 const commonKeys = [...new Set(['PracticeReaction.inc', 'PracticeSpeed.inc'].flatMap(file =>
   [...readFileSync(resolve(common, 'include/eagler/thprac', file), 'utf8').matchAll(/\bpractice_(TH\w+)/g)].map(m => m[1])))];
 const sharedLabels = banner + '#pragma once\nnamespace PracticeRuntime {\n' + commonKeys.map(key => {

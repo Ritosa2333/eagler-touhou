@@ -16,10 +16,10 @@ import { workspacePath } from "../lib/workspace-layout.mjs";
 const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => [game,
   product.runtimeFileLayout === "directory"
     ? game === "th09"
-      ? [workspacePath(game, `${game}_web`, "sdl-runtime", "managed.mjs")]
-      : game === "th15" ? [workspacePath(game, `${game}_web`, "sdl-runtime", "shell.mjs")] : [
-        workspacePath(game, `${game}_web`, "sdl-runtime", "shell.mjs"),
-        workspacePath(game, `${game}_web`, "sdl-runtime", "eagler-host.mjs"),
+      ? [workspacePath(game, `web`, "sdl-runtime", "managed.mjs")]
+      : game === "th15" ? [workspacePath(game, `web`, "sdl-runtime", "shell.mjs")] : [
+        workspacePath(game, `web`, "sdl-runtime", "shell.mjs"),
+        workspacePath(game, `web`, "sdl-runtime", "eagler-host.mjs"),
       ]
     : [workspacePath(game, "resources", "shell.html")],
 ]));

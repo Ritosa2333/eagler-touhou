@@ -22,8 +22,8 @@ assert.match(th07Ascii, /WAS_PRESSED_RAW\(TH_BUTTON_RESET\)/,
   "th07: Pause must consume the Reset input bit");
 coveredGames.add("th07");
 
-const th08Input = await readFile(workspacePath("th08", "th08_web", "cpp", "game", "InputController.cpp"), "utf8");
-const th08Pause = await readFile(workspacePath("th08", "th08_web", "cpp", "game", "UiMenus.cpp"), "utf8");
+const th08Input = await readFile(workspacePath("th08", "web", "cpp", "game", "InputController.cpp"), "utf8");
+const th08Pause = await readFile(workspacePath("th08", "web", "cpp", "game", "UiMenus.cpp"), "utf8");
 assert.match(th08Input, /\{19\s*,\s*82\s*,\s*Reset\}/,
   "th08: R must map to the native Reset input bit");
 assert.match(th08Pause, /restart\s*=\s*16384/,
@@ -31,13 +31,13 @@ assert.match(th08Pause, /restart\s*=\s*16384/,
 coveredGames.add("th08");
 
 // TH09's in-game pause menu owns the retry action through its own input frame.
-const th09Menu = await readFile(workspacePath("th09", "th09_web", "cpp", "game", "InGameMenu.cpp"), "utf8");
+const th09Menu = await readFile(workspacePath("th09", "web", "cpp", "game", "InGameMenu.cpp"), "utf8");
 assert.match(th09Menu, /menu_action\(InGameAction::retry\)/,
   "th09: Pause must expose the retry (restart run) action");
 coveredGames.add("th09");
 
-const th10Input = await readFile(workspacePath("th10", "th10_web", "cpp", "game", "InputDevices.cpp"), "utf8");
-const th10Pause = await readFile(workspacePath("th10", "th10_web", "cpp", "game", "ResultsPause.cpp"), "utf8");
+const th10Input = await readFile(workspacePath("th10", "web", "cpp", "game", "InputDevices.cpp"), "utf8");
+const th10Pause = await readFile(workspacePath("th10", "web", "cpp", "game", "ResultsPause.cpp"), "utf8");
 assert.match(th10Input, /\{0x52\s*,\s*0x4000\}/i,
   "th10: R must map to the native restart input bit");
 assert.match(th10Pause, /pressed\s*&\s*0x4000/,
@@ -46,8 +46,8 @@ coveredGames.add("th10");
 
 // TH20 recovers the original VK table: R (0x52) sets 0x200000, and the pause
 // menu consumes that bit to confirm the retry action.
-const th20Input = await readFile(workspacePath("th20", "source_reconstruction", "input", "input_state.cpp"), "utf8");
-const th20Pause = await readFile(workspacePath("th20", "source_reconstruction", "pause_system", "menu.cpp"), "utf8");
+const th20Input = await readFile(workspacePath("th20", "src", "input", "input_state.cpp"), "utf8");
+const th20Pause = await readFile(workspacePath("th20", "src", "pause_system", "menu.cpp"), "utf8");
 assert.match(th20Input, /key\(0x52\s*,\s*0x200000\)/,
   "th20: R must map to the native restart input bit");
 assert.match(th20Pause, /e\.pressed\(0x200000\)[\s\S]{0,80}confirm_retry/,
@@ -56,16 +56,16 @@ coveredGames.add("th20");
 
 // TH11 recovers the original VK table: R (0x52/82) sets 0x200000, and the
 // pause menu consumes that bit to select the retry action.
-const th11Input = await readFile(workspacePath("th11", "th11_web", "cpp", "game", "GameInput.cpp"), "utf8");
-const th11Pause = await readFile(workspacePath("th11", "th11_web", "cpp", "game", "PauseMenu.cpp"), "utf8");
+const th11Input = await readFile(workspacePath("th11", "web", "cpp", "game", "GameInput.cpp"), "utf8");
+const th11Pause = await readFile(workspacePath("th11", "web", "cpp", "game", "PauseMenu.cpp"), "utf8");
 assert.match(th11Input, /\{82\s*,\s*0x200000\}/,
   "th11: R must map to the native restart input bit");
 assert.match(th11Pause, /pressed\s*&\s*0x200000[\s\S]{0,80}cursor\.select\(3\)/,
   "th11: Pause restart must consume the restart input bit");
 coveredGames.add("th11");
 
-const th15Input = await readFile(workspacePath("th15", "th15_web", "cpp", "sdl", "BrowserRuntime.cpp"), "utf8");
-const th15Pause = await readFile(workspacePath("th15", "th15_web", "cpp", "game", "PauseMenu.cpp"), "utf8");
+const th15Input = await readFile(workspacePath("th15", "web", "cpp", "sdl", "BrowserRuntime.cpp"), "utf8");
+const th15Pause = await readFile(workspacePath("th15", "web", "cpp", "game", "PauseMenu.cpp"), "utf8");
 assert.match(th15Input, /\{0x200000\s*,\s*82\}/,
   "th15: R must map to the native restart input bit");
 assert.match(th15Pause, /pressed\s*&\s*0x200000[\s\S]{0,240}menu\.select\(4\);phase\(16\)/,

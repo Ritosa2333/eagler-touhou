@@ -1,5 +1,5 @@
 #pragma once
-#include "../../th08_web/cpp/multiplayer/SessionSetup.hpp"
+#include "../../web/cpp/multiplayer/SessionSetup.hpp"
 #include <eagler/netplay/AdonisTiming.hpp>
 // Frozen contracts before the cooperation changes (6/7) and from the prior
 // 2026-10-02 rules branch (8/9). Both must reject admission and Replay playback.

@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/Balance.hpp"
+#include "../web/cpp/multiplayer/Balance.hpp"
 #include <cassert>
 
 int main(){

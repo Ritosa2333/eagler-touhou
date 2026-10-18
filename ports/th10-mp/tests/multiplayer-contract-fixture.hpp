@@ -1,5 +1,5 @@
 #pragma once
-#include "../th10_web/cpp/multiplayer/SessionSetup.hpp"
+#include "../web/cpp/multiplayer/SessionSetup.hpp"
 
 // Historical wire-contract fixture, independent of the current production
 // version. It reconstructs historical identities without enabling legacy gameplay.

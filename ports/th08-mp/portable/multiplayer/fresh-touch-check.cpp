@@ -1,5 +1,5 @@
 #include "../input/TouchController.hpp"
-#include "../../th08_web/cpp/multiplayer/AnalogMovement.hpp"
+#include "../../web/cpp/multiplayer/AnalogMovement.hpp"
 #include <eagler/netplay/NetplayCore.hpp>
 #include <cassert>
 #include <cstdio>

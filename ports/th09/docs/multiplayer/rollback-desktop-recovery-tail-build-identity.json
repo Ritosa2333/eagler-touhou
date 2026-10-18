@@ -23,41 +23,41 @@
       "sourceCount": 275,
       "changed": [
         {
-          "path": "th09_web/cpp/sdl/Application.cpp",
+          "path": "web/cpp/sdl/Application.cpp",
           "frozen": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
           "candidate": "5a8580c706cde19b8ea411bbb4f54ccae776524e5971f7c658c58e8bb94a066b"
         }
       ],
       "frozen": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\build.json",
           "bytes": 87059,
           "sha256": "86da4a062d000b3b4f238f823dee07d5fcaa5137e229778c3e9bc5a8eaabc21f"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\th09.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\th09.wasm",
           "bytes": 2827907,
           "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\th09.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\th09.mjs",
           "bytes": 257184,
           "sha256": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3"
         }
       },
       "candidate": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\desktop-recovery-tail-release-c1\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\desktop-recovery-tail-release-c1\\build.json",
           "bytes": 87055,
           "sha256": "d53ed483bf189918f186e3869a1854595553b4779e087189f1b66d8370b71540"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\desktop-recovery-tail-release-c1\\th09.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\desktop-recovery-tail-release-c1\\th09.wasm",
           "bytes": 2828005,
           "sha256": "1060150871b6ce658a131f9930c28cc0504532a16c441f404ba222bc363d551c"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\desktop-recovery-tail-release-c1\\th09.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\desktop-recovery-tail-release-c1\\th09.mjs",
           "bytes": 257184,
           "sha256": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3"
         }
@@ -83,41 +83,41 @@
       "sourceCount": 275,
       "changed": [
         {
-          "path": "th09_web/cpp/sdl/Application.cpp",
+          "path": "web/cpp/sdl/Application.cpp",
           "frozen": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
           "candidate": "5a8580c706cde19b8ea411bbb4f54ccae776524e5971f7c658c58e8bb94a066b"
         }
       ],
       "frozen": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live-matched\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-live-matched\\build.json",
           "bytes": 89507,
           "sha256": "897446c5628d5bbda6167f2f7fc9e57e4e4570ce16d14a4e244445938a083ae1"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live-matched\\th09-presentation.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-live-matched\\th09-presentation.wasm",
           "bytes": 3155544,
           "sha256": "f0fe104e03cf4c10617c16c8c08897784a83b02d5e8eeeabf8c2ee1e7e9e58cb"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live-matched\\th09-presentation.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-live-matched\\th09-presentation.mjs",
           "bytes": 260890,
           "sha256": "d6dfb6c40fd632bb748bc4a881e6f5dd1429aaa6de1cc4dade11ba82005da295"
         }
       },
       "candidate": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\desktop-recovery-tail-live-c1\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\desktop-recovery-tail-live-c1\\build.json",
           "bytes": 89503,
           "sha256": "48d5f00676c193c98a8e1da2311f3f25465246d483ac282295c1ae7774dd5d9a"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\desktop-recovery-tail-live-c1\\th09-presentation.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\desktop-recovery-tail-live-c1\\th09-presentation.wasm",
           "bytes": 3155633,
           "sha256": "866f8238480a8b65e96a37d765887f570257225af52c45924bbe0ef762128c9c"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\desktop-recovery-tail-live-c1\\th09-presentation.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\desktop-recovery-tail-live-c1\\th09-presentation.mjs",
           "bytes": 260890,
           "sha256": "2bf5b47085a738be71e5a4f29a00fbbbed87085ef1bd66f41c1a3e02bbf62195"
         }
@@ -128,7 +128,7 @@
   "invocations": [
     {
       "identity": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-build-release-c1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-build-release-c1-invocation.json",
         "bytes": 65029,
         "sha256": "657966b18aca9cb85a341e74a6295e01809c9c9cacf626e3eb35666ab511caa4"
       },
@@ -136,7 +136,7 @@
       "elapsedMs": 55713.9234,
       "sourceStable": true,
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-build-release-c1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-build-release-c1-process.log",
         "bytes": 8309,
         "sha256": "e17324f4a76b11903ed75b8a01602cafc1587ef151ce389e95a8985443d3d602"
       },
@@ -144,7 +144,7 @@
         "scope": "Desktop candidate build only; no browser/device/phone",
         "candidate": "Finish one due captured forward tick immediately after qualified completed recovery",
         "semanticSourceChanges": 1,
-        "changedSource": "th09_web/cpp/sdl/Application.cpp",
+        "changedSource": "web/cpp/sdl/Application.cpp",
         "baselineBuildSources": 275,
         "baselineWasmSha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
         "release": true,
@@ -155,7 +155,7 @@
     },
     {
       "identity": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-build-live-c1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-build-live-c1-invocation.json",
         "bytes": 64833,
         "sha256": "e944e07fd440bc0935f87276e094afdddf0a8d2b36cada38b648ef6eed26bfd9"
       },
@@ -163,7 +163,7 @@
       "elapsedMs": 56222.7756,
       "sourceStable": true,
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-build-live-c1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-build-live-c1-process.log",
         "bytes": 8319,
         "sha256": "291bb9ce36b63d61909320b7c313bb0a6f56e180ba0212e937bab53f78b1314e"
       },
@@ -171,7 +171,7 @@
         "scope": "Desktop correctness diagnostic build only; no browser/device/phone",
         "candidate": "Finish one due captured forward tick immediately after qualified completed recovery",
         "semanticSourceChanges": 1,
-        "changedSource": "th09_web/cpp/sdl/Application.cpp",
+        "changedSource": "web/cpp/sdl/Application.cpp",
         "baselineBuildSources": 275,
         "release": false,
         "profile": true,

@@ -11,7 +11,7 @@ const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const retry=process.argv.includes('--retry'),death=process.argv.includes('--p1-death');
 const rescueDeath=process.argv.includes('--p1-rescue-death');
 const profile=retry||death||rescueDeath?'multiplayer-fixtures':'multiplayer';
-const buildRoot=resolve(root,'th10_web/artifacts',profile),build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
+const buildRoot=resolve(root,'web/artifacts',profile),build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 if(build.profile!==profile||sha(resolve(buildRoot,'th10-sdl.wasm'))!==build.sha256)throw Error('Wrong/stale network build');
 for(const [name,hash] of Object.entries(build.sourceFiles))if(sha(resolve(root,name))!==hash)throw Error('Source changed: '+name);
 const only=process.argv.find(arg=>arg.startsWith('--only='))?.slice(7);

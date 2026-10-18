@@ -12,7 +12,7 @@ p.add_argument('--fixtures',type=Path)
 p.add_argument('--runtime',type=Path,help='Explicit packaged Runtime supplying the measured font tables')
 p.add_argument('--late-import',action='store_true');p.add_argument('--all-stages',action='store_true')
 p.add_argument('--recorded',action='store_true',help='Fixtures are native recordings, rather than software format fixtures')
-a=p.parse_args();root=a.workspace;repo=a.repo or root/(a.game+'-eagler');web=repo/(a.game+'_web')
+a=p.parse_args();root=a.workspace;repo=a.repo or root/(a.game+'-eagler');web=repo/'web'
 owner=json.loads(subprocess.check_output(['node',str(Path(__file__).resolve().parents[1]/'support/runtime-source-owner.mjs'),'--source='+str(repo),'--game='+a.game,'--variant='+('multiplayer' if a.multiplayer else 'normal')],text=True))
 profile=('sdl-multiplayer' if a.game=='th15' else 'multiplayer' if a.game=='th10' else 'multiplayer-diagnostic') if a.multiplayer else 'sdl-release' if a.game=='th15' else 'sdl3'
 build=web/'artifacts'/profile;runtime=a.runtime or repo/'build-eagler'
@@ -25,8 +25,8 @@ files={'/module.mjs':build/(stem+'.mjs'),'/module.wasm':build/(stem+'.wasm'),'/g
 build_identity=json.loads((build/'build.json').read_text(encoding='utf-8'))
 if hashlib.sha256(files['/module.wasm'].read_bytes()).hexdigest()!=build_identity.get('sha256'):p.error(f'{build}: WASM does not match its build identity')
 declared={**build_identity.get('sourceFiles',{}),**build_identity.get('headers',{}),**(build_identity.get('sources',{}) if isinstance(build_identity.get('sources'),dict) else {})}
-native_paths=([f'{a.game}_web/cpp/sdl/GameHost.cpp',f'{a.game}_web/cpp/sdl/LocalReplay.inc'] if a.game in ['th08','th10'] else ['th11_web/cpp/sdl/Application.cpp']+(['th11_web/cpp/sdl/LocalReplay.inc'] if a.multiplayer else []) if a.game=='th11' else ['th15_web/cpp/sdl/BrowserRuntime.cpp','th15_web/cpp/sdl/LocalReplay.inc'])
-if a.game=='th08':native_paths+=['th08_web/cpp/game/GameApplication.cpp','th08_web/cpp/game/GameApplication.hpp']
+native_paths=([f'{a.game}_web/cpp/sdl/GameHost.cpp',f'{a.game}_web/cpp/sdl/LocalReplay.inc'] if a.game in ['th08','th10'] else ['web/cpp/sdl/Application.cpp']+(['web/cpp/sdl/LocalReplay.inc'] if a.multiplayer else []) if a.game=='th11' else ['web/cpp/sdl/BrowserRuntime.cpp','web/cpp/sdl/LocalReplay.inc'])
+if a.game=='th08':native_paths+=['web/cpp/game/GameApplication.cpp','web/cpp/game/GameApplication.hpp']
 owner['nativeReplaySources']={}
 for path in native_paths:
  actual=hashlib.sha256((repo/path).read_bytes()).hexdigest()

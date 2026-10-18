@@ -1,3 +1,4 @@
+import {selectedPortGames} from './support/port-selection.mjs';
 import { readFileSync } from "node:fs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
@@ -7,7 +8,7 @@ const preloadGames = Object.entries(PRODUCT_GAMES)
   .map(([game]) => game)
   .sort();
 
-for (const game of preloadGames) {
+for (const game of selectedPortGames(preloadGames)) {
   const source = readFileSync(workspacePath(game, "src", "GameWindow.cpp"), "utf8").replaceAll("\r\n", "\n");
   for (const [needle, label] of [
     ["#ifdef __EMSCRIPTEN__", "Web-only guard"],

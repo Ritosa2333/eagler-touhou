@@ -1,56 +1,23 @@
-# Legacy import compatibility
+# 旧数据迁移
 
-This directory is the bounded read-only compatibility owner for two previously
-published inputs:
+这里集中维护旧安装数据与当前 Package Store 之间的转换。当前导入、安装和更新由 [`package/`](../package/README.md) 负责。
 
-- `eagler-touhou/game-data-pack/1` and
-  `eagler-touhou/offline-game-pack/1` ZIPs;
-- the `eagler-touhou-game-data-v1` Cache Storage and associated localStorage
-  metadata written by older Launchers.
+| 兼容输入 | 处理方式 |
+| --- | --- |
+| `game-data-pack/1`、`offline-game-pack/1` ZIP | 读取旧格式并安装到当前 Package Store |
+| `eagler-touhou-game-data-v1` Cache Storage 与元数据 | 启动时迁移；成功后清理对应旧记录 |
+| 仅有 16 位 revision 的旧安装对象 | 更新时计算完整 SHA-256，哈希与字节数匹配后复用 |
+| 旧 Host Manifest 文件名与 schema | 由当前 Site Manifest 校验后派生兼容响应 |
+| 旧首次使用确认键 | 由 `src/contracts/compat/first-use-notice.mts` 读取 |
+| 固定 URL 的 Runtime 缓存 | 由 Runtime generation reader 按内容身份读取完整快照 |
+| 已发布的 `legacy/*.mjs` URL | 由 `path-aliases.mjs` 映射到本目录 |
+| `EAGLER_FRONTEND=react` | 部署预检接受旧设置；当前前端由根 launcher 提供 |
 
-New imports and installations must use the Package Store. Legacy data is read
-only to perform a one-way migration; a successful migration deletes the old
-records, and no production path may create new records in these formats.
+## 修改步骤
 
-The compatibility owner may be retired only in a release that simultaneously:
+1. 为待迁移的旧输入加入真实格式夹具。
+2. 验证迁移结果可由当前读取器使用，并覆盖中断后的重试。
+3. 检查存档与 Replay 文件内容保持一致。
+4. 更新升级说明与对应迁移测试。
 
-1. raises the documented minimum supported upgrade baseline beyond every
-   Launcher release that wrote these records;
-2. provides a standalone export/recovery path for users who skipped that
-   baseline; and
-3. removes the startup migration call, the readers/adapters, and their tests in
-   one reviewed change.
-
-Until those conditions are met, these modules are compatibility code rather
-than examples or a second package implementation.
-
-## Short-revision Package Store upgrade window
-
-Package ZIPs published before full per-file SHA-256 declarations may contain
-only a 16-character file revision. When such an installed generation is
-updated to a descriptor with the same revision and byte count, the installer
-hashes the existing object once, reuses it only on an exact SHA-256 match, and
-records that verified identity so another game can reuse identical content.
-New descriptors and stored objects always carry full SHA-256 identities; this
-path must not become an alternate producer format.
-
-Retire this bridge after the minimum supported upgrade baseline is newer than
-the last short-revision offline packages published before 2026-09-12 and one
-normal release cycle has elapsed after that baseline. Retirement removes the
-missing-hash branch and its regression fixture together; content-addressed
-reuse of fully identified objects remains part of the Package Store.
-
-## Current compatibility ownership
-
-| Boundary | Callers and evidence | Removal condition |
-| --- | --- | --- |
-| Site Manifest schema/file and operator flag | Metadata/directory readers, package writer and verifier. `test-site-manifest-compat.mjs` checks 404-only fallback, strict current errors and alias tampering. | Raise the supported site/client baseline beyond schema-1 Host Manifest consumers and verify an upgrade/export path. Remove the generated URL alias and its tests together. |
-| Old `EAGLER_FRONTEND=react` setting | Operator preflight only. It is a no-op, never a UI selection. `main` is rejected. | Operators have migrated their launch scripts. |
-| First-use acknowledgement keys | React FirstUseNotice calls the pure adapter in `src/contracts/compat/first-use-notice.mts`. Mounted notice tests cover old nonempty values, empty values and storage failure. | Raise the supported client baseline and remove keys plus regression cases together. |
-| Fixed-URL Runtime snapshot caches | App Shell/runtime cache workers use `runtime-generation-reader.js`. Runtime cache cases verify per-byte identity and incomplete snapshots. | The documented old-cache upgrade window ends and existing data has a recovery/export route. |
-| Published `legacy/*.mjs` URLs | `path-aliases.mjs` maps them to this directory. The React artifact seals the bundled responses but does not precache these historical entrypoints. Legacy ZIP/migration tests execute those same source owners. | Follow the package/storage baseline conditions above. |
-
-Source code is consolidated here. Historical URL spellings and protocol markers
-may remain at their wire boundaries; they are not duplicate implementations or
-current UI renderers. New Site Manifest output is schema-checked before any
-legacy response is derived from it. Neither adapter modifies saves or Replay.
+退役兼容入口时，先明确新的最低升级版本，并提供跳过该版本用户的导出恢复路径，再一并移除读取器、调用方与测试。短 revision 兼容在最低版本越过 2026-09-12 前的旧离线包、并经过一个正常发布周期后退役。

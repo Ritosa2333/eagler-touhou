@@ -8,7 +8,7 @@
     "status": 0,
     "signal": null,
     "args": [
-      "th09_web/tests/server/managed-touch-queue.test.mjs"
+      "web/tests/server/managed-touch-queue.test.mjs"
     ],
     "runLabel": "mobile-managed-queue-characterization-b1",
     "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -16,16 +16,16 @@
     "scriptSha256": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
     "scriptAfterSha256": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
     "identityBefore": {
-      "th09_web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
-      "th09_web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
-      "th09_web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
-      "th09_web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
+      "web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
+      "web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+      "web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+      "web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
     },
     "identityAfter": {
-      "th09_web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
-      "th09_web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
-      "th09_web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
-      "th09_web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
+      "web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
+      "web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+      "web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+      "web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
     },
     "identityError": null,
     "build": null,
@@ -45,18 +45,18 @@
       ],
       "releaseAckChecks": true
     },
-    "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-process.log",
+    "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-process.log",
     "logSha256": "b1c7f33f8d3da8a407a174116bd9e21e74d8c0ce493b2a61713c2c3185ac492f",
     "stdoutBytes": 9861,
     "stderrBytes": 0
   },
   "invocationArtifact": {
-    "path": "th09_web/artifacts/multiplayer-tests/mobile-managed-queue-characterization-b1-invocation.json",
+    "path": "web/artifacts/multiplayer-tests/mobile-managed-queue-characterization-b1-invocation.json",
     "bytes": 2435,
     "sha256": "8b8d4985d792e07c12cc0e5494ac7e55d4aae994a83a9803dbb9ab95a86d5334"
   },
   "log": {
-    "path": "th09_web/artifacts/multiplayer-tests/mobile-managed-queue-characterization-b1-process.log",
+    "path": "web/artifacts/multiplayer-tests/mobile-managed-queue-characterization-b1-process.log",
     "bytes": 9861,
     "sha256": "b1c7f33f8d3da8a407a174116bd9e21e74d8c0ce493b2a61713c2c3185ac492f"
   },

@@ -30,7 +30,7 @@ def runtime_source(workspace, game):
         start = source.index("const browserKeyboardDown = new Map();")
         end = source.index('window.addEventListener("message"', start)
         return "const launched=true,protocol='eagler-touhou/1',game='" + game + "',epoch=1;window.Module={eaglerControls:{},eaglerOptions:{}};" + source[start:end] + "\nwindow.clearRuntime=clearBrowserKeyboard;window.getKeys=()=>({bits:Module.eaglerControls.keyboardBits||0,pulse:Module.eaglerControls.keyboardPulseBits||0});"
-    source = (repo / (game + "_web/sdl-runtime/directory-keyboard.mjs")).read_text(encoding="utf-8")
+    source = (repo / ("web/sdl-runtime/directory-keyboard.mjs")).read_text(encoding="utf-8")
     return source.replace("export ", "") + """
       const held=new Set();window.fixtureProfile='standard';
       const keyboard=createBrowserKeyboard({hostContext:{protocol:'eagler-touhou/1',game:'GAME',epoch:1,origin:location.origin,

@@ -14,7 +14,7 @@ const f12=region(read('thprac_th11.cpp'),'        void ContentUpdate()','       
 for(const call of ['GameFPSOpt(mOptCtx)','DisableKeyOpt()','KeyHUDOpt()','InfLifeOpt()','GameplayOpt(mOptCtx)','InGameReactionTestOpt()','AboutOpt()'])if(!f12.includes(call))throw Error('TH11 F12 membership drift: '+call);
 const preamble='// Generated from purple shared tools (MIT), following TH15.\n';
 const files={
- 'th11_web/cpp/game/PracticeLicense.hpp':`${preamble}#pragma once\nnamespace th11 {inline constexpr const char* practice_license=${JSON.stringify(readFileSync(resolve(upstream,'LICENCE'),'utf8'))};}\n`,
+ 'web/cpp/game/PracticeLicense.hpp':`${preamble}#pragma once\nnamespace th11 {inline constexpr const char* practice_license=${JSON.stringify(readFileSync(resolve(upstream,'LICENCE'),'utf8'))};}\n`,
 };
 if(process.argv.includes('--write')){for(const[p,v]of Object.entries(files))writeFileSync(resolve(root,p),v);console.log('Generated TH11 purple shared tools');}
 else if(process.argv.includes('--check')){for(const[p,v]of Object.entries(files))if(!existsSync(resolve(root,p))||readFileSync(resolve(root,p),'utf8').replaceAll('\r\n','\n').trimEnd()!==v.trimEnd())throw Error('Stale shared tools: '+p);console.log('Purple shared tool extraction verified');}

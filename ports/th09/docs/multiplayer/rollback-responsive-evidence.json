@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generator": "th09_web/tests/multiplayer/summarize-responsive.mjs",
+  "generator": "web/tests/multiplayer/summarize-responsive.mjs",
   "scope": "Responsive TH09 follow-up evidence only. Historical J/M ABBA, explicitly listed correctness scopes, and opt-in P progress, N/P HOST ABBA and paired diagnostics remain separate. No earlier rollback4x evidence is imported.",
   "verdict": {
     "performanceBenefit": "unconfirmed",
@@ -463,7 +463,7 @@
       {
         "run": "a1",
         "candidate": "J",
-        "rawReport": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-release-a1-report.json",
+        "rawReport": "web/artifacts/multiplayer-tests/rollback4x-responsive-release-a1-report.json",
         "passed": true,
         "identity": {
           "wasm": "b525102519c98ac5e3d4cd3bbcd840fa6e77eb1f0bf9196e3ba2cb2a8e94547b",
@@ -2920,7 +2920,7 @@
       {
         "run": "b1",
         "candidate": "M",
-        "rawReport": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-release-b1-report.json",
+        "rawReport": "web/artifacts/multiplayer-tests/rollback4x-responsive-release-b1-report.json",
         "passed": true,
         "identity": {
           "wasm": "535c358231dc21ada7c2f9df910c1fb0d505cff41612bc79478205afee3993cf",
@@ -5377,7 +5377,7 @@
       {
         "run": "b2",
         "candidate": "M",
-        "rawReport": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-release-b2-report.json",
+        "rawReport": "web/artifacts/multiplayer-tests/rollback4x-responsive-release-b2-report.json",
         "passed": true,
         "identity": {
           "wasm": "535c358231dc21ada7c2f9df910c1fb0d505cff41612bc79478205afee3993cf",
@@ -7834,7 +7834,7 @@
       {
         "run": "a2",
         "candidate": "J",
-        "rawReport": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-release-a2-report.json",
+        "rawReport": "web/artifacts/multiplayer-tests/rollback4x-responsive-release-a2-report.json",
         "passed": true,
         "identity": {
           "wasm": "b525102519c98ac5e3d4cd3bbcd840fa6e77eb1f0bf9196e3ba2cb2a8e94547b",
@@ -10293,7 +10293,7 @@
   "correctness": {
     "L_nativeTouch900": {
       "passed": true,
-      "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-input-touch-01-report.json",
+      "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-input-touch-01-report.json",
       "scope": "Two real TH09 worlds, native raw gesture producer, complete exact-input spectator/world/framebuffer/Replay reference; fixed three-iteration input delay, not wall-clock RTC or phone evidence",
       "wasm": "08cfc57ef71686ba53338b6e853f23030928f40a999863b31d94ce0b592621f1",
       "harnessSha256": "a81831068d5dff953300e18fe823cfd1eecf152db2fb321cc67debe1120390b3",
@@ -10482,7 +10482,7 @@
     },
     "L_actualFrontierDeep8": {
       "passed": true,
-      "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-input-deep8-frontier-01-report.json",
+      "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-input-deep8-frontier-01-report.json",
       "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected frontier-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
       "wasm": "08cfc57ef71686ba53338b6e853f23030928f40a999863b31d94ce0b592621f1",
       "harnessSha256": "9abe2fb08c668620efaef90bf79bfb3f7e862145fc63288d9cd3f0d7c8bd20cc",
@@ -10644,7 +10644,7 @@
       "note": "Sustained requested depth, not mandatory completion within one callback. Replay equality is a generating-harness assertion; this report retains the byte length rather than raw replay bytes. No real-relay 4x pacing conclusion."
     },
     "M_imageResampleComponent": {
-      "report": "th09_web/artifacts/multiplayer-tests/image-resample-report.json",
+      "report": "web/artifacts/multiplayer-tests/image-resample-report.json",
       "passed": true,
       "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance",
       "wasmSha256": "eb59f1009025ec5aeed64e90a020c7437ebad3df15c494caf8ca05cd3a5968fb",
@@ -10656,17 +10656,17 @@
         "-ffp-contract=off",
         "-fno-exceptions",
         "-ID:\\workspace\\eagler\\th09-eagler\\third_party\\eagler-common\\include",
-        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer"
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer"
       ],
       "sources": {
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\image-resample.cpp": "4197190afa029f28c0316c50b9227cced74490f059c41f4d9fcf90bf95fc5abb",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\game\\ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\image-resample.cpp": "4197190afa029f28c0316c50b9227cced74490f059c41f4d9fcf90bf95fc5abb",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1"
       },
       "headerCount": 142,
       "recordedHeaderSetSha256": "e084e73f75f5b54b3e35f45b4027662ae6c4f4082362f1342a5fb89a86e08332",
       "note": "Build inputs are those recorded in this component report, not a claim that the current workspace or frozen production releases share these inputs.",
       "fixture": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\image-resample.cpp",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\image-resample.cpp",
         "sha256": "4197190afa029f28c0316c50b9227cced74490f059c41f4d9fcf90bf95fc5abb"
       },
       "authoredFixtureCases": 390,
@@ -10674,7 +10674,7 @@
     },
     "M_productionRender7200": {
       "passed": true,
-      "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-text-render-01-report.json",
+      "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-text-render-01-report.json",
       "scope": "Two frozen authored production releases, public spectator feed/tick exports, identical endurance tape including pause edges; exact framebuffer PNG, network hash and session state. No development exports, rollback transport or timed performance claims.",
       "identity": {
         "wasm": [
@@ -12067,7 +12067,7 @@
       "note": "Two frozen production releases, public spectator feed/tick exports, pause and results coverage. Exact PNG/hash/session equality at 73 checkpoints; no dev exports or rollback transport, no timed performance claim."
     },
     "N_sessionComponent": {
-      "report": "th09_web/artifacts/multiplayer-tests/session-report.json",
+      "report": "web/artifacts/multiplayer-tests/session-report.json",
       "passed": true,
       "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance",
       "wasmSha256": "9c91e8a572ce01c5b0a675fe9828d035727e984a87757cc370b2b82dadf203c2",
@@ -12079,11 +12079,11 @@
         "-ffp-contract=off",
         "-fno-exceptions",
         "-ID:\\workspace\\eagler\\th09-eagler\\third_party\\eagler-common\\include",
-        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer"
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer"
       ],
       "sources": {
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\session.cpp": "198cc70dc667085f3c245b89158a0a4b74ab887948a96f138440b97baccb26a6",
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer\\RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\session.cpp": "198cc70dc667085f3c245b89158a0a4b74ab887948a96f138440b97baccb26a6",
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer\\RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
         "D:\\workspace\\eagler\\th09-eagler\\third_party\\eagler-common\\src\\netplay\\NetplayCore.cpp": "da1ccd45031cc6ddb8702e9357b031fa2bbb38754b9382f3dadab69f963c90b0",
         "D:\\workspace\\eagler\\th09-eagler\\third_party\\eagler-common\\src\\netplay\\NetplayProtocol.cpp": "1a5f3ba6ed1884b83c24c6d2d558922163dc878eb18879f72059dd7688e7bfeb",
         "D:\\workspace\\eagler\\th09-eagler\\third_party\\eagler-common\\src\\netplay\\NetplaySession.cpp": "3481ea7c9821c28f0b96ba15fe8fb5292bd1d28116f9f904078bd50864b05ea8",
@@ -12093,7 +12093,7 @@
       "recordedHeaderSetSha256": "e084e73f75f5b54b3e35f45b4027662ae6c4f4082362f1342a5fb89a86e08332",
       "note": "Build inputs are those recorded in this component report, not a claim that the current workspace or frozen production releases share these inputs.",
       "fixture": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\session.cpp",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\session.cpp",
         "sha256": "198cc70dc667085f3c245b89158a0a4b74ab887948a96f138440b97baccb26a6"
       },
       "scopeDetail": "Session contract fixtures include continuous actual-input frontier, out-of-order holes, replay frontier, reset/clock handling and CPU-slow-but-input-complete pacing. Component scope only; no production 4x pacing or presentation acceptance."
@@ -12104,7 +12104,7 @@
       "name": "rollback4x-responsive-input-deep8-01-failure.json",
       "interpretation": "Coverage gate required more than 100 complete eight-frame recoveries plus a fresh tick within one callback. The new recovery budget deliberately permits partial callbacks; this gate stopped the run before the later reference oracle.",
       "rawFailure": {
-        "error": "page.evaluate: Error: Sustained requested-depth recovery not exercised [{\"calls\":2136,\"p50\":8.180000007152557,\"p95\":10.490000009536743,\"p99\":11.919999986886978,\"max\":13.480000019073486,\"correctionCalls\":1622,\"completeDeepCalls\":145,\"maxResimulatedInCall\":8},{\"calls\":2135,\"p50\":8.129999995231628,\"p95\":10.775000005960464,\"p99\":12.08500000834465,\"max\":14.099999994039536,\"correctionCalls\":1623,\"completeDeepCalls\":85,\"maxResimulatedInCall\":8}]\n    at eval (eval at evaluate (:311:30), <anonymous>:78:96)\n    at async <anonymous>:337:30\n    at D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\peer-browser.mjs:31:27",
+        "error": "page.evaluate: Error: Sustained requested-depth recovery not exercised [{\"calls\":2136,\"p50\":8.180000007152557,\"p95\":10.490000009536743,\"p99\":11.919999986886978,\"max\":13.480000019073486,\"correctionCalls\":1622,\"completeDeepCalls\":145,\"maxResimulatedInCall\":8},{\"calls\":2135,\"p50\":8.129999995231628,\"p95\":10.775000005960464,\"p99\":12.08500000834465,\"max\":14.099999994039536,\"correctionCalls\":1623,\"completeDeepCalls\":85,\"maxResimulatedInCall\":8}]\n    at eval (eval at evaluate (:311:30), <anonymous>:78:96)\n    at async <anonymous>:337:30\n    at D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\peer-browser.mjs:31:27",
         "errors": []
       }
     },
@@ -12112,7 +12112,7 @@
       "name": "rollback4x-responsive-input-deep8-02-failure.json",
       "interpretation": "The requested-depth gate had been corrected, but this earlier delivery clock followed the rewindable world frame. One peer recorded only 98 qualifying requests. The accepted frontier-clock fixture above uses a monotonic input-delivery frontier. This failure did not establish a correctness mismatch.",
       "rawFailure": {
-        "error": "page.evaluate: Error: Sustained requested-depth recovery not exercised [{\"calls\":2142,\"p50\":8.224999994039536,\"p95\":10.459999978542328,\"p99\":12.145000010728836,\"max\":22.810000002384186,\"correctionCalls\":1620,\"requestedDeepCalls\":98,\"completeDeepCalls\":44,\"maxRequestedDepth\":8,\"maxResimulatedInCall\":8},{\"calls\":2139,\"p50\":8.180000007152557,\"p95\":10.594999998807907,\"p99\":12.08500000834465,\"max\":16.11999997496605,\"correctionCalls\":1621,\"requestedDeepCalls\":113,\"completeDeepCalls\":62,\"maxRequestedDepth\":8,\"maxResimulatedInCall\":8}]\n    at eval (eval at evaluate (:311:30), <anonymous>:82:97)\n    at async <anonymous>:337:30\n    at D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\peer-browser.mjs:31:27",
+        "error": "page.evaluate: Error: Sustained requested-depth recovery not exercised [{\"calls\":2142,\"p50\":8.224999994039536,\"p95\":10.459999978542328,\"p99\":12.145000010728836,\"max\":22.810000002384186,\"correctionCalls\":1620,\"requestedDeepCalls\":98,\"completeDeepCalls\":44,\"maxRequestedDepth\":8,\"maxResimulatedInCall\":8},{\"calls\":2139,\"p50\":8.180000007152557,\"p95\":10.594999998807907,\"p99\":12.08500000834465,\"max\":16.11999997496605,\"correctionCalls\":1621,\"requestedDeepCalls\":113,\"completeDeepCalls\":62,\"maxRequestedDepth\":8,\"maxResimulatedInCall\":8}]\n    at eval (eval at evaluate (:311:30), <anonymous>:82:97)\n    at async <anonymous>:337:30\n    at D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\peer-browser.mjs:31:27",
         "errors": []
       }
     }
@@ -12120,20 +12120,20 @@
   "progress": {
     "requested": true,
     "mandatoryFiles": [
-      "th09_web/artifacts/rollback4x-responsive-network-release/build.json",
-      "th09_web/artifacts/rollback4x-responsive-vm-profile/build.json",
-      "th09_web/artifacts/rollback4x-responsive-vm-final-profile/build.json",
-      "th09_web/artifacts/rollback4x-responsive-vm-final-release/build.json",
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-world-01-report.json",
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-deep8-01-report.json",
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-render-01-report.json",
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-probe-smoke-01-report.json",
-      "th09_web/artifacts/multiplayer-tests/host-load-probe-smoke-report.json",
-      "th09_web/artifacts/multiplayer-tests/frame-schedule-report.json"
+      "web/artifacts/rollback4x-responsive-network-release/build.json",
+      "web/artifacts/rollback4x-responsive-vm-profile/build.json",
+      "web/artifacts/rollback4x-responsive-vm-final-profile/build.json",
+      "web/artifacts/rollback4x-responsive-vm-final-release/build.json",
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-world-01-report.json",
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-deep8-01-report.json",
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-render-01-report.json",
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-probe-smoke-01-report.json",
+      "web/artifacts/multiplayer-tests/host-load-probe-smoke-report.json",
+      "web/artifacts/multiplayer-tests/frame-schedule-report.json"
     ],
     "builds": {
       "NRelease": {
-        "path": "th09_web/artifacts/rollback4x-responsive-network-release/build.json",
+        "path": "web/artifacts/rollback4x-responsive-network-release/build.json",
         "kind": "th09-native-web-release-candidate",
         "builtAt": "2026-10-10T13:17:06.191Z",
         "completeGame": false,
@@ -12144,17 +12144,17 @@
         "sourceCount": 274,
         "sourceSetSha256": "292e58960903b0188c6929d0311db6b5777bfca92abc646360f24b462f2a3d81",
         "relevantSources": {
-          "th09_web/cpp/game/ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1",
-          "th09_web/cpp/sdl/Application.cpp": "c86067e0ae33c5e4ac628613aa6a28398536f60d37aa37bb2dc87075af68ef97",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "7c55aa548064da8544114fb510862beb7968ed003881319b1d24ba2b29e46067",
-          "th09_web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
-          "th09_web/cpp/multiplayer/RollbackSession.hpp": "44d15111a540be958b536c19a3cf9ca4d500230aab047390958cdc432cc17947",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "17e8e5ff1d5a271684c82390a39e8165365e34caa92b80829d855ce91acf29a8"
+          "web/cpp/game/ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1",
+          "web/cpp/sdl/Application.cpp": "c86067e0ae33c5e4ac628613aa6a28398536f60d37aa37bb2dc87075af68ef97",
+          "web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
+          "web/cpp/multiplayer/WorldState.cpp": "7c55aa548064da8544114fb510862beb7968ed003881319b1d24ba2b29e46067",
+          "web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
+          "web/cpp/multiplayer/RollbackSession.hpp": "44d15111a540be958b536c19a3cf9ca4d500230aab047390958cdc432cc17947",
+          "web/cpp/multiplayer/WorldState.hpp": "17e8e5ff1d5a271684c82390a39e8165365e34caa92b80829d855ce91acf29a8"
         }
       },
       "PInitialProfile": {
-        "path": "th09_web/artifacts/rollback4x-responsive-vm-profile/build.json",
+        "path": "web/artifacts/rollback4x-responsive-vm-profile/build.json",
         "kind": "th09-presentation-harness",
         "builtAt": "2026-10-10T13:25:00.690Z",
         "completeGame": false,
@@ -12165,17 +12165,17 @@
         "sourceCount": 274,
         "sourceSetSha256": "160b7c9284d37bba70aead7616d34d6a69901ddc9e9a087c5d229a0352a98007",
         "relevantSources": {
-          "th09_web/cpp/game/ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1",
-          "th09_web/cpp/sdl/Application.cpp": "8150548199bd53ab808ea57e86cc53ebfb08aa63814ae464e3be4991195016a7",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "b74a2de491955ce4c800bc9da0d2cb4e317b7a118a6a9aaf8881c8b00223b7c4",
-          "th09_web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
-          "th09_web/cpp/multiplayer/RollbackSession.hpp": "44d15111a540be958b536c19a3cf9ca4d500230aab047390958cdc432cc17947",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "884427f2f20d073a930154459ad4fb0f76f6d008b42ac4f011002215d80fc16a"
+          "web/cpp/game/ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1",
+          "web/cpp/sdl/Application.cpp": "8150548199bd53ab808ea57e86cc53ebfb08aa63814ae464e3be4991195016a7",
+          "web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
+          "web/cpp/multiplayer/WorldState.cpp": "b74a2de491955ce4c800bc9da0d2cb4e317b7a118a6a9aaf8881c8b00223b7c4",
+          "web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
+          "web/cpp/multiplayer/RollbackSession.hpp": "44d15111a540be958b536c19a3cf9ca4d500230aab047390958cdc432cc17947",
+          "web/cpp/multiplayer/WorldState.hpp": "884427f2f20d073a930154459ad4fb0f76f6d008b42ac4f011002215d80fc16a"
         }
       },
       "PFinalProfile": {
-        "path": "th09_web/artifacts/rollback4x-responsive-vm-final-profile/build.json",
+        "path": "web/artifacts/rollback4x-responsive-vm-final-profile/build.json",
         "kind": "th09-presentation-harness",
         "builtAt": "2026-10-10T13:33:31.031Z",
         "completeGame": false,
@@ -12186,17 +12186,17 @@
         "sourceCount": 274,
         "sourceSetSha256": "2f891f93f2cb6687a0e780ed8029ee2f21b9030e76a991acaa269c1f19254efb",
         "relevantSources": {
-          "th09_web/cpp/game/ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1",
-          "th09_web/cpp/sdl/Application.cpp": "8150548199bd53ab808ea57e86cc53ebfb08aa63814ae464e3be4991195016a7",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "e3a73ec3a4f3d68b90639d7515368c28d9fee0beabd99bbfb2d99f3ddde73ebe",
-          "th09_web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
-          "th09_web/cpp/multiplayer/RollbackSession.hpp": "44d15111a540be958b536c19a3cf9ca4d500230aab047390958cdc432cc17947",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "691a2d3cb25fb943e80811bd4d8240526bb4dd241f66fe950c694e14ca572c0e"
+          "web/cpp/game/ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1",
+          "web/cpp/sdl/Application.cpp": "8150548199bd53ab808ea57e86cc53ebfb08aa63814ae464e3be4991195016a7",
+          "web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
+          "web/cpp/multiplayer/WorldState.cpp": "e3a73ec3a4f3d68b90639d7515368c28d9fee0beabd99bbfb2d99f3ddde73ebe",
+          "web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
+          "web/cpp/multiplayer/RollbackSession.hpp": "44d15111a540be958b536c19a3cf9ca4d500230aab047390958cdc432cc17947",
+          "web/cpp/multiplayer/WorldState.hpp": "691a2d3cb25fb943e80811bd4d8240526bb4dd241f66fe950c694e14ca572c0e"
         }
       },
       "PFinalRelease": {
-        "path": "th09_web/artifacts/rollback4x-responsive-vm-final-release/build.json",
+        "path": "web/artifacts/rollback4x-responsive-vm-final-release/build.json",
         "kind": "th09-native-web-release-candidate",
         "builtAt": "2026-10-10T13:34:24.616Z",
         "completeGame": false,
@@ -12207,13 +12207,13 @@
         "sourceCount": 274,
         "sourceSetSha256": "2f891f93f2cb6687a0e780ed8029ee2f21b9030e76a991acaa269c1f19254efb",
         "relevantSources": {
-          "th09_web/cpp/game/ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1",
-          "th09_web/cpp/sdl/Application.cpp": "8150548199bd53ab808ea57e86cc53ebfb08aa63814ae464e3be4991195016a7",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "e3a73ec3a4f3d68b90639d7515368c28d9fee0beabd99bbfb2d99f3ddde73ebe",
-          "th09_web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
-          "th09_web/cpp/multiplayer/RollbackSession.hpp": "44d15111a540be958b536c19a3cf9ca4d500230aab047390958cdc432cc17947",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "691a2d3cb25fb943e80811bd4d8240526bb4dd241f66fe950c694e14ca572c0e"
+          "web/cpp/game/ImageResample.cpp": "27f7b61c708570139cb25c6a8dd3309a64c9c2cc6f3bb1a6618e57c48ac9ecf1",
+          "web/cpp/sdl/Application.cpp": "8150548199bd53ab808ea57e86cc53ebfb08aa63814ae464e3be4991195016a7",
+          "web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
+          "web/cpp/multiplayer/WorldState.cpp": "e3a73ec3a4f3d68b90639d7515368c28d9fee0beabd99bbfb2d99f3ddde73ebe",
+          "web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
+          "web/cpp/multiplayer/RollbackSession.hpp": "44d15111a540be958b536c19a3cf9ca4d500230aab047390958cdc432cc17947",
+          "web/cpp/multiplayer/WorldState.hpp": "691a2d3cb25fb943e80811bd4d8240526bb4dd241f66fe950c694e14ca572c0e"
         }
       }
     },
@@ -12271,12 +12271,12 @@
         ]
       },
       "errors": [],
-      "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-world-01-report.json",
+      "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-world-01-report.json",
       "interpretation": "Initial P profile build; not final release timing evidence."
     },
     "PFinalDeep8": {
       "passed": true,
-      "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-deep8-01-report.json",
+      "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-deep8-01-report.json",
       "wasm": "253adae67aad58822146086abaafa453bdb7b6893531e1aaab18fd4ae9bc56d6",
       "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected frontier-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
       "harnessSha256": "9abe2fb08c668620efaef90bf79bfb3f7e862145fc63288d9cd3f0d7c8bd20cc",
@@ -12573,7 +12573,7 @@
       "interpretation": "Final P diagnostic build; reference/hash/audit/PNG and replay-harness assertions passed. Controlled frontier transport, not wall-clock relay or a throughput comparison."
     },
     "PFinalProductionRender": {
-      "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-render-01-report.json",
+      "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-render-01-report.json",
       "passed": true,
       "scope": "Two frozen authored production releases, public spectator feed/tick exports, identical endurance tape including pause edges; exact framebuffer PNG, network hash and session state. No development exports, rollback transport or timed performance claims.",
       "identity": {
@@ -13963,7 +13963,7 @@
       "interpretation": "Public spectator feed/tick exports and exact PNG/hash/session comparison. No live rollback, input-latency or timed-throughput conclusion."
     },
     "latestFrameScheduleComponent": {
-      "report": "th09_web/artifacts/multiplayer-tests/frame-schedule-report.json",
+      "report": "web/artifacts/multiplayer-tests/frame-schedule-report.json",
       "passed": true,
       "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance",
       "wasmSha256": "2e45dcac51d21ec723e43ae2a6fc470f1ce62c26c05efa1718388426de324656",
@@ -13975,22 +13975,22 @@
         "-ffp-contract=off",
         "-fno-exceptions",
         "-ID:\\workspace\\eagler\\th09-eagler\\third_party\\eagler-common\\include",
-        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer"
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer"
       ],
       "sources": {
-        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\frame-schedule.cpp": "a5f21959532b17e25110507bf7b08b2f168252ef03866ab532ee94d08728c7d6"
+        "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\frame-schedule.cpp": "a5f21959532b17e25110507bf7b08b2f168252ef03866ab532ee94d08728c7d6"
       },
       "headerCount": 142,
       "recordedHeaderSetSha256": "e084e73f75f5b54b3e35f45b4027662ae6c4f4082362f1342a5fb89a86e08332",
       "note": "Build inputs are those recorded in this component report, not a claim that the current workspace or frozen production releases share these inputs."
     },
     "latestSessionAndImageComponents": {
-      "sessionReport": "th09_web/artifacts/multiplayer-tests/session-report.json",
-      "imageReport": "th09_web/artifacts/multiplayer-tests/image-resample-report.json",
+      "sessionReport": "web/artifacts/multiplayer-tests/session-report.json",
+      "imageReport": "web/artifacts/multiplayer-tests/image-resample-report.json",
       "note": "Required baseline sections record the latest component reports and their own source hashes; frozen J/M performance identities are unchanged."
     },
     "MProbeSmoke": {
-      "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-probe-smoke-01-report.json",
+      "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-probe-smoke-01-report.json",
       "passed": true,
       "identity": {
         "wasm": "535c358231dc21ada7c2f9df910c1fb0d505cff41612bc79478205afee3993cf",
@@ -14790,7 +14790,7 @@
       "scopeLimit": "CPU1 frozen M smoke with wall-clock synthetic input, not formal N/P performance or hardware input-to-photon evidence."
     },
     "hostProbeSelfTest": {
-      "report": "th09_web/artifacts/multiplayer-tests/host-load-probe-smoke-report.json",
+      "report": "web/artifacts/multiplayer-tests/host-load-probe-smoke-report.json",
       "passed": true,
       "scope": "Host-only read-only observation. No browser, game, compiler, or performance workload was started. Only this probe's own PowerShell helper was stopped.",
       "identity": {
@@ -15477,10 +15477,10 @@
   "hostAbba": {
     "requested": true,
     "mandatoryFiles": [
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a1-report.json",
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b1-report.json",
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b2-report.json",
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a2-report.json"
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a1-report.json",
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b1-report.json",
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b2-report.json",
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a2-report.json"
     ],
     "order": [
       "N",
@@ -15892,7 +15892,7 @@
       {
         "run": "a1",
         "candidate": "N",
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a1-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a1-report.json",
         "passed": true,
         "identity": {
           "wasm": "17b20ffcb71be9bb8d15b7faa22295d61bcc1ef26655f4272b8d2619c8e71a35",
@@ -19492,7 +19492,7 @@
       {
         "run": "b1",
         "candidate": "P",
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b1-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b1-report.json",
         "passed": true,
         "identity": {
           "wasm": "de1760ac76f3aaa8cd49c9f267f37f85e86c70d6bf251679a5c93fefacca9b68",
@@ -23264,7 +23264,7 @@
       {
         "run": "b2",
         "candidate": "P",
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b2-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b2-report.json",
         "passed": true,
         "identity": {
           "wasm": "de1760ac76f3aaa8cd49c9f267f37f85e86c70d6bf251679a5c93fefacca9b68",
@@ -30881,7 +30881,7 @@
       {
         "run": "a2",
         "candidate": "N",
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a2-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a2-report.json",
         "passed": true,
         "identity": {
           "wasm": "17b20ffcb71be9bb8d15b7faa22295d61bcc1ef26655f4272b8d2619c8e71a35",
@@ -35385,9 +35385,9 @@
     "comparison": "M/P phase-cost diagnostic",
     "activatePage": false,
     "mandatoryFiles": [
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-4x-01-report.json"
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-4x-01-report.json"
     ],
-    "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-4x-01-report.json",
+    "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-4x-01-report.json",
     "passed": true,
     "correctnessPassed": true,
     "performanceGate": null,
@@ -35436,7 +35436,7 @@
       "A": {
         "id": "A",
         "role": "reference",
-        "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-text-profile",
+        "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-text-profile",
         "wasm": "3bb69fa3a5ae733834c7b34bc3091c5f8e4d6370ac408e484ed5ab020fb49a35",
         "loader": "dbb2af609470690e80160cd72accb78cfef07606e38fae1d80c02db8df725f28",
         "manifest": "66cc5ef7426b9f8f9823459857d8b22f08a7fb04ca7ae3363c562944cff62391"
@@ -35444,7 +35444,7 @@
       "B": {
         "id": "B",
         "role": "candidate",
-        "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-vm-final-profile",
+        "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-vm-final-profile",
         "wasm": "253adae67aad58822146086abaafa453bdb7b6893531e1aaab18fd4ae9bc56d6",
         "loader": "74ee6506e0705b237c4c3fb781bc6321e47310ddc8877ba39414e27480a37d4d",
         "manifest": "5e85bf7ad4d0b86a409f713fa8c67b56dfb1c58ff64791ac62e6877a331d4ae1"
@@ -42659,9 +42659,9 @@
         "comparison": "same-build M/M base-only control",
         "activatePage": false,
         "mandatoryFiles": [
-          "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-01-report.json"
+          "web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-01-report.json"
         ],
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-01-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-01-report.json",
         "passed": true,
         "correctnessPassed": true,
         "performanceGate": null,
@@ -42711,7 +42711,7 @@
           "A": {
             "id": "A",
             "role": "reference",
-            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-text-profile",
+            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-text-profile",
             "wasm": "3bb69fa3a5ae733834c7b34bc3091c5f8e4d6370ac408e484ed5ab020fb49a35",
             "loader": "dbb2af609470690e80160cd72accb78cfef07606e38fae1d80c02db8df725f28",
             "manifest": "66cc5ef7426b9f8f9823459857d8b22f08a7fb04ca7ae3363c562944cff62391"
@@ -42719,7 +42719,7 @@
           "B": {
             "id": "B",
             "role": "candidate",
-            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-text-profile",
+            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-text-profile",
             "wasm": "3bb69fa3a5ae733834c7b34bc3091c5f8e4d6370ac408e484ed5ab020fb49a35",
             "loader": "dbb2af609470690e80160cd72accb78cfef07606e38fae1d80c02db8df725f28",
             "manifest": "66cc5ef7426b9f8f9823459857d8b22f08a7fb04ca7ae3363c562944cff62391"
@@ -44418,9 +44418,9 @@
         "comparison": "same-build M/M base-only control",
         "activatePage": true,
         "mandatoryFiles": [
-          "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-active-01-report.json"
+          "web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-active-01-report.json"
         ],
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-active-01-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-active-01-report.json",
         "passed": true,
         "correctnessPassed": true,
         "performanceGate": null,
@@ -44471,7 +44471,7 @@
           "A": {
             "id": "A",
             "role": "reference",
-            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-text-profile",
+            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-text-profile",
             "wasm": "3bb69fa3a5ae733834c7b34bc3091c5f8e4d6370ac408e484ed5ab020fb49a35",
             "loader": "dbb2af609470690e80160cd72accb78cfef07606e38fae1d80c02db8df725f28",
             "manifest": "66cc5ef7426b9f8f9823459857d8b22f08a7fb04ca7ae3363c562944cff62391"
@@ -44479,7 +44479,7 @@
           "B": {
             "id": "B",
             "role": "candidate",
-            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-text-profile",
+            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-text-profile",
             "wasm": "3bb69fa3a5ae733834c7b34bc3091c5f8e4d6370ac408e484ed5ab020fb49a35",
             "loader": "dbb2af609470690e80160cd72accb78cfef07606e38fae1d80c02db8df725f28",
             "manifest": "66cc5ef7426b9f8f9823459857d8b22f08a7fb04ca7ae3363c562944cff62391"
@@ -46560,9 +46560,9 @@
         "comparison": "M/P phase-cost diagnostic",
         "activatePage": true,
         "mandatoryFiles": [
-          "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-active-4x-01-report.json"
+          "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-active-4x-01-report.json"
         ],
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-active-4x-01-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-active-4x-01-report.json",
         "passed": true,
         "correctnessPassed": true,
         "performanceGate": null,
@@ -46613,7 +46613,7 @@
           "A": {
             "id": "A",
             "role": "reference",
-            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-text-profile",
+            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-text-profile",
             "wasm": "3bb69fa3a5ae733834c7b34bc3091c5f8e4d6370ac408e484ed5ab020fb49a35",
             "loader": "dbb2af609470690e80160cd72accb78cfef07606e38fae1d80c02db8df725f28",
             "manifest": "66cc5ef7426b9f8f9823459857d8b22f08a7fb04ca7ae3363c562944cff62391"
@@ -46621,7 +46621,7 @@
           "B": {
             "id": "B",
             "role": "candidate",
-            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-vm-final-profile",
+            "artifactDirectory": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-vm-final-profile",
             "wasm": "253adae67aad58822146086abaafa453bdb7b6893531e1aaab18fd4ae9bc56d6",
             "loader": "74ee6506e0705b237c4c3fb781bc6321e47310ddc8877ba39414e27480a37d4d",
             "manifest": "5e85bf7ad4d0b86a409f713fa8c67b56dfb1c58ff64791ac62e6877a331d4ae1"
@@ -50843,13 +50843,13 @@
   "networkBurst": {
     "requested": true,
     "mandatoryFiles": [
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-network-burst-01-report.json",
-      "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-text-network-burst-01-report.json"
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-network-burst-01-report.json",
+      "web/artifacts/multiplayer-tests/rollback4x-responsive-text-network-burst-01-report.json"
     ],
     "observations": [
       {
         "candidate": "P",
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-network-burst-01-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-network-burst-01-report.json",
         "passed": true,
         "identity": {
           "wasm": "de1760ac76f3aaa8cd49c9f267f37f85e86c70d6bf251679a5c93fefacca9b68",
@@ -66495,7 +66495,7 @@
       },
       {
         "candidate": "M",
-        "report": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-text-network-burst-01-report.json",
+        "report": "web/artifacts/multiplayer-tests/rollback4x-responsive-text-network-burst-01-report.json",
         "passed": true,
         "identity": {
           "wasm": "535c358231dc21ada7c2f9df910c1fb0d505cff41612bc79478205afee3993cf",
@@ -83755,187 +83755,187 @@
   ],
   "rawReports": [
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-release-a1-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-release-a1-report.json",
       "sha256": "6ae9960d593b2029441a1c4d4f5c15894056b503dfe7cbda8b0357a55d6cd379",
       "bytes": 4134620,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-release-b1-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-release-b1-report.json",
       "sha256": "2491439353376addd38f65c01e7a10c9026e46eca6b64b16001af42cb5ceb48d",
       "bytes": 5222345,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-release-b2-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-release-b2-report.json",
       "sha256": "6ffb123b5388eb00dd0a7b64c5851b55344e5363da6d4e1b22e7d17efc578fca",
       "bytes": 5828907,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-release-a2-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-release-a2-report.json",
       "sha256": "a0b9b64d6d9181fb0c22148ae1e0d3facc8850c135f1a8bf2c14671154c5f194",
       "bytes": 5240595,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-input-touch-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-input-touch-01-report.json",
       "sha256": "08be47ef9bd9575b09df28aa140d83f1f8c21afda23c14508e862a831a1a8375",
       "bytes": 381557,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-input-deep8-frontier-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-input-deep8-frontier-01-report.json",
       "sha256": "476f3b1546e62a5f167d900a49441c75cf9a772d0cc60a6edea6fa2d3134fc30",
       "bytes": 1413658,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/image-resample-report.json",
+      "path": "web/artifacts/multiplayer-tests/image-resample-report.json",
       "sha256": "7ad2d0f2a2ccb4a2024d69ee50faa83b69b9864ffaea7a04cbf4f6da01eb333f",
       "bytes": 25239,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/session-report.json",
+      "path": "web/artifacts/multiplayer-tests/session-report.json",
       "sha256": "809c3f226b384e85451fc34e04e8c678935baaaade17d03a9aa034df03bac736",
       "bytes": 25927,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-text-render-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-text-render-01-report.json",
       "sha256": "881080d750a1e779d04fd344e26200742ade9ca845fecaf20882e40d101f4e57",
       "bytes": 95128,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-input-deep8-01-failure.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-input-deep8-01-failure.json",
       "sha256": "f26d3f598260118d9e4b60f4f1b5ea77e939378ce3f274f51e52cfc976b80f01",
       "bytes": 714,
       "expected": "coverage-failure"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-input-deep8-02-failure.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-input-deep8-02-failure.json",
       "sha256": "feff92e5e91dbd0729f7929d05f9bccc9cfdf6a13ed9b4f23ce9c958f7f670d6",
       "bytes": 813,
       "expected": "coverage-failure"
     },
     {
-      "path": "th09_web/artifacts/rollback4x-responsive-network-release/build.json",
+      "path": "web/artifacts/rollback4x-responsive-network-release/build.json",
       "sha256": "a6b6e51b59ed840d50b1b83c365b1f27dbf69870367db590b90d9e8cdc2659af",
       "bytes": 86584,
       "expected": "build"
     },
     {
-      "path": "th09_web/artifacts/rollback4x-responsive-vm-profile/build.json",
+      "path": "web/artifacts/rollback4x-responsive-vm-profile/build.json",
       "sha256": "f5a4919e0a1083d41a1865eb3a50174c3098f24d1163235cfcddbb5550c464d1",
       "bytes": 88700,
       "expected": "build"
     },
     {
-      "path": "th09_web/artifacts/rollback4x-responsive-vm-final-profile/build.json",
+      "path": "web/artifacts/rollback4x-responsive-vm-final-profile/build.json",
       "sha256": "5e85bf7ad4d0b86a409f713fa8c67b56dfb1c58ff64791ac62e6877a331d4ae1",
       "bytes": 88700,
       "expected": "build"
     },
     {
-      "path": "th09_web/artifacts/rollback4x-responsive-vm-final-release/build.json",
+      "path": "web/artifacts/rollback4x-responsive-vm-final-release/build.json",
       "sha256": "405dcbf63582996157e564e6c067572c77df34f02d908ea085a7ef43f5437375",
       "bytes": 86584,
       "expected": "build"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-world-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-world-01-report.json",
       "sha256": "c852064b346dead3f593a6ebc6904c48668b86ec76b87c2c03c51ed1d213f7a4",
       "bytes": 827,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-deep8-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-deep8-01-report.json",
       "sha256": "fb722e6c860823d9c1292a0b38689bce3a7f71ad97b5fda04c5485724d2df016",
       "bytes": 1492529,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-render-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-render-01-report.json",
       "sha256": "50aa1240d4163a99acff0e5795cdbc81367a56c784bfb159eda698f29b7509b6",
       "bytes": 95128,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-probe-smoke-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-probe-smoke-01-report.json",
       "sha256": "2b07e98d17158d5d93376c276fbeeeb1cdb2908c7131ce60494ca42f41ccbbd0",
       "bytes": 10618015,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/host-load-probe-smoke-report.json",
+      "path": "web/artifacts/multiplayer-tests/host-load-probe-smoke-report.json",
       "sha256": "1ba6c1393861d4a13042cfea7e447619aa7ad8aad8d591588254630fd6bc4771",
       "bytes": 12712,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/frame-schedule-report.json",
+      "path": "web/artifacts/multiplayer-tests/frame-schedule-report.json",
       "sha256": "88b9fd208d1bd51b1bfaa69aa2782b4ffda81f7b9c4c02385d4afb7ce1874fd9",
       "bytes": 25073,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a1-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a1-report.json",
       "sha256": "47f88d4d0bb878800ef5bd81fbf0be38bb70bac700ce0fcb4ac4f1c06e004cc6",
       "bytes": 5391496,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b1-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b1-report.json",
       "sha256": "b2d2a27333e74ce0f0484571777c67fd9ec50ccfd8c8b06b46bdd4ecddddf524",
       "bytes": 6545502,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b2-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-b2-report.json",
       "sha256": "4c9332a71ce5555d77606ef20324e36c2dbc369523f9b34aea9d76f92a6ca2ea",
       "bytes": 5026345,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a2-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-host-a2-report.json",
       "sha256": "362c5a505b3a096626a0fc98499e1a8d2efd1500670e929fbaf0400642bdfc2e",
       "bytes": 5154623,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-4x-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-4x-01-report.json",
       "sha256": "1e6fbac7d54b0351f8e0a54b1573d75def21edb00f856242a434295a3950d642",
       "bytes": 2557614,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-01-report.json",
       "sha256": "578cac82b4512cf47e4348e76bd670f0d4525896ffbbd1b6d73079fd29001e62",
       "bytes": 257853,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-active-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-paired-control-mm-active-01-report.json",
       "sha256": "3c3c174370d8adbbdd8db1d23c6a79f682c620d93f75356862876424fe64ed3a",
       "bytes": 283673,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-active-4x-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-paired-active-4x-01-report.json",
       "sha256": "c7c70888200b749533952cc910685567bcd5fa1887766ffb8c02226ecbc74d8d",
       "bytes": 1258409,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-vm-network-burst-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-vm-network-burst-01-report.json",
       "sha256": "1d1344cc91b9914f119fa27c034ff94c5dc7a684c62fbbcb0321cd3a2524c285",
       "bytes": 48191304,
       "expected": "pass"
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-responsive-text-network-burst-01-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-responsive-text-network-burst-01-report.json",
       "sha256": "c4ac38eaedc8b34d02fd9f830a291217167fdd6a0984894c3afb86d842e44fd4",
       "bytes": 33187328,
       "expected": "pass"

@@ -1,4 +1,4 @@
-#include "../../th11_web/cpp/game/GameSession.hpp"
+#include "../../web/cpp/game/GameSession.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>

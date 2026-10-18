@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
@@ -15,5 +15,10 @@ test('review binds exact asset and notice bytes and cannot admit game data or co
  assert.equal(await reviewed(asset),true);assert.equal(await reviewed('assets/unknown.svg'),false);
  await writeFile(join(root,asset),'<svg>changed</svg>\n');assert.equal(await reviewed(asset),false);
  await writeFile(join(root,asset),'<svg/>\n');await writeFile(join(root,license),'changed permission\n');assert.equal(await reviewed(asset),false);
+ await writeFile(join(root,license),'permission\n');await rm(join(root,license));assert.equal(await reviewed(asset),false);
+ await writeFile(join(root,license),'permission\n');await save([{...entry,evidence:[]}]);reviewed=await loadReviewedPublicationAssets(root,manifest);
+ assert.equal(await reviewed(asset),false);
+ await save([{...entry,evidence:[{...entry.evidence[0],sha256:'0'.repeat(64)}]}]);reviewed=await loadReviewedPublicationAssets(root,manifest);
+ assert.equal(await reviewed(asset),false);
  for(const path of ['../escape.svg','assets/private.dat','assets/th11-card.png']){await save([{...entry,path}]);await assert.rejects(loadReviewedPublicationAssets(root,manifest));}
 });

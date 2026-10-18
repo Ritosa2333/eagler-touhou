@@ -9,7 +9,7 @@
     "executable": "C:\\Program Files\\nodejs\\node.exe"
   },
   "source": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-thread-cpu-feasibility.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-thread-cpu-feasibility.mjs",
     "bytes": 5123,
     "sha256": "2b7cbf3cae29c72149b04a882e6871cf55392e18b4ede593f51c98b272c6a5b9",
     "stable": true

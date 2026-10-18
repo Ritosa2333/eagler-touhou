@@ -3,6 +3,15 @@ import {execFileSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
+export function nodeBuildTargets(affected, workspace, builds) {
+  return Object.entries(builds.games).flatMap(([game,entry])=>['normal','multiplayer'].flatMap(variant=>{
+    const definition=entry.variants[variant];
+    if (!definition || {...entry.sourceBuild,...definition.sourceBuild}.kind!=='node') return [];
+    const directory=workspace.repositories[definition.workspaceRepository ?? entry.workspaceRepository];
+    return affected.includes(directory) ? [{game,variant,directory}] : [];
+  }));
+}
+
 export function affectedComponents(files, workspace, builds) {
   const runtimes = [...new Set(Object.entries(workspace.repositories)
     .filter(([key, value]) => value.startsWith('ports/')).map(([, value]) => value))];
@@ -38,6 +47,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   if (process.env.GITHUB_OUTPUT) {
     const checkout = [...new Set(['tools', 'launcher/config', 'common', ...affected])].join('\n');
     await appendFile(process.env.GITHUB_OUTPUT, `affected=${result}\ncheckout<<EAGLER_SCOPE\n${checkout}\nEAGLER_SCOPE\n`);
+    await appendFile(process.env.GITHUB_OUTPUT, `node-builds=${JSON.stringify(nodeBuildTargets(affected,workspace,builds))}\n`);
   }
   console.log(result);
 }

@@ -11,7 +11,7 @@ const load=p=>import(pathToFileURL(resolve(launcher,p)).href);
 const {FRONTEND_PACKAGE_FILES,resolveFrontendPackageSource}=await load('lib/frontend-manifest.mjs');
 const {createDevelopmentHostManifestFromContent}=await load('lib/development-host-manifest.mjs');
 const {PRODUCT_CONTENT}=await load('lib/content-definition.mjs');
-const root=resolve(import.meta.dirname,'..'),runtime=resolve(root,'build-eagler'),assets=resolve(root,'th15_web/artifacts/thprac-private-assets');
+const root=resolve(import.meta.dirname,'..'),runtime=resolve(root,'build-eagler'),assets=resolve(root,'web/artifacts/thprac-private-assets');
 const data=await readFile(resolve(assets,'th15.dat'));
 const host=await createDevelopmentHostManifestFromContent({shared:{unicodeFont:'./shared/unifont.otf',vanillaFont:''},games:{th15:{runtime:'./runtime/th15/th15.html?hosted=1',data:{source:'./games/th15/th15.dat',identity:{bytes:data.length,sha256:createHash('sha256').update(data).digest('hex'),layout:PRODUCT_CONTENT.th15.dataLayout}},music:{}}}},{games:['th15']});
 const files=new Map(FRONTEND_PACKAGE_FILES.map(p=>['/'+p,resolveFrontendPackageSource(p)]));

@@ -1,0 +1,777 @@
+{
+  "schema": "eagler-touhou/adaptation-checklist/1",
+  "sections": [
+    {
+      "id": "build",
+      "title": "源码与构建",
+      "file": "build.md"
+    },
+    {
+      "id": "runtime",
+      "title": "启动与资源",
+      "file": "runtime.md"
+    },
+    {
+      "id": "input",
+      "title": "键盘、手柄与触控",
+      "file": "input.md"
+    },
+    {
+      "id": "presentation",
+      "title": "画面与声音",
+      "file": "presentation.md"
+    },
+    {
+      "id": "storage",
+      "title": "存档与 Replay",
+      "file": "storage.md"
+    },
+    {
+      "id": "localization",
+      "title": "语言与练习",
+      "file": "localization.md"
+    },
+    {
+      "id": "multiplayer",
+      "title": "多人接入与规则",
+      "file": "multiplayer.md"
+    },
+    {
+      "id": "validation",
+      "title": "验证与交付",
+      "file": "validation.md"
+    }
+  ],
+  "checks": [
+    {
+      "id": "BUILD-01",
+      "label": "源码目录与普通版／MP归属",
+      "section": "build"
+    },
+    {
+      "id": "BUILD-02",
+      "label": "工具链与外部依赖",
+      "section": "build"
+    },
+    {
+      "id": "BUILD-03",
+      "label": "对应模式独立构建",
+      "section": "build"
+    },
+    {
+      "id": "BUILD-04",
+      "label": "Runtime 文件与来源记录",
+      "section": "build"
+    },
+    {
+      "id": "BUILD-05",
+      "label": "前端搭配单个游戏运行",
+      "section": "build"
+    },
+    {
+      "id": "BUILD-06",
+      "label": "源码与素材来源",
+      "section": "build"
+    },
+    {
+      "id": "RUNTIME-01",
+      "label": "协议身份与会话代次",
+      "section": "runtime"
+    },
+    {
+      "id": "RUNTIME-02",
+      "label": "就绪、配置、启动、首帧",
+      "section": "runtime"
+    },
+    {
+      "id": "RUNTIME-03",
+      "label": "命令响应与错误信息",
+      "section": "runtime"
+    },
+    {
+      "id": "RUNTIME-04",
+      "label": "后台、恢复与退出清理",
+      "section": "runtime"
+    },
+    {
+      "id": "RUNTIME-05",
+      "label": "Runtime 与资源管理分工",
+      "section": "runtime"
+    },
+    {
+      "id": "RUNTIME-06",
+      "label": "重开与常显判定点",
+      "section": "runtime"
+    },
+    {
+      "id": "MP-RULE-01",
+      "label": "死亡、幽灵与救援",
+      "section": "multiplayer",
+      "profile": "multiplayer-cooperative"
+    },
+    {
+      "id": "MP-RULE-02",
+      "label": "个人资源与团队资源",
+      "section": "multiplayer",
+      "profile": "multiplayer-cooperative"
+    },
+    {
+      "id": "MP-RULE-03",
+      "label": "给予资源与反馈",
+      "section": "multiplayer",
+      "profile": "multiplayer-cooperative"
+    },
+    {
+      "id": "MP-RULE-04",
+      "label": "对话、结算与全灭",
+      "section": "multiplayer",
+      "profile": "multiplayer-cooperative"
+    },
+    {
+      "id": "MP-RULE-05",
+      "label": "自机可见性与多人HUD",
+      "section": "multiplayer",
+      "profile": "multiplayer-cooperative"
+    },
+    {
+      "id": "INPUT-01",
+      "label": "键盘逻辑输入",
+      "section": "input",
+      "contract": "REQUIRED_INPUT_BEHAVIORS/keyboard-logical-input"
+    },
+    {
+      "id": "INPUT-02",
+      "label": "启动器键盘改键",
+      "section": "input",
+      "contract": "REQUIRED_INPUT_BEHAVIORS/launcher-keyboard-mapping"
+    },
+    {
+      "id": "INPUT-03",
+      "label": "启动器手柄映射",
+      "section": "input",
+      "contract": "REQUIRED_INPUT_BEHAVIORS/launcher-gamepad-mapping"
+    },
+    {
+      "id": "INPUT-04",
+      "label": "手柄方向与按钮",
+      "section": "input",
+      "contract": "REQUIRED_INPUT_BEHAVIORS/controller-logical-input"
+    },
+    {
+      "id": "INPUT-05",
+      "label": "多种输入独立持有",
+      "section": "input",
+      "contract": "REQUIRED_INPUT_BEHAVIORS/independent-input-owners"
+    },
+    {
+      "id": "INPUT-06",
+      "label": "失焦与断开释放",
+      "section": "input",
+      "contract": "REQUIRED_INPUT_BEHAVIORS/loss-cleanup"
+    },
+    {
+      "id": "INPUT-07",
+      "label": "原作菜单与对话输入",
+      "section": "input",
+      "contract": "REQUIRED_INPUT_BEHAVIORS/original-menu-semantics"
+    },
+    {
+      "id": "TOUCH-01",
+      "label": "限速滑动移动",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/direct-rate-limited-movement"
+    },
+    {
+      "id": "TOUCH-02",
+      "label": "无限速滑动移动",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/direct-unlimited-movement"
+    },
+    {
+      "id": "TOUCH-03",
+      "label": "方向式虚拟摇杆",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/joystick-digital-movement"
+    },
+    {
+      "id": "TOUCH-04",
+      "label": "自由方向虚拟摇杆",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/joystick-free-movement"
+    },
+    {
+      "id": "TOUCH-05",
+      "label": "按住低速",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/focus-hold"
+    },
+    {
+      "id": "TOUCH-06",
+      "label": "切换低速",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/focus-toggle"
+    },
+    {
+      "id": "TOUCH-07",
+      "label": "双指低速",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/focus-two-finger"
+    },
+    {
+      "id": "TOUCH-08",
+      "label": "射击、Bomb 与暂停",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/fire-bomb-pause"
+    },
+    {
+      "id": "TOUCH-09",
+      "label": "Deathbomb 与移动保持",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/deathbomb-preservation"
+    },
+    {
+      "id": "TOUCH-10",
+      "label": "无限速移动落率记录",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/unlimited-cheat-processing-rate"
+    },
+    {
+      "id": "TOUCH-11",
+      "label": "双击 Bomb",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/double-tap-bomb"
+    },
+    {
+      "id": "TOUCH-12",
+      "label": "菜单与对话手势",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/menu-dialogue-navigation"
+    },
+    {
+      "id": "TOUCH-13",
+      "label": "确认键的新按下边沿",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/touch-confirm-edge"
+    },
+    {
+      "id": "TOUCH-14",
+      "label": "100–300% 灵敏度",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/sensitivity-100-300"
+    },
+    {
+      "id": "TOUCH-15",
+      "label": "触控与其他输入隔离",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/mixed-input-isolation"
+    },
+    {
+      "id": "TOUCH-16",
+      "label": "触控取消与生命周期",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/lifecycle-cancel"
+    },
+    {
+      "id": "TOUCH-17",
+      "label": "共用布局编辑器",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/layout-editor"
+    },
+    {
+      "id": "TOUCH-18",
+      "label": "共用重开按钮",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/restart-button"
+    },
+    {
+      "id": "TOUCH-19",
+      "label": "共用双指放大镜",
+      "section": "input",
+      "contract": "REQUIRED_TOUCH_BEHAVIORS/magnifier"
+    },
+    {
+      "id": "DISPLAY-01",
+      "label": "固定逻辑步进",
+      "section": "presentation",
+      "contract": "REQUIRED_PRESENTATION_BEHAVIORS/fixed-authority"
+    },
+    {
+      "id": "DISPLAY-02",
+      "label": "跟随显示器刷新率",
+      "section": "presentation",
+      "contract": "REQUIRED_PRESENTATION_BEHAVIORS/display-cadence-presentation"
+    },
+    {
+      "id": "DISPLAY-03",
+      "label": "额外绘制无逻辑副作用",
+      "section": "presentation",
+      "contract": "REQUIRED_PRESENTATION_BEHAVIORS/draw-only-extra-frames"
+    },
+    {
+      "id": "DISPLAY-04",
+      "label": "连续视觉字段插值",
+      "section": "presentation",
+      "contract": "REQUIRED_PRESENTATION_BEHAVIORS/continuous-fields-only"
+    },
+    {
+      "id": "DISPLAY-05",
+      "label": "出生、销毁和瞬移",
+      "section": "presentation",
+      "contract": "REQUIRED_PRESENTATION_BEHAVIORS/discontinuity-snap"
+    },
+    {
+      "id": "DISPLAY-06",
+      "label": "暂停画面的表现",
+      "section": "presentation",
+      "contract": "REQUIRED_PRESENTATION_BEHAVIORS/pause-modal-policy"
+    },
+    {
+      "id": "DISPLAY-07",
+      "label": "实际呈现后报告首帧",
+      "section": "presentation",
+      "contract": "REQUIRED_PRESENTATION_BEHAVIORS/first-frame-after-present"
+    },
+    {
+      "id": "DISPLAY-08",
+      "label": "限制到 60 Hz",
+      "section": "presentation",
+      "contract": "REQUIRED_PRESENTATION_BEHAVIORS/optional-60hz-presentation-limit"
+    },
+    {
+      "id": "REPLAY-01",
+      "label": "导入原版 Replay",
+      "section": "storage",
+      "contract": "REQUIRED_REPLAY_BEHAVIORS/original-replay-import"
+    },
+    {
+      "id": "REPLAY-02",
+      "label": "按原版格式导出可表达输入",
+      "section": "storage",
+      "contract": "REQUIRED_REPLAY_BEHAVIORS/original-replay-export-when-representable"
+    },
+    {
+      "id": "REPLAY-03",
+      "label": "记录实际生效输入",
+      "section": "storage",
+      "contract": "REQUIRED_REPLAY_BEHAVIORS/deterministic-effective-input"
+    },
+    {
+      "id": "REPLAY-04",
+      "label": "扩展格式与版本",
+      "section": "storage",
+      "contract": "REQUIRED_REPLAY_BEHAVIORS/extended-format-only-when-needed"
+    },
+    {
+      "id": "REPLAY-05",
+      "label": "Replay 文件管理",
+      "section": "storage",
+      "contract": "REQUIRED_REPLAY_BEHAVIORS/file-management"
+    },
+    {
+      "id": "REPLAY-06",
+      "label": "回放与实时输入隔离",
+      "section": "storage",
+      "contract": "REQUIRED_REPLAY_BEHAVIORS/playback-live-input-isolation"
+    },
+    {
+      "id": "REPLAY-07",
+      "label": "回放独立于显示刷新率",
+      "section": "storage",
+      "contract": "REQUIRED_REPLAY_BEHAVIORS/presentation-independence"
+    },
+    {
+      "id": "VERIFY-01",
+      "label": "全部内置 Demo 对照",
+      "section": "validation",
+      "contract": "REQUIRED_REPLAY_VERIFICATION_BEHAVIORS/quick-all-title-demos",
+      "profile": "singleplayer"
+    },
+    {
+      "id": "VERIFY-02",
+      "label": "长 Replay 样本",
+      "section": "validation",
+      "contract": "REQUIRED_REPLAY_VERIFICATION_BEHAVIORS/daily-long-replay-corpus",
+      "profile": "singleplayer"
+    },
+    {
+      "id": "VERIFY-03",
+      "label": "原版基准与内容哈希",
+      "section": "validation",
+      "contract": "REQUIRED_REPLAY_VERIFICATION_BEHAVIORS/immutable-content-addressed-golden",
+      "profile": "singleplayer"
+    },
+    {
+      "id": "VERIFY-04",
+      "label": "读取固定基准",
+      "section": "validation",
+      "contract": "REQUIRED_REPLAY_VERIFICATION_BEHAVIORS/candidate-cannot-bless",
+      "profile": "singleplayer"
+    },
+    {
+      "id": "VERIFY-05",
+      "label": "单独维护原版基准",
+      "section": "validation",
+      "contract": "REQUIRED_REPLAY_VERIFICATION_BEHAVIORS/explicit-oracle-maintenance",
+      "profile": "singleplayer"
+    },
+    {
+      "id": "VERIFY-06",
+      "label": "逐逻辑帧比较",
+      "section": "validation",
+      "contract": "REQUIRED_REPLAY_VERIFICATION_BEHAVIORS/strict-fixed-tick-comparison",
+      "profile": "singleplayer"
+    },
+    {
+      "id": "VERIFY-07",
+      "label": "诊断构建与正常构建",
+      "section": "validation",
+      "contract": "REQUIRED_REPLAY_VERIFICATION_BEHAVIORS/diagnostic-build-isolation",
+      "profile": "singleplayer"
+    },
+    {
+      "id": "VERIFY-08",
+      "label": "本作状态映射与结束条件",
+      "section": "validation",
+      "contract": "REQUIRED_REPLAY_VERIFICATION_BEHAVIORS/title-owned-adapter",
+      "profile": "singleplayer"
+    },
+    {
+      "id": "SAVE-01",
+      "label": "已声明的存储根",
+      "section": "storage",
+      "contract": "REQUIRED_STORAGE_BEHAVIORS/declared-save-root"
+    },
+    {
+      "id": "SAVE-02",
+      "label": "用户文件允许范围",
+      "section": "storage",
+      "contract": "REQUIRED_STORAGE_BEHAVIORS/strict-user-file-allowlist"
+    },
+    {
+      "id": "SAVE-03",
+      "label": "明确持久化时机",
+      "section": "storage",
+      "contract": "REQUIRED_STORAGE_BEHAVIORS/explicit-durable-sync"
+    },
+    {
+      "id": "SAVE-04",
+      "label": "退出重开后数据保留",
+      "section": "storage",
+      "contract": "REQUIRED_STORAGE_BEHAVIORS/runtime-restart-durability"
+    },
+    {
+      "id": "SAVE-05",
+      "label": "离线读取已有数据",
+      "section": "storage",
+      "contract": "REQUIRED_STORAGE_BEHAVIORS/offline-storage-continuity"
+    },
+    {
+      "id": "SAVE-06",
+      "label": "游戏包与用户数据分开",
+      "section": "storage",
+      "contract": "REQUIRED_STORAGE_BEHAVIORS/package-user-data-separation"
+    },
+    {
+      "id": "AUDIO-01",
+      "label": "正常 OGG 音乐",
+      "section": "presentation",
+      "contract": "REQUIRED_MUSIC_BEHAVIORS/audible-ogg-normal-mode"
+    },
+    {
+      "id": "AUDIO-02",
+      "label": "无 BGM 模式",
+      "section": "presentation",
+      "contract": "REQUIRED_MUSIC_BEHAVIORS/explicit-no-music-mode"
+    },
+    {
+      "id": "AUDIO-03",
+      "label": "切曲、渐变、暂停、停止",
+      "section": "presentation",
+      "contract": "REQUIRED_MUSIC_BEHAVIORS/title-music-lifecycle"
+    },
+    {
+      "id": "AUDIO-04",
+      "label": "返回前台后恢复声音",
+      "section": "presentation",
+      "contract": "REQUIRED_MUSIC_BEHAVIORS/foreground-audio-recovery"
+    },
+    {
+      "id": "AUDIO-05",
+      "label": "音乐资源错误信息",
+      "section": "presentation",
+      "contract": "REQUIRED_MUSIC_BEHAVIORS/music-failure-surfacing"
+    },
+    {
+      "id": "AUDIO-06",
+      "label": "高刷新与音频事件分开",
+      "section": "presentation",
+      "contract": "REQUIRED_MUSIC_BEHAVIORS/presentation-audio-independence"
+    },
+    {
+      "id": "PACKAGE-01",
+      "label": "共用游戏包存储",
+      "section": "runtime",
+      "contract": "REQUIRED_PACKAGE_BEHAVIORS/canonical-package-store"
+    },
+    {
+      "id": "PACKAGE-02",
+      "label": "DATA 身份与挂载目标",
+      "section": "runtime",
+      "contract": "REQUIRED_PACKAGE_BEHAVIORS/runtime-data-identity"
+    },
+    {
+      "id": "PACKAGE-03",
+      "label": "完整更新后切换版本",
+      "section": "runtime",
+      "contract": "REQUIRED_PACKAGE_BEHAVIORS/atomic-current-generation"
+    },
+    {
+      "id": "PACKAGE-04",
+      "label": "本地导入与在线安装一致",
+      "section": "runtime",
+      "contract": "REQUIRED_PACKAGE_BEHAVIORS/local-import-parity"
+    },
+    {
+      "id": "PACKAGE-05",
+      "label": "已安装游戏离线启动",
+      "section": "runtime",
+      "contract": "REQUIRED_PACKAGE_BEHAVIORS/offline-installed-launch"
+    },
+    {
+      "id": "PACKAGE-06",
+      "label": "统一安装和更新入口",
+      "section": "runtime",
+      "contract": "REQUIRED_PACKAGE_BEHAVIORS/no-shadow-install-store"
+    },
+    {
+      "id": "MP-01",
+      "label": "独立 MP 产品变体",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/dedicated-runtime-variant",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-02",
+      "label": "房间人数、难度与机体",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/declared-room-bounds",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-03",
+      "label": "所有席位准备并同步开局",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/ready-start-synchronization",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-04",
+      "label": "确定性输入与状态检查",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/deterministic-peer-authority",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-05",
+      "label": "各席位输入归属",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/player-input-ownership",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-06",
+      "label": "旁观加入与输入隔离",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/spectator-admission-and-isolation",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-07",
+      "label": "旁观只读取连续已确认历史",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/spectator-confirmed-history",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-08",
+      "label": "慢旁观者与玩家隔离",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/spectator-failure-isolation",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-09",
+      "label": "旁观尾帧与结束时机",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/spectator-tail-lifecycle",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-10",
+      "label": "联机暂停与重开",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/pause-restart-semantics",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-11",
+      "label": "多人 Replay",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/multiplayer-replay",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-12",
+      "label": "WebRTC 与 Relay 路径",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/peer-transport-and-relay-fallback",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-13",
+      "label": "本地玩家可见性",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/local-player-visibility",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-14",
+      "label": "联机与回滚诊断",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/network-rollback-diagnostics",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "MP-15",
+      "label": "游戏结束返回房间",
+      "section": "multiplayer",
+      "contract": "REQUIRED_MULTIPLAYER_BEHAVIORS/runtime-exit-room-lifecycle",
+      "profile": "multiplayer"
+    },
+    {
+      "id": "PRACTICE-01",
+      "label": "发布包中的练习能力",
+      "section": "localization",
+      "contract": "REQUIRED_THPRAC_BEHAVIORS/runtime-attestation",
+      "profile": "thprac"
+    },
+    {
+      "id": "PRACTICE-02",
+      "label": "开局前启用与语言",
+      "section": "localization",
+      "contract": "REQUIRED_THPRAC_BEHAVIORS/prelaunch-enable-and-locale",
+      "profile": "thprac"
+    },
+    {
+      "id": "PRACTICE-03",
+      "label": "游戏内练习状态",
+      "section": "localization",
+      "contract": "REQUIRED_THPRAC_BEHAVIORS/runtime-owned-live-session",
+      "profile": "thprac"
+    },
+    {
+      "id": "PRACTICE-04",
+      "label": "关卡与资源参数",
+      "section": "localization",
+      "contract": "REQUIRED_THPRAC_BEHAVIORS/shared-practice-parameters",
+      "profile": "thprac"
+    },
+    {
+      "id": "PRACTICE-05",
+      "label": "练习 Replay 元数据",
+      "section": "localization",
+      "contract": "REQUIRED_THPRAC_BEHAVIORS/replay-prac-metadata",
+      "profile": "thprac"
+    },
+    {
+      "id": "PRACTICE-06",
+      "label": "触控功能键与指针",
+      "section": "localization",
+      "contract": "REQUIRED_THPRAC_BEHAVIORS/touch-function-bridge",
+      "profile": "thprac"
+    },
+    {
+      "id": "PRACTICE-07",
+      "label": "练习语言跟随设置",
+      "section": "localization",
+      "contract": "REQUIRED_THPRAC_BEHAVIORS/locale-propagation",
+      "profile": "thprac"
+    },
+    {
+      "id": "PRACTICE-08",
+      "label": "练习界面的可用功能",
+      "section": "localization",
+      "contract": "REQUIRED_THPRAC_BEHAVIORS/no-false-upstream-claims",
+      "profile": "thprac"
+    },
+    {
+      "id": "LANG-01",
+      "label": "内置日语原文",
+      "section": "localization",
+      "contract": "REQUIRED_LANGUAGE_BEHAVIORS/built-in-japanese-baseline"
+    },
+    {
+      "id": "LANG-02",
+      "label": "语言包身份与发布清单",
+      "section": "localization",
+      "contract": "REQUIRED_LANGUAGE_BEHAVIORS/validated-pack-publication",
+      "profile": "language"
+    },
+    {
+      "id": "LANG-03",
+      "label": "开局前挂载翻译与字体",
+      "section": "localization",
+      "contract": "REQUIRED_LANGUAGE_BEHAVIORS/prelaunch-resource-application",
+      "profile": "language"
+    },
+    {
+      "id": "LANG-04",
+      "label": "语言包失败时回到原文",
+      "section": "localization",
+      "contract": "REQUIRED_LANGUAGE_BEHAVIORS/safe-launch-fallback",
+      "profile": "language"
+    },
+    {
+      "id": "LANG-05",
+      "label": "字体字符覆盖",
+      "section": "localization",
+      "contract": "REQUIRED_LANGUAGE_BEHAVIORS/font-coverage-resource",
+      "profile": "language"
+    },
+    {
+      "id": "LANG-06",
+      "label": "缺译资源使用原文",
+      "section": "localization",
+      "contract": "REQUIRED_LANGUAGE_BEHAVIORS/original-resource-fallback",
+      "profile": "language"
+    },
+    {
+      "id": "MIDI-01",
+      "label": "声明 MIDI 选项",
+      "section": "presentation",
+      "contract": "REQUIRED_MIDI_BEHAVIORS/selector-only-when-declared",
+      "profile": "midi"
+    },
+    {
+      "id": "MIDI-02",
+      "label": "可听到的 MIDI 输出",
+      "section": "presentation",
+      "contract": "REQUIRED_MIDI_BEHAVIORS/audible-midi-transport",
+      "profile": "midi"
+    },
+    {
+      "id": "MIDI-03",
+      "label": "MIDI 生命周期",
+      "section": "presentation",
+      "contract": "REQUIRED_MIDI_BEHAVIORS/music-lifecycle",
+      "profile": "midi"
+    },
+    {
+      "id": "MIDI-04",
+      "label": "MIDI 与 OGG 分开",
+      "section": "presentation",
+      "contract": "REQUIRED_MIDI_BEHAVIORS/separate-from-ogg",
+      "profile": "midi"
+    }
+  ]
+}

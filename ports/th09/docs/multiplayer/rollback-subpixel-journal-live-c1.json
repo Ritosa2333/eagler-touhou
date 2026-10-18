@@ -2,7 +2,7 @@
   "schema": "th09/journal-live-summary/3",
   "createdAt": "2026-10-11T16:25:01.130Z",
   "summarizer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\tests\\multiplayer\\journal-live-summary.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\tests\\multiplayer\\journal-live-summary.mjs",
     "bytes": 28008,
     "sha256": "43528e8c6db5350825d1c34bc695af8d6fe2e20865fd2f949b6f26c10ec48fd7"
   },
@@ -199,7 +199,7 @@
   "runs": [
     {
       "source": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-a1-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-a1-report.json",
         "label": "subpixel-journal-release-relay79-a1-report.json",
         "order": 0,
         "bytes": 37711276,
@@ -2170,7 +2170,7 @@
           "relayTraceIncluded": true
         },
         "sourceIdentity": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "6709dad23cbe2f8d472c69155fcd48e96d5f95df947beef3f73a506e334c31da",
           "fixtureSha256": "6579d8b6201c31d29517306022f24f9471866a757e018eaee9a93556331527fd",
@@ -2212,7 +2212,7 @@
     },
     {
       "source": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-b1-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-b1-report.json",
         "label": "subpixel-journal-release-relay79-b1-report.json",
         "order": 1,
         "bytes": 37725494,
@@ -4182,7 +4182,7 @@
           "relayTraceIncluded": true
         },
         "sourceIdentity": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "6709dad23cbe2f8d472c69155fcd48e96d5f95df947beef3f73a506e334c31da",
           "fixtureSha256": "6579d8b6201c31d29517306022f24f9471866a757e018eaee9a93556331527fd",
@@ -4224,7 +4224,7 @@
     },
     {
       "source": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-b2-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-b2-report.json",
         "label": "subpixel-journal-release-relay79-b2-report.json",
         "order": 2,
         "bytes": 37676814,
@@ -6195,7 +6195,7 @@
           "relayTraceIncluded": true
         },
         "sourceIdentity": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "6709dad23cbe2f8d472c69155fcd48e96d5f95df947beef3f73a506e334c31da",
           "fixtureSha256": "6579d8b6201c31d29517306022f24f9471866a757e018eaee9a93556331527fd",
@@ -6237,7 +6237,7 @@
     },
     {
       "source": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-a2-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-a2-report.json",
         "label": "subpixel-journal-release-relay79-a2-report.json",
         "order": 3,
         "bytes": 37759765,
@@ -8206,7 +8206,7 @@
           "relayTraceIncluded": true
         },
         "sourceIdentity": {
-          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+          "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
           "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
           "probeSha256": "6709dad23cbe2f8d472c69155fcd48e96d5f95df947beef3f73a506e334c31da",
           "fixtureSha256": "6579d8b6201c31d29517306022f24f9471866a757e018eaee9a93556331527fd",

@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Original document ownership, not browser rendering: parse the actual adapted
  * stylesheet and match its selectors against mounted production components.
  * Authority: pinned edee9633 main iframe/body styles and transient host rules. */
@@ -14,7 +15,7 @@ import {mainAssets} from '../../scripts/ui-rewrite/main-assets.ts';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
-const pinned = path => execFileSync('git', ['show', `edee9633e5e3ee79cd2e1aa334f84f6caf755090:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', path);
 const read = path => readFileSync(resolve(project, path), 'utf8').replaceAll('\r\n', '\n');
 const boundary = ':not(:where([data-launcher-document],[data-launcher-document] *))';
 const selectors = [

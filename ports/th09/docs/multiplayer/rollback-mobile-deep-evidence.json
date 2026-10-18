@@ -1,17 +1,17 @@
 {
   "schema": "th09-mobile-three-world-summary/v1",
   "analyzer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\mobile-evidence-summary.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\tests\\multiplayer\\mobile-evidence-summary.mjs",
     "sha256": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155"
   },
   "inputs": [
-    "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
-    "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
-    "th09_web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json"
+    "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
+    "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
+    "web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json"
   ],
   "runs": [
     {
-      "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
+      "path": "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
       "rawSha256": "252adca4726260f63f7040466cd4040acdb047b1173b952736d9e39f9e059721",
       "rawBytes": 2607763,
       "available": true,
@@ -6407,7 +6407,7 @@
       }
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
+      "path": "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
       "rawSha256": "dfa40a4835635a8041d7ebba08337997ba5a2bd47d61bdcbcc069a5ebdaadaae",
       "rawBytes": 2926641,
       "available": true,
@@ -13138,7 +13138,7 @@
       }
     },
     {
-      "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json",
+      "path": "web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json",
       "rawSha256": "4d1bed8cbdd83f235ae9a7246356265c8e9c7c4f9e1f9dead6e990a3c87a178f",
       "rawBytes": 2708848,
       "available": true,

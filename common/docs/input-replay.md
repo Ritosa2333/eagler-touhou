@@ -1,80 +1,45 @@
-# Confirmed all-seat input archive
+# 多人输入 Replay
 
-`eagler::input_replay` is a file codec, not a title simulator, native Replay
-format adapter, transport or state snapshot. A title supplies its versioned
-description, appends reconciled and confirmed input frames, and reconstructs
-its native lifecycle during playback. This extended multiplayer recording must
-never be exported as a supposedly retail-compatible single-player Replay.
+[`InputReplay.hpp`](../include/eagler/netplay/InputReplay.hpp) 编解码所有席位已经确认的输入。各作提供版本化说明、章节标签和播放生命周期。该格式使用自己的扩展 Replay 身份。
 
-## Format version 1
+## 1. 写入与播放
 
-All words and binary32 coordinates are little-endian. No C++ padding, pointer,
-host handle, address, or live network session identifier is serialized.
+1. 在第零帧前调用 `Begin` 分配有界记录器，写入作品、玩法 ABI、人数和视角。
+2. 对输入完成纠正后，用 `RollbackCore::ConfirmedInputs` 取完整确认行，再按全局帧序 `Append`。
+3. 切关或原生重试时添加唯一章节标签；网络帧号重置后，录像的全局帧号仍连续。
+4. 保存时 `Encode`；菜单预览用 `Inspect`；播放时 `Decode` 并核对作品元数据、玩法 ABI 与资源。
+5. 播放从记录中读取每席位输入。存档只读，查看者的暂停、加速和视角由本地控制。
 
-| Offset | Size | Value |
+## 2. 二进制布局
+
+所有整数与 binary32 坐标使用小端序。固定头共 40 字节：
+
+| 偏移 | 字节数 | 内容 |
 | --- | --- | --- |
 | 0 | 8 | ASCII `EAGLRPY1` |
-| 8 | 4 | Format version, exactly 1 |
-| 12 | 4 | Nonzero title ID |
-| 16 | 4 | Nonzero deterministic gameplay ABI |
-| 20 | 1 | Active seat count, 2 or 3 |
-| 21 | 1 | Recorded viewpoint, less than the seat count |
-| 22 | 2 | Reserved, must be zero |
-| 24 | 4 | Description length, at most 16 KiB (16,384 bytes) |
-| 28 | 4 | Chapter count, 1 through 64 |
-| 32 | 4 | Input frame count, 1 through 250,000 |
-| 36 | 4 | FNV-1a-32 of the whole file except this four-byte word |
+| 8 | 4 | 格式版本：1 |
+| 12 | 4 | 非零作品 ID |
+| 16 | 4 | 非零玩法 ABI |
+| 20 | 1 | 席位数：2 或 3 |
+| 21 | 1 | 记录视角，小于席位数 |
+| 22 | 2 | 保留位：0 |
+| 24 | 4 | 说明长度，上限 16,384 字节 |
+| 28 | 4 | 章节数：1–64 |
+| 32 | 4 | 输入帧数：1–250,000 |
+| 36 | 4 | 全文件 FNV-1a-32，计算时跳过本字段 |
 
-The header is followed by the opaque title description, chapter index, and
-interleaved seat samples. Each eight-byte chapter is a nonzero unique label and
-its first frame. The first chapter starts at zero; subsequent frame offsets are
-strictly increasing and less than the total frame count. Labels are title-owned
-and independently validated (for example, stage plus native retry generation).
+头后依次是作品说明、章节索引、按帧排列的席位输入。每个章节 8 字节：非零唯一标签、起始帧。首章从零开始，后续起始帧严格递增且小于总帧数。
 
-Each frame contains exactly `seatCount` samples. Each twelve-byte sample has
-16-bit held buttons, 8-bit `AnalogMode` (0 through 4), 8-bit flags
-(`unlimited=1`, `touchUsed=2`, `touchBomb=4`, no other bits), and two finite
-binary32 coordinates. Signed zero and all finite coordinate bit patterns are
-preserved. There are no implicit/default seats or trailing payloads. Exact
-calculated length must match and total size may not exceed 16 MiB. The checksum
-detects accidental corruption; it is not authentication or a substitute for
-structural and title-specific validation.
+每席位每帧 12 字节：16 位按键、8 位 `AnalogMode`（0–4）、8 位 flags、两个有限 binary32 坐标。flags 为 `unlimited=1`、`touchUsed=2`、`touchBomb=4`。坐标保留有符号零的位型。
 
-## Ownership
+文件长度须与头中计数完全一致，上限 16 MiB。校验同时检查章节、模式、flags、有限坐标和校验和。
 
-`Begin` reserves the bounded recording owner before frame zero, so allocator
-order cannot depend on remote packet/confirmation arrival. `Append` accepts
-only the next global frame and a complete valid row. A new chapter cannot reuse
-an old label. Titles may preserve a recording across native retries while the
-network-local frame counter starts again at zero.
+## 3. 确认与所有权
 
-`RollbackCore::ConfirmedInputs` rejects missing/expired simulation history,
-unsimulated/abandoned futures, holes in any seat's confirmed prefix, and frames
-at or after an unreconciled rollback request. It also checks the actual input
-against the simulated decision. It does not restore title memory or prove
-snapshot coverage. Reconcile first, then export and retire output in order.
+`ConfirmedInputs` 检查历史仍在、各席位确认前缀完整、输入与模拟决定一致，并截在尚未纠正的帧之前。作品层负责世界恢复与输出退休顺序，详见[回滚](../../docs/architecture/rollback.md)。
 
-`Inspect` validates all samples without constructing a frame owner for every
-native menu preview. `Decode`, `Inspect`, `Begin` and `Encode` leave their
-destination unchanged on invalid input. `Encode` can output an explicit
-confirmed prefix with a consistently trimmed chapter index, or a replacement
-display description, without mutating the live archive. A prefix is never
-evidence that a requested longer verification completed.
+无效输入下，`Decode`、`Inspect`、`Begin` 和 `Encode` 保持目标内容。`Encode` 可以输出明确的确认前缀，并同步裁剪章节；记录中写明实际帧数。到达容量上限时向用户说明录像终点。
 
-Titles still owe their metadata/gameplay-ABI/resource validation, native input
-and stage/generation ordering, read-only playback storage, local viewer controls,
-menu integration, canonical coverage and later-stage seeking. Codec PASS does
-not claim these features. The 250,000-frame/16 MiB bound is a file-owner limit,
-not permission for a title to silently present a truncated run as complete.
+## 4. 检查
 
-## Tests and phase boundary
-
-`tests/input-replay-test.cpp` covers 2P/3P bit-exact roundtrips, signed zero,
-metadata replacement, prefixes, every byte truncation, corrupted/resealed
-malformed files, chapter validation, invalid modes/flags/non-finite coordinates,
-unchanged outputs after rejection, delayed/corrected input, abandoned futures,
-and expired core history. Title/browser tests remain separate evidence.
-
-Complete multiplayer functionality and correctness, retaining an independently
-verified ordinary single-player baseline, before performance work. Do not mix
-the phases or replace goldens to hide a divergence.
+[`input-replay-test.cpp`](../tests/input-replay-test.cpp) 覆盖双人/三人逐位往返、前缀、说明替换、截断、畸形输入、章节、纠正和过期历史。各作再完成[存档与 Replay](../../docs/adaptation/storage.md)中的菜单、只读播放、整局和切关检查。

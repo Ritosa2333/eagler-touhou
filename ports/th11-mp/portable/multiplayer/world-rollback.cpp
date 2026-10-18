@@ -1,6 +1,6 @@
-#include "../../th11_web/cpp/game/WorldRollback.hpp"
+#include "../../web/cpp/game/WorldRollback.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
-#include "../../th11_web/cpp/game/RollbackCapture.hpp"
+#include "../../web/cpp/game/RollbackCapture.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

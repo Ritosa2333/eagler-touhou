@@ -11,7 +11,7 @@ const midiGames = Object.entries(PRODUCT_GAMES)
 for (const game of midiGames) {
   const product = PRODUCT_GAMES[game];
   if (product.runtimeFileLayout === "directory") {
-    const shell = await readFile(workspacePath(game, `${game}_web`, "sdl-runtime", "shell.mjs"), "utf8");
+    const shell = await readFile(workspacePath(game, `web`, "sdl-runtime", "shell.mjs"), "utf8");
     assert.match(shell, /["']touhou-midi["']/,
       `${game}: MIDI-capable directory Runtime must deliver MIDI bytes through the shared touhou-midi transport`);
     assert.match(shell, /["']midi["']/,

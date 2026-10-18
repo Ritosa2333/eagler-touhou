@@ -1,30 +1,29 @@
-# Maintainer commands
+# 命令行脚本
 
-`scripts/` contains portable product build, packaging, verification, and CI
-entrypoints. Reusable policy and
-assembly logic should live in `lib/`; automated tests live in `tests/`.
-Machine-, account-, or maintainer-infrastructure-specific utilities belong in
-`tools/maintainer/`, not in this portable command surface.
+`scripts/` 存放命令行入口。可复用策略与组装逻辑放在 `lib/`，测试放在 `tests/`。
 
-The directory is intentionally flat by default. A subdirectory is introduced
-only when it represents a real product/build subsystem rather than merely a
-file category.
+## 贡献者命令
 
-## Command families
+以下命令从 `launcher/` 运行：
 
-- `build-*`, `prepare-*`, `subset-*`, `convert_*` - build/input preparation;
-- `package-*`, `release.mjs` - artifact producers;
-- `verify-*`, `audit-*`, `check.mjs` - verification and publication gates;
-- `serve*.mjs` - local development/static serving;
-- `resolve-*`, `inspect-*`, `list-*`, `write-*` - thin CLI adapters;
+```sh
+npm run dev
+npm run build
+npm run typecheck
+npm test
+```
 
-Live/public maintainer probes are deliberately documented separately in
-[`tools/maintainer/`](../tools/maintainer/README.md).
+`dev` 启动 React Router 前端。`build` 更新 vendored 浏览器资源和生成内容、编译客户端服务并构建前端产物。`typecheck` 检查应用和构建工具 TypeScript。`test` 运行 React 应用测试集。
 
-Prefer the stable npm entrypoints documented in the root README and
-`docs/README.md` for normal workflows. Tests already scheduled by
-`tests/test-plan.mjs` do not need one npm alias per file; focused maintainers can
-run the owning test file directly.
+`npm start` 和 `npm run dev:workspace` 运行 `serve.mjs`，提供已构建前端和 workspace 开发元数据。稀疏检出时，将 `EAGLER_DEVELOPMENT_GAMES` 设为一个作品编号。
 
-If a script starts exporting reusable APIs or accumulating business policy,
-move that reusable owner to `lib/` and keep the script as a thin CLI wrapper.
+## 构建与发布入口
+
+- `build-runtime.mjs` 按 `config/runtime-builds.json` 构建作品源码；参数为 `--game`、`--variant`、`--emsdk`、`--dry-run`。
+- `package-runtime-release.mjs` 将已打包的 Runtime 目录组装为 Runtime Release。
+- `build-launcher.mjs`、`build-content-pages.mjs` 和 `build-app-shell.mjs` 分别构建前端、撰写页面和 App Shell 输入。
+- `host/build.mjs` 使用已准备输入组装 Host 站点；`host/build-import.mjs` 构建本地导入模式。
+- `serve.mjs` 启动本地集成开发服务器。
+- `check.mjs` 执行 Launcher 仓库检查；`audit-publication.mjs` 检查公开源码树。
+
+常用工作流优先使用 `package.json` 中的命令入口。脚本需要专属参数或没有稳定命令别名时，直接运行脚本。源码归属和 Runtime 流程见[开发指南](../docs/DEVELOPMENT.md)与[架构说明](../docs/ARCHITECTURE.md)。

@@ -1,9 +1,9 @@
 // Typed shared-tool regression. No claim of browser/audio/device equivalence.
 #include <eagler/thprac/PracticeKeyMonitor.hpp>
 #include <eagler/thprac/PracticeInput.hpp>
-#include "../th15_web/cpp/game/Types.hpp"
+#include "../web/cpp/game/Types.hpp"
 #include <eagler/thprac/PracticeSpeed.hpp>
-#include "../th15_web/cpp/game/PracticeCadence.hpp"
+#include "../web/cpp/game/PracticeCadence.hpp"
 #include <cassert>
 #include <iostream>
 #include <memory>

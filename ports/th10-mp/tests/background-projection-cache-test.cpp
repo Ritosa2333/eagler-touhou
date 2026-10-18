@@ -1,5 +1,5 @@
-#include "../th10_web/cpp/platform/BackgroundProjectionCache.hpp"
-#include "../th10_web/cpp/game/Arithmetic.hpp"
+#include "../web/cpp/platform/BackgroundProjectionCache.hpp"
+#include "../web/cpp/game/Arithmetic.hpp"
 #include <array>
 #include <cerrno>
 #include <cstdio>

@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Pinned-main differential behavior + real React shelf lifecycles in synthetic
  * DOM only. Native layout, touch physics, artwork and browser QA remain separate. */
 import test, {before, after} from 'node:test';
@@ -15,7 +16,7 @@ before(async () => {
   React = await import('react'); ({createRoot} = await import('react-dom/client')); bootstrap.close();
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/library-rail-'));
   const output = resolve(work, 'actual.mjs');
-  const pinned = execFileSync('git', ['show', 'edee9633e5e3ee79cd2e1aa334f84f6caf755090:src/launcher/game-library.mts'], {cwd: project, encoding: 'utf8'});
+  const pinned = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/game-library.mts');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'tsx', contents: `
     export {initializeGameLibrary, bindLibraryRail, libraryIndexWidth} from './src/launcher/game-library.mts';
     export {initializeGameLibrary as pinnedLibrary, libraryIndexWidth as pinnedWidth} from 'pinned-library';

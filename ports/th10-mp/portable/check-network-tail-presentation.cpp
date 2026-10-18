@@ -1,6 +1,6 @@
-#include "../th10_web/cpp/game/StageRenderer.hpp"
-#include "../th10_web/cpp/game/GraphicsMath.hpp"
-#include "../th10_web/cpp/sdl/NetworkTailPresentation.hpp"
+#include "../web/cpp/game/StageRenderer.hpp"
+#include "../web/cpp/game/GraphicsMath.hpp"
+#include "../web/cpp/sdl/NetworkTailPresentation.hpp"
 #include <array>
 #include <cmath>
 #include <cstdio>

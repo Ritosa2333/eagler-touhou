@@ -8,7 +8,7 @@ import {createRequire} from 'node:module';
 const root=resolve(import.meta.dirname,'../..');
 const launcher=process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../eagler-touhou');
 const {chromium}=createRequire(resolve(launcher,'package.json'))(process.env.EAGLER_PLAYWRIGHT_MODULE||'playwright');
-const build=resolve(root,'th10_web/artifacts/multiplayer-fixtures');
+const build=resolve(root,'web/artifacts/multiplayer-fixtures');
 const server=createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  if(path==='/'){res.setHeader('Content-Type','text/html');res.end('<canvas id="canvas"></canvas>');return;}

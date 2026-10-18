@@ -72,12 +72,12 @@ if(process.argv.includes('--run-wasm')){
     return {stdout,stderr,...command};
   }
   try{
-    const game=resolve(root,'th11_web/cpp/game'),common=resolve(root,'third_party/eagler-common');
+    const game=resolve(root,'web/cpp/game'),common=resolve(root,'../../common');
     const names=['TextRaster.cpp','GlyphAtlas.cpp','ImageResample.cpp','TextureImage.cpp'];
-    const sources=names.map(name=>resolve(game,name)).concat(resolve(root,'th11_web/cpp/sdl/TextureRollback.cpp'),resolve(import.meta.dirname,'texture-rollback.cpp'));
+    const sources=names.map(name=>resolve(game,name)).concat(resolve(root,'web/cpp/sdl/TextureRollback.cpp'),resolve(import.meta.dirname,'texture-rollback.cpp'));
     // These hooks are source-identity evidence only: this CPU gate does not
     // compile SDL GraphicsDevice/FontDevice or prove a real GPU re-upload.
-    const hooks=['GraphicsDevice.hpp','GraphicsDevice.cpp','FontDevice.hpp','FontDevice.cpp','TextureRollback.hpp'].map(name=>resolve(root,'th11_web/cpp/sdl',name));
+    const hooks=['GraphicsDevice.hpp','GraphicsDevice.cpp','FontDevice.hpp','FontDevice.cpp','TextureRollback.hpp'].map(name=>resolve(root,'web/cpp/sdl',name));
     for(const name of fontFiles){const path=resolve(fontDirectory,name);assets.set(path,hash(readFileSync(path)));receipt.assets.files[name]={sha256:assets.get(path),bytes:readFileSync(path).length};}
     receipt.assets.digest=hash(JSON.stringify(receipt.assets.files));
     const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(resolve(dir,entry.name)):[resolve(dir,entry.name)]);
