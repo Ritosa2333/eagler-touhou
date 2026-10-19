@@ -303,6 +303,16 @@ EMSCRIPTEN_KEEPALIVE int th15_room_preview(){
  return 0;
 #endif
 }
+EMSCRIPTEN_KEEPALIVE int th15_room_return(){
+#if TH15_MULTIPLAYER
+ using namespace th15::sdl;if(running||!app||!app->initialized)return 0;
+ network.Clear();mp_started=mp_recording=mp_playback=mp_local_results=false;mp_menu={};
+ app->multiplayer=false;app->exiting=false;app->pending_destination=-1;
+ clear_inputs();if(!app->begin_title(1))return 0;room_preview=true;return 1;
+#else
+ return 0;
+#endif
+}
 EMSCRIPTEN_KEEPALIVE void th15_limit_presentation(unsigned enabled){using namespace th15::sdl;if(limit_presentation_60==(enabled!=0))return;limit_presentation_60=enabled!=0;presentation.reset();if(app){app->graphics.presentation.enabled=!limit_presentation_60;app->graphics.presentation.reset();}}
 EMSCRIPTEN_KEEPALIVE void th15_render_scale(unsigned scale){if(!th15::sdl::running)th15::sdl::render_scale=scale>=2?2:1;}
 EMSCRIPTEN_KEEPALIVE const char* th15_error(){using namespace th15::sdl;return app?app->failure.c_str():last_error.c_str();}

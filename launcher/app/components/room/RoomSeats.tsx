@@ -5,6 +5,7 @@ import type { MultiplayerRoomService, RoomOwnerSnapshot } from '../../services/m
 import { useLocale } from '../../i18n';
 import { networkMessage, roomPresentation } from './presentation';
 import {ResourceTracks} from './RoomProgress';
+import {RoomActionMenu} from './RoomActionMenu';
 import type { RoomNetworkPresentation, RoomPanelKind, RoomViewContext } from './types';
 export interface RoomSeatsProps {
   state: RoomOwnerSnapshot;
@@ -101,7 +102,7 @@ function RoomSeat({
   );
   const message = networkMessage(state, context, t),
     local = seat?.clientId === state.localClientId;
-  const values = (['direct', 'turn'] as const).map((lane) => {
+  const diagnostics = (['direct', 'turn'] as const).map((lane) => {
     const metric = seat ? network.metric(seat.clientId, lane) : null,
       measured =
         state.connected &&
@@ -109,8 +110,9 @@ function RoomSeat({
         !seat?.offline &&
         metric?.state === 'connected' &&
         metric.rtt != null;
-    return `${t(`room.${lane}`)} ${measured ? `${Math.max(1, Math.round(metric!.rtt!))}ms` : '—'}`;
+    return {lane, label:t(`room.${lane}`), value:measured ? `${Math.max(1, Math.round(metric!.rtt!))}ms` : '—'};
   });
+  const values = diagnostics.map(metric => `${metric.label} ${metric.value}`);
   const resource =
     state.seat === index && state.preparation
       ? {
@@ -143,6 +145,19 @@ function RoomSeat({
   const loading = resourceReady ? 100 : resource?.stage === 'runtime' ? resource.runtimePercent ?? resource.percent : 0;
   const degrees = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) * 3.6 : 0;
   const appearance = !occupied ? 'empty' : seat?.offline || !resourceReady ? 'loading' : seat?.ready ? 'ready' : 'unready';
+  const name = <strong className="mp-seat-name" data-mp-seat-name={index} title={seat?.name || `P${index + 1}`}>
+    {seat?.name || (state.seat === index ? state.displayName : '') || `P${index + 1}`}
+  </strong>;
+  const connection = <button
+    className={`mp-seat-latency${workspace ? ' room-seat-network' : ''}`}
+    type="button" hidden={!seat} disabled={local || !!message || !!seat?.offline}
+    aria-haspopup="dialog" aria-controls="mpRoomPanel"
+    data-network-peer={seat && !local ? seat.clientId : undefined}
+    aria-label={seat && !local ? workspace ? `${t('multiplayer.you')} → P${index + 1} | ${values.join(' | ')} | ${t('room.connections')}` : `${t('multiplayer.you')} → P${index + 1} · ${values.join(' / ')} · ${t('room.connections')}` : undefined}
+    onClick={event => {if (seat) openPanel('network', event.currentTarget, seat.clientId);}}
+  >{local ? workspace ? <span className="room-seat-network-label">{t('room.localDevice')}</span> : t('room.localDevice') : workspace ? diagnostics.map(metric =>
+    <span className="room-seat-network-pair" key={metric.lane}><span className="room-seat-network-label">{metric.label}</span><span className="room-seat-network-value">{metric.value}</span></span>
+  ) : values.map(value => <span key={value}>{value}</span>)}</button>;
   return (
     <article
       ref={node}
@@ -152,8 +167,13 @@ function RoomSeat({
       hidden={!active}
       title={occupied ? seatLabel : ''}
     >
-      {workspace && occupied && <span className="room-seat-decoration" aria-hidden="true"><span className="room-seat-watermark">{appearance.toUpperCase()}</span></span>}
+      {workspace && occupied && <span className="room-seat-decoration" aria-hidden="true">
+        {(['loading', 'unready', 'ready'] as const).map(status => <span key={status} className={`room-seat-watermark${appearance === status ? ' active' : ''}`}>
+          {[...status.toUpperCase()].map((letter, glyph) => <span key={glyph} className="room-seat-letter" style={{'--glyph': glyph} as CSSProperties}>{letter}</span>)}
+        </span>)}
+      </span>}
       <div className="mp-seat-face" style={workspace && occupied ? {'--base-angle': `${degrees(base)}deg`, '--loading-angle': `${degrees(loading)}deg`} as CSSProperties : undefined}>
+        {workspace && occupied && <span className="room-seat-player-tag">P{index + 1}</span>}
         {workspace && occupied && <span className={`room-seat-ring${resource?.status === 'preparing' && (resource.stage === 'runtime' ? loading == null : base == null) ? ' indeterminate' : ''}`}
           role="progressbar" aria-label={t(resource?.stage === 'runtime' || resourceReady ? 'room.resourceLoading' : 'room.baseResources')}
           aria-valuemin={0} aria-valuemax={100} aria-valuenow={resourceReady ? 100 : (resource?.stage === 'runtime' ? loading : base) ?? undefined}/>}
@@ -189,39 +209,20 @@ function RoomSeat({
           </span>
         )}
       </div>
-      <span className="mp-seat-index">
+      {!workspace && <span className="mp-seat-index">
         <span>P{index + 1}</span>
-        <button
-          className="mp-seat-latency"
-          type="button"
-          hidden={!seat}
-          disabled={local || !!message || !!seat?.offline}
-          aria-haspopup="dialog"
-          aria-controls="mpRoomPanel"
-          data-network-peer={seat && !local ? seat.clientId : undefined}
-          aria-label={
-            seat && !local
-              ? `${t('multiplayer.you')} → P${index + 1} · ${values.join(' / ')} · ${t('room.connections')}`
-              : undefined
-          }
-          onClick={(event) => {
-            if (seat) openPanel('network', event.currentTarget, seat.clientId);
-          }}
-        >
-          {local ? t('room.localDevice') : values.map((value) => <span key={value}>{value}</span>)}
-        </button>
-      </span>
+        {connection}
+      </span>}
       {occupied ? (
         <div className="mp-seat-identity">
-          <strong className="mp-seat-name" data-mp-seat-name={index} title={seat?.name || `P${index + 1}`}>
-            {seat?.name || (state.seat === index ? state.displayName : '') || `P${index + 1}`}
-          </strong>
+          {name}
           <span className="mp-seat-details">
             <span className="mp-seat-loadout" title={seatLabel}>
               {seatLabel}
             </span>
             {controlCaption}
           </span>
+          {workspace && connection}
         </div>
       ) : (
         <strong className="mp-seat-name" data-mp-seat-name={index}>
@@ -250,7 +251,15 @@ function RoomSeat({
         aria-label={t('room.playerOptions')}
         onClick={(event) => openPanel('personal', event.currentTarget)}
       />
-      {index > 0 && (
+      {index > 0 && workspace && <div key={seat?.clientId} className="mp-seat-moderation" hidden={!ready || !owner || room.phase!=='lobby' || !seat}>
+        <RoomActionMenu enabled={ready && owner && room.phase==='lobby' && !!seat} label={t('room.managePlayer',{seat:index+1})}
+          triggerContent={<span aria-hidden="true">⋯</span>} triggerClassName="room-member-menu-trigger" menuClassName="room-member-menu" minimumWidth={180} align="end"
+          items={[
+            {id:'move-spectator',label:t('room.movePlayerToSpectator'),disabled:!!seat?.offline,select:()=>{if(seat)service.movePlayerToSpectator(index,seat.clientId);}},
+            {id:'remove-player',label:t('room.removePlayer',{seat:index+1}),danger:true,select:()=>{void service.removePlayer(index);}},
+          ]}/>
+      </div>}
+      {index > 0 && !workspace && (
         <details
           key={seat?.clientId}
           className="mp-seat-moderation"

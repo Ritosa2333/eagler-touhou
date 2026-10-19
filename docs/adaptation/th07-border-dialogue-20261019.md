@@ -1,4 +1,4 @@
-# TH07 共享结界与对话 · 2026-10-19
+# th07 共享结界与对话 | 2026-10-19
 
 ## 状态与结算
 
@@ -6,7 +6,7 @@
 
 修复保留对话期间的待开启状态，不生成结界效果，也不发放结束奖励。对话只结束已经激活的结界；自然结束拒绝未激活状态，且共享结束一次性清理所有参与者的激活及待开启状态。取消队友的待开启状态不改其生命状态、复活或无敌计时。Bomb 破除同样清理残留待开启状态。
 
-普通单人分支不变；多人 Gameplay ABI 从 12 升到 13、Netplay ABI 从 13 升到 14，避免旧 Replay 或不同规则客户端混用。
+多人结界规则在合作分支实现；Gameplay ABI 从 12 升到 13、Netplay ABI 从 13 升到 14，避免旧 Replay 或不同规则客户端混用。
 
 ## 验证
 
@@ -19,10 +19,10 @@
 - 队友正在 Bomb 而处于待开启时，共享结束取消其待开启状态，但保留生命状态；Bomb 结束后不重新开启结界。
 - 直接对待开启状态调用自然结束不发奖。
 
-Web multiplayer 构建通过；实际生产 Runtime 双客户端预加载及开局检查通过，双方在相同逻辑帧的世界哈希一致。CherryMax 既有源码检查同步更新为当前 `GameplayAbi()` 的挑战模式分支声明，检查通过。状态转换测试是生产函数级回归，不代替完整关卡人工通关验收。
+Web multiplayer 构建通过；实际生产 Runtime 双客户端预加载及开局检查通过，双方在相同逻辑帧的世界哈希一致。CherryMax 既有源码检查同步更新为当前 `GameplayAbi()` 的挑战模式分支声明，检查通过。生产函数级回归验证结界状态与奖励结算，真实双客户端验证预加载、开局和同帧同步。
 
 ## test 交付
 
-test 版本 `th07-border-dialogue-20261019-91d95c245e78`，Runtime 代次 `fcfbd3fafabd0d26cd1997b71fdde9a7b1ad03e2ee464761ca6328af8169f458`，App Shell `1b9f4695c864382fa763`。发布文件校验覆盖 3409 个文件、17 组 Runtime。仅替换 TH07 multiplayer Runtime，保留 test 现有前端及 TH11 计时修复；主站、beta、普通版、资源节点和联机服务不变。
+test 版本 `th07-border-dialogue-20261019-91d95c245e78`，Runtime 代次 `fcfbd3fafabd0d26cd1997b71fdde9a7b1ad03e2ee464761ca6328af8169f458`，App Shell `1b9f4695c864382fa763`。发布文件校验覆盖 3409 个文件、17 组 Runtime。交付 th07 multiplayer Runtime，沿用 test 前端与 th11 计时修复。
 
-发布与回滚记录位于 `/var/tmp/th07-border-dialogue-test-20261019/`，回滚链接为 `/var/www/eagler-touhou-test/rollback-before-th07-border-dialogue-20261019-91d95c245e78`。本次不调整 Nginx 配置。
+发布与回滚记录位于 `/var/tmp/th07-border-dialogue-test-20261019/`，回滚链接为 `/var/www/eagler-touhou-test/rollback-before-th07-border-dialogue-20261019-91d95c245e78`。

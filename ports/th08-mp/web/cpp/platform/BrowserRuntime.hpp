@@ -114,6 +114,8 @@ public:
     bool pump_network(bool capture_follows=false);
     bool flush_network_inputs();
     multiplayer::RollbackDriver* network_driver(){return multiplayer_driver.get();}
+    void return_to_room();
+    void begin_room_run(){discard_network_shutdown_writes=false;}
     void set_device_motion(i32 mode,float x,float y,bool touch,bool bomb){
         device_motion={};device_motion.touchUsed=touch;device_motion.touchBomb=bomb;
         if(mode==1||mode==2){device_motion.analogMode=Netplay::AnalogMode::DirectTouch;device_motion.x=x;device_motion.y=y;device_motion.unlimited=mode==2;}

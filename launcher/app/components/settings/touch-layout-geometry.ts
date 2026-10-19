@@ -33,9 +33,13 @@ export function captureTouchLayoutDefaults(surface: HTMLElement, unavailable: st
 export function visibleTouchControls(surface: HTMLElement) {
   return touchLayoutControlNames.filter(name => {const element = controlElement(surface, name); return !element.hidden && getComputedStyle(element).display !== 'none';});
 }
+export function effectiveControlScale(element: HTMLElement, item: TouchLayoutControlPlacement, safe: DOMRect) {
+  return Math.min(item.scale, Math.max(1, safe.width - 12) / Math.max(1, element.offsetWidth), Math.max(1, safe.height - 12) / Math.max(1, element.offsetHeight));
+}
 export function effectivePlacement(element: HTMLElement, item: TouchLayoutControlPlacement, safe: DOMRect) {
-  const marginX = Math.min(.48, (element.offsetWidth * item.scale / 2 + 6) / Math.max(1, safe.width));
-  const marginY = Math.min(.48, (element.offsetHeight * item.scale / 2 + 6) / Math.max(1, safe.height));
+  const scale = effectiveControlScale(element, item, safe);
+  const marginX = Math.min(.5, (element.offsetWidth * scale / 2 + 6) / Math.max(1, safe.width));
+  const marginY = Math.min(.5, (element.offsetHeight * scale / 2 + 6) / Math.max(1, safe.height));
   return {x: Math.max(marginX, Math.min(1 - marginX, item.x)), y: Math.max(marginY, Math.min(1 - marginY, item.y))};
 }
 export function overlapRatio(a: DOMRect, b: DOMRect) {

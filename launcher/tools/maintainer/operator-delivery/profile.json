@@ -17,6 +17,12 @@
       "thprac": true,
       "runtimeVariants": ["normal", "multiplayer"]
     },
+    "th075": {
+      "languages": ["ja", "lang_zh-hans", "lang_en"],
+      "music": ["ogg"],
+      "thprac": false,
+      "runtimeVariants": ["normal", "multiplayer"]
+    },
     "th08": {
       "languages": ["ja"],
       "music": ["midi", "ogg"],

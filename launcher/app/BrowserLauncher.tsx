@@ -47,10 +47,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const replayFiles = useSyncExternalStore(replayModel?.subscribe ?? emptySubscribe, replayModel?.getSnapshot ?? noDiagnostics, replayModel?.getSnapshot ?? noDiagnostics);
   const replayWorkspace = !!replayFiles?.open;
   const room = useSyncExternalStore(session.room.service.subscribe, session.room.service.getSnapshot, session.room.service.getSnapshot);
-  // Spectators use upstream PlayerControls' native timeline/adjustment UI,
-  // not a second Replay-styled player with duplicate timeline owners.
-  const spectatorWorkspace = false;
-  const roomWorkspace = !!room.room && (!state.runtime?.launched || !!state.roomLaunchStage) && !state.th09NetworkOverlayOpen && !replayWorkspace && !spectatorWorkspace;
+  const roomWorkspace = !!room.room && (!state.runtime?.launched || !!state.roomLaunchStage) && !state.th09NetworkOverlayOpen && !replayWorkspace;
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   const preferences = useSyncExternalStore(session.preferences.subscribe, session.preferences.getSnapshot, session.preferences.getSnapshot);
   const firstUse = useRef<FirstUseNoticeHandle>(null), notice = useRef<SiteNoticeHandle>(null), network = useRef<NetworkDiagnosticsHandle>(null);
@@ -67,7 +64,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     bootTouchPreview: state.bootTouchPreview !== null, bootTouchPreviewImage: state.bootTouchPreviewImage,
     nativeTouch: session.nativeTouch, touchFireEnabled: session.touchFireState.getEnabled(), assetUrl, lobbyHref: assetUrl('lobby.html'), masthead,
     footer: <Footer donationAvailable={donationAvailable}/>, serverStatusNote: <ServerStatusNote session={session}/>, metadataRevision: state.metadataRevision,
-    replayWorkspace, spectatorWorkspace,
+    replayWorkspace,
     roomWorkspace,
     runtimeOpen: state.playerOpen, runtimeLaunched: state.runtime?.launched, titleOverlayOpen: state.th09NetworkOverlayOpen, runtimeFrame: session.attachFrame, requestRuntimeClose: session.requestRuntimeClose, requestRoomLeave: session.requestRoomLeave,
     optionsActions: <SessionLaunchActions session={session}/>, multiplayerControls: <RoomSettingsControls session={session}/>, multiplayerDiagnostics: <InlineMultiplayerDiagnostics session={session}/>, multiplayerOnline: <LegacyMultiplayerOnline session={session}/>,

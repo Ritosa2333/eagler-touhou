@@ -85,6 +85,7 @@
       window.addEventListener("resize", fitCanvasToViewport, { passive: true });
       window.visualViewport?.addEventListener("resize", fitCanvasToViewport, { passive: true });
       let launched = false;
+      let launchSerial = 0;
       let loadedMusicFiles = [];
       let loadedRuntimeFiles = [];
       let thpracCatalog = [];
@@ -97,7 +98,7 @@
         window.parent.postMessage({ protocol, game, epoch, request, ok, ...payload }, location.origin);
       };
       const emit = (event, payload = {}) => {
-        if (hosted) window.parent.postMessage({ protocol, game, epoch, event, ...payload }, location.origin);
+        if (hosted) window.parent.postMessage({ protocol, game, epoch, event, ...(event==='first-frame'?{launchSerial}:{}), ...payload }, location.origin);
       };
       globalThis.EaglerTouhouGameExited = result => {
         spectatorPlayback.stop();
@@ -756,7 +757,8 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           // The title already emitted its one-shot startup frame. The Host
           // needs a new acknowledgement after this launch's actual swap.
           Module._eagler_room_preview_report_launch_frame();
-          Module.eaglerRoomPreview=false;launched=true;clearBrowserKeyboard();return;
+          Module._eagler_room_begin_run?.();Module.eaglerRoomPreview=false;launched=true;clearBrowserKeyboard();
+          if(Module.eaglerOptions.netplaySpectator)spectatorPlayback.start();return;
         }
         await installStartupBranding(Module, {game:'th06', builtAt:Module.eaglerBuiltAt, fs:FS});
         const start = session => {
@@ -1096,8 +1098,19 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
             }
             reply(message.request,true,{presented:true});break;
           }
+          case "return-room": {
+            if(params.get('runtimeVariant')!=='multiplayer'||!Module._eagler_room_return)throw Error('Room menu return is unavailable');
+            spectatorPlayback.stop();clearBrowserKeyboard();Module.eaglerRoomPreview=true;
+            Module._eagler_room_return();
+            const deadline=performance.now()+60000;
+            while(!Module._eagler_room_preview_ready()){
+              if(performance.now()>deadline)throw Error('Native room title timeout');
+              await new Promise(requestAnimationFrame);
+            }
+            launched=false;reply(message.request,true,{presented:true});break;
+          }
           case "launch":
-            await launch();
+            launchSerial=Number(message.launchSerial)||0;await launch();
             reply(message.request, true);
             break;
           case "touch-controls":
@@ -1203,7 +1216,7 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           setWebAudioActive(document.visibilityState !== "hidden");
           if (hosted) {
             status.textContent = "Ready";
-            emit("ready", { saveRoot,roomPreview:params.get('runtimeVariant')==='multiplayer' });
+            emit("ready", { saveRoot,roomPreview:params.get('runtimeVariant')==='multiplayer',roomReturn:params.get('runtimeVariant')==='multiplayer'&&typeof Module._eagler_room_return==='function' });
           } else {
             launch();
           }

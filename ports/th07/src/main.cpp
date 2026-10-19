@@ -64,6 +64,19 @@ static bool g_NetplayStage1HarnessDispatched = false;
 static bool g_NetplayStage1HarnessPrepared = false;
 static bool g_DemoDeterminismHarness = false;
 static bool g_DemoDeterminismHarnessDispatched = false;
+#ifdef __EMSCRIPTEN__
+extern "C" EMSCRIPTEN_KEEPALIVE void eagler_room_return()
+{
+    Netplay::Th07LanStageProbe::ReturnToRoom();
+}
+extern "C" EMSCRIPTEN_KEEPALIVE void eagler_room_begin_run()
+{
+    g_NetplayLanProduction = false;
+    g_NetplayStage1Harness = false;
+    g_NetplayStage1HarnessDispatched = g_NetplayStage1HarnessPrepared = false;
+    Netplay::Th07LanStageProbe::BeginRoomRun();
+}
+#endif
 static i32 g_DemoDeterminismIndex = 0;
 #endif
 #ifdef TH_DEV_TOOLS
@@ -461,7 +474,13 @@ SDL_AppResult SDL_AppIterate(void *appstate)
             SDL_Log("th07 demo determinism: armed built-in demo %d", g_DemoDeterminismIndex);
         }
     }
-    if (g_NetplayStage1Harness && !g_NetplayStage1HarnessDispatched &&
+    bool playerLaunchAllowed = true;
+#ifdef __EMSCRIPTEN__
+    playerLaunchAllowed = !g_NetplayLanProduction || EM_ASM_INT({
+        return !Module.eaglerRoomPreview ? 1 : 0;
+    }) != 0;
+#endif
+    if (g_NetplayStage1Harness && playerLaunchAllowed && !g_NetplayStage1HarnessDispatched &&
         g_MainMenuForDebug && g_MainMenuForDebug->calcChain &&
         (!g_NetplayLanProduction ||
          Netplay::Th07LanStageProbe::TransportReady()))

@@ -101,6 +101,23 @@ test('directory preserves main host-existence product subset and 3s retry withou
   clock.tick(1500); assert.equal(sockets.length, 2); service.dispose();
 });
 
+for (const mode of ['normal', 'manifest-test', 'query-test']) test(`directory applies test-product visibility to filters and creation: ${mode}`, async () => {
+  const published = manifest();
+  published.games.th075 = {...published.games.th06, runtime: 'runtime/th075/game.html', multiplayerRuntime: 'runtime/th075/mp.html',
+    gameData: {...published.games.th06.gameData, path: 'th075.data'}};
+  if (mode === 'manifest-test') published.shared.testBuild = true;
+  const {service, sockets} = directory({loadSiteManifest: async () => published, testBuild: mode === 'query-test', selectedProduct: 'th075mp'});
+  try {
+    await service.initialize();
+    sockets[0].open(); sockets[0].message(directoryState({product: service.getSnapshot().selectedProduct}));
+    assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th075mp']);
+    assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th075mp');
+    assert.equal(service.prepareForm('create'), true);
+    service.updateForm({product: 'th075mp'});
+    assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th075mp');
+  } finally {service.dispose();}
+});
+
 test('directory 10s manifest timeout and StrictMode-style suspend/resume do not strand leaving', async () => {
   const blocked = directory({loadSiteManifest: () => new Promise(() => {})});
   const initializing = blocked.service.initialize(); blocked.clock.tick(10000); await initializing;
@@ -204,6 +221,25 @@ test('room program versions refresh before readiness and pin the agreed generati
   const launch=f.events.find(([kind])=>kind==='launch');assert.ok(launch);
   assert.equal(new URL(launch[1].runtimeOptions.netplayUrl).searchParams.get('runtimeGeneration'),hash);
   socket.message({type:'state',room:roomState(id,{seats})});assert.equal(f.service.getSnapshot().room.runtimeGeneration,undefined,'next lobby cannot retain the last run identity');
+  f.service.dispose();
+});
+
+for (const matches of [false, true]) test(`late spectator admission requires the running match program: matches=${matches}`, async () => {
+  const localGeneration = matches ? hash : 'b'.repeat(64);
+  const f = roomFixture({prepareResources: async () => ({runtimeGeneration: localGeneration})});
+  const invite = owner.encodeRoomInvite({g:'th06mp',r:'1234',a:'join',s:true});
+  f.service.restoreInvite('https://launcher.invalid/?j='+invite,'th06mp');
+  await flush(); const socket = f.sockets[0]; socket.open();
+  const room = roomState('other-host',{phase:'playing',startSerial:4,spectatorTimeline:true,runtimeGeneration:hash});
+  socket.message({type:'state',roomDirectory:{runtimeVersions:true},room});
+  await flush(); socket.message({type:'spectator-start',serial:4,room}); await flush();
+  assert.equal(f.events.some(([kind])=>kind==='launch'),matches);
+  if (matches) assert.equal(new URL(f.events.find(([kind])=>kind==='launch')[1].runtimeOptions.netplayUrl).searchParams.get('runtimeGeneration'),hash);
+  else {
+    assert.equal(f.events.find(([kind])=>kind==='operation-error')[2].message,'multiplayer.runtimeVersionMismatch');
+    assert.equal(f.service.getSnapshot().room.code,'1234');
+    assert.equal(f.service.getSnapshot().spectatorRequested,true);
+  }
   f.service.dispose();
 });
 

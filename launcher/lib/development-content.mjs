@@ -89,6 +89,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
     th075: Object.freeze({
       ...(process.env.EAGLER_TH075_LANGUAGE_PACKS ? {languagePackDirectory:projectRelativePath(process.env.EAGLER_TH075_LANGUAGE_PACKS)} : {}),
       runtime:`${ws("th075","build-eagler","th075.html")}?hosted=1`,
+      multiplayerRuntime:`${ws("th075mp","build-eagler-multiplayer","th075.html")}?hosted=1`,
       data:Object.freeze({source:process.env.EAGLER_TH075_CONTENT_DIR ? projectRelativePath(resolve(process.env.EAGLER_TH075_CONTENT_DIR,"th075.data")) : ws("th075","assets-ogg","th075.data"),layout:PRODUCT_CONTENT.th075.dataLayout}),
       music:availableMusic({ogg:Object.freeze({base:process.env.EAGLER_TH075_CONTENT_DIR ? `${projectRelativePath(resolve(process.env.EAGLER_TH075_CONTENT_DIR,"music"))}/` : wsDir("th075","assets-ogg","music"),...PRODUCT_CONTENT.th075.music.ogg})},process.env.EAGLER_TH075_CONTENT_DIR),
     }),

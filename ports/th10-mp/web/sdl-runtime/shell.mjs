@@ -203,7 +203,8 @@ const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibra
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
-const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
+let launchSerial=0,roomOwned=false;
+const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
 const spectatorPlayback=createSpectatorPlaybackBridge({
  active:()=>multiplayerRuntime&&launched&&options.netplaySpectator===true&&!closing,memory:()=>new Uint8Array(core.memory.buffer),
  state:()=>core?.multiplayer_spectator_playback_state?.(app)||0,control:(run,action,frame)=>core?.multiplayer_spectator_playback_control?.(app,run,action,frame)||0,
@@ -401,7 +402,7 @@ async function resumeForegroundAudio(forcePause=false){
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&!!app&&launched&&!closing&&!touchRetired&&!document.hidden&&ownsTouchDocument());
 }
-async function stop(){if(closing)return;closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
+async function stop(){if(closing)return;if(roomOwned&&!options.replayViewer){closing=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{closing=false;}return;}closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>root()+'/'+replayFiles.physical(storage.relativeSave(value)),replayState:()=>{const v=Array.from(new Uint32Array(core.memory.buffer,core.eagler_replay_state(),multiplayerRuntime?6:5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:v[5]??0};},stopLoop:()=>{clearKeyboard();core.sdl_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:error});
 async function initializeTitle(seed){
  if(app)return;
@@ -460,8 +461,19 @@ async function command(message){
  }
  case 'spectator-playback':return spectatorPlayback.command(message);
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(message);
- case 'launch':await launch();return {};
- case 'prepare-room':return prepareRoom();
+ case 'launch':launchSerial=Number(message.launchSerial)||0;await launch();return {};
+ case 'prepare-room':roomOwned=true;return prepareRoom();
+ case 'return-room':roomOwned=true;{
+  if(!multiplayerRuntime||!core.sdl_room_return)throw Error('Room menu return is unavailable');
+  spectatorPlayback.stop();calibration?.stop();clearKeyboard();core.sdl_loop_stop();
+  if(!core.sdl_room_return(app))throw Error('Native room return rejected');
+  roomPreview=true;core.sdl_loop_pause(document.hidden?1:0);core.sdl_loop_start(app);const deadline=performance.now()+60000;
+  while(!core.sdl_room_preview_ready(app)){
+   if(core.application_error(app)||performance.now()>deadline)throw Error('Native room title initialization failed');
+   await new Promise(requestAnimationFrame);
+  }
+  launched=false;launchSettled=false;return {presented:true};
+ }
  case 'sync':await save();return {};
  case 'list':return {files:listLocalReplayFiles(Module.FS,root(),storage.relativeSave,path=>({path:replayFiles.exported(path,Module.FS.readFile(root()+'/'+path))}))};
  case 'read':{const path=replayFiles.physical(storage.relativeSave(message.path));return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
@@ -528,5 +540,5 @@ const initialized=(async()=>{
  Module.runtimeStopped=()=>{};Module.callMain=launch;
  window.__th10Runtime={core,Module,get app(){return app;},status,launch,stop,command};
  initializedReady=true;
- emit('ready',multiplayerRuntime?{roomPreview:true}:{});
+ emit('ready',multiplayerRuntime?{roomPreview:true,roomReturn:typeof core.sdl_room_return==='function'}:{});
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});

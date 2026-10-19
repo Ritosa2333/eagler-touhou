@@ -47,7 +47,8 @@ function touchPolicy(value){
  const mode=Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(value.touchMovementMode));
  return (value.touchEnabled?1:0)|(mode<<1)|(value.touchFocusMode==='two-finger'?8:0)|(value.doubleTapBombEnabled?16:0)|(value.netplaySpectator?32:0);
 }
-const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
+let launchSerial=0,roomOwned=false;
+const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
 const values=(fn,n)=>Array.from(core.HEAP32.subarray(fn()/4,fn()/4+n));
 const status=()=>({title:values(core._th09_title_status,8),session:values(core._th09_session_status,8),touch:values(core._th09_touch_state,4)});
 const err=()=>{const a=core.HEAPU8.subarray(core._th09_error());return new TextDecoder().decode(a.subarray(0,a.indexOf(0)));};
@@ -109,7 +110,7 @@ async function installRuntimePack(pack){
  }
 }
 async function save(){if(launched&&!netplay?.spectator&&!core._th09_save_snapshot())throw Error('保存失败');await sync();}
-async function stop(){if(stopping)return;revokeLifetime();stopping=true;clearKeyboard();try{networkOverlayPending=false;replayPlayer?.close();replayPlayer=null;core._th09_loop_stop();await netplay?.finishSpectatorOutput();netplay?.close();await save();core._th09_game_close();launched=false;delete window.__th09Runtime;if(!retired)stopPending=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;if(roomOwned&&!options.replayViewer){stopping=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{stopping=false;}return;}revokeLifetime();stopping=true;clearKeyboard();try{networkOverlayPending=false;replayPlayer?.close();replayPlayer=null;core._th09_loop_stop();await netplay?.finishSpectatorOutput();netplay?.close();await save();core._th09_game_close();launched=false;delete window.__th09Runtime;if(!retired)stopPending=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function openNetwork(){if(!launched||options.netplayMode==='lan'||!status().title[1]||networkOverlayPending)return;networkOverlayPending=true;neutralTouch();core._th09_loop_pause(1);emit('network-request');}
 let titleInitialized=false,roomPreview=false;
 async function initializeTitle(receivedLifetime){
@@ -160,13 +161,14 @@ case 'touch-controls':{
  mappedBomb=nextBomb;mappedEscape=nextEscape;lastTouchFire=!!t.fireEnabled;
  core._th09_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return {};
 }
-case 'prepare-room':{
+case 'prepare-room':{roomOwned=true;
  if(runtimeVariant!=='multiplayer'||launched)throw Error('Invalid room preview owner');
  await initializeTitle(receivedLifetime);
  if(!core._th09_room_preview(1))throw Error(err());
  roomPreview=true;core._th09_loop_start();$('#loading').textContent='';await new Promise(requestAnimationFrame);return {presented:true};
 }
 case 'launch':{
+ launchSerial=Number(m.launchSerial)||0;
  const owner=core;assertLifetime(receivedLifetime,owner);
  if(!initializedReady||configApplying)throw Error('Runtime initialization or configuration is incomplete');
  if(launched){if(!launchSettled)throw Error('Runtime launch did not complete');return {};}
@@ -191,7 +193,7 @@ case 'launch':{
  netplay=options.netplayMode==='lan'?new SharedNetplay(core,{
   onStatus:t=>emit('notice',{message:t}),onTiming:timing=>emit('runtime-info',{netplayTiming:timing}),
   onMatch:th09Match=>emit('runtime-info',{th09Match}),
-  onClose:reason=>{if(receivedLifetime!==lifetime||owner!==core||retired)return;revokeLifetime();if(reason)emit('notice',{message:reason});queueMicrotask(()=>void stop().catch(fatal));},
+  onClose:reason=>{if(receivedLifetime!==lifetime||owner!==core||retired||roomPreview)return;revokeLifetime();if(reason)emit('notice',{message:reason});queueMicrotask(()=>void stop().catch(fatal));},
   onResult:()=>emit('notice',{message:'对局结束，可在游戏内保存 Replay'})}):null;
  $('#loading').textContent='';core._th09_loop_start();if(netplay){core._th09_loop_pause(1);await netplay.connect(options);}
  assertLifetime(receivedLifetime,owner);launchSettled=true;
@@ -220,6 +222,11 @@ case 'spectator-room-state':{
  netplay?.roomState(m.runId,m.waiting);return {};
 }
 case 'network-open':openNetwork();return {};
+case 'return-room':roomOwned=true;
+ if(runtimeVariant!=='multiplayer'||!core._th09_room_return)throw Error('Room menu return is unavailable');
+ roomPreview=true;clearKeyboard();neutralTouch();core._th09_loop_stop();netplay?.close(false);netplay=null;
+ if(!core._th09_room_return())throw Error(err());
+ launched=false;launchSettled=false;first=false;core._th09_loop_start();await new Promise(requestAnimationFrame);return {presented:true};
 case 'network-cancel':networkOverlayPending=false;clearKeyboard();neutralTouch();core._th09_loop_pause(+document.hidden);canvas.focus();return {};
 default:throw Error('不支持的操作：'+m.command);}}
 async function dispatchCommand(m,receivedLifetime=receiveLifetime(),waitForInitialized=false){
@@ -266,6 +273,6 @@ const initialized=(async()=>{
  const buffer=(await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch})).buffer;assertLifetime(initializingLifetime,core);
  if(Object.prototype.toString.call(buffer)!=='[object ArrayBuffer]'||buffer.byteLength<1000000)throw Error('花映塚资源无效');core.FS.writeFile('/th09.dat',new Uint8Array(buffer));
  core.FS.mkdirTree('/fonts');for(const name of ['cp932.bin','blend.bin']){const response=await fetch('./fonts/'+name);assertLifetime(initializingLifetime,core);if(!response.ok)throw Error('字体表缺失：'+name);const bytes=new Uint8Array(await response.arrayBuffer());assertLifetime(initializingLifetime,core);core.FS.writeFile('/fonts/'+name,bytes);}
- assertLifetime(initializingLifetime,core);initializedReady=true;emit('ready',{roomPreview:runtimeVariant==='multiplayer'});if(query.get('standalone')==='1')await command({command:'launch'});
+ assertLifetime(initializingLifetime,core);initializedReady=true;emit('ready',{roomPreview:runtimeVariant==='multiplayer',roomReturn:runtimeVariant==='multiplayer'&&typeof core._th09_room_return==='function'});if(query.get('standalone')==='1')await command({command:'launch'});
 })().catch(e=>{if(!(e instanceof SupersededRuntimeCommand))fatal(e);throw e;});
 void initialized.catch(()=>{});

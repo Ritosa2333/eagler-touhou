@@ -198,7 +198,8 @@ const saveRoot=runtimeBuild.multiplayer?'/savesth15mp':'/savesth15';
 let multiplayerBridge=null;
 let core,launched=false,first=false,stopping=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve();
 let roomPreview=false;
-const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
+let launchSerial=0,roomOwned=false;
+const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
 const spectatorPlayback=createSpectatorPlaybackBridge({
  active:()=>runtimeBuild.multiplayer&&launched&&options.netplaySpectator===true&&!stopping,memory:()=>core.HEAPU8,
  state:()=>core?._th15_mp_spectator_state?.()||0,control:(run,action,frame)=>core?._th15_mp_spectator_control?.(run,action,frame)||0,
@@ -217,7 +218,7 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core._th15_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop(){if(stopping)return;stopping=true;localReplay.close();spectatorPlayback.stop();try{core._th15_loop_stop();await save();multiplayerBridge?.close();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;if(roomOwned&&!options.replayViewer){stopping=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{stopping=false;}return;}stopping=true;localReplay.close();spectatorPlayback.stop();try{core._th15_loop_stop();await save();multiplayerBridge?.close();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth15(?:mp)?\//,'').replace(/^\//,'');if(!/^(?:scoreth15\.dat|th15\.cfg|replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th15(?:mp)?_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?|autosave\/save[0-3]_[0-4]\.dat)$/.test(name))throw Error('存档路径无效');return name;}
 function apply(){core.eaglerOptions=options;core._th15_always_hitbox(+(options.alwaysHitbox===true));core._th15_limit_presentation(+!!options.limitPresentationTo60);core._th15_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(runtimeBuild.multiplayer&&options.touchMovementMode==='joystick-free'?'joystick':options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th15_music_enabled(+music);}
 async function resource(r){
@@ -260,7 +261,7 @@ async function initializeTitle(){
  performance.mark('eagler-startup-menu-ready');
 }
 async function command(m){switch(m.command){
-case 'prepare-room':
+case 'prepare-room':roomOwned=true;
  if(!runtimeBuild.multiplayer||launched||options.netplayMode==='lan'||options.replayViewer)throw Error('Room preview requires an unlaunched multiplayer title');
  if(!roomPreview){await initializeTitle();if(!core._th15_room_preview())throw Error(err()||'Room title did not present');roomPreview=true;core._th15_loop_start();$('#loading').textContent='';await new Promise(requestAnimationFrame);}
  return {presented:true};
@@ -273,8 +274,13 @@ case 'direct-touch':{if(m.type==='cancel'){core._th15_touch_cancel();return {};}
 case 'touch-controls':{const t=m.controls||m;core.eaglerControls=t;if(Number.isFinite(t.touchSensitivity)&&t.touchSensitivity>=100&&t.touchSensitivity<=300&&t.touchSensitivity!==options.touchSensitivity){options.touchSensitivity=t.touchSensitivity;apply();}core._th15_touch_controls(+!!options.touchEnabled,+!!t.fireEnabled,+!!t.focusEnabled,t.bombSerial>>>0,t.escapeSerial>>>0);core._th15_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return {};}
 case 'thprac-mouse':{if(!options.thpracEnabled||!['down','move','up'].includes(m.type)||![m.x,m.y].every(Number.isFinite))return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);if(scale>0)core._th15_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(m.x-r.left-(r.width-640*scale)/2)/scale,(m.y-r.top-(r.height-480*scale)/2)/scale);return {};}
 case 'spectator-playback':return spectatorPlayback.command(m);
+case 'return-room':roomOwned=true;
+ if(!runtimeBuild.multiplayer||!core._th15_room_return)throw Error('Room menu return is unavailable');
+ spectatorPlayback.stop();clearKeyboard();core._th15_loop_stop();multiplayerBridge.close();
+ if(!core._th15_room_return()||!core._th15_room_preview())throw Error(err()||'Native room return rejected');
+ roomPreview=true;launched=false;first=false;core._th15_loop_start();await new Promise(requestAnimationFrame);return {presented:true};
 case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(m);
-case 'launch':if(!launched){if(roomPreview)core._th15_loop_stop();else await initializeTitle();launched=true;roomPreview=false;apply();first=false;$('#loading').textContent='';if(!runtimeBuild.multiplayer||await multiplayerBridge.launch())core._th15_loop_start();if(runtimeBuild.multiplayer&&options.replayViewer){first=true;emit('first-frame');}if(options.netplaySpectator)spectatorPlayback.start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,...runtimeBuild});}return {};
+case 'launch':launchSerial=Number(m.launchSerial)||0;if(!launched){if(roomPreview)core._th15_loop_stop();else await initializeTitle();launched=true;roomPreview=false;apply();first=false;$('#loading').textContent='';if(!runtimeBuild.multiplayer||await multiplayerBridge.launch())core._th15_loop_start();if(runtimeBuild.multiplayer&&options.replayViewer){first=true;emit('first-frame');}if(options.netplaySpectator)spectatorPlayback.start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,...runtimeBuild});}return {};
 case 'sync':await save();return {};
 case 'list':return {files:listLocalReplayFiles(core.FS,saveRoot,path)};
 case 'read':return {bytes:Array.from(core.FS.readFile(saveRoot+'/'+path(m.path)))};
@@ -316,5 +322,5 @@ const initialized=(async()=>{
  if(manifest.schema!=='eagler-sdl-resources/1'||manifest.game!==game||!Array.isArray(manifest.resources)||manifest.resources.length!==1||manifest.resources[0]?.path!=='/fonts/cp932.bin')throw Error('资源清单无效');
  for(const r of manifest.resources)await resource(r);
  if(runtimeBuild.multiplayer){const {createMultiplayerBridge}=await import('./multiplayer.mjs');const manifest=await(await fetch('./manifest.json')).json();multiplayerBridge=createMultiplayerBridge({core,getOptions:()=>options,manifest,emit,onError:fatal,onExit:stop});}
- emit('ready',{roomPreview:runtimeBuild.multiplayer===true});
+ emit('ready',{roomPreview:runtimeBuild.multiplayer===true,roomReturn:runtimeBuild.multiplayer===true&&typeof core._th15_room_return==='function'});
 })().catch(e=>{if(e?.name==='AbortError'&&e?.message==='EAGLER_RUNTIME_SESSION_SUPERSEDED')return false;fatal(e);throw e;});

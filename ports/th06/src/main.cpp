@@ -54,6 +54,18 @@ static bool g_MusicRoomVisualTestDispatched = false;
 #ifdef TH_ENABLE_NETPLAY
 static bool g_NetplayLanProduction = false;
 static bool g_NetplayProductionDispatched = false;
+#ifdef __EMSCRIPTEN__
+extern "C" EMSCRIPTEN_KEEPALIVE void eagler_room_return()
+{
+    Netplay::Th06LanStageProbe::ReturnToRoom();
+}
+extern "C" EMSCRIPTEN_KEEPALIVE void eagler_room_begin_run()
+{
+    g_NetplayLanProduction = false;
+    g_NetplayProductionDispatched = false;
+    Netplay::Th06LanStageProbe::BeginRoomRun();
+}
+#endif
 #endif
 #ifdef TH_DEV_TOOLS
 static bool g_StartStage1ForVisualTest = false;
@@ -622,7 +634,13 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     if(!g_NetplayLanProduction&&EM_ASM_INT({return !Module.eaglerRoomPreview&&Module.eaglerOptions?.netplayMode==='lan'?1:0;}))
         g_NetplayLanProduction=true;
 #endif
-    if (g_NetplayLanProduction && !g_NetplayProductionDispatched &&
+    bool playerLaunchAllowed = true;
+#ifdef __EMSCRIPTEN__
+    playerLaunchAllowed = EM_ASM_INT({
+        return !Module.eaglerRoomPreview && !Module.eaglerOptions?.netplaySpectator ? 1 : 0;
+    }) != 0;
+#endif
+    if (g_NetplayLanProduction && playerLaunchAllowed && !g_NetplayProductionDispatched &&
         g_MainMenu.chainCalc != nullptr &&
         Netplay::Th06LanStageProbe::TransportReady())
     {

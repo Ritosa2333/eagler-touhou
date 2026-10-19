@@ -203,7 +203,8 @@ const protocol='eagler-touhou/1',game='th11',query=new URLSearchParams(location.
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
-const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
+let launchSerial=0,roomOwned=false;
+const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
 const spectatorPlayback=createSpectatorPlaybackBridge({
  active:()=>multiplayerRuntime&&launched&&options.netplaySpectator===true&&!stopping,memory:()=>new Uint8Array(core.memory.buffer),
  state:()=>core?.th11_mp_spectator_state?.()||0,control:(run,action,frame)=>core?.th11_mp_spectator_control?.(run,action,frame)||0,
@@ -306,7 +307,7 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop({returnToMenu=false}={}){if(stopping)return;localReplay.close();spectatorPlayback.stop();invalidateTouches();stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
+async function stop({returnToMenu=false}={}){if(stopping)return;if(roomOwned&&!options.replayViewer){stopping=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{stopping=false;}return;}localReplay.close();spectatorPlayback.stop();invalidateTouches();stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(multiplayerRuntime?/^\/savesth11(?:mp)?\//:/^\/savesth11\//,'').replace(/^\//,'');const valid=multiplayerRuntime?/^replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th11_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/:/^(?:scoreth11\.dat|th11\.cfg|replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;if(!valid.test(name))throw Error('存档路径无效');return name;}
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>saveRoot+'/'+path(value),replayState:()=>{const p=core.eagler_replay_state(),v=Array.from(new Uint32Array(core.memory.buffer,p,5));const u=multiplayerRuntime?new Uint32Array(core.memory.buffer,core.th11_mp_replay_ui_status(),12):null;return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:u?.[4]??0};},stopLoop:()=>{clearKeyboard();core.th11_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:error});
 async function initializeTitle(receivedTouchLifetime=touchLifetime){
@@ -361,12 +362,17 @@ async function command(m,receivedTouchLifetime=touchLifetime){
  case 'thprac-mouse':{if(!options.thpracEnabled||!core.sdl_thprac_mouse)return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);core.sdl_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(Number(m.x)-r.left-(r.width-640*scale)/2)/scale,(Number(m.y)-r.top-(r.height-480*scale)/2)/scale);return {};}
  case 'spectator-playback':return spectatorPlayback.command(m);
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(m);
- case 'prepare-room':
+ case 'prepare-room':roomOwned=true;
   if(!multiplayerRuntime||launched)throw Error('Invalid room preview owner');
   await initializeTitle(receivedTouchLifetime);
   if(!core.th11_room_preview())throw Error(coreError()||'Room preview rejected');
   roomPreview=true;core.th11_loop_start();$('#loading').textContent='';await new Promise(requestAnimationFrame);return {presented:true};
- case 'launch':await launch(receivedTouchLifetime);return {};
+ case 'return-room':roomOwned=true;
+  if(!multiplayerRuntime)throw Error('Room menu return is unavailable');
+  spectatorPlayback.stop();clearKeyboard();core.th11_loop_stop();multiplayer.stop();
+  if(!core.th11_return_title()||!core.th11_room_preview())throw Error(coreError()||'Native room return rejected');
+  roomPreview=true;launched=false;launchSettled=false;core.th11_loop_start();await new Promise(requestAnimationFrame);return {presented:true};
+ case 'launch':launchSerial=Number(m.launchSerial)||0;await launch(receivedTouchLifetime);return {};
  case 'sync':await save();return {};
  case 'list':return {files:listLocalReplayFiles(Module.FS,saveRoot,path)};
  case 'read':return {bytes:Array.from(Module.FS.readFile(saveRoot+'/'+path(m.path)))};
@@ -442,7 +448,7 @@ const initialized=(async()=>{
  Module.onGameFrame=(ok,ms,count)=>{if(!ok){if(multiplayerRuntime)multiplayer.fail(Error(coreError()));else error(Error(coreError()));return;}try{multiplayer?.frame();}catch(reason){multiplayer.fail(reason);return;}ticks+=count;if(!first&&(!multiplayerRuntime||count>0)){first=true;last=performance.now();ticks=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){emit('frame-health',{fps:ticks*1000/(now-last),maxGapMs:ms});const a=u32(core.th11_audio_statistics(),9);emit('audio-health',{queuedMs:a[4]*1000/44100,minQueuedMs:0,backend:'script',underruns:a[3]});last=now;ticks=0;}if(!multiplayerRuntime&&core.th11_phase()===4)void stop().catch(error);};
  window.__th11Runtime={core,Module,get app(){return launched?1:0;},get multiplayer(){return multiplayer;},get saveRoot(){return saveRoot;},launch,stop,command};
  if(!ownsTouchDocument()||touchRetired)return false;
- initializedReady=true;emit('ready',multiplayerRuntime?{roomPreview:true}:{});
+ initializedReady=true;emit('ready',multiplayerRuntime?{roomPreview:true,roomReturn:true}:{});
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});
 async function mountData(){
  // eagler-touhou managed package: the retail archive arrives through the parent

@@ -307,6 +307,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const identity = createMultiplayerIdentityStore({persistentStorage: storage, sessionStorage});
   const sessions = createMultiplayerRoomSessionStore({storage: sessionStorage});
   const directory = createLobbyDirectory({
+    testBuild: entryUrl.searchParams.has('test'),
     loadSiteManifest: signal => loadCompatibleSiteManifest(async file => {const response = await window.fetch(new URL(file, baseUrl), {cache: 'no-store', signal}); if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), {status: response.status}); return response.json();}),
     createSocket: url => new WebSocket(url), memberId: multiplayerMemberId,
     identity, sessions, sessionStorage, translate: t,
@@ -405,6 +406,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   async function requestRuntimeClose({nativeExit = false}: {nativeExit?: boolean} = {}): Promise<boolean> {
     const owner = requiredRuntime();
+    const currentRoom = roomSession?.service.getSnapshot();
+    if (!nativeExit && owner.getSnapshot().launched && !snapshot.replayViewer && currentRoom?.room &&
+        !snapshot.th09NetworkOverlayOpen) {
+      try {await owner.returnToRoom();}
+      catch (error) {reportError(error); return false;}
+      await nativeTouch.exitPlayerFullscreen().catch(() => {});
+      transfer.hide(); startupError.close(); activeSettings = null;
+      publish({playerOpen:false,touchHelpOpen:false,startupError:null,roomLaunchStage:null,spectatorViewer:false});
+      return true;
+    }
     const replayReturnProduct = snapshot.replayViewer ? navigation?.productId : null;
     // Pending preparation cancellation is fenced before asynchronous acquisition
     // can publish another document. A launched writer remains intact until sync.
@@ -417,8 +428,13 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (replayReturnProduct && settings.getSnapshot()?.context.productId !== replayReturnProduct) settings.hydrate(settingsContext(replayReturnProduct, snapshot.locale));
     publish({playerOpen: false, touchHelpOpen: false, startupError: null, roomLaunchStage: null, replayViewer: false, spectatorViewer: false});
     if (replayReturnProduct) replayRoomEpoch = null;
-    if (roomSession?.service.getSnapshot().room?.phase === 'lobby')
-      queueMicrotask(() => roomSession?.service.resourcesChanged());
+    const returnedRoom = roomSession?.service.getSnapshot();
+    if (returnedRoom?.room && returnedRoom.room.phase === 'lobby')
+      queueMicrotask(() => {
+        const currentRoom = roomSession?.service.getSnapshot();
+        if (currentRoom?.epoch === returnedRoom.epoch && currentRoom.room?.code === returnedRoom.room?.code)
+          roomSession?.service.resourcesChanged();
+      });
     return true;
   }
   const gameData = createGameDataImportModel({acquisition, translate: t,
@@ -505,6 +521,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (message.event === 'runtime-info' && message.netplayTiming) {calibration.record(message.netplayTiming, runtime!.getSnapshot().epoch ?? 0); roomSession?.service.acceptMeasuredTiming(message.netplayTiming);}
       if (message.event === 'runtime-info' && message.th09Match) roomSession?.service.acceptTh09Match(message.th09Match);
       if (message.event === 'notice' && typeof message.message === 'string' && message.message) feedback.toast(message.message);
+      if (message.event === 'room-menu' && runtime?.getSnapshot().roomPreview && !runtime.getSnapshot().launched) {
+        activeSettings = null; transfer.hide(); startupError.close();
+        publish({playerOpen:false,touchHelpOpen:false,startupError:null,roomLaunchStage:null,spectatorViewer:false});
+        requiredNavigation().completeRuntimeClose({titleOverlayWasOpen:false});
+      }
       if (ownsPresentation && message.event === 'error') feedback.playerStatus(errorText(message.error || t('runtime.startFailed')));
       if (ownsPresentation && message.event === 'exit') {
         feedback.playerStatus(t(message.status === 'success' ? 'runtime.gameExited' : 'runtime.gameExitedAbnormally'));
@@ -675,7 +696,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (!fromTitle) {
       await roomPreloadTask;
       const current = requiredRuntime().getSnapshot(), preloaded = roomPreload;
-      if (!preloaded || preloaded.product !== context.product || preloaded.epoch !== current.epoch || current.phase !== 'prepared') {
+      const retainedTitle = current.roomPreview && current.game === gameIdForProduct(context.product) && current.runtimeVariant === 'multiplayer';
+      if (current.phase !== 'prepared' || (!retainedTitle && (!preloaded || preloaded.product !== context.product || preloaded.epoch !== current.epoch))) {
         // Never replace a missing/stale native preload with a cold launch after
         // synchronized Start. Return the room to its preparation gate instead.
         roomSession?.service.resourcesChanged();
@@ -687,18 +709,26 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (context.snapshot.seat != null && !requiredRuntime().getSnapshot().roomPreview && !await confirmMusicWarnings()) return;
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
     const cover = !fromTitle;
-    if (fromTitle) {await requiredRuntime().sync(); if (!context.isCurrent()) throw new RuntimeSessionSupersededError(); titleNetwork.close(false); await requiredRuntime().close({discardUnsaved: true});}
+    if (fromTitle) {
+      const owner = requiredRuntime();
+      if (owner.getSnapshot().runtimeVariant === 'multiplayer' && owner.getSnapshot().roomReturnSupported) await owner.returnToRoom();
+      else {await owner.sync(); if (!context.isCurrent()) throw new RuntimeSessionSupersededError(); await owner.close({discardUnsaved:true});}
+      titleNetwork.close(false);
+    }
     requiredNavigation().closeRoomPanel(); requiredNavigation().closeRoomSettings();
     publish({roomLaunchStage: cover ? 'runtime' : null});
     await showRoomPlayer(context, mobile, context.snapshot.seat != null);
     publish({spectatorViewer: context.snapshot.spectatorRequested});
     const owner = requiredRuntime(), preloaded = roomPreload;
-    if (!fromTitle && preloaded?.product === context.product && preloaded.epoch === owner.getSnapshot().epoch && owner.getSnapshot().phase === 'prepared') {
-      await owner.configurePreparedRoom(preloaded.epoch, context.runtimeOptions);
+    const current = owner.getSnapshot();
+    if (current.phase === 'prepared' && current.epoch !== null &&
+        (current.roomPreview && current.game === gameIdForProduct(context.product) && current.runtimeVariant === 'multiplayer' ||
+          preloaded?.product === context.product && preloaded.epoch === current.epoch)) {
+      await owner.configurePreparedRoom(current.epoch, context.runtimeOptions);
       if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
       await owner.launch({awaitFirstFrame: cover});
-      void preloaded.prepared.startBackground().catch(reportError);
-      roomPreload = null;
+      if (preloaded?.epoch === current.epoch) void preloaded.prepared.startBackground().catch(reportError);
+      // The prepared plan and permanent iframe remain the room's title owner.
       transfer.launchAcknowledged(); feedback.playerStatus(t('runtime.ready')); frame?.focus({preventScroll: true});
     } else if (fromTitle) await configuredLaunch(context.product, {signal: context.signal, multiplayer: {kind: 'room', options: context.runtimeOptions}, awaitFirstFrame: cover, throwErrors: true});
     else throw new Error(t('room.resourcesUnavailable'));
@@ -708,6 +738,17 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   async function checkRoom(context: RoomOperationContext) {
     const owner = requiredRuntime();
+    await roomPreloadTask;
+    const current = owner.getSnapshot();
+    if (current.phase === 'prepared' && current.epoch !== null && current.runtimeVariant === 'multiplayer' &&
+        current.game === gameIdForProduct(context.product)) {
+      await owner.configurePreparedRoom(current.epoch, {}, {checkGame:true});
+      if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
+      await showRoomPlayer(context, false);
+      await owner.launch();
+      if (context.isCurrent()) feedback.status(t('multiplayer.checkGamePassed'));
+      return;
+    }
     if (owner.getSnapshot().epoch !== null && !await owner.close({decide: closeDecision, discardUnsaved: !owner.getSnapshot().launched})) return;
     await showRoomPlayer(context, false); feedback.playerStatus(t('multiplayer.checkingGame'));
     const operation = preparationIntent(context.product, {kind: 'preflight'}, context.signal);
