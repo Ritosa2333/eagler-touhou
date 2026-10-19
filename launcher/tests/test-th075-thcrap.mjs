@@ -4,7 +4,8 @@ import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {deflateSync} from 'node:zlib';
-import {Th075BaseResources,Th075ThcrapCompiler,cryptTh075,th075QuotedRecords,encodeTh075Pixels} from '../server/th075-thcrap-compiler.mjs';
+import {Th075BaseResources,Th075ThcrapCompiler,cryptTh075,th075QuotedRecords,encodeTh075Pixels,th075ImageVariant} from '../server/th075-thcrap-compiler.mjs';
+import {chineseScriptQuotes,chineseStaticResources} from '../server/th075-chinese-static.mjs';
 import {crc32} from '../integrations/thcrap.mjs';
 
 test('TH075 pixel runs preserve BGRA words and avoid expanding noisy images',()=>{
@@ -20,6 +21,23 @@ test('TH075 quote identities exclude comments and preserve numeric controls',()=
   assert.deepEqual(th075QuotedRecords(encrypted).map(r=>[r.quote,r.label,r.record,r.command,r.text.toString()]),[[0,0,0,'P','story'],[1,0,2,'N','\\cd0c0c0ending']]);
 });
 
+test('TH075 replay image variant binds the same pixels to each original edition',()=>{
+  const bank=Buffer.alloc(22);bank.writeUInt32LE(1,1);bank.writeUInt32LE(1,5);bank.writeUInt32LE(1,9);bank[13]=32;
+  const patch=Buffer.alloc(44);patch.write('E75I');patch.writeUInt32LE(2,4);patch.writeUInt32LE(1,16);patch.writeUInt32LE(1,24);patch.writeUInt32LE(1,28);patch.writeUInt32LE(4,36);
+  const variant=th075ImageVariant(patch,bank);assert.equal(variant.readUInt32LE(8),crc32(bank));assert.equal(variant.readUInt32LE(12),bank.length);assert.deepEqual(variant.subarray(20),patch.subarray(20));
+  const wrong=Buffer.from(bank);wrong.writeUInt32LE(2,1);assert.throws(()=>th075ImageVariant(patch,wrong),/TH075 bitmap|geometry mismatch/);
+  assert.throws(()=>th075ImageVariant(patch.subarray(0,43),bank),/geometry mismatch/);
+});
+
+test('TH075 Chinese Story replaces only aligned dialogue, retaining thpatch endings',async()=>{
+  const original=cryptTh075(Buffer.from('B0\nP(XX)"Japanese"\nW010\nN()"\\cd0c0c0ending"\n'));
+  const translated=cryptTh075(Buffer.from('B0\nP(XX)"\x01hello\x02"\nW010\nN()"ignored ending"\n','latin1'));
+  assert.deepEqual(chineseScriptQuotes(original,translated),{'0':'hello'});
+  assert.throws(()=>chineseScriptQuotes(original,cryptTh075(Buffer.from('B1\nP(XX)"\x01hello\x02"\nW010\nN()"ending"\n','latin1'))),/position mismatch/);
+  const result=await chineseStaticResources([{path:'data/character/reimu/reimu.sce',script:translated,sha256:'test'}],{read:async()=>original},async tables=>tables);
+  assert.equal(result.provenance.quotes,1);assert.equal(result.resources[0].path,'th075/character/reimu/reimu.sce.quotes.json');assert.deepEqual(JSON.parse(result.resources[0].bytes),{'0':'hello'});
+});
+
 test('TH075 original-edition resolver follows native sprite and portrait ownership',async()=>{
   const temp=await mkdtemp(resolve(tmpdir(),'th075-base-test-'));
   try{
@@ -30,6 +48,8 @@ test('TH075 original-edition resolver follows native sprite and portrait ownersh
     const table=Buffer.from(JSON.stringify({files})),header=Buffer.alloc(12);header.write('E75DATA1');header.writeUInt32LE(table.length,8);const path=resolve(temp,'th075.data');await writeFile(path,Buffer.concat([header,table,...parts]));
     const source=new Th075BaseResources([path]);
     for(const [path,edition]of [['data/character/00.dat','base'],['data/character/03.dat','patched'],['data/character/042.dat','patched'],['data/system/title.dat','base'],['data/system/select.dat','patched']])assert.equal((await source.read(path)).toString(),edition+':'+path);
+    assert.equal((await source.read('data/system/select.dat','base')).toString(),'base:data/system/select.dat');
+    await assert.rejects(source.read('data/system/select.dat','unknown'),/Invalid TH075 resource edition/);
   }finally{await rm(temp,{recursive:true,force:true});}
 });
 

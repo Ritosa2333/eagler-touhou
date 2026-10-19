@@ -63,3 +63,23 @@ The seven descriptions are encoded in localization/options.json using the
 pack glyph bank; lang_en follows the legacy English v1.1 DLL literals, and
 lang_zh-hans follows the development package Chinese help. Runtime validates
 all seven byte arrays and preserves Japanese when the field is missing.
+
+Clear/Story correction (2026-10-20): score registration reads the Base edition
+of `data/system/replay.dat`, while replay listing/save reads Patched. Compiled
+packs now include a geometry-checked Base image variant with its own size and
+CRC. Both native consumers retain strict original-resource validation; original
+resource selection, score files and replay formats are unchanged.
+
+For Simplified Chinese Story, add `--th075-story-resources D:/private/resources/chinese`
+to the preparation command. The optional adapter takes the existing development
+package's eleven compressed GBK Chinese scripts, verifies every quoted position
+against the Japanese script, and imports only dialogue. Existing thpatch ending
+pages remain in use. `opencc-python-reimplemented==0.1.7` (`t2s`) converts the
+existing Traditional Chinese text; Pillow/fonttools remain required. Source
+SHA-256 identities and quote coverage are recorded in localization/options.json
+and preparation cache inputs. No unmodified retail scripts enter language ZIPs.
+
+Regression checks: seven compiler tests; real Japanese DATA in a non-published
+native browser harness decoding every replacement, rendering changed text,
+checking eleven fighters and entering score/replay scenes 10/5/7/10. These are
+resource and scene-entry checks, not a complete ending playthrough.

@@ -171,4 +171,9 @@
 
 ## 运行验收记录
 
+### 2026-10-20 汉化资源版本选择
+
+同步普通版 LanguagePatches 的 Base／Patched replay.dat 变体校验，保持严格
+CRC 与尺寸检查；未改多人规则。本轮部署和原生场景验收针对普通版，MP 待独立构建验证。
+
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
