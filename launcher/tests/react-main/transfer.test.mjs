@@ -290,7 +290,7 @@ test('language download switches mirrors inside one transfer and validates the c
       const url = new URL(input); visits.push(url.origin);
       if (url.pathname === '/_eagler/resource-routes') return Response.json({schema: 'eagler-touhou/resource-routes/1',
         path: '/language/th06/en.zip', bytes: zip.length, sha256: hash,
-        sources: ['https://first.invalid/language/th06/en.zip', 'https://second.invalid/language/th06/en.zip']});
+        sources: ['https://first.invalid', 'https://second.invalid'].map(origin => origin + url.searchParams.get('path'))});
       if (url.origin === 'https://first.invalid') throw new TypeError('Node disconnected');
       return new Response(zip);
     }});
