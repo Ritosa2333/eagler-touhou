@@ -9,6 +9,7 @@ import {gamepadProbeBundle,gamepadTargetFor,prepareVirtualGamepad,bindProtocolHo
 import {readVerifiedRuntimeFile,selectRuntimeTargets,verifyPrivateData,verifyRuntimePackage} from './acceptance-contracts.mjs';
 import {sourceSnapshot} from '../testing/source-snapshot.mjs';
 import {runWithReport} from '../testing/cli-report.mjs';
+import {assertCliArguments} from '../testing/cli-options.mjs';
 import {readRuntimeObservation,assertRuntimeObservation,runtimeScenarioResult} from './runtime-observations.mjs';
 import {createNavigationAbortEvidence,shouldRecordHttpFailure} from './navigation-abort-evidence.mjs';
 import {loadRuntimeReplayFixture} from './replay-fixtures.mjs';
@@ -17,6 +18,7 @@ const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.s
 const requestedOutput=argument('output');
 if(!requestedOutput)throw Error('Required: --output=directory');
 const result=await runWithReport({output:resolve(requestedOutput),schema:'eagler-touhou/runtime-browser/1'},async(report,save)=>{
+assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant'],flags:['gamepad']});
 if(!argument('manifest')||!argument('output'))throw Error('Required: --manifest=private-inputs.json --output=directory');
 assert.equal(argument('variant'),'normal',
   'runtime-browser requires --variant=normal. Verify multiplayer through tools/ports/room-browser.mjs with real players and --route=rtc|relay');
@@ -394,6 +396,11 @@ try{
     }
   }
 }finally{await browser?.close();await new Promise(done=>server.close(done));report.finishedAt=new Date().toISOString();
+  report.harnessPostflightSha256=hash(await readFile(new URL(import.meta.url)));
+  assert.equal(report.harnessPostflightSha256,report.harnessSha256,'Runtime driver changed during acceptance');
+  for(const [name,expected] of Object.entries(report.helperSha256))
+    assert.equal(hash(await readFile(new URL(`./${name}.mjs`,import.meta.url))),expected,`Runtime acceptance helper changed: ${name}`);
+  if(gamepad)assert.equal(hash(await readFile(new URL('./gamepad-probe.mjs',import.meta.url))),report.gamepadProbeSha256,'Gamepad probe changed during acceptance');
   report.status=report.targets.length===selection.expected.length&&report.targets.every(target=>target.passed)?'passed':report.targets.some(target=>target.status==='failed')?'failed':'incomplete';
   report.passed=report.status==='passed';await save();}
 

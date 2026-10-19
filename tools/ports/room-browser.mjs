@@ -12,13 +12,19 @@ import {compareTh08FrozenWorld,compareTh08LiveWorld,th08DisconnectedWaitState} f
 import {readRuntimeObservation} from './runtime-observations.mjs';
 import {sourceSnapshot} from '../testing/source-snapshot.mjs';
 import {runWithReport} from '../testing/cli-report.mjs';
+import {assertCliArguments} from '../testing/cli-options.mjs';
+import {exerciseRoomLifecycle} from './room-lifecycle.mjs';
+import {admitRoomSpectator,exerciseRoomSpectator,finishSpectatorLaunch} from './room-spectator.mjs';
 
 const option=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const requestedOutput=option('output');
 if(!requestedOutput)throw Error('Required: --output=directory');
 const result=await runWithReport({output:resolve(requestedOutput),schema:'eagler-touhou/room-browser/1'},async(report,save)=>{
+assertCliArguments(process.argv.slice(2),{values:['url','output','route','players','manifest','packages','game'],flags:['disconnect','gamepad','lifecycle','spectator']});
 const base=option('url'),out=option('output'),route=option('route'),playersText=option('players'),manifestPath=option('manifest');
 const disconnect=process.argv.includes('--disconnect');
+const lifecycle=process.argv.includes('--lifecycle');
+const spectator=process.argv.includes('--spectator');
 const gamepad=process.argv.includes('--gamepad'),gamepadBundle=gamepad?await gamepadProbeBundle():null;
 assert.ok(base&&manifestPath&&out,'Required: --url=local-launcher --manifest=private-inputs.json --game=thXX[,thYY] --players=2|3 --route=rtc|relay --output=private-directory');
 assert.ok(playersText&&/^[23]$/.test(playersText),'--players must be explicitly set to 2 or 3');
@@ -41,13 +47,15 @@ Object.assign(report,{url:base,route,players,
   selection:{games,players,route,expectedTargets:selection.expected},
   scope:'Real Launcher room controls, hash-identified current multiplayer Runtime and current private DATA; desktop browser session acceptance',targets:[]});
 report.disconnectRequested=disconnect;
+report.lifecycleRequested=lifecycle;
+report.spectatorRequested=spectator;
 report.commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();
 report.sourceSnapshot=sourceSnapshot(root);
 report.sourcePackages=Object.fromEntries(sourcePackages);
 report.sourcePackageErrors=Object.fromEntries(sourcePackageErrors);
 report.harnessSha256=createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
 report.helperSources={};
-for(const name of ['room-errors.mjs','runtime-observations.mjs','native-observation-contract.mjs','th08-world-progress.mjs']){
+for(const name of ['room-errors.mjs','runtime-observations.mjs','native-observation-contract.mjs','th08-world-progress.mjs','room-lifecycle.mjs','room-spectator.mjs']){
   const bytes=await readFile(new URL(name,import.meta.url));
   report.helperSources[name]=createHash('sha256').update(bytes).digest('hex');
   await writeFile(resolve(directory,name),bytes);
@@ -129,45 +137,50 @@ async function roomResourceSnapshot(page){return page.evaluate(()=>{
   return{status:progress?.dataset.status??null,label:document.querySelector('#mpRoomResourceLabel')?.textContent?.trim()??'',
     detail:progress?.title??'',retryVisible:retry?.hidden===false,readyDisabled:document.querySelector('#mpReady')?.disabled??true};
 });}
-async function waitForRoomResources(page,record,seat){
+async function waitForRoomResources(page,record,seat,{requireReadyControl=true,label=`P${seat+1}`}={}){
   const terminal=()=>page.waitForFunction(()=>['ready','failed','cancelled'].includes(
     document.querySelector('#mpRoomResourceProgress')?.dataset.status??''),null,{timeout:120000});
-  try{await terminal();}catch(error){throw Error(`P${seat+1} resource preparation did not report ready/failed/cancelled: ${JSON.stringify(await roomResourceSnapshot(page))}; ${error.message}`);}
+  try{await terminal();}catch(error){throw Error(`${label} resource preparation did not report ready/failed/cancelled: ${JSON.stringify(await roomResourceSnapshot(page))}; ${error.message}`);}
   let snapshot=await roomResourceSnapshot(page);
   if(snapshot.status!=='ready'&&snapshot.retryVisible){
-    record.steps.push({name:`P${seat+1}-resource-retry`,at:new Date().toISOString(),previous:snapshot});
+    record.steps.push({name:`${label}-resource-retry`,at:new Date().toISOString(),previous:snapshot});
     await save();
     await page.locator('#mpRoomResourceRetry').click();
-    try{await terminal();}catch(error){throw Error(`P${seat+1} resource retry did not report ready/failed/cancelled: ${JSON.stringify(await roomResourceSnapshot(page))}; ${error.message}`);}
+    try{await terminal();}catch(error){throw Error(`${label} resource retry did not report ready/failed/cancelled: ${JSON.stringify(await roomResourceSnapshot(page))}; ${error.message}`);}
     snapshot=await roomResourceSnapshot(page);
   }
-  assert.equal(snapshot.status,'ready',`P${seat+1} room resources are ${snapshot.status}: ${JSON.stringify(snapshot)}`);
-  assert.equal(snapshot.readyDisabled,false,`P${seat+1} resources report ready but the native Ready control is disabled: ${JSON.stringify(snapshot)}`);
+  assert.equal(snapshot.status,'ready',`${label} room resources are ${snapshot.status}: ${JSON.stringify(snapshot)}`);
+  if(requireReadyControl)assert.equal(snapshot.readyDisabled,false,`${label} resources report ready but the native Ready control is disabled: ${JSON.stringify(snapshot)}`);
   return snapshot;
 }
 async function nativeSnapshot(page,game,seat){
   const handle=await page.locator('#gameFrame').elementHandle();
   const frame=handle?await handle.contentFrame():null;
-  const [snapshot,observation]=await Promise.all([page.evaluate(()=>{
+  const [snapshot,observation]=await Promise.all([page.evaluate(game=>{
   const r=document.querySelector('#gameFrame')?.contentWindow;
   if(!r)return null;
   const runtime=Object.keys(r).filter(key=>/^__th\d+Runtime$/.test(key)).map(key=>r[key])[0];
   const module=runtime?.Module??r.Module,core=runtime?.core??r.core??module;
-  let native=null;
+  let native=null,spectatorNative=null,driverNative=null;
   for(const name of ['th11_mp_status','_th15_mp_status'])if(typeof core?.[name]==='function'){
     const memory=core.memory?.buffer??module?.HEAPU8?.buffer;
     if(memory)native=Array.from(new Uint32Array(memory,core[name](),24));
+  }
+  if(game==='th08'&&runtime?.app&&core?.multiplayer_spectator_status&&core?.multiplayer_driver_status){
+    spectatorNative=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_status(runtime.app),8));
+    driverNative=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_driver_status(runtime.app),17));
   }
   const options=module?.eaglerOptions??core?.eaglerOptions??{};
   return{active:r.__eaglerNetplayLanActive??(native?!!native[1]:false),
     frame:r.__eaglerNetplayLanFrame??native?.[3]??-1,confirmed:r.__eaglerNetplayLanConfirmed??native?.[4]??-1,
     route:r.__eaglerPeerTransport?.route??r.__eaglerNetplayTransport??'',
-    failed:r.__eaglerNetplayFailed??false,error:r.__eaglerNetplayError??'',native,
+    failed:r.__eaglerNetplayFailed??false,error:r.__eaglerNetplayError??'',native,spectatorNative,driverNative,
     transportState:{disconnected:r.__eaglerPeerTransport?.disconnected===true,recovering:r.__eaglerPeerTransport?.isRecovering?.()===true},
     state:runtime?.status?.()??null,gameplayStage:r.__eaglerNetplayGameplayStage??null,
-    options:{player:options.netplayPlayer,players:options.netplayPlayerCount,mode:options.netplayMode,prediction:options.netplayPredictionLimit},
+    generation:r.__eaglerNetplayLanGeneration??r.__eaglerNetplayGeneration??r.__eaglerNetplayDiagnostics?.generation??null,
+    options:{player:options.netplayPlayer,players:options.netplayPlayerCount,mode:options.netplayMode,prediction:options.netplayPredictionLimit,spectator:options.netplaySpectator===true},
     runtimeUrl:r.location?.href??'',events:window.acceptanceEvents??[]};
-  }),frame?frame.evaluate(readRuntimeObservation,{game,variant:'multiplayer',localSeat:seat}):null]);
+  },game),frame?frame.evaluate(readRuntimeObservation,{game,variant:'multiplayer',localSeat:seat}):null]);
   return snapshot?{...snapshot,observation,observationTarget:{game,variant:'multiplayer',localSeat:seat}}:null;
 }
 async function gamepadFailureSnapshot(page,game,seat){
@@ -226,7 +239,7 @@ await save();
 try{
   for(const game of games){
     const record=records.get(game);if(!record.runtimeIdentity||record.resourcePreparation.status!=='ready')continue;
-    let browser;const contexts=[],pages=[],pendingConsoleSamples=[];
+    let browser,viewer;const contexts=[],pages=[],pendingConsoleSamples=[];
     const step=async(name,operation)=>{record.stage=name;record.steps.push({name,at:new Date().toISOString()});await save();return operation();};
     const awaitPendingConsoleSamples=async()=>{
       while(pendingConsoleSamples.length)await Promise.all(pendingConsoleSamples.splice(0));
@@ -300,6 +313,11 @@ try{
           record.seatResources[seat]=await waitForRoomResources(page,record,seat);
         });
       }
+      if(spectator)await step('admit-spectator-before-start',async()=>{
+        viewer=await admitRoomSpectator({browser,base,game,room:record.room,route,packages,record,directory,
+          dismiss,waitForRoomEntry,waitForRoomResources});
+        contexts.push(viewer.context);
+      });
       for(let seat=0;seat<players;seat++)await step(`P${seat+1}-ready`,async()=>{
         await pages[seat].locator('#mpReady').click();
         await pages[seat].waitForFunction(()=>document.querySelector('#mpReady')?.getAttribute('aria-pressed')==='true',null,{timeout:120000});
@@ -319,6 +337,7 @@ try{
           }
         }
         for(const page of pages)await page.waitForFunction(()=>window.acceptanceEvents?.some(event=>event.event==='first-frame'),null,{timeout:120000});
+        if(viewer)await finishSpectatorLaunch(viewer);
       });
       if(PRODUCT_GAMES[game].multiplayer.inGameSelection)await step('native-versus-selection',async()=>{
         for(let round=0;round<12;round++)for(const page of pages){
@@ -365,6 +384,8 @@ try{
           throw firstFailure??new Error(`Native gamepad failed for ${failures.length} room seat(s)`);
         }
       });
+      if(viewer)await exerciseRoomSpectator({viewer,game,pages,snapshot:nativeSnapshot,step,directory,runtimeIdentity:record.runtimeIdentity});
+      if(lifecycle)await exerciseRoomLifecycle({game,pages,snapshot:nativeSnapshot,step,record});
       await step('capture-gameplay',async()=>{
         record.captureNative=await Promise.all(pages.map((page,seat)=>nativeSnapshot(page,game,seat)));
         for(let seat=0;seat<pages.length;seat++){
@@ -390,7 +411,7 @@ try{
         const requestedCheckerMs=Date.now();
         record.disconnect.requestedAt=new Date().toISOString();record.disconnect.requestedCheckerMs=requestedCheckerMs;
         record.disconnect.closedSeats.push({seat:players-1,checkerMs:requestedCheckerMs,reason:'peer-close'});
-        await contexts.pop().close();pages.pop();
+        await contexts.splice(players-1,1)[0].close();pages.pop();
         const deadline=Date.now()+(route==='relay'?35000:20000);
         while(true){
           const seats=await Promise.all(pages.map(async(page,seat)=>{
@@ -519,6 +540,7 @@ try{
       record.runtimePassed=true;
       record.passed=true;
     }catch(error){record.passed=false;record.error=String(error.stack||error);record.failure=await Promise.all(pages.map(page=>roomSnapshot(page).catch(error=>({error:String(error)}))));
+      record.failureNative=await Promise.all(pages.map((page,seat)=>nativeSnapshot(page,game,seat).then(({events,...state})=>state).catch(error=>({error:String(error)}))));
       for(let seat=0;seat<pages.length;seat++)await pages[seat].screenshot({path:resolve(directory,`${game}-failure-p${seat+1}.png`)}).catch(()=>{});
     }finally{recordRoomSiteAssetFailures(report.siteAssets,record.httpErrors);report.siteAssetsPassed=report.siteAssets.passed;
       try{for(const context of contexts)await context.close();}finally{if(browser)await browser.close();}
@@ -550,6 +572,13 @@ try{
   report.resourcePostflightPassed=report.targets.length===selection.expected.length&&report.targets.every(target=>
     target.resourcePreparation.status==='ready'&&target.resourcePostflight?.status==='passed');
   report.finishedAt=new Date().toISOString();await save();
+}
+report.harnessPostflight={sha256:createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex'),helpers:{}};
+assert.equal(report.harnessPostflight.sha256,report.harnessSha256,'Room driver changed during acceptance');
+for(const [name,expected] of Object.entries(report.helperSources)){
+  const actual=createHash('sha256').update(await readFile(new URL(name,import.meta.url))).digest('hex');
+  report.harnessPostflight.helpers[name]=actual;
+  assert.equal(actual,expected,`Room acceptance helper changed: ${name}`);
 }
 report.runtimePassed=report.targets.length===selection.expected.length&&report.targets.every(target=>target.runtimePassed===true);
 report.runtimePostflightPassed=report.targets.length===selection.expected.length&&report.targets.every(target=>target.runtimePostflight?.status==='passed');

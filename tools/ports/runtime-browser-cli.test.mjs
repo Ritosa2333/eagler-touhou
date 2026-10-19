@@ -39,3 +39,25 @@ test('malformed manifest replaces an older passing report in both desktop browse
     }
   }finally{await rm(temporary,{recursive:true,force:true});}
 });
+
+test('a misspelled or duplicated scenario cannot retain an old passing browser report',async()=>{
+  const temporary=await mkdtemp(resolve(tmpdir(),'browser-invalid-scenario-'));
+  try{
+    for(const [entry,extra,expected] of [
+      ['room',['--lifecyle'],/Unknown option/],
+      ['room',['--spectator=false'],/does not accept a value/],
+      ['runtime',['--game=th11'],/Duplicate option/],
+    ]){
+      const output=await mkdtemp(resolve(temporary,entry+'-'));
+      await writeFile(resolve(output,'report.json'),JSON.stringify({status:'passed',passed:true,runId:'old'}));
+      const child=spawnSync(process.execPath,[resolve(import.meta.dirname,entry+'-browser.mjs'),
+        '--manifest='+resolve(temporary,'does-not-exist.json'),'--output='+output,'--game=th08',...extra],
+      {encoding:'utf8',windowsHide:true,timeout:15000});
+      assert.equal(child.status,1,child.stderr);assert.match(child.stderr,expected);
+      assert.doesNotMatch(child.stderr,/ENOENT|browserType\.launch/);
+      const report=JSON.parse(await readFile(resolve(output,'report.json')));
+      assert.equal(report.passed,false);assert.equal(report.status,'failed');assert.notEqual(report.runId,'old');
+      assert.deepEqual(report.targets,[]);assert.ok(report.finishedAt);
+    }
+  }finally{assert.ok(temporary.startsWith(resolve(tmpdir(),'browser-invalid-scenario-')));await rm(temporary,{recursive:true,force:true});}
+});
