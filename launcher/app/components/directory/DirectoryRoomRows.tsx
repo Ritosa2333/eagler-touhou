@@ -10,7 +10,7 @@ export function DirectoryRoomRows({snapshot, service, assetUrl, initialRows = fa
   return <>{snapshot.visibleRooms.map(room => {
     const policy = multiplayerConfigForProduct(room.product)!;
     return <Th09RoomCard key={room.product + '-' + room.code} room={room}
-      difficulty={policy.difficulties[room.difficulty] || 'Normal'} state={directoryRoomState(room)}
+      difficulty={policy.inGameSelection ? '' : policy.difficulties[room.difficulty] || 'Normal'} state={directoryRoomState(room)}
       spectating={directoryRoomSpectatorEntry(room)} initial={initialRows} assetUrl={assetUrl}
       disabled={snapshot.connection !== 'live' || !!snapshot.mine || snapshot.leaving || !directoryRoomCanEnter(room)}
       conflict={!!snapshot.mine} onJoin={() => service.joinRoom(room.product, room.code)}/>;

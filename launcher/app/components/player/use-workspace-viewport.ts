@@ -16,11 +16,9 @@ export function useWorkspaceViewport(stage: HTMLDivElement | null, enabled: bool
     };
     const schedule = () => {cancelAnimationFrame(frame); frame = requestAnimationFrame(fit);};
     const resize = new ResizeObserver(schedule);
-    const observe = () => {resize.disconnect(); resize.observe(stage); for (const node of stage.children) if (node !== viewport) resize.observe(node); schedule();};
-    const children = new MutationObserver(observe);
-    children.observe(stage, {childList: true});
-    observe();
+    resize.observe(stage);
+    schedule();
     window.addEventListener('resize', schedule);
-    return () => {cancelAnimationFrame(frame); resize.disconnect(); children.disconnect(); window.removeEventListener('resize', schedule); viewport.removeAttribute('data-workspace-stacked'); viewport.style.removeProperty('--workspace-game-height');};
+    return () => {cancelAnimationFrame(frame); resize.disconnect(); window.removeEventListener('resize', schedule); viewport.removeAttribute('data-workspace-stacked'); viewport.style.removeProperty('--workspace-game-height');};
   }, [stage, enabled]);
 }

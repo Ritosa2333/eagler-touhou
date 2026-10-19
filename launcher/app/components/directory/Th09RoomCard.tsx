@@ -20,7 +20,7 @@ export function Th09RoomCard({room, difficulty, state, spectating, disabled, ini
     role="listitem" data-key={room.product + '-' + room.code}>
     <div className="th09-room-meta">
       <strong className="lobby-room-code">#{room.code}</strong>
-      <span className="lobby-difficulty" hidden={!difficulty}><DifficultyLabel name={difficulty} assetUrl={assetUrl}/></span>
+      <span className="lobby-difficulty" hidden={!difficulty}>{difficulty && <DifficultyLabel name={difficulty} assetUrl={assetUrl}/>}</span>
       {room.challengeMode && <span className="lobby-challengeMode room-challenge-on">{t('room.challengeEnabled')}</span>}
       {room.disableCheatMovement && <span className="lobby-movement-rule">{t('lobby.noCheat')}</span>}
     </div>

@@ -1,13 +1,11 @@
 # 文档总表
 
-共 222 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 223 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
 | 类别 | 路径 | 标题 |
 | --- | --- | --- |
-| 适配指南 | [docs/adaptation/th07-border-dialogue-20261019.md](adaptation/th07-border-dialogue-20261019.md) | TH07 共享结界与对话 · 2026-10-19 |
-| 适配指南 | [docs/adaptation/th11-spell-time-20261019.md](adaptation/th11-spell-time-20261019.md) | TH11 多人符卡结算计时 · 2026-10-19 |
 | 项目入口 | [CONTRIBUTING.md](../CONTRIBUTING.md) | 参与开发 |
 | 项目入口 | [README.en.md](../README.en.md) | 项目 README |
 | 项目入口 | [README.md](../README.md) | 项目 README |
@@ -21,9 +19,11 @@
 | 适配指南 | [docs/adaptation/multiplayer.md](adaptation/multiplayer.md) | 多人接入与规则 |
 | 适配指南 | [docs/adaptation/presentation.md](adaptation/presentation.md) | 画面与声音 |
 | 适配指南 | [docs/adaptation/record-template.md](adaptation/record-template.md) | 验证记录模板 |
-| 适配指南 | [docs/adaptation/room-start-20261019.md](adaptation/room-start-20261019.md) | 房间预加载转开局修复 · 2026-10-19 |
+| 适配指南 | [docs/adaptation/room-start-20261019.md](adaptation/room-start-20261019.md) | 房间预加载与首帧确认 ｜ 2026-10-19 |
 | 适配指南 | [docs/adaptation/runtime.md](adaptation/runtime.md) | 启动与资源 |
 | 适配指南 | [docs/adaptation/storage.md](adaptation/storage.md) | 存档与 Replay |
+| 适配指南 | [docs/adaptation/th07-border-dialogue-20261019.md](adaptation/th07-border-dialogue-20261019.md) | th07 共享结界与对话 ｜ 2026-10-19 |
+| 适配指南 | [docs/adaptation/th11-spell-time-20261019.md](adaptation/th11-spell-time-20261019.md) | th11 多人符卡结算计时 ｜ 2026-10-19 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
 | 作品入口 | [ports/th06/README.md](../ports/th06/README.md) | 東方紅魔郷 TH06 |
@@ -129,7 +129,7 @@
 | 架构说明 | [docs/architecture/source-layout.md](architecture/source-layout.md) | 游戏源码目录 |
 | 架构说明 | [docs/architecture/spectator.md](architecture/spectator.md) | 旁观协议 |
 | 迁移记录 | [docs/migration/README.md](migration/README.md) | Monorepo 迁移记录 |
-| 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 |
+| 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |
 | 历史记录 | [docs/history/README.md](history/README.md) | 历史与迁移 |
 | 历史记录 | [ports/th15-mp/web/CHANGELOG.txt](../ports/th15-mp/web/CHANGELOG.txt) | [2026-10-05] 绀珠传 WEB 1.0.3 |
@@ -223,10 +223,9 @@
 | 许可证与声明 | [services/relay/LICENSE](../services/relay/LICENSE) | LICENSE |
 | 许可证与声明 | [services/telemetry/LICENSE](../services/telemetry/LICENSE) | LICENSE |
 | 许可证与声明 | [services/turn/LICENSE](../services/turn/LICENSE) | LICENSE |
-| 协作约定 | [AGENTS.md](../AGENTS.md) | 协作约定 |
+| 协作约定 | [AGENTS.md](../AGENTS.md) | 文风要求 |
 | 协作约定 | [launcher/tools/maintainer/operator-delivery/payload/AGENTS.md](../launcher/tools/maintainer/operator-delivery/payload/AGENTS.md) | 部署代理约定 |
 | CI 与协作模板 | [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) | 改动 |
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
-| 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | TH075 thcrap host preparation |
-| 其他说明 | [design-qa.md](../design-qa.md) | 房间呈现验收 |
+| 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | th075 语言资源准备 |

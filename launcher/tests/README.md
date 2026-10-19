@@ -10,7 +10,7 @@
 | 单个 Node 测试 | `node tests/test-名称.mjs` | 文件中声明的夹具 |
 | 浏览器与设备 | `package.json` 中对应的 `test:*:browser` | 浏览器及该测试声明的游戏包、地址和资源 |
 
-核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。
+核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行，每个测试入口在同一计划中执行一次。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。
 
 `npm run test:workspace-viewport:browser` 使用真实房间、Replay 和触控组件的展示夹具，检查手机 4:3 画面、桌面全宽及高度上限、双人和三人房右侧观战栏、少量观众头像放大、头像预览与完整名单、空席、加入及离开旁观、重新入座、成员移至旁观、竖屏快捷发言位置、面板触控隔离、大尺寸自定义控件边界和房间状态动效。截图输出到 `.cache/workspace-viewport/`。设置 `WORKSPACE_VIEWPORT_PREVIEW_ONLY=1` 可直接启动交互预览，`WORKSPACE_VIEWPORT_PREVIEW_PORT` 指定端口。
 

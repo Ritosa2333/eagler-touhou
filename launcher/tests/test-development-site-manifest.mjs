@@ -63,6 +63,7 @@ for (const [game, entry] of Object.entries(manifest.games)) {
 const multiplayerRuntimeOwners = {
   th06: "../ports/th06/build/web/multiplayer/th06.html",
   th07: "../ports/th07/build/web/multiplayer/th07.html",
+  th075: "../ports/th075-mp/build-eagler-multiplayer/th075.html",
   th08: "../ports/th08-mp/build-eagler-multiplayer/th08.html",
   th09: "../ports/th09/web/build-eagler-multiplayer/th09.html",
   th10: "../ports/th10-mp/build-eagler-multiplayer/th10.html",
@@ -70,7 +71,7 @@ const multiplayerRuntimeOwners = {
   th15: "../ports/th15-mp/build-eagler-multiplayer/th15.html",
 };
 const multiplayerGames = Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].multiplayerRuntime);
-assert.deepEqual(multiplayerGames, Object.keys(multiplayerRuntimeOwners), "all seven catalogued multiplayer games have a development Runtime owner");
+assert.deepEqual(multiplayerGames, Object.keys(multiplayerRuntimeOwners), "every catalogued multiplayer game has a development Runtime owner");
 for (const [game, owner] of Object.entries(multiplayerRuntimeOwners)) {
   const actual = manifest.games[game].multiplayerRuntime;
   assert.ok(actual, `${game}: development Site Manifest must expose a multiplayer entrance`);
