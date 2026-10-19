@@ -197,6 +197,7 @@ const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const saveRoot=runtimeBuild.multiplayer?'/savesth15mp':'/savesth15';
 let multiplayerBridge=null;
 let core,launched=false,first=false,stopping=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve();
+let roomPreview=false;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 const spectatorPlayback=createSpectatorPlaybackBridge({
  active:()=>runtimeBuild.multiplayer&&launched&&options.netplaySpectator===true&&!stopping,memory:()=>core.HEAPU8,
@@ -247,7 +248,22 @@ const localReplay=createNativeLocalReplay({core:()=>core,module:()=>core,physica
  openReplay:async(value,stage)=>{if(runtimeBuild.multiplayer)return multiplayerBridge.openReplay(path(value),stage);const bytes=new TextEncoder().encode(saveRoot+'/'+path(value)+'\0'),p=core._malloc(bytes.length);try{core.HEAPU8.set(bytes,p);if(!core._eagler_replay_open(p,stage))throw Error(err());}finally{core._free(p);}},
  replayState:()=>{const p=core._eagler_replay_state(),v=Array.from(core.HEAPU32.subarray(p/4,p/4+6));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:v[5]};},
  onState:playback=>emit('runtime-info',{playback}),onError:fatal});
+async function initializeTitle(){
+ await installStartupBranding(core,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});
+ let scaleOption=query.get('renderScale');if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}
+ const requested=Number(scaleOption);core._th15_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);
+ if(!core._th15_prepare_loading())throw Error(err());$('#loading').textContent='';
+ const startupImageAt=performance.now();performance.mark('eagler-startup-image');
+ await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
+ if(!core._th15_initialize())throw Error(err());
+ await finishStartupAnimation(startupImageAt,frames=>core._th15_draw_startup(frames));
+ performance.mark('eagler-startup-menu-ready');
+}
 async function command(m){switch(m.command){
+case 'prepare-room':
+ if(!runtimeBuild.multiplayer||launched||options.netplayMode==='lan'||options.replayViewer)throw Error('Room preview requires an unlaunched multiplayer title');
+ if(!roomPreview){await initializeTitle();if(!core._th15_room_preview())throw Error(err()||'Room title did not present');roomPreview=true;core._th15_loop_start();$('#loading').textContent='';await new Promise(requestAnimationFrame);}
+ return {presented:true};
 case 'configure':if(launched)throw Error('不能配置正在运行的游戏');if(!['ogg','none'].includes(m.music))throw Error('不支持的音乐模式');options=m.options||{};music=m.music==='ogg';for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
 case 'keyboard':if(launched&&!document.hidden&&!stopping)keyboard.event(m,!!m.down,'hosted');return {};
@@ -258,7 +274,7 @@ case 'touch-controls':{const t=m.controls||m;core.eaglerControls=t;if(Number.isF
 case 'thprac-mouse':{if(!options.thpracEnabled||!['down','move','up'].includes(m.type)||![m.x,m.y].every(Number.isFinite))return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);if(scale>0)core._th15_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(m.x-r.left-(r.width-640*scale)/2)/scale,(m.y-r.top-(r.height-480*scale)/2)/scale);return {};}
 case 'spectator-playback':return spectatorPlayback.command(m);
 case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(m);
-case 'launch':if(!launched){await installStartupBranding(core,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});let scaleOption=query.get('renderScale');if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}const requested=Number(scaleOption);core._th15_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);if(!core._th15_prepare_loading())throw Error(err());$('#loading').textContent='';const startupImageAt=performance.now();performance.mark('eagler-startup-image');await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);if(!core._th15_initialize())throw Error(err());await finishStartupAnimation(startupImageAt,frames=>core._th15_draw_startup(frames));performance.mark('eagler-startup-menu-ready');launched=true;apply();first=false;$('#loading').textContent='';if(!runtimeBuild.multiplayer||await multiplayerBridge.launch())core._th15_loop_start();if(runtimeBuild.multiplayer&&options.replayViewer){first=true;emit('first-frame');}if(options.netplaySpectator)spectatorPlayback.start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,...runtimeBuild});}return {};
+case 'launch':if(!launched){if(roomPreview)core._th15_loop_stop();else await initializeTitle();launched=true;roomPreview=false;apply();first=false;$('#loading').textContent='';if(!runtimeBuild.multiplayer||await multiplayerBridge.launch())core._th15_loop_start();if(runtimeBuild.multiplayer&&options.replayViewer){first=true;emit('first-frame');}if(options.netplaySpectator)spectatorPlayback.start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,...runtimeBuild});}return {};
 case 'sync':await save();return {};
 case 'list':return {files:listLocalReplayFiles(core.FS,saveRoot,path)};
 case 'read':return {bytes:Array.from(core.FS.readFile(saveRoot+'/'+path(m.path)))};
@@ -282,7 +298,7 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
  if(!launched||!options.touchEnabled||e.pointerType==='mouse')return;if(e.type==='pointercancel'){core._th15_touch_cancel();return;}e.preventDefault();if(type===0)document.body.setPointerCapture(e.pointerId);const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th15_touch(type,e.pointerId,(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height);
 });
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fatal(Error('图形环境失效，请退出后重新开始。'));});
-window.addEventListener('pagehide',()=>{clearKeyboard();core?._th15_touch_cancel();if(launched){core._th15_loop_stop();try{void save().catch(fatal);}catch(e){fatal(e);}closeAudio();}});
+window.addEventListener('pagehide',()=>{clearKeyboard();core?._th15_touch_cancel();if(roomPreview){core._th15_loop_stop();closeAudio();}else if(launched){core._th15_loop_stop();try{void save().catch(fatal);}catch(e){fatal(e);}closeAudio();}});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if(launched&&!document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}},30000);
@@ -300,5 +316,5 @@ const initialized=(async()=>{
  if(manifest.schema!=='eagler-sdl-resources/1'||manifest.game!==game||!Array.isArray(manifest.resources)||manifest.resources.length!==1||manifest.resources[0]?.path!=='/fonts/cp932.bin')throw Error('资源清单无效');
  for(const r of manifest.resources)await resource(r);
  if(runtimeBuild.multiplayer){const {createMultiplayerBridge}=await import('./multiplayer.mjs');const manifest=await(await fetch('./manifest.json')).json();multiplayerBridge=createMultiplayerBridge({core,getOptions:()=>options,manifest,emit,onError:fatal,onExit:stop});}
- emit('ready');
+ emit('ready',{roomPreview:runtimeBuild.multiplayer===true});
 })().catch(e=>{if(e?.name==='AbortError'&&e?.message==='EAGLER_RUNTIME_SESSION_SUPERSEDED')return false;fatal(e);throw e;});
