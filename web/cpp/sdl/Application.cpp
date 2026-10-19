@@ -79,7 +79,7 @@ struct Application:StageResourceEffects {
     AnmRenderer renderer;
     std::vector<u8> archive;
     std::vector<u8> saved_score_state,saved_config_state;
-    bool initialized=false,platform_prepared=false;
+    bool initialized=false,platform_prepared=false,room_preview=false;
     AnmResource loading_signature;
     AnmManager loading_animations;
     AnmVm* loading_credit=nullptr;
@@ -824,6 +824,11 @@ bool sample_and_tick(bool advance=true){
 #ifdef TH11_MULTIPLAYER
     // SDL events keep pumping during a remote wait. Gesture pulses belong to
     // the next unscheduled frame and are never consumed by a retry.
+    if(app.room_preview){
+        app.session.suppress_title_demo();
+        app.multiplayer_advanced=advance;
+        return !advance||app.tick(0,false);
+    }
     const auto phase=app.session.state.phase;
     app.netplay.SetCapturePhase(app.multiplayer_world&&!app.multiplayer_finish_pending&&
         (!app.netplay.AllowsRollback()||phase==GameSessionPhase::paused||
@@ -893,6 +898,7 @@ EMSCRIPTEN_KEEPALIVE int th11_mp_configure(const unsigned* words,unsigned count)
     using namespace th11::sdl;if(running)return 0;th11::multiplayer::SessionSetup setup;
     if(!th11::multiplayer::DecodeSessionSetup(setup,words,count)){app.error="Invalid TH11 multiplayer session contract";return 0;}
     app.rollback_release();rollback_cadence.reset();
+    app.room_preview=false;
     app.error.clear();app.multiplayer_replay.Clear();app.multiplayer_world=false;app.multiplayer_viewer=false;
     app.multiplayer_build=setup.build;return app.netplay.Reset(setup)?1:0;
 }
@@ -1042,6 +1048,15 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
 EMSCRIPTEN_KEEPALIVE int th11_save_scores(){return th11::sdl::app.save_scores();}
 EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
 EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
+EMSCRIPTEN_KEEPALIVE int th11_room_preview(){
+#ifdef TH11_MULTIPLAYER
+    using namespace th11::sdl;
+    if(!app.initialized||app.netplay.Configured()||app.multiplayer_world)return 0;
+    clear_inputs();app.session.suppress_title_demo();app.room_preview=true;return 1;
+#else
+    return 0;
+#endif
+}
 EMSCRIPTEN_KEEPALIVE int th11_draw_loading(unsigned frames){return th11::sdl::app.draw_loading(frames);}
 EMSCRIPTEN_KEEPALIVE int th11_prepare_loading(){return th11::sdl::app.prepare_loading();}
 #if TH11_DEVELOPMENT_HARNESS
@@ -1175,6 +1190,14 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         // Reset before any exact/rollback tick: every internal pump contributes.
         app.audio.begin_pump_profile_frame();
 #ifdef TH11_MULTIPLAYER
+        if(app.room_preview){
+            if(suspended){cadence.reset();return EM_TRUE;}
+            const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
+            for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
+            app.graphics.backend.commit();app.graphics.backend.defer=false;app.audio.pump();
+            if(ticks)th11_browser_frame(ok?1:0,emscripten_get_now()-begin,ticks);
+            if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
+        }
         recovery_tasks_remaining=2; // hard cap between real rAF callbacks
         th11::runtime_cost::begin();
         if(app.rollback_profile_enabled){app.rollback_profile.fill(0);app.rollback_profile[0]=1;app.rollback_profile[1]=1;}
