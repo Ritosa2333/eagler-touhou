@@ -101,6 +101,23 @@ test('directory preserves main host-existence product subset and 3s retry withou
   clock.tick(1500); assert.equal(sockets.length, 2); service.dispose();
 });
 
+for (const mode of ['normal', 'manifest-test', 'query-test']) test(`directory applies test-product visibility to filters and creation: ${mode}`, async () => {
+  const published = manifest();
+  published.games.th075 = {...published.games.th06, runtime: 'runtime/th075/game.html', multiplayerRuntime: 'runtime/th075/mp.html',
+    gameData: {...published.games.th06.gameData, path: 'th075.data'}};
+  if (mode === 'manifest-test') published.shared.testBuild = true;
+  const {service, sockets} = directory({loadSiteManifest: async () => published, testBuild: mode === 'query-test', selectedProduct: 'th075mp'});
+  try {
+    await service.initialize();
+    sockets[0].open(); sockets[0].message(directoryState({product: service.getSnapshot().selectedProduct}));
+    assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th075mp']);
+    assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th075mp');
+    assert.equal(service.prepareForm('create'), true);
+    service.updateForm({product: 'th075mp'});
+    assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th075mp');
+  } finally {service.dispose();}
+});
+
 test('directory 10s manifest timeout and StrictMode-style suspend/resume do not strand leaving', async () => {
   const blocked = directory({loadSiteManifest: () => new Promise(() => {})});
   const initializing = blocked.service.initialize(); blocked.clock.tick(10000); await initializing;

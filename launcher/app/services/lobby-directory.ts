@@ -100,6 +100,7 @@ export interface LobbyDirectoryOptions {
   launcherUrl(): string;
   navigateToRoom(url: string): void;
   selectedProduct?: string;
+  testBuild?: boolean;
   /** Router normalizes the directory filter; this service never writes history. */
   onSelectedProductNormalized?(product: MultiplayerProductId): void;
   randomWord?(): number;
@@ -470,7 +471,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const products = PRODUCT_IDS.filter(
         (product): product is MultiplayerProductId =>
           isMultiplayerProductId(product) &&
-          productEnabledForBuild(product, manifest.shared.testBuild) &&
+          productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) &&
           !!manifest.games[gameIdForProduct(product)],
       );
       const selectedProduct = products.includes(snapshot.selectedProduct as MultiplayerProductId)
