@@ -6,7 +6,7 @@ import {mkdtemp,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve,join,relative} from 'node:path';
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
-import {musicTitleSceneOutcome} from './music-browser-result.mjs';
+import {musicScenarioErrors,musicTitleSceneOutcome} from './music-browser-result.mjs';
 import {describeNativeMusic,describeNoneMusicControl,mapTrackToInput,nativeAudioStatsShape,runtimeMusicResources,
   readNativeAudioState,selectedMusicMappingGames,summarizeMusicPcm,validateMusicManifest,verifyMusicInputs} from './music-browser-helpers.mjs';
 
@@ -125,6 +125,24 @@ test('required title OGG scene may pass while AUDIO-01 full coverage remains par
   assert.equal(musicTitleSceneOutcome({oggPcmObserved:true,expectedTrack:'th11_00.ogg',
     observedTrack:'th11_01.ogg',trackInput:{name:'th11_01.ogg',sha256:'b'.repeat(64)},errors:[]}).scenario.status,'failed');
   assert.equal(musicTitleSceneOutcome({oggPcmObserved:true,errors:['HTTP 404']}).scenario.status,'failed');
+});
+
+test('audible PCM cannot hide console, late response audit, request, or native protocol failures',()=>{
+  const faults=[
+    {errors:[{mode:'ogg',error:'Protocol history could not be read after renderer crash'}]},
+    {consoleErrors:['Audio graph failed']},
+    {httpErrors:[{url:'https://fixture.test/track.ogg',failure:'net::ERR_FAILED'}]},
+    {modes:[{mode:'ogg',responseAuditError:'Late Runtime response identity mismatch'}]},
+    {modes:[{mode:'ogg',fixtureResponses:{errors:['Browser body was truncated']}}]},
+    {modes:[{mode:'ogg',events:[{event:'error',error:'Native decoder failed'}]}]},
+    {modes:[{mode:'ogg',events:[{event:'abort',error:'Runtime stopped'}]}]},
+    {modes:[{mode:'ogg',events:[{request:'configure',ok:false,error:'Rejected'}]}]},
+  ];
+  for(const record of faults){
+    const errors=musicScenarioErrors(record);assert.equal(errors.length,1);
+    assert.equal(musicTitleSceneOutcome({oggPcmObserved:true,errors}).scenario.status,'failed');
+  }
+  assert.deepEqual(musicScenarioErrors({modes:[{mode:'ogg',events:[{event:'runtime-info',ok:true}]}]}),[]);
 });
 
 test('music-browser rejects unknown, duplicate and empty CLI values with a fresh failed report',async t=>{

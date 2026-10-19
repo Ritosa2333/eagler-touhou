@@ -10,7 +10,7 @@ import {sourceSnapshot} from '../testing/source-snapshot.mjs';
 import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
 import {readRuntimeObservation} from './runtime-observations.mjs';
-import {musicTitleSceneOutcome} from './music-browser-result.mjs';
+import {musicScenarioErrors,musicTitleSceneOutcome} from './music-browser-result.mjs';
 import {MUSIC_BROWSER_GAMES,MUSIC_PCM_PROBE_SOURCE,describeNativeMusic,describeNoneMusicControl,mapTrackToInput,
   nativeAudioStatsShape,readNativeAudioState,runtimeMusicResources,selectedMusicMappingGames,summarizeMusicPcm,verifyMusicInputs} from './music-browser-helpers.mjs';
 
@@ -218,9 +218,11 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
           const context=await browser.newContext({viewport:{width:1100,height:820}});
           await context.addInitScript({content:MUSIC_PCM_PROBE_SOURCE});
           const page=await context.newPage();let frame=null,fixtureWatcher=null;
-          page.on('pageerror',error=>record.errors.push(String(error)));
-          page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push(message.text());});
-          page.on('response',response=>{if(response.status()>=400)record.httpErrors.push({url:response.url(),status:response.status()});});
+          page.on('pageerror',error=>record.errors.push({mode,error:String(error)}));
+          page.on('crash',()=>record.errors.push({mode,error:'Runtime browser page crashed'}));
+          page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push({mode,text:message.text()});});
+          page.on('response',response=>{if(response.status()>=400)record.httpErrors.push({mode,url:response.url(),status:response.status()});});
+          page.on('requestfailed',request=>record.httpErrors.push({mode,url:request.url(),failure:request.failure()?.errorText??'request failed'}));
           try{
             fixtureWatcher=await fixture.watchPage(page,{output,label:`${game}-${mode}`});
             await page.goto(fixture.hostUrl(target,mode==='none'?1:2));
@@ -298,7 +300,13 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
               await fixtureWatcher.stop();
               modeRecord.fixtureResponses??={capture:fixtureWatcher.capture,count:fixtureWatcher.responses.length,responses:fixtureWatcher.responses,errors:fixtureWatcher.errors};
             }
-            modeRecord.events=await page.evaluate(()=>window.events??[]).catch(()=>[]);
+            modeRecord.events=await page.evaluate(()=>{
+              if(!Array.isArray(window.events))throw Error('Runtime protocol event history is unavailable');
+              return window.events;
+            }).catch(error=>{
+              modeRecord.protocolTailError=String(error.stack||error);
+              record.errors.push({mode,error:modeRecord.protocolTailError});return[];
+            });
             await context.close();await save();
           }
         }
@@ -306,10 +314,11 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
         const pcmOutput=Boolean(ogg?.title?.pcm?.outputObserved);
         const noneControl=record.modes.find(mode=>mode.mode==='none')?.control;
         record.dataIdentity=fixtureIdentity.data;record.packageIdentity=fixtureIdentity.runtime;
+        record.scenarioErrors=musicScenarioErrors(record,{fixtureFailures:fixture.httpFailures});
         const sceneOutcome=musicTitleSceneOutcome({oggPcmObserved:pcmOutput,
           expectedTrack:titleTrack[game]??null,observedTrack:ogg?.title?.native?.trackFile??null,
           trackInput:ogg?.title?.trackInput??null,
-          errors:[...record.errors,...record.httpErrors,...fixture.httpFailures.map(event=>event.error)]});
+          errors:record.scenarioErrors});
         record.scenario=sceneOutcome.scenario;record.checks=[sceneOutcome.coverage];
         record.audio01={...sceneOutcome.coverage,trackIdentity:sceneOutcome.trackIdentity,runtimePcm:pcmOutput,
           noneControl,titleTrack:ogg?.title?.native?.trackFile??null,titleInput:ogg?.title?.trackInput??null};

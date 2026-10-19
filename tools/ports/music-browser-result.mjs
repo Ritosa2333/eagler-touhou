@@ -1,3 +1,20 @@
+/** Preserve every error channel collected during the selected music journey. */
+export function musicScenarioErrors(record,{fixtureFailures=[]}={}){
+  const errors=[];
+  const append=(channel,values,mode)=>{
+    for(const value of values??[])errors.push({channel,...(mode?{mode}:{}),value});
+  };
+  append('page-or-scene',record.errors);append('console',record.consoleErrors);
+  append('http-or-request',record.httpErrors);append('fixture-server',fixtureFailures);
+  for(const mode of record.modes??[]){
+    if(mode.responseAuditError)append('response-audit',[mode.responseAuditError],mode.mode);
+    append('response-identity',mode.fixtureResponses?.errors,mode.mode);
+    append('runtime-protocol',(mode.events??[]).filter(event=>event&&
+      (event.event==='error'||event.event==='abort'||event.ok===false)),mode.mode);
+  }
+  return errors;
+}
+
 /** Report the executed title scene separately from AUDIO-01 full-scope coverage. */
 export function musicTitleSceneOutcome({oggPcmObserved,expectedTrack=null,observedTrack=null,trackInput=null,errors=[]}={}) {
   const trackIdentityPassed=expectedTrack==null||

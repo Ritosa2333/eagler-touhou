@@ -109,6 +109,8 @@
 - 反例：界面显示已选择 OGG，但 Runtime 没有读取轨道或 PCM 全零，应失败。
 - 当前入口与覆盖：`tools/ports/music-browser.mjs` 用正式 Runtime `configure`／`launch`、产品目录 mount 和逐文件 SHA-256 清单，对比 `music=none` 与 OGG 的标题输出，并在原生观察可确认时采集开局 PCM。无 BGM 对照在首帧后等待 1.8 秒，再检查 600 毫秒 Runtime 输出窗；只有运行中的音频上下文且全窗静音才确认为有效对照，有声音时记录为未分类输出。通过的标题输出场景单独记为 `scenario.status=passed`；AUDIO-01 的完整切曲、场景变化、循环与生命周期覆盖保留为 `complete:false`。`--plan-only` 先核对 Runtime、DATA 与逐条 OGG 路由的身份，报告保持 `incomplete`。th11 的 9-word 原生统计把 cue 映射到 `MusicCatalog.hpp`；th15 的 11-word 原生统计把 track index 与 `music/manifest.json` 对应，两个作品同时记录 Runtime 输出 PCM。th08／th10／th20 记录原生 decoder readiness 与实际 PCM，产品报告将曲目身份覆盖标为 partial。TH20 记录正式 native phase/UI 观察；该驱动尚未实现 TH20 标题导航。OGG 路由按作品隔离；游标位置与连续性属于 AUDIO-03／04 的场景检查。
 
+音乐浏览器报告逐通道保存页面异常、Console、HTTP／请求失败、原生协议错误及收尾阶段的响应身份差异。这些错误均阻断本次场景通过，PCM 非零不能覆盖错误记录。
+
 ### AUDIO-02 | 无 BGM 模式
 
 - 操作：选择无 BGM，进入玩法并触发原表列出的射击、击中等音效。
