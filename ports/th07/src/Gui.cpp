@@ -970,7 +970,7 @@ ZunResult GuiImpl::RunMsg()
         for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
         {
             if (IsPlayerSlotActive(playerId) &&
-                g_Players[playerId].hasBorder != BORDER_NONE)
+                g_Players[playerId].hasBorder == BORDER_ACTIVE)
             {
                 // Shared-border propagation inside Player clears every
                 // participant, so one call is sufficient and deterministic.
