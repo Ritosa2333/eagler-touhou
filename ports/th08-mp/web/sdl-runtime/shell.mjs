@@ -377,7 +377,7 @@ const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,
  stepReplay:()=>core.sdl_loop_tick(app,1/60,17)===0,
  replayState:()=>{if(!multiplayerRuntime){const v=Array.from(new Uint32Array(core.memory.buffer,core.eagler_replay_state(),5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4]};}const s=replayWords();return {frame:s[4],total:s[5],ended:!!(s[9]||s[11]),stage:status()[1],startStage:localReplayStart,bootstrapTarget:s[8]};},
  onState:playback=>emit('runtime-info',{playback}),onError:error});
-async function initializeTitle(){
+async function initializeTitle({roomTitle=false}={}){
  if(app){
   const multiplayer=multiplayerRuntime?validateMultiplayerOptions(options):null;
   if(multiplayer)await configureMultiplayer(core,app,options,{runtimeBuildWords});
@@ -400,9 +400,9 @@ async function initializeTitle(){
  const multiplayer=multiplayerRuntime?validateMultiplayerOptions(options):null;
  const replayViewer=multiplayerRuntime&&options.replayViewer===true;
  const multiplayerPreflight=multiplayerRuntime&&options.multiplayerPreflight===true;
- if((replayViewer&&multiplayer)||(multiplayerPreflight&&(multiplayer||replayViewer)))
+ if((replayViewer&&multiplayer)||(multiplayerPreflight&&(multiplayer||replayViewer))||(roomTitle&&(multiplayer||replayViewer)))
   throw Error('Conflicting TH08 multiplayer Runtime role');
- if(multiplayerRuntime&&!multiplayer&&!replayViewer&&!multiplayerPreflight)
+ if(multiplayerRuntime&&!multiplayer&&!replayViewer&&!multiplayerPreflight&&!roomTitle)
   throw Error('TH08 multiplayer Runtime requires a room start, preflight or Replay viewer');
  if(!multiplayerRuntime&&options.netplayMode==='lan')throw Error('Network session requires the multiplayer Runtime');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
@@ -483,7 +483,7 @@ async function command(message){
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(message);
  case 'prepare-room':{
   if(!multiplayerRuntime||launched)throw Error('Invalid room preview owner');
-  await initializeTitle();
+  await initializeTitle({roomTitle:true});
   if(!core.sdl_room_preview())throw Error('Native room preview rejected');
   roomPreview=true;core.sdl_loop_start();
   const deadline=performance.now()+60000;

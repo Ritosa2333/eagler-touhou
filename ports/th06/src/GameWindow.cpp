@@ -95,6 +95,15 @@ static void SaveThpracSnapshot()
 }
 #endif
 
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_NETPLAY)
+// Presentation-only acknowledgement when a preloaded title becomes a live run.
+static bool s_RoomLaunchFrameRequested = false;
+extern "C" EMSCRIPTEN_KEEPALIVE void eagler_room_preview_report_launch_frame()
+{
+    s_RoomLaunchFrameRequested = true;
+}
+#endif
+
 RenderResult GameWindow::Render()
 {
 #ifdef __EMSCRIPTEN__
@@ -439,9 +448,16 @@ RenderResult GameWindow::Render()
     // made it through the game loop and buffer swap. This deliberately sits
     // after Present() and does not participate in simulation/presentation
     // timing, input, RNG, collision, or Replay determinism.
-    if (!s_FirstWebFrameReported)
+    if (!s_FirstWebFrameReported
+#ifdef TH_ENABLE_NETPLAY
+        || s_RoomLaunchFrameRequested
+#endif
+    )
     {
         s_FirstWebFrameReported = true;
+#ifdef TH_ENABLE_NETPLAY
+        s_RoomLaunchFrameRequested = false;
+#endif
         EM_ASM({ globalThis.EaglerTouhouFirstFrame?.(); });
     }
 

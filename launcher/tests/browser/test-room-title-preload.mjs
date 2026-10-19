@@ -33,7 +33,8 @@ try{
  await page.setViewport({width:1320,height:600});await page.goto('http://127.0.0.1:'+server.address().port);await page.evaluate(()=>{addRuntime(0);addRuntime(1);});
  try{await page.waitForFunction(()=>ready.size===2,{timeout:90000});}catch(e){console.log('BOOT',await Promise.all(page.frames().map(f=>f.evaluate(()=>({url:location.href,text:document.body?.innerText})))));throw e;}
  console.log('READY');
- await page.evaluate(async game=>{for(let s=0;s<2;s++){await rpc(s,'configure',{music:'none',resources:[],runtimeResources:[],sharedResources:game==='th075'?[]:[{path:'/msgothic.ttc',url:'/msgothic.ttc'},{path:'/unifont.otf',url:'/unifont.otf'}],options:{thpracEnabled:false,renderScale:1,...(game==='th08'?{multiplayerPreflight:true}:{})}});await rpc(s,'prepare-room');if(s===0)await new Promise(r=>setTimeout(r,4000));}},game);
+ // Match Launcher room-preload: no room-start contract and no preflight role.
+ await page.evaluate(async game=>{for(let s=0;s<2;s++){await rpc(s,'configure',{music:'none',resources:[],runtimeResources:[],sharedResources:game==='th075'?[]:[{path:'/msgothic.ttc',url:'/msgothic.ttc'},{path:'/unifont.otf',url:'/unifont.otf'}],options:{thpracEnabled:false,renderScale:1}});await rpc(s,'prepare-room');if(s===0)await new Promise(r=>setTimeout(r,4000));}},game);
  const frames=()=>page.frames().filter(f=>f.url().includes('runtimeEpoch='));
  const states=()=>Promise.all(frames().map(f=>f.evaluate(game=>{const r=window['__'+game+'Runtime'];if(game==='th06'||game==='th07')return {phase:Module._eagler_room_preview_ready(),frame:window.preloadPresents||0};if(game==='th09'){const s=r.status().title;return {phase:s[1],frame:s[0]};}if(game==='th075')return {phase:Module._th075_scene(),frame:Module._th075_frame()};return game==='th11'?{phase:r.core.th11_phase(),frame:r.core.th11_frame()}:{phase:r.status()[0],frame:new Uint32Array(r.core.memory.buffer)[(r.core.sdl_stats()>>>2)+5]};},game)));
  if(game==='th06'||game==='th07')for(const f of frames())await f.evaluate(()=>{window.preloadPresents=0;const original=EaglerTouhouFrameHealth;EaglerTouhouFrameHealth=(fps,...args)=>{window.preloadPresents+=fps;original(fps,...args);};});
@@ -48,10 +49,21 @@ try{
   if(game==='th09'){window.preloadModule=r.core;const original=r.core.onGameFrame;r.core.onGameFrame=(...args)=>{original?.(...args);const h=r.core.HEAPU32,p=r.core._th09_network_info()>>>2,n=h[p+3];if(n>0)preloadSamples[n]=r.core._th09_network_hash();};return;}
   window.preloadModule=r.Module;window.preloadApp=r.app;const key=game==='th11'?'onGameFrame':'runtimeFinish',original=r.Module[key];r.Module[key]=(...args)=>{original?.(...args);const h=new Uint32Array(r.core.memory.buffer);if(game==='th11'){const p=r.core.th11_mp_game_status()>>>2,frame=h[p+6];if(frame>0)preloadSamples[frame]=h[p+1];}else{const p=r.core.multiplayer_netplay_status(r.app)>>>2,frame=h[p+3];if(frame>0){const c=r.core.multiplayer_canonical_state(r.app)>>>2;preloadSamples[frame]=Array.from(h.subarray(c,c+13));}}};
  },game);
+ const startupFrames=await page.evaluate(()=>[1,2].map(epoch=>events.filter(e=>e.epoch===epoch&&e.event==='first-frame').length));
  for(let s=0;s<2;s++)await send(sockets[s],{type:'set-ready',ready:true},m=>m.room?.seats[s]?.ready);
  const start=await send(sockets[0],['th06','th07'].includes(game)?{type:'start'}:{type:'start',adonisMode:mode,inputDelay:0,inputDelayAuto:false,predictionReserve:2},m=>m.type==='start'),count=requests.length;
  await page.evaluate(async({game,port,room,serial,mode})=>Promise.all([0,1].map(async s=>{await rpc(s,'configure',{music:'none',resources:[],runtimeResources:[],sharedResources:[],options:{thpracEnabled:false,renderScale:1,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(serial),member:'private-'+s,player:String(s)}),netplayPlayer:s,netplayPlayerCount:2,netplayDifficulty:1,netplaySeed:1234,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:mode,netplayPredictionLimit:game==='th08'?8:mode?0:game==='th11'?12:8,netplayPredictionReserve:2}});await rpc(s,'launch');})),{game,port,room,serial:start.serial,mode});
  const flat=game==='th06'||game==='th07';
+ if(flat){
+  assert(startupFrames.every(n=>n>0),'the preview already consumed the native startup first-frame');
+  await wait(()=>page.evaluate(before=>before.every((n,s)=>events.filter(e=>e.epoch===s+1&&e.event==='first-frame').length===n+1),startupFrames),'native post-launch first-frame',10000);
+  for(const [s,f] of frames().entries()){
+   await page.evaluate(({s,game})=>document.querySelector('#p'+s).contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:s+1,command:'keyboard',code:'ArrowRight',key:'ArrowRight',keyCode:39,location:0,down:true},location.origin),{s,game});
+   await wait(()=>f.evaluate(()=>Module.eaglerControls.keyboardBits!==0),'live keyboard must unlock',3000);
+   await page.evaluate(({s,game})=>document.querySelector('#p'+s).contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:s+1,command:'keyboard',code:'ArrowRight',key:'ArrowRight',keyCode:39,location:0,down:false},location.origin),{s,game});
+   await wait(()=>f.evaluate(()=>Module.eaglerControls.keyboardBits===0),'live keyboard release',3000);
+  }
+ }
  try{await wait(async()=>{const samples=await Promise.all(frames().map(f=>f.evaluate(flat=>Object.keys(flat?window.__eaglerNetplayLanHashes||{}:preloadSamples).length,flat)));return samples.every(n=>n>=(flat||game==='th075'?2:100));},'match frames');}catch(e){console.log('MATCH',await Promise.all(frames().map(f=>f.evaluate(()=>({samples:preloadSamples,failed:window.__eaglerNetplayError,frame:window.__eaglerNetplayLanFrame,status:typeof Module._th075_mp_status==='function'?Array.from(Module.HEAPU32.subarray(Module._th075_mp_status()>>>2,(Module._th075_mp_status()>>>2)+64)):null,text:document.body.innerText})))));throw e;}
  const samples=await Promise.all(frames().map(f=>f.evaluate(flat=>flat?window.__eaglerNetplayLanHashes:preloadSamples,flat)));let matches=0;
  for(const [n,v]of Object.entries(samples[0]))if(samples[1][n]!==undefined){assert.deepEqual(v,samples[1][n],'same-frame world '+n);matches++;}assert(matches>=(flat||game==='th075'?2:20));

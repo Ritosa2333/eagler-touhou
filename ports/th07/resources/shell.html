@@ -791,7 +791,12 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
         stopLoop:()=>{clearBrowserKeyboard();Module._eagler_replay_stop_loop();},onState:playback=>emit('runtime-info',{playback}),onError:error=>emit('notice',{message:String(error)})});
       const launch = async () => {
         if (launched) return;
-        if(Module.eaglerRoomPreview){Module.eaglerRoomPreview=false;launched=true;clearBrowserKeyboard();return;}
+        if(Module.eaglerRoomPreview){
+          // The title already emitted its one-shot startup frame. The Host
+          // needs a new acknowledgement after this launch's actual swap.
+          Module._eagler_room_preview_report_launch_frame();
+          Module.eaglerRoomPreview=false;launched=true;clearBrowserKeyboard();return;
+        }
         await installStartupBranding(Module, {game:'th07', builtAt:Module.eaglerBuiltAt, fs:FS});
         const start = session => {
           if (launched) return;

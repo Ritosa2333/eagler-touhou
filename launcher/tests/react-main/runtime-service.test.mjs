@@ -160,6 +160,22 @@ test('room preview is prelaunch, native-acknowledged, and binds the same engine 
   assert.equal(f.service.getSnapshot().epoch,epoch);assert.equal(f.navigations.length,navigations);
 });
 
+test('a title preview frame cannot unlock a room launch; its next real frame releases the launch waiter', async () => {
+  const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  const preparing=f.service.prepare(plan);await flush();f.event('ready',{roomPreview:true});await flush();f.ack('configure');await preparing;
+  const epoch=f.service.getSnapshot().epoch;
+  f.event('first-frame');assert.equal(f.service.getSnapshot().firstFrame,false);
+  const preview=f.service.prepareRoomPreview(epoch);await flush();f.ack('prepare-room',{presented:true});await preview;
+  const binding=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=1'});
+  await flush();f.ack('configure');await binding;
+  let settled=false;
+  const launch=f.service.launch({awaitFirstFrame:true}).then(value=>{settled=true;return value;});
+  await flush();f.ack('launch');await flush();
+  assert.equal(f.service.getSnapshot().launched,true);assert.equal(settled,false);
+  f.event('first-frame');const running=await launch;
+  assert.equal(running.phase,'running');assert.equal(running.firstFrame,true);assert.equal(settled,true);
+});
+
 test('runtime: validated direct preload uses original asset URL, one frame and ACK-based ordinary launch', async () => {
   const f = fixture(), frame = f.frame; assert.equal(f.service.getSnapshot().fileOnly, false); const plan = directPlan(); await f.prepare(plan);
   assert.equal(f.service.getSnapshot().fileOnly, false, 'ordinary prepare does not inherit a file-only role');

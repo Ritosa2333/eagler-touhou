@@ -19,6 +19,7 @@
 | 适配指南 | [docs/adaptation/multiplayer.md](adaptation/multiplayer.md) | 多人接入与规则 |
 | 适配指南 | [docs/adaptation/presentation.md](adaptation/presentation.md) | 画面与声音 |
 | 适配指南 | [docs/adaptation/record-template.md](adaptation/record-template.md) | 验证记录模板 |
+| 适配指南 | [docs/adaptation/room-start-20261019.md](adaptation/room-start-20261019.md) | 房间预加载转开局修复 · 2026-10-19 |
 | 适配指南 | [docs/adaptation/runtime.md](adaptation/runtime.md) | 启动与资源 |
 | 适配指南 | [docs/adaptation/storage.md](adaptation/storage.md) | 存档与 Replay |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
