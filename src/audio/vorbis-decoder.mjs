@@ -1,7 +1,7 @@
 // Keep one small Wasm runtime per URL. Decoder handles and encoded Wasm copies
 // belong to each open operation and are freed by close(), including failures.
 const runtimes = new Map();
-export const DEFAULT_VORBIS_MODULE_URL = new URL('../../site/runtime/vorbis.mjs', import.meta.url).href;
+export const DEFAULT_VORBIS_MODULE_URL = new URL('../../site/runtime/audio/vorbis.mjs', import.meta.url).href;
 
 function runtimeFor(moduleURL) {
   const url = String(moduleURL);

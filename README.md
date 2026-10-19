@@ -51,9 +51,11 @@ ctest --test-dir artifacts/native --output-on-failure
 
 ## 还原边界
 
-`main` 的 Eagler Touhou 平台接入进度、包边界及尚未完成项见 [Web 适配](docs/WEB_ADAPTATION.md)。
+`eagler` 是 Eagler Touhou Web 适配的集成分支；接入进度、包边界及尚未完成项见 [Web 适配](docs/WEB_ADAPTATION.md)。
+使用真实 Launcher 的本地构建、资源包与启动入口见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
-`experiments` 保留单关行为与画面修复版本；`main` 增加完整游戏流程：原版标题与选择菜单、
+`main` 保留建立 `eagler` 前的已提交版本，后续 Web 适配改动在 `eagler` 集成。
+`experiments` 保留已确认的还原基线；`eagler` 包含完整游戏流程：原版标题与选择菜单、
 六面连续游玩、Extra、Practice、Replay、成绩与符卡履历、音乐室、设置、闲置 Demo、
 暂停／续关／重试、十二种结局及staff、名字与录像保存。
 浏览器设置／成绩使用移植版存档结构；`.rpy`导出经过实际原版加载器、解密和解压的局部验证。

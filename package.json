@@ -15,6 +15,7 @@
     "verify:quick": "node tools/replay-verifier/check-gameplay.mjs quick",
     "verify:daily": "node tools/replay-verifier/check-gameplay.mjs daily",
     "package:eagler": "node scripts/package-eagler.mjs",
+    "package:launcher": "node scripts/package-launcher.mjs",
     "prepare:eagler-content": "node scripts/prepare-managed-content.mjs"
   }
 }

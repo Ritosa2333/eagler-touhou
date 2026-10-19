@@ -26,5 +26,5 @@ for(const name of names){
   identities[name]={bytes:bytes.length,sha256};plan.push({destination,bytes});
 }
 for(const {destination,bytes}of plan){fs.mkdirSync(path.dirname(destination),{recursive:true});fs.writeFileSync(destination,bytes);}
-fs.writeFileSync(marker,JSON.stringify({schema:'th12-eagler-source/1',repository:'https://github.com/Tweet-META/th12',baseCommit:git('rev-parse','HEAD').trim(),files:identities},null,2)+'\n');
+fs.writeFileSync(marker,JSON.stringify({schema:'th12-eagler-source/1',repository:'https://github.com/Tweet-META/th12',branch:git('branch','--show-current').trim()||null,baseCommit:git('rev-parse','HEAD').trim(),files:identities},null,2)+'\n');
 console.log(JSON.stringify({sourceOwner:target,files:names.length}));

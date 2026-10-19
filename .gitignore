@@ -13,6 +13,7 @@ site/runtime/core.wasm
 site/runtime/build.json
 site/runtime/vorbis.mjs
 site/runtime/vorbis.wasm
+site/runtime/audio/
 tools/replay-verifier/golden/
 tools/replay-verifier/corpus.json
 tools/replay-verifier/subsystem-golden.json

@@ -12,11 +12,11 @@ in `player.error`.
 `load`/`preload` return encoded-byte/metadata records rather than AudioBuffers.
 Compressed OGG bytes are retained in `buffers`; PCM is never cached per track.
 The default codec module URL is resolved relative to this source module as
-`../../site/runtime/vorbis.mjs`; `decoderModuleURL` can override it.
+`../../site/runtime/audio/vorbis.mjs`; `decoderModuleURL` can override it.
 
 Build with `node scripts/build-audio.mjs` using the existing Emscripten 4.0.22
 installation (`EMSDK`, `EMCC_PYTHON_SCRIPT`, `EMSDK_PYTHON` are supported). The
-script writes `site/runtime/vorbis.mjs` and `site/runtime/vorbis.wasm`. Both must
+script writes `site/runtime/audio/vorbis.mjs` and `site/runtime/audio/vorbis.wasm`. Both must
 be included in the Runtime and served together, including inside a managed
 Runtime. It keeps compiler cache/temp files under this project's `artifacts/`
 and does not require global packages. The script only compiles; it does not run

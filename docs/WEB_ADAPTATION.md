@@ -3,7 +3,10 @@
 还原分支 `experiments` 保留在 `492eddf16a3d9389cb529bedf06555b2cafcabe5`。
 用户此前对该还原基线的确认，不覆盖本轮新增的 Web 适配和设备表现。
 适配工作从 canonical `b40dfb5c55bec2ebbfa4bdcabdb877a5f9500f27` 出发；
-高刷新率、THPrac 和语言分别在独立实验工作区开发，当前实现已接入 `main` 工作目录。
+高刷新率、THPrac 和语言分别在独立实验工作区开发，当前实现集成于 `eagler` 分支。
+`eagler` 从原 `main` 的 `32af3d9c9d6dc5ffe83f9f3a7c3b2b89cbd1a0c0` 建立，
+承接真实 Launcher 接入及后续 Web 适配。`main` 与 `experiments` 保留原有提交，
+本次分支整理不重写其历史，也不将已经进入 `main` 的早期适配提交倒退删除。
 这些工作区和基线用于追溯来源，不代表实验已经完成正式推广或人工验收。
 
 本轮已编译包含 THPrac 的完整 C++ 核心和独立 Vorbis 解码器。按用户要求，
@@ -45,8 +48,10 @@ Runtime 校验父窗口、同源身份和正整数导航 epoch，串行处理命
 | 文件 | `list/read/write/remove/sync` 使用存档白名单和相对路径；运行中不导入/删除文件；未知成绩、配置或损坏录像拒绝导入。 |
 | 生命周期 | 失焦释放输入，隐藏页停止推进并保存；退出等待存储同步；WebGL 丢失停止游戏并报告错误。 |
 
-`/adapter-preview.html` 是本地完整协议的人工观察入口，不是目标启动器。
-Hosted、External、Import、缓存/离线交付和真实设备链仍需人工验收。
+真实 React Launcher 的本地 Hosted 接入及构建方式见 [Launcher 接入](LAUNCHER_INTEGRATION.md)。
+它沿用实际 Package Store、Runtime Generation、文件管理与离线资源流程；
+`/adapter-preview.html` 保留为单独的协议观察入口。
+Hosted 实际运行、External、Import、缓存/离线交付和真实设备链仍需人工验收。
 多人 profile 未声明启用。
 
 ## 输入、存档与录像边界
@@ -131,6 +136,12 @@ node scripts/install-eagler-source.mjs --workspace="D:\Sources\eagler-touhou"
 共享开发入口可用 `EAGLER_TH12_CONTENT_DIR` 指向准备好的 DATA/音乐目录。
 本机人工入口为 `http://127.0.0.1:8114/adapter-preview.html`，可选择日文/繁中、
 stream/full 音乐、THPrac 与触控模式；该检查页不进入 Runtime Release。
+
+真实 Launcher 的本机入口为 `http://127.0.0.1:8130/`，由上游 React 页面与
+`package-server.mjs --games=th12` 组装，当前输出位于忽略的 `artifacts/launcher-site/`。
+此轮已完成页面编译、浏览器核心／音频编译、Hosted 内容与独立繁中包打包，
+并启动本机静态服务器；没有自行运行游戏或测试。可重建入口为
+`scripts/package-launcher.mjs`，详见 [Launcher 接入](LAUNCHER_INTEGRATION.md)。
 
 ## 留给用户的人工确认项
 
