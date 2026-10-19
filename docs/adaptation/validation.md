@@ -85,6 +85,8 @@
 
 ## 测试辅助器
 
+共用 protocol-host 站点通过本地 HTTPS 提供经过身份核对的 Runtime、DATA 和字体。每次运行创建独立的一日 localhost 证书，测试浏览器按该证书的 SPKI 指纹接受连接。报告保存证书身份，并逐响应比较浏览器实际收到的字节数和 SHA-256；传输内容变化时保存原始响应并判失败。站点关闭时释放连接并清理临时证书。工具使用 OpenSSL，可通过 `EAGLER_OPENSSL` 指定可执行文件。
+
 桌面普通版 Runtime 验收使用 `node tools/ports/runtime-browser.mjs --manifest=/absolute/private-inputs.json --game=th06,th07,th08,th09,th10,th11,th15,th20 --variant=normal --gamepad --output=/absolute/results`。此入口运行普通版 protocol-host 场景；MP 使用下文真实房间入口，选择受支持的 2P/3P 与 RTC/Relay 路径。输入清单逐项声明 `id`、`game`、`variant`、Runtime 包目录 `runtime`、入口 `entry`、私有 DATA 路径 `data`、期望 `packageSha256`、仓库相对 `sourceRoot`、`buildReceipt` 和 `packageReceipt`，共用字体放在 `shared` 字段。源码收据使用 `eagler-touhou/runtime-source-build/3`，登记 `game`、`variant`、`profile`、`executionSha256`、完整 `sourceFiles`、`requiredSubmodules` 与编译 `outputs`。验收器逐项核对当前源码、产物包哈希、执行 WASM、编译加载器与 DATA；清单缺项、私有 DATA 缺失或源码／包身份不符都会使对应目标失败。
 
 `requiredSubmodules` 逐项记录路径与提交，并与当前构建配方及 Git 子模块指针相符，无子模块依赖时为空数组。`outputs` 绑定 WASM、编译加载器，以及 CMake 的入口 HTML 或 Node 构建清单；这些文件在打包前后和浏览器验收时核对原值。`planSha256` 绑定实际命令、参数、工具链、特性和环境，打包与验收同时核对构建计划。Runtime 桌面验收执行 13 项必需契约。Replay 文件管理使用清单中本作的 `replay: {path, bytes, sha256}`，指定已有有效录像的绝对路径、字节数和哈希，经过真实导入校验后检查读取、列举、同步、新代恢复及删除持久化，并复核输入原值。录像播放另行验收。

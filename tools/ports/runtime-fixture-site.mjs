@@ -1,13 +1,43 @@
 import assert from 'node:assert/strict';
-import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
-import {readFile} from 'node:fs/promises';
+import {readFile,writeFile} from 'node:fs/promises';
 import {extname,resolve} from 'node:path';
 import {readVerifiedRuntimeFile,verifyRuntimePackage,verifyPrivateData} from './acceptance-contracts.mjs';
+import {createFixtureServer} from '../browser/fixture-server.mjs';
 
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const mime=path=>({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript',
   '.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(path)]??'application/octet-stream';
+
+/** Compare browser-visible bytes with the verified bytes supplied by this fixture. */
+export function watchFixtureResponses(page,{base,expectedResponses,output,label='runtime'}){
+  assert.match(label,/^[A-Za-z0-9_-]+$/,'Response evidence label must be a basename');
+  const origin=new URL(base).origin,responses=[],errors=[],pending=new Set();
+  const receive=response=>{
+    const url=new URL(response.url());if(!['http:','https:'].includes(url.protocol)||url.origin!==origin)return;
+    if(url.pathname==='/favicon.ico'&&response.status()===204)return;
+    const operation=(async()=>{
+      const expected=expectedResponses.get(url.pathname+url.search);
+      assert.ok(expected,`Browser response was not supplied by the verified fixture: ${url.href}`);
+      const bytes=await response.body();
+      const record={url:url.href,status:response.status(),expected,
+        actual:{bytes:bytes.length,sha256:sha256(bytes)},headers:await response.allHeaders(),
+        fromServiceWorker:response.fromServiceWorker()};
+      responses.push(record);
+      if(response.status()!==200||bytes.length!==expected.bytes||record.actual.sha256!==expected.sha256){
+        if(output){const name=`${label}-${responses.length}-${sha256(url.href).slice(0,16)}.response`;
+          await writeFile(resolve(output,name),bytes);record.actualBody=name;}
+        throw Error(`Browser response identity mismatch: ${url.href} expected ${expected.bytes}/${expected.sha256}, received ${bytes.length}/${record.actual.sha256}`);
+      }
+    })().catch(error=>errors.push(String(error.stack||error)));
+    pending.add(operation);void operation.finally(()=>pending.delete(operation));
+  };
+  page.on('response',receive);
+  return {responses,errors,async flush(){
+    while(pending.size)await Promise.all([...pending]);
+    assert.deepEqual(errors,[],'Browser received altered or unverified fixture bytes');
+  },stop(){page.off('response',receive);}};
+}
 
 export function protocolHostPage({target,epoch=1,scripts=[]}) {
   assert.ok(Number.isSafeInteger(epoch)&&epoch>0,'Runtime epoch must be a positive integer');
@@ -26,53 +56,58 @@ export function protocolHostPage({target,epoch=1,scripts=[]}) {
 }
 
 /** A local fixture serves only identity-verified packages and immutable DATA. */
-export async function createRuntimeFixtureSite({repoRoot,targets,shared={},port=0,renderHost=protocolHostPage,files=new Map()}) {
-  const identities=new Map(),sharedInputs=new Map(),httpFailures=[];
+export async function createRuntimeFixtureSite({repoRoot,targets,shared={},port=0,protocol='http',renderHost=protocolHostPage,files=new Map()}) {
+  const identities=new Map(),sharedInputs=new Map(),httpFailures=[],expectedResponses=new Map();
   assert.ok(Array.isArray(targets)&&targets.length>0,'Explicit nonempty Runtime target selection required');
   assert.equal(new Set(targets.map(target=>target.id)).size,targets.length,'Duplicate Runtime target identity');
   for(const [name,path] of Object.entries(shared)){
     assert.match(name,/^[A-Za-z0-9_.-]+$/,'Shared resource must use a basename');
     const bytes=await readFile(resolve(path));sharedInputs.set('/shared/'+name,{path:resolve(path),bytes:bytes.length,sha256:sha256(bytes)});
   }
-  const server=createServer(async(request,response)=>{
+  const fixture=await createFixtureServer(async(request,response)=>{
     try {
       const url=new URL(request.url,'http://127.0.0.1');
+      const reply=(bytes,type)=>{
+        const body=typeof bytes==='string'?Buffer.from(bytes):bytes;
+        expectedResponses.set(url.pathname+url.search,{bytes:body.length,sha256:sha256(body)});
+        response.writeHead(200,{'Content-Type':type,'Content-Length':body.length,'Cache-Control':'no-store'}).end(body);
+      };
       if(url.pathname==='/favicon.ico'){response.writeHead(204).end();return;}
       const target=targets.find(target=>url.pathname===`/host/${target.id}`);
       if(target){assert.ok(identities.has(target.id),'Runtime target has not passed preflight');
         const html=renderHost({target,epoch:Number(url.searchParams.get('epoch')??1)});
-        response.writeHead(200,{'Content-Type':'text/html','Cache-Control':'no-store'}).end(html);return;}
+        reply(html,'text/html');return;}
       for(const target of targets){
         const identity=identities.get(target.id),prefix=`/runtime/${target.id}/`;
         if(url.pathname.startsWith(prefix)){
           assert.ok(identity,'Runtime target has not passed preflight');
           const path=decodeURIComponent(url.pathname.slice(prefix.length));
           const bytes=await readVerifiedRuntimeFile(target,identity.runtime,path);
-          response.writeHead(200,{'Content-Type':mime(path),'Content-Length':bytes.length,'Cache-Control':'no-store'}).end(bytes);return;
+          reply(bytes,mime(path));return;
         }
         if(url.pathname===`/data/${target.id}`){
           assert.ok(identity,'Private DATA has not passed preflight');
           const bytes=await readFile(target.data);
           assert.equal(bytes.length,identity.data.bytes,'Private DATA size changed');
           assert.equal(sha256(bytes),identity.data.sha256,'Private DATA changed');
-          response.writeHead(200,{'Content-Type':'application/octet-stream','Content-Length':bytes.length,'Cache-Control':'no-store'}).end(bytes);return;
+          reply(bytes,'application/octet-stream');return;
         }
       }
       const resource=sharedInputs.get(url.pathname);
       if(resource){const bytes=await readFile(resource.path);
         assert.equal(bytes.length,resource.bytes,'Shared resource size changed');assert.equal(sha256(bytes),resource.sha256,'Shared resource changed');
-        response.writeHead(200,{'Content-Type':mime(url.pathname),'Content-Length':bytes.length,'Cache-Control':'no-store'}).end(bytes);return;}
+        reply(bytes,mime(url.pathname));return;}
       if(files.has(url.pathname)){
         const input=files.get(url.pathname),bytes=typeof input==='string'?await readFile(input):input;
         assert.ok(bytes instanceof Uint8Array,'Fixture asset must be a file path or bytes');
-        response.writeHead(200,{'Content-Type':mime(url.pathname),'Content-Length':bytes.length,'Cache-Control':'no-store'}).end(bytes);return;
+        reply(bytes,mime(url.pathname));return;
       }
       response.writeHead(404).end('Unknown Runtime fixture resource');
     }catch(error){httpFailures.push({url:request.url,error:String(error.stack||error)});response.writeHead(500).end(String(error.message||error));}
-  });
-  await new Promise((accept,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',accept);});
-  const base=`http://127.0.0.1:${server.address().port}`;
-  return {base,httpFailures,sharedInputs:Object.fromEntries(sharedInputs),
+  },{port,protocol});
+  const {base}=fixture;
+  return {base,protocol:fixture.protocol,tlsIdentity:fixture.tlsIdentity,fetch:fixture.fetch,httpFailures,sharedInputs:Object.fromEntries(sharedInputs),
+    watchPage:(page,options={})=>watchFixtureResponses(page,{...options,base,expectedResponses}),
     hostUrl:(target,epoch=1)=>`${base}/host/${target.id}?epoch=${epoch}`,
     async verifyShared(){
       for(const input of sharedInputs.values()){
@@ -89,5 +124,5 @@ export async function createRuntimeFixtureSite({repoRoot,targets,shared={},port=
       const previous=identities.get(target.id);if(previous)assert.deepEqual(identity,previous,'Runtime source, receipts, package or DATA changed during acceptance');
       identities.set(target.id,identity);return identity;
     },
-    close:()=>new Promise((accept,reject)=>server.close(error=>error?reject(error):accept()))};
+    close:fixture.close};
 }

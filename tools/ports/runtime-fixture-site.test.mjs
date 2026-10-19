@@ -4,7 +4,10 @@ import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {runInNewContext} from 'node:vm';
-import {createRuntimeFixtureSite,protocolHostPage} from './runtime-fixture-site.mjs';
+import {EventEmitter} from 'node:events';
+import {createHash} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
+import {createRuntimeFixtureSite,protocolHostPage,watchFixtureResponses} from './runtime-fixture-site.mjs';
 
 test('protocol host rejects messages from another origin, frame, game, protocol or epoch',async()=>{
   const listeners=new Set(),sent=[],origin='http://127.0.0.1:8139';
@@ -51,4 +54,27 @@ test('fixture detects shared resource byte replacement at the same path',async()
     const changed=await fetch(site.base+'/shared/font.bin');assert.equal(changed.status,500);assert.match(await changed.text(),/Shared resource changed/);
     assert.equal(site.httpFailures.length,1);
   }finally{await site.close();assert.ok(directory.startsWith(resolve(tmpdir(),'eagler-fixture-shared-')));await rm(directory,{recursive:true,force:true});}
+});
+
+test('browser byte receipt rejects injected HTML and preserves its exact raw response',async()=>{
+  const output=await mkdtemp(resolve(tmpdir(),'eagler-response-receipt-'));
+  const page=new EventEmitter(),base='https://127.0.0.1:8199';
+  const original=Buffer.from('<!doctype html><p>日語</p>');
+  const injected=Buffer.concat([original,Buffer.from('<script src="https://injected.invalid/"></script>')]);
+  const identity=bytes=>({bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')});
+  const expectedResponses=new Map([['/host',identity(original)],['/runtime.js',identity(Buffer.from('run()'))]]);
+  const probe=watchFixtureResponses(page,{base,expectedResponses,output,label:'native'});
+  const response=(path,bytes)=>({url:()=>base+path,status:()=>200,body:async()=>bytes,
+    allHeaders:async()=>({'content-length':String(bytes.length)}),fromServiceWorker:()=>false});
+  try{
+    page.emit('response',response('/runtime.js',Buffer.from('run()')));await probe.flush();
+    assert.equal(probe.responses.length,1);
+    page.emit('response',response('/host',injected));
+    await assert.rejects(()=>probe.flush(),/altered or unverified/);
+    const mismatch=probe.responses.find(item=>item.url.endsWith('/host'));
+    assert.deepEqual(mismatch.expected,identity(original));assert.deepEqual(mismatch.actual,identity(injected));
+    assert.deepEqual(await readFile(resolve(output,mismatch.actualBody)),injected);
+    assert.match(probe.errors[0],/identity mismatch/);
+    probe.stop();assert.equal(page.listenerCount('response'),0);
+  }finally{probe.stop();assert.equal(resolve(output,'..'),resolve(tmpdir()));await rm(output,{recursive:true,force:true});}
 });

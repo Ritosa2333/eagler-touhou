@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile} from 'node:fs/promises';
-import {resolve} from 'node:path';
+import {resolve,basename} from 'node:path';
 import {selectRuntimeTargets,readVerifiedRuntimeFile} from './acceptance-contracts.mjs';
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
 import {readRuntimeObservation} from './runtime-observations.mjs';
@@ -25,22 +25,24 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
     scope:'Current ordinary Runtime | native practice overlay open/close and disabled control | screenshots for locale review',
     coverage:{ids:['PRACTICE-01','PRACTICE-02','PRACTICE-03','PRACTICE-07'],complete:false,
       scope:'Built feature declaration, configured locale and enabled state, actual native menu opening/closing in four independent ordinary instances. Scene transitions, parameter application and replay metadata have separate scenarios.'},targets:[]});
-  for(const name of ['practice-browser.mjs','practice-observations.mjs','runtime-fixture-site.mjs','runtime-observations.mjs','runtime-desktop-stage.mjs']){
+  for(const name of ['practice-browser.mjs','practice-observations.mjs','runtime-fixture-site.mjs','runtime-observations.mjs','runtime-desktop-stage.mjs','../browser/fixture-server.mjs']){
     const bytes=await readFile(new URL(name,import.meta.url));
-    (report.harnessSources??={})[name]=sha256(bytes);await writeFile(resolve(output,name),bytes);
+    (report.harnessSources??={})[name]=sha256(bytes);await writeFile(resolve(output,basename(name)),bytes);
   }
-  const site=await createRuntimeFixtureSite({repoRoot,targets:selection.targets,shared:config.shared});
+  const site=await createRuntimeFixtureSite({repoRoot,targets:selection.targets,shared:config.shared,protocol:'https'});
+  report.transport={base:site.base,protocol:site.protocol,tlsIdentity:site.tlsIdentity};
   report.sharedInputs=await site.verifyShared();
   let browser;
   try{
     const {launchBrowser}=await import('../browser/launch.mjs');
-    browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+    browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
+      `--ignore-certificate-errors-spki-list=${site.tlsIdentity.spkiSha256}`]});
     report.browser=browser.version();
     for(const target of selection.targets){
       const record={id:target.id,game:target.game,variant:target.variant,checks:[],errors:[],consoleErrors:[],httpErrors:[],locales:[]};
       report.targets.push(record);await save();
       const stage=createStageRecorder(record,save);
-      let context;
+      let context,responseProbe;
       try{
         record.identity=await stage('identity-preflight',{},()=>site.verify(target));
         const manifest=JSON.parse(await readVerifiedRuntimeFile(target,record.identity.runtime,'manifest.json'));
@@ -64,10 +66,13 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
             addEventListener('eagler-thprac-menu',event=>window.__practiceBrowserEvents.push({open:event.detail?.open,at:performance.now()}));
           });
           const page=await context.newPage();
+          responseProbe=site.watchPage(page,{output,label:`${target.id}-${epoch}`});
+          caseRecord.responseIntegrity={responses:responseProbe.responses,errors:responseProbe.errors};
           page.on('pageerror',error=>record.errors.push(String(error)));
           page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push(message.text());});
           page.on('response',response=>{if(response.status()>=400)record.httpErrors.push({url:response.url(),status:response.status()});});
           await stage('host-navigation',{epoch,locale,enabled},()=>page.goto(site.hostUrl(target,epoch)));
+          await responseProbe.flush();
           await stage('runtime-ready',{epoch},()=>page.waitForFunction(epoch=>events.some(event=>event.event==='ready'&&event.epoch===epoch),epoch,{timeout:120000}));
           const element=await page.locator('iframe').elementHandle(),frame=await element.contentFrame();assert.ok(frame);
           const sharedResources=Object.keys(config.shared??{}).map(name=>({path:`/${name}`,url:`/shared/${name}`}));
@@ -75,6 +80,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
             thpracCatalog:[],options:{touchEnabled:false,alwaysHitbox:false,thpracEnabled:enabled,thpracLocale:locale,limitPresentationTo60:false}}),{sharedResources,enabled,locale}));
           await stage('launch',{epoch},()=>page.evaluate(()=>rpc('launch')));
           await stage('first-frame',{epoch},()=>page.waitForFunction(epoch=>events.some(event=>event.event==='first-frame'&&event.epoch===epoch),epoch,{timeout:120000}));
+          await responseProbe.flush();
           await frame.locator('canvas').first().focus();
           const observe=()=>frame.evaluate(readRuntimeObservation,target);
           const ready=practiceGameplayReady;
@@ -114,8 +120,9 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
             'Native practice owner did not publish menu closing');
           Object.assign(caseRecord,{status:'passed',closed,
             localeReview:'Screenshot records displayed glyphs and labels; native locale correctness requires image review'});
+          await responseProbe.flush();
           }catch(error){Object.assign(caseRecord,{status:'failed',error:String(error.stack||error)});}
-          finally{await context?.close();context=null;await save();}
+          finally{responseProbe?.stop();responseProbe=null;await context?.close();context=null;await save();}
         }
         assert.deepEqual(record.errors,[],'Browser errors');assert.deepEqual(record.consoleErrors,[],'Runtime errors');assert.deepEqual(record.httpErrors,[],'HTTP errors');
         assert.equal(record.locales.length,4,'Every enabled locale and the disabled control must run');
@@ -124,6 +131,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
       }catch(error){record.status='failed';record.error=String(error.stack||error);
         const active=record.locales.find(item=>item.status==='running');if(active)Object.assign(active,{status:'failed',error:record.error});}
       finally{
+        responseProbe?.stop();
         await context?.close();
         try{record.postflight=await site.verify(target);}catch(error){record.status='failed';record.postflightError=String(error.stack||error);}
         await save();console.log(`${target.id}: ${record.status.toUpperCase()} ${record.error?.split('\n')[0]??''}`);
