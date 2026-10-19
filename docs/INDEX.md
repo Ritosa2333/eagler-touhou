@@ -1,6 +1,6 @@
 # 文档总表
 
-共 204 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 223 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -19,12 +19,17 @@
 | 适配指南 | [docs/adaptation/multiplayer.md](adaptation/multiplayer.md) | 多人接入与规则 |
 | 适配指南 | [docs/adaptation/presentation.md](adaptation/presentation.md) | 画面与声音 |
 | 适配指南 | [docs/adaptation/record-template.md](adaptation/record-template.md) | 验证记录模板 |
+| 适配指南 | [docs/adaptation/room-start-20261019.md](adaptation/room-start-20261019.md) | 房间预加载与首帧确认 ｜ 2026-10-19 |
 | 适配指南 | [docs/adaptation/runtime.md](adaptation/runtime.md) | 启动与资源 |
 | 适配指南 | [docs/adaptation/storage.md](adaptation/storage.md) | 存档与 Replay |
+| 适配指南 | [docs/adaptation/th07-border-dialogue-20261019.md](adaptation/th07-border-dialogue-20261019.md) | th07 共享结界与对话 ｜ 2026-10-19 |
+| 适配指南 | [docs/adaptation/th11-spell-time-20261019.md](adaptation/th11-spell-time-20261019.md) | th11 多人符卡结算计时 ｜ 2026-10-19 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
 | 作品入口 | [ports/th06/README.md](../ports/th06/README.md) | 東方紅魔郷 TH06 |
 | 作品入口 | [ports/th07/README.md](../ports/th07/README.md) | 東方妖々夢 TH07 |
+| 作品入口 | [ports/th075-mp/README.md](../ports/th075-mp/README.md) | 東方萃夢想 MP |
+| 作品入口 | [ports/th075/README.md](../ports/th075/README.md) | 東方萃夢想 |
 | 作品入口 | [ports/th08-mp/README.md](../ports/th08-mp/README.md) | 東方永夜抄 TH08 多人版 |
 | 作品入口 | [ports/th08/README.md](../ports/th08/README.md) | 東方永夜抄 TH08 |
 | 作品入口 | [ports/th09/README.md](../ports/th09/README.md) | 東方花映塚 TH09 |
@@ -37,6 +42,8 @@
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
 | 作品适配表 | [ports/th06/ADAPTATION.md](../ports/th06/ADAPTATION.md) | th06 适配检查 |
 | 作品适配表 | [ports/th07/ADAPTATION.md](../ports/th07/ADAPTATION.md) | th07 适配检查 |
+| 作品适配表 | [ports/th075-mp/ADAPTATION.md](../ports/th075-mp/ADAPTATION.md) | th075 MP 适配检查 |
+| 作品适配表 | [ports/th075/ADAPTATION.md](../ports/th075/ADAPTATION.md) | th075 适配检查 |
 | 作品适配表 | [ports/th08-mp/ADAPTATION.md](../ports/th08-mp/ADAPTATION.md) | th08 MP 适配检查 |
 | 作品适配表 | [ports/th08/ADAPTATION.md](../ports/th08/ADAPTATION.md) | th08 适配检查 |
 | 作品适配表 | [ports/th09/ADAPTATION.md](../ports/th09/ADAPTATION.md) | th09 适配检查 |
@@ -50,6 +57,8 @@
 | 作品源码文档 | [ports/th06/docs/DEVELOPMENT.md](../ports/th06/docs/DEVELOPMENT.md) | TH06 开发指南 |
 | 作品源码文档 | [ports/th07/docs/DEVELOPMENT.md](../ports/th07/docs/DEVELOPMENT.md) | TH07 开发指南 |
 | 作品源码文档 | [ports/th07/vendored/README.md](../ports/th07/vendored/README.md) | 第三方构建依赖 |
+| 作品源码文档 | [ports/th075-mp/docs/DEVELOPMENT.md](../ports/th075-mp/docs/DEVELOPMENT.md) | 萃梦想多人版开发 |
+| 作品源码文档 | [ports/th075/docs/DEVELOPMENT.md](../ports/th075/docs/DEVELOPMENT.md) | 萃梦想普通版开发 |
 | 作品源码文档 | [ports/th08-mp/docs/DEVELOPMENT.md](../ports/th08-mp/docs/DEVELOPMENT.md) | TH08 多人版开发指南 |
 | 作品源码文档 | [ports/th08/docs/DEVELOPMENT.md](../ports/th08/docs/DEVELOPMENT.md) | TH08 开发指南 |
 | 作品源码文档 | [ports/th09/docs/DEVELOPMENT.md](../ports/th09/docs/DEVELOPMENT.md) | TH09 开发指南 |
@@ -120,6 +129,7 @@
 | 架构说明 | [docs/architecture/source-layout.md](architecture/source-layout.md) | 游戏源码目录 |
 | 架构说明 | [docs/architecture/spectator.md](architecture/spectator.md) | 旁观协议 |
 | 迁移记录 | [docs/migration/README.md](migration/README.md) | Monorepo 迁移记录 |
+| 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |
 | 历史记录 | [docs/history/README.md](history/README.md) | 历史与迁移 |
 | 历史记录 | [ports/th15-mp/web/CHANGELOG.txt](../ports/th15-mp/web/CHANGELOG.txt) | [2026-10-05] 绀珠传 WEB 1.0.3 |
@@ -143,6 +153,14 @@
 | 许可证与声明 | [ports/th07/LICENSE](../ports/th07/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th07/portable/THPRAC-LICENSE.txt](../ports/th07/portable/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th07/src/thirdparty/STB_LICENSE](../ports/th07/src/thirdparty/STB_LICENSE) | STB_LICENSE |
+| 许可证与声明 | [ports/th075-mp/LICENSE](../ports/th075-mp/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th075-mp/THIRD-PARTY-NOTICES.txt](../ports/th075-mp/THIRD-PARTY-NOTICES.txt) | Original game and assets: Twilight Frontier / Team Shanghai Alice. |
+| 许可证与声明 | [ports/th075-mp/portable/LICENSE.eagler-common](../ports/th075-mp/portable/LICENSE.eagler-common) | LICENSE |
+| 许可证与声明 | [ports/th075-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th075-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
+| 许可证与声明 | [ports/th075/LICENSE](../ports/th075/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th075/THIRD-PARTY-NOTICES.txt](../ports/th075/THIRD-PARTY-NOTICES.txt) | Original game and assets: Twilight Frontier / Team Shanghai Alice. |
+| 许可证与声明 | [ports/th075/portable/LICENSE.eagler-common](../ports/th075/portable/LICENSE.eagler-common) | LICENSE |
+| 许可证与声明 | [ports/th075/portable/sdl/third_party/miniaudio.LICENSE](../ports/th075/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th08-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th08-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th08-mp/web/assets/native/vendor/SpessaSynth.LICENSE](../ports/th08-mp/web/assets/native/vendor/SpessaSynth.LICENSE) | SpessaSynth |
 | 许可证与声明 | [ports/th08-mp/web/assets/native/vendor/stb-vorbis.LICENSE](../ports/th08-mp/web/assets/native/vendor/stb-vorbis.LICENSE) | stb vorbis |
@@ -205,8 +223,9 @@
 | 许可证与声明 | [services/relay/LICENSE](../services/relay/LICENSE) | LICENSE |
 | 许可证与声明 | [services/telemetry/LICENSE](../services/telemetry/LICENSE) | LICENSE |
 | 许可证与声明 | [services/turn/LICENSE](../services/turn/LICENSE) | LICENSE |
-| 协作约定 | [AGENTS.md](../AGENTS.md) | 协作约定 |
+| 协作约定 | [AGENTS.md](../AGENTS.md) | 文风要求 |
 | 协作约定 | [launcher/tools/maintainer/operator-delivery/payload/AGENTS.md](../launcher/tools/maintainer/operator-delivery/payload/AGENTS.md) | 部署代理约定 |
 | CI 与协作模板 | [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) | 改动 |
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
+| 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | th075 语言资源准备 |

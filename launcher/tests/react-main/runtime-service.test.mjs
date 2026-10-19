@@ -88,9 +88,9 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
     epoch: service.getSnapshot().epoch, event: type, ...extra}, envelope);
   const ack = (command, extra = {}) => {const message = [...outbound].reverse().find(item => item.command === command && item.request); assert.ok(message, `actual ${command} request exists`);
     emit({protocol: message.protocol, game: message.game, epoch: message.epoch, request: message.request, ok: true, ...extra}); return message;};
-  async function prepare(plan) {
+  async function prepare(plan, capabilities = {}) {
     const pending = service.prepare(plan); await flush(); assert.equal(service.getSnapshot().phase, 'loading');
-    event('ready'); await flush(); assert.equal(service.getSnapshot().phase, 'configuring'); ack('configure'); await pending;
+    event('ready', capabilities); await flush(); assert.equal(service.getSnapshot().phase, 'configuring'); ack('configure'); await pending;
     assert.equal(service.getSnapshot().phase, 'prepared');
   }
   const result = {service, host, frame, runtime, timers, eventContexts, outbound, navigations, retained, released, codeCalls, dataReads, emit, event, ack, prepare, loadListeners};
@@ -113,6 +113,108 @@ test('runtime: worker downloads share document network accounting and cannot sur
   report({path:'runtime/th10/'+hash+'/game.wasm',phase:'receiving',loaded:4,total:5});
   assert.equal(states.at(-1).count,0,'late progress cannot revive the retired Runtime');
   release();await assert.rejects(preparing,/SUPERSEDED/);
+});
+
+test('room preload: binding a run reuses the epoch/DATA and retains the prepared resource payload', async () => {
+  const f = fixture(), plan = managedPlan();
+  plan.runtimeVariant = 'multiplayer'; plan.entry = 'runtime/th10/th10mp.html';
+  plan.configure.options = {touchEnabled: true, gameLanguage: 'en'};
+  plan.configure.runtimePack = {schema: 'prepared-language-fixture', files: [{path: '/thcrap/th10/msg.bin', bytes: new Uint8Array([1, 2])}]};
+  await f.prepare(plan);
+  const before = f.service.getSnapshot(), navigations = f.navigations.length, reads = f.dataReads.length;
+  const configure = f.service.configurePreparedRoom(before.epoch, {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid/?run=7', netplayPlayer: 1});
+  await flush(); const wire = f.ack('configure'); await configure;
+  assert.equal(f.service.getSnapshot().epoch, before.epoch);
+  assert.equal(f.navigations.length, navigations); assert.equal(f.dataReads.length, reads);
+  assert.equal(wire.options.touchEnabled, true); assert.equal(wire.options.netplayPlayer, 1);
+  assert.deepEqual(wire.runtimePack, plan.configure.runtimePack, 'legacy configure must retain the prepared language payload');
+  assert.deepEqual(wire.resources, []); assert.deepEqual(wire.sharedResources, []);
+  const launch = f.service.launch(); await flush(); f.ack('launch'); await launch;
+  assert.equal(f.service.getLauncherControlContext().options.netplayPlayer, 1);
+  await assert.rejects(f.service.configurePreparedRoom(before.epoch, {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid'}));
+});
+
+test('room return keeps the same engine, synchronizes first and rejects first frames from an older launch', async () => {
+  const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  await f.prepare(plan,{roomReturn:true});
+  const epoch=f.service.getSnapshot().epoch,document=f.runtime.document,navigations=f.navigations.length,reads=f.dataReads.length;
+  let previousSerial=0;
+  for(let attempt=0;attempt<3;attempt++){
+    const configuring=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=7',netplaySpectator:true});
+    await flush();f.ack('configure');await configuring;
+    const launching=f.service.launch({awaitFirstFrame:true});await flush();const launched=f.ack('launch');
+    if(previousSerial){const events=f.eventContexts.length;f.event('first-frame',{launchSerial:previousSerial});f.event('room-menu',{launchSerial:previousSerial});assert.equal(f.service.getSnapshot().firstFrame,false);assert.equal(f.eventContexts.length,events,'old launch events never reach presentation owners');}
+    f.event('first-frame',{launchSerial:launched.launchSerial});await launching;previousSerial=launched.launchSerial;
+    const returning=f.service.returnToRoom();await flush();
+    assert.equal(f.outbound.filter(m=>m.command==='return-room').length,attempt,'native menu waits for save sync');
+    f.ack('sync');await flush();f.ack('return-room',{presented:true});await returning;
+    const current=f.service.getSnapshot();assert.equal(current.phase,'prepared');assert.equal(current.roomPreview,true);
+    assert.equal(current.launched,false);assert.equal(current.spectator,false);assert.equal(current.epoch,epoch);
+    assert.equal(f.runtime.document,document);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+    assert.equal(f.service.getLauncherControlContext().options.netplayMode,undefined);
+  }
+});
+
+test('native menu return cancels an unfinished first-frame wait without retiring the loaded engine',async()=>{
+  const f=fixture(),plan=managedPlan();plan.runtimeVariant='multiplayer';await f.prepare(plan,{roomReturn:true});
+  const document=f.runtime.document,epoch=f.service.getSnapshot().epoch;
+  const launching=f.service.launch({awaitFirstFrame:true}),cancelled=assert.rejects(launching,/SUPERSEDED/);
+  await flush();const message=f.ack('launch');await flush();
+  f.event('room-menu',{launchSerial:message.launchSerial});await cancelled;
+  assert.equal(f.service.getSnapshot().phase,'prepared');assert.equal(f.service.getSnapshot().roomPreview,true);
+  assert.equal(f.service.getSnapshot().epoch,epoch);assert.equal(f.runtime.document,document);
+  const next=f.service.launch();await flush();f.ack('launch');await next;
+  assert.equal(f.service.getSnapshot().launched,true);
+});
+
+test('a Runtime without room-return support stays loaded when return is requested', async () => {
+  const f=fixture(),plan=managedPlan();plan.runtimeVariant='multiplayer';await f.prepare(plan);
+  const launching=f.service.launch();await flush();f.ack('launch');await launching;
+  const document=f.runtime.document,navigations=f.navigations.length;
+  await assert.rejects(f.service.returnToRoom(),/runtime.roomReturnUnavailable/);
+  assert.equal(f.service.getSnapshot().launched,true);assert.equal(f.runtime.document,document);assert.equal(f.navigations.length,navigations);
+});
+
+test('room preload: a stale run cannot configure a replacement engine', async () => {
+  const f = fixture(); await f.prepare(managedPlan()); const epoch = f.service.getSnapshot().epoch;
+  f.service.cancel(); await f.prepare(managedPlan());
+  const messages = f.outbound.length;
+  await assert.rejects(f.service.configurePreparedRoom(epoch, {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid'}));
+  assert.equal(f.outbound.length, messages);
+});
+
+test('room preview is prelaunch, native-acknowledged, and binds the same engine without remounting resources', async () => {
+  const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  const preparing=f.service.prepare(plan);await flush();f.event('ready',{roomPreview:true});await flush();f.ack('configure');await preparing;
+  const epoch=f.service.getSnapshot().epoch,navigations=f.navigations.length;
+  const preview=f.service.prepareRoomPreview(epoch);await flush();
+  assert.equal(f.service.getSnapshot().roomPreview,undefined);
+  f.ack('prepare-room',{presented:true});assert.equal(await preview,true);
+  assert.equal(f.service.getSnapshot().roomPreview,true);
+  assert.equal(f.service.getSnapshot().launched,false);
+  assert.equal(f.service.getInputContext().launched,false);
+  const binding=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=1'});
+  await flush();const wire=f.ack('configure');await binding;
+  assert.deepEqual(wire.resources,[]);assert.deepEqual(wire.runtimeResources,[]);assert.equal(wire.runtimePack,undefined);
+  const launch=f.service.launch();await flush();f.ack('launch');await launch;
+  assert.equal(f.service.getSnapshot().roomPreview,false);
+  assert.equal(f.service.getSnapshot().epoch,epoch);assert.equal(f.navigations.length,navigations);
+});
+
+test('a title preview frame cannot unlock a room launch; its next real frame releases the launch waiter', async () => {
+  const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  const preparing=f.service.prepare(plan);await flush();f.event('ready',{roomPreview:true});await flush();f.ack('configure');await preparing;
+  const epoch=f.service.getSnapshot().epoch;
+  f.event('first-frame');assert.equal(f.service.getSnapshot().firstFrame,false);
+  const preview=f.service.prepareRoomPreview(epoch);await flush();f.ack('prepare-room',{presented:true});await preview;
+  const binding=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=1'});
+  await flush();f.ack('configure');await binding;
+  let settled=false;
+  const launch=f.service.launch({awaitFirstFrame:true}).then(value=>{settled=true;return value;});
+  await flush();f.ack('launch');await flush();
+  assert.equal(f.service.getSnapshot().launched,true);assert.equal(settled,false);
+  f.event('first-frame');const running=await launch;
+  assert.equal(running.phase,'running');assert.equal(running.firstFrame,true);assert.equal(settled,true);
 });
 
 test('runtime: validated direct preload uses original asset URL, one frame and ACK-based ordinary launch', async () => {

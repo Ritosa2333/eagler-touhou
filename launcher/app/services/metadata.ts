@@ -17,6 +17,7 @@ export interface MetadataSnapshot {
   siteManifest: SiteManifest | null;
   releaseCatalog: ReleaseCatalog | null;
   installed: ReadonlyMap<GameId, InstalledPackageGeneration>;
+  beautyInstalled: ReadonlySet<GameId>;
   products: readonly ProductId[];
   metadataErrors: readonly unknown[];
   siteManifestError: unknown | null;
@@ -49,7 +50,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
   let disposed = false;
   let initialization: Promise<void> | null = null;
   let snapshot: MetadataSnapshot = Object.freeze({phase: 'idle', siteManifest: null,
-    releaseCatalog: null, installed: new Map(), products: availableProducts(null), metadataErrors: [], siteManifestError: null, releaseCatalogError: null});
+    releaseCatalog: null, installed: new Map(), beautyInstalled: new Set<GameId>(), products: availableProducts(null), metadataErrors: [], siteManifestError: null, releaseCatalogError: null});
 
   function availableProducts(host: SiteManifest | null): readonly ProductId[] {
     return Object.freeze(PRODUCT_IDS.filter(product => {
@@ -80,6 +81,15 @@ export function createMetadataService(options: MetadataServiceOptions) {
         if (result.generation) installed.set(id, result.generation);
         else installed.delete(id);
         publish({installed});
+        // Optional availability must not hold up selected-package hydration.
+        const beauty = gameVersion === 'beauty' ? Promise.resolve(result) : readCurrentPackageGeneration(id, {indexedDBFactory: options.indexedDBFactory, gameVersion: 'beauty'});
+        void beauty.then(value => {
+          if (disposed || reads.get(id) !== version) return;
+          if (snapshot.beautyInstalled.has(id) === !!value.generation) return;
+          const beautyInstalled = new Set(snapshot.beautyInstalled);
+          if (value.generation) beautyInstalled.add(id); else beautyInstalled.delete(id);
+          publish({beautyInstalled});
+        }).catch(() => {});
       } catch {
         // A failed hint read must not erase a usable previous snapshot. Launch
         // still reads the authoritative store again before using package data.
@@ -134,6 +144,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
     const music = hostGame?.music;
     return {
       productId, uiLocale: locale, hostFeatures: hostGame?.features,
+      beautyInstalled: snapshot.beautyInstalled.has(gameId),
       languages: buildLanguageCatalog({
         languageOptions: game?.languageOptions, legacyLanguages: hostGame?.languages,
         offlineEntries: loadOfflineLanguageIndex(options.storage, gameId), generation,
@@ -161,7 +172,10 @@ export function createMetadataService(options: MetadataServiceOptions) {
     acceptInstalledHint(game: GameId, generation: InstalledPackageGeneration) {
       if (disposed || descriptorGameVersion(generation.descriptor) !== (options.getGameVersion?.(game) ?? loadGameVersion(options.storage, game))) return;
       if (generation.game !== game) throw new Error('Package hint game mismatch');
-      const installed = new Map(snapshot.installed); installed.set(game, generation); publish({installed});
+      const installed = new Map(snapshot.installed); installed.set(game, generation);
+      const beautyInstalled = new Set(snapshot.beautyInstalled);
+      if (descriptorGameVersion(generation.descriptor) === 'beauty') beautyInstalled.add(game);
+      publish({installed, beautyInstalled});
     },
     dispose() {
       disposed = true;

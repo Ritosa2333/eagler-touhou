@@ -71,6 +71,16 @@ export const PRODUCT_CONTENT = Object.freeze({
       ogg: Object.freeze({ kind: "verified-converter", outputDirectory: "bgm-ogg" }),
     }),
   }),
+  th075: Object.freeze({
+    original: Object.freeze({files:Object.freeze(["th075.dat","th075b.dat"]),oggSourceFiles:Object.freeze(["th075bgm.dat"]),
+      preparedAlternative:Object.freeze({directory:"assets-ogg",markerFiles:Object.freeze(["th075.data","music/00a.ogg"])})}),
+    dataLayout:"sha256-31f13ab255731fc7490659c30a8105ce7377a873c26ef64c8c7af1e9e0669759",
+    music:Object.freeze({ogg:Object.freeze({mount:PRODUCT_GAMES.th075.package.musicMounts.ogg,files:Object.freeze(["00a.ogg", "00b.ogg", "00c.ogg", "01a.ogg", "01b.ogg", "02a.ogg", "02b.ogg", "03a.ogg", "03b.ogg", "04a.ogg", "04b.ogg", "05a.ogg", "05b.ogg", "06a.ogg", "07a.ogg", "08a.ogg", "09a.ogg", "51.ogg", "52.ogg", "53.ogg", "54.ogg", "56.ogg", "57.ogg", "58.ogg", "59.ogg", "60.ogg", "61.ogg", "62.ogg", "63.ogg", "65.ogg", "67.ogg", "68.ogg", "sys00_op.ogg", "sys99_ed.ogg"])})}),
+    hostPreparation:Object.freeze({artwork:Object.freeze({kind:"prepared-artwork"}),
+      languagePack:Object.freeze({kind:"thcrap-runtime-compiler",inputMode:"archives",developmentEnv:"EAGLER_TH075_ARCHIVES",developmentFiles:Object.freeze(["th075.dat","th075b.dat"])}),
+      preparedContent:Object.freeze({directory:"assets-ogg",markerFiles:Object.freeze(["th075.data","music/00a.ogg"]),script:"scripts/prepare-th075-content.mjs"}),
+      ogg:Object.freeze({kind:"prepared-content"}),dataAssets:Object.freeze({kind:"prepared-content"})}),
+  }),
   th08: Object.freeze({
     original: Object.freeze({
       files: Object.freeze(["th08.dat"]),

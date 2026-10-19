@@ -2404,8 +2404,8 @@ void RetireGameplaySession()
     if (g_SpectatorMode)
     {
         // Spectator admission is scoped to the current relay run. A later
-        // room start gets a new startSerial and a fresh Runtime from the
-        // Launcher, so never reuse this old read-only socket for generation 1.
+        // room launch explicitly rearms the retained Runtime. Keep the old
+        // read-only socket retired until that launch selects its next role.
         g_SpectatorRunRetired = true;
         if (ProductionLanMode() && g_ProductionTransportStarted)
         {
@@ -4876,6 +4876,29 @@ bool ReconciliationInProgress()
 bool Requested()
 {
     return RequestedInternal();
+}
+
+void ReturnToRoom()
+{
+    g_BrowserPeerTransport.Close();
+    g_ProductionTransportStarted = false;
+    RetireGameplaySession();
+    g_SpectatorRunRetired = true;
+    g_SpectatorPlayback.Clear();
+    g_SpectatorView.Clear();
+    if (g_Supervisor.wantedState == SUPERVISOR_STATE_MAINMENU &&
+        g_Supervisor.curState == SUPERVISOR_STATE_GAMEMANAGER)
+        g_Supervisor.wantedState = SUPERVISOR_STATE_INIT;
+    g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
+}
+
+void BeginRoomRun()
+{
+    g_SpectatorRunRetired = false;
+    g_SpectatorMode = false;
+    g_Initialized = g_Active = g_Done = false;
+    g_SpectatorPlayback.Clear();
+    g_SpectatorView.Clear();
 }
 
 double SimulationIntervalScale()

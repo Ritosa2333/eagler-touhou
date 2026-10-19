@@ -72,6 +72,7 @@ export function createRoomDirectory({
         (seat) => seat.ready && seat.readyVersion === room.lobby.settingsVersion,
       ).length,
       difficulty: room.lobby.difficulty,
+      startedAt: room.lobby.startedAt || 0,
       host: publicNames ? seats[0]?.name || '' : initial(seats[0]?.name),
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       challengeMode: room.lobby.challengeMode === true,
@@ -84,6 +85,7 @@ export function createRoomDirectory({
         seat
           ? {
               initial: initial(seat.name),
+              loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
               ...(match[1] === 'th09mp'
                 ? {

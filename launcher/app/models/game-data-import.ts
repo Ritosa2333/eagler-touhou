@@ -61,6 +61,7 @@ export interface GameDataImportPorts {
    * This model never creates another network tracker or native Runtime owner. */
   beginBlockingDownload(options: {label: string; onCancel(): Promise<void>}): {finish(): void; cancel(): Promise<void>};
   onActivityChange?(): void;
+  packageInstalled?(context: Extract<GameDataContinuation, {kind: 'launch'}>): void;
   /** Main unlockGameDataImport keeps existing metrics but reveals GAME DATA. */
   showGameDataTransfer?(): void;
 }
@@ -206,6 +207,12 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
             ports.feedback.playerStatus(message); ports.feedback.toast(message);
           }
         }
+      }
+      if (!disposed && serial === id && gameDataContinuationMatches(importContext, getContext())) {
+        ports.packageInstalled?.(importContext);
+        // A matching room import owns a paused preparation, not a second Start
+        // intent. Continue it immediately instead of stranding it as cancelled.
+        await roomImport?.resume();
       }
     } catch (error) {
       // After installation, a Runtime retirement failure is not an invalid ZIP.

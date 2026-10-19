@@ -4,12 +4,14 @@ import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
+import {existsSync} from 'node:fs';
 import {cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {dirname, resolve} from 'node:path';
 import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {ensureContractsBuild} from '../../lib/contracts-build.mjs';
 import {writeSiteMetadata} from '../../lib/site-metadata.mjs';
+import {privateFrontendAssetSource} from '../../lib/private-frontend-assets.mjs';
 import {PRODUCT_GAMES} from '../../lib/contracts/product-catalog.mjs';
 import {resolveHostFrontend, reusableHostedBase, buildHostedSite, buildImportArtifacts} from '../../host/lib/site-builder.mjs';
 
@@ -93,7 +95,8 @@ test('cache reuse binds frontend kind, mount, artifact bytes, metadata, and depl
     await mkdir(site, {recursive: true});
     for (const path of selected.artifact.packageFiles) {
       await mkdir(dirname(resolve(site, path)), {recursive: true});
-      await cp(selected.artifact.resolveSource(path), resolve(site, path));
+      const privateSource = privateFrontendAssetSource(path);
+      await cp(privateSource && existsSync(privateSource) ? privateSource : selected.artifact.resolveSource(path), resolve(site, path));
     }
     await writeSiteMetadata(site, null);
     deployment.files = await Promise.all(selected.artifact.packageFiles.map(async path => {

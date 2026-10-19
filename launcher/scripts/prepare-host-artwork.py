@@ -32,6 +32,7 @@ ARTWORK_BY_GAME = {
         "pwa/apple-touch-icon.png",
     ),
     "th07": ("th07-card.webp",),
+    "th075": ("th075-card.webp",),
     "th08": ("th08-card.webp",),
     "th09": ("th09-card.webp",),
     "th10": ("th10-card.webp",),
@@ -197,6 +198,11 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         return extract_pbgz_entry(root / "th09.dat", "title00.png")
     if name == "th10-card.webp":
         return _extract_th10_title(root, thdat, thanm)
+    if name == "th075-card.webp":
+        for candidate in (root / "th075-card.webp", root / "th075_web/launcher/public/assets/th075-card.png"):
+            if candidate.is_file():
+                return candidate.read_bytes()
+        raise FileNotFoundError("Supply the TH075 development card or an artwork override")
     if name == "th15-card.webp":
         return _extract_th15_title(root, thdat, thanm)
     if name in ("th11-card.webp", "th20-card.webp"):

@@ -1,0 +1,14 @@
+import {execFileSync} from 'node:child_process';
+import {existsSync,mkdirSync,readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {WASI} from 'node:wasi';
+const root=resolve(import.meta.dirname,'..'),sdk=process.env.WASI_SDK_PATH;
+if(!sdk)throw Error('Set WASI_SDK_PATH');
+const compiler=resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++');
+if(!existsSync(compiler))throw Error('Missing WASI compiler');
+const out=resolve(root,'web/artifacts/spell-timing-test');mkdirSync(out,{recursive:true});
+const wasm=resolve(out,'spell-timing.wasm');
+execFileSync(compiler,['-O2','-std=c++17','-Wall','-Wextra','-Werror','-DTH11_MULTIPLAYER=1','-I'+resolve(root,'web/cpp/game'),resolve(root,'web/cpp/game/SpellTiming.cpp'),resolve(root,'tests/spell-timing-test.cpp'),'-o',wasm],{stdio:'inherit'});
+const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
+const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});
+if(wasi.start(instance)!==0)throw Error('TH11 spell timing regression failed');

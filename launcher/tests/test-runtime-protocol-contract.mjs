@@ -17,7 +17,7 @@ const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game
   product.runtimeFileLayout === "directory"
     ? game === "th09"
       ? [workspacePath(game, `web`, "sdl-runtime", "managed.mjs")]
-      : game === "th15" ? [workspacePath(game, `web`, "sdl-runtime", "shell.mjs")] : [
+      : ["th075", "th15"].includes(game) ? [workspacePath(game, `web`, "sdl-runtime", "shell.mjs")] : [
         workspacePath(game, `web`, "sdl-runtime", "shell.mjs"),
         workspacePath(game, `web`, "sdl-runtime", "eagler-host.mjs"),
       ]

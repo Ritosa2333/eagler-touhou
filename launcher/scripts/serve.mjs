@@ -22,7 +22,7 @@ import { developmentResourceRoutes } from "../lib/development-resource-routes.mj
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { REACT_FRONTEND_ARTIFACT, FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
-import { SITE_MANIFEST_FILE } from "../lib/contracts/site-manifest.mjs";
+import { SITE_MANIFEST_FILE, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { RELEASE_CATALOG_FILE, RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "../lib/client-services-build.mjs";
 import { privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
@@ -68,8 +68,14 @@ if (process.env.EAGLER_TOUHOU_ARTWORK_DIR && !existsSync(configuredArtworkDirect
 const configuredNetplayRelay = process.env.EAGLER_TOUHOU_NETPLAY_RELAY?.trim() || undefined;
 const hostArtwork = new Set(hostArtworkFiles(Object.keys(DEVELOPMENT_CONTENT.games)));
 const selectedDevelopmentGames = process.env.EAGLER_DEVELOPMENT_GAMES?.split(",").map(value => value.trim()).filter(Boolean);
+// Optional operator-owned local manifest lets UI previews reuse packaged
+// Runtimes without requiring every source repository to have build outputs.
+const localManifest = process.env.EAGLER_DEVELOPMENT_SITE_MANIFEST
+  ? validateSiteManifest(JSON.parse(await readFile(resolve(process.env.EAGLER_DEVELOPMENT_SITE_MANIFEST), 'utf8')))
+  : null;
+if (localManifest && configuredNetplayRelay) localManifest.shared.netplayRelay = configuredNetplayRelay;
 let developmentResources = null;
-const developmentManifest = sourceDevelopmentServer ? await createDevelopmentSiteManifest({
+const developmentManifest = sourceDevelopmentServer ? localManifest ?? await createDevelopmentSiteManifest({
     netplayRelay: configuredNetplayRelay,
     games: selectedDevelopmentGames,
     publishManifest: manifest => {
@@ -161,7 +167,7 @@ const handleThcrap = thcrapEnabled ? createThcrapHttpHandler({
   repository: process.env.EAGLER_THCRAP_REPOSITORY,
   cacheRoot: process.env.EAGLER_THCRAP_CACHE,
   maxAgeMs: Number.parseInt(process.env.EAGLER_THCRAP_MAX_AGE_MS || "900000", 10),
-  ...(runtimeCompiler ? { packProcessor: resources => runtimeCompiler.processPack(resources) } : {})
+  ...(runtimeCompiler ? { packProcessor: (resources,context) => runtimeCompiler.processPack(resources,context) } : {})
 }) : async () => false;
 
 function etag(info) {

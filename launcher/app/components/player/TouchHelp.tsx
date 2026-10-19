@@ -2,6 +2,7 @@ import {useLayoutEffect, useRef} from 'react';
 import type {TouchFocusMode} from '../../../src/launcher/game-preferences.mts';
 import {useLocale} from '../../i18n';
 import {useTouchGuidePlayback} from './use-touch-guide-playback';
+import {FightingGuide} from './FightingGuide';
 
 export interface TouchHelpProps {
   open: boolean;
@@ -9,11 +10,12 @@ export interface TouchHelpProps {
   touchEnabled: boolean;
   focusMode: TouchFocusMode;
   showIosFullscreenHelp: boolean;
+  nativeControls?: boolean;
 }
 /** Original index.html938–1065 and app.mts2216–2225/3674–3782/4816.
  * This hidden Player overlay never adds a native dialog or history entry.
  * Seen gating and game refocus stay with the actual Player session owner. */
-export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIosFullscreenHelp}: TouchHelpProps) {
+export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIosFullscreenHelp,nativeControls=false}: TouchHelpProps) {
   const {t} = useLocale(), root = useRef<HTMLDivElement>(null);
   const playback = useTouchGuidePlayback(root, open);
   const close = () => {playback.collapse(); onCloseRequest();};
@@ -55,6 +57,7 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
                 </div>
               </div>
             </article>
+            {nativeControls ? <FightingGuide open={playback.active==='game-controls'} onToggle={()=>playback.toggle('game-controls')}/> : <>
             <article className="guide-scene guide-panel help-desktop-only" data-guide-panel="game-controls">
               <button className="guide-tab-card" id="guideTabGameControls" type="button" aria-controls="guideGameControls" data-guide-tab="game-controls" aria-expanded={playback.active === 'game-controls'} onClick={() => playback.toggle('game-controls')}><span><strong data-i18n="help.gameControls">{t("help.gameControls")}</strong><small data-i18n="help.gameControlsSummary">{t("help.gameControlsSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"></path></svg></i></button>
               <div className="guide-demo-body" id="guideGameControls" hidden={playback.active !== 'game-controls'}>
@@ -139,6 +142,7 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
                 </div>
               </div>
             </article>
+            </>}
           </section>
         </main>
       </div>

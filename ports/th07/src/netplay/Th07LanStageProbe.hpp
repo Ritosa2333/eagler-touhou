@@ -12,6 +12,8 @@ bool Active();
 // presenting. Stage 1 must not be dispatched until this becomes true.
 bool TransportReady();
 bool LastTickAdvanced();
+void ReturnToRoom();
+void BeginRoomRun();
 // True only while authoritative world state is between rollback restore and
 // the final replay frame. Draw must not inspect this partial historical state.
 bool ReconciliationInProgress();

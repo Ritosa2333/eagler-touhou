@@ -398,6 +398,9 @@ const u8 *Controller::GetControllerState()
 
 u16 Controller::GetInput(void)
 {
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    if(EM_ASM_INT({return Module.eaglerRoomPreview?1:0;}))return 0;
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // Rollback replays an already-sampled logical frame. Touch pulses and
     // host button serials are consumed by GetButtonBits(), so do not poll

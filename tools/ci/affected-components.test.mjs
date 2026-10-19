@@ -12,6 +12,7 @@ test('source build matrix follows actual recipes and retains both shared-source 
   const targets=nodeBuildTargets(affectedComponents(null,workspace,builds),workspace,builds);
   assert.equal(targets.filter(target=>target.game==='th09').length,2);
   assert.equal(targets.filter(target=>target.game==='th20').length,1);
+  assert.deepEqual(targets.filter(target=>target.game==='th075').map(target=>target.variant), ['normal','multiplayer']);
   assert.ok(targets.every(target=>!['th06','th07'].includes(target.game)));
 });
 test('Launcher-only contribution does not schedule native consumers', () => {

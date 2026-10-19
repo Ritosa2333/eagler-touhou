@@ -74,13 +74,8 @@ export function createRoomSession(options: RoomSessionOptions) {
         (!runtime?.launched || options.titleOverlayOpen()),
     });
     quickChat.update({
-      visible:
-        (state.product === 'th09mp' && !!room) ||
-        (runtime?.launched === true &&
-          runtime.runtimeVariant === 'multiplayer' &&
-          !options.replayViewer() &&
-          !!room),
-      inRoom: state.product === 'th09mp' && runtime?.launched !== true,
+      visible: !!room && !options.replayViewer(),
+      inRoom: !!room && (runtime?.launched !== true || options.titleOverlayOpen()),
       room: room ? `${state.product}-${room.code}` : '',
       serial: state.startSerial,
       localSeat: state.seat,

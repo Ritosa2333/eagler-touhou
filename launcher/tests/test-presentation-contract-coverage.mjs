@@ -33,6 +33,7 @@ const verification = Object.freeze({
     "portable/check-presentation-purity.mjs",
   ]) }),
   th09: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
+  th075: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th11: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
   th15: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
@@ -52,6 +53,19 @@ for (const [game, lane] of Object.entries(verification).filter(([game]) => selec
     if (game === 'th09') {
       await runNativeCpp(await readFile(workspacePath(game,'web/tests/multiplayer/frame-schedule.cpp'),'utf8'),
         {includes:[workspacePath(game,'web/tests/multiplayer')]});
+    } else if (game === 'th075') {
+      await runNativeCpp(`#include "FrameCadence.hpp"
+#include <cassert>
+#include <initializer_list>
+int main(){for(unsigned hz:{60u,75u,90u,120u,144u,165u,240u}){
+ touhou::sdl::FrameCadence clock;unsigned ticks=0;
+ for(unsigned i=0;i<hz*10;++i)ticks+=clock.advance(1./hz);
+ assert(ticks==600);
+ }
+ touhou::sdl::FrameCadence clock;
+ assert(clock.advance(.1)==4);assert(clock.advance(0)==2);
+ clock.reset();assert(clock.advance(0)==0);assert(clock.advance(-1)==0);
+}`, {includes:[workspacePath(game,'portable/sdl')]});
     } else if (game === 'th20') {
       await runNativeCpp(await readFile(workspacePath(game,'portable/check-frame-cadence.cpp'),'utf8'),
         {includes:[workspacePath(game,'portable')]});

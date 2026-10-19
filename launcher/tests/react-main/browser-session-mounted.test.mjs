@@ -166,7 +166,8 @@ function createNativeEndpoint(frame) {
   frame.removeAttribute = name => {if (name === 'src') native.location.replace('about:blank'); else removeAttribute(name);};
   native.emit = (event, extra = {}) => {
     const message = new env.window.Event('message');
-    Object.defineProperties(message, {origin: {value: env.window.location.origin}, source: {value: native}, data: {value: {...native.envelope, event, ...extra}}});
+    Object.defineProperties(message, {origin: {value: env.window.location.origin}, source: {value: native}, data: {value: {...native.envelope, event,
+      ...(event === 'ready' ? {roomReturn:true} : event === 'first-frame' ? {launchSerial:native.launchSerial} : {}), ...extra}}});
     env.window.dispatchEvent(message);
   };
   native.respond = (message, values = {}) => {
@@ -178,6 +179,7 @@ function createNativeEndpoint(frame) {
     assert.equal(target, env.window.location.origin);
     owner.outbound.push(message); owner.order.push(message.command);
     if (message.command === 'configure') native.options = message.options;
+    if (message.command === 'launch') native.launchSerial = message.launchSerial;
     if (!message.request) return;
     if (message.command === 'sync' && owner.syncMode === 'hold') {owner.pendingSync.push(message); return;}
     if (message.command === 'write' && owner.writeMode === 'hold') {owner.pendingWrite.push(message); return;}
@@ -187,7 +189,8 @@ function createNativeEndpoint(frame) {
       : message.command === 'sync' && owner.syncMode === 'fail' ? {ok: false, error: 'Synthetic native sync failure'}
       : message.command === 'write' && owner.writeMode === 'fail' ? {ok: false, error: 'Synthetic native write failure'}
       : message.command === 'read' ? {bytes: owner.corruptRead ? [255] : owner.storedFiles.get(message.path) ?? [3, 4, 5]}
-      : message.command === 'list' ? {files: [...owner.storedFiles].map(([path, bytes]) => ({path, size: bytes.length}))} : {};
+      : message.command === 'list' ? {files: [...owner.storedFiles].map(([path, bytes]) => ({path, size: bytes.length}))}
+      : message.command === 'return-room' ? {presented:true} : {};
     queueMicrotask(() => {native.respond(message, response);if(message.command==='launch'&&native.options?.replayViewer&&!owner.holdReplayFirstFrame)native.emit('first-frame');});
   };
   owner.native = native; owner.frame = frame; return native;
@@ -279,7 +282,7 @@ function playerOpen() {return env.document.querySelector('#player')?.getAttribut
 function commands() {return mounted.outbound.map(value => value.command);}
 function currentUrl() {const loc = mounted.router.state.location; return loc.pathname + loc.search + loc.hash;}
 async function tick() {await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 20));});}
-async function until(predicate, message, timeoutMs = 2500) {const deadline = Date.now() + timeoutMs; while (!predicate() && Date.now() < deadline) await tick(); assert.ok(predicate(), `${message}; evidence=${JSON.stringify({url: currentUrl(), playerOpen: playerOpen(), routerState: mounted.router.state.location.state, order: mounted.order, fetches: mounted.fetches.map(x => x.url), status: env.document.querySelector('#status')?.textContent, startup: api.getTestSession()?.startupError.getSnapshot(), runtime: api.getTestSession()?.getRuntime()?.getSnapshot(), body: env.document.body.textContent.slice(-1600)})}`);}
+async function until(predicate, message, timeoutMs = 2500) {const deadline = Date.now() + timeoutMs; while (!predicate() && Date.now() < deadline) await tick(); assert.ok(predicate(), `${message}; evidence=${JSON.stringify({url: currentUrl(), playerOpen: playerOpen(), routerState: mounted.router.state.location.state, order: mounted.order, fetches: mounted.fetches.map(x => x.url), status: env.document.querySelector('#status')?.textContent, startup: api.getTestSession()?.startupError.getSnapshot(), runtime: api.getTestSession()?.getRuntime()?.getSnapshot(), roomPreparation: api.getTestSession()?.room.service.getSnapshot().preparation, body: env.document.body.textContent.slice(-1600)})}`);}
 async function click(selector) {await React.act(async () => {node(selector).click();}); await tick();}
 async function back() {await React.act(async () => {void mounted.router.navigate(-1);}); await tick();}
 async function start() {
@@ -482,7 +485,7 @@ test('actual BrowserLauncher: cold save export owns file-only preparation and re
 const storageImportCases = [
   {kind: 'save', game: 'th06', name: 'import.dat', path: 'score.dat', accept: '.dat'},
   {kind: 'hint', game: 'th10', name: 'import.txt', path: 'hint/hint_user.txt', accept: '.txt'},
-  {kind: 'replay', game: 'th06', name: 'th6_01.rpy', path: 'replay/th6_01.rpy', accept: '.zip,.rpy,.rpyx'},
+  {kind: 'replay', game: 'th06', name: 'th6_01.rpy', path: 'replay/th6_01.rpy', accept: '.zip,.rpy,.rpyx,.rep'},
 ];
 async function runningStorageImport({kind, game}) {
   const f = await mountBrowser({initial: `/?game=${game}&keep=a%20b`, host: subsetHost([game], {multiplayer: false}), seedPackages: game === 'th10' ? [game] : [], seedStorage(storage) {
@@ -1015,7 +1018,7 @@ for (const room of [false, true]) test(`actual BrowserLauncher: same-base missin
   await acceptHeldHost(f);
   assert.equal(visibleOptions(), null); assert.equal(node('#gameId').textContent, 'TH06 MP', 'removed card does not substitute a different retained panel');
   assert.equal(currentUrl(), address); assert.equal(f.routeEvents.length, routes); assert.equal(node('#gameFrame'), frame);
-  assert.deepEqual(f.navigations, []); assert.equal(playerOpen(), false);
+  assert.deepEqual(f.navigations, []); assert.equal(playerOpen(), room, 'restored room keeps its Player workspace visible without starting a Runtime');
   if (room) {
     assert.equal(node('#mpRoomCode'), code); assert.equal(code.textContent, '1234');
     assert.equal(node('#mpRoomView').hidden, false); assert.equal(env.document.body.classList.contains('mp-room-active'), true);
@@ -1110,14 +1113,15 @@ for (const game of ['th06', 'th07']) test(`actual BrowserLauncher: ${game} MP st
   assert.equal(!!configure.options.netplayMode, false, 'original184–186: game check cannot join gameplay transport');
   assert.match(f.native.location.href, new RegExp(`/runtime/${game}/multiplayer/${game}\\.html`));
   assert.match(f.native.location.href, /runtimeVariant=multiplayer/);
-  assert.deepEqual(f.dataReads, [[1, 2, 3]], 'actual managed preparation reads canonical installed DATA');
+  assert.deepEqual(f.dataReads, [[1, 2, 3]], 'game check reuses the room instance and its installed DATA');
   const epoch = f.native.envelope.epoch, documentBefore = f.native.document;
   await React.act(async () => {f.native.emit('exit', {epoch: epoch - 1, status: 'error'});}); await tick();
   assert.equal(playerOpen(), true, 'original188–190: stale native exit is ignored');
   assert.equal(f.native.document, documentBefore); assert.equal(node('#gameFrame'), frame);
   const roomKey = `eagler-touhou-${product}-room-v1`, removals = f.sessionStorage.removals.filter(key => key === roomKey).length;
   await React.act(async () => {f.native.emit('exit', {status: 'error'});});
-  await until(() => !playerOpen(), 'current authenticated native error Exit closes Player');
+  await until(() => !api.getTestSession().getSnapshot().playerOpen && !api.getTestSession().getRuntime().getSnapshot().launched, 'current authenticated native error Exit retires gameplay');
+  assert.equal(node('#player').classList.contains('room-workspace'), true, 'the same Player returns to its room workspace');
   assert.equal(commands().includes('sync'), false, 'main5502–5506 native Exit has no surviving save receiver');
   assert.equal(node('#decisionDialog').open, false);
   assert.equal(node('#mpRoomView').hidden, false); assert.equal(node('#mpRoomCode').textContent, code);
@@ -1411,6 +1415,9 @@ for (const locale of ['en', 'zh-CN']) test(`actual BrowserLauncher: room Cancel/
   const session = api.getTestSession();
   await React.act(async () => {session.setLocale(locale);});
   await until(() => releases.length === 1 && !node('#mpRoomResourceCancel').hidden, 'canonical room preparation waits on its first Package Store read');
+  assert.equal(session.room.service.getSnapshot().preparation.stage,'package','checking the Package Store must not claim DATA was acquired');
+  assert.equal(node('#mpRoomLoadingFill').style.width,'0%');
+  assert.notEqual(node('#mpRoomResourceTrack').getAttribute('aria-valuenow'),'100');
   await click('#mpRoomResourceCancel');
   // Pinned app6824 calls beginManualGamePackageImport's cancelled-download
   // default (app3377 / i18n346–347), not the generic Import button's intro.
@@ -1490,19 +1497,27 @@ for (const status of ['ready', 'preparing', 'cancelled', 'failed']) for (const o
     });
     await React.act(async () => {await importing;});
     if (outcome === 'success') {
-      assert.equal(session.room.service.getSnapshot().preparation.status, eligible ? 'cancelled' : status);
-      assert.equal(node('#status').textContent, 'Game package imported; the game is ready to start');
+      if (status === 'ready' || eligible) {
+        await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'successful package recovery preloads the room resources');
+        assert.equal(session.getRuntime().getSnapshot().phase, 'prepared');
+      }
+      else {
+        assert.equal(session.room.service.getSnapshot().preparation.status, eligible ? 'cancelled' : status);
+        assert.equal(node('#status').textContent, 'Game package imported; the game is ready to start');
+      }
       assert.equal(session.gameData.getSnapshot().attempt, null); assert.equal(node('#gameDataImportWindow').hidden, true);
     } else {
       assert.equal(session.gameData.getSnapshot().busy, false); assert.equal(node('#gameDataImportWindow').hidden, false);
       assert.match(node('#gameDataImportReason').textContent, /ZIP/);
       assert.equal(session.room.service.getSnapshot().preparation.status, eligible ? 'cancelled' : status);
     }
-    if (!eligible) {
+    if (!eligible && !(status === 'ready' && outcome === 'success')) {
       assert.ok(events.every(value => value === status), 'ordinary manual import does not publish room importing/cancelled/preparing transitions');
       assert.equal(session.room.service.getSnapshot().preparation.status, status);
     }
-    unsubscribe(); assert.deepEqual(f.navigations, [], 'manual install-only recovery does not start Runtime');
+    unsubscribe(); assert.equal(commands().includes('launch'), false, 'install-only import and preload never start gameplay');
+    if (status !== 'ready' && !(eligible && outcome === 'success')) assert.deepEqual(f.navigations, [], 'failed or unrelated imports never start a native preparation');
+    if (eligible && outcome === 'success') assert.equal(f.navigations.length, 1, 'successful room recovery prepares one native instance and still requires an explicit Start');
     await React.act(async () => {session.room.service.leave(); releaseRead?.();});
   });
 }
@@ -1847,7 +1862,8 @@ for (const fromDirectory of [false, true]) test(`actual BrowserLauncher terminal
   const sockets = f.sockets.length; await React.act(async () => {session.room.service.reconnect(); session.room.service.pageShow(true);});
   assert.equal(f.sockets.length, sockets, 'retained terminal room still has reconnect stopped');
   await React.act(async () => {f.native.emit('exit', {status: 'error'});});
-  await until(() => !playerOpen(), 'authenticated Runtime Exit finishes the synthetic preflight');
+  await until(() => !session.getSnapshot().playerOpen && !session.getRuntime().getSnapshot().launched, 'authenticated Runtime Exit finishes the synthetic preflight');
+  assert.equal(node('#player').classList.contains('room-workspace'), true);
 });
 for (const strictMode of [false, true]) test(`actual BrowserLauncher terminal warm directory return preserves notice (StrictMode=${strictMode})`, async () => {
   const {f, session, directorySocket} = await liveActualDirectory({strictMode});
@@ -1932,7 +1948,8 @@ for (const origin of ['directory create', 'directory join', 'direct']) test(`act
   await until(() => session.getRuntime().getSnapshot().launched, 'actual multiplayer preflight Runtime launched');
   const socketCount = f.sockets.length, sentCount = socket.sent.length;
   await React.act(async () => f.native.emit('exit', {status: 'success'}));
-  await until(() => !playerOpen(), 'authenticated Runtime Exit closes Player');
+  await until(() => !session.getSnapshot().playerOpen && !session.getRuntime().getSnapshot().launched, 'authenticated Runtime Exit returns to the room workspace');
+  assert.equal(node('#player').classList.contains('room-workspace'), true);
   const invite = api.resolveRoomInvite(new URL(currentUrl(), env.window.location.href));
   assert.equal(invite.g, 'th06mp'); assert.equal(invite.r, code);
   assert.equal(invite.f === true, fromDirectory, 'authorized correction: same-room native return retains directory origin');
@@ -1940,7 +1957,10 @@ for (const origin of ['directory create', 'directory join', 'direct']) test(`act
   for (const key of ['p', 'd', 'v']) assert.equal(invite[key], undefined);
   assert.equal(invite.c, false); assert.equal(session.room.service.getSnapshot().room.code, savedRoom.code);
   assert.equal(session.room.service.getSnapshot().fromDirectory, fromDirectory);
-  assert.equal(f.sockets.length, socketCount); assert.equal(socket.sent.length, sentCount); assert.equal(node('#gameFrame'), frame);
+  assert.equal(f.sockets.length, socketCount); assert.equal(node('#gameFrame'), frame);
+  assert.ok(socket.sent.slice(sentCount).every(message => ['resources-changed', 'set-ready', 'resource-progress'].includes(message.type)),
+    'returning to the retained room only cancels readiness and restarts preload, without rejoining');
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'next-run resources are preloaded again');
   assert.equal(session.getRuntime().getSnapshot().launched, false);
   await click('#mpLeaveRoom');
   await until(() => session.room.service.getSnapshot().room === null, 'subsequent Leave clears membership');
@@ -1967,6 +1987,93 @@ test('actual BrowserLauncher: direct fallback import retires its loading epoch a
 });
 
 
+test('directory Replay entry opens the existing multiplayer workspace without creating membership', async () => {
+  const {session, f} = await liveActualDirectory();
+  assert.equal(node('#watchReplayButton').disabled, false);
+  await click('#watchReplayButton');
+  await until(() => !!env.document.querySelector('.replay-file-browser'), 'independent Replay workspace opens');
+  assert.equal(session.getReplays().getSnapshot().productId, 'th06mp');
+  assert.equal(session.room.service.getSnapshot().room, null);
+  assert.equal(f.sockets.some(socket => new URL(socket.url).searchParams.has('lobby')), false);
+  await until(() => session.getRuntime().getSnapshot().launched, 'standalone viewer prepares its Replay engine');
+  assert.equal(f.outbound.findLast(message => message.command === 'configure').options.replayViewer, true);
+  assert.equal(f.outbound.findLast(message => message.command === 'configure').options.netplayMode, undefined);
+});
+
+test('opening Replay in a prepared room pauses its iframe owner and closing resumes preload without losing membership', async () => {
+  const {session, f, socket} = await actualTerminalRoom({fromDirectory: false, locale: 'en'});
+  const epoch = session.getRuntime().getSnapshot().epoch;
+  await React.act(async () => {await session.openReplayViewer('th06mp');});
+  assert.ok(node('.replay-file-browser'));
+  assert.equal(session.room.service.getSnapshot().preparation.status, 'cancelled');
+  await until(() => session.getRuntime().getSnapshot().launched, 'viewer owns the replacement native engine');
+  assert.notEqual(session.getRuntime().getSnapshot().epoch, epoch);
+  assert.equal(f.outbound.findLast(message => message.command === 'configure').options.replayViewer, true);
+  await click('.replay-workspace-header .replay-back');
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'room preload resumes after Replay browser closes');
+  assert.notEqual(session.getRuntime().getSnapshot().epoch, epoch);
+  assert.equal(session.room.service.getSnapshot().room.code, '1234');
+  assert.equal(socket.closes.length, 0);
+  assert.equal(f.outbound.some(message => message.command === 'configure' && message.options?.netplayMode), false);
+  assert.equal(env.errors.length, 0);
+});
+
+test('room settings reload overlay is viewport-scoped and requires an explicit reload or restore', async () => {
+  const host = subsetHost(['th06']); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({initial: '/?game=th06mp&mpRoom=1234', host, socketBoundary: true, seedPackages: ['th06']});
+  const session = api.getTestSession();
+  await until(() => !!session.room.service.getSnapshot().room, 'room entered');
+  const saved = session.settings.getSnapshot();
+  await React.act(async () => {session.settings.setOption('alwaysHitbox', !saved.options.alwaysHitbox);});
+  await until(() => !!env.document.querySelector('.room-resource-reload'), 'reload overlay');
+  assert.equal(node('.room-resource-reload').parentElement, node('#gameViewport'));
+  assert.equal(node('.room-resource-reload button').textContent, 'Reload resources');
+  assert.equal(session.getSnapshot().roomReloadPending, true);
+  const navigations = f.navigations.length;
+  await React.act(async () => {session.settings.setOption('touchEnabled', !saved.options.touchEnabled);});
+  assert.equal(f.navigations.length, navigations, 'editing another setting does not automatically reload');
+  await click('.room-resource-reload button:last-child');
+  assert.equal(session.settings.getSnapshot().options.alwaysHitbox, saved.options.alwaysHitbox);
+  assert.equal(session.settings.getSnapshot().options.touchEnabled, saved.options.touchEnabled);
+  assert.equal(env.document.querySelector('.room-resource-reload'), null);
+  assert.notEqual(session.room.service.getSnapshot().preparation?.status, 'cancelled', 'original preparation resumed');
+  await React.act(async () => {session.settings.setOption('alwaysHitbox', !saved.options.alwaysHitbox);});
+  await click('.room-resource-reload button:first-child');
+  assert.notEqual(session.room.service.getSnapshot().preparation?.status, 'cancelled', 'new preparation resumed');
+  assert.equal(session.settings.getSnapshot().options.alwaysHitbox, !saved.options.alwaysHitbox);
+  assert.equal(session.getSnapshot().roomReloadPending, false);
+  assert.equal(env.document.querySelector('.room-resource-reload'), null);
+});
+
+test('room start binds the run to its native preload without a second navigation or DATA read', async () => {
+  const host = subsetHost(['th06']); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({initial: '/?game=th06mp&mpRoom=1234', host, socketBoundary: true, seedPackages: ['th06']});
+  const session = api.getTestSession();
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'native preload completed before Ready', 15_000);
+  const socket = f.sockets[0], localId = new URL(socket.url).searchParams.get('lobby');
+  const room = {code: '1234', playerCount: 2, difficulty: 1, phase: 'playing', inputDelay: 0, predictionLimit: 8, startSerial: 2,
+    seats: [{clientId: localId, name: 'A', loadout: 0, ready: true}, {clientId: 'peer12345', name: 'B', loadout: 1, ready: true}], spectators: []};
+  const epoch = session.getRuntime().getSnapshot().epoch, navigations = f.navigations.length, reads = f.dataReads.length;
+  await React.act(async () => {
+    socket.open();
+    socket.message({type:'state',room:{...room,phase:'lobby',seats:room.seats.map(s=>({...s,ready:false}))}});
+    await session.room.service.toggleReady();
+  });
+  assert.equal(session.getRuntime().getSnapshot().epoch,epoch,'Ready must reuse the native engine prepared on room entry');
+  assert.equal(f.navigations.length,navigations,'Ready never navigates the iframe again');
+  assert.equal(f.dataReads.length,reads,'Ready never reloads DATA or resources');
+  await React.act(async () => {socket.open(); socket.message({type: 'start', serial: 2, room});});
+  await until(() => node('#decisionDialog').open, 'original music confirmation');
+  await click('#decisionConfirm'); await until(() => session.getRuntime().getSnapshot().launched, 'preloaded engine launched');
+  assert.equal(node('#player').classList.contains('room-workspace'),true,'new room layout remains while waiting for the first frame/path');
+  assert.equal(node('#mpRoomView').classList.contains('room-workspace-view'),true,'no fallback to the legacy room during startup');
+  assert.equal(session.getRuntime().getSnapshot().epoch, epoch);
+  assert.equal(f.navigations.length, navigations); assert.equal(f.dataReads.length, reads);
+  const configure = f.outbound.findLast(message => message.command === 'configure');
+  assert.equal(configure.options.netplayMode, 'lan'); assert.equal(configure.options.netplayPlayer, 0);
+  assert.equal(new URL(configure.options.netplayUrl).searchParams.get('run'), '2');
+});
+
 test('actual BrowserLauncher: spectator toolbar exits playback into the existing room', async () => {
   const invite = api.encodeRoomInvite({g: 'th09mp', r: '1234', f: true, a: 'join', s: true});
   const host = subsetHost(['th09']); host.shared.netplayRelay = 'wss://relay.invalid/socket';
@@ -1977,17 +2084,18 @@ test('actual BrowserLauncher: spectator toolbar exits playback into the existing
     startSerial: 4, spectatorTimeline: true, seats: [{clientId: 'host', name: 'A', loadout: 0, ready: true}, {clientId: 'peer', name: 'B', loadout: 1, ready: true}], spectators: []};
   await React.act(async () => {socket.open(); socket.message({type: 'state', room}); socket.message({type: 'spectator-start', serial: 4, room});});
   await until(() => commands().includes('launch'), 'spectator Runtime launched');
-  assert.equal(f.outbound.find(message => message.command === 'configure').options.netplaySpectator, true);
-  assert.equal(node('.touch-utility-row').firstElementChild.id, 'playbackExit');
-  assert.equal(node('#playbackExit').nextElementSibling.id, 'fullscreenToggle');
-  await click('#playbackExit'); await until(() => !playerOpen(), 'spectator playback stopped');
+  assert.equal(f.outbound.findLast(message => message.command === 'configure').options.netplaySpectator, true);
+  assert.ok(node('#playbackExit'), 'native spectator controls expose their playback exit');
+  assert.equal(env.document.querySelector('.spectator-workspace-panel'), null, 'spectating uses the native Player controls');
+  await click('#playbackExit'); await until(() => !api.getTestSession().getSnapshot().playerOpen && !api.getTestSession().getRuntime().getSnapshot().launched, 'spectator playback retired');
+  assert.equal(node('#player').classList.contains('room-workspace'), true);
   assert.equal(node('#mpRoomCode').textContent, '1234');
   assert.equal(socket.closes.length, 0, 'room membership survives playback exit');
   assert.equal(env.document.querySelector('#playbackExit'), null);
 });
 
 for (const game of ['th06','th07','th08','th09','th10','th11','th15']) {
- test(`actual BrowserLauncher: ${game} spectator return uses a fresh Runtime and settles its loading cover`, async () => {
+ test(`actual BrowserLauncher: ${game} spectator return retains its Runtime and settles each launch cover`, async () => {
   const product=game+'mp',invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true});
   const host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
   const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,seedPackages:[game],seedStorage(storage){
@@ -1998,20 +2106,21 @@ for (const game of ['th06','th07','th08','th09','th10','th11','th15']) {
    predictionLimit:game==='th11'?12:game==='th15'?0:8,...(game==='th15'?{adonisMode:1}:{}),
    startSerial:4,spectatorTimeline:true,seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[]};
   await React.act(async()=>{socket.open();socket.message({type:'state',room});socket.message({type:'spectator-start',serial:4,room});});
-  let previousEpoch=null,previousDocument=null;
+  let previousEpoch=null,previousDocument=null,initialNavigations,initialReads;
   for(let attempt=0;attempt<3;++attempt){
    if(attempt)await React.act(async()=>{void session.room.service.launch();});
    await until(()=>f.outbound.filter(m=>m.command==='launch').length===attempt+1||session.startupError.getSnapshot().open,'spectator launch acknowledged',15_000);
    assert.equal(session.startupError.getSnapshot().open,false,session.startupError.getSnapshot().detail);
    const current=session.getRuntime().getSnapshot();
-   assert.notEqual(current.epoch,previousEpoch);assert.notEqual(f.native.document,previousDocument);
+   if(attempt){assert.equal(current.epoch,previousEpoch);assert.equal(f.native.document,previousDocument);}
+   else{initialNavigations=f.navigations.length;initialReads=f.dataReads.length;}
    assert.equal(f.native.options.netplaySpectator,true);
    f.native.Module={eaglerOptions:{netplayMode:'lan'}};
    f.native[api.multiplayerConfigForProduct(product).peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
    f.native.__eaglerNetplaySpectator=true;f.native.__eaglerNetplayTransport='spectator';
    if(previousEpoch!==null){
-    await React.act(async()=>f.native.emit('first-frame',{epoch:previousEpoch}));
-    assert.equal(session.getRuntime().getSnapshot().firstFrame,false,'a retired epoch cannot uncover the new Runtime');
+    await React.act(async()=>f.native.emit('first-frame',{launchSerial:f.native.launchSerial-1}));
+    assert.equal(session.getRuntime().getSnapshot().firstFrame,false,'a previous launch cannot uncover the retained Runtime');
    }
    await React.act(async()=>f.native.emit('first-frame'));
    if(game!=='th09'){
@@ -2022,8 +2131,15 @@ for (const game of ['th06','th07','th08','th09','th10','th11','th15']) {
    }
    await until(()=>session.getSnapshot().roomLaunchStage===null,'current first frame and receiver settle the loading cover');
    previousEpoch=current.epoch;previousDocument=f.native.document;
-   await click('#playbackExit');await until(()=>!playerOpen(),'spectator returns to room');
-   assert.equal(f.native.location.href,'about:blank');assert.equal(socket.closes.length,0);
+   if(attempt===2)await React.act(async()=>f.native.emit('room-menu',{launchSerial:f.native.launchSerial}));
+   else await click('#playbackExit');
+   await until(()=>!session.getSnapshot().playerOpen&&!session.getRuntime().getSnapshot().launched,'spectator returns to the native room title');
+   assert.equal(node('#player').classList.contains('room-workspace'),true);
+   assert.equal(session.getRuntime().getSnapshot().phase,'prepared');assert.equal(session.getRuntime().getSnapshot().roomPreview,true);
+   assert.equal(f.native.document,previousDocument);assert.equal(socket.closes.length,0);
+   assert.equal(f.navigations.length,initialNavigations);assert.equal(f.dataReads.length,initialReads);
+   assert.equal(f.outbound.filter(m=>m.command==='return-room').length,Math.min(attempt+1,2));
+   assert.equal(f.outbound.filter(m=>m.command==='launch').length,attempt+1,'returning to the room never auto-launches the prepared spectator');
    assert.equal(session.room.service.getSnapshot().room.code,'1234');
   }
  });

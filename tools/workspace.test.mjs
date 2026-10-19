@@ -35,3 +35,9 @@ test('TH10 multiplayer selects its separate source directory', () => {
 test('unknown build variants are rejected', () => {
   assert.throws(() => selectedPaths('th10', 'preview'), /没有 preview 构建/);
 });
+
+test('TH075 has independent normal and multiplayer monorepo owners', () => {
+  assert.deepEqual(portPaths(selectedPaths('th075', 'normal')), ['ports/th075']);
+  assert.deepEqual(portPaths(selectedPaths('th075', 'multiplayer')), ['ports/th075-mp']);
+  assert.deepEqual(new Set(portPaths(selectedPaths('th075', 'both'))), new Set(['ports/th075', 'ports/th075-mp']));
+});

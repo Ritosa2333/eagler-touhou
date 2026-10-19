@@ -202,6 +202,28 @@ export declare const PRODUCT_GAMES: Readonly<{
             focusHitbox: false;
         }>;
     }>;
+    th075: Readonly<{
+        number: "07.5"; title: "東方萃夢想"; subtitle: "Immaterial and Missing Power"; cardArtwork: "th075-card.webp";
+        storage: Readonly<{saveRoot:"/savesth075";scoreFile:"score.dat";configFiles:readonly string[]}>;
+        runtime: "./runtime/th075/th075.html"; inputProfile: "fighting";
+        touchMovementModes: readonly ["joystick", "joystick-free"];
+        touchActions: Readonly<{
+            fire: Readonly<{label:"A";descriptionKey:"touch.fighting.light";bit:1;code:"KeyZ";key:"z";keyCode:90}>;
+            bomb: Readonly<{label:"C";descriptionKey:"touch.fighting.projectile";bit:4;code:"KeyC";key:"c";keyCode:67}>;
+            focus: Readonly<{label:"B";descriptionKey:"touch.fighting.heavy";bit:2;code:"KeyX";key:"x";keyCode:88}>;
+            function: Readonly<{label:"D";descriptionKey:"touch.fighting.dash";bit:8;code:"KeyV";key:"v";keyCode:86}>;
+        }>;
+        touchFire: Readonly<{mode:"held-key";labelKey:"touch.actionHold";key:Readonly<{code:"KeyZ";key:"z";keyCode:90}>}>;
+        musicCapabilities: Readonly<{midi:false}>;
+        musicRuntime: Readonly<{localOggConfigureMode:"runtime-selection";requiresCompleteOgg:true}>;
+        support: Readonly<{highRefreshRate:false;sourceRepository:"https://github.com/Goan114/th075";adaptationNotice:"early-test"}>;
+        runtimeFileLayout: "directory"; requiredShared: readonly string[]; runtimeAssets: readonly string[]; dataProvider: "retail-memory";
+        package: Readonly<{dataFileId:"game-data";dataTarget:"/th075.data";maxImportBytes:number;musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
+        replay: Readonly<{prefix:"th075";extensions:readonly string[];naming:"filename"}>;
+        multiplayerRuntime: "./runtime/th075/multiplayer/th075.html";
+        multiplayer: Readonly<MultiplayerProductConfig>;
+        features: Readonly<{thprac:false;languages:true;focusHitbox:false}>;
+    }>;
     th08: Readonly<{
         thpracExtraFunctionKeys: readonly ["U"];
         cardArtwork: "th08-card.webp";
@@ -758,6 +780,7 @@ export interface MultiplayerLoadoutConfig {
     shot: number;
 }
 export interface MultiplayerInputTimingConfig {
+    rollbackDefault?: boolean;
     /** Zero permits confirmed input only: no prediction, rollback or hybrid mode. */
     rollbackLimit: number;
     sendPredictionLimit?: number;
@@ -766,6 +789,9 @@ export interface MultiplayerInputTimingConfig {
     manualRollbackDelay?: boolean;
 }
 export interface MultiplayerProductConfig {
+    spectator?: boolean;
+    titleRoomEntry?: boolean;
+    loadoutFields?: readonly Readonly<{labelKey: string; dependsOn?: readonly number[]}>[];
     titleKey: string;
     gameplay: "cooperative" | "versus";
     inGameSelection?: boolean;

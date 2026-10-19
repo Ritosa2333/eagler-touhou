@@ -8,6 +8,7 @@
 | --- | --- | --- | --- |
 | th06 | `ports/th06` | `ports/th06` | 共用源码，分别构建 normal 与 multiplayer |
 | th07 | `ports/th07` | `ports/th07` | 共用源码，分别构建 normal 与 multiplayer |
+| th075 | `ports/th075` | `ports/th075-mp` | 分目录、分模式构建 |
 | th08 | `ports/th08` | `ports/th08-mp` | 分目录、分模式构建 |
 | th09 | `ports/th09` | `ports/th09` | 共用生产程序，保留普通版与 MP 产品身份 |
 | th10 | `ports/th10` | `ports/th10-mp` | 分目录、分模式构建 |

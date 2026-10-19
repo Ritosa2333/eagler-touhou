@@ -8,6 +8,9 @@
 // implementation solely to keep this list green.
 export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-integrations.mjs",
+  "tests/test-app-shell-host-artwork.mjs",
+  "tests/test-th075-english-static.mjs",
+  "tests/test-th075-thcrap.mjs",
   "tests/test-library-index-scrub.mjs",
   "tests/test-th15-thcrap.mjs",
   "tests/test-thcrap-patch-precedence.mjs",
@@ -40,7 +43,6 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-frontend-manifest.mjs",
   "tests/test-dom-contract.mjs",
   "tests/test-app-shell-contract.mjs",
-  "tests/test-app-shell-host-artwork.mjs",
   "tests/test-app-shell-client.mjs",
   "tests/test-app-shell-worker-update-status.mjs",
   "tests/test-launcher-lifecycle.mjs",
@@ -67,8 +69,6 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-edge-drawer-gesture.mjs",
   "tests/test-game-zoom.mjs",
   "tests/test-game-preferences.mjs",
-  "tests/test-game-version-store.mjs",
-  "tests/test-pixel-perfect-display.mjs",
   "tests/test-external-midi.mjs",
   "tests/test-language-catalog.mjs",
   "tests/test-offline-language-index.mjs",

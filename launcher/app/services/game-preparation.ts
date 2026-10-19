@@ -23,6 +23,7 @@ import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
 export type MultiplayerPreparation =
   | {kind: 'room'; options: MultiplayerRuntimeOptions}
   | {kind: 'replay'}
+  | {kind: 'room-preload'; runtimeGeneration?: string}
   | {kind: 'preflight'};
 export interface FilePreparationInput {
   productId: ProductId;
@@ -81,6 +82,7 @@ function requestFor(input: FilePreparationInput, withUpdate: boolean): Acquisiti
   if (input.settings.context.productId !== input.productId || input.settings.gameId !== gameIdForProduct(input.productId)) throw new Error('Settings product changed before preparation');
   const game = input as GamePreparationInput;
   return {productId: input.productId, gameVersion: input.settings.gameVersion, music: input.settings.music, language: input.settings.language,
+    updateBeforePrepare: game.multiplayer?.kind === 'room-preload',
     signal: input.signal, onProgress: input.onProgress, onAcquisitionActivity: input.onAcquisitionActivity,
     ...(withUpdate ? {updateSignal: game.updateSignal, onUpdateActivity: game.onUpdateActivity, decideUpdate: game.decideUpdate, onWarning: game.onWarning} : {})};
 }
@@ -160,10 +162,8 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
     input.onWarning?.(t('language.launchFallback', {language: entry?.title || entry?.id || t('language.fallbackName'), reason: preparationErrorText(error)}));
   }
   guard();
-  // A room or selected Replay enters a match immediately, before progressive
-  // music loading can run. Any character/round track must already be mounted.
-  const completeOgg = input.settings.gameId === 'th09' &&
-    (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
+  const musicPolicy=PRODUCT_GAMES[input.settings.gameId].musicRuntime;
+  const completeOgg = input.multiplayer?.kind === 'room-preload' || ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) || input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
   ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,
     completeSet: completeOgg,
     downloadSignal: input.musicDownloadSignal, onMusicDownloadActivity: input.onMusicDownloadActivity,
@@ -194,6 +194,14 @@ export async function prepareFilePlan(input: FilePreparationInput): Promise<Runt
   const acquired = await input.acquisition.acquire(requestFor(input, false)); checkPreparationAbort(input.signal);
   const plan = {...identityPlan(input, acquired), fileOnly: true};
   input.onRuntimePlan?.(structuredClone(plan)); checkPreparationAbort(input.signal); return plan;
+}
+/** In-game TH09 room entry keeps the paused title engine alive. Warm its next
+ * multiplayer resources without navigating or writing into that native epoch. */
+export async function prepareRoomResourcePlan(input: GamePreparationInput): Promise<PreparedGamePlan> {
+  if (input.multiplayer?.kind !== 'room-preload') throw new Error('Room resource preparation requires a room-entry intent');
+  const acquired = await input.acquisition.acquire(requestFor(input, true));
+  const guard = () => checkPreparationAbort(input.signal);
+  guard(); return finishPlan(input, identityPlan(input, acquired), guard);
 }
 function applyNativeMusicResult(result: PreparedGamePlan, snapshot: RuntimeSnapshot, input: GamePreparationInput) {
   if (snapshot.musicWarning) {input.onTransferHide?.(); input.onWarning?.(snapshot.musicWarning);}
@@ -243,6 +251,7 @@ export async function prepareGame(input: GamePreparationInput & {runtime: Runtim
   if (input.multiplayer?.kind === 'room') initial.multiplayerProgram = {
     generation: new URL(input.multiplayer.options.netplayUrl).searchParams.get('runtimeGeneration') ?? undefined,
   };
+  if (input.multiplayer?.kind === 'room-preload') initial.multiplayerProgram = {generation: input.multiplayer.runtimeGeneration};
   input.onRuntimePlan?.(structuredClone(initial)); checkPreparationAbort(input.signal);
   let prepared: PreparedGamePlan | null = null;
   const runtimeSnapshot = await input.runtime.prepareWithReady(initial, async epoch => {
@@ -259,7 +268,7 @@ export async function prepareGame(input: GamePreparationInput & {runtime: Runtim
     const snapshot = input.runtime.getSnapshot();
     if (snapshot.epoch !== runtimeSnapshot.epoch || !snapshot.launched) return Promise.reject(new Error('Launch this prepared Runtime before starting background resources'));
     background = startPreparedGameBackground({input, prepared: result, epoch: runtimeSnapshot.epoch!,
-      deferredUpdate: acquired.kind === 'managed' ? acquired.deferredUpdate : null});
+      deferredUpdate: acquired.kind === 'managed' && input.multiplayer?.kind !== 'room' && input.multiplayer?.kind !== 'room-preload' ? acquired.deferredUpdate : null});
     return background;
   }};
 }

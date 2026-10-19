@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import { RoomView } from '../components/room';
@@ -32,7 +32,14 @@ export function RoomComposition({
     session.settings.getSnapshot,
   );
   const home = useRef<{ parent: Node; next: Node | null } | null>(null);
+  const [workspace, setWorkspace] = useState<{host:HTMLElement;stage:HTMLElement} | null>(null);
+  const workspaceVisible = !!room.room && (!state.runtime?.launched || !!state.roomLaunchStage) && !state.th09NetworkOverlayOpen && !state.replayViewer && navigation.surface !== 'touch';
+  useLayoutEffect(()=>{
+    const host = document.getElementById('player'), stage = host?.querySelector<HTMLElement>('.player-stage');
+    setWorkspace(previous => workspaceVisible && host && stage ? previous?.host === host && previous.stage === stage ? previous : {host,stage} : null);
+  }, [workspaceVisible]);
   useLayoutEffect(() => {
+    if (workspaceVisible) return;
     const element = document.getElementById('mpRoomView'),
       player = document.getElementById('player');
     if (!element || !player) return;
@@ -61,7 +68,7 @@ export function RoomComposition({
       if (element.isConnected) restore();
       else player.classList.remove('mp-room-launch-cover');
     };
-  }, [state.th09NetworkOverlayOpen, state.roomLaunchStage, !!room.room]);
+  }, [state.th09NetworkOverlayOpen, state.roomLaunchStage, !!room.room, workspaceVisible]);
   return (
     <RoomView
       visible={!!navigation.productId && isMultiplayerProductId(navigation.productId)}
@@ -71,6 +78,7 @@ export function RoomComposition({
       context={{
         transfer,
         launched: state.runtime?.launched === true,
+        previewReady: state.runtime?.roomPreview === true,
         th09NetworkOverlayOpen: state.th09NetworkOverlayOpen,
         launchStage: state.roomLaunchStage === 'runtime' ? 'preparing' : state.roomLaunchStage,
         touchEnabled: settings?.options.touchEnabled === true,
@@ -83,6 +91,12 @@ export function RoomComposition({
       onOpenSettings={navigation.openRoomSettings}
       settingsOpen={navigation.roomSettingsOpen}
       settingsClosing={settingsClosing}
+      workspaceHost={workspaceVisible ? workspace?.host : null}
+      workspaceStage={workspaceVisible ? workspace?.stage : null}
+      onFullscreen={()=>{void session.togglePlayerFullscreen();}}
+      reloadPending={state.roomReloadPending}
+      onReloadResources={session.reloadRoomResources}
+      onRestoreSettings={session.restoreRoomSettings}
       panel={
         navigation.roomPanel
           ? { kind: navigation.roomPanel, peerId: navigation.roomNetworkPeer }

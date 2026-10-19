@@ -1,6 +1,5 @@
 import { defaultTh15ChapterThreshold } from "../../../src/launcher/th15-chapter-reward.mts";
 import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
-import { multiplayerInputTimingPolicy } from '../../../src/contracts/product-catalog.mts';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
 import { useLocale } from '../../i18n';
 import type { RoomViewProps, RoomPanelKind } from './types';
@@ -12,9 +11,18 @@ import { RoomPersonal } from './RoomPersonal';
 import { RoomNetwork } from './RoomNetwork';
 import { RoomSpectators } from './RoomSpectators';
 import { RoomGameSettings } from './RoomGameSettings';
+import {RoomTiming} from './RoomTiming';
+import {RoomQuickChat} from './RoomQuickChat';
+import {DifficultyLabel} from './DifficultyLabel';
+import {RoomElapsed} from './RoomElapsed';
+import {RoomWorkspace} from './RoomWorkspace';
 /** Main index570–713 + app8058–8353. All controls target the real room/network
  * owners; panel/drawer intents belong to the single root Router. */
 export function RoomView(props: RoomViewProps) {
+  return props.workspaceHost && props.workspaceStage ? <RoomWorkspace {...props}/> : <TitleRoomView {...props}/>;
+}
+/** Retained native TH09 title-room overlay; ordinary rooms use the workspace. */
+function TitleRoomView(props: RoomViewProps) {
   const { service, network, context, assetUrl } = props,
     { t } = useLocale();
   const state = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
@@ -37,13 +45,11 @@ export function RoomView(props: RoomViewProps) {
     spectatorCount = Math.max(spectators.length, Math.max(0, Number(room.spectatorCount) || 0));
   const synchronizedReady =
     !state.loadoutPending &&
+    state.preparation?.status === 'ready' &&
     ready &&
     room.phase === 'lobby' &&
     Array.isArray(room.seats) &&
     room.seats.slice(0, room.playerCount).every((seat) => seat && !seat.offline && seat.ready);
-  const rollbackSupported =
-      !!config.inputTiming?.measuredStartup && multiplayerInputTimingPolicy(config).rollback,
-    rollbackHidden = !rollbackSupported || (!owner && room.phase === 'lobby');
   const phase = t(
     context.launchStage === 'path'
       ? 'room.connectingGameplay'
@@ -70,6 +76,7 @@ export function RoomView(props: RoomViewProps) {
       className="mp-room-view"
       id="mpRoomView"
       data-public-names={state.nickname ? 'true' : undefined}
+      data-roster-identities="true"
       hidden={props.visible === false}
       aria-label={`${gameId.toUpperCase()} ${t('multiplayer.roomAria')}`}
       inert={props.settingsOpen}
@@ -129,7 +136,10 @@ export function RoomView(props: RoomViewProps) {
               count: room.playerCount,
             })}
           </span>
-          <span id="mpRoomDifficultyBadge" hidden={config.inGameSelection}>{config.inGameSelection ? '' : config.difficulties[room.difficulty] || 'Normal'}</span>
+          <span className="mp-room-difficulty" id="mpRoomDifficultyBadge">
+            <DifficultyLabel name={config.difficulties[room.difficulty] || 'Normal'} assetUrl={assetUrl}/>
+            {room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}
+          </span>
           <span
             id="mpRoomPhase"
             title={state.preparation?.status === 'failed' ? state.preparation.error : ''}
@@ -190,6 +200,7 @@ export function RoomView(props: RoomViewProps) {
           </div>
         )}
       </section>
+      {props.quickChat && <div className="mp-room-chat-space"><RoomQuickChat model={props.quickChat} part="log"/></div>}
       <div className="mp-session-dock">
         <div className="mp-dock-players">
           <RoomSeats
@@ -234,25 +245,10 @@ export function RoomView(props: RoomViewProps) {
                 })}
             </div>
           </div>
-          <div id="mpInputTiming" className="mp-room-input-timing" hidden={rollbackHidden}>
-            <button
-              className="mp-rollback-toggle"
-              id="mpRollbackToggle"
-              type="button"
-              role="switch"
-              aria-checked={
-                room.phase && room.phase !== 'lobby' ? room.adonisMode !== 1 : state.rollbackEnabled
-              }
-              title={t(multiplayerInputTimingPolicy(config).manualRollbackDelay ? 'room.rollbackDelayHint' : 'room.rollbackHint')}
-              hidden={rollbackHidden}
-              disabled={!rollbackSupported || !ready || !owner || room.phase !== 'lobby'}
-              onClick={() => service.setRollbackEnabled(!state.rollbackEnabled)}
-            >
-              <span>{t('room.enableRollback')}</span>
-              <i aria-hidden="true" />
-            </button>
-          </div>
+          <RoomTiming state={state} service={service}/>
         </div>
+        <div className="mp-room-social">
+        {room.phase !== 'lobby' && <div className="mp-room-social-time"><RoomElapsed phase={room.phase ?? 'lobby'} startedAt={room.startedAt as number | undefined}/></div>}
         <aside
           className="mp-spectator-rail"
           id="mpSpectatorRail"
@@ -285,6 +281,8 @@ export function RoomView(props: RoomViewProps) {
             </span>
           </button>
         </aside>
+        {props.quickChat && <RoomQuickChat model={props.quickChat} part="actions"/>}
+        </div>
         <footer className="mp-room-footer" hidden={!room.synced || state.seat == null}>
           <button
             className={`mp-ready-button${state.ready && state.seat != null ? ' ready' : ''}`}
@@ -345,7 +343,7 @@ export function RoomView(props: RoomViewProps) {
           service={service}
           hidden={currentPanel.kind !== 'spectators'}
         />
-        <RoomGameSettings state={state} service={service} hidden={currentPanel.kind !== 'game'} />
+        <RoomGameSettings state={state} service={service} assetUrl={assetUrl} hidden={currentPanel.kind !== 'game'} />
       </RoomPanel>
     </section>
   );

@@ -37,6 +37,21 @@ function fixture(productId = 'th06') {
   return {model, context, changes, reset: () => api.settingsChangeResetsRuntime(changes.at(-1))};
 }
 
+test('room settings restore is atomic and keeps current drawer and metadata context', () => {
+  const f = fixture('th06mp'), saved = f.model.getSnapshot();
+  f.model.setLanguage('ja'); f.model.setMusic('none');
+  f.model.setOption('alwaysHitbox', !saved.options.alwaysHitbox);
+  f.model.setDisclosure('advanced', true);
+  const count = f.changes.length;
+  f.model.restoreRoomSettings(saved);
+  assert.equal(f.changes.length, count + 1);
+  assert.deepEqual(f.model.getSnapshot().options, saved.options);
+  assert.equal(f.model.getSnapshot().language, saved.language);
+  assert.equal(f.model.getSnapshot().music, saved.music);
+  assert.equal(f.model.getSnapshot().disclosure.advanced, true);
+  assert.equal(f.reset(), false, 'restoring must not create a second pending settings edit');
+});
+
 test('main ordinary setOption resets; live sensitivity and opacity do not', () => {
   const f = fixture();
   f.model.setOption('touchEnabled', !f.model.getSnapshot().options.touchEnabled); assert.equal(f.reset(), true);

@@ -6,7 +6,7 @@
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "013b565b96f5bd5ee827f4c34a4a28ff14d664a966702eb67260a59c096d551e",
+      "sourceDigest": "06f675ea09c5e3e29dd8942c70bd675fbc857ce93b8af68d992bf2c8b39e888d",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -163,7 +163,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "b6496583106ebf9ddf6cdb4f4811ec586c6d8c6c4634820ce4f2147da18d964d",
+      "sourceDigest": "ebaa329ea614dfa478f6187070bd5d5eba2ef96482d33a703abc594cfa6a37b3",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -339,7 +339,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "94affa504eec9c8c18c97657f3f95c943db2a0f0d416f7f84f762a0ae8b4f0aa",
+      "sourceDigest": "b7190155a9796e868e2b761e3ece357144da71935a2e573494aa88594901a955",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -496,7 +496,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "0aae3f1122010a759fb5d97b725cfec0e47422c500042504fb9dfffce8c1228a",
+      "sourceDigest": "3d86f51547b79b9da7cd84ac21e81b84f89599e233f2c3d3b5c697ee90df8d85",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -669,10 +669,276 @@
       ]
     },
     {
+      "game": "th075",
+      "variant": "multiplayer",
+      "directory": "ports/th075-mp",
+      "sourceDigest": "4d28fa522323b478195596e23a153980b8c1f1e748c173a27efbf988790130a5",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 207,
+      "features": {
+        "thcrap": false,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "web/scripts/build-sdl.mjs",
+        "--release",
+        "--eagler",
+        "--multiplayer",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th075-mp"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/BrowserRuntime.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th075",
+      "variant": "normal",
+      "directory": "ports/th075",
+      "sourceDigest": "76a5511aebfa40848d0aca4155f4c238a15be9118f375dbf7fec3688f371a093",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 200,
+      "features": {
+        "thcrap": false,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "web/scripts/build-sdl.mjs",
+        "--release",
+        "--eagler",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th075"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/BrowserRuntime.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "normal-presentation",
+          "level": "source-contract",
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "launcher/tests/test-native-frame-pacing.mjs",
+            "launcher/tests/test-mobile-frame-pacing.mjs",
+            "launcher/tests/test-presentation-contract-coverage.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "cb6714a1a4a9f65b8f5257457d61d71be834999c2e5bf1864200e5d6fd3102b2",
+      "sourceDigest": "34530bd161c2ec888f3c16153c91740bf77b1ba861e7dc15ac48052845814a77",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -741,18 +1007,6 @@
           "complete": true
         },
         {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
-        },
-        {
           "id": "package-store",
           "level": "module",
           "checks": [
@@ -809,7 +1063,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "65e3089a4704b3a5ece2a29f63a16fb1702933a6217cf4e72130ed1d6aa82f7a",
+      "sourceDigest": "c3e419abd8d3a7c2a9c19a246b1f7b4beef5b0c1a8fc1b3e33ce4fcdf2aa3b3d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -875,18 +1129,6 @@
             "web/cpp/sdl/GameHost.cpp"
           ],
           "complete": true
-        },
-        {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
         },
         {
           "id": "package-store",
@@ -964,7 +1206,7 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "943b171fd7d40aca82e101843c3b97659879cba3376c79407fa43dc617555be0",
+      "sourceDigest": "97d5c454f69016adb1b36e466eb39fcadc8a96e6472bcd9d03fa1c49c4de235a",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 114,
@@ -1028,18 +1270,6 @@
             "web/cpp/sdl/Application.cpp"
           ],
           "complete": true
-        },
-        {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/managed.mjs"
-          ],
-          "complete": false
         },
         {
           "id": "package-store",
@@ -1098,7 +1328,7 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "6c7af5fcc0dd070a3b4cba31a3056cbc3269d2cbd9fa3af6eb5458afe767434c",
+      "sourceDigest": "b5c3fff3edc5e254dbc5379664e8fc2e9a7224c5360e3ee240c38b583f3068ad",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 114,
@@ -1162,18 +1392,6 @@
             "web/cpp/sdl/Application.cpp"
           ],
           "complete": true
-        },
-        {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/managed.mjs"
-          ],
-          "complete": false
         },
         {
           "id": "package-store",
@@ -1251,7 +1469,7 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "9790391b40263dda527d8d2458c6df6e8c1982f7ae7ea16d3582ed30d20fd754",
+      "sourceDigest": "4e626ccefd04607c594205587fd3e5a223acc2ce57f94caa6465a3ed20b29f23",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 279,
@@ -1319,18 +1537,6 @@
           "complete": true
         },
         {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
-        },
-        {
           "id": "package-store",
           "level": "module",
           "checks": [
@@ -1387,7 +1593,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "9a29dc730068b6d8539dd2a6181ae10f760e56e4f486e71b3eeabd97317fcf74",
+      "sourceDigest": "0167e12e700f18bb9d771e50e5e60af3e132967c79f54549183d7d90597ed3fa",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -1453,18 +1659,6 @@
             "web/cpp/sdl/GameHost.cpp"
           ],
           "complete": true
-        },
-        {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
         },
         {
           "id": "package-store",
@@ -1542,7 +1736,7 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "329c83c539046d7823210868e61472993381f3c3613f940c1276acb1629a8cf2",
+      "sourceDigest": "7be9a48d0e90917c9ca138242b92321bbea1d27d6898429142a58d3890f06429",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 138,
@@ -1610,18 +1804,6 @@
           "complete": true
         },
         {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
-        },
-        {
           "id": "package-store",
           "level": "module",
           "checks": [
@@ -1678,7 +1860,7 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "6a0da8d7ebcbbce6ed2e4ab572204e9649d04758672eb6dc2a2a29b66bfadc62",
+      "sourceDigest": "4cfbebbbbeed6448ccddd9e945cd3424947e55bd462a8dd2234d0c5d2feace5d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 113,
@@ -1744,18 +1926,6 @@
             "web/cpp/sdl/Application.cpp"
           ],
           "complete": true
-        },
-        {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
         },
         {
           "id": "package-store",
@@ -1833,7 +2003,7 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "8461fcd7271a459ba35b3f84fa973cabdf58bd6c729c974e45a2a8697d835113",
+      "sourceDigest": "f98e1dbd0f0f49fc338726c9745d73c193a25512e37e75897e23b7b4dbd65e6e",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 266,
@@ -1900,18 +2070,6 @@
           "complete": true
         },
         {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
-        },
-        {
           "id": "package-store",
           "level": "module",
           "checks": [
@@ -1968,7 +2126,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "812a616352993205bebd74c7ddf021e338675a3573451b1844b461c55447127d",
+      "sourceDigest": "d74cad569489b54221bcb02640b796d9f3e20a9d91a4ec257ac89299c5edc9eb",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -2033,18 +2191,6 @@
             "web/cpp/sdl/BrowserRuntime.cpp"
           ],
           "complete": true
-        },
-        {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
         },
         {
           "id": "package-store",
@@ -2122,7 +2268,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "fe985857f54983e2b36bf1f42b4ff03952ec71f9a8a02932f1782af4ef2b3b07",
+      "sourceDigest": "84f7f02f8f4b71e2da47c212d17c6f52a1854ea7ce4aed327e556a7217a69b0a",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,
@@ -2187,18 +2333,6 @@
             "web/cpp/sdl/InputHost.cpp"
           ],
           "complete": true
-        },
-        {
-          "id": "always-hitbox-abi",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-06"
-          ],
-          "files": [
-            "web/sdl-runtime/shell.mjs"
-          ],
-          "complete": false
         },
         {
           "id": "package-store",

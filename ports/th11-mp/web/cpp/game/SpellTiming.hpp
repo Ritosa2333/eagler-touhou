@@ -11,5 +11,10 @@ public:
     double start=0; i32 last_frames=0,encoded=0;u32 index=0;
     std::array<u32,20> records{};
     bool update(u32& flags,i32 frame_count,double now,bool replay)noexcept;
+#ifdef TH11_MULTIPLAYER
+    // The spell controller owns elapsed simulation frames on every peer,
+    // including rollback replay and spectators. No local wall clock/Replay slot.
+    bool update_multiplayer(u32& flags,i32 frame_count)noexcept;
+#endif
 };
 }

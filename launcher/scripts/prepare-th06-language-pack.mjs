@@ -5,7 +5,7 @@ import { basename, extname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { createThcrapClient, downloadThcrapPack } from "../integrations/thcrap.mjs";
+import { createThcrapClient, downloadThcrapPack, crc32 } from "../integrations/thcrap.mjs";
 import { ThcrapRuntimeCompiler } from "../server/thcrap-compiler.mjs";
 import { ThtkRunner } from "../server/thtk-runner.mjs";
 import { createStaticThcrapPack } from "../server/thcrap-static-pack.mjs";
@@ -58,6 +58,9 @@ async function localInputFingerprint() {
     resolve(project, "scripts/subset-font.py"),
     resolve(project, "integrations/thcrap.mjs"),
     resolve(project, "server/thcrap-compiler.mjs"),
+    resolve(project, "server/th075-thcrap-compiler.mjs"),
+    resolve(project, "server/th075-menu-text.mjs"),
+    resolve(project, "scripts/th075-language-assets.py"),
     resolve(project, "server/thcrap-ascii-contract.mjs"),
     resolve(project, "server/thcrap-string-contract.mjs"),
     resolve(project, "server/thcrap-static-pack.mjs"),
@@ -119,17 +122,29 @@ if (cached) {
   process.exit(0);
 }
 
-const thdat = required("thdat");
-const thmsg = required("thmsg");
+const thdat = game === "th075" ? null : required("thdat");
+const thmsg = game === "th075" ? null : required("thmsg");
 const client = createThcrapClient({ repository });
-const runner = new ThtkRunner({ thdat, thmsg, temporaryRoot: args.get("temporary-root") || undefined });
-const compiler = new ThcrapRuntimeCompiler({ runner, archives: { [game]: archives } });
+const runner = game === "th075" ? null : new ThtkRunner({ thdat, thmsg, temporaryRoot: args.get("temporary-root") || undefined });
+const compiler = new ThcrapRuntimeCompiler({ runner, archives: { [game]: archives }, fontFile, fontPython, fontLicense:args.get("font-license") });
 
 const pack = await client.resolveLanguage(language, game);
-const downloaded = await downloadThcrapPack(pack, {
+// Cache downloaded source assets by expected CRC and URL; every cache hit is verified.
+if(game==='th075')pack.assets=pack.assets.filter(a=>!a.mountPath.includes('/fonts/'));
+const sourceCache=resolve(project,'.cache/thcrap-source-assets');await mkdir(sourceCache,{recursive:true});
+const assetsByUrl=new Map(pack.assets.map(a=>[a.url,a]));
+const sourceFetch=async(url,options)=>{
+  const asset=assetsByUrl.get(String(url));if(!asset)return fetch(url,options);
+  const name=resolve(sourceCache,asset.crc32.toString(16)+'-'+createHash('sha256').update(String(url)).digest('hex')+'.bin');
+  try{const b=await readFile(name);if(crc32(b)===asset.crc32)return new Response(b);}catch{}
+  const response=await fetch(url,options);if(!response.ok)return response;
+  const bytes=new Uint8Array(await response.arrayBuffer());if(crc32(bytes)===asset.crc32)await writeFile(name,bytes);
+  return new Response(bytes,{status:response.status});
+};
+const downloaded = await downloadThcrapPack(pack, {fetchImpl:sourceFetch,
   onProgress: ({ completed, total, path }) => process.stderr.write(`\r${completed}/${total} ${path}                    `)
 });
-const resources = await compiler.processPack(downloaded.resources);
+const resources = await compiler.processPack(downloaded.resources,{language});
 
 function collectStrings(value, output) {
   if (typeof value === "string") {
@@ -192,7 +207,7 @@ async function applyFontOverride(input) {
   }
 }
 
-const preparedResources = await applyFontOverride(resources);
+const preparedResources = game === "th075" ? resources : await applyFontOverride(resources);
 const result = createStaticThcrapPack({ pack, resources: preparedResources });
 const preparedRuntimeVersion = result.manifest.runtimeVersion;
 const packDirectory = resolve(output, "language");

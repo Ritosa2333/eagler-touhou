@@ -40,6 +40,7 @@ EMSCRIPTEN_KEEPALIVE const char* eagler_replay_inspect(const u8* bytes,unsigned 
 EMSCRIPTEN_KEEPALIVE const char* eagler_replay_error(){return local_error.c_str();}
 EMSCRIPTEN_KEEPALIVE void eagler_replay_stop_loop(){g_ReplayWorkspaceDriving=true;}
 EMSCRIPTEN_KEEPALIVE int eagler_replay_ready(){return g_ReplayWorkspaceDriving||g_MainMenu.chainCalc!=nullptr;}
+EMSCRIPTEN_KEEPALIVE int eagler_room_preview_ready(){return g_MainMenu.chainCalc&&(g_MainMenu.gameState==STATE_PRE_INPUT||g_MainMenu.gameState==STATE_MAIN_MENU);}
 EMSCRIPTEN_KEEPALIVE int eagler_replay_preparing(){return !started;}
 EMSCRIPTEN_KEEPALIVE int eagler_replay_open(const char* path,unsigned stage){
     if(!g_AnmManager||stage<1||stage>7)return reject("Game initialization or stage selection is not ready");size_t size=0;auto* bytes=static_cast<u8*>(SDL_LoadFile(path,&size));if(!bytes)return reject("Selected file could not be opened");

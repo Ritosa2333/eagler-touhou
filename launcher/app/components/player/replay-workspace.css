@@ -2,7 +2,7 @@
 #player.replay-workspace{display:grid;grid-template-columns:minmax(0,2.3fr) minmax(300px,1fr);grid-template-rows:auto max-content;align-content:start;align-items:stretch;gap:12px 10px;padding:16px 20px 20px;max-width:none;background:#100f0e url('/assets/launcher-background.webp') center/cover fixed;color:var(--paper);font-family:var(--ui-font);overflow:auto;overscroll-behavior:contain;touch-action:pan-y;isolation:isolate}
 #player.replay-workspace::before{content:"";position:fixed;inset:0;z-index:-1;background:#080807e6;pointer-events:none}
 #player.replay-workspace .player-stage{position:relative;grid-column:1;grid-row:2;display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--line);border-radius:20px;background:#111110e8;overflow:hidden}
-#player.replay-workspace .game-viewport{position:relative;inset:auto;flex:none;width:100%;height:auto;min-height:0;min-width:0;aspect-ratio:1.44;border-radius:4px;background:#000;overflow:hidden}
+#player.replay-workspace .game-viewport{position:relative;inset:auto;border-radius:4px;background:#000;overflow:hidden}
 /* Replay transport owns input. Swipes over the game belong to page scrolling. */
 #player.replay-workspace #gameFrame{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;touch-action:pan-y}
 .replay-workspace-idle{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#080808;color:var(--muted);font-size:16px;text-align:center;padding:20px}
@@ -62,7 +62,7 @@
 .replay-current h2{font-size:24px;line-height:1.4;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .replay-current p{grid-column:1/-1;grid-row:2;display:flex;flex-wrap:wrap;gap:10px 24px;font-size:14px;line-height:1.5;color:var(--muted);margin:0}
 .replay-current .replay-workspace-error{grid-row:auto;color:#f28d84;overflow-wrap:anywhere}
-.replay-file-browser{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;min-width:0;min-height:300px;background:#111110e8;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.replay-file-browser{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-width:0;min-height:300px;background:#111110e8;border:1px solid var(--line);border-radius:20px;overflow:hidden}
 .replay-file-browser>header{display:flex;align-items:center;justify-content:space-between;padding:26px 22px 16px;gap:10px}
 .replay-file-browser h2{font-size:30px;margin:0}
 .replay-file-browser>header .replay-button{padding:14px 20px;font-size:18px}
@@ -107,12 +107,11 @@
  .replay-workspace-file small{font-size:12px}
  .replay-transport-buttons{gap:10px}
 }
-/* Wide windows reserve room for the transport and metadata before sizing the
-   game. Only the file list scrolls; the Runtime keeps its own 4:3 letterbox. */
-@media(min-width:761px) and (orientation:landscape) and (min-height:480px){
+/* Wide windows reserve transport and metadata before fitting the game image. */
+@media(min-width:761px) and (orientation:landscape){
  #player.replay-workspace{grid-template-rows:auto minmax(0,1fr);padding-bottom:24px;overflow:hidden}
  #player.replay-workspace .player-stage{min-height:0}
- #player.replay-workspace .game-viewport{flex:1;aspect-ratio:auto}
+ #player.replay-workspace .game-viewport{flex:none;aspect-ratio:4/3}
  .replay-transport,.replay-current,.replay-file-browser>header,.replay-breadcrumb,.replay-file-browser>footer,.replay-workspace-move{flex:none}
  .replay-file-browser,.replay-workspace-files{min-height:0}
 }

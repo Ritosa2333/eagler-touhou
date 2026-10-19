@@ -1,6 +1,6 @@
 import {createGameZoomController} from '../../src/launcher/game-zoom.mts';
 import {touchLayoutControlMeta, touchLayoutControlNames, type TouchLayoutProfile} from '../../src/launcher/touch-layout-model.mts';
-import {effectivePlacement} from '../components/settings/touch-layout-geometry';
+import {effectiveControlScale, effectivePlacement} from '../components/settings/touch-layout-geometry';
 import {createPlayerTouch} from './player-touch';
 import {createPlayerKeyboard} from './player-keyboard';
 import {createPlayerGamepad} from './player-gamepad';
@@ -67,7 +67,7 @@ export function applySavedPlayerTouchLayout(player: HTMLElement, safe: HTMLEleme
     const position = effectivePlacement(node, item, safeRect);
     node.style.setProperty('--touch-layout-x', `${safeRect.left - hostRect.left + position.x * safeRect.width}px`);
     node.style.setProperty('--touch-layout-y', `${safeRect.top - hostRect.top + position.y * safeRect.height}px`);
-    node.style.setProperty('--touch-layout-scale', String(item.scale));
+    node.style.setProperty('--touch-layout-scale', String(effectiveControlScale(node, item, safeRect)));
     node.style.zIndex = String(31 + (Number.isFinite(item.priority) ? item.priority : touchLayoutControlMeta[name].priority));
   }
 }

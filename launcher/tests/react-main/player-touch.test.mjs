@@ -48,6 +48,23 @@ function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-
   }; active.push(f); return f;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+test('declared native actions hold A/B/C/D together without keyboard or auto-fire ownership', () => {
+  const f=fixture({game:'th075'});
+  for(const [index,name] of ['fire','bomb','focus','functionKey'].entries())f.pointer(name,'pointerdown',{pointerId:index+1});
+  assert.equal(f.sent.at(-1).actionButtons,15);
+  assert.equal(f.sent.at(-1).fireEnabled,false);
+  assert.equal(f.sent.filter(m=>m.command==='keyboard').length,0);
+  f.pointer('bomb','pointercancel',{pointerId:2});
+  assert.equal(f.sent.at(-1).actionButtons,11);
+  f.touch.cancelPointers();assert.equal(f.sent.at(-1).actionButtons,0);
+});
+test('iOS native actions retain the other finger and cancel on epoch replacement', () => {
+  const f=fixture({game:'th075',ios:true});
+  f.iosEvent('fire','touchstart',[{identifier:1},{identifier:2}]);
+  f.iosEvent('fire','touchend',[{identifier:1}]);assert.equal(f.sent.at(-1).actionButtons,1);
+  f.iosEvent('focus','touchstart',[{identifier:3}]);assert.equal(f.sent.at(-1).actionButtons,3);
+  f.epoch(2);f.touch.syncControls();assert.equal(f.sent.at(-1).actionButtons,0);
+});
 test('direct contacts preserve independent IDs and normalized iframe coordinates with gesture-cached rect', () => {
   const f = fixture(); f.pointer('directSurface', 'pointerdown'); f.pointer('directSurface', 'pointermove', {clientX: 410, clientY: 620});
   f.pointer('directSurface', 'pointerdown', {pointerId: 2, clientX: 110, clientY: 170});
@@ -150,4 +167,13 @@ test('main1874/8983: recreated Player bindings retain document fire choice acros
   next.click('fire'); assert.equal(enabled, true); assert.deepEqual(writes, [false, true]); next.touch.dispose();
   assert.deepEqual(writes, [false, true], 'dispose resets transient input only');
   assert.equal(fixture().touch.getSnapshot().fireEnabled, true, 'a fresh document starts with main\'s true default');
+});
+
+test('rapid native taps preserve every edge, drop duplicate capture releases and bound HUD updates', async () => {
+ const f=fixture({game:'th075'});let updates=0;f.touch.subscribe(()=>updates++);
+ for(let i=0;i<100;i++){f.pointer('fire','pointerdown',{pointerId:i+1});f.pointer('fire','pointerup',{pointerId:i+1});f.pointer('fire','lostpointercapture',{pointerId:i+1});}
+ const packets=f.sent.filter(m=>m.command==='touch-controls');assert.equal(packets.length,200);
+ assert.deepEqual(packets.map(m=>m.actionButtons),Array.from({length:200},(_,i)=>i%2===0?1:0));
+ assert.equal(updates,0,'HUD renders are not synchronous with each input edge');
+ assert.equal(f.touch.getSnapshot().actionButtons,0);await wait(40);assert.equal(updates,1);
 });

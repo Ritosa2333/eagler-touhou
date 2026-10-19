@@ -4,6 +4,8 @@
     "launcher": "launcher",
     "th06": "ports/th06",
     "th07": "ports/th07",
+    "th075": "ports/th075",
+    "th075mp": "ports/th075-mp",
     "th08": "ports/th08",
     "th09": "ports/th09",
     "th10": "ports/th10",

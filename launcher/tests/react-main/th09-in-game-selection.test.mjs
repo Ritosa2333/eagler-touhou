@@ -41,7 +41,7 @@ after(async () => {env.close(); await rm(work,{recursive:true,force:true});});
 for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
   test(`${product} room and directory selection controls (${locale})`,async()=>{
     const native=product==='th09mp', calls=[];
-    const state={product,preferredLoadout:0,connected:true,seat:0,displayName:'Alice',rollbackEnabled:true,
+    const state={product,preferredLoadout:0,connected:true,seat:0,displayName:'Alice',rollbackEnabled:true,timingChoice:'auto',
       room:{synced:true,playerCount:2,difficulty:1,phase:'lobby',seats:[{clientId:'host'},null]}};
     const service={timingRecommendation:()=>({inputDelay:0}),setRoomSettings:value=>calls.push(value)};
     const form={mode:'create',product,capacity:2,difficulty:1,code:'',visibility:'public',disableCheatMovement:false,validationMessage:''};

@@ -20,6 +20,7 @@ const validInput = {
     GameDirectories: {
       th06: "original/th06",
       th07: "original/th07",
+      th075: "original/th075",
       th08: "original/th08",
       th09: "original/th09",
       th10: "original/th10",
@@ -65,7 +66,7 @@ const legacyInput = {
     Th10Directory: "original/th10",
     Th11Directory: "original/th11",
     Th20Directory: "original/th20",
-    GameDirectories: { th15: "original/th15" },
+    GameDirectories: { th075: "original/th075", th15: "original/th15" },
     Th06LanguagePacks: "languages/th06",
     Th07LanguagePacks: "languages/th07",
     Music: ["midi"],

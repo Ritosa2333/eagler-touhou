@@ -136,7 +136,7 @@ export class ThcrapService {
     await mkdir(assetsDirectory, { recursive: true });
 
     const processedResources = this.packProcessor
-      ? await this.packProcessor(downloaded.resources)
+      ? await this.packProcessor(downloaded.resources,{language:languageId})
       : await Promise.all(downloaded.resources.map(async resource => ({
           ...resource,
           ...(await this.resourceProcessor(resource))

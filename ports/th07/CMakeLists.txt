@@ -229,7 +229,7 @@ if(EMSCRIPTEN)
         "-sENVIRONMENT=web"
         "${TH_WEB_OPT_LEVEL}"
         "-sINVOKE_RUN=0"
-        "-sEXPORTED_RUNTIME_METHODS=['callMain']"
+        "-sEXPORTED_RUNTIME_METHODS=['callMain','FS','IDBFS']"
         "-lidbfs.js"
         "--shell-file"
         "${CMAKE_SOURCE_DIR}/resources/shell.html"
