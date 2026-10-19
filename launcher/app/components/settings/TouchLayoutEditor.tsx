@@ -8,7 +8,7 @@ import {useLocale} from '../../i18n';
 import {closeMainSelectMenus} from '../launcher/MainSelect';
 import {TouchSettingsFields} from './TouchSettingsFields';
 import {TouchControlPreview} from './TouchControlPreview';
-import {captureTouchLayoutDefaults, controlElement, effectivePlacement, overlapRatio, visibleTouchControls} from './touch-layout-geometry';
+import {captureTouchLayoutDefaults, controlElement, effectiveControlScale, effectivePlacement, overlapRatio, visibleTouchControls} from './touch-layout-geometry';
 import type {SettingsActions, TouchEditorNativePorts} from './types';
 
 type Gesture = {kind: 'move'; pointer: number; name: TouchLayoutControlName; x: number; y: number}
@@ -211,7 +211,7 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
       const point = effectivePlacement(element, item, safe);
       element.style.setProperty('--touch-layout-x', `${safe.left - h.left + point.x * safe.width}px`);
       element.style.setProperty('--touch-layout-y', `${safe.top - h.top + point.y * safe.height}px`);
-      element.style.setProperty('--touch-layout-scale', String(item.scale)); element.style.zIndex = String(31 + item.priority);
+      element.style.setProperty('--touch-layout-scale', String(effectiveControlScale(element, item, safe))); element.style.zIndex = String(31 + item.priority);
     }
     const visible = visibleTouchControls(host), reserved = host.querySelector<HTMLElement>('#touchLayoutReservedZone')!.getBoundingClientRect();
     for (let i = 0; i < visible.length; i++) {

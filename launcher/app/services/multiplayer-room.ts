@@ -1097,6 +1097,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       throw new Error(ports.translate('multiplayer.roomStateInvalid'));
     if (preparedRuntimeGeneration && (!runtimeVersionsSupported || !room.runtimeGeneration))
       throw new Error(ports.translate('multiplayer.runtimeCheckFailed'));
+    if (preparedRuntimeGeneration && preparedRuntimeGeneration !== room.runtimeGeneration)
+      throw new Error(ports.translate('multiplayer.runtimeVersionMismatch'));
     const config = policy()!,
       spectator = state.seat == null && state.spectatorRequested;
     if (!spectator && (state.seat == null || state.seat < 0 || state.seat >= room.playerCount))

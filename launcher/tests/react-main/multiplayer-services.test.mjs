@@ -207,6 +207,25 @@ test('room program versions refresh before readiness and pin the agreed generati
   f.service.dispose();
 });
 
+for (const matches of [false, true]) test(`late spectator admission requires the running match program: matches=${matches}`, async () => {
+  const localGeneration = matches ? hash : 'b'.repeat(64);
+  const f = roomFixture({prepareResources: async () => ({runtimeGeneration: localGeneration})});
+  const invite = owner.encodeRoomInvite({g:'th06mp',r:'1234',a:'join',s:true});
+  f.service.restoreInvite('https://launcher.invalid/?j='+invite,'th06mp');
+  await flush(); const socket = f.sockets[0]; socket.open();
+  const room = roomState('other-host',{phase:'playing',startSerial:4,spectatorTimeline:true,runtimeGeneration:hash});
+  socket.message({type:'state',roomDirectory:{runtimeVersions:true},room});
+  await flush(); socket.message({type:'spectator-start',serial:4,room}); await flush();
+  assert.equal(f.events.some(([kind])=>kind==='launch'),matches);
+  if (matches) assert.equal(new URL(f.events.find(([kind])=>kind==='launch')[1].runtimeOptions.netplayUrl).searchParams.get('runtimeGeneration'),hash);
+  else {
+    assert.equal(f.events.find(([kind])=>kind==='operation-error')[2].message,'multiplayer.runtimeVersionMismatch');
+    assert.equal(f.service.getSnapshot().room.code,'1234');
+    assert.equal(f.service.getSnapshot().spectatorRequested,true);
+  }
+  f.service.dispose();
+});
+
 test('room program versions block old relay readiness and failed preparation launch', async () => {
   const old=await joinedRoom({prepareResources:async()=>({runtimeGeneration:hash})});
   await old.service.toggleReady();assert.equal(old.service.getSnapshot().ready,false);

@@ -339,6 +339,15 @@ bool BrowserRuntime::connect_spectator(const char* relay,const char* id){
     return multiplayer_driver->ConnectSpectator(relay,id);
 }
 bool BrowserRuntime::pump_network(bool capture_follows){return !multiplayer_driver||multiplayer_driver->Pump(capture_follows);}
+void BrowserRuntime::return_to_room(){
+    // The host synchronized confirmed files before ending this run. Keep
+    // teardown/title writes isolated until a new run is explicitly configured.
+    discard_network_shutdown_writes=true;
+    multiplayer_driver.reset();app.session.netplay.Clear();app.session.multiplayer_session={};
+    replay_viewer=replay_finished=replay_menu_opened=false;replay_request.clear();
+    app.game.menus.context.supervisor_state=app.title.context.supervisor_state=i32(Scene::Title);
+    app.supervisor.state.target=i32(Scene::Title);room_preview=true;
+}
 bool BrowserRuntime::flush_network_inputs(){return !multiplayer_driver||multiplayer_driver->FlushInputs();}
 bool BrowserRuntime::bind_audio_events(multiplayer::AudioEvents* events){return audio&&audio->bind_audio_events(events);}
 bool BrowserRuntime::commit_audio_events(multiplayer::AudioEvents& events,u32 confirmed,u32 simulated){

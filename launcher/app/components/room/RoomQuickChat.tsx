@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import {RoomActionMenu} from './RoomActionMenu';
 import { QUICK_CHAT_ROWS } from '../../../src/contracts/multiplayer-quick-chat.mts';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
 import { useLocale } from '../../i18n';
@@ -23,6 +24,7 @@ export function RoomQuickChat({ model, part = 'all' }: { model: MultiplayerQuick
         ))}
       </div>;
   if (part === 'log') return messages;
+  if (part === 'actions') return <FloatingRoomChat enabled={!!enabled} label={t('room.quickChat')} locale={locale} send={id => model.sendPhrase(id)}/>;
   return (
     <section id="mpRoomChat" className="mp-room-quick-chat" aria-label={t('chat.players')}>
       {part === 'all' && messages}
@@ -39,4 +41,13 @@ export function RoomQuickChat({ model, part = 'all' }: { model: MultiplayerQuick
       </details>
     </section>
   );
+}
+
+/** Room menus share focus, clipping boundaries and motion. */
+function FloatingRoomChat({enabled, label, locale, send}: {enabled:boolean;label:string;locale:string;send(id:string):void}) {
+  return <section id="mpRoomChat" className="mp-room-quick-chat" aria-label={label}>
+    <RoomActionMenu enabled={enabled} label={label} triggerContent={<>{label}<span aria-hidden="true">⌃</span></>}
+      triggerClassName="room-quick-chat-trigger" menuClassName="room-quick-chat-picker"
+      items={QUICK_CHAT_ROWS.flat().map(phrase=>({id:phrase.id,label:locale==='en'?phrase.en:phrase.zh,select:()=>send(phrase.id)}))}/>
+  </section>;
 }

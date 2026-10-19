@@ -1,6 +1,6 @@
 # 文档总表
 
-共 220 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 222 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -227,3 +227,4 @@
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
 | 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | TH075 thcrap host preparation |
+| 其他说明 | [design-qa.md](../design-qa.md) | 房间呈现验收 |

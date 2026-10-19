@@ -1,4 +1,6 @@
 import {createContext, useState, type CSSProperties, type ReactNode, type RefCallback} from 'react';
+import {useWorkspaceViewport} from './use-workspace-viewport';
+import './workspace-viewport.css';
 
 /** Controls can compose inside the stage without moving or remounting the iframe. */
 export const PlayerStage = createContext<HTMLDivElement | null>(null);
@@ -9,6 +11,7 @@ export function PlayerSurface({open, editing, replayWorkspace = false, roomWorks
   onFrame?: RefCallback<HTMLIFrameElement>; children?: ReactNode;
 }) {
   const [stage, setStage] = useState<HTMLDivElement | null>(null);
+  useWorkspaceViewport(stage, roomWorkspace || replayWorkspace);
   return <section ref={onElement} className={`player${open ? ' open' : ''}${replayWorkspace ? ' replay-workspace' : ''}${roomWorkspace ? ' room-workspace' : ''}${editing ? ' touch-preview touch-layout-edit touch-enabled' : preview ? ' touch-preview' : ''}`} style={previewImage ? {'--touch-preview-image': previewImage} as CSSProperties : undefined}
     id="player" data-launcher-document="" aria-hidden={!open}>
     <PlayerStage value={stage}>{children}</PlayerStage>

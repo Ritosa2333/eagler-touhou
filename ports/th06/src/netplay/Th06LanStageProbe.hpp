@@ -23,6 +23,8 @@ int SpectatorControl(const char *run, const char *action, std::uint32_t frame);
 // presenting. Stage 1 must not be dispatched until this becomes true.
 bool TransportReady();
 bool LastTickAdvanced();
+void ReturnToRoom();
+void BeginRoomRun();
 void SetGameplayStartSeed(std::uint16_t seed);
 // Presentation/wall-clock scheduler correction only. 1.0 is the native
 // 60 Hz cadence; production LAN may make a small temporary adjustment to

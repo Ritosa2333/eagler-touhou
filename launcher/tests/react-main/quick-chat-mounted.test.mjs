@@ -202,9 +202,10 @@ test('room messages stay above the controls and sending closes the upward picker
   const {model,clock,calls}=fixture();model.update({...context(),inRoom:true});
   await mount(model,{room:'split',strict:true});
   assert.equal(query('#roomBottomControls').querySelector('.mp-room-chat-log'),null);
-  const actions=query('#mpRoomChat details');await act(()=>{actions.open=true;});
-  await act(()=>query('#mpRoomChat [data-phrase="1"]').click());
-  assert.equal(calls.at(-1)[0],'send');assert.equal(actions.open,false);
+  const actions=query('#mpRoomChat .room-quick-chat-trigger');await act(()=>actions.click());
+  assert.equal(query('#roomBottomControls').querySelector('.room-quick-chat-picker'),null);
+  await act(()=>query('.room-quick-chat-picker [data-phrase="1"]').click());
+  assert.equal(calls.at(-1)[0],'send');assert.equal(actions.getAttribute('aria-expanded'),'false');
   await act(()=>model.receive(message()));
   assert.equal(query('#roomUpperSpace .mp-room-chat-log').children.length,1);
   await act(()=>clock.tick(10000));

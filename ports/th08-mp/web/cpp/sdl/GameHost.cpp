@@ -477,6 +477,9 @@ EX("sdl_room_preview") bool sdl_room_preview(){
 EX("sdl_room_preview_ready") bool sdl_room_preview_ready(){
     return runtime&&runtime->room_preview&&runtime->app.title.ready_for_session();
 }
+EX("sdl_room_return") bool sdl_room_return(){
+    if(!runtime)return false;sdl_keys_clear();runtime->return_to_room();return true;
+}
 EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;reset_cadence();display_cadence.reset();presentation_gate.reset();emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
 EX("sdl_loop_stop") void sdl_loop_stop(){running=false;++loop_epoch;sdl_audio_pause(true);}
 EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;reset_cadence();display_cadence.reset();presentation_gate.reset();sdl_audio_pause(suspended);}
