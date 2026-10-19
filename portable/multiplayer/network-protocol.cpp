@@ -91,10 +91,15 @@ int main(int argc,char** argv){
    CHECK(!r.NeedsCapture()&&r.NextFrame()==0&&!r.Prepare(0).canAdvance);
   }
   r.SetCapturePhase(true,1'000'000);CHECK(!r.NeedsCapture());
+  // A confirmed menu may queue inputs, combat must drain that tail rather
+  // than preserving a second permanent delay after returning from the menu.
+  r.SetCapturePhase(false,1'000'000);
   for(unsigned frame=0;frame<Netplay::ConfirmedInputClock::MaxLead;++frame){
+   CHECK(!r.NeedsCapture());
    for(unsigned seat=1;seat<count;++seat)CHECK(r.SubmitRemote(seat,frame,input(frame,seat))==Netplay::RemoteInputResult::Accepted);
    const auto d=r.Prepare(frame);CHECK(d.canAdvance&&!d.predictedMask&&d.inputs[0]==input(frame,0));CHECK(r.MarkSimulated(frame,d));
   }
+  CHECK(r.NeedsCapture()&&r.CaptureFrame()==r.NextFrame());
   CHECK(r.Finish()&&r.BeginNextRun(419));CHECK(r.CaptureFrame()==0);
  }
  for(unsigned count:{2u,3u}){auto s=setup(count,0,0);auto words=EncodeSessionSetup(s);CHECK(words[22]==(count==2?1250000u:1500000u));SessionSetup decoded;CHECK(DecodeSessionSetup(decoded,words.data(),words.size()));s.chapter_threshold=5000000;CHECK(GameplayAbi(s)!=GameplayAbi(decoded));NetplayRuntime a,b;CHECK(a.Reset(s));decoded.local_player=1;CHECK(b.Reset(decoded));CHECK(a.ApplySession(b.Hello())==Netplay::SessionPacketResult::ContractMismatch);
