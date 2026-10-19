@@ -426,23 +426,29 @@ for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) 
   }
 });
 
-for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product uses original row metadata and native game policy: ${locale}`, async () => {
-  const f = await fixture({locale}).live();
+for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product uses room metadata and native game policy: ${locale}`, async () => {
+  const f = await fixture({locale, host: {games: Object.keys(owners.PRODUCT_GAMES)}}).live();
   const rowsMount = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service, assetUrl}, {locale});
   for (const product of f.service.getSnapshot().products) {
     await React.act(async () => f.service.selectProduct(product));
     await f.receive([room({product, capacity: 2, seats: [{initial: 'A', online: false, ready: true}, null]})]);
     await rowsMount.update({snapshot: f.service.getSnapshot()});
     const snapshot = f.service.getSnapshot();
+    const policy = owners.multiplayerConfigForProduct(product);
+    assert.equal(n('.lobby-difficulty').hidden, !!policy.inGameSelection);
+    if (policy.inGameSelection) {
+      assert.equal(n('.lobby-difficulty').textContent, '');
+      assert.equal(all('.difficulty-label').length, 0);
+    } else {
+      assert.equal(n('.difficulty-label').textContent, policy.difficulties[snapshot.visibleRooms[0].difficulty]);
+    }
     if (product === 'th09mp') {
       assert.equal(n('.th09-room-score').textContent,'VS');
       assert.equal(n('.th09-room-duration').textContent,t(locale,'lobby.recruiting'));
       assert.equal(all('.th09-duel-avatar').length,2);
-      assert.equal(n('.th09-room-row .lobby-difficulty').textContent, owners.multiplayerConfigForProduct(product).difficulties[snapshot.visibleRooms[0].difficulty]);
     } else {
       assert.equal(n('.lobby-room-code').textContent, '#' + snapshot.visibleRooms[0].code);
       assert.equal(all('.th09-duel-avatar').length,2);
-      assert.equal(n('.difficulty-label').textContent,owners.multiplayerConfigForProduct(product).difficulties[snapshot.visibleRooms[0].difficulty]);
     }
   }
   await rowsMount.unmount();
