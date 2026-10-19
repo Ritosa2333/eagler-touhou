@@ -688,6 +688,10 @@ i32 Application::step(bool scheduled_tick,double callback_started){
         }
         if(session.sessionId&&!state.netplay_runtime.Playback()&&!state.netplay_runtime.Spectator()&&
            !state.netplay_runtime.PreparingWorld()&&!state.multiplayer_replay.Begin(session,state.configuration)){error=-6;return 2;}
+        // Title animation has an endpoint-local duration. Construct the match
+        // only from the agreed seed, never the title's consumed random stream.
+        engine.script_random.seed=engine.visual_random.seed=u16(session.seed);
+        engine.script_random.calls=engine.visual_random.calls=0;
         if(!ensure_world())return 2;
         if(!startup->scores->multiplayer_active()){
             const bool records=state.netplay_runtime.Playback()||state.netplay_runtime.Spectator()?
