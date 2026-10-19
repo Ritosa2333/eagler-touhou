@@ -277,6 +277,29 @@ test('main language cancellation/task lifetime brackets only downloads, closes o
   }
 });
 
+test('language download switches mirrors inside one transfer and validates the completed archive', async () => {
+  const path = 'thcrap/th06/localization/strings.etl', payload = strToU8('ETL1');
+  const manifest = {schema: 'eagler-touhou/thcrap-static-pack/1', game: 'th06', language: 'lang_en', runtimeVersion: 'mirror-test', files: [{path: `/${path}`, bytes: payload.length}]};
+  const zip = zipSync({'manifest.json': strToU8(JSON.stringify(manifest)), [path]: payload}, {level: 0});
+  const hash = createHash('sha256').update(zip).digest('hex'), visits = [], snapshots = [];
+  const foreground = api.createNetworkActivityTracker({onChange: snapshot => snapshots.push(snapshot)});
+  const network = api.createPreparationNetwork({foreground, baseUrl: 'https://launcher.invalid/', translate: t});
+  const result = await api.prepareLanguagePack({game: 'th06', baseUrl: 'https://launcher.invalid/', translate: t,
+    entry: {id: 'lang_en', title: 'English', pack: {url: '/language/th06/en.zip', bytes: zip.length, sha256: hash}},
+    caches: null, storage: null, network, fetchImpl: async input => {
+      const url = new URL(input); visits.push(url.origin);
+      if (url.pathname === '/_eagler/resource-routes') return Response.json({schema: 'eagler-touhou/resource-routes/1',
+        path: '/language/th06/en.zip', bytes: zip.length, sha256: hash,
+        sources: ['https://first.invalid/language/th06/en.zip', 'https://second.invalid/language/th06/en.zip']});
+      if (url.origin === 'https://first.invalid') throw new TypeError('Node disconnected');
+      return new Response(zip);
+    }});
+  assert.deepEqual(visits, ['https://launcher.invalid', 'https://first.invalid', 'https://second.invalid']);
+  assert.equal(result.files.length, 1); assert.equal(snapshots.at(-1).count, 0);
+  assert.equal(Math.max(...snapshots.map(value => value.count)), 1);
+  assert(snapshots.some(value => value.active[0]?.loaded === zip.length));
+});
+
 test('dispose clears pending frames and timers, and late completion does not rearm them', () => {
   const f = fixture(); f.model.musicComplete({}); f.model.midiFallback(); f.model.networkSnapshot(net([task()])); f.model.dispose();
   f.model.musicComplete({}); f.model.midiFallback(); f.model.launchAcknowledged(); f.model.beginRuntime({game: 'th06', generation: null});
