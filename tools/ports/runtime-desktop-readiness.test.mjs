@@ -55,6 +55,22 @@ test('TH09 touch eligibility is grounded in native context, player readiness, an
   }
 });
 
+test('TH09 movement requires its actual native ABI together with touch eligibility',()=>{
+  const eligible=()=>({...gameplay(),nativeObservation:{version:1,validMask:0x1bf},
+    touchInput:{context:'gameplay',ready:true,inTitle:false,active:false}});
+  assert.deepEqual(evaluateDesktopGameplayReadiness(eligible(),'th09'),{ready:true,reasons:[]});
+  for(const [mutate,reason] of [
+    [state=>{state.capabilities.input=false;state.input=null;state.nativeObservation.validMask&=~2;},'native-input-unavailable'],
+    [state=>{state.capabilities.position=false;state.position=null;state.nativeObservation.validMask&=~4;},'native-player-position-unavailable'],
+    [state=>{state.touchInput.ready=false;},'native-touch-player-not-ready'],
+    [state=>{state.touchInput.context='dialogue-or-ending';},'touch-context-not-gameplay'],
+  ]){
+    const state=eligible();mutate(state);
+    const result=incompleteGameplayPrecondition(state,'th09');
+    assert.equal(result.checkStatus,'incomplete');assert.ok(result.eligibility.reasons.includes(reason));
+  }
+});
+
 test('TH09 SFX correlation requires a newly activated native voice and PCM on its own output tap',()=>{
   const voice=(id,overrides={})=>({id,playing:true,node:true,started:2,outputTapIndex:4,...overrides});
   const baseline={nativeSfx:{available:true,snapshots:{end:[voice('steady') ]}}};

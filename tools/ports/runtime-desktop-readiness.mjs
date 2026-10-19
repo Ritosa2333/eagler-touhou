@@ -12,6 +12,7 @@ export function evaluateDesktopGameplayReadiness(state,game){
     ?['stage','match'].includes(state.phase?.name)
     :game==='th08'&&state?.status?.supervisorActive===2&&state.status.active===1&&!state.status.loading;
   if(!phaseReady)reasons.push('native-gameplay-phase-unavailable');
+  if(game==='th09')reasons.push(...th09TouchFireEligibility(state).reasons);
   return{ready:reasons.length===0,reasons};
 }
 

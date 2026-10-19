@@ -10,7 +10,7 @@ import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
 import {readRuntimeObservation} from './runtime-observations.mjs';
 import {createStageRecorder} from './runtime-desktop-stage.mjs';
-import {evaluateDesktopGameplayReadiness,incompleteGameplayPrecondition,incompleteTh09TouchPrecondition,th09TouchFireEligibility,correlateTh09SfxWindow} from './runtime-desktop-readiness.mjs';
+import {evaluateDesktopGameplayReadiness,incompleteGameplayPrecondition,incompleteTh09TouchPrecondition,correlateTh09SfxWindow} from './runtime-desktop-readiness.mjs';
 import {createFixtureServer} from '../browser/fixture-server.mjs';
 import {createFixtureResponseProbe} from './runtime-fixture-site.mjs';
 
@@ -58,7 +58,8 @@ const audioProbeSource=`(()=>{
 })();`;
 
 const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-probes/1'},async(report,save)=>{
-  assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant']});
+  assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant'],flags:['suppress-touch-movement']});
+  const suppressTouchMovement=process.argv.includes('--suppress-touch-movement');
   const selectedGame=argument('game'),selectedVariant=argument('variant');
   if(!selectedGame||selectedVariant!=='normal')throw new Error('Required: --game=<explicit comma-separated games> --variant=normal');
   const manifestArgument=argument('manifest');if(!manifestArgument)throw new Error('Required: --manifest=<accepted private input manifest>');
@@ -108,6 +109,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     sourceSnapshotStart,manifest:manifestIdentity,
     probeArtifacts,
     selection:{games:selection.games,variant:selection.variant,expectedTargets:selection.expected},
+    negativeControl:{enabled:suppressTouchMovement,kind:suppressTouchMovement?'suppress-touch-movement':null},
     scope:'Headed Chromium on Windows with current normal Runtime packages and private DATA. Playwright keyboard events pass through the production KeyboardMapping and Runtime KeyboardInputBridge. A small host harness forwards host blur/document-hidden to KeyboardMapping.clear and keyboard-clear; this verifies Runtime release behavior without claiming the Launcher UI wiring. Simulated touch commands enter each Runtime package through its documented touch protocol while the native game loop runs. WebAudio sampling is attached inside each Runtime iframe to its actual output graph. No physical keyboard, touchscreen, controller, retail EXE comparison, Launcher UI, multiplayer session, or OGG track is claimed.',
     protocols:{keyboard:'eagler-touhou/keyboard-input/1',touch:'eagler-touhou/runtime-protocol top-level touch-controls fields',nativeObservation:'eagler-touhou/runtime-observation/1',audio:'Per-Runtime-realm AudioNode AnalyserNode tap immediately before AudioDestinationNode'},
     audioMode:'configure.music=none; this isolates actual sound-effect output from BGM. AUDIO-01 OGG track playback is outside this probe because the accepted input manifest supplies no music resource receipt.',
@@ -195,7 +197,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
       const observe=()=>frame.evaluate(readRuntimeObservation,{game:target.game,variant:target.variant});
       const nativePeek=()=>frame.evaluate(game=>{const runtime=window[`__${game}Runtime`],module=runtime?.Module??window.Module,core=runtime?.core??module,audioContexts={};for(const api of ['SDL','SDL2','SDL3']){try{const context=module?.[api]?.audioContext;if(context)audioContexts[api]={state:context.state,sampleRate:context.sampleRate,currentTime:context.currentTime,sharedWithHost:context===parent.__touhouAudioContext};}catch(error){audioContexts[api]={error:String(error)};}}return{canvas:document.querySelector('canvas')?{width:document.querySelector('canvas').width,height:document.querySelector('canvas').height}:null,audioContexts,audioProbe:window.__eaglerDesktopAudioProbe?.summary?.()??null,wasmRuntime:!!core};},target.game);
       const waitObservation=async(label,predicate,timeoutMs=30000)=>{const start=Date.now();let state,samples=0;do{state=await observe();samples++;if(predicate(state)){record.preconditions??=[];record.preconditions.push({label,samples,durationMs:Date.now()-start,state});return state;}await page.waitForTimeout(75);}while(Date.now()-start<timeoutMs);throw Error(`${label}: native condition not reached: ${JSON.stringify(state)}`);};
-      const gameplayReadiness=state=>target.game==='th09'?th09TouchFireEligibility(state):evaluateDesktopGameplayReadiness(state,target.game);
+      const gameplayReadiness=state=>evaluateDesktopGameplayReadiness(state,target.game);
       const gameplayReady=state=>gameplayReadiness(state).ready;
       const waitForGameplayReadiness=async(epoch,label,timeoutMs=5000)=>{
         const start=Date.now();let state,samples=0;
@@ -465,9 +467,17 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           assert.equal(firing.contextState,'running','The Runtime WebAudio context must be running');assert.ok(firing.tapCount>0,'No real WebAudio destination path was observed');assert.ok(firing.nonZeroSamples>0&&firing.peakAbs>0,'No non-zero WebAudio PCM was captured while firing with BGM disabled');
           return record.audio;
         });
-        const touchControls=async(fields={})=>page.evaluate(controls=>rpc('touch-controls',controls),{fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0,touchSensitivity:100,...fields});
+        const touchControls=async(fields={})=>{
+          const controls={fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0,touchSensitivity:100,...fields};
+          if(suppressTouchMovement&&(controls.joystickX||controls.joystickY)){
+            (record.suppressedTouchMovement??=[]).push({epoch:activeEpoch,command:'touch-controls',requested:{...controls}});
+            controls.joystickX=controls.joystickY=0;
+          }
+          return page.evaluate(value=>rpc('touch-controls',value),controls);
+        };
         const cancelTouch=()=>page.evaluate(()=>rpc('touch-cancel'));
         const directTouch=async(type,id,x,y)=>{
+          if(suppressTouchMovement){(record.suppressedTouchMovement??=[]).push({epoch:activeEpoch,command:'direct-touch',type,id,x,y});return;}
           const point=await frame.locator('canvas').evaluate((canvas,{x,y})=>{const rect=canvas.getBoundingClientRect();return{x:(rect.left+x*rect.width)/innerWidth,y:(rect.top+y*rect.height)/innerHeight};},{x,y});
           return page.evaluate(value=>send('direct-touch',value),{type,id,...point});
         };
@@ -484,44 +494,39 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         };
         const touchModeProbe=async(mode,epoch)=>{
           const precondition=await observe();
-          if(target.game==='th09'){
-            const eligibility=incompleteTh09TouchPrecondition(precondition);
-            if(eligibility)return{checkStatus:'incomplete',...eligibility,mode,epoch,
-              reason:'TH09 touch context/player readiness was unavailable.'};
-            return{checkStatus:'incomplete',mode,epoch,precondition,
-              reason:'TH09 exposes native touch eligibility, but not a native input mask for this movement assertion.'};
-          }
           const preconditionIssue=incompleteGameplayPrecondition(precondition,target.game);
           if(preconditionIssue)return{...preconditionIssue,mode,epoch};
           await resetInputState(epoch);await page.waitForTimeout(180);
           const start=await observe(),eligibility=incompleteGameplayPrecondition(start,target.game);
           if(eligibility)return{...eligibility,mode,epoch};
           const baseInput=start.input.value,actions=[];
+          const touchNeutral=value=>gameplayReady(value)&&value.input.value===baseInput&&
+            (target.game!=='th09'||value.motionSample?.enabled===false);
           try{
           if(mode==='touch'||mode==='touch-unlimited'){
             await cancelTouch();await touchControls();
             const before=await observe(),sign=before.position.x>192?-1:1;
             await directTouch('down',100+epoch,.5,.75);await directTouch('move',100+epoch,.5+sign*.08,.75);
             let moved;try{moved=await waitObservation(`${mode} drag native movement`,value=>
-              (value.position.x-before.position.x)*sign>0,3000);}finally{await directTouch('up',100+epoch,.5+sign*.08,.75);await cancelTouch();}
-            const neutral=await waitObservation(`${mode} drag cancel releases input`,value=>value.input.value===baseInput,2500);
+              gameplayReady(value)&&(value.position.x-before.position.x)*sign>0,3000);}finally{await directTouch('up',100+epoch,.5+sign*.08,.75);await cancelTouch();}
+            const neutral=await waitObservation(`${mode} drag cancel releases input`,touchNeutral,2500);
             actions.push({kind:'drag',before,moved,neutral,sign,deltaX:moved.position.x-before.position.x});
           }else{
             const vectors=[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,1],[-1,1],[1,-1]];
             for(const [x,y] of vectors){
-              await touchControls();await waitObservation(`${mode} neutral before ${x},${y}`,value=>value.input.value===baseInput,1500);
+              await touchControls();await waitObservation(`${mode} neutral before ${x},${y}`,touchNeutral,1500);
               const before=await observe();await touchControls({joystickX:x*32767,joystickY:y*32767});
               let held;try{held=await waitObservation(`${mode} joystick ${x},${y} native movement`,value=>
-                (x===0||((value.position.x-before.position.x)*x>0))&&(y===0||((value.position.y-before.position.y)*y>0)),2000);}
+                gameplayReady(value)&&(x===0||((value.position.x-before.position.x)*x>0))&&(y===0||((value.position.y-before.position.y)*y>0)),2000);}
               finally{await touchControls();}
-              const released=await waitObservation(`${mode} joystick release ${x},${y}`,value=>value.input.value===baseInput,1500);
+              const released=await waitObservation(`${mode} joystick release ${x},${y}`,touchNeutral,1500);
               actions.push({kind:'joystick-direction',x,y,before,held,released});
             }
             if(mode==='joystick-free'){
               const magnitudes=[];
               for(const ratio of [.4,1]){
                 await touchControls();const before=await observe();await touchControls({joystickX:Math.round(32767*ratio)});await page.waitForTimeout(240);const after=await observe();
-                await touchControls();await waitObservation(`joystick-free ${ratio} release`,value=>value.input.value===baseInput,1500);
+                await touchControls();await waitObservation(`joystick-free ${ratio} release`,touchNeutral,1500);
                 magnitudes.push({ratio,before,after,deltaX:Math.abs(after.position.x-before.position.x)});
               }
               assert.ok(magnitudes[0].deltaX>0&&magnitudes[1].deltaX>magnitudes[0].deltaX,
@@ -529,7 +534,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             }
           }
           await cancelTouch();await touchControls();
-          const neutral=await waitObservation(`${mode} end neutral`,value=>value.input.value===baseInput,2000);
+          const neutral=await waitObservation(`${mode} end neutral`,touchNeutral,2000);
           return{mode,epoch,start,actions,neutral};
           }catch(error){
             const finalState=await observe().catch(()=>null),finalEligibility=incompleteGameplayPrecondition(finalState,target.game);
