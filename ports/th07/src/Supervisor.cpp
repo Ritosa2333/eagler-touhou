@@ -209,6 +209,22 @@ void Supervisor::DebugPrint(const char *fmt, ...)
     va_end(args);
 }
 
+void Supervisor::WarnPrint(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_WARN, fmt, args);
+    va_end(args);
+}
+
+void Supervisor::ErrorPrint(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, fmt, args);
+    va_end(args);
+}
+
 void Supervisor::CheckTiming()
 {
     f64 timeDiff;

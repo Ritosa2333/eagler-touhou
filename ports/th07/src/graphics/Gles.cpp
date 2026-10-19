@@ -220,7 +220,7 @@ ZunGraphics *GlesGraphics::Init()
     if (!ctx)
     {
         delete gfx;
-        Supervisor::DebugPrint("gles renderer create failed: %s\n", SDL_GetError());
+        Supervisor::ErrorPrint("gles renderer create failed: %s\n", SDL_GetError());
         return nullptr;
     }
     gfx->ctx = ctx;
@@ -278,7 +278,7 @@ ZunGraphics *GlesGraphics::Init()
 #ifdef __EMSCRIPTEN__
     if (!SDL_GL_SetSwapInterval(-1) && !SDL_GL_SetSwapInterval(1))
     {
-        Supervisor::DebugPrint("SDL_GL_SetSwapInterval failed: %s\n", SDL_GetError());
+        Supervisor::WarnPrint("SDL_GL_SetSwapInterval failed: %s\n", SDL_GetError());
     }
 #else
     if (!SDL_GL_SetSwapInterval(1))
@@ -286,7 +286,7 @@ ZunGraphics *GlesGraphics::Init()
         // Presentation pacing still has a display-refresh fallback in GameWindow,
         // but strict swap interval 1 is the desired path because adaptive VSync
         // (-1) can tear when frames miss the refresh deadline.
-        Supervisor::DebugPrint("SDL_GL_SetSwapInterval(1) failed: %s\n", SDL_GetError());
+        Supervisor::WarnPrint("SDL_GL_SetSwapInterval(1) failed: %s\n", SDL_GetError());
     }
     if (const char *nativePerf = std::getenv("EAGLER_NATIVE_PERF"); nativePerf && nativePerf[0] == '1')
     {

@@ -12,6 +12,10 @@
 
 核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。全仓统一入口、并发与时间预算见[测试目录](../../tests/README.md)。
 
+会建立临时 Git 仓库、索引和子模块的构建凭据测试共用 `runtime-git-fixture` 资源锁。它们仍可与其他测试并行，但彼此串行，避免 Git 夹具同时运行争用磁盘与 Git 子进程资源。资源归属集中声明在测试计划中。
+
+依赖凭据夹具分别验证完整的八个必需子模块，以及带一个真实 pin 的增量执行。前者检查必需／可选输入和身份变化，后者检查编译步骤、输出刷新和复用边界。
+
 跨作品 Runtime 协议 L0 (`node tests/test-runtime-protocol-contract.mjs`) 从 `runtime-builds.json` 枚举 normal/MP 变体，按声明的源码归属核对命令、事件与触控范围。
 
 旧界面的对照输入保存在 [`fixtures/ui-history/`](fixtures/ui-history/README.md)，按固定 SHA-256 校验；完整检出与稀疏检出使用同一组输入。Python 场景比较通过标准输入接收检查脚本，支持 Windows 下的大份历史输入。

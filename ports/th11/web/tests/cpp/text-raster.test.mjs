@@ -4,10 +4,11 @@ import {core,oracle,memory,root,report} from './helpers.mjs';
 import {FontOracle,fontParams} from '../../scripts/native/font-oracle.mjs';
 
 test('TH11 measured glyphs and text image match original GDI drawing and alpha processing',async()=>{
+ const fontDirectory=process.env.TH11_TEST_FONT_DIRECTORY;assert.ok(fontDirectory,'TH11_TEST_FONT_DIRECTORY must come from the hash-verified candidate fixture receipt');
  const c=await core(),m=await oracle(),f=c.text_raster_create(),gdi=new FontOracle(1024,65),style=c.allocate(32),string=c.allocate(1024),native=m.allocate(1024*65*2),text=m.allocate(1024),rect=m.allocate(16),texture=m.allocate(4),vtable=m.allocate(128);
  const fonts=[[32,400,'ＭＳ ゴシック'],[32,600,'ＭＳ 明朝'],[15,700,'ＭＳ ゴシック'],[15,700,'ＭＳ 明朝']],decoder=new TextDecoder('shift_jis');let selected=101,drawColor=0,checks=0;
  const arg=n=>m.u32(m.reg('ESP')+n*4),dv=()=>new DataView(c.memory.buffer),put=(o,v)=>dv().setInt32(style+o,v,true);
- for(const [i,name]of ['font0.bin','font1.bin','font2.bin','font3.bin','cp932.bin','blend4444.bin'].entries()){const bytes=readFileSync(resolve(root,'assets/sdl-native/fonts',name)),p=c.allocate(bytes.length);memory(c,p,bytes.length).set(bytes);assert.equal(c.text_raster_load(f,i,p,bytes.length),1);c.release(p);}
+ for(const [i,name]of ['font0.bin','font1.bin','font2.bin','font3.bin','cp932.bin','blend4444.bin'].entries()){const bytes=readFileSync(resolve(fontDirectory,name)),p=c.allocate(bytes.length);memory(c,p,bytes.length).set(bytes);assert.equal(c.text_raster_load(f,i,p,bytes.length),1);c.release(p);}
  m.u32(texture,vtable);m.u32(vtable+0x48,m.registerImport({dll:'texture',name:'GetSurface',argc:3,handler:()=>{m.u32(arg(3),0);return 0;}}));
  for(const e of m.importMap.values()){
   if(e.name==='SelectObject'){e.argc=2;e.handler=()=>{const old=selected;selected=arg(2);if(selected>=101&&selected<=104){const [h,w,face]=fonts[selected-101];gdi.select(fontParams(h,w),face);}return old;};}

@@ -1,5 +1,7 @@
 # th10 多人版开发指南
 
+`th10_native_observation_v1()` 沿用普通版的共用 12-word 只读 ABI，输入和坐标来自本地席位，另提供实际多人逻辑帧。未建立字段由有效位标明，MP 暂停和重开通过真实房间协商流程验收。
+
 本目录打包入口固定使用 th10 产品身份，普通版与 MP 由显式构建参数选择。编译模块文件名可与其他作品相同。
 
 当前适配记录见[th10 多人适配表](../ADAPTATION.md)。命令从仓库根目录运行；示例使用 PowerShell。
@@ -18,7 +20,7 @@ $env:EAGLER_DEVELOPMENT_UNICODE_FONT='C:\local-content\fonts\unifont-15.1.05.otf
 $env:EAGLER_DEVELOPMENT_GAMES='th10'
 $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th10 --variant=multiplayer --emsdk='/path/to/emsdk'
-node ports/th10-mp/portable/package-eagler.mjs --multiplayer
+node launcher/scripts/package-runtime.mjs --game=th10 --variant=multiplayer
 npm --prefix launcher run build
 npm --prefix launcher run dev:workspace
 ```

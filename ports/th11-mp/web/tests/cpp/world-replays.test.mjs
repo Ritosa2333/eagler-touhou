@@ -101,6 +101,10 @@ test('TH11 whole-world original demos retain native economy, movement and RNG',a
     }
    }
    if(capture){const complete=finalState.phase===4&&(!campaign||finalState.stage===(selected===7?7:6));for(const stream of Object.values(capture))stream.finish({complete,reason:complete?'replay-complete':'capture-incomplete',evidence:{checks,selection:options,finalState,replaySha256:sha(raw)}});assert.ok(complete,'verifier requires terminal lifecycle and full route');}
+   if(campaign)assert.ok(finalState.phase===4&&finalState.stage===(selected===7?7:6),
+    'Campaign comparison must reach the declared terminal lifecycle and final stage');
+   else assert.equal(checks,b.readUInt32LE(offset+4)-1,
+    'Demo comparison must cover every recorded gameplay frame before its terminal marker');
    const name=campaign?(selected===7?'world-replay-external-extra':'world-replay-external-campaign'):external?`world-replay-external-stage${selected}`:`world-replay-demo${demo}`;
    report(name+(nativeResumeOnly?'-tail':campaign&&finalState.phase===1?'-partial':''),{passed:true,countInstructions,stageDrawClocks:drawClocks,completed:!nativeResumeOnly&&finalState.phase!==1,startFrame,nativeResumeOnly,nativeCheckpoint,replaySha256:sha(raw),checks,frames,activeTicks,firstInactiveFrame,finalState,selection:options,scope:'Native scheduler and C++ battle run original inputs. Each tick checks 12 economy fields, complete player movement, script RNG, active projectile count and selected enemy/item fields. Active ticks are distinguished from frozen post-game states. Host resource, GPU and audio boundaries are replaced. Stage draw timing executes original background/foreground clock instructions; campaign mode additionally runs native cross-stage teardown/construction. Full rendered pixels and shutdown are separate checks. Native-only checkpoint warmup checks only the reported tail, not the earlier C++ warmup.'});
    if(render)c.comp_delete(render);

@@ -22,6 +22,10 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-build-profile.mjs",
   "tests/test-runtime-build-profiles.mjs",
   "tests/test-runtime-source-plan.mjs",
+  "tests/test-runtime-build-dependencies.mjs",
+  "tests/test-runtime-package-evidence.mjs",
+  "tests/test-runtime-build-source-exclusions.mjs",
+  "tests/test-runtime-cmake-staging.mjs",
   "tests/test-host-workspace.mjs",
   "tests/test-host-artwork-adapter-coverage.mjs",
   "tests/test-format-adapter-coverage.mjs",
@@ -128,6 +132,19 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-release-entry.mjs",
   "tests/test-operator-delivery.mjs",
 ]);
+
+export const REPOSITORY_NODE_TEST_RESOURCES = Object.freeze({
+  "tests/test-runtime-source-plan.mjs": Object.freeze(["runtime-git-fixture"]),
+  "tests/test-runtime-build-dependencies.mjs": Object.freeze(["runtime-git-fixture"]),
+  "tests/test-runtime-package-evidence.mjs": Object.freeze(["runtime-git-fixture"]),
+  "tests/test-runtime-build-source-exclusions.mjs": Object.freeze(["runtime-git-fixture"]),
+  "tests/test-runtime-cmake-staging.mjs": Object.freeze(["runtime-git-fixture"]),
+  "tests/test-source-identity.mjs": Object.freeze(["runtime-git-fixture"]),
+});
+
+export function repositoryNodeTestResources(test) {
+  return REPOSITORY_NODE_TEST_RESOURCES[test] ?? [];
+}
 
 export const REPOSITORY_PYTHON_TESTS = Object.freeze([
   "tests/test_ogg_converter.py",

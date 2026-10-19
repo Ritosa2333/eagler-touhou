@@ -14,7 +14,7 @@ $env:EAGLER_DEVELOPMENT_VANILLA_FONT='C:\Windows\Fonts\msgothic.ttc'
 $env:EAGLER_DEVELOPMENT_UNICODE_FONT='C:\local-content\fonts\unifont-15.1.05.otf'
 $env:EAGLER_DEVELOPMENT_GAMES='th08'
 node launcher/scripts/build-runtime.mjs --game=th08 --variant=normal --emsdk='/path/to/emsdk'
-node ports/th08/portable/package-eagler.mjs
+node launcher/scripts/package-runtime.mjs --game=th08 --variant=normal
 npm --prefix launcher run build
 npm --prefix launcher run dev:workspace
 ```

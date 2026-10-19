@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 EM_JS(void, th15_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
 EM_JS(int, th15_host_has_focus, (), {
@@ -131,6 +132,75 @@ EMSCRIPTEN_KEEPALIVE void th15_render_scale(unsigned scale){if(!th15::sdl::runni
 EMSCRIPTEN_KEEPALIVE const char* th15_error(){using namespace th15::sdl;return app?app->failure.c_str():last_error.c_str();}
 EMSCRIPTEN_KEEPALIVE unsigned th15_phase(){using namespace th15::sdl;return !app?4:app->exiting?4:app->title?0:app->ending?3:app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive?2:1;}
 EMSCRIPTEN_KEEPALIVE unsigned th15_frame(){using namespace th15::sdl;return app?app->frames:0;}
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_native_observation_v1(){
+ using namespace th15::sdl;
+ constexpr unsigned missing=0xffffffffu,missing_float=0x7fc00000u;
+ constexpr unsigned phase_valid=0x001,input_valid=0x002,position_valid=0x004,world_valid=0x008;
+ constexpr unsigned restart_valid=0x010,pause_valid=0x020,app_frame_valid=0x080,seat_valid=0x100;
+ static std::array<unsigned,12> words{};words.fill(missing);words[0]=1;words[1]=0;words[8]=words[9]=missing_float;
+ if(!app||!app->initialized)return words.data();
+ words[1]|=phase_valid|app_frame_valid;words[10]=app->frames;
+ const auto pause_screen=app->pause?app->pause->state.screen:th15::PauseScreen::Inactive;
+ auto* current_scene=app->scene();
+ const bool gameplay_ready=current_scene&&current_scene->battle.player&&current_scene->battle.player->life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
+ if(app->pause){words[1]|=pause_valid;words[6]=pause_screen==th15::PauseScreen::Pause?1u:0u;}
+ if(app->title)words[2]=0;
+ else if(app->ending)words[2]=4;
+ else if(app->exiting)words[2]=5;
+ else if(pause_screen==th15::PauseScreen::Pause)words[2]=2;
+ else if(pause_screen==th15::PauseScreen::GameOver||pause_screen==th15::PauseScreen::Results)words[2]=3;
+ else if(gameplay_ready)words[2]=1;
+ else words[2]=7;
+ if(auto* scene=current_scene){
+  auto& battle=scene->battle;words[1]|=world_valid;words[4]=unsigned(app->progress.stage_frame);
+  const bool checkpoint_mode=(battle.session.mode_flags&0x300)!=0;
+  const bool restart_frame_available=!app->progress.replay&&battle.player&&
+      (!checkpoint_mode||scene->checkpoint.ready());
+  if(restart_frame_available){words[1]|=restart_valid;words[5]=unsigned(app->progress.stage_frame);}
+  if(battle.player){
+   words[1]|=seat_valid;words[11]=0;
+   std::memcpy(&words[8],&battle.player->motion.position.x,sizeof(float));
+   std::memcpy(&words[9],&battle.player->motion.position.y,sizeof(float));words[1]|=position_valid;
+   if(words[2]==1){words[1]|=input_valid;words[3]=battle.active_frame().held;}
+  }
+ }
+ return words.data();
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_input_context_v1(){
+ using namespace th15::sdl;
+ constexpr unsigned missing=0xffffffffu;
+ constexpr unsigned app_valid=0x001,scene_valid=0x002,mode_valid=0x004,seat_valid=0x008;
+ constexpr unsigned pilot_valid=0x010,player_valid=0x020,ghost_valid=0x040,life_valid=0x080;
+ constexpr unsigned flags_valid=0x100,messages_valid=0x200;
+ static std::array<unsigned,12> words{};
+ words.fill(missing);words[0]=1;words[1]=0;
+ if(!app)return words.data();
+ words[1]|=app_valid|flags_valid;words[2]=app->initialized?1u:0u;words[10]=app->progress.scene_flags;
+ auto* current_scene=app->scene();
+ words[1]|=scene_valid;words[3]=current_scene?1u:0u;
+ if(!current_scene)return words.data();
+ auto& battle=current_scene->battle;
+ words[1]|=mode_valid|messages_valid;words[4]=0;words[11]=current_scene->messages.active()?1u:0u;
+#if TH15_MULTIPLAYER
+ if(battle.mp_enabled){
+  const unsigned seat=battle.mp_options.local_seat;
+  words[1]|=seat_valid;words[5]=seat;
+  if(seat<battle.mp_options.seat_count&&seat<battle.pilots.size()){
+   words[1]|=pilot_valid;
+   const auto* pilot=battle.pilots[seat].get();words[6]=pilot?1u:0u;
+   if(pilot){
+    words[1]|=ghost_valid;words[8]=pilot->ghost?1u:0u;
+    words[1]|=player_valid;words[7]=pilot->player?1u:0u;
+    if(pilot->player){words[1]|=life_valid;words[9]=unsigned(pilot->player->life.state);}
+   }
+  }
+  return words.data();
+ }
+#endif
+ words[1]|=seat_valid|player_valid|ghost_valid;words[5]=0;words[7]=battle.player?1u:0u;words[8]=0;
+ if(battle.player){words[1]|=life_valid;words[9]=unsigned(battle.player->life.state);}
+ return words.data();
+}
 EMSCRIPTEN_KEEPALIVE int th15_save_scores(){using namespace th15::sdl;return !app||app->save_settings();}
 EMSCRIPTEN_KEEPALIVE int th15_save_replay(unsigned slot,const char* name){using namespace th15::sdl;if(!app||!name||std::strlen(name)>8||slot>=99)return 0;std::array<char,9> text{};std::memcpy(text.data(),name,std::strlen(name));return app->prepare_live_replay(false)&&app->save_slot(slot,text);}
 EMSCRIPTEN_KEEPALIVE int th15_validate_file(unsigned kind,const unsigned char* data,unsigned size){if(kind==0){th15::ScoreFile file;return file.open(data,size);}if(kind==1){th15::Replay file;return file.open(data,size);}if(kind==2){th15::GameConfig file;return file.open(data,size);}if(kind==3){th15::CheckpointFile file;return file.open(data,size);}return 0;}

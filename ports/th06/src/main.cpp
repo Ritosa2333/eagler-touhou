@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include <cstdio>
 #include <cstring>
 
 #ifdef __EMSCRIPTEN__
@@ -242,8 +243,8 @@ static ChainCallbackResult StartNetplayGame(MainMenu *menu)
     g_Supervisor.framerateMultiplier = 1.0f;
     g_Supervisor.StopAudio();
     g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER;
-    SDL_Log("th06 netplay: dispatched LAN game players=%d local=%d difficulty=%d seed=%d",
-            requestedPlayerCount, localSlot, requestedDifficulty, requestedSeed);
+    std::printf("th06 netplay: dispatched LAN game players=%d local=%d difficulty=%d seed=%d\n",
+                requestedPlayerCount, localSlot, requestedDifficulty, requestedSeed);
     return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
 }
 #endif
@@ -352,7 +353,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
         return Module.eaglerOptions?.netplayMode === 'lan' ? 1 : 0;
     }) != 0;
     if (g_NetplayLanProduction)
-        SDL_Log("th06 netplay: LAN session requested");
+        std::printf("th06 netplay: LAN session requested\n");
 #endif
 #ifdef TH_DEV_TOOLS
     g_ReplayExtensionSelfTest = EM_ASM_INT({

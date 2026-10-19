@@ -86,9 +86,13 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
       {timeoutMs:600000, resources:['source-tree','launcher-build']})],
     },
     'ports-unit': {
-      scope:'Per-title server, lifecycle, package isolation, input and replay modules with public fixtures',tier:'integration',concurrency:2,
+      scope:'Per-title server, lifecycle, package isolation, input, replay and compiled cooperative resource rules with public fixtures',tier:'integration',concurrency:2,
       tasks:()=>[
         node('golden-integrity',['--test','--test-concurrency=2',...['th08','th08-mp','th10','th10-mp'].map(owner=>`ports/${owner}/tools/replay-verifier/golden.test.mjs`)]),
+        node('th06-th07-replay-source-contract',['launcher/tests/test-replay-determinism-contract.mjs']),
+        ...['th06','th07'].map(owner=>({id:`${owner}-cooperative-rules`,
+          command:environment.TH_PYTHON??environment.PYTHON??(process.platform==='win32'?'python':'python3'),
+          args:[resolve(root,`ports/${owner}/tests/cooperative-rules-test.py`)],cwd:root,timeoutMs:60000})),
         packageTest('th09-server','ports/th09/web','test:server'),
         packageTest('th09-timeline','ports/th09/web','test:spectator-timeline'),
         packageTest('th11-browser','ports/th11/web','test:browser-contracts'),
@@ -96,6 +100,7 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
         packageTest('th11-mp-runtime','ports/th11-mp/web','test:multiplayer-runtime'),
         node('th15-progress',['--test','ports/th15/tools/replay-verifier/original-progress.test.mjs']),
         node('th15-mp-progress',['--test','ports/th15-mp/tools/replay-verifier/original-progress.test.mjs']),
+        node('th15-mp-disconnect',['--test','ports/th15-mp/web/tests/multiplayer/disconnect.test.mjs']),
         node('th20-modules',['--test','ports/th20/portable/test-outside-touch.mjs','ports/th20/portable/test-eagler-host.mjs','ports/th20/tools/replay-verifier/adapter.test.mjs']),
       ],
     },

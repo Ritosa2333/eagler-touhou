@@ -34,7 +34,7 @@ function stop(child) {
   }
 }
 
-async function execute(task, {output, environment, signal}) {
+async function execute(task, {output, environment, unsetEnvironment, signal}) {
   const startedAt = new Date().toISOString(), start = performance.now();
   const log = resolve(output, `${task.id}.log`), stream = createWriteStream(log);
   let child, timer, timedOut = false, cancelled = false, logError;
@@ -44,9 +44,15 @@ async function execute(task, {output, environment, signal}) {
     const syntaxOnly=task.command === process.execPath && task.args?.[0] === '--check';
     const command=syntaxOnly ? task.command : process.env.TH_PYTHON ?? process.env.PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3');
     const args=syntaxOnly ? task.args : [fileURLToPath(new URL('./supervise.py', import.meta.url)), '--', task.command, ...(task.args ?? [])];
+    const childEnvironment={...process.env};
+    for (const key of unsetEnvironment) delete childEnvironment[key];
+    Object.assign(childEnvironment,environment);
+    for (const key of unsetEnvironment) delete childEnvironment[key];
+    Object.assign(childEnvironment,task.environment,{PYTHONDONTWRITEBYTECODE:'1'});
+    delete childEnvironment.NODE_OPTIONS;
     child = spawn(command, args, {cwd:task.cwd, shell:false, windowsHide:true,
       detached:process.platform !== 'win32', stdio:['ignore','pipe','pipe'],
-      env:{...process.env, ...environment, ...task.environment, PYTHONDONTWRITEBYTECODE:'1'}});
+      env:childEnvironment});
     child.stdout.pipe(stream, {end:false});
     child.stderr.pipe(stream, {end:false});
     child.once('error', error => finish(null, null, error.message));
@@ -68,10 +74,12 @@ async function execute(task, {output, environment, signal}) {
 
 /** A selected task must finish successfully. Missing inputs and timeouts fail. */
 export async function runTasks(tasks, {output, concurrency=4, environment={}, signal, failFast=false,
-  onResult=()=>{}, metadata={}} = {}) {
+  onResult=()=>{}, metadata={},unsetEnvironment=[]} = {}) {
   if (!Array.isArray(tasks) || !tasks.length) throw new Error('No tests selected');
   if (!Number.isSafeInteger(concurrency) || concurrency < 1 || concurrency > 32)
     throw new Error('Test concurrency must be an integer from 1 to 32');
+  if (!Array.isArray(unsetEnvironment)||unsetEnvironment.some(key=>typeof key!=='string'||!/^[-A-Z0-9_]+$/i.test(key)))
+    throw new Error('unsetEnvironment must contain valid environment variable names');
   const ids = new Set();
   for (const task of tasks) {
     if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(task.id) || ids.has(task.id))
@@ -104,7 +112,7 @@ export async function runTasks(tasks, {output, concurrency=4, environment={}, si
       if (resources.some(resource=>held.has(resource))) {i++; continue;}
       pending.splice(i, 1);
       resources.forEach(resource=>held.add(resource));
-      active.set(task.id, execute(task, {output, environment, signal:taskSignal}).then(result=>({task, result})));
+      active.set(task.id, execute(task, {output, environment, unsetEnvironment, signal:taskSignal}).then(result=>({task, result})));
     }
     if (!active.size) {
       for (const task of pending.splice(0)) report.results.push({id:task.id, status:'cancelled', durationMs:0});

@@ -53,6 +53,7 @@ public:
     bool NetworkEnabled()const{return network_;}
     bool Retired()const{return retired_;}
     std::uint32_t NextFrame()const;
+    std::uint32_t LastSimulatedFrame()const{return core_.LastSimulatedFrame();}
     std::uint32_t Confirmed()const{return core_.ConfirmedThroughAllRemotes();}
     unsigned Generation()const{return generation_;}
     unsigned Backlog()const{return unsigned(spectator_frames_.size());}

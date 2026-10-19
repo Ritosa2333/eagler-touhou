@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
+#include <cstdio>
 #include <new>
 #include <vector>
 
@@ -217,8 +218,9 @@ GfxInterface *GlesGraphics::Init()
 
     const GLubyte *version = glGetString(GL_VERSION);
     const GLubyte *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
-    SDL_Log("GLES renderer: %s; GLSL: %s", version != nullptr ? reinterpret_cast<const char *>(version) : "unknown",
-            glslVersion != nullptr ? reinterpret_cast<const char *>(glslVersion) : "unknown");
+    std::printf("GLES renderer: %s; GLSL: %s\n",
+                version != nullptr ? reinterpret_cast<const char *>(version) : "unknown",
+                glslVersion != nullptr ? reinterpret_cast<const char *>(glslVersion) : "unknown");
 
     glGenFramebuffers(1, &gfx->fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, gfx->fbo);

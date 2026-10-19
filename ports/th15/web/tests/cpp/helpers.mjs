@@ -5,6 +5,7 @@ import {createHash} from "node:crypto";
 import {WASI} from "node:wasi";
 import {NativeMachine} from "../../scripts/native/machine.mjs";
 export const root=fileURLToPath(new URL("../../",import.meta.url));
+export function privateOracleInput(name){const value=process.env[name];if(typeof value!=="string"||!value)throw Error(`${name} must come from the private oracle input receipt`);if(!isAbsolute(value))throw Error(`${name} must be an absolute receipt-bound path`);return value;}
 export const target=JSON.parse(readFileSync(resolve(root,"target.json"),"utf8"));
 export const sha=data=>createHash("sha256").update(data).digest("hex");
 export async function core(){const wasi=new WASI({version:"preview1",args:[],env:{},preopens:{}});const {instance}=await WebAssembly.instantiate(readFileSync(resolve(root,"artifacts/cpp/game-core-test.wasm")),{wasi_snapshot_preview1:wasi.wasiImport,env:{emscripten_notify_memory_growth(){}}});wasi.initialize(instance);return instance.exports;}

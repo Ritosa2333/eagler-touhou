@@ -31,6 +31,7 @@ EM_JS(void, th11_browser_frame, (int ok,double milliseconds,unsigned ticks), { M
 #include <cstdlib>
 #include <ctime>
 #include <cstdio>
+#include <cstring>
 #include <sys/stat.h>
 #include <dirent.h>
 
@@ -484,6 +485,51 @@ EMSCRIPTEN_KEEPALIVE const float* th11_audio_samples(){static float pcm[2048];re
 EMSCRIPTEN_KEEPALIVE const char* th11_error(){return th11::sdl::app.error.c_str();}
 EMSCRIPTEN_KEEPALIVE unsigned th11_frame(){return th11::sdl::app.session.state.frame;}
 EMSCRIPTEN_KEEPALIVE unsigned th11_phase(){return unsigned(th11::sdl::app.session.state.phase);}
+EMSCRIPTEN_KEEPALIVE const unsigned* th11_native_observation_v1(){
+    constexpr unsigned missing=0xffffffffu,missing_float=0x7fc00000u;
+    constexpr unsigned phase_valid=0x001,input_valid=0x002,position_valid=0x004,world_valid=0x008;
+    constexpr unsigned restart_valid=0x010,pause_valid=0x020,multiplayer_valid=0x040,seat_valid=0x100;
+    static std::array<unsigned,12> words{};words.fill(missing);words[0]=1;words[1]=0;words[8]=words[9]=missing_float;
+    auto& application=th11::sdl::app;if(!application.initialized)return words.data();
+    auto& session=application.session;words[1]|=phase_valid|pause_valid;
+    switch(session.state.phase){
+    case th11::GameSessionPhase::title:words[2]=0;break;
+    case th11::GameSessionPhase::stage:words[2]=1;break;
+    case th11::GameSessionPhase::paused:words[2]=2;break;
+    case th11::GameSessionPhase::game_over:words[2]=3;break;
+    case th11::GameSessionPhase::ending:words[2]=4;break;
+    case th11::GameSessionPhase::finished:words[2]=5;break;
+    }
+    words[6]=session.state.phase==th11::GameSessionPhase::paused?1u:0u;
+    if(session.battle){
+        auto& battle=*session.battle;words[1]|=world_valid;words[4]=session.state.frame;
+#ifdef TH11_MULTIPLAYER
+        if(session.multiplayer_active){
+            words[1]|=multiplayer_valid;words[7]=session.multiplayer_frame;
+            const unsigned seat=session.multiplayer_options.local_seat;
+            if(seat<session.multiplayer_options.seat_count){
+                words[1]|=seat_valid;words[11]=seat;const auto view=session.multiplayer_seat(seat);
+                if(view.active&&!view.ghost){
+                    std::memcpy(&words[8],&view.x,sizeof(float));std::memcpy(&words[9],&view.y,sizeof(float));words[1]|=position_valid;
+                    if(session.state.phase==th11::GameSessionPhase::stage&&seat<battle.pilots.size()&&battle.pilots[seat]){
+                        words[3]=battle.pilots[seat]->input.movement.held;words[1]|=input_valid;
+                    }
+                }
+            }
+        }else
+#endif
+        if(battle.player){
+            words[1]|=seat_valid|position_valid;words[11]=0;
+            std::memcpy(&words[8],&battle.player->motion.state.position.x,sizeof(float));
+            std::memcpy(&words[9],&battle.player->motion.state.position.y,sizeof(float));
+            if(session.state.phase==th11::GameSessionPhase::stage){words[1]|=input_valid;words[3]=battle.player_input.movement.held;}
+#ifndef TH11_MULTIPLAYER
+            words[1]|=restart_valid;words[5]=session.state.frame;
+#endif
+        }
+    }
+    return words.data();
+}
 EMSCRIPTEN_KEEPALIVE int th11_return_title(){return th11::sdl::app.return_to_title()?1:0;}
 EMSCRIPTEN_KEEPALIVE int th11_restart(){return th11::sdl::app.restart()?1:0;}
 EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}

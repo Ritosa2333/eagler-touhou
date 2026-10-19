@@ -2,25 +2,38 @@ import {existsSync, readFileSync, readdirSync} from 'node:fs';
 import {resolve, relative, sep} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {sourceIdentity as gitSourceIdentity} from '../../launcher/lib/release-manifest.mjs';
+import {expectedRuntimeBuildSources, expectedRuntimeBuildSubmodules} from '../../launcher/lib/runtime-build-evidence.mjs';
 
 export const root = resolve(import.meta.dirname, '../..');
 export const layout = JSON.parse(readFileSync(resolve(root, 'launcher/config/workspace.json'), 'utf8'));
 export const builds = JSON.parse(readFileSync(resolve(root, 'launcher/config/runtime-builds.json'), 'utf8'));
 export const slash = value => value.split(sep).join('/');
-export function dependencyRevision(path, revision, actual) {
-  if (actual && actual.revision!==revision) throw new Error(`${path}: dependency checkout differs from its Git pin`);
-  return {path,revision,...(actual?.dirty ? {workingTree:actual.sha256} : {})};
+export function dependencyRevision(path, revision) {
+  return {path,revision};
 }
-export async function sourceDependencies(target) {
-  if (target.recipe.kind!=='cmake') return [];
-  const rows=execFileSync('git',['ls-files','--stage','-z','--',target.directory],
-    {cwd:root,encoding:'utf8',windowsHide:true}).split('\0').filter(row=>row.startsWith('160000 '));
-  return Promise.all(rows.map(async row=>{
-    const [meta,path]=row.split('\t'),revision=meta.split(' ')[1],directory=resolve(root,path);
-    const actual=existsSync(resolve(directory,'.git')) ? await gitSourceIdentity(directory) : null;
-    return dependencyRevision(path,revision,actual);
-  }));
+
+// Pair required module pins with the exact source files captured by the Runtime build inventory.
+export function runtimeDependencyInputs(requiredSubmodules, sourceFiles, repository=root) {
+  if (!Array.isArray(requiredSubmodules) || !Array.isArray(sourceFiles))
+    throw new Error('Runtime dependency inputs require captured submodules and source files');
+  const dependencies=[],inputFiles=new Set();
+  for (const module of requiredSubmodules) {
+    if (!module || typeof module.path!=='string' || typeof module.commit!=='string')
+      throw new Error('Invalid required Runtime submodule identity');
+    const prefix=`${module.path}/`;
+    const files=sourceFiles.filter(file=>typeof file?.path==='string'&&file.path.startsWith(prefix));
+    if (!files.length) throw new Error(`Required Runtime submodule has no captured source files: ${module.path}`);
+    dependencies.push(dependencyRevision(module.path,module.commit));
+    for (const file of files) inputFiles.add(resolve(repository,file.path));
+  }
+  return {dependencies,inputFiles:[...inputFiles]};
+}
+
+export function sourceDependencies(target) {
+  if (target.recipe.kind!=='cmake') return {dependencies:[],inputFiles:[]};
+  const requiredSubmodules=expectedRuntimeBuildSubmodules(target.game,target.variant,root);
+  const sourceFiles=expectedRuntimeBuildSources(target.game,target.variant,root);
+  return runtimeDependencyInputs(requiredSubmodules,sourceFiles,root);
 }
 export function targets({game, variant = 'both'} = {}) {
   if (game && !builds.games[game]) throw new Error(`Unknown game: ${game}`);
@@ -72,8 +85,10 @@ export function sourceIdentity(files, extra = {}) {
   const hash = createHash('sha256').update(JSON.stringify(extra));
   for (const path of [...new Set(files)].sort((a, b) => slash(relative(root,a)).localeCompare(slash(relative(root,b)), 'en'))) {
     const name = slash(relative(root, path));
-    const text = readFileSync(path).toString('latin1').replaceAll('\r\n', '\n');
-    hash.update(name).update('\0').update(text,'latin1').update('\0');
+    const bytes=readFileSync(path);
+    const binary=bytes.subarray(0,Math.min(bytes.length,8000)).includes(0);
+    const content=binary?bytes:Buffer.from(bytes.toString('latin1').replaceAll('\r\n','\n'),'latin1');
+    hash.update(name).update('\0').update(content).update('\0');
   }
   return hash.digest('hex');
 }

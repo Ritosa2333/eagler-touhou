@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp, mkdir, readFile, rm} from 'node:fs/promises';
+import {mkdtemp, mkdir, readFile, readdir, rm, writeFile} from 'node:fs/promises';
 import {setTimeout as delay} from 'node:timers/promises';
 import {tmpdir} from 'node:os';
 import {resolve, dirname} from 'node:path';
@@ -81,6 +81,23 @@ test('empty selections, duplicate ids and invalid time budgets are rejected', as
   await assert.rejects(runTasks([task('unbounded','', {timeoutMs:0})], {}), /timeout/);
 });
 
+test('child environment controls remove inherited scope selectors before applying the selected profile', () => fixture(async output => {
+  const key='EAGLER_NATIVE_SCOPE_TEST',previous=process.env[key];
+  process.env[key]='narrow-inherited-value';
+  try {
+    const report=await runTasks([
+      task('cleared',`console.log(JSON.stringify(process.env[${JSON.stringify(key)}]??null))`),
+      task('profiled',`console.log(JSON.stringify(process.env[${JSON.stringify(key)}]??null))`,
+        {environment:{[key]:'full-suite-value'}}),
+    ],{output,concurrency:1,environment:{[key]:'inherited-run-level-overlay'},unsetEnvironment:[key]});
+    assert.equal(report.status,'passed');
+    assert.match(await readFile(report.results[0].log,'utf8'),/null/);
+    assert.match(await readFile(report.results[1].log,'utf8'),/full-suite-value/);
+  } finally {
+    if(previous===undefined)delete process.env[key];else process.env[key]=previous;
+  }
+}));
+
 test('concurrent invocations cannot overwrite the same report directory',()=>fixture(async output=>{
   const release=await acquireOutputLock(output);
   try {await assert.rejects(runTasks([task('overlap','process.exit(0)')],{output}),/already owned/);}
@@ -120,3 +137,38 @@ test('a successful driver cannot hide detached work that survives its exit', () 
   await delay(150);
   assert.equal(await readFile(heartbeat, 'utf8'), after);
 }));
+
+test('runTasks removes NODE_OPTIONS shard selectors from host, run, and task environments', {timeout: 120000}, async () => {
+  const root=await mkdtemp(resolve(tmpdir(),'eagler-node-options-runner-'));
+  const selector='--test-shard=1/2',saved=process.env.NODE_OPTIONS;
+  try {
+    const first=resolve(root,'one.test.mjs'),second=resolve(root,'two.test.mjs');
+    await writeFile(first,`import test from 'node:test';import assert from 'node:assert/strict';import {writeFileSync} from 'node:fs';import {resolve} from 'node:path';const mark=()=>writeFileSync(resolve(process.env.RUNNER_TEST_MARKERS,'one.marker'),'one');test('one-a',()=>{mark();assert.equal(2,2)});test('one-b',()=>assert.deepEqual([1,2],[1,2]));\n`);
+    await writeFile(second,`import test from 'node:test';import assert from 'node:assert/strict';import {writeFileSync} from 'node:fs';import {resolve} from 'node:path';const mark=()=>writeFileSync(resolve(process.env.RUNNER_TEST_MARKERS,'two.marker'),'two');test('two-a',()=>{mark();assert.equal('x','x')});test('two-b',()=>assert.ok(true));test('two-c',()=>assert.equal(4,2+2));\n`);
+    const scenarios=[
+      {id:'host',host:true},
+      {id:'run-environment',environment:{NODE_OPTIONS:selector}},
+      {id:'task-environment',taskEnvironment:{NODE_OPTIONS:selector}},
+    ];
+    for(const scenario of scenarios){
+      if(scenario.host)process.env.NODE_OPTIONS=selector;else delete process.env.NODE_OPTIONS;
+      const output=resolve(root,scenario.id),markers=resolve(output,'markers');await mkdir(markers,{recursive:true});
+      const environment=scenario.environment??{};
+      const taskEnvironment={RUNNER_TEST_MARKERS:markers,...scenario.taskEnvironment};
+      const report=await runTasks([{id:'node-test-files',command:process.execPath,
+        args:['--test','--test-reporter=spec',first,second],cwd:root,timeoutMs:30000,environment:taskEnvironment}],
+        {output:resolve(output,'run'),concurrency:1,environment,unsetEnvironment:['NODE_TEST_CONTEXT']});
+      assert.equal(report.status,'passed',scenario.id);
+      assert.equal(report.results.length,1,scenario.id);
+      assert.equal(report.results[0].status,'passed',scenario.id);
+      const log=await readFile(report.results[0].log,'utf8');
+      assert.match(log,/ℹ tests 5(?:\r?\n|$)/,`${scenario.id}: both files' five tests must execute`);
+      assert.match(log,/ℹ pass 5(?:\r?\n|$)/,`${scenario.id}: all five tests must pass`);
+      assert.match(log,/ℹ skipped 0(?:\r?\n|$)/,`${scenario.id}: no tests may be skipped`);
+      assert.deepEqual((await readdir(markers)).sort(),['one.marker','two.marker'],`${scenario.id}: each test file must leave its run-local marker`);
+    }
+  } finally {
+    if(saved===undefined)delete process.env.NODE_OPTIONS;else process.env.NODE_OPTIONS=saved;
+    assert.equal(dirname(resolve(root)),resolve(tmpdir()));await rm(root,{recursive:true,force:true});
+  }
+});

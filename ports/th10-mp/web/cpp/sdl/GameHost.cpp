@@ -207,6 +207,29 @@ EXPORT("sdl_touch_mode") void sdl_touch_mode(u32 mode){if(gestures.set_mode(stat
 EXPORT("sdl_touch_controls") void sdl_touch_controls(u32 shoot,u32 slow,u32 bomb,u32 escape,float x,float y){gestures.controls(shoot,slow,bomb,escape,x,y);}
 EXPORT("sdl_resource_stats") const u32* sdl_resource_stats(){static u32 out[4]{};if(session&&session->files){auto& f=*session->files;out[0]=f.cache_bytes;out[1]=f.cache_hits;out[2]=f.cache_misses;out[3]=f.decoded.size();}return out;}
 EXPORT("sdl_game_status") const i32* sdl_game_status(){static i32 result[10]{};if(session&&session->app){auto& a=*session->app;result[0]=a.value.screen;result[1]=a.state.game.stage;result[2]=a.error;result[3]=a.state.game.lives;result[4]=a.state.game.power;result[5]=gestures.current_context();result[6]=gestures.active();result[7]=gestures.fire;result[8]=gestures.focus;result[9]=a.input.player_profiles[0].input.raw;}return result;}
+// Read the committed local seat, not the host/menu input lane.
+EXPORT("th10_native_observation_v1") const u32* th10_native_observation_v1(){
+    static u32 out[12];std::fill(out,out+12,~0u);out[0]=1;out[1]=1;out[2]=6;out[8]=out[9]=0x7fc00000u;
+    if(!session||!session->app)return out;
+    const auto& app=*session->app;const auto* world=app.world;out[2]=app.stopped?5:app.title?0:7;
+    if(world&&world->actors.session&&!world->loading){
+        const auto* results=world->actors.results;const int state=results?results->state:0;
+        out[1]|=0x20;out[6]=state>=1&&state<=5;out[2]=out[6]?2:state>=6?3:1;
+        const int frame=world->actors.session->elapsed.current;
+        if(frame>=0){out[1]|=8;out[4]=static_cast<u32>(frame);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const u32 seat=world->local_player;
+        if(seat<world->player_count&&seat<3){
+            out[1]|=0x102;out[11]=seat;out[3]=app.state.input_lanes.seats[seat].current;
+            if(const auto* player=world->pilots[seat].player){
+                out[1]|=4;std::memcpy(out+8,&player->position.x,4);std::memcpy(out+9,&player->position.y,4);
+            }
+        }
+        const u32 multiplayer=app.state.netplay_runtime.LastSimulatedFrame();
+        if(multiplayer!=Netplay::INVALID_FRAME){out[1]|=0x40;out[7]=multiplayer;}
+#endif
+    }return out;
+}
 }
 
 #include "LocalReplay.inc"

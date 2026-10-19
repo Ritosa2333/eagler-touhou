@@ -1083,7 +1083,7 @@ ZunResult SoundPlayer::PreloadBGM(i32 idx, const char *path)
     file = SDL_IOFromFile(this->bgmArchivePath, "rb");
     if (!file)
     {
-        Supervisor::DebugPrint("error : bgmfile is not find %s\n", this->bgmArchivePath);
+        Supervisor::ErrorPrint("error : bgmfile is not find %s\n", this->bgmArchivePath);
         return ZUN_ERROR;
     }
 
@@ -1093,7 +1093,7 @@ ZunResult SoundPlayer::PreloadBGM(i32 idx, const char *path)
     if (!lpBuffer)
     {
         SDL_CloseIO(file);
-        Supervisor::DebugPrint("error : bgmfile is not find %s\n", this->bgmArchivePath);
+        Supervisor::ErrorPrint("error : BGM preload allocation failed for %s\n", this->bgmArchivePath);
         return ZUN_ERROR;
     }
 

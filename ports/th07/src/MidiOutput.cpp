@@ -228,7 +228,7 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
     currentCursor = this->midiFileData[fileIdx];
     if (currentCursor == NULL)
     {
-        Supervisor::DebugPrint("error : MIDI playback requested before loading\n");
+        Supervisor::ErrorPrint("error : MIDI playback requested before loading\n");
         return ZUN_ERROR;
     }
 

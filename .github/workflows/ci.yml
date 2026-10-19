@@ -51,7 +51,15 @@ jobs:
 
           tools/testing
 
+          tools/build
+
+          tools/ports
+
+          ports/th08/portable
+
           common/contracts
+
+          common/cmake
 
           tests
 
@@ -177,6 +185,7 @@ jobs:
         node-version: 24
         cache: npm
         cache-dependency-path: launcher/package-lock.json
+    - run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th06,th07 --variant=normal
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
@@ -226,6 +235,7 @@ jobs:
         cache: npm
         cache-dependency-path: launcher/package-lock.json
     - run: npm --prefix launcher ci --ignore-scripts
+    - run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=${{ matrix.game }} --variant=${{ matrix.variant }}
     - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
         version: 6.0.9
@@ -286,10 +296,15 @@ jobs:
 
           common
 
+          launcher
+
           tools/build'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- ports/th06/vendored/SDL ports/th06/vendored/SDL_image ports/th06/vendored/SDL_ttf
+      run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th06 --variant=normal
     - name: Compile and run core behavior tests
       run: bash scripts/run-core-tests.sh
     needs:
@@ -319,10 +334,15 @@ jobs:
 
           common
 
+          launcher
+
           tools/build'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- ports/th06/vendored/SDL ports/th06/vendored/SDL_image ports/th06/vendored/SDL_ttf
+      run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th06 --variant=normal
     - name: Set up Emscripten
       uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
@@ -360,10 +380,15 @@ jobs:
 
           common
 
+          launcher
+
           tools/build'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
+      run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th07 --variant=normal
     - name: Check Python and integration script syntax
       shell: bash
       run: "python3 -m py_compile tests/*.py audit/source-contracts/*.py scripts/convert_bgm_ogg.py\nfor file in tests/*.cjs;\
@@ -397,10 +422,15 @@ jobs:
 
           common
 
+          launcher
+
           tools/build'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
+      run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th07 --variant=normal
     - name: Set up Emscripten
       uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 
 export const REQUIRED_RUNTIME_CHECKS=Object.freeze(['runtime-input-identity','runtime-ready','configure-launch-first-frame',
   'reject-unknown-command','save-list-and-flush','hosted-keyboard-native-effect','native-gamepad-sampling','native-gamepad-effect',
-  'native-pause-and-restart','resize-and-continued-rendering','runtime-errors','reload-storage-and-epoch']);
+  'native-pause-and-restart','resize-and-continued-rendering','runtime-errors','reload-storage-and-epoch','replay-file-roundtrip-persistence']);
 
 export function runtimeScenarioResult({checks=[],failure}={}) {
   const missing=REQUIRED_RUNTIME_CHECKS.filter(id=>!checks.some(check=>check.id===id&&check.status==='passed'));
@@ -33,18 +33,13 @@ export function readRuntimeObservation(target) {
     }
     return undefined;
   };
-  const buffer = core?.memory?.buffer ?? module?.HEAPU8?.buffer ?? null;
+  const buffer = core?.memory?.buffer ?? module?.HEAPU8?.buffer ?? root.HEAPU8?.buffer ?? null;
   const finite = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
   const wasmArray = (fn, count, Type) => {
     if (typeof fn !== 'function' || !buffer) return null;
     const pointer = fn();
     if (!Number.isInteger(pointer) || pointer <= 0 || pointer + count * 4 > buffer.byteLength) return null;
     return Array.from(new Type(buffer, pointer, count));
-  };
-  const wasmFloat2 = (pointer, offset = 0) => {
-    if (!buffer || !Number.isInteger(pointer) || pointer <= 0 || pointer + (offset + 2) * 4 > buffer.byteLength) return null;
-    const values = Array.from(new Float32Array(buffer, pointer + offset * 4, 2));
-    return values.every(Number.isFinite) ? {x: values[0], y: values[1]} : null;
   };
   const unsupported = [];
   const result = {
@@ -85,29 +80,162 @@ export function readRuntimeObservation(target) {
   } else if (game === 'th08') {
     const app = runtime?.app;
     const statusExport = nativeExport('status'), traceExport = nativeExport('trace'), diagnosticsExport = nativeExport('diagnostics');
-    if (statusExport && traceExport && diagnosticsExport && app != null) {
-      const status = Array.from({length: 11}, (_, index) => finite(statusExport(app, index)));
-      const tracePtr = traceExport(app);
-      const trace = Number.isInteger(tracePtr) && tracePtr > 0 && buffer && tracePtr + 68 * 4 <= buffer.byteLength
-        ? Array.from(new Uint32Array(buffer, tracePtr, 68)) : null;
-      const diagnostics = wasmArray(() => diagnosticsExport(app), 16, Int32Array);
-      if (trace) {
-        result.frames.enemy = finite(status[6]);
-        result.frames.control = trace[3];
-        result.position = wasmFloat2(tracePtr, 7);
-        result.capabilities.position = result.position !== null;
-        result.input = diagnostics ? {kind: 'logical-buttons', value: diagnostics[11]} : null;
-        result.capabilities.input = result.input !== null;
-        result.pause = diagnostics ? {active: diagnostics[6] !== 0, raw: diagnostics[6]} : null;
-        result.capabilities.pause = result.pause !== null;
-        result.status = {supervisorActive: status[0], active: status[1], invalid: status[2], stage: status[3],
-          loading: status[7], titleScreen: status[8], cursor: status[9], supervisorState: diagnostics?.[9] ?? null};
-        result.capabilities.restartFrame = 'enemy';
+    let status=null,trace=null,tracePtr=null,diagnostics=null,multiplayer=null,netplay=null,netProgress=null,touch=null;
+    const memoryBuffer=()=>core?.memory?.buffer??module?.HEAPU8?.buffer??root.HEAPU8?.buffer??null;
+    const float2FromCurrentBuffer=(pointer,offset=0)=>{
+      const current=memoryBuffer();
+      if(!current||!Number.isInteger(pointer)||pointer<=0||pointer+(offset+2)*4>current.byteLength)return null;
+      const values=Array.from(new Float32Array(current,pointer+offset*4,2));
+      return values.every(Number.isFinite)?{x:values[0],y:values[1]}:null;
+    };
+    const statusFn=(name,count,Type)=>{
+      const fn=nativeExport(name);
+      if(typeof fn!=='function')return null;
+      const pointer=fn(app);
+      const currentBuffer=memoryBuffer();
+      return Number.isInteger(pointer)&&pointer>0&&currentBuffer&&pointer+count*4<=currentBuffer.byteLength
+        ?Array.from(new Type(currentBuffer,pointer,count)):null;
+    };
+    if(app!=null){
+      if(statusExport)status=Array.from({length:11},(_,index)=>finite(statusExport(app,index)));
+      tracePtr=traceExport?.(app);const currentBuffer=memoryBuffer();
+      if(Number.isInteger(tracePtr)&&tracePtr>0&&currentBuffer&&tracePtr+68*4<=currentBuffer.byteLength)
+        trace=Array.from(new Uint32Array(currentBuffer,tracePtr,68));
+      if(diagnosticsExport)diagnostics=wasmArray(()=>diagnosticsExport(app),16,Int32Array);
+      if(variant==='multiplayer'){
+        multiplayer=statusFn('multiplayer_status',44,Int32Array);
+        netplay=statusFn('multiplayer_netplay_status',15,Uint32Array);
+        netProgress=statusFn('multiplayer_progress',6,Uint32Array);
       }
-      const stats = wasmArray(nativeExport('sdl_stats'), 6, Uint32Array);
-      if (stats) setPresentation(stats[5]);
+      // touch_state writes a read-only snapshot into caller-owned memory. Use
+      // the title's paired allocator so this never borrows or overwrites a
+      // production buffer, and release it immediately after copying the data.
+      const touchExport=nativeExport('touch_state'),allocate=nativeExport('allocate'),deallocate=nativeExport('deallocate');
+      if(touchExport&&allocate&&deallocate){
+        let pointer=0;
+        try{
+          pointer=allocate(12*4);
+          const current=memoryBuffer();
+          if(Number.isInteger(pointer)&&pointer>0&&current&&pointer+12*4<=current.byteLength){
+            touchExport(app,pointer);
+            const after=memoryBuffer();
+            if(after&&pointer+12*4<=after.byteLength){
+              const values=Array.from(new Float32Array(after,pointer,12));
+              if(values.every(Number.isFinite))touch=values;
+            }
+          }
+        }catch{touch=null;}
+        finally{if(Number.isInteger(pointer)&&pointer>0)deallocate(pointer);}
+      }
     }
-    unsupported.push('standardized-phase');
+    if(trace){
+      result.frames.enemy=finite(status?.[6])??finite(trace[2]);
+      result.frames.control=finite(trace[3]);
+      result.position=float2FromCurrentBuffer(tracePtr,7);
+      result.capabilities.position=result.position!==null;
+      result.input=diagnostics?{kind:variant==='multiplayer'?'native-consumed-buttons':'logical-buttons',value:diagnostics[11]}:null;
+      result.capabilities.input=result.input!==null;
+      result.pause=diagnostics?{active:diagnostics[6]!==0,raw:diagnostics[6]}:null;
+      result.capabilities.pause=result.pause!==null;
+      if(status)result.status={supervisorActive:status[0],active:status[1],invalid:status[2],stage:status[3],
+        loading:status[7],titleScreen:status[8],cursor:status[9],supervisorState:diagnostics?.[9]??null};
+      result.capabilities.restartFrame=variant==='multiplayer'?null:'enemy';
+      if(variant==='normal'&&status&&status[0]===2&&status[1]===1&&!status[2]&&!status[7]){
+        const resultScreen=Boolean(diagnostics?.[7]||diagnostics?.[8]);
+        result.phase={value:resultScreen?3:result.pause?.active?2:1,
+          name:resultScreen?'game_over':result.pause?.active?'paused':'stage'};
+        result.capabilities.phase=true;result.localSeat=0;
+      }
+    }
+    if(variant==='multiplayer'){
+      result.input=null;result.position=null;result.localSeat=null;
+      result.capabilities.input=result.capabilities.position=false;
+      result.capabilities.restartFrame=null;
+      if(multiplayer&&netplay){
+        const seat=multiplayer[2],count=multiplayer[1];
+        if(multiplayer[0]&&count>=2&&count<=3&&seat>=0&&seat<count){
+          result.localSeat=seat;
+          if(netplay[4]!==0xffffffff)result.frames.multiplayer=netplay[4];
+          const offset=8+12*seat;
+          if(multiplayer[3]&&!multiplayer[4]&&netplay[7]&&multiplayer[offset+9]){
+            result.input={kind:'native-consumed-buttons',value:multiplayer[offset+10]};
+            result.position={x:multiplayer[offset+5],y:multiplayer[offset+6]};
+            result.capabilities.input=result.capabilities.position=true;
+            result.phase={value:result.pause?.active?2:1,name:result.pause?.active?'paused':'stage'};
+            result.capabilities.phase=true;
+          }
+        }
+      }
+    }
+    const statsExport=nativeExport('sdl_stats'),statsPointer=statsExport?.(),statsBuffer=memoryBuffer();
+    const stats=Number.isInteger(statsPointer)&&statsPointer>0&&statsBuffer&&statsPointer+24<=statsBuffer.byteLength
+      ?Array.from(new Uint32Array(statsBuffer,statsPointer,6)):null;
+    if(stats)setPresentation(stats[5]);
+
+    const flag=value=>value===null||value===undefined?null:value!==0;
+    const invalidFrame=value=>value===0xffffffff?null:finite(value);
+    const touchMode=touch?touch[0]:null;
+    const touchName=touchMode===0?'inactive-or-blocked':touchMode===1?'gameplay':touchMode===2?'dialogue':touchMode===3?'special-game-mode':null;
+    const stage=variant==='multiplayer'?finite(multiplayer?.[6]):finite(status?.[3]);
+    const enemyFrame=variant==='multiplayer'?finite(multiplayer?.[7]):finite(status?.[6])??finite(trace?.[2]);
+    const controlTick=finite(trace?.[3]);
+    const loading=flag(diagnostics?.[3]??status?.[7]??null);
+    const controlLoading=finite(diagnostics?.[4]);
+    const pauseState=finite(diagnostics?.[6]);
+    const retrying=flag(diagnostics?.[7]??null);
+    const gameOver=flag(diagnostics?.[8]??null);
+    const dialogue=touch?touchMode===2:null;
+    const transitionFlags=finite(trace?.[4]);
+    const inTransition=transitionFlags===null?null:Boolean(transitionFlags&0x60);
+    let localPlayer={seat:null,eligible:null,movementAvailable:null,inputButtons:null,position:null,lifeState:null};
+    if(variant==='normal'&&result.localSeat===0){
+      const playerAvailable=touch&&(touchMode===1||touchMode===2)?touch[1]===1:null;
+      localPlayer={seat:0,eligible:null,movementAvailable:playerAvailable,
+        inputButtons:finite(diagnostics?.[11]),position:result.position?{...result.position}:null,
+        lifeState:finite(trace?.[9])};
+    }else if(variant==='multiplayer'&&multiplayer&&netplay&&result.localSeat!==null){
+      const offset=8+12*result.localSeat,eligible=multiplayer[offset+9]===1;
+      const playerReady=Boolean(multiplayer[3]&&!multiplayer[4]&&netplay[7]&&eligible);
+      localPlayer={seat:result.localSeat,eligible,movementAvailable:null,
+        inputButtons:playerReady?finite(multiplayer[offset+10]):null,
+        position:playerReady?{x:multiplayer[offset+5],y:multiplayer[offset+6]}:null,
+        lifeState:playerReady?finite(multiplayer[offset+4]):null};
+    }
+    let network=null,frontier=null,correctionIdle=null,allFramesConfirmed=null,networkSettled=null;
+    if(variant==='multiplayer'&&netplay){
+      network={version:finite(netplay[0]),configured:flag(netplay[1]),canStart:flag(netplay[2]),
+        nextFrame:finite(netplay[3]),lastCompletedFrame:invalidFrame(netplay[4]),
+        confirmedThrough:invalidFrame(netplay[5]),rollbackFrame:invalidFrame(netplay[6]),worldReady:flag(netplay[7]),
+        frameOpen:flag(netplay[8]),waiting:flag(netplay[9]),generation:finite(netplay[10]),retired:flag(netplay[11]),
+        inputDelay:finite(netplay[12]),nextCaptureFrame:invalidFrame(netplay[13]),mode:finite(netplay[14])};
+      if(netProgress){
+        frontier={predictionFrontier:invalidFrame(netProgress[0]),nextFrame:finite(netProgress[1]),
+          correcting:flag(netProgress[2]),callbackYielded:flag(netProgress[3]),correctionYields:finite(netProgress[4]),
+          correctionEnd:invalidFrame(netProgress[5])};
+      }
+      if(network.lastCompletedFrame!==null&&network.confirmedThrough!==null)
+        allFramesConfirmed=network.confirmedThrough>=network.lastCompletedFrame;
+      if(frontier)correctionIdle=network.rollbackFrame===null&&frontier.correcting===false&&frontier.correctionEnd===null;
+      networkSettled=Boolean(network.configured&&network.worldReady&&!network.retired&&!network.frameOpen&&!network.waiting&&
+        correctionIdle===true&&allFramesConfirmed===true&&frontier?.nextFrame===network.nextFrame&&
+        frontier?.predictionFrontier===frontier?.nextFrame);
+    }
+    const normalRunning=variant==='normal'&&status?.[0]===2&&status?.[1]===1&&status?.[2]===0&&loading===false&&
+      controlLoading===0&&pauseState!==null&&retrying!==null&&gameOver!==null&&dialogue!==null&&inTransition===false;
+    const multiplayerRunning=variant==='multiplayer'&&loading===false&&controlLoading===0&&pauseState!==null&&retrying!==null&&
+      gameOver!==null&&dialogue!==null&&inTransition===false;
+    result.worldProgress={schema:'eagler-touhou/th08-world-progress/1',
+      counters:{stage,enemySceneFrame:enemyFrame,controlTick,
+        lastCompletedNetworkFrame:network?.lastCompletedFrame??null,confirmedNetworkFrame:network?.confirmedThrough??null,
+        nextNetworkFrame:network?.nextFrame??null},
+      state:{loading,controlLoadState:controlLoading,pauseState,paused:pauseState===null?null:pauseState!==0,
+        retrying,gameOver,dialogue,touchContext:touchName,touchContextRaw:touchMode,inTransition},
+      localPlayer,netplay:network?{...network,...(frontier?{frontier}:{}),correctionIdle,allFramesConfirmed,settled:networkSettled}:null,
+      comparable:variant==='normal'?Boolean(normalRunning&&localPlayer.position&&localPlayer.inputButtons!==null&&
+        Number.isFinite(stage)&&Number.isFinite(enemyFrame)&&Number.isFinite(controlTick)):
+        Boolean(multiplayerRunning&&networkSettled&&localPlayer.seat!==null&&localPlayer.inputButtons!==null&&localPlayer.position&&
+          Number.isFinite(stage)&&Number.isFinite(enemyFrame)&&Number.isFinite(controlTick))};
+    if(!result.capabilities.phase)unsupported.push('standardized-phase');
     if (!result.capabilities.input) unsupported.push('keyboard-gameplay-effect');
     if (!result.capabilities.position) unsupported.push('player-position');
   } else if (game === 'th09') {
@@ -208,6 +336,91 @@ export function readRuntimeObservation(target) {
     unsupported.push('unknown-runtime');
   }
 
+  // Versioned exports copy title-owned state without advancing a tick or
+  // draining diagnostic/input queues. Legacy packages retain their readers.
+  const native=wasmArray(nativeExport(`${game}_native_observation_v1`),12,Uint32Array);
+  if(native){
+    if(native[0]!==1||(native[1]&~0x1ff)!==0)throw new Error(`${game}: unsupported native observation ABI`);
+    const valid=native[1];result.nativeObservation={version:native[0],validMask:valid};
+    for(const [index,bit] of [[2,1],[3,2],[4,8],[5,0x10],[6,0x20],[7,0x40],[10,0x80],[11,0x100]]){
+      if((valid&bit)&&native[index]===0xffffffff)throw new Error(`${game}: missing native observation field ${index} has a valid bit`);
+      if(!(valid&bit)&&native[index]!==0xffffffff)throw new Error(`${game}: invalid native observation field ${index} has data`);
+    }
+    if(!(valid&4)&&(native[8]!==0x7fc00000||native[9]!==0x7fc00000))throw new Error(`${game}: invalid native position has data`);
+    Object.assign(result.capabilities,{phase:false,input:false,position:false,pause:false,restartFrame:null});
+    result.phase=result.input=result.position=result.pause=null;
+    for(const name of ['simulation','restart','multiplayer','application'])delete result.frames[name];
+    if(valid&1){
+      const names=['title',game==='th09'?'match':'stage','paused','game_over','ending','finished','inactive','transition'];
+      if(!names[native[2]])throw new Error(`${game}: invalid observed native phase`);
+      result.phase={value:native[2],name:names[native[2]]};result.capabilities.phase=true;
+    }
+    if(valid&2){result.input={kind:'native-consumed-buttons',value:native[3]};result.capabilities.input=true;}
+    if(valid&4){
+      const words=new Uint32Array([native[8],native[9]]),values=new Float32Array(words.buffer);
+      if(!values.every(Number.isFinite))throw new Error(`${game}: invalid observed player position`);
+      result.position={x:values[0],y:values[1]};result.capabilities.position=true;
+    }
+    if(valid&8)result.frames.simulation=native[4];
+    if(valid&0x10){result.frames.restart=native[5];if(variant==='normal')result.capabilities.restartFrame='restart';}
+    if(valid&0x20){
+      if(native[6]>1)throw new Error(`${game}: invalid observed pause state`);
+      result.pause={active:native[6]===1,raw:native[6]};result.capabilities.pause=true;
+    }
+    if(valid&0x40)result.frames.multiplayer=native[7];
+    if(valid&0x80)result.frames.application=native[10];
+    if(valid&0x100){
+      if(native[11]>2||(variant==='normal'&&native[11]!==0))throw new Error(`${game}: observed input belongs to an invalid local seat`);
+      result.localSeat=native[11];
+    }
+    if(!result.capabilities.restartFrame&&!unsupported.includes('restart-frame'))unsupported.push('restart-frame');
+    for(let i=unsupported.length-1;i>=0;i--){
+      const item=unsupported[i];
+      if((result.capabilities.phase&&['phase','semantic-phase','standardized-phase','session-phase','gameplay-phase'].includes(item))||
+         (result.capabilities.input&&['input','keyboard-gameplay-effect','keyboard-button-mask'].includes(item))||
+         (result.capabilities.position&&item.includes('position'))||
+         (result.capabilities.pause&&item==='pause-state')||
+         (result.capabilities.restartFrame&&['restart','restart-frame','restart-state'].includes(item))||
+         (Number.isFinite(result.frames.simulation)&&item==='gameplay-frame'))unsupported.splice(i,1);
+    }
+  }
+
+  if(game==='th15'){
+    const context=wasmArray(nativeExport('th15_input_context_v1'),12,Uint32Array);
+    if(context){
+      if(context[0]!==1||(context[1]&~0x3ff)!==0)throw new Error('th15: unsupported input context ABI');
+      const valid=context[1];
+      for(let index=2;index<12;index++){
+        const available=Boolean(valid&(1<<(index-2)));
+        if(available===(context[index]===0xffffffff))throw new Error(`th15: inconsistent input context field ${index}`);
+      }
+      for(const index of [2,3,4,6,7,8,11])if((valid&(1<<(index-2)))&&context[index]>1)
+        throw new Error(`th15: invalid input context boolean ${index}`);
+      if((valid&8)&&(context[5]>2||(variant==='normal'&&context[5]!==0)||
+        (Number.isInteger(result.localSeat)&&context[5]!==result.localSeat)))
+        throw new Error('th15: input context belongs to a different local seat');
+      const value=index=>valid&(1<<(index-2))?context[index]:null;
+      const flag=index=>value(index)===null?null:value(index)===1;
+      result.inputContext={version:context[0],validMask:valid,initialized:flag(2),scenePresent:flag(3),
+        multiplayer:flag(4),localSeat:value(5),pilotPresent:flag(6),playerPresent:flag(7),ghost:flag(8),
+        lifeState:value(9),sceneFlags:value(10),messagesActive:flag(11)};
+    }
+  }
+
+  if(game==='th20'){
+    const ui=wasmArray(nativeExport('th20_ui_observation_v1'),9,Int32Array);
+    if(ui){
+      if(ui[0]!==1||ui[1]<0||(ui[1]&~3)!==0)throw new Error('th20: unsupported UI observation ABI');
+      for(const [bit,indices] of [[1,[2,3,4,5]],[2,[6,7,8]]]){
+        if(!(ui[1]&bit)&&indices.some(index=>ui[index]!==-1))throw new Error('th20: invalid UI observation group has data');
+      }
+      if((ui[1]&1)&&![0,1].includes(ui[5]))throw new Error('th20: invalid retry-confirmation readiness');
+      result.ui={version:ui[0],validMask:ui[1],
+        pause:ui[1]&1?{state:ui[2],substate:ui[3],cursor:ui[4],retryConfirmInputReady:ui[5]===1}:null,
+        stone:ui[1]&2?{state:ui[6],visible:ui[7],category:ui[8]}:null};
+    }
+  }
+
   if (!result.capabilities.phase && !unsupported.includes('semantic-phase') && !unsupported.includes('standardized-phase')) unsupported.push('phase');
   if (!result.capabilities.input && !unsupported.some(value => value.includes('input') || value.includes('keyboard'))) unsupported.push('input');
   if (!result.capabilities.position && !unsupported.some(value => value.includes('position'))) unsupported.push('position');
@@ -244,6 +457,7 @@ export function assertRuntimeObservation(observation, behavior, expected = {}) {
     case 'pause-active':
       missing('pause', 'native pause state');
       assert.equal(observation.pause?.active, true, `${game}: native pause state is inactive`);
+      if(observation.nativeObservation?.validMask&1)assert.equal(observation.phase?.name,'paused',`${game}: a result or transition screen is not a paused game`);
       break;
     case 'pause-inactive':
       missing('pause', 'native pause state');

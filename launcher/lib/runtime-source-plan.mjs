@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { loadSourceLayout } from "./source-layout.mjs";
 import { launcherRoot } from "./workspace-layout.mjs";
 import { loadRuntimeBuildConfig, cmakeCacheArguments } from "./runtime-build-profiles.mjs";
+import { resolveRuntimeBuildSubmodules } from "./runtime-build-dependencies.mjs";
 
 const compilerPath = sdk => ["install", "upstream"].map(part => resolve(sdk, part, "emscripten/emcc.py")).find(existsSync);
 function requireDirectoryInput(path, marker, label) {
@@ -29,6 +30,8 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
   const owner = definition.workspaceRepository ?? entry.workspaceRepository;
   const source = resolve(options.source ?? layout.path(owner));
   requireDirectoryInput(source, recipe.kind === "cmake" ? "CMakeLists.txt" : recipe.build[0], `${game}/${variant} source`);
+  const requiredSubmoduleDeclarations=recipe.requiredSubmodules??[];
+  const requiredSubmodules=resolveRuntimeBuildSubmodules({source,repository:layout.root,declarations:requiredSubmoduleDeclarations});
   const jobs = Number(options.jobs ?? 4);
   if (!Number.isSafeInteger(jobs) || jobs < 1 || jobs > 64) throw new Error("jobs must be an integer from 1 to 64");
   const requestedSdk = options.emsdk ?? environment[`TH${game.slice(2)}_EMSDK`] ?? environment.EMSDK;
@@ -52,6 +55,14 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
     PYTHON: python, TH_PYTHON: python, EMCC_CORES: String(jobs), TH_BUILD_JOBS: String(jobs),
     EAGLER_COMMON_ROOT: common, EAGLER_COMMON_NETPLAY_ROOT: resolve(options.netplayCommon ?? environment.EAGLER_COMMON_NETPLAY_ROOT ?? common),
     TH_ENABLE_THCRAP: thcrap ? "1" : "0", TH_ENABLE_THPRAC: thprac ? "1" : "0" };
+  const recipeEnvironment=recipe.environment??{};
+  if(!recipeEnvironment||typeof recipeEnvironment!=='object'||Array.isArray(recipeEnvironment))
+    throw new Error(`${game}/${variant} source build environment must be an object`);
+  for(const [name,value] of Object.entries(recipeEnvironment)){
+    if(!/^[A-Z_][A-Z0-9_]*$/.test(name)||typeof value!=='string'||value.includes('\0'))
+      throw new Error(`${game}/${variant} source build environment has an invalid entry: ${name}`);
+    env[name]=value;
+  }
   if (variant === "multiplayer") requireDirectoryInput(env.EAGLER_COMMON_NETPLAY_ROOT,
     "include/eagler/netplay/SessionChannel.hpp", "netplay common dependency");
   const steps = [];
@@ -61,7 +72,7 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
     execution = resolve(build, `${game}.wasm`);
     const toolchain = ["install", "upstream"].map(part => resolve(sdk, part, "emscripten/cmake/Modules/Platform/Emscripten.cmake")).find(existsSync);
     if (!toolchain) throw new Error(`Emscripten CMake toolchain not found: ${sdk}`);
-    const cache = { ...config.defaults.cache, ...definition.cache, TH_ENABLE_THCRAP: thcrap, TH_ENABLE_THPRAC: thprac,
+    const cache = { ...config.defaults.cache, ...definition.cache, ...recipe.cmakeCache, TH_ENABLE_THCRAP: thcrap, TH_ENABLE_THPRAC: thprac,
       TH_EXTERNAL_ASSETS: !options.assets, CMAKE_TOOLCHAIN_FILE: toolchain, EAGLER_COMMON_ROOT: common,
       TH_RUNTIME_EXTENSION_CMAKE: options.runtimeExtension ?? "" };
     if (options.assets) cache[entry.assetRootVariable] = resolve(options.assets);
@@ -88,6 +99,7 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
   }
   const metadata = resolve(sdk, "touhou-sdk.json");
   return { game, variant, owner, source, common, execution, features: { thcrap, thprac },
+    requiredSubmoduleDeclarations, requiredSubmodules, sourceExclusions: recipe.sourceExclusions ?? [],
     toolchain: { root: sdk, compiler: compilerPath(sdk), version, ...(existsSync(metadata) ? { metadata: JSON.parse(readFileSync(metadata, "utf8")) } : {}) },
     environment: env, steps };
 }

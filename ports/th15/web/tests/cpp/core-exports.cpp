@@ -836,6 +836,7 @@ API(anm_adjust_position) u32 anm_adjust_position_export(AnmVm* p,Vec3* position)
 API(anm_position) u32 anm_position_export(AnmVm* p,Vec3* position){return anm_position(*p,*position);}
 API(anm_environment_scale) float* anm_environment_scale(AnmEnvironment* p){return &p->resolution_scale;}
 API(anm_environment_offsets) i32* anm_environment_offsets(AnmEnvironment* p){return p->screen_offsets.data();}
+API(anm_environment_raster_scale) float* anm_environment_raster_scale(AnmEnvironment* p){return &p->raster_scale;}
 API(anm_vm_geometry_bytes) u32 anm_vm_geometry_bytes(AnmVm* p){return p->geometry.allocation_bytes;}
 API(anm_vm_trail) AnmTrail* anm_vm_trail(AnmVm* p){return p->geometry.trail.get();}
 API(anm_vm_trail_initialize) void anm_vm_trail_initialize(AnmVm* p,Rng* random){p->geometry.clear();p->geometry.trail=std::make_unique<AnmTrail>();p->geometry.trail->initialize(*random);p->geometry.allocation_bytes=0x318;}

@@ -43,6 +43,28 @@ function validateSourceBuild(value, label, partial = false) {
       typeof input !== "string" || /[\\:\0]/.test(input) || input.split("/").some(part => !part || part === "." || part === "..")))) {
     throw new Error(`${label} invalid sourceBuild commonInputs`);
   }
+  if (value.sourceExclusions != null && (!Array.isArray(value.sourceExclusions) || value.sourceExclusions.some(input =>
+      typeof input !== "string" || !input || /[\\:\0\t\r\n]/.test(input) || input.startsWith("/") ||
+      input.split("/").some(part => !part || part === "." || part === "..")))) {
+    throw new Error(label + " invalid sourceBuild sourceExclusions");
+  }
+  if (value.cmakeCache != null) validateCache(value.cmakeCache, label + " sourceBuild");
+  if (value.requiredSubmodules != null) {
+    const visit = (entries, ownerLabel) => {
+      if (!Array.isArray(entries)) throw new Error(`${ownerLabel} requiredSubmodules must be an array`);
+      const seen = new Set();
+      for (const entry of entries) {
+        if (!plainObject(entry) || typeof entry.path !== "string" || /[\\:\0\t\r\n]/.test(entry.path) ||
+            entry.path.split("/").some(part => !part || part === "." || part === "..")) {
+          throw new Error(`${ownerLabel} has an invalid requiredSubmodules path`);
+        }
+        if (seen.has(entry.path)) throw new Error(`${ownerLabel} has a duplicate requiredSubmodules path: ${entry.path}`);
+        seen.add(entry.path);
+        if (entry.requiredSubmodules != null) visit(entry.requiredSubmodules, `${ownerLabel}/${entry.path}`);
+      }
+    };
+    visit(value.requiredSubmodules, label);
+  }
   for (const key of ["commonMarker", "netplayCommonDirectory", "execution"]) {
     if (value[key] != null && (typeof value[key] !== "string" || /[\\:\0]/.test(value[key]) ||
         value[key].split("/").some(part => !part || part === "." || part === ".."))) {
@@ -137,6 +159,7 @@ export async function resolveRuntimeBuild({ game, variant = "normal", thcrap, th
   const cache = {
     ...profile.defaults.cache,
     ...profile.definition.cache,
+    ...profile.sourceBuild?.cmakeCache,
     TH_ENABLE_THCRAP: resolvedThcrap,
     TH_ENABLE_THPRAC: resolvedThprac,
   };

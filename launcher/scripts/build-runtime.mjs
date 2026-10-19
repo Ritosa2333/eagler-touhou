@@ -1,9 +1,8 @@
 import { planRuntimeSourceBuild } from "../lib/runtime-source-plan.mjs";
-import { sourceIdentity } from "../lib/release-manifest.mjs";
 import { workspaceRoot } from "../lib/workspace-layout.mjs";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import {executeRuntimeSourceBuild} from '../lib/runtime-build-evidence.mjs';
+import {executeRuntimeSourceBuild,runtimeBuildInputIdentity} from '../lib/runtime-build-evidence.mjs';
 
 const options = {};
 const names = new Map([["game", "game"], ["variant", "variant"], ["source", "source"], ["common", "common"],
@@ -23,12 +22,8 @@ for (const arg of process.argv.slice(2)) {
 }
 if (!options.game) throw new Error("usage: node scripts/build-runtime.mjs --game=thXX [--variant=normal|multiplayer] [--emsdk=PATH] [--dry-run]");
 const plan = await planRuntimeSourceBuild(options);
-const identify = async () => ({
-  source: await sourceIdentity(plan.source),
-  common: await sourceIdentity(plan.common),
-  netplayCommon: await sourceIdentity(plan.environment.EAGLER_COMMON_NETPLAY_ROOT),
-});
-plan.sources = await identify();
+const identify = () => runtimeBuildInputIdentity(plan,workspaceRoot());
+plan.sources = identify();
 if (dryRun) console.log(JSON.stringify(plan, null, 2));
 else {
   const receipt = resolve(workspaceRoot(), "artifacts/validation/source-builds", `${plan.game}-${plan.variant}.json`);
@@ -40,7 +35,7 @@ else {
   }
   catch (error) {if (error.code !== 'ENOENT') throw error;}
   const runtimeEvidence = await executeRuntimeSourceBuild(plan, workspaceRoot(), {previousReceipt,previousPlan});
-  if (JSON.stringify(await identify()) !== JSON.stringify(plan.sources)) throw new Error("Source changed during compilation; discard this build and rebuild.");
+  if (JSON.stringify(identify()) !== JSON.stringify(plan.sources)) throw new Error("Source changed during compilation; discard this build and rebuild.");
   await mkdir(dirname(receipt), { recursive: true });
   await writeFile(runtimeReceipt, JSON.stringify(runtimeEvidence, null, 2) + '\n');
   await writeFile(receipt, JSON.stringify({ schema: "eagler-touhou/source-build/1", ...plan }, null, 2) + "\n");

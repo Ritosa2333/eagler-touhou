@@ -70,6 +70,10 @@ constexpr SDL_GamepadAxis pad_axes[]={SDL_GAMEPAD_AXIS_LEFTX,SDL_GAMEPAD_AXIS_LE
 int pad_index(IDirectInputDevice8W* device) {
     return static_cast<int>(reinterpret_cast<std::uintptr_t>(device)) - 1;
 }
+LONG direct_input_axis(Sint16 value) {
+    const double unit = value < 0 ? value / 32768. : value / 32767.;
+    return LONG(std::lround(unit * 1000.));
+}
 void add_pad(SDL_JoystickID id) {
     for (const auto* p : pads) if (p && SDL_GetGamepadID(const_cast<SDL_Gamepad*>(p)) == id) return;
     for (auto*& p : pads) if (!p) { p = SDL_OpenGamepad(id); return; }
@@ -156,15 +160,14 @@ struct SdlHost : Host {
         LONG* axes = &output->lX;
         for (int n = 0; n < 6; ++n) {
             const int value = SDL_GetGamepadAxis(pad, pad_axes[n]);
-            const double unit = value < 0 ? value / 32768. : value / 32767.;
-            axes[n] = LONG(std::floor((unit + 1) * 32767.5 + .5));
+            axes[n] = direct_input_axis(Sint16(value));
         }
         for (std::uint32_t n = 0; n < sizeof(pad_slots) / sizeof(*pad_slots); ++n)
             if (SDL_GetGamepadButton(pad, pad_slots[n])) output->rgbButtons[n] = 0x80;
         const int x = int(SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT)) - int(SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_LEFT));
         const int y = int(SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_DOWN)) - int(SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_UP));
-        if (x) { output->lX = x > 0 ? 65535 : 0; }
-        if (y) { output->lY = y > 0 ? 65535 : 0; }
+        if (x) { output->lX = x * 1000; }
+        if (y) { output->lY = y * 1000; }
         output->rgdwPOV[0] = (x || y)
             ? std::uint32_t((int(std::round(std::atan2(double(x), double(-y)) * 180 / 3.141592653589793)) + 360) % 360) * 100
             : ~0u;

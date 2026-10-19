@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';import {core,oracle,memory,string,root,report} from './helpers.mjs';
+import{originalRecordFixture}from'./score-fixture.mjs';
 test('TH15 ending constructor branch and persisted first-view flags match original records exactly',async()=>{
- const c=await core(),m=await oracle(),record=m.allocate(0x33b54),owner=m.allocate(0x24),data=c.allocate(0x33b4c),first=c.allocate(4),defaults=readFileSync(resolve(root,'artifacts/cpp/analysis/score/original-saved-state.bin'));let loaded='',cases=0,checks=0;const base=m.heap;
+ const recordFixture=await originalRecordFixture(),c=await core(),m=await oracle(),record=m.allocate(0x33b54),owner=m.allocate(0x24),data=c.allocate(0x33b4c),first=c.allocate(4),defaults=recordFixture.savedState;let loaded='',cases=0,checks=0;const base=m.heap;
  const str=p=>{const b=m.bytes(p,256);return Buffer.from(b.subarray(0,b.indexOf(0))).toString('latin1');};
  m.replace(0x4017e0,'ending callback allocation boundary',()=>{const p=m.allocate(0x28);m.view(p,0x28).fill(0);return p;},1);m.replace(0x401390,'ending update registration boundary',()=>0,2);m.replace(0x401440,'ending draw registration boundary',()=>0,2);m.replace(0x424670,'ending loading presentation boundary',()=>0);
  m.replace(0x402db0,'ending message file boundary',()=>{loaded=str(m.reg('ECX'));return m.allocate(16);},1);m.replace(0x4238d0,'ending script construction boundary (separately proven)',()=>{const p=m.reg('ECX');m.view(p,0xf0).fill(0);return p;},1);

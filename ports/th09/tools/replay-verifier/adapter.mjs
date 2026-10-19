@@ -3,7 +3,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 
 const here=dirname(fileURLToPath(import.meta.url));
 const repo=resolve(here,'../..');
-const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT||join(repo,'..','eagler-common'));
+const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT||join(repo,'..','..','common'));
 const {compareTraces}=await import(pathToFileURL(join(commonRoot,'testkit/replay-verifier/compare.mjs')));
 const {digestCanonicalJson,recordsFromSegments}=await import(pathToFileURL(join(commonRoot,'testkit/replay-verifier/adapter.mjs')));
 

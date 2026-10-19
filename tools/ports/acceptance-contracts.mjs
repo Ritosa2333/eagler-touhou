@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {lstat,readdir,readFile,realpath} from 'node:fs/promises';
-import {resolve,relative,isAbsolute,sep} from 'node:path';
+import {resolve,relative,isAbsolute,sep,basename} from 'node:path';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {canonicalRuntimePayload,parseRuntimeGenerationPath,runtimeGenerationBase,validateRuntimeManifest} from '../../launcher/lib/contracts/runtime-generations.mjs';
 import {validateSiteManifest} from '../../launcher/lib/contracts/site-manifest.mjs';
-import {expectedRuntimeBuildSources,runtimeBuildSourceRoot} from '../../launcher/lib/runtime-build-evidence.mjs';
+import {expectedRuntimeBuildSources,expectedRuntimeBuildSubmodules,runtimeBuildSourceRoot,verifyRuntimeBuildOutputs,runtimeBuildPlanIdentity} from '../../launcher/lib/runtime-build-evidence.mjs';
+import {captureRuntimePackageControlInputs,resolveRuntimePackagePlan,runtimePackageIdentity,runtimePackageSourceInputsIdentity,
+  RUNTIME_PACKAGE_BUILD_SCHEMA} from '../../launcher/lib/runtime-package-evidence.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const safeRelativePath = value => typeof value === 'string' && value.length > 0 &&
@@ -46,14 +48,30 @@ export async function verifySourceBuildReceipt(target,{repoRoot,wasmSha256}) {
   const sourceRoot=await checkedWorkspacePath(repoRoot,target.sourceRoot,`${target.id}: sourceRoot`,{directory:true});
   const receiptPath=await checkedWorkspacePath(repoRoot,target.buildReceipt,`${target.id}: buildReceipt`);
   const receiptBytes=await readFile(receiptPath),receipt=JSON.parse(receiptBytes.toString('utf8'));
-  assert.deepEqual(Object.keys(receipt).sort(),['executionSha256','game','profile','schema','sourceFiles','variant'].sort(),
+  assert.equal(receipt.schema,'eagler-touhou/runtime-source-build/3',
+    `${target.id}: current Runtime acceptance requires a version 3 source build receipt`);
+  assert.deepEqual(Object.keys(receipt).sort(),['executionSha256','game','profile','schema','sourceFiles','variant',
+    'requiredSubmodules','outputs','planSha256'].sort(),
     `${target.id}: build receipt has unsupported fields`);
-  assert.equal(receipt.schema,'eagler-touhou/runtime-source-build/1',`${target.id}: unsupported source build receipt`);
   assert.equal(receipt.game,target.game,`${target.id}: source build receipt game mismatch`);
   assert.equal(receipt.variant,target.variant,`${target.id}: source build receipt variant mismatch`);
   assert.equal(receipt.profile,target.variant==='multiplayer'?'multiplayer':'production',`${target.id}: source build receipt profile mismatch`);
   assert.match(receipt.executionSha256,/^[a-f0-9]{64}$/,`${target.id}: source build receipt execution SHA-256 is invalid`);
   assert.equal(receipt.executionSha256,wasmSha256,`${target.id}: receipt is not bound to the packaged execution WASM`);
+  const expectedModules=expectedRuntimeBuildSubmodules(target.game,target.variant,repoRoot);
+  const requiredSubmodules=receipt.requiredSubmodules;
+  assert.ok(Array.isArray(requiredSubmodules),`${target.id}: requiredSubmodules must be an array`);
+  const modulePaths=new Set();
+  for(const module of requiredSubmodules){
+    assert.deepEqual(Object.keys(module).sort(),['commit','path'],`${target.id}: malformed required submodule receipt`);
+    assert.ok(safeRelativePath(module.path),`${target.id}: submodule path must be repository-relative`);
+    assert.match(module.commit,/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/,`${target.id}: invalid submodule commit`);
+    assert.ok(!modulePaths.has(module.path),`${target.id}: duplicate required submodule ${module.path}`);modulePaths.add(module.path);
+    await checkedWorkspacePath(repoRoot,module.path,`${target.id}: required submodule ${module.path}`,{directory:true});
+  }
+  const byPath=(a,b)=>a.path<b.path?-1:a.path>b.path?1:0;
+  assert.deepEqual([...requiredSubmodules].sort(byPath),[...expectedModules].sort(byPath),
+    `${target.id}: required submodule receipt does not match the current build recipe and gitlink pins`);
   assert.ok(Array.isArray(receipt.sourceFiles)&&receipt.sourceFiles.length>0,`${target.id}: source build receipt has no source files`);
   const expectedSources=expectedRuntimeBuildSources(target.game,target.variant,repoRoot);
   const seen=new Set();let ownedProductionSources=0;
@@ -70,10 +88,47 @@ export async function verifySourceBuildReceipt(target,{repoRoot,wasmSha256}) {
   assert.deepEqual([...seen].sort(),expectedSources.map(source=>source.path).sort(),
     `${target.id}: source receipt does not match the complete current builder source inventory`);
   assert.ok(ownedProductionSources>0,`${target.id}: receipt has no owned C/C++ production source`);
+  verifyRuntimeBuildOutputs(receipt,target.game,target.variant,repoRoot);
+  const buildPlan=`artifacts/validation/source-builds/${target.game}-${target.variant}.json`;
+  const planPath=await checkedWorkspacePath(repoRoot,buildPlan,`${target.id}: source build plan`);
+  const planBytes=await readFile(planPath),plan=JSON.parse(planBytes.toString('utf8'));
+  assert.equal(plan.game,target.game,`${target.id}: source build plan game mismatch`);
+  assert.equal(plan.variant,target.variant,`${target.id}: source build plan variant mismatch`);
+  assert.equal(resolve(repoRoot,plan.source),sourceRoot,`${target.id}: source build plan owner mismatch`);
+  assert.equal(resolve(repoRoot,plan.execution),resolve(repoRoot,receipt.outputs.execution.path),`${target.id}: source build plan output mismatch`);
+  assert.equal(runtimeBuildPlanIdentity(plan),receipt.planSha256,`${target.id}: source build plan changed after compilation`);
   return {schema:receipt.schema,game:receipt.game,variant:receipt.variant,profile:receipt.profile,
     executionSha256:receipt.executionSha256,sourceRoot:target.sourceRoot,buildReceipt:target.buildReceipt,
-    receiptSha256:sha256(receiptBytes),sourceCount:receipt.sourceFiles.length,
-    sourceFilesSha256:sha256(Buffer.from(JSON.stringify([...receipt.sourceFiles].sort((a,b)=>a.path.localeCompare(b.path)))))};
+    receiptSha256:sha256(receiptBytes),sourceCount:receipt.sourceFiles.length,requiredSubmodules,
+    outputs:receipt.outputs,planSha256:receipt.planSha256,buildPlan,planReceiptSha256:sha256(planBytes),
+    ...runtimePackageSourceInputsIdentity(receipt.sourceFiles,requiredSubmodules)};
+}
+
+/** Bind every packaged byte to a completed packager run over the current source build and controls. */
+export async function verifyPackageBuildReceipt(target,{repoRoot,sourceBuild,files,packageSha256}) {
+  const receiptPath=await checkedWorkspacePath(repoRoot,target.packageReceipt,`${target.id}: packageReceipt`);
+  const bytes=await readFile(receiptPath),receipt=JSON.parse(bytes.toString('utf8'));
+  assert.equal(receipt.schema,RUNTIME_PACKAGE_BUILD_SCHEMA,`${target.id}: unsupported package build receipt`);
+  assert.deepEqual(Object.keys(receipt).sort(),['schema','game','variant','entry','packageSha256','files',
+    'sourceBuildReceiptSha256','sourceInputsSha256','packagerInputs'].sort(),`${target.id}: package receipt has unsupported fields`);
+  for(const key of ['game','variant','entry'])assert.equal(receipt[key],target[key],`${target.id}: package receipt ${key} mismatch`);
+  assert.equal(receipt.packageSha256,packageSha256,`${target.id}: package receipt payload identity mismatch`);
+  assert.equal(receipt.sourceBuildReceiptSha256,sourceBuild.receiptSha256,`${target.id}: package receipt is not bound to the current source build receipt`);
+  assert.equal(receipt.sourceInputsSha256,sourceBuild.sourceInputsSha256,`${target.id}: package receipt is not bound to current source inputs`);
+  const canonical=map=>Object.fromEntries(Object.keys(map).sort().map(name=>[name,map[name]]));
+  assert.ok(receipt.files&&typeof receipt.files==='object'&&!Array.isArray(receipt.files),`${target.id}: package receipt files must be a map`);
+  assert.equal(runtimePackageIdentity({...target,files:receipt.files}),packageSha256,`${target.id}: package receipt file identity mismatch`);
+  if(own(files,'runtime-generation.json')){
+    const payload=map=>Object.fromEntries(Object.entries(map).filter(([name])=>!['runtime-files.json','runtime-generation.json'].includes(name)));
+    assert.deepEqual(canonical(payload(receipt.files)),canonical(payload(files)),`${target.id}: package receipt does not match the published Runtime payload`);
+  }else assert.deepEqual(canonical(receipt.files),canonical(files),`${target.id}: package receipt does not match the complete Runtime directory`);
+  const plan=resolveRuntimePackagePlan(target.game,target.variant,repoRoot);
+  const expected=captureRuntimePackageControlInputs(plan,repoRoot);
+  assert.ok(Array.isArray(receipt.packagerInputs),`${target.id}: package receipt has no packager inputs`);
+  for(const input of expected)await checkedWorkspacePath(repoRoot,input.path,`${target.id}: packager input ${input.path}`);
+  assert.deepEqual(receipt.packagerInputs,expected,`${target.id}: packager inputs no longer match the current Runtime package recipe`);
+  return {schema:receipt.schema,packageReceipt:target.packageReceipt,receiptSha256:sha256(bytes),
+    sourceBuildReceiptSha256:receipt.sourceBuildReceiptSha256,sourceInputsSha256:receipt.sourceInputsSha256,packagerInputCount:expected.length};
 }
 
 export function parseExplicitGames(value, option) {
@@ -102,6 +157,7 @@ export function selectRuntimeTargets(config,{game,variant}) {
     assert.ok(typeof target.data==='string'&&target.data,`${target.id}: private DATA path is required`);
     assert.match(target.packageSha256,/^[a-f0-9]{64}$/,`${target.id}: packageSha256 must be provided as a SHA-256`);
     assert.ok(safeRelativePath(target.buildReceipt),`${target.id}: buildReceipt must be a safe repository-relative path`);
+    assert.ok(safeRelativePath(target.packageReceipt),`${target.id}: packageReceipt must be a safe repository-relative path`);
     assert.ok(safeSourceRoot(target.sourceRoot),`${target.id}: sourceRoot must be a safe repository-relative path`);
     assert.ok(!own(target,'files')||Array.isArray(target.files),`${target.id}: files must be an array`);
     const key=`${target.game}/${target.variant}`;
@@ -182,7 +238,7 @@ export async function verifyRuntimePackage(target,{repoRoot}={}) {
   const actual=await inventoryFiles(root),hasInventory=actual.includes('runtime-files.json'),hasGeneration=actual.includes('runtime-generation.json');
   assert.ok(hasInventory||hasGeneration,`${target.id}: missing runtime-files.json or runtime-generation.json`);
   assert.ok(!(hasInventory&&hasGeneration),`${target.id}: package has conflicting Runtime inventories`);
-  let inventoryBytes,inventory,generationRoot=null,files,identityBytes;
+  let inventoryBytes,inventory,generationRoot=null,files;
   if(hasInventory){
     inventoryBytes=await readFile(resolve(root,'runtime-files.json'));inventory=JSON.parse(inventoryBytes.toString('utf8'));
     assert.equal(inventory.schema,'eagler-touhou/runtime-directory/1',`${target.id}: unsupported Runtime inventory`);
@@ -238,14 +294,21 @@ export async function verifyRuntimePackage(target,{repoRoot}={}) {
     wasmSha256=wasmNames.length===1?identities[wasmNames[0]].sha256:null;
   }else assert.fail(`${target.id}: package does not bind a build identity to its Runtime WASM`);
   const normalizedFiles=Object.fromEntries(metadataFiles.map(name=>[name,identities[name]]));
-  identityBytes=Buffer.from(JSON.stringify({schema:'eagler-touhou/runtime-package-identity/1',game:target.game,variant:target.variant,entry:target.entry,files:normalizedFiles}));
-  const packageSha256=sha256(identityBytes);
+  const packageSha256=runtimePackageIdentity({game:target.game,variant:target.variant,entry:target.entry,files:normalizedFiles});
   assert.match(target.packageSha256,/^[a-f0-9]{64}$/,`${target.id}: expected packageSha256 is required`);
   assert.equal(packageSha256,target.packageSha256,`${target.id}: package identity does not match the expected current packageSha256`);
   const sourceBuild=await verifySourceBuildReceipt(target,{repoRoot,wasmSha256});
+  for(const role of ['execution','loader','entry']){
+    const output=sourceBuild.outputs[role];if(!output)continue;
+    const name=basename(output.path);
+    assert.equal(identities[name]?.sha256,output.sha256,`${target.id}: packaged ${role} is not the current compiler output`);
+  }
+  const descriptorName=hasInventory?'runtime-files.json':'runtime-generation.json';
+  const packageBuild=await verifyPackageBuildReceipt(target,{repoRoot,sourceBuild,packageSha256,
+    files:{...normalizedFiles,[descriptorName]:{bytes:inventoryBytes.length,sha256:sha256(inventoryBytes)}}});
   return {game:target.game,variant:target.variant,entry:target.entry,packageSha256,
     inventorySha256:sha256(inventoryBytes),generation:inventory.generation??null,wasmSha256,
-    manifestSha256:identities['manifest.json']?.sha256??null,sourceBuild,files:normalizedFiles};
+    manifestSha256:identities['manifest.json']?.sha256??null,sourceBuild,packageBuild,files:normalizedFiles};
 }
 
 /** Serve only bytes that still match the package verified before browser launch. */
@@ -331,8 +394,7 @@ async function verifyRemoteInventory({fetchImpl,entryUrl,game,variant,source,sit
     assert.equal(version.build,wasmSha256.slice(0,24),'TH09 version does not match Runtime WASM');
   }else assert.fail('Runtime package does not bind a build identity to its WASM');
   const files=Object.fromEntries(names.map(name=>[name,identities[name]]));
-  const identityBytes=Buffer.from(JSON.stringify({schema:'eagler-touhou/runtime-package-identity/1',game,variant,entry,files}));
-  return {source,game,variant,entryUrl:entryUrl.href,packageSha256:sha256(identityBytes),inventorySha256:sha256(inventoryBytes),
+  return {source,game,variant,entryUrl:entryUrl.href,packageSha256:runtimePackageIdentity({game,variant,entry,files}),inventorySha256:sha256(inventoryBytes),
     siteManifestSha256,generation:null,wasmSha256,manifestSha256:identities['manifest.json']?.sha256??null,files};
 }
 
@@ -410,8 +472,7 @@ export async function verifyPublishedRuntime(base,game,variant,{fetchImpl=global
       assert.equal(version.build,wasmSha256.slice(0,24),`${game}/${variant}: version does not match Runtime WASM`);
     }else assert.fail(`${game}/${variant}: package does not bind a build identity to its WASM`);
     const normalizedFiles=Object.fromEntries(Object.keys(files).sort().map(name=>[name,files[name]]));
-    const identity={schema:'eagler-touhou/runtime-package-identity/1',game,variant,entry:generation.entry,files:normalizedFiles};
-    const packageSha256=sha256(Buffer.from(JSON.stringify(identity)));
+    const packageSha256=runtimePackageIdentity({game,variant,entry:generation.entry,files:normalizedFiles});
     assert.equal(packageSha256,expectedPackageSha256,`${game}/${variant}: published Runtime package does not match the source-verified current packageSha256`);
     return {source:'current-published-generation',game,variant,entryUrl:entryUrl.href,root:group.root,generation:generation.generation,
       packageSha256,runtimeManifestSha256:sha256(manifestBytes),siteManifestSha256,

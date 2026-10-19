@@ -1,0 +1,52 @@
+{
+  "schema": "eagler-touhou/runtime-packages/1",
+  "games": {
+    "th06": {
+      "variants": {
+        "normal": { "kind": "cmake", "output": "build-eagler/normal", "entry": "th06.html", "wasmFile": "th06.wasm", "files": ["th06.html", "th06.js", "th06.wasm"] },
+        "multiplayer": { "kind": "cmake", "output": "build-eagler/multiplayer", "entry": "th06.html", "wasmFile": "th06.wasm", "files": ["th06.html", "th06.js", "th06.wasm"] }
+      }
+    },
+    "th07": {
+      "variants": {
+        "normal": { "kind": "cmake", "output": "build-eagler/normal", "entry": "th07.html", "wasmFile": "th07.wasm", "files": ["th07.html", "th07.js", "th07.wasm"] },
+        "multiplayer": { "kind": "cmake", "output": "build-eagler/multiplayer", "entry": "th07.html", "wasmFile": "th07.wasm", "files": ["th07.html", "th07.js", "th07.wasm"] }
+      }
+    },
+    "th08": {
+      "variants": {
+        "normal": { "kind": "script", "script": "portable/package-eagler.mjs", "args": [], "output": "build-eagler", "entry": "th08.html", "wasmFile": "th08-sdl.wasm", "controlFiles": ["portable/package-eagler.mjs", "portable/presentation-lab/native-abi.mjs"] },
+        "multiplayer": { "kind": "script", "script": "portable/package-eagler.mjs", "args": ["--multiplayer"], "output": "build-eagler-multiplayer", "entry": "th08.html", "wasmFile": "th08-sdl.wasm", "controlFiles": ["portable/package-eagler.mjs", "portable/presentation-lab/native-abi.mjs"] }
+      }
+    },
+    "th09": {
+      "variants": {
+        "normal": { "kind": "script", "script": "web/scripts/build-eagler.mjs", "args": [], "output": "web/build-eagler", "entry": "th09.html", "wasmFile": "th09.wasm", "controlFiles": ["web/scripts/build-eagler.mjs"], "sharedControlFiles": ["common/browser/playback-clock.mjs"] },
+        "multiplayer": { "kind": "script", "script": "web/scripts/build-eagler.mjs", "args": ["--multiplayer"], "output": "web/build-eagler-multiplayer", "entry": "th09.html", "wasmFile": "th09.wasm", "controlFiles": ["web/scripts/build-eagler.mjs"], "sharedControlFiles": ["common/browser/playback-clock.mjs"] }
+      }
+    },
+    "th10": {
+      "variants": {
+        "normal": { "kind": "script", "script": "portable/package-eagler.mjs", "args": [], "output": "build-eagler", "entry": "th10.html", "wasmFile": "th10-sdl.wasm", "controlFiles": ["portable/package-eagler.mjs", "portable/presentation-lab/native-abi.mjs"] },
+        "multiplayer": { "kind": "script", "script": "portable/package-eagler.mjs", "args": ["--multiplayer"], "output": "build-eagler-multiplayer", "entry": "th10.html", "wasmFile": "th10-sdl.wasm", "controlFiles": ["portable/package-eagler.mjs", "portable/presentation-lab/native-abi.mjs"] }
+      }
+    },
+    "th11": {
+      "variants": {
+        "normal": { "kind": "script", "script": "portable/package-eagler.mjs", "args": [], "output": "build-eagler", "entry": "th11.html", "wasmFile": "th11-sdl.wasm", "controlFiles": ["portable/package-eagler.mjs"] },
+        "multiplayer": { "kind": "script", "script": "portable/package-eagler.mjs", "args": ["--multiplayer"], "output": "build-eagler-multiplayer", "entry": "th11.html", "wasmFile": "th11-sdl.wasm", "controlFiles": ["portable/package-eagler.mjs", "portable/common-revision.mjs"], "sharedControlFiles": ["launcher/lib/release-manifest.mjs"] }
+      }
+    },
+    "th15": {
+      "variants": {
+        "normal": { "kind": "script", "script": "portable/package-eagler.mjs", "args": [], "output": "build-eagler", "entry": "th15.html", "wasmFile": "th15.wasm", "controlFiles": ["portable/package-eagler.mjs"] },
+        "multiplayer": { "kind": "script", "script": "portable/package-eagler.mjs", "args": ["--multiplayer"], "output": "build-eagler-multiplayer", "entry": "th15.html", "wasmFile": "th15.wasm", "controlFiles": ["portable/package-eagler.mjs"] }
+      }
+    },
+    "th20": {
+      "variants": {
+        "normal": { "kind": "script", "script": "portable/package-eagler.mjs", "args": [], "output": "build-eagler", "entry": "th20.html", "wasmFile": "th20-sdl.wasm", "controlFiles": ["portable/package-eagler.mjs"] }
+      }
+    }
+  }
+}

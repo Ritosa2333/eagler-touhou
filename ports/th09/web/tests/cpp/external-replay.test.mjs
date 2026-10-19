@@ -102,6 +102,8 @@ test('Supplied campaign replay matches the original world frame by frame',async(
     }catch(error){dumpDivergence(label,error);throw error;}
    };
    compare('initial');let nativeHealth=m.i32(players[0]+0xa8);
+   const recordingFrames=c.session_value(f,3),startFrames=frames;
+   assert.ok(Number.isSafeInteger(recordingFrames)&&recordingFrames>0,'supplied replay must declare its frame range');
    for(let frame=0;frame<c.session_value(f,3)&&frame<Number(process.env.TH09_REPLAY_LIMIT??120000);++frame){
     m.call(0x4204b0,{ecx:replayManager});assert.equal(c.session_step(f,0,0,0),1,err());
     m.call(0x41aa5f,{ecx:0x4a7d90});
@@ -119,6 +121,8 @@ test('Supplied campaign replay matches the original world frame by frame',async(
     }
     snapshot(frame);compare(`replay stage ${stage} frame ${frame}`);if(c.session_value(f,0)!==1){stageComplete=c.session_value(f,2)===c.session_value(f,3);break;}
    }
+   assert.ok(stageComplete||frames-startFrames===recordingFrames,
+    `Replay comparison ended before its declared boundary: ${frames-startFrames}/${recordingFrames}`);
   }
   report(external?'external-replay-stage-'+stage:'session-replays',{checks,frames,stage,playerDefeats,stageComplete,scenarios,animationComparison:!process.env.TH09_GAMEPLAY_ONLY,laserComparison:!!process.env.TH09_COMPARE_LASERS,scope:'Supplied original replay: original constructors and update chain versus C++ RNG, inputs, CPU decisions, player motion, collisions, score, dialogue, background and scene state. Animation bytes compared unless gameplay-only is selected. No forced battle outcome.'});
  }finally{c.session_delete(f);c.release(name);c.release(data);c.release(scratch);m.close();routeOracle.close();}

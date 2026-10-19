@@ -15,7 +15,7 @@ $env:EAGLER_DEVELOPMENT_VANILLA_FONT='C:\Windows\Fonts\msgothic.ttc'
 $env:EAGLER_DEVELOPMENT_UNICODE_FONT='C:\local-content\fonts\unifont-15.1.05.otf'
 $env:EAGLER_DEVELOPMENT_GAMES='th10'
 node launcher/scripts/build-runtime.mjs --game=th10 --variant=normal --emsdk='/path/to/emsdk'
-node ports/th10/portable/package-eagler.mjs
+node launcher/scripts/package-runtime.mjs --game=th10 --variant=normal
 npm --prefix launcher run build
 npm --prefix launcher run dev:workspace
 ```
@@ -25,3 +25,5 @@ npm --prefix launcher run dev:workspace
 ## 源码与验证
 
 `web/cpp/` 含游戏、SDL 宿主和 Runtime 导出；`portable/` 含 GLES、数值、输入和浏览器接口；`portable/presentation-lab/` 是独立诊断工作台。源码检查从 `ports/th10/` 运行 `node portable/check-high-refresh-contract.mjs` 和 `node portable/check-presentation-purity.mjs`；纯度报告以 `unknown` 标记尚待归类的结果。
+
+`th10_native_observation_v1()` 以共用 12-word ABI 提供只读阶段、已消费输入、玩家坐标、Results 暂停状态与关卡逻辑计时。有效位区分尚未建立的状态，读取接口只复制数据。普通版重开对照关卡逻辑计时；MP 按本地席位读取已提交输入及坐标，暂停和重开通过真实房间协商流程验收。

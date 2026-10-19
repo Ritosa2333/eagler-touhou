@@ -54,8 +54,8 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
   }),
   games: Object.freeze({
     th06: Object.freeze({
-      runtime: `${ws("th06", "build", "web", "normal", "th06.html")}?hosted=1&v=audio-music-modes-1`,
-      multiplayerRuntime: `${ws("th06", "build", "web", "multiplayer", "th06.html")}?hosted=1&v=th06-netplay-local-2`,
+      runtime: `${ws("th06", "build-eagler", "normal", "th06.html")}?hosted=1&v=audio-music-modes-1`,
+      multiplayerRuntime: `${ws("th06", "build-eagler", "multiplayer", "th06.html")}?hosted=1&v=th06-netplay-local-2`,
       data: Object.freeze({
         source: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.data")) : ws("th06", "build", "web", "normal", "th06.data"),
         runtimeScript: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.js")) : ws("th06", "build", "web", "normal", "th06.js"),
@@ -72,8 +72,8 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       }),
     }),
     th07: Object.freeze({
-      runtime: `${ws("th07", "build", "web", "normal", "th07.html")}?hosted=1&v=audio-music-modes-1`,
-      multiplayerRuntime: `${ws("th07", "build", "web", "multiplayer", "th07.html")}?hosted=1&v=th07-netplay-local-2`,
+      runtime: `${ws("th07", "build-eagler", "normal", "th07.html")}?hosted=1&v=audio-music-modes-1`,
+      multiplayerRuntime: `${ws("th07", "build-eagler", "multiplayer", "th07.html")}?hosted=1&v=th07-netplay-local-2`,
       data: Object.freeze({
         source: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.data")) : ws("th07", "build", "web", "normal", "th07.data"),
         runtimeScript: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.js")) : ws("th07", "build", "web", "normal", "th07.js"),

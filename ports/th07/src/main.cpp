@@ -165,6 +165,8 @@ void AnmManager::TakeScreenshotIfRequested()
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 {
+    GameWindow::InstallLogOutput();
+
     for (int index = 1; index < argc; index++)
         if (std::strcmp(argv[index], "--music-room") == 0)
             g_OpenMusicRoomForVisualTest = true;
@@ -298,43 +300,50 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
     if (g_ThcrapAsciiFormatSelfTest)
     {
         const bool passed = AsciiManager::DebugLocalizedFormatSelfTest();
-        SDL_Log("th07 thcrap legacy ASCII formatter self-test: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 thcrap legacy ASCII formatter self-test: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
     if (g_ThcrapEndingSelfTest)
     {
         const bool passed = Ending::DebugTranslatedLineSelfTest();
-        SDL_Log("th07 thcrap ending direct-line self-test: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 thcrap ending direct-line self-test: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
     if (g_ThcrapLayoutSelfTest)
     {
         const bool passed = TextHelper::DebugLayoutSelfTest();
-        SDL_Log("th07 thcrap persistent layout self-test: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 thcrap persistent layout self-test: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
     if (g_ThcrapAsciiSelfTest)
     {
         const bool passed = Localization::DebugAsciiTableSelfTest();
-        SDL_Log("th07 thcrap EAS1 loader self-test: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 thcrap EAS1 loader self-test: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
     if (g_ThcrapStringSelfTest)
     {
         const bool passed = Localization::DebugStringTableSelfTest();
-        SDL_Log("th07 thcrap EST1 loader self-test: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 thcrap EST1 loader self-test: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
     if (g_ThcrapTextImageSelfTest)
     {
         const bool passed = Localization::DebugBossImageRowContractSelfTest();
-        SDL_Log("th07 thcrap boss textimage row contract: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 thcrap boss textimage row contract: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
     if (g_ThcrapFontMetricsSelfTest)
     {
         const bool passed = TextHelper::DebugLocalizedFontMetricsSelfTest();
-        SDL_Log("th07 thcrap localized SDL_ttf font metrics self-test: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 thcrap localized SDL_ttf font metrics self-test: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
 #endif
@@ -343,13 +352,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
     if (g_TouchStateSelfTest)
     {
         const bool passed = Touch::DebugStateSelfTest();
-        SDL_Log("th07 touch finger-state self-test: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 touch finger-state self-test: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
     if (g_ReplayExtensionSelfTest)
     {
         const bool passed = ReplayExtension::DebugRoundTrip("replay-extension-selftest.rpy");
-        SDL_Log("th07 ReplayExtension round-trip self-test: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 ReplayExtension round-trip self-test: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
 #endif
@@ -358,7 +369,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
     if (g_ThpracReplaySelfTest)
     {
         const bool passed = PracticeRuntime::DebugReplayMetadataRoundTrip("thprac-replay-selftest.rpy");
-        SDL_Log("th07 thprac replay metadata round-trip: %s", passed ? "PASS" : "FAIL");
+        SDL_LogMessage(SDL_LOG_CATEGORY_TEST, passed ? SDL_LOG_PRIORITY_INFO : SDL_LOG_PRIORITY_ERROR,
+                       "th07 thprac replay metadata round-trip: %s", passed ? "PASS" : "FAIL");
         return passed ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     }
 #endif

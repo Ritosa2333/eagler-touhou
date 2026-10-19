@@ -283,7 +283,7 @@ u32 MainMenu::OnUpdatePreInput()
                 ReplayManager::ValidateReplayData(this->currentReplay, g_LastFileSize);
             if (!this->currentReplay)
             {
-                Supervisor::DebugPrint("error : Demo Play is not ready\n");
+                Supervisor::WarnPrint("warning : Demo Play is not ready\n");
                 this->demoFramesCount = 0;
             }
             else

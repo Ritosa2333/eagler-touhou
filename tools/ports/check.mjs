@@ -101,12 +101,12 @@ async function main(args) {
     const label = `${target.game}-${target.variant}`;
     try {
       const input = inspectInputs(target);
-      const dependencies = await sourceDependencies(target);
+      const {dependencies, inputFiles: dependencyFiles} = sourceDependencies(target);
       writeFileSync(resolve(options.output, `${label}-inputs.json`), JSON.stringify(input,null,2)+'\n');
       const issues = validatePortLayout(target.directory, input.inputFiles);
       const owner = resolve(root,target.directory);
       const nativeFiles = input.translationUnits.map(name => resolve(owner,name));
-      const files = [...input.inputFiles, ...runtimeSourceFiles(target.game, PRODUCT_GAMES[target.game]).map(name=>resolve(owner,name)),
+      const files = [...input.inputFiles, ...dependencyFiles, ...runtimeSourceFiles(target.game, PRODUCT_GAMES[target.game]).map(name=>resolve(owner,name)),
         resolve(owner,target.recipe.kind === 'cmake' ? 'CMakeLists.txt' : target.recipe.build[0]), ...evidenceSources(target)];
       const gates = [{id:'source-inputs', status:issues.length ? 'failed':'passed', level:'source-inputs', complete:true,
         checks:['BUILD-01'], files:[target.directory], ...(issues.length ? {error:issues.join('\n')}: {})},

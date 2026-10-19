@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
 import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve, dirname} from 'node:path';
@@ -8,7 +9,7 @@ import {
   createRuntimeManifest, packageEagler, MULTIPLAYER_EXPORTS, sha256,
 } from '../package-eagler.mjs';
 
-import {COMMON_REVISION as revision} from '../common-revision.mjs';
+import {COMMON_REVISION as revision,COMMON_SOURCE} from '../common-revision.mjs';
 const leb = value => {
   const bytes = [];
   do { const part = value & 127; value >>>= 7; bytes.push(part | (value ? 128 : 0)); } while (value);
@@ -32,7 +33,7 @@ function buildFor(bytes, multiplayer = false) {
     variant: multiplayer ? 'multiplayer' : 'normal', diagnostic: false,
     version: 'test', builtAt: '2026-10-09T00:00:00.000Z', kind: 'cpp-sdl3',
     features: {thprac: false, languages: true, ...(multiplayer ? {multiplayer: true} : {})},
-    ...(multiplayer ? {commonRevision: revision,
+    ...(multiplayer ? {commonRevision: revision,commonSource:COMMON_SOURCE,
       netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true},
       } : {}),
     runtimeSourceFiles:{'direct-input-bridge.mjs':sha256('// input bridge\n'),
@@ -83,6 +84,38 @@ test('ordinary and MP plans use separate binary, object-profile and package dire
   assert.throws(() => resolvePackagePlan('/workspace/title', ['--multiplayer-fixtures']), /Diagnostic/);
 });
 
+test('diagnostic build CLI cannot resolve output to the production directory', () => {
+  const workspace=resolve(import.meta.dirname,'../..'),webRoot=resolve(workspace,'web');
+  const script=resolve(import.meta.dirname,'../build.mjs');
+  const printPlan=(diagnostic,output)=>{
+    const env={...process.env};
+    delete env.TH11_OUTPUT;
+    if(output!==undefined)env.TH11_OUTPUT=output;
+    const result=spawnSync(process.execPath,[script,'--multiplayer',...(diagnostic?['--diagnostic']:[]),'--print-plan'],
+      {cwd:workspace,env,encoding:'utf8',windowsHide:true,timeout:30000});
+    return result;
+  };
+  const collision=printPlan(true,'artifacts/review/../multiplayer');
+  assert.notEqual(collision.status,0,collision.stdout);
+  assert.match(collision.stderr,/Diagnostic build output resolves to a production artifact directory/);
+
+  const crossVariantCollision=printPlan(true,'artifacts/sdl3');
+  assert.notEqual(crossVariantCollision.status,0,crossVariantCollision.stdout);
+  assert.match(crossVariantCollision.stderr,/Diagnostic build output resolves to a production artifact directory/);
+
+  const production=printPlan(false,'artifacts/multiplayer');
+  assert.equal(production.status,0,production.stderr);
+  assert.equal(JSON.parse(production.stdout).outputDirectory,resolve(webRoot,'artifacts/multiplayer'));
+
+  const defaultDiagnostic=printPlan(true);
+  assert.equal(defaultDiagnostic.status,0,defaultDiagnostic.stderr);
+  assert.equal(JSON.parse(defaultDiagnostic.stdout).outputDirectory,resolve(webRoot,'artifacts/multiplayer-diagnostic'));
+
+  const separateDiagnostic=printPlan(true,'artifacts/review/mp-diagnostic');
+  assert.equal(separateDiagnostic.status,0,separateDiagnostic.stderr);
+  assert.equal(JSON.parse(separateDiagnostic.stdout).outputDirectory,resolve(webRoot,'artifacts/review/mp-diagnostic'));
+});
+
 test('MP attestation requires bounded rollback, the recorded common source and an isolated variant', () => {
   const plan = resolvePackagePlan('/workspace/title', ['--multiplayer']);
   const build = buildFor(wasm(MULTIPLAYER_EXPORTS), true);
@@ -92,6 +125,9 @@ test('MP attestation requires bounded rollback, the recorded common source and a
     {...build.netplay, measuredStartup: false},
   ]) assert.throws(() => validateBuildManifest({...build, netplay}, plan), /12-frame rollback/);
   assert.throws(() => validateBuildManifest({...build, commonRevision: '0'.repeat(40)}, plan), /recorded shared source/);
+  assert.throws(() => validateBuildManifest({...build, commonSource:undefined}, plan), /recorded shared source/);
+  assert.throws(() => validateBuildManifest({...build, commonSource:{...COMMON_SOURCE,sha256:'0'.repeat(64)}}, plan), /recorded shared source/);
+  assert.throws(() => validateBuildManifest({...build, commonSource:{...COMMON_SOURCE,dirty:!COMMON_SOURCE.dirty}}, plan), /recorded shared source/);
   assert.throws(() => validateBuildManifest({...build, variant: 'normal'}, plan), /variant/);
   assert.throws(() => validateBuildManifest({...build, sourceDigest: '0'.repeat(64)}, plan), /inventory/);
 });

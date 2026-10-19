@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from 'node:fs';import{resolve}from 'node:path';import{core,oracle,memory,string,root,report}from './helpers.mjs';
+import{originalRecordFixture}from'./score-fixture.mjs';
 test('TH15 named high-score registration matches original full-row shifting, unsigned ties, date/slowdown details and preserved spare bytes',async()=>{
- const c=await core(),m=await oracle(),f=c.records_create(),native=m.allocate(0x40000),graphics=m.allocate(0x100),data=c.allocate(0x33b4c),name=c.allocate(9),baseline=readFileSync(resolve(root,'artifacts/cpp/analysis/score/original-saved-state.bin'));let cases=0,checks=0,dateCalls=0;
+ const recordFixture=await originalRecordFixture(),c=await core(),m=await oracle(),f=c.records_create(),native=m.allocate(0x40000),graphics=m.allocate(0x100),data=c.allocate(0x33b4c),name=c.allocate(9),baseline=recordFixture.savedState;let cases=0,checks=0,dateCalls=0;
  const state=()=>Buffer.concat([Buffer.from(memory(c,c.records_blocks(f,0),5*0xa4a0)),Buffer.from(memory(c,c.records_blocks(f,1),0x42c))]),f64=(at,value)=>{const b=Buffer.alloc(8);b.writeDoubleLE(value);m.write(at,b);};m.u32(0x4e9bc8,native);m.u32(0x4e9a88,graphics);m.replace(0x490eda,'fixture score timestamp',()=>{const out=m.u32(m.reg('ESP')+4);m.u32(out,0x12345678);m.u32(out+4,0x9abcdef0);dateCalls++;return 0;});
  try{for(let character=0;character<5;character++)for(const legacy of[false,true])for(let rank=0;rank<6;rank++)for(const score of[1500000,1000000,950000,650000,100000,99999,0,0xffffffff]){
   const bytes=Buffer.from(baseline),base=character*0xa4a0+(legacy?0x5188:0)+0x10+rank*320;

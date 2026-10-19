@@ -1,6 +1,6 @@
 # th11 适配检查
 
-[开发入口](README.md) · [检查方法](../../docs/adaptation/README.md) · [全部作品](../README.md)
+[开发入口](README.md) | [检查方法](../../docs/adaptation/README.md) | [全部作品](../README.md)
 
 源码目录：`ports/th11`。构建模式：`normal`。
 
@@ -8,7 +8,7 @@
 
 状态：`待核对`、`进行中`、`待验证`、`已实现`、`已验证`、`检查失败`、`不适用`。
 
-[自动检查结果与源码身份](../../docs/adaptation/status.json) · `npm run ports:check -- --game=th11 --variant=both`
+[自动检查结果与源码身份](../../docs/adaptation/status.json) | `npm run ports:check -- --game=th11 --variant=both`
 
 ## 源码与构建
 

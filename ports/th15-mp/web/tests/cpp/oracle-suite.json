@@ -1,0 +1,1927 @@
+{
+  "schema": "eagler-touhou/native-oracle-suite/1",
+  "owner": "th15-mp",
+  "game": "th15",
+  "variant": "mp",
+  "discovery": {
+    "directory": "tests/cpp",
+    "pattern": "*.test.mjs"
+  },
+  "baseInputs": [],
+  "groups": [
+    {
+      "id": "assets",
+      "requiredInputs": [
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-dat",
+      "requiredInputs": [
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        },
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th15] 东方绀珠传 (汉化版+日文版)/th15.dat",
+          "sha256": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-external-replay-process-state",
+      "requiredInputs": [
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        },
+        {
+          "id": "legacy-replay",
+          "kind": "receipt",
+          "receiptId": "legacy-replay",
+          "inputKind": "file",
+          "expectedPath": "../[th15] 东方绀珠传 (汉化版+日文版)/replay/th15_ud0186.rpy"
+        },
+        {
+          "id": "legacy-native-trace",
+          "kind": "receipt",
+          "receiptId": "legacy-native-trace",
+          "inputKind": "file",
+          "expectedPath": "artifacts/native-process-replay/native-replay-frames.bin"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-extra-replay-process-state",
+      "requiredInputs": [
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        },
+        {
+          "id": "extra-replay",
+          "kind": "receipt",
+          "receiptId": "extra-replay",
+          "inputKind": "file",
+          "expectedPath": "artifacts/native-process-extra/extra-probe.rpy"
+        },
+        {
+          "id": "extra-native-trace",
+          "kind": "receipt",
+          "receiptId": "extra-native-trace",
+          "inputKind": "file",
+          "expectedPath": "artifacts/native-process-extra/native-extra-frames.bin"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-native",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-native-replays-tester-easy-reisen-replay",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        },
+        {
+          "id": "accepted-replay-library",
+          "kind": "receipt",
+          "receiptId": "accepted-replay-library",
+          "inputKind": "directory",
+          "expectedPath": "reference/replays"
+        },
+        {
+          "id": "easy-reisen-replay",
+          "kind": "receipt",
+          "receiptId": "easy-reisen-replay",
+          "inputKind": "file",
+          "expectedPath": "reference/replays/tester-easy-reisen.rpy"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-native-replays-tester-extra-replay",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        },
+        {
+          "id": "accepted-replay-library",
+          "kind": "receipt",
+          "receiptId": "accepted-replay-library",
+          "inputKind": "directory",
+          "expectedPath": "reference/replays"
+        },
+        {
+          "id": "extra-sanae-replay",
+          "kind": "receipt",
+          "receiptId": "extra-sanae-replay",
+          "inputKind": "file",
+          "expectedPath": "reference/replays/tester-extra-sanae.rpy"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "core",
+      "requiredInputs": [],
+      "environment": {}
+    },
+    {
+      "id": "dat",
+      "requiredInputs": [
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th15] 东方绀珠传 (汉化版+日文版)/th15.dat",
+          "sha256": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "native",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "native-record-store",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "presentation-uv",
+      "requiredInputs": [
+        {
+          "id": "emscripten-sdk",
+          "kind": "receipt",
+          "receiptId": "emscripten-sdk",
+          "inputKind": "directory",
+          "pathEnv": "TH15_EMSDK"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "thcrap-dialogue",
+      "requiredInputs": [
+        {
+          "id": "emscripten-sdk",
+          "kind": "receipt",
+          "receiptId": "emscripten-sdk",
+          "inputKind": "directory",
+          "pathEnv": "TH15_EMSDK"
+        },
+        {
+          "id": "language-packs",
+          "kind": "receipt",
+          "receiptId": "language-packs",
+          "inputKind": "directory",
+          "pathEnv": "TH15_LANGUAGE_PACKS"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "native-saved-state",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-native-saved-state",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "native-text-raster",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "original-font-definitions",
+          "kind": "receipt",
+          "receiptId": "original-font-definitions",
+          "inputKind": "file",
+          "pathEnv": "TH15_ORACLE_FONT_DEFINITIONS"
+        },
+        {
+          "id": "original-font-assets",
+          "kind": "receipt",
+          "receiptId": "original-font-assets",
+          "inputKind": "directory",
+          "pathEnv": "TH15_ORACLE_FONT_ASSETS"
+        }
+      ],
+      "environment": {}
+    }
+  ],
+  "tests": [
+    {
+      "file": "anm-bullet-scripts.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-bullet-source.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-camera.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-control.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-coordinates.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-default-material.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-draw-schedule.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-environment.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-file.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-gathering.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-geometry.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-interpolation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-interpreter.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-manager.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-math.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-objects.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-orange-trail.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-overlay.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-paused-interrupt.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-projected-renderer.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-properties.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-rebind.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-registry.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-renderer.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-resource-retirement.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-resource.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-scene-update.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-shape-renderer.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-slowdown.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-special-renderer.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-sprite.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-trail.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-transforms.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-tree-file.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-variables.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-vector-evaluation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-world-renderer.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "application-assets.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "archive.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "ascii-frame.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "ascii-text.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "battle-callback-order.test.mjs",
+      "role": "candidate",
+      "group": "core"
+    },
+    {
+      "file": "battle-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "battle-frame-policy.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "battle-live-context.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bomb-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bomb-marisa.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bomb-reimu-stop.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bomb-reimu.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bomb-reisen.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bomb-sanae.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bullet-activation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-area-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bullet-area.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bullet-collision.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-commands.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-formation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-frame.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-manager.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-objects.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bullet-spawn.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-split.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-update.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-visual.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bullet-wait.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "chapter-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "chapter-reward.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "checkpoint-file.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "codecs.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "config-validation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "continuous-input.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "curve-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "curve-contact.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "curve-geometry.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "curve-motion.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "curve-path.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "curve-program.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "curve-renderer.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "curve-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "curve-visual.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "damage-sources.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "dialogue.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "ecl-calls.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "ecl-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "ecl-context.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "ecl-interpreter.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "ecl-resource.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "ecl-threads.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "ending-frame.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "ending-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native-saved-state"
+    },
+    {
+      "file": "ending-script.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "ending-selection.test.mjs",
+      "role": "candidate",
+      "group": "native-saved-state"
+    },
+    {
+      "file": "enemy-all-laser-integration.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "enemy-animation-regions.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-area-commands.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-attributes.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-background-fog.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-background-interrupt.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-callbacks.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-collision-geometry.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-combat.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-construction.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-damage.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-death.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-difficulty-time.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-distortion.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-effects.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-frame-clock.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-health.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-immediate-drop.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-interrupts.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-laser-callback.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "enemy-laser-integration.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "enemy-manager.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-movement.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-radius-callback.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "enemy-routine-switch.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-runtime.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-scene-clear.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-scene-events.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-spawn.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-speed.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-spell-commands.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-update.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-variables.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-visual.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-wait-boss.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "external-replay-process-state.test.mjs",
+      "role": "candidate",
+      "group": "assets-external-replay-process-state"
+    },
+    {
+      "file": "extra-replay-process-state.test.mjs",
+      "role": "candidate",
+      "group": "assets-extra-replay-process-state"
+    },
+    {
+      "file": "frame-scheduler.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "game-battle-spell.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "game-battle.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "game-hud-draw.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "game-hud-entry.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "game-hud-frame.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "game-hud-notifications.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "game-input.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "gameplay-graze.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "interpolation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "item-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "item-collection.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "item-frame.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "item-spawn.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-circular-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-commands.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-contact.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-curve-attributes.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-dynamics.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-emission-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-manager-spawn-order.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-manager.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-motion.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-moving-attributes.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-program-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-rebind-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-rectangular-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-reflection-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-reflection.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-renderer.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-stationary-attributes.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-stationary-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-stationary-circular-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-stationary-rectangular-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-stationary-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-stationary-split-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "laser-stationary.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-visual.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "legacy-text-format.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "line-intersection.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "line-rectangle.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "manual-image-native.test.mjs",
+      "role": "maintenance",
+      "task": "manual-image-native"
+    },
+    {
+      "file": "manual.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "menu-cursor.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "message-bridge.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "motion.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "music-commands.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "music-layout.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "music-preload-name.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "pause-actions.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "pause-activation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "pause-draw.test.mjs",
+      "role": "candidate",
+      "group": "native-saved-state"
+    },
+    {
+      "file": "pause-frame.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "pause-menu.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "pause-name.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "pause-restoration.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "pause-score.test.mjs",
+      "role": "candidate",
+      "group": "native-saved-state"
+    },
+    {
+      "file": "player-bounds.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "player-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-collision.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "player-frame.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-laser-collision.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "player-life.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-lifecycle.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-motion.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-options.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-same-frame-contact.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-shooting.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "player-shot-angles.test.mjs",
+      "role": "candidate",
+      "group": "core"
+    },
+    {
+      "file": "player-shot-frame.test.mjs",
+      "role": "candidate",
+      "group": "core"
+    },
+    {
+      "file": "player-shot-hits.test.mjs",
+      "role": "candidate",
+      "group": "core"
+    },
+    {
+      "file": "player-shot-spawn.test.mjs",
+      "role": "candidate",
+      "group": "core"
+    },
+    {
+      "file": "player-shot-targets.test.mjs",
+      "role": "candidate",
+      "group": "core"
+    },
+    {
+      "file": "player-shot-viewport.test.mjs",
+      "role": "candidate",
+      "group": "core"
+    },
+    {
+      "file": "player-stage-reset.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "popup-manager.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "popup-motion-controls.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "popup-render.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "position-interpolation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "presentation-uv.test.mjs",
+      "role": "candidate",
+      "group": "presentation-uv"
+    },
+    {
+      "file": "record-store.test.mjs",
+      "role": "candidate",
+      "group": "native-record-store"
+    },
+    {
+      "file": "reimu-bomb-checkpoint-regression.test.mjs",
+      "role": "candidate",
+      "group": "assets-dat"
+    },
+    {
+      "file": "replay-acceleration.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "replay-lifecycle.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "replay-playback.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "replay-recording.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "replay-snapshot.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "replay.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "rng.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "run-construction.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "run-draw.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "run-gameplay.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "run-pause.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "run-session.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "run-shared-scheduler.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "run-stage-flow.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "run-time.test.mjs",
+      "role": "candidate",
+      "group": "native-saved-state"
+    },
+    {
+      "file": "scene-capture.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "score-file.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "score-registration.test.mjs",
+      "role": "candidate",
+      "group": "native-saved-state"
+    },
+    {
+      "file": "screen-compositor.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "screen-fade-modes.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-fade.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-grid-object.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "screen-motion-frame.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-nudge.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-shake.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-targets.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "screen-views-initialization.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-views.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "segment-intersection.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "session-activation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "session-battle-binding.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "session-completion.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "session-gameplay.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "session-hud-score-integration.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "session-initialization.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "session-replay.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "session-runtime.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "session-teardown.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "sht-resource.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "sound-effects.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "spell-card-start.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "spell-card.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "spell-draw.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "spell-name-layout.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "spell-presentation-clock.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-assets.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "stage-camera.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "stage-checkpoint.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-definition.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "stage-deformation.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-draw-frame.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-fog.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "stage-gameplay.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "stage-resource-lifetime.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "stage-resource.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-scene-render.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-script.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-visibility.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "tester-easy-reisen-replay.test.mjs",
+      "role": "candidate",
+      "group": "assets-native-replays-tester-easy-reisen-replay"
+    },
+    {
+      "file": "tester-extra-replay.test.mjs",
+      "role": "candidate",
+      "group": "assets-native-replays-tester-extra-replay"
+    },
+    {
+      "file": "text-kernels.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "text-raster.test.mjs",
+      "role": "candidate",
+      "group": "native-text-raster"
+    },
+    {
+      "file": "texture-pixels.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "thcrap-dialogue.test.mjs",
+      "role": "candidate",
+      "group": "thcrap-dialogue"
+    },
+    {
+      "file": "timer-config.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "title-character-menu.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-cheat.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "title-controller.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-frame.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-main-menu.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-manual.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-music-room.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-options.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-player-data.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-practice-draw.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "title-practice-resume.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-replay-save.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-replay.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-results.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "title-scene.test.mjs",
+      "role": "candidate",
+      "group": "assets"
+    },
+    {
+      "file": "title-selection-menu.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "vector-math.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    }
+  ],
+  "maintenance": [
+    {
+      "id": "manual-image-native",
+      "kind": "test",
+      "file": "manual-image-native.test.mjs",
+      "outputRoot": "artifacts/validation/oracle-maintenance",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "accepted-manifest-tree",
+          "manifestPath": "reference/archive-manifest.json",
+          "manifestSha256": "51cf10fcca094965fc154c4ca71974ad3edc3133a88e0ed8d1c7da7f1413be0b",
+          "rootPath": "reference/assets"
+        }
+      ]
+    }
+  ],
+  "nativeEnvironment": {
+    "profile": "full-native/v1",
+    "clearInherited": [
+      "EAGLER_COMMON_ROOT",
+      "EAGLER_MAINTENANCE_OUTPUT",
+      "EAGLER_ORACLE_ROOT",
+      "NODE_OPTIONS",
+      "NODE_TEST_CONTEXT",
+      "TH11_CORE_TEST_FILE",
+      "TH15_EMSDK",
+      "TH15_GATHER_SCENARIOS",
+      "TH15_LANGUAGE_PACKS",
+      "TH15_ORACLE_FONT_ASSETS",
+      "TH15_ORACLE_FONT_DEFINITIONS",
+      "TH15_RUN_FLOW_CHARACTERS",
+      "TH15_RUN_FLOW_DIFFICULTIES",
+      "TH15_RUN_FLOW_STAGE_LIMIT",
+      "TH15_RUN_FLOW_START_STAGE",
+      "TH15_STAGE_GAMEPLAY_CHARACTER",
+      "TH15_STAGE_GAMEPLAY_FRAMES",
+      "TH15_STAGE_GAMEPLAY_STAGE"
+    ],
+    "defaults": {
+      "TH15_GATHER_SCENARIOS": "4",
+      "TH15_RUN_FLOW_CHARACTERS": "0",
+      "TH15_RUN_FLOW_DIFFICULTIES": "1",
+      "TH15_RUN_FLOW_STAGE_LIMIT": "90000",
+      "TH15_RUN_FLOW_START_STAGE": "1",
+      "TH15_STAGE_GAMEPLAY_CHARACTER": "0",
+      "TH15_STAGE_GAMEPLAY_FRAMES": "3600",
+      "TH15_EMSDK": null,
+      "TH15_LANGUAGE_PACKS": null,
+      "TH15_STAGE_GAMEPLAY_STAGE": null,
+      "TH15_ORACLE_FONT_ASSETS": null,
+      "TH15_ORACLE_FONT_DEFINITIONS": null
+    }
+  }
+}

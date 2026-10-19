@@ -1,7 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';import {core,oracle,memory,string,root,report,enableNativeMath} from './helpers.mjs';import {resourceLoader,nativePool,prepareBank,nativeInstances,compareAnm} from './anm-oracle.mjs';
 const hash=s=>{let h=2166136261;for(const b of Buffer.from(s,'latin1'))h=Math.imul(h^b,16777619)>>>0;return h|0;};
+import{originalRecordFixture}from'./score-fixture.mjs';
 test('TH15 actual ending scene and shared scheduler preserve native animation trees through staff transition',async()=>{
- const c=await core(),m=await oracle();enableNativeMath(m);const loader=resourceLoader(m),base=m.heap,defaults=readFileSync(resolve(root,'artifacts/cpp/analysis/score/original-saved-state.bin'));let events=[],texts=[],pending=null,currentBase=0,readyBank=0,readyName='',totalFrames=0,checks=0,animationChecks=0,loads=0;
+ const recordFixture=await originalRecordFixture(),c=await core(),m=await oracle();enableNativeMath(m);const loader=resourceLoader(m),base=m.heap,defaults=recordFixture.savedState;let events=[],texts=[],pending=null,currentBase=0,readyBank=0,readyName='',totalFrames=0,checks=0,animationChecks=0,loads=0;
  const str=p=>{const b=m.bytes(p,1024);return Buffer.from(b.subarray(0,b.indexOf(0))).toString('latin1');};
  const msgRead=()=>{const name=str(m.reg('ECX')),data=readFileSync(resolve(root,'reference/assets',name)),p=m.allocate(data.length);m.write(p,data);currentBase=p;events.push(1,hash(name));return p;};
  m.replace(0x476360,'ending sound output',()=>{events.push(7,m.i32(m.reg('ESP')+4));return 0;},2);

@@ -17,7 +17,7 @@ $env:EAGLER_DEVELOPMENT_UNICODE_FONT='C:\local-content\fonts\unifont-15.1.05.otf
 $env:EAGLER_DEVELOPMENT_GAMES='th08'
 $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th08 --variant=multiplayer --emsdk='C:\tools\emsdk'
-node ports/th08-mp/portable/package-eagler.mjs --multiplayer
+node launcher/scripts/package-runtime.mjs --game=th08 --variant=multiplayer
 npm --prefix launcher run build
 npm --prefix launcher run dev:workspace
 ```

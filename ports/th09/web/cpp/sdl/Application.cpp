@@ -460,6 +460,43 @@ void sample_keys(u16 (&out)[3]){
 extern "C" {
 #define TH09_EXPORT(n) __attribute__((export_name(n)))
 void queue_rollback_recovery();
+TH09_EXPORT("th09_native_observation_v1") const unsigned* th09_native_observation_v1(){
+    constexpr unsigned missing=0xffffffffu,missing_float=0x7fc00000u;
+    constexpr unsigned phase_valid=0x001,input_valid=0x002,position_valid=0x004,world_valid=0x008;
+    constexpr unsigned restart_valid=0x010,pause_valid=0x020,app_frame_valid=0x080,seat_valid=0x100;
+    static std::array<unsigned,12> words{};words.fill(missing);words[0]=1;words[1]=0;words[8]=words[9]=missing_float;
+    if(probe){
+        words[1]|=app_frame_valid;words[10]=probe->frames;
+        if(probe->in_title){words[1]|=phase_valid;words[2]=0;}
+        else if(probe->session){
+            words[1]|=phase_valid|world_valid|restart_valid|pause_valid;
+            words[4]=words[5]=probe->session->frames;words[6]=probe->paused?1u:0u;
+            const unsigned side=network.active?unsigned(network.side):0u;
+            if(!spectator_mode){words[1]|=seat_valid;words[11]=side;}
+            switch(probe->session->phase){
+            case SessionPhase::inactive:words[2]=6;break;
+            case SessionPhase::match:words[2]=probe->paused?2:1;break;
+            case SessionPhase::game_over:case SessionPhase::match_complete:words[2]=3;break;
+            case SessionPhase::ending:words[2]=4;break;
+            case SessionPhase::finished:words[2]=5;break;
+            }
+            auto* world=probe->world;
+            if(!spectator_mode&&world&&world->battle&&world->battle->fields[side].player){
+                const auto& player=*world->battle->fields[side].player;
+                words[1]|=position_valid;std::memcpy(&words[8],&player.motion.position.x,sizeof(float));
+                std::memcpy(&words[9],&player.motion.position.y,sizeof(float));
+                // The session enters match before the player can receive gameplay input.
+                // Keep the match phase and position observable, but expose input only
+                // after the native life state has returned to the controllable state.
+                if(probe->session->phase==SessionPhase::match&&!probe->paused&&!spectator_mode&&
+                   player.control.player_state==0&&player.motion.health>0){
+                    words[1]|=input_valid;words[3]=player.input.held;
+                }
+            }
+        }else{words[1]|=phase_valid;words[2]=6;}
+    }
+    return words.data();
+}
 TH09_EXPORT("th09_rollback_recovery_mode") u32 th09_rollback_recovery_mode(u32 after){
     if(after>1||running||rollback_active)return 0;
     recovery_schedule.Configure(after!=0);recovery_callbacks=recovery_ticks=recovery_last_us=0;return 1;

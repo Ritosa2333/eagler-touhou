@@ -6,6 +6,7 @@ import { runTasks } from "../../tools/testing/runner.mjs";
 import { availableParallelism } from "node:os";
 import {
   REPOSITORY_NODE_TESTS,
+  repositoryNodeTestResources,
   REPOSITORY_PYTHON_TESTS,
   WORKSPACE_NODE_TESTS,
   WORKSPACE_PRECHECKS,
@@ -28,9 +29,9 @@ const reports = [];
 const controller = new AbortController();
 const cancel = () => controller.abort();
 process.once("SIGINT", cancel); process.once("SIGTERM", cancel);
-function task(command, args, index=0) {
+function task(command, args, index=0, resources=[]) {
   return {id:`${index}-${args.join("_").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-150)}`,
-    command, args, cwd:project, timeoutMs:180000};
+    command, args, cwd:project, timeoutMs:180000, resources};
 }
 async function batch(name, tasks, concurrency=jobs) {
   const report = await runTasks(tasks, {output:resolve(output, name), concurrency,
@@ -43,7 +44,7 @@ async function batch(name, tasks, concurrency=jobs) {
 }
 const run = (command, args) => batch(`prepare-${reports.length}`, [task(command, args)]);
 const runPool = (tasks, concurrency=jobs) => batch(`checks-${reports.length}`,
-  tasks.map(([command, args], index)=>task(command, args, index)), concurrency);
+  tasks.map(([command, args, resources=[]], index)=>task(command, args, index, resources)), concurrency);
 
 const excludedDirectories = new Set([
   ".git", ".cache", ".codex-tmp", ".npm-cache", ".deploy-python", "node_modules", "artifacts", "archive",
@@ -93,7 +94,7 @@ await run(process.execPath, ["scripts/build-app-shell.mjs", "--check"]);
 // Repo-local, deterministic behavior/format gates. These must work in an
 // ordinary standalone clone without sibling game repositories or private game
 // resources.
-await runPool(REPOSITORY_NODE_TESTS.map(test => [process.execPath, [test]]), Math.min(jobs, 6));
+await runPool(REPOSITORY_NODE_TESTS.map(test => [process.execPath, [test], repositoryNodeTestResources(test)]), Math.min(jobs, 6));
 await runPool(REPOSITORY_PYTHON_TESTS.map(test => ["python", [test]]), Math.min(jobs, 4));
 await run(process.execPath, ["scripts/audit-publication.mjs"]);
 
