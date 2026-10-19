@@ -21,4 +21,13 @@ bool SpellTiming::update(u32& flags,i32 frames,double now,bool replay)noexcept{
     else records[index]=u32(encoded);
     ++index;return true;
 }
+#ifdef TH11_MULTIPLAYER
+bool SpellTiming::update_multiplayer(u32& flags,i32 frames)noexcept{
+    // Keep native rounding and encoding; origin is the spell's frame zero.
+    // Force it on every sample so mid-spell spectator admission needs no
+    // process-local timestamp from the publishing player.
+    start=0;
+    return update(flags,frames,(flags&1)?0.:double(frames)/60.,false);
+}
+#endif
 }
