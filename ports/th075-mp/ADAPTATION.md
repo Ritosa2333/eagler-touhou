@@ -171,6 +171,11 @@
 
 ## 运行验收记录
 
+### 2026-10-20 生产语言路径准入
+
+LANG-03：MP shell 同步接收 Base replay.dat 汉化变体的确定路径，configure
+准入与越界拒绝由 `test-th075-language-configure.mjs` 检查。浏览器更新流程和本轮部署针对普通版。
+
 ### 2026-10-20 汉化资源版本选择
 
 同步普通版 LanguagePatches 的 Base／Patched replay.dat 变体校验，保持严格

@@ -171,6 +171,13 @@
 
 ## 运行验收记录
 
+### 2026-10-20 生产语言包配置入口
+
+LANG-03：生产 shell 的路径白名单接收 Base replay.dat 汉化变体，按确定路径授权。
+验证入口为 `launcher/tests/test-th075-language-configure.mjs` 和
+`launcher/tests/test-th075-language-upgrade-browser.mjs`，覆盖生产 configure
+以及历史包导入、持久化更新与刷新启动。
+
 ### 2026-10-20 通关汉化资源与中文剧情
 
 LANG-03／LANG-05／LANG-06：结算姓名登记与回放菜单分别校验 Base／Patched

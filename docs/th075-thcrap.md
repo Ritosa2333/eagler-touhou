@@ -36,6 +36,12 @@ node launcher/scripts/prepare-th075-english-static.mjs /private/th075e.dat /priv
 
 通关姓名登记读取 Base 版 `data/system/replay.dat`，回放列表和保存菜单读取 Patched 版。编译器为两个版本生成独立绑定尺寸与 CRC 的替换资源，复用图像前核对槽位几何。Runtime 保留原有资源选择与严格校验，存档及 Replay 格式保持一致。
 
+生产启动入口同时接收 `/thcrap/th075/images/base/data/system/replay.dat.bin`。
+Base 变体按这一确定路径授权，其余图像、文字、字体与元数据继续分别校验。
+`test-th075-language-configure.mjs` 覆盖普通版及 MP 的 configure 路径准入；
+`test-th075-language-upgrade-browser.mjs` 使用历史导入 ZIP、真实 Package Store
+和生产 Runtime，核对导入、语言包更新、DATA 复用、刷新启动与中文对白呈现。
+
 ## 验证职责
 
 - 编译器、静态包与补丁优先级检查负责资源内容和发布身份。
