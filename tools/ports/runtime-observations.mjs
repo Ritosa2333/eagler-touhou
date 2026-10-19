@@ -46,7 +46,7 @@ export function readRuntimeObservation(target) {
     schema: 'eagler-touhou/runtime-observation/1', game, variant: variant ?? null,
     frames: {}, phase: null, input: null, position: null, pause: null,
     render: {presentationFrame: null, renderCallbacks: null}, replay: null,
-    status: null, motionSample: null,
+    status: null, motionSample: null, touchInput: null,
     capabilities: {phase: false, input: false, position: false, pause: false,
       restartFrame: null, presentationFrame: false},
     unsupported,
@@ -265,6 +265,21 @@ export function readRuntimeObservation(target) {
         result.motionSample = {enabled: touchProbe[4] !== 0, target: touchProbe[5] !== 0,
           x: touchProbe[6], y: touchProbe[7]};
         result.capabilities.position = true;
+      }
+      if (Array.isArray(status.touch) && status.touch.length >= 4) {
+        const context = finite(status.touch[0]), ready = finite(status.touch[1]);
+        const active = finite(status.touch[2]), inTitle = finite(status.touch[3]);
+        const contexts = ['inactive', 'gameplay', 'dialogue-or-ending', 'replay'];
+        result.touchInput = {
+          context: context === null ? null : contexts[context] ?? null,
+          contextValue: context,
+          ready: ready === null ? null : ready === 1,
+          readyValue: ready,
+          active: active === null ? null : active !== 0,
+          activeValue: active,
+          inTitle: inTitle === null ? null : inTitle === 1,
+          inTitleValue: inTitle,
+        };
       }
       const metrics = wasmArray(nativeExport('th09_game_metrics'), 10, Uint32Array);
       if (metrics) setPresentation(metrics[9]);

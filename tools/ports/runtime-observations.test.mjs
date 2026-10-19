@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {assertRuntimeObservation, readRuntimeObservation,runtimeScenarioResult,REQUIRED_RUNTIME_CHECKS} from './runtime-observations.mjs';
+import {evaluateDesktopGameplayReadiness} from './runtime-desktop-readiness.mjs';
 
 test('observed actions and missing required behaviors cannot produce an overall passing Runtime',()=>{
   const checks=REQUIRED_RUNTIME_CHECKS.map(id=>({id,status:'passed'}));
@@ -68,6 +69,35 @@ test('versioned native observation uses validity and consumed local-seat state, 
     wasm.uint32(128,[...words.slice(0,3),0xffffffff,...words.slice(4)]);
     assert.throws(()=>readRuntimeObservation({game:'th11',variant:'normal'}),/missing native observation field 3/);
     assert.throws(()=>assertRuntimeObservation({...normal,phase:{value:3,name:'game_over'}},'pause-active'),/not a paused game/);
+  });
+});
+
+test('TH11 phase can become ready before its native player ABI, then become gameplay-ready in the same runtime epoch',()=>{
+  const wasm=wasmFixture();
+  const missing=0xffffffff,missingFloat=0x7fc00000;
+  const words=[1,0x029,1,missing,24,missing,0,missing,missingFloat,missingFloat,missing,missing];
+  wasm.uint32(128,words);
+  const core={memory:wasm.memory,th11_phase:()=>1,th11_frame:()=>24,th11_native_observation_v1:()=>128};
+  withWindow({core},()=>{
+    const before=readRuntimeObservation({game:'th11',variant:'normal'});
+    assert.deepEqual(before.phase,{value:1,name:'stage'});
+    assert.equal(before.capabilities.input,false);
+    assert.equal(before.capabilities.position,false);
+    assert.deepEqual(evaluateDesktopGameplayReadiness(before,'th11'),{
+      ready:false,reasons:['native-input-unavailable','native-player-position-unavailable','local-seat-unavailable'],
+    });
+
+    const position=new Float32Array([27,310]);
+    const positionWords=new Uint32Array(position.buffer);
+    wasm.uint32(128,[1,0x13f,1,0,25,25,0,missing,positionWords[0],positionWords[1],missing,0]);
+    const after=readRuntimeObservation({game:'th11',variant:'normal'});
+    assert.equal(after.capabilities.input,true);
+    assert.equal(after.capabilities.position,true);
+    assert.equal(after.input.value,0);
+    assert.deepEqual(after.position,{x:27,y:310});
+    assert.equal(after.localSeat,0);
+    assert.equal(after.frames.simulation,25);
+    assert.deepEqual(evaluateDesktopGameplayReadiness(after,'th11'),{ready:true,reasons:[]});
   });
 });
 
@@ -231,7 +261,17 @@ test('TH09 live session phase/frame, pause, player position, and presentation ar
   assert.deepEqual(observed.position, {x: 12, y: 34});
   assert.equal(observed.pause.active, true);
   assert.equal(observed.render.presentationFrame, 31);
+  assert.deepEqual(observed.touchInput,{context:'inactive',contextValue:0,ready:false,readyValue:0,
+    active:false,activeValue:0,inTitle:false,inTitleValue:0});
   assert.throws(() => assertRuntimeObservation(observed, 'input-held'), /no read-only observer/);
+  runtime.status=()=>({title:[70],session:[1,25,0,0,0,1,0,1],touch:[1,1,0,0]});
+  const gameplay=withWindow({__th09Runtime:runtime},()=>readRuntimeObservation('th09'));
+  assert.deepEqual(gameplay.touchInput,{context:'gameplay',contextValue:1,ready:true,readyValue:1,
+    active:false,activeValue:0,inTitle:false,inTitleValue:0});
+  runtime.status=()=>({title:[70],session:[1,26,0,0,0,1,0,1],touch:[2,1,1,0]});
+  const dialogue=withWindow({__th09Runtime:runtime},()=>readRuntimeObservation('th09'));
+  assert.deepEqual(dialogue.touchInput,{context:'dialogue-or-ending',contextValue:2,ready:true,readyValue:1,
+    active:true,activeValue:1,inTitle:false,inTitleValue:0});
 });
 
 test('TH10 production status and world actor expose native input, player movement, and presentation for both variants', () => {

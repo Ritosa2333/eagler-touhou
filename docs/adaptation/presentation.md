@@ -43,7 +43,7 @@
 - 权威观察与预期：读取本作逻辑帧、RNG、计时和 Replay 位置，并与同输入参考逐边界比对；刷新率只改变呈现机会。
 - 通过／失败：相同输入序列到达相同逻辑状态与 Replay 边界即通过；逻辑时钟随额外绘制次数变化即失败。
 - 反例：让模拟更新错误地绑定每次绘制，确认逻辑帧或状态摘要立即偏离。
-- 当前入口与覆盖：各作 `frame-scheduler`／presentation 单测覆盖组件逻辑，TH15 有 `tests/sdl/high-refresh-browser.test.mjs`；跨设备同输入对照仍按实测设备记录。
+- 当前入口与覆盖：各作 `frame-scheduler`／presentation 单测覆盖组件逻辑，th15 有 `tests/sdl/high-refresh-browser.test.mjs`；跨设备同输入对照仍按实测设备记录。
 
 ### DISPLAY-02 | 跟随显示器刷新率
 
@@ -51,7 +51,7 @@
 - 权威观察与预期：把浏览器／合成器的已呈现帧时间与设备当前刷新设置对照，同时读取原生逻辑帧；只以提交帧证据计呈现。
 - 通过／失败：额外绘制机会跟随设备刷新而逻辑状态仍按本作时钟推进；只有 RAF 回调增加、画面未提交不能通过。
 - 反例：注入绘制回调但不提交画面，确认报告不会把回调数写成实际呈现数。
-- 当前入口与覆盖：TH15 `high-refresh-browser.test.mjs` 驱动虚拟 RAF 与原生帧；其他作品的 `runtime-browser.mjs` 记录原生呈现计数，不替代实体高刷验证。
+- 当前入口与覆盖：th15 `high-refresh-browser.test.mjs` 驱动虚拟 RAF 与原生帧；其他作品的 `runtime-browser.mjs` 记录原生呈现计数，不替代实体高刷验证。
 
 ### DISPLAY-03 | 额外绘制无逻辑副作用
 
@@ -67,7 +67,7 @@
 - 权威观察与预期：连续字段按本作明确的采样映射与逻辑前后值检查；贴图、状态、出生／销毁仍按离散逻辑边界检查。
 - 通过／失败：中间呈现符合本作连续字段契约，离散变化只在相应逻辑状态生效；旧状态残留或状态提前切换即失败。
 - 反例：把连续坐标改成只取整网格，或在对象复用后沿用旧插值端点，确认位置／对象身份断言失败。
-- 当前入口与覆盖：th09 `renderer.test.mjs`、TH11 `anm-renderer`／`player-rendering`、TH15 `position-interpolation` 等覆盖各自字段；不得把单个 renderer 或共用模块结果写成全部对象通过。
+- 当前入口与覆盖：th09 `renderer.test.mjs`、th11 `anm-renderer`／`player-rendering`、th15 `position-interpolation` 等覆盖各自字段；不得把单个 renderer 或共用模块结果写成全部对象通过。
 
 ### DISPLAY-05 | 出生、销毁和瞬移
 
@@ -75,7 +75,7 @@
 - 权威观察与预期：记录对象身份／代次、有效状态、当前逻辑位置及提交的绘制对象；新对象的当前状态构成独立预期。
 - 通过／失败：新对象从自身当前状态绘制，销毁对象不再出现，瞬移不沿旧对象轨迹补间；任一旧代状态残留即失败。
 - 反例：强制池槽位复用但保留前一对象的位置或贴图，确认代次与画面对象不匹配。
-- 当前入口与覆盖：TH11 有 `player-lifecycle`、`item-rendering`，TH15 有 `player-lifecycle`、`stage-resource-lifetime` 等测试；逐作登记实际触发的对象类型与样本范围。
+- 当前入口与覆盖：th11 有 `player-lifecycle`、`item-rendering`，th15 有 `player-lifecycle`、`stage-resource-lifetime` 等测试；逐作登记实际触发的对象类型与样本范围。
 
 ### DISPLAY-06 | 暂停画面的表现
 
@@ -83,7 +83,7 @@
 - 权威观察与预期：以原生暂停状态和世界逻辑帧为世界权威；菜单动画／光标依本作暂停界面的状态机单独观察。
 - 通过／失败：暂停期间世界保持暂停，菜单只按其设计更新；世界帧继续推进或菜单错误冻结即失败。
 - 反例：使用 GameOver／Restart 遮罩冒充暂停状态，确认暂停断言要求真正的 Pause screen。
-- 当前入口与覆盖：`tools/ports/runtime-browser.mjs` 有原生暂停／重开检查，TH11／TH15 各有 `pause-frame`、`pause-menu` 等单测；截图补充菜单外观，不能代替帧状态。
+- 当前入口与覆盖：`tools/ports/runtime-browser.mjs` 有原生暂停／重开检查，th11／th15 各有 `pause-frame`、`pause-menu` 等单测；截图补充菜单外观，不能代替帧状态。
 
 ### DISPLAY-07 | 实际呈现后报告首帧
 
@@ -99,7 +99,7 @@
 - 权威观察与预期：比较本作原生逻辑帧／已消费输入与呈现事件；限制开关只约束呈现频率。
 - 通过／失败：开启限制后画面按 60 Hz 口径呈现，而逻辑速度、输入规则和 Replay 结果不变。
 - 反例：让限帧器跳过模拟步或累积输入，确认逻辑帧／Replay 对照失败。
-- 当前入口与覆盖：TH15 `high-refresh-browser.test.mjs` 检查受限与未受限绘制循环；其他作品需执行同一设备操作并附本次刷新设置和原生帧记录。
+- 当前入口与覆盖：th15 `high-refresh-browser.test.mjs` 检查受限与未受限绘制循环；其他作品需执行同一设备操作并附本次刷新设置和原生帧记录。
 
 ### AUDIO-01 | 正常 OGG 音乐
 
@@ -107,7 +107,7 @@
 - 观察与独立预期：采集实际 PCM 输出和加载的 OGG 身份，将曲目与固定资源清单或独立原版执行对照。
 - 判定：每个要求场景输出对应曲目，错误曲目、持续静音或未解码都失败；不设置未有依据的幅值门槛。
 - 反例：界面显示已选择 OGG，但 Runtime 没有读取轨道或 PCM 全零，应失败。
-- 当前入口/边界：th11 的 tests/browser/audio-check.mjs 从原生混音器采样 WAV/音乐 PCM 并检验若干生命周期；不是正式 Launcher 包验收，也未覆盖全作品。Launcher 的 music-availability 测试只核模式选择。
+- 当前入口与覆盖：`tools/ports/music-browser.mjs` 用正式 Runtime `configure`／`launch`、产品目录 mount 和逐文件 SHA-256 清单，对比 `music=none` 与 OGG 的标题输出，并在原生观察可确认时采集开局 PCM。无 BGM 对照在首帧后等待 1.8 秒，再检查 600 毫秒 Runtime 输出窗；只有运行中的音频上下文且全窗静音才确认为有效对照，有声音时记录为未分类输出。通过的标题输出场景单独记为 `scenario.status=passed`；AUDIO-01 的完整切曲、场景变化、循环与生命周期覆盖保留为 `complete:false`。`--plan-only` 先核对 Runtime、DATA 与逐条 OGG 路由的身份，报告保持 `incomplete`。th11 的 9-word 原生统计把 cue 映射到 `MusicCatalog.hpp`；th15 的 11-word 原生统计把 track index 与 `music/manifest.json` 对应，两个作品同时记录 Runtime 输出 PCM。th08／th10／th20 记录原生 decoder readiness 与实际 PCM，产品报告将曲目身份覆盖标为 partial。TH20 记录正式 native phase/UI 观察；该驱动尚未实现 TH20 标题导航。OGG 路由按作品隔离；游标位置与连续性属于 AUDIO-03／04 的场景检查。
 
 ### AUDIO-02 | 无 BGM 模式
 
@@ -115,7 +115,7 @@
 - 观察与独立预期：分别采集音乐轨和音效输出通道/事件，参考同一场景启用 OGG 时的独立轨道身份。
 - 判定：BGM 轨无输出而音效仍产生对应 PCM；“全静音”不能作为无 BGM 通过。
 - 反例：音乐关掉后音效设备也被停止，应失败。
-- 当前入口/边界：runtime-browser 用 music none 配置但没有检查 PCM；当前自动覆盖主要是选项/可用性契约，尚无全作品音效与音乐分离验收。
+- 当前入口/边界：`runtime-desktop-probes.mjs` 以 `music=none` 启动正式普通版，在 Runtime 自己的 WebAudio 输出图采集 PCM。TH09 先记录 idle 基线，再把新原生 voice 身份映射到其自身输出 tap，要求该 tap 在动作窗产生非零 PCM；每个音效窗保留 voice、tap 与 PCM 证据。原生玩法资格未建立或 voice-to-tap 证据不完整时记录 incomplete；映射 voice 存在而关联 PCM 全零时失败。曲目身份与音乐／音效分轨比较另行验收。
 
 ### AUDIO-03 | 切曲、渐变、暂停、停止
 
@@ -131,7 +131,7 @@
 - 观察与独立预期：记录 AudioContext 状态、选中曲目、输出 PCM 和当前位置；返回前后按音频连续状态及曲目循环规则比较。
 - 判定：前台恢复后有正确曲目输出，位置沿连续曲目推进或按本作既定暂停策略恢复。
 - 反例：AudioContext 显示 running 但采样 PCM 仍为零，应失败。
-- 当前入口/边界：audio-health 与 MidiBridge 单测检查恢复策略和状态事件，shell-protocol 测试模拟可见性处理；没有所有作品实际 OGG PCM 的前后台回归。
+- 当前入口/边界：`runtime-desktop-probes.mjs` 用真实标签页隐藏／恢复及原生 WebAudio PCM 检查音效输出，分别记录上下文暂停后恢复和持续运行两种路径。OGG 曲目位置与循环按独立音乐场景验证；audio-health 与 MidiBridge 单测检查恢复策略。
 
 ### AUDIO-05 | 音乐资源错误信息
 
