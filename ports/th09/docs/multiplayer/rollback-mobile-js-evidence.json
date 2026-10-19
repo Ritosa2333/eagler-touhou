@@ -1,0 +1,63 @@
+{
+  "schema": "th09/mobile-js-preflight/1",
+  "startedAt": "2026-10-11T04:03:32.434Z",
+  "endedAt": "2026-10-11T04:03:32.827Z",
+  "elapsedMs": 392.2506,
+  "passed": true,
+  "sourceStable": true,
+  "identityBefore": {
+    "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+    "web/tests/multiplayer/touch-input-probe.test.mjs": "eda28e98680b6440c1068e6c40230848ac4eb3d49b9ea457837314771c432b8b",
+    "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+    "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2"
+  },
+  "identityAfter": {
+    "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+    "web/tests/multiplayer/touch-input-probe.test.mjs": "eda28e98680b6440c1068e6c40230848ac4eb3d49b9ea457837314771c432b8b",
+    "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+    "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2"
+  },
+  "results": [
+    {
+      "args": [
+        "--check",
+        "web/tests/multiplayer/touch-input-probe.mjs"
+      ],
+      "status": 0,
+      "error": null,
+      "elapsedMs": 64.2345
+    },
+    {
+      "args": [
+        "--check",
+        "web/tests/multiplayer/touch-peer-browser.mjs"
+      ],
+      "status": 0,
+      "error": null,
+      "elapsedMs": 64.05230000000002
+    },
+    {
+      "args": [
+        "--check",
+        "web/tests/multiplayer/smoothness-browser.mjs"
+      ],
+      "status": 0,
+      "error": null,
+      "elapsedMs": 81.78819999999999
+    },
+    {
+      "args": [
+        "--test",
+        "web/tests/multiplayer/touch-input-probe.test.mjs"
+      ],
+      "status": 0,
+      "error": null,
+      "elapsedMs": 178.1349
+    }
+  ],
+  "log": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-js-preflight-01-process.log",
+    "sha256": "14c40fc31f38d4e094f384abf8e4cc66eb6c2ed0130982580079d979f4bfd17e"
+  },
+  "scope": "Three syntax checks and eight offline mock/clock/wire contracts; no browser, gameplay or phone performance claim."
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "th09/desktop-network-brake-plan/1",
+  "createdAt": "2026-10-11T12:20:13.883Z",
+  "tree": "D:/workspace/eagler/worktrees/th09-network-brake-4x",
+  "branch": "experiment/network-brake-4x",
+  "head": "63127575d43ea5ef35b317ff8137b00a1ab5b1cc",
+  "baselineSourcesMatched": 275,
+  "normalization": [
+    {
+      "path": "web/cpp/sdl/PerformanceDiagnostics.hpp",
+      "before": "12be62ebfc146c9836eec53ee5cae17787922e5e8d169e9fdf680f3172cb62c0",
+      "after": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
+      "reason": "Frozen byte identity; line endings only"
+    }
+  ],
+  "status": "Isolated frozen baseline created; pacing patch and gates pending",
+  "productionChange": "Only change network interval target from 1+clamp((B-4)/3,0,1) to 1+clamp((B-3)/3,0,1). Keep original Application recovery budget; do not combine with recovery-tail candidate.",
+  "invariants": {
+    "history": 8,
+    "inputDelay": 0,
+    "maxNetworkIntervalScale": 2,
+    "riseMsPerUnit": 50,
+    "fallMsPerUnit": 150,
+    "capture": "once-only",
+    "beforeDeficit": "bounded transport Pump first",
+    "gameLogic": "unchanged"
+  },
+  "hypothesis": "Spread information-scarcity slowdown over one additional prediction frame before exhausting H8; no future packet oracle and no CPU-cost threshold",
+  "validation": {
+    "components": [
+      "session",
+      "adonis",
+      "mobile-prediction",
+      "frame-schedule"
+    ],
+    "performance": "Desktop only, both CPU4, same continuous native-ABI joystick, relay39±5 control and same +160 ms for1200ms at first-relay-input+8000ms",
+    "buildIdentity": "One production translation unit differs, normalized flags/imports/exports match frozen A",
+    "acceptance": "No weaker correctness or endpoint gates; compare all new-state gaps and ordinary callback cost; no claim that unchanged D0 proves unchanged wall-clock response",
+    "rejection": "Extra ordinary-network slowdown, unchanged information stalls or worse tails/response oppose adoption"
+  },
+  "reference": "Recovery-tail B did not beat returning frozen A consistently; keep B isolated. No phone, push, merge or deployment."
+}

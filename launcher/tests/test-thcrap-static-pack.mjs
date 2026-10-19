@@ -1,0 +1,72 @@
+import assert from "node:assert/strict";
+import { unzipSync } from "fflate";
+import {readFile} from 'node:fs/promises';
+import {transform} from 'esbuild';
+import { createStaticThcrapPack, staticLanguagePackPath } from "../server/thcrap-static-pack.mjs";
+
+// Exercise the ZIP date under a negative UTC offset, where UTC midnight on
+// 1980-01-01 would otherwise become a local date in 1979.
+process.env.TZ = "America/Los_Angeles";
+
+const bytes = Buffer.from("ETL1\0\0\0\0", "ascii");
+const pack = createStaticThcrapPack({
+  pack: { game: "th06", language: "lang_zh-hans", title: "简体中文", assets: [{ path: "th06/stages.js", crc32: 1 }] },
+  resources: [{ path: "th06/stages.js", targetPath: "/thcrap/th06/localization/stages.etl", format: "eagler-localization-table/1", bytes }],
+});
+assert.equal(pack.manifest.runtimeVersion, "independent");
+assert.equal(pack.catalog.pack.runtimeVersion, "independent");
+assert.equal(pack.fileName, "lang_zh-hans.zip");
+assert.equal(pack.catalog.pack.url, "language/lang_zh-hans.zip");
+assert.equal(staticLanguagePackPath("lang_en"), "language/lang_en.zip");
+assert.equal(pack.archive[12] | (pack.archive[13] << 8), 0x21); // ZIP DOS date: 1980-01-01
+const unpacked = unzipSync(pack.archive);
+assert.deepEqual(Buffer.from(unpacked["thcrap/th06/localization/stages.etl"]), bytes);
+
+assert.throws(() => createStaticThcrapPack({
+  pack: { game: "th06", language: "lang_zh-hans" },
+  resources: [{ targetPath: "/thcrap/th07/bad.bin", bytes }]
+}), /invalid thcrap target path/);
+
+const th07Pack = createStaticThcrapPack({
+  pack: { game: "th07", language: "lang_en", title: "English", assets: [{ path: "th07/msg1.dat", crc32: 2 }] },
+  resources: [{ path: "th07/msg1.dat", targetPath: "/thcrap/th07/msg1.dat", format: "touhou-message/1", bytes }],
+});
+assert.equal(th07Pack.manifest.game, "th07");
+assert.deepEqual(Buffer.from(unzipSync(th07Pack.archive)["thcrap/th07/msg1.dat"]), bytes);
+
+const th08Pack = createStaticThcrapPack({
+  pack: { game: "th08", language: "lang_zh-hans", title: "简体中文", assets: [{ path: "th08/msg1a.dat", crc32: 3 }] },
+  resources: [{ path: "th08/msg1a.dat", targetPath: "/thcrap/th08/msg1a.dat", format: "touhou-message/1", bytes }],
+});
+assert.equal(th08Pack.manifest.game, "th08");
+assert.deepEqual(Buffer.from(unzipSync(th08Pack.archive)["thcrap/th08/msg1a.dat"]), bytes);
+const th09Pack = createStaticThcrapPack({
+  pack: { game: "th09", language: "lang_zh-hans", title: "简体中文", assets: [{ path: "th09/pl00.msg.jdiff", crc32: 4 }] },
+  resources: [{ path: "th09/pl00.msg.jdiff", targetPath: "/thcrap/th09/pl00.msg", format: "touhou-message/1", bytes }],
+});
+assert.equal(th09Pack.manifest.game, "th09");
+assert.deepEqual(Buffer.from(unzipSync(th09Pack.archive)["thcrap/th09/pl00.msg"]), bytes);
+const th11Pack = createStaticThcrapPack({
+  pack: { game: "th11", language: "lang_zh-hans", title: "简体中文", assets: [{ path: "th11/st01_00a.msg.jdiff", crc32: 5 }] },
+  resources: [{ path: "th11/st01_00a.msg.jdiff", targetPath: "/thcrap/th11/st01_00a.msg", format: "touhou-message/1", bytes }],
+});
+assert.deepEqual(Buffer.from(unzipSync(th11Pack.archive)["thcrap/th11/st01_00a.msg"]), bytes);
+console.log(JSON.stringify({ schema: pack.manifest.schema, files: pack.manifest.files.length, games: ["th06", "th07", "th08", "th09", "th11"], runtimeIndependent: true }));
+const th15Pack = createStaticThcrapPack({pack: {game: "th15", language: "lang_zh-hans", assets: []}, resources: [{targetPath: "/thcrap/th15/st01a.msg", bytes}]});
+assert.deepEqual(Buffer.from(unzipSync(th15Pack.archive)["thcrap/th15/st01a.msg"]), bytes);
+assert.equal(th15Pack.manifest.runtimeVersion, "independent");
+const th075Pack=createStaticThcrapPack({pack:{game:'th075',language:'lang_zh-hans',assets:[]},resources:[{targetPath:'/thcrap/th075/fonts/localized-glyphs.bin',bytes}]});
+assert.equal(th075Pack.manifest.game,'th075');assert.deepEqual(Buffer.from(unzipSync(th075Pack.archive)['thcrap/th075/fonts/localized-glyphs.bin']),bytes);
+
+// Exercise the actual browser consumer instead of reconstructing its schema.
+const consumer=await transform(await readFile(new URL('../src/launcher/language-pack-validation.mts',import.meta.url),'utf8'),{loader:'ts',format:'esm'});
+const {validateStaticLanguagePackEntries}=await import('data:text/javascript;base64,'+Buffer.from(consumer.code).toString('base64'));
+for(const built of [pack,th07Pack,th08Pack,th09Pack,th11Pack,th15Pack]) {
+  const accepted=validateStaticLanguagePackEntries(unzipSync(built.archive),{game:built.manifest.game,language:built.manifest.language});
+  assert.equal(accepted.files.length,built.manifest.files.length);
+}
+assert.throws(()=>createStaticThcrapPack({pack:{game:'th09',language:'lang_en',assets:[]},resources:[
+  {path:'th09/pl00.msg',targetPath:'/thcrap/th09/pl00.msg',format:'touhou-message/1',bytes},
+  {path:'th09/pl00.msg.jdiff',mountPath:'/thcrap/th09/pl00.msg',format:'touhou-message/1',bytes:new Uint8Array([9])},
+]}),/duplicate thcrap target path/,'raw and jdiff outputs cannot silently produce a duplicate manifest');
+console.log('Six producer/consumer round trips and duplicate compiled-target rejection: PASS');

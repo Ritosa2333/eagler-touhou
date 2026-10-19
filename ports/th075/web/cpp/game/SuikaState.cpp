@@ -1,0 +1,2 @@
+#include "SuikaState.hpp"
+namespace th075 {void reset_suika(FighterActor& a,SuikaState& s,FighterCoreEvents& events){s.impactX=0;s.impactY=0;s.spellLoops=0;s.guardEffectSent=0;s.summonTimer=0;s.giantMode=0;s.giantTicks=0;s.anchorX=0;s.anchorY=0;s.farRangeFrames=0;s.introWait=s.captionWait=s.endWait=s.story.phaseTimer=0;events.reset_hud_alpha();a.knockdownTime=0;a.commandTimers.fill(0);a.reset_round(events);}}

@@ -1,0 +1,640 @@
+import { validatePackageDescriptor } from "./package-descriptor.mjs";
+import { packageInstallationKey, descriptorGameVersion } from "./game-version.mjs";
+import { isGameId } from "../product-catalog.mjs";
+
+export const PACKAGE_STORE_DB = "eagler-touhou-package-store-v1";
+export const PACKAGE_STORE_DB_VERSION = 3;
+export const PACKAGE_OBJECTS = "objects";
+export const PACKAGE_OBJECT_SHA256_INDEX = "sha256";
+export const PACKAGE_GENERATIONS = "generations";
+export const PACKAGE_INSTALLATIONS = "installations";
+export const PACKAGE_LEASES = "leases";
+
+const PENDING_STALE_MS = 2 * 60 * 1000;
+const LEASE_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+// Chromium's structured clone caps one IndexedDB value at 127 MiB. Objects
+// above this stay well clear of the ceiling and are persisted as Blobs.
+const PACKAGE_OBJECT_ARRAYBUFFER_LIMIT = 96 * 1024 * 1024;
+
+const GENERATION_ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/i;
+
+function assertExpectedGeneration(installation, expectedGenerationId) {
+  if (expectedGenerationId !== undefined && (installation?.currentGeneration ?? null) !== expectedGenerationId) {
+    throw new Error('Package changed before background update');
+  }
+}
+
+function assertGame(game) {
+  if (!isGameId(game)) throw new Error("invalid package game id");
+}
+
+function assertGenerationId(generationId) {
+  if (typeof generationId !== "string" || !GENERATION_ID.test(generationId)) throw new Error("invalid package generation id");
+}
+
+function requestResult(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = event => resolve(event.target.result);
+    request.onerror = () => reject(request.error || new Error("IndexedDB request failed"));
+  });
+}
+
+function hasStoredPackageBytes(value) {
+  return value?.blob instanceof Blob || value?.data instanceof ArrayBuffer;
+}
+
+function normalizeStoredPackageObject(value) {
+  if (!value || typeof value !== "object") return null;
+  if (value.blob instanceof Blob) return value;
+  if (!(value.data instanceof ArrayBuffer)) return null;
+  return {
+    ...value,
+    blob: new Blob([value.data], { type: String(value.type || "application/octet-stream") }),
+  };
+}
+
+async function writePackageObjectRecord(id, value, indexedDBFactory) {
+  await withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_OBJECTS], "readwrite");
+    const done = transactionDone(transaction);
+    const request = transaction.objectStore(PACKAGE_OBJECTS).put(value, id);
+    await Promise.all([requestResult(request), done]);
+  }, indexedDBFactory);
+}
+
+export async function readPackageObjects(objectIds, { indexedDBFactory } = {}) {
+  const ids = [...new Set((objectIds || []).filter(id => typeof id === "string" && id))];
+  if (!ids.length) return new Map();
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_OBJECTS], "readonly");
+    const done = transactionDone(transaction);
+    const store = transaction.objectStore(PACKAGE_OBJECTS);
+    const values = await Promise.all(ids.map(id => requestResult(store.get(id))));
+    await done;
+    const result = new Map();
+    for (let index = 0; index < ids.length; index++) {
+      const normalized = normalizeStoredPackageObject(values[index]);
+      if (normalized) result.set(ids[index], normalized);
+    }
+    return result;
+  }, indexedDBFactory);
+}
+
+function normalizeSha256(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(normalized)) throw new Error("invalid package object SHA-256");
+  return normalized;
+}
+
+export async function readPackageObjectKeys(objectIds, { indexedDBFactory } = {}) {
+  const ids = [...new Set((objectIds || []).filter(id => typeof id === "string" && id))];
+  if (!ids.length) return new Set();
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_OBJECTS], "readonly");
+    const done = transactionDone(transaction);
+    const store = transaction.objectStore(PACKAGE_OBJECTS);
+    const keys = await Promise.all(ids.map(id => requestResult(store.getKey(id))));
+    await done;
+    const result = new Set();
+    for (let index = 0; index < ids.length; index++) {
+      if (keys[index] !== undefined) result.add(ids[index]);
+    }
+    return result;
+  }, indexedDBFactory);
+}
+
+function transactionDone(transaction) {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error || new Error("IndexedDB transaction failed"));
+    transaction.onabort = () => reject(transaction.error || new Error("IndexedDB transaction aborted"));
+  });
+}
+
+function randomObjectId() {
+  if (globalThis.crypto?.randomUUID) return `obj-${crypto.randomUUID()}`;
+  const bytes = new Uint8Array(16);
+  if (!globalThis.crypto?.getRandomValues) throw new Error("secure random source unavailable");
+  crypto.getRandomValues(bytes);
+  return `obj-${[...bytes].map(value => value.toString(16).padStart(2, "0")).join("")}`;
+}
+
+async function normalizePackageBinary(value, type = value?.type || "application/octet-stream") {
+  const normalizedType = String(type || "application/octet-stream");
+  let data = null;
+  if (value instanceof ArrayBuffer) data = value;
+  else if (ArrayBuffer.isView(value)) data = value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+  else if (value instanceof Blob) {
+    // Keep an over-limit Blob as-is instead of materializing then copying it.
+    if (value.size > PACKAGE_OBJECT_ARRAYBUFFER_LIMIT) return { blob: value, type: normalizedType, bytes: value.size };
+    data = await value.arrayBuffer();
+  }
+  else throw new Error("package object must be binary data");
+  // Chromium rejects a single IndexedDB value above 127 MiB ("serialized keys
+  // and/or value are too large"), which a retail archive can exceed: TH20's
+  // th20.data is 144 MiB, so an ArrayBuffer record could never be written.
+  // IndexedDB stores a Blob out of line, so the same bytes persist unchanged.
+  if (data.byteLength > PACKAGE_OBJECT_ARRAYBUFFER_LIMIT) {
+    return { blob: new Blob([data], { type: normalizedType }), type: normalizedType, bytes: data.byteLength };
+  }
+  return { data, type: normalizedType, bytes: data.byteLength };
+}
+
+function assertOperationId(operationId) {
+  if (typeof operationId !== "string" || !operationId || operationId.length > 128) throw new Error("invalid package operation id");
+}
+
+function packageMutationBusy(game, pendingGeneration) {
+  const error = new Error(`${game}: another Package mutation is active (${pendingGeneration || "pending"})`);
+  error.name = "PackageMutationBusyError";
+  return error;
+}
+
+export function generationKey(game, generationId) {
+  assertGame(game);
+  assertGenerationId(generationId);
+  return [game, generationId];
+}
+
+export async function openPackageStore(indexedDBFactory = globalThis.indexedDB, { timeoutMs = 15000 } = {}) {
+  if (!indexedDBFactory?.open) throw new Error("IndexedDB unavailable");
+  return new Promise((resolve, reject) => {
+    const request = indexedDBFactory.open(PACKAGE_STORE_DB, PACKAGE_STORE_DB_VERSION);
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error("Package Store open timed out"));
+    }, timeoutMs);
+    const finish = callback => value => {
+      if (settled) {
+        try { value?.target?.result?.close?.(); } catch {}
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      callback(value);
+    };
+    request.onupgradeneeded = event => {
+      const db = event.target.result;
+      const objects = db.objectStoreNames.contains(PACKAGE_OBJECTS)
+        ? event.target.transaction.objectStore(PACKAGE_OBJECTS)
+        : db.createObjectStore(PACKAGE_OBJECTS);
+      if (!objects.indexNames.contains(PACKAGE_OBJECT_SHA256_INDEX)) {
+        objects.createIndex(PACKAGE_OBJECT_SHA256_INDEX, "sha256", { unique: false });
+      }
+      if (!db.objectStoreNames.contains(PACKAGE_GENERATIONS)) db.createObjectStore(PACKAGE_GENERATIONS);
+      if (!db.objectStoreNames.contains(PACKAGE_INSTALLATIONS)) db.createObjectStore(PACKAGE_INSTALLATIONS);
+      if (!db.objectStoreNames.contains(PACKAGE_LEASES)) db.createObjectStore(PACKAGE_LEASES);
+    };
+    request.onsuccess = finish(event => {
+      const db = event.target.result;
+      db.onversionchange = () => db.close();
+      resolve(db);
+    });
+    request.onerror = finish(() => reject(request.error || new Error("cannot open Package Store")));
+    request.onblocked = finish(() => reject(new Error("Package Store open blocked")));
+  });
+}
+
+async function withPackageDb(callback, indexedDBFactory) {
+  const db = await openPackageStore(indexedDBFactory);
+  try {
+    return await callback(db);
+  } finally {
+    db.close();
+  }
+}
+
+export async function putPackageObject(value, {
+  type = value?.type || "application/octet-stream",
+  objectId = null,
+  indexedDBFactory,
+} = {}) {
+  const id = objectId || randomObjectId();
+  if (typeof id !== "string" || !/^obj-[a-z0-9-]{16,}$/i.test(id)) throw new Error("invalid package object id");
+  const record = await normalizePackageBinary(value, type);
+  // The acquisition boundary already materializes independent bytes. Keep the
+  // exact ArrayBuffer where possible to avoid another full-size JS heap copy.
+  await writePackageObjectRecord(id, record, indexedDBFactory);
+  return id;
+}
+
+export async function readPackageObject(objectId, { indexedDBFactory } = {}) {
+  if (typeof objectId !== "string" || !objectId) return null;
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_OBJECTS], "readonly");
+    const done = transactionDone(transaction);
+    const value = await requestResult(transaction.objectStore(PACKAGE_OBJECTS).get(objectId));
+    await done;
+    return normalizeStoredPackageObject(value);
+  }, indexedDBFactory);
+}
+
+export async function readVerifiedPackageObjectBySha256(sha256, bytes, { indexedDBFactory } = {}) {
+  const normalizedHash = normalizeSha256(sha256);
+  const expectedBytes = Number(bytes);
+  if (!Number.isSafeInteger(expectedBytes) || expectedBytes < 0) return null;
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_OBJECTS], "readonly");
+    const done = transactionDone(transaction);
+    const objects = transaction.objectStore(PACKAGE_OBJECTS);
+    const objectId = await requestResult(objects.index(PACKAGE_OBJECT_SHA256_INDEX).getKey(normalizedHash));
+    const value = objectId === undefined ? null : await requestResult(objects.get(objectId));
+    await done;
+    const normalized = normalizeStoredPackageObject(value);
+    return normalized && Number(normalized.bytes) === expectedBytes
+      ? { objectId, ...normalized }
+      : null;
+  }, indexedDBFactory);
+}
+
+export async function attestPackageObjectSha256(objectId, sha256, bytes, { indexedDBFactory } = {}) {
+  if (typeof objectId !== "string" || !objectId) throw new Error("invalid package object id");
+  const normalizedHash = normalizeSha256(sha256);
+  const expectedBytes = Number(bytes);
+  if (!Number.isSafeInteger(expectedBytes) || expectedBytes < 0) throw new Error("invalid package object size");
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_OBJECTS], "readwrite");
+    const done = transactionDone(transaction);
+    const objects = transaction.objectStore(PACKAGE_OBJECTS);
+    const value = await requestResult(objects.get(objectId));
+    if (!hasStoredPackageBytes(value) || Number(value.bytes) !== expectedBytes) {
+      throw new Error("package object changed before SHA-256 attestation");
+    }
+    objects.put({ ...value, sha256: normalizedHash }, objectId);
+    await done;
+    return objectId;
+  }, indexedDBFactory);
+}
+
+export async function readPackageInstallation(game, { gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
+  assertGame(game);
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS], "readonly");
+    const done = transactionDone(transaction);
+    const value = await requestResult(transaction.objectStore(PACKAGE_INSTALLATIONS).get(slot));
+    await done;
+    return value || null;
+  }, indexedDBFactory);
+}
+
+export async function readPackageGeneration(game, generationId, { indexedDBFactory } = {}) {
+  const key = generationKey(game, generationId);
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_GENERATIONS], "readonly");
+    const done = transactionDone(transaction);
+    const value = await requestResult(transaction.objectStore(PACKAGE_GENERATIONS).get(key));
+    await done;
+    return value || null;
+  }, indexedDBFactory);
+}
+
+export async function readCurrentPackageGeneration(game, { gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
+  assertGame(game);
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_GENERATIONS], "readonly");
+    const done = transactionDone(transaction);
+    const installation = await requestResult(transaction.objectStore(PACKAGE_INSTALLATIONS).get(slot));
+    const generation = installation?.currentGeneration
+      ? await requestResult(transaction.objectStore(PACKAGE_GENERATIONS).get(generationKey(game, installation.currentGeneration)))
+      : null;
+    await done;
+    return generation ? { installation, generation } : { installation: installation || null, generation: null };
+  }, indexedDBFactory);
+}
+
+export async function stagePendingPackageGeneration(generation, {
+  source = null,
+  operationId,
+  expectedGenerationId,
+  webLockHeld = false,
+  now = Date.now(),
+  staleMs = PENDING_STALE_MS,
+  indexedDBFactory,
+} = {}) {
+  if (!generation?.id || !generation?.game || generation.descriptor?.game !== generation.game || !generation.files || typeof generation.files !== "object") {
+    throw new Error("invalid package generation");
+  }
+  validatePackageDescriptor(generation.descriptor);
+  assertGenerationId(generation.id);
+  assertOperationId(operationId);
+  const slot = packageInstallationKey(generation.game, descriptorGameVersion(generation.descriptor));
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_GENERATIONS], "readwrite");
+    const done = transactionDone(transaction);
+    const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
+    const generations = transaction.objectStore(PACKAGE_GENERATIONS);
+    const current = await requestResult(installs.get(slot));
+    assertExpectedGeneration(current, expectedGenerationId);
+    if (current?.pendingGeneration && current.pendingOperationId !== operationId) {
+      const started = Number(current.pendingStartedAt) || 0;
+      const fresh = started > 0 && now - started < staleMs;
+      const orphanedWebLockOwner = webLockHeld === true && current.pendingWebLock === true;
+      if (fresh && !orphanedWebLockOwner) {
+        try { transaction.abort(); } catch {}
+        try { await done; } catch {}
+        throw packageMutationBusy(generation.game, current.pendingGeneration);
+      }
+      // Acquiring the per-game Web Lock proves that a previous pending
+      // operation which also held that lock is no longer alive: refresh,
+      // navigation and crashes release browser locks automatically. Pending
+      // state from older/non-WebLock clients keeps the stale-time fallback.
+      generations.delete(generationKey(generation.game, current.pendingGeneration));
+    }
+    const nextSource = source ?? current?.source ?? "local";
+    if (!new Set(["local", "remote"]).has(nextSource)) throw new Error("invalid installation source");
+    generations.put(generation, generationKey(generation.game, generation.id));
+    const installation = {
+      ...(current || {}),
+      game: generation.game,
+      source: current?.source ?? nextSource,
+      currentGeneration: current?.currentGeneration ?? null,
+      pendingGeneration: generation.id,
+      pendingOperationId: operationId,
+      pendingWebLock: webLockHeld === true,
+      pendingSource: nextSource,
+      pendingStartedAt: now,
+    };
+    installs.put(installation, slot);
+    await done;
+    return installation;
+  }, indexedDBFactory);
+}
+
+export async function refreshPendingPackageOperation(game, generationId, operationId, { now = Date.now(), gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
+  generationKey(game, generationId);
+  assertOperationId(operationId);
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS], "readwrite");
+    const done = transactionDone(transaction);
+    const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
+    const installation = await requestResult(installs.get(slot));
+    if (installation?.pendingGeneration !== generationId || installation.pendingOperationId !== operationId) {
+      throw new Error("pending generation ownership changed");
+    }
+    installation.pendingStartedAt = now;
+    installs.put(installation, slot);
+    await done;
+    return installation;
+  }, indexedDBFactory);
+}
+
+export async function attachPendingPackageObject(game, generationId, fileId, objectId, { operationId = null, gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
+  const key = generationKey(game, generationId);
+  if (typeof fileId !== "string" || !fileId || typeof objectId !== "string" || !objectId) throw new Error("invalid package file attachment");
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_OBJECTS, PACKAGE_GENERATIONS], "readwrite");
+    const done = transactionDone(transaction);
+    const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
+    const objects = transaction.objectStore(PACKAGE_OBJECTS);
+    const generations = transaction.objectStore(PACKAGE_GENERATIONS);
+    const [installation, object, generation] = await Promise.all([
+      requestResult(installs.get(slot)),
+      requestResult(objects.get(objectId)),
+      requestResult(generations.get(key)),
+    ]);
+    if (installation?.pendingGeneration !== generationId || (operationId && installation.pendingOperationId !== operationId)) {
+      throw new Error("pending generation ownership changed");
+    }
+    if (!hasStoredPackageBytes(object) || !generation?.descriptor?.files || !Object.hasOwn(generation.descriptor.files, fileId)) {
+      throw new Error("unknown package object or generation file");
+    }
+    generation.files = {
+      ...generation.files,
+      [fileId]: {
+        objectId,
+        revision: generation.descriptor.files[fileId].revision,
+        ...(object?.data instanceof ArrayBuffer ? { storageMode: "arraybuffer" } : {}),
+      },
+    };
+    generations.put(generation, key);
+    await done;
+    return generation;
+  }, indexedDBFactory);
+}
+
+export async function putPendingPackageObject(game, generationId, fileId, value, {
+  type = value?.type || "application/octet-stream",
+  sha256 = null,
+  objectId = null,
+  operationId,
+  gameVersion = "original",
+  indexedDBFactory,
+} = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
+  const key = generationKey(game, generationId);
+  assertOperationId(operationId);
+  const id = objectId || randomObjectId();
+  if (typeof id !== "string" || !/^obj-[a-z0-9-]{16,}$/i.test(id)) throw new Error("invalid package object id");
+  const object = await normalizePackageBinary(value, type);
+  if (sha256) object.sha256 = normalizeSha256(sha256);
+  return withPackageDb(async db => {
+    // Persist bytes and their generation reference in one transaction so GC
+    // can never observe a newly written object without its owning reference.
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_OBJECTS, PACKAGE_GENERATIONS], "readwrite");
+    const done = transactionDone(transaction);
+    const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
+    const objects = transaction.objectStore(PACKAGE_OBJECTS);
+    const generations = transaction.objectStore(PACKAGE_GENERATIONS);
+    const [installation, generation] = await Promise.all([
+      requestResult(installs.get(slot)),
+      requestResult(generations.get(key)),
+    ]);
+    if (installation?.pendingGeneration !== generationId || installation.pendingOperationId !== operationId) {
+      throw new Error("pending generation ownership changed");
+    }
+    if (!generation?.descriptor?.files || !Object.hasOwn(generation.descriptor.files, fileId)) {
+      throw new Error("unknown pending generation file");
+    }
+    objects.put(object, id);
+    generation.files = {
+      ...generation.files,
+      [fileId]: {
+        objectId: id,
+        revision: generation.descriptor.files[fileId].revision,
+        ...(object.data instanceof ArrayBuffer ? { storageMode: "arraybuffer" } : {}),
+      },
+    };
+    generations.put(generation, key);
+    await done;
+    return { objectId: id, generation };
+  }, indexedDBFactory);
+}
+
+export async function commitPendingPackageGeneration(game, generationId, { operationId, source = null, expectedGenerationId, gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
+  const key = generationKey(game, generationId);
+  assertOperationId(operationId);
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_GENERATIONS], "readwrite");
+    const done = transactionDone(transaction);
+    const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
+    const generations = transaction.objectStore(PACKAGE_GENERATIONS);
+    const [installation, generation] = await Promise.all([
+      requestResult(installs.get(slot)),
+      requestResult(generations.get(key)),
+    ]);
+    if (!generation || generation.game !== game) throw new Error("pending generation not found");
+    if (installation?.pendingGeneration !== generationId || installation.pendingOperationId !== operationId) {
+      throw new Error("pending generation ownership changed");
+    }
+    // Compare and switch current in this same durable transaction. Web Locks
+    // are an optimization; an update waiting for staging may already be stale.
+    assertExpectedGeneration(installation, expectedGenerationId);
+    const nextSource = source ?? installation.pendingSource ?? installation.source ?? "local";
+    if (!new Set(["local", "remote"]).has(nextSource)) throw new Error("invalid installation source");
+    const committed = {
+      ...(installation || {}),
+      game,
+      source: nextSource,
+      currentGeneration: generationId,
+      pendingGeneration: null,
+      pendingOperationId: null,
+      pendingWebLock: null,
+      pendingSource: null,
+      pendingStartedAt: null,
+    };
+    installs.put(committed, slot);
+    await done;
+    return committed;
+  }, indexedDBFactory);
+}
+
+export async function cancelPendingPackageGeneration(game, { generationId = null, operationId = null, gameVersion = "original", indexedDBFactory } = {}) {
+  const slot = packageInstallationKey(game, gameVersion);
+  assertGame(game);
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_GENERATIONS], "readwrite");
+    const done = transactionDone(transaction);
+    const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
+    const generations = transaction.objectStore(PACKAGE_GENERATIONS);
+    const installation = await requestResult(installs.get(slot));
+    if (!installation?.pendingGeneration ||
+        (generationId && installation.pendingGeneration !== generationId) ||
+        (operationId && installation.pendingOperationId !== operationId)) {
+      await done;
+      return installation || null;
+    }
+    generations.delete(generationKey(game, installation.pendingGeneration));
+    installation.pendingGeneration = null;
+    installation.pendingOperationId = null;
+    installation.pendingWebLock = null;
+    installation.pendingSource = null;
+    installation.pendingStartedAt = null;
+    installs.put(installation, slot);
+    await done;
+    return installation;
+  }, indexedDBFactory);
+}
+
+export async function readPackageObjectBySource(game, generationId, source, { indexedDBFactory } = {}) {
+  const key = generationKey(game, generationId);
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_GENERATIONS, PACKAGE_OBJECTS], "readonly");
+    const done = transactionDone(transaction);
+    const generation = await requestResult(transaction.objectStore(PACKAGE_GENERATIONS).get(key));
+    if (!generation?.descriptor?.files) {
+      await done;
+      return null;
+    }
+    const fileId = Object.keys(generation.descriptor.files).find(id => generation.descriptor.files[id].source === source);
+    const objectId = fileId ? generation.files?.[fileId]?.objectId : null;
+    const object = objectId ? await requestResult(transaction.objectStore(PACKAGE_OBJECTS).get(objectId)) : null;
+    await done;
+    const normalized = normalizeStoredPackageObject(object);
+    return normalized ? { fileId, declaration: generation.descriptor.files[fileId], objectId, ...normalized } : null;
+  }, indexedDBFactory);
+}
+
+export async function retainPackageGeneration(game, generationId, { leaseId, now = Date.now(), indexedDBFactory } = {}) {
+  generationKey(game, generationId);
+  if (typeof leaseId !== "string" || !leaseId) throw new Error("invalid Package generation lease id");
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_LEASES], "readwrite");
+    const done = transactionDone(transaction);
+    transaction.objectStore(PACKAGE_LEASES).put({ leaseId, game, generationId, updatedAt: now }, leaseId);
+    await done;
+    return leaseId;
+  }, indexedDBFactory);
+}
+
+export async function releasePackageGeneration(leaseId, { indexedDBFactory } = {}) {
+  if (typeof leaseId !== "string" || !leaseId) return;
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_LEASES], "readwrite");
+    const done = transactionDone(transaction);
+    transaction.objectStore(PACKAGE_LEASES).delete(leaseId);
+    await done;
+  }, indexedDBFactory);
+}
+
+export async function garbageCollectPackageStore({ indexedDBFactory, now = Date.now(), leaseStaleMs = LEASE_STALE_MS } = {}) {
+  return withPackageDb(async db => {
+    const transaction = db.transaction([PACKAGE_INSTALLATIONS, PACKAGE_GENERATIONS, PACKAGE_OBJECTS, PACKAGE_LEASES], "readwrite");
+    const done = transactionDone(transaction);
+    const installs = transaction.objectStore(PACKAGE_INSTALLATIONS);
+    const generations = transaction.objectStore(PACKAGE_GENERATIONS);
+    const objects = transaction.objectStore(PACKAGE_OBJECTS);
+    const leases = transaction.objectStore(PACKAGE_LEASES);
+    const [allInstallations, allGenerations, allGenerationKeys, allObjectKeys, allLeases] = await Promise.all([
+      requestResult(installs.getAll()),
+      requestResult(generations.getAll()),
+      requestResult(generations.getAllKeys()),
+      requestResult(objects.getAllKeys()),
+      requestResult(leases.getAll()),
+    ]);
+    const liveGenerations = new Set();
+    for (const installation of allInstallations) {
+      if (installation?.currentGeneration) liveGenerations.add(`${installation.game}\0${installation.currentGeneration}`);
+      if (installation?.pendingGeneration) liveGenerations.add(`${installation.game}\0${installation.pendingGeneration}`);
+    }
+    for (const lease of allLeases) {
+      if (!lease?.leaseId || !lease?.game || !lease?.generationId || now - (Number(lease.updatedAt) || 0) >= leaseStaleMs) {
+        if (lease?.leaseId) leases.delete(lease.leaseId);
+        continue;
+      }
+      liveGenerations.add(`${lease.game}\0${lease.generationId}`);
+    }
+    const liveObjects = new Set();
+    let generationsDeleted = 0;
+    for (let index = 0; index < allGenerations.length; index++) {
+      const generation = allGenerations[index];
+      const key = allGenerationKeys[index];
+      const live = generation && liveGenerations.has(`${generation.game}\0${generation.id}`);
+      if (!live) {
+        generations.delete(key);
+        generationsDeleted++;
+        continue;
+      }
+      for (const ref of Object.values(generation.files || {})) if (ref?.objectId) liveObjects.add(ref.objectId);
+    }
+    let objectsDeleted = 0;
+    for (const objectId of allObjectKeys) {
+      if (!liveObjects.has(objectId)) {
+        objects.delete(objectId);
+        objectsDeleted++;
+      }
+    }
+    await done;
+    return { generationsDeleted, objectsDeleted };
+  }, indexedDBFactory);
+}
+
+export function packageMimeType(source, fallback = "application/octet-stream") {
+  const lower = String(source || "").toLowerCase();
+  if (lower.endsWith(".html")) return "text/html; charset=utf-8";
+  if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "text/javascript; charset=utf-8";
+  if (lower.endsWith(".wasm")) return "application/wasm";
+  if (lower.endsWith(".json")) return "application/json; charset=utf-8";
+  if (lower.endsWith(".ogg")) return "audio/ogg";
+  if (lower.endsWith(".ttc")) return "font/ttf";
+  if (lower.endsWith(".ttf")) return "font/ttf";
+  if (lower.endsWith(".otf")) return "font/otf";
+  if (lower.endsWith(".zip")) return "application/zip";
+  return fallback;
+}

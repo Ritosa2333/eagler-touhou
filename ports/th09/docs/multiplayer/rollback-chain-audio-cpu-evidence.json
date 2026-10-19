@@ -1,0 +1,5208 @@
+{
+  "version": 1,
+  "scope": "Offline attribution of the complete V8 sampling windows of one diagnostic live session, not release acceptance or a process CPU benchmark.",
+  "inputs": {
+    "report": {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-report.json",
+      "bytes": 46482148,
+      "sha256": "e3b6ba7445638c72b69b9a7e85ab6ecb65041f3e3859753d6f8d533c3804e08d"
+    },
+    "analyzer": {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-live-audio-profile.mjs",
+      "bytes": 14061,
+      "sha256": "5cb9b70931886e353d8b23d51b6f3b1603d8a58bf9ffdcb134050b842f50cabf"
+    }
+  },
+  "identity": {
+    "wasm": "7c8bdf579af8e18ace2208377d5a4f22a309eba9c1ec22f0248e252bd6f7deaa",
+    "harness": "a3768e3a9f2a1c47e1a694d2d0755e09059885ac63ac35fc8bf049e72f30dac9",
+    "loader": "7f7080fa2d91486b07971b0054862554dd62c632a7320512ff0bd8d72a4f808a",
+    "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+    "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+    "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+    "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+    "hostLoadProbe": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+    "networkTransportProbe": "02f44188e8f01c9072963d5f2f8bb34c4d88ca6bd90df6039dc0b874b1e8854e",
+    "callbackCostProbe": "52a06adf11b89aa96616afd19c0a9dc8b55ef1fe9fb65933b49ba34545196ba4",
+    "relayTransportProbe": "b75e82a07d21f23135b704381d29aef6829315308ab8ff0daf76de89ea4e757f",
+    "relayTransportFixture": "ee8398f6c08963a05d208a2020a168ddbd2deb6320ae880d57133f1872f215d1",
+    "relayTransportController": "060efa1bb2fd077cbad386c28a30467d6f07528f0c1846e91811105ee5f6e1ed"
+  },
+  "parameters": {
+    "limit": 900,
+    "delay": 0,
+    "jitter": 0,
+    "slow": 4,
+    "dropEvery": 0,
+    "release": false,
+    "profile": true,
+    "fallback": true,
+    "inputMode": "tape",
+    "audioOutput": true,
+    "responsiveness": false,
+    "burstAt": 0,
+    "burstFor": 0,
+    "burstDelay": 0,
+    "rafDiagnostics": true,
+    "hostLoad": true,
+    "networkTrace": true,
+    "impairmentSite": "none",
+    "relayDiagnostics": true,
+    "expectedRtcPath": "any",
+    "liveCost": true,
+    "clientSendMode": "synchronous",
+    "burstClock": "browser-active",
+    "cpuThrottle": {
+      "ratesBySide": [
+        1,
+        4
+      ],
+      "configuredAfter": "openProbe",
+      "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+    }
+  },
+  "correctness": {
+    "passed": true,
+    "errors": [],
+    "finalComparable": true,
+    "hashes": [
+      1373367096,
+      1373367096
+    ],
+    "audited": [
+      [
+        8510,
+        0,
+        4,
+        -1,
+        0,
+        0,
+        -1033138054,
+        1132144111,
+        6,
+        3,
+        0,
+        1126007704,
+        4833,
+        60,
+        0,
+        10,
+        65,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1034689440,
+        1137582364,
+        7,
+        3,
+        0,
+        1129100102,
+        3812,
+        60,
+        0,
+        12,
+        1,
+        0,
+        0,
+        11,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        8510,
+        0,
+        4,
+        -1,
+        0,
+        0,
+        -1033138054,
+        1132144111,
+        6,
+        3,
+        0,
+        1126007704,
+        4833,
+        60,
+        0,
+        10,
+        65,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1034689440,
+        1137582364,
+        7,
+        3,
+        0,
+        1129100102,
+        3812,
+        60,
+        0,
+        12,
+        1,
+        0,
+        0,
+        11,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "method": {
+    "units": "Sample weights are raw V8 timeDeltas in microseconds. They include descheduling and profiler perturbation; no sample is discarded and no CPU-time claim is made.",
+    "partition": "Each sample belongs to exactly one entire-profile source category. Within AudioDevice::pump, each sample belongs to one pump group; within its ma_node_graph_read_pcm_frames or ma_node_read_pcm_frames descendants, each sample belongs to one mix group. Partition sums are asserted.",
+    "precedence": "Mix groups use ancestor membership: Vorbis/codebook/IMDCT, then WAV, then resampler/filter, then channel/data converter, then data-source/decoder, then node/engine/mix residue. A descendant of a group is charged only once.",
+    "inclusive": "Subtree anchors are unions of matching ancestors per sample, preventing recursion/name aggregation double-counting. Different anchors overlap and must not be added.",
+    "inlining": "WAV includes read/interface/metadata and inlined conversion, not just u8/s16 conversion. Linear resampler includes inlined filter work. No separate biquad/lpf/u8-to-f32/s16-to-f32 share is inferred without symbols.",
+    "diagnostics": "Named clock/probe/network leaf candidates are retained, not subtracted. now/send names also serve runtime/product work. Audio-output, transport, live-counter and 500us V8 sampling probes are enabled; their causal overhead is not isolated.",
+    "window": "Profiler starts/stops sequentially for each side after netplay setup and around formal polling. Complete profile windows differ by side and include more than report.summary frames 180..899. No recorded mapping from CDP profile timestamps to browser performance.now permits exact per-callback alignment.",
+    "counterContext": "Native counters span before-open through final capture, which differs from the profile window. Their inclusive phases overlap and must not be summed. Startup/diagnostic checks can be present in cumulative counters even when the formal summary has zero replay.",
+    "limits": "One 900-frame tape, one selected BGM, no impaired relay delivery, profile build with diagnostics. This cannot accept release smoothness, attribute earlier 2s RAF gaps, establish every music boundary, or measure PCM-cache/SIMD gains."
+  },
+  "formalSummary": [
+    {
+      "logicHz": 28.664449922652434,
+      "elapsedMs": 25083.334999978542,
+      "firstFrame": 180,
+      "lastFrame": 899,
+      "callbacks": 3979,
+      "waitCallbacks": 512,
+      "corrections": 122,
+      "resimulated": 869,
+      "captures": 719,
+      "callbackWorkMs": {
+        "count": 3979,
+        "total": 3628.899998575449,
+        "p50": 0.014999985694885254,
+        "p95": 4.33500000834465,
+        "p99": 8.969999998807907,
+        "max": 12.924999982118607,
+        "over25ms": 0,
+        "over50ms": 0,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "presentationGapMs": {
+        "count": 719,
+        "total": 25062.01,
+        "p50": 30.494999999995343,
+        "p95": 60.44499999999971,
+        "p99": 72.64999999999782,
+        "max": 96.86999999999534,
+        "over25ms": 567,
+        "over50ms": 59,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "effectivePresentationGapMs": {
+        "count": 719,
+        "total": 25062.01,
+        "p50": 30.494999999995343,
+        "p95": 60.44499999999971,
+        "p99": 72.64999999999782,
+        "max": 96.86999999999534,
+        "over25ms": 567,
+        "over50ms": 59,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "callbackCompletionGapMs": {
+        "count": 719,
+        "total": 25061.689999997616,
+        "p50": 31.21500000357628,
+        "p95": 60.04999998211861,
+        "p99": 72.88499999046326,
+        "max": 94.11500000953674,
+        "over25ms": 568,
+        "over50ms": 79,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "rafGapMs": {
+        "count": 3978,
+        "total": 25086.175,
+        "p50": 6.065000000002328,
+        "p95": 6.4649999999965075,
+        "p99": 12.084999999999127,
+        "max": 23.540000000000873,
+        "over25ms": 0,
+        "over50ms": 0,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "plannedDelayMs": {
+        "count": 1980,
+        "total": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "max": 0,
+        "over25ms": 0,
+        "over50ms": 0,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "deliveredDelayMs": {
+        "count": 1980,
+        "total": 271.45500004291534,
+        "p50": 0.12999999523162842,
+        "p95": 0.25,
+        "p99": 0.3449999988079071,
+        "max": 0.7199999988079071,
+        "over25ms": 0,
+        "over50ms": 0,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "scenes": [
+        1
+      ]
+    },
+    {
+      "logicHz": 28.79179189663423,
+      "elapsedMs": 24972.394999980927,
+      "firstFrame": 180,
+      "lastFrame": 899,
+      "callbacks": 691,
+      "waitCallbacks": 0,
+      "corrections": 0,
+      "resimulated": 0,
+      "captures": 719,
+      "callbackWorkMs": {
+        "count": 691,
+        "total": 14083.339999318123,
+        "p50": 18.884999990463257,
+        "p95": 37.275000005960464,
+        "p99": 44.63499999046326,
+        "max": 89.875,
+        "over25ms": 196,
+        "over50ms": 4,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "presentationGapMs": {
+        "count": 674,
+        "total": 24965.069999999992,
+        "p50": 36.33499999999913,
+        "p95": 60.65999999999622,
+        "p99": 72.93000000000029,
+        "max": 102.92499999999563,
+        "over25ms": 495,
+        "over50ms": 104,
+        "over100ms": 1,
+        "over250ms": 0
+      },
+      "effectivePresentationGapMs": {
+        "count": 674,
+        "total": 24965.069999999992,
+        "p50": 36.33499999999913,
+        "p95": 60.65999999999622,
+        "p99": 72.93000000000029,
+        "max": 102.92499999999563,
+        "over25ms": 495,
+        "over50ms": 104,
+        "over100ms": 1,
+        "over250ms": 0
+      },
+      "callbackCompletionGapMs": {
+        "count": 674,
+        "total": 24972.394999980927,
+        "p50": 36.33000001311302,
+        "p95": 62.20000001788139,
+        "p99": 74.29499998688698,
+        "max": 103.18500000238419,
+        "over25ms": 543,
+        "over50ms": 117,
+        "over100ms": 1,
+        "over250ms": 0
+      },
+      "rafGapMs": {
+        "count": 690,
+        "total": 24965.069999999992,
+        "p50": 36.30500000000029,
+        "p95": 60.650000000001455,
+        "p99": 72.93000000000029,
+        "max": 102.92499999999563,
+        "over25ms": 492,
+        "over50ms": 104,
+        "over100ms": 1,
+        "over250ms": 0
+      },
+      "plannedDelayMs": {
+        "count": 1731,
+        "total": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "max": 0,
+        "over25ms": 0,
+        "over50ms": 0,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "deliveredDelayMs": {
+        "count": 1731,
+        "total": 1792.2150000333786,
+        "p50": 0.9600000083446503,
+        "p95": 2.3899999856948853,
+        "p99": 3.4849999845027924,
+        "max": 7.949999988079071,
+        "over25ms": 0,
+        "over50ms": 0,
+        "over100ms": 0,
+        "over250ms": 0
+      },
+      "scenes": [
+        1
+      ]
+    }
+  ],
+  "host": {
+    "valid": true,
+    "complete": true,
+    "counts": {
+      "cpuAttempts": 54,
+      "processMessages": 15,
+      "processRowsSeen": 435,
+      "processRowsStored": 435,
+      "stdoutBytes": 11937,
+      "stderrBytes": 0
+    },
+    "overflow": {
+      "cpuSamples": false,
+      "processSamples": false,
+      "processRows": false,
+      "processRowsPerSample": false,
+      "stdout": false,
+      "knownProcesses": false,
+      "marks": false,
+      "errors": false
+    },
+    "errors": [],
+    "scope": "Read-only host CPU counters and candidate process CPU counters. No performance samples are excluded or reweighted.",
+    "limitations": [
+      "Aggregate CPU occupancy does not establish single-core availability, CPU frequency, thermal state, GPU load, or a stable benchmark environment.",
+      "Process names are candidates for contention, not proof that a process is compiling. Known harness/relay/helper PIDs are labeled separately; other node processes remain unlabeled candidates.",
+      "Process CPU is cumulative lifetime CPU seconds. A first sighting is not CPU consumed during this run; PID reuse or counter reset can break a delta.",
+      "The 5 s process snapshots miss short tasks that start and exit between snapshots. Timer delays and source/receive times are retained.",
+      "This observer has overhead. Its own PowerShell helper is intentionally not a candidate process, but its work is included in aggregate CPU counters.",
+      "Overflow and sampling failures make this evidence incomplete; they are never a reason to silently remove a game result."
+    ],
+    "marks": [
+      {
+        "atMs": 0.07630000000000337,
+        "utcMs": 1791647937418,
+        "label": "probe-start"
+      },
+      {
+        "atMs": 6.398799999999994,
+        "utcMs": 1791647937424,
+        "label": "relay-setup-start"
+      },
+      {
+        "atMs": 10.612599999999986,
+        "utcMs": 1791647937429,
+        "label": "relay-spawned"
+      },
+      {
+        "atMs": 129.50559999999996,
+        "utcMs": 1791647937547,
+        "label": "relay-listening"
+      },
+      {
+        "atMs": 278.47999999999996,
+        "utcMs": 1791647937696,
+        "label": "presentation-server-ready"
+      },
+      {
+        "atMs": 278.5006,
+        "utcMs": 1791647937696,
+        "label": "browser-1-setup-start"
+      },
+      {
+        "atMs": 3871.7214,
+        "utcMs": 1791647941290,
+        "label": "browser-1-setup-complete"
+      },
+      {
+        "atMs": 3871.7493,
+        "utcMs": 1791647941290,
+        "label": "browser-2-setup-start"
+      },
+      {
+        "atMs": 7744.720600000001,
+        "utcMs": 1791647945163,
+        "label": "browser-2-setup-complete"
+      },
+      {
+        "atMs": 7744.7564,
+        "utcMs": 1791647945163,
+        "label": "netplay-setup-start"
+      },
+      {
+        "atMs": 12624.677099999999,
+        "utcMs": 1791647950043,
+        "label": "formal-poll-start"
+      },
+      {
+        "atMs": 44713.5957,
+        "utcMs": 1791647982131,
+        "label": "formal-poll-complete"
+      },
+      {
+        "atMs": 71832.3639,
+        "utcMs": 1791648009250,
+        "label": "browser-sample-capture-complete"
+      },
+      {
+        "atMs": 71963.8424,
+        "utcMs": 1791648009382,
+        "label": "success-report-ready"
+      },
+      {
+        "atMs": 71966.2353,
+        "utcMs": 1791648009384,
+        "label": "probe-stop"
+      }
+    ],
+    "knownProcesses": [
+      {
+        "pid": 29140,
+        "role": "harness-node",
+        "registeredAtMs": 0.05469999999996844,
+        "registeredUtcMs": 1791647937418
+      },
+      {
+        "pid": 52072,
+        "role": "host-load-sampler",
+        "registeredAtMs": 6.309499999999957,
+        "registeredUtcMs": 1791647937424
+      },
+      {
+        "pid": 1744,
+        "role": "netplay-relay",
+        "registeredAtMs": 10.607100000000003,
+        "registeredUtcMs": 1791647937428
+      }
+    ],
+    "busyFraction": {
+      "count": 53,
+      "total": 17.969460237778993,
+      "min": 0.22486468755125466,
+      "p50": 0.33622947956688787,
+      "p95": 0.42141510207428057,
+      "p99": 0.45000824266402906,
+      "max": 0.4607815687372505
+    },
+    "observedProcesses": [
+      {
+        "pid": 1744,
+        "name": "node",
+        "firstCpuSeconds": 0.125,
+        "lastCpuSeconds": 2.8125,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 2.6875
+      },
+      {
+        "pid": 48904,
+        "name": "python",
+        "firstCpuSeconds": 94.328125,
+        "lastCpuSeconds": 95.046875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0.71875
+      },
+      {
+        "pid": 4748,
+        "name": "python",
+        "firstCpuSeconds": 381.921875,
+        "lastCpuSeconds": 382.421875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0.5
+      },
+      {
+        "pid": 40148,
+        "name": "node",
+        "firstCpuSeconds": 208.34375,
+        "lastCpuSeconds": 208.46875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0.125
+      },
+      {
+        "pid": 41372,
+        "name": "node",
+        "firstCpuSeconds": 7.59375,
+        "lastCpuSeconds": 7.625,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0.03125
+      },
+      {
+        "pid": 63432,
+        "name": "node",
+        "firstCpuSeconds": 5.765625,
+        "lastCpuSeconds": 5.796875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0.03125
+      },
+      {
+        "pid": 38784,
+        "name": "python",
+        "firstCpuSeconds": 33.40625,
+        "lastCpuSeconds": 33.421875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0.015625
+      },
+      {
+        "pid": 3864,
+        "name": "node",
+        "firstCpuSeconds": 0.484375,
+        "lastCpuSeconds": 0.484375,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 6316,
+        "name": "node",
+        "firstCpuSeconds": 0.171875,
+        "lastCpuSeconds": 0.171875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 15024,
+        "name": "node",
+        "firstCpuSeconds": 0.640625,
+        "lastCpuSeconds": 0.640625,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 15684,
+        "name": "node",
+        "firstCpuSeconds": 0.21875,
+        "lastCpuSeconds": 0.21875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 21452,
+        "name": "node",
+        "firstCpuSeconds": 0.5,
+        "lastCpuSeconds": 0.5,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 22004,
+        "name": "node",
+        "firstCpuSeconds": 0.28125,
+        "lastCpuSeconds": 0.28125,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 22784,
+        "name": "node",
+        "firstCpuSeconds": 0.109375,
+        "lastCpuSeconds": 0.109375,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 23744,
+        "name": "node",
+        "firstCpuSeconds": 0.125,
+        "lastCpuSeconds": 0.125,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 40004,
+        "name": "node",
+        "firstCpuSeconds": 0.875,
+        "lastCpuSeconds": 0.875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 46156,
+        "name": "node",
+        "firstCpuSeconds": 0.125,
+        "lastCpuSeconds": 0.125,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 56248,
+        "name": "node",
+        "firstCpuSeconds": 0.078125,
+        "lastCpuSeconds": 0.078125,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 56744,
+        "name": "node",
+        "firstCpuSeconds": 0.421875,
+        "lastCpuSeconds": 0.421875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 58692,
+        "name": "node",
+        "firstCpuSeconds": 0.171875,
+        "lastCpuSeconds": 0.171875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 60376,
+        "name": "node",
+        "firstCpuSeconds": 0.09375,
+        "lastCpuSeconds": 0.09375,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 62408,
+        "name": "node",
+        "firstCpuSeconds": 0.21875,
+        "lastCpuSeconds": 0.21875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 62528,
+        "name": "node",
+        "firstCpuSeconds": 5.921875,
+        "lastCpuSeconds": 5.921875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 65020,
+        "name": "node",
+        "firstCpuSeconds": 0.46875,
+        "lastCpuSeconds": 0.46875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 67924,
+        "name": "node",
+        "firstCpuSeconds": 0.25,
+        "lastCpuSeconds": 0.25,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 15068,
+        "name": "python",
+        "firstCpuSeconds": 0.03125,
+        "lastCpuSeconds": 0.03125,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 29692,
+        "name": "python",
+        "firstCpuSeconds": 0.03125,
+        "lastCpuSeconds": 0.03125,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 35524,
+        "name": "python",
+        "firstCpuSeconds": 7.1875,
+        "lastCpuSeconds": 7.1875,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      },
+      {
+        "pid": 56472,
+        "name": "python",
+        "firstCpuSeconds": 0.015625,
+        "lastCpuSeconds": 0.015625,
+        "firstSourceUtcMs": 1791647937640,
+        "samples": 15,
+        "lastSourceUtcMs": 1791648009248,
+        "observedDeltaCpuSeconds": 0
+      }
+    ],
+    "observedCompilerProcesses": [],
+    "caveat": "Host sampling spans setup and report extraction as well as profiles. Process filtering and finite sample cadence cannot prove host isolation or assign a stall to another process."
+  },
+  "nativeCounterContext": [
+    {
+      "valid": true,
+      "errors": [],
+      "overflow": {
+        "frames": false,
+        "marks": false,
+        "errors": false
+      },
+      "fieldNames": [
+        "version",
+        "enabled",
+        "epoch",
+        "phaseCount",
+        "counterCount",
+        "gaugeCount",
+        "gameOpen.calls",
+        "gameOpen.inclusiveMs",
+        "gameOpen.exclusiveMs",
+        "prepareLoading.calls",
+        "prepareLoading.inclusiveMs",
+        "prepareLoading.exclusiveMs",
+        "platformInit.calls",
+        "platformInit.inclusiveMs",
+        "platformInit.exclusiveMs",
+        "graphicsInit.calls",
+        "graphicsInit.inclusiveMs",
+        "graphicsInit.exclusiveMs",
+        "fontInit.calls",
+        "fontInit.inclusiveMs",
+        "fontInit.exclusiveMs",
+        "fontWarm.calls",
+        "fontWarm.inclusiveMs",
+        "fontWarm.exclusiveMs",
+        "audioInit.calls",
+        "audioInit.inclusiveMs",
+        "audioInit.exclusiveMs",
+        "titleInit.calls",
+        "titleInit.inclusiveMs",
+        "titleInit.exclusiveMs",
+        "startMatch.calls",
+        "startMatch.inclusiveMs",
+        "startMatch.exclusiveMs",
+        "frameCallback.calls",
+        "frameCallback.inclusiveMs",
+        "frameCallback.exclusiveMs",
+        "gameTick.calls",
+        "gameTick.inclusiveMs",
+        "gameTick.exclusiveMs",
+        "rollbackTick.calls",
+        "rollbackTick.inclusiveMs",
+        "rollbackTick.exclusiveMs",
+        "networkPump.calls",
+        "networkPump.inclusiveMs",
+        "networkPump.exclusiveMs",
+        "inputCapture.calls",
+        "inputCapture.inclusiveMs",
+        "inputCapture.exclusiveMs",
+        "checkpoint.calls",
+        "checkpoint.inclusiveMs",
+        "checkpoint.exclusiveMs",
+        "restore.calls",
+        "restore.inclusiveMs",
+        "restore.exclusiveMs",
+        "tickInputs.calls",
+        "tickInputs.inclusiveMs",
+        "tickInputs.exclusiveMs",
+        "update.calls",
+        "update.inclusiveMs",
+        "update.exclusiveMs",
+        "semanticDraw.calls",
+        "semanticDraw.inclusiveMs",
+        "semanticDraw.exclusiveMs",
+        "present.calls",
+        "present.inclusiveMs",
+        "present.exclusiveMs",
+        "warmResources.calls",
+        "warmResources.inclusiveMs",
+        "warmResources.exclusiveMs",
+        "confirmedPublish.calls",
+        "confirmedPublish.inclusiveMs",
+        "confirmedPublish.exclusiveMs",
+        "audioUpdate.calls",
+        "audioUpdate.inclusiveMs",
+        "audioUpdate.exclusiveMs",
+        "audioPump.calls",
+        "audioPump.inclusiveMs",
+        "audioPump.exclusiveMs",
+        "audioMix.calls",
+        "audioMix.inclusiveMs",
+        "audioMix.exclusiveMs",
+        "audioPut.calls",
+        "audioPut.inclusiveMs",
+        "audioPut.exclusiveMs",
+        "musicSelect.calls",
+        "musicSelect.inclusiveMs",
+        "musicSelect.exclusiveMs",
+        "gpuSubmit.calls",
+        "gpuSubmit.inclusiveMs",
+        "gpuSubmit.exclusiveMs",
+        "gpuDirect.calls",
+        "gpuDirect.inclusiveMs",
+        "gpuDirect.exclusiveMs",
+        "gpuCommit.calls",
+        "gpuCommit.inclusiveMs",
+        "gpuCommit.exclusiveMs",
+        "textureUpload.calls",
+        "textureUpload.inclusiveMs",
+        "textureUpload.exclusiveMs",
+        "textRender.calls",
+        "textRender.inclusiveMs",
+        "textRender.exclusiveMs",
+        "counter.forwardTicks",
+        "counter.replayTicks",
+        "counter.speculativeTicks",
+        "counter.restoredCheckpoints",
+        "counter.sealedCheckpoints",
+        "counter.publishedFrames",
+        "counter.publishedCommands",
+        "counter.publishedSfx",
+        "counter.publishedMusic",
+        "counter.publishedOtherAudio",
+        "counter.pumpReadyCalls",
+        "counter.pumpRefillCalls",
+        "counter.pcmChunks",
+        "counter.pcmFramesRead",
+        "counter.pcmFramesQueued",
+        "counter.audioReadErrors",
+        "counter.audioPutErrors",
+        "counter.queueEmptyCalls",
+        "counter.musicDecoderOpens",
+        "counter.musicSameTrackRestarts",
+        "counter.gpuQueuedBatches",
+        "counter.gpuDirectBatches",
+        "counter.textureCreates",
+        "counter.textureUploads",
+        "counter.sfxDecoderOpens",
+        "counter.programCompiles",
+        "counter.readbacks",
+        "counter.textureUploadBytes",
+        "counter.timingErrors",
+        "gauge.queueFramesBefore",
+        "gauge.queueFramesAfterEstimate",
+        "gauge.lastPumpChunks"
+      ],
+      "final": {
+        "audioInit.calls": 1,
+        "audioInit.inclusiveMs": 168.03999999165535,
+        "audioInit.exclusiveMs": 168.03999999165535,
+        "audioUpdate.calls": 1139,
+        "audioUpdate.inclusiveMs": 6.340000361204147,
+        "audioUpdate.exclusiveMs": 6.340000361204147,
+        "audioPump.calls": 6471,
+        "audioPump.inclusiveMs": 587.9299996495247,
+        "audioPump.exclusiveMs": 41.29499888420105,
+        "audioMix.calls": 1465,
+        "audioMix.inclusiveMs": 539.7500006258488,
+        "audioMix.exclusiveMs": 539.7500006258488,
+        "audioPut.calls": 1465,
+        "audioPut.inclusiveMs": 6.885000139474869,
+        "audioPut.exclusiveMs": 6.885000139474869,
+        "musicSelect.calls": 2,
+        "musicSelect.inclusiveMs": 17.25499999523163,
+        "musicSelect.exclusiveMs": 17.25499999523163,
+        "counter.replayTicks": 1585,
+        "counter.restoredCheckpoints": 1585,
+        "counter.publishedFrames": 900,
+        "counter.publishedCommands": 421,
+        "counter.publishedSfx": 420,
+        "counter.publishedMusic": 1,
+        "counter.publishedOtherAudio": 0,
+        "counter.pcmChunks": 1465,
+        "counter.pcmFramesRead": 1500160,
+        "counter.pcmFramesQueued": 1500160,
+        "counter.audioReadErrors": 0,
+        "counter.audioPutErrors": 0,
+        "counter.queueEmptyCalls": 1,
+        "counter.musicDecoderOpens": 1,
+        "counter.musicSameTrackRestarts": 0,
+        "counter.sfxDecoderOpens": 54,
+        "counter.timingErrors": 0
+      },
+      "marks": [
+        {
+          "label": "before-open",
+          "observedAt": 355.88000002503395,
+          "values": {
+            "audioInit.calls": 0,
+            "audioInit.inclusiveMs": 0,
+            "audioInit.exclusiveMs": 0,
+            "audioUpdate.calls": 0,
+            "audioUpdate.inclusiveMs": 0,
+            "audioUpdate.exclusiveMs": 0,
+            "audioPump.calls": 0,
+            "audioPump.inclusiveMs": 0,
+            "audioPump.exclusiveMs": 0,
+            "audioMix.calls": 0,
+            "audioMix.inclusiveMs": 0,
+            "audioMix.exclusiveMs": 0,
+            "audioPut.calls": 0,
+            "audioPut.inclusiveMs": 0,
+            "audioPut.exclusiveMs": 0,
+            "musicSelect.calls": 0,
+            "musicSelect.inclusiveMs": 0,
+            "musicSelect.exclusiveMs": 0,
+            "counter.replayTicks": 0,
+            "counter.restoredCheckpoints": 0,
+            "counter.publishedFrames": 0,
+            "counter.publishedCommands": 0,
+            "counter.publishedSfx": 0,
+            "counter.publishedMusic": 0,
+            "counter.publishedOtherAudio": 0,
+            "counter.pcmChunks": 0,
+            "counter.pcmFramesRead": 0,
+            "counter.pcmFramesQueued": 0,
+            "counter.audioReadErrors": 0,
+            "counter.audioPutErrors": 0,
+            "counter.queueEmptyCalls": 0,
+            "counter.musicDecoderOpens": 0,
+            "counter.musicSameTrackRestarts": 0,
+            "counter.sfxDecoderOpens": 0,
+            "counter.timingErrors": 0
+          }
+        },
+        {
+          "label": "after-open",
+          "observedAt": 3031.7750000059605,
+          "values": {
+            "audioInit.calls": 1,
+            "audioInit.inclusiveMs": 168.03999999165535,
+            "audioInit.exclusiveMs": 168.03999999165535,
+            "audioUpdate.calls": 0,
+            "audioUpdate.inclusiveMs": 0,
+            "audioUpdate.exclusiveMs": 0,
+            "audioPump.calls": 0,
+            "audioPump.inclusiveMs": 0,
+            "audioPump.exclusiveMs": 0,
+            "audioMix.calls": 0,
+            "audioMix.inclusiveMs": 0,
+            "audioMix.exclusiveMs": 0,
+            "audioPut.calls": 0,
+            "audioPut.inclusiveMs": 0,
+            "audioPut.exclusiveMs": 0,
+            "musicSelect.calls": 0,
+            "musicSelect.inclusiveMs": 0,
+            "musicSelect.exclusiveMs": 0,
+            "counter.replayTicks": 0,
+            "counter.restoredCheckpoints": 0,
+            "counter.publishedFrames": 0,
+            "counter.publishedCommands": 0,
+            "counter.publishedSfx": 0,
+            "counter.publishedMusic": 0,
+            "counter.publishedOtherAudio": 0,
+            "counter.pcmChunks": 0,
+            "counter.pcmFramesRead": 0,
+            "counter.pcmFramesQueued": 0,
+            "counter.audioReadErrors": 0,
+            "counter.audioPutErrors": 0,
+            "counter.queueEmptyCalls": 0,
+            "counter.musicDecoderOpens": 0,
+            "counter.musicSameTrackRestarts": 0,
+            "counter.sfxDecoderOpens": 54,
+            "counter.timingErrors": 0
+          }
+        },
+        {
+          "label": "cpu-throttle-configured",
+          "observedAt": 3044.505000025034,
+          "values": {
+            "audioInit.calls": 1,
+            "audioInit.inclusiveMs": 168.03999999165535,
+            "audioInit.exclusiveMs": 168.03999999165535,
+            "audioUpdate.calls": 0,
+            "audioUpdate.inclusiveMs": 0,
+            "audioUpdate.exclusiveMs": 0,
+            "audioPump.calls": 0,
+            "audioPump.inclusiveMs": 0,
+            "audioPump.exclusiveMs": 0,
+            "audioMix.calls": 0,
+            "audioMix.inclusiveMs": 0,
+            "audioMix.exclusiveMs": 0,
+            "audioPut.calls": 0,
+            "audioPut.inclusiveMs": 0,
+            "audioPut.exclusiveMs": 0,
+            "musicSelect.calls": 0,
+            "musicSelect.inclusiveMs": 0,
+            "musicSelect.exclusiveMs": 0,
+            "counter.replayTicks": 0,
+            "counter.restoredCheckpoints": 0,
+            "counter.publishedFrames": 0,
+            "counter.publishedCommands": 0,
+            "counter.publishedSfx": 0,
+            "counter.publishedMusic": 0,
+            "counter.publishedOtherAudio": 0,
+            "counter.pcmChunks": 0,
+            "counter.pcmFramesRead": 0,
+            "counter.pcmFramesQueued": 0,
+            "counter.audioReadErrors": 0,
+            "counter.audioPutErrors": 0,
+            "counter.queueEmptyCalls": 0,
+            "counter.musicDecoderOpens": 0,
+            "counter.musicSameTrackRestarts": 0,
+            "counter.sfxDecoderOpens": 54,
+            "counter.timingErrors": 0
+          }
+        }
+      ],
+      "firstFrame": {
+        "sampleIndex": 0,
+        "frame": 0,
+        "observedAt": 10717.460000008345
+      },
+      "lastFrame": {
+        "sampleIndex": 5210,
+        "frame": 900,
+        "observedAt": 43802.32500001788,
+        "values": {
+          "audioInit.calls": 1,
+          "audioInit.inclusiveMs": 168.03999999165535,
+          "audioInit.exclusiveMs": 168.03999999165535,
+          "audioUpdate.calls": 1093,
+          "audioUpdate.inclusiveMs": 6.180000275373459,
+          "audioUpdate.exclusiveMs": 6.180000275373459,
+          "audioPump.calls": 6304,
+          "audioPump.inclusiveMs": 578.0299996435642,
+          "audioPump.exclusiveMs": 40.35999894142151,
+          "audioMix.calls": 1432,
+          "audioMix.inclusiveMs": 530.9150005877018,
+          "audioMix.exclusiveMs": 530.9150005877018,
+          "audioPut.calls": 1432,
+          "audioPut.inclusiveMs": 6.755000114440918,
+          "audioPut.exclusiveMs": 6.755000114440918,
+          "musicSelect.calls": 2,
+          "musicSelect.inclusiveMs": 17.25499999523163,
+          "musicSelect.exclusiveMs": 17.25499999523163,
+          "counter.replayTicks": 1585,
+          "counter.restoredCheckpoints": 1585,
+          "counter.publishedFrames": 900,
+          "counter.publishedCommands": 421,
+          "counter.publishedSfx": 420,
+          "counter.publishedMusic": 1,
+          "counter.publishedOtherAudio": 0,
+          "counter.pcmChunks": 1432,
+          "counter.pcmFramesRead": 1466368,
+          "counter.pcmFramesQueued": 1466368,
+          "counter.audioReadErrors": 0,
+          "counter.audioPutErrors": 0,
+          "counter.queueEmptyCalls": 1,
+          "counter.musicDecoderOpens": 1,
+          "counter.musicSameTrackRestarts": 0,
+          "counter.sfxDecoderOpens": 54,
+          "counter.timingErrors": 0
+        }
+      },
+      "audioContext": {
+        "state": "running",
+        "advancedSeconds": 33.879999999999995
+      },
+      "audioOutput": {
+        "nonzeroBlocks": 374,
+        "sampledValues": 24832,
+        "maxAmplitude": 1.0228455066680908,
+        "overflow": false
+      },
+      "memoryBytes": 161087488
+    },
+    {
+      "valid": true,
+      "errors": [],
+      "overflow": {
+        "frames": false,
+        "marks": false,
+        "errors": false
+      },
+      "fieldNames": [
+        "version",
+        "enabled",
+        "epoch",
+        "phaseCount",
+        "counterCount",
+        "gaugeCount",
+        "gameOpen.calls",
+        "gameOpen.inclusiveMs",
+        "gameOpen.exclusiveMs",
+        "prepareLoading.calls",
+        "prepareLoading.inclusiveMs",
+        "prepareLoading.exclusiveMs",
+        "platformInit.calls",
+        "platformInit.inclusiveMs",
+        "platformInit.exclusiveMs",
+        "graphicsInit.calls",
+        "graphicsInit.inclusiveMs",
+        "graphicsInit.exclusiveMs",
+        "fontInit.calls",
+        "fontInit.inclusiveMs",
+        "fontInit.exclusiveMs",
+        "fontWarm.calls",
+        "fontWarm.inclusiveMs",
+        "fontWarm.exclusiveMs",
+        "audioInit.calls",
+        "audioInit.inclusiveMs",
+        "audioInit.exclusiveMs",
+        "titleInit.calls",
+        "titleInit.inclusiveMs",
+        "titleInit.exclusiveMs",
+        "startMatch.calls",
+        "startMatch.inclusiveMs",
+        "startMatch.exclusiveMs",
+        "frameCallback.calls",
+        "frameCallback.inclusiveMs",
+        "frameCallback.exclusiveMs",
+        "gameTick.calls",
+        "gameTick.inclusiveMs",
+        "gameTick.exclusiveMs",
+        "rollbackTick.calls",
+        "rollbackTick.inclusiveMs",
+        "rollbackTick.exclusiveMs",
+        "networkPump.calls",
+        "networkPump.inclusiveMs",
+        "networkPump.exclusiveMs",
+        "inputCapture.calls",
+        "inputCapture.inclusiveMs",
+        "inputCapture.exclusiveMs",
+        "checkpoint.calls",
+        "checkpoint.inclusiveMs",
+        "checkpoint.exclusiveMs",
+        "restore.calls",
+        "restore.inclusiveMs",
+        "restore.exclusiveMs",
+        "tickInputs.calls",
+        "tickInputs.inclusiveMs",
+        "tickInputs.exclusiveMs",
+        "update.calls",
+        "update.inclusiveMs",
+        "update.exclusiveMs",
+        "semanticDraw.calls",
+        "semanticDraw.inclusiveMs",
+        "semanticDraw.exclusiveMs",
+        "present.calls",
+        "present.inclusiveMs",
+        "present.exclusiveMs",
+        "warmResources.calls",
+        "warmResources.inclusiveMs",
+        "warmResources.exclusiveMs",
+        "confirmedPublish.calls",
+        "confirmedPublish.inclusiveMs",
+        "confirmedPublish.exclusiveMs",
+        "audioUpdate.calls",
+        "audioUpdate.inclusiveMs",
+        "audioUpdate.exclusiveMs",
+        "audioPump.calls",
+        "audioPump.inclusiveMs",
+        "audioPump.exclusiveMs",
+        "audioMix.calls",
+        "audioMix.inclusiveMs",
+        "audioMix.exclusiveMs",
+        "audioPut.calls",
+        "audioPut.inclusiveMs",
+        "audioPut.exclusiveMs",
+        "musicSelect.calls",
+        "musicSelect.inclusiveMs",
+        "musicSelect.exclusiveMs",
+        "gpuSubmit.calls",
+        "gpuSubmit.inclusiveMs",
+        "gpuSubmit.exclusiveMs",
+        "gpuDirect.calls",
+        "gpuDirect.inclusiveMs",
+        "gpuDirect.exclusiveMs",
+        "gpuCommit.calls",
+        "gpuCommit.inclusiveMs",
+        "gpuCommit.exclusiveMs",
+        "textureUpload.calls",
+        "textureUpload.inclusiveMs",
+        "textureUpload.exclusiveMs",
+        "textRender.calls",
+        "textRender.inclusiveMs",
+        "textRender.exclusiveMs",
+        "counter.forwardTicks",
+        "counter.replayTicks",
+        "counter.speculativeTicks",
+        "counter.restoredCheckpoints",
+        "counter.sealedCheckpoints",
+        "counter.publishedFrames",
+        "counter.publishedCommands",
+        "counter.publishedSfx",
+        "counter.publishedMusic",
+        "counter.publishedOtherAudio",
+        "counter.pumpReadyCalls",
+        "counter.pumpRefillCalls",
+        "counter.pcmChunks",
+        "counter.pcmFramesRead",
+        "counter.pcmFramesQueued",
+        "counter.audioReadErrors",
+        "counter.audioPutErrors",
+        "counter.queueEmptyCalls",
+        "counter.musicDecoderOpens",
+        "counter.musicSameTrackRestarts",
+        "counter.gpuQueuedBatches",
+        "counter.gpuDirectBatches",
+        "counter.textureCreates",
+        "counter.textureUploads",
+        "counter.sfxDecoderOpens",
+        "counter.programCompiles",
+        "counter.readbacks",
+        "counter.textureUploadBytes",
+        "counter.timingErrors",
+        "gauge.queueFramesBefore",
+        "gauge.queueFramesAfterEstimate",
+        "gauge.lastPumpChunks"
+      ],
+      "final": {
+        "audioInit.calls": 1,
+        "audioInit.inclusiveMs": 143.9350000023842,
+        "audioInit.exclusiveMs": 143.9350000023842,
+        "audioUpdate.calls": 916,
+        "audioUpdate.inclusiveMs": 44.00500023365021,
+        "audioUpdate.exclusiveMs": 44.00500023365021,
+        "audioPump.calls": 1802,
+        "audioPump.inclusiveMs": 4054.8549997210503,
+        "audioPump.exclusiveMs": 174.3149999678135,
+        "audioMix.calls": 1372,
+        "audioMix.inclusiveMs": 3795.2450000345707,
+        "audioMix.exclusiveMs": 3795.2450000345707,
+        "audioPut.calls": 1372,
+        "audioPut.inclusiveMs": 85.29499971866608,
+        "audioPut.exclusiveMs": 85.29499971866608,
+        "musicSelect.calls": 2,
+        "musicSelect.inclusiveMs": 166.06999999284744,
+        "musicSelect.exclusiveMs": 166.06999999284744,
+        "counter.replayTicks": 1,
+        "counter.restoredCheckpoints": 1,
+        "counter.publishedFrames": 900,
+        "counter.publishedCommands": 421,
+        "counter.publishedSfx": 420,
+        "counter.publishedMusic": 1,
+        "counter.publishedOtherAudio": 0,
+        "counter.pcmChunks": 1372,
+        "counter.pcmFramesRead": 1404928,
+        "counter.pcmFramesQueued": 1404928,
+        "counter.audioReadErrors": 0,
+        "counter.audioPutErrors": 0,
+        "counter.queueEmptyCalls": 1,
+        "counter.musicDecoderOpens": 1,
+        "counter.musicSameTrackRestarts": 0,
+        "counter.sfxDecoderOpens": 54,
+        "counter.timingErrors": 0
+      },
+      "marks": [
+        {
+          "label": "before-open",
+          "observedAt": 297.14500001072884,
+          "values": {
+            "audioInit.calls": 0,
+            "audioInit.inclusiveMs": 0,
+            "audioInit.exclusiveMs": 0,
+            "audioUpdate.calls": 0,
+            "audioUpdate.inclusiveMs": 0,
+            "audioUpdate.exclusiveMs": 0,
+            "audioPump.calls": 0,
+            "audioPump.inclusiveMs": 0,
+            "audioPump.exclusiveMs": 0,
+            "audioMix.calls": 0,
+            "audioMix.inclusiveMs": 0,
+            "audioMix.exclusiveMs": 0,
+            "audioPut.calls": 0,
+            "audioPut.inclusiveMs": 0,
+            "audioPut.exclusiveMs": 0,
+            "musicSelect.calls": 0,
+            "musicSelect.inclusiveMs": 0,
+            "musicSelect.exclusiveMs": 0,
+            "counter.replayTicks": 0,
+            "counter.restoredCheckpoints": 0,
+            "counter.publishedFrames": 0,
+            "counter.publishedCommands": 0,
+            "counter.publishedSfx": 0,
+            "counter.publishedMusic": 0,
+            "counter.publishedOtherAudio": 0,
+            "counter.pcmChunks": 0,
+            "counter.pcmFramesRead": 0,
+            "counter.pcmFramesQueued": 0,
+            "counter.audioReadErrors": 0,
+            "counter.audioPutErrors": 0,
+            "counter.queueEmptyCalls": 0,
+            "counter.musicDecoderOpens": 0,
+            "counter.musicSameTrackRestarts": 0,
+            "counter.sfxDecoderOpens": 0,
+            "counter.timingErrors": 0
+          }
+        },
+        {
+          "label": "after-open",
+          "observedAt": 3264.675000011921,
+          "values": {
+            "audioInit.calls": 1,
+            "audioInit.inclusiveMs": 143.9350000023842,
+            "audioInit.exclusiveMs": 143.9350000023842,
+            "audioUpdate.calls": 0,
+            "audioUpdate.inclusiveMs": 0,
+            "audioUpdate.exclusiveMs": 0,
+            "audioPump.calls": 0,
+            "audioPump.inclusiveMs": 0,
+            "audioPump.exclusiveMs": 0,
+            "audioMix.calls": 0,
+            "audioMix.inclusiveMs": 0,
+            "audioMix.exclusiveMs": 0,
+            "audioPut.calls": 0,
+            "audioPut.inclusiveMs": 0,
+            "audioPut.exclusiveMs": 0,
+            "musicSelect.calls": 0,
+            "musicSelect.inclusiveMs": 0,
+            "musicSelect.exclusiveMs": 0,
+            "counter.replayTicks": 0,
+            "counter.restoredCheckpoints": 0,
+            "counter.publishedFrames": 0,
+            "counter.publishedCommands": 0,
+            "counter.publishedSfx": 0,
+            "counter.publishedMusic": 0,
+            "counter.publishedOtherAudio": 0,
+            "counter.pcmChunks": 0,
+            "counter.pcmFramesRead": 0,
+            "counter.pcmFramesQueued": 0,
+            "counter.audioReadErrors": 0,
+            "counter.audioPutErrors": 0,
+            "counter.queueEmptyCalls": 0,
+            "counter.musicDecoderOpens": 0,
+            "counter.musicSameTrackRestarts": 0,
+            "counter.sfxDecoderOpens": 54,
+            "counter.timingErrors": 0
+          }
+        },
+        {
+          "label": "cpu-throttle-configured",
+          "observedAt": 3287.0850000083447,
+          "values": {
+            "audioInit.calls": 1,
+            "audioInit.inclusiveMs": 143.9350000023842,
+            "audioInit.exclusiveMs": 143.9350000023842,
+            "audioUpdate.calls": 0,
+            "audioUpdate.inclusiveMs": 0,
+            "audioUpdate.exclusiveMs": 0,
+            "audioPump.calls": 0,
+            "audioPump.inclusiveMs": 0,
+            "audioPump.exclusiveMs": 0,
+            "audioMix.calls": 0,
+            "audioMix.inclusiveMs": 0,
+            "audioMix.exclusiveMs": 0,
+            "audioPut.calls": 0,
+            "audioPut.inclusiveMs": 0,
+            "audioPut.exclusiveMs": 0,
+            "musicSelect.calls": 0,
+            "musicSelect.inclusiveMs": 0,
+            "musicSelect.exclusiveMs": 0,
+            "counter.replayTicks": 0,
+            "counter.restoredCheckpoints": 0,
+            "counter.publishedFrames": 0,
+            "counter.publishedCommands": 0,
+            "counter.publishedSfx": 0,
+            "counter.publishedMusic": 0,
+            "counter.publishedOtherAudio": 0,
+            "counter.pcmChunks": 0,
+            "counter.pcmFramesRead": 0,
+            "counter.pcmFramesQueued": 0,
+            "counter.audioReadErrors": 0,
+            "counter.audioPutErrors": 0,
+            "counter.queueEmptyCalls": 0,
+            "counter.musicDecoderOpens": 0,
+            "counter.musicSameTrackRestarts": 0,
+            "counter.sfxDecoderOpens": 54,
+            "counter.timingErrors": 0
+          }
+        }
+      ],
+      "firstFrame": {
+        "sampleIndex": 0,
+        "frame": 0,
+        "observedAt": 7180.469999998808
+      },
+      "lastFrame": {
+        "sampleIndex": 867,
+        "frame": 900,
+        "observedAt": 40188.860000014305,
+        "values": {
+          "audioInit.calls": 1,
+          "audioInit.inclusiveMs": 143.9350000023842,
+          "audioInit.exclusiveMs": 143.9350000023842,
+          "audioUpdate.calls": 901,
+          "audioUpdate.inclusiveMs": 43.985000252723694,
+          "audioUpdate.exclusiveMs": 43.985000252723694,
+          "audioPump.calls": 1769,
+          "audioPump.inclusiveMs": 4024.6449996829033,
+          "audioPump.exclusiveMs": 172.90999999642372,
+          "audioMix.calls": 1359,
+          "audioMix.inclusiveMs": 3767.2849999964237,
+          "audioMix.exclusiveMs": 3767.2849999964237,
+          "audioPut.calls": 1359,
+          "audioPut.inclusiveMs": 84.44999969005585,
+          "audioPut.exclusiveMs": 84.44999969005585,
+          "musicSelect.calls": 2,
+          "musicSelect.inclusiveMs": 166.06999999284744,
+          "musicSelect.exclusiveMs": 166.06999999284744,
+          "counter.replayTicks": 1,
+          "counter.restoredCheckpoints": 1,
+          "counter.publishedFrames": 900,
+          "counter.publishedCommands": 421,
+          "counter.publishedSfx": 420,
+          "counter.publishedMusic": 1,
+          "counter.publishedOtherAudio": 0,
+          "counter.pcmChunks": 1359,
+          "counter.pcmFramesRead": 1391616,
+          "counter.pcmFramesQueued": 1391616,
+          "counter.audioReadErrors": 0,
+          "counter.audioPutErrors": 0,
+          "counter.queueEmptyCalls": 1,
+          "counter.musicDecoderOpens": 1,
+          "counter.musicSameTrackRestarts": 0,
+          "counter.sfxDecoderOpens": 54,
+          "counter.timingErrors": 0
+        }
+      },
+      "audioContext": {
+        "state": "running",
+        "advancedSeconds": 33.89066666666666
+      },
+      "audioOutput": {
+        "nonzeroBlocks": 368,
+        "sampledValues": 24768,
+        "maxAmplitude": 0.9998487830162048,
+        "overflow": false
+      },
+      "memoryBytes": 134217728
+    }
+  ],
+  "currentMusicAssets": {
+    "scope": "Current fixture metadata read after capture; the raw live report does not record the selected music cue or music asset hashes.",
+    "format": {
+      "path": "D:\\workspace\\eagler\\th09-eagler\\web\\reference\\assets\\thbgm.fmt",
+      "bytes": 1005,
+      "sha256": "005a233bd4cd332cab5fe78508b1400929090bd6949610440e7d93308fbd5b8c"
+    },
+    "tracks": [
+      {
+        "file": "th09_00.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 3135680,
+        "introFrames": 218336,
+        "durationSeconds": 71.10385487528345,
+        "fullF32Bytes": 25085440,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00.ogg",
+          "bytes": 1757496,
+          "sha256": "316c5ae8a2492bcf9b8e39dafb537ebe7ea4e70fb9fd9dd52b7f281deadf458e",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_00b.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 5940992,
+        "introFrames": 481024,
+        "durationSeconds": 134.71637188208618,
+        "fullF32Bytes": 47527936,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00b.ogg",
+          "bytes": 3470198,
+          "sha256": "3bfe666bf744a3709c9fc991b45a179da88d9dc21ecd7ba87026fa8939552b8a",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_00c.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 3104416,
+        "introFrames": 187968,
+        "durationSeconds": 70.39492063492064,
+        "fullF32Bytes": 24835328,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_00c.ogg",
+          "bytes": 1623421,
+          "sha256": "bd7808c1ee0a66f344b2b876638b42413b6e1743db00b07b91ba43c36179add7",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_01.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 7044096,
+        "introFrames": 377472,
+        "durationSeconds": 159.73006802721088,
+        "fullF32Bytes": 56352768,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_01.ogg",
+          "bytes": 4154589,
+          "sha256": "0ccbf94d0ece753ac97c24659d1bd28bf305b68f3c8db0de54ed435f2da73d9b",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_02.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 5741904,
+        "introFrames": 208272,
+        "durationSeconds": 130.20190476190476,
+        "fullF32Bytes": 45935232,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_02.ogg",
+          "bytes": 3330544,
+          "sha256": "fa259e5ba48ebb683b6bb1ef86866bc0a752e7616b1ed5c03e2927d72d7443fe",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_05.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 6555392,
+        "introFrames": 478464,
+        "durationSeconds": 148.6483446712018,
+        "fullF32Bytes": 52443136,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_05.ogg",
+          "bytes": 4329700,
+          "sha256": "16bc29037f448813168ee318b209c21f2b1697054244e7de128a379e2219b5b5",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_07.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 7331840,
+        "introFrames": 449536,
+        "durationSeconds": 166.25487528344672,
+        "fullF32Bytes": 58654720,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_07.ogg",
+          "bytes": 4326338,
+          "sha256": "e8def2e9acfe65f679effcff3c657e87441f4fcd9e4762ccdf051938d27ed762",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th07_09.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 6224832,
+        "introFrames": 186560,
+        "durationSeconds": 141.1526530612245,
+        "fullF32Bytes": 49798656,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th07_09.ogg",
+          "bytes": 3768596,
+          "sha256": "b6b5982b28234ad292ef57c5b013dd48b193c80a3cf85898d9eb4f91a93d6b99",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th07_10_b.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 7015168,
+        "introFrames": 672256,
+        "durationSeconds": 159.07410430839002,
+        "fullF32Bytes": 56121344,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th07_10_b.ogg",
+          "bytes": 4254555,
+          "sha256": "ff042456fa3f8cc211665698437f9f55473dea8a371cf4d67172b30731cb5dc9",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_08_2.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 7882368,
+        "introFrames": 704320,
+        "durationSeconds": 178.73850340136053,
+        "fullF32Bytes": 63058944,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_08_2.ogg",
+          "bytes": 4871445,
+          "sha256": "ffa52aa2aef9474bb509363e0ae03e2bb3a4510546a40b719f4813ec1d591b8d",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_09.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 7511232,
+        "introFrames": 631360,
+        "durationSeconds": 170.32272108843537,
+        "fullF32Bytes": 60089856,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_09.ogg",
+          "bytes": 4577477,
+          "sha256": "c89d14b131c6f893ba2b280338ea521de09870f3670d833682cc4b23a3187857",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th08_12.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 5334528,
+        "introFrames": 167936,
+        "durationSeconds": 120.9643537414966,
+        "fullF32Bytes": 42676224,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th08_12.ogg",
+          "bytes": 3203611,
+          "sha256": "713f8becb676cc83229cd11f455be786b82cd3cc9de2c22b16371d600a0c4498",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_10.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 4835464,
+        "introFrames": 248832,
+        "durationSeconds": 109.64770975056689,
+        "fullF32Bytes": 38683712,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_10.ogg",
+          "bytes": 2949875,
+          "sha256": "353c27aa5fbfa7e08ecb0a37c34f8f62ae3a45d3cd906dee38f2e1da043609b6",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_11.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 11224320,
+        "introFrames": 269056,
+        "durationSeconds": 254.51972789115646,
+        "fullF32Bytes": 89794560,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_11.ogg",
+          "bytes": 6959581,
+          "sha256": "d2f92da2940b7f830ccb8a23e8398df1795ec16063bef0b8fbbbcb9789bc8f0b",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_12.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 5189248,
+        "introFrames": 272704,
+        "durationSeconds": 117.67002267573696,
+        "fullF32Bytes": 41513984,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_12.ogg",
+          "bytes": 3258330,
+          "sha256": "87162fc05c0cd396825b0c80430e530736382b81e7131849631ab84271a0caae",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_13.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 7055872,
+        "introFrames": 474560,
+        "durationSeconds": 159.99709750566893,
+        "fullF32Bytes": 56446976,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_13.ogg",
+          "bytes": 4190716,
+          "sha256": "e8339d3f5dbf3a2a450ab54fb937e20fa121550874eca101fb93c7a0a3806f9a",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_14.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 2182080,
+        "introFrames": 99744,
+        "durationSeconds": 49.480272108843536,
+        "fullF32Bytes": 17456640,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_14.ogg",
+          "bytes": 1270677,
+          "sha256": "d05ef899b591d9f12a3f84bd9a1ff7ec1978b7eb1b4de71b9963f2b3ddcc52ef",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_15.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 1690560,
+        "introFrames": 865696,
+        "durationSeconds": 38.33469387755102,
+        "fullF32Bytes": 13524480,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_15.ogg",
+          "bytes": 989967,
+          "sha256": "b1a7981b546dd373cc8375a6f4688b5e4562c7418095572070ff6fc894bc48bc",
+          "channels": 2,
+          "rate": 44100
+        }
+      },
+      {
+        "file": "th09_17.wav",
+        "channels": 2,
+        "rate": 44100,
+        "totalFrames": 4958944,
+        "introFrames": 222080,
+        "durationSeconds": 112.44770975056689,
+        "fullF32Bytes": 39671552,
+        "ogg": {
+          "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\music\\th09_17.ogg",
+          "bytes": 2825216,
+          "sha256": "6e631a0b7e09a7eea653fb77229b174594c8e3676db3ebf8885968e6b0cc7e64",
+          "channels": 2,
+          "rate": 44100
+        }
+      }
+    ]
+  },
+  "sides": [
+    {
+      "side": "P1",
+      "input": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-P1.cpuprofile",
+        "bytes": 655240,
+        "sha256": "6f34141fc8862b51ab90cd3b562439a602dbb7c34719c4a08770bd57b7d56bb2"
+      },
+      "window": {
+        "startTimeUs": 206866736692,
+        "endTimeUs": 206902702893,
+        "spanUs": 35966201,
+        "sampledUs": 35965411,
+        "unsampledTailUs": 790,
+        "nodeCount": 1719,
+        "sampleCount": 33335,
+        "requestedSamplingIntervalUs": 500,
+        "deltaUs": {
+          "count": 33335,
+          "total": 35965411,
+          "min": 53,
+          "p50": 1054,
+          "p95": 1380,
+          "p99": 1816,
+          "max": 73977
+        },
+        "deltaClasses": [
+          {
+            "category": "1-5ms",
+            "sampledUs": 27522212,
+            "samples": 24086,
+            "percent": 76.52411368244894
+          },
+          {
+            "category": "0-1ms",
+            "sampledUs": 8285694,
+            "samples": 9236,
+            "percent": 23.03795165860888
+          },
+          {
+            "category": "5-20ms",
+            "sampledUs": 83528,
+            "samples": 12,
+            "percent": 0.2322453648590308
+          },
+          {
+            "category": ">20ms",
+            "sampledUs": 73977,
+            "samples": 1,
+            "percent": 0.20568929408314005
+          }
+        ]
+      },
+      "entireProfileLeafPartition": [
+        {
+          "category": "idle",
+          "sampledUs": 27088431,
+          "samples": 25146,
+          "percent": 75.31800762682789
+        },
+        {
+          "category": "wasm-leaf",
+          "sampledUs": 3379751,
+          "samples": 3124,
+          "percent": 9.39722612929406
+        },
+        {
+          "category": "named-js-native-other",
+          "sampledUs": 2852057,
+          "samples": 2664,
+          "percent": 7.929999743364534
+        },
+        {
+          "category": "program-unattributed",
+          "sampledUs": 2311441,
+          "samples": 2093,
+          "percent": 6.4268443922412
+        },
+        {
+          "category": "anonymous-leaf",
+          "sampledUs": 230603,
+          "samples": 217,
+          "percent": 0.6411799381355603
+        },
+        {
+          "category": "garbage-collector",
+          "sampledUs": 103128,
+          "samples": 91,
+          "percent": 0.28674217013674613
+        }
+      ],
+      "audioPump": {
+        "sampledUs": 541940,
+        "partition": [
+          {
+            "category": "mix-attributed",
+            "sampledUs": 486975,
+            "samples": 452,
+            "percent": 89.85773332841273
+          },
+          {
+            "category": "pump-other-or-inlined",
+            "sampledUs": 26212,
+            "samples": 24,
+            "percent": 4.836697789423184
+          },
+          {
+            "category": "clock-calls",
+            "sampledUs": 19770,
+            "samples": 19,
+            "percent": 3.648005314241429
+          },
+          {
+            "category": "sdl-queue-read",
+            "sampledUs": 7850,
+            "samples": 7,
+            "percent": 1.4484998339299553
+          },
+          {
+            "category": "sdl-put",
+            "sampledUs": 1133,
+            "samples": 1,
+            "percent": 0.20906373399269293
+          }
+        ]
+      },
+      "audioMix": {
+        "sampledUs": 486975,
+        "partition": [
+          {
+            "category": "bgm-vorbis-subtree",
+            "sampledUs": 298101,
+            "samples": 280,
+            "percent": 61.21484675804712
+          },
+          {
+            "category": "nodegraph-mixing-residue",
+            "sampledUs": 72520,
+            "samples": 69,
+            "percent": 14.891934904255866
+          },
+          {
+            "category": "resampler-and-inlined-filter",
+            "sampledUs": 70966,
+            "samples": 66,
+            "percent": 14.57282201345038
+          },
+          {
+            "category": "sfx-wav-subtree",
+            "sampledUs": 27575,
+            "samples": 22,
+            "percent": 5.662508342317367
+          },
+          {
+            "category": "data-source-decoder-residue",
+            "sampledUs": 12609,
+            "samples": 10,
+            "percent": 2.589249961496997
+          },
+          {
+            "category": "channel-format-residue",
+            "sampledUs": 5204,
+            "samples": 5,
+            "percent": 1.0686380204322605
+          }
+        ],
+        "topLeafFunctions": [
+          {
+            "functionName": "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 547106,
+            "sampledUs": 134777,
+            "samples": 128
+          },
+          {
+            "functionName": "codebook_decode_deinterleave_repeat(stb_vorbis*, Codebook*, float**, int, int*, int*, int, int)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 675289,
+            "sampledUs": 73895,
+            "samples": 69
+          },
+          {
+            "functionName": "ma_resampling_backend_process__linear(void*, void*, void const*, unsigned long long*, void*, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 678070,
+            "sampledUs": 70966,
+            "samples": 66
+          },
+          {
+            "functionName": "ma_engine_node_process_pcm_frames__general(ma_engine_node*, float const**, unsigned int*, float**, unsigned int*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 706230,
+            "sampledUs": 31987,
+            "samples": 31
+          },
+          {
+            "functionName": "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 650260,
+            "sampledUs": 29986,
+            "samples": 28
+          },
+          {
+            "functionName": "vorbis_finish_frame(stb_vorbis*, int, int, int)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 557774,
+            "sampledUs": 25620,
+            "samples": 24
+          },
+          {
+            "functionName": "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 635843,
+            "sampledUs": 23006,
+            "samples": 21
+          },
+          {
+            "functionName": "ma_wav_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 683769,
+            "sampledUs": 16010,
+            "samples": 12
+          },
+          {
+            "functionName": "imdct_step3_inner_r_loop(int, float*, int, int, float*, int)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 676544,
+            "sampledUs": 11313,
+            "samples": 11
+          },
+          {
+            "functionName": "get8_packet_raw(stb_vorbis*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 557433,
+            "sampledUs": 8292,
+            "samples": 7
+          },
+          {
+            "functionName": "imdct_step3_iter0_loop(int, float*, int, int, float*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 675968,
+            "sampledUs": 8239,
+            "samples": 8
+          },
+          {
+            "functionName": "ma_engine_node_process_pcm_frames__sound(void*, float const**, unsigned int*, float**, unsigned int*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 705120,
+            "sampledUs": 6064,
+            "samples": 6
+          },
+          {
+            "functionName": "ma_wav_ds_get_data_format(void*, ma_format*, unsigned int*, unsigned int*, unsigned char*, unsigned long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 693971,
+            "sampledUs": 5546,
+            "samples": 4
+          },
+          {
+            "functionName": "ma_decoder__data_source_on_read(void*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 698457,
+            "sampledUs": 5079,
+            "samples": 4
+          },
+          {
+            "functionName": "ma_data_source_read_pcm_frames",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 615089,
+            "sampledUs": 4130,
+            "samples": 3
+          },
+          {
+            "functionName": "codebook_decode_scalar_raw(stb_vorbis*, Codebook*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 559663,
+            "sampledUs": 4042,
+            "samples": 4
+          },
+          {
+            "functionName": "read",
+            "url": "http://127.0.0.1:65533/probe.mjs",
+            "lineNumber": 0,
+            "columnNumber": 16307,
+            "sampledUs": 3992,
+            "samples": 3
+          },
+          {
+            "functionName": "ma_dr_wav__on_read_memory(void*, void*, unsigned long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 624346,
+            "sampledUs": 3794,
+            "samples": 4
+          },
+          {
+            "functionName": "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 646732,
+            "sampledUs": 3487,
+            "samples": 3
+          },
+          {
+            "functionName": "ma_data_converter_process_pcm_frames",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 611697,
+            "sampledUs": 3183,
+            "samples": 3
+          },
+          {
+            "functionName": "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 615677,
+            "sampledUs": 2342,
+            "samples": 2
+          },
+          {
+            "functionName": "ma_dr_wav_read_pcm_frames_le",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 630548,
+            "sampledUs": 2225,
+            "samples": 2
+          },
+          {
+            "functionName": "ma_channel_converter_process_pcm_frames",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 601453,
+            "sampledUs": 2021,
+            "samples": 2
+          },
+          {
+            "functionName": "get_bits(stb_vorbis*, int)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 559319,
+            "sampledUs": 1137,
+            "samples": 1
+          },
+          {
+            "functionName": "ma_stbvorbis_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 694281,
+            "sampledUs": 1091,
+            "samples": 1
+          },
+          {
+            "functionName": "ma_decoder__data_source_on_get_data_format(void*, ma_format*, unsigned int*, unsigned int*, unsigned char*, unsigned long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 699848,
+            "sampledUs": 1058,
+            "samples": 1
+          },
+          {
+            "functionName": "ma_node_graph_read_pcm_frames",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 646214,
+            "sampledUs": 996,
+            "samples": 1
+          },
+          {
+            "functionName": "get position",
+            "url": "http://127.0.0.1:65533/probe.mjs",
+            "lineNumber": 0,
+            "columnNumber": 27562,
+            "sampledUs": 948,
+            "samples": 1
+          },
+          {
+            "functionName": "read",
+            "url": "http://127.0.0.1:65533/probe.mjs",
+            "lineNumber": 0,
+            "columnNumber": 44293,
+            "sampledUs": 917,
+            "samples": 1
+          },
+          {
+            "functionName": "_fd_read",
+            "url": "http://127.0.0.1:65533/probe.mjs",
+            "lineNumber": 0,
+            "columnNumber": 164887,
+            "sampledUs": 832,
+            "samples": 1
+          }
+        ]
+      },
+      "overlappingSubtreeAnchors": [
+        {
+          "category": "audioPump",
+          "sampledUs": 541940,
+          "samples": 503,
+          "percent": 1.5068366659288281
+        },
+        {
+          "category": "vorbisRead",
+          "sampledUs": 297010,
+          "samples": 279,
+          "percent": 0.8258212314048073
+        },
+        {
+          "category": "clockNamed",
+          "sampledUs": 220034,
+          "samples": 206,
+          "percent": 0.611793370024327
+        },
+        {
+          "category": "sdlPlayback",
+          "sampledUs": 155071,
+          "samples": 146,
+          "percent": 0.43116704547043827
+        },
+        {
+          "category": "sendNamed",
+          "sampledUs": 136160,
+          "samples": 129,
+          "percent": 0.3785859697251896
+        },
+        {
+          "category": "sdlOutputResampler",
+          "sampledUs": 87723,
+          "samples": 81,
+          "percent": 0.24390934945801118
+        },
+        {
+          "category": "packetId",
+          "sampledUs": 55148,
+          "samples": 51,
+          "percent": 0.15333621517629814
+        },
+        {
+          "category": "musicSelect",
+          "sampledUs": 17867,
+          "samples": 11,
+          "percent": 0.049678286729435674
+        }
+      ],
+      "relevantLeafFunctions": [
+        {
+          "functionName": "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 547106,
+          "sampledUs": 134777,
+          "samples": 128
+        },
+        {
+          "functionName": "ResampleFrame_Stereo",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 995420,
+          "sampledUs": 87723,
+          "samples": 81
+        },
+        {
+          "functionName": "codebook_decode_deinterleave_repeat(stb_vorbis*, Codebook*, float**, int, int*, int*, int, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 675289,
+          "sampledUs": 73895,
+          "samples": 69
+        },
+        {
+          "functionName": "ma_resampling_backend_process__linear(void*, void*, void const*, unsigned long long*, void*, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 678070,
+          "sampledUs": 70966,
+          "samples": 66
+        },
+        {
+          "functionName": "vorbis_finish_frame(stb_vorbis*, int, int, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 557774,
+          "sampledUs": 25620,
+          "samples": 24
+        },
+        {
+          "functionName": "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 635843,
+          "sampledUs": 23006,
+          "samples": 21
+        },
+        {
+          "functionName": "ma_wav_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 683769,
+          "sampledUs": 16010,
+          "samples": 12
+        },
+        {
+          "functionName": "imdct_step3_inner_r_loop(int, float*, int, int, float*, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 676544,
+          "sampledUs": 11313,
+          "samples": 11
+        },
+        {
+          "functionName": "get8_packet_raw(stb_vorbis*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 557433,
+          "sampledUs": 8292,
+          "samples": 7
+        },
+        {
+          "functionName": "imdct_step3_iter0_loop(int, float*, int, int, float*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 675968,
+          "sampledUs": 8239,
+          "samples": 8
+        },
+        {
+          "functionName": "ma_wav_ds_get_data_format(void*, ma_format*, unsigned int*, unsigned int*, unsigned char*, unsigned long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 693971,
+          "sampledUs": 5546,
+          "samples": 4
+        },
+        {
+          "functionName": "codebook_decode_scalar_raw(stb_vorbis*, Codebook*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 559663,
+          "sampledUs": 4042,
+          "samples": 4
+        },
+        {
+          "functionName": "get_bits(stb_vorbis*, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 559319,
+          "sampledUs": 3844,
+          "samples": 3
+        },
+        {
+          "functionName": "ma_dr_wav__on_read_memory(void*, void*, unsigned long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 624346,
+          "sampledUs": 3794,
+          "samples": 4
+        },
+        {
+          "functionName": "start_decoder(stb_vorbis*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 560261,
+          "sampledUs": 3744,
+          "samples": 3
+        },
+        {
+          "functionName": "ma_dr_wav_read_pcm_frames_le",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 630548,
+          "sampledUs": 2225,
+          "samples": 2
+        },
+        {
+          "functionName": "ma_decoding_backend_init_file__stbvorbis(void*, char const*, ma_decoding_backend_config const*, ma_allocation_callbacks const*, void**)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 703697,
+          "sampledUs": 2032,
+          "samples": 2
+        },
+        {
+          "functionName": "ma_stbvorbis_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 694281,
+          "sampledUs": 1091,
+          "samples": 1
+        },
+        {
+          "functionName": "ma_dr_wav__on_seek_memory(void*, int, ma_dr_wav_seek_origin)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 624209,
+          "sampledUs": 858,
+          "samples": 1
+        }
+      ],
+      "namedDiagnosticAndNetworkLeafCandidates": [
+        {
+          "functionName": "send",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 136160,
+          "samples": 129
+        },
+        {
+          "functionName": "_emscripten_get_now",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 66487,
+          "sampledUs": 102457,
+          "samples": 100
+        },
+        {
+          "functionName": "now",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 89249,
+          "samples": 79
+        },
+        {
+          "functionName": "packetId",
+          "url": "",
+          "lineNumber": 79,
+          "columnNumber": 18,
+          "sampledUs": 55148,
+          "samples": 51
+        },
+        {
+          "functionName": "now",
+          "url": "",
+          "lineNumber": 7,
+          "columnNumber": 11,
+          "sampledUs": 28328,
+          "samples": 27
+        },
+        {
+          "functionName": "th09_probe_load",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 493594,
+          "sampledUs": 9540,
+          "samples": 9
+        },
+        {
+          "functionName": "th09_probe_performance",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 491203,
+          "sampledUs": 2207,
+          "samples": 2
+        },
+        {
+          "functionName": "non-virtual thunk to th09::GameBattle::Services::Field::probe_attacks(th09::Bullet&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 185294,
+          "sampledUs": 2049,
+          "samples": 2
+        },
+        {
+          "functionName": "th09_probe_tick_cost",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 491012,
+          "sampledUs": 1102,
+          "samples": 1
+        },
+        {
+          "functionName": "th09::AttackAreas::probe(th09::Vec3 const&, th09::Vec3 const&, th09::Bounds const&, th09::Bullet*, th09::AreaCollisionContext&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 52716,
+          "sampledUs": 1009,
+          "samples": 1
+        }
+      ],
+      "topWasmLeafFunctions": [
+        {
+          "functionName": "Netplay::RollbackJournal::Touch(void*, unsigned long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 903729,
+          "sampledUs": 469518,
+          "samples": 438
+        },
+        {
+          "functionName": "th09::multiplayer::EnemyState::Copy(th09::EclVm&, th09::EclVm const&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 769678,
+          "sampledUs": 211008,
+          "samples": 197
+        },
+        {
+          "functionName": "th09::multiplayer::WorldState::Save(th09::GameSession&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 826435,
+          "sampledUs": 187189,
+          "samples": 177
+        },
+        {
+          "functionName": "th09::StageRenderer::models(th09::Background&, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 531822,
+          "sampledUs": 169476,
+          "samples": 155
+        },
+        {
+          "functionName": "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 547106,
+          "sampledUs": 134777,
+          "samples": 128
+        },
+        {
+          "functionName": "ResampleFrame_Stereo",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 995420,
+          "sampledUs": 87723,
+          "samples": 81
+        },
+        {
+          "functionName": "th09::GraphicsMath::translated_projection(th09::Vec3 const&, th09::Matrix4 const&, th09::Matrix4 const&, th09::Matrix4 const&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 252051,
+          "sampledUs": 87444,
+          "samples": 82
+        },
+        {
+          "functionName": "th09::GraphicsMath::project(th09::Vec3 const&, th09::Viewport const&, th09::Matrix4 const&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 251771,
+          "sampledUs": 79946,
+          "samples": 72
+        },
+        {
+          "functionName": "th09::multiplayer::WorldState::Effects(th09::EffectManager&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 809426,
+          "sampledUs": 76737,
+          "samples": 71
+        },
+        {
+          "functionName": "codebook_decode_deinterleave_repeat(stb_vorbis*, Codebook*, float**, int, int*, int*, int, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 675289,
+          "sampledUs": 73895,
+          "samples": 69
+        },
+        {
+          "functionName": "ma_resampling_backend_process__linear(void*, void*, void const*, unsigned long long*, void*, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 678070,
+          "sampledUs": 70966,
+          "samples": 66
+        },
+        {
+          "functionName": "th09::GameBattle::update_effects(int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 165685,
+          "sampledUs": 56038,
+          "samples": 53
+        },
+        {
+          "functionName": "th09::multiplayer::WorldState::Restore()",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 885089,
+          "sampledUs": 54555,
+          "samples": 53
+        },
+        {
+          "functionName": "th09::AnmExecutor::execute(th09::AnmVm&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 33094,
+          "sampledUs": 52930,
+          "samples": 49
+        },
+        {
+          "functionName": "th09::sdl::(anonymous namespace)::Application::tick_inputs(unsigned short, unsigned short, unsigned short, bool)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 444073,
+          "sampledUs": 49696,
+          "samples": 46
+        },
+        {
+          "functionName": "th09::GameBattle::update_enemies(int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 138516,
+          "sampledUs": 44190,
+          "samples": 41
+        },
+        {
+          "functionName": "touhou::graphics::PipelineState::compatible(touhou::graphics::PipelineState const&, bool) const",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 42235,
+          "sampledUs": 42705,
+          "samples": 39
+        },
+        {
+          "functionName": "th09::GameBattle::update_bullets(int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 145030,
+          "sampledUs": 35965,
+          "samples": 35
+        },
+        {
+          "functionName": "th09::multiplayer::EffectState::Copy(th09::EffectActor&, th09::EffectActor const&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 770879,
+          "sampledUs": 33377,
+          "samples": 31
+        },
+        {
+          "functionName": "th09::GameBattle::update_player(int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 149047,
+          "sampledUs": 32832,
+          "samples": 30
+        },
+        {
+          "functionName": "ma_engine_node_process_pcm_frames__general(ma_engine_node*, float const**, unsigned int*, float**, unsigned int*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 706230,
+          "sampledUs": 31987,
+          "samples": 31
+        },
+        {
+          "functionName": "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 650260,
+          "sampledUs": 29986,
+          "samples": 28
+        },
+        {
+          "functionName": "th09::sdl::(anonymous namespace)::Application::checkpoint(th09::multiplayer::WorldState&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 434645,
+          "sampledUs": 29243,
+          "samples": 28
+        },
+        {
+          "functionName": "th09_rollback_pump",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 413136,
+          "sampledUs": 28901,
+          "samples": 27
+        },
+        {
+          "functionName": "touhou::sdl::Renderer::issue(touhou::sdl::State const&, touhou::graphics::Topology, unsigned int, void const*, unsigned int, void const*, touhou::graphics::IndexType, void const*, unsigned int, unsigned int, bool)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 917119,
+          "sampledUs": 28770,
+          "samples": 27
+        },
+        {
+          "functionName": "th09_game_tick",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 467625,
+          "sampledUs": 27855,
+          "samples": 26
+        },
+        {
+          "functionName": "th09::AnmRenderer::append(th09::SpriteVertex const*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 41238,
+          "sampledUs": 27708,
+          "samples": 24
+        },
+        {
+          "functionName": "vorbis_finish_frame(stb_vorbis*, int, int, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 557774,
+          "sampledUs": 25620,
+          "samples": 24
+        },
+        {
+          "functionName": "th09::sdl::AudioDevice::pump()",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 672028,
+          "sampledUs": 24977,
+          "samples": 23
+        },
+        {
+          "functionName": "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 635843,
+          "sampledUs": 23006,
+          "samples": 21
+        },
+        {
+          "functionName": "SDL_GetAudioStreamDataAdjustGain",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 978277,
+          "sampledUs": 22482,
+          "samples": 21
+        },
+        {
+          "functionName": "th09::GraphicsMath::look_at(th09::Vec3 const&, th09::Vec3 const&, th09::Vec3 const&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 251119,
+          "sampledUs": 22406,
+          "samples": 20
+        },
+        {
+          "functionName": "th09::AnmRenderer::finish(th09::AnmVm&, bool, bool, bool)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 43774,
+          "sampledUs": 21501,
+          "samples": 20
+        },
+        {
+          "functionName": "th09::sdl::(anonymous namespace)::Application::draw(bool)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 405800,
+          "sampledUs": 21185,
+          "samples": 20
+        },
+        {
+          "functionName": "th09_loop_start::$_0::__invoke(double, void*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 477506,
+          "sampledUs": 20834,
+          "samples": 17
+        }
+      ],
+      "topNonWasmLeafFunctions": [
+        {
+          "functionName": "(idle)",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 27088431,
+          "samples": 25146
+        },
+        {
+          "functionName": "(program)",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 2311441,
+          "samples": 2093
+        },
+        {
+          "functionName": "eagler_journal_copy_bytes",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 220915,
+          "sampledUs": 1053860,
+          "samples": 986
+        },
+        {
+          "functionName": "requestAnimationFrame",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 165133,
+          "samples": 155
+        },
+        {
+          "functionName": "send",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 136160,
+          "samples": 129
+        },
+        {
+          "functionName": "read",
+          "url": "",
+          "lineNumber": 36,
+          "columnNumber": 12,
+          "sampledUs": 128519,
+          "samples": 119
+        },
+        {
+          "functionName": "(garbage collector)",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 103128,
+          "samples": 91
+        },
+        {
+          "functionName": "_emscripten_get_now",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 66487,
+          "sampledUs": 102457,
+          "samples": 100
+        },
+        {
+          "functionName": "(anonymous)",
+          "url": "",
+          "lineNumber": 308,
+          "columnNumber": 22,
+          "sampledUs": 99222,
+          "samples": 91
+        },
+        {
+          "functionName": "now",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 89249,
+          "samples": 79
+        },
+        {
+          "functionName": "wasm-to-js",
+          "url": "",
+          "lineNumber": 0,
+          "columnNumber": 0,
+          "sampledUs": 81913,
+          "samples": 76
+        },
+        {
+          "functionName": "info",
+          "url": "http://127.0.0.1:65533/app/shared-netplay.mjs",
+          "lineNumber": 29,
+          "columnNumber": 6,
+          "sampledUs": 70561,
+          "samples": 65
+        },
+        {
+          "functionName": "core.onGameFrame",
+          "url": "",
+          "lineNumber": 35,
+          "columnNumber": 19,
+          "sampledUs": 70102,
+          "samples": 66
+        },
+        {
+          "functionName": "(anonymous)",
+          "url": "",
+          "lineNumber": 349,
+          "columnNumber": 61,
+          "sampledUs": 57300,
+          "samples": 57
+        },
+        {
+          "functionName": "packetId",
+          "url": "",
+          "lineNumber": 79,
+          "columnNumber": 18,
+          "sampledUs": 55148,
+          "samples": 51
+        },
+        {
+          "functionName": "bufferData",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 51275,
+          "samples": 47
+        },
+        {
+          "functionName": "(anonymous)",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 42843,
+          "samples": 40
+        },
+        {
+          "functionName": "wasm-to-js",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 36058,
+          "samples": 32
+        },
+        {
+          "functionName": "parse",
+          "url": "",
+          "lineNumber": 55,
+          "columnNumber": 15,
+          "sampledUs": 35144,
+          "samples": 32
+        },
+        {
+          "functionName": "now",
+          "url": "",
+          "lineNumber": 7,
+          "columnNumber": 11,
+          "sampledUs": 28328,
+          "samples": 27
+        },
+        {
+          "functionName": "getGamepads",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 27259,
+          "samples": 26
+        },
+        {
+          "functionName": "prototype.send",
+          "url": "",
+          "lineNumber": 394,
+          "columnNumber": 26,
+          "sampledUs": 26700,
+          "samples": 23
+        },
+        {
+          "functionName": "uniform4fv",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 26301,
+          "samples": 23
+        },
+        {
+          "functionName": "js-to-wasm::i",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 25777,
+          "samples": 25
+        },
+        {
+          "functionName": "453994",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 179552,
+          "sampledUs": 25604,
+          "samples": 26
+        },
+        {
+          "functionName": "eagler_peer_send_to",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 216998,
+          "sampledUs": 24849,
+          "samples": 24
+        },
+        {
+          "functionName": "play.frame",
+          "url": "",
+          "lineNumber": 343,
+          "columnNumber": 26,
+          "sampledUs": 24460,
+          "samples": 23
+        },
+        {
+          "functionName": "socket.onmessage",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 211763,
+          "sampledUs": 23432,
+          "samples": 23
+        },
+        {
+          "functionName": "onFrame",
+          "url": "",
+          "lineNumber": 76,
+          "columnNumber": 9,
+          "sampledUs": 22814,
+          "samples": 23
+        },
+        {
+          "functionName": "window.readStats",
+          "url": "",
+          "lineNumber": 5,
+          "columnNumber": 19,
+          "sampledUs": 22211,
+          "samples": 22
+        },
+        {
+          "functionName": "drawArraysInstanced",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 19808,
+          "samples": 18
+        },
+        {
+          "functionName": "rafHook",
+          "url": "",
+          "lineNumber": 300,
+          "columnNumber": 18,
+          "sampledUs": 17786,
+          "samples": 17
+        },
+        {
+          "functionName": "bindBuffer",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 16017,
+          "samples": 15
+        },
+        {
+          "functionName": "depthMask",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 14255,
+          "samples": 13
+        },
+        {
+          "functionName": "drawArrays",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 14064,
+          "samples": 13
+        }
+      ],
+      "longestSamplingIntervals": [
+        {
+          "sampleIndex": 0,
+          "nodeId": 2,
+          "deltaUs": 73977,
+          "intervalEndOffsetUs": 73977,
+          "sourceClass": "program-unattributed",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(program)"
+          ]
+        },
+        {
+          "sampleIndex": 12751,
+          "nodeId": 12,
+          "deltaUs": 14673,
+          "intervalEndOffsetUs": 13844042,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 12750,
+          "nodeId": 12,
+          "deltaUs": 8148,
+          "intervalEndOffsetUs": 13829369,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 5690,
+          "nodeId": 12,
+          "deltaUs": 6837,
+          "intervalEndOffsetUs": 6186847,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 4998,
+          "nodeId": 12,
+          "deltaUs": 6805,
+          "intervalEndOffsetUs": 5415389,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 20884,
+          "nodeId": 12,
+          "deltaUs": 6681,
+          "intervalEndOffsetUs": 22599192,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 3650,
+          "nodeId": 234,
+          "deltaUs": 6518,
+          "intervalEndOffsetUs": 3959754,
+          "sourceClass": "wasm-leaf",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::(anonymous namespace)::Application::music(int)",
+            "th09::sdl::AudioDevice::music(int)"
+          ]
+        },
+        {
+          "sampleIndex": 1657,
+          "nodeId": 12,
+          "deltaUs": 6400,
+          "intervalEndOffsetUs": 1824165,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 11589,
+          "nodeId": 12,
+          "deltaUs": 5969,
+          "intervalEndOffsetUs": 12583015,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 20848,
+          "nodeId": 2,
+          "deltaUs": 5740,
+          "intervalEndOffsetUs": 22545176,
+          "sourceClass": "program-unattributed",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(program)"
+          ]
+        },
+        {
+          "sampleIndex": 20887,
+          "nodeId": 1455,
+          "deltaUs": 5332,
+          "intervalEndOffsetUs": 22608451,
+          "sourceClass": "named-js-native-other",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09_rollback_pump",
+            "eagler_peer_disconnected"
+          ]
+        },
+        {
+          "sampleIndex": 21458,
+          "nodeId": 416,
+          "deltaUs": 5271,
+          "intervalEndOffsetUs": 23232459,
+          "sourceClass": "named-js-native-other",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "messageHook",
+            "now",
+            "now"
+          ]
+        },
+        {
+          "sampleIndex": 15058,
+          "nodeId": 689,
+          "deltaUs": 5154,
+          "intervalEndOffsetUs": 16309051,
+          "sourceClass": "wasm-leaf",
+          "inPump": true,
+          "inMix": true,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::AudioDevice::pump()",
+            "ma_node_graph_read_pcm_frames",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_engine_node_process_pcm_frames__sound(void*, float const**, unsigned int*, float**, unsigned int*)",
+            "ma_data_source_read_pcm_frames",
+            "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_decoder__data_source_on_read(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_data_source_read_pcm_frames",
+            "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_wav_ds_read(void*, void*, unsigned long long, unsigned long long*)"
+          ]
+        },
+        {
+          "sampleIndex": 5218,
+          "nodeId": 12,
+          "deltaUs": 4963,
+          "intervalEndOffsetUs": 5655188,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 5627,
+          "nodeId": 12,
+          "deltaUs": 4837,
+          "intervalEndOffsetUs": 6104195,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 989,
+          "nodeId": 12,
+          "deltaUs": 4786,
+          "intervalEndOffsetUs": 1114281,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 5692,
+          "nodeId": 12,
+          "deltaUs": 4735,
+          "intervalEndOffsetUs": 6195432,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 28861,
+          "nodeId": 2,
+          "deltaUs": 4693,
+          "intervalEndOffsetUs": 31161387,
+          "sourceClass": "program-unattributed",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(program)"
+          ]
+        },
+        {
+          "sampleIndex": 5732,
+          "nodeId": 12,
+          "deltaUs": 4647,
+          "intervalEndOffsetUs": 6244112,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 25135,
+          "nodeId": 12,
+          "deltaUs": 4609,
+          "intervalEndOffsetUs": 27175187,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        }
+      ],
+      "separateLeafSymbolsFound": {
+        "biquadOrLpf": [],
+        "wavIntegerToFloat": []
+      }
+    },
+    {
+      "side": "P2",
+      "input": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-chain-profile\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-cpu-profile-01-P2.cpuprofile",
+        "bytes": 842374,
+        "sha256": "ea78048bf59e5c34f900d3df1ba666cbe98cb9d1a537a72f798bca2373582fc5"
+      },
+      "window": {
+        "startTimeUs": 206869621583,
+        "endTimeUs": 206902830399,
+        "spanUs": 33208816,
+        "sampledUs": 33207467,
+        "unsampledTailUs": 1349,
+        "nodeCount": 2472,
+        "sampleCount": 29853,
+        "requestedSamplingIntervalUs": 500,
+        "deltaUs": {
+          "count": 29853,
+          "total": 33207467,
+          "min": 44,
+          "p50": 1055,
+          "p95": 1374,
+          "p99": 1867,
+          "max": 983489
+        },
+        "deltaClasses": [
+          {
+            "category": "1-5ms",
+            "sampledUs": 24849460,
+            "samples": 21751,
+            "percent": 74.83094088447035
+          },
+          {
+            "category": "0-1ms",
+            "sampledUs": 7307248,
+            "samples": 8093,
+            "percent": 22.004834033261254
+          },
+          {
+            "category": ">20ms",
+            "sampledUs": 983489,
+            "samples": 1,
+            "percent": 2.9616501613929183
+          },
+          {
+            "category": "5-20ms",
+            "sampledUs": 67270,
+            "samples": 8,
+            "percent": 0.2025749208754766
+          }
+        ]
+      },
+      "entireProfileLeafPartition": [
+        {
+          "category": "wasm-leaf",
+          "sampledUs": 11334767,
+          "samples": 10482,
+          "percent": 34.13318757495114
+        },
+        {
+          "category": "named-js-native-other",
+          "sampledUs": 11259977,
+          "samples": 10443,
+          "percent": 33.90796714485932
+        },
+        {
+          "category": "program-unattributed",
+          "sampledUs": 7574567,
+          "samples": 6123,
+          "percent": 22.80983069259694
+        },
+        {
+          "category": "idle",
+          "sampledUs": 2080282,
+          "samples": 1927,
+          "percent": 6.264500691967864
+        },
+        {
+          "category": "anonymous-leaf",
+          "sampledUs": 830129,
+          "samples": 763,
+          "percent": 2.4998263191829717
+        },
+        {
+          "category": "garbage-collector",
+          "sampledUs": 127745,
+          "samples": 115,
+          "percent": 0.3846875764417684
+        }
+      ],
+      "audioPump": {
+        "sampledUs": 4057893,
+        "partition": [
+          {
+            "category": "mix-attributed",
+            "sampledUs": 3678508,
+            "samples": 3403,
+            "percent": 90.65068990237052
+          },
+          {
+            "category": "clock-calls",
+            "sampledUs": 172865,
+            "samples": 163,
+            "percent": 4.259969397911675
+          },
+          {
+            "category": "pump-other-or-inlined",
+            "sampledUs": 148071,
+            "samples": 140,
+            "percent": 3.6489626513069715
+          },
+          {
+            "category": "sdl-put",
+            "sampledUs": 45297,
+            "samples": 43,
+            "percent": 1.1162689602707612
+          },
+          {
+            "category": "sdl-queue-read",
+            "sampledUs": 13152,
+            "samples": 13,
+            "percent": 0.32410908814007666
+          }
+        ]
+      },
+      "audioMix": {
+        "sampledUs": 3678508,
+        "partition": [
+          {
+            "category": "bgm-vorbis-subtree",
+            "sampledUs": 2178485,
+            "samples": 2007,
+            "percent": 59.22197260411014
+          },
+          {
+            "category": "nodegraph-mixing-residue",
+            "sampledUs": 584718,
+            "samples": 532,
+            "percent": 15.895520683929462
+          },
+          {
+            "category": "resampler-and-inlined-filter",
+            "sampledUs": 527011,
+            "samples": 501,
+            "percent": 14.326759653642181
+          },
+          {
+            "category": "sfx-wav-subtree",
+            "sampledUs": 175353,
+            "samples": 165,
+            "percent": 4.766959865249715
+          },
+          {
+            "category": "data-source-decoder-residue",
+            "sampledUs": 153336,
+            "samples": 142,
+            "percent": 4.16842915660371
+          },
+          {
+            "category": "channel-format-residue",
+            "sampledUs": 59605,
+            "samples": 56,
+            "percent": 1.6203580364647843
+          }
+        ],
+        "topLeafFunctions": [
+          {
+            "functionName": "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 547106,
+            "sampledUs": 986361,
+            "samples": 901
+          },
+          {
+            "functionName": "codebook_decode_deinterleave_repeat(stb_vorbis*, Codebook*, float**, int, int*, int*, int, int)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 675289,
+            "sampledUs": 620293,
+            "samples": 575
+          },
+          {
+            "functionName": "ma_resampling_backend_process__linear(void*, void*, void const*, unsigned long long*, void*, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 678070,
+            "sampledUs": 523927,
+            "samples": 498
+          },
+          {
+            "functionName": "ma_engine_node_process_pcm_frames__general(ma_engine_node*, float const**, unsigned int*, float**, unsigned int*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 706230,
+            "sampledUs": 204666,
+            "samples": 191
+          },
+          {
+            "functionName": "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 650260,
+            "sampledUs": 202294,
+            "samples": 176
+          },
+          {
+            "functionName": "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 635843,
+            "sampledUs": 131625,
+            "samples": 126
+          },
+          {
+            "functionName": "vorbis_finish_frame(stb_vorbis*, int, int, int)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 557774,
+            "sampledUs": 117972,
+            "samples": 109
+          },
+          {
+            "functionName": "ma_wav_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 683769,
+            "sampledUs": 108258,
+            "samples": 102
+          },
+          {
+            "functionName": "imdct_step3_inner_r_loop(int, float*, int, int, float*, int)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 676544,
+            "sampledUs": 85039,
+            "samples": 80
+          },
+          {
+            "functionName": "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 646732,
+            "sampledUs": 84744,
+            "samples": 77
+          },
+          {
+            "functionName": "ma_engine_node_process_pcm_frames__sound(void*, float const**, unsigned int*, float**, unsigned int*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 705120,
+            "sampledUs": 81356,
+            "samples": 77
+          },
+          {
+            "functionName": "get8_packet_raw(stb_vorbis*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 557433,
+            "sampledUs": 62373,
+            "samples": 58
+          },
+          {
+            "functionName": "ma_data_source_read_pcm_frames",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 615089,
+            "sampledUs": 56472,
+            "samples": 53
+          },
+          {
+            "functionName": "imdct_step3_iter0_loop(int, float*, int, int, float*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 675968,
+            "sampledUs": 50566,
+            "samples": 47
+          },
+          {
+            "functionName": "ma_decoder__data_source_on_read(void*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 698457,
+            "sampledUs": 46221,
+            "samples": 42
+          },
+          {
+            "functionName": "codebook_decode_scalar_raw(stb_vorbis*, Codebook*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 559663,
+            "sampledUs": 36440,
+            "samples": 33
+          },
+          {
+            "functionName": "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 615677,
+            "sampledUs": 36142,
+            "samples": 33
+          },
+          {
+            "functionName": "ma_channel_converter_process_pcm_frames",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 601453,
+            "sampledUs": 34269,
+            "samples": 32
+          },
+          {
+            "functionName": "ma_dr_wav__on_read_memory(void*, void*, unsigned long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 624346,
+            "sampledUs": 31962,
+            "samples": 30
+          },
+          {
+            "functionName": "_fd_read",
+            "url": "http://127.0.0.1:65533/probe.mjs",
+            "lineNumber": 0,
+            "columnNumber": 164887,
+            "sampledUs": 30593,
+            "samples": 28
+          },
+          {
+            "functionName": "ma_data_converter_process_pcm_frames",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 611697,
+            "sampledUs": 25336,
+            "samples": 24
+          },
+          {
+            "functionName": "ma_dr_wav_read_pcm_frames_le",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 630548,
+            "sampledUs": 23583,
+            "samples": 22
+          },
+          {
+            "functionName": "vorbis_decode_initial(stb_vorbis*, int*, int*, int*, int*, int*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 558366,
+            "sampledUs": 15005,
+            "samples": 10
+          },
+          {
+            "functionName": "wasm-to-js",
+            "url": "",
+            "lineNumber": 0,
+            "columnNumber": 0,
+            "sampledUs": 10587,
+            "samples": 10
+          },
+          {
+            "functionName": "ma_stbvorbis_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 694281,
+            "sampledUs": 10547,
+            "samples": 10
+          },
+          {
+            "functionName": "ma_wav_ds_get_data_format(void*, ma_format*, unsigned int*, unsigned int*, unsigned char*, unsigned long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 693971,
+            "sampledUs": 9399,
+            "samples": 9
+          },
+          {
+            "functionName": "ma_decoder__data_source_on_get_data_format(void*, ma_format*, unsigned int*, unsigned int*, unsigned char*, unsigned long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 699848,
+            "sampledUs": 8147,
+            "samples": 8
+          },
+          {
+            "functionName": "ma_node_graph_read_pcm_frames",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 646214,
+            "sampledUs": 7351,
+            "samples": 7
+          },
+          {
+            "functionName": "ma_stbvorbis_ds_get_data_format(void*, ma_format*, unsigned int*, unsigned int*, unsigned char*, unsigned long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 698134,
+            "sampledUs": 6313,
+            "samples": 6
+          },
+          {
+            "functionName": "ma_decoder__data_source_on_seek(void*, unsigned long long)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 699384,
+            "sampledUs": 5287,
+            "samples": 5
+          },
+          {
+            "functionName": "ma_engine_node_update_pitch_if_required(ma_engine_node*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 705958,
+            "sampledUs": 4307,
+            "samples": 4
+          },
+          {
+            "functionName": "do_getc",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 2455930,
+            "sampledUs": 3916,
+            "samples": 3
+          },
+          {
+            "functionName": "__uflow",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 2455863,
+            "sampledUs": 3160,
+            "samples": 3
+          },
+          {
+            "functionName": "__toread",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 2455738,
+            "sampledUs": 2100,
+            "samples": 2
+          },
+          {
+            "functionName": "ma_resampling_backend_get_required_input_frame_count__linear(void*, void const*, unsigned long long, unsigned long long*)",
+            "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+            "lineNumber": 0,
+            "columnNumber": 683262,
+            "sampledUs": 2072,
+            "samples": 2
+          }
+        ]
+      },
+      "overlappingSubtreeAnchors": [
+        {
+          "category": "audioPump",
+          "sampledUs": 4057893,
+          "samples": 3762,
+          "percent": 12.219820921601759
+        },
+        {
+          "category": "vorbisRead",
+          "sampledUs": 2157217,
+          "samples": 1987,
+          "percent": 6.496180512653976
+        },
+        {
+          "category": "clockNamed",
+          "sampledUs": 1590559,
+          "samples": 1484,
+          "percent": 4.789763097558751
+        },
+        {
+          "category": "sendNamed",
+          "sampledUs": 1390691,
+          "samples": 1292,
+          "percent": 4.1878864172326065
+        },
+        {
+          "category": "sdlPlayback",
+          "sampledUs": 1043615,
+          "samples": 970,
+          "percent": 3.1427118485128664
+        },
+        {
+          "category": "sdlOutputResampler",
+          "sampledUs": 608128,
+          "samples": 562,
+          "percent": 1.8312989665848347
+        },
+        {
+          "category": "packetId",
+          "sampledUs": 514083,
+          "samples": 477,
+          "percent": 1.5480945896897225
+        },
+        {
+          "category": "musicSelect",
+          "sampledUs": 160161,
+          "samples": 146,
+          "percent": 0.48230417574456974
+        }
+      ],
+      "relevantLeafFunctions": [
+        {
+          "functionName": "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 547106,
+          "sampledUs": 997073,
+          "samples": 911
+        },
+        {
+          "functionName": "codebook_decode_deinterleave_repeat(stb_vorbis*, Codebook*, float**, int, int*, int*, int, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 675289,
+          "sampledUs": 620293,
+          "samples": 575
+        },
+        {
+          "functionName": "ResampleFrame_Stereo",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 995420,
+          "sampledUs": 608128,
+          "samples": 562
+        },
+        {
+          "functionName": "ma_resampling_backend_process__linear(void*, void*, void const*, unsigned long long*, void*, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 678070,
+          "sampledUs": 523927,
+          "samples": 498
+        },
+        {
+          "functionName": "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 635843,
+          "sampledUs": 131625,
+          "samples": 126
+        },
+        {
+          "functionName": "vorbis_finish_frame(stb_vorbis*, int, int, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 557774,
+          "sampledUs": 117972,
+          "samples": 109
+        },
+        {
+          "functionName": "ma_wav_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 683769,
+          "sampledUs": 108258,
+          "samples": 102
+        },
+        {
+          "functionName": "imdct_step3_inner_r_loop(int, float*, int, int, float*, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 676544,
+          "sampledUs": 86011,
+          "samples": 81
+        },
+        {
+          "functionName": "get8_packet_raw(stb_vorbis*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 557433,
+          "sampledUs": 65664,
+          "samples": 61
+        },
+        {
+          "functionName": "ma_decoding_backend_init_file__stbvorbis(void*, char const*, ma_decoding_backend_config const*, ma_allocation_callbacks const*, void**)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 703697,
+          "sampledUs": 57245,
+          "samples": 51
+        },
+        {
+          "functionName": "imdct_step3_iter0_loop(int, float*, int, int, float*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 675968,
+          "sampledUs": 50566,
+          "samples": 47
+        },
+        {
+          "functionName": "codebook_decode_scalar_raw(stb_vorbis*, Codebook*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 559663,
+          "sampledUs": 36440,
+          "samples": 33
+        },
+        {
+          "functionName": "ma_dr_wav__on_read_memory(void*, void*, unsigned long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 624346,
+          "sampledUs": 31962,
+          "samples": 30
+        },
+        {
+          "functionName": "start_decoder(stb_vorbis*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 560261,
+          "sampledUs": 31255,
+          "samples": 29
+        },
+        {
+          "functionName": "ma_dr_wav_read_pcm_frames_le",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 630548,
+          "sampledUs": 23583,
+          "samples": 22
+        },
+        {
+          "functionName": "vorbis_decode_initial(stb_vorbis*, int*, int*, int*, int*, int*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 558366,
+          "sampledUs": 17187,
+          "samples": 12
+        },
+        {
+          "functionName": "ma_stbvorbis_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 694281,
+          "sampledUs": 10547,
+          "samples": 10
+        },
+        {
+          "functionName": "ma_wav_ds_get_data_format(void*, ma_format*, unsigned int*, unsigned int*, unsigned char*, unsigned long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 693971,
+          "sampledUs": 10185,
+          "samples": 10
+        },
+        {
+          "functionName": "vorbis_find_page(stb_vorbis*, unsigned int*, unsigned int*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 576371,
+          "sampledUs": 8700,
+          "samples": 8
+        },
+        {
+          "functionName": "ma_stbvorbis_ds_get_data_format(void*, ma_format*, unsigned int*, unsigned int*, unsigned char*, unsigned long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 698134,
+          "sampledUs": 7406,
+          "samples": 7
+        },
+        {
+          "functionName": "start_page(stb_vorbis*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 570867,
+          "sampledUs": 4642,
+          "samples": 4
+        },
+        {
+          "functionName": "stb_vorbis_stream_length_in_samples",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 574570,
+          "sampledUs": 3210,
+          "samples": 3
+        },
+        {
+          "functionName": "start_page_no_capturepattern(stb_vorbis*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 578487,
+          "sampledUs": 2937,
+          "samples": 3
+        },
+        {
+          "functionName": "get_bits(stb_vorbis*, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 559319,
+          "sampledUs": 2800,
+          "samples": 3
+        },
+        {
+          "functionName": "ma_stbvorbis_ds_get_length(void*, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 698394,
+          "sampledUs": 2139,
+          "samples": 2
+        },
+        {
+          "functionName": "ma_resampling_backend_get_required_input_frame_count__linear(void*, void const*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 683262,
+          "sampledUs": 2072,
+          "samples": 2
+        },
+        {
+          "functionName": "ma_wav_ds_seek(void*, unsigned long long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 693116,
+          "sampledUs": 1173,
+          "samples": 1
+        },
+        {
+          "functionName": "setup_malloc(stb_vorbis*, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 572163,
+          "sampledUs": 1037,
+          "samples": 1
+        },
+        {
+          "functionName": "maybe_start_packet(stb_vorbis*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 578015,
+          "sampledUs": 1032,
+          "samples": 1
+        },
+        {
+          "functionName": "ma_resampling_backend_reset__linear(void*, void*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 683441,
+          "sampledUs": 1012,
+          "samples": 1
+        },
+        {
+          "functionName": "ma_wav_ds_get_cursor(void*, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 694189,
+          "sampledUs": 978,
+          "samples": 1
+        }
+      ],
+      "namedDiagnosticAndNetworkLeafCandidates": [
+        {
+          "functionName": "send",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 1390691,
+          "samples": 1292
+        },
+        {
+          "functionName": "_emscripten_get_now",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 66487,
+          "sampledUs": 730955,
+          "samples": 681
+        },
+        {
+          "functionName": "packetId",
+          "url": "",
+          "lineNumber": 79,
+          "columnNumber": 18,
+          "sampledUs": 514083,
+          "samples": 477
+        },
+        {
+          "functionName": "now",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 451519,
+          "samples": 419
+        },
+        {
+          "functionName": "now",
+          "url": "",
+          "lineNumber": 7,
+          "columnNumber": 11,
+          "sampledUs": 408085,
+          "samples": 384
+        },
+        {
+          "functionName": "th09::AttackAreas::probe(th09::Vec3 const&, th09::Vec3 const&, th09::Bounds const&, th09::Bullet*, th09::AreaCollisionContext&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 52716,
+          "sampledUs": 7556,
+          "samples": 7
+        },
+        {
+          "functionName": "th09_probe_load",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 493594,
+          "sampledUs": 5115,
+          "samples": 5
+        },
+        {
+          "functionName": "non-virtual thunk to th09::GameBattle::Services::Field::probe_attacks(th09::Bullet&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 185294,
+          "sampledUs": 5100,
+          "samples": 5
+        },
+        {
+          "functionName": "th09_probe_performance",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 491203,
+          "sampledUs": 2160,
+          "samples": 2
+        }
+      ],
+      "topWasmLeafFunctions": [
+        {
+          "functionName": "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 547106,
+          "sampledUs": 997073,
+          "samples": 911
+        },
+        {
+          "functionName": "codebook_decode_deinterleave_repeat(stb_vorbis*, Codebook*, float**, int, int*, int*, int, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 675289,
+          "sampledUs": 620293,
+          "samples": 575
+        },
+        {
+          "functionName": "ResampleFrame_Stereo",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 995420,
+          "sampledUs": 608128,
+          "samples": 562
+        },
+        {
+          "functionName": "ma_resampling_backend_process__linear(void*, void*, void const*, unsigned long long*, void*, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 678070,
+          "sampledUs": 523927,
+          "samples": 498
+        },
+        {
+          "functionName": "th09::StageRenderer::models(th09::Background&, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 531822,
+          "sampledUs": 414541,
+          "samples": 382
+        },
+        {
+          "functionName": "touhou::sdl::Renderer::issue(touhou::sdl::State const&, touhou::graphics::Topology, unsigned int, void const*, unsigned int, void const*, touhou::graphics::IndexType, void const*, unsigned int, unsigned int, bool)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 917119,
+          "sampledUs": 309992,
+          "samples": 284
+        },
+        {
+          "functionName": "touhou::graphics::PipelineState::compatible(touhou::graphics::PipelineState const&, bool) const",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 42235,
+          "sampledUs": 229238,
+          "samples": 206
+        },
+        {
+          "functionName": "touhou::sdl::Renderer::surface(unsigned int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 923537,
+          "sampledUs": 219496,
+          "samples": 202
+        },
+        {
+          "functionName": "ma_engine_node_process_pcm_frames__general(ma_engine_node*, float const**, unsigned int*, float**, unsigned int*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 706230,
+          "sampledUs": 204666,
+          "samples": 191
+        },
+        {
+          "functionName": "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 650260,
+          "sampledUs": 202294,
+          "samples": 176
+        },
+        {
+          "functionName": "th09::GraphicsMath::project(th09::Vec3 const&, th09::Viewport const&, th09::Matrix4 const&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 251771,
+          "sampledUs": 183895,
+          "samples": 169
+        },
+        {
+          "functionName": "th09::AnmExecutor::execute(th09::AnmVm&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 33094,
+          "sampledUs": 161808,
+          "samples": 151
+        },
+        {
+          "functionName": "th09::GraphicsMath::translated_projection(th09::Vec3 const&, th09::Matrix4 const&, th09::Matrix4 const&, th09::Matrix4 const&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 252051,
+          "sampledUs": 161736,
+          "samples": 145
+        },
+        {
+          "functionName": "th09::sdl::(anonymous namespace)::Application::tick_inputs(unsigned short, unsigned short, unsigned short, bool)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 444073,
+          "sampledUs": 161567,
+          "samples": 150
+        },
+        {
+          "functionName": "th09::GameBattle::update_effects(int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 165685,
+          "sampledUs": 158555,
+          "samples": 149
+        },
+        {
+          "functionName": "th09::sdl::GraphicsDevice::resolve(void*, unsigned int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 757728,
+          "sampledUs": 150521,
+          "samples": 140
+        },
+        {
+          "functionName": "SDL_GetAudioStreamDataAdjustGain",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 978277,
+          "sampledUs": 146062,
+          "samples": 133
+        },
+        {
+          "functionName": "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 635843,
+          "sampledUs": 131625,
+          "samples": 126
+        },
+        {
+          "functionName": "th09::GameBattle::update_enemies(int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 138516,
+          "sampledUs": 128692,
+          "samples": 117
+        },
+        {
+          "functionName": "std::__2::vector<unsigned char, std::__2::allocator<unsigned char>>::resize(unsigned long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 49460,
+          "sampledUs": 126352,
+          "samples": 121
+        },
+        {
+          "functionName": "th09::AnmRenderer::append(th09::SpriteVertex const*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 41238,
+          "sampledUs": 125644,
+          "samples": 117
+        },
+        {
+          "functionName": "th09_game_tick",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 467625,
+          "sampledUs": 125060,
+          "samples": 113
+        },
+        {
+          "functionName": "th09::sdl::AudioDevice::pump()",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 672028,
+          "sampledUs": 122155,
+          "samples": 115
+        },
+        {
+          "functionName": "th09_rollback_pump",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 413136,
+          "sampledUs": 119204,
+          "samples": 108
+        },
+        {
+          "functionName": "th09::sdl::(anonymous namespace)::Application::draw(bool)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 405800,
+          "sampledUs": 118957,
+          "samples": 112
+        },
+        {
+          "functionName": "vorbis_finish_frame(stb_vorbis*, int, int, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 557774,
+          "sampledUs": 117972,
+          "samples": 109
+        },
+        {
+          "functionName": "th09::GameBattle::update_bullets(int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 145030,
+          "sampledUs": 117141,
+          "samples": 110
+        },
+        {
+          "functionName": "touhou::sdl::Renderer::draw(touhou::graphics::Topology, unsigned int, void const*, unsigned int, void const*, touhou::graphics::IndexType)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 914089,
+          "sampledUs": 113983,
+          "samples": 106
+        },
+        {
+          "functionName": "ma_wav_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 683769,
+          "sampledUs": 108258,
+          "samples": 102
+        },
+        {
+          "functionName": "touhou::sdl::Renderer::finish_batch()",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 915555,
+          "sampledUs": 104846,
+          "samples": 93
+        },
+        {
+          "functionName": "th09::GameBattle::update_player(int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 149047,
+          "sampledUs": 103134,
+          "samples": 94
+        },
+        {
+          "functionName": "th09::HeadsUpDisplay::draw(th09::HudFrame const&)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 255820,
+          "sampledUs": 88810,
+          "samples": 79
+        },
+        {
+          "functionName": "th09::AnmRenderer::finish(th09::AnmVm&, bool, bool, bool)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 43774,
+          "sampledUs": 87703,
+          "samples": 81
+        },
+        {
+          "functionName": "imdct_step3_inner_r_loop(int, float*, int, int, float*, int)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 676544,
+          "sampledUs": 86011,
+          "samples": 81
+        },
+        {
+          "functionName": "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+          "url": "http://127.0.0.1:65533/th09-presentation.wasm",
+          "lineNumber": 0,
+          "columnNumber": 646732,
+          "sampledUs": 85714,
+          "samples": 78
+        }
+      ],
+      "topNonWasmLeafFunctions": [
+        {
+          "functionName": "(program)",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 7574567,
+          "samples": 6123
+        },
+        {
+          "functionName": "(idle)",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 2080282,
+          "samples": 1927
+        },
+        {
+          "functionName": "send",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 1390691,
+          "samples": 1292
+        },
+        {
+          "functionName": "_emscripten_get_now",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 66487,
+          "sampledUs": 730955,
+          "samples": 681
+        },
+        {
+          "functionName": "wasm-to-js",
+          "url": "",
+          "lineNumber": 0,
+          "columnNumber": 0,
+          "sampledUs": 543038,
+          "samples": 508
+        },
+        {
+          "functionName": "packetId",
+          "url": "",
+          "lineNumber": 79,
+          "columnNumber": 18,
+          "sampledUs": 514083,
+          "samples": 477
+        },
+        {
+          "functionName": "bufferData",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 465686,
+          "samples": 421
+        },
+        {
+          "functionName": "now",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 451519,
+          "samples": 419
+        },
+        {
+          "functionName": "now",
+          "url": "",
+          "lineNumber": 7,
+          "columnNumber": 11,
+          "sampledUs": 408085,
+          "samples": 384
+        },
+        {
+          "functionName": "uniform4fv",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 318490,
+          "samples": 290
+        },
+        {
+          "functionName": "wasm-to-js",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 304288,
+          "samples": 281
+        },
+        {
+          "functionName": "prototype.send",
+          "url": "",
+          "lineNumber": 394,
+          "columnNumber": 26,
+          "sampledUs": 280831,
+          "samples": 259
+        },
+        {
+          "functionName": "(anonymous)",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 268650,
+          "samples": 252
+        },
+        {
+          "functionName": "requestAnimationFrame",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 241897,
+          "samples": 223
+        },
+        {
+          "functionName": "socket.onmessage",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 211763,
+          "sampledUs": 236815,
+          "samples": 221
+        },
+        {
+          "functionName": "parse",
+          "url": "",
+          "lineNumber": 55,
+          "columnNumber": 15,
+          "sampledUs": 230057,
+          "samples": 215
+        },
+        {
+          "functionName": "eagler_peer_send_to",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 216998,
+          "sampledUs": 228062,
+          "samples": 211
+        },
+        {
+          "functionName": "read",
+          "url": "",
+          "lineNumber": 36,
+          "columnNumber": 12,
+          "sampledUs": 206893,
+          "samples": 193
+        },
+        {
+          "functionName": "core.onGameFrame",
+          "url": "",
+          "lineNumber": 35,
+          "columnNumber": 19,
+          "sampledUs": 197659,
+          "samples": 179
+        },
+        {
+          "functionName": "record",
+          "url": "",
+          "lineNumber": 85,
+          "columnNumber": 16,
+          "sampledUs": 182586,
+          "samples": 172
+        },
+        {
+          "functionName": "drawArrays",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 170999,
+          "samples": 158
+        },
+        {
+          "functionName": "bindTexture",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 168879,
+          "samples": 153
+        },
+        {
+          "functionName": "453994",
+          "url": "http://127.0.0.1:65533/probe.mjs",
+          "lineNumber": 0,
+          "columnNumber": 179552,
+          "sampledUs": 166690,
+          "samples": 158
+        },
+        {
+          "functionName": "(anonymous)",
+          "url": "",
+          "lineNumber": 349,
+          "columnNumber": 61,
+          "sampledUs": 160609,
+          "samples": 148
+        },
+        {
+          "functionName": "(anonymous)",
+          "url": "",
+          "lineNumber": 308,
+          "columnNumber": 22,
+          "sampledUs": 150270,
+          "samples": 132
+        },
+        {
+          "functionName": "getGamepads",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 150238,
+          "samples": 140
+        },
+        {
+          "functionName": "bindVertexArray",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 148661,
+          "samples": 142
+        },
+        {
+          "functionName": "useProgram",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 135482,
+          "samples": 125
+        },
+        {
+          "functionName": "(garbage collector)",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 127745,
+          "samples": 115
+        },
+        {
+          "functionName": "bindBuffer",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 127478,
+          "samples": 119
+        },
+        {
+          "functionName": "drawArraysInstanced",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 114750,
+          "samples": 106
+        },
+        {
+          "functionName": "bindFramebuffer",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 101946,
+          "samples": 95
+        },
+        {
+          "functionName": "info",
+          "url": "http://127.0.0.1:65533/app/shared-netplay.mjs",
+          "lineNumber": 29,
+          "columnNumber": 6,
+          "sampledUs": 101890,
+          "samples": 92
+        },
+        {
+          "functionName": "depthRange",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 93523,
+          "samples": 86
+        },
+        {
+          "functionName": "viewport",
+          "url": "",
+          "lineNumber": -1,
+          "columnNumber": -1,
+          "sampledUs": 90966,
+          "samples": 82
+        }
+      ],
+      "longestSamplingIntervals": [
+        {
+          "sampleIndex": 0,
+          "nodeId": 2,
+          "deltaUs": 983489,
+          "intervalEndOffsetUs": 983489,
+          "sourceClass": "program-unattributed",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(program)"
+          ]
+        },
+        {
+          "sampleIndex": 1740,
+          "nodeId": 2,
+          "deltaUs": 14373,
+          "intervalEndOffsetUs": 2881559,
+          "sourceClass": "program-unattributed",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(program)"
+          ]
+        },
+        {
+          "sampleIndex": 9147,
+          "nodeId": 1365,
+          "deltaUs": 12958,
+          "intervalEndOffsetUs": 10960756,
+          "sourceClass": "wasm-leaf",
+          "inPump": true,
+          "inMix": true,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09::sdl::AudioDevice::pump()",
+            "ma_node_graph_read_pcm_frames",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_engine_node_process_pcm_frames__sound(void*, float const**, unsigned int*, float**, unsigned int*)",
+            "ma_data_source_read_pcm_frames",
+            "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_decoder__data_source_on_read(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_data_source_read_pcm_frames",
+            "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_stbvorbis_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+            "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)"
+          ]
+        },
+        {
+          "sampleIndex": 4791,
+          "nodeId": 286,
+          "deltaUs": 11214,
+          "intervalEndOffsetUs": 6221852,
+          "sourceClass": "wasm-leaf",
+          "inPump": true,
+          "inMix": true,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::AudioDevice::pump()",
+            "ma_node_graph_read_pcm_frames",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)"
+          ]
+        },
+        {
+          "sampleIndex": 17271,
+          "nodeId": 4,
+          "deltaUs": 6730,
+          "intervalEndOffsetUs": 19714304,
+          "sourceClass": "anonymous-leaf",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            ""
+          ]
+        },
+        {
+          "sampleIndex": 7985,
+          "nodeId": 1285,
+          "deltaUs": 6483,
+          "intervalEndOffsetUs": 9698126,
+          "sourceClass": "wasm-leaf",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::(anonymous namespace)::Application::tick_inputs(unsigned short, unsigned short, unsigned short, bool)",
+            "th09::HeadsUpDisplay::update(th09::HudFrame const&)",
+            "th09::AnmExecutor::execute(th09::AnmVm&)",
+            "th09::add_angle(float, float)"
+          ]
+        },
+        {
+          "sampleIndex": 2030,
+          "nodeId": 296,
+          "deltaUs": 5365,
+          "intervalEndOffsetUs": 3199217,
+          "sourceClass": "wasm-leaf",
+          "inPump": true,
+          "inMix": true,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::AudioDevice::pump()",
+            "ma_node_graph_read_pcm_frames",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_engine_node_process_pcm_frames__sound(void*, float const**, unsigned int*, float**, unsigned int*)",
+            "ma_data_source_read_pcm_frames",
+            "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_decoder__data_source_on_read(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_data_source_read_pcm_frames",
+            "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_stbvorbis_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+            "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)"
+          ]
+        },
+        {
+          "sampleIndex": 2078,
+          "nodeId": 478,
+          "deltaUs": 5130,
+          "intervalEndOffsetUs": 3264303,
+          "sourceClass": "wasm-leaf",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::(anonymous namespace)::Application::tick_inputs(unsigned short, unsigned short, unsigned short, bool)",
+            "th09::sdl::(anonymous namespace)::Application::draw(bool)",
+            "th09::HeadsUpDisplay::draw(th09::HudFrame const&)",
+            "non-virtual thunk to th09::GameWorld::Services::hud_animation(th09::AnmVm&, bool)",
+            "th09::GamePresentation::animation(th09::AnmVm&, th09::BattleSprite)",
+            "th09::AnmRenderer::draw_no_rotation(th09::AnmVm&, bool, bool)",
+            "th09::AnmRenderer::finish(th09::AnmVm&, bool, bool, bool)",
+            "th09::AnmRenderer::append(th09::SpriteVertex const*)",
+            "touhou::graphics::PipelineState::compatible(touhou::graphics::PipelineState const&, bool) const"
+          ]
+        },
+        {
+          "sampleIndex": 2052,
+          "nodeId": 168,
+          "deltaUs": 5017,
+          "intervalEndOffsetUs": 3227564,
+          "sourceClass": "garbage-collector",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(garbage collector)"
+          ]
+        },
+        {
+          "sampleIndex": 9143,
+          "nodeId": 208,
+          "deltaUs": 4956,
+          "intervalEndOffsetUs": 10943683,
+          "sourceClass": "named-js-native-other",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "node.onaudioprocess",
+            "SDL3.audio_playback.scriptProcessorNode.onaudioprocess",
+            "dynCall"
+          ]
+        },
+        {
+          "sampleIndex": 4512,
+          "nodeId": 72,
+          "deltaUs": 4890,
+          "intervalEndOffsetUs": 5904994,
+          "sourceClass": "named-js-native-other",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::(anonymous namespace)::Application::tick_inputs(unsigned short, unsigned short, unsigned short, bool)",
+            "th09::sdl::(anonymous namespace)::Application::draw(bool)",
+            "th09::GamePresentation::background(th09::Background&, th09::Background const&, int, bool)",
+            "th09::StageRenderer::clear(bool, bool, unsigned int)",
+            "th09::sdl::GraphicsDevice::clear(bool, bool, unsigned int, float)",
+            "touhou::sdl::Renderer::submit_batches()",
+            "wasm-to-js",
+            "_emscripten_glBufferData",
+            "bufferData"
+          ]
+        },
+        {
+          "sampleIndex": 17591,
+          "nodeId": 369,
+          "deltaUs": 4843,
+          "intervalEndOffsetUs": 20068518,
+          "sourceClass": "wasm-leaf",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::(anonymous namespace)::Application::tick_inputs(unsigned short, unsigned short, unsigned short, bool)",
+            "th09::sdl::(anonymous namespace)::Application::draw(bool)",
+            "th09::GamePresentation::background(th09::Background&, th09::Background const&, int, bool)",
+            "th09::StageRenderer::models(th09::Background&, int)",
+            "th09::GraphicsMath::translated_projection(th09::Vec3 const&, th09::Matrix4 const&, th09::Matrix4 const&, th09::Matrix4 const&)"
+          ]
+        },
+        {
+          "sampleIndex": 25497,
+          "nodeId": 3,
+          "deltaUs": 4652,
+          "intervalEndOffsetUs": 28559840,
+          "sourceClass": "idle",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(idle)"
+          ]
+        },
+        {
+          "sampleIndex": 17275,
+          "nodeId": 2,
+          "deltaUs": 4639,
+          "intervalEndOffsetUs": 19723576,
+          "sourceClass": "program-unattributed",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(program)"
+          ]
+        },
+        {
+          "sampleIndex": 23438,
+          "nodeId": 213,
+          "deltaUs": 4628,
+          "intervalEndOffsetUs": 26327236,
+          "sourceClass": "wasm-leaf",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "node.onaudioprocess",
+            "SDL3.audio_playback.scriptProcessorNode.onaudioprocess",
+            "dynCall",
+            "js-to-wasm:di:i",
+            "SDL_PlaybackAudioThreadIterate",
+            "SDL_GetAudioStreamDataAdjustGain",
+            "ResampleFrame_Stereo"
+          ]
+        },
+        {
+          "sampleIndex": 1376,
+          "nodeId": 314,
+          "deltaUs": 4501,
+          "intervalEndOffsetUs": 2468940,
+          "sourceClass": "named-js-native-other",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "messageHook",
+            "socket.onmessage"
+          ]
+        },
+        {
+          "sampleIndex": 24589,
+          "nodeId": 2,
+          "deltaUs": 4472,
+          "intervalEndOffsetUs": 27562923,
+          "sourceClass": "program-unattributed",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "(program)"
+          ]
+        },
+        {
+          "sampleIndex": 11446,
+          "nodeId": 297,
+          "deltaUs": 4441,
+          "intervalEndOffsetUs": 13424156,
+          "sourceClass": "wasm-leaf",
+          "inPump": true,
+          "inMix": true,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::AudioDevice::pump()",
+            "ma_node_graph_read_pcm_frames",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_input_bus_read_pcm_frames(void*, ma_node_input_bus*, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_node_read_pcm_frames(void*, unsigned int, float*, unsigned int, unsigned int*, unsigned long long)",
+            "ma_engine_node_process_pcm_frames__sound(void*, float const**, unsigned int*, float**, unsigned int*)",
+            "ma_data_source_read_pcm_frames",
+            "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_decoder__data_source_on_read(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_data_source_read_pcm_frames",
+            "ma_data_source_read_pcm_frames_within_range(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_stbvorbis_ds_read(void*, void*, unsigned long long, unsigned long long*)",
+            "ma_stbvorbis_read_pcm_frames(ma_stbvorbis*, void*, unsigned long long, unsigned long long*)",
+            "vorbis_decode_packet(stb_vorbis*, int*, int*, int*)",
+            "codebook_decode_deinterleave_repeat(stb_vorbis*, Codebook*, float**, int, int*, int*, int, int)"
+          ]
+        },
+        {
+          "sampleIndex": 12809,
+          "nodeId": 1387,
+          "deltaUs": 4331,
+          "intervalEndOffsetUs": 14902310,
+          "sourceClass": "wasm-leaf",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "th09_game_tick",
+            "th09::sdl::(anonymous namespace)::Application::tick_inputs(unsigned short, unsigned short, unsigned short, bool)",
+            "th09::sdl::(anonymous namespace)::Application::draw(bool)",
+            "th09::GameWorld::Services::Scene::clock(th09::Vec3 const&, int, int, int)",
+            "th09::GamePresentation::clock(th09::Vec3 const&, int, int, int)",
+            "snprintf",
+            "vsnprintf",
+            "vfprintf",
+            "__vfprintf_internal",
+            "printf_core",
+            "__fwritex",
+            "__memcpy"
+          ]
+        },
+        {
+          "sampleIndex": 15778,
+          "nodeId": 180,
+          "deltaUs": 4329,
+          "intervalEndOffsetUs": 18098762,
+          "sourceClass": "named-js-native-other",
+          "inPump": false,
+          "inMix": false,
+          "path": [
+            "(root)",
+            "",
+            "tick",
+            "js-to-wasm:di:i",
+            "th09_loop_start::$_0::__invoke(double, void*)",
+            "wasm-to-js",
+            "th09_browser_frame",
+            "",
+            "core.onGameFrame"
+          ]
+        }
+      ],
+      "separateLeafSymbolsFound": {
+        "biquadOrLpf": [],
+        "wavIntegerToFloat": []
+      }
+    }
+  ]
+}

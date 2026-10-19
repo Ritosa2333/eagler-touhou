@@ -1,0 +1,2185 @@
+#include "Gui.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
+
+#if defined(TH_DEV_TOOLS) && defined(__EMSCRIPTEN__)
+#include <emscripten/emscripten.h>
+#endif
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#ifdef TH_DEV_TOOLS
+#include <SDL3/SDL_log.h>
+#endif
+
+#include "AnmManager.hpp"
+#include "AsciiManager.hpp"
+#include "Chain.hpp"
+#include "ChainPriorities.hpp"
+#include "FileSystem.hpp"
+#include "EnemyManager.hpp"
+#include "GameManager.hpp"
+#include "GameWindow.hpp"
+#include "Localization.hpp"
+#include "Player.hpp"
+#include "PracticeRuntime.hpp"
+#include "SoundPlayer.hpp"
+#include "Stage.hpp"
+#include "TextHelper.hpp"
+#include "ZunColor.hpp"
+#include "utils.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/NetplaySideEffects.hpp"
+#endif
+
+#ifdef TH_DEV_TOOLS
+static bool g_DebugDialogueFastForward = false;
+#endif
+
+Gui g_Gui;
+static ChainElem g_GuiCalcChain;
+static ChainElem g_GuiDrawChain;
+
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace
+{
+// Countdown warning audio is presentation state, not rollback state. Track the
+// currently presented spellcard and a bit for each audible second (0..9). A
+// rollback may move the timer back above 10 or revisit 9/8/etc., but it must not
+// re-arm a second which this spellcard already voiced.
+struct SpellcardCountdownAudioState
+{
+    bool initialized = false;
+    i32 phaseSpellcardId = -1;
+    i32 lastPresentedSecond = -1;
+    u16 soundedSeconds = 0;
+};
+
+SpellcardCountdownAudioState g_SpellcardCountdownAudio;
+
+void ResetSpellcardCountdownAudio()
+{
+    g_SpellcardCountdownAudio = {};
+    g_SpellcardCountdownAudio.phaseSpellcardId = -1;
+    g_SpellcardCountdownAudio.lastPresentedSecond = -1;
+}
+
+bool ShouldPlaySpellcardCountdownWarning(i32 secondsRemaining,
+                                         i32 rollbackLastSecondsRemaining)
+{
+    if (!MultiplayerGameplay::IsMultiplayer())
+        return secondsRemaining < 10 &&
+               rollbackLastSecondsRemaining != secondsRemaining;
+
+    // The vanilla warning belongs to the whole Boss timer, including non-spell
+    // phases. Use the active spell id when there is one, otherwise -1. A real
+    // phase restart also makes the displayed timer jump upward by many seconds;
+    // TH06 rollback is capped at 12 frames (< 1 second), so an increase of more
+    // than one displayed second cannot be caused by rollback alone.
+    const i32 phaseSpellcardId = g_EnemyManager.spellcardInfo.isActive != 0
+                                     ? static_cast<i32>(g_EnemyManager.spellcardInfo.idx)
+                                     : -1;
+    const bool newPhase =
+        !g_SpellcardCountdownAudio.initialized ||
+        g_SpellcardCountdownAudio.phaseSpellcardId != phaseSpellcardId ||
+        (g_SpellcardCountdownAudio.lastPresentedSecond >= 0 &&
+         secondsRemaining > g_SpellcardCountdownAudio.lastPresentedSecond + 1);
+    if (newPhase)
+    {
+        g_SpellcardCountdownAudio.initialized = true;
+        g_SpellcardCountdownAudio.phaseSpellcardId = phaseSpellcardId;
+        g_SpellcardCountdownAudio.soundedSeconds = 0;
+    }
+    g_SpellcardCountdownAudio.lastPresentedSecond = secondsRemaining;
+
+    if (secondsRemaining < 0 || secondsRemaining >= 10)
+        return false;
+
+    const u16 bit = static_cast<u16>(1u << secondsRemaining);
+    if ((g_SpellcardCountdownAudio.soundedSeconds & bit) != 0)
+        return false;
+    g_SpellcardCountdownAudio.soundedSeconds |= bit;
+    return true;
+}
+
+const char *GetMultiplayerHudLoadoutName(u8 playerId)
+{
+    static const char *names[4] = {
+        "ReimuA", "ReimuB", "MarisaA", "MarisaB",
+    };
+    const i32 index = MultiplayerGameplay::GetPlayerCharacter(playerId) * 2 +
+                      MultiplayerGameplay::GetPlayerShot(playerId);
+    return index >= 0 && index < 4 ? names[index] : "Unknown";
+}
+
+ZunResult LoadMultiplayerFaceBank(u8 playerId)
+{
+    if (playerId == 0 || playerId >= MultiplayerGameplay::GetPlayerCount())
+        return ZUN_SUCCESS;
+
+    const bool marisa = MultiplayerGameplay::GetPlayerCharacter(playerId) == CHARA_MARISA;
+    const char *pathA = marisa ? "data/face01a.anm" : "data/face00a.anm";
+    const char *pathB = marisa ? "data/face01b.anm" : "data/face00b.anm";
+    const char *pathC = marisa ? "data/face01c.anm" : "data/face00c.anm";
+    const i32 fileA = playerId == 1 ? ANM_FILE_FACE2_CHARA_A : ANM_FILE_FACE3_CHARA_A;
+    const i32 fileB = playerId == 1 ? ANM_FILE_FACE2_CHARA_B : ANM_FILE_FACE3_CHARA_B;
+    const i32 fileC = playerId == 1 ? ANM_FILE_FACE2_CHARA_C : ANM_FILE_FACE3_CHARA_C;
+    const i32 offsetA = playerId == 1 ? ANM_OFFSET_FACE2_CHARA_A : ANM_OFFSET_FACE3_CHARA_A;
+    const i32 offsetB = playerId == 1 ? ANM_OFFSET_FACE2_CHARA_B : ANM_OFFSET_FACE3_CHARA_B;
+    const i32 offsetC = playerId == 1 ? ANM_OFFSET_FACE2_CHARA_C : ANM_OFFSET_FACE3_CHARA_C;
+
+    if (g_AnmManager->LoadAnm(fileA, pathA, offsetA) != ZUN_SUCCESS ||
+        g_AnmManager->LoadAnm(fileB, pathB, offsetB) != ZUN_SUCCESS ||
+        g_AnmManager->LoadAnm(fileC, pathC, offsetC) != ZUN_SUCCESS)
+        return ZUN_ERROR;
+    return ZUN_SUCCESS;
+}
+
+i32 ResolveMultiplayerBombFaceIndex(u8 playerId, i32 p1Index)
+{
+    if (playerId == 1)
+        return p1Index - ANM_OFFSET_FACE_CHARA_A + ANM_OFFSET_FACE2_CHARA_A;
+    if (playerId == 2)
+        return p1Index - ANM_OFFSET_FACE_CHARA_A + ANM_OFFSET_FACE3_CHARA_A;
+    return p1Index;
+}
+} // namespace
+
+#if defined(TH_DEV_TOOLS) && defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+extern "C" EMSCRIPTEN_KEEPALIVE int TouhouDebugCountdownAudioStep(
+    i32 secondsRemaining, i32 rollbackLastSecondsRemaining, i32 phaseSpellcardId,
+    i32 spellActive, i32 reset)
+{
+    if (reset)
+        ResetSpellcardCountdownAudio();
+    const auto oldActive = g_EnemyManager.spellcardInfo.isActive;
+    const auto oldIdx = g_EnemyManager.spellcardInfo.idx;
+    g_EnemyManager.spellcardInfo.isActive = spellActive ? 1u : 0u;
+    g_EnemyManager.spellcardInfo.idx = static_cast<u32>(phaseSpellcardId);
+    const bool play = ShouldPlaySpellcardCountdownWarning(
+        secondsRemaining, rollbackLastSecondsRemaining);
+    g_EnemyManager.spellcardInfo.isActive = oldActive;
+    g_EnemyManager.spellcardInfo.idx = oldIdx;
+    if (play)
+        g_SoundPlayer.PlaySoundByIdx(SOUND_1D);
+    return play ? 1 : 0;
+}
+#endif
+#endif
+
+bool Gui::IsStageFinished() const
+{
+    return this->impl->loadingScreenSprite.activeSpriteIndex >= 0 && this->impl->loadingScreenSprite.flags.isStopped;
+}
+
+void Gui::EndPlayerSpellcard() const
+{
+    (this->impl->bombSpellcardName).pendingInterrupt = 1;
+}
+
+void Gui::EndEnemySpellcard() const
+{
+    this->impl->enemySpellcardName.pendingInterrupt = 1;
+    return;
+}
+
+bool Gui::IsDialogueSkippable() const
+{
+    return (this->impl->msg).dialogueSkippable;
+}
+
+void Gui::ShowBonusScore(u32 bonusScore) const
+{
+    this->impl->bonusScore.pos = ZunVec3(416.0f, 32.0f, 0.0f);
+    this->impl->bonusScore.isShown = 1;
+    this->impl->bonusScore.timer.InitializeForPopup();
+    this->impl->bonusScore.fmtArg = bonusScore;
+    return;
+}
+
+void Gui::ShowFullPowerMode(i32 fmtArg) const
+{
+    this->impl->fullPowerMode.pos = ZunVec3(416.0f, 232.0f, 0.0f);
+    this->impl->fullPowerMode.isShown = 1;
+    this->impl->fullPowerMode.timer.InitializeForPopup();
+    this->impl->fullPowerMode.fmtArg = fmtArg;
+    return;
+}
+
+void Gui::ShowSpellcardBonus(u32 spellcardScore) const
+{
+    this->impl->spellCardBonus.pos = ZunVec3(224.0f, 16.0f, 0.0f);
+    this->impl->spellCardBonus.isShown = 1;
+    this->impl->spellCardBonus.timer.InitializeForPopup();
+    this->impl->spellCardBonus.fmtArg = spellcardScore;
+    return;
+}
+
+ChainCallbackResult Gui::OnUpdate(Gui *gui)
+{
+    gui->impl->UpdatePrev();
+
+    // HUD element visibility timers used to be refreshed and decayed inside
+    // DrawGameScene, gated by g_SuppressAnmAdvance. They are time-based state
+    // and must advance with the fixed 60 Hz update chain, not the presentation
+    // rate, so they are handled here instead. The refresh condition mirrors
+    // the one that gates the HUD border rendering.
+    if (
+#ifdef TH_ENABLE_THPRAC
+        PracticeRuntime::Purple::BackgroundFix() ||
+#endif
+        (((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS) & 1) == 0 &&
+         (gui->impl->vms[6].currentInstruction != NULL || g_Supervisor.unk198 != 0 ||
+          g_Supervisor.RedrawWholeFrame())))
+    {
+        gui->flags.flag0 = 2;
+        gui->flags.flag1 = 2;
+        gui->flags.flag3 = 2;
+        gui->flags.flag4 = 2;
+        gui->flags.flag2 = 2;
+    }
+    if (gui->flags.flag0)
+    {
+        gui->flags.flag0--;
+    }
+    if (gui->flags.flag2)
+    {
+        gui->flags.flag2--;
+    }
+    if (gui->flags.flag1)
+    {
+        gui->flags.flag1--;
+    }
+    if (gui->flags.flag3)
+    {
+        gui->flags.flag3--;
+    }
+    if (gui->flags.flag4)
+    {
+        gui->flags.flag4--;
+    }
+
+    if (g_GameManager.isTimeStopped)
+    {
+        return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
+    gui->UpdateStageElements();
+    gui->impl->RunMsg();
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ChainCallbackResult Gui::OnDraw(Gui *gui)
+{
+    char spellCardBonusStr[32];
+    ZunVec3 stringPos;
+
+    g_AnmManager->SetDepthFunc(DEPTH_FUNC_ALWAYS);
+    //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+    if (gui->impl->finishedStage)
+    {
+        stringPos.x = GAME_REGION_LEFT + 42.0f;
+        stringPos.y = GAME_REGION_TOP + 112.0f;
+        stringPos.z = 0.0;
+        g_AsciiManager.color = COLOR_SUNSHINEYELLOW;
+        if (g_GameManager.currentStage < EXTRA_STAGE)
+        {
+            g_AsciiManager.AddFormatText(&stringPos, "Stage Clear\n\n");
+        }
+        else
+        {
+            g_AsciiManager.AddFormatText(&stringPos, "All Clear!\n\n");
+        }
+
+        stringPos.y += 32.0f;
+        g_AsciiManager.color = COLOR_WHITE;
+        g_AsciiManager.AddFormatText(&stringPos, "Stage * 1000 = %5d\n", g_GameManager.currentStage * 1000);
+
+        stringPos.y += 16.0f;
+        g_AsciiManager.color = COLOR_LAVENDER;
+        g_AsciiManager.AddFormatText(&stringPos, "Power *  100 = %5d\n", g_GameManager.currentPower * 100);
+
+        stringPos.y += 16.0f;
+        g_AsciiManager.color = COLOR_LIGHTBLUE;
+        g_AsciiManager.AddFormatText(&stringPos, "Graze *   10 = %5d\n", g_GameManager.grazeInStage * 10);
+
+        stringPos.y += 16.0f;
+        g_AsciiManager.color = COLOR_LIGHT_RED;
+        g_AsciiManager.AddFormatText(&stringPos, "    * Point Item %3d\n", g_GameManager.pointItemsCollectedInStage);
+
+        if (EXTRA_STAGE <= g_GameManager.currentStage)
+        {
+            stringPos.y += 16.0f;
+            g_AsciiManager.color = COLOR_LIGHTYELLOW;
+            g_AsciiManager.AddFormatText(&stringPos, "Player    = %8d\n", g_GameManager.livesRemaining * 3000000);
+            stringPos.y += 16.0f;
+            g_AsciiManager.AddFormatText(&stringPos, "Bomb      = %8d\n", g_GameManager.bombsRemaining * 1000000);
+        }
+
+        stringPos.y += 32.0f;
+        switch (g_GameManager.difficulty)
+        {
+        case EASY:
+            g_AsciiManager.color = COLOR_LIGHT_RED;
+            g_AsciiManager.AddFormatText(&stringPos, "Easy Rank      * 0.5\n");
+            break;
+        case NORMAL:
+            g_AsciiManager.color = COLOR_LIGHT_RED;
+            g_AsciiManager.AddFormatText(&stringPos, "Normal Rank    * 1.0\n");
+            break;
+        case HARD:
+            g_AsciiManager.color = COLOR_LIGHT_RED;
+            g_AsciiManager.AddFormatText(&stringPos, "Hard Rank      * 1.2\n");
+            break;
+        case LUNATIC:
+            g_AsciiManager.color = COLOR_LIGHT_RED;
+            g_AsciiManager.AddFormatText(&stringPos, "Lunatic Rank   * 1.5\n");
+            break;
+        case EXTRA:
+            g_AsciiManager.color = COLOR_LIGHT_RED;
+            g_AsciiManager.AddFormatText(&stringPos, "Extra Rank     * 2.0\n");
+            break;
+        }
+
+        stringPos.y += 16.0f;
+        if (g_GameManager.difficulty < EXTRA && !g_GameManager.isInPracticeMode)
+        {
+            switch (g_Supervisor.defaultConfig.lifeCount)
+            {
+            case 3:
+                g_AsciiManager.color = COLOR_LIGHT_RED;
+                g_AsciiManager.AddFormatText(&stringPos, "Player Penalty * 0.5\n");
+                stringPos.y += 16.0f;
+                break;
+            case 4:
+                g_AsciiManager.color = COLOR_LIGHT_RED;
+                g_AsciiManager.AddFormatText(&stringPos, "Player Penalty * 0.2\n");
+                stringPos.y += 16.0f;
+                break;
+            }
+        }
+        g_AsciiManager.color = COLOR_WHITE;
+        g_AsciiManager.AddFormatText(&stringPos, "Total     = %8d", gui->impl->stageScore);
+        g_AsciiManager.color = COLOR_WHITE;
+    }
+
+    gui->impl->DrawDialogue();
+    gui->DrawStageElements();
+    gui->DrawGameScene();
+    g_AsciiManager.isGui = 1;
+    if (gui->impl->bonusScore.isShown)
+    {
+        g_AsciiManager.color = COLOR_LIGHTYELLOW;
+        g_AsciiManager.AddFormatText(&gui->impl->bonusScore.pos, "BONUS %8d", gui->impl->bonusScore.fmtArg);
+        g_AsciiManager.color = COLOR_WHITE;
+    }
+    if (gui->impl->fullPowerMode.isShown)
+    {
+        g_AsciiManager.color = COLOR_PALEBLUE;
+        g_AsciiManager.AddFormatText(&gui->impl->fullPowerMode.pos, "Full Power Mode!!",
+                                     gui->impl->fullPowerMode.fmtArg);
+        g_AsciiManager.color = COLOR_WHITE;
+    }
+    if (gui->impl->spellCardBonus.isShown)
+    {
+        g_AsciiManager.color = COLOR_RED;
+
+        gui->impl->spellCardBonus.pos.x =
+            ((f32)GAME_REGION_WIDTH - (f32)std::strlen("Spell Card Bonus!") * 16.0f) / 2.0f + (f32)GAME_REGION_LEFT;
+        gui->impl->spellCardBonus.pos.y = GAME_REGION_TOP + 64.0f;
+        g_AsciiManager.AddFormatText(&gui->impl->spellCardBonus.pos, "Spell Card Bonus!");
+
+        gui->impl->spellCardBonus.pos.y += 16.0f;
+        std::sprintf(spellCardBonusStr, "+%d", gui->impl->spellCardBonus.fmtArg);
+        gui->impl->spellCardBonus.pos.x =
+            ((f32)GAME_REGION_WIDTH - (f32)std::strlen(spellCardBonusStr) * 32.0f) / 2.0f + (f32)GAME_REGION_LEFT;
+        g_AsciiManager.scale.x = 2.0f;
+        g_AsciiManager.scale.y = 2.0f;
+        g_AsciiManager.color = COLOR_LIGHT_RED;
+        g_AsciiManager.AddString(&gui->impl->spellCardBonus.pos, spellCardBonusStr);
+
+        g_AsciiManager.scale.x = 1.0;
+        g_AsciiManager.scale.y = 1.0;
+        g_AsciiManager.color = COLOR_WHITE;
+    }
+    g_AsciiManager.isGui = 0;
+    g_AnmManager->SetDepthFunc(DEPTH_FUNC_LEQUAL);
+    //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+void Gui::ShowBombNamePortrait(u32 sprite, const char *bombName, u8 playerId)
+{
+    i32 portraitScript = ANM_SCRIPT_FACE_BOMB_PORTRAIT;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() && playerId < MultiplayerGameplay::GetPlayerCount())
+    {
+        portraitScript = ResolveMultiplayerBombFaceIndex(playerId, portraitScript);
+        sprite = static_cast<u32>(ResolveMultiplayerBombFaceIndex(playerId, static_cast<i32>(sprite)));
+
+        // Match TH07's cosmetic fallback rule: a missing guest face must not
+        // turn a Bomb cut-in into an invalid sprite/script access.
+        if (sprite >= ARRAY_SIZE(g_AnmManager->sprites) ||
+            g_AnmManager->sprites[sprite].sourceFileIndex < 0)
+        {
+            portraitScript = ANM_SCRIPT_FACE_BOMB_PORTRAIT;
+            sprite = ANM_SCRIPT_FACE_BOMB_PORTRAIT;
+        }
+    }
+#else
+    (void)playerId;
+#endif
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->playerSpellcardPortrait, portraitScript);
+    g_AnmManager->SetActiveSprite(&this->impl->playerSpellcardPortrait, sprite);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->bombSpellcardName, 0x706);
+    if (Localization::Active())
+    {
+        // The same thcrap spell_width patch covers player bomb names.
+        const f32 spriteWidth = std::min(TextHelper::MeasureTextWidth(bombName,
+                                                                      this->impl->bombSpellcardName.fontHeight) +
+                                                 4.0f,
+                                             this->impl->bombSpellcardName.sprite->textureWidth);
+        g_AnmManager->SetActiveSpriteWidth(&this->impl->bombSpellcardName, spriteWidth);
+        g_AnmManager->DrawVmTextFmt(&this->impl->bombSpellcardName, 0xf0f0ff, 0x0, "%s", bombName);
+        this->bombSpellcardBarLength = spriteWidth + 16.0f;
+#ifdef TH_DEV_TOOLS
+        SDL_Log("TH06 thcrap bomb geometry: text=%s measuredWidth=%.3f textureWidth=%.3f spriteWidth=%.3f bar=%.3f",
+                bombName, static_cast<double>(TextHelper::MeasureTextWidth(bombName,
+                                                                          this->impl->bombSpellcardName.fontHeight)),
+                static_cast<double>(this->impl->bombSpellcardName.sprite->textureWidth),
+                static_cast<double>(spriteWidth), static_cast<double>(this->bombSpellcardBarLength));
+#endif
+    }
+    else
+    {
+        g_AnmManager->DrawVmTextFmt(&this->impl->bombSpellcardName, 0xf0f0ff, 0x0, "%s", bombName);
+        this->bombSpellcardBarLength = std::strlen(bombName) * 0xf / 2.0f + 16.0f;
+    }
+    g_Supervisor.unk198 = 3;
+    g_SoundPlayer.PlaySoundByIdx(SOUND_BOMB);
+}
+
+void Gui::ShowSpellcard(i32 spellcardSprite, i32 spellcardId, const char *spellcardName)
+{
+    const char *displayName = Localization::SpellName(static_cast<u32>(spellcardId), spellcardName);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->enemySpellcardPortrait, ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT);
+    g_AnmManager->SetActiveSprite(&this->impl->enemySpellcardPortrait, ANM_SPRITE_FACE_STAGE_START + spellcardSprite);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->enemySpellcardName, ANM_SCRIPT_TEXT_ENEMY_SPELLCARD_NAME);
+    if (Localization::Active())
+    {
+        // thcrap's TH06 spell_width patch reduces the shared text sprite to
+        // min(measured width + 4, texture width), and its
+        // spell_draw_leftaligned patch then renders from that sprite's left
+        // edge. The surrounding bar is 16 pixels wider than the reduced
+        // sprite. Keeping these three values coupled is what makes the name
+        // and background animate as one element.
+        const f32 spriteWidth = std::min(TextHelper::MeasureTextWidth(displayName,
+                                                                      this->impl->enemySpellcardName.fontHeight) +
+                                                 4.0f,
+                                             this->impl->enemySpellcardName.sprite->textureWidth);
+        g_AnmManager->SetActiveSpriteWidth(&this->impl->enemySpellcardName, spriteWidth);
+        g_AnmManager->DrawVmTextFmt(&this->impl->enemySpellcardName, 0xfff0f0, COLOR_RGB(COLOR_BLACK), "%s",
+                                    displayName);
+        this->blueSpellcardBarLength = spriteWidth + 16.0f;
+#ifdef TH_DEV_TOOLS
+        SDL_Log("TH06 thcrap spell geometry: id=%d text=%s measuredWidth=%.3f textureWidth=%.3f spriteWidth=%.3f bar=%.3f",
+                spellcardId, displayName,
+                static_cast<double>(TextHelper::MeasureTextWidth(displayName,
+                                                                  this->impl->enemySpellcardName.fontHeight)),
+                static_cast<double>(this->impl->enemySpellcardName.sprite->textureWidth),
+                static_cast<double>(spriteWidth), static_cast<double>(this->blueSpellcardBarLength));
+#endif
+    }
+    else
+    {
+        g_AnmManager->DrawStringFormat(&this->impl->enemySpellcardName, 0xfff0f0, COLOR_RGB(COLOR_BLACK), "%s",
+                                       displayName);
+        this->blueSpellcardBarLength = std::strlen(spellcardName) * 15 / 2.0f + 16.0f;
+    }
+    g_SoundPlayer.PlaySoundByIdx(SOUND_BOMB);
+    return;
+}
+
+ZunResult Gui::ActualAddedCallback()
+{
+#ifdef TH_ENABLE_THPRAC
+    PracticeRuntime::Purple::ResetLockTimer();
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    ResetSpellcardCountdownAudio();
+#endif
+    i32 idx;
+
+    if ((i32)(g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT))
+    {
+        memset(this->impl, 0, sizeof(GuiImpl));
+        if (g_AnmManager->LoadAnm(ANM_FILE_FRONT, "data/front.anm", ANM_OFFSET_FRONT) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_LOADING, "data/loading.anm", ANM_OFFSET_LOADING) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        this->impl->loadingScreenSprite.activeSpriteIndex = -1;
+        switch (g_GameManager.character)
+        {
+        case CHARA_REIMU:
+            if (g_AnmManager->LoadAnm(ANM_FILE_FACE_CHARA_A, "data/face00a.anm", ANM_OFFSET_FACE_CHARA_A) !=
+                ZUN_SUCCESS)
+            {
+                return ZUN_ERROR;
+            }
+            if (g_AnmManager->LoadAnm(ANM_FILE_FACE_CHARA_B, "data/face00b.anm", ANM_OFFSET_FACE_CHARA_B) !=
+                ZUN_SUCCESS)
+            {
+                return ZUN_ERROR;
+            }
+            if (g_AnmManager->LoadAnm(ANM_FILE_FACE_CHARA_C, "data/face00c.anm", ANM_OFFSET_FACE_CHARA_C) !=
+                ZUN_SUCCESS)
+            {
+                return ZUN_ERROR;
+            }
+            break;
+        case CHARA_MARISA:
+            if (g_AnmManager->LoadAnm(ANM_FILE_FACE_CHARA_A, "data/face01a.anm", ANM_OFFSET_FACE_CHARA_A) !=
+                ZUN_SUCCESS)
+            {
+                return ZUN_ERROR;
+            }
+            if (g_AnmManager->LoadAnm(ANM_FILE_FACE_CHARA_B, "data/face01b.anm", ANM_OFFSET_FACE_CHARA_B) !=
+                ZUN_SUCCESS)
+            {
+                return ZUN_ERROR;
+            }
+            if (g_AnmManager->LoadAnm(ANM_FILE_FACE_CHARA_C, "data/face01c.anm", ANM_OFFSET_FACE_CHARA_C) !=
+                ZUN_SUCCESS)
+            {
+                return ZUN_ERROR;
+            }
+            break;
+        }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (MultiplayerGameplay::IsMultiplayer())
+        {
+            for (u8 playerId = 1; playerId < MultiplayerGameplay::GetPlayerCount(); ++playerId)
+                if (LoadMultiplayerFaceBank(playerId) != ZUN_SUCCESS)
+                    return ZUN_ERROR;
+        }
+#endif
+    }
+    else
+    {
+        g_AnmManager->SetAndExecuteScriptIdx(&this->impl->loadingScreenSprite, ANM_SCRIPT_LOADING_SHOW_LOADING_SCREEN);
+        this->impl->loadingScreenSprite.pendingInterrupt = 1;
+    }
+    switch (g_GameManager.currentStage)
+    {
+    case 1:
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_A, "data/face03a.anm", ANM_OFFSET_FACE_STAGE_A) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_B, "data/face03b.anm", ANM_OFFSET_FACE_STAGE_B) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (this->LoadMsg("data/msg1.dat") != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        break;
+    case 2:
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_A, "data/face05a.anm", ANM_OFFSET_FACE_STAGE_A) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (this->LoadMsg("data/msg2.dat") != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        break;
+    case 3:
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_A, "data/face06a.anm", ANM_OFFSET_FACE_STAGE_A) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_B, "data/face06b.anm", ANM_OFFSET_FACE_STAGE_B) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (this->LoadMsg("data/msg3.dat") != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        break;
+    case 4:
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_A, "data/face08a.anm", ANM_OFFSET_FACE_STAGE_A) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_B, "data/face08b.anm", ANM_OFFSET_FACE_STAGE_B) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (this->LoadMsg("data/msg4.dat") != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        break;
+    case 5:
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_A, "data/face09a.anm", ANM_OFFSET_FACE_STAGE_A) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_B, "data/face09b.anm", ANM_OFFSET_FACE_STAGE_B) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (this->LoadMsg("data/msg5.dat") != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        break;
+    case 6:
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_A, "data/face09b.anm", ANM_OFFSET_FACE_STAGE_A) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_B, "data/face10a.anm", ANM_OFFSET_FACE_STAGE_B) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_C, "data/face10b.anm", ANM_OFFSET_FACE_STAGE_C) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (this->LoadMsg("data/msg6.dat") != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        break;
+    default:
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_A, "data/face08a.anm", ANM_OFFSET_FACE_STAGE_A) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_B, "data/face12a.anm", ANM_OFFSET_FACE_STAGE_B) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_C, "data/face12b.anm", ANM_OFFSET_FACE_STAGE_C) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        if (this->LoadMsg("data/msg7.dat") != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        break;
+    }
+    if ((i32)(g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT))
+    {
+        for (idx = 0; idx < ARRAY_SIZE_SIGNED(this->impl->vms); idx++)
+        {
+            g_AnmManager->SetAndExecuteScriptIdx(&this->impl->vms[idx], ANM_SCRIPT_FRONT_START + idx);
+        }
+    }
+    this->bossPresent = false;
+    this->impl->bossHealthBarState = 0;
+    this->bossHealthBar1 = 0.0;
+    this->bossHealthBar2 = 0.0;
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->playerSpellcardPortrait, ANM_SCRIPT_FACE_BOMB_PORTRAIT);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->enemySpellcardPortrait, ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->bombSpellcardName, ANM_SCRIPT_TEXT_BOMB_NAME);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->enemySpellcardName, ANM_SCRIPT_TEXT_ENEMY_SPELLCARD_NAME);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->bombSpellcardBackground, ANM_SCRIPT_FRONT_BOMB_NAME_BACKGROUND);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->enemySpellcardBackground,
+                                         ANM_SCRIPT_FRONT_ENEMY_SPELLCARD_BACKGROUND);
+    this->impl->playerSpellcardPortrait.currentInstruction = NULL;
+    this->impl->bombSpellcardName.currentInstruction = NULL;
+    this->impl->enemySpellcardPortrait.currentInstruction = NULL;
+    this->impl->enemySpellcardName.currentInstruction = NULL;
+    this->impl->playerSpellcardPortrait.flags.isVisible = 0;
+    this->impl->bombSpellcardName.flags.isVisible = 0;
+    this->impl->enemySpellcardPortrait.flags.isVisible = 0;
+    this->impl->enemySpellcardName.flags.isVisible = 0;
+    this->impl->bombSpellcardName.fontWidth = 15;
+    this->impl->bombSpellcardName.fontHeight = 15;
+    this->impl->enemySpellcardName.fontWidth = 15;
+    this->impl->enemySpellcardName.fontHeight = 15;
+    // Upstream thprac's th06_title hook jumps from 0x41ae2c to 0x41af35,
+    // skipping this entire initialization block for custom section warps.
+    // GuiImpl was zeroed at the start of ActualAddedCallback(), so the exact
+    // portable equivalent is to perform no replacement writes here at all.
+    const bool suppressStageIntroTitles = PracticeRuntime::SuppressStageIntroTitles();
+#ifdef TH_DEV_TOOLS
+    if (suppressStageIntroTitles)
+        SDL_Log("TH06 thprac stage intro titles: suppressed");
+#endif
+    if (!suppressStageIntroTitles)
+    {
+        g_AnmManager->SetAndExecuteScriptIdx(&this->impl->stageNameSprite, ANM_SCRIPT_TEXT_STAGE_NAME);
+        g_AnmManager->SetAndExecuteScriptIdx(&this->impl->songNameSprite, ANM_SCRIPT_TEXT_SONG_NAME);
+        if (!Localization::ApplyStageTitleImage(&this->impl->stageNameSprite, g_GameManager.currentStage))
+            g_AnmManager->DrawStringFormat2(&this->impl->stageNameSprite, COLOR_RGB(COLOR_LIGHTCYAN),
+                                            COLOR_RGB(COLOR_BLACK), "%s",
+                                            Localization::StageName(g_GameManager.currentStage,
+                                                                    g_Stage.stdData->stageName));
+        this->impl->songNameSprite.fontWidth = 16;
+        this->impl->songNameSprite.fontHeight = 16;
+        if (!Localization::ApplyMusicTitleImage(&this->impl->songNameSprite, g_GameManager.currentStage, 0))
+            g_AnmManager->DrawStringFormat(&this->impl->songNameSprite, COLOR_RGB(COLOR_LIGHTCYAN),
+                                           COLOR_RGB(COLOR_BLACK),
+                                           Localization::StringById("th06 BGM In-game format", TH_SONG_NAME),
+                                           Localization::MusicTitle((g_GameManager.currentStage - 1) * 2 + 2,
+                                                                    g_Stage.stdData->songNames[0]));
+    }
+    this->impl->msg.currentMsgIdx = 0xffffffff;
+    this->impl->finishedStage = 0;
+    this->impl->bonusScore.isShown = 0;
+    this->impl->fullPowerMode.isShown = 0;
+    this->impl->spellCardBonus.isShown = 0;
+    this->flags.flag0 = 2;
+    this->flags.flag1 = 2;
+    this->flags.flag3 = 2;
+    this->flags.flag4 = 2;
+    this->flags.flag2 = 2;
+    return ZUN_SUCCESS;
+}
+
+ZunResult Gui::LoadMsg(const char *path) const
+{
+    i32 idx;
+
+    this->FreeMsgFile();
+    this->impl->msg.msgFile = (MsgRawHeader *)FileSystem::OpenPath(path, 0);
+    if (this->impl->msg.msgFile == NULL)
+    {
+        g_GameErrorContext.Log(TH_ERR_GUI_MSG_FILE_CORRUPTED, path);
+        return ZUN_ERROR;
+    }
+    this->impl->msg.currentMsgIdx = 0xffffffff;
+    this->impl->msg.currentInstr = NULL;
+
+    this->impl->msg.instrs =
+        (const MsgRawInstr **)std::malloc(sizeof(MsgRawInstr **) * this->impl->msg.msgFile->numInstrs);
+
+    for (idx = 0; idx < this->impl->msg.msgFile->numInstrs; idx++)
+    {
+        this->impl->msg.instrs[idx] =
+            (MsgRawInstr *)(((u8 *)+this->impl->msg.msgFile) + this->impl->msg.msgFile->instrsOffsets[idx]);
+    }
+    return ZUN_SUCCESS;
+}
+
+void Gui::FreeMsgFile() const
+{
+    std::free((void *)this->impl->msg.msgFile);
+    this->impl->msg.msgFile = NULL;
+
+    std::free(this->impl->msg.instrs);
+    this->impl->msg.instrs = NULL;
+}
+
+void Gui::MsgRead(i32 msgIdx) const
+{
+    this->impl->MsgRead(msgIdx);
+    g_Supervisor.unk198 = 3;
+    return;
+}
+
+void GuiImpl::MsgRead(i32 msgIdx)
+{
+    const MsgRawHeader *msgFile;
+    const MsgRawInstr **msgInstrs;
+
+    if (this->msg.msgFile->numInstrs <= msgIdx)
+    {
+        return;
+    }
+    msgFile = this->msg.msgFile;
+    msgInstrs = this->msg.instrs;
+    std::memset(&this->msg, 0, sizeof(GuiMsgVm));
+    this->msg.currentMsgIdx = msgIdx;
+    this->msg.msgFile = msgFile;
+    this->msg.instrs = msgInstrs;
+    this->msg.currentInstr = this->msg.instrs[msgIdx];
+    this->msg.dialogueLines[0].anmFileIndex = -1;
+    this->msg.dialogueLines[1].anmFileIndex = -1;
+    this->msg.fontSize = 15;
+    this->msg.textColorsA[0] = COLOR_RGB(COLOR_GUI_1);
+    this->msg.textColorsA[1] = COLOR_RGB(COLOR_GUI_2);
+    this->msg.textColorsB[0] = 0;
+    this->msg.textColorsB[1] = 0;
+    this->msg.dialogueSkippable = 1;
+    if (g_GameManager.currentStage == 6 && (msgIdx == 0 || msgIdx == 10))
+    {
+        g_AnmManager->LoadAnm(ANM_FILE_EFFECTS, "data/eff06.anm", ANM_OFFSET_EFFECTS);
+    }
+    else if (g_GameManager.currentStage == 7 && (msgIdx == 0 || msgIdx == 10))
+    {
+        g_AnmManager->LoadAnm(ANM_FILE_EFFECTS, "data/eff07.anm", ANM_OFFSET_EFFECTS);
+        g_AnmManager->LoadAnm(ANM_FILE_FACE_STAGE_A, "data/face12c.anm", ANM_OFFSET_FACE_STAGE_A);
+    }
+    return;
+}
+
+ZunResult GuiImpl::RunMsg()
+{
+    const MsgRawInstrArgs *args;
+
+    if (this->msg.currentMsgIdx < 0)
+    {
+        return ZUN_ERROR;
+    }
+    if (this->msg.ignoreWaitCounter > 0)
+    {
+        this->msg.ignoreWaitCounter--;
+    }
+    if (this->msg.dialogueSkippable && IS_PRESSED(TH_BUTTON_SKIP))
+    {
+        this->msg.timer.SetCurrent(this->msg.currentInstr->time);
+    }
+    while ((i32)(this->msg.timer.current >= this->msg.currentInstr->time))
+    {
+        switch (this->msg.currentInstr->opcode)
+        {
+        case MSG_OPCODE_MSGDELETE:
+            this->msg.currentMsgIdx = 0xffffffff;
+            return ZUN_ERROR;
+        case MSG_OPCODE_PORTRAITANMSCRIPT:
+            args = &this->msg.currentInstr->args;
+            g_AnmManager->SetAndExecuteScriptIdx(
+                &this->msg.portraits[args->portraitAnmScript.portraitIdx],
+                args->portraitAnmScript.anmScriptIdx +
+                    (args->portraitAnmScript.portraitIdx == 0 ? ANM_SCRIPT_FACE_START : ANM_SCRIPT_FACE_START + 2));
+            break;
+        case MSG_OPCODE_PORTRAITANMSPRITE:
+            args = &this->msg.currentInstr->args;
+            g_AnmManager->SetActiveSprite(
+                &this->msg.portraits[args->portraitAnmScript.portraitIdx],
+                args->portraitAnmScript.anmScriptIdx +
+                    (args->portraitAnmScript.portraitIdx == 0 ? ANM_SCRIPT_FACE_START : ANM_SCRIPT_FACE_START + 8));
+            break;
+        case MSG_OPCODE_TEXTDIALOGUE:
+            args = &this->msg.currentInstr->args;
+            if (args->text.textLine == 0 && 0 <= this->msg.dialogueLines[1].anmFileIndex)
+            {
+                g_AnmManager->DrawVmTextFmt(&this->msg.dialogueLines[1], this->msg.textColorsA[args->text.textColor],
+                                            this->msg.textColorsB[args->text.textColor], " ");
+            }
+            g_AnmManager->SetAndExecuteScriptIdx(&this->msg.dialogueLines[args->text.textLine],
+                                                 0x702 + args->text.textLine);
+            this->msg.dialogueLines[args->text.textLine].fontWidth =
+                this->msg.dialogueLines[args->text.textLine].fontHeight = this->msg.fontSize;
+            if (Localization::Active())
+                g_AnmManager->DrawVmTextFmt(&this->msg.dialogueLines[args->text.textLine],
+                                            this->msg.textColorsA[args->text.textColor],
+                                            this->msg.textColorsB[args->text.textColor], "%s", args->text.text);
+            else
+                g_AnmManager->DrawVmTextFmt(&this->msg.dialogueLines[args->text.textLine],
+                                            this->msg.textColorsA[args->text.textColor],
+                                            this->msg.textColorsB[args->text.textColor], args->text.text);
+            this->msg.framesElapsedDuringPause = 0;
+            break;
+        case MSG_OPCODE_WAIT:
+#ifdef TH_DEV_TOOLS
+            if (g_DebugDialogueFastForward && this->msg.currentInstr->time >= 135)
+            {
+                g_DebugDialogueFastForward = false;
+                g_DevSpeedMultiplier = 1.0f;
+                SDL_Log("th06 dev thcrap: dialogue harness reached @135; restored 1x logic speed");
+            }
+#endif
+            if (!this->msg.dialogueSkippable || !IS_PRESSED(TH_BUTTON_SKIP))
+            {
+                if (!WAS_PRESSED_GAME(TH_BUTTON_SHOOT) || this->msg.framesElapsedDuringPause < 8)
+                {
+                    if (this->msg.framesElapsedDuringPause >= this->msg.currentInstr->args.wait)
+                    {
+                        break;
+                    }
+                    this->msg.framesElapsedDuringPause += 1;
+                    goto SKIP_TIME_INCREMENT;
+                }
+            }
+            break;
+        case MSG_OPCODE_ANMINTERRUPT:
+            args = &this->msg.currentInstr->args;
+            if (args->anmInterrupt.unk1 < 2)
+            {
+                this->msg.portraits[args->anmInterrupt.unk1].pendingInterrupt = args->anmInterrupt.unk2;
+            }
+            else
+            {
+                this->msg.dialogueLines[args->anmInterrupt.unk1 - 2].pendingInterrupt = args->anmInterrupt.unk2;
+            }
+            break;
+        case MSG_OPCODE_ECLRESUME:
+            this->msg.ignoreWaitCounter += 1;
+            break;
+        case MSG_OPCODE_MUSIC:
+        {
+            const char *path = g_Stage.stdData->songPaths[this->msg.currentInstr->args.music];
+            g_AnmManager->SetAndExecuteScriptIdx(&this->songNameSprite, 0x701);
+            this->songNameSprite.fontWidth = 16;
+            this->songNameSprite.fontHeight = 16;
+            if (!Localization::ApplyMusicTitleImage(&this->songNameSprite, g_GameManager.currentStage,
+                                                     this->msg.currentInstr->args.music))
+                g_AnmManager->DrawStringFormat(
+                    &this->songNameSprite, COLOR_RGB(COLOR_LIGHTCYAN), COLOR_RGB(COLOR_BLACK),
+                    Localization::StringById("th06 BGM In-game format", TH_SONG_NAME),
+                    Localization::MusicTitle((g_GameManager.currentStage - 1) * 2 +
+                                                 this->msg.currentInstr->args.music + 2,
+                                             g_Stage.stdData->songNames[this->msg.currentInstr->args.music]));
+#ifdef TH_ENABLE_NETPLAY
+            if (Netplay::SideEffects::ObserveBgmPlay(path))
+                break;
+#endif
+            if (g_Supervisor.PlayMidiFile(this->msg.currentInstr->args.music) != ZUN_SUCCESS)
+            {
+                g_Supervisor.PlayAudio(path);
+                // th06_bgm_play marks el_bgm_changed only when PlayAudio was
+                // called from GuiImpl::RunMsg's music opcode (return 0x418db4).
+                PracticeRuntime::NotifyBgmPlay(path);
+            }
+            break;
+        }
+        case MSG_OPCODE_TEXTINTRO:
+            args = &this->msg.currentInstr->args;
+            g_AnmManager->SetAndExecuteScriptIdx(&this->msg.introLines[args->text.textLine],
+                                                 args->text.textLine + 0x704);
+            if (!((args->text.textLine == 0 &&
+                   Localization::ApplyBossTitleImage(&this->msg.introLines[0], g_GameManager.currentStage)) ||
+                  (args->text.textLine == 1 &&
+                   Localization::ApplyBossNameImage(&this->msg.introLines[1], g_GameManager.currentStage))))
+                if (Localization::Active())
+                    g_AnmManager->DrawStringFormat(&this->msg.introLines[args->text.textLine],
+                                                   this->msg.textColorsA[args->text.textColor],
+                                                   this->msg.textColorsB[args->text.textColor], "%s", args->text.text);
+                else
+                    g_AnmManager->DrawStringFormat(&this->msg.introLines[args->text.textLine],
+                                                   this->msg.textColorsA[args->text.textColor],
+                                                   this->msg.textColorsB[args->text.textColor], args->text.text);
+            this->msg.framesElapsedDuringPause = 0;
+            break;
+        case MSG_OPCODE_STAGERESULTS:
+            this->finishedStage = 1;
+            if (g_GameManager.currentStage < 6)
+            {
+                g_AnmManager->SetAndExecuteScriptIdx(&this->loadingScreenSprite,
+                                                     ANM_SCRIPT_LOADING_SHOW_LOADING_SCREEN);
+            }
+            else
+            {
+                g_GameManager.extraLives = 0xff;
+            }
+            break;
+        case MSG_OPCODE_MSGHALT:
+            goto SKIP_TIME_INCREMENT;
+        case MSG_OPCODE_MUSICFADEOUT:
+            g_Supervisor.FadeOutMusic(4.0);
+            break;
+        case MSG_OPCODE_STAGEEND:
+            g_GameManager.guiScore = g_GameManager.score;
+            // th06_preplay_2 @ 0x418ef9 is not primarily a score patch: the
+            // original instruction already copies score -> guiScore.  thprac
+            // jumps to 0x418f0e for a live advanced-practice run, bypassing
+            // the vanilla isInPracticeMode test.  This matters most for Extra:
+            // th06_prac_menu_enter deliberately clears isInPracticeMode there,
+            // but advanced Extra still must end through the Practice Result
+            // path. THGuiRep::mRepStatus is its own owner and becomes true in
+            // Replay State(3); do not substitute the broader isInReplay flag.
+            if (g_GameManager.isInPracticeMode ||
+                (PracticeRuntime::AdvancedActive() && !PracticeRuntime::ReplayPlaybackActive()))
+            {
+                g_GameManager.guiScore = g_GameManager.score;
+                g_Supervisor.curState = SUPERVISOR_STATE_RESULTSCREEN_FROMGAME;
+                goto SKIP_TIME_INCREMENT;
+            }
+            if (g_GameManager.currentStage < 5 || (g_GameManager.difficulty != EASY && g_GameManager.currentStage == 5))
+            {
+                g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER_REINIT;
+            }
+            else if (!g_GameManager.isInReplay)
+            {
+                if (g_GameManager.difficulty == EXTRA)
+                {
+                    g_GameManager.isGameCompleted = 1;
+                    g_GameManager.guiScore = g_GameManager.score;
+                    g_Supervisor.curState = SUPERVISOR_STATE_RESULTSCREEN_FROMGAME;
+                    goto SKIP_TIME_INCREMENT;
+                }
+                else
+                {
+                    g_Supervisor.curState = SUPERVISOR_STATE_ENDING;
+                }
+            }
+            else
+            {
+                g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU_REPLAY;
+            }
+            goto SKIP_TIME_INCREMENT;
+        case MSG_OPCODE_WAITSKIPPABLE:
+            this->msg.dialogueSkippable = this->msg.currentInstr->args.dialogueSkippable;
+            break;
+        }
+        this->msg.currentInstr =
+            (MsgRawInstr *)(((u8 *)&this->msg.currentInstr->args) + this->msg.currentInstr->argSize);
+    }
+    this->msg.timer.NextTick();
+SKIP_TIME_INCREMENT:
+    g_AnmManager->ExecuteScript(&this->msg.portraits[0]);
+    g_AnmManager->ExecuteScript(&this->msg.portraits[1]);
+    g_AnmManager->ExecuteScript(&this->msg.dialogueLines[0]);
+    g_AnmManager->ExecuteScript(&this->msg.dialogueLines[1]);
+    g_AnmManager->ExecuteScript(&this->msg.introLines[0]);
+    g_AnmManager->ExecuteScript(&this->msg.introLines[1]);
+    if ((i32)(this->msg.timer.current < 60) && this->msg.dialogueSkippable && IS_PRESSED(TH_BUTTON_SKIP))
+    {
+        this->msg.timer.SetCurrent(60);
+    }
+    return ZUN_SUCCESS;
+}
+
+ZunResult GuiImpl::DrawDialogue() const
+{
+    f32 dialogueBoxHeight;
+
+    if (this->msg.currentMsgIdx < 0)
+    {
+        return ZUN_ERROR;
+    }
+    if (g_GameManager.currentStage == 6 && (this->msg.currentMsgIdx == 1 || this->msg.currentMsgIdx == 11))
+    {
+        return ZUN_SUCCESS;
+    }
+    if ((i32)(this->msg.timer.current < 60))
+    {
+        dialogueBoxHeight = this->msg.timer.AsFramesFloat() * 48.0f / 60.0f;
+    }
+    else
+    {
+        dialogueBoxHeight = 48.0f;
+    }
+    // base_tsa's dialog_box_leftedge/dialog_box_rightedge binhacks replace
+    // every hard-coded 256 below with the end X of text sprite 0x702.  Its
+    // patched text.anm widens that sprite to 320 px, expanding the box by
+    // 32 px on each side while retaining a 16 px text inset.
+    const f32 dialogueBoxWidth = Localization::Active()
+                                     ? g_AnmManager->sprites[ANM_OFFSET_TEXT + 2].endPixelInclusive.x
+                                     : 256.0f;
+#ifdef TH_DEV_TOOLS
+    static bool loggedLocalizedDialogueBox = false;
+    static bool loggedOriginalDialogueBox = false;
+    bool &loggedDialogueBox = Localization::Active() ? loggedLocalizedDialogueBox : loggedOriginalDialogueBox;
+    if (!loggedDialogueBox)
+    {
+        SDL_Log("TH06 dialogue box geometry: localization=%d width=%.3f left=%.3f right=%.3f",
+                Localization::Active() ? 1 : 0, static_cast<double>(dialogueBoxWidth),
+                static_cast<double>(g_GameManager.arcadeRegionTopLeftPos.x +
+                                    (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f - 16.0f),
+                static_cast<double>(g_GameManager.arcadeRegionTopLeftPos.x +
+                                    (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f +
+                                    dialogueBoxWidth + 16.0f));
+        loggedDialogueBox = true;
+    }
+#endif
+    VertexDiffuseXyzrhw vertices[4];
+    // Probably not what Zun wrote, but I don't like Zun's design. My guess is
+    // Zun made a separate vertex structure with a ZunVec3 for the xyz, a
+    // separate f32 for the w, and a D3DCOLOR for the diffuse. This kinda makes
+    // no sense though - the position is a D3DXVECTOR4.
+    //    std::memcpy(&vertices[0].position,
+    //           &ZunVec3(g_GameManager.arcadeRegionTopLeftPos.x + (g_GameManager.arcadeRegionSize.x - 256.0f) / 2.0f -
+    //                            16.0f,
+    //                        384.0f, 0.0f),
+    //           sizeof(ZunVec3));
+
+    vertices[0].position =
+        ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x +
+                    (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f - 16.0f,
+                384.0f, 0.0f, 1.0f);
+
+    //    std::memcpy(&vertices[1].position,
+    //           &ZunVec3(g_GameManager.arcadeRegionTopLeftPos.x + (g_GameManager.arcadeRegionSize.x - 256.0f) / 2.0f +
+    //                            256.0f + 16.0f,
+    //                        384.0f, 0.0f),
+    //           sizeof(ZunVec3));
+
+    vertices[1].position = ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x +
+                                       (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f +
+                                       dialogueBoxWidth + 16.0f,
+                                   384.0f, 0.0f, 1.0f),
+
+    //    std::memcpy(&vertices[2].position,
+    //           &ZunVec3(g_GameManager.arcadeRegionTopLeftPos.x + (g_GameManager.arcadeRegionSize.x - 256.0f) / 2.0f -
+    //                            16.0f,
+    //                        384.0f + dialogueBoxHeight, 0.0f),
+    //           sizeof(ZunVec3));
+
+        vertices[2].position =
+            ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x +
+                        (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f - 16.0f,
+                    384.0f + dialogueBoxHeight, 0.0f, 1.0f),
+
+    //    std::memcpy(&vertices[3].position,
+    //           &ZunVec3(g_GameManager.arcadeRegionTopLeftPos.x + (g_GameManager.arcadeRegionSize.x - 256.0f) / 2.0f +
+    //                            256.0f + 16.0f,
+    //                        384.0f + dialogueBoxHeight, 0.0f),
+    //           sizeof(ZunVec3));
+
+        vertices[3].position = ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x +
+                                           (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f +
+                                           dialogueBoxWidth + 16.0f,
+                                       384.0f + dialogueBoxHeight, 0.0f, 1.0f);
+
+    vertices[0].diffuse = vertices[1].diffuse = ColorData(0xd0000000);
+    vertices[2].diffuse = vertices[3].diffuse = ColorData(0x90000000);
+    //    vertices[0].position.w = vertices[1].position.w = vertices[2].position.w = vertices[3].position.w = 1.0f;
+    g_AnmManager->DrawInterpNoRotation(&this->msg.portraits[0]);
+    g_AnmManager->DrawInterpNoRotation(&this->msg.portraits[1]);
+
+    g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_REPLACE);
+    g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_REPLACE);
+
+    g_AnmManager->SetDepthMask(false);
+
+    if (g_AnmManager->currentTextureHandle == 0)
+    {
+        g_AnmManager->SetCurrentTexture(g_AnmManager->dummyTextureHandle);
+    }
+
+    g_AnmManager->FlushVertexBuffer();
+    g_AnmManager->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
+
+    g_AnmManager->SetVertexAttributes(VERTEX_ATTR_DIFFUSE);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_POSITION, sizeof(*vertices), &vertices[0].position);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_DIFFUSE, sizeof(*vertices), &vertices[0].diffuse);
+
+    g_AnmManager->BackendDrawCall();
+
+    g_AnmManager->SetCurrentBlendMode(0xff);
+
+    g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_MODULATE);
+    g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_MODULATE);
+
+    g_AnmManager->DrawInterpNoRotation(&this->msg.dialogueLines[0]);
+    g_AnmManager->DrawInterpNoRotation(&this->msg.dialogueLines[1]);
+    if (Localization::Active())
+    {
+        // base_tsa swaps these draws so the name layer is below the title.
+        g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[1]);
+        g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[0]);
+    }
+    else
+    {
+        g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[0]);
+        g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[1]);
+    }
+    return ZUN_SUCCESS;
+}
+
+bool Gui::MsgWait() const
+{
+    if (this->impl->msg.ignoreWaitCounter > 0)
+    {
+        return false;
+    }
+    return 0 <= this->impl->msg.currentMsgIdx;
+}
+
+bool Gui::HasCurrentMsgIdx() const
+{
+    // Touch input is polled before a gameplay GUI exists (notably when the
+    // desktop visual-test entry point starts directly in Music Room).
+    return this->impl != nullptr && 0 <= this->impl->msg.currentMsgIdx;
+}
+
+bool Gui::IsWaitingForPlayerAdvance() const
+{
+    return this->impl != nullptr && 0 <= this->impl->msg.currentMsgIdx &&
+           this->impl->msg.currentInstr != nullptr &&
+           this->impl->msg.currentInstr->opcode == MSG_OPCODE_WAIT;
+}
+
+#ifdef TH_DEV_TOOLS
+void Gui::DebugShowLocalizedStageText()
+{
+    if (this->impl == nullptr)
+        return;
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->stageNameSprite, ANM_SCRIPT_TEXT_STAGE_NAME);
+    Localization::ApplyStageTitleImage(&this->impl->stageNameSprite, 1);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->songNameSprite, ANM_SCRIPT_TEXT_SONG_NAME);
+    Localization::ApplyMusicTitleImage(&this->impl->songNameSprite, 1, 0);
+    SDL_Log("th06 dev thcrap: stage title and music title triggered");
+}
+
+void Gui::DebugShowLocalizedSpellcard()
+{
+    if (this->impl != nullptr)
+        ShowSpellcard(0, 0, "");
+}
+
+void Gui::DebugShowLocalizedBomb()
+{
+    if (this->impl != nullptr)
+        ShowBombNamePortrait(ANM_SCRIPT_FACE_BOMB_PORTRAIT,
+                             Localization::StringById("th06 Bomb Reimu A", TH_REIMU_A_BOMB_NAME));
+}
+
+void Gui::DebugStartStage1BossDialogue()
+{
+    if (this->impl == nullptr)
+        return;
+    this->impl->MsgRead(0);
+    g_DebugDialogueFastForward = true;
+    g_DevSpeedMultiplier = 8.0f;
+    SDL_Log("th06 dev thcrap: Stage 1 dialogue running at 8x until @135");
+}
+#endif
+
+void Gui::UpdateStageElements()
+{
+    i32 stageScore;
+    i32 idx;
+
+    for (idx = 0; idx < ARRAY_SIZE_SIGNED(this->impl->vms); idx++)
+    {
+        if (idx == 19 && this->impl->msg.currentMsgIdx < 0)
+        {
+            if (this->bossPresent)
+            {
+                if (!this->impl->bossHealthBarState)
+                {
+                    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->vms[idx], ANM_SCRIPT_FRONT_ENEMY_TEXT);
+                    this->impl->bossHealthBarState = 1;
+                    this->bossUIOpacity = 0;
+                }
+                else
+                {
+                    if (g_AnmManager->ExecuteScript(&this->impl->vms[idx]))
+                    {
+                        this->impl->bossHealthBarState = 2;
+                    }
+                    if (this->bossUIOpacity < 256 - 4)
+                    {
+                        this->bossUIOpacity += 4;
+                    }
+                    else
+                    {
+                        this->bossUIOpacity = 0xff;
+                    }
+                }
+            }
+            else if (this->impl->bossHealthBarState != 0)
+            {
+                if (this->impl->bossHealthBarState <= 2)
+                {
+                    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->vms[idx], ANM_SCRIPT_FRONT_ENEMY_TEXT2);
+                    this->impl->bossHealthBarState = 3;
+                }
+                if (this->bossUIOpacity > 0)
+                {
+                    this->bossUIOpacity -= 4;
+                }
+                else
+                {
+                    this->bossUIOpacity = 0;
+                }
+                if (g_AnmManager->ExecuteScript(&this->impl->vms[idx]))
+                {
+                    this->impl->bossHealthBarState = 0;
+                    this->bossHealthBar2 = 0.0f;
+                    this->bossUIOpacity = 0;
+                }
+            }
+            if (2 <= this->impl->bossHealthBarState)
+            {
+                if (this->bossHealthBar1 > this->bossHealthBar2)
+                {
+                    this->bossHealthBar2 += 0.01f;
+                    if (this->bossHealthBar1 < this->bossHealthBar2)
+                    {
+                        this->bossHealthBar2 = this->bossHealthBar1;
+                    }
+                }
+                else if (this->bossHealthBar1 < this->bossHealthBar2)
+                {
+                    this->bossHealthBar2 -= 0.02f;
+                    if (this->bossHealthBar1 > this->bossHealthBar2)
+                    {
+                        this->bossHealthBar2 = this->bossHealthBar1;
+                    }
+                }
+            }
+        }
+        else
+        {
+            g_AnmManager->ExecuteScript(&this->impl->vms[idx]);
+        }
+    }
+    g_AnmManager->ExecuteScript(&this->impl->stageNameSprite);
+    g_AnmManager->ExecuteScript(&this->impl->songNameSprite);
+    g_AnmManager->ExecuteScript(&this->impl->playerSpellcardPortrait);
+    g_AnmManager->ExecuteScript(&this->impl->bombSpellcardName);
+    g_AnmManager->ExecuteScript(&this->impl->enemySpellcardPortrait);
+    g_AnmManager->ExecuteScript(&this->impl->enemySpellcardName);
+    if (0 <= this->impl->loadingScreenSprite.activeSpriteIndex &&
+        g_AnmManager->ExecuteScript(&this->impl->loadingScreenSprite) != 0)
+    {
+        this->impl->loadingScreenSprite.activeSpriteIndex = -1;
+    }
+    if (this->impl->bonusScore.isShown)
+    {
+        if ((i32)(this->impl->bonusScore.timer.current < 30))
+        {
+            this->impl->bonusScore.pos.x =
+                (this->impl->bonusScore.timer.AsFramesFloat() * -312.0f / 30.0f) + (f32)GAME_REGION_RIGHT;
+        }
+        else
+        {
+            this->impl->bonusScore.pos.x = 104.0f;
+        }
+        if ((i32)(250 <= this->impl->bonusScore.timer.current))
+        {
+            this->impl->bonusScore.isShown = 0;
+        }
+        this->TickTimer(&this->impl->bonusScore.timer);
+    }
+    if (this->impl->fullPowerMode.isShown)
+    {
+        if ((i32)(this->impl->fullPowerMode.timer.current < 30))
+        {
+            this->impl->fullPowerMode.pos.x =
+                (this->impl->fullPowerMode.timer.AsFramesFloat() * -312.0f / 30.0f) + (f32)GAME_REGION_RIGHT;
+        }
+        else
+        {
+            this->impl->fullPowerMode.pos.x = 104.0f;
+        }
+        if ((i32)(180 <= this->impl->fullPowerMode.timer.current))
+        {
+            this->impl->fullPowerMode.isShown = 0;
+        }
+        this->TickTimer(&this->impl->fullPowerMode.timer);
+    }
+    if (this->impl->spellCardBonus.isShown)
+    {
+        if ((i32)(280 <= this->impl->spellCardBonus.timer.current))
+        {
+            this->impl->spellCardBonus.isShown = 0;
+        }
+        this->TickTimer(&this->impl->spellCardBonus.timer);
+    }
+    if (this->impl->finishedStage == 1)
+    {
+        stageScore = 0;
+        stageScore += g_GameManager.currentStage * 1000;
+        stageScore += g_GameManager.grazeInStage * 10;
+        stageScore += g_GameManager.currentPower * 100;
+        stageScore *= g_GameManager.pointItemsCollectedInStage;
+        if (6 <= g_GameManager.currentStage)
+        {
+            stageScore += g_GameManager.livesRemaining * 3000000;
+            stageScore += g_GameManager.bombsRemaining * 1000000;
+        }
+        switch (g_GameManager.difficulty)
+        {
+        case NORMAL:
+            break;
+        case EASY:
+            stageScore /= 2;
+            stageScore -= stageScore % 10;
+            break;
+        case HARD:
+            stageScore = stageScore * 12 / 10;
+            stageScore -= stageScore % 10;
+            break;
+        case LUNATIC:
+            stageScore = stageScore * 15 / 10;
+            stageScore -= stageScore % 10;
+            break;
+        case EXTRA:
+            stageScore *= 2;
+            stageScore -= stageScore % 10;
+            break;
+        }
+        switch (g_Supervisor.defaultConfig.lifeCount)
+        {
+        case 3:
+            stageScore = stageScore * 5 / 10;
+            stageScore -= stageScore % 10;
+            break;
+        case 4:
+            stageScore = stageScore * 2 / 10;
+            stageScore -= stageScore % 10;
+            break;
+        }
+        this->impl->stageScore = stageScore;
+        g_GameManager.score += stageScore;
+        this->impl->finishedStage += 1;
+    }
+    return;
+}
+
+static const ZunColor COLOR1 = 0xa0d0ff;
+static const ZunColor COLOR2 = 0xa080ff;
+static const ZunColor COLOR3 = 0xe080c0;
+static const ZunColor COLOR4 = 0xff4040;
+
+void Gui::DrawGameScene()
+{
+    AnmVm *vm;
+    i32 idx;
+    f32 xPos;
+    f32 yPos;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Match TH07MP: once the runtime owns a multiplayer session, the HUD stays
+    // in multiplayer layout for the whole gameplay lifecycle. Player-chain
+    // registration is transient during stage teardown/rebuild and must not make
+    // the presentation fall back to P1's vanilla resource rows.
+    const bool compactMultiplayerHud = MultiplayerGameplay::IsMultiplayer();
+    constexpr f32 multiplayerHudBaseY = 112.0f;
+    constexpr f32 multiplayerHudRowStep = 48.0f;
+    constexpr f32 multiplayerHudOffsetX = 8.0f;
+    constexpr f32 resourceIconStep = 11.0f;
+#endif
+
+    if (this->impl->msg.currentMsgIdx < 0 && (this->bossPresent + this->impl->bossHealthBarState) > 0)
+    {
+        vm = &this->impl->vms[19];
+        g_AnmManager->DrawInterpNoRotation(vm);
+        vm = &this->impl->vms[21];
+        vm->flags.anchor = AnmVmAnchor_TopLeft;
+        vm->scaleX = (this->bossHealthBar2 * 288.0f) / 14.0f;
+        vm->pos.x = 96.0f;
+        vm->pos.y = 24.0f;
+        vm->pos.z = 0.0;
+        g_AnmManager->DrawInterpNoRotation(vm);
+        ZunVec3 textPos(80.0f, 16.0f, 0.0);
+#ifdef TH_ENABLE_THPRAC
+        const float thresholdRatio=PracticeRuntime::Purple::BossThresholdRatio(this->bossHealthBar2);
+        if(thresholdRatio>=0) {
+            AnmVm thresholdVm=*vm;
+              thresholdVm.scaleX=thresholdRatio*288.0f/14.0f;
+              thresholdVm.color=0xffffaaaa;
+              thresholdVm.prevScaleX=thresholdVm.scaleX;
+              thresholdVm.prevColor=thresholdVm.color;
+            g_AnmManager->DrawInterpNoRotation(&thresholdVm);
+        }
+#endif
+        g_AsciiManager.SetColor(this->bossUIOpacity << 24 | 0xffff80);
+        g_AsciiManager.AddFormatText(&textPos, "%d", this->eclSetLives);
+        textPos = ZunVec3(384.0f, 16.0f, 0.0f);
+        ZunColor bossLivesColor;
+        if (this->spellcardSecondsRemaining >= 20)
+        {
+            bossLivesColor = COLOR1;
+        }
+        else if (this->spellcardSecondsRemaining >= 10)
+        {
+            bossLivesColor = COLOR2;
+        }
+        else if (this->spellcardSecondsRemaining >= 5)
+        {
+            bossLivesColor = COLOR3;
+        }
+        else
+        {
+            bossLivesColor = COLOR4;
+        }
+
+        g_AsciiManager.SetColor(this->bossUIOpacity << 24 | bossLivesColor);
+        i32 cappedSpellcardSecondsRemaining =
+            this->spellcardSecondsRemaining > 99 ? 99 : this->spellcardSecondsRemaining;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (ShouldPlaySpellcardCountdownWarning(
+                cappedSpellcardSecondsRemaining,
+                this->lastSpellcardSecondsRemaining))
+#else
+        if (cappedSpellcardSecondsRemaining < 10 &&
+            this->lastSpellcardSecondsRemaining != this->spellcardSecondsRemaining)
+#endif
+        {
+            g_SoundPlayer.PlaySoundByIdx(SOUND_1D);
+        }
+        g_AsciiManager.AddFormatText(&textPos, "%.2d", cappedSpellcardSecondsRemaining);
+        g_AsciiManager.color = COLOR_WHITE;
+        this->lastSpellcardSecondsRemaining = this->spellcardSecondsRemaining;
+    }
+    g_Supervisor.viewport.x = 0;
+    g_Supervisor.viewport.y = 0;
+    g_Supervisor.viewport.width = GAME_WINDOW_WIDTH;
+    g_Supervisor.viewport.height = GAME_WINDOW_HEIGHT;
+    g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
+    g_Supervisor.viewport.Set();
+    //    g_Supervisor.d3dDevice->SetViewport(&g_Supervisor.viewport);
+
+    vm = &this->impl->vms[6];
+    if (
+#ifdef TH_ENABLE_THPRAC
+        PracticeRuntime::Purple::BackgroundFix() ||
+#endif
+        (((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS) & 1) == 0 &&
+         (vm->currentInstruction != NULL || g_Supervisor.unk198 != 0 || g_Supervisor.RedrawWholeFrame())))
+    {
+        for (yPos = 0.0f; yPos < 464.0f; yPos += 32.0f)
+        {
+            vm->pos = ZunVec3(0.0f, yPos, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+        for (xPos = 416.0f; xPos < 624.0f; xPos += 32.0f)
+        {
+            for (yPos = 0.0f; yPos < 464.0f; yPos += 32.0f)
+            {
+                vm->pos = ZunVec3(xPos, yPos, 0.49f);
+                g_AnmManager->DrawNoRotation(vm);
+            }
+        }
+        vm = &this->impl->vms[7];
+        for (xPos = 32.0f; xPos < 416.0f; xPos += 32.0f)
+        {
+            vm->pos = ZunVec3(xPos, 0.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+        vm = &this->impl->vms[8];
+        for (xPos = 32.0f; xPos < 416.0f; xPos += 32.0f)
+        {
+            vm->pos = ZunVec3(xPos, 464.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+        g_AnmManager->DrawInterp(&this->impl->vms[5]);
+        g_AnmManager->DrawInterp(&this->impl->vms[0]);
+        g_AnmManager->DrawInterp(&this->impl->vms[1]);
+        g_AnmManager->DrawInterp(&this->impl->vms[3]);
+        g_AnmManager->DrawInterp(&this->impl->vms[4]);
+        g_AnmManager->DrawInterp(&this->impl->vms[2]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[9]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[10]);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (!compactMultiplayerHud)
+        {
+#endif
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[11]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[12]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[13]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[14]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[15]);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        }
+#endif
+    }
+    if ((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS & 1) == 0)
+    {
+        vm = &this->impl->vms[22];
+        xPos = 496.0f;
+        vm->pos = ZunVec3(xPos, 58.0f, 0.49f);
+        g_AnmManager->DrawNoRotation(vm);
+        vm->pos = ZunVec3(xPos, 82.0f, 0.49f);
+        g_AnmManager->DrawNoRotation(vm);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (!compactMultiplayerHud)
+        {
+#endif
+        if (this->flags.flag0)
+        {
+            vm->pos = ZunVec3(xPos, 122.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+        if (this->flags.flag1)
+        {
+            vm->pos = ZunVec3(xPos, 146.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+        if (this->flags.flag2)
+        {
+            vm->pos = ZunVec3(xPos, 186.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+        if (this->flags.flag3)
+        {
+            vm->pos = ZunVec3(xPos, 206.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+        if (this->flags.flag4)
+        {
+            vm->pos = ZunVec3(xPos, 226.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        }
+#endif
+        vm->pos = ZunVec3(488.0f, 464.0f, 0.49f);
+        g_AnmManager->DrawNoRotation(vm);
+        vm->pos = ZunVec3(0.0, 464.0f, 0.49f);
+        g_AnmManager->DrawNoRotation(vm);
+    }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (compactMultiplayerHud)
+    {
+        AnmVm rowBackgroundVm = this->impl->vms[22];
+        AnmVm playerLabelVm = this->impl->vms[11];
+        AnmVm bombLabelVm = this->impl->vms[12];
+        AnmVm powerLabelVm = this->impl->vms[13];
+        AnmVm grazeLabelVm = this->impl->vms[14];
+        AnmVm pointLabelVm = this->impl->vms[15];
+        const f32 savedLifeScaleX = this->impl->vms[16].scaleX;
+        const f32 savedLifeScaleY = this->impl->vms[16].scaleY;
+        const f32 savedBombScaleX = this->impl->vms[17].scaleX;
+        const f32 savedBombScaleY = this->impl->vms[17].scaleY;
+        const ZunVec2 savedAsciiScale = g_AsciiManager.scale;
+        const ZunColor savedAsciiColor = g_AsciiManager.color;
+        const u32 savedAsciiGui = g_AsciiManager.isGui;
+        const bool savedAsciiSelected = g_AsciiManager.isSelected;
+
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            for (xPos = 416.0f; xPos < 640.0f; xPos += 16.0f)
+            {
+                rowBackgroundVm.pos = ZunVec3(xPos, blockY, 0.48f);
+                g_AnmManager->DrawNoRotation(&rowBackgroundVm);
+                rowBackgroundVm.pos = ZunVec3(xPos, blockY + 12.0f, 0.48f);
+                g_AnmManager->DrawNoRotation(&rowBackgroundVm);
+                rowBackgroundVm.pos = ZunVec3(xPos, blockY + 24.0f, 0.48f);
+                g_AnmManager->DrawNoRotation(&rowBackgroundVm);
+            }
+        }
+
+        playerLabelVm.scaleX = playerLabelVm.scaleY = 0.80f;
+        bombLabelVm.scaleX = bombLabelVm.scaleY = 0.80f;
+        powerLabelVm.scaleX = powerLabelVm.scaleY = 0.80f;
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)) ||
+                MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            playerLabelVm.pos = ZunVec3(481.0f + multiplayerHudOffsetX, blockY, 0.47f);
+            bombLabelVm.pos = ZunVec3(481.0f + multiplayerHudOffsetX, blockY + 12.0f, 0.47f);
+            powerLabelVm.pos = ZunVec3(481.0f + multiplayerHudOffsetX, blockY + 24.0f, 0.47f);
+            g_AnmManager->DrawNoRotation(&playerLabelVm);
+            g_AnmManager->DrawNoRotation(&bombLabelVm);
+            g_AnmManager->DrawNoRotation(&powerLabelVm);
+        }
+
+        grazeLabelVm.pos.y = multiplayerHudBaseY + 148.0f;
+        pointLabelVm.pos.y = multiplayerHudBaseY + 164.0f;
+        g_AnmManager->DrawNoRotation(&grazeLabelVm);
+        g_AnmManager->DrawNoRotation(&pointLabelVm);
+
+        // Keep the same draw ordering as TH07MP: finish all sprite-based
+        // resources before issuing the custom Power-bar draw calls. The latter
+        // changes backend render state, so interleaving it per player can make
+        // later life/bomb sprites depend on whichever state the previous Power
+        // row left behind.
+        this->impl->vms[16].scaleX = this->impl->vms[16].scaleY = 0.65f;
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)) ||
+                MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            vm = &this->impl->vms[16];
+            if (MultiplayerGameplay::IsChallengeMode())
+            {
+                ZunVec3 countPos(532.0f + multiplayerHudOffsetX, blockY, 0.49f);
+                g_AsciiManager.AddFormatText(&countPos, "%u", g_MultiplayerContributionStats[playerId].challengeDeaths);
+                continue;
+            }
+            for (idx = 0, xPos = 532.0f + multiplayerHudOffsetX;
+                 idx < GetPlayerLives(static_cast<u8>(playerId)); ++idx, xPos += resourceIconStep)
+            {
+                vm->pos = ZunVec3(xPos, blockY, 0.49f);
+                g_AnmManager->DrawNoRotation(vm);
+            }
+        }
+        this->impl->vms[16].scaleX = savedLifeScaleX;
+        this->impl->vms[16].scaleY = savedLifeScaleY;
+
+        this->impl->vms[17].scaleX = this->impl->vms[17].scaleY = 0.65f;
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)) ||
+                MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            vm = &this->impl->vms[17];
+            for (idx = 0, xPos = 532.0f + multiplayerHudOffsetX;
+                 idx < GetPlayerBombs(static_cast<u8>(playerId)); ++idx, xPos += resourceIconStep)
+            {
+                vm->pos = ZunVec3(xPos, blockY + 12.0f, 0.49f);
+                g_AnmManager->DrawNoRotation(vm);
+            }
+        }
+        this->impl->vms[17].scaleX = savedBombScaleX;
+        this->impl->vms[17].scaleY = savedBombScaleY;
+
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            ZunVec3 textPos(424.0f + multiplayerHudOffsetX, blockY, 0.0f);
+            g_AsciiManager.scale = ZunVec2(0.55f, 0.55f);
+            g_AsciiManager.color = COLOR_WHITE;
+            g_AsciiManager.AddFormatText(&textPos, "P%d", playerId + 1);
+
+            g_AsciiManager.scale = ZunVec2(0.50f, 0.50f);
+            g_AsciiManager.color = 0xff80c0ff;
+            textPos = ZunVec3(424.0f + multiplayerHudOffsetX, blockY + 14.0f, 0.0f);
+            g_AsciiManager.AddString(
+                &textPos, GetMultiplayerHudLoadoutName(static_cast<u8>(playerId)));
+
+            if (MultiplayerGameplay::ShouldShowContributionStats())
+            {
+                g_AsciiManager.scale = ZunVec2(0.42f, 0.42f);
+                g_AsciiManager.color = 0xffa0d8ff;
+                textPos = ZunVec3(424.0f + multiplayerHudOffsetX, blockY + 27.0f, 0.0f);
+                g_AsciiManager.AddFormatText(
+                    &textPos, "K:%u D:%u",
+                    GetPlayerEnemiesDefeated(static_cast<u8>(playerId)),
+                    GetPlayerDamageDealt(static_cast<u8>(playerId)));
+            }
+
+            if (MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+            {
+                g_AsciiManager.scale = ZunVec2(0.50f, 0.50f);
+                g_AsciiManager.color = 0xffffc080;
+                textPos = ZunVec3(486.0f + multiplayerHudOffsetX, blockY + 12.0f, 0.0f);
+                g_AsciiManager.AddString(&textPos, "AWAY");
+            }
+        }
+
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)) ||
+                MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            const i32 playerPower = GetPlayerPower(static_cast<u8>(playerId));
+            const f32 powerBarLeft = 532.0f + multiplayerHudOffsetX;
+            const f32 powerBarTop = blockY + 26.0f;
+            const f32 powerBarBottom = blockY + 36.0f;
+            const f32 powerBarRight = powerBarLeft + static_cast<f32>(playerPower) * 0.25f;
+            ZunVec3 textPos;
+            if (playerPower > 0)
+            {
+                VertexDiffuseXyzrhw vertices[4];
+                vertices[0].position = ZunVec4(powerBarLeft, powerBarTop, 0.1f, 1.0f);
+                vertices[1].position = ZunVec4(powerBarRight, powerBarTop, 0.1f, 1.0f);
+                vertices[2].position = ZunVec4(powerBarLeft, powerBarBottom, 0.1f, 1.0f);
+                vertices[3].position = ZunVec4(powerBarRight, powerBarBottom, 0.1f, 1.0f);
+                vertices[0].diffuse = vertices[2].diffuse = ColorData(0xe0e0e0ff);
+                vertices[1].diffuse = vertices[3].diffuse = ColorData(0x80e0e0ff);
+                g_AnmManager->FlushVertexBuffer();
+                g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_REPLACE);
+                g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_REPLACE);
+                g_AnmManager->SetDepthMask(false);
+                g_AnmManager->SetDepthFunc(DEPTH_FUNC_ALWAYS);
+                if (g_AnmManager->currentTextureHandle == 0)
+                    g_AnmManager->SetCurrentTexture(g_AnmManager->dummyTextureHandle);
+                g_AnmManager->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
+                g_AnmManager->SetVertexAttributes(VERTEX_ATTR_DIFFUSE);
+                g_AnmManager->SetAttributePointer(
+                    VERTEX_ARRAY_POSITION, sizeof(*vertices), &vertices[0].position);
+                g_AnmManager->SetAttributePointer(
+                    VERTEX_ARRAY_DIFFUSE, sizeof(*vertices), &vertices[0].diffuse);
+                g_AnmManager->BackendDrawCall();
+                g_AnmManager->SetCurrentBlendMode(0xff);
+                g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_MODULATE);
+                g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_MODULATE);
+            }
+
+            g_AsciiManager.scale = ZunVec2(0.70f, 0.70f);
+            g_AsciiManager.color = COLOR_WHITE;
+            textPos = ZunVec3(powerBarLeft, powerBarTop, 0.0f);
+            if (playerPower < 128)
+                g_AsciiManager.AddFormatText(&textPos, "%d", playerPower);
+            else
+                g_AsciiManager.AddString(&textPos, "MAX");
+        }
+        g_AsciiManager.scale = savedAsciiScale;
+        g_AsciiManager.color = savedAsciiColor;
+        g_AsciiManager.isGui = savedAsciiGui;
+        g_AsciiManager.isSelected = savedAsciiSelected;
+    }
+    if (!compactMultiplayerHud)
+    {
+#endif
+    if (this->flags.flag0 || ((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS & 1) != 0))
+    {
+        vm = &this->impl->vms[16];
+        for (idx = 0, xPos = 496.0f; idx < g_GameManager.livesRemaining; idx++, xPos += 16.0f)
+        {
+            vm->pos = ZunVec3(xPos, 122.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+    }
+    if (this->flags.flag1 || ((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS & 1) != 0))
+    {
+        vm = &this->impl->vms[17];
+        for (idx = 0, xPos = 496.0f; idx < g_GameManager.bombsRemaining; idx++, xPos += 16.0f)
+        {
+            vm->pos = ZunVec3(xPos, 146.0f, 0.49f);
+            g_AnmManager->DrawNoRotation(vm);
+        }
+    }
+    if (this->flags.flag2 || ((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS & 1) != 0))
+    {
+        VertexDiffuseXyzrhw vertices[4];
+        if (g_GameManager.currentPower > 0)
+        {
+            g_AnmManager->FlushVertexBuffer();
+            //            std::memcpy(&vertices[0].position, &ZunVec3(496.0f, 186.0f, 0.1f), sizeof(ZunVec3));
+            //            std::memcpy(&vertices[1].position, &ZunVec3(g_GameManager.currentPower + 496 + 0.0f, 186.0f,
+            //            0.1f),
+            //                   sizeof(ZunVec3));
+            //            std::memcpy(&vertices[2].position, &ZunVec3(496.0f, 202.0f, 0.1f), sizeof(ZunVec3));
+            //            std::memcpy(&vertices[3].position, &ZunVec3(g_GameManager.currentPower + 496 + 0.0f, 202.0f,
+            //            0.1f),
+            //                   sizeof(ZunVec3));
+
+            vertices[0].position = ZunVec4(496.0f, 186.0f, 0.1f, 1.0f);
+            vertices[1].position = ZunVec4(g_GameManager.currentPower + 496 + 0.0f, 186.0f, 0.1f, 1.0f);
+            vertices[2].position = ZunVec4(496.0f, 202.0f, 0.1f, 1.0f);
+            vertices[3].position = ZunVec4(g_GameManager.currentPower + 496 + 0.0f, 202.0f, 0.1f, 1.0f);
+
+            vertices[0].diffuse = vertices[2].diffuse = ColorData(0xe0e0e0ff);
+            vertices[1].diffuse = vertices[3].diffuse = ColorData(0x80e0e0ff);
+
+            //            vertices[0].position.w = vertices[1].position.w = vertices[2].position.w =
+            //            vertices[3].position.w = 1.0;
+
+            g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_REPLACE);
+            g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_REPLACE);
+
+            g_AnmManager->SetDepthMask(false);
+            g_AnmManager->SetDepthFunc(DEPTH_FUNC_ALWAYS);
+
+            if (g_AnmManager->currentTextureHandle == 0)
+            {
+                g_AnmManager->SetCurrentTexture(g_AnmManager->dummyTextureHandle);
+            }
+
+            g_AnmManager->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
+
+            g_AnmManager->SetVertexAttributes(VERTEX_ATTR_DIFFUSE);
+            g_AnmManager->SetAttributePointer(VERTEX_ARRAY_POSITION, sizeof(*vertices), &vertices[0].position);
+            g_AnmManager->SetAttributePointer(VERTEX_ARRAY_DIFFUSE, sizeof(*vertices), &vertices[0].diffuse);
+
+            g_AnmManager->BackendDrawCall();
+
+            //            g_Supervisor.d3dDevice->SetVertexShader(D3DFVF_DIFFUSE | D3DFVF_XYZRHW);
+            //            g_Supervisor.d3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices,
+            //            sizeof(VertexDiffuseXyzrhw));
+            g_AnmManager->SetCurrentBlendMode(0xff);
+
+            g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_MODULATE);
+            g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_MODULATE);
+
+            if (128 <= g_GameManager.currentPower)
+            {
+                vm = &this->impl->vms[18];
+                vm->pos = ZunVec3(496.0f, 186.0f, 0.0f);
+                g_AnmManager->DrawNoRotation(vm);
+            }
+        }
+        if (g_GameManager.currentPower < 128)
+        {
+            ZunVec3 formatTextPos = ZunVec3(496.0f, 186.0f, 0.0f);
+
+            g_AsciiManager.AddFormatText(&formatTextPos, "%d", g_GameManager.currentPower);
+        }
+    }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    }
+#endif
+    {
+        ZunVec3 elemPos(496.0f, 82.0f, 0.0f);
+        g_AsciiManager.AddFormatText(&elemPos, "%.9d", g_GameManager.guiScore);
+        elemPos = ZunVec3(496.0f, 58.0f, 0.0f);
+        g_AsciiManager.AddFormatText(&elemPos, "%.9d", g_GameManager.highScore);
+        if (this->flags.flag3 || ((g_Supervisor.cfg.opts >> 4 & 1) != 0))
+        {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            elemPos = ZunVec3(
+                496.0f, compactMultiplayerHud ? multiplayerHudBaseY + 148.0f : 206.0f, 0.0f);
+#else
+            elemPos = ZunVec3(496.0f, 206.0f, 0.0f);
+#endif
+            g_AsciiManager.AddFormatText(&elemPos, "%d", g_GameManager.grazeInStage);
+        }
+        if (this->flags.flag4 || ((g_Supervisor.cfg.opts >> 4 & 1) != 0))
+        {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            elemPos = ZunVec3(
+                496.0f, compactMultiplayerHud ? multiplayerHudBaseY + 164.0f : 226.0f, 0.0f);
+#else
+            elemPos = ZunVec3(496.0f, 226.0f, 0.0f);
+#endif
+            g_AsciiManager.AddFormatText(&elemPos, "%d", g_GameManager.pointItemsCollectedInStage);
+        }
+    }
+    return;
+}
+
+void Gui::DrawStageElements() const
+{
+    ZunVec3 stageTextPos;
+    ZunColor stageTextColor;
+    ZunColor demoTextColor;
+
+    if (this->impl->stageNameSprite.flags.isVisible)
+    {
+
+        stageTextPos.x = 168.0f;
+        stageTextPos.y = 198.0f;
+        stageTextPos.z = 0.0f;
+        if (!g_GameManager.demoMode)
+        {
+            g_AnmManager->Draw2(&this->impl->stageNameSprite);
+
+            // this looks like an inline function, maybe ZunColor is a struct?
+            stageTextColor = COLOR_COMBINE_ALPHA(COLOR_SUNSHINEYELLOW, this->impl->stageNameSprite.color);
+            g_AsciiManager.color = stageTextColor;
+
+            if (Localization::StageLogoImageActive())
+            {
+                // base_tsa::textimage_is_active#stlogo suppresses the
+                // original STAGE / FINAL / EXTRA label while the combined
+                // 384x48 ti_stlogo.png row owns logical textimage slot 0x700.
+            }
+            else if (g_GameManager.currentStage < EXTRA_STAGE)
+            {
+                stageTextPos.x = 168.0f;
+                g_AsciiManager.AddFormatText(&stageTextPos, "STAGE %d", g_GameManager.currentStage);
+            }
+            else if (g_GameManager.currentStage == EXTRA_STAGE)
+            {
+                stageTextPos.x = 136.0f;
+                g_AsciiManager.AddFormatText(&stageTextPos, "FINAL STAGE");
+            }
+            else
+            {
+                stageTextPos.x = 136.0f;
+                g_AsciiManager.AddFormatText(&stageTextPos, "EXTRA STAGE");
+            }
+        }
+        else
+        {
+            demoTextColor = COLOR_COMBINE_ALPHA(COLOR_SUNSHINEYELLOW, this->impl->stageNameSprite.color);
+            g_AsciiManager.color = demoTextColor;
+
+            stageTextPos.x = 136.0f;
+
+            if (!Localization::StageLogoImageActive())
+                g_AsciiManager.AddFormatText(&stageTextPos, " DEMO PLAY");
+        }
+        g_AsciiManager.color = COLOR_WHITE;
+    }
+
+    if (this->impl->songNameSprite.flags.isVisible && !g_GameManager.demoMode)
+    {
+        g_AnmManager->Draw2(&this->impl->songNameSprite);
+    }
+    if (this->impl->playerSpellcardPortrait.flags.isVisible
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        && !MultiplayerGameplay::IsMultiplayer()
+#endif
+    )
+    {
+        g_AnmManager->DrawInterpNoRotation(&this->impl->playerSpellcardPortrait);
+    }
+    if (this->impl->enemySpellcardPortrait.flags.isVisible
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        && !MultiplayerGameplay::IsMultiplayer()
+#endif
+    )
+    {
+        g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardPortrait);
+    }
+
+    if (this->impl->bombSpellcardName.flags.isVisible)
+    {
+        if (Localization::Active())
+        {
+            // Equivalent to thcrap's bomb_pos and spell_pos_reset patches.
+            AnmVm nameDraw = this->impl->bombSpellcardName;
+            nameDraw.pos = nameDraw.prevPos.Lerp(nameDraw.pos, g_RenderAlpha);
+            const f32 sourceNameX = nameDraw.pos.x;
+            nameDraw.pos.x += -nameDraw.sprite->textureWidth + nameDraw.sprite->widthPx / 2.0f;
+
+            AnmVm backgroundDraw = this->impl->bombSpellcardBackground;
+            backgroundDraw.pos = nameDraw.pos;
+            backgroundDraw.pos.x += (nameDraw.sprite->widthPx - this->bombSpellcardBarLength) / 2.0f;
+            backgroundDraw.scaleX = this->bombSpellcardBarLength / 14.0f;
+#ifdef TH_DEV_TOOLS
+            static bool loggedBombDrawGeometry = false;
+            if (!loggedBombDrawGeometry)
+            {
+                SDL_Log("TH06 thcrap bomb draw geometry: sourceX=%.3f nameX=%.3f bgX=%.3f textureWidth=%.3f spriteWidth=%.3f bar=%.3f",
+                        static_cast<double>(sourceNameX), static_cast<double>(nameDraw.pos.x),
+                        static_cast<double>(backgroundDraw.pos.x),
+                        static_cast<double>(nameDraw.sprite->textureWidth),
+                        static_cast<double>(nameDraw.sprite->widthPx),
+                        static_cast<double>(this->bombSpellcardBarLength));
+                loggedBombDrawGeometry = true;
+            }
+#endif
+            g_AnmManager->DrawNoRotation(&backgroundDraw);
+            g_AnmManager->DrawNoRotation(&nameDraw);
+        }
+        else
+        {
+            // The background follows the name in presentation space. Draw can
+            // run after several rollback/catch-up ticks, so its own prevPos is
+            // not a reliable interpolation endpoint for this attached sprite.
+            AnmVm nameDraw = this->impl->bombSpellcardName;
+            nameDraw.pos = nameDraw.prevPos.Lerp(nameDraw.pos, g_RenderAlpha);
+            AnmVm backgroundDraw = this->impl->bombSpellcardBackground;
+            backgroundDraw.pos = nameDraw.pos;
+            backgroundDraw.pos.x +=
+                this->bombSpellcardBarLength * 16.0f / 15.0f / 2.0f + -128.0f - 16.0f;
+            backgroundDraw.scaleX = this->bombSpellcardBarLength / 14.0f;
+            g_AnmManager->DrawNoRotation(&backgroundDraw);
+            g_AnmManager->DrawNoRotation(&nameDraw);
+        }
+    }
+    if (this->impl->enemySpellcardName.flags.isVisible)
+    {
+        if (Localization::Active())
+        {
+            // thcrap's spell_pos patch temporarily moves the reduced name
+            // sprite so its right edge remains at the original 256-pixel
+            // sprite's right edge. It restores the VM immediately after the
+            // draw to avoid disturbing the ANM animation. Draw copies here
+            // provide the same temporary state without mutating either the
+            // current or previous animation position.
+            AnmVm nameDraw = this->impl->enemySpellcardName;
+            nameDraw.pos = nameDraw.prevPos.Lerp(nameDraw.pos, g_RenderAlpha);
+            const f32 sourceNameX = nameDraw.pos.x;
+            nameDraw.pos.x += nameDraw.sprite->textureWidth - nameDraw.sprite->widthPx / 2.0f;
+
+            AnmVm backgroundDraw = this->impl->enemySpellcardBackground;
+            backgroundDraw.pos = nameDraw.pos;
+            backgroundDraw.pos.x += (nameDraw.sprite->widthPx - this->blueSpellcardBarLength) / 2.0f;
+            backgroundDraw.scaleX = this->blueSpellcardBarLength / 14.0f;
+#ifdef TH_DEV_TOOLS
+            static bool loggedSpellDrawGeometry = false;
+            if (!loggedSpellDrawGeometry)
+            {
+                SDL_Log("TH06 thcrap spell draw geometry: sourceX=%.3f nameX=%.3f bgX=%.3f textureWidth=%.3f spriteWidth=%.3f bar=%.3f",
+                        static_cast<double>(sourceNameX), static_cast<double>(nameDraw.pos.x),
+                        static_cast<double>(backgroundDraw.pos.x),
+                        static_cast<double>(nameDraw.sprite->textureWidth),
+                        static_cast<double>(nameDraw.sprite->widthPx),
+                        static_cast<double>(this->blueSpellcardBarLength));
+                loggedSpellDrawGeometry = true;
+            }
+#endif
+            g_AnmManager->DrawNoRotation(&backgroundDraw);
+            g_AnmManager->DrawNoRotation(&nameDraw);
+        }
+        else
+        {
+            AnmVm nameDraw = this->impl->enemySpellcardName;
+            nameDraw.pos = nameDraw.prevPos.Lerp(nameDraw.pos, g_RenderAlpha);
+            AnmVm backgroundDraw = this->impl->enemySpellcardBackground;
+            backgroundDraw.pos = nameDraw.pos;
+            backgroundDraw.pos.x +=
+                128.0f - this->blueSpellcardBarLength * 16.0f / 15.0f / 2.0f;
+            backgroundDraw.scaleX = this->blueSpellcardBarLength / 14.0f;
+            g_AnmManager->DrawNoRotation(&backgroundDraw);
+            g_AnmManager->DrawNoRotation(&nameDraw);
+        }
+    }
+    if (this->impl->loadingScreenSprite.activeSpriteIndex >= 0)
+    {
+        g_Supervisor.viewport.x = g_GameManager.arcadeRegionTopLeftPos.x;
+        g_Supervisor.viewport.y = g_GameManager.arcadeRegionTopLeftPos.y;
+
+        g_Supervisor.viewport.width = g_GameManager.arcadeRegionSize.x;
+        g_Supervisor.viewport.height = g_GameManager.arcadeRegionSize.y;
+
+        g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
+        g_Supervisor.viewport.Set();
+        //        g_Supervisor.d3dDevice->SetViewport(&g_Supervisor.viewport);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->loadingScreenSprite);
+    }
+    g_AnmManager->FlushVertexBuffer();
+}
+
+ZunResult Gui::AddedCallback(Gui *gui)
+{
+    return gui->ActualAddedCallback();
+}
+
+ZunResult Gui::DeletedCallback(Gui *gui)
+{
+    g_AnmManager->ReleaseAnm(ANM_FILE_FACE_STAGE_A);
+    g_AnmManager->ReleaseAnm(ANM_FILE_FACE_STAGE_B);
+    g_AnmManager->ReleaseAnm(ANM_FILE_FACE_STAGE_C);
+    gui->FreeMsgFile();
+    if ((i32)(g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT))
+    {
+        g_AnmManager->ReleaseAnm(ANM_FILE_FRONT);
+        g_AnmManager->ReleaseAnm(ANM_FILE_LOADING);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE_CHARA_A);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE_CHARA_B);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE_CHARA_C);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE2_CHARA_A);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE2_CHARA_B);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE2_CHARA_C);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE3_CHARA_A);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE3_CHARA_B);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE3_CHARA_C);
+#endif
+        delete gui->impl;
+        gui->impl = NULL;
+    }
+    return ZUN_SUCCESS;
+}
+
+ZunResult Gui::RegisterChain()
+{
+    Gui *gui = &g_Gui;
+    if ((i32)(g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT))
+    {
+        std::memset(gui, 0, sizeof(Gui));
+        gui->impl = new GuiImpl();
+    }
+    g_GuiCalcChain.callback = (ChainCallback)Gui::OnUpdate;
+    g_GuiCalcChain.addedCallback = NULL;
+    g_GuiCalcChain.deletedCallback = NULL;
+    g_GuiCalcChain.addedCallback = (ChainAddedCallback)Gui::AddedCallback;
+    g_GuiCalcChain.deletedCallback = (ChainDeletedCallback)Gui::DeletedCallback;
+    g_GuiCalcChain.arg = gui;
+    if (g_Chain.AddToCalcChain(&g_GuiCalcChain, TH_CHAIN_PRIO_CALC_GUI) != ZUN_SUCCESS)
+    {
+        return ZUN_ERROR;
+    }
+    g_GuiDrawChain.callback = (ChainCallback)Gui::OnDraw;
+    g_GuiDrawChain.addedCallback = NULL;
+    g_GuiDrawChain.deletedCallback = NULL;
+    g_GuiDrawChain.arg = gui;
+    g_Chain.AddToDrawChain(&g_GuiDrawChain, TH_CHAIN_PRIO_DRAW_GUI);
+    return ZUN_SUCCESS;
+}
+
+GuiImpl::GuiImpl() {};
+
+void Gui::CutChain()
+{
+    g_Chain.Cut(&g_GuiCalcChain);
+    g_Chain.Cut(&g_GuiDrawChain);
+    return;
+}

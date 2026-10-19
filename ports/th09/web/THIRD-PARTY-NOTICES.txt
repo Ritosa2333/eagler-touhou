@@ -1,0 +1,19 @@
+TH09 C++ / SDL3 browser reconstruction
+
+Original game, characters, graphics, dialogue, music and effects: Team Shanghai Alice / ZUN.
+Game data and MS Gothic font are separate original/proprietary assets; the source code does not grant a license to those assets.
+
+Runtime components (license copies in licenses/):
+- SDL 3.4.2 and SDL_ttf 3.2.2: zlib license.
+- FreeType 2.14.3: FreeType License. Portions copyright The FreeType Project.
+- miniaudio: MIT or public domain, selected MIT notice included.
+- stb_image 2.08: public domain; notice included.
+- stb_vorbis: MIT or public domain; notices included.
+- ws 8.21.3 server: MIT.
+- TH08 codec reference/adaptation: KSS, MIT.
+- Emscripten compiler/runtime: MIT and University of Illinois/NCSA licenses.
+
+Development comparisons only (not shipped to browsers):
+- Unicorn/unicorn.js: GPL-2.0. The installed package includes its license.
+- thtk and thprac pinned references: see reference/upstream and sources.json, including upstream licenses.
+- Ghidra analysis candidates are development evidence; none are compiled into the game.

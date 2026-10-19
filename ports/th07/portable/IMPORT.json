@@ -1,0 +1,63 @@
+{
+  "schema": "th07/portable-source-import/1",
+  "archiveSha256": "ef423e0560bcb79ad26b592cd04b4458ce600f3748ccf8a936646866bfa60820",
+  "legacySourceSha256": "05d78d6fe2f29b327ec25c3d9fc5841bb3f802a2cc9536f5e0b346dbde37b22c",
+  "purpleSourceSha256": "b5be6dc698f574992ab49696c5c0d8ad756af93bf0760be1504ee9e958bee1b0",
+  "sections": 103,
+  "legacyPatchEquivalent": true,
+  "transactionalAdapter": true,
+  "files": [
+    {
+      "source": "portable/include/thprac/portable/session.hpp",
+      "sha256": "98c1a1d6c310aee671aefc8d03c1849b65d70b9cc3a051a8a98713107a10b84a"
+    },
+    {
+      "source": "portable/include/thprac/portable/ecl_interpreter.hpp",
+      "sha256": "948b6367e0b2bd28b403cbff0ec0fd815446b792eee5e1ec90c2fb8885db4e23"
+    },
+    {
+      "source": "portable/include/thprac/portable/ecl_patch.hpp",
+      "sha256": "98e4a87507ff53ce60bdf75464318c776d350a14ba81578de82964c17875680c"
+    },
+    {
+      "source": "portable/include/thprac/portable/th07/adapter.hpp",
+      "sha256": "f2ba27e68870bb1caf59d271a9501f2f0edc7dd50ec85b12f8274ca5e081f968"
+    },
+    {
+      "source": "portable/include/thprac/portable/th07/patches.hpp",
+      "sha256": "91da323caa7035cf457f5261b4e19232b22cded4e0100fc7f3d59b48220d60ee"
+    },
+    {
+      "source": "portable/src/session.cpp",
+      "sha256": "923b8edfd9ba4b784798c11b241607d3258ff654cd45a104aa98f7b1867cf0b0"
+    },
+    {
+      "source": "portable/src/ecl_patch.cpp",
+      "sha256": "06951ffb40c47de5a7de6c7c115174fcdd2bdcd71d68f7998f192f69ed5cd71b"
+    },
+    {
+      "source": "portable/src/th07/patches.cpp",
+      "sha256": "864094ddf957a33eacc258ce104e6378a08b1e2e6bffb53ae3659408f06e4db4"
+    },
+    {
+      "source": "portable/generated/section_catalog.hpp",
+      "sha256": "3bd74e7f4d3f9425dc5c7f3b37468bf44ca4a7576f09adc6e4ff3f5208d4875c"
+    },
+    {
+      "source": "portable/generated/timeline_warps.hpp",
+      "sha256": "ca888426afb5969376f23b80e2263f280b17b565c553cbd253b28b653b740d67"
+    },
+    {
+      "source": "portable/tests/ecl_patch_test.cpp",
+      "sha256": "30d4f1e85a67cb07921637c769aa2d2fbf81cb6ed190c789d59e4dd3e2d10a1e"
+    },
+    {
+      "source": "portable/tests/session_test.cpp",
+      "sha256": "d1edab4b2d4832b87a460616e4b7d80a38800b8780b5b3bf9664d33b722c4a59"
+    },
+    {
+      "source": "portable/tests/th07_patch_test.cpp",
+      "sha256": "39941ec89ba50262dde3b0fcf02128202e9888fad176407fe65b628cb92c3448"
+    }
+  ]
+}

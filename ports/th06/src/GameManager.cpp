@@ -1,0 +1,816 @@
+#include "GameManager.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
+#include "AsciiManager.hpp"
+#include "BulletManager.hpp"
+#include "ChainPriorities.hpp"
+#include "EclManager.hpp"
+#include "EffectManager.hpp"
+#include "EnemyManager.hpp"
+#include "Gui.hpp"
+#include "GameWindow.hpp"
+#include "Player.hpp"
+#include "PracticeRuntime.hpp"
+#include "RuntimeExtension.hpp"
+#include "ReplayExtension.hpp"
+#include "ReplayManager.hpp"
+#include "ResultScreen.hpp"
+#include "Rng.hpp"
+#include "ScreenEffect.hpp"
+#include "SoundPlayer.hpp"
+#include "Stage.hpp"
+#include "Supervisor.hpp"
+#include "Touch.hpp"
+#include "utils.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
+
+// #include <d3d8types.h>
+// #include <d3dx8math.h>
+
+static const u32 g_ExtraLivesScores[5] = {10000000, 20000000, 40000000, 60000000, 1900000000};
+
+static const char *const g_EclFiles[9] = {"dummy",
+                                          "data/ecldata1.ecl",
+                                          "data/ecldata2.ecl",
+                                          "data/ecldata3.ecl",
+                                          "data/ecldata4.ecl",
+                                          "data/ecldata5.ecl",
+                                          "data/ecldata6.ecl",
+                                          "data/ecldata7.ecl",
+                                          NULL};
+
+struct AnmStageFiles
+{
+    const char *file1;
+    const char *file2;
+};
+
+static const AnmStageFiles g_AnmStageFiles[8] = {
+    {"dummy", "dummy"},
+    {"data/stg1enm.anm", "data/stg1enm2.anm"},
+    {"data/stg2enm.anm", "data/stg2enm2.anm"},
+    {"data/stg3enm.anm", NULL},
+    {"data/stg4enm.anm", NULL},
+    {"data/stg5enm.anm", "data/stg5enm2.anm"},
+    {"data/stg6enm.anm", "data/stg6enm2.anm"},
+    {"data/stg7enm.anm", "data/stg7enm2.anm"},
+};
+struct DifficultyInfo
+{
+    u32 rank;
+    u32 minRank;
+    u32 maxRank;
+};
+
+static const DifficultyInfo g_DifficultyInfoForReplay[5] = {
+    // rank, minRank, maxRank
+    /* EASY    */ {16, 12, 20},
+    /* NORMAL  */ {16, 10, 32},
+    /* HARD    */ {16, 10, 32},
+    /* LUNATIC */ {16, 10, 32},
+    /* EXTRA   */ {16, 14, 18},
+};
+
+static const DifficultyInfo g_DifficultyInfo[5] = {
+    // rank, minRank, maxRank
+    /* EASY    */ {16, 12, 20},
+    /* NORMAL  */ {16, 10, 32},
+    /* HARD    */ {16, 10, 32},
+    /* LUNATIC */ {16, 10, 32},
+    /* EXTRA   */ {16, 14, 18},
+};
+
+// These are either on Supervisor.cpp or somewhere else
+GameManager g_GameManager;
+
+static ChainElem g_GameManagerCalcChain;
+static ChainElem g_GameManagerDrawChain;
+
+#define MAX_CLEARS 99
+
+#define DEMO_FADEOUT_FRAMES 3600
+#define DEMO_FRAMES 3720
+
+#define GUI_SCORE_STEP 78910
+
+#define MAX_LIVES 8
+
+static u32 ApplyScoreCap(u32 score)
+{
+#ifdef TH_ENABLE_THCRAP
+    // base_tsa::remove_score_cap patches both the unsigned compare threshold
+    // and replacement value to 0x7fffffff. Keep that exact behavior in
+    // thcrap-enabled builds; it is intentionally independent of whether a
+    // particular language is currently active.
+    constexpr u32 SCORE_CAP_TRIGGER = 0x7fffffffu;
+    constexpr u32 SCORE_CAP_VALUE = 0x7fffffffu;
+#else
+    constexpr u32 SCORE_CAP_TRIGGER = 1000000000u;
+    constexpr u32 SCORE_CAP_VALUE = 999999990u;
+#endif
+    return score >= SCORE_CAP_TRIGGER ? SCORE_CAP_VALUE : score;
+}
+
+i32 GameManager::IsInBounds(f32 x, f32 y, f32 width, f32 height) const
+{
+    if (width / 2.0f + x < 0.0f)
+    {
+        return false;
+    }
+    if ((x - width / 2.0f) > g_GameManager.arcadeRegionSize.x)
+    {
+        return false;
+    }
+    if (height / 2.0f + y < 0.0f)
+    {
+        return false;
+    }
+    if (y - height / 2.0f > g_GameManager.arcadeRegionSize.y)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+ChainCallbackResult GameManager::OnUpdate(GameManager *gameManager)
+{
+    u32 isInMenu;
+    u32 scoreIncrement;
+
+    // The pause-menu state machine advanced inside OnDraw at high refresh
+    // (gated by g_SuppressAnmAdvance). State 1 and 2 are treated identically
+    // everywhere, so the 1 -> 2 transition belongs to the fixed 60 Hz update
+    // chain: it now runs on the update following the pause request, exactly
+    // one frame later as before, and never depends on the draw rate.
+    if (gameManager->isInGameMenu == 1)
+    {
+        gameManager->isInGameMenu = 2;
+    }
+
+    gameManager->prevArcadeRegionTopLeftPos = gameManager->arcadeRegionTopLeftPos;
+    gameManager->prevArcadeRegionSize = gameManager->arcadeRegionSize;
+
+    if (gameManager->demoMode)
+    {
+        if (WAS_PRESSED(TH_BUTTON_ANY))
+        {
+            g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
+        }
+        gameManager->demoFrames++;
+        if (gameManager->demoFrames == DEMO_FADEOUT_FRAMES)
+        {
+            ScreenEffect::RegisterChain(SCREEN_EFFECT_FADE_OUT, 120, 0x000000, 0, 0);
+        }
+        if (gameManager->demoFrames >= DEMO_FRAMES)
+        {
+            g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
+        }
+    }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    UpdateTeamWipeRetryCountdown();
+#endif
+    if (!gameManager->isInRetryMenu && !gameManager->isInGameMenu && !gameManager->demoMode &&
+        WAS_PRESSED(TH_BUTTON_MENU))
+    {
+        gameManager->isInGameMenu = 1;
+        g_GameManager.arcadeRegionTopLeftPos.x = GAME_REGION_LEFT;
+        g_GameManager.arcadeRegionTopLeftPos.y = GAME_REGION_TOP;
+        g_GameManager.arcadeRegionSize.x = GAME_REGION_WIDTH;
+        g_GameManager.arcadeRegionSize.y = GAME_REGION_HEIGHT;
+        g_Supervisor.unk198 = 3;
+    }
+
+    if (!gameManager->isInRetryMenu && !gameManager->isInGameMenu)
+    {
+        isInMenu = 1;
+    }
+    else
+    {
+        isInMenu = 0;
+    }
+
+    gameManager->isInMenu = isInMenu;
+
+    // Seems like gameManager->isInGameMenu was supposed to have 3 states, but all the times it ends up checking both
+    if (gameManager->isInGameMenu == 1 || gameManager->isInGameMenu == 2 || gameManager->isInRetryMenu)
+    {
+        return CHAIN_CALLBACK_RESULT_BREAK;
+    }
+
+    gameManager->score = ApplyScoreCap(gameManager->score);
+    if (gameManager->guiScore != gameManager->score)
+    {
+        if (gameManager->score < gameManager->guiScore)
+        {
+            gameManager->score = gameManager->guiScore;
+        }
+
+        scoreIncrement = (gameManager->score - gameManager->guiScore) >> 5;
+        if (scoreIncrement >= GUI_SCORE_STEP)
+        {
+            scoreIncrement = GUI_SCORE_STEP;
+        }
+        else if (scoreIncrement < 10)
+        {
+            scoreIncrement = 10;
+        }
+        scoreIncrement = scoreIncrement - scoreIncrement % 10;
+
+        if (gameManager->nextScoreIncrement < scoreIncrement)
+        {
+            gameManager->nextScoreIncrement = scoreIncrement;
+        }
+        if (gameManager->guiScore + gameManager->nextScoreIncrement > gameManager->score)
+        {
+            gameManager->nextScoreIncrement = gameManager->score - gameManager->guiScore;
+        }
+
+        gameManager->guiScore += gameManager->nextScoreIncrement;
+        if (gameManager->guiScore >= gameManager->score)
+        {
+            gameManager->nextScoreIncrement = 0;
+            gameManager->guiScore = gameManager->score;
+        }
+        if (gameManager->extraLives >= 0 && g_ExtraLivesScores[gameManager->extraLives] <= gameManager->guiScore)
+        {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            if (MultiplayerGameplay::IsMultiplayer())
+            {
+                bool awarded = false;
+                for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+                {
+                    if (!IsPlayerActive(playerId) ||
+                        MultiplayerGameplay::IsPlayerPermanentlyDeparted(playerId))
+                        continue;
+                    if (GetPlayerLives(playerId) < MAX_LIVES)
+                    {
+                        AddPlayerLives(playerId, 1);
+                        awarded = true;
+                    }
+                }
+                if (awarded)
+                    g_SoundPlayer.PlaySoundByIdx(SOUND_1UP);
+            }
+            else
+#endif
+            if (gameManager->livesRemaining < MAX_LIVES)
+            {
+                gameManager->livesRemaining++;
+                g_SoundPlayer.PlaySoundByIdx(SOUND_1UP);
+            }
+            g_Gui.flags.flag0 = 2;
+            gameManager->extraLives++;
+            g_GameManager.IncreaseSubrank(200);
+        }
+        if (gameManager->highScore < gameManager->guiScore)
+        {
+            gameManager->highScore = gameManager->guiScore;
+        }
+    }
+    gameManager->gameFrames++;
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ChainCallbackResult GameManager::OnDraw(GameManager *gameManager)
+{
+    // Rendering state must be established for every presentation frame. The
+    // original 60 Hz loop happened to run OnUpdate immediately before every
+    // draw, but at high refresh render-only frames otherwise inherit whichever
+    // viewport/camera the GUI or a full-screen effect left behind. That made
+    // the playfield alternate between 384x448 and 640x480 at 180 Hz.
+    g_Supervisor.viewport.x = gameManager->arcadeRegionTopLeftPos.x;
+    g_Supervisor.viewport.y = gameManager->arcadeRegionTopLeftPos.y;
+    g_Supervisor.viewport.width = gameManager->arcadeRegionSize.x;
+    g_Supervisor.viewport.height = gameManager->arcadeRegionSize.y;
+    g_Supervisor.viewport.minZ = 0.5f;
+    g_Supervisor.viewport.maxZ = 1.0f;
+    SetupCamera(0);
+    g_Supervisor.viewport.Set();
+    g_GfxBackend->SetClearDepth(1.0f);
+    g_GfxBackend->Clear(CLEAR_DEPTH_BUFFER);
+
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ZunResult GameManager::RegisterChain()
+{
+    GameManager *mgr = &g_GameManager;
+
+    g_GameManagerCalcChain.callback = (ChainCallback)GameManager::OnUpdate;
+    g_GameManagerCalcChain.addedCallback = NULL;
+    g_GameManagerCalcChain.deletedCallback = NULL;
+    g_GameManagerCalcChain.addedCallback = (ChainAddedCallback)GameManager::AddedCallback;
+    g_GameManagerCalcChain.deletedCallback = (ChainDeletedCallback)GameManager::DeletedCallback;
+    g_GameManagerCalcChain.arg = mgr;
+
+    mgr->gameFrames = 0;
+
+    if (g_Chain.AddToCalcChain(&g_GameManagerCalcChain, TH_CHAIN_PRIO_CALC_GAMEMANAGER))
+    {
+        return ZUN_ERROR;
+    }
+    g_GameManagerDrawChain.callback = (ChainCallback)GameManager::OnDraw;
+    g_GameManagerDrawChain.addedCallback = NULL;
+    g_GameManagerDrawChain.deletedCallback = NULL;
+    g_GameManagerDrawChain.arg = mgr;
+    g_Chain.AddToDrawChain(&g_GameManagerDrawChain, TH_CHAIN_PRIO_DRAW_GAMEMANAGER);
+    return ZUN_SUCCESS;
+}
+
+ZunResult GameManager::AddedCallback(GameManager *mgr)
+{
+    std::printf("spectator-debug GM added begin cur=%d wanted=%d stage=%d rng=%u\n", g_Supervisor.curState, g_Supervisor.wantedState, mgr->currentStage, static_cast<unsigned>(g_Rng.seed));
+    ScoreDat *scoredat;
+    u32 clrdIdx;
+    u32 catkCursor;
+    i32 i;
+    Catk *catk;
+    bool failedToLoadReplay;
+    i32 padding[3];
+
+    Touch::ResetRunUsage();
+    PracticeRuntime::RefreshFromHost();
+    if (g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT)
+    {
+        // A fresh run owns a fresh replay/touch stream. Practice restart can
+        // reuse the existing ReplayManager, so relying only on its AddedCallback
+        // leaves the previous run's gesture lane and finger ids alive.
+        Touch::CancelTouches();
+        Touch::ResetReplayRecordingState();
+        Touch::ResetReplayTouch();
+        ReplayExtension::ResetRecording();
+    }
+    // Normal Replay-menu playback already executed THGuiRep::State(1/2/3)
+    // before the original isInReplay write. Do not parse the file a second
+    // time here and overwrite that candidate/state-machine semantics. Keep a
+    // direct-start fallback for developer/architectural entry paths that do
+    // not pass through MainMenu::ReplayHandling().
+    if (mgr->isInReplay && !PracticeRuntime::ReplayStartupCommitted())
+        PracticeRuntime::LoadReplayMetadata(reinterpret_cast<const char *>(mgr->replayFile));
+    PracticeRuntime::PrepareStart(*mgr);
+    failedToLoadReplay = false;
+    //    g_Supervisor.d3dDevice->ResourceManagerDiscardBytes(0);
+    if (g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT)
+    {
+        g_Supervisor.defaultConfig.bombCount = g_GameManager.bombsRemaining;
+        g_Supervisor.defaultConfig.lifeCount = g_GameManager.livesRemaining;
+        mgr->arcadeRegionTopLeftPos.x = 32.0;
+        mgr->arcadeRegionTopLeftPos.y = 16.0;
+        mgr->arcadeRegionSize.x = 384.0;
+        mgr->arcadeRegionSize.y = 448.0;
+        mgr->playerMovementAreaTopLeftPos.x = 8.0;
+        mgr->playerMovementAreaTopLeftPos.y = 16.0;
+        mgr->playerMovementAreaSize.x = 368.0;
+        mgr->playerMovementAreaSize.y = 416.0;
+        mgr->counat = 0;
+        mgr->guiScore = 0;
+        mgr->score = 0;
+        mgr->nextScoreIncrement = 0;
+        mgr->highScore = 100000;
+        mgr->currentPower = 0;
+        mgr->numRetries = 0;
+        if (6 <= mgr->currentStage)
+        {
+            mgr->difficulty = EXTRA;
+        }
+        if (mgr->difficulty < EXTRA)
+        {
+            mgr->extraLives = 0;
+        }
+        else
+        {
+            mgr->extraLives = 4;
+        }
+        g_GameManager.powerItemCountForScore = 0;
+        mgr->rank = 8;
+        mgr->grazeInTotal = 0;
+        mgr->pointItemsCollected = 0;
+        for (catk = mgr->catk, i = 0; i < ARRAY_SIZE_SIGNED(mgr->catk); i++, catk++)
+        {
+            // Randomize catk content.
+            for (catkCursor = 0; catkCursor < sizeof(Catk) / sizeof(u16); catkCursor++)
+            {
+                ((u16 *)catk)[catkCursor] = g_Rng.GetRandomU16();
+            }
+            catk->base.magic = CATK_MAGIC;
+            catk->base.unkLen = sizeof(Catk);
+            catk->base.th6kLen = sizeof(Catk);
+            catk->base.version = TH6K_VERSION;
+            catk->idx = i;
+            catk->numAttempts = 0;
+            catk->numSuccess = 0;
+        }
+        scoredat = ResultScreen::OpenScore("score.dat");
+        g_GameManager.highScore =
+            ResultScreen::GetHighScore(scoredat, NULL, g_GameManager.CharacterShotType(), g_GameManager.difficulty);
+        ResultScreen::ParseCatk(scoredat, mgr->catk);
+        ResultScreen::ParseClrd(scoredat, mgr->clrd);
+        ResultScreen::ParsePscr(scoredat, (Pscr *)mgr->pscr);
+        if (mgr->isInPracticeMode != 0)
+        {
+            g_GameManager.highScore =
+                mgr->pscr[g_GameManager.CharacterShotType()][g_GameManager.currentStage][g_GameManager.difficulty]
+                    .score;
+        }
+        ResultScreen::ReleaseScoreDat(scoredat);
+        mgr->rank = g_DifficultyInfo[g_GameManager.difficulty].rank;
+        mgr->minRank = g_DifficultyInfo[g_GameManager.difficulty].minRank;
+        mgr->maxRank = g_DifficultyInfo[g_GameManager.difficulty].maxRank;
+        mgr->deaths = 0;
+        mgr->bombsUsed = 0;
+        mgr->spellcardsCaptured = 0;
+    }
+    else
+    {
+        mgr->guiScore = mgr->score;
+        mgr->nextScoreIncrement = 0;
+    }
+    mgr->subRank = 0;
+    mgr->pointItemsCollectedInStage = 0;
+    mgr->grazeInStage = 0;
+    mgr->isInGameMenu = 0;
+    mgr->currentStage = mgr->currentStage + 1;
+    PracticeRuntime::ResetTracker();
+    PracticeRuntime::ResetBgmTracking();
+    if (g_GameManager.isInReplay == 0)
+    {
+        clrdIdx = g_GameManager.CharacterShotType();
+        if (mgr->numRetries == 0 &&
+            mgr->clrd[clrdIdx].difficultyClearedWithRetries[g_GameManager.difficulty] < mgr->currentStage - 1)
+        {
+            mgr->clrd[clrdIdx].difficultyClearedWithRetries[g_GameManager.difficulty] = mgr->currentStage - 1;
+        }
+        if (mgr->clrd[clrdIdx].difficultyClearedWithoutRetries[g_GameManager.difficulty] < mgr->currentStage - 1)
+        {
+            mgr->clrd[clrdIdx].difficultyClearedWithoutRetries[g_GameManager.difficulty] = mgr->currentStage - 1;
+        }
+    }
+    if (mgr->isInPracticeMode != 0)
+    {
+        switch (mgr->currentStage)
+        {
+        case STAGE2:
+            break;
+        case STAGE3:
+            mgr->currentPower = 64;
+            break;
+        default:
+            mgr->currentPower = 128;
+        }
+    }
+    g_Supervisor.LoadPbg3(CM_PBG3_INDEX, TH_CM_DAT_FILE);
+    std::printf("spectator-debug GM cm loaded stage=%d\n", mgr->currentStage);
+    g_Supervisor.LoadPbg3(ST_PBG3_INDEX, TH_ST_DAT_FILE);
+    std::printf("spectator-debug GM st loaded stage=%d\n", mgr->currentStage);
+    if (g_GameManager.isInReplay == 1)
+    {
+        if (ReplayManager::RegisterChain(1, (char *)g_GameManager.replayFile) != ZUN_SUCCESS)
+        {
+            failedToLoadReplay = true;
+        }
+        else
+        {
+            // ReplayManager::RegisterChain is the point where the replay
+            // header becomes authoritative for character/shot/difficulty.
+            // Re-publish those runtime-owned values before Stage/Enemy/ECL
+            // loading so section patches never use the previous Practice menu.
+            PracticeRuntime::SyncRuntimeDerivedSession();
+        }
+        while (g_ExtraLivesScores[mgr->extraLives] <= mgr->guiScore)
+        {
+            mgr->extraLives++;
+        }
+        mgr->minRank = g_DifficultyInfoForReplay[g_GameManager.difficulty].minRank;
+        mgr->maxRank = g_DifficultyInfoForReplay[g_GameManager.difficulty].maxRank;
+    }
+    g_Rng.generationCount = 0;
+#ifdef TH_ENABLE_THPRAC
+    PracticeRuntime::Purple::PrepareSeed();
+#endif
+    mgr->randomSeed = g_Rng.seed;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() &&
+        g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT)
+    {
+        // P1's vanilla fields are authoritative after all start/practice
+        // setup above. Seed guest sidecars exactly once per fresh run; stage
+        // reinit must preserve the resources each participant earned/lost.
+        ResetMultiplayerPlayerResources();
+        ResetPlayerContributionStats();
+        if (g_GameManager.isInReplay == 1 && ReplayExtension::MultiplayerPlaybackActive())
+        {
+            // Vanilla StageReplayData restores only P1. New MP EAGX files append
+            // a per-stage snapshot so direct Stage2+ playback can restore each
+            // guest's divergent lives/bombs/power instead of cloning P1. Old v1
+            // MP files simply lack this optional block and retain the historical
+            // Stage1-compatible fallback above.
+            for (u8 playerId = 0; playerId < MultiplayerGameplay::GetPlayerCount(); ++playerId)
+            {
+                ReplayExtension::MultiplayerPlayerResourceSnapshot resources;
+                if (!ReplayExtension::GetMultiplayerPlaybackStageResources(
+                        mgr->currentStage - 1, playerId, &resources))
+                    continue;
+                SetPlayerLives(playerId, resources.lives);
+                if (MultiplayerGameplay::IsChallengeMode())
+                    g_MultiplayerContributionStats[playerId].challengeDeaths = resources.challengeDeaths;
+                SetPlayerBombs(playerId, resources.bombs);
+                SetPlayerPower(playerId, resources.power);
+                ReplayExtension::MultiplayerContributionSnapshot contributions;
+                if (ReplayExtension::GetMultiplayerPlaybackStageContributions(
+                        mgr->currentStage - 1, playerId, &contributions))
+                {
+                    g_MultiplayerContributionStats[playerId].enemiesDefeated =
+                        contributions.enemiesDefeated;
+                    g_MultiplayerContributionStats[playerId].damageDealt =
+                        contributions.damageDealt;
+                }
+            }
+        }
+    }
+#endif
+    if (Stage::RegisterChain(mgr->currentStage) != ZUN_SUCCESS)
+    {
+        g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_STAGE);
+        return ZUN_ERROR;
+    }
+    std::printf("spectator-debug GM stage registered stage=%d\n", mgr->currentStage);
+
+    if (Player::RegisterChain(0) != ZUN_SUCCESS)
+    {
+        g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_PLAYER);
+        return ZUN_ERROR;
+    }
+    std::printf("spectator-debug GM p0 registered stage=%d\n", mgr->currentStage);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer())
+    {
+        for (u8 playerId = 1; playerId < MultiplayerGameplay::GetPlayerCount(); ++playerId)
+        {
+            if (!MultiplayerGameplay::IsPlayerActive(playerId))
+                continue;
+            if (Player::RegisterChain(playerId) != ZUN_SUCCESS)
+            {
+                g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_PLAYER);
+                return ZUN_ERROR;
+            }
+        }
+    }
+#endif
+    if (BulletManager::RegisterChain("data/etama.anm") != ZUN_SUCCESS)
+    {
+        g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_BULLETMANAGER);
+        return ZUN_ERROR;
+    }
+    std::printf("spectator-debug GM bullets registered\n");
+    if (EnemyManager::RegisterChain(g_AnmStageFiles[mgr->currentStage].file1,
+                                    g_AnmStageFiles[mgr->currentStage].file2) != ZUN_SUCCESS)
+    {
+        g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_ENEMYMANAGER);
+        return ZUN_ERROR;
+    }
+    std::printf("spectator-debug GM enemies registered\n");
+    if (g_EclManager.Load(g_EclFiles[mgr->currentStage]) != ZUN_SUCCESS)
+    {
+        g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_ECLMANAGER);
+        return ZUN_ERROR;
+    }
+    std::printf("spectator-debug GM ECL loaded\n");
+    if (EffectManager::RegisterChain() != ZUN_SUCCESS)
+    {
+        g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_EFFECTMANAGER);
+        return ZUN_ERROR;
+    }
+    std::printf("spectator-debug GM effects registered\n");
+    if (Gui::RegisterChain() != ZUN_SUCCESS)
+    {
+        g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_GUI);
+        return ZUN_ERROR;
+    }
+    std::printf("spectator-debug GM GUI registered\n");
+    if (g_GameManager.isInReplay == 0)
+    {
+        ReplayManager::RegisterChain(0, "replay/th6_00.rpy");
+    }
+
+    // th06_patch_main is installed at original address 0x41c17a. Verified
+    // against the Japanese i386 executable, that site is after ReplayManager
+    // registration and immediately before the initial-BGM play sequence.
+    // Keep trainer stats/section side effects at that exact lifecycle boundary
+    // instead of exposing them to the replay recorder too early.
+    PracticeRuntime::ApplyInitialState(*mgr, true);
+    // State(3)'s portable startup bridge is one-shot. The source-owned
+    // THGuiRep::mRepStatus remains sticky independently until Replay State(1).
+    PracticeRuntime::FinishReplayStartup();
+    RuntimeExtension::OnGameStarted(mgr);
+
+    if (g_GameManager.demoMode == 0)
+    {
+        // Read boss battle, and store it for use when boss is started.
+        g_Supervisor.ReadMidiFile(1, g_Stage.stdData->songPaths[1]);
+        // th06_patch_main uses THBGMTest() to start the boss theme when an
+        // advanced Practice section begins on a boss portion.
+        const char *initialBgm = g_Stage.stdData->songPaths[PracticeRuntime::InitialBgmIndex()];
+        if (!PracticeRuntime::PreserveBgmOnRestart())
+        {
+            g_Supervisor.PlayAudio(initialBgm);
+            PracticeRuntime::NotifyBgmPlay(initialBgm);
+        }
+        else
+        {
+            // Exact el_bgm_signal consumption: the previous audio stream is
+            // already alive, so skip the new run's redundant initial play.
+            PracticeRuntime::FinishBgmRestartPreservation();
+        }
+    }
+    mgr->isInRetryMenu = 0;
+    mgr->isInMenu = 1;
+    if (g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT)
+    {
+        g_Supervisor.unk1b4 = 0.0;
+        g_Supervisor.unk1b8 = 0.0;
+    }
+    mgr->isTimeStopped = false;
+    // Original 0x41c1c1 clears score after th06_patch_main. guiScore keeps the
+    // configured practice score; the first normal OnUpdate restores score from
+    // guiScore, exactly as upstream. Do not suppress this vanilla transient.
+    mgr->score = 0;
+    mgr->isGameCompleted = 0;
+    g_AsciiManager.InitializeVms();
+    if (failedToLoadReplay)
+    {
+        g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
+    }
+    g_Supervisor.unk198 = 3;
+    return ZUN_SUCCESS;
+}
+
+ZunResult GameManager::DeletedCallback(GameManager *mgr)
+{
+#ifdef TH_ENABLE_THPRAC
+    PracticeRuntime::Purple::SaveStatistics();
+#endif
+    i32 padding1, padding2, padding3;
+
+    //    g_Supervisor.d3dDevice->ResourceManagerDiscardBytes(0);
+    if (!g_GameManager.demoMode && !PracticeRuntime::PreserveBgmOnRestart())
+    {
+        g_Supervisor.StopAudio();
+    }
+    Stage::CutChain();
+    BulletManager::CutChain();
+    Player::CutChain();
+    EnemyManager::CutChain();
+    g_EclManager.Unload();
+    EffectManager::CutChain();
+    Gui::CutChain();
+    ReplayManager::StopRecording();
+    mgr->isInMenu = 0;
+    g_AsciiManager.InitializeVms();
+    return ZUN_SUCCESS;
+}
+
+void GameManager::CutChain()
+{
+    g_Chain.Cut(&g_GameManagerCalcChain);
+    g_Chain.Cut(&g_GameManagerDrawChain);
+}
+
+void GameManager::SetupCameraStageBackground(f32 extraRenderDistance)
+{
+    ZunVec3 eyeVec;
+    ZunVec3 atVec;
+    ZunVec3 upVec;
+    f32 fov;
+    f32 aspectRatio;
+    f32 viewportMiddleWidth;
+    f32 viewportMiddleHeight;
+    f32 cameraDistance;
+
+    g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
+
+    viewportMiddleWidth = g_Supervisor.viewport.width / 2.0f;
+    viewportMiddleHeight = g_Supervisor.viewport.height / 2.0f;
+    aspectRatio = (f32)g_Supervisor.viewport.width / (f32)g_Supervisor.viewport.height;
+    fov = ZUN_PI * (30.0f / 180.0f);
+    cameraDistance = viewportMiddleHeight / ZUN_TANF(fov / 2);
+    upVec.x = 0.0f;
+    upVec.y = 1.0f;
+    upVec.z = 0.0f;
+    atVec.x = viewportMiddleWidth;
+    atVec.y = -viewportMiddleHeight;
+    atVec.z = 0.0f;
+    eyeVec.x = viewportMiddleWidth;
+    eyeVec.y = -viewportMiddleHeight;
+    eyeVec.z = -cameraDistance;
+    ZunMatrix viewMatrix = createViewMatrix(eyeVec, atVec, upVec);
+    g_AnmManager->SetTransformMatrix(MATRIX_VIEW, viewMatrix);
+    g_Supervisor.viewMatrix = viewMatrix;
+
+    g_GameManager.cameraDistance = ZUN_FABSF(cameraDistance);
+
+    ZunMatrix perspectiveMatrix = perspectiveMatrixFromFOV(fov, aspectRatio, 100.0f, 10000.0f + extraRenderDistance);
+    g_AnmManager->SetTransformMatrix(MATRIX_PROJECTION, perspectiveMatrix);
+    g_Supervisor.projectionMatrix = perspectiveMatrix;
+    return;
+}
+
+void GameManager::SetupCamera(f32 extraRenderDistance)
+{
+    ZunVec3 eyeVec;
+    ZunVec3 atVec;
+    ZunVec3 upVec;
+    f32 fov;
+    f32 aspectRatio;
+    f32 viewportMiddleWidth;
+    f32 viewportMiddleHeight;
+    f32 cameraDistance;
+
+    f32 atVecY;
+    f32 atVecX;
+    f32 eyeVecZ;
+
+    g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
+
+    viewportMiddleWidth = g_Supervisor.viewport.width / 2.0f;
+    viewportMiddleHeight = g_Supervisor.viewport.height / 2.0f;
+    aspectRatio = (f32)g_Supervisor.viewport.width / (f32)g_Supervisor.viewport.height;
+    fov = ZUN_PI * (30.0f / 180.0f);
+    cameraDistance = viewportMiddleHeight / ZUN_TANF(fov / 2);
+    upVec.x = 0.0f;
+    upVec.y = 1.0f;
+    upVec.z = 0.0f;
+    const ZunVec3 drawCameraFacingDir = g_Stage.GetDrawCameraFacingDir();
+    atVecY = -viewportMiddleHeight + drawCameraFacingDir.y;
+    atVecX = viewportMiddleWidth + drawCameraFacingDir.x;
+    atVec.x = atVecX;
+    atVec.y = atVecY;
+    atVec.z = 0;
+    eyeVecZ = -cameraDistance * drawCameraFacingDir.z;
+    eyeVec.x = viewportMiddleWidth;
+    eyeVec.y = -viewportMiddleHeight;
+    eyeVec.z = eyeVecZ;
+
+    ZunMatrix viewMatrix = createViewMatrix(eyeVec, atVec, upVec);
+    g_AnmManager->SetTransformMatrix(MATRIX_VIEW, viewMatrix);
+    g_Supervisor.viewMatrix = viewMatrix;
+
+    g_GameManager.cameraDistance = ZUN_FABSF(cameraDistance);
+
+    ZunMatrix perspectiveMatrix = perspectiveMatrixFromFOV(fov, aspectRatio, 100.0f, 10000.0f + extraRenderDistance);
+    g_AnmManager->SetTransformMatrix(MATRIX_PROJECTION, perspectiveMatrix);
+    g_Supervisor.projectionMatrix = perspectiveMatrix;
+
+    return;
+}
+
+void GameManager::IncreaseSubrank(i32 amount)
+{
+    this->subRank = this->subRank + amount;
+    while (this->subRank >= 100)
+    {
+        this->rank++;
+        this->subRank -= 100;
+    }
+    if (this->rank > this->maxRank)
+    {
+        this->rank = this->maxRank;
+    }
+}
+
+void GameManager::DecreaseSubrank(i32 amount)
+{
+    this->subRank = this->subRank - amount;
+    while (this->subRank < 0)
+    {
+        this->rank--;
+        this->subRank += 100;
+    }
+    if (this->rank < this->minRank)
+    {
+        this->rank = this->minRank;
+    }
+}
+
+GameManager::GameManager()
+{
+
+    memset(this, 0, sizeof(GameManager));
+
+    (this->arcadeRegionTopLeftPos).x = GAME_REGION_LEFT;
+    (this->arcadeRegionTopLeftPos).y = GAME_REGION_TOP;
+    (this->arcadeRegionSize).x = GAME_REGION_WIDTH;
+    (this->arcadeRegionSize).y = GAME_REGION_HEIGHT;
+    this->prevArcadeRegionTopLeftPos = this->arcadeRegionTopLeftPos;
+    this->prevArcadeRegionSize = this->arcadeRegionSize;
+}
+
+i32 GameManager::HasReachedMaxClears(i32 character, i32 shottype) const
+{
+    return (this->clrd[shottype + character * 2].difficultyClearedWithRetries[1] == MAX_CLEARS ||
+            this->clrd[shottype + character * 2].difficultyClearedWithRetries[2] == MAX_CLEARS ||
+            this->clrd[shottype + character * 2].difficultyClearedWithRetries[3] == MAX_CLEARS);
+}

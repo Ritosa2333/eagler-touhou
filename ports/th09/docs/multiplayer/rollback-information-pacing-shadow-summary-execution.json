@@ -1,0 +1,23 @@
+{
+  "schema": "th09-information-pacing-shadow-command-v1",
+  "kind": "derived-evidence-summary-only",
+  "startedAt": "2026-10-11T02:55:25.7349610Z",
+  "completedAt": "2026-10-11T02:55:25.8963345Z",
+  "nodeElapsedMs": 141,
+  "command": [
+    "node",
+    "web/tests/multiplayer/summarize-information-pacing-shadow.mjs"
+  ],
+  "exitCode": 0,
+  "sourceBeforeSha256": "50dae38eb02b14c92c97bc424ac071a71d61f49ad870c5a239f7d89444472bda",
+  "sourceAfterSha256": "50dae38eb02b14c92c97bc424ac071a71d61f49ad870c5a239f7d89444472bda",
+  "identityStable": true,
+  "summary": {
+    "path": "docs/multiplayer/rollback-information-pacing-shadow-summary.json",
+    "bytes": 161764,
+    "sha256": "00e8543522581189a1ad2230ca119538edb18daf7f4fcbcea2a5fda6bd844c6e"
+  },
+  "outputLines": [
+    "{\"output\":\"D:\\\\workspace\\\\eagler\\\\worktrees\\\\th09-rollback-4x\\\\docs\\\\multiplayer\\\\rollback-information-pacing-shadow-summary.json\",\"bytes\":161764,\"sha256\":\"00e8543522581189a1ad2230ca119538edb18daf7f4fcbcea2a5fda6bd844c6e\",\"executionRecord\":{\"path\":\"docs/multiplayer/rollback-information-pacing-shadow-execution.json\",\"bytes\":5237,\"sha256\":\"6fc153d803571bd725e1550d359cf8562b34cff30e9692b4899ab501e44fa85e\"},\"syntaxRecord\":{\"path\":\"docs/multiplayer/rollback-information-pacing-shadow-syntax.json\",\"bytes\":519,\"sha256\":\"30ab8746044047875459b2c4df57c24c15244394efd3d505b987884afa211933\"},\"cases\":[{\"id\":\"relay39_burst_response\",\"peers\":[{\"side\":0,\"firstWarmSample\":336,\"maximumEligibleHistoryCount\":32,\"admittedGapCount\":958,\"firstWarnings\":{\"count\":36,\"warningTypes\":{\"none\":0,\"predicted-bridgeable\":2,\"predicted-beyond-ramp\":0,\"overdue-unknown\":34},\"qualifications\":{\"unclassified\":0,\"observed-fields-unflagged\":28,\"local-observation-contaminated\":8,\"right-censored-no-next-A\":0,\"clock-unavailable\":0},\"qualifiedGeometry\":{\"unknown\":0,\"unnecessary-warning-proxy\":28,\"model-bridgeable\":0,\"beyond-ramp-model\":0,\"interval-overlap-unknown\":0},\"strictOpportunities\":0},\"allStrictOpportunities\":1,\"allStrictOpportunitiesWithoutWarning\":1,\"noWarningGapRetrospective\":1},{\"side\":1,\"firstWarmSample\":314,\"maximumEligibleHistoryCount\":32,\"admittedGapCount\":1114,\"firstWarnings\":{\"count\":63,\"warningTypes\":{\"none\":0,\"predicted-bridgeable\":0,\"predicted-beyond-ramp\":0,\"overdue-unknown\":63},\"qualifications\":{\"unclassified\":0,\"observed-fields-unflagged\":54,\"local-observation-contaminated\":9,\"right-censored-no-next-A\":0,\"clock-unavailable\":0},\"qualifiedGeometry\":{\"unknown\":0,\"unnecessary-warning-proxy\":54,\"model-bridgeable\":0,\"beyond-ramp-model\":0,\"interval-overlap-unknown\":0},\"strictOpportunities\":0},\"allStrictOpportunities\":1,\"allStrictOpportunitiesWithoutWarning\":1,\"noWarningGapRetrospective\":1}]},{\"id\":\"relay125_steady\",\"peers\":[{\"side\":0,\"firstWarmSample\":356,\"maximumEligibleHistoryCount\":32,\"admittedGapCount\":1083,\"firstWarnings\":{\"count\":0,\"warningTypes\":{\"none\":0,\"predicted-bridgeable\":0,\"predicted-beyond-ramp\":0,\"overdue-unknown\":0},\"qualifications\":{\"unclassified\":0,\"observed-fields-unflagged\":0,\"local-observation-contaminated\":0,\"right-censored-no-next-A\":0,\"clock-unavailable\":0},\"qualifiedGeometry\":{\"unknown\":0,\"unnecessary-warning-proxy\":0,\"model-bridgeable\":0,\"beyond-ramp-model\":0,\"interval-overlap-unknown\":0},\"strictOpportunities\":0},\"allStrictOpportunities\":0,\"allStrictOpportunitiesWithoutWarning\":0,\"noWarningGapRetrospective\":0},{\"side\":1,\"firstWarmSample\":374,\"maximumEligibleHistoryCount\":32,\"admittedGapCount\":905,\"firstWarnings\":{\"count\":0,\"warningTypes\":{\"none\":0,\"predicted-bridgeable\":0,\"predicted-beyond-ramp\":0,\"overdue-unknown\":0},\"qualifications\":{\"unclassified\":0,\"observed-fields-unflagged\":0,\"local-observation-contaminated\":0,\"right-censored-no-next-A\":0,\"clock-unavailable\":0},\"qualifiedGeometry\":{\"unknown\":0,\"unnecessary-warning-proxy\":0,\"model-bridgeable\":0,\"beyond-ramp-model\":0,\"interval-overlap-unknown\":0},\"strictOpportunities\":0},\"allStrictOpportunities\":0,\"allStrictOpportunitiesWithoutWarning\":0,\"noWarningGapRetrospective\":0}]}]}"
+  ]
+}

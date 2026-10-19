@@ -1,0 +1,1217 @@
+{
+  "version": 1,
+  "complete": true,
+  "scope": "Read-only source review and offline finite grouping of existing reports; no new game run, build or performance test.",
+  "method": {
+    "formal": "180 <= sampled frame < 900; exactly one measured onGameFrame hook per RAF request",
+    "gap": "Outgoing edge to the unique entered child request with matching callbackId; entry timestamps are actual JS callback entry, not the browser RAF timestamp",
+    "insideOther": "Whole RAF duration minus exported native callback work; includes wrappers and unmeasured boundaries, not a pure JS attribution",
+    "subgroup": "10 <= native callback ms < 20, sample delta frame=1, corrections=0, resim=0; not asserted to have no checkpoint",
+    "pacing": "Latest safe pacing observation at or before actual RAF entry, with observation age retained; not an exact internal cadence-entry state probe",
+    "quantiles": "Linear interpolation at (count-1)*p",
+    "exclusions": "No host-load or outlier filtering; startup and tail remain in source reports outside this explicitly formal group."
+  },
+  "reports": [
+    {
+      "label": "old-diagnostic",
+      "source": {
+        "path": "web/artifacts/multiplayer-tests/rollback4x-chain-live-relay-none-02-report.json",
+        "sha256": "63a1997798609a598d5256e77775eb6df58b042ff7a810ef59ba00241c2b58a7",
+        "bytes": 39268580
+      },
+      "identity": {
+        "wasm": "7c8bdf579af8e18ace2208377d5a4f22a309eba9c1ec22f0248e252bd6f7deaa",
+        "harness": "a3768e3a9f2a1c47e1a694d2d0755e09059885ac63ac35fc8bf049e72f30dac9",
+        "loader": "7f7080fa2d91486b07971b0054862554dd62c632a7320512ff0bd8d72a4f808a",
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+        "hostLoadProbe": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+        "networkTransportProbe": "090fe224bf5642b3daf4aaf354b67287ba5ad0b39a9d4f336cc1abe6603578c3",
+        "callbackCostProbe": "95325df1973c510629770e401572a5a4422e2f68c160ae48d01716570831866c",
+        "relayTransportProbe": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa",
+        "relayTransportFixture": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919",
+        "relayTransportController": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
+      },
+      "parameters": {
+        "limit": 900,
+        "delay": 0,
+        "jitter": 0,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": false,
+        "profile": false,
+        "fallback": true,
+        "inputMode": "tape",
+        "audioOutput": true,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": true,
+        "impairmentSite": "none",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "any",
+        "liveCost": true,
+        "clientSendMode": "synchronous",
+        "burstClock": "browser-active",
+        "cpuThrottle": {
+          "ratesBySide": [
+            1,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        }
+      },
+      "passed": true,
+      "peers": [
+        {
+          "side": 1,
+          "formal": {
+            "callbacks": 3335,
+            "waitReturns": 730,
+            "oneFresh": 677,
+            "twoFresh": 17,
+            "metrics": {
+              "nativeMs": {
+                "count": 3335,
+                "p50": 0.019999980926513672,
+                "p99": 8.653200002908704,
+                "max": 10.705000013113022
+              },
+              "wholeRafMs": {
+                "count": 3335,
+                "p50": 0.20500001311302185,
+                "p99": 8.85830000579357,
+                "max": 11.074999988079071
+              },
+              "insideOtherMs": {
+                "count": 3335,
+                "p50": 0.1599999964237213,
+                "p99": 0.3082999843358986,
+                "max": 1.1299999952316284
+              },
+              "nextEntryGapMs": {
+                "count": 3335,
+                "p50": 7.719999998807907,
+                "p99": 10.164700001478188,
+                "max": 29.930000007152557
+              },
+              "nextRequestWaitMs": {
+                "count": 3335,
+                "p50": 7.370000004768372,
+                "p99": 8.868199996352192,
+                "max": 26
+              },
+              "afterExitGapMs": {
+                "count": 3335,
+                "p50": 7.33500000834465,
+                "p99": 8.829899983406065,
+                "max": 25.955000013113022
+              },
+              "entryTimestampLagMs": {
+                "count": 3335,
+                "p50": 0.4000000000014552,
+                "p99": 2.2695000170935127,
+                "max": 16.160000014308025
+              },
+              "pacingAgeMs": {
+                "count": 3335,
+                "p50": 15.459999978542328,
+                "p99": 64.24489999473094,
+                "max": 99.53999999165535
+              }
+            },
+            "pacing": {
+              "unityAndActualAvailable": 0,
+              "networkScaleAboveUnity": 3098,
+              "networkScaleTwo": 1943,
+              "effectiveRange": [
+                1003,
+                2000
+              ],
+              "outstandingRange": [
+                2,
+                8
+              ]
+            }
+          },
+          "native10to20OneFreshNoResim": {
+            "callbacks": 0,
+            "waitReturns": 0,
+            "oneFresh": 0,
+            "twoFresh": 0,
+            "metrics": {
+              "nativeMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "wholeRafMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "insideOtherMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "nextEntryGapMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "nextRequestWaitMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "afterExitGapMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "entryTimestampLagMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "pacingAgeMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              }
+            },
+            "pacing": {
+              "unityAndActualAvailable": 0,
+              "networkScaleAboveUnity": 0,
+              "networkScaleTwo": 0,
+              "effectiveRange": [
+                null,
+                null
+              ],
+              "outstandingRange": [
+                null,
+                null
+              ]
+            }
+          },
+          "maximumOutgoingActualEntryGap": {
+            "rafIndex": 2312,
+            "sampleIndex": 1994,
+            "frame": 513,
+            "ok": 1,
+            "nativeMs": 3.884999990463257,
+            "wholeRafMs": 4.080000013113022,
+            "insideOtherMs": 0.19500002264976501,
+            "nextEntryGapMs": 29.930000007152557,
+            "nextRequestWaitMs": 25.894999980926514,
+            "afterExitGapMs": 25.849999994039536,
+            "nextRequestOffsetMs": 4.035000026226044,
+            "timestampGapMs": 29.97500000000582,
+            "entryTimestampLagMs": 0.6050000000032014,
+            "frameDelta": 4,
+            "correctionDelta": 0,
+            "resimDelta": 3,
+            "networkScaleMilli": 2000,
+            "effectiveScaleMilli": 2000,
+            "outstanding": 7,
+            "pacingAgeMs": 8.644999980926514
+          }
+        },
+        {
+          "side": 2,
+          "formal": {
+            "callbacks": 755,
+            "waitReturns": 2,
+            "oneFresh": 635,
+            "twoFresh": 37,
+            "metrics": {
+              "nativeMs": {
+                "count": 755,
+                "p50": 16.310000002384186,
+                "p99": 49.694199988245984,
+                "max": 68.36000001430511
+              },
+              "wholeRafMs": {
+                "count": 755,
+                "p50": 18.280000001192093,
+                "p99": 53.46989999234681,
+                "max": 70.72999998927116
+              },
+              "insideOtherMs": {
+                "count": 755,
+                "p50": 1.5350000262260437,
+                "p99": 7.542899990677847,
+                "max": 23.604999989271164
+              },
+              "nextEntryGapMs": {
+                "count": 755,
+                "p50": 31.51000002026558,
+                "p99": 89.54109999895098,
+                "max": 2188.110000014305
+              },
+              "nextRequestWaitMs": {
+                "count": 755,
+                "p50": 12.354999989271164,
+                "p99": 41.746600000262276,
+                "max": 2177.2950000166893
+              },
+              "afterExitGapMs": {
+                "count": 755,
+                "p50": 12.060000002384186,
+                "p99": 41.52640000224114,
+                "max": 2176.8700000047684
+              },
+              "entryTimestampLagMs": {
+                "count": 755,
+                "p50": 12.714999995230755,
+                "p99": 41.982099993417975,
+                "max": 54.35499999642343
+              },
+              "pacingAgeMs": {
+                "count": 755,
+                "p50": 12.519999980926514,
+                "p99": 65.15390000700955,
+                "max": 87.44999998807907
+              }
+            },
+            "pacing": {
+              "unityAndActualAvailable": 731,
+              "networkScaleAboveUnity": 0,
+              "networkScaleTwo": 0,
+              "effectiveRange": [
+                980,
+                997
+              ],
+              "outstandingRange": [
+                0,
+                3
+              ]
+            }
+          },
+          "native10to20OneFreshNoResim": {
+            "callbacks": 257,
+            "waitReturns": 0,
+            "oneFresh": 257,
+            "twoFresh": 0,
+            "metrics": {
+              "nativeMs": {
+                "count": 257,
+                "p50": 14.584999978542328,
+                "p99": 19.745400000810623,
+                "max": 19.905000001192093
+              },
+              "wholeRafMs": {
+                "count": 257,
+                "p50": 16.735000014305115,
+                "p99": 23.264800006151198,
+                "max": 27.884999990463257
+              },
+              "insideOtherMs": {
+                "count": 257,
+                "p50": 1.6800000071525574,
+                "p99": 5.799199992418289,
+                "max": 8.694999992847443
+              },
+              "nextEntryGapMs": {
+                "count": 257,
+                "p50": 28.57499998807907,
+                "p99": 53.37940000295639,
+                "max": 65.21500000357628
+              },
+              "nextRequestWaitMs": {
+                "count": 257,
+                "p50": 12.629999995231628,
+                "p99": 35.22800000309944,
+                "max": 41.99500000476837
+              },
+              "afterExitGapMs": {
+                "count": 257,
+                "p50": 12.16499999165535,
+                "p99": 33.90440000534058,
+                "max": 41.57499998807907
+              },
+              "entryTimestampLagMs": {
+                "count": 257,
+                "p50": 12.984999979733402,
+                "p99": 33.16359999236883,
+                "max": 50.23999998688669
+              },
+              "pacingAgeMs": {
+                "count": 257,
+                "p50": 12.209999978542328,
+                "p99": 56.86479999303817,
+                "max": 66.52499997615814
+              }
+            },
+            "pacing": {
+              "unityAndActualAvailable": 251,
+              "networkScaleAboveUnity": 0,
+              "networkScaleTwo": 0,
+              "effectiveRange": [
+                980,
+                997
+              ],
+              "outstandingRange": [
+                0,
+                2
+              ]
+            }
+          },
+          "maximumOutgoingActualEntryGap": {
+            "rafIndex": 365,
+            "sampleIndex": 356,
+            "frame": 283,
+            "ok": 1,
+            "nativeMs": 7.905000001192093,
+            "wholeRafMs": 11.240000009536743,
+            "insideOtherMs": 3.3350000083446503,
+            "nextEntryGapMs": 2188.110000014305,
+            "nextRequestWaitMs": 2177.2950000166893,
+            "afterExitGapMs": 2176.8700000047684,
+            "nextRequestOffsetMs": 10.814999997615814,
+            "timestampGapMs": 2186.7299999999996,
+            "entryTimestampLagMs": 4.039999994038226,
+            "frameDelta": 1,
+            "correctionDelta": 0,
+            "resimDelta": 0,
+            "networkScaleMilli": 1000,
+            "effectiveScaleMilli": 993,
+            "outstanding": 0,
+            "pacingAgeMs": 7.865000009536743
+          }
+        }
+      ]
+    },
+    {
+      "label": "input-batch-simd-diagnostic",
+      "source": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-chain-profile/web/artifacts/multiplayer-tests/rollback4x-chain-input-batch-simd-live-relay-none-01-report.json",
+        "sha256": "6fd99bbb29d3244f67db2632468ced5b040a26a063f35bc70d1d53ad0c7a170d",
+        "bytes": 34170121
+      },
+      "identity": {
+        "wasm": "2dc45fc83983243bda9390a6daabdc12c9c0e03f4e16a3e20e4d02172e85fb49",
+        "harness": "a3768e3a9f2a1c47e1a694d2d0755e09059885ac63ac35fc8bf049e72f30dac9",
+        "loader": "7f7080fa2d91486b07971b0054862554dd62c632a7320512ff0bd8d72a4f808a",
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+        "hostLoadProbe": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+        "networkTransportProbe": "02f44188e8f01c9072963d5f2f8bb34c4d88ca6bd90df6039dc0b874b1e8854e",
+        "callbackCostProbe": "52a06adf11b89aa96616afd19c0a9dc8b55ef1fe9fb65933b49ba34545196ba4",
+        "relayTransportProbe": "b75e82a07d21f23135b704381d29aef6829315308ab8ff0daf76de89ea4e757f",
+        "relayTransportFixture": "ee8398f6c08963a05d208a2020a168ddbd2deb6320ae880d57133f1872f215d1",
+        "relayTransportController": "060efa1bb2fd077cbad386c28a30467d6f07528f0c1846e91811105ee5f6e1ed"
+      },
+      "parameters": {
+        "limit": 900,
+        "delay": 0,
+        "jitter": 0,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": false,
+        "profile": false,
+        "fallback": true,
+        "inputMode": "tape",
+        "audioOutput": true,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": true,
+        "impairmentSite": "none",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "any",
+        "liveCost": true,
+        "clientSendMode": "synchronous",
+        "burstClock": "browser-active",
+        "cpuThrottle": {
+          "ratesBySide": [
+            1,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        }
+      },
+      "passed": true,
+      "peers": [
+        {
+          "side": 1,
+          "formal": {
+            "callbacks": 2963,
+            "waitReturns": 235,
+            "oneFresh": 673,
+            "twoFresh": 16,
+            "metrics": {
+              "nativeMs": {
+                "count": 2963,
+                "p50": 0.014999985694885254,
+                "p99": 8.877100009322172,
+                "max": 11.214999973773956
+              },
+              "wholeRafMs": {
+                "count": 2963,
+                "p50": 0.20500001311302185,
+                "p99": 9.128300008177762,
+                "max": 11.41499999165535
+              },
+              "insideOtherMs": {
+                "count": 2963,
+                "p50": 0.17000001668930054,
+                "p99": 0.33500000834465027,
+                "max": 0.9050000011920929
+              },
+              "nextEntryGapMs": {
+                "count": 2963,
+                "p50": 7.665000021457672,
+                "p99": 10.426399992108347,
+                "max": 24.805000007152557
+              },
+              "nextRequestWaitMs": {
+                "count": 2963,
+                "p50": 7.33500000834465,
+                "p99": 8.979000001549727,
+                "max": 24.690000027418137
+              },
+              "afterExitGapMs": {
+                "count": 2963,
+                "p50": 7.2950000166893005,
+                "p99": 8.949499999880793,
+                "max": 24.650000005960464
+              },
+              "entryTimestampLagMs": {
+                "count": 2963,
+                "p50": 0.41499998092695023,
+                "p99": 2.9925999970663564,
+                "max": 17.165000003577006
+              },
+              "pacingAgeMs": {
+                "count": 2963,
+                "p50": 15.325000017881393,
+                "p99": 57.91440000772478,
+                "max": 103.01499998569489
+              }
+            },
+            "pacing": {
+              "unityAndActualAvailable": 0,
+              "networkScaleAboveUnity": 2931,
+              "networkScaleTwo": 1371,
+              "effectiveRange": [
+                1016,
+                2000
+              ],
+              "outstandingRange": [
+                3,
+                8
+              ]
+            }
+          },
+          "native10to20OneFreshNoResim": {
+            "callbacks": 0,
+            "waitReturns": 0,
+            "oneFresh": 0,
+            "twoFresh": 0,
+            "metrics": {
+              "nativeMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "wholeRafMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "insideOtherMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "nextEntryGapMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "nextRequestWaitMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "afterExitGapMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "entryTimestampLagMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              },
+              "pacingAgeMs": {
+                "count": 0,
+                "p50": null,
+                "p99": null,
+                "max": null
+              }
+            },
+            "pacing": {
+              "unityAndActualAvailable": 0,
+              "networkScaleAboveUnity": 0,
+              "networkScaleTwo": 0,
+              "effectiveRange": [
+                null,
+                null
+              ],
+              "outstandingRange": [
+                null,
+                null
+              ]
+            }
+          },
+          "maximumOutgoingActualEntryGap": {
+            "rafIndex": 2064,
+            "sampleIndex": 1794,
+            "frame": 446,
+            "ok": 1,
+            "nativeMs": 0.010000020265579224,
+            "wholeRafMs": 0.1550000011920929,
+            "insideOtherMs": 0.14499998092651367,
+            "nextEntryGapMs": 24.805000007152557,
+            "nextRequestWaitMs": 24.690000027418137,
+            "afterExitGapMs": 24.650000005960464,
+            "nextRequestOffsetMs": 0.11499997973442078,
+            "timestampGapMs": 8.049999999999272,
+            "entryTimestampLagMs": 0.4099999964237213,
+            "frameDelta": 0,
+            "correctionDelta": 0,
+            "resimDelta": 0,
+            "networkScaleMilli": 1513,
+            "effectiveScaleMilli": 1513,
+            "outstanding": 5,
+            "pacingAgeMs": 26.25
+          }
+        },
+        {
+          "side": 2,
+          "formal": {
+            "callbacks": 694,
+            "waitReturns": 0,
+            "oneFresh": 622,
+            "twoFresh": 49,
+            "metrics": {
+              "nativeMs": {
+                "count": 694,
+                "p50": 16.587500005960464,
+                "p99": 46.579449992179875,
+                "max": 65.70500001311302
+              },
+              "wholeRafMs": {
+                "count": 694,
+                "p50": 18.902499988675117,
+                "p99": 49.63535000085838,
+                "max": 67
+              },
+              "insideOtherMs": {
+                "count": 694,
+                "p50": 1.8899999856948853,
+                "p99": 6.73399999588729,
+                "max": 10.235000014305115
+              },
+              "nextEntryGapMs": {
+                "count": 694,
+                "p50": 31.657499983906746,
+                "p99": 76.87005001723767,
+                "max": 98.80999997258186
+              },
+              "nextRequestWaitMs": {
+                "count": 694,
+                "p50": 12.477500006556511,
+                "p99": 34.90260000050079,
+                "max": 46.2049999833107
+              },
+              "afterExitGapMs": {
+                "count": 694,
+                "p50": 12.015000000596046,
+                "p99": 34.3630999889971,
+                "max": 45.979999989271164
+              },
+              "entryTimestampLagMs": {
+                "count": 694,
+                "p50": 13.689999994039681,
+                "p99": 35.92409998636388,
+                "max": 47.50499997735096
+              },
+              "pacingAgeMs": {
+                "count": 694,
+                "p50": 12.695000007748604,
+                "p99": 48.013150023222224,
+                "max": 75.80500000715256
+              }
+            },
+            "pacing": {
+              "unityAndActualAvailable": 694,
+              "networkScaleAboveUnity": 0,
+              "networkScaleTwo": 0,
+              "effectiveRange": [
+                980,
+                986
+              ],
+              "outstandingRange": [
+                0,
+                0
+              ]
+            }
+          },
+          "native10to20OneFreshNoResim": {
+            "callbacks": 324,
+            "waitReturns": 0,
+            "oneFresh": 324,
+            "twoFresh": 0,
+            "metrics": {
+              "nativeMs": {
+                "count": 324,
+                "p50": 14.394999995827675,
+                "p99": 19.82499998807907,
+                "max": 19.88500002026558
+              },
+              "wholeRafMs": {
+                "count": 324,
+                "p50": 16.389999985694885,
+                "p99": 23.076400007605546,
+                "max": 25.805000007152557
+              },
+              "insideOtherMs": {
+                "count": 324,
+                "p50": 1.9099999964237213,
+                "p99": 6.8607000005245045,
+                "max": 10.235000014305115
+              },
+              "nextEntryGapMs": {
+                "count": 324,
+                "p50": 28.172500014305115,
+                "p99": 49.90639999926086,
+                "max": 52.25999999046326
+              },
+              "nextRequestWaitMs": {
+                "count": 324,
+                "p50": 12.265000015497208,
+                "p99": 31.270849998891343,
+                "max": 33.86500000953674
+              },
+              "afterExitGapMs": {
+                "count": 324,
+                "p50": 11.797499999403954,
+                "p99": 30.901099998354905,
+                "max": 33.43000000715256
+              },
+              "entryTimestampLagMs": {
+                "count": 324,
+                "p50": 12.8724999898659,
+                "p99": 31.907649997542567,
+                "max": 36.53999999284679
+              },
+              "pacingAgeMs": {
+                "count": 324,
+                "p50": 11.452500000596046,
+                "p99": 42.81944999814033,
+                "max": 72.06999999284744
+              }
+            },
+            "pacing": {
+              "unityAndActualAvailable": 324,
+              "networkScaleAboveUnity": 0,
+              "networkScaleTwo": 0,
+              "effectiveRange": [
+                980,
+                986
+              ],
+              "outstandingRange": [
+                0,
+                0
+              ]
+            }
+          },
+          "maximumOutgoingActualEntryGap": {
+            "rafIndex": 305,
+            "sampleIndex": 293,
+            "frame": 301,
+            "ok": 1,
+            "nativeMs": 49.804999977350235,
+            "wholeRafMs": 52.8299999833107,
+            "insideOtherMs": 3.0250000059604645,
+            "nextEntryGapMs": 98.80999997258186,
+            "nextRequestWaitMs": 46.2049999833107,
+            "afterExitGapMs": 45.979999989271164,
+            "nextRequestOffsetMs": 52.604999989271164,
+            "timestampGapMs": 85.25500000000102,
+            "entryTimestampLagMs": 33.95000000477012,
+            "frameDelta": 1,
+            "correctionDelta": 0,
+            "resimDelta": 0,
+            "networkScaleMilli": 1000,
+            "effectiveScaleMilli": 980,
+            "outstanding": 0,
+            "pacingAgeMs": 29.12000000476837
+          }
+        }
+      ]
+    }
+  ],
+  "releaseEnvironmentControl": {
+    "source": {
+      "path": "web/artifacts/multiplayer-tests/rollback4x-chain-release-relay-headed-02-report.json",
+      "sha256": "311e43a281836de611e614dbe7730675386c8d599327833ecd0f4dd0e7a048c5",
+      "bytes": 11005847
+    },
+    "identity": {
+      "wasm": "de1760ac76f3aaa8cd49c9f267f37f85e86c70d6bf251679a5c93fefacca9b68",
+      "harness": "a0ce03e2e79efaeab2f605c2e14f94415bce543cfdcb57d0e83eee4be4f34fef",
+      "loader": "4e53b06c7e2a99624bc4234ffde1682a9a18ce7c89be3d2a414b4f0cb3620ee8",
+      "headedBrowserExecutable": {
+        "selection": "playwright.chromium.executablePath; existing normal Windows chrome.exe",
+        "basename": "chrome.exe",
+        "bytes": 4508160,
+        "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+        "launcherSha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+      },
+      "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+      "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+      "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+      "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+      "hostLoadProbe": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+      "relayTransportProbe": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
+      "relayTransportFixture": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",
+      "relayTransportController": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870",
+      "relayStartupProbe": "15dd23710b0007ca0f43a6068da4dba497146773932cd0f75d596b2a0a2bd86a"
+    },
+    "parameters": {
+      "limit": 900,
+      "delay": 0,
+      "jitter": 0,
+      "slow": 4,
+      "dropEvery": 0,
+      "release": true,
+      "profile": false,
+      "fallback": true,
+      "inputMode": "tape",
+      "audioOutput": true,
+      "responsiveness": false,
+      "burstAt": 0,
+      "burstFor": 0,
+      "burstDelay": 0,
+      "rafDiagnostics": true,
+      "hostLoad": true,
+      "networkTrace": false,
+      "impairmentSite": "none",
+      "relayDiagnostics": true,
+      "expectedRtcPath": "any",
+      "liveCost": false,
+      "clientSendMode": "synchronous",
+      "burstClock": "browser-active",
+      "cpuThrottle": {
+        "ratesBySide": [
+          1,
+          4
+        ],
+        "configuredAfter": "openProbe",
+        "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+      },
+      "startupTrace": false,
+      "relayInputDiagnostics": true,
+      "headedControl": true,
+      "headedLaunch": {
+        "headless": false,
+        "explicitArgs": [
+          "--enable-gpu",
+          "--use-gl=angle",
+          "--use-angle=d3d11",
+          "--autoplay-policy=no-user-gesture-required",
+          "--hide-scrollbars",
+          "--mute-audio",
+          "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+        ],
+        "preservedHeadlessAuxiliaryArgs": [
+          "--hide-scrollbars",
+          "--mute-audio",
+          "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+        ],
+        "scope": "Window-mode environment control, not a production code change; proxy, input, audio/context, CPU setup, and native GPU arguments are unchanged."
+      }
+    },
+    "passed": true,
+    "summary": [
+      {
+        "logicHz": 59.923732673584915,
+        "elapsedMs": 11998.584999978542,
+        "firstFrame": 180,
+        "lastFrame": 899,
+        "callbacks": 1560,
+        "waitCallbacks": 0,
+        "corrections": 50,
+        "resimulated": 64,
+        "captures": 719,
+        "callbackWorkMs": {
+          "count": 1560,
+          "total": 934.5600000917912,
+          "p50": 0.46000000834465027,
+          "p95": 1.6150000095367432,
+          "p99": 2.2150000035762787,
+          "max": 5.300000011920929,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "presentationGapMs": {
+          "count": 719,
+          "total": 11992.340000000002,
+          "p50": 15.540000000000873,
+          "p95": 23.18499999999767,
+          "p99": 23.655000000002474,
+          "max": 24.174999999999272,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "effectivePresentationGapMs": {
+          "count": 719,
+          "total": 11992.340000000002,
+          "p50": 15.540000000000873,
+          "p95": 23.18499999999767,
+          "p99": 23.655000000002474,
+          "max": 24.174999999999272,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "callbackCompletionGapMs": {
+          "count": 719,
+          "total": 11992.42999997735,
+          "p50": 15.61999997496605,
+          "p95": 23.235000014305115,
+          "p99": 24.194999992847443,
+          "max": 26.719999998807907,
+          "over25ms": 1,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "rafGapMs": {
+          "count": 1559,
+          "total": 11999.554999999998,
+          "p50": 7.57499999999709,
+          "p95": 8.424999999999272,
+          "p99": 8.599999999998545,
+          "max": 9.485000000000582,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "plannedDelayMs": {
+          "count": 1805,
+          "total": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "max": 0,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "deliveredDelayMs": {
+          "count": 1805,
+          "total": 97.36000028252602,
+          "p50": 0.054999977350234985,
+          "p95": 0.08500000834465027,
+          "p99": 0.11500000953674316,
+          "max": 4.325000017881393,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "scenes": [
+          1
+        ]
+      },
+      {
+        "logicHz": 59.98680123511668,
+        "elapsedMs": 11985.969999998808,
+        "firstFrame": 180,
+        "lastFrame": 899,
+        "callbacks": 1550,
+        "waitCallbacks": 0,
+        "corrections": 1,
+        "resimulated": 1,
+        "captures": 719,
+        "callbackWorkMs": {
+          "count": 1550,
+          "total": 3062.425000309944,
+          "p50": 1.854999989271164,
+          "p95": 5.819999992847443,
+          "p99": 9.03999999165535,
+          "max": 14.9200000166893,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "presentationGapMs": {
+          "count": 719,
+          "total": 11980.710000000001,
+          "p50": 15.545000000000073,
+          "p95": 23.040000000000873,
+          "p99": 23.625,
+          "max": 24.36499999999978,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "effectivePresentationGapMs": {
+          "count": 719,
+          "total": 11980.710000000001,
+          "p50": 15.545000000000073,
+          "p95": 23.040000000000873,
+          "p99": 23.625,
+          "max": 24.36499999999978,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "callbackCompletionGapMs": {
+          "count": 719,
+          "total": 11980.57000002265,
+          "p50": 15.71000000834465,
+          "p95": 23.530000001192093,
+          "p99": 26.4549999833107,
+          "max": 34.24000000953674,
+          "over25ms": 13,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "rafGapMs": {
+          "count": 1549,
+          "total": 11988.305000000002,
+          "p50": 7.559999999999491,
+          "p95": 8.305000000000291,
+          "p99": 8.860000000000582,
+          "max": 22.890000000001237,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "plannedDelayMs": {
+          "count": 1791,
+          "total": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "max": 0,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "deliveredDelayMs": {
+          "count": 1791,
+          "total": 413.2600002884865,
+          "p50": 0.20499998331069946,
+          "p95": 0.4399999976158142,
+          "p99": 0.7949999868869781,
+          "max": 1.8400000035762787,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "scenes": [
+          1
+        ]
+      }
+    ],
+    "scope": "Original P release; different build/instrumentation and headed/browser startup observation conditions. Not a matched timing comparison with either diagnostic report."
+  },
+  "sources": [
+    {
+      "path": "web/cpp/sdl/Application.cpp",
+      "sha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
+      "bytes": 87130,
+      "anchorLine": 617
+    },
+    {
+      "path": "web/cpp/multiplayer/FrameSchedule.hpp",
+      "sha256": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
+      "bytes": 1053,
+      "anchorLine": 20
+    },
+    {
+      "path": "portable/sdl/FrameCadence.hpp",
+      "sha256": "d475dd64d34b68178c1da18b27e46f46476363946179aa156554df15f37702d6",
+      "bytes": 610,
+      "anchorLine": 12
+    },
+    {
+      "path": "web/tests/multiplayer/frame-schedule.cpp",
+      "sha256": "a5f21959532b17e25110507bf7b08b2f168252ef03866ab532ee94d08728c7d6",
+      "bytes": 2529,
+      "anchorLine": 27
+    },
+    {
+      "path": "web/cpp/multiplayer/RollbackSession.cpp",
+      "sha256": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
+      "bytes": 15088,
+      "anchorLine": 49
+    },
+    {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-transport-common/include/eagler/netplay/FramePacingPolicy.hpp",
+      "sha256": "60efd7cfb63aff9df2e906beb2ba8088c650b53853a7e75453a8dff151df8f97",
+      "bytes": 2150,
+      "anchorLine": 17
+    },
+    {
+      "path": "D:/workspace/eagler/th08-eagler/tools/emsdk/install/emscripten/src/lib/libhtml5.js",
+      "sha256": "55d0f01efe316ba26e84f2427f0d865a65923a4edf9f092ba01c9a8f52ffe69a",
+      "bytes": 116558,
+      "anchorLine": 2347
+    },
+    {
+      "path": "D:/workspace/eagler/th08-eagler/tools/emsdk/install/emscripten/src/lib/libeventloop.js",
+      "sha256": "00344832c1550fc624e286ca45c5c370d46c4bec4858eb35c74c7fb715ac3a91",
+      "bytes": 19081,
+      "anchorLine": 491
+    },
+    {
+      "path": "D:/workspace/eagler/th07-eagler/src/main.cpp",
+      "sha256": "6ab00e93a42b7312899452fbd1c98a0f9de9929adbc64512a677b71306cc11f2",
+      "bytes": 38639,
+      "anchorLine": 9
+    },
+    {
+      "path": "D:/workspace/eagler/th07-eagler/vendored/SDL/src/main/emscripten/SDL_sysmain_callbacks.c",
+      "sha256": "44d5e78ffd0218496814f18f8a4cab23cf24f9b56a27d83776165217c68e7a09",
+      "bytes": 4766,
+      "anchorLine": 98
+    },
+    {
+      "path": "D:/workspace/eagler/th07-eagler/src/GameWindow.cpp",
+      "sha256": "faec747511ce2e1b97e0840b7d88c736da9d1ab4cc5be2e1a49e1daa11b812de",
+      "bytes": 33590,
+      "anchorLine": 335
+    }
+  ],
+  "oldBuild": {
+    "source": {
+      "path": "web/artifacts/rollback4x-chain-live-profile/build.json",
+      "sha256": "f0bd041d4000603fb84f20b1417b5dbb4d554dd5e0d8ec15d28124255af4b941",
+      "bytes": 88821
+    },
+    "wasm": "7c8bdf579af8e18ace2208377d5a4f22a309eba9c1ec22f0248e252bd6f7deaa",
+    "selectedSourceIdentities": {
+      "web/cpp/sdl/Application.cpp": "a13de4320ec6c9210e6992b3abf38b09935e819372e67f1eac8307933b588d27",
+      "web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
+      "portable/sdl/FrameCadence.hpp": "d475dd64d34b68178c1da18b27e46f46476363946179aa156554df15f37702d6",
+      "web/cpp/multiplayer/FrameSchedule.hpp": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
+      "../th09-rollback-transport-common/include/eagler/netplay/PendingFrameSchedule.hpp": "6e99f7c74d70936c061e079b2f7b028cf342d93ee55ba355ea9e53240e3ef67e"
+    }
+  },
+  "candidateCheckoutTimingHeaders": [
+    {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-chain-profile/web/cpp/multiplayer/FrameSchedule.hpp",
+      "sha256": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
+      "bytes": 1053
+    },
+    {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-chain-profile/portable/sdl/FrameCadence.hpp",
+      "sha256": "d475dd64d34b68178c1da18b27e46f46476363946179aa156554df15f37702d6",
+      "bytes": 610
+    }
+  ],
+  "findings": [
+    {
+      "id": "no-fixed-completion-wait",
+      "conclusion": "TH09 uses entry-to-entry RAF timestamp deltas, not a timer reset after work. The installed SDK requests the next RAF after the C++ callback returns, but adds no fixed 16.67 ms timeout.",
+      "source": "Application.cpp:617; libhtml5.js:2347"
+    },
+    {
+      "id": "th07-same-request-order",
+      "conclusion": "Current TH07 default Web SDL callbacks use emscripten_set_main_loop(fps=0); the SDK runs MainLoop.runIter before scheduling the next RAF. This source comparison does not show an entry-first request advantage for TH07.",
+      "source": "TH07 src/main.cpp:9; SDL_sysmain_callbacks.c:98; libeventloop.js:491"
+    },
+    {
+      "id": "conditional-debt-discard",
+      "conclusion": "FrameSchedule exhausted(1,1) preserves the fractional phase; only uncompleted due work resets it. A pending rollback retry needs no new time credit. Frequent budget exhaustion can limit catch-up, but this is not a fixed 30 Hz setting.",
+      "source": "FrameSchedule.hpp; tests/multiplayer/frame-schedule.cpp:27"
+    },
+    {
+      "id": "not-network-braking-on-p2",
+      "conclusion": "Neither diagnostic P2 formal group observes networkScale > 1 at the latest prior safe observation. All 694 candidate P2 callbacks have outstanding=0 and networkScale=1000 in those observations; effective scale is 980..986. The roughly 31 Hz diagnostic result cannot be attributed to an observed shortage brake.",
+      "source": "Reports and finite grouping in this file; RollbackSession.cpp:104"
+    },
+    {
+      "id": "callback-plus-dispatch",
+      "conclusion": "Both reports include substantial native work, additional time inside the RAF callback, and time until subsequent browser entry. Native work, RAF wrapper time, and browser scheduling must not be collapsed into a FrameSchedule-only explanation.",
+      "source": "Per-peer metrics below"
+    },
+    {
+      "id": "long-pending-is-distinct",
+      "conclusion": "The old P2 maximum outgoing actual-entry gap follows an 11.240 ms RAF callback and includes 2177.295 ms waiting after the next request. Independent network pumping continued in the previously established raw chain evidence; this is not a two-second C++ tick or proof that the entire main thread stopped.",
+      "source": "Old maximumOutgoingActualEntryGap; rollback4x-chain-live-relay-none-02-report.json"
+    },
+    {
+      "id": "th07-debt-not-dropin",
+      "conclusion": "TH07 netplay keeps unconsumed bounded accumulator work and may run multiple Calc ticks before Draw. TH09 requires semantic Draw for each logical tick; copying TH07 catch-up retention cannot be assumed to preserve TH09 tail latency.",
+      "source": "TH07 GameWindow.cpp:335 and :349"
+    },
+    {
+      "id": "release-not-fixed-30",
+      "conclusion": "The original P release under the separate headed environment control passed near 60 Hz. This rules out describing the diagnostic 31 Hz observation as an unconditional fixed 30 Hz release-code limit. It does not establish a causal improvement from window mode, input batching or SIMD.",
+      "source": "releaseEnvironmentControl"
+    }
+  ],
+  "limitations": [
+    "All distributions are separately computed over retained records. Their medians or quantiles must not be added or subtracted to attribute causes.",
+    "Actual RAF entry gaps differ from the existing summary definition using browser-supplied RAF timestamps. The summary has not been replaced.",
+    "The native10to20 subgroup excludes correction/resim but is not a no-checkpoint or pure-forward-cost claim; all formal records and maxima are also reported.",
+    "Safe pacing observation age is retained. Observations do not reconstruct the exact internal cadence debt or every branch decision.",
+    "Both diagnostic reports and the headed release control have V8 profiling disabled. The diagnostic reports use a DEV build with live callback-cost and browser packet probes; the headed release disables those two probes but retains RAF/HOST/audio observations and relay diagnostics.",
+    "Headed release also uses a normal visible browser and a pre-page single-PID CIM identity observation. Startup delay and environment differ; these are not matched code-performance runs.",
+    "Host samples and all original raw reports are retained. Host sampling completeness does not establish a quiet machine, and no sample was filtered by load.",
+    "No browser, build, performance run, gate or production edit was performed for this evidence. Existing cadence test source was reviewed, not re-executed.",
+    "Current TH07 source and installed SDK are identified by file hashes. They are method references, not a matched performance benchmark or proof about every historical TH07 release.",
+    "No conclusion is made that requesting RAF at callback entry would fix seconds-long pending callbacks or improve release performance."
+  ]
+}

@@ -1,0 +1,174 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TH07 MP performance and determinism fixture</title>
+<iframe id="runtime" style="width:640px;height:480px;border:0"></iframe>
+<pre id="status">boot</pre>
+<script>
+(() => {
+  "use strict";
+  const protocol = "eagler-touhou/1";
+  const game = "th07";
+  const epoch = 1;
+  const params = new URLSearchParams(location.search);
+  const player = Number(params.get("player") || 0);
+  const playerCount = Number(params.get("players") || 2);
+  const bridgeDrag = params.get("bridgeDrag") === "1";
+  const responsiveProfile = params.get("responsiveProfile") === "1";
+  const automaticProfile = responsiveProfile || params.get("autoProfile") === "1";
+  const physical = params.get("physicalTouch") === "1" || bridgeDrag;
+  const iframe = document.getElementById("runtime");
+  const pending = new Map();
+  let request = 0;
+  function send(command, body = {}) {
+    const id = `th07-perf-${++request}`;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        pending.delete(id);
+        reject(new Error(`${command} timeout`));
+      }, 30000);
+      pending.set(id, { resolve, reject, timer });
+      iframe.contentWindow.postMessage(
+        { protocol, game, epoch, command, request: id, ...body }, location.origin);
+    });
+  }
+  window.addEventListener("message", async event => {
+    if (event.source !== iframe.contentWindow || event.origin !== location.origin) return;
+    const message = event.data || {};
+    if (message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
+    if (message.request && pending.has(message.request)) {
+      const waiter = pending.get(message.request);
+      pending.delete(message.request);
+      clearTimeout(waiter.timer);
+      if (message.ok) waiter.resolve(message);
+      else waiter.reject(new Error(message.error || "runtime request failed"));
+      return;
+    }
+    if (message.event !== "ready") return;
+    try {
+      await send("configure", {
+        music: params.get("music") === "ogg" ? "ogg" : "none",
+        resources: params.get("music") === "ogg" ?
+          ["01","02","03","04","05","06","07","08","09","10","11","12","13","13b","14","15","16","17","18","19"].map(track => ({
+            url: `/assets-ogg/bgm-ogg/th07_${track}.ogg`, path: `/bgm-ogg/th07_${track}.ogg`
+          })) : [],
+        sharedResources: [{ url: "/assets/msgothic.ttc", path: "/msgothic.ttc" }],
+        thpracCatalog: [],
+        options: {
+          debugHarness: "netplay-lan-stage1", netplayMode: "lan",
+          // Explicit manual tuning keeps old/new comparisons controlled. The
+          // auto-profile lane below removes overrides and tests real defaults.
+          netplayPerformanceProfile: automaticProfile ? "responsive" : "manual",
+          netplayUrl: params.get("relay"), netplayPlayer: player,
+          netplayPlayerCount: playerCount,
+          netplayInputDelayFrames: responsiveProfile ? 0 : params.get("autoProfile") === "1" ? undefined : Number(params.get("inputDelay") ?? 3),
+          netplayRollbackPolicy: params.get("rollbackPolicy") || undefined,
+          netplayMaxPredictionFrames: Number(params.get("predictionWindow") ?? 12),
+          netplayTouchDeltaPredictionFrames: Number(params.get("touchDeltaPredictionFrames") || 0),
+          netplayTouchQuantization: Number(params.get("touchQuantization") || 0),
+          netplayTouchEquivalentAbsorb: params.get("touchEquivalentAbsorb") === "1",
+          netplayIncrementalReconcile: params.get("incrementalReconcile") === "1",
+          netplayInitialFrameLag: Number(params.get("initialFrameLag") || 0),
+          netplayDisableTimeSyncPacing: params.get("disableTimeSyncPacing") === "1",
+          netplaySnapshotPolicy: automaticProfile ? undefined : params.get("snapshotPolicy") || "always",
+          netplaySnapshotLayout: automaticProfile ? undefined : params.get("snapshotLayout") || "objects",
+          netplaySnapshotCopy: automaticProfile ? undefined : params.get("snapshotCopy") || "wasm",
+          netplaySnapshotRestore: automaticProfile ? undefined : params.get("snapshotRestore") || "sequential",
+          netplaySnapshotCheckpointFrames: responsiveProfile ? undefined : Number(params.get("checkpointFrames") || 2),
+          netplayBulletSnapshot: responsiveProfile ? undefined : params.get("bulletSnapshot") || "journal",
+          netplayTouchWorkload: params.get("trace") || "default",
+          netplayPerfTelemetry: true,
+          limitPresentationTo60: responsiveProfile ? undefined : params.get("cap60") === "1",
+          netplayTestIncrementalTouch: params.get("touchStream") === "delta",
+          netplayTestNoRollback: params.get("noRollback") === "1",
+          netplayTestKeepRollbackSnapshots: params.get("keepSnapshots") === "1",
+          netplayTestDenseBullets: Number(params.get("denseBullets") || 0),
+          netplayTestDenseCurved: params.get("curvedBullets") === "1",
+          touchEnabled: physical,
+          touchMovementMode: "touch", touchFocusMode: "two-finger",
+          netplayTestFrames: Number(params.get("frames") || 900),
+          netplaySeed: 19005, netplayDifficulty: Number(params.get("difficulty") || 1), netplayIceServers: [],
+          netplayTestStage: params.has("realStage") ? Number(params.get("realStage")) : undefined,
+          netplayLiveBulletAudit: params.get("liveBulletAudit") === "1",
+          netplayDormantBulletElision: params.get("dormantBulletElision") === "1",
+          netplayReliableInputRepair: responsiveProfile ? undefined : params.get("reliableInputRepair") === "1",
+          netplayLoadouts: [
+            { character: 0, shot: 0 }, { character: 1, shot: 1 },
+            { character: 2, shot: 0 },
+          ].slice(0, playerCount),
+          netplayPhysicalInput: physical,
+          netplayScriptedInput: !physical,
+          // Reuse the existing alternating joystick/direct-touch stimulus.
+          // This fixture requires TH_DEV_TOOLS=OFF: no Replay-menu cycle.
+          netplayReplayPlaybackCycle: params.get("analog") === "1",
+        },
+      });
+      globalThis.__th07PerfLaunch = async () => {
+        try {
+          await send("launch");
+          document.getElementById("status").textContent = "launched";
+          if (bridgeDrag) startBridgeDrag();
+        } catch (error) { globalThis.__th07PerfFailure = String(error?.message || error); }
+      };
+      globalThis.__th07PerfConfigured = true;
+      if (params.get("manualStart") !== "1") await globalThis.__th07PerfLaunch();
+    } catch (error) {
+      globalThis.__th07PerfFailure = String(error?.message || error);
+      document.getElementById("status").textContent = globalThis.__th07PerfFailure;
+    }
+  });
+  function startBridgeDrag() {
+    const limit = Number(params.get("frames") || 900);
+    const stats = globalThis.__th07BridgeDrag = {
+      events: 0, done: false, pathPixels: 0, minX: Infinity, maxX: -Infinity
+    };
+    let active = false, lastFrame = -1, lastX = 0, lastY = 0, firstTime = 0, bombSent = false;
+    const wallClock = params.get("wallClockDrag") === "1";
+    function event(type, x, y) {
+      const message = { protocol, game, epoch, command: "direct-touch", type,
+        id: 991 + player, x, y, testIssuedAt: performance.timeOrigin + performance.now() };
+      if (params.get("directInputBridge") === "1") {
+        const bridge = iframe.contentWindow.__eaglerDirectInputBridge;
+        if (!bridge || bridge.schema !== "eagler-touhou/direct-input/1" || !bridge.submit(message))
+          throw new Error("synchronous input bridge was not accepted");
+        stats.directEvents = (stats.directEvents || 0) + 1;
+      } else iframe.contentWindow.postMessage(message, location.origin);
+      ++stats.events;
+    }
+    function tick() {
+      const w = iframe.contentWindow;
+      const frame = Number(w.__eaglerNetplayLanFrame || 0);
+      if (params.get("bombCycle") === "1" && !bombSent && frame >= 960 + player * 80) {
+        const message = { protocol, game, epoch, command:"touch-controls", fireEnabled:true,
+          focusEnabled:false, bombSerial:1, escapeSerial:0, joystickX:0, joystickY:0, touchSensitivity:100 };
+        if (params.get("directInputBridge") === "1") {
+          if (!w.__eaglerDirectInputBridge?.submit(message)) throw new Error("Bomb bridge refused");
+        } else w.postMessage(message, location.origin);
+        bombSent = true; stats.bombSentAt = frame;
+      }
+      if (frame >= 320 && frame < limit - 60 && (wallClock || frame !== lastFrame)) {
+        const rect = w.Module.canvas.getBoundingClientRect();
+        if (!firstTime) firstTime = performance.now();
+        const phase = (wallClock ? (performance.now() - firstTime) / 2500 : (frame - 320) / 150) * Math.PI * 2 + player * 0.8;
+        const x = (rect.left + rect.width * (0.5 + 0.045 * Math.sin(phase))) / w.innerWidth;
+        const y = (rect.top + rect.height * 0.8) / w.innerHeight;
+        event(active ? "move" : "down", x, y);
+        if (active) stats.pathPixels += Math.abs(x - lastX) * w.innerWidth;
+        lastX = x; lastY = y; active = true; lastFrame = frame;
+        const actualX = w.__eaglerNetplayPerf?.positions?.[player * 2];
+        if (Number.isFinite(actualX)) {
+          stats.minX = Math.min(stats.minX, actualX);
+          stats.maxX = Math.max(stats.maxX, actualX);
+        }
+      }
+      if (frame >= limit - 60 && active) {
+        event("up", lastX, lastY); active = false; stats.done = true;
+      }
+      if (!w.__eaglerNetplayLanStageDone && !w.__eaglerNetplayFailed) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  const build = params.get("build") || "build-web-th07-netplay";
+  if (!/^[A-Za-z0-9_.-]+$/.test(build)) throw new Error("invalid test build directory");
+  iframe.src = `/${build}/th07.html?hosted=1&runtimeVariant=multiplayer&runtimeEpoch=${epoch}`;
+})();
+</script>

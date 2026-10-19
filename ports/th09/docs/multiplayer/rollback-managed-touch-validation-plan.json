@@ -1,0 +1,79 @@
+{
+  "schema": "th09-managed-touch-validation-plan/v1",
+  "declaredDate": "2026-10-11",
+  "root": "D:/workspace/eagler/worktrees/th09-managed-touch-4x",
+  "branch": "experiment/managed-touch-4x",
+  "parentCommit": "63127575d43ea5ef35b317ff8137b00a1ab5b1cc",
+  "baseline": {
+    "root": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x",
+    "managedSha256": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+    "releaseWasmSha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
+  },
+  "userGoal": "Full D0 prediction/rollback with continuous newly presented game states at CPU4, including continuous phone drag and joystick. Smooth slowdown caused by lack of network information is acceptable; large freezes are not.",
+  "narrowChange": "Remove already-received synchronous touch commands from the asynchronous managed filesystem/resource queue. Keep the existing host envelope and per-event native movement order; consume ineligible controls serials without replaying their actions when eligibility returns.",
+  "productionScope": [
+    "web/sdl-runtime/managed.mjs"
+  ],
+  "forbiddenShortcuts": [
+    "No new direct-input bridge or host protocol command",
+    "No document.hasFocus or netplay.active-only input gate",
+    "No gesture coalescing or last-point replacement",
+    "No native game_tick/draw/pump from input handlers",
+    "No reset of mapped serials on pause/game_open/restart",
+    "No rewritten host DATA provider or alternate Runtime carrier",
+    "No moving or overwriting frozen baseline evidence"
+  ],
+  "acceptance": {
+    "receiver": [
+      "Use the actual managed message/lifecycle listeners with only dependencies controlled; do not write closure state or call command() as the message path",
+      "Active direct-touch/controls/cancel native calls and legal ACKs complete while unrelated resources remain unresolved",
+      "Retain every direct MOVE, coordinate transform and native call order",
+      "Core-not-created, initialization-not-complete, ready-without-launch and launched-with-unresolved-connect states consume input without late native replay",
+      "Existing onClose/onGameFrame stop, fatal and pagehide revoke old asynchronous launch completion; no invented stop message",
+      "Hidden/blur/overlay/disable/mode change neutralize relevant transient movement and preserve correct action pulse semantics",
+      "Same WindowProxy/epoch with a replaced or disconnected document does not permit old receiver input",
+      "Source bomb/escape serial changes received while ineligible do not become actions upon repeated post-resume controls",
+      "Normal fire/focus/sensitivity controls do not cancel an ongoing direct gesture",
+      "Current valid parent touch remains permitted when the child document does not have focus",
+      "All source/origin/protocol/game/epoch gates and legal ACK/error behavior remain effective"
+    ],
+    "native": [
+      "Test actual TouchController.hpp, not a JavaScript model",
+      "cancel preserves remaining accepted action pulses; reset clears pulses but retains private serial baselines",
+      "Repeated same mapped neutral controls clear axes/focus without refreshing pulses or losing fire preference",
+      "New/jumped/nonmonotonic/wrapped serial changes retain one change event per native call; duplicate values do not refresh",
+      "Cancelled direct drag cannot revive from an orphan MOVE; a new DOWN works",
+      "Free joystick speed/focus selection and existing deathbomb behavior remain valid"
+    ],
+    "integration": [
+      "Materialize normal/multiplayer directory Runtime from the frozen release WASM and candidate shell with exact source identities",
+      "Use an ordinary current React Launcher and its immutable Runtime generation and Package Store ownership for browser or Android acceptance",
+      "Record device/browser/origin/forwarding and separate source event, host submission, receiver/native call and sampled frame boundaries",
+      "Retain unsuccessful setup or acceptance results under distinct labels; do not relabel VM success as physical input latency or mobile FPS"
+    ]
+  },
+  "execution": {
+    "owner": "root",
+    "environment": "nig only",
+    "serialize": [
+      "tests",
+      "build/materialization",
+      "browsers",
+      "Android device operations",
+      "raw processing"
+    ],
+    "noInstallDownload": true,
+    "localOnly": true,
+    "retainBeforeAfterSourceHashes": true,
+    "retainStdoutStderr": true,
+    "exclusiveOutputs": true
+  },
+  "interpretation": [
+    "This receiver fix cannot preempt a browser main thread that has not dispatched a message task.",
+    "Receiver-local lifetime metadata cannot identify same-epoch host messages that were posted earlier but have not yet entered the receiver.",
+    "VM fake clocks establish ordering and gates, not elapsed phone milliseconds or actual native movement.",
+    "The unchanged native WASM keeps the preceding deep-correctness evidence relevant to engine identity; this does not replace hosted-input integration.",
+    "Continuous moving-target prediction and observed rAF waiting remain independent unresolved work."
+  ]
+}
+

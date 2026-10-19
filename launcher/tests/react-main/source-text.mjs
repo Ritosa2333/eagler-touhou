@@ -1,0 +1,23 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
+/** Git blobs use LF even when the Windows checkout uses CRLF. */
+export const normalizeSourceText = value => value.replaceAll('\r\n', '\n');
+/** Added settings labels are covered separately by the shared-settings fixture.
+ * All prior messages and domain authorities remain pinned byte for byte. */
+export const pinnedUiAuthorityText = value => normalizeSourceText(value).replace(/^  \["(?:nickname\.[^"]+|file\.replayImported|room\.(?:rollbackDelayHint|manualDelayHint)|multiplayer\.control\.keysOrStick|settings\.(?:pixelPerfect|thpracMultiplayerDisabled|gameVersion|version\.(?:original|beauty|hint)))".*\n/gm, '');
+
+/** Domain facts now include main's TH11 policy. The newer editable-nickname
+ * label is retained from origin/main; do not bless the candidate as its own oracle. */
+export function synchronizedMainAuthority(path, project, fallbackRevision) {
+  const domain = ['src/contracts/product-catalog.mts', 'src/launcher/i18n.mts', 'src/launcher/multiplayer-guide.mts', 'public/content/MULTIPLAYER.html'].includes(path);
+  const revision = domain ? '8bdf6dbf4a81032f0725cc841b86d03e1465fe07' : fallbackRevision;
+  let source = readUiHistoryText(revision, path);
+  // TH15 was added after this committed controller. Extend only its declared
+  // title catalog; parsing, sanitization and interaction remain the old oracle.
+  if (path === 'src/launcher/multiplayer-guide.mts') source = source.replace(
+    '  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),\n',
+    '  Object.freeze({ id: "th11", short: "TH11", title: "地灵殿" }),\n  Object.freeze({ id: "th15", short: "TH15", title: "绀珠传" }),\n');
+  if (path === 'src/launcher/i18n.mts') source = source.replace(
+    '  ["multiplayer.nameOneTimeHint", "昵称只能设置一次，保存后不可修改", "Your nickname can be saved only once and cannot be changed later"],',
+    '  ["multiplayer.nameEditableHint", "昵称可随时修改，保存后立即生效", "You can change your nickname at any time; changes take effect immediately"],');
+  return source.replaceAll("eagler-touhou/host-manifest/1", "eagler-touhou/site-manifest/1").replaceAll("Host Manifest", "Site Manifest").replaceAll("Host manifest", "Site manifest").replaceAll("Host 清单", "站点清单");
+}

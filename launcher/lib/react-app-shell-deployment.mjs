@@ -1,0 +1,35 @@
+/** Shared artifact policy. This module never registers a Service Worker. */
+export const REACT_APP_SHELL_META = "eagler-react-app-shell";
+
+export function normalizeReactMountPath(value) {
+  if (typeof value !== "string" || !/^\/(?:[A-Za-z0-9_-]+\/)*$/.test(value)) throw new Error("React mount must be an absolute directory path with a trailing slash");
+  return value;
+}
+
+export function validateReactAppShellDeployment(value) {
+  if (!value || typeof value !== "object") throw new Error("Missing isolated React App Shell configuration");
+  if (value.schema !== "eagler-touhou/react-app-shell/1" || typeof value.origin !== "string" || typeof value.mountPath !== "string") throw new Error("Invalid isolated React App Shell configuration");
+  const mountPath = normalizeReactMountPath(value.mountPath);
+  // Normal publications are portable: the document owns only its own origin
+  // and declared mount. Explicit origins remain available for isolated builds.
+  if (value.origin === "same-origin") {
+    if (value.isolatedOrigin !== undefined) throw new Error("Same-origin App Shell does not need an isolated origin declaration");
+    return Object.freeze({schema: "eagler-touhou/react-app-shell/1", origin: "same-origin", mountPath});
+  }
+  const origin = new URL(value.origin);
+  const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname);
+  if (origin.origin !== value.origin || origin.username || origin.password || (origin.protocol !== "https:" && !(origin.protocol === "http:" && loopback))) throw new Error("An exact secure deployment origin is required");
+  // A dedicated test origin may own its root, but this must be explicit.
+  // Default builds and copied artifacts still cannot register elsewhere.
+  if (value.isolatedOrigin !== undefined && value.isolatedOrigin !== true) throw new Error("Invalid isolated origin declaration");
+  if (mountPath === "/" && !loopback && value.isolatedOrigin !== true) throw new Error("A remote React experiment requires an isolated non-root mount or explicit isolated origin");
+  return Object.freeze({schema: /** @type {const} */ ("eagler-touhou/react-app-shell/1"), origin: origin.origin, mountPath,
+    ...(value.isolatedOrigin === true ? {isolatedOrigin: true} : {})});
+}
+
+export function reactAppShellMatchesSite(configuration, site) {
+  if (!configuration) return true;
+  const {origin, mountPath} = validateReactAppShellDeployment(configuration);
+  return origin === "same-origin" ? !site || site.pathname === mountPath
+    : !!site && site.origin === origin && site.pathname === mountPath;
+}

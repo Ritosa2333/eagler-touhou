@@ -1,52 +1,920 @@
 name: CI
-
-on:
-  push:
-  pull_request:
-
+'on':
+  push: null
+  pull_request: null
+  workflow_dispatch: null
 permissions:
   contents: read
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      affected: ${{ steps.scope.outputs.affected }}
+      checkout: ${{ steps.scope.outputs.checkout }}
+      node-builds: ${{ steps.scope.outputs.node-builds }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        sparse-checkout: 'tools/ci
+
+          launcher/config'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: node --test tools/ci/affected-components.test.mjs
+    - id: scope
+      run: node tools/ci/affected-components.mjs
+      env:
+        EAGLER_CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.13'
-          cache: pip
-          cache-dependency-path: requirements-ci.txt
-      - run: npm ci --ignore-scripts
-      - run: python -m pip install --requirement requirements-ci.txt
-      - run: npm run check
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'launcher
 
-  ui-rewrite:
+          tools/browser
+
+          common/contracts
+
+          services'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+        cache: pip
+        cache-dependency-path: launcher/requirements-ci.txt
+    - run: npm ci --ignore-scripts
+    - run: python -m pip install --requirement requirements-ci.txt
+    - run: npm --prefix ../services/relay ci --ignore-scripts
+    - run: npm run check
+    defaults:
+      run:
+        working-directory: launcher
+  ui-behavior:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
-      - name: Fetch pinned main parity source
-        run: |
-          git fetch --no-tags --depth=1 origin edee9633e5e3ee79cd2e1aa334f84f6caf755090
-          git cat-file -e edee9633e5e3ee79cd2e1aa334f84f6caf755090^{commit}
-          git fetch --no-tags --depth=1 origin 8bdf6dbf4a81032f0725cc841b86d03e1465fe07
-          git cat-file -e 8bdf6dbf4a81032f0725cc841b86d03e1465fe07^{commit}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm run typecheck:ui-rewrite
-      - run: npm run typecheck:ui-rewrite:tools
-      - run: npm run test:ui-rewrite
-      - run: npm run build:ui-rewrite
+    - uses: actions/checkout@v7
+      with:
+        # Existing UI differential fixtures read pinned ancestral Git blobs.
+        fetch-depth: 0
+        sparse-checkout: 'launcher
+
+          tools/browser
+
+          common/contracts
+
+          services/relay'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+        cache: pip
+        cache-dependency-path: launcher/requirements-ci.txt
+    - run: npm ci --ignore-scripts
+    - run: python -m pip install --requirement requirements-ci.txt
+    - run: npm --prefix ../services/relay ci --ignore-scripts
+    - run: npm run build:launcher
+    - run: npm run test:ui-rewrite
+    - run: npm run test:support
+    defaults:
+      run:
+        working-directory: launcher
+  host-bootstrap-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'launcher/host/lib
+
+          launcher/tests'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: node launcher/tests/test-node-environment.mjs
+  source-publication:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: node --test tools/docs/check.test.mjs
+    - run: npm run docs:check
+    - run: node launcher/scripts/audit-publication.mjs --workspace
+  source-contracts:
+    needs: scope
+    if: ${{ needs.scope.outputs.affected != '["launcher"]' }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: ${{ needs.scope.outputs.checkout }}
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: node tools/ci/validate-source-entries.mjs
+      env:
+        EAGLER_CI_AFFECTED: ${{ needs.scope.outputs.affected }}
+    - run: node --test tools/build/compiler-arguments.test.mjs tools/build/source-dependencies.test.mjs tools/build/source-object.test.mjs tools/build/runtime-inputs.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
+  port-adaptation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - uses: msys2/setup-msys2@v2
+      if: runner.os == 'Windows'
+      id: msys
+      with:
+        msystem: UCRT64
+        install: mingw-w64-ucrt-x86_64-gcc
+    - if: runner.os == 'Windows'
+      shell: pwsh
+      run: Add-Content -LiteralPath $env:GITHUB_PATH -Value '${{ steps.msys.outputs.msys2-location }}/ucrt64/bin'
+    - run: npm --prefix launcher ci --ignore-scripts
+    - run: node --test tools/ports/check.test.mjs
+    - run: npm run ports:check -- --all --check-status
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: port-adaptation-${{ matrix.os }}
+        path: artifacts/validation/ports/
+  port-source-build:
+    needs: scope
+    if: ${{ needs.scope.outputs.node-builds != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.scope.outputs.node-builds) }}
+    name: Runtime / ${{ matrix.game }} / ${{ matrix.variant }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
+        sparse-checkout: |
+          launcher
+          common
+          tools
+          ${{ matrix.directory }}
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - run: npm --prefix launcher ci --ignore-scripts
+    - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+      with:
+        version: 6.0.9
+        actions-cache-folder: emsdk-cache
+    - name: Compile selected source and verify provenance
+      shell: bash
+      run: node launcher/scripts/build-runtime.mjs --game=${{ matrix.game }} --variant=${{ matrix.variant }} --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: source-build-${{ matrix.game }}-${{ matrix.variant }}
+        path: artifacts/validation/source-builds/
+  common_ci_native:
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Configure
+      run: cmake -S . -B build -DEAGLER_COMMON_BUILD_TESTS=ON
+    - name: Build
+      run: cmake --build build --config Release --parallel
+    - name: Test
+      run: ctest --test-dir build -C Release --output-on-failure
+    - name: Presentation Lab controller contract
+      run: node --test testkit/presentation-lab/controller-core.test.mjs testkit/presentation-lab/release-contract.test.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'common') }}
+    name: common / native
+    defaults:
+      run:
+        working-directory: common
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th06_eagler_ci_core-tests:
+    name: ports/th06 / Core behavior tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th06
+
+          common
+
+          tools/build'
+    - name: Prepare selected SDL dependencies
+      working-directory: .
+      run: git submodule update --init --recursive -- ports/th06/vendored/SDL ports/th06/vendored/SDL_image ports/th06/vendored/SDL_ttf
+    - name: Compile and run core behavior tests
+      run: bash scripts/run-core-tests.sh
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th06') }}
+    defaults:
+      run:
+        working-directory: ports/th06
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th06_eagler_ci_web-build:
+    name: ports/th06 / Web ${{ matrix.variant }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+        - normal
+        - netplay
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th06
+
+          common
+
+          tools/build'
+    - name: Prepare selected SDL dependencies
+      working-directory: .
+      run: git submodule update --init --recursive -- ports/th06/vendored/SDL ports/th06/vendored/SDL_image ports/th06/vendored/SDL_ttf
+    - name: Set up Emscripten
+      uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+      with:
+        version: 6.0.5
+        actions-cache-folder: emsdk-cache
+    - name: Configure
+      run: emcmake cmake --preset web-ci-${{ matrix.variant }}
+    - name: Build
+      run: cmake --build --preset web-ci-${{ matrix.variant }} --parallel
+    - name: Verify source-only Web output
+      shell: bash
+      run: "test -s build/ci-web-${{ matrix.variant }}/th06.html\ntest -s build/ci-web-${{ matrix.variant }}/th06.js\ntest\
+        \ -s build/ci-web-${{ matrix.variant }}/th06.wasm\nif find build/ci-web-${{ matrix.variant }} -type f \\( -iname '*.dat'\
+        \ -o -iname '*.data' \\) -print -quit | grep -q .; then\n  echo 'error: source-only Web CI produced original-game\
+        \ DATA' >&2\n  exit 1\nfi\n"
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th06') }}
+    defaults:
+      run:
+        working-directory: ports/th06
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th07_eagler_ci_core-tests:
+    name: ports/th07 / Core behavior tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th07
+
+          common
+
+          tools/build'
+    - name: Prepare selected SDL dependencies
+      working-directory: .
+      run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
+    - name: Check Python and integration script syntax
+      shell: bash
+      run: "python3 -m py_compile tests/*.py audit/source-contracts/*.py scripts/convert_bgm_ogg.py\nfor file in tests/*.cjs;\
+        \ do\n  node --check \"$file\"\ndone\n"
+    - name: Compile and run core behavior tests
+      run: bash scripts/run-core-tests.sh
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th07') }}
+    defaults:
+      run:
+        working-directory: ports/th07
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th07_eagler_ci_web-build:
+    name: ports/th07 / Web ${{ matrix.variant }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+        - normal
+        - netplay
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th07
+
+          common
+
+          tools/build'
+    - name: Prepare selected SDL dependencies
+      working-directory: .
+      run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
+    - name: Set up Emscripten
+      uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+      with:
+        version: 6.0.5
+        actions-cache-folder: emsdk-cache
+    - name: Configure
+      run: emcmake cmake --preset web-ci-${{ matrix.variant }}
+    - name: Build
+      run: cmake --build --preset web-ci-${{ matrix.variant }} --parallel
+    - name: Verify source-only Web output
+      shell: bash
+      run: "test -s build/ci-web-${{ matrix.variant }}/th07.html\ntest -s build/ci-web-${{ matrix.variant }}/th07.js\ntest\
+        \ -s build/ci-web-${{ matrix.variant }}/th07.wasm\nif find build/ci-web-${{ matrix.variant }} -type f \\( -iname '*.dat'\
+        \ -o -iname '*.data' \\) -print -quit | grep -q .; then\n  echo 'error: source-only Web CI produced original-game\
+        \ DATA' >&2\n  exit 1\nfi\n"
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th07') }}
+    defaults:
+      run:
+        working-directory: ports/th07
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th08_presentation_lab_source-contract:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th08
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: node --test ../../common/testkit/presentation-lab/controller-core.test.mjs ../../common/testkit/presentation-lab/release-contract.test.mjs
+    - run: node --test portable/presentation-lab/test-analyzer.mjs
+    - run: node portable/check-high-refresh-contract.mjs
+    - run: node portable/check-presentation-purity.mjs
+    - run: node --check portable/presentation-lab/serve.mjs
+    - run: node --check portable/package-eagler.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th08') }}
+    name: ports/th08 / source-contract
+    defaults:
+      run:
+        working-directory: ports/th08
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th08_replay_verifier_golden-integrity:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th08
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: node tools/replay-verifier/verify-golden.mjs
+    - run: node --test tools/replay-verifier/golden.test.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th08') }}
+    name: ports/th08 / golden-integrity
+    defaults:
+      run:
+        working-directory: ports/th08
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th08_mp_presentation_lab_source-contract:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th08-mp
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: node --test ../../common/testkit/presentation-lab/controller-core.test.mjs ../../common/testkit/presentation-lab/release-contract.test.mjs
+    - run: node --test portable/presentation-lab/test-analyzer.mjs
+    - run: node portable/check-high-refresh-contract.mjs
+    - run: node portable/check-presentation-purity.mjs
+    - run: node --check portable/presentation-lab/serve.mjs
+    - run: node --check portable/package-eagler.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th08-mp') }}
+    name: ports/th08-mp / source-contract
+    defaults:
+      run:
+        working-directory: ports/th08-mp
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th08_mp_replay_verifier_golden-integrity:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th08-mp
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: node tools/replay-verifier/verify-golden.mjs
+    - run: node --test tools/replay-verifier/golden.test.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th08-mp') }}
+    name: ports/th08-mp / golden-integrity
+    defaults:
+      run:
+        working-directory: ports/th08-mp
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th10_input_regressions_input:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th10
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Verify and extract the pinned WASI SDK
+      shell: bash
+      run: 'set -euo pipefail
+
+        package="$RUNNER_TEMP/wasi-sdk.deb"
+
+        curl --fail --location --retry 2 --max-time 300 --output "$package" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb
+
+        echo "09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package" | sha256sum --check
+
+        dpkg-deb --extract "$package" "$RUNNER_TEMP/th10-wasi-sdk"
+
+        echo "WASI_SDK_PATH=$RUNNER_TEMP/th10-wasi-sdk/opt/wasi-sdk" >> "$GITHUB_ENV"
+
+        '
+    - name: Actual input consumers and alignment checks
+      run: 'node --test tests/make-dependencies.test.mjs
+
+        node portable/check-menu-input.mjs
+
+        node portable/check-presentation-input.mjs
+
+        TH10_TEST_UBSAN=1 node portable/check-menu-input.mjs
+
+        TH10_TEST_UBSAN=1 node portable/check-presentation-input.mjs
+
+        '
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10') }}
+    name: ports/th10 / input
+    defaults:
+      run:
+        working-directory: ports/th10
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th10_presentation_lab_source-contract:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th10
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: node --test ../../common/testkit/presentation-lab/controller-core.test.mjs ../../common/testkit/presentation-lab/release-contract.test.mjs
+    - run: node portable/check-high-refresh-contract.mjs
+    - run: node portable/check-presentation-purity.mjs
+    - run: node --check portable/presentation-lab/serve.mjs
+    - run: node --check portable/package-eagler.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10') }}
+    name: ports/th10 / source-contract
+    defaults:
+      run:
+        working-directory: ports/th10
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th10_replay_verifier_golden-integrity:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th10
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: node tools/replay-verifier/verify-golden.mjs
+    - run: node --test tools/replay-verifier/golden.test.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10') }}
+    name: ports/th10 / golden-integrity
+    defaults:
+      run:
+        working-directory: ports/th10
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th10_mp_performance_regressions_native-regressions:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th10-mp
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Display cadence and pinned channel API contract
+      run: 'node portable/check-high-refresh-contract.mjs
+
+        node --test tests/high-refresh-contract.test.mjs tests/make-dependencies.test.mjs
+
+        node --check portable/check-anm-dense-engine.mjs
+
+        node --check portable/check-anm-trig-input.mjs
+
+        node --check portable/check-anm-billboard.mjs
+
+        node --check portable/check-anm-uv-scroll.mjs
+
+        node --check portable/check-anm-submit.mjs
+
+        node --check portable/check-player-shot-lookup.mjs
+
+        node --check portable/check-presentation-input.mjs
+
+        node --check portable/check-menu-input.mjs
+
+        node --check portable/check-game-resources.mjs
+
+        node --check portable/check-bullet-owner.mjs
+
+        '
+    - name: Optimized owner tests with assertions enabled
+      shell: bash
+      run: "set -euo pipefail\nmkdir -p artifacts/performance-regressions\nflags=(-std=c++17 -O2 -UNDEBUG -Wall -Wextra -Werror\
+        \ -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -I../../common/include)\nfor test in rollback-pool presentation-cache; do\n \
+        \ g++ \"${flags[@]}\" \"tests/${test}-test.cpp\" -o \"artifacts/performance-regressions/${test}\"\n  \"artifacts/performance-regressions/${test}\"\
+        \ndone\ng++ \"${flags[@]}\" tests/rollback-pool-capture-test.cpp ../../common/src/netplay/RollbackJournal.cpp -o artifacts/performance-regressions/rollback-pool-capture\n\
+        artifacts/performance-regressions/rollback-pool-capture\n"
+    - name: Pool capture address and undefined-behavior checks
+      shell: bash
+      run: 'set -euo pipefail
+
+        g++ -std=c++17 -O1 -g -UNDEBUG -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1
+        -I../../common/include tests/rollback-pool-capture-test.cpp ../../common/src/netplay/RollbackJournal.cpp -o artifacts/performance-regressions/rollback-pool-capture-sanitized
+
+        artifacts/performance-regressions/rollback-pool-capture-sanitized
+
+        '
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
+    name: ports/th10-mp / native-regressions
+    defaults:
+      run:
+        working-directory: ports/th10-mp
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th10_mp_performance_regressions_wasm-owner-regressions:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th10-mp
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb
+        key: th10-wasi-sdk-34-09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a
+    - name: Verify and extract the official pinned WASI SDK
+      id: wasi_sdk
+      shell: bash
+      run: "set -euo pipefail\npackage=\"$HOME/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb\"\nmkdir -p \"$HOME/.cache\" \"\
+        $RUNNER_TEMP/th10-wasi-sdk\"\nif [ ! -f \"$package\" ]; then\n  curl --fail --location --retry 2 --max-time 300 --output\
+        \ \"$package\" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb\n\
+        fi\necho \"09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package\" | sha256sum --check\ndpkg-deb\
+        \ --extract \"$package\" \"$RUNNER_TEMP/th10-wasi-sdk\"\necho \"WASI_SDK_PATH=$RUNNER_TEMP/th10-wasi-sdk/opt/wasi-sdk\"\
+        \ >> \"$GITHUB_ENV\"\n"
+    - name: Actual wasm32 multiplayer owner regressions
+      run: 'node portable/check-multiplayer-rules.mjs
+
+        '
+    - name: Actual wasm32 audio undefined-behavior regressions
+      if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
+      run: 'TH10_TEST_UBSAN=1 node portable/check-multiplayer-rules.mjs --audio-only
+
+        '
+    - name: Actual wasm32 ANM and shot arithmetic regressions
+      if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
+      run: 'node portable/check-anm-trig-input.mjs
+
+        node portable/check-anm-billboard.mjs
+
+        TH10_TEST_UBSAN=1 node portable/check-anm-billboard.mjs
+
+        node portable/check-anm-uv-scroll.mjs
+
+        TH10_TEST_UBSAN=1 node portable/check-anm-uv-scroll.mjs
+
+        node portable/check-anm-submit.mjs
+
+        TH10_TEST_UBSAN=1 node portable/check-anm-submit.mjs
+
+        node portable/check-player-shot-lookup.mjs
+
+        TH10_TEST_UBSAN=1 node portable/check-player-shot-lookup.mjs
+
+        '
+    - name: Authored menu and screenshot input word regressions
+      if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
+      run: 'node portable/check-presentation-input.mjs
+
+        node portable/check-menu-input.mjs
+
+        TH10_TEST_UBSAN=1 node portable/check-presentation-input.mjs
+
+        TH10_TEST_UBSAN=1 node portable/check-menu-input.mjs
+
+        '
+    - name: Compile title rollback and channel diagnostics against the pin
+      if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
+      shell: bash
+      run: "set -euo pipefail\nmkdir -p artifacts/performance-regressions\nflags=(--target=wasm32-wasip1 -O2 -std=c++17 -Wall\
+        \ -Wextra -Werror -fno-exceptions -fno-rtti -ffp-contract=off -fno-strict-aliasing -DTH_NATIVE_PLATFORM=1 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1\
+        \ -I../../common/include -Iweb/cpp/multiplayer)\nfor source in RollbackState NetworkExports; do\n  \"$WASI_SDK_PATH/bin/clang++\"\
+        \ \"${flags[@]}\" -c \"web/cpp/multiplayer/${source}.cpp\" -o \"artifacts/performance-regressions/${source}.o\"\
+        \ndone\n"
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
+    name: ports/th10-mp / wasm-owner-regressions
+    defaults:
+      run:
+        working-directory: ports/th10-mp
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th10_mp_presentation_lab_source-contract:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th10-mp
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: node --test ../../common/testkit/presentation-lab/controller-core.test.mjs ../../common/testkit/presentation-lab/release-contract.test.mjs
+    - run: node portable/check-high-refresh-contract.mjs
+    - run: node portable/check-presentation-purity.mjs
+    - run: node --check portable/presentation-lab/serve.mjs
+    - run: node --check portable/package-eagler.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
+    name: ports/th10-mp / source-contract
+    defaults:
+      run:
+        working-directory: ports/th10-mp
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  ports_th10_mp_replay_verifier_golden-integrity:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        sparse-checkout: 'ports/th10-mp
+
+          common
+
+          tools/build'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: node tools/replay-verifier/verify-golden.mjs
+    - run: node --test tools/replay-verifier/golden.test.mjs
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th10-mp') }}
+    name: ports/th10-mp / golden-integrity
+    defaults:
+      run:
+        working-directory: ports/th10-mp
+    env:
+      EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
+      EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  checks:
+    name: Checks
+    if: ${{ always() }}
+    needs:
+    - scope
+    - check
+    - source-contracts
+    - source-publication
+    - common_ci_native
+    - ports_th06_eagler_ci_core-tests
+    - ports_th06_eagler_ci_web-build
+    - ports_th07_eagler_ci_core-tests
+    - ports_th07_eagler_ci_web-build
+    - ports_th08_presentation_lab_source-contract
+    - ports_th08_replay_verifier_golden-integrity
+    - ports_th08_mp_presentation_lab_source-contract
+    - ports_th08_mp_replay_verifier_golden-integrity
+    - ports_th10_input_regressions_input
+    - ports_th10_presentation_lab_source-contract
+    - ports_th10_replay_verifier_golden-integrity
+    - ports_th10_mp_performance_regressions_native-regressions
+    - ports_th10_mp_performance_regressions_wasm-owner-regressions
+    - ports_th10_mp_presentation_lab_source-contract
+    - ports_th10_mp_replay_verifier_golden-integrity
+    - relay
+    - telemetry
+    - turn
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - name: Require completed checks
+      env:
+        EAGLER_RESULTS: ${{ toJSON(needs) }}
+      run: node -e "const jobs=JSON.parse(process.env.EAGLER_RESULTS); const failed=Object.entries(jobs).filter(([,job])=>['failure','cancelled'].includes(job.result));
+        if(jobs.scope.result!=='success'||jobs.check.result!=='success'||failed.length)process.exit(1); console.log('Applicable
+        checks completed');"
+  relay:
+    name: services/relay
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/relay') }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'services/relay
+
+          common/contracts'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: npm ci --ignore-scripts
+    - run: npm test
+    - run: npm run build
+    - run: npm run package -- artifacts/package
+    - run: npm --prefix artifacts/package ci --omit=dev --ignore-scripts
+    - run: node tests/test-netplay-relay-product-policy.mjs
+      env:
+        EAGLER_TEST_RELAY_PATH: artifacts/package/server/netplay-relay.mjs
+    defaults:
+      run:
+        working-directory: services/relay
+  telemetry:
+    name: services/telemetry
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/telemetry') }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'services/telemetry
+
+          common/contracts'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: npm test
+    defaults:
+      run:
+        working-directory: services/telemetry
+  turn:
+    name: services/turn
+    needs:
+    - scope
+    if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/turn') }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'services/turn
+
+          common/contracts'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - run: node tests/test-netplay-service-config.mjs
+    defaults:
+      run:
+        working-directory: services/turn

@@ -1,0 +1,96 @@
+{
+  "schema": "th09/subpixel-journal-protocol/1",
+  "createdAt": "2026-10-11T16:10:47.981Z",
+  "root": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x",
+  "baseCheckpoint": "a3a59db525d2e76faf9bb683bc624d455d3aa3ae",
+  "original": "D:/workspace/eagler/worktrees/th09-managed-touch-4x",
+  "baseline": {
+    "directory": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/artifacts/subpixel-release-20261011-c1",
+    "wasm": "cb03c6df0c460360d2d3548e63556a9b74bf18ac7f6613bdf8231a4e03c30480",
+    "manifestSha256": "6ee34897072d16f89a8e62decbcfcc13ea5adefb50e03501c4e8348a2d29212b"
+  },
+  "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
+  "protectedFiles": {
+    "web/cpp/game/AnmRenderer.cpp": "f9c0487d71fc958dbd9a47695a11c3df5ae178eb559f2fa45f890a5af0253f38",
+    "web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
+    "web/sdl-runtime/shared-netplay.mjs": "720b44fcb091b5db7b768f3b946703c5f6f91c3b2aad706d22455b068406908a"
+  },
+  "tools": {
+    "journal-run.mjs": "97f021a202462481697eed82d5938f91dfc3332f1fd2d89d07bb77ea5795c5b1",
+    "journal-live-summary.mjs": "43528e8c6db5350825d1c34bc695af8d6fe2e20865fd2f949b6f26c10ec48fd7",
+    "smoothness-browser.mjs": "d899f3cf53ab6b769ccb6df7ae86e9e1aa28b091cae8ef60ff3fddc66ad27001",
+    "run-tests.mjs": "becfab9eccfba36b71f966635708b3a13837fba7b93c8bec2c3e6bff3e11d86f"
+  },
+  "correctness": {
+    "components": [
+      "shot-capture",
+      "enemy-capture",
+      "bullet-snapshot",
+      "sprite-subpixel",
+      "touch-controller"
+    ],
+    "runtimeTests": [
+      "managed-touch-queue.test.mjs",
+      "shared-netplay.test.mjs"
+    ],
+    "peer": {
+      "frames": 600,
+      "cpu": 4,
+      "fixedDelayFrames": 8,
+      "forceCorrection": true,
+      "deliveryClock": "frontier",
+      "mode": 0,
+      "inputDelay": 0,
+      "required": "Full-state, replay and rendered-image agreement at the same resolved frame; diagnostic build, not Release cost data."
+    }
+  },
+  "release": {
+    "candidate": "web/artifacts/subpixel-journal-release-c1",
+    "flags": "--release; -O2; TH09_DEVELOPMENT_HARNESS=0; audio SIMD off",
+    "order": [
+      "a1",
+      "b1",
+      "b2",
+      "a2"
+    ],
+    "runPrefix": "subpixel-journal-release-relay79-",
+    "parameters": {
+      "frames": 1200,
+      "cpuBySide": [
+        4,
+        4
+      ],
+      "headedProcesses": 2,
+      "nativeGpu": true,
+      "mode": 0,
+      "inputDelay": 0,
+      "impairmentSite": "relay",
+      "delayMs": 79,
+      "jitterMs": 5,
+      "dropEvery": 0,
+      "burst": false,
+      "touchSourceHz": 120,
+      "touchPattern": "continuous",
+      "touchProfile": "joystick",
+      "sourceDurationMs": 120000,
+      "audioOutput": false,
+      "profile": false,
+      "liveCost": false
+    },
+    "primaryMetrics": [
+      "Page-clock new-state gap p95/p99/max and counts over50/100/250ms",
+      "rAF-clock new-state gap distribution separately",
+      "native callback wall time",
+      "prediction-frontier logicHz, actual information gap and pacing scale"
+    ],
+    "interpretation": [
+      "All four runs retained in execution order, including unfavorable tails.",
+      "Qualification proves the declared workload and confirmed hash checks; it is not a frame-rate pass.",
+      "Network-driven smooth slowdown is an expected outcome; lower logicHz alone is not a CPU regression.",
+      "Continuous wall-clock input does not imply identical captured input tapes or world trajectories across runs.",
+      "This desktop synthetic input probe does not test a physical phone or the complete Launcher managed bridge.",
+      "Compare against the user frozen cb03 build, never the older 037c reference."
+    ]
+  },
+  "scope": "Local isolated candidate; original source and running test site are not changed."
+}

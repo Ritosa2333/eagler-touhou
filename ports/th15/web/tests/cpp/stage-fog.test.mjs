@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {core,oracle,memory,report} from './helpers.mjs';
+test('TH15 fog interpolation and packed channels match original on ordinary, incremental and Hermite modes',async()=>{
+ const c=await core(),m=await oracle(),native=m.allocate(168),result=m.allocate(28),rate=m.allocate(4),heap=m.heap,p=c.stage_fog_create(),out=c.allocate(28);m.u32(0x4ca620,rate);let checks=0,frames=0,seed=0x85c19713;const next=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed;};
+ try{for(let sample=0;sample<3072;sample++){const data=Buffer.alloc(168),mode=sample%18,duration=[0,1,2,17,120,-1][sample%6],speed=[1,.25,.5,1.5,2,.995][sample%6];for(let i=0;i<5;i++){for(let axis=0;axis<6;axis++)data.writeFloatLE(Math.fround((next()%4097-1024)/(axis<2?4:8)),i*28+axis*4);data.writeUInt32LE(next(),i*28+24);}data.writeInt32LE(-1,140);data.writeUInt32LE(1,156);data.writeInt32LE(duration,160);data.writeInt32LE(mode,164);m.write(native,data);memory(c,p,168).set(data);m.f32(rate,speed);
+ for(let frame=0;frame<4;frame++){m.call(0x411a70,{ecx:native,args:[result]});c.stage_fog_step(p,speed,out);assert.deepEqual(Buffer.from(memory(c,out,28)),Buffer.from(m.bytes(result,28)),'output '+sample+'/'+frame+' mode '+mode);assert.deepEqual(Buffer.from(memory(c,p,168)),Buffer.from(m.bytes(native,168)),'state '+sample+'/'+frame+' mode '+mode);frames++;checks+=2;}
+ }report('stage-fog',{passed:true,cases:3072,frames,checks,originalFunctions:['0x411a70','0x4121e0','0x4122f0'],scope:'All fog channels, packed BGRA bytes, interpolation timers and arithmetic order for ordinary easing, incremental, accelerating and Hermite paths. No GPU fog pixels are claimed.'});
+ }finally{c.stage_fog_delete(p);c.release(out);m.close();}
+});

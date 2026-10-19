@@ -1,0 +1,21 @@
+{
+  "schema":"eagler/replay-corpus/v1",
+  "game":"th10",
+  "policy":{"gameplayMutation":"forbidden"},
+  "demo":{"rotationOrder":["demo/demo1.rpy","demo/demo2.rpy","demo/demo3.rpy","demo/demo0.rpy"]},
+  "cases":[
+    {"id":"demo1","kind":"demo","source":"demo/demo1.rpy","status":"ready"},
+    {"id":"demo2","kind":"demo","source":"demo/demo2.rpy","status":"ready"},
+    {"id":"demo3","kind":"demo","source":"demo/demo3.rpy","status":"ready"},
+    {"id":"demo0","kind":"demo","source":"demo/demo0.rpy","status":"ready"},
+    {"id":"marisa-b-lunatic","kind":"lunatic","loadout":"marisa-b","difficulty":"lunatic","status":"ready","source":"tools/replay-verifier/fixtures/original/th10_ud1aef.rpy","sourceUrl":"https://maribelhearn.com/replays/royalflare/th10/th10_ud1aef.rpy","sourceArchive":"Royalflare","submitter":"CZW","replayVersion":"1.00a","replaySha256":"67f1951dcb50d5c12eb218c2f7380b91657eabb72111ddef80f413f0b64ad4fe","slowdownPercent":0.04,"recordedStages":6,"notes":"Royalflare submission explicitly states that the P3 bug is not used."},
+    {"id":"marisa-b-extra","kind":"extra","loadout":"marisa-b","difficulty":"extra","status":"ready","source":"tools/replay-verifier/fixtures/original/th10_ud1b2a.rpy","sourceUrl":"https://maribelhearn.com/replays/royalflare/th10/th10_ud1b2a.rpy","sourceArchive":"Royalflare","submitter":"Moko Mope","replayVersion":"1.00a","replaySha256":"f4878460427772d6245571484a15f22d1e9105fc9cee5aa74b4a17c892ace58b","slowdownPercent":0.0,"recordedStages":1}
+  ],
+  "suite":"title-demo",
+  "fixtures":[
+    {"id":"demo1","replaySha256":"e1d9b92502ab6b74016e1e755e21583ea3513779f31ead56b6c1d48eb7c48d81","expectedTicks":3000},
+    {"id":"demo2","replaySha256":"af2b40a672a4ec85e268c29ee3003d891851ce16554b2d62ad6ba85330b50bb7","expectedTicks":3000},
+    {"id":"demo3","replaySha256":"b9c0d8beff741cd2f86b5513bb8a0a9ef50450a4e01ece1e093b446d307930a4","expectedTicks":3000},
+    {"id":"demo0","replaySha256":"2b1294b7a437d8ac0187da9dedfd24ca3577215ccdecb30b24bd31aacfa021be","expectedTicks":3000}
+  ]
+}

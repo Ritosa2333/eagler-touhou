@@ -1,0 +1,27 @@
+{
+  "schema": "eagler-touhou/workspace-layout/1",
+  "repositories": {
+    "launcher": "launcher",
+    "th06": "ports/th06",
+    "th07": "ports/th07",
+    "th075": "ports/th075",
+    "th075mp": "ports/th075-mp",
+    "th08": "ports/th08",
+    "th09": "ports/th09",
+    "th10": "ports/th10",
+    "th11": "ports/th11",
+    "th15": "ports/th15",
+    "th20": "ports/th20",
+    "thprac": "thprac",
+    "dependencies": "dependencies",
+    "toolchains": "toolchains",
+    "th11mp": "ports/th11-mp",
+    "th15mp": "ports/th15-mp",
+    "th10mp": "ports/th10-mp",
+    "common": "common",
+    "th08mp": "ports/th08-mp",
+    "relay": "services/relay",
+    "turn": "services/turn",
+    "telemetry": "services/telemetry"
+  }
+}

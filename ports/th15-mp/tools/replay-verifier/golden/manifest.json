@@ -1,0 +1,384 @@
+{
+  "schema": "eagler/replay-golden-set/v1",
+  "game": "th15",
+  "identity": {
+    "executableSha256": "67a642357c8777089f468aab9c7a0ae346ebdb62849d842a7b7b18d1e6910364",
+    "resourceSha256": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7"
+  },
+  "suites": {
+    "quick": [
+      "demo0",
+      "demo1",
+      "demo2"
+    ],
+    "daily": [
+      "marisa-lunatic",
+      "marisa-extra"
+    ]
+  },
+  "assets": {
+    "demo0": {
+      "path": "3b1b51baa272dc378eca286098d9ec13bf9856f4d2c653f4a8995d1fd8c6dee5.jsonl.gz",
+      "sha256": "3b1b51baa272dc378eca286098d9ec13bf9856f4d2c653f4a8995d1fd8c6dee5",
+      "ticks": 7339,
+      "replaySha256": "d04a58b01b12ce3c76d98ee6acd088b4422a65cd27634834b877f3ddf6820a1c",
+      "stateSchema": "th15/authoritative-selected-state/v1",
+      "provenance": {
+        "source": "existing-native-world-factory",
+        "viewport": [
+          128,
+          16,
+          320,
+          16
+        ],
+        "glyphOutput": "offline-raster-boundary",
+        "instructionBudgetHook": false,
+        "provider": "th15/retail-x86-world"
+      },
+      "completion": {
+        "spec": {
+          "stage": 3,
+          "frames": 7339,
+          "terminalMarker": true
+        },
+        "finalState": [
+          7339,
+          0,
+          1107116032,
+          1133519872,
+          1,
+          1178245,
+          0,
+          2,
+          400,
+          3,
+          29366,
+          36944,
+          1,
+          0,
+          0,
+          4
+        ],
+        "nativeFlags": 4
+      }
+    },
+    "demo1": {
+      "path": "ec171a30bcaa22167b02cf213a754a1ee74a04136172bcfdc237aa088d8c1064.jsonl.gz",
+      "sha256": "ec171a30bcaa22167b02cf213a754a1ee74a04136172bcfdc237aa088d8c1064",
+      "ticks": 6620,
+      "replaySha256": "7ea4791563aa2cda7a957ec2fd16d4ef9589913ac6ba928a453331b3e4df0eba",
+      "stateSchema": "th15/authoritative-selected-state/v1",
+      "provenance": {
+        "source": "existing-native-world-factory",
+        "viewport": [
+          128,
+          16,
+          320,
+          16
+        ],
+        "glyphOutput": "offline-raster-boundary",
+        "instructionBudgetHook": false,
+        "provider": "th15/retail-x86-world"
+      },
+      "completion": {
+        "spec": {
+          "stage": 2,
+          "frames": 6620,
+          "terminalMarker": true
+        },
+        "finalState": [
+          6620,
+          0,
+          0,
+          1137180672,
+          1,
+          693193,
+          1,
+          1,
+          350,
+          3,
+          909,
+          14544,
+          8,
+          120,
+          0,
+          4
+        ],
+        "nativeFlags": 4
+      }
+    },
+    "demo2": {
+      "path": "29559dd21bfabf63ff686994ba8429fc467db74c282734ac43d40ce77e3897c0.jsonl.gz",
+      "sha256": "29559dd21bfabf63ff686994ba8429fc467db74c282734ac43d40ce77e3897c0",
+      "ticks": 6269,
+      "replaySha256": "158045b68171cafa4ba63e6fc4edd6a8a8a2f9529cc21c0a1f17d216a399fb9e",
+      "stateSchema": "th15/authoritative-selected-state/v1",
+      "provenance": {
+        "source": "existing-native-world-factory",
+        "viewport": [
+          128,
+          16,
+          320,
+          16
+        ],
+        "glyphOutput": "offline-raster-boundary",
+        "instructionBudgetHook": false,
+        "provider": "th15/retail-x86-world"
+      },
+      "completion": {
+        "spec": {
+          "stage": 1,
+          "frames": 6269,
+          "terminalMarker": true
+        },
+        "finalState": [
+          6269,
+          0,
+          0,
+          1133641728,
+          1,
+          776013,
+          1,
+          1,
+          171,
+          3,
+          20508,
+          25655,
+          2,
+          10,
+          0,
+          4
+        ],
+        "nativeFlags": 4
+      }
+    },
+    "marisa-lunatic": {
+      "path": "bdb2d8b0590fe7c048486cfa17199ec1e8d2c7a7e38143c48893e6009fc5b4e6.jsonl.gz",
+      "sha256": "bdb2d8b0590fe7c048486cfa17199ec1e8d2c7a7e38143c48893e6009fc5b4e6",
+      "ticks": 146871,
+      "replaySha256": "480e93f57235a8f4ceef9e1a3182d6e98bf4307c1390e7d872829d00d5886c76",
+      "stateSchema": "th15/authoritative-selected-state/v1",
+      "provenance": {
+        "source": "existing-native-world-factory",
+        "viewport": [
+          128,
+          16,
+          320,
+          16
+        ],
+        "glyphOutput": "offline-raster-boundary",
+        "instructionBudgetHook": false,
+        "provider": "th15/retail-x86-world"
+      },
+      "completion": {
+        "stageProviders": [
+          {
+            "spec": {
+              "stage": 1,
+              "frames": 17601,
+              "terminalMarker": false
+            },
+            "finalState": [
+              17451,
+              1,
+              1092444160,
+              1131507712,
+              1,
+              12787173,
+              1,
+              4,
+              283,
+              3,
+              62418,
+              78325,
+              1,
+              0,
+              0,
+              81
+            ],
+            "nativeFlags": 4
+          },
+          {
+            "spec": {
+              "stage": 2,
+              "frames": 20317,
+              "terminalMarker": false
+            },
+            "finalState": [
+              20167,
+              97,
+              1116014592,
+              1136021504,
+              1,
+              37614559,
+              8,
+              1,
+              239,
+              0,
+              34019,
+              132702,
+              2,
+              0,
+              0,
+              81
+            ],
+            "nativeFlags": 4
+          },
+          {
+            "spec": {
+              "stage": 3,
+              "frames": 25689,
+              "terminalMarker": false
+            },
+            "finalState": [
+              25539,
+              17,
+              3247046656,
+              1125971968,
+              1,
+              60896407,
+              12,
+              2,
+              400,
+              1,
+              21179,
+              152585,
+              1,
+              0,
+              0,
+              81
+            ],
+            "nativeFlags": 4
+          },
+          {
+            "spec": {
+              "stage": 4,
+              "frames": 23615,
+              "terminalMarker": false
+            },
+            "finalState": [
+              23465,
+              1,
+              1127743488,
+              1129158656,
+              1,
+              93425482,
+              16,
+              2,
+              397,
+              3,
+              50700,
+              177298,
+              1,
+              0,
+              0,
+              81
+            ],
+            "nativeFlags": 4
+          },
+          {
+            "spec": {
+              "stage": 5,
+              "frames": 29321,
+              "terminalMarker": false
+            },
+            "finalState": [
+              29171,
+              1,
+              3268811776,
+              1133861888,
+              1,
+              157844621,
+              20,
+              3,
+              400,
+              1,
+              38417,
+              136479,
+              1,
+              0,
+              0,
+              81
+            ],
+            "nativeFlags": 4
+          },
+          {
+            "spec": {
+              "stage": 6,
+              "frames": 31458,
+              "terminalMarker": false
+            },
+            "finalState": [
+              31078,
+              0,
+              1102610432,
+              1133644800,
+              1,
+              200174973,
+              25,
+              2,
+              357,
+              3,
+              8319,
+              196873,
+              1,
+              0,
+              0,
+              81
+            ],
+            "nativeFlags": 16400
+          }
+        ]
+      }
+    },
+    "marisa-extra": {
+      "path": "7e966fdbcfea38ae5465d2725f743370af631f83fb5c9b87a9a232a3b64acc80.jsonl.gz",
+      "sha256": "7e966fdbcfea38ae5465d2725f743370af631f83fb5c9b87a9a232a3b64acc80",
+      "ticks": 58483,
+      "replaySha256": "6ae9905f7a9d25b4baaf93460b4a276352dcf72707b4563a06170775383f168b",
+      "stateSchema": "th15/authoritative-selected-state/v1",
+      "provenance": {
+        "source": "existing-native-world-factory",
+        "viewport": [
+          128,
+          16,
+          320,
+          16
+        ],
+        "glyphOutput": "offline-raster-boundary",
+        "instructionBudgetHook": false,
+        "provider": "th15/retail-x86-world"
+      },
+      "completion": {
+        "stageProviders": [
+          {
+            "spec": {
+              "stage": 7,
+              "frames": 58863,
+              "terminalMarker": false
+            },
+            "finalState": [
+              58483,
+              0,
+              3255496704,
+              1137358080,
+              1,
+              66586154,
+              0,
+              8,
+              400,
+              6,
+              53473,
+              330376,
+              2,
+              0,
+              0,
+              81
+            ],
+            "nativeFlags": 16400
+          }
+        ]
+      }
+    }
+  }
+}

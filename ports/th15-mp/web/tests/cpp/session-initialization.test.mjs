@@ -1,0 +1,32 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{core,oracle,memory,string,report}from'./helpers.mjs';
+test('TH15 full scene initialization matches original run/practice/Extra state and factory ordering',async()=>{
+ const c=await core(),m=await oracle(),f=c.session_initialization_create(),scene=m.allocate(0x100),graphics=m.allocate(0x100),anm=m.allocate(0x40),wave=m.allocate(0x20),records=m.allocate(0x60000),dummy=m.allocate(0x100);let events=[],cases=0,checks=0;
+ const event=id=>{events.push(id);return 1;},sp=()=>m.reg('ESP');
+ try{
+ for(const entry of m.image.imports)if(entry.dll==='kernel32.dll'&&entry.name==='Sleep'){const stub=m.importMap.get(m.u32(entry.address));stub.handler=()=>0;stub.argc=1;}
+ m.view(scene,0x100).fill(0);m.view(graphics,0x100).fill(0);m.view(anm,0x40).fill(0);m.view(wave,0x20).fill(0);m.u32(0x4e9a94,scene);m.u32(0x4e798c,dummy);m.u32(0x503c18,anm);m.i32(anm+0x20,-1);m.u32(0x4e9bd8,wave);m.u32(0x4e9a88,graphics);m.u32(0x4e9bc8,records);m.u32(0x51e0a4,0);
+ for(const at of [0x477e10,0x41f490,0x44db40,0x44de70])m.replace(at,'fixture presentation operation',()=>1);
+ m.replace(0x409040,'fixture transition timer',()=>1,1);m.replace(0x472c90,'fixture wall clock',()=>0);
+ m.replace(0x4017e0,'fixture callback allocation',()=>{const p=m.allocate(0x40);m.view(p,0x40).fill(0);return p;},1);
+ m.replace(0x401390,'fixture session callback registration',()=>event(3),2);m.replace(0x401440,'fixture draw registration',()=>1,2);
+ m.replace(0x4210c0,'fixture session finalization',()=>event(22));
+ m.replace(0x43a960,'fixture bomb HUD',()=>{events.push(0,m.u32(sp()+4),m.u32(sp()+8));return 1;},2);
+ m.replace(0x453fd0,'fixture player allocation',()=>{m.i32(0x4e7448,100);m.i32(0x4e7444,400);return event(1);});m.replace(0x4567b0,'fixture configure options',()=>event(2));
+ for(const[at,id,argc]of[[0x45be60,4,0],[0x45d080,5,0],[0x40e5d0,6,0],[0x435290,7,0],[0x433f10,8,0],[0x4191d0,9,0],[0x43f740,10,0],[0x441730,11,0],[0x450200,12,0],[0x45e920,13,0],[0x413450,14,0],[0x426a00,15,0],[0x43bbd0,16,1],[0x414660,17,0],[0x41fd00,18,0],[0x44d500,19,0]])m.replace(at,'fixture factory '+id,()=>event(id),argc);
+ m.replace(0x44d360,'fixture preload music',()=>event(m.u32(sp()+4)?21:20),2);
+ const stateAddresses=[0x4e73f0,0x4e73f8,0x4e73fc,0x4e7400,0x4e7404,0x4e7408,0x4e7410,0x4e7414,0x4e7424,0x4e7438,0x4e75bc,0x4e75c0,0x4e77a0,...Array.from({length:9},(_,i)=>0x4e7594+i*4),0x4e75b8,0x4e73e8,scene+0x90,scene+0xb4,scene+0x98];
+ const playerAddresses=[0x4e7450,0x4e7454,0x4e742c,0,0,0,0x4e7794,0x4e7440,0x4e7448,0x4e745c,0x4e7460,0];
+ const scoreAddresses=[0x4e740c,0x4e7434,0x4e743c,0x4e7430,0x4e7464,0x4e746c,0x4e7470,0x4e7474,0x4e7478,0x4e747c,0x4e7458,0x4e7410,0x4e741c,0x4e7420,0x4e7444];
+ for(let sample=0;sample<640;++sample){
+  const stage=sample%8,difficulty=Math.floor(sample/8)%5,character=Math.floor(sample/40)%4,mode=Math.floor(sample/160)%4,flags=(mode<<4)|[0,4,8,1,2,9,0x40,0x100,0x200,0x300][Math.floor(sample/4)%10],newRun=sample%7!==0,replay=sample%3===0,gui=sample%2===0;
+  const s=c.session_initialization_field(f,0),p=c.session_initialization_field(f,1),v=c.session_initialization_field(f,2),continueBudget=c.session_initialization_field(f,3),rank=c.session_initialization_field(f,6),best=c.session_initialization_field(f,4),plays=c.session_initialization_field(f,5);let dv=new DataView(c.memory.buffer);
+  const state=[stage,19,230,897,character,0,difficulty,3,37,98765,13579,-2,sample%11,...Array.from({length:9},(_,i)=>sample+i),29,0x3f19999a,0x4080, replay?1:0,127],player=[4,2,91,0,0,0,flags,173,100,5,3,0],score=[sample%2?99870:-32,987600,19000000,12,2672,17,4,0x41d00000,0x43230000,0x42c80000,5,difficulty,982,312,400];
+  m.view(0x4e73f0,0x1cc).fill(0);state.forEach((n,i)=>{dv.setInt32(s+i*4,n,true);m.u32(stateAddresses[i],n>>>0);});player.forEach((n,i)=>{dv.setInt32(p+i*4,n,true);if(playerAddresses[i])m.u32(playerAddresses[i],n>>>0);});score.forEach((n,i)=>{dv.setInt32(v+i*4,n,true);m.u32(scoreAddresses[i],n>>>0);});dv.setInt32(s+120,81+sample,true);m.i32(0x4e7480,81+sample);dv.setInt32(continueBudget,17,true);m.i32(0x4e77a4,17);dv.setInt32(rank,113+sample,true);m.i32(0x4e7418,113+sample);m.u32(0x4e7ed8,newRun?1:0);m.u32(0x4e9a8c,gui?dummy:0);c.session_initialization_configure(f,gui,newRun,replay);
+  const high=34000+sample,extra=sample%2?-3:9,legacy=(flags&0x300)===0,bank=records+character*0xa4a0+(legacy?0x5188:0),d=newRun&&stage===7?4:difficulty;
+  dv.setInt32(best,high,true);dv.setInt32(best+4,extra,true);m.i32(bank+0x18+d*320,high);m.view(bank+0x1d+d*320,1)[0]=extra&255;m.i32(bank+0x970+37*0x9c,high);m.i32(records+0xa320+(character*0x1494+stage+d*8)*8,high);
+  const play=sample%2?9999999:42;dv.setInt32(plays,play,true);m.i32(bank+0x515c,play);events=[];m.call(0x43bff0,{limit:1000000});assert.equal(c.session_initialization_run(f),1,string(c,c.session_initialization_error(f)));dv=new DataView(c.memory.buffer);
+  const label='sample '+sample;stateAddresses.forEach((at,i)=>{assert.equal(dv.getUint32(s+i*4,true),m.u32(at),label+' progress '+i);checks++;});playerAddresses.forEach((at,i)=>{if(at){assert.equal(dv.getUint32(p+i*4,true),m.u32(at),label+' player '+i);checks++;}});scoreAddresses.forEach((at,i)=>{assert.equal(dv.getUint32(v+i*4,true),m.u32(at),label+' score '+i);checks++;});assert.equal(dv.getInt32(s+120,true),m.i32(0x4e7480),label+' alternating pieces');assert.equal(dv.getInt32(continueBudget,true),m.i32(0x4e77a4),label+' continue budget');assert.equal(dv.getInt32(rank,true),m.i32(0x4e7418),label+' preserved ECL rank');checks++;assert.equal(dv.getInt32(plays,true),m.i32(bank+0x515c),label+' play counter');assert.deepEqual(Array.from(new Uint32Array(c.memory.buffer,c.session_initialization_events(f),c.session_initialization_event_count(f))),events,label+' exact initialization order');checks+=3;cases++;
+ }
+ report('session-initialization',{passed:true,cases,checks,scope:'Unmodified original 43bff0 and original counter reset 43e6d0/43e660. Observed run/practice/spell/Extra initialization, score selection, lives, bomb HUD updates before piece reset, starting power, continue budget, preserved ECL difficulty scaling rank, retained progress on scene transition, record play cap, replay restart, manager factory ordering and music preparation. Fixture factories do not replace full-game session verification.'});
+ }finally{c.session_initialization_delete(f);m.close();}
+});

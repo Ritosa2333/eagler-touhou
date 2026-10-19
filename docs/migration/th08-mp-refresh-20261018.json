@@ -1,0 +1,46 @@
+{
+  "schema": "eagler-touhou/component-source-refresh/1",
+  "component": "ports/th08-mp",
+  "sourceRepository": "YomotsuHisami/th08",
+  "sourceRef": "eagler-mp",
+  "sourceBase": "ed28bff70dd7075d028944869b4b8083aff52db8",
+  "sourceCommit": "961eb329f7410fc1a01ae20f53eae8839314c601",
+  "sourcePinnedCommon": "44d0732e0f3569dc107512fefa0ef5c535c01925",
+  "monorepoCommonSource": "0b236bfccf2a1eb9d4a9e227ad049abfb4e68345",
+  "commonSelectionChanged": false,
+  "prefix": "ports/th08-mp/",
+  "sourceFiles": [
+    "docs/netplay-progress.md",
+    "portable/multiplayer/check-network.py",
+    "th08_web/cpp/multiplayer/NetworkConnection.cpp"
+  ],
+  "integration": "Keep the source commit as an ancestor and apply only its delta from the original MP base under the component prefix. Retain candidate capture-failure diagnostics after the new correction-continuation boundary.",
+  "nativeChange": "Skip spectator terminal publication only when no spectator publisher was started; keep player confirmation and active publisher retirement gates.",
+  "sourceReportedScope": "Standard production 2P packets and local Relay passed. Full spectator and active-stream restart probes still failed. Candidate rebuild and browser evidence are recorded separately.",
+  "candidateVerification": {
+    "buildCommit": "e1b2c5e178ef369aa48ab6464ba0deebd4da40f5",
+    "sourceInputsVerified": 523,
+    "wasmSha256": "8671d3cf9ffc036182fc609ab74f2c2a1cacf3debbf3c7ded2c4aa289a84d586",
+    "production": true,
+    "standardTwoPlayerPackets": true,
+    "standardTwoPlayerRelayAndNativeRestart": true,
+    "packetCheckpoints": [
+      119,
+      179,
+      379
+    ],
+    "relayCheckpoints": [
+      119,
+      239,
+      379
+    ],
+    "fullSpectator": "Source follow-up still fails; not rerun or promoted to PASS in this candidate.",
+    "scopeNotRevalidated": [
+      "3P",
+      "RTC",
+      "analog",
+      "full stage playthrough",
+      "public network and devices"
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
+import type { RoomOwnerSnapshot, MultiplayerRoomService } from '../../services/multiplayer-room';
+import { useLocale } from '../../i18n';
+import { roomPresentation } from './presentation';
+export function RoomSpectators({
+  state,
+  service,
+  hidden,
+}: {
+  state: RoomOwnerSnapshot;
+  service: MultiplayerRoomService;
+  hidden: boolean;
+}) {
+  const { t } = useLocale(),
+    { room, ready, owner, config } = roomPresentation(state, t)!,
+    entries = room.spectators || [];
+  return (
+    <div
+      id="mpSpectatorContent"
+      className="mp-spectator-content"
+      data-room-panel="spectators"
+      hidden={hidden}
+    >
+      <p className="mp-spectator-intro">
+        {t(
+          state.product === 'th09mp' && room.spectatorTimeline
+            ? 'room.th09SpectatorHint'
+            : 'room.spectatorHint',
+        )}
+      </p>
+      <div className="mp-spectator-list" id="mpSpectatorList">
+        {entries.length ? (
+          entries.map((entry, index) => {
+            const mine = entry.clientId === state.localClientId,
+              title = state.nickname && entry.name ? entry.name : t('room.spectatorNumber', { number: index + 1 });
+            return (
+              <div
+                className={`mp-spectator-entry${mine ? ' mine' : ''}`}
+                key={entry.clientId}
+                title={title}
+              >
+                <span className="mp-spectator-avatar">
+                  {multiplayerDisplayInitial(entry.name, '?')}
+                </span>
+                <div className="mp-spectator-copy">
+                  <strong>{title}</strong>
+                  <small>
+                    {t(
+                      state.product === 'th09mp' && room.phase !== 'lobby'
+                        ? 'room.spectatorJoined'
+                        : 'room.watching',
+                    )}
+                  </small>
+                </div>
+                <span className="mp-spectator-marker">{mine ? t('multiplayer.you') : ''}</span>
+                {owner && ready && room.phase === 'lobby' && !mine && (
+                  <button
+                    type="button"
+                    className="mp-spectator-remove"
+                    aria-label={t('room.removeSpectator')}
+                    title={t('room.removeSpectator')}
+                    onClick={() => {
+                      void service.removeSpectator(entry.clientId);
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div className="mp-spectator-empty">{t('status.noSpectators')}</div>
+        )}
+      </div>
+      <button
+        className="mp-spectator-join"
+        id="mpSpectatorJoin"
+        type="button"
+        hidden={
+          (state.seat != null && room.phase !== 'lobby') ||
+          (config as typeof config & { spectator?: boolean }).spectator === false
+        }
+        disabled={!ready || (state.seat != null && room.phase !== 'lobby')}
+        onClick={state.spectatorRequested ? service.leaveSpectator : service.spectate}
+      >
+        {t(state.spectatorRequested ? 'multiplayer.leaveSpectator' : 'multiplayer.joinSpectator')}
+      </button>
+    </div>
+  );
+}

@@ -1,0 +1,649 @@
+{
+  "schema": "th09-browser-scheduler-metadata/v1",
+  "raw": {
+    "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-report.json",
+    "bytes": 36168002,
+    "sha256": "a24d75bc216ee2a20360ea7bf3e63134adbc1657fd7ced5801108770c924332e"
+  },
+  "scope": "Identity and collection/clock qualification only; task wall spans do not establish CPU busy or causality; no events is not idle evidence.",
+  "traces": [
+    {
+      "side": 0,
+      "artifact": {
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-P1-scheduler-trace.json",
+        "bytes": 25668050,
+        "sha256": "ad1a333b617b145ac8c501e83b3ec25de1696aac74d985a9facd48a3e6adf296"
+      },
+      "status": "stopped",
+      "collectionValid": false,
+      "availability": {
+        "available": true,
+        "reason": "ready",
+        "missingCategories": [],
+        "product": "Chrome/153.0.8010.12"
+      },
+      "counts": {
+        "batches": 1077,
+        "rawEvents": 159515,
+        "retainedEvents": 159486,
+        "droppedEvents": 29,
+        "droppedFields": 159486,
+        "malformedEvents": 0,
+        "retainedDataJsonBytes": 45956388,
+        "unknownEventNames": 121469,
+        "errors": 2
+      },
+      "overflow": {
+        "events": 0,
+        "bytes": 0,
+        "bufferUsage": 0,
+        "marks": 0,
+        "errors": 0,
+        "names": 0,
+        "threads": 0,
+        "firstAt": null,
+        "firstTraceTs": null
+      },
+      "errors": [
+        {
+          "code": "tracing-complete-timeout",
+          "at": 91002.9488,
+          "name": "TimeoutError"
+        },
+        {
+          "code": "cdp-detach",
+          "at": 96048.1422,
+          "name": "TimeoutError"
+        }
+      ],
+      "clock": {
+        "traceTimestampUnit": "microseconds",
+        "pageTimestampUnit": "milliseconds",
+        "mapping": "traceTs/1000 = pagePerformanceNow + offsetMs",
+        "timeOriginIsNotTraceOrigin": true,
+        "quantizationAllowanceMs": 0.1,
+        "matches": [
+          {
+            "stage": "armed",
+            "name": "th09-sched-armed",
+            "before": 7404.3949999809265,
+            "after": 7405.424999952316,
+            "timeOrigin": 1791715101292.56,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 60208,
+              "tid": 42408,
+              "ts": 274021160575
+            },
+            "offsetMs": [
+              274013755.05,
+              274013756.28000003
+            ]
+          },
+          {
+            "stage": "first-active",
+            "name": "th09-sched-first-active",
+            "before": 10190.469999969006,
+            "after": 10190.649999976158,
+            "timeOrigin": 1791715101292.56,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 60208,
+              "tid": 42408,
+              "ts": 274023946632
+            },
+            "offsetMs": [
+              274013755.882,
+              274013756.2620001
+            ]
+          },
+          {
+            "stage": "capture-stop",
+            "name": "th09-sched-capture-stop",
+            "before": 58439.50999999046,
+            "after": 58439.939999997616,
+            "timeOrigin": 1791715101292.56,
+            "candidateCount": 0,
+            "uniqueCandidateCount": 0,
+            "trace": null,
+            "offsetMs": null
+          }
+        ],
+        "matchedMarks": 2,
+        "sameThread": true,
+        "samePageTimeOrigin": true,
+        "clockMapped": false,
+        "offsetIntersectionMs": [
+          274013755.882,
+          274013756.2620001
+        ],
+        "maximumBracketWidthMs": 1.0299999713897705,
+        "distinctMarkSpanMs": 2785.0450000166893,
+        "renderer": null
+      },
+      "capture": {
+        "nodeStartedAt": 9682.46,
+        "nodeStopRequestedAt": 60696.3839,
+        "nodeEndRequestedAt": 60724.7696,
+        "nodeCompletedAt": null,
+        "nodeStoppedAt": 96048.1941,
+        "reason": "capture-stop",
+        "deadlineFired": false,
+        "chromeBufferFull": false,
+        "tracingCompleteReceived": false,
+        "dataLossOccurred": null,
+        "endRequests": 1
+      },
+      "coverage": {
+        "clockMapped": false,
+        "allThreeMarks": false,
+        "marksOrdered": true,
+        "activeWindowCovered": false,
+        "categories": {
+          "toplevel": 58271,
+          "renderer.scheduler": 3853,
+          "cc": 53060,
+          "viz": 26202,
+          "gpu": 18031,
+          "blink.user_timing": 2
+        },
+        "schedulerObserved": true,
+        "compositorObserved": true,
+        "gpuObserved": true,
+        "renderer": null,
+        "limitation": "No events is not evidence of idle. Match the retained complete time window to existing rAF requests; a non-reproduced stall is not a repair.",
+        "threadCount": 67,
+        "unknownNameCount": 180
+      },
+      "sourceIdentity": {
+        "before": {
+          "helper": {
+            "bytes": 23899,
+            "sha256": "2cac389b374981179924ab691b6098a4c39149fd4c06493131e292c905fce8ad"
+          },
+          "harness": {
+            "bytes": 69739,
+            "sha256": "6d400d7906a6e3af1d988739f95ba534a0b28a8c64133aa475a5be22255a4ce5"
+          }
+        },
+        "after": {
+          "helper": {
+            "bytes": 23899,
+            "sha256": "2cac389b374981179924ab691b6098a4c39149fd4c06493131e292c905fce8ad"
+          },
+          "harness": {
+            "bytes": 69739,
+            "sha256": "6d400d7906a6e3af1d988739f95ba534a0b28a8c64133aa475a5be22255a4ce5"
+          }
+        },
+        "stable": true
+      },
+      "phaseCounts": {
+        "M": 67,
+        "X": 139602,
+        "I": 19817
+      },
+      "namedCounts": [
+        [
+          "ThreadControllerImpl::RunTask",
+          26488
+        ],
+        [
+          "ExternalBeginFrameSource::OnBeginFrame",
+          2471
+        ],
+        [
+          "Scheduler::BeginFrame",
+          1236
+        ],
+        [
+          "Scheduler::BeginImplFrame",
+          1236
+        ],
+        [
+          "Scheduler::OnBeginImplFrameDeadline",
+          1236
+        ],
+        [
+          "ThreadPool_RunTask",
+          1008
+        ],
+        [
+          "ProxyImpl::ScheduledActionSendBeginMainFrame",
+          848
+        ],
+        [
+          "ProxyMain::BeginMainFrame",
+          848
+        ],
+        [
+          "DisplayScheduler::OnBeginFrameDeadline",
+          769
+        ],
+        [
+          "LayerTreeHost::DoUpdateLayers",
+          302
+        ],
+        [
+          "LayerTreeHostImpl::PrepareToDraw",
+          302
+        ],
+        [
+          "DisplayScheduler::DrawAndSwap",
+          301
+        ],
+        [
+          "Display::DrawAndSwap",
+          301
+        ],
+        [
+          "DirectRenderer::DrawFrame",
+          301
+        ],
+        [
+          "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+          301
+        ],
+        [
+          "thread_name",
+          55
+        ],
+        [
+          "process_name",
+          12
+        ],
+        [
+          "th09-sched-armed",
+          1
+        ],
+        [
+          "th09-sched-first-active",
+          1
+        ]
+      ],
+      "mainEventCount": 0,
+      "mainX": [],
+      "sampleEvents": [
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274021153668,
+          "pid": 48684,
+          "tid": 47064,
+          "nameHash": "d03d517c5aeecf4707c6a0bdeec167d3a4577f1f9f7cba0f6d1e7b5860f92870",
+          "dur": 16,
+          "tts": 1586,
+          "tdur": 9
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274021153677,
+          "pid": 48684,
+          "tid": 43156,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 15,
+          "tts": 632,
+          "tdur": 14
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274021153693,
+          "pid": 48684,
+          "tid": 43156,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 1,
+          "tts": 646,
+          "tdur": 1
+        }
+      ],
+      "metadata": [
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 60208,
+          "tid": 42408,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 52104,
+          "tid": 21148,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        }
+      ]
+    },
+    {
+      "side": 1,
+      "artifact": {
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-P2-scheduler-trace.json",
+        "bytes": 26982597,
+        "sha256": "1ae09a3f2e1079a4a5b364609979e98d363d5286a14a631ace630c21c84fe7ab"
+      },
+      "status": "stopped",
+      "collectionValid": false,
+      "availability": {
+        "available": true,
+        "reason": "ready",
+        "missingCategories": [],
+        "product": "Chrome/153.0.8010.12"
+      },
+      "counts": {
+        "batches": 1134,
+        "rawEvents": 168765,
+        "retainedEvents": 168739,
+        "droppedEvents": 26,
+        "droppedFields": 168739,
+        "malformedEvents": 0,
+        "retainedDataJsonBytes": 48447070,
+        "unknownEventNames": 129254,
+        "errors": 2
+      },
+      "overflow": {
+        "events": 0,
+        "bytes": 0,
+        "bufferUsage": 0,
+        "marks": 0,
+        "errors": 0,
+        "names": 0,
+        "threads": 0,
+        "firstAt": null,
+        "firstTraceTs": null
+      },
+      "errors": [
+        {
+          "code": "tracing-complete-timeout",
+          "at": 91008.9274,
+          "name": "TimeoutError"
+        },
+        {
+          "code": "cdp-detach",
+          "at": 96550.8472,
+          "name": "TimeoutError"
+        }
+      ],
+      "clock": {
+        "traceTimestampUnit": "microseconds",
+        "pageTimestampUnit": "milliseconds",
+        "mapping": "traceTs/1000 = pagePerformanceNow + offsetMs",
+        "timeOriginIsNotTraceOrigin": true,
+        "quantizationAllowanceMs": 0.1,
+        "matches": [
+          {
+            "stage": "armed",
+            "name": "th09-sched-armed",
+            "before": 2720.014999985695,
+            "after": 2720.425000011921,
+            "timeOrigin": 1791715105975.97,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 30240,
+              "tid": 22096,
+              "ts": 274021159592
+            },
+            "offsetMs": [
+              274018439.067,
+              274018439.67700005
+            ]
+          },
+          {
+            "stage": "first-active",
+            "name": "th09-sched-first-active",
+            "before": 5496.514999985695,
+            "after": 5496.694999992847,
+            "timeOrigin": 1791715105975.97,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 30240,
+              "tid": 22096,
+              "ts": 274023936077
+            },
+            "offsetMs": [
+              274018439.282,
+              274018439.66200006
+            ]
+          },
+          {
+            "stage": "capture-stop",
+            "name": "th09-sched-capture-stop",
+            "before": 53761.07999998331,
+            "after": 53764.939999997616,
+            "timeOrigin": 1791715105975.97,
+            "candidateCount": 0,
+            "uniqueCandidateCount": 0,
+            "trace": null,
+            "offsetMs": null
+          }
+        ],
+        "matchedMarks": 2,
+        "sameThread": true,
+        "samePageTimeOrigin": true,
+        "clockMapped": false,
+        "offsetIntersectionMs": [
+          274018439.282,
+          274018439.66200006
+        ],
+        "maximumBracketWidthMs": 3.8600000143051147,
+        "distinctMarkSpanMs": 2776.089999973774,
+        "renderer": null
+      },
+      "capture": {
+        "nodeStartedAt": 9680.7262,
+        "nodeStopRequestedAt": 60696.455,
+        "nodeEndRequestedAt": 60733.9686,
+        "nodeCompletedAt": null,
+        "nodeStoppedAt": 96550.8876,
+        "reason": "capture-stop",
+        "deadlineFired": false,
+        "chromeBufferFull": false,
+        "tracingCompleteReceived": false,
+        "dataLossOccurred": null,
+        "endRequests": 1
+      },
+      "coverage": {
+        "clockMapped": false,
+        "allThreeMarks": false,
+        "marksOrdered": true,
+        "activeWindowCovered": false,
+        "categories": {
+          "toplevel": 60333,
+          "renderer.scheduler": 4160,
+          "cc": 57769,
+          "viz": 27611,
+          "gpu": 18812,
+          "blink.user_timing": 2
+        },
+        "schedulerObserved": true,
+        "compositorObserved": true,
+        "gpuObserved": true,
+        "renderer": null,
+        "limitation": "No events is not evidence of idle. Match the retained complete time window to existing rAF requests; a non-reproduced stall is not a repair.",
+        "threadCount": 52,
+        "unknownNameCount": 203
+      },
+      "sourceIdentity": {
+        "before": {
+          "helper": {
+            "bytes": 23899,
+            "sha256": "2cac389b374981179924ab691b6098a4c39149fd4c06493131e292c905fce8ad"
+          },
+          "harness": {
+            "bytes": 69739,
+            "sha256": "6d400d7906a6e3af1d988739f95ba534a0b28a8c64133aa475a5be22255a4ce5"
+          }
+        },
+        "after": {
+          "helper": {
+            "bytes": 23899,
+            "sha256": "2cac389b374981179924ab691b6098a4c39149fd4c06493131e292c905fce8ad"
+          },
+          "harness": {
+            "bytes": 69739,
+            "sha256": "6d400d7906a6e3af1d988739f95ba534a0b28a8c64133aa475a5be22255a4ce5"
+          }
+        },
+        "stable": true
+      },
+      "phaseCounts": {
+        "M": 52,
+        "X": 144236,
+        "I": 24449,
+        "R": 1,
+        "B": 1
+      },
+      "namedCounts": [
+        [
+          "ThreadControllerImpl::RunTask",
+          27485
+        ],
+        [
+          "ExternalBeginFrameSource::OnBeginFrame",
+          2542
+        ],
+        [
+          "Scheduler::BeginFrame",
+          1273
+        ],
+        [
+          "Scheduler::BeginImplFrame",
+          1270
+        ],
+        [
+          "Scheduler::OnBeginImplFrameDeadline",
+          1269
+        ],
+        [
+          "ProxyImpl::ScheduledActionSendBeginMainFrame",
+          1000
+        ],
+        [
+          "ProxyMain::BeginMainFrame",
+          1000
+        ],
+        [
+          "ThreadPool_RunTask",
+          852
+        ],
+        [
+          "DisplayScheduler::OnBeginFrameDeadline",
+          834
+        ],
+        [
+          "LayerTreeHost::DoUpdateLayers",
+          318
+        ],
+        [
+          "LayerTreeHostImpl::PrepareToDraw",
+          318
+        ],
+        [
+          "DisplayScheduler::DrawAndSwap",
+          318
+        ],
+        [
+          "Display::DrawAndSwap",
+          318
+        ],
+        [
+          "DirectRenderer::DrawFrame",
+          317
+        ],
+        [
+          "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+          317
+        ],
+        [
+          "thread_name",
+          43
+        ],
+        [
+          "process_name",
+          9
+        ],
+        [
+          "th09-sched-armed",
+          1
+        ],
+        [
+          "th09-sched-first-active",
+          1
+        ]
+      ],
+      "mainEventCount": 0,
+      "mainX": [],
+      "sampleEvents": [
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274021152603,
+          "pid": 23604,
+          "tid": 44392,
+          "nameHash": "d03d517c5aeecf4707c6a0bdeec167d3a4577f1f9f7cba0f6d1e7b5860f92870",
+          "dur": 16,
+          "tts": 25792,
+          "tdur": 8
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274021152609,
+          "pid": 23604,
+          "tid": 50164,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 19,
+          "tts": 569,
+          "tdur": 18
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274021152629,
+          "pid": 23604,
+          "tid": 50164,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 1,
+          "tts": 587,
+          "tdur": 1
+        }
+      ],
+      "metadata": [
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 30240,
+          "tid": 22096,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 28800,
+          "tid": 62792,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        }
+      ]
+    }
+  ]
+}

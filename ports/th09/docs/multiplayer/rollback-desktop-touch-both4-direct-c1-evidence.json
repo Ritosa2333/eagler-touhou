@@ -1,0 +1,3624 @@
+{
+  "schema": "th09-both4-render-work-evidence/v1",
+  "scope": "Desktop only, artificial native-ABI joystick, no physical phone or Launcher multiplayer qualification. Uncalibrated added diagnostic numeric copies. No production code change between these runs.",
+  "raw": {
+    "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-c1-report.json",
+    "bytes": 24198823,
+    "sha256": "50cebeb50ac38dc5bbc681a6cbe48d70fb892842301117107efb705317629570"
+  },
+  "identity": {
+    "wasm": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
+    "harness": "6d400d7906a6e3af1d988739f95ba534a0b28a8c64133aa475a5be22255a4ce5",
+    "loader": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3",
+    "smoothnessWindow": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+    "headedBrowserExecutable": {
+      "selection": "playwright.chromium.executablePath; existing normal Windows chrome.exe",
+      "basename": "chrome.exe",
+      "bytes": 4508160,
+      "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+      "launcherSha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+    },
+    "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+    "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+    "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+    "touchInputProbe": "f3bc2ac980bb24ee9b6ecb4fd921f4854e6e9ebec67a639bfcc77eb8c386e003",
+    "touchInputSchedules": [
+      "27a768f892f4eaf3d4683bfb05e56fda58e380d8e8cb3804354ef09d76096e4b",
+      "d7274cf59c3b961129a91e32c41a8b558118c4eca6ff0684669ecdbd3feeebc0"
+    ],
+    "hostLoadProbe": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca"
+  },
+  "parameters": {
+    "limit": 1800,
+    "delay": 0,
+    "jitter": 0,
+    "slow": 4,
+    "dropEvery": 0,
+    "release": true,
+    "profile": false,
+    "fallback": false,
+    "inputMode": "wall-clock",
+    "audioOutput": false,
+    "responsiveness": false,
+    "burstAt": 0,
+    "burstFor": 0,
+    "burstDelay": 0,
+    "rafDiagnostics": false,
+    "hostLoad": true,
+    "networkTrace": false,
+    "impairmentSite": "none",
+    "relayDiagnostics": false,
+    "expectedRtcPath": "direct",
+    "liveCost": false,
+    "clientSendMode": "synchronous",
+    "burstClock": "browser-active",
+    "cpuThrottle": {
+      "ratesBySide": [
+        4,
+        4
+      ],
+      "configuredAfter": "openProbe",
+      "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+    },
+    "startupTrace": false,
+    "relayInputDiagnostics": false,
+    "nativeFrontierObservation": "Release pacing ABI sampled on every retained game callback, independently of optional RAF diagnostics",
+    "graphicsIdentity": {
+      "scope": "Actual captured core/canvas/existing context after openProbe and before CPU throttling; same-owner read repeated inside the existing failure snapshot. Missing references are unavailable, never inferred from requested browser flags."
+    },
+    "renderWork": {
+      "enabled": true,
+      "columns": [
+        "sampleIndex",
+        "batches",
+        "uploadBytes",
+        "readBytes",
+        "vertexUploadBytes",
+        "programCompiles",
+        "bufferReplacements",
+        "bufferSubUpdates",
+        "rendererFrames",
+        "resamples",
+        "presentations"
+      ],
+      "source": "Same onGameFrame th09_game_metrics uint32[10] pointer as samples[11] presentations",
+      "limit": 50000,
+      "cumulative": true,
+      "observerOverheadCalibrated": false,
+      "scope": "Optional numeric copies per retained callback, not per simulated frame; uint32 wrap or regression requires separate intervals. No extra draw/tick or per-frame GPU query/readback; these counters are not GPU timings."
+    },
+    "touchInput": {
+      "enabled": true,
+      "profile": "joystick",
+      "sourceHz": 120,
+      "durationMs": 120000,
+      "mode": 0,
+      "inputDelay": 0,
+      "scope": "Synthetic native ABI events on an independent Page clock; not a Launcher/iOS bridge or physical phone test"
+    },
+    "headedControl": true,
+    "chromeSchedulerTrace": false,
+    "rafAnomaly": false,
+    "headedLaunch": {
+      "headless": false,
+      "explicitArgs": [
+        "--enable-gpu",
+        "--use-gl=angle",
+        "--use-angle=d3d11",
+        "--autoplay-policy=no-user-gesture-required",
+        "--hide-scrollbars",
+        "--mute-audio",
+        "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+      ],
+      "preservedHeadlessAuxiliaryArgs": [
+        "--hide-scrollbars",
+        "--mute-audio",
+        "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+      ],
+      "scope": "Window-mode environment control, not a production code change; proxy, input, audio/context, CPU setup, and native GPU arguments are unchanged."
+    }
+  },
+  "driverPassed": true,
+  "driverError": null,
+  "headedControl": {
+    "launches": [
+      {
+        "side": 0,
+        "observedAt": 1791714028979,
+        "explicitArgs": [
+          "--enable-gpu",
+          "--use-gl=angle",
+          "--use-angle=d3d11",
+          "--autoplay-policy=no-user-gesture-required",
+          "--hide-scrollbars",
+          "--mute-audio",
+          "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+        ],
+        "method": "CDP SystemInfo.getProcessInfo browser PID + single-PID Win32_Process CIM",
+        "allowedArgs": [
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-renderer-backgrounding",
+          "--enable-unsafe-swiftshader",
+          "--no-sandbox",
+          "--enable-gpu",
+          "--use-gl=angle",
+          "--use-angle=d3d11",
+          "--autoplay-policy=no-user-gesture-required",
+          "--hide-scrollbars",
+          "--mute-audio",
+          "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+        ],
+        "observationAvailable": true,
+        "verified": true,
+        "browserProcessMatches": 1,
+        "browserPid": 54672,
+        "commandLineSha256": "96f4f7b938ff3f4397cb6d36c12c5ed370d1862b95e80a07402e28612f87eb09",
+        "commandLineHashEncoding": "UTF-8 of the exact Win32_Process.CommandLine string",
+        "omittedArgumentCount": 37,
+        "executableMatches": true,
+        "headlessSwitch": false,
+        "preservedAuxiliaryArgs": true,
+        "requiredArgsPresent": true,
+        "observationMs": 927
+      },
+      {
+        "side": 1,
+        "observedAt": 1791714033651,
+        "explicitArgs": [
+          "--enable-gpu",
+          "--use-gl=angle",
+          "--use-angle=d3d11",
+          "--autoplay-policy=no-user-gesture-required",
+          "--hide-scrollbars",
+          "--mute-audio",
+          "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+        ],
+        "method": "CDP SystemInfo.getProcessInfo browser PID + single-PID Win32_Process CIM",
+        "allowedArgs": [
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-renderer-backgrounding",
+          "--enable-unsafe-swiftshader",
+          "--no-sandbox",
+          "--enable-gpu",
+          "--use-gl=angle",
+          "--use-angle=d3d11",
+          "--autoplay-policy=no-user-gesture-required",
+          "--hide-scrollbars",
+          "--mute-audio",
+          "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+        ],
+        "observationAvailable": true,
+        "verified": true,
+        "browserProcessMatches": 1,
+        "browserPid": 64612,
+        "commandLineSha256": "b993a1ffb1e8732da195b58c4ede431954e3a243e47eaa03621996a1155afe7d",
+        "commandLineHashEncoding": "UTF-8 of the exact Win32_Process.CommandLine string",
+        "omittedArgumentCount": 37,
+        "executableMatches": true,
+        "headlessSwitch": false,
+        "preservedAuxiliaryArgs": true,
+        "requiredArgsPresent": true,
+        "observationMs": 906
+      }
+    ],
+    "windows": [
+      {
+        "side": 0,
+        "stage": "setup-complete",
+        "observedAt": 1791714033317,
+        "window": {
+          "windowId": 370365318,
+          "bounds": {
+            "left": 50,
+            "top": 69,
+            "width": 1297,
+            "height": 810,
+            "windowState": "normal"
+          }
+        },
+        "page": {
+          "at": 3143.814999997616,
+          "timeOrigin": 1791714030179.975,
+          "visibility": "visible",
+          "focus": true,
+          "screenX": 50,
+          "screenY": 69,
+          "outerWidth": 1297,
+          "outerHeight": 810,
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "devicePixelRatio": 0.999999992853418,
+          "screen": {
+            "width": 1280,
+            "height": 720,
+            "availWidth": 1280,
+            "availHeight": 720,
+            "availLeft": 0,
+            "availTop": 0
+          }
+        },
+        "errors": []
+      },
+      {
+        "side": 1,
+        "stage": "setup-complete",
+        "observedAt": 1791714037683,
+        "window": {
+          "windowId": 2021253219,
+          "bounds": {
+            "left": 10,
+            "top": 10,
+            "width": 1297,
+            "height": 809,
+            "windowState": "normal"
+          }
+        },
+        "page": {
+          "at": 2826.4599999785423,
+          "timeOrigin": 1791714034863.265,
+          "visibility": "visible",
+          "focus": true,
+          "screenX": 10,
+          "screenY": 10,
+          "outerWidth": 1297,
+          "outerHeight": 809,
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "devicePixelRatio": 0.999999992853418,
+          "screen": {
+            "width": 1280,
+            "height": 720,
+            "availWidth": 1280,
+            "availHeight": 720,
+            "availLeft": 0,
+            "availTop": 0
+          }
+        },
+        "errors": []
+      },
+      {
+        "side": 0,
+        "stage": "measurement-complete",
+        "observedAt": 1791714083252,
+        "window": {
+          "windowId": 370365318,
+          "bounds": {
+            "left": 223,
+            "top": 384,
+            "width": 1298,
+            "height": 809,
+            "windowState": "minimized"
+          }
+        },
+        "page": {
+          "at": 53088.64999997616,
+          "timeOrigin": 1791714030179.975,
+          "visibility": "visible",
+          "focus": true,
+          "screenX": -16040,
+          "screenY": -16040,
+          "outerWidth": 140,
+          "outerHeight": 24,
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "devicePixelRatio": 0.999999992853418,
+          "screen": {
+            "width": 1280,
+            "height": 720,
+            "availWidth": 1280,
+            "availHeight": 720,
+            "availLeft": 0,
+            "availTop": 0
+          }
+        },
+        "errors": []
+      },
+      {
+        "side": 1,
+        "stage": "measurement-complete",
+        "observedAt": 1791714083252,
+        "window": {
+          "windowId": 2021253219,
+          "bounds": {
+            "left": 10,
+            "top": 10,
+            "width": 1297,
+            "height": 809,
+            "windowState": "normal"
+          }
+        },
+        "page": {
+          "at": 48401.75,
+          "timeOrigin": 1791714034863.265,
+          "visibility": "visible",
+          "focus": true,
+          "screenX": 10,
+          "screenY": 10,
+          "outerWidth": 1297,
+          "outerHeight": 809,
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "devicePixelRatio": 0.999999992853418,
+          "screen": {
+            "width": 1280,
+            "height": 720,
+            "availWidth": 1280,
+            "availHeight": 720,
+            "availLeft": 0,
+            "availTop": 0
+          }
+        },
+        "errors": []
+      }
+    ],
+    "windowObservationLimit": 6,
+    "scope": "Only the two browsers created by this harness. CDP supplies the unique browser PID; CIM reads only that PID. Save only command-line SHA256 and allowlisted flags, never raw command lines, executable/profile paths, or process lists. Missing identity observation is explicit and cannot establish a matched environment control. Window bounds, visibility/focus and existing lifecycle events do not prove physical scanout, continuous foreground visibility, or non-overlap. No window is moved or brought to front.",
+    "identityVerified": true
+  },
+  "graphicsIdentity": [
+    {
+      "side": 0,
+      "status": "captured",
+      "clock": "Node performance.now()",
+      "timeOrigin": 1791714027898.853,
+      "requestedAt": 2431.7741,
+      "returnedAt": 5411.4173,
+      "graphics": {
+        "clock": "Page performance.now()",
+        "timeOrigin": 1791714030179.975,
+        "sampledAt": 3125.274999976158,
+        "returnedAt": 3126.649999976158,
+        "available": true,
+        "reason": null,
+        "source": "core.ctx+core.canvas.GLctxObject.GLctx",
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "vendor": "Google Inc. (Intel)",
+        "rendererSource": "WEBGL_debug_renderer_info",
+        "readiness": {
+          "pageReady": true,
+          "corePresent": true,
+          "gameMetricsAvailable": true
+        },
+        "identity": {
+          "documentSame": true,
+          "coreSame": true,
+          "canvasSame": true,
+          "canvasInDocument": true,
+          "canvasConnected": true,
+          "expectedCanvasSame": true,
+          "contextCanvasSame": true,
+          "currentContextReferencePresent": true,
+          "currentContextReferencesSame": true
+        },
+        "canvas": {
+          "id": "canvas",
+          "width": 640,
+          "height": 480
+        },
+        "contextType": "[object WebGL2RenderingContext]",
+        "contextLost": false
+      }
+    },
+    {
+      "side": 1,
+      "status": "captured",
+      "clock": "Node performance.now()",
+      "timeOrigin": 1791714027898.853,
+      "requestedAt": 7071.7793,
+      "returnedAt": 9779.8096,
+      "graphics": {
+        "clock": "Page performance.now()",
+        "timeOrigin": 1791714034863.265,
+        "sampledAt": 2810.939999997616,
+        "returnedAt": 2812.4950000047684,
+        "available": true,
+        "reason": null,
+        "source": "core.ctx+core.canvas.GLctxObject.GLctx",
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "vendor": "Google Inc. (Intel)",
+        "rendererSource": "WEBGL_debug_renderer_info",
+        "readiness": {
+          "pageReady": true,
+          "corePresent": true,
+          "gameMetricsAvailable": true
+        },
+        "identity": {
+          "documentSame": true,
+          "coreSame": true,
+          "canvasSame": true,
+          "canvasInDocument": true,
+          "canvasConnected": true,
+          "expectedCanvasSame": true,
+          "contextCanvasSame": true,
+          "currentContextReferencePresent": true,
+          "currentContextReferencesSame": true
+        },
+        "canvas": {
+          "id": "canvas",
+          "width": 640,
+          "height": 480
+        },
+        "contextType": "[object WebGL2RenderingContext]",
+        "contextLost": false
+      }
+    }
+  ],
+  "confirmedPrefix": {
+    "count": 15,
+    "lastFrame": 1800,
+    "equal": true
+  },
+  "peers": [
+    {
+      "side": 0,
+      "available": true,
+      "summary": {
+        "logicHz": 59.11403389065849,
+        "elapsedMs": 27404.65999996662,
+        "firstFrame": 180,
+        "lastFrame": 1800,
+        "callbacks": 4509,
+        "waitCallbacks": 55,
+        "corrections": 90,
+        "resimulated": 158,
+        "captures": 1620,
+        "callbackWorkMs": {
+          "count": 4509,
+          "total": 4274.674995005131,
+          "p50": 0.009999990463256836,
+          "p95": 3.0800000429153442,
+          "p99": 4.694999992847443,
+          "max": 10.319999992847443,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "presentationGapMs": {
+          "count": 1618,
+          "total": 27388.93499999999,
+          "p50": 18.165000000000873,
+          "p95": 18.25,
+          "p99": 18.61999999999898,
+          "max": 369.6849999999995,
+          "over25ms": 5,
+          "over50ms": 1,
+          "over100ms": 1,
+          "over250ms": 1
+        },
+        "effectivePresentationGapMs": {
+          "count": 1618,
+          "total": 27388.93499999999,
+          "p50": 18.165000000000873,
+          "p95": 18.25,
+          "p99": 18.61999999999898,
+          "max": 369.6849999999995,
+          "over25ms": 5,
+          "over50ms": 1,
+          "over100ms": 1,
+          "over250ms": 1
+        },
+        "callbackCompletionGapMs": {
+          "count": 1618,
+          "total": 27387.185000002384,
+          "p50": 17.935000002384186,
+          "p95": 20.09500002861023,
+          "p99": 21.839999973773956,
+          "max": 379.30500000715256,
+          "over25ms": 5,
+          "over50ms": 1,
+          "over100ms": 1,
+          "over250ms": 1
+        },
+        "rafGapMs": {
+          "count": 4508,
+          "total": 27401.04999999997,
+          "p50": 6.06000000000131,
+          "p95": 6.125,
+          "p99": 6.185000000004948,
+          "max": 24.19499999999971,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "plannedDelayMs": {
+          "count": 2649,
+          "total": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "max": 0,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "deliveredDelayMs": {
+          "count": 2649,
+          "total": 140.9550006389618,
+          "p50": 0.010000050067901611,
+          "p95": 0.17500001192092896,
+          "p99": 0.20500004291534424,
+          "max": 1.1800000071525574,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "scenes": [
+          1
+        ],
+        "sessionPhases": [
+          1
+        ],
+        "window": {
+          "schema": "continuous-prediction-frontier-v1",
+          "status": [
+            "complete"
+          ],
+          "complete": true,
+          "requestedFrameRange": [
+            180,
+            1800
+          ],
+          "progressSource": "native-networkPacing-PredictionFrontier",
+          "nativeFrontierComplete": true,
+          "nativeFrontierMissingSampleIndices": [],
+          "nativeFrontierErrors": [],
+          "epochValid": true,
+          "epochErrors": [],
+          "nativeMatchesObservedNextHighWater": true,
+          "startSampleIndex": 481,
+          "endSampleIndexExclusive": 4990,
+          "bodyRange": [
+            481,
+            4990
+          ],
+          "startMarker": {
+            "sampleIndex": 481,
+            "sample": [
+              3060.985000014305,
+              1,
+              5.039999961853027,
+              180,
+              178,
+              112,
+              187,
+              180,
+              1,
+              1,
+              178,
+              180,
+              1,
+              12908.38
+            ],
+            "nativePacing": [
+              481,
+              1,
+              2,
+              1000,
+              1000,
+              180,
+              178
+            ],
+            "predictionFrontier": 180
+          },
+          "endMarker": {
+            "sampleIndex": 4990,
+            "sample": [
+              30465.644999980927,
+              1,
+              2.439999997615814,
+              1800,
+              1800,
+              202,
+              345,
+              1800,
+              5,
+              1,
+              1800,
+              1800,
+              1,
+              40315.47
+            ],
+            "nativePacing": [
+              4990,
+              1,
+              0,
+              1000,
+              1000,
+              1800,
+              1800
+            ],
+            "predictionFrontier": 1800
+          },
+          "closedBoundaryAvailable": true,
+          "markerDeltas": {
+            "frontier": 1620,
+            "next": 1620,
+            "corrections": 90,
+            "resimulated": 158,
+            "captures": 1620,
+            "rendererSubmissions": 1620
+          },
+          "bodyFirstToLast": {
+            "fromSample": 481,
+            "toSample": 4989,
+            "elapsedMs": 27396.224999964237,
+            "deltas": {
+              "frontier": 1619,
+              "next": 1619,
+              "corrections": 90,
+              "resimulated": 158,
+              "captures": 1619,
+              "rendererSubmissions": 1619
+            }
+          },
+          "formalWithEndBoundary": {
+            "available": true,
+            "newStates": {
+              "rafTimestampMs": {
+                "count": 1619,
+                "total": 27407.08999999999,
+                "p50": 18.165000000000873,
+                "p95": 18.25,
+                "p99": 18.61999999999898,
+                "max": 369.6849999999995,
+                "over25ms": 5,
+                "over50ms": 1,
+                "over100ms": 1,
+                "over250ms": 1
+              },
+              "sampledAtMs": {
+                "count": 1619,
+                "total": 27404.65999996662,
+                "p50": 17.935000002384186,
+                "p95": 20.09500002861023,
+                "p99": 21.839999973773956,
+                "max": 379.30500000715256,
+                "over25ms": 5,
+                "over50ms": 1,
+                "over100ms": 1,
+                "over250ms": 1
+              },
+              "maximumRafGap": {
+                "fromSample": 838,
+                "toSample": 898,
+                "rafTimestampMs": 369.6849999999995,
+                "sampledAtMs": 379.30500000715256,
+                "frontierDelta": 1,
+                "nextDelta": 1,
+                "rendererSubmissions": 1,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              },
+              "maximumSampledAtGap": {
+                "fromSample": 838,
+                "toSample": 898,
+                "rafTimestampMs": 369.6849999999995,
+                "sampledAtMs": 379.30500000715256,
+                "frontierDelta": 1,
+                "nextDelta": 1,
+                "rendererSubmissions": 1,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              }
+            },
+            "adjacentCallbacks": {
+              "rafTimestampMs": {
+                "count": 4509,
+                "total": 27407.08999999997,
+                "p50": 6.06000000000131,
+                "p95": 6.125,
+                "p99": 6.185000000004948,
+                "max": 24.19499999999971,
+                "over25ms": 0,
+                "over50ms": 0,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sampledAtMs": {
+                "count": 4509,
+                "total": 27404.65999996662,
+                "p50": 6.060000002384186,
+                "p95": 9.310000002384186,
+                "p99": 11.060000002384186,
+                "max": 28.7049999833107,
+                "over25ms": 1,
+                "over50ms": 0,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "maximumRafGap": {
+                "fromSample": 4632,
+                "toSample": 4633,
+                "rafTimestampMs": 24.19499999999971,
+                "sampledAtMs": 28.7049999833107,
+                "frontierDelta": 2,
+                "nextDelta": 2,
+                "rendererSubmissions": 2,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              },
+              "maximumSampledAtGap": {
+                "fromSample": 4632,
+                "toSample": 4633,
+                "rafTimestampMs": 24.19499999999971,
+                "sampledAtMs": 28.7049999833107,
+                "frontierDelta": 2,
+                "nextDelta": 2,
+                "rendererSubmissions": 2,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              }
+            },
+            "lastObservedNewStateSample": 4990,
+            "endMarkerHasNewState": true,
+            "observedWithoutNewStateToEnd": null
+          },
+          "crossingNewStateIntervals": {
+            "start": [
+              {
+                "fromSample": 478,
+                "toSample": 481,
+                "rafTimestampMs": 18.164999999999054,
+                "sampledAtMs": 21.080000042915344,
+                "frontierDelta": 1,
+                "nextDelta": 1,
+                "rendererSubmissions": 1,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              }
+            ],
+            "end": [
+              {
+                "fromSample": 4987,
+                "toSample": 4990,
+                "rafTimestampMs": 18.154999999998836,
+                "sampledAtMs": 17.474999964237213,
+                "frontierDelta": 1,
+                "nextDelta": 1,
+                "rendererSubmissions": 1,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              }
+            ]
+          },
+          "segments": {
+            "startup": {
+              "range": [
+                0,
+                481
+              ],
+              "callbacks": 481,
+              "waitCallbacks": 0,
+              "callbackWorkMs": {
+                "count": 481,
+                "total": 813.3649994134903,
+                "p50": 0.005000054836273193,
+                "p95": 5.314999997615814,
+                "p99": 7.644999980926514,
+                "max": 52.9200000166893,
+                "over25ms": 2,
+                "over50ms": 1,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sessionPhases": [
+                1
+              ],
+              "adjacentCallbacks": {
+                "rafTimestampMs": {
+                  "count": 480,
+                  "total": 3053.9750000000004,
+                  "p50": 6.06000000000131,
+                  "p95": 6.135000000000218,
+                  "p99": 12.125,
+                  "max": 48.48500000000058,
+                  "over25ms": 3,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 480,
+                  "total": 3049.9300000071526,
+                  "p50": 6.014999985694885,
+                  "p95": 11.465000033378601,
+                  "p99": 14.939999997615814,
+                  "max": 59.47999995946884,
+                  "over25ms": 4,
+                  "over50ms": 1,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": {
+                  "fromSample": 4,
+                  "toSample": 5,
+                  "rafTimestampMs": 48.48500000000058,
+                  "sampledAtMs": 42.89000004529953,
+                  "frontierDelta": 2,
+                  "nextDelta": 2,
+                  "rendererSubmissions": 2,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 2,
+                  "toSample": 3,
+                  "rafTimestampMs": 6.110000000000582,
+                  "sampledAtMs": 59.47999995946884,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              },
+              "newStates": {
+                "rafTimestampMs": {
+                  "count": 176,
+                  "total": 3041.875,
+                  "p50": 18.165000000000873,
+                  "p95": 18.2450000000008,
+                  "p99": 48.43499999999949,
+                  "max": 48.48500000000058,
+                  "over25ms": 4,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 176,
+                  "total": 3039.9049999713898,
+                  "p50": 17.65499997138977,
+                  "p95": 21.12999999523163,
+                  "p99": 45.75,
+                  "max": 67.53999996185303,
+                  "over25ms": 4,
+                  "over50ms": 1,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": {
+                  "fromSample": 4,
+                  "toSample": 5,
+                  "rafTimestampMs": 48.48500000000058,
+                  "sampledAtMs": 42.89000004529953,
+                  "frontierDelta": 2,
+                  "nextDelta": 2,
+                  "rendererSubmissions": 2,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 0,
+                  "toSample": 3,
+                  "rafTimestampMs": 18.19499999999971,
+                  "sampledAtMs": 67.53999996185303,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              }
+            },
+            "body": {
+              "range": [
+                481,
+                4990
+              ],
+              "callbacks": 4509,
+              "waitCallbacks": 55,
+              "callbackWorkMs": {
+                "count": 4509,
+                "total": 4274.674995005131,
+                "p50": 0.009999990463256836,
+                "p95": 3.0800000429153442,
+                "p99": 4.694999992847443,
+                "max": 10.319999992847443,
+                "over25ms": 0,
+                "over50ms": 0,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sessionPhases": [
+                1
+              ],
+              "adjacentCallbacks": {
+                "rafTimestampMs": {
+                  "count": 4508,
+                  "total": 27401.04999999997,
+                  "p50": 6.06000000000131,
+                  "p95": 6.125,
+                  "p99": 6.185000000004948,
+                  "max": 24.19499999999971,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 4508,
+                  "total": 27396.224999964237,
+                  "p50": 6.060000002384186,
+                  "p95": 9.310000002384186,
+                  "p99": 11.060000002384186,
+                  "max": 28.7049999833107,
+                  "over25ms": 1,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": {
+                  "fromSample": 4632,
+                  "toSample": 4633,
+                  "rafTimestampMs": 24.19499999999971,
+                  "sampledAtMs": 28.7049999833107,
+                  "frontierDelta": 2,
+                  "nextDelta": 2,
+                  "rendererSubmissions": 2,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 4632,
+                  "toSample": 4633,
+                  "rafTimestampMs": 24.19499999999971,
+                  "sampledAtMs": 28.7049999833107,
+                  "frontierDelta": 2,
+                  "nextDelta": 2,
+                  "rendererSubmissions": 2,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              },
+              "newStates": {
+                "rafTimestampMs": {
+                  "count": 1618,
+                  "total": 27388.93499999999,
+                  "p50": 18.165000000000873,
+                  "p95": 18.25,
+                  "p99": 18.61999999999898,
+                  "max": 369.6849999999995,
+                  "over25ms": 5,
+                  "over50ms": 1,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "sampledAtMs": {
+                  "count": 1618,
+                  "total": 27387.185000002384,
+                  "p50": 17.935000002384186,
+                  "p95": 20.09500002861023,
+                  "p99": 21.839999973773956,
+                  "max": 379.30500000715256,
+                  "over25ms": 5,
+                  "over50ms": 1,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "maximumRafGap": {
+                  "fromSample": 838,
+                  "toSample": 898,
+                  "rafTimestampMs": 369.6849999999995,
+                  "sampledAtMs": 379.30500000715256,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 838,
+                  "toSample": 898,
+                  "rafTimestampMs": 369.6849999999995,
+                  "sampledAtMs": 379.30500000715256,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              }
+            },
+            "tail": {
+              "range": [
+                4990,
+                4991
+              ],
+              "callbacks": 1,
+              "waitCallbacks": 0,
+              "callbackWorkMs": {
+                "count": 1,
+                "total": 2.439999997615814,
+                "p50": 2.439999997615814,
+                "p95": 2.439999997615814,
+                "p99": 2.439999997615814,
+                "max": 2.439999997615814,
+                "over25ms": 0,
+                "over50ms": 0,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sessionPhases": [
+                1
+              ],
+              "adjacentCallbacks": {
+                "rafTimestampMs": {
+                  "count": 0,
+                  "total": 0,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 0,
+                  "total": 0,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": null,
+                "maximumSampledAtGap": null
+              },
+              "newStates": {
+                "rafTimestampMs": {
+                  "count": 0,
+                  "total": 0,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 0,
+                  "total": 0,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": null,
+                "maximumSampledAtGap": null
+              }
+            },
+            "allObserved": {
+              "range": [
+                0,
+                4991
+              ],
+              "callbacks": 4991,
+              "waitCallbacks": 55,
+              "callbackWorkMs": {
+                "count": 4991,
+                "total": 5090.479994416237,
+                "p50": 0.009999990463256836,
+                "p95": 3.6299999952316284,
+                "p99": 5.439999997615814,
+                "max": 52.9200000166893,
+                "over25ms": 2,
+                "over50ms": 1,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sessionPhases": [
+                1
+              ],
+              "adjacentCallbacks": {
+                "rafTimestampMs": {
+                  "count": 4990,
+                  "total": 30467.130000000077,
+                  "p50": 6.06000000000131,
+                  "p95": 6.125,
+                  "p99": 6.194999999999709,
+                  "max": 48.48500000000058,
+                  "over25ms": 3,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 4990,
+                  "total": 30465.644999980927,
+                  "p50": 6.055000007152557,
+                  "p95": 9.710000038146973,
+                  "p99": 11.639999985694885,
+                  "max": 59.47999995946884,
+                  "over25ms": 5,
+                  "over50ms": 1,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": {
+                  "fromSample": 4,
+                  "toSample": 5,
+                  "rafTimestampMs": 48.48500000000058,
+                  "sampledAtMs": 42.89000004529953,
+                  "frontierDelta": 2,
+                  "nextDelta": 2,
+                  "rendererSubmissions": 2,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 2,
+                  "toSample": 3,
+                  "rafTimestampMs": 6.110000000000582,
+                  "sampledAtMs": 59.47999995946884,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              },
+              "newStates": {
+                "rafTimestampMs": {
+                  "count": 1796,
+                  "total": 30467.129999999997,
+                  "p50": 18.165000000000873,
+                  "p95": 18.25,
+                  "p99": 19.19499999999971,
+                  "max": 369.6849999999995,
+                  "over25ms": 9,
+                  "over50ms": 1,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "sampledAtMs": {
+                  "count": 1796,
+                  "total": 30465.644999980927,
+                  "p50": 17.899999976158142,
+                  "p95": 20.319999992847443,
+                  "p99": 22.5,
+                  "max": 379.30500000715256,
+                  "over25ms": 9,
+                  "over50ms": 2,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "maximumRafGap": {
+                  "fromSample": 838,
+                  "toSample": 898,
+                  "rafTimestampMs": 369.6849999999995,
+                  "sampledAtMs": 379.30500000715256,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 838,
+                  "toSample": 898,
+                  "rafTimestampMs": 369.6849999999995,
+                  "sampledAtMs": 379.30500000715256,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              }
+            }
+          },
+          "scopes": {
+            "body": "Every original sample in [first frontier >= startFrame, first frontier >= endFrame); no phase or rewound-cursor filtering. Without a terminal crossing the observed body is right-censored.",
+            "progress": "Closed Hz and cumulative counter deltas use endpoint minus start, including the endpoint counters. The endpoint callback cost belongs to tail; body cost includes start. Missing native frontier uses explicitly labelled observed next high-water, never captures, and complete stays false.",
+            "gaps": "Top-level gap fields retain body-only submission/RAF timestamp semantics. formalWithEndBoundary also closes through the terminal marker. Cross-boundary intervals and all sampled startup/tail costs remain separate. No sample is removed from raw results.",
+            "timing": "callbackCompletionGapMs is the post-native sampledAt gap between renderer submissions, not whole observer callback return; RAF timestamps and submissions are not physical scanout.",
+            "phase": "scenes is a compatibility alias of sessionPhases (SessionPhase, not internal MatchScene); no phase is excluded.",
+            "capture": "captures is a once-only input-capture counter and may be ahead of simulation completion; it never chooses boundaries.",
+            "nativeWork": "callbackWorkMs is the existing native game callback measurement, not total JavaScript observer time or GPU completion."
+          }
+        }
+      },
+      "observedBodyNewStateHz": 59.07495125312469,
+      "actualInitialGraphics": {
+        "side": 0,
+        "status": "captured",
+        "clock": "Node performance.now()",
+        "timeOrigin": 1791714027898.853,
+        "requestedAt": 2431.7741,
+        "returnedAt": 5411.4173,
+        "graphics": {
+          "clock": "Page performance.now()",
+          "timeOrigin": 1791714030179.975,
+          "sampledAt": 3125.274999976158,
+          "returnedAt": 3126.649999976158,
+          "available": true,
+          "reason": null,
+          "source": "core.ctx+core.canvas.GLctxObject.GLctx",
+          "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "vendor": "Google Inc. (Intel)",
+          "rendererSource": "WEBGL_debug_renderer_info",
+          "readiness": {
+            "pageReady": true,
+            "corePresent": true,
+            "gameMetricsAvailable": true
+          },
+          "identity": {
+            "documentSame": true,
+            "coreSame": true,
+            "canvasSame": true,
+            "canvasInDocument": true,
+            "canvasConnected": true,
+            "expectedCanvasSame": true,
+            "contextCanvasSame": true,
+            "currentContextReferencePresent": true,
+            "currentContextReferencesSame": true
+          },
+          "canvas": {
+            "id": "canvas",
+            "width": 640,
+            "height": 480
+          },
+          "contextType": "[object WebGL2RenderingContext]",
+          "contextLost": false
+        }
+      },
+      "actualFailureGraphics": null,
+      "actualFinalRenderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "route": "rtc",
+      "routeEvidence": {
+        "route": "rtc",
+        "declaredPath": "direct",
+        "selectedPath": "direct",
+        "peers": [
+          {
+            "peer": 1,
+            "connectionState": "connected",
+            "iceConnectionState": "connected",
+            "selected": {
+              "selectedVia": "transport",
+              "state": "succeeded",
+              "nominated": true,
+              "localType": "host",
+              "remoteType": "host",
+              "localProtocol": "udp",
+              "remoteProtocol": "udp",
+              "bytesSent": 328741,
+              "bytesReceived": 305191,
+              "currentRoundTripTime": 0.001
+            },
+            "error": null,
+            "input": {
+              "state": "open",
+              "ordered": false,
+              "maxRetransmits": 0,
+              "bufferedAmount": 0
+            },
+            "control": {
+              "state": "open",
+              "ordered": true,
+              "maxRetransmits": null,
+              "bufferedAmount": 0
+            }
+          }
+        ],
+        "scope": "Selected ICE candidate types and channel state after measurement; no IP/SDP recorded. RTC is not automatically direct."
+      },
+      "stats": [
+        1802,
+        1802,
+        202,
+        345,
+        1802,
+        5,
+        1,
+        1802
+      ],
+      "confirmedHashes": [
+        [
+          120,
+          485315997
+        ],
+        [
+          240,
+          3812826596
+        ],
+        [
+          360,
+          3603148512
+        ],
+        [
+          480,
+          266669705
+        ],
+        [
+          600,
+          1505804001
+        ],
+        [
+          720,
+          3304006150
+        ],
+        [
+          840,
+          3940121049
+        ],
+        [
+          960,
+          1594429160
+        ],
+        [
+          1080,
+          217077117
+        ],
+        [
+          1200,
+          3965928739
+        ],
+        [
+          1320,
+          2795154599
+        ],
+        [
+          1440,
+          1523362851
+        ],
+        [
+          1560,
+          750220277
+        ],
+        [
+          1680,
+          3875194891
+        ],
+        [
+          1800,
+          1788440179
+        ]
+      ],
+      "touch": {
+        "valid": true,
+        "counts": {
+          "plannedEvents": 10839,
+          "dueEvents": 2640,
+          "futureCensoredEvents": 8199,
+          "plannedNativeEvents": 10816,
+          "dueNativeEvents": 2635,
+          "submittedEvents": 2528,
+          "rawNativeCalls": 2528,
+          "coalescedMoves": 111,
+          "notSubmitted": 1,
+          "attributedCaptures": 1148,
+          "renderProgressObservedEvents": 1148,
+          "submittedWithoutAttributableChangedWire": 1375,
+          "packets": 2649,
+          "duplicates": 670,
+          "changedHistory": 0,
+          "captureGaps": 0,
+          "actualInputFrames": 1802,
+          "analogActiveFrames": 1281,
+          "targetChanges": 1122,
+          "newFrontierCallbacks": 1796,
+          "newPresentedCallbacks": 1796,
+          "forwardFrames": 1800,
+          "positionChangedObservations": 1410
+        },
+        "clock": {
+          "name": "Page performance.now",
+          "timeOrigin": 1791714030179.975,
+          "startedAt": 9853.350000023842,
+          "endedAt": 40318.19499999285
+        },
+        "configuration": {
+          "schema": "th09-touch-input-v1",
+          "profile": "joystick",
+          "sourceHz": 120,
+          "durationMs": 120000,
+          "side": 0,
+          "startMs": 2500,
+          "periodMs": 5200,
+          "sensitivity": 1.5,
+          "cadence": "Absolute Page-clock grid during moving legs; contact/control/release/hold edges retain their own deadlines."
+        },
+        "tapeSha256": "ecd2385d66b0b14ef576527fd143761806127b45544ce61ee13e4587bd1fd40b"
+      },
+      "forward": {
+        "criterion": "Adjacent body callbacks, session phase 1 on both, delta next=1/corrections=0/resimulated=0/local input captures=1. Not a guarantee of exactly one attempted tick. Whole callback wall time; workload differs across independent Page-clock runs.",
+        "frameDetailsValid": true,
+        "graphics": {
+          "present": true,
+          "valid": true,
+          "overflow": false,
+          "rows": 4991,
+          "regressions": []
+        },
+        "subsets": {
+          "allObservedSingleForward": {
+            "count": 1529,
+            "callbackWholeWallMs": {
+              "count": 1529,
+              "total": 3422.399996817112,
+              "p50": 2.0350000262260437,
+              "p99": 4.634999990463257,
+              "max": 7.084999978542328
+            },
+            "returnCodes": {
+              "1": 1529
+            },
+            "worldSnapshotDeltas": {
+              "count": 1529,
+              "total": 48,
+              "p50": 0,
+              "p99": 1,
+              "max": 1
+            },
+            "graphics": {
+              "batches": {
+                "count": 1529,
+                "total": 42641,
+                "p50": 28,
+                "p99": 38,
+                "max": 41
+              },
+              "uploadBytes": {
+                "count": 1529,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "readBytes": {
+                "count": 1529,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "vertexUploadBytes": {
+                "count": 1529,
+                "total": 102166652,
+                "p50": 67596,
+                "p99": 79332,
+                "max": 81012
+              },
+              "programCompiles": {
+                "count": 1529,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "bufferReplacements": {
+                "count": 1529,
+                "total": 7288,
+                "p50": 5,
+                "p99": 6,
+                "max": 6
+              },
+              "bufferSubUpdates": {
+                "count": 1529,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "rendererFrames": {
+                "count": 1529,
+                "total": 1529,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "resamples": {
+                "count": 1529,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "presentations": {
+                "count": 1529,
+                "total": 1529,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              }
+            }
+          },
+          "worldSaves0": {
+            "count": 1481,
+            "callbackWholeWallMs": {
+              "count": 1481,
+              "total": 3267.7549969553947,
+              "p50": 2.0299999713897705,
+              "p99": 4.485000014305115,
+              "max": 6.514999985694885
+            },
+            "returnCodes": {
+              "1": 1481
+            },
+            "worldSnapshotDeltas": {
+              "count": 1481,
+              "total": 0,
+              "p50": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "graphics": {
+              "batches": {
+                "count": 1481,
+                "total": 41540,
+                "p50": 28,
+                "p99": 38,
+                "max": 41
+              },
+              "uploadBytes": {
+                "count": 1481,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "readBytes": {
+                "count": 1481,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "vertexUploadBytes": {
+                "count": 1481,
+                "total": 99504504,
+                "p50": 67776,
+                "p99": 79388,
+                "max": 81012
+              },
+              "programCompiles": {
+                "count": 1481,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "bufferReplacements": {
+                "count": 1481,
+                "total": 7094,
+                "p50": 5,
+                "p99": 6,
+                "max": 6
+              },
+              "bufferSubUpdates": {
+                "count": 1481,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "rendererFrames": {
+                "count": 1481,
+                "total": 1481,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "resamples": {
+                "count": 1481,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "presentations": {
+                "count": 1481,
+                "total": 1481,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              }
+            }
+          },
+          "worldSaves1": {
+            "count": 48,
+            "callbackWholeWallMs": {
+              "count": 48,
+              "total": 154.64499986171722,
+              "p50": 3.0149999856948853,
+              "p99": 7.084999978542328,
+              "max": 7.084999978542328
+            },
+            "returnCodes": {
+              "1": 48
+            },
+            "worldSnapshotDeltas": {
+              "count": 48,
+              "total": 48,
+              "p50": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "graphics": {
+              "batches": {
+                "count": 48,
+                "total": 1101,
+                "p50": 24,
+                "p99": 29,
+                "max": 29
+              },
+              "uploadBytes": {
+                "count": 48,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "readBytes": {
+                "count": 48,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "vertexUploadBytes": {
+                "count": 48,
+                "total": 2662148,
+                "p50": 56000,
+                "p99": 77352,
+                "max": 77352
+              },
+              "programCompiles": {
+                "count": 48,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "bufferReplacements": {
+                "count": 48,
+                "total": 194,
+                "p50": 4,
+                "p99": 6,
+                "max": 6
+              },
+              "bufferSubUpdates": {
+                "count": 48,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "rendererFrames": {
+                "count": 48,
+                "total": 48,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "resamples": {
+                "count": 48,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "presentations": {
+                "count": 48,
+                "total": 48,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              }
+            }
+          }
+        },
+        "bodyAdjacentGraphics": {
+          "batches": {
+            "count": 4508,
+            "total": 44646,
+            "p50": 0,
+            "p99": 35,
+            "max": 58
+          },
+          "uploadBytes": {
+            "count": 4508,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "readBytes": {
+            "count": 4508,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "vertexUploadBytes": {
+            "count": 4508,
+            "total": 107085952,
+            "p50": 0,
+            "p99": 78332,
+            "max": 141184
+          },
+          "programCompiles": {
+            "count": 4508,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "bufferReplacements": {
+            "count": 4508,
+            "total": 7648,
+            "p50": 0,
+            "p99": 6,
+            "max": 8
+          },
+          "bufferSubUpdates": {
+            "count": 4508,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "rendererFrames": {
+            "count": 4508,
+            "total": 1619,
+            "p50": 0,
+            "p99": 1,
+            "max": 2
+          },
+          "resamples": {
+            "count": 4508,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "presentations": {
+            "count": 4508,
+            "total": 1619,
+            "p50": 0,
+            "p99": 1,
+            "max": 2
+          }
+        }
+      },
+      "pacing": {
+        "scope": "All chronological body callbacks; each native row indexed into the sample array.",
+        "missing": {
+          "count": 4509,
+          "total": 1079,
+          "p50": 0,
+          "p99": 8,
+          "max": 8
+        },
+        "backlog": {
+          "count": 4509,
+          "total": 4,
+          "p50": 0,
+          "p99": 0,
+          "max": 4
+        },
+        "networkScale": {
+          "count": 4509,
+          "total": 4583.9360000000015,
+          "p50": 1,
+          "p99": 2,
+          "max": 2
+        },
+        "effectiveScale": {
+          "count": 4509,
+          "total": 4582.6740000000045,
+          "p50": 1,
+          "p99": 2,
+          "max": 2
+        }
+      }
+    },
+    {
+      "side": 1,
+      "available": true,
+      "summary": {
+        "logicHz": 59.14895605752482,
+        "elapsedMs": 27388.47999995947,
+        "firstFrame": 180,
+        "lastFrame": 1800,
+        "callbacks": 4419,
+        "waitCallbacks": 0,
+        "corrections": 1002,
+        "resimulated": 1365,
+        "captures": 1620,
+        "callbackWorkMs": {
+          "count": 4419,
+          "total": 7032.945000052452,
+          "p50": 0.004999995231628418,
+          "p95": 5.4549999833106995,
+          "p99": 6.9549999833106995,
+          "max": 14.405000030994415,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "presentationGapMs": {
+          "count": 1613,
+          "total": 27364.689999999984,
+          "p50": 18.160000000003492,
+          "p95": 18.24499999999898,
+          "p99": 18.29500000000189,
+          "max": 472.630000000001,
+          "over25ms": 3,
+          "over50ms": 1,
+          "over100ms": 1,
+          "over250ms": 1
+        },
+        "effectivePresentationGapMs": {
+          "count": 1613,
+          "total": 27364.689999999984,
+          "p50": 18.160000000003492,
+          "p95": 18.24499999999898,
+          "p99": 18.29500000000189,
+          "max": 472.630000000001,
+          "over25ms": 3,
+          "over50ms": 1,
+          "over100ms": 1,
+          "over250ms": 1
+        },
+        "callbackCompletionGapMs": {
+          "count": 1613,
+          "total": 27366.169999957085,
+          "p50": 17.680000007152557,
+          "p95": 20.77000004053116,
+          "p99": 22.950000047683716,
+          "max": 489.7549999952316,
+          "over25ms": 8,
+          "over50ms": 1,
+          "over100ms": 1,
+          "over250ms": 1
+        },
+        "rafGapMs": {
+          "count": 4418,
+          "total": 27376.824999999943,
+          "p50": 6.059999999999491,
+          "p95": 6.130000000001019,
+          "p99": 6.200000000000728,
+          "max": 472.630000000001,
+          "over25ms": 2,
+          "over50ms": 1,
+          "over100ms": 1,
+          "over250ms": 1
+        },
+        "plannedDelayMs": {
+          "count": 2271,
+          "total": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "max": 0,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "deliveredDelayMs": {
+          "count": 2271,
+          "total": 126.0399985909462,
+          "p50": 0.014999985694885254,
+          "p95": 0.17500001192092896,
+          "p99": 0.20499998331069946,
+          "max": 0.9599999785423279,
+          "over25ms": 0,
+          "over50ms": 0,
+          "over100ms": 0,
+          "over250ms": 0
+        },
+        "scenes": [
+          1
+        ],
+        "sessionPhases": [
+          1
+        ],
+        "window": {
+          "schema": "continuous-prediction-frontier-v1",
+          "status": [
+            "complete"
+          ],
+          "complete": true,
+          "requestedFrameRange": [
+            180,
+            1800
+          ],
+          "progressSource": "native-networkPacing-PredictionFrontier",
+          "nativeFrontierComplete": true,
+          "nativeFrontierMissingSampleIndices": [],
+          "nativeFrontierErrors": [],
+          "epochValid": true,
+          "epochErrors": [],
+          "nativeMatchesObservedNextHighWater": true,
+          "startSampleIndex": 490,
+          "endSampleIndexExclusive": 4909,
+          "bodyRange": [
+            490,
+            4909
+          ],
+          "startMarker": {
+            "sampleIndex": 490,
+            "sample": [
+              3064.1150000095367,
+              1,
+              1.6049999594688416,
+              180,
+              180,
+              4,
+              5,
+              180,
+              1,
+              1,
+              180,
+              180,
+              1,
+              8237.2
+            ],
+            "nativePacing": [
+              490,
+              1,
+              0,
+              1000,
+              1000,
+              180,
+              180
+            ],
+            "predictionFrontier": 180
+          },
+          "endMarker": {
+            "sampleIndex": 4909,
+            "sample": [
+              30452.594999969006,
+              1,
+              7.245000004768372,
+              1800,
+              1799,
+              1006,
+              1370,
+              1800,
+              2,
+              1,
+              1799,
+              1800,
+              1,
+              35620.105
+            ],
+            "nativePacing": [
+              4909,
+              1,
+              1,
+              1000,
+              1000,
+              1800,
+              1799
+            ],
+            "predictionFrontier": 1800
+          },
+          "closedBoundaryAvailable": true,
+          "markerDeltas": {
+            "frontier": 1620,
+            "next": 1620,
+            "corrections": 1002,
+            "resimulated": 1365,
+            "captures": 1620,
+            "rendererSubmissions": 1620
+          },
+          "bodyFirstToLast": {
+            "fromSample": 490,
+            "toSample": 4908,
+            "elapsedMs": 27375.189999997616,
+            "deltas": {
+              "frontier": 1619,
+              "next": 1619,
+              "corrections": 1001,
+              "resimulated": 1363,
+              "captures": 1619,
+              "rendererSubmissions": 1619
+            }
+          },
+          "formalWithEndBoundary": {
+            "available": true,
+            "newStates": {
+              "rafTimestampMs": {
+                "count": 1614,
+                "total": 27382.904999999988,
+                "p50": 18.160000000003492,
+                "p95": 18.24499999999898,
+                "p99": 18.29500000000189,
+                "max": 472.630000000001,
+                "over25ms": 3,
+                "over50ms": 1,
+                "over100ms": 1,
+                "over250ms": 1
+              },
+              "sampledAtMs": {
+                "count": 1614,
+                "total": 27388.47999995947,
+                "p50": 17.685000002384186,
+                "p95": 20.80000001192093,
+                "p99": 22.950000047683716,
+                "max": 489.7549999952316,
+                "over25ms": 8,
+                "over50ms": 1,
+                "over100ms": 1,
+                "over250ms": 1
+              },
+              "maximumRafGap": {
+                "fromSample": 825,
+                "toSample": 826,
+                "rafTimestampMs": 472.630000000001,
+                "sampledAtMs": 13.639999985694885,
+                "frontierDelta": 4,
+                "nextDelta": 4,
+                "rendererSubmissions": 4,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              },
+              "maximumSampledAtGap": {
+                "fromSample": 822,
+                "toSample": 825,
+                "rafTimestampMs": 18.179999999998472,
+                "sampledAtMs": 489.7549999952316,
+                "frontierDelta": 1,
+                "nextDelta": 1,
+                "rendererSubmissions": 1,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              }
+            },
+            "adjacentCallbacks": {
+              "rafTimestampMs": {
+                "count": 4419,
+                "total": 27382.904999999944,
+                "p50": 6.059999999999491,
+                "p95": 6.130000000001019,
+                "p99": 6.200000000000728,
+                "max": 472.630000000001,
+                "over25ms": 2,
+                "over50ms": 1,
+                "over100ms": 1,
+                "over250ms": 1
+              },
+              "sampledAtMs": {
+                "count": 4419,
+                "total": 27388.47999995947,
+                "p50": 6.024999976158142,
+                "p95": 11.534999966621399,
+                "p99": 13.214999973773956,
+                "max": 479.5300000309944,
+                "over25ms": 3,
+                "over50ms": 1,
+                "over100ms": 1,
+                "over250ms": 1
+              },
+              "maximumRafGap": {
+                "fromSample": 825,
+                "toSample": 826,
+                "rafTimestampMs": 472.630000000001,
+                "sampledAtMs": 13.639999985694885,
+                "frontierDelta": 4,
+                "nextDelta": 4,
+                "rendererSubmissions": 4,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              },
+              "maximumSampledAtGap": {
+                "fromSample": 824,
+                "toSample": 825,
+                "rafTimestampMs": 6.054999999998472,
+                "sampledAtMs": 479.5300000309944,
+                "frontierDelta": 1,
+                "nextDelta": 1,
+                "rendererSubmissions": 1,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              }
+            },
+            "lastObservedNewStateSample": 4909,
+            "endMarkerHasNewState": true,
+            "observedWithoutNewStateToEnd": null
+          },
+          "crossingNewStateIntervals": {
+            "start": [
+              {
+                "fromSample": 488,
+                "toSample": 490,
+                "rafTimestampMs": 12.090000000000146,
+                "sampledAtMs": 12.225000023841858,
+                "frontierDelta": 1,
+                "nextDelta": 1,
+                "rendererSubmissions": 1,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              }
+            ],
+            "end": [
+              {
+                "fromSample": 4906,
+                "toSample": 4909,
+                "rafTimestampMs": 18.215000000003783,
+                "sampledAtMs": 22.310000002384186,
+                "frontierDelta": 1,
+                "nextDelta": 1,
+                "rendererSubmissions": 1,
+                "fromSessionPhase": 1,
+                "toSessionPhase": 1
+              }
+            ]
+          },
+          "segments": {
+            "startup": {
+              "range": [
+                0,
+                490
+              ],
+              "callbacks": 490,
+              "waitCallbacks": 0,
+              "callbackWorkMs": {
+                "count": 490,
+                "total": 507.18000000715256,
+                "p50": 0.009999990463256836,
+                "p95": 2.6299999952316284,
+                "p99": 7.089999973773956,
+                "max": 61.785000026226044,
+                "over25ms": 2,
+                "over50ms": 1,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sessionPhases": [
+                1
+              ],
+              "adjacentCallbacks": {
+                "rafTimestampMs": {
+                  "count": 489,
+                  "total": 3060.0249999999996,
+                  "p50": 6.0600000000004,
+                  "p95": 6.130000000000109,
+                  "p99": 7.639999999999418,
+                  "max": 60.67000000000007,
+                  "over25ms": 2,
+                  "over50ms": 1,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 489,
+                  "total": 3056.3050000071526,
+                  "p50": 6.034999966621399,
+                  "p95": 9.010000050067902,
+                  "p99": 11.834999978542328,
+                  "max": 67.96000003814697,
+                  "over25ms": 2,
+                  "over50ms": 1,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": {
+                  "fromSample": 3,
+                  "toSample": 4,
+                  "rafTimestampMs": 60.67000000000007,
+                  "sampledAtMs": 38.060000002384186,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 2,
+                  "toSample": 3,
+                  "rafTimestampMs": 6.010000000000218,
+                  "sampledAtMs": 67.96000003814697,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              },
+              "newStates": {
+                "rafTimestampMs": {
+                  "count": 179,
+                  "total": 3054.005000000001,
+                  "p50": 18.160000000000764,
+                  "p95": 18.235000000000582,
+                  "p99": 36.3149999999996,
+                  "max": 60.67000000000007,
+                  "over25ms": 2,
+                  "over50ms": 1,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 179,
+                  "total": 3051.889999985695,
+                  "p50": 17.905000030994415,
+                  "p95": 20.27999997138977,
+                  "p99": 38.060000002384186,
+                  "max": 76.43999999761581,
+                  "over25ms": 2,
+                  "over50ms": 1,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": {
+                  "fromSample": 3,
+                  "toSample": 4,
+                  "rafTimestampMs": 60.67000000000007,
+                  "sampledAtMs": 38.060000002384186,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 0,
+                  "toSample": 3,
+                  "rafTimestampMs": 18.150000000000546,
+                  "sampledAtMs": 76.43999999761581,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              }
+            },
+            "body": {
+              "range": [
+                490,
+                4909
+              ],
+              "callbacks": 4419,
+              "waitCallbacks": 0,
+              "callbackWorkMs": {
+                "count": 4419,
+                "total": 7032.945000052452,
+                "p50": 0.004999995231628418,
+                "p95": 5.4549999833106995,
+                "p99": 6.9549999833106995,
+                "max": 14.405000030994415,
+                "over25ms": 0,
+                "over50ms": 0,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sessionPhases": [
+                1
+              ],
+              "adjacentCallbacks": {
+                "rafTimestampMs": {
+                  "count": 4418,
+                  "total": 27376.824999999943,
+                  "p50": 6.059999999999491,
+                  "p95": 6.130000000001019,
+                  "p99": 6.200000000000728,
+                  "max": 472.630000000001,
+                  "over25ms": 2,
+                  "over50ms": 1,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "sampledAtMs": {
+                  "count": 4418,
+                  "total": 27375.189999997616,
+                  "p50": 6.024999976158142,
+                  "p95": 11.530000030994415,
+                  "p99": 13.2049999833107,
+                  "max": 479.5300000309944,
+                  "over25ms": 3,
+                  "over50ms": 1,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "maximumRafGap": {
+                  "fromSample": 825,
+                  "toSample": 826,
+                  "rafTimestampMs": 472.630000000001,
+                  "sampledAtMs": 13.639999985694885,
+                  "frontierDelta": 4,
+                  "nextDelta": 4,
+                  "rendererSubmissions": 4,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 824,
+                  "toSample": 825,
+                  "rafTimestampMs": 6.054999999998472,
+                  "sampledAtMs": 479.5300000309944,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              },
+              "newStates": {
+                "rafTimestampMs": {
+                  "count": 1613,
+                  "total": 27364.689999999984,
+                  "p50": 18.160000000003492,
+                  "p95": 18.24499999999898,
+                  "p99": 18.29500000000189,
+                  "max": 472.630000000001,
+                  "over25ms": 3,
+                  "over50ms": 1,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "sampledAtMs": {
+                  "count": 1613,
+                  "total": 27366.169999957085,
+                  "p50": 17.680000007152557,
+                  "p95": 20.77000004053116,
+                  "p99": 22.950000047683716,
+                  "max": 489.7549999952316,
+                  "over25ms": 8,
+                  "over50ms": 1,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "maximumRafGap": {
+                  "fromSample": 825,
+                  "toSample": 826,
+                  "rafTimestampMs": 472.630000000001,
+                  "sampledAtMs": 13.639999985694885,
+                  "frontierDelta": 4,
+                  "nextDelta": 4,
+                  "rendererSubmissions": 4,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 822,
+                  "toSample": 825,
+                  "rafTimestampMs": 18.179999999998472,
+                  "sampledAtMs": 489.7549999952316,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              }
+            },
+            "tail": {
+              "range": [
+                4909,
+                4913
+              ],
+              "callbacks": 4,
+              "waitCallbacks": 0,
+              "callbackWorkMs": {
+                "count": 4,
+                "total": 14.145000040531158,
+                "p50": 6.889999985694885,
+                "p95": 7.245000004768372,
+                "p99": 7.245000004768372,
+                "max": 7.245000004768372,
+                "over25ms": 0,
+                "over50ms": 0,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sessionPhases": [
+                1
+              ],
+              "adjacentCallbacks": {
+                "rafTimestampMs": {
+                  "count": 3,
+                  "total": 18.164999999993597,
+                  "p50": 6.055000000000291,
+                  "p95": 6.069999999999709,
+                  "p99": 6.069999999999709,
+                  "max": 6.069999999999709,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 3,
+                  "total": 17.759999990463257,
+                  "p50": 3.825000047683716,
+                  "p95": 12.924999952316284,
+                  "p99": 12.924999952316284,
+                  "max": 12.924999952316284,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": {
+                  "fromSample": 4911,
+                  "toSample": 4912,
+                  "rafTimestampMs": 6.069999999999709,
+                  "sampledAtMs": 12.924999952316284,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 4911,
+                  "toSample": 4912,
+                  "rafTimestampMs": 6.069999999999709,
+                  "sampledAtMs": 12.924999952316284,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              },
+              "newStates": {
+                "rafTimestampMs": {
+                  "count": 1,
+                  "total": 18.164999999993597,
+                  "p50": 18.164999999993597,
+                  "p95": 18.164999999993597,
+                  "p99": 18.164999999993597,
+                  "max": 18.164999999993597,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "sampledAtMs": {
+                  "count": 1,
+                  "total": 17.759999990463257,
+                  "p50": 17.759999990463257,
+                  "p95": 17.759999990463257,
+                  "p99": 17.759999990463257,
+                  "max": 17.759999990463257,
+                  "over25ms": 0,
+                  "over50ms": 0,
+                  "over100ms": 0,
+                  "over250ms": 0
+                },
+                "maximumRafGap": {
+                  "fromSample": 4909,
+                  "toSample": 4912,
+                  "rafTimestampMs": 18.164999999993597,
+                  "sampledAtMs": 17.759999990463257,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 4909,
+                  "toSample": 4912,
+                  "rafTimestampMs": 18.164999999993597,
+                  "sampledAtMs": 17.759999990463257,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              }
+            },
+            "allObserved": {
+              "range": [
+                0,
+                4913
+              ],
+              "callbacks": 4913,
+              "waitCallbacks": 0,
+              "callbackWorkMs": {
+                "count": 4913,
+                "total": 7554.270000100136,
+                "p50": 0.004999995231628418,
+                "p95": 5.430000007152557,
+                "p99": 6.985000014305115,
+                "max": 61.785000026226044,
+                "over25ms": 2,
+                "over50ms": 1,
+                "over100ms": 0,
+                "over250ms": 0
+              },
+              "sessionPhases": [
+                1
+              ],
+              "adjacentCallbacks": {
+                "rafTimestampMs": {
+                  "count": 4912,
+                  "total": 30467.165000000092,
+                  "p50": 6.059999999999491,
+                  "p95": 6.130000000001019,
+                  "p99": 6.209999999999127,
+                  "max": 472.630000000001,
+                  "over25ms": 4,
+                  "over50ms": 2,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "sampledAtMs": {
+                  "count": 4912,
+                  "total": 30470.35499995947,
+                  "p50": 6.025000035762787,
+                  "p95": 11.480000019073486,
+                  "p99": 13.165000021457672,
+                  "max": 479.5300000309944,
+                  "over25ms": 5,
+                  "over50ms": 2,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "maximumRafGap": {
+                  "fromSample": 825,
+                  "toSample": 826,
+                  "rafTimestampMs": 472.630000000001,
+                  "sampledAtMs": 13.639999985694885,
+                  "frontierDelta": 4,
+                  "nextDelta": 4,
+                  "rendererSubmissions": 4,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 824,
+                  "toSample": 825,
+                  "rafTimestampMs": 6.054999999998472,
+                  "sampledAtMs": 479.5300000309944,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              },
+              "newStates": {
+                "rafTimestampMs": {
+                  "count": 1795,
+                  "total": 30467.16499999999,
+                  "p50": 18.160000000003492,
+                  "p95": 18.24499999999898,
+                  "p99": 18.30500000000029,
+                  "max": 472.630000000001,
+                  "over25ms": 5,
+                  "over50ms": 2,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "sampledAtMs": {
+                  "count": 1795,
+                  "total": 30470.35499995947,
+                  "p50": 17.69999998807907,
+                  "p95": 20.73499995470047,
+                  "p99": 23.110000014305115,
+                  "max": 489.7549999952316,
+                  "over25ms": 10,
+                  "over50ms": 2,
+                  "over100ms": 1,
+                  "over250ms": 1
+                },
+                "maximumRafGap": {
+                  "fromSample": 825,
+                  "toSample": 826,
+                  "rafTimestampMs": 472.630000000001,
+                  "sampledAtMs": 13.639999985694885,
+                  "frontierDelta": 4,
+                  "nextDelta": 4,
+                  "rendererSubmissions": 4,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                },
+                "maximumSampledAtGap": {
+                  "fromSample": 822,
+                  "toSample": 825,
+                  "rafTimestampMs": 18.179999999998472,
+                  "sampledAtMs": 489.7549999952316,
+                  "frontierDelta": 1,
+                  "nextDelta": 1,
+                  "rendererSubmissions": 1,
+                  "fromSessionPhase": 1,
+                  "toSessionPhase": 1
+                }
+              }
+            }
+          },
+          "scopes": {
+            "body": "Every original sample in [first frontier >= startFrame, first frontier >= endFrame); no phase or rewound-cursor filtering. Without a terminal crossing the observed body is right-censored.",
+            "progress": "Closed Hz and cumulative counter deltas use endpoint minus start, including the endpoint counters. The endpoint callback cost belongs to tail; body cost includes start. Missing native frontier uses explicitly labelled observed next high-water, never captures, and complete stays false.",
+            "gaps": "Top-level gap fields retain body-only submission/RAF timestamp semantics. formalWithEndBoundary also closes through the terminal marker. Cross-boundary intervals and all sampled startup/tail costs remain separate. No sample is removed from raw results.",
+            "timing": "callbackCompletionGapMs is the post-native sampledAt gap between renderer submissions, not whole observer callback return; RAF timestamps and submissions are not physical scanout.",
+            "phase": "scenes is a compatibility alias of sessionPhases (SessionPhase, not internal MatchScene); no phase is excluded.",
+            "capture": "captures is a once-only input-capture counter and may be ahead of simulation completion; it never chooses boundaries.",
+            "nativeWork": "callbackWorkMs is the existing native game callback measurement, not total JavaScript observer time or GPU completion."
+          }
+        }
+      },
+      "observedBodyNewStateHz": 58.94457419397044,
+      "actualInitialGraphics": {
+        "side": 1,
+        "status": "captured",
+        "clock": "Node performance.now()",
+        "timeOrigin": 1791714027898.853,
+        "requestedAt": 7071.7793,
+        "returnedAt": 9779.8096,
+        "graphics": {
+          "clock": "Page performance.now()",
+          "timeOrigin": 1791714034863.265,
+          "sampledAt": 2810.939999997616,
+          "returnedAt": 2812.4950000047684,
+          "available": true,
+          "reason": null,
+          "source": "core.ctx+core.canvas.GLctxObject.GLctx",
+          "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "vendor": "Google Inc. (Intel)",
+          "rendererSource": "WEBGL_debug_renderer_info",
+          "readiness": {
+            "pageReady": true,
+            "corePresent": true,
+            "gameMetricsAvailable": true
+          },
+          "identity": {
+            "documentSame": true,
+            "coreSame": true,
+            "canvasSame": true,
+            "canvasInDocument": true,
+            "canvasConnected": true,
+            "expectedCanvasSame": true,
+            "contextCanvasSame": true,
+            "currentContextReferencePresent": true,
+            "currentContextReferencesSame": true
+          },
+          "canvas": {
+            "id": "canvas",
+            "width": 640,
+            "height": 480
+          },
+          "contextType": "[object WebGL2RenderingContext]",
+          "contextLost": false
+        }
+      },
+      "actualFailureGraphics": null,
+      "actualFinalRenderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "route": "rtc",
+      "routeEvidence": {
+        "route": "rtc",
+        "declaredPath": "direct",
+        "selectedPath": "direct",
+        "peers": [
+          {
+            "peer": 0,
+            "connectionState": "connected",
+            "iceConnectionState": "connected",
+            "selected": {
+              "selectedVia": "transport",
+              "state": "succeeded",
+              "nominated": true,
+              "localType": "host",
+              "remoteType": "host",
+              "localProtocol": "udp",
+              "remoteProtocol": "udp",
+              "bytesSent": 305191,
+              "bytesReceived": 328741,
+              "currentRoundTripTime": 0
+            },
+            "error": null,
+            "input": {
+              "state": "open",
+              "ordered": false,
+              "maxRetransmits": 0,
+              "bufferedAmount": 0
+            },
+            "control": {
+              "state": "open",
+              "ordered": true,
+              "maxRetransmits": null,
+              "bufferedAmount": 0
+            }
+          }
+        ],
+        "scope": "Selected ICE candidate types and channel state after measurement; no IP/SDP recorded. RTC is not automatically direct."
+      },
+      "stats": [
+        1803,
+        1802,
+        1008,
+        1372,
+        1803,
+        2,
+        1,
+        1801
+      ],
+      "confirmedHashes": [
+        [
+          120,
+          485315997
+        ],
+        [
+          240,
+          3812826596
+        ],
+        [
+          360,
+          3603148512
+        ],
+        [
+          480,
+          266669705
+        ],
+        [
+          600,
+          1505804001
+        ],
+        [
+          720,
+          3304006150
+        ],
+        [
+          840,
+          3940121049
+        ],
+        [
+          960,
+          1594429160
+        ],
+        [
+          1080,
+          217077117
+        ],
+        [
+          1200,
+          3965928739
+        ],
+        [
+          1320,
+          2795154599
+        ],
+        [
+          1440,
+          1523362851
+        ],
+        [
+          1560,
+          750220277
+        ],
+        [
+          1680,
+          3875194891
+        ],
+        [
+          1800,
+          1788440179
+        ]
+      ],
+      "touch": {
+        "valid": true,
+        "counts": {
+          "plannedEvents": 10913,
+          "dueEvents": 2646,
+          "futureCensoredEvents": 8267,
+          "plannedNativeEvents": 10890,
+          "dueNativeEvents": 2641,
+          "submittedEvents": 2288,
+          "rawNativeCalls": 2288,
+          "coalescedMoves": 356,
+          "notSubmitted": 2,
+          "attributedCaptures": 1285,
+          "renderProgressObservedEvents": 1285,
+          "submittedWithoutAttributableChangedWire": 998,
+          "packets": 2271,
+          "duplicates": 456,
+          "changedHistory": 0,
+          "captureGaps": 0,
+          "actualInputFrames": 1803,
+          "analogActiveFrames": 1418,
+          "targetChanges": 1260,
+          "newFrontierCallbacks": 1795,
+          "newPresentedCallbacks": 1795,
+          "forwardFrames": 1801,
+          "positionChangedObservations": 1345
+        },
+        "clock": {
+          "name": "Page performance.now",
+          "timeOrigin": 1791714034863.265,
+          "startedAt": 5175.740000009537,
+          "endedAt": 35645.299999952316
+        },
+        "configuration": {
+          "schema": "th09-touch-input-v1",
+          "profile": "joystick",
+          "sourceHz": 120,
+          "durationMs": 120000,
+          "side": 1,
+          "startMs": 2637,
+          "periodMs": 5200,
+          "sensitivity": 1.5,
+          "cadence": "Absolute Page-clock grid during moving legs; contact/control/release/hold edges retain their own deadlines."
+        },
+        "tapeSha256": "cf259ae280d07789f63e54b9c23023e0339f0132c00716f6a95b33779643fd07"
+      },
+      "forward": {
+        "criterion": "Adjacent body callbacks, session phase 1 on both, delta next=1/corrections=0/resimulated=0/local input captures=1. Not a guarantee of exactly one attempted tick. Whole callback wall time; workload differs across independent Page-clock runs.",
+        "frameDetailsValid": true,
+        "graphics": {
+          "present": true,
+          "valid": true,
+          "overflow": false,
+          "rows": 4913,
+          "regressions": []
+        },
+        "subsets": {
+          "allObservedSingleForward": {
+            "count": 609,
+            "callbackWholeWallMs": {
+              "count": 609,
+              "total": 1862.1799996495247,
+              "p50": 3.0149999856948853,
+              "p99": 6.069999992847443,
+              "max": 8.680000007152557
+            },
+            "returnCodes": {
+              "1": 609
+            },
+            "worldSnapshotDeltas": {
+              "count": 609,
+              "total": 483,
+              "p50": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "graphics": {
+              "batches": {
+                "count": 609,
+                "total": 16543,
+                "p50": 27,
+                "p99": 38,
+                "max": 40
+              },
+              "uploadBytes": {
+                "count": 609,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "readBytes": {
+                "count": 609,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "vertexUploadBytes": {
+                "count": 609,
+                "total": 40030104,
+                "p50": 67368,
+                "p99": 79568,
+                "max": 81012
+              },
+              "programCompiles": {
+                "count": 609,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "bufferReplacements": {
+                "count": 609,
+                "total": 2838,
+                "p50": 4,
+                "p99": 6,
+                "max": 6
+              },
+              "bufferSubUpdates": {
+                "count": 609,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "rendererFrames": {
+                "count": 609,
+                "total": 609,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "resamples": {
+                "count": 609,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "presentations": {
+                "count": 609,
+                "total": 609,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              }
+            }
+          },
+          "worldSaves0": {
+            "count": 126,
+            "callbackWholeWallMs": {
+              "count": 126,
+              "total": 273.93500036001205,
+              "p50": 2.060000002384186,
+              "p99": 4.419999957084656,
+              "max": 5.870000004768372
+            },
+            "returnCodes": {
+              "1": 126
+            },
+            "worldSnapshotDeltas": {
+              "count": 126,
+              "total": 0,
+              "p50": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "graphics": {
+              "batches": {
+                "count": 126,
+                "total": 2806,
+                "p50": 24,
+                "p99": 24,
+                "max": 24
+              },
+              "uploadBytes": {
+                "count": 126,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "readBytes": {
+                "count": 126,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "vertexUploadBytes": {
+                "count": 126,
+                "total": 6847024,
+                "p50": 55328,
+                "p99": 56672,
+                "max": 77352
+              },
+              "programCompiles": {
+                "count": 126,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "bufferReplacements": {
+                "count": 126,
+                "total": 504,
+                "p50": 4,
+                "p99": 4,
+                "max": 4
+              },
+              "bufferSubUpdates": {
+                "count": 126,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "rendererFrames": {
+                "count": 126,
+                "total": 126,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "resamples": {
+                "count": 126,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "presentations": {
+                "count": 126,
+                "total": 126,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              }
+            }
+          },
+          "worldSaves1": {
+            "count": 483,
+            "callbackWholeWallMs": {
+              "count": 483,
+              "total": 1588.2449992895126,
+              "p50": 3.0450000166893005,
+              "p99": 6.339999973773956,
+              "max": 8.680000007152557
+            },
+            "returnCodes": {
+              "1": 483
+            },
+            "worldSnapshotDeltas": {
+              "count": 483,
+              "total": 483,
+              "p50": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "graphics": {
+              "batches": {
+                "count": 483,
+                "total": 13737,
+                "p50": 28,
+                "p99": 39,
+                "max": 40
+              },
+              "uploadBytes": {
+                "count": 483,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "readBytes": {
+                "count": 483,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "vertexUploadBytes": {
+                "count": 483,
+                "total": 33183080,
+                "p50": 68964,
+                "p99": 79676,
+                "max": 81012
+              },
+              "programCompiles": {
+                "count": 483,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "bufferReplacements": {
+                "count": 483,
+                "total": 2334,
+                "p50": 5,
+                "p99": 6,
+                "max": 6
+              },
+              "bufferSubUpdates": {
+                "count": 483,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "rendererFrames": {
+                "count": 483,
+                "total": 483,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "resamples": {
+                "count": 483,
+                "total": 0,
+                "p50": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "presentations": {
+                "count": 483,
+                "total": 483,
+                "p50": 1,
+                "p99": 1,
+                "max": 1
+              }
+            }
+          }
+        },
+        "bodyAdjacentGraphics": {
+          "batches": {
+            "count": 4418,
+            "total": 44629,
+            "p50": 0,
+            "p99": 36,
+            "max": 89
+          },
+          "uploadBytes": {
+            "count": 4418,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "readBytes": {
+            "count": 4418,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "vertexUploadBytes": {
+            "count": 4418,
+            "total": 107072344,
+            "p50": 0,
+            "p99": 78516,
+            "max": 215068
+          },
+          "programCompiles": {
+            "count": 4418,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "bufferReplacements": {
+            "count": 4418,
+            "total": 7648,
+            "p50": 0,
+            "p99": 6,
+            "max": 16
+          },
+          "bufferSubUpdates": {
+            "count": 4418,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "rendererFrames": {
+            "count": 4418,
+            "total": 1619,
+            "p50": 0,
+            "p99": 1,
+            "max": 4
+          },
+          "resamples": {
+            "count": 4418,
+            "total": 0,
+            "p50": 0,
+            "p99": 0,
+            "max": 0
+          },
+          "presentations": {
+            "count": 4418,
+            "total": 1619,
+            "p50": 0,
+            "p99": 1,
+            "max": 4
+          }
+        }
+      },
+      "pacing": {
+        "scope": "All chronological body callbacks; each native row indexed into the sample array.",
+        "missing": {
+          "count": 4419,
+          "total": 5223,
+          "p50": 1,
+          "p99": 2,
+          "max": 3
+        },
+        "backlog": {
+          "count": 4419,
+          "total": 0,
+          "p50": 0,
+          "p99": 0,
+          "max": 0
+        },
+        "networkScale": {
+          "count": 4419,
+          "total": 4419,
+          "p50": 1,
+          "p99": 1,
+          "max": 1
+        },
+        "effectiveScale": {
+          "count": 4419,
+          "total": 4419.864999999985,
+          "p50": 1,
+          "p99": 1.003,
+          "max": 1.003
+        }
+      }
+    }
+  ],
+  "host": {
+    "valid": true,
+    "complete": true,
+    "logicalCpus": 24,
+    "wholeRunMeanBusyFraction": 0.29500420207926786,
+    "busyFraction": {
+      "count": 48,
+      "total": 14.007161226864605,
+      "p50": 0.2695390373896416,
+      "p99": 0.6093611178418544,
+      "max": 0.6093611178418544
+    },
+    "scope": "Whole retained run including startup; not causal attribution of individual gaps."
+  },
+  "relayValid": null,
+  "historical": [
+    {
+      "name": "relay-c1",
+      "raw": {
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c1-report.json",
+        "bytes": 26013187,
+        "sha256": "32185bd7f93526011a547e9a77e178bc7313fd641c7edb364bc9a3d2dd5762e2"
+      },
+      "scope": "Descriptive independently generated wall-clock input; no matched A/B inference.",
+      "peers": [
+        {
+          "side": 0,
+          "status": [
+            "native-frontier-incomplete"
+          ],
+          "forward": {
+            "criterion": "Adjacent body callbacks, session phase 1 on both, delta next=1/corrections=0/resimulated=0/local input captures=1. Not a guarantee of exactly one attempted tick. Whole callback wall time; workload differs across independent Page-clock runs.",
+            "frameDetailsValid": true,
+            "graphics": {
+              "present": false,
+              "valid": false,
+              "overflow": null,
+              "rows": 0,
+              "regressions": []
+            },
+            "subsets": {
+              "allObservedSingleForward": {
+                "count": 590,
+                "callbackWholeWallMs": {
+                  "count": 590,
+                  "total": 2206.4100006222725,
+                  "p50": 3.490000009536743,
+                  "p99": 7.004999995231628,
+                  "max": 10.849999964237213
+                },
+                "returnCodes": {
+                  "1": 590
+                },
+                "worldSnapshotDeltas": {
+                  "count": 590,
+                  "total": 590,
+                  "p50": 1,
+                  "p99": 1,
+                  "max": 1
+                },
+                "graphics": null
+              },
+              "worldSaves0": {
+                "count": 0,
+                "callbackWholeWallMs": {
+                  "count": 0,
+                  "total": 0,
+                  "p50": null,
+                  "p99": null,
+                  "max": null
+                },
+                "returnCodes": {},
+                "worldSnapshotDeltas": {
+                  "count": 0,
+                  "total": 0,
+                  "p50": null,
+                  "p99": null,
+                  "max": null
+                },
+                "graphics": null
+              },
+              "worldSaves1": {
+                "count": 590,
+                "callbackWholeWallMs": {
+                  "count": 590,
+                  "total": 2206.4100006222725,
+                  "p50": 3.490000009536743,
+                  "p99": 7.004999995231628,
+                  "max": 10.849999964237213
+                },
+                "returnCodes": {
+                  "1": 590
+                },
+                "worldSnapshotDeltas": {
+                  "count": 590,
+                  "total": 590,
+                  "p50": 1,
+                  "p99": 1,
+                  "max": 1
+                },
+                "graphics": null
+              }
+            },
+            "bodyAdjacentGraphics": null
+          }
+        },
+        {
+          "side": 1,
+          "status": [
+            "native-frontier-incomplete"
+          ],
+          "forward": {
+            "criterion": "Adjacent body callbacks, session phase 1 on both, delta next=1/corrections=0/resimulated=0/local input captures=1. Not a guarantee of exactly one attempted tick. Whole callback wall time; workload differs across independent Page-clock runs.",
+            "frameDetailsValid": true,
+            "graphics": {
+              "present": false,
+              "valid": false,
+              "overflow": null,
+              "rows": 0,
+              "regressions": []
+            },
+            "subsets": {
+              "allObservedSingleForward": {
+                "count": 570,
+                "callbackWholeWallMs": {
+                  "count": 570,
+                  "total": 2248.9649996757507,
+                  "p50": 3.6100000143051147,
+                  "p99": 7.969999969005585,
+                  "max": 45.830000042915344
+                },
+                "returnCodes": {
+                  "1": 570
+                },
+                "worldSnapshotDeltas": {
+                  "count": 570,
+                  "total": 570,
+                  "p50": 1,
+                  "p99": 1,
+                  "max": 1
+                },
+                "graphics": null
+              },
+              "worldSaves0": {
+                "count": 0,
+                "callbackWholeWallMs": {
+                  "count": 0,
+                  "total": 0,
+                  "p50": null,
+                  "p99": null,
+                  "max": null
+                },
+                "returnCodes": {},
+                "worldSnapshotDeltas": {
+                  "count": 0,
+                  "total": 0,
+                  "p50": null,
+                  "p99": null,
+                  "max": null
+                },
+                "graphics": null
+              },
+              "worldSaves1": {
+                "count": 570,
+                "callbackWholeWallMs": {
+                  "count": 570,
+                  "total": 2248.9649996757507,
+                  "p50": 3.6100000143051147,
+                  "p99": 7.969999969005585,
+                  "max": 45.830000042915344
+                },
+                "returnCodes": {
+                  "1": 570
+                },
+                "worldSnapshotDeltas": {
+                  "count": 570,
+                  "total": 570,
+                  "p50": 1,
+                  "p99": 1,
+                  "max": 1
+                },
+                "graphics": null
+              }
+            },
+            "bodyAdjacentGraphics": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "relay-c2",
+      "raw": {
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c2-failure.json",
+        "bytes": 26249699,
+        "sha256": "f6e2b4a50ec5bafb2e476d7424f6f1a3f48713da00d4d53a03a2a02d354d5d3f"
+      },
+      "scope": "Descriptive independently generated wall-clock input; no matched A/B inference.",
+      "peers": [
+        {
+          "side": 0,
+          "status": [
+            "end-not-observed"
+          ],
+          "forward": {
+            "criterion": "Adjacent body callbacks, session phase 1 on both, delta next=1/corrections=0/resimulated=0/local input captures=1. Not a guarantee of exactly one attempted tick. Whole callback wall time; workload differs across independent Page-clock runs.",
+            "frameDetailsValid": true,
+            "graphics": {
+              "present": false,
+              "valid": false,
+              "overflow": null,
+              "rows": 0,
+              "regressions": []
+            },
+            "subsets": {
+              "allObservedSingleForward": {
+                "count": 925,
+                "callbackWholeWallMs": {
+                  "count": 925,
+                  "total": 25092.91999989748,
+                  "p50": 26.09500002861023,
+                  "p99": 54.33499997854233,
+                  "max": 74.9099999666214
+                },
+                "returnCodes": {
+                  "1": 925
+                },
+                "worldSnapshotDeltas": {
+                  "count": 925,
+                  "total": 804,
+                  "p50": 1,
+                  "p99": 1,
+                  "max": 1
+                },
+                "graphics": null
+              },
+              "worldSaves0": {
+                "count": 121,
+                "callbackWholeWallMs": {
+                  "count": 121,
+                  "total": 2657.0999997258186,
+                  "p50": 20.74500000476837,
+                  "p99": 44.18000000715256,
+                  "max": 44.90499997138977
+                },
+                "returnCodes": {
+                  "1": 121
+                },
+                "worldSnapshotDeltas": {
+                  "count": 121,
+                  "total": 0,
+                  "p50": 0,
+                  "p99": 0,
+                  "max": 0
+                },
+                "graphics": null
+              },
+              "worldSaves1": {
+                "count": 804,
+                "callbackWholeWallMs": {
+                  "count": 804,
+                  "total": 22435.82000017166,
+                  "p50": 27.110000014305115,
+                  "p99": 54.939999997615814,
+                  "max": 74.9099999666214
+                },
+                "returnCodes": {
+                  "1": 804
+                },
+                "worldSnapshotDeltas": {
+                  "count": 804,
+                  "total": 804,
+                  "p50": 1,
+                  "p99": 1,
+                  "max": 1
+                },
+                "graphics": null
+              }
+            },
+            "bodyAdjacentGraphics": null
+          }
+        },
+        {
+          "side": 1,
+          "status": [
+            "end-not-observed"
+          ],
+          "forward": {
+            "criterion": "Adjacent body callbacks, session phase 1 on both, delta next=1/corrections=0/resimulated=0/local input captures=1. Not a guarantee of exactly one attempted tick. Whole callback wall time; workload differs across independent Page-clock runs.",
+            "frameDetailsValid": true,
+            "graphics": {
+              "present": false,
+              "valid": false,
+              "overflow": null,
+              "rows": 0,
+              "regressions": []
+            },
+            "subsets": {
+              "allObservedSingleForward": {
+                "count": 894,
+                "callbackWholeWallMs": {
+                  "count": 894,
+                  "total": 24193.93500071764,
+                  "p50": 25.975000023841858,
+                  "p99": 56.23499995470047,
+                  "max": 87.31000000238419
+                },
+                "returnCodes": {
+                  "1": 894
+                },
+                "worldSnapshotDeltas": {
+                  "count": 894,
+                  "total": 765,
+                  "p50": 1,
+                  "p99": 1,
+                  "max": 1
+                },
+                "graphics": null
+              },
+              "worldSaves0": {
+                "count": 129,
+                "callbackWholeWallMs": {
+                  "count": 129,
+                  "total": 2850.475000143051,
+                  "p50": 20.089999973773956,
+                  "p99": 43.519999980926514,
+                  "max": 44.49500000476837
+                },
+                "returnCodes": {
+                  "1": 129
+                },
+                "worldSnapshotDeltas": {
+                  "count": 129,
+                  "total": 0,
+                  "p50": 0,
+                  "p99": 0,
+                  "max": 0
+                },
+                "graphics": null
+              },
+              "worldSaves1": {
+                "count": 765,
+                "callbackWholeWallMs": {
+                  "count": 765,
+                  "total": 21343.46000057459,
+                  "p50": 26.865000009536743,
+                  "p99": 56.40499997138977,
+                  "max": 87.31000000238419
+                },
+                "returnCodes": {
+                  "1": 765
+                },
+                "worldSnapshotDeltas": {
+                  "count": 765,
+                  "total": 765,
+                  "p50": 1,
+                  "p99": 1,
+                  "max": 1
+                },
+                "graphics": null
+              }
+            },
+            "bodyAdjacentGraphics": null
+          }
+        }
+      ]
+    }
+  ]
+}

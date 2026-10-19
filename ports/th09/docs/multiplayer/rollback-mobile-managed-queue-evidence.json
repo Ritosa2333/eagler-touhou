@@ -1,0 +1,662 @@
+{
+  "schema": "th09-mobile-managed-touch-queue-characterization/v1",
+  "createdAt": "2026-10-11T04:49:53.098Z",
+  "invocation": {
+    "startedAt": "2026-10-11T04:47:45.873Z",
+    "endedAt": "2026-10-11T04:47:45.976Z",
+    "elapsedMs": 102.0318,
+    "status": 0,
+    "signal": null,
+    "args": [
+      "web/tests/server/managed-touch-queue.test.mjs"
+    ],
+    "runLabel": "mobile-managed-queue-characterization-b1",
+    "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
+    "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
+    "scriptSha256": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
+    "scriptAfterSha256": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
+    "identityBefore": {
+      "web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
+      "web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+      "web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+      "web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
+    },
+    "identityAfter": {
+      "web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
+      "web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+      "web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+      "web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
+    },
+    "identityError": null,
+    "build": null,
+    "reference": null,
+    "declaredParameters": {
+      "scope": "Real managed.mjs message/lifecycle listener in bounded VM, stub native and fake clock; no game/browser/device/network or FPS measurements.",
+      "mode": "characterization",
+      "productionSourceChanged": false,
+      "requiredGoals": false,
+      "cases": [
+        "envelope and epoch gates",
+        "active ready+launched resource backlog",
+        "blur cancellation",
+        "hidden joystick",
+        "adversarial pre-ready",
+        "source stability"
+      ],
+      "releaseAckChecks": true
+    },
+    "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-process.log",
+    "logSha256": "b1c7f33f8d3da8a407a174116bd9e21e74d8c0ce493b2a61713c2c3185ac492f",
+    "stdoutBytes": 9861,
+    "stderrBytes": 0
+  },
+  "invocationArtifact": {
+    "path": "web/artifacts/multiplayer-tests/mobile-managed-queue-characterization-b1-invocation.json",
+    "bytes": 2435,
+    "sha256": "8b8d4985d792e07c12cc0e5494ac7e55d4aae994a83a9803dbb9ab95a86d5334"
+  },
+  "log": {
+    "path": "web/artifacts/multiplayer-tests/mobile-managed-queue-characterization-b1-process.log",
+    "bytes": 9861,
+    "sha256": "b1c7f33f8d3da8a407a174116bd9e21e74d8c0ce493b2a61713c2c3185ac492f"
+  },
+  "fixtureContractsPassed": true,
+  "tests": 6,
+  "sourceStable": true,
+  "sourceIdentity": {
+    "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+    "keyboard": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+    "replay": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+    "test": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a"
+  },
+  "goalGateSatisfied": false,
+  "goals": {
+    "envelopeGatesPreserved": true,
+    "activeInputDoesNotAwaitUnrelatedResource": false,
+    "noPreBarrierDirectInputCallsAfterBlur": false,
+    "noPreBarrierJoystickCallsWhileHidden": false,
+    "noPreReadyInputDeliveredAfterInitializationWithoutLaunch": false
+  },
+  "cases": [
+    {
+      "case": "envelope-gates",
+      "mode": "characterization",
+      "requireGoals": false,
+      "scope": {
+        "boundary": "real managed listener to stub native calls and parent ACK",
+        "gameProgressMeasured": false,
+        "realLatencyMeasured": false,
+        "realLauncherOrBrowser": false
+      },
+      "clock": {
+        "name": "fixture scheduling clock",
+        "timeOrigin": null,
+        "synthetic": true
+      },
+      "sourceIdentity": {
+        "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+        "keyboard": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "replay": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "test": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a"
+      },
+      "observed": {
+        "rejectedEnvelopeCount": 7,
+        "invalidRuntimeEpochIgnored": true,
+        "acceptedNativeCalls": 1
+      },
+      "goals": {
+        "envelopeGatesPreserved": true
+      },
+      "nativeCalls": [
+        {
+          "seq": 22,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch",
+          "args": [
+            0,
+            -1000000,
+            0.5,
+            0.5
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "active-resource-backlog",
+      "mode": "characterization",
+      "requireGoals": false,
+      "scope": {
+        "boundary": "real managed listener to stub native calls and parent ACK",
+        "gameProgressMeasured": false,
+        "realLatencyMeasured": false,
+        "realLauncherOrBrowser": false
+      },
+      "clock": {
+        "name": "fixture scheduling clock",
+        "timeOrigin": null,
+        "synthetic": true
+      },
+      "sourceIdentity": {
+        "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+        "keyboard": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "replay": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "test": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a"
+      },
+      "observed": {
+        "workflow": "ready-and-launched",
+        "inputMessages": 5,
+        "beforeRelease": {
+          "nativeInputCalls": 0,
+          "unacknowledgedInputRequests": 5,
+          "resourceAcknowledged": false,
+          "keyboardNativeCalls": 3
+        },
+        "classification": "native-input-wait-reproduced",
+        "afterRelease": {
+          "nativeInputCalls": 7,
+          "unacknowledgedInputRequests": 0
+        }
+      },
+      "goals": {
+        "activeInputDoesNotAwaitUnrelatedResource": false
+      },
+      "nativeCalls": [
+        {
+          "seq": 22,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "key",
+          "args": [
+            44,
+            1
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 24,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "key",
+          "args": [
+            44,
+            0
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 25,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "keys-clear",
+          "args": [],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 31,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch",
+          "args": [
+            0,
+            -1000000,
+            0.5,
+            0.5
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 33,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch",
+          "args": [
+            1,
+            -1000000,
+            0.75,
+            0.625
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 35,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-controls",
+          "args": [
+            1,
+            1,
+            1,
+            0,
+            0
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 36,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-stick",
+          "args": [
+            0,
+            0
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 38,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-cancel",
+          "args": [],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 40,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-controls",
+          "args": [
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 41,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-stick",
+          "args": [
+            0,
+            0
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "blur-barrier",
+      "mode": "characterization",
+      "requireGoals": false,
+      "scope": {
+        "boundary": "real managed listener to stub native calls and parent ACK",
+        "gameProgressMeasured": false,
+        "realLatencyMeasured": false,
+        "realLauncherOrBrowser": false
+      },
+      "clock": {
+        "name": "fixture scheduling clock",
+        "timeOrigin": null,
+        "synthetic": true
+      },
+      "sourceIdentity": {
+        "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+        "keyboard": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "replay": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "test": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a"
+      },
+      "observed": {
+        "workflow": "ready-and-launched-before-blur",
+        "beforeRelease": {
+          "unacknowledgedInputRequests": 2,
+          "cancelNativeSeq": 20
+        },
+        "preBlurInputCallsAfterCancel": 2,
+        "unacknowledgedAfterRelease": 0,
+        "classification": "old-native-input-calls-after-cancel",
+        "actualGestureRearmMeasured": false
+      },
+      "goals": {
+        "noPreBarrierDirectInputCallsAfterBlur": false
+      },
+      "nativeCalls": [
+        {
+          "seq": 19,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "keys-clear",
+          "args": [],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 20,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-cancel",
+          "args": [],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 24,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch",
+          "args": [
+            0,
+            -1000000,
+            0.5,
+            0.5
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 26,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch",
+          "args": [
+            1,
+            -1000000,
+            0.75,
+            0.625
+          ],
+          "life": {
+            "hidden": false,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "hidden-joystick-barrier",
+      "mode": "characterization",
+      "requireGoals": false,
+      "scope": {
+        "boundary": "real managed listener to stub native calls and parent ACK",
+        "gameProgressMeasured": false,
+        "realLatencyMeasured": false,
+        "realLauncherOrBrowser": false
+      },
+      "clock": {
+        "name": "fixture scheduling clock",
+        "timeOrigin": null,
+        "synthetic": true
+      },
+      "sourceIdentity": {
+        "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+        "keyboard": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "replay": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "test": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a"
+      },
+      "observed": {
+        "workflow": "ready-and-launched-before-hidden",
+        "beforeRelease": {
+          "unacknowledgedInputRequests": 1,
+          "hidden": true
+        },
+        "oldControlNativeCallsWhileHidden": 2,
+        "unacknowledgedAfterRelease": 0,
+        "actualMovementOrCaptureMeasured": false
+      },
+      "goals": {
+        "noPreBarrierJoystickCallsWhileHidden": false
+      },
+      "nativeCalls": [
+        {
+          "seq": 18,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "keys-clear",
+          "args": [],
+          "life": {
+            "hidden": true,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 19,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-cancel",
+          "args": [],
+          "life": {
+            "hidden": true,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 20,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "loop-pause",
+          "args": [
+            1
+          ],
+          "life": {
+            "hidden": true,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 26,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-controls",
+          "args": [
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          "life": {
+            "hidden": true,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 27,
+          "fixtureAtMs": 2000,
+          "kind": "native",
+          "op": "touch-stick",
+          "args": [
+            12000,
+            -9000
+          ],
+          "life": {
+            "hidden": true,
+            "launched": true,
+            "stopping": false,
+            "validEpoch": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "adversarial-pre-ready",
+      "mode": "characterization",
+      "requireGoals": false,
+      "scope": {
+        "boundary": "real managed listener to stub native calls and parent ACK",
+        "gameProgressMeasured": false,
+        "realLatencyMeasured": false,
+        "realLauncherOrBrowser": false
+      },
+      "clock": {
+        "name": "fixture scheduling clock",
+        "timeOrigin": null,
+        "synthetic": true
+      },
+      "sourceIdentity": {
+        "managed": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+        "keyboard": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+        "replay": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938",
+        "test": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a"
+      },
+      "observed": {
+        "workflow": "adversarial-valid-envelope",
+        "normalLauncherWouldSendBeforeReady": false,
+        "beforeModuleRelease": {
+          "nativeInputCalls": 0,
+          "unacknowledgedInputRequests": 2
+        },
+        "nativeInputCallsBeforeLaunch": 3,
+        "unacknowledgedAfterInitialization": 0,
+        "actualGameplayMeasured": false
+      },
+      "goals": {
+        "noPreReadyInputDeliveredAfterInitializationWithoutLaunch": false
+      },
+      "nativeCalls": [
+        {
+          "seq": 3,
+          "fixtureAtMs": 0,
+          "kind": "native",
+          "op": "touch",
+          "args": [
+            0,
+            -1000000,
+            0.5,
+            0.5
+          ],
+          "life": {
+            "hidden": false,
+            "launched": false,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 5,
+          "fixtureAtMs": 0,
+          "kind": "native",
+          "op": "touch-options",
+          "args": [
+            0,
+            0,
+            1.5,
+            0,
+            0
+          ],
+          "life": {
+            "hidden": false,
+            "launched": false,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 6,
+          "fixtureAtMs": 0,
+          "kind": "native",
+          "op": "touch-controls",
+          "args": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "life": {
+            "hidden": false,
+            "launched": false,
+            "stopping": false,
+            "validEpoch": true
+          }
+        },
+        {
+          "seq": 7,
+          "fixtureAtMs": 0,
+          "kind": "native",
+          "op": "touch-stick",
+          "args": [
+            1000,
+            0
+          ],
+          "life": {
+            "hidden": false,
+            "launched": false,
+            "stopping": false,
+            "validEpoch": true
+          }
+        }
+      ]
+    }
+  ],
+  "scope": "Real managed source listeners and controlled resource await in a bounded VM. Native stubs expose call order, not actual dragging, simulation, network, browser scheduling, physical input latency or FPS. False goals describe reproduced risks, not test harness failures."
+}

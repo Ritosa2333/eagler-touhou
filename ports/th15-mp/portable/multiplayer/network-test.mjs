@@ -1,0 +1,26 @@
+import {spawnSync} from 'node:child_process';
+import {readFileSync,writeFileSync,readdirSync,existsSync} from 'node:fs';
+import {resolve,basename} from 'node:path';
+const root=resolve(import.meta.dirname,'../..');
+const sdk=resolve(process.env.TH15_EMSDK||resolve(root,'tools/emsdk'));
+const compiler=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);
+if(!compiler)throw Error('Set TH15_EMSDK');
+const out=resolve(root,process.env.TH15_OUTPUT||'web/artifacts/sdl-multiplayer');
+const common=resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT||resolve(root,'../../common'));
+const build=JSON.parse(readFileSync(resolve(out,'build.json')));
+const run=(program,args)=>{const r=spawnSync(program,args,{cwd:root,env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),TEMP:out,TMP:out},encoding:'utf8',windowsHide:true,maxBuffer:4*1024*1024});if(r.error)throw r.error;if(r.status)throw Error(r.stdout+r.stderr);if(r.stdout)process.stdout.write(r.stdout);return r;};
+const flags=['-O2','-std=c++17','-I'+resolve(root,'web/cpp/multiplayer'),'-I'+resolve(common,'include'),'-DTH_NATIVE_PLATFORM=1','-DTH15_MULTIPLAYER=1','-DTH_ENABLE_THPRAC=0','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti'];
+const fixture=resolve(out,'network-protocol.o');run('python',[compiler,...flags,'-c',resolve(import.meta.dirname,'network-protocol.cpp'),'-o',fixture]);
+const objects=Object.keys(build.sources).filter(p=>p.startsWith('web/cpp/multiplayer/')||resolve(root,p).startsWith(resolve(common,'src/netplay')+'/')||resolve(root,p).startsWith(resolve(common,'src/netplay')+'\\')).map(p=>resolve(out,'objects',p.replaceAll('\\','_').replaceAll('/','_')+'.o'));
+const loader=resolve(out,'network-protocol.cjs'),rsp=resolve(out,'network-test.rsp');
+writeFileSync(rsp,[...flags,'--use-port=sdl3','-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-sNODERAWFS=1','-sEXIT_RUNTIME=1','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=8388608','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824',...objects,fixture,'-o',loader].map(a=>JSON.stringify(a)).join('\n'));
+run('python',[compiler,'@'+rsp]);
+const result=run(process.execPath,[loader]);
+writeFileSync(resolve(out,'network-test-result.txt'),result.stdout);
+// Shared startup codec regression: preserve TH08/10/11 bytes and admit TH15.
+const startup=resolve(out,'common-startup.o');
+run('python',[compiler,...flags,'-c',resolve(common,'tests/adonis-startup-test.cpp'),'-o',startup]);
+const startupLoader=resolve(out,'common-startup.cjs');
+writeFileSync(rsp,[...flags,'--use-port=sdl3','-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-sEXIT_RUNTIME=1','-sSTACK_SIZE=8388608','-sINITIAL_MEMORY=134217728',...objects,startup,'-o',startupLoader].map(a=>JSON.stringify(a)).join('\n'));
+run('python',[compiler,'@'+rsp]);
+writeFileSync(resolve(out,'common-startup-test-result.txt'),run(process.execPath,[startupLoader]).stdout);

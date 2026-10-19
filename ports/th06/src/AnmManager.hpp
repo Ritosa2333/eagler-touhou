@@ -1,0 +1,538 @@
+#pragma once
+
+// #include <d3d8.h>
+// #include <d3dx8math.h>
+
+#include <SDL3/SDL.h>
+#include <cstddef>
+
+#include "AnmIdx.hpp"
+#include "AnmVm.hpp"
+#include "GameManager.hpp"
+#include "GameWindow.hpp"
+#include "ZunEndian.hpp"
+#include "ZunResult.hpp"
+#include "ZunTimer.hpp"
+#include "inttypes.hpp"
+
+#define TEX_FMT_UNKNOWN 0u
+#define TEX_FMT_A8R8G8B8 1u
+#define TEX_FMT_A1R5G5B5 2u
+#define TEX_FMT_R5G6B5 3u
+#define TEX_FMT_R8G8B8 4u
+#define TEX_FMT_A4R4G4B4 5u
+
+struct TextureData
+{
+    GfxTextureHandle handle;
+    const void *fileData;
+
+    // Fields needed to compensate for inability to read back texture for alpha loading
+    u8 *textureData;
+    u32 width;
+    u32 height;
+    i32 format;
+};
+
+// Endian-neutral version of ZunColor, for use with OpenGL
+struct ColorData
+{
+    u8 r;
+    u8 g;
+    u8 b;
+    u8 a;
+
+    ColorData()
+    {
+    }
+
+    ColorData(ZunColor color)
+    {
+        a = (color >> 24);
+        r = (color >> 16) & 0xFF;
+        g = (color >> 8) & 0xFF;
+        b = color & 0xFF;
+    };
+};
+static_assert(sizeof(ColorData) == 0x04, "ColorData has additional padding between struct members");
+
+// NOTE: Every usage of a position with RHW in EoSD simply sets RHW to 1.0f
+// D3D8 interprets vertices with D3DFVF_XYZRHW as having already been transformed, so Zun
+// uses RHW simply to draw polygons in an orthographic manner
+// This has to be worked around, since OpenGL does transform vertices with vec4 positions
+// With the workaround done, all uses of XYZRHW vertices should be replaceable with XYZ vertices
+
+// structure of a vertex with SetVertexShade FVF set to D3DFVF_DIFFUSE | D3DFVF_XYZRHW
+struct VertexDiffuseXyzrhw
+{
+    ZunVec4 position;
+    ColorData diffuse;
+};
+
+// Structure of a vertex with SetVertexShade FVF set to D3DFVF_TEX1 | D3DFVF_XYZRHW
+struct VertexTex1Xyzrhw
+{
+    ZunVec4 position;
+    ZunVec2 textureUV;
+};
+
+// Structure of a vertex with SetVertexShade FVF set to D3DFVF_TEX1 | D3DFVF_DIFFUSE | D3DFVF_XYZRHW
+struct VertexTex1DiffuseXyzrhw
+{
+    ZunVec4 position;
+    ColorData diffuse;
+    ZunVec2 textureUV;
+};
+static_assert(sizeof(VertexTex1DiffuseXyzrhw) == 28);
+static_assert(offsetof(VertexTex1DiffuseXyzrhw, position) == 0);
+static_assert(offsetof(VertexTex1DiffuseXyzrhw, diffuse) == 16);
+static_assert(offsetof(VertexTex1DiffuseXyzrhw, textureUV) == 20);
+
+// Structure of a vertex with SetVertexShade FVF set to D3DFVF_TEX1 | D3DFVF_DIFFUSE | D3DFVF_XYZ
+struct VertexTex1DiffuseXyz
+{
+    ZunVec3 position;
+    ColorData diffuse;
+    ZunVec2 textureUV;
+};
+
+enum ProjectionMode
+{
+    PROJECTION_MODE_PERSPECTIVE,
+    PROJECTION_MODE_ORTHOGRAPHIC
+};
+
+struct VertexAttribArrayState
+{
+    void *ptr;
+    std::size_t stride;
+};
+
+enum DirtyRenderStateBitShifts
+{
+    DIRTY_FOG = 0,
+    DIRTY_DEPTH_CONFIG = 1,
+    DIRTY_VERTEX_ATTRIBUTE_ENABLE = 2,
+    DIRTY_VERTEX_ATTRIBUTE_ARRAY = 3,
+    DIRTY_COLOR_OP = 4,
+    DIRTY_TEXTURE_FACTOR = 5,
+    DIRTY_MODEL_MATRIX = 6,
+    DIRTY_VIEW_MATRIX = 7,
+    DIRTY_PROJECTION_MATRIX = 8,
+    DIRTY_TEXTURE_MATRIX = 9,
+};
+
+struct AnmRawSprite
+{
+    LE<u32> id;
+    ZunVec2Raw offset;
+    ZunVec2Raw size;
+};
+
+struct AnmRawScript
+{
+    LE<u32> id;
+    LE<u32> firstInstruction;
+};
+
+struct AnmRawEntry
+{
+    LE<i32> numSprites;
+    LE<i32> numScripts;
+    u32 textureIdx;
+    LE<i32> width;
+    LE<i32> height;
+    LE<u32> format;
+    LE<u32> colorKey;
+    LE<u32> nameOffset;
+    u32 spriteIdxOffset;
+    LE<u32> alphaNameOffset;
+    LE<u32> version;
+    LE<u32> unk1;
+    LE<u32> textureOffset;
+    LE<u32> hasData;
+    LE<u32> nextOffset;
+    LE<u32> unk2;
+    // These last two are actually flexible sizes based off the first 2 variables
+    LE<u32> spriteOffsets[10];
+    AnmRawScript scripts[10];
+};
+
+struct RenderVertexInfo
+{
+    ZunVec3 position;
+    ZunVec2 textureUV;
+};
+
+struct AnmManager
+{
+    AnmManager();
+    ~AnmManager();
+
+    //    void ReleaseVertexBuffer();
+    void SetupVertexBuffer();
+    void FlushVertexBuffer();
+    void ClearVertexBuffer();
+
+    u32 spritesToDraw;
+    VertexTex1DiffuseXyzrhw *vertexBufferStartPtr;
+    VertexTex1DiffuseXyzrhw *vertexBufferEndPtr;
+    VertexTex1DiffuseXyzrhw vertexBuffer[0x18000];
+
+    u32 renderStateChangesThisFrame;
+    u32 flushesThisFrame;
+    ZunResult AddSpriteToDrawBuffer(VertexTex1DiffuseXyzrhw *vertices);
+
+    ZunResult CreateEmptyTexture(i32 textureIdx, u32 width, u32 height, i32 textureFormat);
+    ZunResult LoadTexture(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey,
+                          bool isExternalResource = false, bool clearTransparentRgb = false,
+                          bool allowRuntimeOverride = true);
+    ZunResult LoadEmbeddedTexture(i32 textureIdx, const AnmRawEntry *entry);
+    ZunResult LoadTextureAlphaChannel(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey,
+                                      bool allowRuntimeOverride = true);
+    void ReleaseTexture(i32 textureIdx);
+    void TakeScreenshotIfRequested();
+    void TakeScreenshot(i32 textureId, i32 left, i32 top, i32 width, i32 height);
+#ifdef TH_ENABLE_THCRAP
+    void QueueThcrapSnapshotIfRequested();
+    void TakeThcrapSnapshotIfRequested();
+#endif
+
+    void SetAndExecuteScript(AnmVm *vm, const AnmRawInstr *beginingOfScript);
+    void SetAndExecuteScriptIdx(AnmVm *vm, i32 anmFileIdx)
+    {
+        vm->anmFileIndex = anmFileIdx;
+        this->SetAndExecuteScript(vm, this->scripts[anmFileIdx]);
+    }
+
+    void InitializeAndSetSprite(AnmVm *vm, i32 spriteIdx)
+    {
+        vm->Initialize();
+        this->SetActiveSprite(vm, spriteIdx);
+        vm->UpdatePrev();
+    }
+
+    void BackendDrawCall()
+    {
+        if (this->dirtyFlags != 0)
+        {
+            this->UpdateDirtyStates();
+        }
+
+        g_GfxBackend->Draw(PRIM_TRIANGLE_STRIP, 0, 4);
+    }
+
+
+    // We need to do checks in these because they're called nearly every ANM draw call and otherwise
+    //   we'd be constantly setting the dirty flag. The other global state sets are done less often
+    //   and so they don't need the checks until UpdateDirtyStates.
+
+    void SetVertexAttributes(u8 vertexShader)
+    {
+        this->dirtyEnabledVertexAttributes = vertexShader;
+
+        if (this->dirtyEnabledVertexAttributes == this->enabledVertexAttributes)
+        {
+            this->dirtyFlags &= ~(1 << DIRTY_VERTEX_ATTRIBUTE_ENABLE);
+            return;
+        }
+
+        this->dirtyFlags |= (1 << DIRTY_VERTEX_ATTRIBUTE_ENABLE);
+    }
+
+    void SetColorOp(TextureOpComponent component, ColorOp op)
+    {
+        if ((g_Supervisor.cfg.opts >> GCOS_NO_COLOR_COMP) & 1)
+        {
+            this->dirtyColorOps[component] = op;
+            dirtyFlags &= ~(1 << DIRTY_COLOR_OP);
+            return;
+        }
+
+        if (this->dirtyColorOps[component] != op)
+        {
+            this->FlushVertexBuffer();
+        }
+        this->dirtyColorOps[component] = op;
+
+        if (this->dirtyColorOps[component] == this->colorOps[component])
+        {
+            dirtyFlags &= ~(1 << DIRTY_COLOR_OP);
+            return;
+        }
+
+        dirtyFlags |= (1 << DIRTY_COLOR_OP);
+    }
+
+    void SetCurrentBlendMode(u8 blendMode)
+    {
+        this->currentBlendMode = blendMode;
+    }
+
+    void SetDepthMask(bool depthEnable)
+    {
+        if (this->dirtyDepthMask != depthEnable)
+            this->FlushVertexBuffer();
+        this->dirtyDepthMask = depthEnable;
+
+        if ((g_Supervisor.cfg.opts >> GCOS_TURN_OFF_DEPTH_TEST) & 1 || this->dirtyDepthMask == this->depthMask)
+        {
+            return;
+        }
+
+        this->dirtyFlags |= (1 << DIRTY_DEPTH_CONFIG);
+    }
+
+    void SetDepthFunc(DepthFunc func)
+    {
+        if ((g_Supervisor.cfg.opts >> GCOS_TURN_OFF_DEPTH_TEST) & 1)
+        {
+            return;
+        }
+
+        this->dirtyDepthFunc = func;
+        this->dirtyFlags |= (1 << DIRTY_DEPTH_CONFIG);
+    }
+
+    void SetCurrentTexture(GfxTextureHandle textureHandle)
+    {
+        if (this->currentTextureHandle != textureHandle)
+        {
+            this->FlushVertexBuffer();
+            this->currentTextureHandle = textureHandle;
+            g_GfxBackend->BindTexture(textureHandle);
+        }
+    }
+    void SetCurrentSprite(const AnmLoadedSprite *sprite)
+    {
+        this->currentSprite = sprite;
+    }
+
+    void SetProjectionMode(ProjectionMode projectionMode)
+    {
+        if (this->projectionMode == projectionMode)
+        {
+            return;
+        }
+
+        this->FlushVertexBuffer();
+
+        this->projectionMode = projectionMode;
+
+        if (projectionMode == PROJECTION_MODE_ORTHOGRAPHIC)
+        {
+            ZunMatrix identityMatrix;
+
+            memcpy(this->perspectiveMatrixBackup, this->dirtyTransformMatrices, sizeof(this->perspectiveMatrixBackup));
+
+            identityMatrix.Identity();
+
+            this->SetTransformMatrix(MATRIX_VIEW, identityMatrix);
+            this->SetTransformMatrix(MATRIX_TEXTURE, identityMatrix);
+
+            ZunMatrix inverseMatrix = inverseViewportMatrix();
+
+            this->SetTransformMatrix(MATRIX_PROJECTION, inverseMatrix);
+
+            return;
+        }
+
+        g_Supervisor.viewport.Set();
+
+        this->SetTransformMatrix(MATRIX_VIEW, this->perspectiveMatrixBackup[MATRIX_VIEW]);
+        this->SetTransformMatrix(MATRIX_PROJECTION, this->perspectiveMatrixBackup[MATRIX_PROJECTION]);
+    }
+
+    void SetFogRange(f32 nearPlane, f32 farPlane)
+    {
+        this->FlushVertexBuffer();
+        this->dirtyFogNear = nearPlane;
+        this->dirtyFogFar = farPlane;
+        this->dirtyFlags |= (1 << DIRTY_FOG);
+    }
+
+    void SetFogColor(ZunColor color)
+    {
+        this->dirtyFogColor = color;
+        this->dirtyFlags |= (1 << DIRTY_FOG);
+    }
+
+    void SetAttributePointer(VertexAttributeArrays attr, std::size_t stride, void *ptr)
+    {
+        this->dirtyAttribArrays[attr].ptr = ptr;
+        this->dirtyAttribArrays[attr].stride = stride;
+
+        if (!std::memcmp(&this->dirtyAttribArrays[attr], &this->attribArrays[attr], sizeof(*this->dirtyAttribArrays)))
+        {
+            return;
+        }
+
+        this->dirtyFlags |= (1 << DIRTY_VERTEX_ATTRIBUTE_ARRAY);
+    }
+
+    void SetTextureFactor(ZunColor factor)
+    {
+        if (this->dirtytTextureFactor != factor)
+            this->FlushVertexBuffer();
+        this->dirtytTextureFactor = factor;
+
+        if (this->dirtytTextureFactor == this->textureFactor)
+        {
+            this->dirtyFlags &= ~(1 << DIRTY_TEXTURE_FACTOR);
+            return;
+        }
+
+        this->dirtyFlags |= 1 << DIRTY_TEXTURE_FACTOR;
+    }
+
+    void SetTransformMatrix(TransformMatrix type, const ZunMatrix &matrix)
+    {
+        std::memcpy(&this->dirtyTransformMatrices[type], &matrix, sizeof(matrix));
+
+        if (!std::memcmp(&this->transformMatrices[type], &matrix, sizeof(matrix)))
+        {
+            this->dirtyFlags &= ~(1 << (DIRTY_MODEL_MATRIX + (DirtyRenderStateBitShifts)type));
+        }
+
+        this->dirtyFlags |= 1 << (DIRTY_MODEL_MATRIX + (DirtyRenderStateBitShifts)type);
+    }
+
+    i32 ExecuteScript(AnmVm *vm);
+    ZunResult Draw(const AnmVm *vm);
+    void DrawTextToSprite(u32 spriteDstIndex, i32 xPos, i32 yPos, i32 spriteWidth, i32 spriteHeight, i32 fontWidth,
+                          i32 fontHeight, ZunColor textColor, ZunColor shadowColor, const char *strToPrint);
+    void DrawStringFormat(AnmVm *vm, ZunColor textColor, ZunColor shadowColor, const char *fmt, ...);
+    void DrawStringFormat2(AnmVm *vm, ZunColor textColor, ZunColor shadowColor, const char *fmt, ...);
+    void DrawVmTextFmt(AnmVm *vm, ZunColor textColor, ZunColor shadowColor, const char *fmt, ...);
+    ZunResult DrawNoRotation(const AnmVm *vm);
+    ZunResult DrawInterpNoRotation(const AnmVm *vm)
+    {
+        AnmVm drawVm = *vm;
+        drawVm.pos = vm->prevPos.Lerp(vm->pos, g_RenderAlpha);
+        return DrawNoRotation(&drawVm);
+    }
+    ZunResult DrawInterp(const AnmVm *vm)
+    {
+        AnmVm drawVm = *vm;
+        drawVm.pos = vm->prevPos.Lerp(vm->pos, g_RenderAlpha);
+        return Draw(&drawVm);
+    }
+    ZunResult DrawOrthographic(const AnmVm *vm);
+    ZunResult DrawFacingCamera(const AnmVm *vm);
+    ZunResult Draw2(const AnmVm *vm);
+    ZunResult Draw3(const AnmVm *vm);
+
+    void LoadSprite(u32 spriteIdx, const AnmLoadedSprite *sprite);
+    ZunResult SetActiveSprite(AnmVm *vm, u32 spriteIdx);
+    void SetActiveSpriteWidth(AnmVm *vm, f32 widthPx);
+
+    void ReleaseSurfaces(void);
+    ZunResult LoadSurface(i32 surfaceIdx, const char *path);
+#ifdef __EMSCRIPTEN__
+    ZunResult PreloadTransitionSurface(const char *path);
+#endif
+    void ReleaseSurface(i32 surfaceIdx);
+    void CopySurfaceToBackBuffer(i32 surfaceIdx, i32 left, i32 top, i32 x, i32 y);
+    void CopySurfaceRectToBackBuffer(i32 surfaceIdx, i32 rectX, i32 rectY, i32 rectLeft, i32 rectTop, i32 width,
+                                     i32 height);
+
+    void TranslateRotation(VertexTex1DiffuseXyzrhw *param_1, float x, float y, float sine, float cosine, float xOffset,
+                           float yOffset);
+
+    void ReleaseAnm(i32 anmIdx);
+    ZunResult LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset);
+#ifdef __EMSCRIPTEN__
+    ZunResult PreloadTransitionAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset);
+#endif
+    void ExecuteAnmIdx(AnmVm *vm, i32 anmFileIdx)
+    {
+        vm->anmFileIndex = anmFileIdx;
+        vm->pos = ZunVec3(0, 0, 0);
+        vm->posOffset = ZunVec3(0, 0, 0);
+        vm->fontHeight = 15;
+        vm->fontWidth = 15;
+
+        this->SetAndExecuteScript(vm, this->scripts[anmFileIdx]);
+    }
+
+    void SetRenderStateForVm(const AnmVm *vm);
+
+    void RequestScreenshot()
+    {
+        this->screenshotTextureId = 3;
+        this->screenshotLeft = GAME_REGION_LEFT;
+        this->screenshotTop = GAME_REGION_TOP;
+        this->screenshotWidth = GAME_REGION_WIDTH;
+        this->screenshotHeight = GAME_REGION_HEIGHT;
+    }
+
+    static SDL_Surface *LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData,
+                                                ZunColor colorKey = 0, bool isExternalResource = false,
+                                                bool allowRuntimeOverride = true);
+    static u8 *ExtractSurfacePixels(SDL_Surface *src, u8 pixelDepth);
+    void ApplySurfaceToColorBuffer(SDL_Surface *src, const SDL_Rect &srcRect, const SDL_Rect &dstRect);
+    // Creates, binds, and set parameters for a new texture
+    void CreateTextureObject();
+    void UpdateDirtyStates();
+
+    AnmLoadedSprite sprites[2048];
+    AnmVm virtualMachine;
+    //    GLuint textures[264];
+    //    void *imageDataArray[256];
+    TextureData textures[264];
+    // Static ANM sprites are sampled from a separately packed runtime atlas
+    // with one-texel edge extrusion. `textures` remains the authoritative
+    // source texture so dynamic/scrolling paths retain original semantics.
+    GfxTextureHandle spriteAtlasTextures[264];
+    i32 maybeLoadedSpriteCount;
+    const AnmRawInstr *scripts[2048];
+    i32 spriteIndices[2048];
+    AnmRawEntry *anmFiles[264];
+    u32 anmFilesSpriteIndexOffsets[264];
+    SDL_Surface *surfaces[32];
+    //    SDL_Surface *surfacesBis[32];
+    //    D3DXIMAGE_INFO surfaceSourceInfo[32];
+    // GLuint currentTextureHandle;
+    GfxTextureHandle currentTextureHandle;
+    GfxTextureHandle dummyTextureHandle;
+    u8 currentBlendMode;
+    ProjectionMode projectionMode;
+    const AnmLoadedSprite *currentSprite;
+    //    IDirect3DVertexBuffer8 *vertexBuffer;
+    RenderVertexInfo vertexBufferContents[4];
+    i32 screenshotTextureId;
+    i32 screenshotLeft;
+    i32 screenshotTop;
+    i32 screenshotWidth;
+    i32 screenshotHeight;
+
+    // GfxInterface *gfxBackend;
+
+  private:
+    u32 dirtyFlags;
+    f32 fogNear;
+    f32 fogFar;
+    ZunColor fogColor;
+    bool depthMask;
+    DepthFunc depthFunc;
+    u8 enabledVertexAttributes;
+    VertexAttribArrayState attribArrays[3];
+    ColorOp colorOps[2];
+    ZunColor textureFactor;
+    ZunMatrix transformMatrices[4];
+
+    f32 dirtyFogNear;
+    f32 dirtyFogFar;
+    ZunColor dirtyFogColor;
+    bool dirtyDepthMask;
+    DepthFunc dirtyDepthFunc;
+    u8 dirtyEnabledVertexAttributes;
+    VertexAttribArrayState dirtyAttribArrays[3];
+    ColorOp dirtyColorOps[2];
+    ZunColor dirtytTextureFactor;
+    ZunMatrix dirtyTransformMatrices[4];
+
+    ZunMatrix perspectiveMatrixBackup[4]; // Replaces matrix stack use for orthographic mode
+};
+
+extern AnmManager *g_AnmManager;

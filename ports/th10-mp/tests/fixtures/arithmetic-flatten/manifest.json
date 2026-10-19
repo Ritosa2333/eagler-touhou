@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "experiment": "th10-four-wrapper-flatten",
+  "source": "th10_web/cpp/game/Arithmetic.cpp",
+  "snapshot": "tests/fixtures/arithmetic-flatten/Arithmetic.cpp",
+  "snapshotMethod": "Root copied original bytes without text decoding/re-encoding; original CRLF preserved.",
+  "snapshotBytes": 4965,
+  "sourceSha256": "9b06ecc55e63d8a54261f182ba7c44172749b6c154c854ad3d66f3b06f339011",
+  "snapshotSha256": "9b06ecc55e63d8a54261f182ba7c44172749b6c154c854ad3d66f3b06f339011",
+  "productionModified": false,
+  "candidate": {
+    "generatedOnlyInIsolatedOutput": true,
+    "attribute": "__attribute__((flatten)) ",
+    "operators": [
+      "+",
+      "-",
+      "*",
+      "/"
+    ],
+    "rule": "Insert exactly this attribute before each of the four Extended operator definitions; stripping exactly those four insertions must recover the complete original bytes."
+  },
+  "dependencies": {
+    "th10_web/cpp/game/Arithmetic.hpp": {
+      "bytes": 1835,
+      "sha256": "2acad23b05950ccc55a3830907e7c99e7f48c95aaf7511403e2af5c69ce18ec0"
+    },
+    "th10_web/cpp/game/Types.hpp": {
+      "bytes": 1363,
+      "sha256": "9428879af73e5979967d94b23c450873c7f401cb6f955225c3d64fcf346dab4e"
+    },
+    "portable/numeric/ExactFloat.hpp": {
+      "bytes": 4675,
+      "sha256": "738cfe4ca906ed584cf471df0d117debe79db85f16afcdff5fa5ae60142d5024"
+    },
+    "portable/numeric/ScalarMath.hpp": {
+      "bytes": 2618,
+      "sha256": "c48810317601d713c0ccabd1c1ab0daa9ddd282edcccc08d4ba4e4eec8996cfb"
+    },
+    "th10_web/cpp/rebuild/third_party/softfloat.c": {
+      "bytes": 1326615,
+      "sha256": "918de5284362d6ff5acabc96ca5586a75db1177b010d7d5bb52be88256b8e6ae"
+    }
+  },
+  "objectRepresentation": {
+    "bytes": 16,
+    "significandOffset": 0,
+    "exponentOffset": 8,
+    "reserved16Offset": 10,
+    "reserved32Offset": 12,
+    "caution": "TH10's last six bytes are explicit initialized members; the production SoftFloat C type treats those bytes as padding. Record and compare all 16 bytes as well as the valid 10 bytes. Baseline representation instability is a failing/blocked result, never a pass."
+  },
+  "scope": "Independent correctness and compiler-output experiment only. Does not replace full44/audio, integration, or adjacent 4x performance acceptance."
+}

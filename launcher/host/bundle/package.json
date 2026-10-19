@@ -1,0 +1,32 @@
+{
+  "name": "eagler-touhou-self-host",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "host": "node host/build.mjs",
+    "host:build": "node host/build.mjs --build-only",
+    "host:doctor": "node scripts/inspect-host.mjs",
+    "package:external-site": "node scripts/package-external-site.mjs",
+    "import": "node host/build-import.mjs",
+    "verify:deployed": "node scripts/verify-deployed-site.mjs",
+    "verify:server": "node scripts/verify-server-build.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "fflate": "0.8.3",
+    "parse5": "8.0.1",
+    "workbox-build": "7.4.1"
+  },
+  "overrides": {
+    "minimatch@5": {
+      "brace-expansion": "2.1.7"
+    },
+    "minimatch@10": {
+      "brace-expansion": "5.0.12"
+    }
+  }
+}

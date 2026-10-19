@@ -1,0 +1,206 @@
+{
+  "schema": "eagler/replay-golden-set/v1",
+  "game": "th11",
+  "identity": {
+    "executableSha256": "2978b17f6184d100d249d4311348dd30c5c32ec75c014b667a525b797d3d8813",
+    "resourceSha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+  },
+  "suites": {
+    "quick": [
+      "demo3",
+      "demo2",
+      "demo1",
+      "demo0"
+    ],
+    "daily": [
+      "reimu-a-lunatic",
+      "reimu-a-extra"
+    ]
+  },
+  "assets": {
+    "demo3": {
+      "path": "dc47329d75659aa16ae79ef675f3cf8f622a0d948af19efa5ccb9570c28275f4.jsonl.gz",
+      "sha256": "dc47329d75659aa16ae79ef675f3cf8f622a0d948af19efa5ccb9570c28275f4",
+      "ticks": 3878,
+      "replaySha256": "ad569b727d2e0ea06ecd4b901a6f186fcfcd7f5c736ba0262882569886fca6e4",
+      "stateSchema": "th11/world-selected-state/v1",
+      "provenance": {
+        "replaySha256": "ad569b727d2e0ea06ecd4b901a6f186fcfcd7f5c736ba0262882569886fca6e4",
+        "coreSha256": "92c1b5d2037358fc55111bc70d73858c61995182c1c64d12ffa2adaa3db0462b",
+        "stageDrawClocks": true,
+        "provider": "th11/retail-x86-world"
+      },
+      "completion": {
+        "checks": 3878,
+        "selection": {
+          "stage": 3,
+          "character": 1,
+          "subtype": 1,
+          "difficulty": 3,
+          "demo": 3
+        },
+        "finalState": {
+          "phase": 4,
+          "stage": 3,
+          "score": 1134824,
+          "lives": 9,
+          "terminalMarker": true
+        },
+        "replaySha256": "ad569b727d2e0ea06ecd4b901a6f186fcfcd7f5c736ba0262882569886fca6e4"
+      }
+    },
+    "demo2": {
+      "path": "1a5f3f9f14df027a234980fdffcae212ebffe98c9d7968b21121fba314cad36f.jsonl.gz",
+      "sha256": "1a5f3f9f14df027a234980fdffcae212ebffe98c9d7968b21121fba314cad36f",
+      "ticks": 4963,
+      "replaySha256": "7f1196f23b54ae01f7210eb3828aa1c333705358ee100be7f6b08d9252bc4c59",
+      "stateSchema": "th11/world-selected-state/v1",
+      "provenance": {
+        "replaySha256": "7f1196f23b54ae01f7210eb3828aa1c333705358ee100be7f6b08d9252bc4c59",
+        "coreSha256": "92c1b5d2037358fc55111bc70d73858c61995182c1c64d12ffa2adaa3db0462b",
+        "stageDrawClocks": true,
+        "provider": "th11/retail-x86-world"
+      },
+      "completion": {
+        "checks": 4963,
+        "selection": {
+          "stage": 1,
+          "character": 1,
+          "subtype": 0,
+          "difficulty": 3,
+          "demo": 2
+        },
+        "finalState": {
+          "phase": 4,
+          "stage": 1,
+          "score": 851557,
+          "lives": 8,
+          "terminalMarker": true
+        },
+        "replaySha256": "7f1196f23b54ae01f7210eb3828aa1c333705358ee100be7f6b08d9252bc4c59"
+      }
+    },
+    "demo1": {
+      "path": "6969d26007bca8dae4930beb07f94a53106e93e059ee8ae5d8130a4436907309.jsonl.gz",
+      "sha256": "6969d26007bca8dae4930beb07f94a53106e93e059ee8ae5d8130a4436907309",
+      "ticks": 4444,
+      "replaySha256": "74ddef8519d5a1e3b2b85aeb3f2ce926f2450a4b4f50595e0a42b31de39fc508",
+      "stateSchema": "th11/world-selected-state/v1",
+      "provenance": {
+        "replaySha256": "74ddef8519d5a1e3b2b85aeb3f2ce926f2450a4b4f50595e0a42b31de39fc508",
+        "coreSha256": "92c1b5d2037358fc55111bc70d73858c61995182c1c64d12ffa2adaa3db0462b",
+        "stageDrawClocks": true,
+        "provider": "th11/retail-x86-world"
+      },
+      "completion": {
+        "checks": 4444,
+        "selection": {
+          "stage": 2,
+          "character": 0,
+          "subtype": 2,
+          "difficulty": 3,
+          "demo": 1
+        },
+        "finalState": {
+          "phase": 4,
+          "stage": 2,
+          "score": 930228,
+          "lives": 8,
+          "terminalMarker": true
+        },
+        "replaySha256": "74ddef8519d5a1e3b2b85aeb3f2ce926f2450a4b4f50595e0a42b31de39fc508"
+      }
+    },
+    "demo0": {
+      "path": "d6a37b79fb337bf4cdce71cd2ada773046437492565ece86449734ef4e9019e6.jsonl.gz",
+      "sha256": "d6a37b79fb337bf4cdce71cd2ada773046437492565ece86449734ef4e9019e6",
+      "ticks": 4764,
+      "replaySha256": "923b2ad69e973f5781d055040e610424f90388ac8cfd4999250af4f1f7081ef0",
+      "stateSchema": "th11/world-selected-state/v1",
+      "provenance": {
+        "replaySha256": "923b2ad69e973f5781d055040e610424f90388ac8cfd4999250af4f1f7081ef0",
+        "coreSha256": "92c1b5d2037358fc55111bc70d73858c61995182c1c64d12ffa2adaa3db0462b",
+        "stageDrawClocks": true,
+        "provider": "th11/retail-x86-world"
+      },
+      "completion": {
+        "checks": 4764,
+        "selection": {
+          "stage": 4,
+          "character": 0,
+          "subtype": 0,
+          "difficulty": 3,
+          "demo": 0
+        },
+        "finalState": {
+          "phase": 4,
+          "stage": 4,
+          "score": 3869813,
+          "lives": 9,
+          "terminalMarker": true
+        },
+        "replaySha256": "923b2ad69e973f5781d055040e610424f90388ac8cfd4999250af4f1f7081ef0"
+      }
+    },
+    "reimu-a-lunatic": {
+      "path": "4af788407e8ac5548457f9d8e2b8abdc26387d5e61a3fb8e8f28b941f05855c8.jsonl.gz",
+      "sha256": "4af788407e8ac5548457f9d8e2b8abdc26387d5e61a3fb8e8f28b941f05855c8",
+      "ticks": 100672,
+      "replaySha256": "04bdd21390bebff68a68a0e6d7af9c008e797320a4269305ca23ffe471419e21",
+      "stateSchema": "th11/world-selected-state/v1",
+      "provenance": {
+        "replaySha256": "04bdd21390bebff68a68a0e6d7af9c008e797320a4269305ca23ffe471419e21",
+        "coreSha256": "92c1b5d2037358fc55111bc70d73858c61995182c1c64d12ffa2adaa3db0462b",
+        "stageDrawClocks": true,
+        "provider": "th11/retail-x86-world"
+      },
+      "completion": {
+        "checks": 100672,
+        "selection": {
+          "stage": 1,
+          "character": 0,
+          "subtype": 0,
+          "difficulty": 3,
+          "demo": 0
+        },
+        "finalState": {
+          "phase": 4,
+          "stage": 6,
+          "score": 66848265,
+          "lives": 0
+        },
+        "replaySha256": "04bdd21390bebff68a68a0e6d7af9c008e797320a4269305ca23ffe471419e21"
+      }
+    },
+    "reimu-a-extra": {
+      "path": "bd9e705abca4ed2856292fec295c99372c58cec6f4c13eb026f494073b1bfb3e.jsonl.gz",
+      "sha256": "bd9e705abca4ed2856292fec295c99372c58cec6f4c13eb026f494073b1bfb3e",
+      "ticks": 43256,
+      "replaySha256": "8503598ded249b04352bdec6120a4dcb05ad5f3ee17a1a55bd52a6abd4fb5175",
+      "stateSchema": "th11/world-selected-state/v1",
+      "provenance": {
+        "replaySha256": "8503598ded249b04352bdec6120a4dcb05ad5f3ee17a1a55bd52a6abd4fb5175",
+        "coreSha256": "92c1b5d2037358fc55111bc70d73858c61995182c1c64d12ffa2adaa3db0462b",
+        "stageDrawClocks": true,
+        "provider": "th11/retail-x86-world"
+      },
+      "completion": {
+        "checks": 43256,
+        "selection": {
+          "stage": 7,
+          "character": 0,
+          "subtype": 0,
+          "difficulty": 4,
+          "demo": 0
+        },
+        "finalState": {
+          "phase": 4,
+          "stage": 7,
+          "score": 72824366,
+          "lives": 5
+        },
+        "replaySha256": "8503598ded249b04352bdec6120a4dcb05ad5f3ee17a1a55bd52a6abd4fb5175"
+      }
+    }
+  }
+}

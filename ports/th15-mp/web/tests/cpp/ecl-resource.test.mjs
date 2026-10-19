@@ -1,0 +1,12 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync,readdirSync} from "node:fs";import {resolve} from "node:path";
+import {core,oracle,memory,string,root,report} from "./helpers.mjs";
+test("All TH15 ECL subroutine tables and include ordering match original loader",async()=>{
+ const c=await core(),m=await oracle(),manager=m.allocate(0x90),vtable=m.allocate(16),path=m.allocate(1024),heap=m.heap;let checks=0;const summaries=[];
+ const skip=m.registerImport({dll:"fixture",name:"include hook disabled",argc:1,handler:()=>0});m.u32(vtable+4,skip);
+ try{for(const name of readdirSync(resolve(root,"reference/assets")).filter(n=>n.endsWith(".ecl")).sort()){m.heap=heap;m.view(manager,0x90).fill(0);m.u32(manager,vtable);const prog=c.program_create(),ecl=c.ecl_create(),source=readFileSync(resolve(root,"reference/assets",name)),p=c.allocate(source.length);memory(c,p,source.length).set(source);assert.equal(c.ecl_open(ecl,p,source.length),1,name);const attach=(data)=>{const pointer=m.allocate(data.length);m.write(pointer,data);const cp=c.allocate(data.length);memory(c,cp,data.length).set(data);const want=m.call(0x48f130,{ecx:manager,args:[pointer]});assert.equal(c.program_attach(prog,cp,data.length),want);c.release(cp);};attach(source);
+  const includes=[];for(let i=0;i<c.ecl_count(ecl,2);i++){const include=string(c,c.ecl_name(ecl,2,i));includes.push(include);attach(readFileSync(resolve(root,"reference/assets",include)));}
+  const count=m.u32(manager+8);assert.equal(c.program_count(prog),count,name);for(let i=0;i<count;i++){const pair=m.u32(manager+0x8c)+i*8,nativeName=m.string(m.u32(pair)),cppName=string(c,c.program_name(prog,i));assert.equal(cppName,nativeName,name+" "+i);m.write(path,Buffer.from(nativeName+"\0"));const index=m.call(0x48f340,{ecx:manager,args:[path]});const pointer=c.program_instruction(prog,i);assert.deepEqual(Buffer.from(memory(c,pointer,16)),Buffer.from(m.bytes(m.u32(pair+4)+16,16)));const cp=c.allocate(Buffer.byteLength(nativeName)+1);memory(c,cp,Buffer.byteLength(nativeName)+1).set(Buffer.from(nativeName+"\0"));assert.equal(c.program_find(prog,cp),c.program_instruction(prog,index));c.release(cp);checks+=4;}
+  summaries.push({name,subroutines:c.ecl_count(ecl,0),animations:c.ecl_count(ecl,1),includes,combinedSubroutines:count});c.ecl_delete(ecl);c.program_delete(prog);c.release(p);}
+  report("ecl-resource",{passed:true,checks,files:summaries.length,originalFunctions:["0x48f130","0x48f340"],summaries});
+ }finally{m.close();}
+});

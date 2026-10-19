@@ -1,0 +1,8 @@
+# Include in the operator's server block. Match the explicit relay.env upstream.
+location /netplay-relay/ {
+    proxy_pass http://127.0.0.1:18142/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header X-Real-IP $remote_addr;
+}

@@ -1,0 +1,336 @@
+{
+  "schema": "th07/purple-source-inventory/1",
+  "sourceSha256": "b5be6dc698f574992ab49696c5c0d8ad756af93bf0760be1504ee9e958bee1b0",
+  "widgetSourceSha256": "d88dd6483ea8cea59a1f5a71ce61306f242d63bf3862c5a2498cd73c55bd93d0",
+  "hooks": [
+    {
+      "kind": "EHOOK_ST",
+      "name": "th07_all_clear_bonus_1",
+      "address": "0x42b3d2"
+    },
+    {
+      "kind": "EHOOK_ST",
+      "name": "th07_all_clear_bonus_2",
+      "address": "0x4280b7"
+    },
+    {
+      "kind": "EHOOK_ST",
+      "name": "th07_rb",
+      "address": "0x4157f3"
+    },
+    {
+      "kind": "PATCH_DY",
+      "name": "th07_reacquire_input",
+      "address": "0x430f03"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_inf_lives",
+      "address": "0x00441171"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_everlasting_bgm",
+      "address": "0x44d2f0"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_midi_pause",
+      "address": "0x44CA0C"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_prac_menu_1",
+      "address": "0x45a214"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_prac_menu_3",
+      "address": "0x45a65d"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_prac_menu_4",
+      "address": "0x45a6d4"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_rep_menu_1",
+      "address": "0x45ac43"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_rep_menu_2",
+      "address": "0x45af96"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_rep_menu_3",
+      "address": "0x45b2c1"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_unpause_prevent_desync",
+      "address": "0x403481"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_patch_main",
+      "address": "0x42f2e3"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_disable_title",
+      "address": "0x42956b"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_fake_shot",
+      "address": "0x40e6ba"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_bgm",
+      "address": "0x42f206"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_bgm_st6_1",
+      "address": "0x427eda"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_bgm_st6_2",
+      "address": "0x42d9a5"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_bgm_st6_3",
+      "address": "0x40348a"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_save_replay",
+      "address": "0x4443fd"
+    },
+    {
+      "kind": "PATCH_DY",
+      "name": "th07_disable_prac_menu1",
+      "address": "0x45b9ea"
+    },
+    {
+      "kind": "PATCH_DY",
+      "name": "th07_disable_prac_menu2",
+      "address": "0x45bb1c"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_update",
+      "address": "0x42fdf8"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_render",
+      "address": "0x42feb9"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_player_state",
+      "address": "0x441FB0"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_enter_game",
+      "address": "0x42EB08"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_bomb",
+      "address": "0x440B9D"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_border_break",
+      "address": "0x441DA4"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_lock_timer1",
+      "address": "0x42D17E"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_lock_timer2",
+      "address": "0x414FE6"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_lock_timer3",
+      "address": "0x413D06"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_lock_timer4",
+      "address": "0x41FFD5"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_save_data1",
+      "address": "0x43805F"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_save_data2",
+      "address": "0x438024"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_checksum1",
+      "address": "0x43A655"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_checksum2",
+      "address": "0x435FBB"
+    },
+    {
+      "kind": "PATCH_DY",
+      "name": "th07_disable_dataver",
+      "address": "0x404fe0"
+    },
+    {
+      "kind": "PATCH_DY",
+      "name": "th07_disable_demo",
+      "address": "0x455a9a"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_disable_mutex",
+      "address": "0x435bff"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_gui_init_1",
+      "address": "0x45599d"
+    },
+    {
+      "kind": "EHOOK_DY",
+      "name": "th07_gui_init_2",
+      "address": "0x4351ac"
+    }
+  ],
+  "advancedCalls": [
+    "GameFPSOpt",
+    "DisableKeyOpt",
+    "KeyHUDOpt",
+    "InfLifeOpt",
+    "GameplayOpt",
+    "InGameReactionTestOpt",
+    "AboutOpt"
+  ],
+  "sections": [
+    "TH07_ST1_MID1",
+    "TH07_ST1_MID2",
+    "TH07_ST1_BOSS1",
+    "TH07_ST1_BOSS2",
+    "TH07_ST1_BOSS3",
+    "TH07_ST1_BOSS4",
+    "TH07_ST2_MID1",
+    "TH07_ST2_MID2",
+    "TH07_ST2_BOSS1",
+    "TH07_ST2_BOSS2",
+    "TH07_ST2_BOSS3",
+    "TH07_ST2_BOSS4",
+    "TH07_ST2_BOSS5",
+    "TH07_ST3_MID1",
+    "TH07_ST3_MID2",
+    "TH07_ST3_MID3",
+    "TH07_ST3_BOSS1",
+    "TH07_ST3_BOSS2",
+    "TH07_ST3_BOSS3",
+    "TH07_ST3_BOSS4",
+    "TH07_ST3_BOSS5",
+    "TH07_ST3_BOSS6",
+    "TH07_ST3_BOSS7",
+    "TH07_ST4_MID1",
+    "TH07_ST4_BOSS1_LUNASA",
+    "TH07_ST4_BOSS1_MERLIN",
+    "TH07_ST4_BOSS1_LYRICA",
+    "TH07_ST4_BOSS2_LUNASA",
+    "TH07_ST4_BOSS2_MERLIN",
+    "TH07_ST4_BOSS2_LYRICA",
+    "TH07_ST4_BOSS3",
+    "TH07_ST4_BOSS4_LUNASA",
+    "TH07_ST4_BOSS5_LUNASA",
+    "TH07_ST4_BOSS4_MERLIN",
+    "TH07_ST4_BOSS5_MERLIN",
+    "TH07_ST4_BOSS4_LYRICA",
+    "TH07_ST4_BOSS5_LYRICA",
+    "TH07_ST4_BOSS6",
+    "TH07_ST4_BOSS7",
+    "TH07_ST5_MID1",
+    "TH07_ST5_MID2",
+    "TH07_ST5_BOSS1",
+    "TH07_ST5_BOSS2",
+    "TH07_ST5_BOSS3",
+    "TH07_ST5_BOSS4",
+    "TH07_ST5_BOSS5",
+    "TH07_ST5_BOSS6",
+    "TH07_ST6_CHAOS",
+    "TH07_ST6_MID1",
+    "TH07_ST6_MID2",
+    "TH07_ST6_BOSS1",
+    "TH07_ST6_BOSS2",
+    "TH07_ST6_BOSS3",
+    "TH07_ST6_BOSS4",
+    "TH07_ST6_BOSS5",
+    "TH07_ST6_BOSS6",
+    "TH07_ST6_BOSS7",
+    "TH07_ST6_BOSS8",
+    "TH07_ST6_BOSS9",
+    "TH07_ST6_BOSS10",
+    "TH07_ST7_MID1",
+    "TH07_ST7_MID2",
+    "TH07_ST7_MID3",
+    "TH07_ST7_END_NS1",
+    "TH07_ST7_END_S1",
+    "TH07_ST7_END_NS2",
+    "TH07_ST7_END_S2",
+    "TH07_ST7_END_NS3",
+    "TH07_ST7_END_S3",
+    "TH07_ST7_END_NS4",
+    "TH07_ST7_END_S4",
+    "TH07_ST7_END_NS5",
+    "TH07_ST7_END_S5",
+    "TH07_ST7_END_NS6",
+    "TH07_ST7_END_S6",
+    "TH07_ST7_END_NS7",
+    "TH07_ST7_END_S7",
+    "TH07_ST7_END_NS8",
+    "TH07_ST7_END_S8",
+    "TH07_ST7_END_S9",
+    "TH07_ST7_END_S10",
+    "TH07_ST8_MID1",
+    "TH07_ST8_MID2",
+    "TH07_ST8_MID3",
+    "TH07_ST8_END_NS1",
+    "TH07_ST8_END_S1",
+    "TH07_ST8_END_NS2",
+    "TH07_ST8_END_S2",
+    "TH07_ST8_END_NS3",
+    "TH07_ST8_END_S3",
+    "TH07_ST8_END_NS4",
+    "TH07_ST8_END_S4",
+    "TH07_ST8_END_NS5",
+    "TH07_ST8_END_S5",
+    "TH07_ST8_END_NS6",
+    "TH07_ST8_END_S6",
+    "TH07_ST8_END_NS7",
+    "TH07_ST8_END_S7",
+    "TH07_ST8_END_NS8",
+    "TH07_ST8_END_S8",
+    "TH07_ST8_END_S9",
+    "TH07_ST8_END_S10",
+    "TH07_ST8_END_S11"
+  ]
+}

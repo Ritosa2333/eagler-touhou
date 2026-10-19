@@ -1,0 +1,177 @@
+#pragma once
+
+#include <eagler/netplay/NetplayProtocol.hpp>
+
+#include <array>
+#include <cstdint>
+
+namespace Netplay
+{
+constexpr std::size_t INPUT_HISTORY_SIZE = 256;
+
+struct CoreConfig
+{
+    std::uint64_t sessionId = 0;
+    std::uint8_t playerCount = 2;
+    std::uint8_t localPlayer = 0;
+    std::uint8_t inputDelay = 0;
+    std::uint8_t maxRollbackFrames = 8;
+    // Game-defined held buttons that are safe to repeat while a remote frame
+    // is missing. Edge actions such as Bomb/Menu must stay released until the
+    // exact sample arrives and requests a rollback.
+    std::uint16_t predictableButtons = 0xffffu;
+    // Movement is safe to repeat briefly, but a long missing-input burst must
+    // not keep driving a remote ship for the entire rollback window.  This is
+    // independent from maxRollbackFrames: prediction/correction can continue
+    // after movement becomes neutral.
+    std::uint16_t directionButtons = 0;
+    std::uint8_t maxDirectionPredictionFrames = 0xffu;
+    // Incremental direct-touch is a per-tick displacement stream. Holding the
+    // last confirmed delta for a very short missing-input window is optional;
+    // zero is the conservative once-only default.
+    std::uint8_t maxDirectTouchDeltaPredictionFrames = 0;
+    // Opt-in for adapters that transmit absolute DirectTouch field targets.
+    // When predicting missing input, retain the last target instead of
+    // clearing the axes as if they represented once-only displacement.
+    bool directTouchIsAbsolute = false;
+    // Explicit lockstep policy, not a zero-valued prediction horizon. With
+    // prediction disabled every player's contiguous actual input is required;
+    // no speculative decision or rewind can be committed.
+    bool allowPrediction = true;
+};
+
+struct FrameDecision
+{
+    bool canAdvance = false;
+    std::uint8_t predictedMask = 0;
+    std::array<FrameInput, MAX_PLAYERS> inputs{};
+};
+
+enum class RemoteInputResult
+{
+    Accepted,
+    Duplicate,
+    PredictionCorrect,
+    RollbackRequired,
+    ConflictingConfirmedInput,
+    TooOld,
+    InvalidPlayer,
+};
+
+enum class EquivalentRemoteInputResult
+{
+    Confirmed,
+    Duplicate,
+    ConflictingConfirmedInput,
+    TooOld,
+    InvalidPlayer,
+    NotPredicted,
+};
+
+class RollbackCore
+{
+public:
+    bool Reset(const CoreConfig &config);
+    void Clear();
+
+    // Physical input captured on captureFrame becomes the local input for
+    // captureFrame + inputDelay. Frames introduced by delay are neutral.
+    bool ScheduleLocalInput(std::uint32_t captureFrame, const FrameInput &input);
+    // A title may replace a neutral startup frame with agreed bootstrap data
+    // before any simulation or peer acknowledgement. Gameplay input remains delayed.
+    bool SetLocalLeadInInput(std::uint32_t frame, const FrameInput &input);
+    std::uint32_t LocalFrameForCapture(std::uint32_t captureFrame) const;
+    bool HasLocalCapture(std::uint32_t captureFrame) const;
+    bool ScheduleLocalInput(std::uint32_t captureFrame, std::uint16_t bits)
+    {
+        return ScheduleLocalInput(captureFrame, FrameInput(bits));
+    }
+    RemoteInputResult SubmitRemoteInput(std::uint8_t player, std::uint32_t frame,
+                                        const FrameInput &input);
+    // The title adapter may call this only after independently proving that
+    // replacing the predicted input with the actual input cannot change any
+    // already-simulated authoritative gameplay state. The core records the
+    // actual sample and advances confirmation without requesting rollback.
+    EquivalentRemoteInputResult SubmitEquivalentRemoteInput(std::uint8_t player,
+                                                            std::uint32_t frame,
+                                                            const FrameInput &input);
+    RemoteInputResult SubmitRemoteInput(std::uint8_t player, std::uint32_t frame,
+                                        std::uint16_t bits)
+    {
+        return SubmitRemoteInput(player, frame, FrameInput(bits));
+    }
+
+    // Returns prediction using the last confirmed input for a missing remote
+    // player. If a peer is farther behind than maxRollbackFrames the core
+    // stalls instead of predicting an unrecoverable frame.
+    FrameDecision PrepareFrame(std::uint32_t frame) const;
+    bool MarkSimulated(std::uint32_t frame, const FrameDecision &decision);
+
+    // After the title has restored the state immediately before firstFrame,
+    // retire that frame and every newer simulated decision. Captured local
+    // inputs, confirmed remote inputs, confirmations and wire ACKs survive.
+    // This lets resimulation stop at a newly corrected lifecycle boundary
+    // without pretending the abandoned future is still simulated. Rejects
+    // missing/expired decision history or skipping an earlier rollback request;
+    // invalid calls leave all state unchanged. Does not restore title memory.
+    bool RewindSimulationTo(std::uint32_t firstFrame);
+
+    bool HasRollbackRequest() const { return rollbackFrame_ != INVALID_FRAME; }
+    std::uint32_t RollbackFrame() const { return rollbackFrame_; }
+    void ClearRollbackRequest() { rollbackFrame_ = INVALID_FRAME; }
+
+    std::uint32_t ConfirmedThrough(std::uint8_t player) const;
+    // Minimum confirmed input frontier across every remote player. Returns
+    // INVALID_FRAME until every remote has at least one confirmed frame.
+    std::uint32_t ConfirmedThroughAllRemotes() const;
+    // ACK frontier for OUR captured input, distinct from locally confirmed
+    // remote input. A run-generation fence needs both directions before its
+    // old retransmission history may be retired.
+    std::uint32_t AcknowledgedLocalThrough(std::uint8_t peer) const;
+    std::uint32_t AcknowledgedLocalThroughAllRemotes() const;
+    std::uint32_t LastSimulatedFrame() const { return lastSimulatedFrame_; }
+    FrameInput LocalInput(std::uint32_t frame, bool *present = nullptr) const;
+    bool InputPresent(std::uint8_t player, std::uint32_t frame) const;
+    bool UsedInput(std::uint8_t player, std::uint32_t frame, FrameInput *out,
+                   bool *predicted = nullptr) const;
+    // Replay/spectators read only computed, reconciled and contiguously
+    // confirmed inputs. Failure leaves *out unchanged.
+    bool ConfirmedInputs(std::uint32_t frame,
+                         std::array<FrameInput, MAX_PLAYERS> *out) const;
+
+    InputPacket BuildInputPacket(std::uint8_t peer, std::uint32_t latestFrame,
+                                 std::uint32_t sequence, std::uint32_t ackSequence) const;
+    bool ApplyInputPacket(const InputPacket &packet, RemoteInputResult *worstResult = nullptr);
+
+private:
+    struct InputSlot
+    {
+        std::uint32_t frame = INVALID_FRAME;
+        FrameInput input{};
+        bool present = false;
+    };
+
+    struct UsedSlot
+    {
+        std::uint32_t frame = INVALID_FRAME;
+        std::array<FrameInput, MAX_PLAYERS> inputs{};
+        std::uint8_t predictedMask = 0;
+    };
+
+    InputSlot *GetInputSlot(std::uint8_t player, std::uint32_t frame);
+    const InputSlot *FindInputSlot(std::uint8_t player, std::uint32_t frame) const;
+    const UsedSlot *FindUsedSlot(std::uint32_t frame) const;
+    FrameInput PredictInput(std::uint8_t player, std::uint32_t frame) const;
+    void AdvanceConfirmedThrough(std::uint8_t player);
+    bool FrameIsTooOld(std::uint32_t frame) const;
+
+    CoreConfig config_{};
+    bool configured_ = false;
+    std::array<std::array<InputSlot, INPUT_HISTORY_SIZE>, MAX_PLAYERS> inputs_{};
+    std::array<UsedSlot, INPUT_HISTORY_SIZE> used_{};
+    std::array<std::uint32_t, MAX_PLAYERS> confirmedThrough_{};
+    std::array<std::uint32_t, MAX_PLAYERS> peerAckOfLocal_{};
+    std::uint32_t lastSimulatedFrame_ = INVALID_FRAME;
+    std::uint32_t rollbackFrame_ = INVALID_FRAME;
+};
+} // namespace Netplay
