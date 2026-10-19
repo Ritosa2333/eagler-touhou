@@ -10,7 +10,7 @@ import {sourceSnapshot} from '../testing/source-snapshot.mjs';
 import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
 import {readRuntimeObservation,assertRuntimeObservation,runtimeScenarioResult} from './runtime-observations.mjs';
-import {createNavigationAbortEvidence,shouldRecordHttpFailure} from './navigation-abort-evidence.mjs';
+import {createNavigationAbortEvidence,shouldRecordHttpFailure,completedSharedResourceAbort} from './navigation-abort-evidence.mjs';
 import {loadRuntimeReplayFixture} from './replay-fixtures.mjs';
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
 
@@ -60,27 +60,55 @@ try{
   browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',`--ignore-certificate-errors-spki-list=${site.tlsIdentity.spkiSha256}`]});
   report.browser=browser.version();
   for(const target of targets){
-    const record={game:target.game,variant:target.variant,id:target.id,checks:[],errors:[],consoleErrors:[],httpErrors:[],expectedNavigationAborts:[],observations:{}};
+    const record={game:target.game,variant:target.variant,id:target.id,checks:[],errors:[],protocolErrors:[],consoleErrors:[],httpErrors:[],expectedNavigationAborts:[],observations:{}};
     report.targets.push(record);
       const check=async(id,checks,operation,{complete=false,fatal=true,verified=()=>true}={})=>{try{const observation=await operation();record.checks.push({id,checks,complete,status:verified(observation)?'passed':'observed',observation});return observation;}catch(error){record.checks.push({id,checks,complete,status:'failed',error:String(error.stack||error)});if(fatal)throw error;}finally{await save();}};
     const context=await browser.newContext({viewport:{width:1100,height:820}});
     if(gamepad)await prepareVirtualGamepad(context,gamepadBundle,gamepadTargetFor(target.game,target.variant,0));
     const page=await context.newPage();
+    await page.exposeBinding('__acceptanceProtocolFailure',(_source,event)=>record.protocolErrors.push(event));
+    await page.addInitScript(game=>{
+      if(window!==window.top)return;
+      addEventListener('message',event=>{
+        const data=event.data;
+        if(event.origin===location.origin&&event.source===document.querySelector('iframe')?.contentWindow&&
+          data?.protocol==='eagler-touhou/1'&&data.game===game&&['error','abort'].includes(data.event))
+          void window.__acceptanceProtocolFailure({event:data.event,epoch:data.epoch,message:data.message??null});
+      });
+    },target.game);
     const responseProbe=await site.watchPage(page,{output,label:target.id});
     record.responseIntegrity={responses:responseProbe.responses,errors:responseProbe.errors,capture:responseProbe.capture};
     const navigationEvidence=createNavigationAbortEvidence();
     page.on('pageerror',error=>record.errors.push(String(error)));
     page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push(message.text());});
-    page.on('request',request=>navigationEvidence.captureRequest(request));
+    record.sharedResourceRequests=[];record.requestFailures=[];
+    page.on('request',request=>{
+      const attribution=navigationEvidence.captureRequest(request);
+      if(request.url().startsWith(`${site.base}/shared/`))record.sharedResourceRequests.push({url:request.url(),attribution});
+    });
     page.on('response',response=>{if(shouldRecordHttpFailure(response.status()))record.httpErrors.push({url:response.url(),status:response.status()});});
     page.on('requestfailed',request=>{
       const failure=navigationEvidence.requestFailure(request);
       const evidence={url:request.url(),failure:failure.errorText,isNavigationRequest:request.isNavigationRequest(),
         attribution:failure.attribution};
+      record.requestFailures.push(evidence);
       if(failure.expectedNavigationAbort)record.expectedNavigationAborts.push(evidence);
       else record.httpErrors.push(evidence);
     });
     const navigate=async url=>{navigationEvidence.retirePage(page);const response=await page.goto(url);await responseProbe.flush();return response;};
+    const auditErrors=()=>{
+      record.completedResourceAborts??=[];
+      record.httpErrors=record.httpErrors.filter(failure=>{
+        const completed=completedSharedResourceAbort(failure,{responses:responseProbe.responses,
+          consumers:record.sharedResourceConsumers,requests:record.sharedResourceRequests});
+        if(completed)record.completedResourceAborts.push(completed);
+        return !completed;
+      });
+      assert.deepEqual(record.errors,[],'Runtime page errors');
+      assert.deepEqual(record.protocolErrors,[],'Runtime protocol errors');
+      assert.deepEqual(record.httpErrors,[],'Unresolved HTTP or request failures');
+      assert.deepEqual(record.consoleErrors.filter(message=>!message.startsWith('Failed to load resource:')),[],'Runtime console errors');
+    };
     let frame;
     const observe=()=>frame.evaluate(readRuntimeObservation,{game:target.game,variant:target.variant});
     const inspect=async()=>({...await frame.evaluate(game=>{
@@ -132,8 +160,29 @@ try{
         assert.equal(ready.protocol,'eagler-touhou/1');assert.equal(ready.game,target.game);assert.equal(ready.epoch,1);return ready;
       });
       await check('configure-launch-first-frame',['RUNTIME-02'],async()=>{
+        if(['th06','th07'].includes(target.game))for(const font of ['msgothic.ttc','unifont.otf'])
+          assert.ok(config.shared?.[font]&&report.sharedInputs[`/shared/${font}`],`Required shared font input: ${font}`);
         const sharedResources=Object.keys(config.shared??{}).map(name=>({path:`/${name}`,url:`/shared/${name}`}));
         await page.evaluate(({sharedResources,options})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],sharedResources,thpracCatalog:[],options:{alwaysHitbox:false,touchEnabled:false,thpracEnabled:false,limitPresentationTo60:false,...options}}),{sharedResources,options:target.options??{}});
+        if(['th06','th07'].includes(target.game)){
+          record.sharedResourceConsumers=await frame.evaluate(async({game,resources})=>{
+            const module=window[`__${game}Runtime`]?.Module??window.Module,fs=module?.FS??window.FS;
+            if(typeof fs?.readFile!=='function')throw Error('Runtime font filesystem is unavailable');
+            return Promise.all(resources.map(async resource=>{
+              const bytes=fs.readFile(resource.path);
+              const digest=await crypto.subtle.digest('SHA-256',bytes);
+              return{path:resource.path,url:new URL(resource.url,location.href).href,epoch:1,stage:'installed-after-configure',
+                bytes:bytes.length,sha256:Array.from(new Uint8Array(digest),value=>value.toString(16).padStart(2,'0')).join('')};
+            }));
+          },{game:target.game,resources:sharedResources});
+          await save();
+          for(const consumer of record.sharedResourceConsumers){
+            const expected=report.sharedInputs[new URL(consumer.url).pathname];
+            assert.ok(expected,'Runtime installed an undeclared shared font');
+            assert.equal(consumer.bytes,expected.bytes,'Runtime font consumption size mismatch');
+            assert.equal(consumer.sha256,expected.sha256,'Runtime font consumption hash mismatch');
+          }
+        }
         await page.evaluate(()=>rpc('launch'));
         await page.waitForFunction(()=>events.some(event=>event.event==='first-frame'),null,{timeout:120000});
         await responseProbe.flush();
@@ -343,8 +392,7 @@ try{
         record.rejectedInputRequests=events.filter(event=>record.inputRequests?.includes(event.request)&&event.ok===false);
         assert.deepEqual(record.rejectedInputRequests,[],'Runtime rejected a test keyboard event');
         assert.deepEqual(events.filter(event=>['error','abort'].includes(event.event)),[]);
-        assert.deepEqual(record.httpErrors,[]);
-        assert.deepEqual(record.consoleErrors.filter(message=>!message.startsWith('Failed to load resource:')),[]);
+        auditErrors();
         return{expectedNavigationAborts:record.expectedNavigationAborts};
       },{fatal:false});
     }catch(error){record.failure=String(error.stack||error);await page.screenshot({path:resolve(output,target.id+'-failure.png')}).catch(()=>{});}
@@ -353,7 +401,12 @@ try{
       delete record.priorSessionEvents;
       try{await responseProbe.flush();}catch(error){record.failure??=String(error.stack||error);}
       try{await responseProbe.stop();}catch(error){record.failure??=String(error.stack||error);}
-      Object.assign(record,runtimeScenarioResult(record));await context.close();await save();
+      record.teardown={url:page.url(),resourceAbortsRetired:false};
+      let contextClosed=false;
+      try{await context.close();contextClosed=true;}catch(error){record.failure??=String(error.stack||error);}
+      try{auditErrors();record.finalErrorAudit={status:'passed',afterContextClosed:contextClosed};}
+      catch(error){record.finalErrorAudit={status:'failed',afterContextClosed:contextClosed,error:String(error.stack||error)};record.failure??=record.finalErrorAudit.error;}
+      Object.assign(record,runtimeScenarioResult(record));await save();
       console.log(`${target.id}: ${record.status.toUpperCase()} ${record.failure?.split('\n')[0]??record.unverifiedChecks.join(', ')}`);
     }
   }

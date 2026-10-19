@@ -45,6 +45,26 @@ export function shouldRecordHttpFailure(status){
   return Number.isFinite(status)&&status>=400;
 }
 
+/** An abort can follow complete consumption; require both wire and Runtime FS proof. */
+export function completedSharedResourceAbort(failure,{responses=[],consumers=[],requests=[]}={}){
+  if(failure?.failure!=='net::ERR_ABORTED'||failure.isNavigationRequest!==false||failure.status!==undefined||
+    failure.attribution?.documentKind!=='runtime-document'||!Number.isSafeInteger(failure.attribution?.epoch)||failure.attribution.epoch<=0)return null;
+  const matchingRequests=requests.filter(item=>item.url===failure.url);
+  const matchingResponses=responses.filter(item=>item.url===failure.url);
+  const matchingConsumers=consumers.filter(item=>item.url===failure.url&&item.epoch===failure.attribution.epoch);
+  if(matchingRequests.length!==1||matchingResponses.length!==1||matchingConsumers.length!==1||
+    matchingRequests[0].attribution?.epoch!==failure.attribution.epoch)return null;
+  const response=matchingResponses[0],consumer=matchingConsumers[0],expected=response.expected;
+  try{if(new URL(failure.url).pathname!==`/shared${consumer.path}`)return null;}catch{return null;}
+  if(response.status!==200||response.contentIdentity!=='passed'||!Number.isSafeInteger(expected?.bytes)||expected.bytes<=0||
+    !/^[a-f0-9]{64}$/.test(expected.sha256??'')||response.actual?.bytes!==expected.bytes||response.actual.sha256!==expected.sha256||
+    consumer.bytes!==expected.bytes||consumer.sha256!==expected.sha256||consumer.stage!=='installed-after-configure'||
+    !['/msgothic.ttc','/unifont.otf'].includes(consumer.path)||
+    response.transport?.event!=='loadingFailed'||response.transport.error!=='net::ERR_ABORTED'||response.transport.canceled!==true)return null;
+  return{failure,responseRequestId:response.requestId,contentIdentity:response.actual,consumer,
+    classification:'complete-response-and-runtime-consumption'};
+}
+
 export function createNavigationAbortEvidence(){
   const started=new WeakMap(),retiringEpochs=new Set();
   return{

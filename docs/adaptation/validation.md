@@ -89,6 +89,8 @@
 
 响应采集在资源到达时启用独立 CDP 字节流，依次保存已缓冲的前缀和后续数据块；已结束的资源通过响应体接口读取。默认单资源预算为 256 MiB，总预算为 512 MiB，超时和超出预算均进入失败结果。`contentIdentity` 由实际字节数和 SHA-256 判断，`transport` 保存原始完成或取消事件；完整字节身份与浏览器传输终态分别可审查。截断、替换或无法取得内容的响应不能通过身份核对。
 
+th06／th07 的输入清单必须提供 msgothic 与 unifont。配置完成后读取 Runtime 文件系统中的两份字体，核对实际安装字节与输入的大小和 SHA-256。若浏览器对同一代唯一请求记录 `ERR_ABORTED`，只有完整响应、安装结果和所属代次全部吻合，才能归为已完成消费的取消；原始请求失败与对应证明均保存在报告。截断、替换、重复请求、未知来源及其他网络错误继续使验收失败。基础 Runtime 检查在实例关闭、收齐事件后再次审计错误，再生成最终状态；最终关闭不会把当前代的未完成资源请求归为预期取消。
+
 Replay 浏览器验收将播放场景与原版格式兼容状态分开记录。场景通过要求正式 Shell 导入、默认速率实际推进 120 个原生帧、观察到 Runtime `ended` 终止信号，并通过本作适用的原生计数自一致性检查。终止信号只记录 Runtime 状态；当前接口不能区分场景退出原因，报告将完整输入消费标为 unproven。各作原版计数与 native cursor 的单位关系按本作来源单独声明，TH11 保留 cursor、total 与阶段 metadata 的原值。候选计数和数值差异保留为观察项，只有绑定到同一输入且计数语义一致的原版终点才能完成 REPLAY-01。
 
 桌面普通版 Runtime 验收使用 `node tools/ports/runtime-browser.mjs --manifest=/absolute/private-inputs.json --game=th06,th07,th08,th09,th10,th11,th15,th20 --variant=normal --gamepad --output=/absolute/results`。此入口运行普通版 protocol-host 场景；MP 使用下文真实房间入口，选择受支持的 2P/3P 与 RTC/Relay 路径。输入清单逐项声明 `id`、`game`、`variant`、Runtime 包目录 `runtime`、入口 `entry`、私有 DATA 路径 `data`、期望 `packageSha256`、仓库相对 `sourceRoot`、`buildReceipt` 和 `packageReceipt`，共用字体放在 `shared` 字段。源码收据使用 `eagler-touhou/runtime-source-build/3`，登记 `game`、`variant`、`profile`、`executionSha256`、完整 `sourceFiles`、`requiredSubmodules` 与编译 `outputs`。验收器逐项核对当前源码、产物包哈希、执行 WASM、编译加载器与 DATA；清单缺项、私有 DATA 缺失或源码／包身份不符都会使对应目标失败。
