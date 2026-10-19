@@ -17,6 +17,7 @@ site/runtime/audio/
 tools/replay-verifier/golden/
 tools/replay-verifier/corpus.json
 tools/replay-verifier/subsystem-golden.json
+tools/replay-verifier/gameplay-golden-index.json
 *.log
 *.pickle
 __pycache__/

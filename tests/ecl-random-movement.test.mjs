@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 
 const fixture=JSON.parse(fs.readFileSync(new URL('fixtures/ecl-random-movement-native.json',import.meta.url)));
 const wasmBinary=fs.readFileSync(new URL('../site/runtime/core.wasm',import.meta.url));

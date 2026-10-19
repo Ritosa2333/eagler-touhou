@@ -7,7 +7,6 @@
 
 ```sh
 npm run build
-npm run test:portable
 npm start
 ```
 
@@ -43,3 +42,19 @@ Unicorn 2.1.4；反编译工具的依赖见 `scripts/reverse/requirements.txt`�
 默认游戏入口为 `site/index.html`，完整流程及局部验证范围见 [FULL_GAME_FLOW.md](FULL_GAME_FLOW.md)。
 `site/preview.html` 保留独立关卡、拖动回放及检查入口。
 完整行为／展示 Oracle 尚未验收，子系统及合成短流程成功不代表整局还原成功。
+
+诊断核心与正式发布核心现为独立产物。原版函数测试钩子和局部世界开关只编译到
+`TH12_DIAGNOSTIC=1` 的诊断核心；正式打包拒绝诊断构建。完整 Replay 的逐帧候选采样、
+不可变金标准、quick/daily 入口及尚缺的原版完整状态 provider，见
+[Replay verifier](../tools/replay-verifier/README.md)。该实现轮没有运行验证或采集原版数据。
+
+使用原版函数钩子的既有测试已改为引用独立诊断核心。维护者之后要运行这些
+测试时，先生成诊断产物，再调用原有入口；本轮没有执行下列测试命令：
+
+```powershell
+$env:TH12_DIAGNOSTIC='1'
+$env:TH12_THPRAC='1'
+node scripts/build.mjs
+Remove-Item Env:TH12_DIAGNOSTIC
+npm run test:portable
+```

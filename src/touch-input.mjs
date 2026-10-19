@@ -33,7 +33,7 @@ export class TouchInput {
   focused(){return this.focus||(this.options.touchFocusMode==='two-finger'&&this.points.size>=2);}
   pointer(event,state,now=performance.now()){
     if(!this.options.touchEnabled)return;this.sync(state);
-    const {id,type,x,y}=event;if(type==='cancel'){this.cancel();return;}
+    const {id,type,x,y}=event;if(type==='cancel'){this.release(id,true);return;}
     if(type==='down'){
       if(this.points.has(id)){this.release(id,true);this.pending=0;}
       const point={id,x,y,startX:x,startY:y,start:now,moved:false,blocked:!state.ready,instance:state.instance};this.points.set(id,point);
@@ -79,9 +79,16 @@ export class TouchInput {
     }
   }
   release(id,cancelled=false){
+    if(!this.points.has(id))return;
     this.points.delete(id);if(this.primary?.id===id)this.primary=null;
-    if(cancelled){this.menu=null;this.tap=null;}
-    else if(this.menu){this.menu.ids.delete(id);if(!this.menu.ids.size)this.menu=null;}
+    // A cancelled menu contact invalidates this gesture's tap, but the other
+    // contacts retain their ownership until their own release. In particular,
+    // their later up events must not turn cancellation into Confirm/Cancel.
+    if(this.menu?.ids.has(id)){
+      if(cancelled)this.menu.consumed=true;
+      this.menu.ids.delete(id);if(!this.menu.ids.size)this.menu=null;
+    }
+    if(cancelled)this.tap=null;
   }
   sample(state,{arrows=false,keyFocused=false,now=performance.now()}={}){
     this.sync(state);const pulses=this.pending;this.pending=0;

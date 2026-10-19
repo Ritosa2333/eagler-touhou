@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/full-bullet-clear-retail-native.json',import.meta.url)));

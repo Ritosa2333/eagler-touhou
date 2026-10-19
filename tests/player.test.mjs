@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 import {loadLiveMain} from './helpers/live-main.mjs';
 const root=path.resolve(import.meta.dirname,'..');
 const files=Array.from({length:6},(_,i)=>fs.readFileSync(path.join(root,'site/assets',`pl0${i>>1}${i%2?'b':'a'}.sht`)));

@@ -121,9 +121,6 @@ int th12_load_anm(int bank, const uint8_t* p, int n) {
 void th12_unload_anm(int bank) {
   th12::animationScene.registry.unloadBank(bank);
 }
-void th12_oracle_fixture(int flags) {
-  th12::oracleFixtureFlags = flags & 15;
-}
 void th12_select_stage(int number) {
   th12::selectStage(number);
 }
@@ -164,13 +161,6 @@ int th12_start_replay(int c, int s, int d, int seed, const int32_t* initial, int
     th12::spellState.replayResultTimeCount = 21;
   }
   return 1;
-}
-void th12_set_initial(int x, int y, int p, int life, int bomb, int points) {
-  th12::setInitial(x, y, p, life, bomb, points);
-}
-void th12_set_replay_economy(int piv, int lifeFragments, int bombFragments, int red, int blue,
-                             int green, int rank) {
-  th12::setReplayEconomy(piv, lifeFragments, bombFragments, red, blue, green, rank);
 }
 const char* th12_state() {
   return th12::captureState().c_str();
@@ -374,16 +364,5 @@ int th12_hud_size() {
 }
 int32_t th12_score_stored() {
   return th12::score;
-}
-const uint32_t* th12_unsupported() {
-  return th12::unsupported.data();
-}
-uint32_t th12_rng16(int seed) {
-  th12::Random r{uint16_t(seed), 0};
-  return r.next16();
-}
-uint32_t th12_rng32(int seed) {
-  th12::Random r{uint16_t(seed), 0};
-  return r.next32();
 }
 }

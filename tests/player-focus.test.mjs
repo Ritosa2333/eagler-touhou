@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 import {readCoreAnimationPoses} from '../src/renderer.mjs';
 import {loadLiveMain} from './helpers/live-main.mjs';
 

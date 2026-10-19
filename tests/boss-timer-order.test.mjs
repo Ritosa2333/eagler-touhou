@@ -1,5 +1,5 @@
 import test from'node:test';import assert from'node:assert/strict';import fs from'node:fs';
-import createCore from'../site/runtime/core.mjs';import{omitPlayerEntryClear}from'./helpers/passive-player.mjs';
+import createCore from'../artifacts/diagnostic-runtime/core.mjs';import{omitPlayerEntryClear}from'./helpers/passive-player.mjs';
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/boss-timer-order-original.json',import.meta.url)));
 function read(core,fn,size){const p=core[fn](),length=core[size]();return JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(p,p+length)));}
 test('countdown uses the actual Enemy18 interrupt check before its phase-clock tail and retains timeout values',async()=>{

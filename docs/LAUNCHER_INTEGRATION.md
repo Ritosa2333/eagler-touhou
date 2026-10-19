@@ -76,6 +76,20 @@ Package Descriptor、Release Catalog、不可变 Runtime Generation 和离线页
 共享字体在语言配置前安装，音乐资源可在启动后继续补齐，代码与 DATA 代际分别
 固定。其他游戏继续使用原来的资源安装路径。
 
+录像管理使用启动器已有的持久工作区。文件列表读取 `/savesth12` IDBFS v21，
+Runtime 负责详情、选关、暂停／播放、速度和前后定位；定位通过重新执行录像输入完成。
+允许管理一层录像子目录。普通 iframe 失焦只清理输入，页面隐藏才暂停，
+避免点击启动器控制按钮时误打开原版暂停菜单。
+
+自托管工具包通过 `preparedContent.buildSources` 显式携带 TH12 内容准备器及其
+Python／JS 依赖，优先使用包内工具，不再依赖打包者本机的 `ports/th12` 存在。
+这些文件是私有准备工具，不属于公开 App Shell 或游戏 Runtime。
+
+普通核心已移除诊断专用导出；诊断构建单独输出到 `artifacts/diagnostic-runtime`，
+生产打包拒绝诊断核心。quick/daily 的逐 tick 数据比较入口与不可变 golden 接受流程见
+[录像验证器](../tools/replay-verifier/README.md)。仍缺完整原版提供器和经审阅的整局
+golden，不能把旧的 RNG／解密局部 Oracle 当作整局验收。
+
 发布 profile 保持 `web-validation-th12`，Runtime 保持 `completeAdapter: false`。
 本轮只完成源码接线、编译和本地打包；首次运行、离线重开、设备输入、存档往返
 及完整流程仍由用户实际确认。新端口是独立浏览器存储来源，不自动迁移旧预览页

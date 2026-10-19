@@ -1,4 +1,5 @@
 import fs from 'node:fs';import path from 'node:path';
+import {compareGameplayFiles} from './trace-stream.mjs';
 const CATEGORIES=['input','player','rng','ecl','enemies','bullets','items','economy','stage'];
 export function validateTrace(trace){
   if(trace?.schema!=='th12-gameplay-trace/1')throw Error('Incompatible state schema');
@@ -23,5 +24,6 @@ export function compareTraces(expected,actual){
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===path.resolve(import.meta.filename)){
   const [expected,actual]=process.argv.slice(2);if(!expected||!actual)throw Error('Provide expected and candidate trace files');
-  const report=compareTraces(JSON.parse(fs.readFileSync(expected)),JSON.parse(fs.readFileSync(actual)));console.log(JSON.stringify(report,null,2));if(report.status!=='pass')process.exitCode=1;
+  if(expected.endsWith('.jsonl')!==actual.endsWith('.jsonl'))throw Error('Do not compare incompatible trace containers');
+  const report=expected.endsWith('.jsonl')?await compareGameplayFiles(expected,actual):compareTraces(JSON.parse(fs.readFileSync(expected)),JSON.parse(fs.readFileSync(actual)));console.log(JSON.stringify(report,null,2));if(report.status!=='pass')process.exitCode=1;
 }

@@ -26,7 +26,7 @@ index 9d8d2d02..2fb5c946 100644
          number: "15";
          title: "東方紺珠伝";
 diff --git a/common/contracts/product-catalog.mjs b/common/contracts/product-catalog.mjs
-index 0aa5f3fc..12a8baee 100644
+index 0aa5f3fc..2480185a 100644
 --- a/common/contracts/product-catalog.mjs
 +++ b/common/contracts/product-catalog.mjs
 @@ -375,6 +375,25 @@ export const PRODUCT_GAMES = Object.freeze({
@@ -39,7 +39,7 @@ index 0aa5f3fc..12a8baee 100644
 +        storage: Object.freeze({saveRoot: "/savesth12", scoreFile: "scoreth12.dat", configFiles: Object.freeze(["th12.cfg"])}),
 +        runtime: "./runtime/th12/th12.html",
 +        runtimeFileLayout: "directory",
-+        runtimeAssets: Object.freeze(["th12.html", "manifest.json", "game.css", "game.mjs", "core.mjs", "core.wasm", "vorbis.mjs", "vorbis.wasm", "managed-data.mjs", "managed-shell.mjs"]),
++        runtimeAssets: Object.freeze(["th12.html", "manifest.json", "game.css", "game.mjs", "core.mjs", "core.wasm", "vorbis.mjs", "vorbis.wasm", "managed-data.mjs", "managed-shell.mjs", "storage.mjs", "replay-workspace.mjs"]),
 +        requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
 +        dataProvider: "retail-memory",
 +        runtimeResourceTransport: "resources",
@@ -456,7 +456,7 @@ index 3ca53350..c0e4427c 100644
 +pefile>=2024.8.26
 +imageio-ffmpeg>=0.6,<1
 diff --git a/launcher/lib/content-definition.mjs b/launcher/lib/content-definition.mjs
-index cfcee05e..caa10757 100644
+index cfcee05e..68c5bee6 100644
 --- a/launcher/lib/content-definition.mjs
 +++ b/launcher/lib/content-definition.mjs
 @@ -1,3 +1,4 @@
@@ -464,7 +464,7 @@ index cfcee05e..caa10757 100644
  import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
  import { TH15_MUSIC_FILES } from "./th15-content-layout.mjs";
  import { TH11_MUSIC_FILES } from "./th11-content-layout.mjs";
-@@ -213,6 +214,28 @@ export const PRODUCT_CONTENT = Object.freeze({
+@@ -213,6 +214,53 @@ export const PRODUCT_CONTENT = Object.freeze({
        }),
      }),
    }),
@@ -475,7 +475,32 @@ index cfcee05e..caa10757 100644
 +    music: Object.freeze({ogg: Object.freeze({mount: PRODUCT_GAMES.th12.package.musicMounts.ogg, files: TH12_MUSIC_FILES})}),
 +    hostPreparation: Object.freeze({
 +      artwork: Object.freeze({kind: "prepared-content", directory: "artwork"}),
-+      preparedContent: Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze(["th12.data", "music/th12_01.ogg", "artwork/th12-card.webp"]), script: "scripts/prepare-th12-content.mjs"}),
++      preparedContent: Object.freeze({
++        directory: "assets-eagler",
++        markerFiles: Object.freeze(["th12.data", "music/th12_01.ogg", "artwork/th12-card.webp"]),
++        script: "scripts/prepare-th12-content.mjs",
++        // Keep the preparer's repository-relative layout: the Python menu
++        // builder invokes Node's replay parser, including its metadata imports.
++        // These are source/format declarations only, never retail resources.
++        buildSources: Object.freeze([
++          ["retail-preparer", "scripts/prepare-retail.mjs"],
++          ["managed-content-preparer", "scripts/prepare-managed-content.mjs"],
++          ["dependency", "scripts/prepare-assets.py"],
++          ["dependency", "scripts/prepare-presentation.py"],
++          ["dependency", "scripts/prepare-sounds.py"],
++          ["dependency", "scripts/prepare-music.py"],
++          ["dependency", "scripts/prepare-menu-assets.py"],
++          ["dependency", "scripts/prepare-host-artwork.py"],
++          ["dependency", "src/managed-data.mjs"],
++          ["dependency", "src/replay.mjs"],
++          ["dependency", "src/replay-motion.mjs"],
++          ["dependency", "src/practice/bridge.mjs"],
++          ["dependency", "src/practice/damage-sources.mjs"],
++          ["dependency", "src/practice/sections.mjs"],
++        ].map(([role, source]) => Object.freeze({
++          role, repository: "th12", source, target: `host/content-preparers/th12/${source}`,
++        }))),
++      }),
 +      languagePack: Object.freeze({
 +        kind: "retail-overlay-compiler",
 +        script: "scripts/prepare-th12-language-pack.mjs",
@@ -558,7 +583,7 @@ index ce278417..c61aeca5 100644
  // not relax the old Emscripten contract or allow original EXE/DAT/DLL content.
  export function runtimeFileNames(game, files) {
 diff --git a/launcher/lib/self-host-bundle.mjs b/launcher/lib/self-host-bundle.mjs
-index 3cb0666c..b8a1e568 100644
+index 3cb0666c..50267516 100644
 --- a/launcher/lib/self-host-bundle.mjs
 +++ b/launcher/lib/self-host-bundle.mjs
 @@ -2,6 +2,7 @@ import { FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT, resolveFrontendPackage
@@ -569,7 +594,7 @@ index 3cb0666c..b8a1e568 100644
  import { relative, resolve } from "node:path";
  import { fileURLToPath } from "node:url";
  import { ensureContractsBuild } from "./contracts-build.mjs";
-@@ -20,10 +21,14 @@ const verifiedOggBaselineFiles = Object.entries(PRODUCT_CONTENT)
+@@ -20,10 +21,15 @@ const verifiedOggBaselineFiles = Object.entries(PRODUCT_CONTENT)
  const preparedContentScripts = Object.values(PRODUCT_CONTENT)
    .map(content => content.hostPreparation?.preparedContent?.script)
    .filter(Boolean);
@@ -583,33 +608,25 @@ index 3cb0666c..b8a1e568 100644
 +    return preparation?.script ?? (preparation?.kind === "thcrap-runtime-compiler"
 +      ? "scripts/prepare-th06-language-pack.mjs" : null);
 +  }).filter(Boolean))];
-+const languageCompilerSources = Object.values(PRODUCT_CONTENT)
-+  .flatMap(content => content.hostPreparation?.languagePack?.buildSources ?? []);
++const hostPreparationBuildSources = Object.values(PRODUCT_CONTENT)
++  .flatMap(content => Object.values(content.hostPreparation ?? {})
++    .flatMap(preparation => preparation?.buildSources ?? []));
  
  // The self-host bundle is a distributable product, not a trimmed source checkout.
  // Every repository-owned file that can reach `npm run host` / `npm run import`
-@@ -136,6 +141,12 @@ export const SELF_HOST_BUNDLE_COPY_RULES = Object.freeze([
+@@ -136,6 +142,12 @@ export const SELF_HOST_BUNDLE_COPY_RULES = Object.freeze([
        relative(project, resolveHostBuildSource(source)).replaceAll("\\", "/"),
        source,
      )),
-+  // Only declared compiler source/metadata enter the private build tools. Retail
-+  // installations and generated language resources are never copied here.
-+  ...languageCompilerSources.map(source => copyRule(
++  // Only declared preparation source/metadata enter the private build tools.
++  // Retail installations and generated resources are never copied here.
++  ...hostPreparationBuildSources.map(source => copyRule(
 +    relative(project, workspacePath(source.repository, source.source)).replaceAll("\\", "/"),
 +    source.target,
 +  )),
    ...mappedFiles.map(([source, target]) => copyRule(source, target)),
  ]);
  
-diff --git a/launcher/lib/th12-content-layout.mjs b/launcher/lib/th12-content-layout.mjs
-new file mode 100644
---- /dev/null
-+++ b/launcher/lib/th12-content-layout.mjs
-@@ -0,0 +1,4 @@
-+// Mount contract for TH12's prepared asset container, not a retail DATA hash.
-+// sha256(JSON.stringify(DATA_LAYOUT_SPEC)) in th12/src/managed-data.mjs.
-+export const TH12_DATA_LAYOUT="sha256-94ee7257f452f635041170f868a8229c9deef1fc647e1897ca03adb328dd57df";
-+export const TH12_MUSIC_FILES=Object.freeze(["th12_01.ogg","th12_00.ogg","th12_02.ogg","th12_04.ogg","th12_05.ogg","th12_07.ogg","th12_08.ogg","th12_09.ogg","th12_10.ogg","th12_13.ogg","th12_14.ogg","th12_16.ogg","th12_17.ogg","th12_18.ogg","th12_19.ogg","th12_20.ogg","th12_21.ogg","th10_17.ogg"]);
 diff --git a/launcher/scripts/package-runtime-release.mjs b/launcher/scripts/package-runtime-release.mjs
 index e7fdab2c..782956c1 100644
 --- a/launcher/scripts/package-runtime-release.mjs
@@ -754,15 +771,132 @@ index b393125a..3caf3ace 100644
      )
      print(json.dumps(report, ensure_ascii=False))
  
+diff --git a/launcher/scripts/serve-static.mjs b/launcher/scripts/serve-static.mjs
+index faa84a64..b1ec2d3e 100644
+--- a/launcher/scripts/serve-static.mjs
++++ b/launcher/scripts/serve-static.mjs
+@@ -1,10 +1,11 @@
+ #!/usr/bin/env node
+ import { createReadStream } from "node:fs";
+ import { createHash } from "node:crypto";
+-import { stat } from "node:fs/promises";
++import { readFile, stat } from "node:fs/promises";
+ import { createServer } from "node:http";
+ import { resolve, sep } from "node:path";
+ import { pipeline } from "node:stream/promises";
++import { isDeepStrictEqual } from "node:util";
+ import { constants as zlibConstants, createBrotliCompress, createGzip } from "node:zlib";
+ import {
+   staticContentCacheControl,
+@@ -21,7 +22,7 @@ if (!rootInfo.isDirectory()) throw new Error(`site root is not a directory: ${ro
+ 
+ const etag = info => `\"${createHash("sha1").update(`${info.size}:${info.mtimeMs}`).digest("base64url")}\"`;
+ 
+-createServer(async (request, response) => {
++const server = createServer(async (request, response) => {
+   try {
+     const url = new URL(request.url || "/", `http://${host}:${port}`);
+     if (url.pathname === "/eagler-touhou" || url.pathname === "/eagler-touhou/") {
+@@ -82,7 +83,28 @@ createServer(async (request, response) => {
+     if (!response.headersSent) response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+     if (!response.writableEnded) response.end("Not found");
+   }
+-}).listen(port, host, () => {
++});
++server.once("error", async error => {
++  const address = `http://${host}:${port}/`;
++  if (error.code === "EADDRINUSE") {
++    try {
++      const expected = JSON.parse(await readFile(resolve(root, "site-manifest.json"), "utf8"));
++      const response = await fetch(new URL("site-manifest.json", address), {
++        signal: AbortSignal.timeout(2000), redirect: "error", cache: "no-store",
++      });
++      if (response.ok && expected.protocol === "eagler-touhou/1" && isDeepStrictEqual(expected, await response.json())) {
++        console.log(`This Eagler Touhou site is already running: ${address}`);
++        console.log("Use the existing page; no second server is needed.");
++        return;
++      }
++    } catch {}
++    console.error(`Port ${port} is already in use. Close the previous server or choose another port.`);
++  } else {
++    console.error(`Could not start the site: ${error.message}`);
++  }
++  process.exitCode = 1;
++});
++server.listen(port, host, () => {
+   console.log(`Eagler Touhou host: http://${host}:${port}/`);
+   console.log(`Serving immutable site directory: ${root}`);
+ });
+diff --git a/launcher/server/thcrap-static-pack.mjs b/launcher/server/thcrap-static-pack.mjs
+index 87cdafe4..d03b7d85 100644
+--- a/launcher/server/thcrap-static-pack.mjs
++++ b/launcher/server/thcrap-static-pack.mjs
+@@ -1,7 +1,7 @@
+ import { createHash } from "node:crypto";
+ import { zipSync } from "fflate";
++import {isGameId} from '../lib/contracts/product-catalog.mjs';
+ 
+-const GAME_ID = /^th(?:06|07|08|09|10|11|15)$/;
+ const LANGUAGE_ID = /^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i;
+ const MAX_FILES = 256;
+ 
+@@ -11,7 +11,7 @@ function assertBytes(value, label) {
+ }
+ 
+ function assertGame(value) {
+-  if (typeof value !== "string" || !GAME_ID.test(value)) throw new TypeError(`invalid game id: ${value}`);
++  if (typeof value !== "string" || !isGameId(value.toLowerCase())) throw new TypeError(`invalid game id: ${value}`);
+   return value.toLowerCase();
+ }
+ 
+diff --git a/launcher/src/launcher/language-catalog.mts b/launcher/src/launcher/language-catalog.mts
+index 6ab99919..efee9539 100644
+--- a/launcher/src/launcher/language-catalog.mts
++++ b/launcher/src/launcher/language-catalog.mts
+@@ -175,7 +175,7 @@ export function resolveLanguagePackSource(entry: LanguageCatalogEntry | null, ba
+ }
+ 
+ export function thpracLocaleForLanguage(id: string) {
+-  return id === "lang_zh-hans" ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
++  return /^lang_zh(?:-|$)/i.test(id) ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
+ }
+ 
+ /** Stored choices win; otherwise use an available translation for the launcher locale. */
+diff --git a/launcher/lib/th12-content-layout.mjs b/launcher/lib/th12-content-layout.mjs
+new file mode 100644
+index 00000000..e64834d9
+--- /dev/null
++++ b/launcher/lib/th12-content-layout.mjs
+@@ -0,0 +1,4 @@
++// Mount contract for TH12's prepared asset container, not a retail DATA hash.
++// sha256(JSON.stringify(DATA_LAYOUT_SPEC)) in th12/src/managed-data.mjs.
++export const TH12_DATA_LAYOUT="sha256-94ee7257f452f635041170f868a8229c9deef1fc647e1897ca03adb328dd57df";
++export const TH12_MUSIC_FILES=Object.freeze(["th12_01.ogg","th12_00.ogg","th12_02.ogg","th12_04.ogg","th12_05.ogg","th12_07.ogg","th12_08.ogg","th12_09.ogg","th12_10.ogg","th12_13.ogg","th12_14.ogg","th12_16.ogg","th12_17.ogg","th12_18.ogg","th12_19.ogg","th12_20.ogg","th12_21.ogg","th10_17.ogg"]);
 diff --git a/launcher/scripts/prepare-th12-content.mjs b/launcher/scripts/prepare-th12-content.mjs
 new file mode 100644
+index 00000000..919529a3
 --- /dev/null
 +++ b/launcher/scripts/prepare-th12-content.mjs
-@@ -0,0 +1,18 @@
-+import {existsSync} from 'node:fs';
+@@ -0,0 +1,33 @@
++import {existsSync, statSync} from 'node:fs';
 +import path from 'node:path';
 +import {spawnSync} from 'node:child_process';
++import {fileURLToPath} from 'node:url';
++import {PRODUCT_CONTENT} from '../lib/content-definition.mjs';
 +import {workspacePath} from '../lib/workspace-layout.mjs';
++
++const project=fileURLToPath(new URL('..',import.meta.url));
++const preparation=PRODUCT_CONTENT.th12.hostPreparation.preparedContent;
++function buildSource(role){
++  const source=preparation.buildSources.find(entry=>entry.role===role);
++  if(!source)throw Error('TH12: missing declared '+role+' build source');
++  const bundled=path.resolve(project,source.target);
++  if(statSync(bundled,{throwIfNoEntry:false})?.isFile())return bundled;
++  const canonical=workspacePath(source.repository,source.source);
++  if(statSync(canonical,{throwIfNoEntry:false})?.isFile())return canonical;
++  throw Error('TH12: preparation source is unavailable: '+source.source+' (bundle: '+bundled+'; workspace: '+canonical+')');
++}
++
 +const argument=(name,fallback)=>{
 +  const inline=process.argv.find(value=>value.startsWith(name+'='));if(inline)return inline.slice(name.length+1);
 +  const index=process.argv.indexOf(name);return index<0?fallback:process.argv[index+1];
@@ -771,14 +905,15 @@ new file mode 100644
 +if(!original||!output)throw Error('Usage: node scripts/prepare-th12-content.mjs --original=DIR --output=DIR [--assets=PREPARED_ASSETS]');
 +const assets=argument('--assets','');
 +if(assets&&!existsSync(path.join(assets,'menu-resources.json')))throw Error('Prepared TH12 asset directory is incomplete.');
-+const script=assets?'prepare-managed-content.mjs':'prepare-retail.mjs';
++const script=buildSource(assets?'managed-content-preparer':'retail-preparer');
 +const options=assets?['--assets='+path.resolve(assets)]:['--original='+path.resolve(original),
 +  '--python='+(process.env.EAGLER_CONTENT_PYTHON??process.env.TH12_PYTHON??process.env.PYTHON??'python'),
-+  '--thdat='+(process.env.EAGLER_CONTENT_THDAT??process.env.THDAT??'thdat')];
-+const result=spawnSync(process.execPath,[workspacePath('th12','scripts/'+script),...options,'--output='+path.resolve(output)],{stdio:'inherit',windowsHide:true});
++  '--thdat='+(process.env.EAGLER_CONTENT_THDAT??process.env.TH12_THDAT??process.env.THDAT??'thdat')];
++const result=spawnSync(process.execPath,[script,...options,'--output='+path.resolve(output)],{stdio:'inherit',windowsHide:true});
 +if(result.error)throw result.error;process.exitCode=result.status??1;
 diff --git a/launcher/scripts/prepare-th12-language-pack.mjs b/launcher/scripts/prepare-th12-language-pack.mjs
 new file mode 100644
+index 00000000..a31f53ca
 --- /dev/null
 +++ b/launcher/scripts/prepare-th12-language-pack.mjs
 @@ -0,0 +1,94 @@
@@ -876,94 +1011,3 @@ new file mode 100644
 +}, null, 2)}\n`);
 +console.log(JSON.stringify({game, output, skipped: false, languages: [language],
 +  files: manifest.files.length, bytes: archive.length, sha256, pack: entry.pack.url}));
-diff --git a/launcher/server/thcrap-static-pack.mjs b/launcher/server/thcrap-static-pack.mjs
-index 87cdafe4..d03b7d85 100644
---- a/launcher/server/thcrap-static-pack.mjs
-+++ b/launcher/server/thcrap-static-pack.mjs
-@@ -1,7 +1,7 @@
- import { createHash } from "node:crypto";
- import { zipSync } from "fflate";
-+import {isGameId} from '../lib/contracts/product-catalog.mjs';
- 
--const GAME_ID = /^th(?:06|07|08|09|10|11|15)$/;
- const LANGUAGE_ID = /^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i;
- const MAX_FILES = 256;
- 
-@@ -11,7 +11,7 @@ function assertBytes(value, label) {
- }
- 
- function assertGame(value) {
--  if (typeof value !== "string" || !GAME_ID.test(value)) throw new TypeError(`invalid game id: ${value}`);
-+  if (typeof value !== "string" || !isGameId(value.toLowerCase())) throw new TypeError(`invalid game id: ${value}`);
-   return value.toLowerCase();
- }
- 
-diff --git a/launcher/src/launcher/language-catalog.mts b/launcher/src/launcher/language-catalog.mts
-index 6ab99919..efee9539 100644
---- a/launcher/src/launcher/language-catalog.mts
-+++ b/launcher/src/launcher/language-catalog.mts
-@@ -175,7 +175,7 @@ export function resolveLanguagePackSource(entry: LanguageCatalogEntry | null, ba
- }
- 
- export function thpracLocaleForLanguage(id: string) {
--  return id === "lang_zh-hans" ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
-+  return /^lang_zh(?:-|$)/i.test(id) ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
- }
- 
- /** Stored choices win; otherwise use an available translation for the launcher locale. */
-diff --git a/launcher/scripts/serve-static.mjs b/launcher/scripts/serve-static.mjs
-index faa84a64..b1ec2d3e 100644
---- a/launcher/scripts/serve-static.mjs
-+++ b/launcher/scripts/serve-static.mjs
-@@ -1,10 +1,11 @@
- #!/usr/bin/env node
- import { createReadStream } from "node:fs";
- import { createHash } from "node:crypto";
--import { stat } from "node:fs/promises";
-+import { readFile, stat } from "node:fs/promises";
- import { createServer } from "node:http";
- import { resolve, sep } from "node:path";
- import { pipeline } from "node:stream/promises";
-+import { isDeepStrictEqual } from "node:util";
- import { constants as zlibConstants, createBrotliCompress, createGzip } from "node:zlib";
- import {
-   staticContentCacheControl,
-@@ -21,7 +22,7 @@ if (!rootInfo.isDirectory()) throw new Error(`site root is not a directory: ${ro
- 
- const etag = info => `\"${createHash("sha1").update(`${info.size}:${info.mtimeMs}`).digest("base64url")}\"`;
- 
--createServer(async (request, response) => {
-+const server = createServer(async (request, response) => {
-   try {
-     const url = new URL(request.url || "/", `http://${host}:${port}`);
-     if (url.pathname === "/eagler-touhou" || url.pathname === "/eagler-touhou/") {
-@@ -82,7 +83,28 @@ createServer(async (request, response) => {
-     if (!response.headersSent) response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-     if (!response.writableEnded) response.end("Not found");
-   }
--}).listen(port, host, () => {
-+});
-+server.once("error", async error => {
-+  const address = `http://${host}:${port}/`;
-+  if (error.code === "EADDRINUSE") {
-+    try {
-+      const expected = JSON.parse(await readFile(resolve(root, "site-manifest.json"), "utf8"));
-+      const response = await fetch(new URL("site-manifest.json", address), {
-+        signal: AbortSignal.timeout(2000), redirect: "error", cache: "no-store",
-+      });
-+      if (response.ok && expected.protocol === "eagler-touhou/1" && isDeepStrictEqual(expected, await response.json())) {
-+        console.log(`This Eagler Touhou site is already running: ${address}`);
-+        console.log("Use the existing page; no second server is needed.");
-+        return;
-+      }
-+    } catch {}
-+    console.error(`Port ${port} is already in use. Close the previous server or choose another port.`);
-+  } else {
-+    console.error(`Could not start the site: ${error.message}`);
-+  }
-+  process.exitCode = 1;
-+});
-+server.listen(port, host, () => {
-   console.log(`Eagler Touhou host: http://${host}:${port}/`);
-   console.log(`Serving immutable site directory: ${root}`);
- });

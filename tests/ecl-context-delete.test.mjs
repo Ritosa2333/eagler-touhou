@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/ecl-context-delete-original.json',import.meta.url)));
 function snapshot(core){const at=core._th12_state(),size=core._th12_state_size();return JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(at,at+size)));}

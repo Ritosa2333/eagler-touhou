@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 import {initializeCandidate,state as worldState} from '../tools/replay-verifier/capture-candidate.mjs';
 
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/enemy-animation-layer-native.json',import.meta.url)));

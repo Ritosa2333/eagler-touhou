@@ -2,7 +2,7 @@ import {allowedPath} from './storage.mjs';
 import {parseReplay} from './replay.mjs';
 import {validateNativeProfile} from './native-profile.mjs';
 
-const boolOptions=['limitPresentationTo60','touchEnabled','doubleTapBombEnabled','alwaysHitbox','thpracEnabled','focusHitboxEnabled'];
+const boolOptions=['limitPresentationTo60','touchEnabled','doubleTapBombEnabled','alwaysHitbox','thpracEnabled','focusHitboxEnabled','replayViewer'];
 const acceptedOptions=new Set([...boolOptions,'touchMovementMode','touchSensitivity','touchFocusMode','oggDecodeMode','replayPath','debugHarness','thpracLocale']);
 export function runtimeOptions(value={}){
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('运行配置无效');
@@ -16,17 +16,17 @@ export function runtimeOptions(value={}){
   // A successful configure must not silently discard a required behavior.
   if(value.focusHitboxEnabled)throw Error('此接入版本尚未完成所选判定点增强');
   if(value.thpracLocale!==undefined&&!['ja-JP','en-US','zh-CN'].includes(value.thpracLocale))throw Error('练习工具语言无效');
-  if(value.replayPath!==undefined&&!savePath(value.replayPath).endsWith('.rpy'))throw Error('录像路径无效');
-  if(value.debugHarness!==undefined&&value.debugHarness!==null&&typeof value.debugHarness!=='string')throw Error('诊断配置无效');
+  if(value.replayPath!==undefined&&!savePath(value.replayPath).toLowerCase().endsWith('.rpy'))throw Error('录像路径无效');
+  if(value.debugHarness!==undefined&&value.debugHarness!==null)throw Error('诊断工具需要独立诊断构建');
   return {...value,limitPresentationTo60:value.limitPresentationTo60??true};
 }
 export function savePath(value){
   if(typeof value!=='string')throw Error('存档路径无效');
   const path=allowedPath(value.startsWith('/savesth12/')?value:'/savesth12/'+value);
-  if(path.endsWith('/web-profile.json'))throw Error('此文件属于浏览器内部记录');return path;
+  if(path.toLowerCase().endsWith('/web-profile.json'))throw Error('此文件属于浏览器内部记录');return path;
 }
 function importedFile(path,bytes){
-  if(path.endsWith('.rpy')){parseReplay(bytes);return;}
+  if(path.toLowerCase().endsWith('.rpy')){parseReplay(bytes);return;}
   validateNativeProfile(path,bytes);
 }
 export function managedCommandHandler(api){
@@ -57,16 +57,26 @@ export function managedCommandHandler(api){
     }
     case 'direct-touch':if(!['down','move','up'].includes(message.type)||!Number.isSafeInteger(message.id)||!Number.isFinite(message.x)||!Number.isFinite(message.y))throw Error('触控坐标无效');api.pointer(message);return {};
     case 'thprac-mouse':if(!['down','move','up'].includes(message.type)||!Number.isFinite(message.x)||!Number.isFinite(message.y)||message.id!==undefined&&!Number.isSafeInteger(message.id)||message.button!==undefined&&(!Number.isInteger(message.button)||message.button<0||message.button>4))throw Error('练习面板坐标无效');api.practicePointer(message);return {};
+    case 'playback':{
+      if(!['inspect','open','pause','play','seek','rate'].includes(message.action))throw Error('录像操作无效');
+      const command={action:message.action};
+      if(['inspect','open'].includes(message.action)){command.path=savePath(message.path);if(!command.path.toLowerCase().endsWith('.rpy'))throw Error('需要录像文件');}
+      if(message.action==='open'&&message.stage!==undefined){if(!Number.isInteger(message.stage)||message.stage<1||message.stage>7)throw Error('录像关卡无效');command.stage=message.stage;}
+      if(message.action==='seek'){if(!Number.isSafeInteger(message.value)||message.value<0)throw Error('录像位置无效');command.value=message.value;}
+      if(message.action==='rate'){if(![0,.5,1,2,4,8].includes(message.value))throw Error('录像速度无效');command.value=message.value;}
+      return api.playback(command);
+    }
     case 'list':{
       await api.sync();const files=[];for(const path of await api.store.list()){if(path.endsWith('/web-profile.json'))continue;const bytes=await api.store.read(savePath(path));files.push({path:savePath(path).slice('/savesth12/'.length),size:bytes?.byteLength??0});}return {files};
     }
     case 'read':{await api.sync();const bytes=await api.store.read(savePath(message.path));if(!bytes)throw Error('文件不存在');return {bytes:Array.from(bytes)};}
     case 'write':{
-      if(api.running())throw Error('请先退出游戏再导入文件');
+      const path=savePath(message.path);
+      if(api.running()&&!(api.replayViewer?.()&&path.toLowerCase().endsWith('.rpy')))throw Error('请先退出游戏再导入文件');
       if(!Array.isArray(message.bytes)||!message.bytes.length||message.bytes.length>64*1024*1024||message.bytes.some(byte=>!Number.isInteger(byte)||byte<0||byte>255))throw Error('文件大小或字节无效');
-      const path=savePath(message.path),bytes=new Uint8Array(message.bytes);importedFile(path,bytes);await api.store.write(path,bytes);await api.store.sync();return {};
+      const bytes=new Uint8Array(message.bytes);importedFile(path,bytes);await api.store.write(path,bytes);await api.store.sync();return {};
     }
-    case 'remove':if(api.running())throw Error('请先退出游戏再删除文件');await api.store.remove(savePath(message.path));await api.store.sync();return {};
+    case 'remove':{const path=savePath(message.path);if(api.running()&&!(api.replayViewer?.()&&path.toLowerCase().endsWith('.rpy')))throw Error('请先退出游戏再删除文件');await api.store.remove(path);await api.store.sync();return {};}
     case 'sync':await api.sync();return {};
     default:throw Error('未支持的操作：'+message.command);
     }

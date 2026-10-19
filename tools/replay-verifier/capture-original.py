@@ -4,13 +4,21 @@ Executes TH12's original RNG functions and original Replay decrypt function in
 an isolated x86 diagnostic process. No retail files or game state are patched.
 This is subsystem evidence, not a whole-game Replay determinism proof.
 """
-import pathlib,sys,hashlib,json,struct,base64
-TITLE=pathlib.Path(__file__).resolve().parents[2];WORKSPACE=TITLE.parent
-sys.path.insert(0,str(WORKSPACE/'tools/python'))
+import pathlib,sys,hashlib,json,struct,base64,argparse
+TITLE=pathlib.Path(__file__).resolve().parents[2]
+parser=argparse.ArgumentParser(description='Explicit TH12 subsystem Oracle only; not a full gameplay capture')
+parser.add_argument('--exe',required=True,type=pathlib.Path)
+parser.add_argument('--replay-dir',action='append',default=[],type=pathlib.Path)
+parser.add_argument('--output',type=pathlib.Path,default=TITLE/'local/oracle-proposals')
+parser.add_argument('--python-packages',type=pathlib.Path)
+args=parser.parse_args()
+if args.python_packages:sys.path.insert(0,str(args.python_packages.resolve()))
 import pefile
 from unicorn import Uc,UC_ARCH_X86,UC_MODE_32,UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_ESP,UC_X86_REG_EIP,UC_X86_REG_EAX,UC_X86_REG_ESI
-exe=WORKSPACE/'th12/th12.exe';pe=pefile.PE(str(exe));base=pe.OPTIONAL_HEADER.ImageBase
+exe=args.exe.resolve();exe_bytes=exe.read_bytes();exe_sha=hashlib.sha256(exe_bytes).hexdigest()
+if exe_sha!='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417':raise RuntimeError('Original EXE is not pinned TH12 1.00b')
+pe=pefile.PE(data=exe_bytes);base=pe.OPTIONAL_HEADER.ImageBase
 mu=Uc(UC_ARCH_X86,UC_MODE_32);mu.mem_map(base,(pe.OPTIONAL_HEADER.SizeOfImage+4095)&~4095);mu.mem_write(base,pe.get_memory_mapped_image())
 STACK=0x1000000;DATA=0x2000000;TEMP=0x3000000;STOP=0x4000000
 for addr,size in [(STACK,0x10000),(DATA,0x200000),(TEMP,0x200000),(STOP,4096)]:mu.mem_map(addr,size)
@@ -36,17 +44,27 @@ for seed in range(65536):
     next32.extend(struct.pack('<I',result));seed32.extend(mu.mem_read(DATA,2))
     if seed%16384==0:print('Original RNG seeds:',seed,flush=True)
 fixtures=[]
-for folder,pattern in [(WORKSPACE/'th12/replay','*.rpy'),(TITLE/'local/retail','demo*.rpy')]:
-    for file in sorted(folder.glob(pattern)):
-        b=file.read_bytes();n=struct.unpack_from('<I',b,28)[0];mu.mem_write(DATA,b[36:36+n])
+seen=set()
+for folder in args.replay_dir:
+    for file in sorted(folder.resolve().glob('*.rpy')):
+        b=file.read_bytes()
+        if len(b)<36:raise RuntimeError('Replay header incomplete: '+file.name)
+        n=struct.unpack_from('<I',b,28)[0]
+        if n<1 or n>0x200000 or n>len(b)-36:raise RuntimeError('Replay exceeds bounded subsystem buffer: '+file.name)
+        if file.name in seen:raise RuntimeError('Duplicate explicit Replay id: '+file.name)
+        seen.add(file.name);mu.mem_write(DATA,b[36:36+n])
         call(0x4639d0,(DATA,n,0xe1,0x800,n),eax=0x5e)
         call(0x4639d0,(DATA,n,0x3a,0x40,n),eax=0x7d)
         fixtures.append({'id':file.name,'replaySha256':hashlib.sha256(b).hexdigest(),'decryptedSha256':hashlib.sha256(mu.mem_read(DATA,n)).hexdigest()})
         print('Original Replay decrypt:',file.name,flush=True)
-identity=json.loads((TITLE/'local/content-identity.json').read_text())
+identity={'executableSha256':exe_sha,'executableBytes':len(exe_bytes),'version':'1.00b'}
 proposal={'schema':'th12-subsystem-oracle/1','scope':['rng16-all-seeds','rng32-all-seeds','retail-replay-decrypt'],
           'wholeGameDeterminism':False,'original':identity,'provider':{'name':'original-x86-instructions','version':'1','unicorn':'2.1.4','rng16':'0x4643d0','rng32':'0x464440','decrypt':'0x4639d0','sampling':'after-original-function-return'},
           'completion':{'rngSeeds':65536,'replayFixtures':len(fixtures)},'next16':base64.b64encode(next16).decode(),'next32':base64.b64encode(next32).decode(),'seedAfter32':base64.b64encode(seed32).decode(),'replayDecryption':fixtures}
 raw=(json.dumps(proposal,separators=(',',':'),ensure_ascii=False)+'\n').encode();digest=hashlib.sha256(raw).hexdigest()
-output=TITLE/'local/oracle-proposals'/f'{digest}.json';output.parent.mkdir(parents=True,exist_ok=True)
-output.write_bytes(raw);print('PROPOSAL',output,flush=True)
+output=args.output.resolve()/f'{digest}.json';output.parent.mkdir(parents=True,exist_ok=True)
+if output.exists():
+    if output.read_bytes()!=raw:raise RuntimeError('Immutable proposal conflict')
+else:
+    with output.open('xb') as stream:stream.write(raw)
+print('SUBSYSTEM PROPOSAL (not full-state gameplay)',output,flush=True)

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 
 const fixture=JSON.parse(fs.readFileSync(new URL('fixtures/bullet-radius-birth-native.json',import.meta.url)));
 const word=value=>{const bytes=Buffer.alloc(4);bytes.writeInt32LE(value);return bytes;};

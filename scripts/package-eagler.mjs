@@ -8,6 +8,7 @@ const argument=(name,fallback)=>process.argv.find(value=>value.startsWith(name+'
 const out=path.resolve(argument('--output',process.env.EAGLER_RUNTIME_OUTPUT??path.join(root,'build-eagler')));
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const coreBuild=JSON.parse(fs.readFileSync(path.join(root,'site/runtime/build.json'),'utf8'));
+if(coreBuild.diagnostic!==false)throw Error('正式 Runtime 禁止诊断/旧未分类构建，请重新运行 build:eagler');
 if(coreBuild.environment!=='web')throw Error('正式 Runtime 需要浏览器构建，请使用 npm run build:eagler');
 for(const name of runtimeSourceFiles(root))if(sha(fs.readFileSync(path.join(root,name)))!==coreBuild.sourceFiles[name])throw Error('请先重新编译核心：'+name);
 const sources=new Set(['site/game.css','site/runtime/core.wasm','site/runtime/audio/vorbis.wasm','site/runtime/audio/vorbis.mjs']);

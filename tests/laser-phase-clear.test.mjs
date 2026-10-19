@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/laser-phase-clear-native.json',import.meta.url)));
 assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');

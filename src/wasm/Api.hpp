@@ -51,10 +51,15 @@ int th12_spell_history_size();
 void th12_set_wall_time(double milliseconds);
 int th12_start_replay(int character, int shot, int difficulty, int seed, const int32_t* initial,
                       int count);
+#if defined(TH12_DIAGNOSTIC) && TH12_DIAGNOSTIC
+int th12_diagnostic_build();
+const char* th12_diagnostic_state();
+int th12_diagnostic_state_size();
 void th12_oracle_fixture(int flags);
 void th12_set_initial(int x, int y, int power, int lives, int bombs, int score);
 void th12_set_replay_economy(int piv, int lifeFragments, int bombFragments, int red, int blue,
                              int green, int rank);
+#endif
 void th12_tick(int held, int pressed);
 const char* th12_state();
 int th12_state_size();
@@ -100,7 +105,9 @@ int th12_background_visible();
 const float* th12_hud();
 int th12_hud_size();
 int32_t th12_score_stored();
+#if defined(TH12_DIAGNOSTIC) && TH12_DIAGNOSTIC
 const uint32_t* th12_unsupported();
 uint32_t th12_rng16(int seed);
 uint32_t th12_rng32(int seed);
+#endif
 }

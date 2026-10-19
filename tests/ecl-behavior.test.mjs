@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import createCore from '../site/runtime/core.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';
 import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 import fs from 'node:fs';
 

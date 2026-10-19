@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';
-import createCore from '../site/runtime/core.mjs';import {parseReplay} from '../src/replay.mjs';
+import createCore from '../artifacts/diagnostic-runtime/core.mjs';import {parseReplay} from '../src/replay.mjs';
 const root=path.resolve(import.meta.dirname,'..');
 async function ready(){const core=await createCore();for(const file of ['stage01.ecl','default.ecl']){const b=fs.readFileSync(path.join(root,'site/assets',file)),p=core._malloc(b.length);core.HEAPU8.set(b,p);assert.equal(core._th12_load_ecl(p,b.length),1);core._free(p);}for(let i=0;i<6;i++){const b=fs.readFileSync(path.join(root,'site/assets',`pl0${Math.floor(i/2)}${i%2?'b':'a'}.sht`)),p=core._malloc(b.length);core.HEAPU8.set(b,p);assert.equal(core._th12_load_sht(i,p,b.length),1);core._free(p);}return core;}
 const hud=c=>[...new Float32Array(c.HEAPU8.buffer,c._th12_hud(),20)];

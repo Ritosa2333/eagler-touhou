@@ -14,6 +14,7 @@ import {SoundPlayer,nativeMusicGain} from '../src/sound-player.mjs';
 import {readCoreSoundEvents} from '../src/sound-events.mjs';
 import {parseReplay,replayInputEnded} from '../src/replay.mjs';
 import {startReplayStage} from '../src/replay-session.mjs';
+import {ReplayWorkspace} from '../src/replay-workspace.mjs';
 import {ReplayRecorder,defaultReplayConfig} from '../src/replay-recorder.mjs';
 import {createFrameRateMeter} from '../src/fps-presentation.mjs';
 import {decodeSpellTitle} from '../src/spell-presentation.mjs';
@@ -33,6 +34,7 @@ const $=id=>document.getElementById(id),canvas=$('screen'),keys=new Set(),hostKe
 const assets=new RuntimeAssets(),keyDown=code=>keys.has(code)||hostKeys.has(code);
 const managedInput=new ManagedInput(),touch=new TouchInput();
 let previousPresentation=null,currentPresentation=null;
+let replayWorkspace=null,viewerMusic={id:null,ticks:0};
 let practiceBridge=null,practiceUI=null,damageSources=null,practiceCaptured=false,logicalStep=TICK,captureThisTick=true,localization=null;
 let emit=()=>{},launched=false,terminated=false,runtimeMusic='ogg',runtimeOptions={limitPresentationTo60:false},firstFrame=false,lastPresentation=0,renderedFrames=0,healthAt=0,maxFrameGap=0,backgrounded=document.hidden;
 let core,renderer,loader,profile,store,resources,model,presentation,loadingScreen,corpus=[],musicIndex=[],soundIndex=[],session=null,ending=null,ready=false,busy=false,fatalError=false,last=0,accumulator=0,previousUI=0,previousPadUI=0,pendingKeys=0,pendingPressed=0,choiceSerial=-1,lastReplay=null,pendingResult=null,joyCaptureRelease=false;
@@ -53,7 +55,7 @@ function updatePracticeUI(){
   practiceUI.update({scene:model.state.scene,replay:!!session?.replay,menu:model.state.scene==='practice'?model.practiceMenu:null,menuReady:model.ready()});
   if(practiceCaptured!==practiceUI.capturesGameplay){practiceCaptured=practiceUI.capturesGameplay;clearKeys({practiceToo:false});}
 }
-function practicePointer(message){const consumed=practiceUI?.pointer(message)??false;if(consumed)updatePracticeUI();return consumed;}
+function practicePointer(message){if(runtimeOptions.replayViewer)return false;const consumed=practiceUI?.pointer(message)??false;if(consumed)updatePracticeUI();return consumed;}
 function checkDamageEntry(){const state=damageSources.state();if(state.error&&state.entryResult===-1)throw Error(state.error);}
 function initializeReplayStage(replay,part){
   practiceBridge.setReplay(true);
@@ -75,7 +77,7 @@ function touchState(){
     fast:playing?core._th12_player_speed(0):0,slow:playing?core._th12_player_speed(1):0,keyFocused:ready&&keyDown(profile.settings.keyMap.focus)};
 }
 function pointerPosition(x,y){const rect=canvas.getBoundingClientRect();return {x:(x-rect.left)*640/rect.width,y:(y-rect.top)*480/rect.height};}
-function hostPointer(message){if(!ready||busy)return;const x=message.x*innerWidth,y=message.y*innerHeight,id='host:'+message.id;if(practicePointer({...message,x,y,id}))return;const point=pointerPosition(x,y);touch.pointer({...message,...point,id},touchState());}
+function hostPointer(message){if(!ready||busy||runtimeOptions.replayViewer)return;const x=message.x*innerWidth,y=message.y*innerHeight,id='host:'+message.id;if(practicePointer({...message,x,y,id}))return;const point=pointerPosition(x,y);touch.pointer({...message,...point,id},touchState());}
 
 function input(){
   const map=profile.settings.keyMap,held=(name,defaults=[])=>keyDown(map[name])||defaults.some(keyDown);
@@ -118,13 +120,17 @@ async function audioReady(){
   // again. Events arriving during decode retain their channel until it is ready.
   audio.effectsReady??=audio.effects.preload().catch(error=>{audio.effectsReady=null;throw error;});
   await Promise.all([audio.context.resume(),audio.effectsReady]);
-  if(!audio.browserPaused&&!audio.musicPaused&&!audio.pendingTrack){
+  if(!audio.browserPaused&&!audio.musicPaused&&!audio.pendingTrack&&(!runtimeOptions.replayViewer||replayWorkspace?.audible)){
     if(audio.music.paused)await resumeMusicTransport();
     else if(audio.track&&!audio.music.source)await playMusic(audio.track,{authorized:true});
   }
 }
 function suppressMusic(command,{retain=false,track=null}={}){return practiceMusicGuard(command,{enabled:!!core?._th12_practice_everlasting_bgm?.(),retain,track});}
-async function playMusic(id,{offsetSeconds=0,authorized=false}={}){
+async function playMusic(id,{offsetSeconds=0,authorized=false,viewerTransport=false}={}){
+  if(runtimeOptions.replayViewer&&!viewerTransport){
+    viewerMusic={id,ticks:0};audio.track=id;
+    if(!replayWorkspace?.audible){pauseAudio();return;}
+  }
   if(!authorized&&suppressMusic('play',{track:id}))return;
   audio.track=id;audio.pendingTrack=null;audio.musicPaused=false;const request=++audio.request;
   if(session&&!session.replay)profile.unlockMusic(id);
@@ -135,7 +141,7 @@ async function playMusic(id,{offsetSeconds=0,authorized=false}={}){
   try{await audio.music.play(track,()=>request===audio.request,{offsetSeconds});}
   finally{if(request===audio.request)audio.pendingTrack=null;}
 }
-function effect(event){audio.effects?.play(event);}
+function effect(event){if(!runtimeOptions.replayViewer||replayWorkspace?.audible)audio.effects?.play(event);}
 function stopEffects(){audio.effects?.stop();}
 function stopMusic({retain=false}={}){if(suppressMusic('stop',{retain}))return;audio.musicPaused=true;audio.pendingTrack=null;++audio.request;audio.music?.stop();}
 function fadeMusic(seconds){if(!suppressMusic('default'))audio.music?.fade(seconds);}
@@ -161,8 +167,13 @@ async function restoreBrowserAudio(){
   if(terminated||fatalError||!launched)return;
   // Keep the native pause intent (and F7 state) separate from browser transport.
   // AudioContext.resume remains in the user-gesture audioReady/resume path.
-  if(!audio.musicPaused)await resumeMusicTransport();
-  if(ready&&!['pause','pause-confirm','continue','result-menu'].includes(model.state.scene))audio.effects?.resume();
+  if(!audio.musicPaused&&(!runtimeOptions.replayViewer||replayWorkspace?.audible))await resumeMusicTransport();
+  if(ready&&(!runtimeOptions.replayViewer||replayWorkspace?.audible)&&!['pause','pause-confirm','continue','result-menu'].includes(model.state.scene))audio.effects?.resume();
+}
+function viewerTransport(){
+  if(!replayWorkspace?.audible||backgrounded){pauseAudio();return;}
+  audio.effects?.resume();
+  if(viewerMusic.id)playMusic(viewerMusic.id,{offsetSeconds:viewerMusic.ticks/60,authorized:true,viewerTransport:true}).catch(fail);
 }
 function loadSpellHistory(){const words=profile.spellHistoryWords(),p=core._malloc(words.length*4);try{new Int32Array(core.HEAPU8.buffer,p,words.length).set(words);if(core._th12_load_spell_history(p,words.length)!==1)throw Error('符卡记录载入失败');}finally{core._free(p);}}
 function saveProfile(){profile.updateSpellHistory(readJSON('spell_history').records);return profile.save().catch(error=>notice('记录保存失败：'+error.message));}
@@ -212,6 +223,16 @@ async function playReplay(id,stage,mode='replay'){
   const b=mode==='demo'?await bytes('/assets/'+encodeURIComponent(id)):(await store.read('/savesth12/replay/'+id)??await bytes('/replays/'+encodeURIComponent(id)));
   const replay=parseReplay(b),part=replay.stages.find(s=>s.number===stage)??replay.stages[0];
   await begin({mode,character:replay.character,shot:replay.shot,difficulty:replay.difficulty,stage:part.number},replay,id);
+}
+async function viewerStage(stage){
+  busy=true;loadingScreen.startResources();stopEffects();pauseAudio();
+  try{
+    if(core._th12_practice_damage_transition(session.stage,stage)!==1)throw Error(damageSources.state().error||'录像跨关状态保存失败');
+    localization?.setContext({stage,character:session.character,shot:session.shot});
+    await prepareStage(stage);resetGamePresentation();session.stage=stage;session.cursor=0;session.previous=0;session.clock=0;
+    initializeReplayStage(session.replay,session.replay.stages.find(part=>part.number===stage));
+    audio.musicSerial=core._th12_music_serial();await playMusic(musicIndex[core._th12_music_track()]?.id??stageMusic[stage]);
+  }finally{if(!fatalError){loadingScreen.completeResources();busy=false;}last=performance.now();accumulator=0;}
 }
 async function nextStage(){
   if(session?.mode==='demo'){model.returnTitle();return;}
@@ -264,6 +285,7 @@ function gameTick(input){
   }else session.recorder?.pushInput({held,pressed,released:session.previous&~held},meter.value||60);
   core._th12_motion(motion?.mode??0,motion?.x??0,motion?.y??0);
   session.previous=held;core._th12_tick(held,pressed);session.clock++;
+  if(runtimeOptions.replayViewer)viewerMusic.ticks++;
   if(!session.replay){
     const resolved=new Int32Array(core.HEAPU8.buffer,core._th12_motion_result(),4);
     session.unlimitedMovement||=!!resolved[3];session.recorder?.recordMotion(resolved[0],resolved[1],session.unlimitedMovement);
@@ -289,6 +311,9 @@ function gameTick(input){
       profile.data.spellRecords[recordKey]=record;
     }
   }
+  // The workspace's recorded route owns EOF and transitions. It must not
+  // enter live name/result/ending menus or add unrecorded gameplay ticks.
+  if(runtimeOptions.replayViewer)return;
   if(flow.status==='next-stage'){
     // Retail stage headers include the clear transition's final recorded
     // inputs. Keep consuming that stream until its actual stage boundary.
@@ -363,7 +388,7 @@ function choices(){
 }
 function present(){
   const scene=model.state.scene;canvas.dataset.scene=scene;canvas.dataset.stage=String(session?.stage??0);canvas.dataset.replayCursor=String(session?.cursor??0);
-  if(['playing','demo'].includes(scene)&&session){drawGamePresentation(true);if(scene==='demo'&&model.state.age>=3540)renderer.renderMenu([],[],null,{overlay:true,shade:Math.min(1,(model.state.age-3540)/60)});}
+  if(['playing','demo'].includes(scene)&&session){drawGamePresentation(!runtimeOptions.replayViewer||!replayWorkspace.paused&&!replayWorkspace.seeking&&replayWorkspace.rate>0);if(scene==='demo'&&model.state.age>=3540)renderer.renderMenu([],[],null,{overlay:true,shade:Math.min(1,(model.state.age-3540)/60)});}
   else if(ending){ending.render(renderer,meter.value);}
   else{
     if(session&&(['pause','pause-confirm','continue','result-menu','result','name'].includes(scene)||scene==='replay-save'&&model.state.nameContext==='pause'))drawGamePresentation();
@@ -396,7 +421,10 @@ function frame(now){
   try{if(!fatalError){
     loadingScreen?.advance(elapsed);
     if(loadingScreen?.startup||loadingScreen?.waiting){loadingScreen.renderBase(meter.value);}
-    else if(ready&&!busy){
+    else if(ready&&!busy&&runtimeOptions.replayViewer){
+      replayWorkspace?.update(elapsed,now);logicalStep=TICK;accumulator=(replayWorkspace?.credit??0)*TICK;
+      if(loadingScreen.waiting)loadingScreen.renderBase(meter.value);else{present();loadingScreen.renderOverlay();}
+    }else if(ready&&!busy){
       const toolSpeed=runtimeOptions.thpracEnabled&&session&&model.state.scene==='playing',fast=keyDown(profile.settings.keyMap.skip)||keyDown('ControlRight')||!!(previousPadUI&512);
       const rate=!toolSpeed&&session?.replay&&model.state.scene==='playing'&&fast?4:1;
       logicalStep=toolSpeed?1000*practiceBridge.interval({replay:!!session.replay,fast,slow:keyDown('ShiftLeft')||keyDown('ShiftRight'),debug:keyDown('Space')}):TICK;accumulator+=elapsed*rate;
@@ -413,6 +441,7 @@ function frame(now){
 }
 function eventKey(code,down,source='local'){
   if(!ready)return;
+  if(runtimeOptions.replayViewer){if(down)audioReady().catch(error=>notice('音频：'+error.message));return;}
   if(practiceUI?.key(code,down,{repeat:down&&practiceUI.keys.has(code)})){updatePracticeUI();return;}
   const sourceKeys=source==='host'?hostKeys:keys,wasHeld=keyDown(code);
   if(down&&wasHeld){sourceKeys.add(code);return;}
@@ -429,20 +458,20 @@ function eventKey(code,down,source='local'){
 window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target?.tagName))return;if(assets.managed&&managedInput.key(e,true,'physical',eventKey)){e.preventDefault();return;}const code=keyboardCode(e);if(code==='F1'||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Escape','Tab','Backspace','F12'].includes(code))e.preventDefault();if(code)eventKey(code,true);});
 window.addEventListener('keyup',e=>{if(assets.managed&&managedInput.key(e,false,'physical',eventKey)){e.preventDefault();return;}const code=keyboardCode(e);if(code)eventKey(code,false);});
 for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])window.addEventListener(type,event=>{
-  if(event.pointerType==='mouse'||!touch.options.touchEnabled||!ready||busy)return;
+  if(event.pointerType==='mouse'||!touch.options.touchEnabled||!ready||busy||runtimeOptions.replayViewer)return;
   if(type==='pointerdown')try{canvas.setPointerCapture(event.pointerId);}catch{}
   if(practicePointer({id:'local:'+event.pointerId,type:type==='pointercancel'?'cancel':type.slice(7),x:event.clientX,y:event.clientY,button:event.button})){event.preventDefault();return;}
   event.preventDefault();if(type==='pointerdown')audioReady().catch(fail);
   const point=pointerPosition(event.clientX,event.clientY);touch.pointer({id:'local:'+event.pointerId,type:type==='pointercancel'?'cancel':type.slice(7),...point},touchState());
 },{passive:false});
 canvas.addEventListener('lostpointercapture',event=>{const id='local:'+event.pointerId;if(touch.points.has(id))touch.release(id,true);practiceUI?.pointer({type:'cancel',id});});
-window.addEventListener('blur',()=>{if(ready&&model.state.scene==='playing'){model.openPause(resultData(false));pauseAudio();}clearKeys();if(assets.managed)syncRuntime().catch(fail);});
-document.addEventListener('visibilitychange',()=>{backgrounded=document.hidden;clearKeys();if(backgrounded){if(ready&&model.state.scene==='playing'){model.openPause(resultData(false));pauseAudio();}suspendBrowserAudio();syncRuntime().catch(fail);}else restoreBrowserAudio().catch(fail);});
-window.addEventListener('pagehide',()=>{backgrounded=true;clearKeys();suspendBrowserAudio();syncRuntime().catch(console.error);});
+window.addEventListener('blur',()=>{clearKeys();if(assets.managed)syncRuntime().catch(fail);});
+document.addEventListener('visibilitychange',()=>{backgrounded=document.hidden;clearKeys();if(backgrounded){if(runtimeOptions.replayViewer)replayWorkspace?.background();else if(ready&&model.state.scene==='playing'){model.openPause(resultData(false));pauseAudio();}suspendBrowserAudio();syncRuntime().catch(fail);}else restoreBrowserAudio().catch(fail);});
+window.addEventListener('pagehide',()=>{backgrounded=true;clearKeys();replayWorkspace?.background();suspendBrowserAudio();syncRuntime().catch(console.error);});
 window.addEventListener('pageshow',()=>{backgrounded=document.hidden;if(!backgrounded)restoreBrowserAudio().catch(fail);});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeys();audio.music?.stop();stopEffects();fail(Error('图形环境已失效，请退出并重新启动游戏'));});
 $('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.querySelector('.viewport').requestFullscreen();};
-$('manual').onclick=()=>{if(session&&model.state.scene==='playing'){model.openPause(resultData(false));}model.key('F1',true);};
+$('manual').onclick=()=>{if(runtimeOptions.replayViewer)return;if(session&&model.state.scene==='playing'){model.openPause(resultData(false));}model.key('F1',true);};
 $('import').onchange=async()=>{try{const file=$('import').files[0];if(!file)return;if(file.size>64*1024*1024)throw Error('录像过大');const b=new Uint8Array(await file.arrayBuffer()),r=parseReplay(b),id='th12_import_'+Date.now()+'.rpy';await store.write('/savesth12/replay/'+id,b);corpus.push(replayMetadata(r,{id}));model.setCorpus(corpus);notice('录像已导入，可从 Replay 选择');}catch(error){notice(error.message);}finally{$('import').value='';}};
 $('export-replay').onclick=()=>{if(!lastReplay)return;const url=URL.createObjectURL(new Blob([lastReplay.bytes],{type:'application/octet-stream'})),a=document.createElement('a');a.href=url;a.download=lastReplay.id;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 
@@ -466,27 +495,34 @@ async function initialize(){
     try{return replayMetadata(parseReplay(await bytes('/replays/'+encodeURIComponent(fixture.id))),fixture);}
     catch(error){console.warn('录像信息读取失败 '+fixture.id+': '+error.message);return fixture;}
   }));
-  for(const path of await store.list())if(path.endsWith('.rpy'))try{const b=await store.read(path),r=parseReplay(b),id=path.split('/').at(-1);corpus=corpus.filter(f=>f.id!==id);corpus.push(replayMetadata(r,{id}));}catch(error){console.warn(error.message);}
+  for(const path of await store.list())if(/^\/savesth12\/replay\/[^/]+\.rpy$/i.test(path))try{const b=await store.read(path),r=parseReplay(b),id=path.split('/').at(-1);corpus=corpus.filter(f=>f.id!==id);corpus.push(replayMetadata(r,{id}));}catch(error){console.warn(error.message);}
   practiceBridge=new PracticeBridge(core);damageSources=new DamageSourceBridge(core);practiceUI=new PracticeOverlay({bridge:practiceBridge,canvas,onError:fail,onMenuAction:action=>model.practiceAction(action)});
-  practiceUI.configure({enabled:!!runtimeOptions.thpracEnabled,locale:runtimeOptions.thpracLocale??'ja-JP'});
+  practiceUI.configure({enabled:!!runtimeOptions.thpracEnabled&&!runtimeOptions.replayViewer,locale:runtimeOptions.thpracLocale??'ja-JP'});
   if(runtimeOptions.thpracEnabled&&!practiceBridge.snapshot().enabled)throw Error('当前构建未包含 THPrac，请重新生成完整适配版');
   model=new TitleScenes({profile,corpus,settings:profile.settings,musicTracks:resources.musicComments,practiceEnabled:!!runtimeOptions.thpracEnabled,practiceLocale:runtimeOptions.thpracLocale??'ja-JP'});presentation=new TitlePresentation(renderer,resources,profile);
+  if(runtimeOptions.replayViewer)replayWorkspace=new ReplayWorkspace({
+    read:path=>store.read(path),state:()=>({stage:session?.stage??0,cursor:session?.cursor??0}),busy:()=>busy||backgrounded||terminated||fatalError,
+    open:async(replay,stage)=>{await begin({mode:'replay',character:replay.character,shot:replay.shot,difficulty:replay.difficulty,stage},replay);model.enter('playing',0,{readyAt:0});captureGamePresentation();},
+    transition:viewerStage,step:()=>{gameTick({held:0});captureGamePresentation();},
+    resetTime:()=>{last=performance.now();accumulator=0;},silence:()=>{stopEffects();pauseAudio();},transport:viewerTransport,
+    report:playback=>emit({event:'runtime-info',playback}),error:fail,
+  });
   if(assets.managed&&window.parent.__touhouAudioContext)audioReady().catch(error=>notice('音频：'+error.message));
   await loadingScreen.waitForStartup();await actions();loadingScreen.endStartup();ready=true;last=performance.now();meter.reset(last);accumulator=0;
   if(!assets.managed)window.__th12Game={ready:()=>ready,state:()=>({scene:model.view(),session:session?{mode:session.mode,stage:session.stage,cursor:session.cursor}:null,flow:session?readJSON('stage_flow'):null}),profile:()=>profile.data,start:settings=>{model.run={...settings};model.enter('playing',0,{readyAt:0});return begin(settings);},model:()=>model,present};
 }
-async function syncRuntime(){if(launched&&profile){if(core)await saveProfile();else await profile.save();}await store?.sync();}
+async function syncRuntime(){if(launched&&profile){if(core&&!session?.replay&&!runtimeOptions.replayViewer)await saveProfile();else await profile.save();}await store?.sync();}
 async function launchRuntime(){
   if(terminated)throw Error('此运行会话已结束，请从启动器重新打开');
   if(launched)throw Error('游戏已启动');launched=true;firstFrame=false;
-  try{localization??=await prepareLocalization();localization.activate();assets.localization=localization;await initialize();if(runtimeOptions.replayPath){const id=runtimeOptions.replayPath.split('/').at(-1);await playReplay(id);model.enter('playing',0,{readyAt:0});}emit({event:'runtime-info',renderer:'WebGL2',architecture:'C++20 / WebAssembly',version:'0.3.0-cpp',integration:'manual-acceptance-pending',language:localization.language,completeAdapter:false});}
+  try{localization??=await prepareLocalization();localization.activate();assets.localization=localization;await initialize();if(runtimeOptions.replayPath){if(runtimeOptions.replayViewer)await replayWorkspace.command({action:'open',path:runtimeOptions.replayPath.startsWith('/savesth12/')?runtimeOptions.replayPath:'/savesth12/'+runtimeOptions.replayPath});else{const id=runtimeOptions.replayPath.split('/').at(-1);await playReplay(id);model.enter('playing',0,{readyAt:0});}}emit({event:'runtime-info',renderer:'WebGL2',architecture:'C++20 / WebAssembly',version:'0.3.0-cpp',integration:'manual-acceptance-pending',language:localization.language,completeAdapter:false});}
   catch(error){launched=false;throw error;}
 }
 async function bootstrap(){
   if(!assets.managed){await launchRuntime();return;}
   document.documentElement.dataset.managed='true';
   emit=installManagedShell({
-    get store(){return store;},running:()=>launched,configure:async settings=>{
+    get store(){return store;},running:()=>launched,replayViewer:()=>!!runtimeOptions.replayViewer,configure:async settings=>{
       const installed=new Map(),pack=settings.runtimePack;
       if(pack){
         if(!Array.isArray(pack.files)||pack.files.length>256)throw Error('语言包安装列表无效');
@@ -502,6 +538,7 @@ async function bootstrap(){
       localization?.deactivate();localization=provider;assets.localization=provider;runtimeOptions=settings.options;runtimeMusic=settings.music;touch.configure(runtimeOptions);
     },
     resources:async items=>{await assets.install(items,message=>emit(message));await installRuntimeFonts(assets.fonts);},launch:launchRuntime,
+    playback:message=>{if(!ready||!runtimeOptions.replayViewer||!replayWorkspace)throw Error('请先打开录像工作区');return replayWorkspace.command(message);},
     key:(code,down,message)=>{if(!managedInput.key(message,down,message.inputSource==='physical'?'physical':'virtual',eventKey))eventKey(keyboardCode(message),down,'host');},clearKeyboard:()=>{clearKeys({touchToo:false,practiceToo:false});practiceUI?.keys.clear();},cancelTouch:()=>{touch.cancel();practiceUI?.cancel();},
     touch:message=>{touch.controls(message,ready&&!busy?touchState():{key:'inactive',kind:'menu',instance:'',ready:false});practiceUI?.mobilePanels(message);updatePracticeUI();},pointer:hostPointer,practicePointer,sync:syncRuntime,
   },window,{announceReady:false});
