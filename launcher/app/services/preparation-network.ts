@@ -28,7 +28,7 @@ export function packageNetworkMetadata(gameId: GameId, input: RequestInfo | URL,
  * Package update has a separate silent tracker, while language owns its native
  * stream and explicitly publishes request/byte/completion to the visible one. */
 export function createPreparationNetwork({foreground, baseUrl, translate: t, fetchImpl = globalThis.fetch, xhrFactory}: {
-  foreground: Pick<Tracker, 'xhrFetch' | 'begin' | 'update' | 'finish'>;
+  foreground: Pick<Tracker, 'resourceFetch' | 'begin' | 'update' | 'finish'>;
   baseUrl: string;
   translate: Translate;
   fetchImpl?: typeof fetch;
@@ -36,8 +36,8 @@ export function createPreparationNetwork({foreground, baseUrl, translate: t, fet
 }) {
   const background = createNetworkActivityTracker({fetchImpl, ...(xhrFactory !== undefined ? {xhrFactory} : {})});
   return Object.freeze({
-    packageFetch: (game: GameId): typeof fetch => (input, init) => foreground.xhrFetch(input, init, packageNetworkMetadata(game, input, baseUrl, t)),
-    backgroundFetch: ((input, init) => background.xhrFetch(input, init)) as typeof fetch,
+    packageFetch: (game: GameId): typeof fetch => (input, init) => foreground.resourceFetch(input, init, packageNetworkMetadata(game, input, baseUrl, t)),
+    backgroundFetch: ((input, init) => background.resourceFetch(input, init)) as typeof fetch,
     beginLanguage(label: string) {
       const id = foreground.begin({title: t('language.downloading'), label: t('language.requesting', {language: label}), kind: 'language', phase: 'requesting'});
       return {

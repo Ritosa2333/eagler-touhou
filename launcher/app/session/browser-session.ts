@@ -717,8 +717,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     }
     requiredNavigation().closeRoomPanel(); requiredNavigation().closeRoomSettings();
     publish({roomLaunchStage: cover ? 'runtime' : null});
-    await showRoomPlayer(context, mobile, context.snapshot.seat != null);
     publish({spectatorViewer: context.snapshot.spectatorRequested});
+    await showRoomPlayer(context, mobile && !context.snapshot.spectatorRequested, context.snapshot.seat != null);
     const owner = requiredRuntime(), preloaded = roomPreload;
     const current = owner.getSnapshot();
     if (current.phase === 'prepared' && current.epoch !== null &&

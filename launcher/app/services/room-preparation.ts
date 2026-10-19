@@ -49,7 +49,7 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
       if (!catalog?.games[game]) throw new Error(t('package.releaseNotReadyNoLocal', {game: game.toUpperCase()}));
       try {
         await acquisition.installPublished(game, {catalog, catalogUrl, gameVersion, addComponents: [],
-          fetchImpl: (input, init) => tracker.xhrFetch(input, init, packageNetworkMetadata(game, input, options.baseUrl, t)),
+          fetchImpl: (input, init) => tracker.resourceFetch(input, init, packageNetworkMetadata(game, input, options.baseUrl, t)),
           signal: context.signal});
       } catch (error) {
         if (context.signal.aborted || (error !== null && typeof error === 'object' && 'name' in error && error.name === 'AbortError') || /已取消下载/.test(preparationErrorText(error))) throw error;

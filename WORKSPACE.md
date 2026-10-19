@@ -45,3 +45,7 @@ node tools/workspace.mjs select th08 --variant=both
 ## 检查入口
 
 根 `.github/workflows/` 是 CI 入口。前端、游戏和服务分别执行自己的检查，文档和适配表共用 `npm run docs:check`。`npm run ports:check -- --all` 检查各作各模式的源码输入和实现，`npm run ports:status -- --all` 更新[适配表与检查记录](docs/adaptation/README.md)。构建成功的来源记录位于 `artifacts/validation/source-builds/`。
+
+## 下载服务
+
+[`services/resource-router/`](services/resource-router/README.md) 按发布清单提供资源分流与备用节点发现。它独立于 Relay 和 TURN，运行 `npm --prefix services/resource-router test` 检查节点内容匹配与分流接口。

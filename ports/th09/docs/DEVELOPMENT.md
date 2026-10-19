@@ -40,3 +40,7 @@ npm --prefix launcher run dev:workspace
 | Ghidra 源码分析 | TH09 原版 EXE；Ghidra 与 JDK 安装目录 | 设置 `$env:TH09_DECOMP_TOOLS='C:\tools\decomp'`，运行 `npm --prefix ports/th09/web run cpp:analyze`。分析产物写入 `ports/th09/web/artifacts/cpp/analysis/`。 |
 
 `build-sdl.mjs` 直接构建宿主时可显式指定 Emscripten SDK：`node ports/th09/web/scripts/build-sdl.mjs --release --emsdk 'C:\tools\emsdk'`。该 SDK 路径须含 `.emscripten` 和 Emscripten 6.0.9 的 `install/` 或 `upstream/` 文件；宿主文件写入 `ports/th09/web/artifacts/sdl-release/`。
+
+## 房间菜单返回
+
+正式 Runtime 导出 `th09_room_return`，结束当前对局、清理旁观状态与待退出标记，回到原生标题菜单。Launcher 保留同一 iframe、Module 和已加载资源，菜单呈现后完成 `return-room` 响应。普通版与多人版共用该生产接口，构建时核对导出存在；连续旁观往返核对菜单持续刷新与再次开局。

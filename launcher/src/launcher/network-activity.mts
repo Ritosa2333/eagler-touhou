@@ -1,3 +1,5 @@
+import {createResourceDownloader, resourcePath} from './resource-download.mjs';
+
 function nowMs() {
   return globalThis.performance?.now?.() ?? Date.now();
 }
@@ -127,6 +129,7 @@ export function createNetworkActivityTracker({
   const fetchTimeout = Math.max(0, Number(fetchTimeoutMs) || 0);
   let serial = 0;
   const tasks = new Map<string, NetworkTask>();
+  const downloadResource = createResourceDownloader({fetchImpl});
 
   const snapshot = (): NetworkActivitySnapshot => {
     const active = [...tasks.values()].map(cloneTask);
@@ -473,6 +476,16 @@ export function createNetworkActivityTracker({
     finish,
     fetch: trackedFetch,
     xhrFetch: trackedXhrFetch,
+    async resourceFetch(input: FetchInput, init: RequestInit = {}, meta: NetworkTaskPatch = {}) {
+      const url = new URL(requestUrl(input), globalThis.location?.href || 'https://package.invalid/');
+      const request = typeof Request !== 'undefined' && input instanceof Request ? input : null;
+      if (!resourcePath(url) || String(init.method || request?.method || 'GET').toUpperCase() !== 'GET') return trackedXhrFetch(input, init, meta);
+      const id = begin({...meta, url: url.href});
+      try {
+        return await downloadResource(url, {...(request ? {headers: request.headers, signal: request.signal, credentials: request.credentials} : {}), ...init},
+          (loaded, total, source) => update(id, {loaded, total, url: source, phase: 'receiving'}));
+      } finally {finish(id);}
+    },
     snapshot,
     get activeCount() { return tasks.size; },
   };

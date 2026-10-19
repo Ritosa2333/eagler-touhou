@@ -233,7 +233,7 @@ test('main 1372: Package network copy retains every original file-kind label in 
 test('main Package foreground uses XHR metadata while background updates stay outside the visible tracker', async () => {
   const foregroundCalls = [], rawCalls = [];
   const adapter = api.createPreparationNetwork({baseUrl: 'https://launcher.invalid/', translate: t, xhrFactory: null,
-    foreground: {xhrFetch: async (...args) => {foregroundCalls.push(args); return new Response('foreground');},
+    foreground: {resourceFetch: async (...args) => {foregroundCalls.push(args); return new Response('foreground');},
       begin() {throw new Error('Unexpected foreground task');}, update() {}, finish() {}},
     fetchImpl: async (input, init) => {rawCalls.push({input, init}); return new Response('background');}});
   const signal = new AbortController().signal;

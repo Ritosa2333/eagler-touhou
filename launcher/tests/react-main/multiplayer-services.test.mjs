@@ -530,7 +530,7 @@ function preparationFixture({installed = true, worker = null, installError, noCa
   const service = owner.createRoomPreparation({acquisition, metadataReady: async () => {events.push(['metadata']);},
     baseUrl: 'https://launcher.invalid/', translate: key => key,
     activeWorker: async () => {events.push(['worker']); return worker;}, dependencies: {
-      createTracker: options => {onChange = options.onChange; return {xhrFetch: async () => {throw new Error('fixture installer does not request bytes');}};},
+      createTracker: options => {onChange = options.onChange; return {resourceFetch: async () => {throw new Error('fixture installer does not request bytes');}};},
       prepareRuntime: async (...args) => {events.push(['runtime', ...args]); return {url: '', generation: hash, cached: true};},
     }});
   return {service, events, progress, controller, context, report: value => progress.push(value), emit: snapshot => onChange(snapshot)};

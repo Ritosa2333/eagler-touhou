@@ -1,6 +1,6 @@
 # 文档总表
 
-共 223 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 224 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -84,7 +84,7 @@
 | Launcher | [launcher/README.md](../launcher/README.md) | launcher README |
 | Launcher | [launcher/THIRD_PARTY.md](../launcher/THIRD_PARTY.md) | 第三方软件与资源致谢 |
 | Launcher | [launcher/compat/README.md](../launcher/compat/README.md) | 旧数据迁移 |
-| Launcher | [launcher/content/MULTIPLAYER.md](../launcher/content/MULTIPLAYER.md) | 联机玩法 |
+| Launcher | [launcher/content/MULTIPLAYER.md](../launcher/content/MULTIPLAYER.md) | 联机玩法介绍 |
 | Launcher | [launcher/docs/ADAPTER_BEHAVIOR_INVARIANTS.md](../launcher/docs/ADAPTER_BEHAVIOR_INVARIANTS.md) | Adapter 行为不变量 |
 | Launcher | [launcher/docs/ADAPTER_CAPABILITIES.md](../launcher/docs/ADAPTER_CAPABILITIES.md) | Adapter 能力参考 |
 | Launcher | [launcher/docs/ARCHITECTURE.md](../launcher/docs/ARCHITECTURE.md) | 启动器结构与职责 |
@@ -120,6 +120,7 @@
 | Relay 服务 | [services/relay/docs/protocol.md](../services/relay/docs/protocol.md) | Relay 客户端协议 |
 | TURN 服务 | [services/turn/README.md](../services/turn/README.md) | TURN 配置工具 |
 | Telemetry 服务 | [services/telemetry/README.md](../services/telemetry/README.md) | 联机遥测服务 |
+| 服务 | [services/resource-router/README.md](../services/resource-router/README.md) | 资源下载服务 |
 | 开发工具 | [tools/README.md](../tools/README.md) | 开发工具 |
 | 开发工具 | [tools/browser/README.md](../tools/browser/README.md) | 浏览器测试工具 |
 | 开发工具 | [tools/ci/README.md](../tools/ci/README.md) | CI 来源资产清单 |

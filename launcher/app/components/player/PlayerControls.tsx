@@ -64,6 +64,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
   );
   const spectatorTimeline =
     state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
+  const spectating = state.spectatorViewer || state.runtime?.spectator === true;
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
   const th09Information = state.runtime?.launched === true && room.product === 'th09mp' && !state.replayViewer;
   const cooperativeSpectator = state.runtime?.launched === true && state.runtime.spectator === true &&
@@ -124,12 +125,13 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
       {settings &&
         !replayWorkspace &&
         !roomWorkspace &&
+        !spectating &&
         state.bootTouchPreview &&
         !session.getActiveSettings() &&
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
+      {session.getActiveSettings() && !spectating && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
         <GameplayControls session={session} />
       )}
     </>
@@ -271,6 +273,7 @@ function PlayerUtilities({
     navigation = useSurfaceNavigation(),
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const [, updateOrientation] = useState(0);
+  const spectating = state.spectatorViewer || state.runtime?.spectator === true;
   const portrait =
     (window.visualViewport?.height || window.innerHeight) >
     (window.visualViewport?.width || window.innerWidth);
@@ -289,7 +292,7 @@ function PlayerUtilities({
     <>
       <TouchHelp
         nativeControls={'touchActions' in PRODUCT_GAMES[settings.gameId]}
-        open={state.touchHelpOpen}
+        open={state.touchHelpOpen && !spectating}
         onCloseRequest={session.closeTouchHelp}
         touchEnabled={settings.options.touchEnabled}
         focusMode={settings.options.touchFocusMode}
@@ -324,7 +327,7 @@ function PlayerUtilities({
           }}
           dangerouslySetInnerHTML={{ __html: playerUtilityIcons.fullscreenToggle }}
         />}
-        {!roomWorkspace && <button
+        {!roomWorkspace && !spectating && <button
           className="touch-help-open"
           id="touchHelpOpen"
           type="button"
@@ -339,7 +342,7 @@ function PlayerUtilities({
           type="button"
           aria-label={t(portrait ? 'player.switchLandscape' : 'player.switchPortrait')}
           title={t('player.switchOrientationTitle')}
-          hidden={!state.runtime?.launched || !session.nativeTouch.canSwitchOrientation()}
+          hidden={spectating || !state.runtime?.launched || !session.nativeTouch.canSwitchOrientation()}
           onClick={(event) => {
             if (!state.runtime?.launched) return;
             event.preventDefault();

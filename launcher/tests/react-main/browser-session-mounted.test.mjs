@@ -2094,8 +2094,10 @@ test('actual BrowserLauncher: spectator toolbar exits playback into the existing
   assert.equal(env.document.querySelector('#playbackExit'), null);
 });
 
-for (const game of ['th06','th07','th08','th09','th10','th11','th15']) {
- test(`actual BrowserLauncher: ${game} spectator return retains its Runtime and settles each launch cover`, async () => {
+for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08','th09','th10','th11','th15']) {
+ test(`actual BrowserLauncher: ${mobileDevice ? 'mobile' : 'desktop'} ${game} spectator return retains its Runtime and settles each launch cover`, async t => {
+  const originalAgent=env.window.navigator.userAgent; t.after(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:originalAgent}));
+  Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:mobileDevice ? 'Mozilla/5.0 Android Mobile' : 'Mozilla/5.0 Desktop'});
   const product=game+'mp',invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true});
   const host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
   const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,seedPackages:[game],seedStorage(storage){
@@ -2115,6 +2117,10 @@ for (const game of ['th06','th07','th08','th09','th10','th11','th15']) {
    if(attempt){assert.equal(current.epoch,previousEpoch);assert.equal(f.native.document,previousDocument);}
    else{initialNavigations=f.navigations.length;initialReads=f.dataReads.length;}
    assert.equal(f.native.options.netplaySpectator,true);
+   assert.equal(f.order.includes('fullscreen-enter'),false,'spectating never requests fullscreen');
+   assert.equal(env.document.querySelector('#touchHud'),null,'spectating has no gameplay touch buttons');
+   assert.equal(env.document.querySelector('#touchEscape'),null);
+   assert.equal(env.document.querySelector('#touchHelpOpen'),null);
    f.native.Module={eaglerOptions:{netplayMode:'lan'}};
    f.native[api.multiplayerConfigForProduct(product).peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
    f.native.__eaglerNetplaySpectator=true;f.native.__eaglerNetplayTransport='spectator';
