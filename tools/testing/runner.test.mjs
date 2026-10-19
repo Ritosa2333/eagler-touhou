@@ -1,14 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {createReadStream} from 'node:fs';
 import {mkdtemp, mkdir, readFile, readdir, rm, writeFile} from 'node:fs/promises';
 import {setTimeout as delay} from 'node:timers/promises';
 import {tmpdir} from 'node:os';
-import {resolve, dirname} from 'node:path';
+import {basename, resolve, dirname} from 'node:path';
 import {runTasks} from './runner.mjs';
 import {acquireOutputLock} from './output-lock.mjs';
 
 const task = (id, source, extra={}) => ({id, command:process.execPath,
   args:['-e', source], cwd:process.cwd(), timeoutMs:10000, ...extra});
+async function sha256File(path) {
+  const hash=createHash('sha256');
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest('hex');
+}
 async function fixture(operation) {
   const output = await mkdtemp(resolve(tmpdir(), 'eagler-test-runner-'));
   try {await operation(output);} finally {
@@ -136,6 +144,94 @@ test('a successful driver cannot hide detached work that survives its exit', () 
   const after = await readFile(heartbeat, 'utf8');
   await delay(150);
   assert.equal(await readFile(heartbeat, 'utf8'), after);
+}));
+
+test('runner and direct supervisor reject root-relative and drive-relative cleanup image paths', () => fixture(async output => {
+  const invalidPaths=['\\helper.exe','/helper.exe','C:helper.exe'];
+  for(let index=0;index<invalidPaths.length;index++){
+    await assert.rejects(runTasks([task(`invalid-cleanup-${index}`,'process.exit(0)',{
+      cleanupImages:[{path:invalidPaths[index],sha256:'a'.repeat(64)}]})],{output:resolve(output,`runner-${index}`)}),
+    /drive-qualified or UNC-share image path/);
+  }
+  const python=process.env.TH_PYTHON??process.env.PYTHON??(process.platform==='win32'?'python':'python3');
+  const supervisor=resolve(process.cwd(),'tools/testing/supervise.py');
+  for(let index=0;index<invalidPaths.length;index++){
+    const child=spawnSync(python,[supervisor,'--cleanup-report',resolve(output,`python-${index}.json`),
+      '--cleanup-image',invalidPaths[index],'a'.repeat(64),'--',process.execPath,'-e','process.exit(0)'],
+    {cwd:process.cwd(),encoding:'utf8',windowsHide:true});
+    assert.equal(child.status,2,child.stderr||child.error?.message);
+    assert.match(child.stderr,/drive-qualified or a complete UNC-share path/);
+  }
+}));
+
+test('a task-declared Windows helper is stopped only after exact path and SHA-256 match', {skip:process.platform !== 'win32'}, () => fixture(async output => {
+  const image={path:process.execPath,sha256:await sha256File(process.execPath)};
+  const helper='setInterval(()=>{},1000);';
+  const driver=`const child=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(helper)}],
+    {detached:true,stdio:'ignore',windowsHide:true});child.unref();setTimeout(()=>process.exit(0),150);`;
+  const report=await runTasks([task('declared-helper',driver,{cleanupImages:[image]})],{output});
+  const result=report.results[0],cleanup=result.cleanupImages;
+  assert.equal(report.status,'passed');assert.equal(result.code,0);
+  assert.deepEqual(report.cleanupDeclarations,[{id:'declared-helper',images:[image]}]);
+  assert.equal(cleanup.status,'passed');assert.deepEqual(cleanup.declared,[image]);
+  const terminated=cleanup.observed.find(item=>item.action==='terminated');
+  assert.ok(terminated,'the declared live helper must be explicitly terminated');
+  assert.equal(terminated.path.toLowerCase(),image.path.toLowerCase());
+  assert.equal(terminated.sha256,image.sha256);
+  assert.equal(terminated.exitCode,0xE0000001);
+  assert.deepEqual(cleanup.remaining,[]);
+}));
+
+test('a declared image with the wrong SHA-256 leaves the helper as a failing descendant', {skip:process.platform !== 'win32'}, () => fixture(async output => {
+  const heartbeat=resolve(output,'wrong-hash-heartbeat');
+  const helper=`const fs=require('node:fs');const file=${JSON.stringify(heartbeat)};function beat(){fs.writeFileSync(file,String(Date.now()));setTimeout(beat,30)}beat();`;
+  const driver=`const child=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(helper)}],
+    {detached:true,stdio:'ignore',windowsHide:true});child.unref();setTimeout(()=>process.exit(0),150);`;
+  const report=await runTasks([task('wrong-helper-hash',driver,{cleanupImages:[{path:process.execPath,sha256:'0'.repeat(64)}]})],{output});
+  const result=report.results[0],cleanup=result.cleanupImages;
+  assert.equal(report.status,'failed');assert.equal(result.code,1);
+  assert.equal(cleanup.status,'failed-descendants');
+  assert.ok(cleanup.observed.some(item=>item.action==='sha256-mismatch'&&item.path.toLowerCase()===process.execPath.toLowerCase()));
+  assert.ok(cleanup.remaining.some(item=>item.path?.toLowerCase()===process.execPath.toLowerCase()));
+  const after=await readFile(heartbeat,'utf8');await delay(150);
+  assert.equal(await readFile(heartbeat,'utf8'),after,'the failed task Job must still terminate the unapproved helper');
+}));
+
+test('a matching executable basename at another path does not authorize cleanup', {skip:process.platform !== 'win32'}, () => fixture(async output => {
+  const heartbeat=resolve(output,'wrong-path-heartbeat');
+  const image={path:resolve(output,'shadow',basename(process.execPath)),sha256:await sha256File(process.execPath)};
+  const helper=`const fs=require('node:fs');const file=${JSON.stringify(heartbeat)};function beat(){fs.writeFileSync(file,String(Date.now()));setTimeout(beat,30)}beat();`;
+  const driver=`const child=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(helper)}],
+    {detached:true,stdio:'ignore',windowsHide:true});child.unref();setTimeout(()=>process.exit(0),150);`;
+  const report=await runTasks([task('wrong-helper-path',driver,{cleanupImages:[image]})],{output});
+  const result=report.results[0],cleanup=result.cleanupImages;
+  assert.equal(report.status,'failed');assert.equal(result.code,1);
+  assert.ok(cleanup.observed.some(item=>item.action==='not-declared'&&item.path.toLowerCase()===process.execPath.toLowerCase()));
+  assert.deepEqual(cleanup.observed.filter(item=>item.action==='terminated'),[]);
+  const after=await readFile(heartbeat,'utf8');await delay(150);
+  assert.equal(await readFile(heartbeat,'utf8'),after,'the Job must still end an image with an unapproved full path');
+}));
+
+test('a nonzero task exit stays failed after its declared helper is cleaned', {skip:process.platform !== 'win32'}, () => fixture(async output => {
+  const image={path:process.execPath,sha256:await sha256File(process.execPath)};
+  const helper='setInterval(()=>{},1000);';
+  const driver=`const child=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(helper)}],
+    {detached:true,stdio:'ignore',windowsHide:true});child.unref();setTimeout(()=>process.exit(7),150);`;
+  const report=await runTasks([task('failed-main-with-helper',driver,{cleanupImages:[image]})],{output});
+  const result=report.results[0];
+  assert.equal(report.status,'failed');assert.equal(result.status,'failed');assert.equal(result.code,7);
+  assert.equal(result.cleanupImages.commandExitCode,7);assert.equal(result.cleanupImages.status,'command-failed');
+  assert.ok(result.cleanupImages.observed.some(item=>item.action==='terminated'));
+}));
+
+test('Linux hard-fails task-declared helper cleanup instead of running without Job identity checks', {skip:process.platform !== 'linux'}, () => fixture(async output => {
+  const marker=resolve(output,'must-not-run');
+  const report=await runTasks([task('unsupported-helper',`require('node:fs').writeFileSync(${JSON.stringify(marker)},'ran')`,{
+    cleanupImages:[{path:'C:\\BuildTools\\bin\\helper.exe',sha256:'a'.repeat(64)}]})],{output});
+  assert.equal(report.status,'failed');assert.equal(report.results[0].status,'failed');
+  assert.equal(report.results[0].code,1);
+  assert.equal(report.results[0].cleanupImages.status,'unsupported-platform');
+  await assert.rejects(readFile(marker),{code:'ENOENT'});
 }));
 
 test('runTasks removes NODE_OPTIONS shard selectors from host, run, and task environments', {timeout: 120000}, async () => {

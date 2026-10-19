@@ -37,7 +37,17 @@ th06／th07 的 Replay 源码契约随 `ports-unit` 执行，核对输入注入�
 
 ## 环境
 
-先运行 `npm --prefix launcher ci --ignore-scripts`、`npm --prefix services/relay ci --ignore-scripts` 和 `npm --prefix ports/th09/web ci --ignore-scripts`，再执行 `python -m pip install -r launcher/requirements-ci.txt` 安装固定版本的图像与 CMake 工具。浏览器依赖按 [Launcher 测试环境](../launcher/tests/README.md#浏览器环境)安装。统一执行器在 Windows 和 Linux 管理完整的子进程生命周期：Windows 使用 Job Object，Linux 使用 child subreaper。驱动正常退出后遗留进程也会导致失败。源码检查使用 Node.js 22.18 以上、Python 3 和 C++17 编译器。Launcher 的 staging 夹具与 common 原生测试使用 CMake，common 还使用 CTest。路径可通过 `EAGLER_TEST_CMAKE` 和 `EAGLER_TEST_CTEST` 指定。
+先运行 `npm --prefix launcher ci --ignore-scripts`、`npm --prefix services/relay ci --ignore-scripts` 和 `npm --prefix ports/th09/web ci --ignore-scripts`，再执行 `python -m pip install -r launcher/requirements-ci.txt` 安装固定版本的图像与 CMake 工具。浏览器依赖按 [Launcher 测试环境](../launcher/tests/README.md#浏览器环境)安装。源码检查使用 Node.js 22.18 以上、Python 3 和 C++ 编译器；`CXX` 指定的编译器须能编译并运行 C++17 与 C++20 程序。Launcher 的 staging 夹具与 common 原生测试使用 CMake，common 还使用 CTest，路径分别由 `EAGLER_TEST_CMAKE` 和 `EAGLER_TEST_CTEST` 指定。
+
+执行器在 Windows 使用 Job Object，在 Linux 使用 child subreaper 管理完整子进程生命周期。驱动退出后的未声明后代使检查失败。Windows 任务可用 `cleanupImages: [{path, sha256}]` 声明已核实的编译器后台辅助进程；监督器按完整映像路径和 SHA-256 匹配 Job 成员，结束匹配进程，并记录 PID、映像、哈希与退出码。主任务退出码和功能断言继续决定测试结果。
+
+本机需要这类清理时，将 `EAGLER_TEST_WINDOWS_COMPILER_HELPERS` 设置为 JSON 数组，填写实际工具路径与哈希：
+
+```json
+[{"path":"C:/Tools/Compiler/vctip.exe","sha256":"<实际的64位SHA-256>"}]
+```
+
+该输入绑定 common configure/build/test、native-gamepad、ports-source 和 th06／th07 cooperative rules 任务，缺省为空。清单用于不写测试产物的编译器辅助进程；路径或哈希不符、其他后代残留都会使测试失败。此清理方式由 Windows Job Object 提供，Linux 收到清单时明确报错。common 原生任务设置 `MSBUILDDISABLENODEREUSE=1`，让构建节点随任务结束。
 
 浏览器 Shell 回归执行真实 Shell 的初始化、监听器与 Launcher 改键路径。Runtime 验收加载带文件哈希清单的正式包，并从原生运行状态观察输入、帧推进和生命周期。
 

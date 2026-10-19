@@ -4,7 +4,7 @@ import {existsSync} from 'node:fs';
 import {mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {isAbsolute, resolve} from 'node:path';
-import {profiles, suites, trackedFiles, testFiles, repository} from '../../tests/suites.mjs';
+import {parseWindowsCompilerHelpers,profiles, suites, trackedFiles, testFiles, repository} from '../../tests/suites.mjs';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {MUSIC_BROWSER_GAMES,validateMusicManifest} from '../ports/music-browser-helpers.mjs';
 import {isNodeTest} from './discovery.mjs';
@@ -40,6 +40,53 @@ test('profiles resolve to real bounded commands and never silently select zero t
         assert.ok(existsSync(resolve(task.cwd, file)), `${id}: missing entrypoint ${file}`);
     }
   }
+});
+
+test('Windows compiler helper declarations are strict and attach only to declared native tasks',()=>{
+  const helper={path:'C:\\VS\\VC\\Tools\\vctip.exe',sha256:'A'.repeat(64)};
+  const uncHelper={path:'\\\\build-host\\tool-share\\vctip.exe',sha256:'B'.repeat(64)};
+  const raw=JSON.stringify([helper,uncHelper]);
+  const environment={EAGLER_TEST_WINDOWS_COMPILER_HELPERS:raw};
+  const parsed=parseWindowsCompilerHelpers(environment,'win32');
+  assert.deepEqual(parsed,[{path:helper.path,sha256:'a'.repeat(64)},{path:uncHelper.path,sha256:'b'.repeat(64)}]);
+  assert.throws(()=>parseWindowsCompilerHelpers(environment,'linux'),/supported only on Windows/);
+  assert.throws(()=>suites({environment,platform:'linux'}),/supported only on Windows/);
+  for(const invalid of [
+    '{',
+    JSON.stringify({path:helper.path,sha256:helper.sha256}),
+    JSON.stringify([{path:'relative\\vctip.exe',sha256:helper.sha256}]),
+    JSON.stringify([{path:'\\vctip.exe',sha256:helper.sha256}]),
+    JSON.stringify([{path:'/vctip.exe',sha256:helper.sha256}]),
+    JSON.stringify([{path:'C:vctip.exe',sha256:helper.sha256}]),
+    JSON.stringify([{path:'\\\\build-host',sha256:helper.sha256}]),
+    JSON.stringify([{path:helper.path,sha256:'bad'}]),
+    JSON.stringify([{...helper,extra:true}]),
+    JSON.stringify([helper,helper]),
+  ]) assert.throws(()=>parseWindowsCompilerHelpers({EAGLER_TEST_WINDOWS_COMPILER_HELPERS:invalid},'win32'),
+    /EAGLER_TEST_WINDOWS_COMPILER_HELPERS/);
+  assert.throws(()=>suites({environment:{EAGLER_TEST_WINDOWS_COMPILER_HELPERS:'{}'},platform:'win32'}),
+    /must be a JSON array/);
+
+  const catalog=suites({environment,platform:'win32'});
+  const selected=[
+    ...catalog['common-native'].tasks(),
+    ...catalog['browser-shell'].tasks(),
+    ...catalog['ports-source'].tasks(),
+    ...catalog['ports-unit'].tasks(),
+  ];
+  const cleanupTasks=selected.filter(task=>task.cleanupImages);
+  assert.deepEqual(cleanupTasks.map(task=>task.id).sort(),[
+    'common-build','common-configure','common-test','native-gamepad','ports-source',
+    'th06-cooperative-rules','th07-cooperative-rules',
+  ].sort());
+  for(const task of cleanupTasks)assert.deepEqual(task.cleanupImages,parsed,task.id);
+  for(const task of catalog['common-native'].tasks())
+    assert.equal(task.environment.MSBUILDDISABLENODEREUSE,'1',task.id);
+  assert.ok(!selected.find(task=>task.id==='golden-integrity').cleanupImages);
+
+  const noHelpers=suites({environment:{}});
+  for(const [suiteId,taskId] of [['common-native','common-configure'],['browser-shell','native-gamepad'],['ports-source','ports-source'],['ports-unit','th06-cooperative-rules']])
+    assert.ok(!noHelpers[suiteId].tasks().find(task=>task.id===taskId).cleanupImages,`${taskId} declared helpers by default`);
 });
 
 test('acceptance requires explicit private inputs and selects the complete product/player matrix',()=>{

@@ -1,9 +1,11 @@
 import {spawn, execFileSync} from 'node:child_process';
-import {mkdir, writeFile, rename} from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
+import {mkdir, readFile, writeFile, rename} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createWriteStream} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {acquireOutputLock} from './output-lock.mjs';
+import {isFullWindowsImagePath} from './windows-image-path.mjs';
 
 function stop(child) {
   if (child.exitCode !== null || child.signalCode !== null || !child.pid) return;
@@ -34,16 +36,22 @@ function stop(child) {
   }
 }
 
-async function execute(task, {output, environment, unsetEnvironment, signal}) {
+async function execute(task, {output, environment, unsetEnvironment, signal, cleanupImages}) {
   const startedAt = new Date().toISOString(), start = performance.now();
   const log = resolve(output, `${task.id}.log`), stream = createWriteStream(log);
+  const hasCleanupDeclaration = cleanupImages?.length > 0;
+  const cleanupReportPath = hasCleanupDeclaration ? resolve(output, `${task.id}.cleanup-${randomUUID()}.json`) : undefined;
   let child, timer, timedOut = false, cancelled = false, logError;
   stream.on('error', error => {logError=error.message; if (child) stop(child);});
   const result = await new Promise(accept => {
     const finish = (code, exitSignal, error) => accept({code, signal:exitSignal, ...(error ? {error} : {})});
     const syntaxOnly=task.command === process.execPath && task.args?.[0] === '--check';
-    const command=syntaxOnly ? task.command : process.env.TH_PYTHON ?? process.env.PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3');
-    const args=syntaxOnly ? task.args : [fileURLToPath(new URL('./supervise.py', import.meta.url)), '--', task.command, ...(task.args ?? [])];
+    const supervised= !syntaxOnly || hasCleanupDeclaration;
+    const command=supervised ? process.env.TH_PYTHON ?? process.env.PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3') : task.command;
+    const args=supervised ? [fileURLToPath(new URL('./supervise.py', import.meta.url)),
+      ...(hasCleanupDeclaration ? ['--cleanup-report', cleanupReportPath,
+        ...cleanupImages.flatMap(image=>['--cleanup-image', image.path, image.sha256])] : []),
+      '--', task.command, ...(task.args ?? [])] : task.args;
     const childEnvironment={...process.env};
     for (const key of unsetEnvironment) delete childEnvironment[key];
     Object.assign(childEnvironment,environment);
@@ -66,10 +74,21 @@ async function execute(task, {output, environment, unsetEnvironment, signal}) {
   });
   clearTimeout(timer);
   if (!stream.destroyed) await new Promise(accept => {stream.once('error', accept); stream.end(accept);});
+  let cleanupEvidence;
+  if (hasCleanupDeclaration) {
+    try {
+      cleanupEvidence = {...JSON.parse(await readFile(cleanupReportPath, 'utf8')), reportFile:cleanupReportPath};
+    } catch (error) {
+      cleanupEvidence = {schema:'eagler-touhou/process-cleanup/1', declared:cleanupImages, observed:[], remaining:[],
+        status:'not-produced', error:`Could not read cleanup evidence: ${error.message}`, reportFile:cleanupReportPath};
+    }
+  }
+  const cleanupStatusOk = !cleanupEvidence || ['not-requested','passed'].includes(cleanupEvidence.status) ||
+    (cleanupEvidence.status === 'command-failed' && result.code !== 0);
   return {id:task.id, command:[task.command, ...(task.args ?? [])], cwd:task.cwd,
     startedAt, durationMs:Math.round(performance.now() - start), log,
-    status:timedOut ? 'timeout' : cancelled ? 'cancelled' : result.code === 0 && !result.error && !logError ? 'passed' : 'failed',
-    ...result, ...(logError ? {error:`Test log failed: ${logError}`} : {})};
+    status:timedOut ? 'timeout' : cancelled ? 'cancelled' : result.code === 0 && !result.error && !logError && cleanupStatusOk ? 'passed' : 'failed',
+    ...result, ...(cleanupEvidence ? {cleanupImages:cleanupEvidence} : {}), ...(logError ? {error:`Test log failed: ${logError}`} : {})};
 }
 
 /** A selected task must finish successfully. Missing inputs and timeouts fail. */
@@ -81,12 +100,30 @@ export async function runTasks(tasks, {output, concurrency=4, environment={}, si
   if (!Array.isArray(unsetEnvironment)||unsetEnvironment.some(key=>typeof key!=='string'||!/^[-A-Z0-9_]+$/i.test(key)))
     throw new Error('unsetEnvironment must contain valid environment variable names');
   const ids = new Set();
+  const cleanupDeclarations = [];
+  const cleanupByTask = new Map();
   for (const task of tasks) {
     if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(task.id) || ids.has(task.id))
       throw new Error(`Invalid or duplicate task id: ${task.id}`);
     ids.add(task.id);
     if (!task.command || !task.cwd || !Number.isSafeInteger(task.timeoutMs) || task.timeoutMs < 1)
       throw new Error(`Task requires a command, cwd and timeout: ${task.id}`);
+    if (task.cleanupImages !== undefined) {
+      if (!Array.isArray(task.cleanupImages)) throw new Error(`cleanupImages must be an array: ${task.id}`);
+      const normalized = task.cleanupImages.map((image, index) => {
+        if (!image || typeof image !== 'object' || Array.isArray(image) ||
+            Object.keys(image).some(key=>!['path','sha256'].includes(key)) ||
+            typeof image.path !== 'string' || !image.path.trim() ||
+            !isFullWindowsImagePath(image.path) ||
+            typeof image.sha256 !== 'string' || !/^[0-9a-f]{64}$/i.test(image.sha256))
+          throw new Error(`cleanupImages[${index}] requires a drive-qualified or UNC-share image path and SHA-256: ${task.id}`);
+        return {path:image.path, sha256:image.sha256.toLowerCase()};
+      });
+      const identities = normalized.map(image=>`${image.path.replaceAll('\\','/').toLowerCase()}|${image.sha256}`);
+      if (new Set(identities).size !== identities.length) throw new Error(`cleanupImages contains duplicates: ${task.id}`);
+      cleanupByTask.set(task.id, normalized);
+      if (normalized.length) cleanupDeclarations.push({id:task.id, images:normalized});
+    }
   }
   output = resolve(output);
   const started = performance.now();
@@ -94,6 +131,7 @@ export async function runTasks(tasks, {output, concurrency=4, environment={}, si
   const release=await acquireOutputLock(output);
   try {
   const report = {schema:'eagler-touhou/test-run/1', ...metadata,
+    cleanupDeclarations,
     startedAt:new Date().toISOString(), selected:tasks.map(task=>task.id), results:[], status:'running'};
   const save = async () => {
     const pending = resolve(output, 'report.pending.json');
@@ -112,7 +150,8 @@ export async function runTasks(tasks, {output, concurrency=4, environment={}, si
       if (resources.some(resource=>held.has(resource))) {i++; continue;}
       pending.splice(i, 1);
       resources.forEach(resource=>held.add(resource));
-      active.set(task.id, execute(task, {output, environment, unsetEnvironment, signal:taskSignal}).then(result=>({task, result})));
+      active.set(task.id, execute(task, {output, environment, unsetEnvironment, signal:taskSignal,
+        cleanupImages:cleanupByTask.get(task.id)}).then(result=>({task, result})));
     }
     if (!active.size) {
       for (const task of pending.splice(0)) report.results.push({id:task.id, status:'cancelled', durationMs:0});

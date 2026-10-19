@@ -1,13 +1,37 @@
 import {execFileSync} from 'node:child_process';
 import {existsSync, readFileSync} from 'node:fs';
-import {resolve} from 'node:path';
+import {resolve, win32 as win32Path} from 'node:path';
 import {PRODUCT_GAMES} from '../common/contracts/product-catalog.mjs';
 import {isNodeTest} from '../tools/testing/discovery.mjs';
 import {MUSIC_BROWSER_GAMES} from '../tools/ports/music-browser-helpers.mjs';
+import {isFullWindowsImagePath} from '../tools/testing/windows-image-path.mjs';
 
 export const repository = resolve(import.meta.dirname, '..');
 const node = (id, args, cwd=repository, extra={}) => ({id, command:process.execPath, args, cwd,
   timeoutMs:300000, ...extra});
+
+export function parseWindowsCompilerHelpers(environment=process.env, platform=process.platform) {
+  const raw=environment.EAGLER_TEST_WINDOWS_COMPILER_HELPERS;
+  if(raw===undefined||raw===null)return [];
+  if(platform!=='win32')throw new Error('EAGLER_TEST_WINDOWS_COMPILER_HELPERS is supported only on Windows');
+  let parsed;
+  try { parsed=JSON.parse(raw); }
+  catch { throw new Error('EAGLER_TEST_WINDOWS_COMPILER_HELPERS must be a JSON array of {path, sha256}'); }
+  if(!Array.isArray(parsed))throw new Error('EAGLER_TEST_WINDOWS_COMPILER_HELPERS must be a JSON array of {path, sha256}');
+  const seen=new Set();
+  return parsed.map((entry,index)=>{
+    if(!entry||typeof entry!=='object'||Array.isArray(entry)||Object.keys(entry).sort().join(',')!=='path,sha256')
+      throw new Error(`EAGLER_TEST_WINDOWS_COMPILER_HELPERS[${index}] must contain only path and sha256`);
+    if(!isFullWindowsImagePath(entry.path))
+      throw new Error(`EAGLER_TEST_WINDOWS_COMPILER_HELPERS[${index}].path must be a drive-qualified or UNC-share Windows path`);
+    if(typeof entry.sha256!=='string'||!/^[a-f\d]{64}$/i.test(entry.sha256))
+      throw new Error(`EAGLER_TEST_WINDOWS_COMPILER_HELPERS[${index}].sha256 must be a 64-digit SHA-256`);
+    const path=win32Path.normalize(entry.path),key=path.toLowerCase();
+    if(seen.has(key))throw new Error(`EAGLER_TEST_WINDOWS_COMPILER_HELPERS contains duplicate path: ${path}`);
+    seen.add(key);
+    return {path,sha256:entry.sha256.toLowerCase()};
+  });
+}
 
 export function trackedFiles(root=repository) {
   return [...new Set(execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
@@ -21,10 +45,14 @@ export function testFiles(files, directory, pattern) {
   return selected;
 }
 
-export function suites({root=repository, output=resolve(root, 'artifacts/validation/tests'), environment=process.env}={}) {
+export function suites({root=repository, output=resolve(root, 'artifacts/validation/tests'), environment=process.env,
+  platform=process.platform}={}) {
   const files = trackedFiles(root), launcher = resolve(root, 'launcher');
   const workspace = JSON.parse(readFileSync(resolve(root, 'launcher/config/workspace.json')));
   const nativeBuild = resolve(output, 'common-native-build');
+  const compilerHelpers=parseWindowsCompilerHelpers(environment,platform);
+  const compilerHelperCleanup=compilerHelpers.length?{cleanupImages:compilerHelpers}:{};
+  const commonBuildEnvironment={MSBUILDDISABLENODEREUSE:'1'};
   const requireInput = (name, marker) => {
     const value = environment[name];
     if (!value || (marker && !existsSync(resolve(value, marker)))) throw new Error(`Required test input: ${name}${marker ? ` (${marker})` : ''}`);
@@ -84,7 +112,7 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
       scope:'Current source and module checks for all 15 product variants', tier:'integration',
       tasks:()=>[node('ports-source', ['tools/ports/check.mjs', '--all', '--check-status',
         `--output=${resolve(output, 'ports-source')}`], root,
-      {timeoutMs:600000, resources:['source-tree','launcher-build']})],
+      {timeoutMs:600000, resources:['source-tree','launcher-build'],...compilerHelperCleanup})],
     },
     'ports-unit': {
       scope:'Per-title server, lifecycle, package isolation, input, replay and compiled cooperative resource rules with public fixtures',tier:'integration',concurrency:2,
@@ -93,7 +121,8 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
         node('th06-th07-replay-source-contract',['launcher/tests/test-replay-determinism-contract.mjs']),
         ...['th06','th07'].map(owner=>({id:`${owner}-cooperative-rules`,
           command:environment.TH_PYTHON??environment.PYTHON??(process.platform==='win32'?'python':'python3'),
-          args:[resolve(root,`ports/${owner}/tests/cooperative-rules-test.py`)],cwd:root,timeoutMs:60000})),
+          args:[resolve(root,`ports/${owner}/tests/cooperative-rules-test.py`)],cwd:root,timeoutMs:60000,
+          ...compilerHelperCleanup})),
         packageTest('th09-server','ports/th09/web','test:server'),
         packageTest('th09-timeline','ports/th09/web','test:spectator-timeline'),
         packageTest('th11-browser','ports/th11/web','test:browser-contracts'),
@@ -118,9 +147,12 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
       scope:'Compiled common C++ consumers and browser bridge modules', tier:'integration', sequential:true,
       tasks:()=>[
         {id:'common-configure', command:environment.EAGLER_TEST_CMAKE ?? 'cmake', cwd:root, args:['-S', resolve(root, 'common'), '-B', nativeBuild,
-          '-DCMAKE_BUILD_TYPE=Release', '-DEAGLER_COMMON_BUILD_TESTS=ON'], timeoutMs:120000},
-        {id:'common-build', command:environment.EAGLER_TEST_CMAKE ?? 'cmake', cwd:root, args:['--build', nativeBuild, '--config', 'Release', '--parallel', '4'], timeoutMs:300000},
-        {id:'common-test', command:environment.EAGLER_TEST_CTEST ?? 'ctest', cwd:root, args:['--test-dir', nativeBuild, '-C', 'Release', '--no-tests=error', '--output-on-failure'], timeoutMs:180000},
+          '-DCMAKE_BUILD_TYPE=Release', '-DEAGLER_COMMON_BUILD_TESTS=ON'], timeoutMs:120000,
+          environment:commonBuildEnvironment,...compilerHelperCleanup},
+        {id:'common-build', command:environment.EAGLER_TEST_CMAKE ?? 'cmake', cwd:root, args:['--build', nativeBuild, '--config', 'Release', '--parallel', '4'], timeoutMs:300000,
+          environment:commonBuildEnvironment,...compilerHelperCleanup},
+        {id:'common-test', command:environment.EAGLER_TEST_CTEST ?? 'ctest', cwd:root, args:['--test-dir', nativeBuild, '-C', 'Release', '--no-tests=error', '--output-on-failure'], timeoutMs:180000,
+          environment:commonBuildEnvironment,...compilerHelperCleanup},
       ],
     },
     relay: {
@@ -140,7 +172,7 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
       scope:'Chromium executes production Shell wiring for all 15 variants, with a broken-wiring negative control', tier:'integration', sequential:true,
       tasks:()=>[
         node('runtime-protocol', ['launcher/tests/test-runtime-protocol-contract.mjs'], root),
-        node('native-gamepad', ['launcher/tests/test-gamepad-contract.mjs'], root),
+        node('native-gamepad', ['launcher/tests/test-gamepad-contract.mjs'], root, compilerHelperCleanup),
         {id:'browser-shell',command:environment.TH_PYTHON ?? 'python',cwd:root,
           args:['launcher/tests/test-keyboard-mapping-browser.py', `--workspace=${root}`],timeoutMs:180000,resources:['browser']},
         {id:'browser-shell-negative',command:environment.TH_PYTHON ?? 'python',cwd:root,
