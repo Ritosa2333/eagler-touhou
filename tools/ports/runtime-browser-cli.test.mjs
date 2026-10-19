@@ -47,6 +47,8 @@ test('a misspelled or duplicated scenario cannot retain an old passing browser r
       ['room',['--lifecyle'],/Unknown option/],
       ['room',['--spectator=false'],/does not accept a value/],
       ['runtime',['--game=th11'],/Duplicate option/],
+      ['offline-runtime',['--update-manifest=first.json','--update-manifest=second.json'],/Duplicate option/],
+      ['offline-runtime',['--update-manifest='],/requires =VALUE/],
     ]){
       const output=await mkdtemp(resolve(temporary,entry+'-'));
       await writeFile(resolve(output,'report.json'),JSON.stringify({status:'passed',passed:true,runId:'old'}));
@@ -60,4 +62,28 @@ test('a misspelled or duplicated scenario cannot retain an old passing browser r
       assert.deepEqual(report.targets,[]);assert.ok(report.finishedAt);
     }
   }finally{assert.ok(temporary.startsWith(resolve(tmpdir(),'browser-invalid-scenario-')));await rm(temporary,{recursive:true,force:true});}
+});
+
+test('every extended behavior entry invalidates stale success before rejecting a misspelled selection',async()=>{
+  const temporary=await mkdtemp(resolve(tmpdir(),'behavior-invalid-selection-'));
+  try{
+    for(const entry of ['practice-browser','replay-browser','runtime-desktop-probes','offline-runtime-browser']){
+      const output=resolve(temporary,entry);await mkdir(output);
+      await writeFile(resolve(output,'report.json'),JSON.stringify({status:'passed',passed:true,runId:'old'}));
+      await writeFile(resolve(output,'preserve.txt'),'existing evidence');
+      const child=spawnSync(process.execPath,[resolve(import.meta.dirname,entry+'.mjs'),
+        '--output='+output,'--manifest='+resolve(temporary,'missing.json'),'--gam=th08'],
+        {encoding:'utf8',windowsHide:true,timeout:15000});
+      assert.equal(child.status,1,child.stderr);
+      const report=JSON.parse(await readFile(resolve(output,'report.json')));
+      assert.equal(report.status,'failed');assert.equal(report.passed,false);assert.notEqual(report.runId,'old');
+      assert.match(report.failure,/Unknown option: --gam/);assert.ok(report.finishedAt);
+      assert.deepEqual(report.targets,[]);
+      assert.equal(await readFile(resolve(output,'preserve.txt'),'utf8'),'existing evidence');
+      assert.doesNotMatch(report.failure,/ENOENT|browserType\.launch/);
+    }
+  }finally{
+    assert.equal(resolve(temporary,'..'),resolve(tmpdir()));
+    await rm(temporary,{recursive:true,force:true});
+  }
 });

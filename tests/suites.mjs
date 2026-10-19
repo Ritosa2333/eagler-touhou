@@ -3,6 +3,7 @@ import {existsSync, readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {PRODUCT_GAMES} from '../common/contracts/product-catalog.mjs';
 import {isNodeTest} from '../tools/testing/discovery.mjs';
+import {MUSIC_BROWSER_GAMES} from '../tools/ports/music-browser-helpers.mjs';
 
 export const repository = resolve(import.meta.dirname, '..');
 const node = (id, args, cwd=repository, extra={}) => ({id, command:process.execPath, args, cwd,
@@ -154,6 +155,74 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
         `--output=${resolve(output, 'runtime-browser')}`], root,
       {timeoutMs:1800000, resources:['browser','runtime']})],
     },
+    'runtime-desktop': {
+      scope:'Current ordinary WASM | Shell keyboard paths, remapping, simulated touch and actual WebAudio output', tier:'acceptance',
+      tasks:()=>[node('runtime-desktop', ['tools/ports/runtime-desktop-probes.mjs',
+        `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`, '--variant=normal',
+        `--game=${Object.keys(PRODUCT_GAMES).join(',')}`,
+        `--output=${resolve(output, 'runtime-desktop')}`], root,
+      {timeoutMs:1800000, resources:['browser','runtime']})],
+    },
+    'runtime-practice': {
+      scope:'Current ordinary practice-enabled WASM | native overlay, configured locale and disabled control', tier:'acceptance',
+      tasks:()=>[node('runtime-practice', ['tools/ports/practice-browser.mjs',
+        `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`, '--variant=normal',
+        `--game=${Object.keys(PRODUCT_GAMES).join(',')}`,
+        `--output=${resolve(output, 'runtime-practice')}`], root,
+      {timeoutMs:1800000, resources:['browser','runtime']})],
+    },
+    'runtime-replay': {
+      scope:'Current ordinary WASM | official Shell Replay import, 120 rate-1 native frames and native termination signal | full input consumption and original-format compatibility reported separately; MP requires explicit selection', tier:'acceptance',
+      tasks:()=>[node('runtime-replay', ['tools/ports/replay-browser.mjs',
+        `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`, '--variant=normal',
+        `--game=${Object.keys(PRODUCT_GAMES).join(',')}`,
+        `--output=${resolve(output, 'runtime-replay')}`], root,
+      {timeoutMs:3600000, resources:['browser','runtime']})],
+    },
+    'runtime-music': {
+      scope:'Current ordinary WASM | title OGG Runtime PCM and native track identity where exposed; AUDIO-01 full coverage is reported separately', tier:'acceptance',
+      tasks:()=>[node('runtime-music', ['tools/ports/music-browser.mjs',
+        `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`,
+        `--music-manifest=${requireInput('EAGLER_TEST_MUSIC_MANIFEST')}`, '--variant=normal',
+        `--game=${MUSIC_BROWSER_GAMES.join(',')}`,
+        `--output=${resolve(output, 'runtime-music')}`], root,
+      {timeoutMs:1800000, resources:['browser','runtime']})],
+    },
+    'runtime-offline': {
+      scope:'Packaged Launcher | verified local ZIP, offline normal Runtime restart and file persistence', tier:'acceptance',
+      tasks:()=>Object.keys(PRODUCT_GAMES).map(game=>node(`offline-${game}`, ['tools/ports/offline-runtime-browser.mjs',
+        `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`,
+        `--packages=${requireInput('EAGLER_TEST_PACKAGES')}`,
+        `--artwork-dir=${requireInput('EAGLER_TEST_ARTWORK')}`, `--game=${game}`,
+        `--output=${resolve(output, `runtime-offline-${game}`)}`], root,
+      {timeoutMs:600000, resources:['browser','runtime','launcher-build']})),
+    },
+    'runtime-offline-update': {
+      scope:'Packaged Launcher | incomplete local update retention, complete second-generation commit and offline recovery', tier:'acceptance',
+      tasks:()=>{
+        const updateManifestPath=requireInput('EAGLER_TEST_UPDATE_PACKAGES');
+        const updateManifest=JSON.parse(readFileSync(updateManifestPath,'utf8'));
+        const games=Object.keys(updateManifest.games??{});
+        if(!games.length||games.some(game=>!PRODUCT_GAMES[game]))throw new Error('EAGLER_TEST_UPDATE_PACKAGES must select supported games');
+        return games.map(game=>node(`offline-update-${game}`, ['tools/ports/offline-runtime-browser.mjs',
+          `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`,
+          `--packages=${requireInput('EAGLER_TEST_PACKAGES')}`,
+          `--artwork-dir=${requireInput('EAGLER_TEST_ARTWORK')}`,
+          `--update-manifest=${updateManifestPath}`,`--game=${game}`,
+          `--output=${resolve(output, `runtime-offline-update-${game}`)}`], root,
+        {timeoutMs:900000, resources:['browser','runtime','launcher-build']}));
+      },
+    },
+    'runtime-spectator': {
+      scope:'Real Launcher 2P Relay rooms | current MP spectator join, native playback and input isolation', tier:'acceptance',
+      tasks:()=>[node('runtime-spectator', ['tools/ports/room-browser.mjs',
+        `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`,
+        `--url=${requireInput('EAGLER_TEST_LAUNCHER_URL')}`, '--route=relay', '--players=2', '--spectator',
+        `--game=${Object.entries(PRODUCT_GAMES).filter(([,product])=>product.multiplayer?.playerCounts.includes(2)).map(([game])=>game).join(',')}`,
+        `--output=${resolve(output, 'runtime-spectator')}`,
+        ...(environment.EAGLER_TEST_PACKAGES ? [`--packages=${environment.EAGLER_TEST_PACKAGES}`] : [])], root,
+      {timeoutMs:1800000, resources:['browser','runtime']})],
+    },
     'runtime-rooms': {
       scope:'Packaged MP WASM through real Launcher rooms, RTC/Relay and peer departure', tier:'acceptance',
       tasks:()=>[2,3].flatMap(players=>['rtc','relay'].map(route=>{
@@ -162,7 +231,7 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
           `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`,
           `--url=${requireInput('EAGLER_TEST_LAUNCHER_URL')}`, `--route=${route}`, `--players=${players}`,
           `--game=${games.join(',')}`,
-          '--disconnect', '--gamepad', `--output=${resolve(output, `rooms-${players}p-${route}`)}`,
+          '--disconnect', '--gamepad', '--lifecycle', `--output=${resolve(output, `rooms-${players}p-${route}`)}`,
           ...(environment.EAGLER_TEST_PACKAGES ? [`--packages=${environment.EAGLER_TEST_PACKAGES}`] : [])], root,
         {timeoutMs:1800000, resources:['browser','runtime']});
       })),
@@ -173,6 +242,6 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
 export const profiles = Object.freeze({
   quick:['tooling','launcher-core','relay','telemetry','turn'],
   integration:['tooling','launcher-core','launcher-ui','launcher-support','browser-shell','ports-source','ports-unit','common-native','relay','telemetry','turn'],
-  acceptance:['launcher-workspace','runtime-browser','runtime-rooms'],
+  acceptance:['launcher-workspace','runtime-browser','runtime-desktop','runtime-practice','runtime-replay','runtime-music','runtime-offline','runtime-rooms','runtime-spectator'],
   oracle:['ports-oracle'],
 });

@@ -6,7 +6,7 @@
 | --- | --- |
 | `npm test` | 工具、Launcher 核心与三个服务的快速回归 |
 | `npm run test:integration` | 快速回归、React、逐作公共夹具、15 变体浏览器接线与源码检查、common 原生测试 |
-| `npm run test:acceptance` | 当前打包 Runtime、存储与重开、多人房间和断线行为 |
+| `npm run test:acceptance` | 当前打包 Runtime、键盘与触控、练习、Replay、音乐 PCM、离线存储、多人生命周期与旁观 |
 | `npm run test:oracles` | th09、th11、th15 及对应独立 MP 源码的原版／原生对照套件 |
 | `npm run test:list` | 各组的实际执行范围 |
 
@@ -33,15 +33,43 @@ th06／th07 的 Replay 源码契约随 `ports-unit` 执行，核对输入注入�
 
 执行器清除子进程的 `NODE_OPTIONS`，Node 选项由登记入口的参数提供。分片与预加载选项不能从宿主环境改变测试选择。
 
+桌面验收入口核对实际场景参数，未知、重复或空选项立即生成失败报告。场景开关使用独立 flag；例如 `--spectator=false` 会被拒绝，避免拼错开关后改跑基础场景却得到成功结果。
+
 ## 环境
 
 先运行 `npm --prefix launcher ci --ignore-scripts`、`npm --prefix services/relay ci --ignore-scripts` 和 `npm --prefix ports/th09/web ci --ignore-scripts`，再执行 `python -m pip install -r launcher/requirements-ci.txt` 安装固定版本的图像与 CMake 工具。浏览器依赖按 [Launcher 测试环境](../launcher/tests/README.md#浏览器环境)安装。统一执行器在 Windows 和 Linux 管理完整的子进程生命周期：Windows 使用 Job Object，Linux 使用 child subreaper。驱动正常退出后遗留进程也会导致失败。源码检查使用 Node.js 22.18 以上、Python 3 和 C++17 编译器。Launcher 的 staging 夹具与 common 原生测试使用 CMake，common 还使用 CTest。路径可通过 `EAGLER_TEST_CMAKE` 和 `EAGLER_TEST_CTEST` 指定。
 
 浏览器 Shell 回归执行真实 Shell 的初始化、监听器与 Launcher 改键路径。Runtime 验收加载带文件哈希清单的正式包，并从原生运行状态观察输入、帧推进和生命周期。
 
+共用 protocol-host 使用独立 localhost HTTPS 站点，并校验浏览器实际收到的响应字节。需要 OpenSSL，`EAGLER_OPENSSL` 可指定路径。测试浏览器按本次临时证书的 SPKI 指纹连接；站点退出后清理证书和连接。
+
 ## Runtime 验收输入
 
 `EAGLER_TEST_RUNTIME_MANIFEST` 指向本地清单，逐项登记八作普通版的 Runtime 目录、入口和 DATA，结构见[运行验收](../docs/adaptation/validation.md)。多人验收通过 `EAGLER_TEST_LAUNCHER_URL` 指定本地 Launcher；`EAGLER_TEST_PACKAGES` 可提供作品到本地导入包的映射。
+
+`runtime-music` 由 acceptance profile 调度，要求 `EAGLER_TEST_MUSIC_MANIFEST`，并固定选择 th08、th10、th11、th15、th20。清单采用 `eagler-touhou/music-inputs/1`，逐作登记私有来源目录、产品目录 mount 和每个 OGG 文件的名称、绝对路径、字节数及 SHA-256；任何已选作品或文件缺失都会使验收失败。
+
+`runtime-desktop` 检查真实 Shell 的键盘、改键、模拟触控与声音输出；`runtime-practice` 使用练习启用包检查原生菜单和关闭对照；`runtime-replay` 通过正式 Shell 导入 Replay，验证 120 个默认速率原生帧、Runtime `ended` 终止信号与 HTML 原文响应，并分别记录终止信号和完整输入消费状态。现有 Runtime 信号不能区分场景退出原因，因此完整输入消费保持 unproven，原版格式兼容完成度另行报告。`runtime-offline` 逐作打包实际 Launcher，要求 `EAGLER_TEST_PACKAGES` 和 `EAGLER_TEST_ARTWORK`，检查 ZIP 安装、离线重启和文件恢复。`runtime-offline-update` 是单独的五作更新旅程，另需 `EAGLER_TEST_UPDATE_PACKAGES` 显式登记基础包与含 OGG 的第二包；它检查归档完整性、本地导入、Replay 恢复和新代离线启动。`runtime-rooms` 在支持的人数和通道组合中执行暂停、恢复、重开与断线；`runtime-spectator` 单独运行 2P Relay 旁观加入及输入隔离，保证旁观失败不会跳过玩家生命周期。每组报告按实际断言注明覆盖范围。
+
+OGG 曲目验收使用正式普通版 Runtime 与本地私有资源清单。Runtime、字体和 OGG 通过短时 localhost HTTPS fixture 提供，浏览器响应按 fixture 的资源身份核对：
+
+```sh
+node tools/ports/music-browser.mjs --manifest=artifacts/validation/adaptation-20261019/inputs.json --music-manifest=artifacts/validation/adaptation-20261019/music-inputs.json --game=th11 --variant=normal --output=artifacts/validation/music-th11-run
+```
+
+`--output` 指向新的记录目录。音乐清单由产品目录中的来源目录和 mount 生成，并逐文件核对长度与 SHA-256；音乐源文件保留在本机。th11／th15 的报告包含原生曲目映射与 Runtime PCM，th08／th10／th20 的报告包含 decoder 统计和 PCM。
+
+浏览器验收前可用同一组输入执行路由预检：
+
+```sh
+node tools/ports/music-browser.mjs --manifest=artifacts/validation/adaptation-20261019/inputs.json --music-manifest=artifacts/validation/adaptation-20261019/music-inputs.json --game=th11 --variant=normal --plan-only --output=artifacts/validation/music-th11-preflight
+```
+
+`--plan-only` 核对 Runtime、DATA 和每条 OGG 路由的字节身份，报告状态为 `incomplete`，不会启动 Runtime 或记作音乐播放通过。OGG 路由按作品隔离，同名曲目不会覆盖其他作品的输入。
+
+正式运行会在 `music=none` 首帧后等待 1.8 秒，再采集 600 毫秒 Runtime 输出。只有运行中的音频上下文在该窗口持续静音，报告才确认无 BGM 对照；检测到声音时按未分类输出记录，不用于证明 OGG 效果。
+
+实际标题 OGG PCM 场景独立记录运行结果，th11／th15 同时核对可用的原生曲目身份；无 BGM 对照作为独立观察记录。AUDIO-01 的完整切曲、场景变化、循环与生命周期范围保留在逐项覆盖记录中，不由标题场景结果替代。
 
 普通版逐作执行，多人按产品目录生成支持的 2P／3P 和 RTC／Relay 组合。输入矩阵必须完整，清单中的产品身份、文件哈希和实际启动目录逐项核对。资源、字体、SDK 和结果保存在本地目录。
 
