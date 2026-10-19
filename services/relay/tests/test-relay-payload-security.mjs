@@ -9,7 +9,7 @@ import { RELAY_LIMITS } from '../src/relay-flow-control.mjs';
 const relay = spawn(process.execPath, ['src/netplay-relay.mjs'], {
   windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
   env: { ...process.env, EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: '0',
-    EAGLER_NETPLAY_STUN_URLS: '', EAGLER_NETPLAY_MAX_ROOMS_PER_IP: '10' },
+    EAGLER_NETPLAY_STUN_URLS: '', EAGLER_NETPLAY_MAX_ROOMS_PER_IP: '10', EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP: '64', EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE: '120' },
 });
 let log = ''; const clients = [];
 const port = await new Promise((resolve, reject) => {
@@ -29,13 +29,29 @@ function open(query) {
   return { socket, json, binary, ready: once(socket, 'open', { signal: AbortSignal.timeout(5000) }) };
 }
 const ended = socket => once(socket, 'close', { signal: AbortSignal.timeout(5000) });
-async function pair(room, signal = false) {
-  const a = open({ room, run: '1', player: '0', players: '2', ...(signal ? { signal: '1' } : {}) });
-  const b = open({ room, run: '1', player: '1', players: '2', ...(signal ? { signal: '1' } : {}) });
+async function pair(name, signal = false) {
+  const room = `th06mp-${name}`;
+  const host = open({ room, lobby: `h_${name}`, member: `m_${name}_host`, intent: 'create' });
+  await host.ready;
+  const guest = open({ room, lobby: `g_${name}`, member: `m_${name}_guest`, intent: 'join' });
+  await guest.ready;
+  for (const [seat, socket] of [[0, host], [1, guest]]) {
+    socket.socket.send(JSON.stringify({ type: 'take-seat', seat, loadout: 0 }));
+    await once(socket.socket, 'message', { signal: AbortSignal.timeout(5000) });
+  }
+  for (const socket of [host, guest]) {
+    socket.socket.send(JSON.stringify({ type: 'set-ready', ready: true }));
+    await once(socket.socket, 'message', { signal: AbortSignal.timeout(5000) });
+  }
+  const started = once(host.socket, 'message', { signal: AbortSignal.timeout(5000) });
+  host.socket.send(JSON.stringify({ type: 'start' }));
+  await started;
+  const a = open({ room, run: '1', player: '0', players: '2', member: `m_${name}_host`, ...(signal ? { signal: '1' } : {}) });
+  const b = open({ room, run: '1', player: '1', players: '2', member: `m_${name}_guest`, ...(signal ? { signal: '1' } : {}) });
   await Promise.all([a.ready, b.ready]); return [a, b];
 }
 try {
-  const [source, target] = await pair('payload-gameplay');
+  const [source, target] = await pair('pload-gameplay');
   const rejected = ended(source.socket);
   source.socket.send(Buffer.alloc(RELAY_LIMITS.gameplayBytes + 1));
   assert.equal((await rejected)[0], 1009); assert.equal(target.binary.length, 0);
@@ -50,7 +66,7 @@ try {
   fragmented.socket.send(Buffer.alloc(40 * 1024), { fin: true });
   assert.equal((await fragmentClose)[0], 1009, 'global maxPayload covers reassembled messages');
 
-  const [signal, peer] = await pair('payload-signal', true);
+  const [signal, peer] = await pair('pload-signal', true);
   const delivered = once(peer.socket, 'message', { signal: AbortSignal.timeout(5000) });
   signal.socket.send(JSON.stringify({ type: 'signal', to: 1, description: { type: 'offer', sdp: 'v=0', unused: {} } }));
   let message = JSON.parse(String((await delivered)[0]));
@@ -61,10 +77,10 @@ try {
   assert.equal((await invalid)[0], 1008);
   assert.equal(peer.json.filter(value => value.type === 'signal').length, 1, 'malformed signaling is not forwarded');
 
-  const [oversize] = await pair('payload-signal-size', true);
+  const [oversize] = await pair('pload-signal-size', true);
   const oversizeClose = ended(oversize.socket); oversize.socket.send('x'.repeat(RELAY_LIMITS.controlBytes + 1));
   assert.equal((await oversizeClose)[0], 1009);
-  const [badTarget] = await pair('payload-signal-target', true);
+  const [badTarget] = await pair('pload-signal-target', true);
   const targetClose = ended(badTarget.socket);
   badTarget.socket.send('{"type":"signal","to":{"toString":null,"valueOf":null},"candidate":{"candidate":"ice"}}');
   assert.equal((await targetClose)[0], 1008, 'untrusted target values cannot crash numeric coercion');
@@ -72,12 +88,12 @@ try {
   const directoryClose = ended(directory.socket);
   directory.socket.send('{"type":"refresh","product":{"toString":null,"valueOf":null}}');
   assert.equal((await directoryClose)[0], 1008);
-  const [flood] = await pair('payload-signal-flood', true);
+  const [flood] = await pair('pload-signal-flood', true);
   const floodClose = ended(flood.socket);
   for (let i = 0; i < 1024; i++) flood.socket.send('{"type":"rtc-ready"}');
   assert.equal((await floodClose)[0], 1008);
 
-  const [healthy, receiver] = await pair('payload-healthy');
+  const [healthy, receiver] = await pair('pload-healthy');
   const received = once(receiver.socket, 'message', { signal: AbortSignal.timeout(5000) });
   healthy.socket.send(Buffer.from([0xe7, 1, 11, 22, 33]));
   assert.deepEqual((await received)[0], Buffer.from([11, 22, 33]));
