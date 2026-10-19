@@ -6,6 +6,7 @@
 
 | 类别 | 路径 | 标题 |
 | --- | --- | --- |
+| 适配指南 | [docs/adaptation/th07-border-dialogue-20261019.md](adaptation/th07-border-dialogue-20261019.md) | TH07 共享结界与对话 · 2026-10-19 |
 | 适配指南 | [docs/adaptation/th11-spell-time-20261019.md](adaptation/th11-spell-time-20261019.md) | TH11 多人符卡结算计时 · 2026-10-19 |
 | 项目入口 | [CONTRIBUTING.md](../CONTRIBUTING.md) | 参与开发 |
 | 项目入口 | [README.en.md](../README.en.md) | 项目 README |

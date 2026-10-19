@@ -171,6 +171,8 @@
 
 ## 运行验收记录
 
+2026-10-19 multiplayer：修复对话与共享结界同帧开启造成重复结算及待开启状态残留，2P/3P 生产函数级回归见[共享结界记录](../../docs/adaptation/th07-border-dialogue-20261019.md)。Gameplay ABI 13、Netplay ABI 14。
+
 2026-10-19 multiplayer：房间预览转正式开局补发实际呈现确认，双实例首帧、输入桥和同步检查通过，见[房间开局修复记录](../../docs/adaptation/room-start-20261019.md)。
 
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
