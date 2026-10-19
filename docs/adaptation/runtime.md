@@ -49,7 +49,7 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 操作：玩法中按住方向键和触点，把页面切到后台再恢复，随后退出并重新进入。
 - 观察与判定：恢复后画面与声音继续工作；退出时 held input 回到中立，重新进入后只有一组有效监听器。
 - 反例：退出后旧实例仍持续消费按键，或恢复时重复响应同一次输入，应判失败。
-- 入口与覆盖：当前 Runtime 浏览器驱动检查暂停/重开、尺寸变化和新 epoch；后台可见性、触点释放及退出监听器清理的完整场景待接入。
+- 入口与覆盖：`runtime-desktop-probes.mjs` 实际切换浏览器标签页，先核对隐藏／失焦事件，再检查持键释放及恢复输出，并另记窗口最小化结果。驱动退休旧 iframe、创建新 epoch 并重复原生输入。`runtime-browser.mjs` 检查暂停、重开与尺寸变化；触点和完整监听器清理分别记录。
 
 ### RUNTIME-05 | Runtime 与资源管理分工
 - 操作：先由 Launcher 安装/准备声明的资源，再启动 Runtime 并读取其声明的 DATA 或共享资源路径。
@@ -79,19 +79,19 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 操作：在有可用旧包时中断新包下载，刷新页面，再完整恢复更新。
 - 观察与判定：中断期间当前代次仍指向完整旧包；新包全文件校验后才切换到新代次。
 - 反例：故意令一个文件长度或哈希不符，当前代次不得切到不完整新包。
-- 入口与覆盖：`test:package-store:browser` 对 IndexedDB 更新事务注入失败/取消，`test:package-generation-conditions:browser` 用两标签页覆盖安装竞争；两项使用合成包数据。
+- 入口与覆盖：`test:package-store:browser` 对 IndexedDB 更新事务注入失败/取消，`test:package-generation-conditions:browser` 用两标签页覆盖安装竞争；两项使用合成包数据。`runtime-offline-update` 使用显式登记的真实旧、新 ZIP，经 Launcher 导入 UI 拒绝不完整归档、确认旧代保留，再提交新代并离线启动。该旅程覆盖归档校验失败与本地完整导入切换；网络传输中途失败另列覆盖。
 
 ### PACKAGE-04 | 本地导入与在线安装一致
 - 操作：分别通过在线获取和本地 ZIP 导入同一包，比较安装后目录、代次清单和游戏身份。
 - 观察与判定：两条路径经过同一包校验及存储流程，产出的有效文件与包身份一致。
 - 反例：本地 ZIP 绕过文件哈希检查或写到独立旧存储，应判失败。
-- 入口与覆盖：`test:package-store:browser` 覆盖夹具获取与本地导入流程；`test:th20-import-launch:browser` 覆盖 TH20 的真实启动导入路径，不能外推到全部作品。
+- 入口与覆盖：`test:package-store:browser` 覆盖夹具获取与本地导入流程；`test:th20-import-launch:browser` 覆盖 th20 的真实启动导入路径，不能外推到全部作品。
 
 ### PACKAGE-05 | 已安装游戏离线启动
 - 操作：在线安装后确认 Runtime 可启动，断开网络并刷新/重开页面，再进入同一游戏。
 - 观察与判定：Launcher、包入口、模块、WASM 与所需本地 DATA 均来自已安装内容，并到达首帧。
 - 反例：离线后仍请求未缓存的模块，或只能打开页面却不能加载游戏，应判失败。
-- 入口与覆盖：`test:runtime-offline-first:browser` 在真实 CacheStorage/Service Worker 中运行合成 Runtime 文件；`test:offline-reload:browser` 检查 App Shell 离线重载，真实游戏包端到端组合待接入。
+- 入口与覆盖：`tools/ports/offline-runtime-browser.mjs` 把实际 Launcher 打包到新站点，以真实 ZIP 导入并启动所选普通版 Runtime；HTTPS 静态入口、Runtime HTML/脚本、字体与站点文件由浏览器响应逐字节核验。关闭网络后由已安装 Service Worker 重开站点、恢复 Runtime 与 Replay 文件并再次同步。`runtime-offline` 对八作逐项运行，覆盖本次选择的真实包和 DATA。
 
 ### PACKAGE-06 | 统一安装和更新入口
 - 操作：分别从游戏卡片、资源准备和更新提示进入安装/更新，完成后再次打开游戏并读取当前代次。
