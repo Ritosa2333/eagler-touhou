@@ -212,7 +212,7 @@ const spectatorPlayback=createSpectatorPlaybackBridge({
 const $=s=>document.querySelector(s);
 let Module,core,app=0,multiplayer=null,runtimeManifest=null,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null,storageSync=Promise.resolve();
-let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=false,touchPageSuspended=false;
+let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=false,touchPageSuspended=false,titleInitialized=false,roomPreview=false;
 // Native TH11 reset/cancel preserves its action serials. Keep both mappings
 // for this document/core lifetime, including a stop and subsequent launch.
 // Rejected snapshots consume only the source baseline, never a future pulse.
@@ -309,16 +309,24 @@ function closeAudio(){
 async function stop({returnToMenu=false}={}){if(stopping)return;localReplay.close();spectatorPlayback.stop();invalidateTouches();stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(multiplayerRuntime?/^\/savesth11(?:mp)?\//:/^\/savesth11\//,'').replace(/^\//,'');const valid=multiplayerRuntime?/^replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th11_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/:/^(?:scoreth11\.dat|th11\.cfg|replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;if(!valid.test(name))throw Error('存档路径无效');return name;}
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>saveRoot+'/'+path(value),replayState:()=>{const p=core.eagler_replay_state(),v=Array.from(new Uint32Array(core.memory.buffer,p,5));const u=multiplayerRuntime?new Uint32Array(core.memory.buffer,core.th11_mp_replay_ui_status(),12):null;return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:u?.[4]??0};},stopLoop:()=>{clearKeyboard();core.th11_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:error});
-async function launch(receivedTouchLifetime=touchLifetime){
+async function initializeTitle(receivedTouchLifetime=touchLifetime){
+ if(titleInitialized)return;
  assertTouchLifetime(receivedTouchLifetime);
- if(launched){if(!launchSettled)throw Error('Runtime launch did not complete');return;}
- launchSettled=false;clearKeyboard();
+ clearKeyboard();
  runtimeManifest??=await(await fetch('./manifest.json')).json();assertTouchLifetime(receivedTouchLifetime);
  await installStartupBranding(Module,{game,builtAt:runtimeManifest.builtAt});assertTouchLifetime(receivedTouchLifetime);
  if(!core.th11_prepare_loading())throw Error(coreError());
  const startupImageAt=performance.now();performance.mark('eagler-startup-image');await new Promise(requestAnimationFrame);assertTouchLifetime(receivedTouchLifetime);await new Promise(requestAnimationFrame);assertTouchLifetime(receivedTouchLifetime);
  if(!core.th11_initialize())throw Error(coreError());await finishStartupAnimation(startupImageAt,frames=>core.th11_draw_loading(frames));assertTouchLifetime(receivedTouchLifetime);performance.mark('eagler-startup-menu-ready');
  if(!multiplayerRuntime&&core.th11_phase()===4&&!core.th11_return_title())throw Error(coreError());
+ titleInitialized=true;
+}
+async function launch(receivedTouchLifetime=touchLifetime){
+ assertTouchLifetime(receivedTouchLifetime);
+ if(launched){if(!launchSettled)throw Error('Runtime launch did not complete');return;}
+ launchSettled=false;
+ if(roomPreview)core.th11_loop_stop();
+ await initializeTitle(receivedTouchLifetime);roomPreview=false;
  launched=true;apply();first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  const loading=$('#loading');if(loading)loading.textContent='';
  const mode=multiplayerRuntime?await multiplayer.launch():{runLoop:true};assertTouchLifetime(receivedTouchLifetime);
@@ -348,11 +356,16 @@ function dispatchInput(m){switch(m.command){
 async function command(m,receivedTouchLifetime=touchLifetime){
  if(dispatchInput(m))return {};
  switch(m.command){
- case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);if(multiplayerRuntime)multiplayer.validateOptions(options);else if(options.netplayMode==='lan'||options.netplaySpectator)throw Error('此 Runtime 不支持多人游戏');music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
+ case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);if(multiplayerRuntime){if(options.netplayMode==='lan'||options.replayViewer)multiplayer.validateOptions(options);}else if(options.netplayMode==='lan'||options.netplaySpectator)throw Error('此 Runtime 不支持多人游戏');music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
  case 'resources':await installResources(m.resources);return {};
  case 'thprac-mouse':{if(!options.thpracEnabled||!core.sdl_thprac_mouse)return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);core.sdl_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(Number(m.x)-r.left-(r.width-640*scale)/2)/scale,(Number(m.y)-r.top-(r.height-480*scale)/2)/scale);return {};}
  case 'spectator-playback':return spectatorPlayback.command(m);
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(m);
+ case 'prepare-room':
+  if(!multiplayerRuntime||launched)throw Error('Invalid room preview owner');
+  await initializeTitle(receivedTouchLifetime);
+  if(!core.th11_room_preview())throw Error(coreError()||'Room preview rejected');
+  roomPreview=true;core.th11_loop_start();$('#loading').textContent='';await new Promise(requestAnimationFrame);return {presented:true};
  case 'launch':await launch(receivedTouchLifetime);return {};
  case 'sync':await save();return {};
  case 'list':return {files:listLocalReplayFiles(Module.FS,saveRoot,path)};
@@ -429,7 +442,7 @@ const initialized=(async()=>{
  Module.onGameFrame=(ok,ms,count)=>{if(!ok){if(multiplayerRuntime)multiplayer.fail(Error(coreError()));else error(Error(coreError()));return;}try{multiplayer?.frame();}catch(reason){multiplayer.fail(reason);return;}ticks+=count;if(!first&&(!multiplayerRuntime||count>0)){first=true;last=performance.now();ticks=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){emit('frame-health',{fps:ticks*1000/(now-last),maxGapMs:ms});const a=u32(core.th11_audio_statistics(),9);emit('audio-health',{queuedMs:a[4]*1000/44100,minQueuedMs:0,backend:'script',underruns:a[3]});last=now;ticks=0;}if(!multiplayerRuntime&&core.th11_phase()===4)void stop().catch(error);};
  window.__th11Runtime={core,Module,get app(){return launched?1:0;},get multiplayer(){return multiplayer;},get saveRoot(){return saveRoot;},launch,stop,command};
  if(!ownsTouchDocument()||touchRetired)return false;
- initializedReady=true;emit('ready');
+ initializedReady=true;emit('ready',multiplayerRuntime?{roomPreview:true}:{});
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});
 async function mountData(){
  // eagler-touhou managed package: the retail archive arrives through the parent
