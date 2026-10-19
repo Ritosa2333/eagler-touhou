@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict';
-import {createServer} from 'node:http';
 import {createHash,randomUUID} from 'node:crypto';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
-import {resolve,extname} from 'node:path';
+import {resolve,basename} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {gamepadProbeBundle,gamepadTargetFor,prepareVirtualGamepad,bindProtocolHostGamepad,probeNativeGamepad} from './gamepad-probe.mjs';
-import {readVerifiedRuntimeFile,selectRuntimeTargets,verifyPrivateData,verifyRuntimePackage} from './acceptance-contracts.mjs';
+import {selectRuntimeTargets,verifyPrivateData,verifyRuntimePackage} from './acceptance-contracts.mjs';
 import {sourceSnapshot} from '../testing/source-snapshot.mjs';
 import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
 import {readRuntimeObservation,assertRuntimeObservation,runtimeScenarioResult} from './runtime-observations.mjs';
 import {createNavigationAbortEvidence,shouldRecordHttpFailure} from './navigation-abort-evidence.mjs';
 import {loadRuntimeReplayFixture} from './replay-fixtures.mjs';
+import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
 
 const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const requestedOutput=argument('output');
@@ -44,63 +44,20 @@ report.harnessSha256=hash(await readFile(new URL(import.meta.url)));
 const observationReader=`export const readRuntimeObservation = (${readRuntimeObservation.toString()});\n`;
 report.observationReaderSha256=hash(observationReader);
 await writeFile(resolve(output,'observation-reader.mjs'),observationReader);
-for(const name of ['runtime-observations','replay-fixtures']){
+for(const name of ['runtime-observations','replay-fixtures','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options']){
   const contents=await readFile(new URL(`./${name}.mjs`,import.meta.url));
   (report.helperSha256??={})[name]=hash(contents);
-  await writeFile(resolve(output,`${name}.mjs`),contents);
+  await writeFile(resolve(output,basename(`${name}.mjs`)),contents);
 }
 if(gamepad){report.gamepadProbeSha256=hash(await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));report.gamepadBundleSha256=hash(gamepadBundle);await writeFile(resolve(output,'gamepad-bundle.js'),gamepadBundle);await writeFile(resolve(output,'gamepad-probe.mjs'),await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));}
 await writeFile(resolve(output,'harness.mjs'),await readFile(new URL(import.meta.url)));
-const routes=new Map();
-const verifiedPackages=new Map();
-const verifiedData=new Map();
-for(const [name,file] of Object.entries(config.shared??{}))routes.set(`/shared/${name}`,resolve(file));
-const server=createServer(async(request,response)=>{
-  try{
-    const url=new URL(request.url,'http://localhost');
-    if(url.pathname==='/favicon.ico'){response.writeHead(204).end();return;}
-    const selected=config.targets.find(target=>url.pathname===`/host/${target.id}`);
-    if(selected){
-      const epoch=Number(url.searchParams.get('epoch')??1);assert.ok(Number.isSafeInteger(epoch)&&epoch>0);
-      const runtime=`/runtime/${selected.id}/${selected.entry}?hosted=1&managedData=1&gameGeneration=desktop-acceptance&runtimeEpoch=${epoch}`;
-      response.setHeader('Content-Type','text/html');
-      response.end(`<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:#222}iframe{width:960px;height:720px;border:0}</style><script>
-      window.events=[];window.__eaglerPrepareManagedRuntimeDataV1=async()=>{const buffer=await fetch('/data/${selected.id}').then(r=>{if(!r.ok)throw Error('Missing private DATA');return r.arrayBuffer()});return{buffer,bytes:buffer.byteLength}};
-      window.send=(command,fields={})=>document.querySelector('iframe').contentWindow.postMessage({protocol:'eagler-touhou/1',game:${JSON.stringify(selected.game)},epoch:${epoch},command,...fields},location.origin);
-      addEventListener('message',event=>{if(event.origin===location.origin&&event.source===document.querySelector('iframe')?.contentWindow)events.push(event.data)});
-      window.rpc=(command,fields={})=>new Promise((accept,reject)=>{const request=crypto.randomUUID(),timer=setTimeout(()=>{removeEventListener('message',receive);reject(Error('Timeout: '+command))},120000);function receive(event){if(event.origin!==location.origin||event.source!==document.querySelector('iframe').contentWindow||event.data?.request!==request)return;clearTimeout(timer);removeEventListener('message',receive);event.data.ok?accept(event.data):reject(Error(event.data.error||'Command rejected'))}addEventListener('message',receive);send(command,{...fields,request})});
-      </script><iframe src="${runtime}"></iframe>`);return;
-    }
-    let file=routes.get(url.pathname),dataTarget;
-    for(const target of config.targets){
-      if(url.pathname===`/data/${target.id}`){file=target.data;dataTarget=target;}
-      const prefix=`/runtime/${target.id}/`;
-      if(url.pathname.startsWith(prefix)){
-        const tail=decodeURIComponent(url.pathname.slice(prefix.length));
-        const identity=verifiedPackages.get(target.id);
-        if(!identity)throw Error(`${target.id}: Runtime package was not verified before use`);
-        const bytes=await readVerifiedRuntimeFile(target,identity,tail);
-        response.writeHead(200,{'Content-Type':({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(tail)]??'application/octet-stream','Content-Length':bytes.length});
-        response.end(bytes);return;
-      }
-    }
-    if(!file){response.writeHead(404).end('Unknown test input');return;}
-    const bytes=await readFile(file);
-    if(dataTarget){
-      const expected=verifiedData.get(dataTarget.id);
-      assert.ok(expected,`${dataTarget.id}: DATA was not verified before use`);
-      assert.equal(bytes.length,expected.bytes,'DATA changed after verification');
-      assert.equal(hash(bytes),expected.sha256,'DATA changed after verification');
-    }
-    response.writeHead(200,{'Content-Type':({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]??'application/octet-stream','Content-Length':bytes.length});
-    response.end(bytes);
-  }catch(error){response.writeHead(404).end(error.message);}
-});
-await new Promise(done=>server.listen(0,'127.0.0.1',done));
+const site=await createRuntimeFixtureSite({repoRoot:root,targets,shared:config.shared,protocol:'https'});
+report.transport={base:site.base,protocol:site.protocol,tlsIdentity:site.tlsIdentity};
+report.sharedInputs=await site.verifyShared();
 let browser;
 try{
   const {launchBrowser}=await import('../browser/launch.mjs');
-  browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+  browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',`--ignore-certificate-errors-spki-list=${site.tlsIdentity.spkiSha256}`]});
   report.browser=browser.version();
   for(const target of targets){
     const record={game:target.game,variant:target.variant,id:target.id,checks:[],errors:[],consoleErrors:[],httpErrors:[],expectedNavigationAborts:[],observations:{}};
@@ -109,6 +66,8 @@ try{
     const context=await browser.newContext({viewport:{width:1100,height:820}});
     if(gamepad)await prepareVirtualGamepad(context,gamepadBundle,gamepadTargetFor(target.game,target.variant,0));
     const page=await context.newPage();
+    const responseProbe=await site.watchPage(page,{output,label:target.id});
+    record.responseIntegrity={responses:responseProbe.responses,errors:responseProbe.errors,capture:responseProbe.capture};
     const navigationEvidence=createNavigationAbortEvidence();
     page.on('pageerror',error=>record.errors.push(String(error)));
     page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push(message.text());});
@@ -121,7 +80,7 @@ try{
       if(failure.expectedNavigationAbort)record.expectedNavigationAborts.push(evidence);
       else record.httpErrors.push(evidence);
     });
-    const navigate=async url=>{navigationEvidence.retirePage(page);return page.goto(url);};
+    const navigate=async url=>{navigationEvidence.retirePage(page);const response=await page.goto(url);await responseProbe.flush();return response;};
     let frame;
     const observe=()=>frame.evaluate(readRuntimeObservation,{game:target.game,variant:target.variant});
     const inspect=async()=>({...await frame.evaluate(game=>{
@@ -159,15 +118,14 @@ try{
     };
     try{
       await check('runtime-input-identity',['BUILD-04'],async()=>{
-        const packageIdentity=await verifyRuntimePackage(target,{repoRoot:root});verifiedPackages.set(target.id,packageIdentity);
-        const dataIdentity=await verifyPrivateData(target.data);
-        verifiedData.set(target.id,dataIdentity);
+        const identity=await site.verify(target);
+        const packageIdentity=identity.runtime,dataIdentity=identity.data;
         if(target.dataSha256)assert.equal(dataIdentity.sha256,target.dataSha256,`${target.id}: private DATA hash mismatch`);
         record.packageIdentity=packageIdentity;record.dataIdentity=dataIdentity;
         return {packageIdentity,dataIdentity};
       });
       await check('runtime-ready',['RUNTIME-01'],async()=>{
-        await navigate(`http://127.0.0.1:${server.address().port}/host/${target.id}?epoch=1`);
+        await navigate(site.hostUrl(target,1));
         await page.waitForFunction(()=>events.some(event=>event.event==='ready'),null,{timeout:120000});
         frame=page.frames().find(frame=>frame.url().includes(`/runtime/${target.id}/`));assert.ok(frame);
         const ready=await page.evaluate(()=>events.find(event=>event.event==='ready'));
@@ -178,6 +136,7 @@ try{
         await page.evaluate(({sharedResources,options})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],sharedResources,thpracCatalog:[],options:{alwaysHitbox:false,touchEnabled:false,thpracEnabled:false,limitPresentationTo60:false,...options}}),{sharedResources,options:target.options??{}});
         await page.evaluate(()=>rpc('launch'));
         await page.waitForFunction(()=>events.some(event=>event.event==='first-frame'),null,{timeout:120000});
+        await responseProbe.flush();
         await page.waitForTimeout(2500);
         const snapshot=await inspect();assert.ok(snapshot.canvas?.width>0&&snapshot.canvas?.height>0);return snapshot;
       });
@@ -334,7 +293,7 @@ try{
           const directory=resolve(output,'user-files',target.id);await mkdir(directory,{recursive:true});
           await writeFile(resolve(directory,file.path),new Uint8Array(value.bytes));}
         record.priorSessionEvents=evidenceEvents(await page.evaluate(()=>window.events));
-        await navigate(`http://127.0.0.1:${server.address().port}/host/${target.id}?epoch=2`);
+        await navigate(site.hostUrl(target,2));
         await page.waitForFunction(()=>events.some(event=>event.event==='ready'&&event.epoch===2),null,{timeout:120000});
         for(const [path,expected] of Object.entries(contents)){
           const actual=await page.evaluate(path=>rpc('read',{path}),path);assert.deepEqual(actual.bytes,expected,path);}
@@ -361,7 +320,7 @@ try{
         const reopen=async epoch=>{
           await page.evaluate(()=>rpc('sync'));
           record.priorSessionEvents=[...(record.priorSessionEvents??[]),...evidenceEvents(await page.evaluate(()=>window.events))];
-          await navigate(`http://127.0.0.1:${server.address().port}/host/${target.id}?epoch=${epoch}`);
+          await navigate(site.hostUrl(target,epoch));
           await page.waitForFunction(epoch=>events.some(event=>event.event==='ready'&&event.epoch===epoch),epoch,{timeout:120000});
         };
         await reopen(3);
@@ -374,6 +333,7 @@ try{
           fixture:fixture.identity,scope:'An existing replay passes the real import validator and file operations through Runtime browser storage. Playback is a separate check.'};
       },{fatal:false});
       await check('runtime-errors',[],async()=>{
+        await responseProbe.flush();
         const packageAfter=await verifyRuntimePackage(target,{repoRoot:root}),dataAfter=await verifyPrivateData(target.data);
         record.inputPostflight={packageIdentity:packageAfter,dataIdentity:dataAfter};
         assert.deepEqual(packageAfter,record.packageIdentity,'Runtime source, build plan, receipts or package changed during acceptance');
@@ -391,11 +351,15 @@ try{
     finally{
       record.events=[...(record.priorSessionEvents??[]),...evidenceEvents(await page.evaluate(()=>window.events??[]).catch(()=>[]))];
       delete record.priorSessionEvents;
+      try{await responseProbe.flush();}catch(error){record.failure??=String(error.stack||error);}
+      try{await responseProbe.stop();}catch(error){record.failure??=String(error.stack||error);}
       Object.assign(record,runtimeScenarioResult(record));await context.close();await save();
       console.log(`${target.id}: ${record.status.toUpperCase()} ${record.failure?.split('\n')[0]??record.unverifiedChecks.join(', ')}`);
     }
   }
-}finally{await browser?.close();await new Promise(done=>server.close(done));report.finishedAt=new Date().toISOString();
+}finally{await browser?.close();await site.close();report.finishedAt=new Date().toISOString();
+  report.sharedInputsPostflight=await site.verifyShared();
+  report.httpFailures=site.httpFailures;assert.deepEqual(report.httpFailures,[],'Verified fixture request failures');
   report.harnessPostflightSha256=hash(await readFile(new URL(import.meta.url)));
   assert.equal(report.harnessPostflightSha256,report.harnessSha256,'Runtime driver changed during acceptance');
   for(const [name,expected] of Object.entries(report.helperSha256))

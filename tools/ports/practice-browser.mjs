@@ -25,7 +25,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
     scope:'Current ordinary Runtime | native practice overlay open/close and disabled control | screenshots for locale review',
     coverage:{ids:['PRACTICE-01','PRACTICE-02','PRACTICE-03','PRACTICE-07'],complete:false,
       scope:'Built feature declaration, configured locale and enabled state, actual native menu opening/closing in four independent ordinary instances. Scene transitions, parameter application and replay metadata have separate scenarios.'},targets:[]});
-  for(const name of ['practice-browser.mjs','practice-observations.mjs','runtime-fixture-site.mjs','runtime-observations.mjs','runtime-desktop-stage.mjs','../browser/fixture-server.mjs']){
+  for(const name of ['practice-browser.mjs','practice-observations.mjs','runtime-fixture-site.mjs','runtime-observations.mjs','runtime-desktop-stage.mjs','../browser/fixture-server.mjs','../browser/response-body-capture.mjs']){
     const bytes=await readFile(new URL(name,import.meta.url));
     (report.harnessSources??={})[name]=sha256(bytes);await writeFile(resolve(output,basename(name)),bytes);
   }
@@ -66,8 +66,8 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
             addEventListener('eagler-thprac-menu',event=>window.__practiceBrowserEvents.push({open:event.detail?.open,at:performance.now()}));
           });
           const page=await context.newPage();
-          responseProbe=site.watchPage(page,{output,label:`${target.id}-${epoch}`});
-          caseRecord.responseIntegrity={responses:responseProbe.responses,errors:responseProbe.errors};
+          responseProbe=await site.watchPage(page,{output,label:`${target.id}-${epoch}`});
+          caseRecord.responseIntegrity={responses:responseProbe.responses,errors:responseProbe.errors,capture:responseProbe.capture};
           page.on('pageerror',error=>record.errors.push(String(error)));
           page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push(message.text());});
           page.on('response',response=>{if(response.status()>=400)record.httpErrors.push({url:response.url(),status:response.status()});});
@@ -122,7 +122,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
             localeReview:'Screenshot records displayed glyphs and labels; native locale correctness requires image review'});
           await responseProbe.flush();
           }catch(error){Object.assign(caseRecord,{status:'failed',error:String(error.stack||error)});}
-          finally{responseProbe?.stop();responseProbe=null;await context?.close();context=null;await save();}
+          finally{await responseProbe?.stop();responseProbe=null;await context?.close();context=null;await save();}
         }
         assert.deepEqual(record.errors,[],'Browser errors');assert.deepEqual(record.consoleErrors,[],'Runtime errors');assert.deepEqual(record.httpErrors,[],'HTTP errors');
         assert.equal(record.locales.length,4,'Every enabled locale and the disabled control must run');
@@ -131,7 +131,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
       }catch(error){record.status='failed';record.error=String(error.stack||error);
         const active=record.locales.find(item=>item.status==='running');if(active)Object.assign(active,{status:'failed',error:record.error});}
       finally{
-        responseProbe?.stop();
+        await responseProbe?.stop();
         await context?.close();
         try{record.postflight=await site.verify(target);}catch(error){record.status='failed';record.postflightError=String(error.stack||error);}
         await save();console.log(`${target.id}: ${record.status.toUpperCase()} ${record.error?.split('\n')[0]??''}`);

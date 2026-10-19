@@ -78,3 +78,21 @@ test('browser byte receipt rejects injected HTML and preserves its exact raw res
     probe.stop();assert.equal(page.listenerCount('response'),0);
   }finally{probe.stop();assert.equal(resolve(output,'..'),resolve(tmpdir()));await rm(output,{recursive:true,force:true});}
 });
+
+test('complete matching bytes establish content identity while an aborted transfer stays visible; truncated bytes fail',async()=>{
+  const page=new EventEmitter(),base='https://127.0.0.1:8199',bytes=Buffer.from([1,2,3,255]);
+  const expected={bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
+  const probe=watchFixtureResponses(page,{base,expectedResponses:new Map([['/font',expected]])});
+  const response=body=>({url:()=>base+'/font',status:()=>200,body:async()=>body,
+    allHeaders:async()=>({'content-length':String(bytes.length)}),fromServiceWorker:()=>false,
+    captureDetails:()=>({method:'Network.streamResourceContent',terminal:{event:'loadingFailed',error:'net::ERR_ABORTED',canceled:true}})});
+  try{
+    page.emit('response',response(bytes));await probe.flush();
+    assert.equal(probe.responses[0].contentIdentity,'passed');
+    assert.equal(probe.responses[0].transport.error,'net::ERR_ABORTED');
+    page.emit('response',response(bytes.subarray(0,-1)));
+    await assert.rejects(()=>probe.flush(),/altered or unverified/);
+    assert.equal(probe.responses[1].contentIdentity,'failed');
+    assert.equal(probe.responses[1].actual.bytes,3);
+  }finally{probe.stop();}
+});

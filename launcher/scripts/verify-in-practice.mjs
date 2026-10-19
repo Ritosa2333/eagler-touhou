@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { createSecureServer } from "node:http2";
 import { tmpdir } from "node:os";
@@ -19,6 +18,7 @@ import { DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_GAMES, PRODUCT_IDS } from "../l
 import { SITE_MANIFEST_SCHEMA } from "../lib/contracts/site-manifest.mjs";
 import { RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 import { staticContentCompressible, staticContentType } from "../server/static-content-policy.mjs";
+import { createEphemeralLocalhostCertificate } from "../../tools/browser/fixture-server.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const args = Object.fromEntries(process.argv.slice(2).map(value => {
@@ -95,25 +95,10 @@ assert.deepEqual(
   "Verified In Practice reference artwork must cover every registered game card",
 );
 
-function createCertificate(directory) {
-  const key = resolve(directory, "localhost-key.pem");
-  const cert = resolve(directory, "localhost-cert.pem");
-  const result = spawnSync(process.env.EAGLER_OPENSSL || "openssl", [
-    "req", "-x509", "-newkey", "rsa:2048", "-nodes",
-    "-keyout", key, "-out", cert, "-days", "1",
-    "-subj", "/CN=localhost",
-    "-addext", "subjectAltName=DNS:localhost,IP:127.0.0.1",
-  ], { encoding: "utf8", windowsHide: true });
-  if (result.status !== 0) {
-    throw new Error(`OpenSSL is required to create the ephemeral localhost certificate: ${result.stderr || result.error || "unknown error"}`);
-  }
-  return { key, cert };
-}
-
 async function createReferenceServer(workRoot) {
   await ensureClientServicesBuild();
   const shell = await buildAppShell({ quiet: true, globDirectory: project });
-  const certificate = createCertificate(workRoot);
+  const certificate = createEphemeralLocalhostCertificate(workRoot);
   const metadata = new Map([
     ["site-manifest.json", Buffer.from(`${JSON.stringify(createReferenceManifest(), null, 2)}\n`)],
     ["release-catalog.json", Buffer.from(`${JSON.stringify({ schema: RELEASE_CATALOG_SCHEMA, games: {} }, null, 2)}\n`)],
