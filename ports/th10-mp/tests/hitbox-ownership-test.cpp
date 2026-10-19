@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/HitboxOwnershipHistory.hpp"
+#include "../web/cpp/multiplayer/HitboxOwnershipHistory.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <cassert>
 #include <cstdio>

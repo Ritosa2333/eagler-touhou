@@ -8,9 +8,9 @@ import { runtimeFileNames } from '../lib/runtime-release.mjs';
 import { workspacePath } from '../lib/workspace-layout.mjs';
 
 const product = PRODUCT_GAMES.th09;
-const html = await readFile(workspacePath('th09', 'th09_web', 'sdl-runtime', 'managed.html'), 'utf8');
-const shell = await readFile(workspacePath('th09', 'th09_web', 'sdl-runtime', 'managed.mjs'), 'utf8');
-const nativeInput = await readFile(workspacePath('th09', 'th09_web', 'cpp', 'sdl', 'Application.cpp'), 'utf8');
+const html = await readFile(workspacePath('th09', 'web', 'sdl-runtime', 'managed.html'), 'utf8');
+const shell = await readFile(workspacePath('th09', 'web', 'sdl-runtime', 'managed.mjs'), 'utf8');
+const nativeInput = await readFile(workspacePath('th09', 'web', 'cpp', 'sdl', 'Application.cpp'), 'utf8');
 assertRuntimeDataShell(html, 'th09', 'normal');
 assertRuntimeProtocolSources([{ name: 'th09.html', source: html }, { name: 'shell.mjs', source: shell }], 'th09', 'normal');
 assert.equal(product.dataProvider, 'retail-memory');
@@ -20,7 +20,7 @@ assert.deepEqual(product.package.rawDataImport.fileNames, ['th09.dat']);
 assert.equal(product.storage.saveRoot, '/savesth09');
 assert.equal(product.package.musicMounts.ogg, '/music');
 assert.equal(PRODUCT_CONTENT.th09.music.ogg.files.length, 19);
-const verifiedMusic = JSON.parse(await readFile(workspacePath('th09', 'th09_web', 'assets', 'sdl-native', 'music-verification.json'), 'utf8'));
+const verifiedMusic = JSON.parse(await readFile(workspacePath('th09', 'web', 'assets', 'sdl-native', 'music-verification.json'), 'utf8'));
 assert.deepEqual(PRODUCT_CONTENT.th09.music.ogg.files, verifiedMusic.map(track => track.file));
 assert.ok(shell.includes("core.FS.writeFile('/th09.dat'"));
 // The Runtime keeps ordinary and multiplayer saves apart, so the mount target

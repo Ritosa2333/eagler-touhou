@@ -371,6 +371,8 @@ function getRoom(id, socket) {
         challengeMode: false,
         prankMode: false,
         inputDelay: 0,
+        timingChoice: 'auto',
+        startedAt: 0,
         adonisMode: multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
         inputDelayAuto: false,
         predictionReserve: 2,
@@ -781,6 +783,8 @@ function lobbySnapshot(room) {
     challengeMode: room.lobby.challengeMode,
     prankMode: room.lobby.prankMode,
     inputDelay: room.lobby.inputDelay,
+    timingChoice: room.lobby.timingChoice,
+    startedAt: room.lobby.startedAt,
     adonisMode: room.lobby.adonisMode,
     inputDelayAuto: room.lobby.inputDelayAuto,
     predictionReserve: room.lobby.predictionReserve,
@@ -1141,7 +1145,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           });
           return;
         }
-        sendLobby(socket, { type: 'error', error: '本局已经开始；已保留旁观席，将在下一局生效' });
+        sendLobby(socket, {type: 'spectator-waiting', serial: room.lobby.startSerial, room: lobbySnapshot(room)});
       }
       return;
     }
@@ -1180,7 +1184,6 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       const spectator = seat < 0 && room.lobby.spectators.has(clientId);
       if (
         (seat < 0 && !spectator) ||
-        (room.lobby.phase === 'lobby' && !roomId.startsWith('th09mp-')) ||
         message.serial !== room.lobby.startSerial ||
         !quickChatPhrase(message.phrase)
       )
@@ -1199,11 +1202,38 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       });
       return;
     }
+    if (message.type === 'resources-changed' && (seat >= 0 || room.lobby.spectators.has(clientId))) {
+      if (room.lobby.phase === 'lobby') {
+        invalidateLobbyReady(room);
+        if (seat >= 0) room.lobby.seats[seat].resource = {status: 'preparing', stage: 'package', percent: null};
+        broadcastLobby(room);
+      }
+      return;
+    }
     if (seat < 0) {
       sendLobby(socket, { type: 'error', error: '请先选择 P 位' });
       return;
     }
     const occupant = room.lobby.seats[seat];
+    if (message.type === 'timing-settings') {
+      const timing = multiplayerInputTimingPolicy(room.multiplayer), choice = message.timingChoice;
+      if (seat !== 0 || room.lobby.phase !== 'lobby' || !room.multiplayer?.inputTiming ||
+          typeof message.rollbackEnabled !== 'boolean' || (message.rollbackEnabled && !timing.rollback) ||
+          !(choice === 'auto' || (Number.isInteger(choice) && choice >= 0 && choice <= timing.manualDelayLimit))) {
+        sendLobby(socket, {type: 'error', error: 'invalid timing settings'}); return;
+      }
+      const mode = message.rollbackEnabled ? 0 : 1;
+      if (room.lobby.adonisMode !== mode || room.lobby.timingChoice !== choice) {
+        invalidateLobbyReady(room);
+        room.lobby.adonisMode = mode;
+        room.lobby.timingChoice = choice;
+        room.lobby.inputDelay = choice === 'auto' || (message.rollbackEnabled && !timing.manualRollbackDelay) ? 0 : choice;
+        room.lobby.inputDelayAuto = !message.rollbackEnabled && timing.measuredStartup && choice === 'auto';
+        room.lobby.timing = null;
+        broadcastLobby(room);
+      }
+      return;
+    }
     if (message.type === 'th09-match') {
       if (
         seat === 0 &&
@@ -1227,12 +1257,16 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       )
         return;
       const resource = {
+        ...Object.fromEntries(['basePercent', 'runtimePercent'].filter(key => key in message).map(key => [key,
+          typeof message[key] === 'number' && Number.isFinite(message[key]) && message[key] >= 0 && message[key] <= 100 ? Math.round(message[key]) : null])),
         status: message.status,
         stage: message.stage,
         percent:
           message.status === 'ready' ? 100 : rawPercent === null ? null : Math.round(rawPercent),
       };
       if (JSON.stringify(occupant.resource) !== JSON.stringify(resource)) {
+        if (room.lobby.phase === 'lobby' && resource.status !== 'ready' &&
+            (occupant.resource?.status === 'ready' || occupant.ready)) invalidateLobbyReady(room);
         occupant.resource = resource;
         broadcastLobby(room);
       }
@@ -1338,6 +1372,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         sendLobby(socket, {type:'error', code:'runtime-version', error:'联机程序版本不一致，请双方取消准备后重新准备，旧版页面请刷新。'});
         sendLobby(socket, {type:'state', room:lobbySnapshot(room)});
         broadcastLobby(room);
+        return;
+      }
+      if (message.ready && occupant.resource && occupant.resource.status !== 'ready') {
+        sendLobby(socket, {type: 'state', room: lobbySnapshot(room)});
         return;
       }
       if (
@@ -1500,6 +1538,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
             !entry ||
             !room.lobbyClients.has(entry.clientId) ||
             !entry.ready ||
+            (entry.resource && entry.resource.status !== 'ready') ||
             entry.readyVersion !== room.lobby.settingsVersion,
         )
       ) {
@@ -1552,6 +1591,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       room.lobby.timing = null;
       if (configurablePredictionLimit != null) room.lobby.predictionLimit = predictionLimit;
       room.lobby.phase = 'starting';
+      room.lobby.startedAt = Date.now();
       room.lobby.startSerial++;
       const run = getRun(room, String(room.lobby.startSerial));
       run.lobbyClientIds = activeSeats.map((entry) => entry.clientId);

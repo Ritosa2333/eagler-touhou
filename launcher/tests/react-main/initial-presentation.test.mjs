@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Pinned-main published HTML before JS/hydration; no browser/rendering claim. */
 import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,7 +13,7 @@ import {installMountedDom} from './mounted-dom-environment.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const pinned = path => execFileSync('git', ['show', `${pinnedMain}:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', path);
 let work, env, api, React, renderToStaticMarkup, createRoot, MemoryRouter, root;
 let originalLibrary, originalLobby, expectedCards;
 const el = (type, props, ...children) => React.createElement(type, props, ...children);

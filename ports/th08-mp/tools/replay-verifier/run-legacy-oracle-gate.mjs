@@ -17,9 +17,9 @@ function options(argv) {
 }
 
 const args = options(process.argv.slice(2));
-if (!args['oracle-root']) throw new Error('usage: node run-legacy-oracle-gate.mjs --oracle-root <TouhouDev/th08_web> [--common-root <eagler-common>] [--report <file>]');
+if (!args['oracle-root']) throw new Error('usage: node run-legacy-oracle-gate.mjs --oracle-root <TouhouDev/web> [--common-root <eagler-common>] [--report <file>]');
 const oracleRoot = resolve(args['oracle-root']);
-const commonRoot = resolve(args['common-root'] ?? process.env.EAGLER_COMMON_ROOT ?? join(here, '..', '..', '..', 'eagler-common'));
+const commonRoot = resolve(args['common-root'] ?? process.env.EAGLER_COMMON_ROOT ?? join(here, '..', '..', '..', '..', 'common'));
 const {compareTraces} = await import(pathToFileURL(join(commonRoot, 'testkit', 'replay-verifier', 'compare.mjs')));
 const commonAdapter = await import(pathToFileURL(join(commonRoot, 'testkit', 'replay-verifier', 'adapter.mjs')));
 const corpus = JSON.parse(await readFile(join(here, 'corpus.json'), 'utf8'));

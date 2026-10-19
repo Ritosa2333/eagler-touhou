@@ -2,7 +2,7 @@
   "version": 1,
   "complete": true,
   "source": {
-    "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-01-report.json",
+    "path": "web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-01-report.json",
     "sha256": "92a6711ebc768d6da8249100d85afabe3187a52bb327715af066f0e3f448fb20",
     "bytes": 20697024
   },
@@ -84,7 +84,7 @@
   "rawPassed": true,
   "relay": {
     "sourceIdentity": {
-      "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+      "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
       "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
       "probeSha256": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
       "fixtureSha256": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,mkdirSync,openSync,readSync,closeSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const out='th10_web/artifacts/architecture-candidate/validation';mkdirSync(out,{recursive:true});
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const out='web/artifacts/architecture-candidate/validation';mkdirSync(out,{recursive:true});
 const browser=await launchBrowser(),context=await browser.newContext(),page=await context.newPage(),errors=[];
 page.on('pageerror',e=>errors.push(e.stack));
-const replay=readFileSync('th10_web/artifacts/sdl3/motion/recording.rpyx'),base='http://127.0.0.1:8093';
+const replay=readFileSync('web/artifacts/sdl3/motion/recording.rpyx'),base='http://127.0.0.1:8093';
 async function open(){await page.goto(base+'/?lang=chs&debug=1');await page.locator('.game[data-game="th10"]').click();await page.locator('#launch').click();await page.waitForFunction(()=>document.querySelector('#gameFrame')?.contentWindow?.__th10Runtime?.app,null,{timeout:120000});return page.frames().find(f=>f.url().includes('/runtime/th10/'));}
 try{
  await page.goto(base+'/?debug=1');await page.evaluate(async bytes=>{for(const language of ['jp','chs'])await new Promise((resolve,reject)=>{const request=indexedDB.open('th10-1.00a-'+language,1);request.onupgradeneeded=()=>request.result.createObjectStore('files');request.onsuccess=()=>{const db=request.result,tx=db.transaction('files','readwrite');tx.objectStore('files').put(new Uint8Array(bytes),'replay/th10_01.rpy');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};});},Array.from(replay));
@@ -14,7 +14,7 @@ try{
  await f.evaluate(bytes=>__th10Runtime.command({command:'write',path:'replay/th10_02.rpyx',bytes}),Array.from(replay));
  // SDL_IO + miniaudio must preserve PCM across unaligned reads, end-of-track
  // boundaries, backward loop seeks and all 18 original music offsets.
- const entries=JSON.parse(readFileSync('th10_web/assets/sdl-native/music-layout.json','utf8')),fd=openSync('[th10] 东方风神录 (汉化版+日文版)/thbgm.dat','r');
+ const entries=JSON.parse(readFileSync('web/assets/sdl-native/music-layout.json','utf8')),fd=openSync('[th10] 东方风神录 (汉化版+日文版)/thbgm.dat','r');
  const tracks=Array.isArray(entries)?entries:entries.tracks;
  const ranges=[];for(const t of tracks){const start=t.offset??t.start,length=t.length??t.size;ranges.push([start,4096],[start+123,8191],[start+length-1027,1027]);}ranges.push(...ranges.slice(0,6).reverse());
  const expected=[];try{for(const [offset,length] of ranges){const b=Buffer.alloc(length);assert.equal(readSync(fd,b,0,length,offset),length);expected.push(createHash('sha256').update(b).digest('hex'));}}finally{closeSync(fd);}

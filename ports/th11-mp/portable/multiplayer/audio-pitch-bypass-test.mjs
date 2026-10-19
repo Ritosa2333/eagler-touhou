@@ -58,7 +58,7 @@ if(process.argv.includes('--run-wasm')){
     return {stdout,stderr};
   }
   try{
-    const game=resolve(root,'th11_web/cpp/game'),thirdParty=resolve(root,'portable/sdl/third_party');
+    const game=resolve(root,'web/cpp/game'),thirdParty=resolve(root,'portable/sdl/third_party');
     const sources=['Archive.cpp','Lzss.cpp','ResourceCrypt.cpp','SoundEffects.cpp'].map(name=>resolve(game,name));
     sources.push(resolve(import.meta.dirname,'audio-pitch-bypass.cpp'));
     // Deliberately observe only this fixture's actual project dependencies.

@@ -1,7 +1,7 @@
 {
   "schema": "th09-raf-wait-touch-timer/v1",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-raf-c1-report.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-raf-c1-report.json",
     "bytes": 36603176,
     "sha256": "eab798213ba54bfd7b933aa8c5fc2560ec4a058555ae852146b140c947d2bbc5"
   },

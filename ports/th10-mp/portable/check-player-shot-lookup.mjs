@@ -23,7 +23,7 @@ const out=resolve(root,'artifacts/player-shot-lookup'+(sanitized?'-ubsan':''));m
 const metadataPath=resolve(out,'build.json');rmSync(metadataPath,{force:true});
 const flags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Werror',
     '-DTH_NATIVE_PLATFORM=1','-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-strict-aliasing',
-    '-I'+resolve(root,'th10_web/cpp/game')];
+    '-I'+resolve(root,'web/cpp/game')];
 if(sanitized)flags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
@@ -53,14 +53,14 @@ async function run(name,objects){
     runs.push({name,passed:true,output:text,wasmSha256:createHash('sha256').update(readFileSync(wasm)).digest('hex')});
     return text;
 }
-const softfloat=compile('th10_web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags);
-const registry=compile('th10_web/cpp/game/AnmRegistry.cpp','AnmRegistry');
-const numeric=['Arithmetic','Movement','GameMath','Timer'].map(name=>compile(`th10_web/cpp/game/${name}.cpp`,name));
+const softfloat=compile('web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags);
+const registry=compile('web/cpp/game/AnmRegistry.cpp','AnmRegistry');
+const numeric=['Arithmetic','Movement','GameMath','Timer'].map(name=>compile(`web/cpp/game/${name}.cpp`,name));
 let originalTrace;
 for(const multiplayer of [false,true]){
     const variant=multiplayer?'multiplayer':'ordinary';
     const variantFlags=[...flags,...(multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[])];
-    const shooting=compile('th10_web/cpp/game/PlayerShooting.cpp',variant+'-PlayerShooting',variantFlags);
+    const shooting=compile('web/cpp/game/PlayerShooting.cpp',variant+'-PlayerShooting',variantFlags);
     const lookup=compile('tests/player-shot-lookup-test.cpp',variant+'-lookup',variantFlags);
     const trace=await run(variant+'-lookup',[lookup,registry,shooting]);
     if(!multiplayer)originalTrace=trace;else if(trace!==originalTrace)throw Error('Ordinary/multiplayer lookup trace differs');

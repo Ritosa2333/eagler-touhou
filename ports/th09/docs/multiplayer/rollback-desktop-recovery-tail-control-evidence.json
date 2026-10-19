@@ -1,7 +1,7 @@
 {
   "schema": "th09/desktop-recovery-tail-control-summary/1",
   "raw": {
-    "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-control-c1/report.json",
+    "path": "D:/workspace/eagler/worktrees/th09-recovery-tail-4x/web/artifacts/multiplayer-tests/desktop-recovery-tail-control-c1/report.json",
     "bytes": 56783,
     "sha256": "1f8e3a194fee87b6d07fe87147787436bcec1c761381cf63e4af9971ea83567f"
   },
@@ -21,14 +21,14 @@
   },
   "fixture": {
     "file": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\fixture.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\fixture.json",
       "bytes": 15318,
       "sha256": "67138a496d14ff07a1318ab955cccafc3e514d26742c7dc6261461dc140461fb"
     },
     "compactObjectSha256": "1614474eb85be7c7956c287ee5a87e0e059020bad9f66dca832c309d320bc62b"
   },
   "test": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\tests\\multiplayer\\recovery-tail-control.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\tests\\multiplayer\\recovery-tail-control.mjs",
     "bytes": 23204,
     "sha256": "1bc4876c5d535d72f770b19456d8d6694c511d1b9ed937929e44e99ddb9fc297"
   },
@@ -36,19 +36,19 @@
     {
       "name": "candidate",
       "input": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\cpp\\sdl\\Application.cpp",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\cpp\\sdl\\Application.cpp",
         "bytes": 87712,
         "sha256": "5a8580c706cde19b8ea411bbb4f54ccae776524e5971f7c658c58e8bb94a066b",
         "functionSha256": "0c9824b4a1dba5de6b7e49dec9ee03fb2534c13f0bb146b697bd57700112ae2e",
         "firstLine": 477
       },
       "wasm": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\candidate.wasm",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\candidate.wasm",
         "bytes": 976940,
         "sha256": "6d547210ee67e1cf2ebdf6269ae2ae32654be23ed5d0a8a1b947a80c26def1c4"
       },
       "output": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\candidate-wasi.stdout.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\candidate-wasi.stdout.json",
         "bytes": 11623,
         "sha256": "4a29f99bb848711c6a3db944ec5065e3fc6bba49be32692af55445f90ba59713"
       },
@@ -431,19 +431,19 @@
     {
       "name": "baseline",
       "input": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\cpp\\sdl\\Application.cpp",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\cpp\\sdl\\Application.cpp",
         "bytes": 87130,
         "sha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
         "functionSha256": "040e36cb3df72299bf4efb3e8bb8b5a7e3b51d36c8a497f2a53832da20b675a5",
         "firstLine": 477
       },
       "wasm": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\baseline.wasm",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\baseline.wasm",
         "bytes": 976549,
         "sha256": "0f15d27e735229a18afbebbba2c1a3b7a8e7d4da67c148c465afe67afc06c767"
       },
       "output": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\baseline-wasi.stdout.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-recovery-tail-4x\\web\\artifacts\\multiplayer-tests\\desktop-recovery-tail-control-c1\\baseline-wasi.stdout.json",
         "bytes": 11422,
         "sha256": "e4d4c1833154f46f8b2af21c98da43407f4d2e7337ebbd2702854a101ff7a56d"
       },

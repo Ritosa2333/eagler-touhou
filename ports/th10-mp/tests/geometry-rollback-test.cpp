@@ -2,8 +2,8 @@
 // AnimationEngine geometry allocators on a legally constructed engine.
 // Only RollbackState::Touch is a test delegate. No World capture, production
 // Touch dispatcher or Application MarkSimulated gate is claimed by this unit.
-#include "../th10_web/cpp/platform/AnimationEngine.hpp"
-#include "../th10_web/cpp/multiplayer/RollbackState.hpp"
+#include "../web/cpp/platform/AnimationEngine.hpp"
+#include "../web/cpp/multiplayer/RollbackState.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <array>
 #include <cstddef>

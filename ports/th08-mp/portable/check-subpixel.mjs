@@ -6,8 +6,8 @@ import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'..');
 const game='th08';
 const sdk=process.env.EMSDK??resolve(root,'tools/emsdk');
-const out=resolve(root,game+'_web/artifacts/subpixel');mkdirSync(out,{recursive:true});
-const obj=resolve(root,game+'_web/artifacts/sdl3/objects');
+const out=resolve(root,'web/artifacts/subpixel');mkdirSync(out,{recursive:true});
+const obj=resolve(root,'web/artifacts/sdl3/objects');
 // Refuse stale build objects. An explicit renderer override is reserved for
 // the before/after negative control; the current build must still be fresh.
 const build=JSON.parse(readFileSync(resolve(obj,'../build.json'),'utf8'));

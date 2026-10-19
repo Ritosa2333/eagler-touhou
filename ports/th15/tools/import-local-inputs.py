@@ -11,16 +11,16 @@ assert source != root, 'Select the original full development package'
 manifest = json.loads((source / 'FILE-SHA256.json').read_text(encoding='utf-8'))
 prefixes = (
     '[th15] 东方绀珠传 (汉化版+日文版)/',
-    'th15_web/assets/', 'th15_web/reference/assets/', 'th15_web/reference/replays/',
-    'th15_web/artifacts/cpp/analysis/',
-    'th15_web/artifacts/cpp/verification/font-definitions-original.json',
-    'th15_web/artifacts/native-process-replay/', 'th15_web/artifacts/native-process-extra/',
-    'th15_web/tools/', 'th08_web/node_modules/', 'th09_web/node_modules/', 'th10_web/node_modules/',
-    'th10_web/tools/', 'tools/architecture/typescript/', 'tools/architecture/python/',
+    'web/assets/', 'web/reference/assets/', 'web/reference/replays/',
+    'web/artifacts/cpp/analysis/',
+    'web/artifacts/cpp/verification/font-definitions-original.json',
+    'web/artifacts/native-process-replay/', 'web/artifacts/native-process-extra/',
+    'web/tools/', 'web/node_modules/', 'web/node_modules/', 'web/node_modules/',
+    'web/tools/', 'tools/architecture/typescript/', 'tools/architecture/python/',
 )
 native_suffixes = {'.wasm', '.dll', '.bin', '.decoded'}
 paths = [name for name in manifest if name.startswith(prefixes) or
-         (name.startswith('th15_web/reference/native/') and Path(name).suffix in native_suffixes)]
+         (name.startswith('web/reference/native/') and Path(name).suffix in native_suffixes)]
 for name in paths:
     src = (source / name).resolve()
     out = (root / name).resolve()

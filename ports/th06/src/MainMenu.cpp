@@ -51,6 +51,9 @@ MainMenu::MainMenu()
 
 ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
 {
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    if(EM_ASM_INT({return Module.eaglerRoomPreview?1:0;}))menu->idleFrames=0;
+#endif
     i32 i;
     AnmVm *vmList;
     u32 time;

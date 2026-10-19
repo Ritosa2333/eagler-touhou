@@ -1,8 +1,8 @@
-#include "../th10_web/cpp/multiplayer/SceneOwnerPools.hpp"
-#include "../th10_web/cpp/multiplayer/RollbackPoolCapture.hpp"
-#include "../th10_web/cpp/game/ProjectileSystems.hpp"
-#include "../th10_web/cpp/game/GameObjectResources.hpp"
-#include "../th10_web/cpp/game/CallbackNames.hpp"
+#include "../web/cpp/multiplayer/SceneOwnerPools.hpp"
+#include "../web/cpp/multiplayer/RollbackPoolCapture.hpp"
+#include "../web/cpp/game/ProjectileSystems.hpp"
+#include "../web/cpp/game/GameObjectResources.hpp"
+#include "../web/cpp/game/CallbackNames.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 
 #include <array>

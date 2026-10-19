@@ -1,3 +1,4 @@
+import {selectedPortGames} from './support/port-selection.mjs';
 import fs from "node:fs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
@@ -9,7 +10,7 @@ const requireMatch = (source, pattern, label) => {
   if (!pattern.test(source)) throw new Error(`missing ${label}: ${pattern}`);
 };
 
-for (const game of ["th06", "th07"]) {
+for (const game of selectedPortGames(["th06", "th07"])) {
   const extensionHeader = read(`${game}-eagler/src/ReplayExtension.hpp`);
   const extension = read(`${game}-eagler/src/ReplayExtension.cpp`);
   const replay = read(`${game}-eagler/src/ReplayManager.cpp`);

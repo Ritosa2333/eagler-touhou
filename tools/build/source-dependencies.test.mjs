@@ -7,7 +7,7 @@ import {isSourceDependency,sourceDependencyTool} from './source-dependencies.mjs
 const root=resolve(tmpdir(),'eagler-dependency-boundary/ports/th10');
 
 test('title inventories include their actual common closure and the inventory tool',()=>{
-  for(const path of ['th10_web/cpp/game/GameInput.cpp','../../common/include/eagler/thprac/PracticeInput.hpp',
+  for(const path of ['web/cpp/game/GameInput.cpp','../../common/include/eagler/thprac/PracticeInput.hpp',
     '../../common/src/netplay/RollbackJournal.cpp','..named-header.hpp',sourceDependencyTool])
     assert.equal(isSourceDependency(root,path),true,path);
 });

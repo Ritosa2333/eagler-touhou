@@ -13,7 +13,7 @@
     "freshState": "Present count changed and logic frontier advanced; actual wrapper-entry interval is an additional observation, not physical scanout"
   },
   "analyzer": {
-    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/tests/multiplayer/analyze-chrome-scheduler.mjs",
+    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/tests/multiplayer/analyze-chrome-scheduler.mjs",
     "bytes": 29576,
     "sha256": "2b7b7ee80f718a0af9e374f4a50200b313fbb2d01e48eb3f38a1d20b13ab9b52"
   },
@@ -21,17 +21,17 @@
     {
       "inputs": [
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-report.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-report.json",
           "bytes": 20748287,
           "sha256": "1c1c677c7e2154787c50fcd207a3be206c4e317250521421d472470734491a94"
         },
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-P1-scheduler-trace.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-P1-scheduler-trace.json",
           "bytes": 619547,
           "sha256": "c3eaceaae5e58a1e4495c82be2d71fd87df47f80266cf75e75ee184eb0c10ff0"
         },
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-P2-scheduler-trace.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-P2-scheduler-trace.json",
           "bytes": 16335947,
           "sha256": "93e37bc0a405c388db0dabb9cde854e860cbb9c00e82f0c88d4cf39607a4b230"
         }
@@ -1953,7 +1953,7 @@
           },
           "trace": {
             "identity": {
-              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-P1-scheduler-trace.json",
+              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-P1-scheduler-trace.json",
               "bytes": 619547,
               "sha256": "c3eaceaae5e58a1e4495c82be2d71fd87df47f80266cf75e75ee184eb0c10ff0"
             },
@@ -5551,7 +5551,7 @@
           },
           "trace": {
             "identity": {
-              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-P2-scheduler-trace.json",
+              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-01-P2-scheduler-trace.json",
               "bytes": 16335947,
               "sha256": "93e37bc0a405c388db0dabb9cde854e860cbb9c00e82f0c88d4cf39607a4b230"
             },
@@ -11770,17 +11770,17 @@
     {
       "inputs": [
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-failure.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-failure.json",
           "bytes": 12167242,
           "sha256": "ff430e9d733fe5977619a37fbb9f5ae7837c0a1f82dd12f7477a523323f41ea8"
         },
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-P1-scheduler-trace.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-P1-scheduler-trace.json",
           "bytes": 37234753,
           "sha256": "647b1cf633692cdf068a959187e5cf70dd92e99c959e58fe99d48da8e76f2bfe"
         },
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-P2-scheduler-trace.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-P2-scheduler-trace.json",
           "bytes": 37263025,
           "sha256": "7ed927ea6b9f5db5ff461c0e192e0085ce501e5184a620c71b466bdcdb38175f"
         }
@@ -13404,7 +13404,7 @@
           },
           "trace": {
             "identity": {
-              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-P1-scheduler-trace.json",
+              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-P1-scheduler-trace.json",
               "bytes": 37234753,
               "sha256": "647b1cf633692cdf068a959187e5cf70dd92e99c959e58fe99d48da8e76f2bfe"
             },
@@ -17876,7 +17876,7 @@
           },
           "trace": {
             "identity": {
-              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-P2-scheduler-trace.json",
+              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-02-P2-scheduler-trace.json",
               "bytes": 37263025,
               "sha256": "7ed927ea6b9f5db5ff461c0e192e0085ce501e5184a620c71b466bdcdb38175f"
             },
@@ -23344,17 +23344,17 @@
     {
       "inputs": [
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-report.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-report.json",
           "bytes": 5061969,
           "sha256": "cc99293e048bc5c6943f19b41f5f1e9200bc033c131bb3929f4350918a063393"
         },
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-P1-scheduler-trace.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-P1-scheduler-trace.json",
           "bytes": 39274718,
           "sha256": "67d9341d2e4671cdba4239fe2b10341b9f1eb0c4e9cddeea53b7a05551566ad4"
         },
         {
-          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-P2-scheduler-trace.json",
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-P2-scheduler-trace.json",
           "bytes": 39748249,
           "sha256": "092e6bdda2f11734000ff9751398f0e2a08f281b963331b7cec4ec1053d6aaa0"
         }
@@ -25022,7 +25022,7 @@
           },
           "trace": {
             "identity": {
-              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-P1-scheduler-trace.json",
+              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-P1-scheduler-trace.json",
               "bytes": 39274718,
               "sha256": "67d9341d2e4671cdba4239fe2b10341b9f1eb0c4e9cddeea53b7a05551566ad4"
             },
@@ -29539,7 +29539,7 @@
           },
           "trace": {
             "identity": {
-              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-P2-scheduler-trace.json",
+              "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-scheduler-short-03-P2-scheduler-trace.json",
               "bytes": 39748249,
               "sha256": "092e6bdda2f11734000ff9751398f0e2a08f281b963331b7cec4ec1053d6aaa0"
             },

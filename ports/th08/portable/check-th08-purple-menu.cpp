@@ -1,5 +1,5 @@
-#include "../th08_web/cpp/third_party/imgui/imgui.h"
-#include "../th08_web/cpp/third_party/imgui/imgui_internal.h"
+#include "imgui.h"
+#include "imgui_internal.h"
 #include <cassert>
 #include <cstring>
 #include <initializer_list>

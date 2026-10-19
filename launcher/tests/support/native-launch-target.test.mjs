@@ -1,3 +1,4 @@
+import {readUiHistoryText} from './ui-history.mjs';
 /** Original native-launch setup only. No browser, game, Relay, or imported
  * Package is executed. These original harnesses already inherit the production
  * frontend artifact; replacing their dynamic server with a static fixture
@@ -14,7 +15,7 @@ import {readReactFrontendArtifact} from '../../lib/react-frontend-artifact.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const paths = ['tests/test-th09mp-launch.py', 'tests/test-th20-import-launch-browser.py', 'tests/test-th20-touch-browser.py'];
-const python = source => JSON.parse(execFileSync('python', ['-c', source], {cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
+const python = source => JSON.parse(execFileSync('python', ['-'], {input: source, cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
 
 function setup(environment) {
   // Evaluate only the original environment copy/update/pop statements, then
@@ -24,7 +25,8 @@ function setup(environment) {
 }
 
 test('native harness setup changes retain the independent original scenario assertions', () => {
-  const rows = python(`import ast,json,subprocess\nfrom pathlib import Path\nrows=[]\nfor p in ${JSON.stringify(paths)}:\n old=subprocess.check_output(['git','show','${baseline}:'+p],text=True);new=Path(p).read_text()\n def assertions(s):return [ast.get_source_segment(s,n) for n in ast.walk(ast.parse(s)) if isinstance(n,ast.Assert)]\n rows.append({'path':p,'count':len(assertions(old)),'equal':assertions(old)==assertions(new)})\nprint(json.dumps(rows))`);
+  const originals = Object.fromEntries(paths.map(path => [path, readUiHistoryText(baseline, path)]));
+  const rows = python(`import ast,json\nfrom pathlib import Path\nrows=[]\nfor p in ${JSON.stringify(paths)}:\n old=json.loads(${JSON.stringify(JSON.stringify(originals))})[p];new=Path(p).read_text()\n def assertions(s):return [ast.get_source_segment(s,n) for n in ast.walk(ast.parse(s)) if isinstance(n,ast.Assert)]\n rows.append({'path':p,'count':len(assertions(old)),'equal':assertions(old)==assertions(new)})\nprint(json.dumps(rows))`);
   for (const row of rows) {assert.ok(row.count > 0, row.path); assert.equal(row.equal, true, row.path);}
 });
 
@@ -68,7 +70,7 @@ async function start(environment, port) {
   } catch (error) {await stop(); throw error;}
 }
 
-test('actual React development server preserves canonical TH20 identity-only Host and per-run Relay metadata; missing selected build fails closed', {timeout: 180000}, async () => {
+test('actual React development server preserves th20 identity, readable shared font routes and per-run Relay metadata; missing selected build fails closed', {timeout: 180000}, async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true});
   const work = await mkdtemp(resolve(project, '.cache/native-launch-setup-'));
   try {
@@ -94,6 +96,13 @@ test('actual React development server preserves canonical TH20 identity-only Hos
       assert.match(html, /__reactRouterContext/); assert.doesNotMatch(html, /<script[^>]+src=["'](?:\.\/)?app\.js/);
       const actual = await (await fetch(server.base + '/site-manifest.json')).json();
       const canonical = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', "import {createDevelopmentSiteManifest} from './lib/development-site-manifest.mjs';console.log(JSON.stringify(await createDevelopmentSiteManifest({games:['th20'],netplayRelay:process.env.EAGLER_TOUHOU_NETPLAY_RELAY})))"], {cwd: project, env: environment, encoding: 'utf8'}));
+      for (const [key,name] of [['vanillaFont','msgothic.ttc'],['unicodeFont','unifont.otf']]) {
+        assert.match(actual.shared[key],new RegExp('^/__development-content/[a-f0-9]{64}/'+name.replaceAll('.','\\.')+'$'));
+        const resource=await fetch(new URL(actual.shared[key],server.base));
+        assert.equal(resource.status,200,name);
+        assert.deepEqual(new Uint8Array(await resource.arrayBuffer()),new Uint8Array([1,2,3]),name);
+        canonical.shared[key]=actual.shared[key];
+      }
       assert.deepEqual(actual, canonical);
       assert.equal(actual.shared.netplayRelay, environment.EAGLER_TOUHOU_NETPLAY_RELAY);
       assert.deepEqual(Object.keys(actual.games), ['th20']);

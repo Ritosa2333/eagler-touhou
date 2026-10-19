@@ -2,7 +2,7 @@
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Native screen ownership fixture must not enter production
 #endif
-#include "../../th08_web/cpp/game/ScreenEffects.hpp"
+#include "../../web/cpp/game/ScreenEffects.hpp"
 #include <cstring>
 
 namespace th08::multiplayer::fixture {

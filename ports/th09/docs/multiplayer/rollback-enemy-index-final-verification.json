@@ -13,77 +13,77 @@
   "errors": [],
   "checks": [
     {
-      "path": "th09_web/cpp/multiplayer/WorldState.cpp",
+      "path": "web/cpp/multiplayer/WorldState.cpp",
       "bytes": 19653,
       "expectedSha256": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
       "actualSha256": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
       "passed": true
     },
     {
-      "path": "th09_web/cpp/multiplayer/WorldState.hpp",
+      "path": "web/cpp/multiplayer/WorldState.hpp",
       "bytes": 7489,
       "expectedSha256": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
       "actualSha256": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/run-tests.mjs",
+      "path": "web/tests/multiplayer/run-tests.mjs",
       "bytes": 4708,
       "expectedSha256": "924aa6f5daa0f9e8246ee273f55e39d71ffa7bde69ee95ea6250f2654a207591",
       "actualSha256": "924aa6f5daa0f9e8246ee273f55e39d71ffa7bde69ee95ea6250f2654a207591",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/peer-browser.mjs",
+      "path": "web/tests/multiplayer/peer-browser.mjs",
       "bytes": 19630,
       "expectedSha256": "a7cf46dfe2550fec3f7ebe2d5e991453dbbe23c658a602e0e69afddd7a428aa5",
       "actualSha256": "a7cf46dfe2550fec3f7ebe2d5e991453dbbe23c658a602e0e69afddd7a428aa5",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "path": "web/tests/multiplayer/smoothness-browser.mjs",
       "bytes": 60069,
       "expectedSha256": "dde1d2e8f744b33e2eb56337ada81524083f334cd5b897c1dbb57bbf17a74fec",
       "actualSha256": "dde1d2e8f744b33e2eb56337ada81524083f334cd5b897c1dbb57bbf17a74fec",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/smoothness-window.mjs",
+      "path": "web/tests/multiplayer/smoothness-window.mjs",
       "bytes": 9583,
       "expectedSha256": "9c46c45b275b5b57912a62c58dbc309dfe3eec2bff6b788a2370ce6c214c0546",
       "actualSha256": "9c46c45b275b5b57912a62c58dbc309dfe3eec2bff6b788a2370ce6c214c0546",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/raf-anomaly-probe.mjs",
+      "path": "web/tests/multiplayer/raf-anomaly-probe.mjs",
       "bytes": 16988,
       "expectedSha256": "f33bf25b07b99dc2e8ae5485138f31c21eed2a54ee564899847907f891eab5f4",
       "actualSha256": "f33bf25b07b99dc2e8ae5485138f31c21eed2a54ee564899847907f891eab5f4",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/analyze-enemy-index-response.mjs",
+      "path": "web/tests/multiplayer/analyze-enemy-index-response.mjs",
       "bytes": 19122,
       "expectedSha256": "5a07b30936471e3272141d404a5ae777c0b553e814f2a9930688a6dd92e10fb9",
       "actualSha256": "5a07b30936471e3272141d404a5ae777c0b553e814f2a9930688a6dd92e10fb9",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/analyze-enemy-index-series.mjs",
+      "path": "web/tests/multiplayer/analyze-enemy-index-series.mjs",
       "bytes": 49508,
       "expectedSha256": "6b5eebf03b19058175527c798f2c3c1b0432304144059af0dafcd742292dabf9",
       "actualSha256": "6b5eebf03b19058175527c798f2c3c1b0432304144059af0dafcd742292dabf9",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs",
+      "path": "web/tests/multiplayer/analyze-information-pacing-shadow.mjs",
       "bytes": 32764,
       "expectedSha256": "d0c0cb5eea57b89b138b3f53ce8d763789a1325bea680818543fc31fb99674e9",
       "actualSha256": "d0c0cb5eea57b89b138b3f53ce8d763789a1325bea680818543fc31fb99674e9",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/summarize-information-pacing-shadow.mjs",
+      "path": "web/tests/multiplayer/summarize-information-pacing-shadow.mjs",
       "bytes": 11472,
       "expectedSha256": "50dae38eb02b14c92c97bc424ac071a71d61f49ad870c5a239f7d89444472bda",
       "actualSha256": "50dae38eb02b14c92c97bc424ac071a71d61f49ad870c5a239f7d89444472bda",
@@ -167,28 +167,28 @@
       "passed": true
     },
     {
-      "path": "th09_web/artifacts/rollback4x-enemy-index-release/th09.wasm",
+      "path": "web/artifacts/rollback4x-enemy-index-release/th09.wasm",
       "bytes": 2827974,
       "expectedSha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577",
       "actualSha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577",
       "passed": true
     },
     {
-      "path": "th09_web/artifacts/rollback4x-enemy-index-release/build.json",
+      "path": "web/artifacts/rollback4x-enemy-index-release/build.json",
       "bytes": 87045,
       "expectedSha256": "ad19bc3a5f0c4e2bb39a9051d7fa8337a5f4b31748f327de85407829f72b61e9",
       "actualSha256": "ad19bc3a5f0c4e2bb39a9051d7fa8337a5f4b31748f327de85407829f72b61e9",
       "passed": true
     },
     {
-      "path": "th09_web/artifacts/rollback4x-chain-input-batch-release/th09.wasm",
+      "path": "web/artifacts/rollback4x-chain-input-batch-release/th09.wasm",
       "bytes": 2827629,
       "expectedSha256": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97",
       "actualSha256": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97",
       "passed": true
     },
     {
-      "path": "th09_web/tests/multiplayer/relay-thread-cpu-feasibility.mjs",
+      "path": "web/tests/multiplayer/relay-thread-cpu-feasibility.mjs",
       "bytes": 5123,
       "expectedSha256": "2b7cbf3cae29c72149b04a882e6871cf55392e18b4ede593f51c98b272c6a5b9",
       "actualSha256": "2b7cbf3cae29c72149b04a882e6871cf55392e18b4ede593f51c98b272c6a5b9",

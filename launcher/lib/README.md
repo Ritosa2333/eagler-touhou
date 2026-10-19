@@ -1,25 +1,14 @@
-# `lib/` ownership
+# `lib/` 目录归属
 
-`lib/` contains reusable **Node-side** engineering logic. It is not a generic
-browser utility directory and it is not a home for CLI entrypoints.
+`lib/` 存放可复用的 Node 端策略与构建逻辑。常见模块负责解析 workspace 和构建配置、校验契约、组装清单与产物，以及实现脚本和测试共用的策略。
 
-Typical owners here include:
+`lib/contracts/` 提供 Node 可导入的契约模块；浏览器侧类型入口位于 `src/contracts/`，跨组件共享契约位于 `../common/contracts/`。
 
-- Launcher/App Shell build and manifest assembly;
-- self-host bundle, Runtime Release, release-plan, provenance, and artifact policy;
-- workspace/build-profile resolution;
-- publication and public-tree policy;
-- reusable verifiers used by more than one command/test;
-- Node adapters for the typed browser-visible contracts under `lib/contracts/`.
+目录归属按职责划分：
 
-Command-line argument parsing, console presentation, and one-shot maintainer
-entrypoints belong in `scripts/`. Browser product behavior belongs in `src/`
-or `package/`. Tests belong in `tests/`.
+- 一次性参数解析和控制台输出放在 `scripts/`。
+- 浏览器应用行为放在 `app/` 和 `src/`。
+- 浏览器 Package 存储和安装流程放在 `package/`。
+- 测试放在 `tests/`。
 
-`lib/contracts/` deliberately exposes Node-consumable contract modules backed
-by the typed owners in `src/contracts/`. The root-level contract files are thin
-stable re-export facades over these modules.
-
-Do not move code here merely because it is shared by two nearby functions. A
-module should represent reusable policy, assembly, validation, or another
-cohesive owner.
+适合放入 `lib/` 的模块应是可复用策略、组装边界、校验器或归属清晰的适配器。

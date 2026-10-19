@@ -14,7 +14,7 @@ const unknownOptions=cliArgs.filter(arg=>arg.startsWith('--')&&!cliFlags.has(arg
 if(unknownOptions.length)throw Error('Unknown option(s): '+unknownOptions.join(', '));
 const root=resolve(import.meta.dirname,'../..'),fixtures=process.argv.includes('--fixtures');
 const profile=fixtures?'multiplayer-fixtures':'multiplayer';
-const buildRoot=resolve(process.env.TH08_MP_BUILD_ROOT||resolve(root,'th08_web/artifacts',profile)),
+const buildRoot=resolve(process.env.TH08_MP_BUILD_ROOT||resolve(root,'web/artifacts',profile)),
  build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 const hash=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
 const verify=()=>{if(build.variant!==profile||hash(resolve(buildRoot,'th08-sdl.wasm'))!==build.sha256)throw Error('Mismatched build');
@@ -76,7 +76,7 @@ if(hostMode)for(const file of ['check-runtime-host.py','runtime-host.html','host
 if(modes.some(m=>m.startsWith('spectator-')))report.harness['check-spectator.py']=hash(resolve(import.meta.dirname,'check-spectator.py'));
 if(modes.includes('replay'))report.harness['check-replay.py']=hash(resolve(import.meta.dirname,'check-replay.py'));
 if(hostMode)for(const file of ['th08.html','shell.mjs','startup-branding.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs']){
- const key='../../th08_web/sdl-runtime/'+file;report.harness[key]=hash(resolve(import.meta.dirname,key));
+ const key='../../web/sdl-runtime/'+file;report.harness[key]=hash(resolve(import.meta.dirname,key));
 }
 let server,relay;
 const children=[];

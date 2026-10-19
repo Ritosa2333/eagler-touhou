@@ -17,6 +17,7 @@ export function readReactAppShellDeployment(document: Pick<Document, 'querySelec
     if (page.protocol !== 'https:' && !(page.protocol === 'http:' && loopback)) return undefined;
     const scope = new URL(configuration.mountPath, configuration.origin === 'same-origin' ? page.origin : configuration.origin);
     if (page.origin !== scope.origin || new URL('./', page).href !== scope.href) return undefined;
-    return Object.freeze({workerUrl: new URL('app-shell-sw.js', scope).href, scope: scope.href});
+    return Object.freeze({workerUrl: new URL('app-shell-sw.js', scope).href, scope: scope.href,
+      previousWorkerUrls: [new URL('app-shell-sw-fontfix-1fefcaa790f0.js', scope).href]});
   } catch { return undefined; }
 }

@@ -4,7 +4,7 @@ import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-const here=dirname(fileURLToPath(import.meta.url)),repo=resolve(here,'../..'),web=resolve(repo,'th09_web');
+const here=dirname(fileURLToPath(import.meta.url)),repo=resolve(here,'../..'),web=resolve(repo,'web');
 const caseIndex=process.argv.indexOf('--case'),selected=caseIndex<0?null:Number(process.argv[caseIndex+1]);
 if(selected!==null&&![0,1,2].includes(selected))throw Error('--case must be 0, 1, or 2');
 const env={...process.env,TH09_REPLAY_VERIFIER_LIGHT:'1',...(selected===null?{}:{TH09_DEMO_CASE:String(selected)})};

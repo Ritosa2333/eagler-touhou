@@ -1,11 +1,11 @@
 // Typed game-owner regression; fake platform services deliberately exclude
 // GPU/audio/input/device equivalence. Native instruction sites are checked
 // separately in check-th15-thprac-native.mjs.
-#include "../th15_web/cpp/game/SpellCard.hpp"
-#include "../th15_web/cpp/game/ChapterCheckpoint.hpp"
-#include "../th15_web/cpp/game/SessionRuntime.hpp"
-#include "../th15_web/cpp/game/PracticeAbScores.hpp"
-#include "../th15_web/cpp/game/SpellDraw.hpp"
+#include "../web/cpp/game/SpellCard.hpp"
+#include "../web/cpp/game/ChapterCheckpoint.hpp"
+#include "../web/cpp/game/SessionRuntime.hpp"
+#include "../web/cpp/game/PracticeAbScores.hpp"
+#include "../web/cpp/game/SpellDraw.hpp"
 #include <cassert>
 #include <iostream>
 using namespace th15;

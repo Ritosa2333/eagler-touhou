@@ -7,7 +7,7 @@ import {chromium} from 'playwright';
 import {browserTestUrl} from '../support/browser-target.mjs';
 const origin=new URL(browserTestUrl()).origin;
 const label=process.env.RUN_LABEL;if(!/^[\w-]+$/.test(label||''))throw Error('Unique RUN_LABEL required');
-const out=resolve(process.env.TH09_SPECTATOR_TEST_OUTPUT||'D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/artifacts/spectator-forward-20261014',label);
+const out=resolve(process.env.TH09_SPECTATOR_TEST_OUTPUT||'D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/artifacts/spectator-forward-20261014',label);
 if(existsSync(out))throw Error('Test output already exists');mkdirSync(out,{recursive:true});
 const report={schema:'th09/spectator-frontend/1',passed:false,scope:'Actual local React room flow and release Runtime. Not physical-device or public-network performance.',stages:[],errors:[],checks:{},browsers:[]};
 const browsers=[],actors=[];

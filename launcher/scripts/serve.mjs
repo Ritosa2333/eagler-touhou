@@ -18,10 +18,11 @@ import {
 import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
 import { createDevelopmentSiteManifest } from "../lib/development-site-manifest.mjs";
+import { developmentResourceRoutes } from "../lib/development-resource-routes.mjs";
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { REACT_FRONTEND_ARTIFACT, FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
-import { SITE_MANIFEST_FILE } from "../lib/contracts/site-manifest.mjs";
+import { SITE_MANIFEST_FILE, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { RELEASE_CATALOG_FILE, RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "../lib/client-services-build.mjs";
 import { privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
@@ -67,11 +68,23 @@ if (process.env.EAGLER_TOUHOU_ARTWORK_DIR && !existsSync(configuredArtworkDirect
 const configuredNetplayRelay = process.env.EAGLER_TOUHOU_NETPLAY_RELAY?.trim() || undefined;
 const hostArtwork = new Set(hostArtworkFiles(Object.keys(DEVELOPMENT_CONTENT.games)));
 const selectedDevelopmentGames = process.env.EAGLER_DEVELOPMENT_GAMES?.split(",").map(value => value.trim()).filter(Boolean);
-const developmentMetadata = sourceDevelopmentServer ? new Map([
-  [SITE_MANIFEST_FILE, `${JSON.stringify(await createDevelopmentSiteManifest({
+// Optional operator-owned local manifest lets UI previews reuse packaged
+// Runtimes without requiring every source repository to have build outputs.
+const localManifest = process.env.EAGLER_DEVELOPMENT_SITE_MANIFEST
+  ? validateSiteManifest(JSON.parse(await readFile(resolve(process.env.EAGLER_DEVELOPMENT_SITE_MANIFEST), 'utf8')))
+  : null;
+if (localManifest && configuredNetplayRelay) localManifest.shared.netplayRelay = configuredNetplayRelay;
+let developmentResources = null;
+const developmentManifest = sourceDevelopmentServer ? localManifest ?? await createDevelopmentSiteManifest({
     netplayRelay: configuredNetplayRelay,
     games: selectedDevelopmentGames,
-  }), null, 2)}\n`],
+    publishManifest: manifest => {
+      developmentResources = developmentResourceRoutes(manifest, {sourceRoot:project});
+      return developmentResources.manifest;
+    },
+  }) : null;
+const developmentMetadata = sourceDevelopmentServer ? new Map([
+  [SITE_MANIFEST_FILE, `${JSON.stringify(developmentManifest, null, 2)}\n`],
   [RELEASE_CATALOG_FILE, `${JSON.stringify({ schema: RELEASE_CATALOG_SCHEMA, games: {} }, null, 2)}\n`],
 ]) : null;
 if (developmentMetadata) developmentMetadata.set(LEGACY_HOST_MANIFEST_FILE,
@@ -227,7 +240,9 @@ createServer(async (request, response) => {
     }
 
     const privateFrontendAsset = sourceDevelopmentServer ? privateFrontendAssetSource(frontendPath) : null;
-    if (sourceDevelopmentServer && FRONTEND_PACKAGE_FILES.includes(frontendPath)) {
+    if (developmentResources?.files.has(pathname)) {
+      file = developmentResources.files.get(pathname);
+    } else if (sourceDevelopmentServer && FRONTEND_PACKAGE_FILES.includes(frontendPath)) {
       file = resolveFrontendPackageSource(frontendPath);
     } else if (privateFrontendAsset && existsSync(privateFrontendAsset)) {
       file = privateFrontendAsset;

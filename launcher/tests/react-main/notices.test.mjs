@@ -17,6 +17,12 @@ const {JSDOM} = require('jsdom');
 const {installMountedDom} = await import(pathToFileURL(resolve(project, 'tests/react-main/mounted-dom-environment.mjs')));
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
+const th09CatalogEntry = '  Object.freeze({ id: "th09", short: "TH09", title: "花映塚" }),\n';
+const extendPinnedGuideCatalog = source => {
+  const anchor = '  Object.freeze({ id: "th08", short: "TH08", title: "永夜抄" }),\n';
+  assert.equal(source.split(anchor).length, 2, 'pinned guide has one TH08 catalog entry');
+  return source.replace(anchor, anchor + th09CatalogEntry);
+};
 let env, React, createRoot, owners, changedMotionOwners, baselineHTML, current = null;
 const alive = new Set();
 const originalSetTimeout = globalThis.setTimeout, originalClearTimeout = globalThis.clearTimeout;
@@ -53,7 +59,12 @@ before(async () => {
     // by executing the complete pinned controller and its pinned sanitizer.
     ctx.onResolve({filter:/^pinned:/},args=>({path:args.path.slice(7),namespace:'pinned'}));
     ctx.onResolve({filter:/^\.\/content-fragment\.mjs$/,namespace:'pinned'},()=>({path:'content-fragment.mts',namespace:'pinned'}));
-    ctx.onLoad({filter:/.*/,namespace:'pinned'},args=>({contents:pinned(`src/launcher/${args.path}`),resolveDir:resolve(project,'src/launcher'),loader:'ts'}));
+    ctx.onLoad({filter:/.*/,namespace:'pinned'},args=>({
+      contents:args.path==='multiplayer-guide.mts'
+        ? extendPinnedGuideCatalog(pinned(`src/launcher/${args.path}`))
+        : pinned(`src/launcher/${args.path}`),
+      resolveDir:resolve(project,'src/launcher'),loader:'ts'
+    }));
   }},{name:'existing-deps-and-original-mts',setup(ctx){
     ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));
     ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});
@@ -173,7 +184,7 @@ test('First use: stale StrictMode manual load must not emit an open request',asy
 for(const [name,id,extra,key] of [['FirstUseNotice','firstUseNoticeText',firstDefaults,'firstUseNotice.loading'],['MultiplayerGuideDialog','mpGuideContent',()=>({gameId:'th07'}),'multiplayerGuide.loading']])test(`${name}: initial loading copy follows a live locale change`,async()=>{const m=await mount(owners[name],extra());await m.setLocale('en');assert.equal(n('#'+id).textContent,owners.translate('en',key));});
 test('First use: cached empty manual re-show uses current locale like original',async()=>{const ref=React.createRef();const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:async()=>response(' ')});await ref.current.showManual();await m.setLocale('en');await ref.current.showManual();assert.equal(n('#firstUseNoticeText').textContent,owners.translate('en','firstUseNotice.empty'));});
 test('Authored first-use document: fetched fragment equals pinned main sanitization',async()=>{const authored=pinned('public/content/FIRST_USE_NOTICE.html'),ref=React.createRef();await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:async()=>response(authored)});await ref.current.load();const expected=env.document.createElement('div');owners.renderContentFragment(expected,authored.trim(),env.document);assert.equal(n('#firstUseNoticeText').innerHTML,expected.innerHTML);});
-test('Authored multiplayer document: all five game renderings equal pinned main controller',async()=>{const authored=pinned('public/content/MULTIPLAYER.html');for(const gameId of ['th06','th07','th08','th10','th11']){const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId,fetchImpl:async()=>response(authored)});await flush();const baseline=new JSDOM('<!doctype html>'+baselineDialog('mpGuideDialog').outerHTML,{url:'https://launcher.invalid/'});baseline.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};baseline.window.HTMLDialogElement.prototype.close=function(){this.open=false;};baseline.window.HTMLElement.prototype.scrollIntoView=function(){};await owners.createMultiplayerGuideController({documentObj:baseline.window.document,fetchImpl:async()=>response(authored),getGameId:()=>gameId}).show();assert.equal(n('#mpGuideContent').innerHTML,n('#mpGuideContent',baseline.window.document).innerHTML,gameId);baseline.window.close();await m.unmount();m.container.remove();}});
+test('Authored multiplayer document: all seven game renderings equal the pinned controller plus TH09 catalog entry',async()=>{const authored=pinned('public/content/MULTIPLAYER.html');for(const gameId of ['th06','th07','th08','th09','th10','th11','th15']){const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId,fetchImpl:async()=>response(authored)});await flush();const baseline=new JSDOM('<!doctype html>'+baselineDialog('mpGuideDialog').outerHTML,{url:'https://launcher.invalid/'});baseline.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};baseline.window.HTMLDialogElement.prototype.close=function(){this.open=false;};baseline.window.HTMLElement.prototype.scrollIntoView=function(){};await owners.createMultiplayerGuideController({documentObj:baseline.window.document,fetchImpl:async()=>response(authored),getGameId:()=>gameId}).show();assert.equal(n('#mpGuideContent').innerHTML,n('#mpGuideContent',baseline.window.document).innerHTML,gameId);baseline.window.close();await m.unmount();m.container.remove();}});
 test('Donation: original lobby closes immediately without library exit animation',async()=>{reduce=false;let closes=0;await mount(owners.DonationDialog,{open:true,closeDurationMs:0,assetUrl:x=>x,onArtworkUnavailable(){},onCloseRequest:()=>closes++});const c=fakeClock();await click('#donationClose');assert.equal(n('#donationDialog').open,false);assert.equal(n('#donationDialog').classList.contains('closing'),false);assert.equal(c.timers.size,0);assert.equal(closes,1);});
 
 for (const locale of ['zh-CN', 'en']) test(`First use ${locale}: failed explicit show preserves pinned error until a later explicit retry`, async () => {

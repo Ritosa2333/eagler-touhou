@@ -115,6 +115,51 @@ test('runtime: worker downloads share document network accounting and cannot sur
   release();await assert.rejects(preparing,/SUPERSEDED/);
 });
 
+test('room preload: binding a run reuses the epoch/DATA and retains the prepared resource payload', async () => {
+  const f = fixture(), plan = managedPlan();
+  plan.runtimeVariant = 'multiplayer'; plan.entry = 'runtime/th10/th10mp.html';
+  plan.configure.options = {touchEnabled: true, gameLanguage: 'en'};
+  plan.configure.runtimePack = {schema: 'prepared-language-fixture', files: [{path: '/thcrap/th10/msg.bin', bytes: new Uint8Array([1, 2])}]};
+  await f.prepare(plan);
+  const before = f.service.getSnapshot(), navigations = f.navigations.length, reads = f.dataReads.length;
+  const configure = f.service.configurePreparedRoom(before.epoch, {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid/?run=7', netplayPlayer: 1});
+  await flush(); const wire = f.ack('configure'); await configure;
+  assert.equal(f.service.getSnapshot().epoch, before.epoch);
+  assert.equal(f.navigations.length, navigations); assert.equal(f.dataReads.length, reads);
+  assert.equal(wire.options.touchEnabled, true); assert.equal(wire.options.netplayPlayer, 1);
+  assert.deepEqual(wire.runtimePack, plan.configure.runtimePack, 'legacy configure must retain the prepared language payload');
+  assert.deepEqual(wire.resources, []); assert.deepEqual(wire.sharedResources, []);
+  const launch = f.service.launch(); await flush(); f.ack('launch'); await launch;
+  assert.equal(f.service.getLauncherControlContext().options.netplayPlayer, 1);
+  await assert.rejects(f.service.configurePreparedRoom(before.epoch, {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid'}));
+});
+
+test('room preload: a stale run cannot configure a replacement engine', async () => {
+  const f = fixture(); await f.prepare(managedPlan()); const epoch = f.service.getSnapshot().epoch;
+  f.service.cancel(); await f.prepare(managedPlan());
+  const messages = f.outbound.length;
+  await assert.rejects(f.service.configurePreparedRoom(epoch, {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid'}));
+  assert.equal(f.outbound.length, messages);
+});
+
+test('room preview is prelaunch, native-acknowledged, and binds the same engine without remounting resources', async () => {
+  const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  const preparing=f.service.prepare(plan);await flush();f.event('ready',{roomPreview:true});await flush();f.ack('configure');await preparing;
+  const epoch=f.service.getSnapshot().epoch,navigations=f.navigations.length;
+  const preview=f.service.prepareRoomPreview(epoch);await flush();
+  assert.equal(f.service.getSnapshot().roomPreview,undefined);
+  f.ack('prepare-room',{presented:true});assert.equal(await preview,true);
+  assert.equal(f.service.getSnapshot().roomPreview,true);
+  assert.equal(f.service.getSnapshot().launched,false);
+  assert.equal(f.service.getInputContext().launched,false);
+  const binding=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=1'});
+  await flush();const wire=f.ack('configure');await binding;
+  assert.deepEqual(wire.resources,[]);assert.deepEqual(wire.runtimeResources,[]);assert.equal(wire.runtimePack,undefined);
+  const launch=f.service.launch();await flush();f.ack('launch');await launch;
+  assert.equal(f.service.getSnapshot().roomPreview,false);
+  assert.equal(f.service.getSnapshot().epoch,epoch);assert.equal(f.navigations.length,navigations);
+});
+
 test('runtime: validated direct preload uses original asset URL, one frame and ACK-based ordinary launch', async () => {
   const f = fixture(), frame = f.frame; assert.equal(f.service.getSnapshot().fileOnly, false); const plan = directPlan(); await f.prepare(plan);
   assert.equal(f.service.getSnapshot().fileOnly, false, 'ordinary prepare does not inherit a file-only role');

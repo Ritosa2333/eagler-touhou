@@ -28,7 +28,7 @@ test('runtime diagnostics preserve live lifecycle and explicit hash sample ident
   rmSync(directory,{recursive:true,force:true});
  });
  for(const [source,name] of [
-  ['th11_web/sdl-runtime/multiplayer.mjs','multiplayer.mjs'],
+  ['web/sdl-runtime/multiplayer.mjs','multiplayer.mjs'],
   ['third_party/eagler-common/browser/adonis-calibration.mjs','adonis-calibration.mjs'],
   ['portable/browser/multiplayer-replay.mjs','multiplayer-replay.mjs'],
  ])copyFileSync(join(root,source),join(directory,name));

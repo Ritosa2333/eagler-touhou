@@ -45,7 +45,7 @@
       },
       "errors": [],
       "artifact": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-a1-P1-scheduler-trace.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-a1-P1-scheduler-trace.json",
         "bytes": 53781600,
         "sha256": "1fa4e669bcd9cc6de8a4689834aaa9d2873c15f5c93d6ac4c431b4a054a4ab24"
       }
@@ -73,7 +73,7 @@
       },
       "errors": [],
       "artifact": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-a1-P2-scheduler-trace.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\desktop-gpu-vsync-both4-relay39-a1-P2-scheduler-trace.json",
         "bytes": 54706482,
         "sha256": "1d59fc457eba7ca68b3a81e5a91fa6e93e5a563a0a70a5c3de1b3923c213ace8"
       }
@@ -82,7 +82,7 @@
   "schema": "th09-both4-render-work-evidence/v1",
   "scope": "Desktop only, artificial native-ABI joystick, no physical phone or Launcher multiplayer qualification. Uncalibrated added diagnostic numeric copies. The selected build is recorded per raw. Any production source differences across runs require the separate build-identity comparison.",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-gpu-vsync-both4-relay39-a1-report.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-gpu-vsync-both4-relay39-a1-report.json",
     "bytes": 39201425,
     "sha256": "bf2cdc5c3def238bfb8cb150fc4660b7bf434c3d62079513c9825140103231b6"
   },

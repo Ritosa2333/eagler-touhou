@@ -4,7 +4,7 @@
 // Application/AnimationEngine are not linked: their final MarkSimulated gate
 // remains an integration obligation, not a claim made by this primitive suite.
 #include "Callbacks.hpp"
-#include "../th10_web/cpp/multiplayer/RollbackPoolCapture.hpp"
+#include "../web/cpp/multiplayer/RollbackPoolCapture.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 
 #include <array>

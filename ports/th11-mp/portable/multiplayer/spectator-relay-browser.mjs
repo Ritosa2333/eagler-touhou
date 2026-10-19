@@ -17,7 +17,7 @@ const workspace=(()=>{if(process.env.EAGLER_WORKSPACE)return resolve(process.env
  throw Error('Set EAGLER_WORKSPACE to the workspace containing WORKSPACE.md.');})();
 const launcher=resolve(process.env.TH11_LAUNCHER_ROOT||resolve(workspace,'worktrees/launcher-th09-spectator-main'));
 const relayRoot=resolve(process.env.TH11_RELAY_ROOT||resolve(launcher,'server'));
-const buildRoot=resolve(process.env.TH11_TEST_BUILD||resolve(root,'th11_web/artifacts/multiplayer-diagnostic'));
+const buildRoot=resolve(process.env.TH11_TEST_BUILD||resolve(root,'web/artifacts/multiplayer-diagnostic'));
 const archivePath=resolve(process.env.TH11_TEST_ARCHIVE||resolve(workspace,'games/web-content/th11/th11.data'));
 const sharedFonts=resolve(process.env.TH11_SHARED_FONT_ROOT||resolve(workspace,'dist/ui-rewrite-fixed-20261010/shared'));
 const cp932Path=resolve(process.env.TH11_CP932_FONT||resolve(workspace,'dist/update-ef596d2-20261006/th11-previous-runtime/fonts/cp932.bin'));
@@ -44,7 +44,7 @@ for(const path of [archivePath,resolve(sharedFonts,'msgothic.ttc'),resolve(share
 const stamp=new Date().toISOString().replaceAll(':','-').replaceAll('.','-');
 const out=resolve(root,'artifacts/multiplayer-spectator/relay-'+stamp+'-'+randomUUID().slice(0,8));
 const runtime=resolve(out,'runtime');await mkdir(runtime,{recursive:true});
-const shellRoot=resolve(root,'th11_web/sdl-runtime');
+const shellRoot=resolve(root,'web/sdl-runtime');
 const copy=async(source,name)=>copyFile(source,resolve(runtime,name));
 for(const name of ['startup-branding.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','eagler-host.mjs','multiplayer.mjs','multiplayer.css'])
   await copy(resolve(shellRoot,name),name);

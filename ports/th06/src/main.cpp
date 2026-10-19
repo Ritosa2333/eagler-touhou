@@ -618,6 +618,10 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 #endif
     (void)appstate;
 #ifdef TH_ENABLE_NETPLAY
+#ifdef __EMSCRIPTEN__
+    if(!g_NetplayLanProduction&&EM_ASM_INT({return !Module.eaglerRoomPreview&&Module.eaglerOptions?.netplayMode==='lan'?1:0;}))
+        g_NetplayLanProduction=true;
+#endif
     if (g_NetplayLanProduction && !g_NetplayProductionDispatched &&
         g_MainMenu.chainCalc != nullptr &&
         Netplay::Th06LanStageProbe::TransportReady())

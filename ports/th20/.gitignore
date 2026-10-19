@@ -1,77 +1,25 @@
-# Generated builds at any depth; keep build*.ps1 source scripts.
-build*/
-cmake-build*/
+# Toolchains, private content and generated outputs.
+/tools/emsdk/
+/assets/
+/assets-ogg/
+/build-eagler/
+/artifacts/
+/web/artifacts/
+/.cache/
+/temp/
+/dist/
+/build*/
+/cmake-build*/
 CMakeFiles/
 CMakeCache.txt
 Testing/
-.vs/
-/dist/
-
-# Original assets, downloaded tools, and regenerable analysis databases.
-/.cache/
-/third_party/*
-!/third_party/eagler-common
-/reference/
-/assets/
-/analysis/*
-!/analysis/binary/
-!/analysis/ghidra/
-!/analysis/native_verified/
-!/analysis/symbol_hints.json
-/tools/asset_win_flex_bison/
-/tools/asset_patch_check/
-/source_reconstruction/audit/compile_probe/
-
-# Editable recovered scripts are source; only rebuilt binary archives are ignored.
-/scripts/recovered/roundtrip/
-
-# Execution captures, user saves, and crash artifacts stay local.
-/incremental/verification/baseline_appdata/
-/incremental/verification/rebuilt_appdata/
-/incremental/verification/source_save_backup/
-/source_reconstruction/archive/isolated_manager_tests/
-/source_reconstruction/progress_state/oracle/isolated_files/
-/source_reconstruction/audio_runtime/oracle_wave_input.bin
-/source_reconstruction/title_system/*_original.bin
-/source_reconstruction/title_system/*_source.bin
-/source_reconstruction/trophy_system/pixels_*.bin
-userdata/
-*.dmp
-*.rpy
-*.log
-
-# Generated native binaries and IDE/compiler artifacts.
-*.exe
-*.dll
-*.lib
-*.obj
-*.pdb
-*.ilk
-*.exp
-*.pch
-*.tlog
-*.idb
-*.suo
-*.user
-
-# Python caches and downloaded archives.
 __pycache__/
 *.pyc
-/tools/*.zip
-/tools/emsdk/
-
-# Keep small diagnostic evidence, but not runtime binaries/dumps/user data.
-/source_reconstruction/diagnostics/*/*
-!/source_reconstruction/diagnostics/*/asan.*
-!/source_reconstruction/diagnostics/*/*_state.json
-!/source_reconstruction/diagnostics/*/build_manifest.json
-!/source_reconstruction/diagnostics/first_run/debugger.log
-!/source_reconstruction/diagnostics/third_run/debugger.log
-!/source_reconstruction/diagnostics/asan_interception_probe2/debugger.log
-!/source_reconstruction/diagnostics/asan_after_enemy_fix/debugger.log
-
-# Local scratch (wasm port logs).
-/temp/
-
-# Emscripten wasm build intermediates and outputs.
-/th20_web/artifacts/
+*.log
+*.rpy
+*.dmp
+*.exe
+*.dll
+*.obj
+*.o
+*.wasm

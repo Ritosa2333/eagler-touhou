@@ -1,3 +1,4 @@
+import {readUiHistoryText} from './ui-history.mjs';
 /** DOM/setup evidence only. JSDOM is not a browser navigation/Runtime gate. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,10 +14,10 @@ const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const paths = ['tests/test-th15-launcher-browser.mjs', 'tests/test-runtime-storage-conformance.py', 'tests/test-mp-runtime-exit-room.py'];
 const read = path => normalizeSourceText(readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8'));
-const pinned = path => execFileSync('git', ['show', `${baseline}:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => readUiHistoryText(baseline, path);
 const helper = 'globalThis.__originalRuntimeDocumentObservation';
 const selected = runtimeDocumentObservationScript({EAGLER_RUNTIME_TEST_OBSERVATION: 'document'});
-const python = source => JSON.parse(execFileSync('python', ['-c', source], {cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
+const python = source => JSON.parse(execFileSync('python', ['-'], {input: source, cwd: project, encoding: 'utf8', env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}}));
 
 function assertionCalls(source) {
   const found = [];
@@ -61,7 +62,8 @@ test('default mode installs nothing; explicit document mode is identical for eit
 
 test('observation adapters retain the independent original native scenario assertions', () => {
   assert.deepEqual(assertionCalls(read(paths[0])), assertionCalls(pinned(paths[0])));
-  const result = python(`import ast,json,subprocess\nfrom pathlib import Path\nresults=[]\nfor path in ${JSON.stringify(paths.slice(1))}:\n old=subprocess.check_output(['git','show','${baseline}:'+path],text=True);current=Path(path).read_text()\n def assertions(source): return [ast.get_source_segment(source,n) for n in ast.walk(ast.parse(source)) if isinstance(n,ast.Assert)]\n results.append({'path':path,'count':len(assertions(old)),'equal':assertions(old)==assertions(current)})\nprint(json.dumps(results))`);
+  const originalSources = Object.fromEntries(paths.slice(1).map(path => [path, pinned(path)]));
+  const result = python(`import ast,json\nfrom pathlib import Path\noriginals=json.loads(${JSON.stringify(JSON.stringify(originalSources))})\nresults=[]\nfor path in ${JSON.stringify(paths.slice(1))}:\n old=originals[path];current=Path(path).read_text()\n def assertions(source): return [ast.get_source_segment(source,n) for n in ast.walk(ast.parse(source)) if isinstance(n,ast.Assert)]\n results.append({'path':path,'count':len(assertions(old)),'equal':assertions(old)==assertions(current)})\nprint(json.dumps(results))`);
   assert.deepEqual(result.map(item => [item.count, item.equal]), [[17, true], [14, true]]);
 
 });

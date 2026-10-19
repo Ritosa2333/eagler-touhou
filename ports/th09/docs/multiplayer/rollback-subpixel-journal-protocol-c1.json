@@ -5,15 +5,15 @@
   "baseCheckpoint": "a3a59db525d2e76faf9bb683bc624d455d3aa3ae",
   "original": "D:/workspace/eagler/worktrees/th09-managed-touch-4x",
   "baseline": {
-    "directory": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/artifacts/subpixel-release-20261011-c1",
+    "directory": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/artifacts/subpixel-release-20261011-c1",
     "wasm": "cb03c6df0c460360d2d3548e63556a9b74bf18ac7f6613bdf8231a4e03c30480",
     "manifestSha256": "6ee34897072d16f89a8e62decbcfcc13ea5adefb50e03501c4e8348a2d29212b"
   },
   "commonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
   "protectedFiles": {
-    "th09_web/cpp/game/AnmRenderer.cpp": "f9c0487d71fc958dbd9a47695a11c3df5ae178eb559f2fa45f890a5af0253f38",
-    "th09_web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
-    "th09_web/sdl-runtime/shared-netplay.mjs": "720b44fcb091b5db7b768f3b946703c5f6f91c3b2aad706d22455b068406908a"
+    "web/cpp/game/AnmRenderer.cpp": "f9c0487d71fc958dbd9a47695a11c3df5ae178eb559f2fa45f890a5af0253f38",
+    "web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
+    "web/sdl-runtime/shared-netplay.mjs": "720b44fcb091b5db7b768f3b946703c5f6f91c3b2aad706d22455b068406908a"
   },
   "tools": {
     "journal-run.mjs": "97f021a202462481697eed82d5938f91dfc3332f1fd2d89d07bb77ea5795c5b1",
@@ -45,7 +45,7 @@
     }
   },
   "release": {
-    "candidate": "th09_web/artifacts/subpixel-journal-release-c1",
+    "candidate": "web/artifacts/subpixel-journal-release-c1",
     "flags": "--release; -O2; TH09_DEVELOPMENT_HARNESS=0; audio SIMD off",
     "order": [
       "a1",

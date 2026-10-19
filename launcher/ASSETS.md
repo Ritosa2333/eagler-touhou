@@ -1,100 +1,29 @@
-# Site assets and host-generated game visuals
+# 资源来源与生成
 
-## Game-card backgrounds
+本文记录 Launcher 图像、字体的来源、Host 生成方式和发布位置。许可证见 [`THIRD_PARTY.md`](THIRD_PARTY.md)；保留随资源提供的上游许可证文件和 [`NOTICE.txt`](NOTICE.txt)。
 
-The final hosted site uses `assets/th06-card.webp`, `assets/th07-card.webp`,
-`assets/th08-card.webp`, `assets/th09-card.webp`, and `assets/th10-card.webp`. Host assembly extracts the title artwork from original
-game files supplied by the deployer and converts it to WebP without enlarging
-or cropping it. A deployer may instead provide a custom card image; WebP input
-is preserved and PNG/JPEG input is normalized to the same final WebP contract.
+## 游戏封面
 
-The original JPG/PNG bytes are staging input only. They are deliberately
-**not** stored in the public source repository, are not copied into the final
-host merely to support the card UI, and are not part of the resource-free
-Runtime Release. The source tree therefore contains references to stable final
-host paths without owning the original-game-derived bytes.
+Host 从运营者本地游戏安装目录的标题图生成 `assets/th06-card.webp`、`th07-card.webp`、`th08-card.webp`、`th09-card.webp`、`th10-card.webp` 和 `th15-card.webp`。TH11、TH20 使用 Host 封面覆盖目录中的 `th11-card.webp`、`th20-card.webp`。运营者可覆盖任意作品的封面。原作封面保存在本地游戏目录，不进入公开仓库或 Runtime Release。
 
-TH11 and TH20 have no retail artwork reader here. Supply `th11-card.webp` or
-`th20-card.webp` through the Host artwork override directory. These cards remain
-local Host inputs, including when an original title image is used.
+Host 使用 Pillow 将提取的图片及 PNG/JPEG 覆盖图转为 WebP，质量为 55、method 为 6；WebP 覆盖图保持原格式。封面仅用于页面展示，不属于游戏资源。
 
-The currently pinned card encoder is Pillow WebP quality 55 / method 6. The
-cards are UI presentation derivatives that are darkened and cropped by the
-Launcher, so the delivery profile favors first-load size over archival image
-quality. This is
-a host-delivery policy rather than a game-data identity: custom WebP overrides
-are not transcoded again.
+PWA 图标 `pwa/icon-192.png`、`icon-512.png`、`icon-maskable-512.png` 和 `apple-touch-icon.png` 在 Host 组装时由站点阴阳标记生成，属于 Host 输出。
 
-## Interface font
+## 字体与站点标识
 
-The ordinary site UI uses local, page-specific WOFF2 subsets of Yatra One for
-Latin letters and numbers and ChillRoundGothic for Chinese, Japanese and other
-text. Medium is used for ordinary CJK text, bold for headings, and Heavy only
-for the two main game-card titles. The build recipe is
-`scripts/build-site-ui-fonts.mjs`; upstream revisions and OFL notices are pinned
-there and stored next to the generated fonts. GNU Unifont remains only as the
-last missing-glyph fallback.
+站点字标使用 `public/assets/fonts/touhou98.woff2`，来自 `font-touhou98@1.0.0`。README 的描边字标为 `docs/assets/eagler-touhou-wordmark.svg`，图标预览为 `docs/assets/eagler-touhou-icon.png`。来源和许可见 [`THIRD_PARTY.md`](THIRD_PARTY.md)。
 
-Full CJK fonts and the game font are not stored in the public repository; a
-deployer supplies a compatible local Japanese font when preparing a private
-deployment.
+站点界面使用自行托管的 Yatra One 拉丁子集和 ChillRoundGothic 界面子集：Medium 用于正文，Bold 用于标题，Heavy 用于两张主卡片标题。子集构建脚本为 `scripts/build-site-ui-fonts.mjs`；上游版本与 OFL 声明记在该脚本及生成字体旁。GNU Unifont 作为缺字时的最后回退字体。完整日文字体与 Runtime 游戏字体由本地 Host 输入或 Runtime 包提供。
 
-The publication audit uses an explicit allowlist for source-public assets.
-Adding a file under `public/assets/` does not make it publishable; host-generated
-original-game-derived files are rejected from source publication candidates.
+站点图标由 `font-touhou98@1.0.0` 的 U+262F 字符渲染，Host 将其复制为 `assets/favicon.ico`；运营者也可提供自定义 favicon。
 
-## Site brand assets
+公告栏使用本地 Bilibili、QQ、GitHub SVG，来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1）。`notice-touhou-cloud.png` 是 [Touhou Cloud](https://cloud.touhou.best/) 发布的标志，项目负责人已确认可用于标识服务提供方。其他服务入口保留文字链接，其图标的再分发许可尚未记录。
 
-`favicon.ico` is the site's yin-yang icon, rendered from the U+262F glyph in
-`font-touhou98@1.0.0`. It is tracked as a source brand asset and copied to
-`assets/favicon.ico` during host assembly. An operator may supply a custom override.
-The preview is `docs/assets/eagler-touhou-icon.png`.
+作品集合菜单内嵌 Material Symbols `language`、`history`、`person`、`warning`；触控帮助内嵌 `fullscreen`、`fullscreen_exit`、`help`、`screen_rotation`。资源来自 `@iconify-json/material-symbols@1.2.86`，随站点内联，不请求图标服务。
 
-`assets/fonts/touhou98.woff2` is the self-hosted Web font from
-`font-touhou98@1.0.0`; the masthead wordmark `eagler☯touhou` uses it. Upstream
-project and license metadata are recorded in `THIRD_PARTY.md`.
+多人房间复用 `assets/launcher-background.webp`。房间控件和输入设置使用 Phosphor regular 图标，许可文件为 [`public/assets/LICENSE-Phosphor.txt`](public/assets/LICENSE-Phosphor.txt)。仓库中玩家和旁观者头像均为占位图。
 
-`docs/assets/eagler-touhou-wordmark.svg` stores the same `EAGLER☯TOUHOU`
-wordmark as font outlines for the repository README.
+## 发布范围
 
-## PWA application icons
-
-The PWA icons derive from the site's font-based yin-yang icon.
-`scripts/prepare-host-artwork.py` produces `pwa/icon-192.png`,
-`icon-512.png`, `icon-maskable-512.png` and `apple-touch-icon.png`, with the
-maskable and Apple variants using the platform-safe inset and background.
-These sizes are generated during host assembly.
-
-## Announcement brand icons
-
-`assets/notice-bilibili.svg` is the Bilibili brand glyph taken from the exact
-`fa7-brands:bilibili` icon set used by the local Mizuki frontend reference
-(`@iconify-json/fa7-brands@1.2.4`, Font Awesome Brands 7.3.1). The SVG path is
-stored locally so the announcement does not depend on an icon CDN.
-
-`assets/notice-qq.svg` and `assets/notice-github.svg` use the `qq` and `github`
-glyphs from that same pinned package, with a light fill for the dark notice.
-
-`public/assets/notice-touhou-cloud.png` is the provider-published Touhou Cloud icon
-declared by `https://cloud.touhou.best/`.
-
-Providers without explicitly documented redistribution permission are rendered
-as text-only links. Their site icons are not copied into this repository.
-
-The masthead collection menu and TH08 maintenance warning embed the `language`,
-`history`, `person`, and `warning` glyph paths from
-`@iconify-json/material-symbols@1.2.86`, matching Mizuki's Material Symbols icon
-system. They are inline in `index.html`, so they add no separate delivery asset
-and remain available offline. Material Symbols are licensed under Apache
-License 2.0.
-
-## Multiplayer room UI
-
-The room reuses `assets/launcher-background.webp` without runtime blur. Player
-and spectator avatars are intentional initial placeholders; no generated artwork
-is published. `assets/room-*.svg` are unmodified Phosphor regular icons, with
-license in `assets/room-icons-LICENSE.txt`. They ship in the offline App Shell.
-
-The input settings entries embed the unmodified `keyboard` and `game-controller`
-paths from [Phosphor regular icons](https://github.com/phosphor-icons/core/tree/main/assets/regular),
-under the same MIT license in `assets/room-icons-LICENSE.txt`.
+[`scripts/audit-publication.mjs`](scripts/audit-publication.mjs) 维护明确的源码资源允许清单。新增 `public/assets/` 文件不会自动进入公开源码包。Host 生成的原作封面保留在本地构建输出中，不进入源码发布包或不含原作资源的 Runtime Release。

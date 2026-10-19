@@ -14,6 +14,7 @@ jobs:
     outputs:
       affected: ${{ steps.scope.outputs.affected }}
       checkout: ${{ steps.scope.outputs.checkout }}
+      node-builds: ${{ steps.scope.outputs.node-builds }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -36,6 +37,8 @@ jobs:
     - uses: actions/checkout@v7
       with:
         sparse-checkout: 'launcher
+
+          tools/browser
 
           common/contracts
 
@@ -66,6 +69,8 @@ jobs:
         # Existing UI differential fixtures read pinned ancestral Git blobs.
         fetch-depth: 0
         sparse-checkout: 'launcher
+
+          tools/browser
 
           common/contracts
 
@@ -110,6 +115,8 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
+    - run: node --test tools/docs/check.test.mjs
+    - run: npm run docs:check
     - run: node launcher/scripts/audit-publication.mjs --workspace
   source-contracts:
     needs: scope
@@ -125,7 +132,77 @@ jobs:
     - run: node tools/ci/validate-source-entries.mjs
       env:
         EAGLER_CI_AFFECTED: ${{ needs.scope.outputs.affected }}
-    - run: node --test tools/build/compiler-arguments.test.mjs tools/build/source-dependencies.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
+    - run: node --test tools/build/compiler-arguments.test.mjs tools/build/source-dependencies.test.mjs tools/build/source-object.test.mjs tools/build/runtime-inputs.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
+  port-adaptation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - uses: msys2/setup-msys2@v2
+      if: runner.os == 'Windows'
+      id: msys
+      with:
+        msystem: UCRT64
+        install: mingw-w64-ucrt-x86_64-gcc
+    - if: runner.os == 'Windows'
+      shell: pwsh
+      run: Add-Content -LiteralPath $env:GITHUB_PATH -Value '${{ steps.msys.outputs.msys2-location }}/ucrt64/bin'
+    - run: npm --prefix launcher ci --ignore-scripts
+    - run: node --test tools/ports/check.test.mjs
+    - run: npm run ports:check -- --all --check-status
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: port-adaptation-${{ matrix.os }}
+        path: artifacts/validation/ports/
+  port-source-build:
+    needs: scope
+    if: ${{ needs.scope.outputs.node-builds != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.scope.outputs.node-builds) }}
+    name: Runtime / ${{ matrix.game }} / ${{ matrix.variant }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
+        sparse-checkout: |
+          launcher
+          common
+          tools
+          ${{ matrix.directory }}
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - run: npm --prefix launcher ci --ignore-scripts
+    - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+      with:
+        version: 6.0.9
+        actions-cache-folder: emsdk-cache
+    - name: Compile selected source and verify provenance
+      shell: bash
+      run: node launcher/scripts/build-runtime.mjs --game=${{ matrix.game }} --variant=${{ matrix.variant }} --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: source-build-${{ matrix.game }}-${{ matrix.variant }}
+        path: artifacts/validation/source-builds/
   common_ci_native:
     strategy:
       matrix:
@@ -671,8 +748,8 @@ jobs:
       shell: bash
       run: "set -euo pipefail\nmkdir -p artifacts/performance-regressions\nflags=(--target=wasm32-wasip1 -O2 -std=c++17 -Wall\
         \ -Wextra -Werror -fno-exceptions -fno-rtti -ffp-contract=off -fno-strict-aliasing -DTH_NATIVE_PLATFORM=1 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1\
-        \ -I../../common/include -Ith10_web/cpp/multiplayer)\nfor source in RollbackState NetworkExports; do\n  \"$WASI_SDK_PATH/bin/clang++\"\
-        \ \"${flags[@]}\" -c \"th10_web/cpp/multiplayer/${source}.cpp\" -o \"artifacts/performance-regressions/${source}.o\"\
+        \ -I../../common/include -Iweb/cpp/multiplayer)\nfor source in RollbackState NetworkExports; do\n  \"$WASI_SDK_PATH/bin/clang++\"\
+        \ \"${flags[@]}\" -c \"web/cpp/multiplayer/${source}.cpp\" -o \"artifacts/performance-regressions/${source}.o\"\
         \ndone\n"
     needs:
     - scope

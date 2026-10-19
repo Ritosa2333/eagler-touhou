@@ -329,7 +329,7 @@ def run_smoke(
             for index, browser in enumerate(browsers):
                 context = browser.new_context(viewport={"width": 960, "height": 720})
                 if rtc_input_delay_ms is not None:
-                    injector = (ROOT / "third_party/eagler-common/testkit/rtc-input-impairment.cjs").read_text(encoding="utf-8")
+                    injector = (Path(os.environ.get("EAGLER_COMMON_ROOT", ROOT.parent.parent / "common")) / "testkit/rtc-input-impairment.cjs").read_text(encoding="utf-8")
                     settings = json.dumps({
                         "oneWayMs": rtc_input_delay_ms,
                         "jitterMs": rtc_input_jitter_ms,

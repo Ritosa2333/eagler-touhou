@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const base='http://127.0.0.1:8095',out='th08_web/artifacts/architecture-candidate/validation';
-const oldSite='th08_web/artifacts/sdl-release/site',newSite='th08_web/artifacts/architecture-candidate/site';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const base='http://127.0.0.1:8095',out='web/artifacts/architecture-candidate/validation';
+const oldSite='web/artifacts/sdl-release/site',newSite='web/artifacts/architecture-candidate/site';
 const previous=JSON.parse(readFileSync(oldSite+'/packages/th08/package.json')),next=JSON.parse(readFileSync(newSite+'/packages/th08/package.json'));
 assert.deepEqual(previous.files['game-data'],next.files['game-data']);
 assert(Object.values(next.files).filter(f=>f.target.startsWith('/music/')).every(f=>f.target.endsWith('.ogg')));

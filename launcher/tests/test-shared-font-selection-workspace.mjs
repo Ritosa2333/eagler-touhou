@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { select } from './test-shared-font-selection.mjs';
 import {pathToFileURL} from 'node:url';
 import {workspacePath} from '../lib/workspace-layout.mjs';
-const host = process.env.EAGLER_TH11_HOST_MODULE || pathToFileURL(workspacePath('th11', 'th11_web/sdl-runtime/eagler-host.mjs')).href;
+const host = process.env.EAGLER_TH11_HOST_MODULE || pathToFileURL(workspacePath('th11', 'web/sdl-runtime/eagler-host.mjs')).href;
 const {resourcePath, installResources} = await import(host);
 assert.equal(resourcePath('/msgothic.ttc', 'th11'), true, 'TH11 accepts its shared original-text font');
 const installed = [];

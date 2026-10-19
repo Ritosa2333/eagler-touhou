@@ -11,7 +11,7 @@
 // Coarse TH09 development probes; no title dependency or clocks in other
 // builds. Draw order, storage lifetime and existing GL statistics are intact.
 #if TH09_DEVELOPMENT_HARNESS
-#include "../../th09_web/cpp/sdl/PerformanceDiagnostics.hpp"
+#include "../../web/cpp/sdl/PerformanceDiagnostics.hpp"
 #else
 #define TH09_PERF_SCOPE(name,phase) ((void)0)
 #define TH09_PERF_COUNT(counter,amount) ((void)0)

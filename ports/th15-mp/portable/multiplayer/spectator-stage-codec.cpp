@@ -1,4 +1,4 @@
-#include "../../th15_web/cpp/multiplayer/SpectatorStageState.hpp"
+#include "../../web/cpp/multiplayer/SpectatorStageState.hpp"
 #include <cassert>
 #include <cstdio>
 using namespace th15;

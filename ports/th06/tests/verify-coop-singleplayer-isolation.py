@@ -24,7 +24,7 @@ with tempfile.TemporaryDirectory(prefix='coop-sp-identity-') as tmp:
         new=(root/'src'/name).read_bytes()
         for text in [old,new]:
             source.write_bytes(text)
-            subprocess.run([cxx,'-std=c++20','-O2','-Isrc','-Ithird_party/eagler-common/include',
+            subprocess.run([cxx,'-std=c++20','-O2','-Isrc','-I../../common/include',
                             '-c',str(source),'-o',str(obj)],cwd=root,check=True)
             outputs.append(obj.read_bytes())
         assert outputs[0]==outputs[1],f'ordinary object changed: {name}'

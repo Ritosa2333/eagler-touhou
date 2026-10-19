@@ -752,6 +752,7 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
         stopLoop:()=>{clearBrowserKeyboard();Module._eagler_replay_stop_loop();},onState:playback=>emit('runtime-info',{playback}),onError:error=>emit('notice',{message:String(error)})});
       const launch = async () => {
         if (launched) return;
+        if(Module.eaglerRoomPreview){Module.eaglerRoomPreview=false;launched=true;clearBrowserKeyboard();return;}
         await installStartupBranding(Module, {game:'th06', builtAt:Module.eaglerBuiltAt, fs:FS});
         const start = session => {
           if (launched) return;
@@ -1077,6 +1078,19 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
             if (!launched || Module.eaglerOptions?.replayViewer !== true) throw Error("请先打开录像管理器");
             reply(message.request, true, await localReplay.command(message));
             break;
+          case "prepare-room": {
+            if(params.get('runtimeVariant')!=='multiplayer'||launched)throw Error('Invalid room preview owner');
+            if(!Module.eaglerRoomPreview){
+              await installStartupBranding(Module,{game:'th06',builtAt:Module.eaglerBuiltAt,fs:FS});
+              Module.eaglerRoomPreview=true;status.textContent='';Module.callMain([]);
+            }
+            const deadline=performance.now()+60000;
+            while(!Module._eagler_room_preview_ready()){
+              if(performance.now()>deadline)throw Error('Native room title timeout');
+              await new Promise(requestAnimationFrame);
+            }
+            reply(message.request,true,{presented:true});break;
+          }
           case "launch":
             await launch();
             reply(message.request, true);
@@ -1184,7 +1198,7 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           setWebAudioActive(document.visibilityState !== "hidden");
           if (hosted) {
             status.textContent = "Ready";
-            emit("ready", { saveRoot });
+            emit("ready", { saveRoot,roomPreview:params.get('runtimeVariant')==='multiplayer' });
           } else {
             launch();
           }

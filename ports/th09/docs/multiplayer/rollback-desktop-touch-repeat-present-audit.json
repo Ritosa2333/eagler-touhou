@@ -5,7 +5,7 @@
     {
       "label": "desktop-touch-both4-relay39-c3",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c3-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c3-report.json",
         "bytes": 29358458,
         "sha256": "4c0fee9625eaccf3ead1bdb96e505150ec3e52ab7c3f74f9c4dca371cc8aa685"
       },
@@ -67,7 +67,7 @@
     {
       "label": "desktop-touch-both4-direct-c1",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-c1-report.json",
         "bytes": 24198823,
         "sha256": "50cebeb50ac38dc5bbc681a6cbe48d70fb892842301117107efb705317629570"
       },
@@ -229,7 +229,7 @@
     {
       "label": "desktop-touch-both4-direct-raf-c1",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-raf-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-raf-c1-report.json",
         "bytes": 36603176,
         "sha256": "eab798213ba54bfd7b933aa8c5fc2560ec4a058555ae852146b140c947d2bbc5"
       },
@@ -352,7 +352,7 @@
     {
       "label": "desktop-touch-both4-direct-sched-c1",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-report.json",
         "bytes": 36168002,
         "sha256": "a24d75bc216ee2a20360ea7bf3e63134adbc1657fd7ced5801108770c924332e"
       },

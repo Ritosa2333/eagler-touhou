@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "kind": "th09-relay125-source-grounded-transport-analysis",
   "source": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
     "bytes": 28866220,
     "sha256": "d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770"
   },
   "analyzer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\analyze-relay125-transport.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-relay125-transport.mjs",
     "sha256": "9e3716f7ddaabe2afc9d7d098afdc67fbafe96192f7ccf826e04ed4d752fe914"
   },
   "sourceContract": {
@@ -9053,7 +9053,7 @@
       }
     },
     "sourceIdentity": {
-      "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+      "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
       "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
       "probeSha256": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
       "fixtureSha256": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",

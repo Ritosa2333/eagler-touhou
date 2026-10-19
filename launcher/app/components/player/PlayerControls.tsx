@@ -27,7 +27,7 @@ const initialTouch = () => undefined;
 const noNetwork = () => null;
 /** The editor and actual game use one original control markup tree. Only this
  * mounted gameplay binding can deliver native input. */
-export function PlayerControls({ session, replayWorkspace = false }: { session: BrowserSession; replayWorkspace?: boolean }) {
+export function PlayerControls({ session, replayWorkspace = false, roomWorkspace = false }: { session: BrowserSession; replayWorkspace?: boolean; roomWorkspace?: boolean }) {
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot),
     navigation = useSurfaceNavigation(),
     { locale, t } = useLocale();
@@ -116,19 +116,20 @@ export function PlayerControls({ session, replayWorkspace = false }: { session: 
         ))}
       </aside>
       </PlayerInformationColumn>
-      <TransferPanel model={session.transfer} />
+      {!roomWorkspace && <TransferPanel model={session.transfer} />}
       <span id="playerStatus" className="visually-hidden" role="status">
         {feedback.playerStatus}
       </span>
-      {settings && !replayWorkspace && <PlayerUtilities session={session} settings={settings} canExitPlayback={state.replayViewer || room.spectatorRequested} />}
+      {settings && !replayWorkspace && <PlayerUtilities session={session} settings={settings} roomWorkspace={roomWorkspace} canExitPlayback={state.replayViewer || room.spectatorRequested} />}
       {settings &&
         !replayWorkspace &&
+        !roomWorkspace &&
         state.bootTouchPreview &&
         !session.getActiveSettings() &&
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && !replayWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
+      {session.getActiveSettings() && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
         <GameplayControls session={session} />
       )}
     </>
@@ -259,10 +260,12 @@ function PlayerUtilities({
   session,
   settings,
   canExitPlayback,
+  roomWorkspace,
 }: {
   session: BrowserSession;
   settings: SettingsSnapshot;
   canExitPlayback: boolean;
+  roomWorkspace: boolean;
 }) {
   const { t } = useLocale(),
     navigation = useSurfaceNavigation(),
@@ -303,7 +306,7 @@ function PlayerUtilities({
           onClick={navigation.closeSurface}
           dangerouslySetInnerHTML={{ __html: playerUtilityIcons.exitPlayback }}
         />}
-        <button
+        {!roomWorkspace && <button
           className="fullscreen-toggle"
           id="fullscreenToggle"
           type="button"
@@ -320,8 +323,8 @@ function PlayerUtilities({
             if (state.runtime?.launched) void session.togglePlayerFullscreen();
           }}
           dangerouslySetInnerHTML={{ __html: playerUtilityIcons.fullscreenToggle }}
-        />
-        <button
+        />}
+        {!roomWorkspace && <button
           className="touch-help-open"
           id="touchHelpOpen"
           type="button"
@@ -329,7 +332,7 @@ function PlayerUtilities({
           title={t('help.title')}
           onClick={session.openTouchHelp}
           dangerouslySetInnerHTML={{ __html: playerUtilityIcons.touchHelpOpen }}
-        />
+        />}
         <button
           className="orientation-toggle"
           id="orientationToggle"

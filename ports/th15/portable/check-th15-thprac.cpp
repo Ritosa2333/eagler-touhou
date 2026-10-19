@@ -1,10 +1,10 @@
 // Resource proof only; this is not a UI/live/replay/device certification.
-#include "../th15_web/cpp/game/Archive.hpp"
-#include "../th15_web/cpp/game/EclResource.hpp"
-#include "../th15_web/cpp/game/PracticeConfig.hpp"
-#include "../th15_web/cpp/game/PracticeSections.hpp"
-#include "../th15_web/cpp/game/PracticeSiteChecks.hpp"
-#include "../th15_web/cpp/game/MusicLayout.hpp"
+#include "../web/cpp/game/Archive.hpp"
+#include "../web/cpp/game/EclResource.hpp"
+#include "../web/cpp/game/PracticeConfig.hpp"
+#include "../web/cpp/game/PracticeSections.hpp"
+#include "../web/cpp/game/PracticeSiteChecks.hpp"
+#include "../web/cpp/game/MusicLayout.hpp"
 #include <fstream>
 #include <iostream>
 #include <functional>

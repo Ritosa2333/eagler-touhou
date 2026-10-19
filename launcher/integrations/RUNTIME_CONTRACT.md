@@ -1,105 +1,66 @@
-# thcrap / thprac Runtime contract
+# Runtime 语言包与 thprac 接口
 
-This document owns the bounded Host/Launcher-to-Runtime integration surface for
-the optional language and thprac profiles. It does not make the development
-compiler service or a particular portable implementation part of the browser
-protocol.
+本文列出语言包和 thprac 的 Host、Launcher、Runtime 交界。适配完整流程见 [`docs/adaptation/localization.md`](../../docs/adaptation/localization.md)；运行时配置入口见 [`../docs/GAME_ADAPTER_CONTRACT.md`](../docs/GAME_ADAPTER_CONTRACT.md)。
 
-The products that currently declare these profiles are TH06/TH07/TH08. A future
-title may use a different format adapter while preserving the same product-level
-capability rules.
+## 代码 Owner
 
-## thcrap / language packages
+| 内容 | Owner |
+| --- | --- |
+| 游戏内容与语言准备声明 | [`lib/content-definition.mjs`](../lib/content-definition.mjs)：`hostPreparation.languagePack` |
+| thprac 产品能力 | [`integrations/thprac.mjs`](thprac.mjs) 与 Product Catalog |
+| 语言选项清单 | Site Manifest `languageOptions`；类型和校验在 [`src/contracts/site-manifest.mts`](../src/contracts/site-manifest.mts) |
+| Runtime 发布能力证明 | [`scripts/package-runtime-release.mjs`](../scripts/package-runtime-release.mjs) |
+| 语言安装与选择 | [`src/launcher/language-catalog.mts`](../src/launcher/language-catalog.mts) |
+| Runtime 配置字段 | [`src/contracts/runtime-protocol.mts`](../src/contracts/runtime-protocol.mts) |
+| 语言包编译与静态打包 | [`scripts/prepare-th06-language-pack.mjs`](../scripts/prepare-th06-language-pack.mjs)、Host 打包脚本 |
 
-### Formal publication path
+## 语言包
 
-The formal product path is **static package preparation**, not a Runtime making
-arbitrary thcrap network requests:
+发布时，Host 先根据 `hostPreparation.languagePack` 编译已选补丁，生成带版本与哈希身份的静态语言资源；Site Manifest 仅公布已经准备好的 `languageOptions`。Launcher 校验并安装所选资源及字体后再启动 Runtime。
 
-1. `lib/content-definition.mjs` declares the title's language preparation kind
-   under `hostPreparation.languagePack`.
-2. Host tooling resolves the requested thcrap patch sources and compiles the
-   supported resources into the Runtime file tree. `.jdiff`/message resources
-   become the original game's translated data files or validated localization
-   tables; image resources retain their supported image representation.
-3. `scripts/prepare-th06-language-pack.mjs` produces a static language catalog
-   and archives with byte/hash identity.
-4. Site/package assembly publishes only the language packs that were actually
-   prepared and selected. `site-manifest.json` exposes the selectable
-   `languageOptions`; Package Descriptors may also carry installed language
-   components.
-5. The Launcher obtains the selected archive from the Package Store or the
-   declared static URL, validates the declared identity, installs its files plus
-   required fonts into the Runtime filesystem, and only then launches the game.
+Runtime 只读取已挂载的本地化资源树和已选语言。翻译资源缺失时回退到原版资源。原文日文字体与翻译文字体按各自资源路径加载。
 
-The Runtime therefore knows only the mounted localization/resource tree (for
-the existing adapters, `/thcrap/th06/` or `/thcrap/th07/`) and the selected
-language. It does not own repository URLs, CDN/cache topology, thcrap language
-IDs, or Package Store policy. When a translated resource is absent, lookup
-falls back to the title's original resource.
-
-Japanese/original text and translated text have separate font ownership. The
-existing Web adapters keep the original Japanese path on the original-style
-Japanese font and use the Unicode/Unifont path for translated text. A successful
-patch compile does not prove complete glyph coverage.
-
-### Development live-compiler path
-
-The development server may expose `/api/thcrap/...` through
-`server/thcrap-service.mjs`. That endpoint is a development/diagnostic service
-for compiling and inspecting live patch sources. It is **not** the formal
-publication contract and a production Runtime must not depend on it.
+开发服务器的 `/api/thcrap/...` 由 `server/thcrap-service.mjs` 提供，用于开发时编译和检查补丁；正式 Runtime 不依赖此接口。
 
 ## thprac
 
-Mobile THPrac uses one Launcher entry, "Cheats and advanced settings".
-The existing live `touch-controls` snapshot optionally carries
-`thpracMobilePanelsEnabled` and `thpracMobilePanelsVisible` booleans.
-These only control native panel presentation, never synthesize simultaneous
-Backspace/F12/Tab presses or enable cheats. When visible, Runtime renders the
-cheat, advanced and information panels as independent collapsed headers.
-Reopening resets them to collapsed; only the expanded advanced panel captures
-gameplay input. Touch checkbox mutations still use title-owned cheat handlers
-and Replay guards. Missing fields retain desktop/legacy Runtime behavior.
+### 配置与认证
 
-thprac is enabled only when both the Product Catalog and the concrete Runtime
-Release attest the optional profile.
+仅当 Product Catalog 声明 `thprac` 且具体 Runtime Release 声明支持该能力时，Launcher 才启用该功能。
 
-Before authoritative game launch, the Launcher sends the standard Runtime
-`configure` payload with:
+启动前，Launcher 通过 Runtime `configure` 命令发送：
 
-- `options.thpracEnabled`;
-- `options.thpracLocale` (`zh-CN`, `ja-JP`, or `en-US` for the current
-  TH06/TH07/TH08/TH10/TH11 adapters).
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `options.thpracEnabled` | `boolean` | 是否启用 thprac |
+| `options.thpracLocale` | `string` | 界面语言；当前适配值为 `zh-CN`、`ja-JP`、`en-US` |
 
-The Runtime materializes those prelaunch values into its own practice owner.
-Current TH06/TH07 shells expose them to the game through `Module.eaglerOptions`,
-but that JavaScript object is an implementation detail rather than another Host
-protocol. TH08 receives the canonical `thpracEnabled` and `thpracLocale` fields
-through the Runtime `configure` command and owns its live practice state
-internally.
+Runtime 自己物化练习配置并持有运行中的练习状态。`Module.eaglerOptions` 是部分 Runtime 的内部实现，不属于 Host 协议。
 
-Live Practice state belongs to the Runtime. Stage/section/frame/resource/score/
-Rank parameters, restart/retry ownership and Replay mirroring must be resolved
-inside the title's real Practice lifecycle rather than by a Launcher-side mock.
+### 触控面板
 
-All three games embed practice parameters directly in the Replay's PRAC trailer
-and read them only from the Replay itself during playback. An external
-`*.rpy.thprac.json` sidecar was never a published format and is not part of the
-supported Replay data model. TH06 additionally exports
-`_EaglerThpracSaveReplaySlot(slot)` so the Host can request an in-game save to
-Replay slot 1–99; the Host remains responsible for synchronizing IDBFS
-afterward.
+现有 `touch-controls` 命令可选携带两个布尔字段：
 
-TH06 and TH07 provide coarse stage navigation, direct frame navigation,
-initial resources/score/Rank (including cherry points in TH07), and practice
-Replay metadata. Their exact-offset upstream features remain deferred. TH08
-also provides exact section and multi-phase spell starts, dialogue control,
-game-specific gauge/time/night/familiar parameters, source-level ECL/STD/ANM
-patches, and practice assists.
+| 字段 | 可观察效果 |
+| --- | --- |
+| `thpracMobilePanelsEnabled` | 启用移动端练习面板入口 |
+| `thpracMobilePanelsVisible` | 显示或收起面板 |
 
-The shared product contract intentionally covers the practice subset that has
-actually been ported. A Runtime must expose only the features listed for that
-game in `integrations/thprac.mjs`; upstream thprac features that are not
-implemented by the adapter must not be exposed merely because the thprac profile
-is enabled.
+这些字段只控制 Runtime 原生 Cheat、Advanced、Information 面板的显示，不模拟 `Backspace`、`F12` 或 `Tab` 按键，也不自行打开作弊项。重新打开后面板回到折叠状态；只有展开的 Advanced 面板接管游戏触控。缺少字段时保留 Runtime 默认行为。
+
+### 状态与 Replay
+
+- 练习阶段、帧、资源、分数、Rank、重开/重试和 Replay 同步由 Runtime 负责，并跟随原生 Practice 生命周期。
+- 已支持的练习参数直接写入原 Replay 的 `PRAC` trailer；没有 `.rpy.thprac.json` 旁车文件格式。
+- TH06 Runtime 可导出 `_EaglerThpracSaveReplaySlot(slot)`，其中 `slot` 为 `1–99`；Host 调用后负责同步 IDBFS。
+- 对外显示的练习能力以 [`integrations/thprac.mjs`](thprac.mjs) 对该产品的声明为准。未移植的上游功能不因启用 thprac 而自动可用。
+
+## 验证
+
+```sh
+cd launcher
+npm run test:thcrap-static-pack
+npm run test:runtime-protocol
+```
+
+开发编译服务由 `npm start` 启动。发布前用 `npm run adapter:inspect` 核对产品声明与 Runtime Release；语言安装和资源回退见 `npm run test:language-fallback:browser`。

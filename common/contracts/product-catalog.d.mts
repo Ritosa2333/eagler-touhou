@@ -220,6 +220,8 @@ export declare const PRODUCT_GAMES: Readonly<{
         runtimeFileLayout: "directory"; requiredShared: readonly string[]; runtimeAssets: readonly string[]; dataProvider: "retail-memory";
         package: Readonly<{dataFileId:"game-data";dataTarget:"/th075.data";maxImportBytes:number;musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
         replay: Readonly<{prefix:"th075";extensions:readonly string[];naming:"filename"}>;
+        multiplayerRuntime: "./runtime/th075/multiplayer/th075.html";
+        multiplayer: Readonly<MultiplayerProductConfig>;
         features: Readonly<{thprac:false;languages:true;focusHitbox:false}>;
     }>;
     th08: Readonly<{
@@ -778,6 +780,7 @@ export interface MultiplayerLoadoutConfig {
     shot: number;
 }
 export interface MultiplayerInputTimingConfig {
+    rollbackDefault?: boolean;
     /** Zero permits confirmed input only: no prediction, rollback or hybrid mode. */
     rollbackLimit: number;
     sendPredictionLimit?: number;
@@ -786,6 +789,9 @@ export interface MultiplayerInputTimingConfig {
     manualRollbackDelay?: boolean;
 }
 export interface MultiplayerProductConfig {
+    spectator?: boolean;
+    titleRoomEntry?: boolean;
+    loadoutFields?: readonly Readonly<{labelKey: string; dependsOn?: readonly number[]}>[];
     titleKey: string;
     gameplay: "cooperative" | "versus";
     inGameSelection?: boolean;

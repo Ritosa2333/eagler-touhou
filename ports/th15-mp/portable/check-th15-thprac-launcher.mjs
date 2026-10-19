@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 const browser=await launchBrowser();
 try{
  const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];
@@ -36,7 +36,7 @@ try{
  }),{command,fields});
  await rpc('keyboard',{code:'F12',down:true});await new Promise(r=>setTimeout(r,100));await rpc('keyboard',{code:'F12',down:false});
  await new Promise(r=>setTimeout(r,200));
- await page.screenshot({path:resolve(import.meta.dirname,'../th15_web/artifacts/thprac-purple-browser-check/launcher-protocol-f12.png')});
+ await page.screenshot({path:resolve(import.meta.dirname,'../web/artifacts/thprac-purple-browser-check/launcher-protocol-f12.png')});
  const key=async code=>{await rpc('keyboard',{code,down:true});await new Promise(r=>setTimeout(r,100));await rpc('keyboard',{code,down:false});await new Promise(r=>setTimeout(r,900));};
  await key('F12');
  for(let i=0;i<6&&await runtime.evaluate(()=>Module._th15_phase()===0);i++)await key('KeyZ');
@@ -52,11 +52,11 @@ try{
  await key('F12');
  await rpc('keyboard',{code:'KeyZ',down:true});await rpc('keyboard',{code:'ArrowRight',down:true});
  await new Promise(r=>setTimeout(r,100));
- await page.screenshot({path:resolve(import.meta.dirname,'../th15_web/artifacts/thprac-purple-browser-check/launcher-protocol-key-hud.png')});
+ await page.screenshot({path:resolve(import.meta.dirname,'../web/artifacts/thprac-purple-browser-check/launcher-protocol-key-hud.png')});
  await rpc('keyboard',{code:'KeyZ',down:false});await rpc('keyboard',{code:'ArrowRight',down:false});
  await key('Backspace');
  await key('KeyU');await key('F1');
- await page.screenshot({path:resolve(import.meta.dirname,'../th15_web/artifacts/thprac-purple-browser-check/launcher-protocol-backspace-u.png')});
+ await page.screenshot({path:resolve(import.meta.dirname,'../web/artifacts/thprac-purple-browser-check/launcher-protocol-backspace-u.png')});
  await rpc('sync',{});
  const files=(await rpc('list',{})).files;
  assert.ok(files.some(f=>f.path==='th15.cfg'));

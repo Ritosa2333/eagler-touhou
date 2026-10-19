@@ -1,71 +1,27 @@
-# Presentation Lab consumer contract
+# Presentation Lab 接入契约
 
-The common lab owns session orchestration, UI, classification infrastructure,
-report envelopes and local tooling. A game supplies two versioned boundaries:
+游戏适配层提供两个边界：
 
-- `RuntimeDriverV1` controls the title's real lifecycle, complete fixed-tick
-  transaction, presentation draw and input path.
-- `ObservationAdapterV1` decodes title-owned native evidence and explains its
-  owner, lifecycle and continuity semantics.
+- `RuntimeDriverV1`：控制真实 Runtime 的冻结、固定步更新、绘制和输入。
+- `ObservationAdapterV1`：解码原生记录，并给出状态拥有者、生命周期和连续性信息。
 
-The JavaScript interface is described in `contracts.d.ts` and enforced at
-runtime by `contracts.mjs`. The native record ABI may differ between titles.
-The v1 compatibility boundary is the pair of exported API major constants.
-Breaking a required method, receipt, normalized record or purity rule requires
-a new major. Additive report fields are allowed, but reports always carry the
-exact common revision, title adapter version and native ABI identifier.
+TypeScript 接口见 [`contracts.d.ts`](contracts.d.ts)，运行时校验见 [`contracts.mjs`](contracts.mjs)。报告记录 common 源码修订、适配层版本和原生 ABI 标识；API major 用于标记兼容性。
 
-## Runtime invariants
+## Runtime 要求
 
-`freeze()` is not application shutdown or an in-game pause. It returns a token
-for the current session generation. `resume(token)` rejects a stale token,
-preserves logical time and discards wall-clock debt accumulated while the lab
-was frozen.
+- `freeze()` 暂停 Lab 驱动并返回当前会话令牌；`resume(token)` 只接受当前令牌，恢复逻辑时间并丢弃冻结期间累积的墙钟时间。
+- `advanceOneTick()` 在完整游戏固定步事务结束后返回成功回执；加载中或场景结束时返回对应状态。
+- `drawOnly()` 走实际绘制路径，不读取输入或推进 Replay、随机数、音频队列及模拟计数器。
 
-`advanceOneTick()` performs exactly one complete title-owned fixed-tick
-transaction. It must not call a bare calculation chain when input capture,
-rollback ownership, audio queues, overlays or reference publication live
-outside that call. It returns an explicit receipt; loading or a finished scene
-is not reported as a successful tick.
+## 观察要求
 
-`drawOnly()` executes the real presentation path without consuming input,
-Replay data, random numbers, audio queues or simulation counters. Native
-suppression flags are implementation mechanisms, not proof of this property.
+- 基准状态来自原始权威绘制，并记录实际模拟 tick 和 draw serial。
+- 每个样本声明状态覆盖范围。未覆盖、缺失或格式错误的数据分类为 `unknown`。
+- 对象身份由内存地址与生命周期或 generation 信息共同确定。
+- 适配层说明状态写入者、发布点、绘制消费者、最终提交点、连续性和恢复规则。
 
-## Observation invariants
+## 接入验收
 
-References are published by an original authoritative draw and carry their
-actual simulation tick and draw serial. They must not be synthesized from the
-interpolation implementation under test.
+在该游戏的真实绘制路径上审计所有状态拥有者，采集重复绘制证据，并覆盖可能被路径修改的权威状态与回滚状态。诊断导出只进入该游戏的审计构建配置；生产包不包含诊断导出或 Lab。
 
-State evidence names its coverage. Missing evidence produces `unknown`, never
-a purity pass. Every draw-only sample supplies the same versioned coverage
-descriptor; an absent sample or malformed `missingGroups` list is unknown.
-Object identity includes lifecycle or generation evidence; memory addresses
-alone are not stable identities.
-
-The title owner registry documents the authoritative writer, endpoint
-publisher, presentation consumer, final submission point, identity,
-continuity/discontinuity rules, restoration rule and fingerprint coverage.
-
-## Consumer admission
-
-A title is not a Lab consumer merely because normal high-refresh play works.
-A fixed-step scheduler, a native Draw-suppression flag, or several local
-save/restore repairs are implementation evidence, not proof that the complete
-Draw transaction is presentation-pure.
-
-Admission requires a target-title audit of every owner reached by the real
-Draw path, repeated-draw evidence, and versioned fingerprint coverage for all
-authoritative and rollback-visible state that the path can mutate. An
-uncovered owner or state group keeps the result `unknown`; it must not be
-waived by borrowing another title's architecture or historical fixes. Support
-may be advertised only after the title-owned registry and evidence satisfy
-these requirements.
-
-## Build boundary
-
-Diagnostic exports are compiled only with the title's presentation-audit
-profile. Production packaging rejects those exports and does not ship this
-testkit. Every consumer pins the exact `eagler-common` revision used to create
-its report.
+修改必需方法、回执、标准化记录或纯度规则时提升 API major；新增报告字段可留在当前 major。

@@ -23,6 +23,7 @@ export interface SettingsContext {
   mobile: boolean;
   /** A seated player's room may prohibit touch-unlimited. */
   forbidUnlimitedMovement?: boolean;
+  beautyInstalled?: boolean;
 }
 export interface SettingsDisclosureState {touch: boolean; files: boolean; display: boolean; advanced: boolean}
 export interface SettingsSnapshot {
@@ -85,6 +86,7 @@ export interface GameSettingsModel {
   setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]): void;
   previewSensitivity(value: number): void;
   commitPreferences(): void;
+  restoreRoomSettings(saved: SettingsSnapshot): void;
   setMusic(value: MusicMode): void;
   setLanguage(value: string): void;
   setGameVersion(value: GameVersion): void;
@@ -144,7 +146,7 @@ export function createGameSettingsModel({storage, onChange}: {
       ...(context.productId === 'th09mp' ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
       music: resolveEffectiveMusicMode({...context.musicAvailability, requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
       musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
-      gameVersion: loadGameVersion(storage, gameId),
+      gameVersion: gameId === 'th075' ? 'original' : loadGameVersion(storage, gameId),
       language: resolvePreferredGameLanguage(context.languages, savedLanguage, context.uiLocale)}, reason);
   }
   return Object.freeze({
@@ -216,6 +218,20 @@ export function createGameSettingsModel({storage, onChange}: {
       publish({...state, options: {...state.options, touchSensitivity: Math.max(100, Math.min(300, Math.round(value) || 100))}}, 'preview');
     },
     commitPreferences,
+    restoreRoomSettings(saved: SettingsSnapshot) {
+      const state = required();
+      if (saved.context.productId !== state.context.productId) return;
+      multiplayerPreferences.persistShareSingleplayerSettings(state.context.productId, saved.shareSingleplayerSettings);
+      persistGameVersion(storage, state.gameId, saved.gameVersion);
+      // Keep current metadata and drawer presentation; restore the configuration
+      // as one transaction rather than emitting one reload per option.
+      publish({...state, preferenceId: saved.preferenceId,
+        shareSingleplayerSettings: saved.shareSingleplayerSettings,
+        options: {...saved.options}, music: saved.music,
+        musicPreference: saved.musicPreference, musicPreferenceExplicit: saved.musicPreferenceExplicit,
+        language: saved.language, gameVersion: saved.gameVersion}, 'host-restore');
+      commitPreferences();
+    },
     setMusic(value: MusicMode) {
       const state = required(), availability = resolveMusicAvailability(state.context.musicAvailability);
       if (value === 'midi' && !availability.midi || value.startsWith('ogg-') && !availability.ogg) return;
@@ -228,6 +244,7 @@ export function createGameSettingsModel({storage, onChange}: {
     },
     setGameVersion(value: GameVersion) {
       const state = required();
+      if (value === 'beauty' && (state.gameId === 'th075' || state.context.beautyInstalled === false)) return;
       if (!GAME_VERSIONS.includes(value) || state.gameVersion === value) return;
       // Persist before publishing: metadata/import readers see the same selection.
       persistGameVersion(storage, state.gameId, value);

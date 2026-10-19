@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/game/SpellHistory.hpp"
+#include "../web/cpp/game/SpellHistory.hpp"
 #include <cassert>
 #include <cstring>
 using namespace th08;

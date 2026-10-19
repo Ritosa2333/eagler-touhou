@@ -1,7 +1,7 @@
 {
   "name": "eagler-touhou",
   "version": "0.1.0",
-  "description": "Browser Launcher and self-host site builder for Touhou Project 6, 7, 8 and 10 ports, with local packages, offline support, touch controls, and multiplayer.",
+  "description": "Shared browser launcher, game management, Runtime integration, and site builder for Eagler Touhou.",
   "private": true,
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -22,9 +22,13 @@
     "multiplayer"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18"
   },
   "scripts": {
+    "dev": "npm run dev:ui-rewrite",
+    "build": "npm run vendor && npm run build:content && npm run build:launcher",
+    "typecheck": "npm run typecheck:ui-rewrite && npm run typecheck:ui-rewrite:tools",
+    "test": "npm run test:ui-rewrite",
     "test:runtime-fonts:browser": "node tests/test-runtime-fonts-browser.mjs",
     "test:local-replay-th0xmp:browser": "python tests/browser/test-local-replay-th0xmp.py",
     "test:game-update-dialog:browser": "node tests/test-game-update-dialog-browser.mjs",
@@ -38,6 +42,8 @@
     "test:runtime-offline-first:browser": "node tests/test-runtime-offline-first-browser.mjs",
     "test:runtime-download:browser": "node tests/test-runtime-download-browser.mjs",
     "start": "node scripts/serve.mjs",
+    "dev:workspace": "node scripts/serve.mjs",
+    "build:runtime": "node scripts/build-runtime.mjs",
     "build:launcher": "node scripts/build-launcher.mjs --force",
     "build:content": "node scripts/build-content-pages.mjs",
     "host": "node host/build.mjs",
@@ -120,7 +126,6 @@
     "test:origin-migration": "node tests/test-origin-migration.mjs",
     "test:origin-migration:browser": "python tests/test-origin-migration-browser.py",
     "test:music-selection:browser": "python tests/browser/test-music-selection.py",
-    "rebuild:web": "pwsh -NoProfile -ExecutionPolicy Bypass -File ../Rebuild-Web-Runtimes.ps1",
     "prepare:thcrap": "node scripts/prepare-thcrap.mjs",
     "test:shell": "node tests/test-shell-protocol.mjs",
     "test:storage": "node tests/test-runtime-storage-contract.mjs",
@@ -150,6 +155,14 @@
     "dev:ui-rewrite": "react-router dev --host 127.0.0.1",
     "typecheck:ui-rewrite:tools": "tsc -p tsconfig.ui-rewrite.tools.json",
     "test:th075:browser": "node tests/test-th075-launcher-browser.mjs",
+    "test:th075-import:browser": "node tests/test-th075-import-browser.mjs",
+    "test:th075-layout:browser": "node tests/test-th075-layout-browser.mjs",
+    "test:th075-menu-transitions:browser": "node tests/test-th075-menu-transitions-browser.mjs",
+    "test:th075-option-help:browser": "node tests/test-th075-option-help-browser.mjs",
+    "test:th075-thcrap:browser": "node tests/test-th075-thcrap-browser.mjs",
+    "test:th075-thcrap-native:browser": "node tests/test-th075-thcrap-native-browser.mjs",
+    "test:th075-touch-scheduling:browser": "node tests/test-th075-touch-scheduling-browser.mjs",
+    "test:th075-transitions:browser": "node tests/test-th075-transitions-browser.mjs",
     "test:th09-panels:browser": "node tests/browser/test-th09-duel-card-browser.mjs && node tests/browser/test-th09-spectator-continuity.mjs && node tests/browser/test-th09-spectator-directory.mjs && node tests/browser/test-th09-spectator-panel.mjs && node tests/browser/test-th09-spectator-timeline.mjs"
   },
   "dependencies": {

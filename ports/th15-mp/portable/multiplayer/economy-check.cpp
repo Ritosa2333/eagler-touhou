@@ -1,9 +1,9 @@
-#include "../../th15_web/cpp/game/MultiplayerEconomy.hpp"
-#include "../../th15_web/cpp/game/ItemCollection.hpp"
-#include "../../th15_web/cpp/game/SpellPresentationClock.hpp"
-#include "../../th15_web/cpp/game/MultiplayerBombProtection.hpp"
-#include "../../th15_web/cpp/game/MultiplayerTransferFeedback.hpp"
-#include "../../th15_web/cpp/game/MultiplayerVisualPolicy.hpp"
+#include "../../web/cpp/game/MultiplayerEconomy.hpp"
+#include "../../web/cpp/game/ItemCollection.hpp"
+#include "../../web/cpp/game/SpellPresentationClock.hpp"
+#include "../../web/cpp/game/MultiplayerBombProtection.hpp"
+#include "../../web/cpp/game/MultiplayerTransferFeedback.hpp"
+#include "../../web/cpp/game/MultiplayerVisualPolicy.hpp"
 #include <cassert>
 #include <cstdio>
 using namespace th15;

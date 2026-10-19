@@ -8,7 +8,7 @@ const expectedOrdinary='1f5a9557f62f33c1243caa72a8649cd8335944665ceb70da763b8f0f
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const builds={};
 for(const profile of ['sdl3','multiplayer','multiplayer-fixtures']){
- const path=resolve(root,'th10_web/artifacts',profile),build=JSON.parse(readFileSync(resolve(path,'build.json')));
+ const path=resolve(root,'web/artifacts',profile),build=JSON.parse(readFileSync(resolve(path,'build.json')));
  const wasm=readFileSync(resolve(path,'th10-sdl.wasm')),loader=readFileSync(resolve(path,'th10-sdl.mjs'));
  assert.equal(sha(wasm),build.sha256,profile+' stale WASM');
  assert.equal(sha(loader),build.loaderSha256,profile+' stale loader');

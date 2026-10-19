@@ -2,12 +2,12 @@
   "schema": "th09-desktop-two-peer-touch-progress/v1",
   "scope": "Failed incomplete two-peer desktop CPU4 native-ABI joystick attempt; all retained chronological samples are kept; no completed smoothness or GPU qualification",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c2-failure.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c2-failure.json",
     "bytes": 26249699,
     "sha256": "f6e2b4a50ec5bafb2e476d7424f6f1a3f48713da00d4d53a03a2a02d354d5d3f"
   },
   "driverPassed": false,
-  "error": "AssertionError [ERR_ASSERTION]: incomplete workload [{\"stats\":[1706,1706,786,1524,1707,0,1,1706],\"ended\":0,\"closed\":[],\"finished\":false},{\"stats\":[1707,1703,781,1495,1707,0,1,1703],\"ended\":0,\"closed\":[],\"finished\":false}]\n    at file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/smoothness-browser.mjs:516:9",
+  "error": "AssertionError [ERR_ASSERTION]: incomplete workload [{\"stats\":[1706,1706,786,1524,1707,0,1,1706],\"ended\":0,\"closed\":[],\"finished\":false},{\"stats\":[1707,1703,781,1495,1707,0,1,1703],\"ended\":0,\"closed\":[],\"finished\":false}]\n    at file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/smoothness-browser.mjs:516:9",
   "identity": {
     "wasm": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
     "harness": "e6a3629a9a7a13444a45f9c989aca2ab431aa1212b3596de6bb8b67a7e008b0f",

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
-const site=resolve(process.argv[2]||'th10_web/artifacts/sdl-release/site');
+const site=resolve(process.argv[2]||'web/artifacts/sdl-release/site');
 const base=process.argv[3]||'https://api.steinsgateon.com/';
 const inventory=JSON.parse(readFileSync(resolve(site,'files.json'),'utf8'));
 const manifest=JSON.parse(readFileSync(resolve(site,'manifest.json'),'utf8'));

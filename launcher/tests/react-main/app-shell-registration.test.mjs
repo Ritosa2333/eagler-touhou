@@ -58,3 +58,27 @@ test('unexpected updatefound worker cannot be activated by a formerly valid owne
   expected.waiting = foreign; expected.installing = foreign; expected.emit('updatefound');
   await f.owner.maybeActivateWaiting(); assert.deepEqual(foreign.messages, []); assert.equal(await f.owner.checkForUpdate(), false); assert.equal(f.reloads(), 0);
 });
+
+test('explicit retired worker migrates to canonical worker without unregistering or deleting caches', async () => {
+  const legacyUrl = new URL('app-shell-sw-fontfix-1fefcaa790f0.js', identity.scopeUrl).href;
+  const migration = {...identity, previousWorkerUrls: [legacyUrl]};
+  const legacy = worker(legacyUrl), canonical = worker(identity.workerUrl, 'installing');
+  const reg = registration(identity.scopeUrl, legacyUrl);
+  let calls=0, reloads=0;
+  const owner=createAppShellClient({secureContext:true,workerUrl:identity.workerUrl,scope:identity.scopeUrl,
+    registrationIdentity:migration,activationRetryMs:0,schedule:fn=>fn(),reload:()=>reloads++,
+    serviceWorker:{controller:legacy,getRegistration:async()=>reg,register:async(url)=>{
+      calls++;assert.equal(url,identity.workerUrl);reg.installing=canonical;return reg;
+    }},logger:{warn(){}}});
+  assert.equal(await owner.ready,reg);assert.equal(calls,1);
+  canonical.state='installed';reg.waiting=canonical;canonical.emit('statechange');
+  await owner.maybeActivateWaiting();
+  assert.deepEqual(canonical.messages,[{type:'ACTIVATE_APP_SHELL'}]);
+  canonical.state='activated';reg.active=canonical;reg.waiting=null;canonical.emit('statechange');
+  assert.equal(reloads,1);
+  const foreign=registration(identity.scopeUrl,'https://isolated.invalid/review/foreign.js');
+  assert.equal(matchesAppShellRegistration(foreign,migration),false);
+  assert.equal(matchesAppShellRegistration(registration('https://isolated.invalid/',legacyUrl),migration),false);
+  const outside={...identity,previousWorkerUrls:['https://other.invalid/app-shell-sw.js']};
+  assert.equal(matchesAppShellRegistration(registration(identity.scopeUrl,'https://other.invalid/app-shell-sw.js'),outside),false);
+});

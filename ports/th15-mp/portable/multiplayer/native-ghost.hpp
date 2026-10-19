@@ -1,4 +1,4 @@
-#include "../../th15_web/cpp/game/ScreenViews.hpp"
+#include "../../web/cpp/game/ScreenViews.hpp"
 struct GhostGraphics final:HudGraphics {
  std::vector<AnmGeometryVertex> submitted;
  void triangles(u32 count,const void* data,u32 stride)override{require(stride==sizeof(AnmGeometryVertex),"Unexpected ghost vertex layout");const auto* p=static_cast<const AnmGeometryVertex*>(data);submitted.insert(submitted.end(),p,p+count*3);}

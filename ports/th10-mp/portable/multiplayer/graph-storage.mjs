@@ -1,4 +1,4 @@
-// Schemas 1/2/3/4 from th10_web/cpp/multiplayer/SessionExports.cpp.
+// Schemas 1/2/3/4 from web/cpp/multiplayer/SessionExports.cpp.
 // Diagnostic capture only: call with a freshly copied 44-word canonical in
 // the same JS turn, outside measured loops. This is not a portable graph hash.
 const SEED = 2166136261;

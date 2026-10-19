@@ -1,3 +1,4 @@
+import {printingRuntimeInputs, printRuntimeInputs, headerInputs} from '../../../tools/build/runtime-inputs.mjs';
 // TH11 ordinary and multiplayer builds have separate objects, binaries and attestations.
 import {spawn, execFileSync} from 'node:child_process';
 import {readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync} from 'node:fs';
@@ -9,11 +10,11 @@ import {COMMON_REVISION as commonRevision, COMMON_COMMIT, COMMON_SOURCE_PATH, CO
 
 const builtAt = new Date().toISOString();
 const workspace = resolve(fileURLToPath(new URL('../', import.meta.url)));
-const root = resolve(workspace, 'th11_web');
+const root = resolve(workspace, 'web');
 const multiplayer = process.argv.includes('--multiplayer');
 const lto=process.argv.includes('--lto');
 const simdExperiment=process.argv.includes('--simd-experiment');
-const printPlan = process.argv.includes('--print-plan');
+const printPlan = (process.argv.includes('--print-plan')||printingRuntimeInputs);
 // Local validation of shared work in progress must never produce a release
 // attestation or overwrite the normal/multiplayer build directory.
 const diagnostic = process.argv.includes('--diagnostic');
@@ -34,7 +35,7 @@ const sdk = process.env.EMSDK || [
 const emcc = sdk && ['install/emscripten/emcc.py', 'upstream/emscripten/emcc.py']
   .map(name => resolve(sdk, name)).find(existsSync);
 if (!emcc && !printPlan) throw Error('TH11 build needs Emscripten; set EMSDK to the shared pinned SDK.');
-const imgui = resolve(root, 'cpp/third_party/imgui');
+const imgui = resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'../../common'),'third_party/imgui');
 const flags = [
   lto?'-O3':'-O2', ...(lto?['-flto']:[]), '-g0', '-std=c++17', '-ffp-contract=off', '-fno-strict-aliasing',
   ...(simdExperiment?['-msimd128']:[]),
@@ -63,7 +64,7 @@ if (multiplayer) {
 }
 const exported = [
   '_malloc', '_free', '_th11_validate_file', '_th11_save_scores', '_th11_save_replay',
-  '_th11_initialize', '_th11_music_enabled', '_th11_audio_statistics', '_th11_return_title',
+  '_th11_initialize', '_th11_room_preview', '_th11_music_enabled', '_th11_audio_statistics', '_th11_return_title',
   '_th11_restart', '_th11_error', '_th11_frame', '_th11_phase', '_th11_pause', '_th11_resume',
   '_th11_loop_start', '_th11_loop_stop', '_th11_loop_pause', '_th11_key', '_th11_keys_clear',
   '_th11_always_hitbox', '_th11_touch', '_th11_touch_cancel', '_th11_touch_options', '_th11_touch_controls', '_th11_touch_stick',
@@ -77,6 +78,7 @@ const linkFlags = multiplayer ? ['-lwebsocket'] : [];
 // export names stable when it is linked. Do not set private compiler options
 // or use DECLARE_ASM_MODULE_EXPORTS=0 (which changes module scoping).
 if(lto)linkFlags.push('-lexports.js');
+await printRuntimeInputs({workspace,root,sources:source,headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input')),flags});
 if (printPlan) {
   console.log(JSON.stringify({game: 'th11', profile, variant, outputDirectory: out,
     packageDirectory: resolve(workspace, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
@@ -105,7 +107,7 @@ const headerFiles = dir => readdirSync(dir, {withFileTypes: true}).flatMap(entry
   entry.isDirectory() ? ((!multiplayer && (entry.name === 'multiplayer' || entry.name === 'netplay')) ? [] :
     headerFiles(resolve(dir, entry.name))) :
     /\.(h|hpp|inc)$/.test(entry.name) ? [resolve(dir, entry.name)] : []);
-const headers = [...headerFiles(resolve(root, 'cpp')), ...headerFiles(resolve(workspace, 'portable/sdl')),
+const headers = [...headerFiles(resolve(root, 'cpp')),...headerFiles(imgui), ...headerFiles(resolve(workspace, 'portable/sdl')),
   ...headerFiles(resolve(workspace, 'portable/input')), resolve(netplayRoot, 'include/eagler/input/DialogueGesture.hpp'),
   ...(multiplayer ? headerFiles(resolve(netplayRoot, 'include')) : [resolve(netplayRoot,'include/eagler/text/RuntimeFontRaster.hpp')])].sort();
 const headerHash = sha(headers.map(path => path + sha(readObserved(path))).join('\n'));

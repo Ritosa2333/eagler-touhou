@@ -8,20 +8,20 @@
   "candidate": {
     "name": "E enemy fixed-pool first-write index",
     "wasmSha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577",
-    "artifact": "th09_web/artifacts/rollback4x-enemy-index-release",
+    "artifact": "web/artifacts/rollback4x-enemy-index-release",
     "productionChanges": [
-      "th09_web/cpp/multiplayer/WorldState.cpp",
-      "th09_web/cpp/multiplayer/WorldState.hpp"
+      "web/cpp/multiplayer/WorldState.cpp",
+      "web/cpp/multiplayer/WorldState.hpp"
     ]
   },
   "baseline": {
     "name": "B input-send-batch scalar",
     "wasmSha256": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97",
-    "artifact": "th09_web/artifacts/rollback4x-chain-input-batch-release"
+    "artifact": "web/artifacts/rollback4x-chain-input-batch-release"
   },
   "controlled": {
     "label": "rollback4x-enemy-index-deep8-cpu4-01",
-    "artifact": "th09_web/artifacts/rollback4x-enemy-index-live",
+    "artifact": "web/artifacts/rollback4x-enemy-index-live",
     "frames": 1800,
     "fixedDelayFrames": 8,
     "inputDelayFrames": 0,

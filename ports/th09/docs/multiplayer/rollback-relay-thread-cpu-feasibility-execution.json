@@ -2,7 +2,7 @@
   "schema": "th09-relay-thread-cpu-feasibility-execution-v1",
   "command": [
     "node",
-    "th09_web/tests/multiplayer/relay-thread-cpu-feasibility.mjs"
+    "web/tests/multiplayer/relay-thread-cpu-feasibility.mjs"
   ],
   "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
   "commandId": "6JXn_UdCpCZfhNfBPS5q9YBG",

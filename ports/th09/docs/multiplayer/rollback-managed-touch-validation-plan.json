@@ -12,7 +12,7 @@
   "userGoal": "Full D0 prediction/rollback with continuous newly presented game states at CPU4, including continuous phone drag and joystick. Smooth slowdown caused by lack of network information is acceptable; large freezes are not.",
   "narrowChange": "Remove already-received synchronous touch commands from the asynchronous managed filesystem/resource queue. Keep the existing host envelope and per-event native movement order; consume ineligible controls serials without replaying their actions when eligibility returns.",
   "productionScope": [
-    "th09_web/sdl-runtime/managed.mjs"
+    "web/sdl-runtime/managed.mjs"
   ],
   "forbiddenShortcuts": [
     "No new direct-input bridge or host protocol command",

@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Main-derived transport/model tests with synthetic sockets, clocks, storage,
  * preparation and Runtime ports. No live relay, game, networking or persistence
@@ -189,7 +190,10 @@ test('room program versions refresh before readiness and pin the agreed generati
   let preparations=0;
   const f=await joinedRoom({prepareResources:async()=>{preparations++;return {runtimeGeneration:hash};}}),socket=f.sockets[0],id=f.identity.lobbyClientId('th06mp');
   socket.message({type:'state',roomDirectory:{runtimeVersions:true},room:roomState(id)});
+  const beforeReady = socket.sent.length;
   await f.service.toggleReady();
+  assert.equal(socket.sent.slice(beforeReady).some(m=>m.type==='resource-progress'&&m.status!=='ready'),false,
+    'rechecking an already prepared program must not invalidate other players readiness');
   assert.equal(preparations,2,'ready rechecks the current publication after lobby precache');
   assert.equal(socket.sent.findLast(m=>m.type==='set-ready').runtimeGeneration,hash);
   const seats=[{clientId:id,loadout:0,ready:true,runtimeGeneration:hash},{clientId:'guest12345',loadout:1,ready:true,runtimeGeneration:'b'.repeat(64)}];
@@ -354,7 +358,11 @@ test('live relay reconnect recovers a lost start without a duplicate Runtime lau
     await wait(()=>f.service.getSnapshot().connected,'guest join');
     await f.service.takeSeat(1);await wait(()=>f.service.getSnapshot().seat===1,'guest seat');
     host.send(JSON.stringify({type:'set-ready',ready:true,movementMode:'keyboard',runtimeGeneration:hash}));
+    await wait(()=>f.service.getSnapshot().room?.seats[0]?.ready,'host ready before guest');
+    const readinessMessages=hostMessages.length;
     await f.service.toggleReady();await wait(()=>{const room=f.service.getSnapshot().room;return room?.seats.slice(0,room.playerCount).every(seat=>seat?.ready);},'ready');
+    assert.equal(hostMessages.slice(readinessMessages).some(message=>message.type==='state'&&!message.room.seats[0]?.ready),false,
+      'the other player stays ready throughout the guest current-program verification');
     host.send(JSON.stringify({type:'start',inputDelay:0}));
     await wait(()=>dropped&&connections===2&&f.events.some(([kind])=>kind==='launch'),'reconnected launch');
     assert.equal(f.service.getSnapshot().room.phase,'starting');assert.equal(f.service.getSnapshot().startSerial,1);
@@ -416,6 +424,58 @@ test('room runtime-stage preparation cannot take package cancellation path and p
   report({...progress, stage: 'runtime'}); service.cancelPreparation();
   assert.equal(service.getSnapshot().preparation.status, 'preparing'); assert.equal(events.some(([kind]) => kind === 'import'), false);
   finish(); await flush(); assert.equal(service.getSnapshot().preparation.status, 'ready'); service.dispose();
+});
+
+test('room resource switch aborts old preparation, requests all-seat unready, and ignores late completion', async () => {
+  const tasks = [];
+  const f = await joinedRoom({prepareResources(context, report) {return new Promise(resolve => tasks.push({context, report, resolve}));}});
+  assert.equal(tasks.length, 1);
+  f.service.resourcesChanged(); await flush();
+  assert.equal(tasks[0].context.signal.aborted, true); assert.equal(tasks.length, 2);
+  assert.ok(f.sockets[0].sent.some(message => message.type === 'resources-changed'));
+  tasks[0].resolve(); await flush();
+  assert.equal(f.service.getSnapshot().preparation.status, 'preparing');
+  const readiness = f.service.toggleReady(); await flush(); assert.equal(f.service.getSnapshot().ready, false);
+  tasks[1].resolve(); await readiness;
+  assert.equal(f.service.getSnapshot().ready, true); f.service.dispose();
+});
+
+test('settings reload pauses resource work and readiness until explicit resume', async () => {
+  const tasks = [];let released=0;
+  const f = await joinedRoom({releasePreparedResources(){released++;},prepareResources(context, report) {return new Promise(resolve => tasks.push({context, report, resolve}));}});
+  const initialReleased=released;
+  f.service.suspendForSettingsReload();
+  assert.equal(released,initialReleased,'draft settings must not retire the visible native title');
+  assert.equal(tasks[0].context.signal.aborted, true);
+  assert.ok(f.sockets[0].sent.some(message => message.type === 'resources-changed'));
+  tasks[0].resolve(); await flush();
+  f.service.retryPreparation(); f.service.resourcesChanged();
+  await f.service.toggleReady(); await f.service.launch(); await flush();
+  assert.equal(tasks.length, 1, 'neither retry, Ready nor Start can bypass the settings decision');
+  assert.equal(f.service.getSnapshot().ready, false);
+  assert.equal(f.events.some(([kind]) => kind === 'launch'), false);
+  f.service.resumeAfterSettingsReload(); await flush();
+  assert.equal(released,initialReleased+1,'only the explicit reload may release the old resources');
+  assert.equal(tasks.length, 2);
+  tasks[1].resolve(); await flush();
+  assert.equal(f.service.getSnapshot().preparation.status, 'ready');
+  f.service.dispose();
+});
+
+test('discarding draft room settings revalidates without releasing prepared resources',async()=>{
+ let released=0;
+ const f=await joinedRoom({releasePreparedResources(){released++;}});await flush();
+ const before=released;f.service.suspendForSettingsReload();
+ f.service.resumeAfterSettingsReload(true);await flush();
+ assert.equal(released,before);assert.equal(f.service.getSnapshot().preparation.status,'ready');
+ f.service.dispose();
+});
+
+test('every playing or full directory room admits spectators even without mid-run playback', () => {
+  for (const product of ['th06mp', 'th07mp', 'th08mp', 'th09mp', 'th10mp', 'th11mp', 'th15mp']) {
+    assert.equal(owner.directoryRoomCanEnter({product, phase: 'playing', players: 2, capacity: 2, joinable: false, spectatable: false}), true);
+    assert.equal(owner.directoryRoomCanEnter({product, phase: 'lobby', players: 2, capacity: 2, joinable: false}), true);
+  }
 });
 
 function preparationFixture({installed = true, worker = null, installError, noCatalog = false} = {}) {
@@ -527,7 +587,7 @@ test('original initial non-MP invite fallback selects default MP without changin
 
 const pinnedMainRevision = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 function pinnedRoomRetry({status, attempt, present = true}) {
-  const source = execFileSync('git', ['show', `${pinnedMainRevision}:src/launcher/app.mts`], {cwd: project, encoding: 'utf8'});
+  const source = readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/app.mts');
   const start = source.indexOf('$("#mpRoomResourceRetry").addEventListener("click", () => {');
   assert.ok(start > 0); const end = source.indexOf('\n});', start); assert.ok(end > start);
   const events = [], room = {}, sandbox = {mpUiState: {room: present ? room : null},
@@ -769,6 +829,20 @@ for(const product of ['th06mp','th07mp','th08mp','th10mp','th11mp','th15mp'])tes
   await flush();assert.equal(socket.sent.some(m=>m.type==='take-seat'),false);
   assert.equal(socket.sent.some(m=>m.type==='spectate'),true);
   assert.equal(f.service.getSnapshot().spectatorRequested,true);f.service.dispose();
+});
+
+for (const phase of ['lobby', 'playing']) test(`directory join falls back to a spectator when a room fills or starts: ${phase}`, async () => {
+  const f = roomFixture();
+  assert.equal(f.service.restoreInvite('https://launcher.invalid/?j=' + owner.encodeRoomInvite({g:'th06mp',r:'1234',f:true,a:'join'}), 'th06mp'), true);
+  await flush(); const socket = f.sockets.at(-1); socket.open();
+  socket.message({type:'state', room:roomState('other_host', {phase, seats:[
+    {clientId:'other_host',name:'A',loadout:0,ready:true}, {clientId:'other_guest',name:'B',loadout:1,ready:true},
+  ]})});
+  await flush();
+  assert.equal(socket.sent.some(message => message.type === 'take-seat'), false);
+  assert.equal(socket.sent.some(message => message.type === 'spectate'), true);
+  assert.equal(f.service.getSnapshot().spectatorRequested, true);
+  f.service.dispose();
 });
 
 test('public nickname commits only an authoritative approval and ignores stale connection replies',async()=>{

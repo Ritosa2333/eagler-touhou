@@ -29,6 +29,8 @@ export interface MultiplayerLobbySeat {
 }
 
 export interface MultiplayerResourceProgress {
+  basePercent?: number | null;
+  runtimePercent?: number | null;
   status: 'preparing' | 'ready' | 'failed' | 'cancelled' | 'importing';
   stage: 'package' | 'runtime';
   percent: number | null;
@@ -40,6 +42,8 @@ export interface MultiplayerLobbySpectator {
 }
 
 export interface NormalizedMultiplayerLobbySnapshot {
+  timingChoice?: 'auto' | number;
+  startedAt?: number;
   visibility: 'public' | 'private';
   disableCheatMovement: boolean;
   challengeMode?: boolean;
@@ -96,6 +100,8 @@ export function normalizeMultiplayerLobbySnapshot(
       !validTh15ChapterThreshold(source.chapterThreshold))
   ) return null;
   const policy = multiplayerInputTimingPolicy({ inputTiming });
+  const timingChoice = source.timingChoice === 'auto' ? 'auto' as const :
+    typeof source.timingChoice === 'number' && Number.isInteger(source.timingChoice) && source.timingChoice >= 0 && source.timingChoice <= policy.manualDelayLimit ? source.timingChoice : undefined;
   const phase = source.phase === 'starting' || source.phase === 'running' ? source.phase : 'lobby';
   const requestedPlayerCount = Number(source.playerCount);
   if (!playerCounts.includes(requestedPlayerCount as 2 | 3)) return null;
@@ -227,6 +233,8 @@ export function normalizeMultiplayerLobbySnapshot(
     seats,
     localSeat,
     localSpectator,
+    ...(timingChoice !== undefined ? {timingChoice} : {}),
+    ...(typeof source.startedAt === 'number' && Number.isSafeInteger(source.startedAt) && source.startedAt > 0 ? {startedAt: source.startedAt} : {}),
   };
 }
 
@@ -241,6 +249,8 @@ function normalizeResourceProgress(value: unknown): MultiplayerResourceProgress 
   const percent = source.percent === null ? null : Number(source.percent);
   return {
     status: source.status as MultiplayerResourceProgress['status'],
+    ...Object.fromEntries(['basePercent', 'runtimePercent'].filter(key => key in source).map(key => [key,
+      typeof source[key] === 'number' && Number.isFinite(source[key]) && source[key] >= 0 && source[key] <= 100 ? Math.round(source[key]) : null])),
     stage: source.stage,
     percent:
       percent !== null && Number.isFinite(percent) && percent >= 0 && percent <= 100

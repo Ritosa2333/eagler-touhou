@@ -10,8 +10,8 @@
       "elapsedMs": 404.4935,
       "reason": "RELAY_TRACE=1 was inherited from relay controls; harness correctly rejects relay gameplay trace without --relay. RTC uses signaling only.",
       "retained": [
-        "th09_web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-invocation.json",
-        "th09_web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-process.log"
+        "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-invocation.json",
+        "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-process.log"
       ],
       "rerun": {
         "label": "mobile-rollback-direct120-c2",

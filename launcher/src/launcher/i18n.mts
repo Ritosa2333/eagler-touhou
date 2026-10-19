@@ -1,3 +1,4 @@
+import {TH075_LOADOUT_MESSAGES} from './th075-loadout-messages.mjs';
 export const UI_LOCALES = Object.freeze(["zh-CN", "en"] as const);
 export const UI_LOCALE_STORAGE_KEY = "eagler-touhou-ui-locale-v1";
 
@@ -6,6 +7,17 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
+  ...TH075_LOADOUT_MESSAGES,
+  ['game.title.th075mp', '东方萃梦想 联机版', 'Touhou 7.5 Multiplayer'],
+  ['room.basicSettings', '基础设置', 'Basic settings'],
+  ['room.cancelReady', '取消准备', 'Cancel ready'],
+  ['room.gameSettingsGroup', '游戏设置', 'Game settings'],
+  ['room.ruleSettings', '规则选项', 'Rules'],
+  ['room.workspaceLoading', '正在预加载游戏资源', 'Preloading game resources'],
+  ['room.workspaceReady', '游戏资源已就绪，等待准备', 'Game resources ready. Ready up to play.'],
+  ['room.reloadSettingsPrompt', '当前设置的更改需要重载资源，请选择重载游戏资源或放弃设置。请您完成所有更改后再重载资源。', 'These setting changes require reloading resources. Reload game resources or discard the changes. Please finish all changes before reloading resources.'],
+  ['room.reloadResources', '重载资源', 'Reload resources'],
+  ['room.restoreSettings', '返回原有设置', 'Restore previous settings'],
   ['touch.fighting.light','轻攻击','Light attack'],
   ['touch.fighting.heavy','重攻击','Heavy attack'],
   ['touch.fighting.projectile','弹幕','Projectile'],
@@ -40,6 +52,19 @@ const entries = [
   ["room.inGameSelectionHint", "双方分别选择角色，共同选择难度和场景。", "Each player chooses their own character. Both players can choose difficulty and stage."],
   ['replay.stopBeforeWatch', '请先退出当前游戏再观看录像', 'Exit the current game before watching a Replay'],
   ['replay.watch', '观看', 'Watch'],
+  ['lobby.watchReplay', '观赏 Replay', 'Watch Replay'],
+  ['room.challengeEnabled', '挑战模式开启', 'Challenge mode enabled'],
+  ['room.baseResources', '基础资源', 'Base resources'],
+  ['room.resourceLoading', '资源加载', 'Resource loading'],
+  ['room.quickChat', '快捷发言', 'Quick chat'],
+  ['room.elapsedTime', '进行时间 {time}', 'Elapsed {time}'],
+  ['room.decreaseDelay', '减少输入延迟', 'Decrease input delay'],
+  ['room.increaseDelay', '增加输入延迟', 'Increase input delay'],
+  ['room.resetAutoDelay', '恢复自动延迟', 'Reset to automatic delay'],
+  ['room.inputDelaySettingsHint', '可在“房间/难度设置”内手动调整输入延迟。', 'You can manually adjust input delay in Room / difficulty settings.'],
+  ['spectator.waitingNextRun', '已进入观众席，等待可观看的对局', 'Spectator seat joined; waiting for an available match'],
+  ['spectator.controlsUnavailable', '当前运行时尚未提供观战时间轴。', 'This Runtime has not provided a spectator timeline yet.'],
+  ['spectator.realtimeReserved', '实时观战（待接入）', 'Real-time spectating (coming later)'],
   ['player.exitPlayback', '退出播放', 'Exit playback'],
   ['player.exitSpectating', '退出旁观', 'Exit spectating'],
   ['replay.watching', '正在观看 {name}', 'Watching {name}'],
@@ -189,6 +214,7 @@ const entries = [
   ["lobby.stale", "连接已断开，房间信息可能已变化。正在重新连接…", "Disconnected. Room information may be out of date. Reconnecting…"],
   ["lobby.recruiting", "招募中", "Open"],
   ["lobby.full", "已满", "Full"],
+  ['lobby.roomFull', '房间已满', 'Room full'],
   ["lobby.playing", "游戏中", "In game"],
   ["lobby.count", "{players}/{capacity} 人", "{players}/{capacity} players"],
   ["lobby.playersCount", "{count} 人", "{count} players"],
@@ -230,6 +256,7 @@ const entries = [
   ["room.networkHint", "我与这位玩家的往返延迟 · 开局前测量", "My round-trip latency to this player · measured before play"],
   ["room.networkNote", "直连、TURN 与中继分别测试；实际游戏链路在开局时决定。", "Direct, TURN and relay are tested separately. The game selects its route at launch."],
   ["room.inputDelay", "输入延迟", "Input delay"],
+  ["room.inputDelayAutoToggle", "自动实测", "Auto measure"],
   ["room.inputDelayMeasure", "自动 · 开局实测", "Auto · measure at start"],
   ["room.inputDelayMeasuring", "输入延迟 · 正在实测…", "Input delay · measuring…"],
   ["room.inputDelayMeasured", "实测 · {frames}f", "Measured · {frames}f"],

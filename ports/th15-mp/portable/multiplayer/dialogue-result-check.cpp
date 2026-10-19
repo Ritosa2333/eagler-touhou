@@ -1,6 +1,6 @@
 #include "native-world.hpp"
-#include "../../th15_web/cpp/game/PauseMenu.hpp"
-#include "../../th15_web/cpp/game/PauseActions.hpp"
+#include "../../web/cpp/game/PauseMenu.hpp"
+#include "../../web/cpp/game/PauseActions.hpp"
 #include <algorithm>
 struct MenuHost final:PauseMenuServices {
  bool sound(i32)override{return true;}bool synchronize_result_score()override{return true;}

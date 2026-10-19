@@ -4,8 +4,8 @@ import {createServer} from 'node:http';
 import {readFile,readdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {inflateSync} from 'node:zlib';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const root=resolve(import.meta.dirname,'../th15_web');
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const root=resolve(import.meta.dirname,'../web');
 const build=resolve(root,'artifacts/thprac-purple-browser-check'),assets=resolve(root,'artifacts/thprac-private-assets');
 const fonts=(await readdir(resolve(assets,'fonts'))).filter(n=>n.endsWith('.bin'));
 // Inspect the presented canvas, not the pre-ImGui game render target.

@@ -1,9 +1,9 @@
-#include "../th08_web/cpp/game/Ending.hpp"
-#include "../th08_web/cpp/game/TitleMenus.hpp"
-#include "../th08_web/cpp/game/Dialogue.hpp"
+#include "../web/cpp/game/Ending.hpp"
+#include "../web/cpp/game/TitleMenus.hpp"
+#include "../web/cpp/game/Dialogue.hpp"
 #include "input/TouchController.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-#include "../th08_web/cpp/multiplayer/TextureJournal.hpp"
+#include "../web/cpp/multiplayer/TextureJournal.hpp"
 // No graphics journal is bound in this script/input fixture.
 namespace th08::multiplayer {bool TextureJournal::Touch(u32,bool){return true;}bool TextureJournal::MayMutate(){return true;}}
 #endif

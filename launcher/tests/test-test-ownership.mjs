@@ -33,7 +33,7 @@ async function collect(directory) {
 }
 
 const exempt = new Set(["tests/test-plan.mjs"]);
-const executableTests = (await collect(resolve(root, "tests"))).filter(file => !exempt.has(file));
+const executableTests = (await collect(resolve(root, "tests"))).filter(file => !exempt.has(file) && !file.startsWith("tests/fixtures/ui-history/"));
 const explicitPatterns = [...explicit].map(pattern => new RegExp('^' + pattern.split('*')
   .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') + '$'));
 const unowned = executableTests.filter(file => !planned.has(file) && !explicitPatterns.some(pattern => pattern.test(file)));

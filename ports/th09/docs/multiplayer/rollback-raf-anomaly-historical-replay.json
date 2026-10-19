@@ -15,10 +15,10 @@
     "runtimeTiming": "No script wall-time benchmark was collected; tool yield intervals are not reported as probe CPU cost."
   },
   "savedRunner": {
-    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/tests/multiplayer/raf-anomaly-historical-replay.mjs",
+    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/tests/multiplayer/raf-anomaly-historical-replay.mjs",
     "bytes": 9794,
     "sha256": "97333d8582346b320f86d2faf8317335d9ebaf0e4af6d02fa5e2bdfcd31cc4ea",
-    "usage": "node th09_web/tests/multiplayer/raf-anomaly-historical-replay.mjs [frozen-relay39-report.json] [raf-anomaly-probe.mjs]",
+    "usage": "node web/tests/multiplayer/raf-anomaly-historical-replay.mjs [frozen-relay39-report.json] [raf-anomaly-probe.mjs]",
     "inputPolicy": "Raw input is locked to SHA 92a6711ebc768d6da8249100d85afabe3187a52bb327715af066f0e3f448fb20. Optional paths relocate that same raw and choose the helper source under examination. The script prints the helper identity and writes no files.",
     "relationshipToExecutedCommand": "The executed inline source was converted to .mjs imports and positional path arguments, with a two-argument usage guard. The replay/reconstruction/assertion body is text-identical after removing only that CLI argument guard.",
     "replayBodyTextEquivalentToExecutedInline": true,
@@ -60,12 +60,12 @@
     "kind": "offline-historical-request-shape-replay",
     "passed": true,
     "raw": {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-01-report.json",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-01-report.json",
       "bytes": 20697024,
       "sha256": "92a6711ebc768d6da8249100d85afabe3187a52bb327715af066f0e3f448fb20"
     },
     "helper": {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/tests/multiplayer/raf-anomaly-probe.mjs",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/tests/multiplayer/raf-anomaly-probe.mjs",
       "bytes": 16988,
       "sha256": "f33bf25b07b99dc2e8ae5485138f31c21eed2a54ee564899847907f891eab5f4"
     },

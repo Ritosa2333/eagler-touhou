@@ -1,4 +1,4 @@
-#include "../th09_web/cpp/game/Ending.hpp"
+#include "../web/cpp/game/Ending.hpp"
 #include <cassert>
 #include <cstdio>
 using namespace th09;

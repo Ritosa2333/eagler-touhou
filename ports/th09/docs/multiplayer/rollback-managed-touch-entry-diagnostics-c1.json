@@ -5,7 +5,7 @@
   "rows": [
     {
       "input": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-android-touch-c2-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-android-touch-c2-report.json",
         "bytes": 122461,
         "sha256": "bed6cd3939d02784c5c33231aae11ed70252ecfa21786326ea1a29047877dfed"
       },
@@ -13,7 +13,7 @@
       "passed": false,
       "failure": {
         "message": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(debuggerUrl.pathname.startsWith('/devtools/browser/'))\n",
-        "stack": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(debuggerUrl.pathname.startsWith('/devtools/browser/'))\n\n    at file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/managed-touch-launcher-browser.mjs:237:51\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
+        "stack": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(debuggerUrl.pathname.startsWith('/devtools/browser/'))\n\n    at file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/managed-touch-launcher-browser.mjs:237:51\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
         "cause": null
       },
       "sourceStable": true,
@@ -63,7 +63,7 @@
     },
     {
       "input": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-android-touch-c3-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-android-touch-c3-report.json",
         "bytes": 122781,
         "sha256": "eb48099ea1d8ebc7856212be226d4c164263a5376bf63d5af6f8a9244a5f1f07"
       },
@@ -71,7 +71,7 @@
       "passed": false,
       "failure": {
         "message": "TimeoutError: browserType.connectOverCDP: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\u001b[2m  - <ws connected> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n",
-        "stack": "browserType.connectOverCDP: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\u001b[2m  - <ws connected> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\n    at D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs:240:26",
+        "stack": "browserType.connectOverCDP: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\u001b[2m  - <ws connected> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\n    at D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs:240:26",
         "cause": null
       },
       "sourceStable": true,
@@ -126,7 +126,7 @@
     },
     {
       "input": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\artifacts\\multiplayer-tests\\managed-touch-desktop-touch-c7-report.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-desktop-touch-c7-report.json",
         "bytes": 226772,
         "sha256": "7d8a86e60a7ed4ee066a2d91f0d2fed51a57bc676df93315d36076e146767e79"
       },
@@ -134,7 +134,7 @@
       "passed": false,
       "failure": {
         "message": "Error: Timed out: real touch switch enabled",
-        "stack": "Error: Timed out: real touch switch enabled\n    at until (file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/managed-touch-launcher-browser.mjs:66:8)\n    at async file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/managed-touch-launcher-browser.mjs:324:2",
+        "stack": "Error: Timed out: real touch switch enabled\n    at until (file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/managed-touch-launcher-browser.mjs:66:8)\n    at async file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/managed-touch-launcher-browser.mjs:324:2",
         "cause": null
       },
       "sourceStable": true,

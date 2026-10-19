@@ -2,8 +2,8 @@
 // entry points, with a legally constructed/destructed AnimationEngine.
 // Only RollbackState::Touch is a test-owned journal delegate: the full World/
 // RollbackState capture and Application MarkSimulated gate are NOT linked.
-#include "../th10_web/cpp/platform/AnimationEngine.hpp"
-#include "../th10_web/cpp/multiplayer/RollbackState.hpp"
+#include "../web/cpp/platform/AnimationEngine.hpp"
+#include "../web/cpp/multiplayer/RollbackState.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 
 #include <array>

@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {mkdir, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {build} from 'esbuild';
-import {loadPlaywright} from './support/playwright-loader.mjs';
+import {loadPlaywright} from '../../tools/browser/playwright.mjs';
 import {buildRuntimeProgramWorkerSource} from '../lib/frontend-assets.mjs';
 import {authoredSourcesPlugin} from './react-main/authored-sources.mjs';
 import {canonicalRuntimePayload, RUNTIME_MANIFEST_SCHEMA, RUNTIME_PROTOCOL} from '../lib/contracts/runtime-generations.mjs';

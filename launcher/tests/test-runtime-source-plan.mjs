@@ -36,6 +36,12 @@ try {
       if (!["normal", "multiplayer"].includes(variant)) continue;
       const source = layout.path(definition.workspaceRepository ?? entry.workspaceRepository);
       const recipe = { ...entry.sourceBuild, ...definition.sourceBuild };
+      if (!recipe.kind) {
+        // Prebuilt-only products do not yet declare a source builder.
+        await assert.rejects(() => planRuntimeSourceBuild({ game, variant, emsdk: sdk }, context),
+          /source build is not declared/);
+        continue;
+      }
       await put(resolve(source, recipe.kind === "cmake" ? "CMakeLists.txt" : recipe.build[0]));
       const before = await readdir(source);
       const plan = await planRuntimeSourceBuild({ game, variant, emsdk: sdk }, context);
@@ -55,7 +61,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 15);
+  assert.equal(plans.length, 17);
   assert.equal(plans.find(plan => plan.game === "th10" && plan.variant === "multiplayer").source, layout.path("th10mp"));
   assert(plans.find(plan => plan.game === "th11" && plan.variant === "multiplayer").steps[0].args.includes("--multiplayer"));
   const th15 = plans.find(plan => plan.game === "th15" && plan.variant === "multiplayer");
@@ -79,6 +85,12 @@ try {
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09", emsdk: resolve(root, "missing-sdk") }, context), /Emscripten compiler not found/);
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09" }, context), /specify --emsdk/);
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09", emsdk: sdk, emscriptenVersion: "6.0.5" }, context), /version mismatch/);
+  for (const version of ['6.0.9', '6.0.9-git', '"6.0.9"', '"6.0.9-git"']) {
+    await put(resolve(sdk, "install/emscripten/emscripten-version.txt"), version+'\n');
+    const plan=await planRuntimeSourceBuild({game:"th09",emsdk:sdk,emscriptenVersion:"6.0.9"},context);
+    assert.equal(plan.toolchain.version, version.replaceAll('"',''));
+    await assert.rejects(()=>planRuntimeSourceBuild({game:"th09",emsdk:sdk,emscriptenVersion:"6.0.8"},context),/version mismatch/);
+  }
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09", emsdk: sdk, common: resolve(root, "missing-common") }, context), /common dependency is missing/);
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th15", variant: "multiplayer", emsdk: sdk, thprac: true }, context), /fixed to false/);
   await assert.rejects(() => planRuntimeSourceBuild({ game: "th09", emsdk: sdk, jobs: 0 }, context), /jobs must be/);
@@ -87,4 +99,4 @@ try {
   assert.equal(dirname(root), resolve(tmpdir()));
   await rm(root, { recursive: true, force: true });
 }
-console.log("Runtime source plans: PASS (15 variants, pinned/shared dependencies, explicit tools, invalid inputs)");
+console.log("Runtime source plans: PASS (17 variants, shared dependencies, explicit tools, invalid inputs)");

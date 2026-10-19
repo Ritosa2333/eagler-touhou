@@ -1,10 +1,21 @@
-# 部署边界
+# 部署 Relay
 
-源码服务和发布包可独立启动。配置示例只含公开占位值，真实密钥、昵称 SQLite 状态和日志保存在静态站点目录之外。
-发布时同时交付 Relay 与相邻的 `nickname-worker.mjs`。
+本目录提供环境变量、Nginx 和 systemd 样例。Relay、昵称数据库和日志应放在静态网站目录之外。
 
-反向代理必须覆盖 `X-Real-IP` 为实际连接地址。只信任明确列出的代理 IP，回环 IPv4 代理使用 `127.0.0.1`。
-示例 Nginx 片段与 relay.env 对应回环上游。启用服务或改变上游端口前，必须经公网代理核对每个客户端的地址归属、不同 IP 的房间配额隔离及离开后的配额释放。
-服务存活和 localhost 探测不能替代这些检查。
+## 准备
 
-TURN 是单独服务，见相邻 `services/turn/` 的配置工具。服务目录搬迁不包含公网部署或端口切换。
+1. 在仓库中运行 `npm ci && npm test`；生产环境建议用 `npm run package -- /path/to/new-relay-package` 生成独立发布目录。
+2. 将 [`relay.env.example`](relay.env.example) 复制到服务机的 `/etc/eagler-touhou/relay.env`，填写实际配置。真实密钥与 SQLite 数据保存在服务机的仓库目录之外。
+3. 将 [`nginx-relay.conf.example`](nginx-relay.conf.example) 的 `location /netplay-relay/` 放进公网 HTTPS 虚拟主机。默认上游为 `127.0.0.1:18142`；Relay 应绑定同一回环地址。
+4. 让代理覆盖 `X-Real-IP` 为真实客户端地址，并将代理的精确 IP 配到 `EAGLER_NETPLAY_TRUSTED_PROXIES`。回环 Nginx 使用 `127.0.0.1`。
+5. 安装 [`eagler-netplay-relay.service`](eagler-netplay-relay.service)，按实际发布目录修改工作目录和启动路径，再启用服务。
+
+## 检查
+
+- `nginx -t` 通过，WebSocket Upgrade 请求可经 `/netplay-relay/` 建立连接。
+- 服务监听地址与 Nginx 上游相同，环境文件中的可信代理 IP 与连接来源一致。
+- 用公网代理验证来自不同 IP 的房间配额相互隔离；离开房间后配额释放。
+
+## TURN
+
+TURN 独立于 Relay 部署，配置生成见 [`services/turn/`](../../turn/README.md)。Relay 与 coturn 的 `EAGLER_NETPLAY_TURN_SHARED_SECRET` 必须一致。

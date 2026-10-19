@@ -13,7 +13,7 @@ const puppeteer=createRequire(resolve(launcher,'package.json'))('puppeteer-core'
 const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/chromium-executable.mjs')));
 const runtime=resolve(process.env.TH15_TEST_RUNTIME),fixtures=process.argv.includes('--fixtures');
 const lifecycleOnly=process.argv.includes('--lifecycle-only')||process.env.TH15_TEST_LIFECYCLE_ONLY==='1';
-const buildRoot=resolve(root,'th15_web',process.env.TH15_OUTPUT||'artifacts/sdl-multiplayer');
+const buildRoot=resolve(root,'web',process.env.TH15_OUTPUT||'artifacts/sdl-multiplayer');
 const probes=resolve(buildRoot,'spectator-stage');
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const productionBuild=JSON.parse(await readFile(resolve(buildRoot,'build.json'),'utf8'));

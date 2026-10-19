@@ -524,7 +524,7 @@ function analysis(data){
 
 try{
   mark('preflight');
-  const musicCatalogFile=resolve(root,'th11_web/cpp/game/MusicCatalog.hpp');
+  const musicCatalogFile=resolve(root,'web/cpp/game/MusicCatalog.hpp');
   const musicText=readFileSync(musicCatalogFile,'utf8'),musicTracks=new Map();
   for(const m of musicText.matchAll(/\{(\d+),"(th(?:10|11)_\d+)"\}/g))musicTracks.set(Number(m[1]),m[2]+'.ogg');
   assert.equal(musicTracks.size,18,'Read actual native MusicCatalog, including result cue');
@@ -550,7 +550,7 @@ try{
   const manifest=JSON.parse(readFileSync(resolve(runtime,'manifest.json'))),inventory=JSON.parse(readFileSync(resolve(runtime,'runtime-files.json')));
   assert.equal(manifest.product,'th11mp');assert.equal(manifest.variant,'multiplayer');
   const wasm=fileIdentity(resolve(runtime,'th11-sdl.wasm'));assert.equal(wasm.sha256,manifest.execution.sha256,'Actual WASM agrees with untouched manifest');
-  report.identity={game:gitIdentity(root),common:gitIdentity(resolve(root,'third_party/eagler-common')),launcher:gitIdentity(launcher),
+  report.identity={game:gitIdentity(root),common:gitIdentity(resolve(root,'../../common')),launcher:gitIdentity(launcher),
     archive:fileIdentity(archive),manifest:fileIdentity(resolve(runtime,'manifest.json')),inventory:fileIdentity(resolve(runtime,'runtime-files.json')),
     wasm,loader:fileIdentity(resolve(runtime,'th11-sdl.mjs')),shell:fileIdentity(resolve(runtime,'shell.mjs')),
     relay:fileIdentity(relayFile),catalog:fileIdentity(catalogFile),runtimeOptions:fileIdentity(optionsFile),relayUrl:fileIdentity(relayUrlFile),runner:fileIdentity(import.meta.filename),host:fileIdentity(resolve(import.meta.dirname,'browser-host.html'))};

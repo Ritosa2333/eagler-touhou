@@ -427,6 +427,11 @@ start:
 
 SDL_AppResult SDL_AppIterate(void *appstate)
 {
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_NETPLAY)
+    if(!g_NetplayLanProduction&&EM_ASM_INT({return !Module.eaglerRoomPreview&&Module.eaglerOptions?.netplayMode==='lan'?1:0;})){
+        g_NetplayLanProduction=true;g_NetplayStage1Harness=true;
+    }
+#endif
 #ifdef __EMSCRIPTEN__
     extern bool g_ReplayWorkspaceDriving;
     if (g_ReplayWorkspaceDriving) return SDL_APP_CONTINUE;

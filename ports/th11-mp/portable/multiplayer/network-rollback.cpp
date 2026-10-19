@@ -1,7 +1,7 @@
-#include "../../th11_web/cpp/multiplayer/NetplayRuntime.hpp"
-#include "../../th11_web/cpp/multiplayer/InputLanes.hpp"
-#include "../../th11_web/cpp/multiplayer/ReplayArchive.hpp"
-#include "../../th11_web/cpp/game/GameInput.hpp"
+#include "../../web/cpp/multiplayer/NetplayRuntime.hpp"
+#include "../../web/cpp/multiplayer/InputLanes.hpp"
+#include "../../web/cpp/multiplayer/ReplayArchive.hpp"
+#include "../../web/cpp/game/GameInput.hpp"
 #include <array>
 #include <cstdio>
 #include <cstdlib>

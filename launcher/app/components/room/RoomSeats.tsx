@@ -1,9 +1,10 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
 import type { MultiplayerRoomService, RoomOwnerSnapshot } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
 import { networkMessage, roomPresentation } from './presentation';
+import {ResourceTracks} from './RoomProgress';
 import type { RoomNetworkPresentation, RoomPanelKind, RoomViewContext } from './types';
 export interface RoomSeatsProps {
   state: RoomOwnerSnapshot;
@@ -11,6 +12,7 @@ export interface RoomSeatsProps {
   network: RoomNetworkPresentation;
   context: RoomViewContext;
   openPanel(kind: RoomPanelKind, trigger: HTMLElement, peerId?: string): void;
+  workspace?: boolean;
 }
 export function RoomSeats(props: RoomSeatsProps) {
   return (
@@ -32,6 +34,7 @@ function RoomSeat({
   context,
   openPanel,
   index,
+  workspace = false,
 }: RoomSeatsProps & { index: number }) {
   const { t } = useLocale(),
     presentation = roomPresentation(state, t)!;
@@ -135,15 +138,25 @@ function RoomSeat({
               : resource.percent == null
                 ? t('room.preparingResources')
                 : t('room.peerDownloading', { percent: resource.percent });
+  const resourceReady = resource?.status === 'ready' || seat?.ready === true;
+  const base = resourceReady || resource?.stage === 'runtime' ? 100 : resource?.basePercent ?? resource?.percent;
+  const loading = resourceReady ? 100 : resource?.stage === 'runtime' ? resource.runtimePercent ?? resource.percent : 0;
+  const degrees = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) * 3.6 : 0;
+  const appearance = !occupied ? 'empty' : seat?.offline || !resourceReady ? 'loading' : seat?.ready ? 'ready' : 'unready';
   return (
     <article
       ref={node}
       className={`mp-seat${occupied ? ' occupied' : ''}${index === 0 && owner ? ' owner' : ''}${seat?.offline ? ' reconnecting' : ''}${occupied && seat?.ready ? ' is-ready' : ''}`}
       data-mp-seat={index}
+      data-card-state={workspace ? appearance : undefined}
       hidden={!active}
       title={occupied ? seatLabel : ''}
     >
-      <div className="mp-seat-face">
+      {workspace && occupied && <span className="room-seat-decoration" aria-hidden="true"><span className="room-seat-watermark">{appearance.toUpperCase()}</span></span>}
+      <div className="mp-seat-face" style={workspace && occupied ? {'--base-angle': `${degrees(base)}deg`, '--loading-angle': `${degrees(loading)}deg`} as CSSProperties : undefined}>
+        {workspace && occupied && <span className={`room-seat-ring${resource?.status === 'preparing' && (resource.stage === 'runtime' ? loading == null : base == null) ? ' indeterminate' : ''}`}
+          role="progressbar" aria-label={t(resource?.stage === 'runtime' || resourceReady ? 'room.resourceLoading' : 'room.baseResources')}
+          aria-valuemin={0} aria-valuemax={100} aria-valuenow={resourceReady ? 100 : (resource?.stage === 'runtime' ? loading : base) ?? undefined}/>}
         <div className="mp-seat-drop" data-mp-seat-drop={index} hidden={occupied}>
           <button
             type="button"
@@ -198,10 +211,10 @@ function RoomSeat({
           {local ? t('room.localDevice') : values.map((value) => <span key={value}>{value}</span>)}
         </button>
       </span>
-      {state.nickname && occupied ? (
+      {occupied ? (
         <div className="mp-seat-identity">
           <strong className="mp-seat-name" data-mp-seat-name={index} title={seat?.name || `P${index + 1}`}>
-            {seat?.name || `P${index + 1}`}
+            {seat?.name || (state.seat === index ? state.displayName : '') || `P${index + 1}`}
           </strong>
           <span className="mp-seat-details">
             <span className="mp-seat-loadout" title={seatLabel}>
@@ -229,7 +242,7 @@ function RoomSeat({
       <span className="mp-seat-me" data-mp-seat-me={index} hidden={state.seat !== index}>
         {t('multiplayer.you')}
       </span>
-      {(!state.nickname || !occupied) && controlCaption}
+      {!occupied && controlCaption}
       <button
         className="mp-seat-edit"
         type="button"
@@ -242,6 +255,13 @@ function RoomSeat({
           key={seat?.clientId}
           className="mp-seat-moderation"
           hidden={!ready || !owner || room.phase !== 'lobby' || !seat}
+          onKeyDown={event => {
+            if (event.key === 'Escape') {
+              event.preventDefault(); event.stopPropagation();
+              event.currentTarget.open = false;
+              event.currentTarget.querySelector('summary')?.focus();
+            }
+          }}
           onBlur={event => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false;
           }}
@@ -264,13 +284,7 @@ function RoomSeat({
       )}
       <div className="mp-seat-resource" hidden={!seat || !resource} data-status={resource?.status}>
         <span className="mp-seat-resource-label">{resourceLabel}</span>
-        <span
-          className={`mp-seat-resource-track${resource?.status === 'importing' || (resource?.status === 'preparing' && resource.percent == null) ? ' indeterminate' : ''}`}
-        >
-          <span
-            style={{ width: `${resource?.status === 'ready' ? 100 : (resource?.percent ?? 0)}%` }}
-          />
-        </span>
+        <ResourceTracks progress={resource ?? null}/>
       </div>
     </article>
   );

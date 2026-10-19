@@ -22,7 +22,7 @@ const out=resolve(root,'artifacts/anm-submit'+(sanitized?'-ubsan':''));mkdirSync
 const metadataPath=resolve(out,'build.json');rmSync(metadataPath,{force:true});
 const flags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Werror',
     '-DTH_NATIVE_PLATFORM=1','-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-strict-aliasing',
-    '-I'+resolve(root,'th10_web/cpp/game')];
+    '-I'+resolve(root,'web/cpp/game')];
 if(sanitized)flags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5'];
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
@@ -37,14 +37,14 @@ function compile(source,name,compileFlags=flags){
     }
     return object;
 }
-const common=[compile('th10_web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags),
-    ...['Arithmetic','GameMath'].map(name=>compile(`th10_web/cpp/game/${name}.cpp`,name))];
+const common=[compile('web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags),
+    ...['Arithmetic','GameMath'].map(name=>compile(`web/cpp/game/${name}.cpp`,name))];
 const sanitizer={enabled:sanitized,softfloatIncluded:false,scope:sanitized?'C++ test/production code only; third-party SoftFloat excluded':'none'};
 console.log(JSON.stringify({suite:'anm-submit',sanitizer}));
 for(const multiplayer of [false,true]){
     const variant=multiplayer?'multiplayer':'ordinary';
     const variantFlags=[...flags,...(multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[])];
-    const renderer=compile('th10_web/cpp/game/AnmRenderer.cpp',variant+'-renderer',variantFlags);
+    const renderer=compile('web/cpp/game/AnmRenderer.cpp',variant+'-renderer',variantFlags);
     // The original oracle keeps observation disabled; callbacks in this stub abort.
     // compile() adds the stub/header closure to the existing dependency hashes.
     const observerObjects=multiplayer?[compile('tests/live-motion-disabled-stub.cpp',variant+'-observer-disabled',variantFlags)]:[];

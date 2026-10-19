@@ -10,20 +10,20 @@ import { runNativeCpp } from "./support/native-cpp.mjs";
 const sources = {
   th06: await readFile(workspacePath("th06", "src", "Controller.cpp"), "utf8"),
   th07: await readFile(workspacePath("th07", "src", "Controller.cpp"), "utf8"),
-  th08: await readFile(workspacePath("th08", "th08_web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
-  th09: await readFile(workspacePath("th09", "th09_web", "cpp", "sdl", "Application.cpp"), "utf8"),
-  th10: await readFile(workspacePath("th10", "th10_web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
+  th08: await readFile(workspacePath("th08", "web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
+  th09: await readFile(workspacePath("th09", "web", "cpp", "sdl", "Application.cpp"), "utf8"),
+  th10: await readFile(workspacePath("th10", "web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
 };
-const th08Runtime = await readFile(workspacePath("th08", "th08_web", "cpp", "platform", "BrowserRuntime.hpp"), "utf8");
+const th08Runtime = await readFile(workspacePath("th08", "web", "cpp", "platform", "BrowserRuntime.hpp"), "utf8");
 const runtimeShells = {
   th06: await readFile(workspacePath("th06", "resources", "shell.html"), "utf8"),
   th07: await readFile(workspacePath("th07", "resources", "shell.html"), "utf8"),
-  th08: await readFile(workspacePath("th08", "th08_web", "sdl-runtime", "shell.mjs"), "utf8"),
-  th09: await readFile(workspacePath("th09", "th09_web", "sdl-runtime", "managed.mjs"), "utf8"),
-  th10: await readFile(workspacePath("th10", "th10_web", "sdl-runtime", "shell.mjs"), "utf8"),
+  th08: await readFile(workspacePath("th08", "web", "sdl-runtime", "shell.mjs"), "utf8"),
+  th09: await readFile(workspacePath("th09", "web", "sdl-runtime", "managed.mjs"), "utf8"),
+  th10: await readFile(workspacePath("th10", "web", "sdl-runtime", "shell.mjs"), "utf8"),
 };
 for (const game of ['th08','th09','th10'])
-  runtimeShells[game] += '\n' + await readFile(workspacePath(game, `${game}_web/sdl-runtime/directory-keyboard.mjs`), 'utf8');
+  runtimeShells[game] += '\n' + await readFile(workspacePath(game, `web/sdl-runtime/directory-keyboard.mjs`), 'utf8');
 const browserGames = ['th11', 'th15', 'th20'];
 assert.deepEqual([...Object.keys(sources), ...browserGames].sort(), Object.keys(PRODUCT_GAMES).sort(),
   "required gamepad verification must be updated when a formal game adapter is registered");
@@ -96,8 +96,8 @@ for (const game of ["th06", "th07"]) {
 
 for (const game of browserGames) {
   const hostPath = game === 'th11' ? 'Application.cpp' : game === 'th15' ? 'BrowserRuntime.cpp' : 'InputHost.cpp';
-  const directory = workspacePath(game, `${game}_web/cpp/sdl`);
-  const host = await readFile(workspacePath(game, `${game}_web/cpp/sdl`, hostPath), 'utf8');
+  const directory = workspacePath(game, `web/cpp/sdl`);
+  const host = await readFile(workspacePath(game, `web/cpp/sdl`, hostPath), 'utf8');
   assert.match(host, /BrowserGamepadState\(/, `${game}: sample the Launcher-owned normalized controller`);
   assert.match(host, /ApplyGamepadVirtualKeys\(/, `${game}: deliver logical actions to gameplay`);
   await runNativeCpp(`#include "browser-gamepad-input.hpp"

@@ -113,6 +113,7 @@ export interface MultiplayerRoomPorts {
   beginManualImport(context: RoomOperationContext): void;
   /** Main app6830 clears manual install-only recovery before an accepted retry. */
   beforePreparationRetry?(): void;
+  releasePreparedResources?(): void;
   /** Own input warnings, TH09 title handoff, fullscreen, first-frame/path gate and error continuation. */
   launch(context: RoomLaunchContext): Promise<void>;
   /** Real multiplayer Runtime, omitNetplay, first frame, then return to room without save RPC. */
@@ -297,6 +298,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     };
   }
   function reportProgress(progress: RoomPreparationProgress) {
+    progress = {...progress,
+      basePercent: progress.status === 'ready' || progress.stage === 'runtime' ? 100 : progress.total ? Math.min(100, (progress.loaded ?? 0) / progress.total * 100) : progress.percent,
+      runtimePercent: progress.status === 'ready' ? 100 : progress.stage === 'runtime' ? progress.percent : 0};
     state.preparation = { ...progress };
     if (state.seat != null && state.connected) {
       const percent =
@@ -305,7 +309,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           : progress.status === 'preparing' && progress.stage === 'package' && progress.total
             ? Math.min(100, Math.floor(((progress.loaded || 0) / progress.total) * 20) * 5)
             : null;
-      const wire = { status: progress.status, stage: progress.stage, percent };
+      const bucket = (value: number | null | undefined) => value == null ? null : Math.floor(value / 5) * 5;
+      const wire = { status: progress.status, stage: progress.stage, percent, basePercent: bucket(progress.basePercent), runtimePercent: bucket(progress.runtimePercent) };
       const key = JSON.stringify(wire);
       if (
         (socket !== reportedSocket || key !== reportedResourceKey) &&
@@ -317,16 +322,22 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     }
     publish();
   }
+  let settingsReloadPending = false;
   function prepareResources(refresh = false): Promise<void> {
-    if (!room || !product || disposed) return Promise.resolve();
+    if (!room || !product || disposed || settingsReloadPending) return Promise.resolve();
     if (preparation?.epoch === epoch && !(refresh && state.preparation?.status === 'ready')) return preparation.task;
+    const revalidating = refresh && state.preparation?.status === 'ready';
     const controller = new AbortController(),
       owned = context(controller.signal);
     const taskOwner = { epoch, controller, task: Promise.resolve() };
     preparation = taskOwner;
-    preparedRuntimeGeneration = undefined;
-    reportedResourceKey = '';
-    reportProgress({ status: 'preparing', stage: 'package', percent: null, error: '' });
+    // Verifying an already prepared program is not a resource change. Keep the
+    // ready resource state unless the adapter actually needs to reload it.
+    if (!revalidating) {
+      preparedRuntimeGeneration = undefined;
+      reportedResourceKey = '';
+      reportProgress({ status: 'preparing', stage: 'package', percent: null, error: '' });
+    }
     taskOwner.task = Promise.resolve()
       .then(() =>
         ports.prepareResources(owned, (progress) => {
@@ -420,6 +431,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
     if (!normalized) return;
     const movementChanged = !room.disableCheatMovement && normalized.disableCheatMovement;
+    if (normalized.timingChoice !== undefined) {
+      state.timingChoice = normalized.timingChoice;
+      state.rollbackEnabled = multiplayerInputTimingPolicy(config).rollback && normalized.adonisMode !== 1;
+    }
     Object.assign(room, normalized, {
       synced: true,
       connection: 'connected',
@@ -574,6 +589,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           autoSeat = false;
           const empty = room?.seats?.slice(0, room.playerCount).findIndex((seat) => !seat) ?? -1;
           if (state.seat == null && empty >= 0 && room?.phase === 'lobby') void takeSeat(empty);
+          // TH09's ordinary title-entry flow keeps its explicit role choice;
+          // directory spectator rows already carry the observer intent.
+          else if (state.seat == null && room && product !== 'th09mp') spectate();
         }
       } else if (message.type === 'start') {
         applySnapshot(message.room);
@@ -589,6 +607,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         state.startSerial = Math.max(state.startSerial, Number(message.serial) || 0);
         publish();
         if (state.spectatorRequested && !ports.isLaunched()) void launch();
+      } else if (message.type === 'spectator-waiting') {
+        applySnapshot(message.room);
+        if (room?.spectatorTimeline && state.spectatorRequested) retrySpectatorAdmission();
       } else if (message.type === 'error' && message.error) {
         if (room?.spectatorTimeline && state.spectatorRequested &&
             message.error === '本局已经开始；已保留旁观席，将在下一局生效') {
@@ -644,11 +665,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     next.addEventListener('error', () => {});
   }
   function resetRoom() {
+    settingsReloadPending = false;
     ownerController.abort();
     ownerController = new AbortController();
     preparation?.controller.abort();
     preparation = null;
     preparedRuntimeGeneration = undefined;
+    ports.releasePreparedResources?.();
     state.preparation = null;
     reportedSocket = null;
     reportedResourceKey = '';
@@ -835,6 +858,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (
       !room?.synced ||
       !state.connected ||
+      (state.seat != null && room.phase !== 'lobby') ||
       state.spectatorRequested ||
       !send({ type: 'spectate', name: state.displayName })
     )
@@ -900,7 +924,6 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (state.seat == null || !state.connected || !room || pendingLoadout) return;
     const ready = !state.ready,
       ownedEpoch = epoch;
-    if (ready && ['cancelled', 'importing'].includes(state.preparation?.status || '')) return;
     if (ready && !(await ensureMovementAllowed())) return;
     if (ready) {
       await prepareResources(true);
@@ -1021,6 +1044,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const max = policy()?.inputTiming?.manualDelayLimit ?? 8;
     if (value !== 'auto' && (!Number.isInteger(value) || value < 0 || value > max)) return;
     state.timingChoice = value;
+    sendTimingSettings();
     publish();
   }
   function setRollbackEnabled(enabled: boolean) {
@@ -1032,7 +1056,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     state.rollbackEnabled = enabled;
+    sendTimingSettings();
     publish();
+  }
+  function sendTimingSettings() {
+    send({type: 'timing-settings', rollbackEnabled: state.rollbackEnabled, timingChoice: state.timingChoice});
   }
   function start() {
     if (!snapshot.canStart) return;
@@ -1250,6 +1278,28 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       void launch();
     });
   }
+  function resourcesChanged() {
+    if (!room || ports.isLaunched() || settingsReloadPending) return;
+    preparation?.controller.abort();
+    preparation = null;
+    ports.releasePreparedResources?.();
+    state.ready = false;
+    send({type: 'resources-changed'});
+    if (state.seat != null) send({type: 'set-ready', ready: false, ...input()});
+    void prepareResources();
+  }
+  /** Replay/file ownership may temporarily use the sole iframe without leaving
+   * membership. This pause is not a download failure or a manual-import intent. */
+  function suspendPreparation(retainPrepared = false) {
+    if (!room || ports.isLaunched()) return false;
+    preparation?.controller.abort(); preparation = null;
+    if (!retainPrepared) ports.releasePreparedResources?.();
+    state.ready = false;
+    send({type: 'resources-changed'});
+    if (state.seat != null) send({type: 'set-ready', ready: false, ...input()});
+    reportProgress({status: 'cancelled', stage: 'runtime', percent: null, error: ''});
+    return true;
+  }
   function cancelImport() {
     // Main app9720–9723: failed import returns this existing preparation to
     // cancelled. It neither opens another dialog nor sends a new ready intent.
@@ -1440,6 +1490,21 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     launch,
     checkGame,
     prepareResources,
+    resourcesChanged,
+    suspendPreparation,
+    suspendForSettingsReload() {
+      if (!room || ports.isLaunched() || settingsReloadPending) return;
+      settingsReloadPending = true;
+      // Fence Ready/Start immediately, but keep the native title visible
+      // until the user explicitly commits the resource reload.
+      suspendPreparation(true);
+    },
+    resumeAfterSettingsReload(reusePrepared = false) {
+      if (!settingsReloadPending) return;
+      settingsReloadPending = false;
+      if (reusePrepared) void prepareResources();
+      else resourcesChanged();
+    },
     cancelPreparation,
     retryPreparation,
     setImporting,

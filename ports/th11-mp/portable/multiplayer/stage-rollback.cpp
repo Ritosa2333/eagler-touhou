@@ -1,8 +1,8 @@
 // Real TH11 Stage/STD/ANM/deformation/semantic Draw component oracle.
 // No retail assets, browser, native world, GPU pixel or performance claim.
-#include "../../th11_web/cpp/game/Stage.hpp"
-#include "../../th11_web/cpp/game/AnmRenderer.hpp"
-#include "../../th11_web/cpp/game/ScreenFade.hpp"
+#include "../../web/cpp/game/Stage.hpp"
+#include "../../web/cpp/game/AnmRenderer.hpp"
+#include "../../web/cpp/game/ScreenFade.hpp"
 #ifdef TH11_MULTIPLAYER
 #include <eagler/netplay/RollbackJournal.hpp>
 #endif

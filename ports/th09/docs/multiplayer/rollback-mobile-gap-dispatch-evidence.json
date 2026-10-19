@@ -2,12 +2,12 @@
   "schema": "th09-mobile-gap-dispatch-summary/v1",
   "analyzer": {
     "before": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\mobile-gap-dispatch-summary.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\tests\\multiplayer\\mobile-gap-dispatch-summary.mjs",
       "bytes": 13289,
       "sha256": "605045b7c797d7fbb032a7c5aefbdbc9505616d1dafe18dc5640a6c33d86938d"
     },
     "after": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\mobile-gap-dispatch-summary.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\tests\\multiplayer\\mobile-gap-dispatch-summary.mjs",
       "bytes": 13289,
       "sha256": "605045b7c797d7fbb032a7c5aefbdbc9505616d1dafe18dc5640a6c33d86938d"
     }
@@ -25,7 +25,7 @@
     },
     "sourceSchema": "th09-mobile-release-summary/v1",
     "sourceAnalyzer": {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\mobile-release-evidence-summary.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\tests\\multiplayer\\mobile-release-evidence-summary.mjs",
       "sha256": "306405cdfcb8d047f50e69dbd0de053966a81d050a6eacd1abee52e0372695ff",
       "helperSha": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f"
     }
@@ -35,9 +35,9 @@
   "runs": [
     {
       "sourceRunIndex": 0,
-      "requestedPath": "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-b1-report.json",
+      "requestedPath": "web/artifacts/multiplayer-tests/mobile-rollback-relay39-b1-report.json",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-b1-report.json",
+        "path": "web/artifacts/multiplayer-tests/mobile-rollback-relay39-b1-report.json",
         "sha256": "ec839cd9d923719415143e086ddf38ff989a04b6ed31a7465cf233f172878c84",
         "bytes": 36546921
       },
@@ -2513,9 +2513,9 @@
     },
     {
       "sourceRunIndex": 1,
-      "requestedPath": "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-c1-report.json",
+      "requestedPath": "web/artifacts/multiplayer-tests/mobile-rollback-relay39-c1-report.json",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/mobile-rollback-relay39-c1-report.json",
         "sha256": "17a76418b666d9e7733b80e0259bc6e7a4e88dbb1066d91947df3373a21884de",
         "bytes": 35735928
       },
@@ -4071,9 +4071,9 @@
     },
     {
       "sourceRunIndex": 2,
-      "requestedPath": "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-c2-report.json",
+      "requestedPath": "web/artifacts/multiplayer-tests/mobile-rollback-relay39-c2-report.json",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-c2-report.json",
+        "path": "web/artifacts/multiplayer-tests/mobile-rollback-relay39-c2-report.json",
         "sha256": "1f2b858cc02e024ffe1257af4745ce89850a6f805d3cab4eb00f5cae8fe2b9d0",
         "bytes": 35843671
       },
@@ -5859,9 +5859,9 @@
     },
     {
       "sourceRunIndex": 3,
-      "requestedPath": "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-b2-report.json",
+      "requestedPath": "web/artifacts/multiplayer-tests/mobile-rollback-relay39-b2-report.json",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-b2-report.json",
+        "path": "web/artifacts/multiplayer-tests/mobile-rollback-relay39-b2-report.json",
         "sha256": "ffb557acc38af18ec1d0421dd6f3afac70cca545aaf86f70837ed6f14eb43d88",
         "bytes": 35819079
       },
@@ -7647,9 +7647,9 @@
     },
     {
       "sourceRunIndex": 4,
-      "requestedPath": "th09_web/artifacts/multiplayer-tests/mobile-rollback-burst120-c1-report.json",
+      "requestedPath": "web/artifacts/multiplayer-tests/mobile-rollback-burst120-c1-report.json",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-burst120-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/mobile-rollback-burst120-c1-report.json",
         "sha256": "6696aee1ceceb1a41a65d6e85c5193f136f54d00270b56afd905914fc1a40501",
         "bytes": 41503634
       },
@@ -9320,9 +9320,9 @@
     },
     {
       "sourceRunIndex": 5,
-      "requestedPath": "th09_web/artifacts/multiplayer-tests/mobile-rollback-direct120-c2-report.json",
+      "requestedPath": "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c2-report.json",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/mobile-rollback-direct120-c2-report.json",
+        "path": "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c2-report.json",
         "sha256": "ed80cbacf95c0a5f513e0fa39fbe196c45c0c127946a984bcc88303eceede5d6",
         "bytes": 22059253
       },
@@ -11004,8 +11004,8 @@
           "elapsedMs": 404.4935,
           "reason": "RELAY_TRACE=1 was inherited from relay controls; harness correctly rejects relay gameplay trace without --relay. RTC uses signaling only.",
           "retained": [
-            "th09_web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-invocation.json",
-            "th09_web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-process.log"
+            "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-invocation.json",
+            "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-process.log"
           ],
           "rerun": {
             "label": "mobile-rollback-direct120-c2",
@@ -11026,7 +11026,7 @@
         "reason": "RELAY_TRACE=1 was inherited from relay controls; harness correctly rejects relay gameplay trace without --relay. RTC uses signaling only.",
         "retained": [
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-invocation.json",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-invocation.json",
             "sha256": "36245008d2d68abf87b3188afb178110c7639278968ad6446ecb77476d870c22",
             "bytes": 5519,
             "record": {
@@ -11036,7 +11036,7 @@
               "status": 1,
               "signal": null,
               "args": [
-                "th09_web/tests/multiplayer/smoothness-browser.mjs",
+                "web/tests/multiplayer/smoothness-browser.mjs",
                 "--release"
               ],
               "runLabel": "mobile-rollback-direct120-c1",
@@ -11045,37 +11045,37 @@
               "scriptSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
               "scriptAfterSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
               "identityBefore": {
-                "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-                "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-                "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-                "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-                "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-                "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-                "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-                "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-                "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-                "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-                "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+                "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+                "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+                "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+                "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+                "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+                "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+                "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+                "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+                "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+                "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+                "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
                 "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
                 "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
               },
               "identityAfter": {
-                "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-                "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-                "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-                "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-                "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-                "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-                "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-                "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-                "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-                "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-                "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+                "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+                "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+                "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+                "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+                "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+                "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+                "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+                "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+                "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+                "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+                "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
                 "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
                 "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
               },
               "identityError": null,
-              "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched",
+              "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-release-matched",
               "reference": null,
               "declaredParameters": {
                 "frames": 900,
@@ -11118,24 +11118,24 @@
                 "buildRole": "matched-candidate-release",
                 "expectedRtcPath": "direct"
               },
-              "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
+              "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
               "logSha256": "30aedecafacd41da7b5431e38d87b7d3f4e8e67e75b8aea62d2f17ff66781ab1",
               "stdoutBytes": 0,
               "stderrBytes": 450
             },
             "log": {
-              "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
+              "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
               "sha256": "30aedecafacd41da7b5431e38d87b7d3f4e8e67e75b8aea62d2f17ff66781ab1",
               "bytes": 450,
               "matchesRecordedSha": true,
-              "firstFailureText": "node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Relay gameplay trace requires --relay; RTC uses signaling only\r\n    at file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/tests/multiplayer/smoothness-browser.mjs:50:8 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: '==',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.13.0\r\n"
+              "firstFailureText": "node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Relay gameplay trace requires --relay; RTC uses signaling only\r\n    at file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/tests/multiplayer/smoothness-browser.mjs:50:8 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: '==',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.13.0\r\n"
             }
           },
           {
-            "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
+            "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
             "sha256": "30aedecafacd41da7b5431e38d87b7d3f4e8e67e75b8aea62d2f17ff66781ab1",
             "bytes": 450,
-            "firstFailureText": "node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Relay gameplay trace requires --relay; RTC uses signaling only\r\n    at file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/tests/multiplayer/smoothness-browser.mjs:50:8 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: '==',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.13.0\r\n"
+            "firstFailureText": "node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Relay gameplay trace requires --relay; RTC uses signaling only\r\n    at file:///D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/tests/multiplayer/smoothness-browser.mjs:50:8 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: '==',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.13.0\r\n"
           }
         ],
         "rerun": {

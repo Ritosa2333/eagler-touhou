@@ -1,6 +1,6 @@
 import { PRODUCT_CONTENT } from "./content-definition.mjs";
 import { projectRelativeWorkspaceDirectory, projectRelativeWorkspacePath } from "./workspace-layout.mjs";
-import { relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import { existsSync } from "node:fs";
 
 const ws = projectRelativeWorkspacePath;
@@ -8,6 +8,7 @@ const wsDir = projectRelativeWorkspaceDirectory;
 const project = resolve(import.meta.dirname, "..");
 const projectRelativePath = path => {
   const value = relative(project, resolve(path)).replaceAll("\\", "/");
+  if (isAbsolute(value)) return resolve(path);
   return value.startsWith(".") ? value : `./${value}`;
 };
 const th08ContentRoot = process.env.EAGLER_TH08_CONTENT_DIR?.trim()
@@ -37,9 +38,9 @@ const th06ContentRoot = process.env.EAGLER_TH06_CONTENT_DIR?.trim()
 const th07ContentRoot = process.env.EAGLER_TH07_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH07_CONTENT_DIR.trim())
   : null;
-function availableMusic(declarations, contentRoot) {
+function availableMusic(declarations) {
   return Object.freeze(Object.fromEntries(Object.entries(declarations).filter(([, entry]) =>
-    contentRoot || entry.files.every(name => existsSync(resolve(project, entry.base, name))))));
+    entry.files.every(name => existsSync(resolve(project, entry.base, name))))));
 }
 
 export const DEVELOPMENT_CONTENT = Object.freeze({
@@ -53,11 +54,11 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
   }),
   games: Object.freeze({
     th06: Object.freeze({
-      runtime: `${ws("th06", "build-web-eagler-thprac-test", "th06.html")}?hosted=1&v=audio-music-modes-1`,
-      multiplayerRuntime: `${ws("th06", "build-web-netplay-th06", "th06.html")}?hosted=1&v=th06-netplay-local-2`,
+      runtime: `${ws("th06", "build", "web", "normal", "th06.html")}?hosted=1&v=audio-music-modes-1`,
+      multiplayerRuntime: `${ws("th06", "build", "web", "multiplayer", "th06.html")}?hosted=1&v=th06-netplay-local-2`,
       data: Object.freeze({
-        source: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.data")) : ws("th06", "build-web-eagler-thprac-test", "th06.data"),
-        runtimeScript: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.js")) : ws("th06", "build-web-eagler-thprac-test", "th06.js"),
+        source: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.data")) : ws("th06", "build", "web", "normal", "th06.data"),
+        runtimeScript: th06ContentRoot ? projectRelativePath(resolve(th06ContentRoot, "th06.js")) : ws("th06", "build", "web", "normal", "th06.js"),
       }),
       music: availableMusic({
         wav: Object.freeze({
@@ -68,14 +69,14 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
           base: th06ContentRoot ? `${projectRelativePath(resolve(th06ContentRoot, "bgm-ogg"))}/` : wsDir("th06", "assets-ogg", "bgm"),
           ...PRODUCT_CONTENT.th06.music.ogg,
         }),
-      }, th06ContentRoot),
+      }),
     }),
     th07: Object.freeze({
-      runtime: `${ws("th07", "build-web-eagler-thprac", "th07.html")}?hosted=1&v=audio-music-modes-1`,
-      multiplayerRuntime: `${ws("th07", "build-web-th07-netplay", "th07.html")}?hosted=1&v=th07-netplay-local-2`,
+      runtime: `${ws("th07", "build", "web", "normal", "th07.html")}?hosted=1&v=audio-music-modes-1`,
+      multiplayerRuntime: `${ws("th07", "build", "web", "multiplayer", "th07.html")}?hosted=1&v=th07-netplay-local-2`,
       data: Object.freeze({
-        source: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.data")) : ws("th07", "build-web-eagler-thprac", "th07.data"),
-        runtimeScript: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.js")) : ws("th07", "build-web-eagler-thprac", "th07.js"),
+        source: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.data")) : ws("th07", "build", "web", "normal", "th07.data"),
+        runtimeScript: th07ContentRoot ? projectRelativePath(resolve(th07ContentRoot, "th07.js")) : ws("th07", "build", "web", "normal", "th07.js"),
       }),
       music: availableMusic({
         wav: Object.freeze({ base: th07ContentRoot ? `${projectRelativePath(th07ContentRoot)}/` : wsDir("th07", "assets"), ...PRODUCT_CONTENT.th07.music.wav }),
@@ -83,7 +84,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
           base: th07ContentRoot ? `${projectRelativePath(resolve(th07ContentRoot, "bgm-ogg"))}/` : wsDir("th07", "assets-ogg", "bgm-ogg"),
           ...PRODUCT_CONTENT.th07.music.ogg,
         }),
-      }, th07ContentRoot),
+      }),
     }),
     th075: Object.freeze({
       ...(process.env.EAGLER_TH075_LANGUAGE_PACKS ? {languagePackDirectory:projectRelativePath(process.env.EAGLER_TH075_LANGUAGE_PACKS)} : {}),
@@ -93,6 +94,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
     }),
     th08: Object.freeze({
       runtime: `${ws("th08", "build-eagler", "th08.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th08mp", "build-eagler-multiplayer", "th08.html")}?hosted=1`,
       data: Object.freeze(th08DataFile ? {
         source: projectRelativePath(th08DataFile),
         layout: PRODUCT_CONTENT.th08.dataLayout,
@@ -103,7 +105,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
           layout: PRODUCT_CONTENT.th08.dataLayout,
         }),
       }),
-      music: Object.freeze(th08ContentRoot ? {
+      music: availableMusic(th08ContentRoot ? {
         ogg: Object.freeze({
           base: `${projectRelativePath(resolve(th08ContentRoot, "bgm-ogg"))}/`,
           ...PRODUCT_CONTENT.th08.music.ogg,
@@ -111,15 +113,15 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       } : {}),
     }),
     th09: Object.freeze({
-      runtime: `${ws("th09", "th09_web", "build-eagler", "th09.html")}?hosted=1`,
-      multiplayerRuntime: `${ws("th09", "th09_web", "build-eagler-multiplayer", "th09.html")}?hosted=1`,
+      runtime: `${ws("th09", "web", "build-eagler", "th09.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th09", "web", "build-eagler-multiplayer", "th09.html")}?hosted=1`,
       data: Object.freeze({
         source: th09ContentRoot
           ? projectRelativePath(resolve(th09ContentRoot, "th09.data"))
           : ws("th09", "[th09] 东方花映塚 (日文版)", "th09.dat"),
         layout: PRODUCT_CONTENT.th09.dataLayout,
       }),
-      music: Object.freeze(th09ContentRoot ? {
+      music: availableMusic(th09ContentRoot ? {
         ogg: Object.freeze({
           base: `${projectRelativePath(resolve(th09ContentRoot, "music"))}/`,
           ...PRODUCT_CONTENT.th09.music.ogg,
@@ -128,6 +130,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
     }),
     th10: Object.freeze({
       runtime: `${ws("th10", "build-eagler", "th10.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th10mp", "build-eagler-multiplayer", "th10.html")}?hosted=1`,
       data: Object.freeze(th10ContentRoot ? {
         source: projectRelativePath(resolve(th10ContentRoot, "th10.data")),
         layout: PRODUCT_CONTENT.th10.dataLayout,
@@ -138,7 +141,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
           layout: PRODUCT_CONTENT.th10.dataLayout,
         }),
       }),
-      music: Object.freeze(th10ContentRoot ? {
+      music: availableMusic(th10ContentRoot ? {
         ogg: Object.freeze({
           base: `${projectRelativePath(resolve(th10ContentRoot, "bgm-ogg"))}/`,
           ...PRODUCT_CONTENT.th10.music.ogg,
@@ -160,7 +163,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       }),
       // TH11's BGM is the prepared /music OGG set; without a content root the
       // Launcher has no host-owned music and relies on an imported Package.
-      music: Object.freeze(th11ContentRoot ? {
+      music: availableMusic(th11ContentRoot ? {
         ogg: Object.freeze({
           base: `${projectRelativePath(resolve(th11ContentRoot, "music"))}/`,
           ...PRODUCT_CONTENT.th11.music.ogg,
@@ -182,7 +185,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       }),
       // TH15's BGM is the prepared /music OGG set; without a content root the
       // Launcher has no host-owned music and relies on an imported Package.
-      music: Object.freeze(th15ContentRoot ? {
+      music: availableMusic(th15ContentRoot ? {
         ogg: Object.freeze({
           base: `${projectRelativePath(resolve(th15ContentRoot, "music"))}/`,
           ...PRODUCT_CONTENT.th15.music.ogg,
@@ -203,7 +206,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       }),
       // TH20's BGM is the prepared /bgm-ogg set; without a content root the
       // Launcher has no host-owned music and relies on an imported Package.
-      music: Object.freeze(th20ContentRoot ? {
+      music: availableMusic(th20ContentRoot ? {
         ogg: Object.freeze({
           base: `${projectRelativePath(resolve(th20ContentRoot, "bgm-ogg"))}/`,
           ...PRODUCT_CONTENT.th20.music.ogg,

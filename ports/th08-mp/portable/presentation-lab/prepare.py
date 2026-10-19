@@ -14,8 +14,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--zip', type=Path, required=True, help='Existing, legally owned test ZIP')
     args = parser.parse_args()
-    members = {'th08_web/dist/data/th08.dat': 'th08.dat'}
-    members.update({f'th08_web/reference/demorpy{i}.rpy': f'demo{i}.rpy' for i in range(4)})
+    members = {'web/dist/data/th08.dat': 'th08.dat'}
+    members.update({f'web/reference/demorpy{i}.rpy': f'demo{i}.rpy' for i in range(4)})
     OUT.mkdir(parents=True, exist_ok=True)
     manifest = {}
     with zipfile.ZipFile(args.zip) as archive:

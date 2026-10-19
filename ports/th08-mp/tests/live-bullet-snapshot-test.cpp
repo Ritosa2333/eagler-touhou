@@ -1,6 +1,6 @@
 // Adapted from TH07's live-bullet-snapshot-test: compare ALL bytes, including
 // dormant VMs, pointer representations, matrices and padding, after rewind.
-#include "../th08_web/cpp/multiplayer/LiveBulletSnapshot.hpp"
+#include "../web/cpp/multiplayer/LiveBulletSnapshot.hpp"
 #include <cassert>
 #include <cstdio>
 #include <memory>

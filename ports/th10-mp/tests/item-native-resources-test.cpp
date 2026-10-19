@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/game/Item.hpp"
+#include "../web/cpp/game/Item.hpp"
 #include <cassert>
 #include <cstdio>
 

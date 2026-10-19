@@ -1,41 +1,72 @@
-# Runtime Storage verification
+# Runtime 存档验证
 
-Storage ownership is defined by [`ARCHITECTURE.md`](ARCHITECTURE.md). Game
-parameters reuse the `storage` declaration in the authoritative Product
-Catalog; do not maintain another game registry in tests or documentation.
+本文给 Runtime 适配者一条最短的存档验证路径。存档路径由 Product Catalog 声明，Host 负责 IndexedDB 挂载与同步，Runtime 通过统一命令读写。
 
-## Source/protocol gate
+## 代码归属
 
-`npm run test:storage` (also run by `npm run check`) executes every formal
-`emscripten-preload` Runtime shell in isolated VMs with mocked DOM and FS
-surfaces (currently TH06 and TH07). It covers the restore barrier, failure,
-late success after timeout, read/write/remove operations, synchronization error
-propagation, and unsafe paths. Directory/retail-memory Runtimes use their own
-source/runtime gates and are covered by the browser conformance lane below.
-This is module evidence and does not prove browser IndexedDB behavior.
+| 内容 | 代码 |
+| --- | --- |
+| 游戏存档名、根目录、配置文件 | [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs) 中的 `storage` |
+| Runtime 命令和消息字段 | [`src/contracts/runtime-protocol.mts`](../src/contracts/runtime-protocol.mts) |
+| 不可变游戏 DATA 装载 | [`lib/runtime-data-provider.mjs`](../lib/runtime-data-provider.mjs) |
+| Node 合约测试 | [`tests/test-runtime-storage-contract.mjs`](../tests/test-runtime-storage-contract.mjs) |
+| 浏览器一致性测试 | [`tests/test-runtime-storage-conformance.py`](../tests/test-runtime-storage-conformance.py) |
 
-## Browser conformance
+Runtime 使用 `list`、`read { path }`、`write { path, bytes }`、`remove { path }`、`sync`。路径必须位于本游戏声明的存档根目录；`ready` 事件可带 `saveRoot`。
 
-Start the current workspace server on port 8130 with `npm start`, then explicitly provide owned fixtures at `<fixture-root>/<game>/score.dat`:
+## 准备
+
+在 `launcher/` 安装依赖，构建当前 Launcher，并为每个要测游戏准备存档文件：
+
+```sh
+npm run build:launcher
+```
+
+```text
+<fixture-root>/<game>/<scoreFile>
+```
+
+`scoreFile` 从 Product Catalog 读取。另开终端运行 `npm start`，服务默认端口为 `8130`，可用 `EAGLER_TOUHOU_PORT` 覆盖；也可以用 `--url` 指定已有服务地址。
+
+## 运行
+
+以下命令都从 `launcher/` 目录执行。
+
+先跑本地命令合约：
+
+```sh
+npm run test:storage
+```
+
+再跑 Chromium 与 WebKit 的浏览器矩阵：
+
+```sh
+npm run test:storage:browser -- --fixture-root /path/to/fixtures
+```
+
+Windows PowerShell 示例：
 
 ```powershell
 npm run test:storage:browser -- --fixture-root D:\fixtures\saves --package th08=D:\fixtures\th08-content.zip
 ```
 
-`--package GAME=PATH` is repeatable and imports an explicit content package through the existing UI. The runner never selects resources automatically from `artifacts/`. Without this option, the site must already provide game DATA. Tests use isolated browser contexts and never access the user's everyday browser saves.
+`--package GAME=PATH` 可重复使用，通过 Launcher 导入指定内容包。默认测试 Product Catalog 中的全部游戏、Chromium/WebKit，以及 `score-only`、`commands` 两种用例。
 
-The default matrix is **every currently registered Product Catalog game**
-(currently TH06/TH07/TH08/TH10) × Chromium/WebKit ×
-`score-only`/`commands`. The runner derives that game set from the Product
-Catalog instead of carrying a second hard-coded registry. The latter case adds
-an independent flat probe covering list/read/write/remove/sync behavior, path
-rejection, and persistent deletion. Both cases cover orderly shutdown,
-full-page reload, destruction of temporary Runtime exports, restoration, and
-exact byte comparison. They do not require a cold start to create a score or
-configuration file automatically.
+| 参数 | 用途 |
+| --- | --- |
+| `--games th06 th07` | 只测指定游戏 |
+| `--browsers chromium webkit` | 选择浏览器 |
+| `--cases score-only commands` | 选择基础用例 |
+| `--cases nested-write` | 另测 `probe/nested.dat` 子目录写入 |
+| `--cases restore-failure` | 注入首次 `syncfs(populate)` 失败，检查 Runtime 报错且不进入 `ready` / `first-frame` |
+| `--url http://127.0.0.1:8130/` | 指定正在运行的 workspace |
 
-`--cases nested-write` is an independent extended case that creates `probe/nested.dat`; its report does not replace `score-only`. `--cases restore-failure` uses a Playwright new-document initialization script to install a `Module` setter in the expected Runtime document and make the first `FS.syncfs(populate)` call fail, without changing product source. The Runtime must emit an error and must not reach ready/first-frame. Neither extended case runs by default. Existing game-specific scripts remain only as historical investigation entrypoints; future generic storage verification uses this runner.
+## 检查结果
 
-Output defaults to `artifacts/validation/runtime-storage/<timestamp>/` and includes per-case JSON, exported files, and failure screenshots. A failed case exits nonzero. Console stderr is retained separately; only `pageerror` or Runtime error/fatal events constitute runtime-failure evidence. Rerun after browser or build updates. Playwright WebKit is not evidence from a real iOS device.
+基础用例检查正常退出、整页重载、临时 Runtime 导出销毁、存档恢复及字节一致。`commands` 还检查列出、读取、写入、删除、同步及越界路径拒绝。浏览器用例在独立上下文挂载存档，并验证同步、重载与恢复。
 
-Each release candidate must rerun its required matrix and retain the report in that candidate's external acceptance evidence. Repository documentation does not retain dated PASS claims from a particular machine, and it never presents Playwright WebKit as proof from real Safari hardware.
+报告默认写入 `artifacts/validation/runtime-storage/<timestamp>/`，失败时命令以非零状态退出，并保存逐例 JSON、导出文件和截图。
+
+## 下一步
+
+添加新 Runtime 时，在它的存档适配中实现上述命令，再跑两组检查。完整的持久化边界见 [`docs/adaptation/storage.md`](../../docs/adaptation/storage.md)；Runtime 消息入口见 [`GAME_ADAPTER_CONTRACT.md`](GAME_ADAPTER_CONTRACT.md)。

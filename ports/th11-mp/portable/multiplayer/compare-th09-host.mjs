@@ -16,7 +16,7 @@ registerHooks({resolve(name,context,next){
 const out=resolve(root,'artifacts/rollback-smoothness',process.env.RUN_LABEL||'th09-control');
 mkdirSync(out,{recursive:true});if(existsSync(resolve(out,'control.json')))throw Error('Preserve earlier control');
 const identity=path=>({path,sha256:createHash('sha256').update(readFileSync(path)).digest('hex')});
-const modules=new Map(['spectator-timeline.mjs','spectator-tape.mjs'].map(n=>['/app/'+n,resolve(th09,'th09_web/sdl-runtime',n)]));
+const modules=new Map(['spectator-timeline.mjs','spectator-tape.mjs'].map(n=>['/app/'+n,resolve(th09,'web/sdl-runtime',n)]));
 const evidence={scope:'TH09 fixture, same machine/Edge/CPU requested rates and one-way delay; different game, input pattern and observer. Not a performance A/B for TH11.',
  startedAt:new Date().toISOString(),finishedAt:null,wrapper:identity(fileURLToPath(import.meta.url)),
  supplements:[...modules.values()].map(identity),parameters:Object.fromEntries(Object.entries(process.env).filter(([k])=>/^(CPU_|FRAMES|DELAY_MS|JITTER_MS|TOUCH_|HEADED_CONTROL|IMPAIRMENT_SITE|PC_BUILD|RUN_LABEL|TH09_FIXTURE_ROOT)/.test(k)))};
@@ -30,6 +30,6 @@ http.createServer=function(options,listener){
  };
  return typeof options==='function'?original.call(this,serve):original.call(this,options,serve);
 };
-try{process.argv.push('--release','--relay');await import(pathToFileURL(resolve(th09,'th09_web/tests/multiplayer/smoothness-browser.mjs')));evidence.completed=true;}
+try{process.argv.push('--release','--relay');await import(pathToFileURL(resolve(th09,'web/tests/multiplayer/smoothness-browser.mjs')));evidence.completed=true;}
 catch(e){evidence.error=e.stack||String(e);throw e;}
 finally{http.createServer=original;evidence.finishedAt=new Date().toISOString();save();}

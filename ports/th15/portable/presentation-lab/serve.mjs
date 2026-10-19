@@ -3,7 +3,7 @@ import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {requiredExports} from './adapter.mjs';
 import {createPresentationLabServer,sha256} from '../../../../common/testkit/presentation-lab/server-core.mjs';
-const lab=import.meta.dirname,root=resolve(lab,'../..'),buildRoot=resolve(root,'th15_web/artifacts/presentation-lab'),common=resolve(root,'../../common/testkit/presentation-lab');
+const lab=import.meta.dirname,root=resolve(lab,'../..'),buildRoot=resolve(root,'web/artifacts/presentation-lab'),common=resolve(root,'../../common/testkit/presentation-lab');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'))),wasm=readFileSync(resolve(buildRoot,'th15-application.wasm'));
 if(sha256(wasm)!==build.sha256)throw Error('Stale Lab Wasm');
 const exports=new Set(WebAssembly.Module.exports(new WebAssembly.Module(wasm)).map(x=>x.name));
@@ -13,7 +13,7 @@ const files=new Map([['/','workbench.html'],['/index.html','workbench.html'],['/
 for(const name of ['controller-core.mjs','contracts.mjs','analyzer.mjs','report-core.mjs'])files.set('/common/testkit/presentation-lab/'+name,resolve(common,name));
 files.set('/lab-config.mjs',resolve(lab,'browser-config.mjs'));files.set('/adapter.mjs',resolve(lab,'adapter.mjs'));
 for(const name of ['runtime.html','runtime.mjs'])files.set('/runtime/'+name,resolve(lab,name));
-files.set('/runtime/keyboard.mjs',resolve(root,'th15_web/sdl-runtime/keyboard.mjs'));
+files.set('/runtime/keyboard.mjs',resolve(root,'web/sdl-runtime/keyboard.mjs'));
 for(const name of ['th15-application.mjs','th15-application.wasm'])files.set('/runtime/'+name,resolve(buildRoot,name));
 const fonts=process.env.TH15_LAB_FONTS||resolve(root,'build-eagler/fonts');
 for(const name of [...Array.from({length:8},(_,n)=>'font'+n+'.bin'),'cp932.bin','blend4444.bin']){const file=resolve(fonts,name);if(!existsSync(file))throw Error('Set TH15_LAB_FONTS to the packaged measured font tables');files.set('/fonts/'+name,file);}

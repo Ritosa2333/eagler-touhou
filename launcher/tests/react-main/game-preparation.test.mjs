@@ -30,7 +30,7 @@ before(async () => {
   const outfile = resolve(work, 'actual-owners.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export {createPackageAcquisition} from './app/services/package-acquisition.ts';
-    export {prepareGame, prepareGameCheck, prepareFilePlan} from './app/services/game-preparation.ts';
+    export {prepareGame, prepareGameCheck, prepareFilePlan, prepareRoomResourcePlan} from './app/services/game-preparation.ts';
     export {packageResourceIds, ensureOggStartup} from './app/services/game-resources.ts';
     export {validatePackageDescriptor} from './package/package-descriptor.mjs';
     export {createRuntimeService} from './app/services/runtime.ts';
@@ -143,10 +143,11 @@ function gameInput(fixture, state = settingsFixture(), extra = {}) {
     touchLayout: null, prepareMidi: async () => {}, ...extra};
 }
 
-test('room program version policy reaches code preparation before native ready and configure', async () => {
+for (const kind of ['room', 'room-preload']) test(`${kind} program version policy reaches code preparation before native ready and configure`, async () => {
   const calls=[],f=acquisitionFixture(),state=settingsFixture({productId:'th06mp'});
   const r=runtimeFixture([],{prepareCode:async(entry,options)=>{calls.push(options);return {url:new URL(entry,baseUrl).href,generation:hash,cached:true};}});
-  const prepared=await api.prepareGame(gameInput(f,state,{productId:'th06mp',runtime:r.service,multiplayer:{kind:'room',options:{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?runtimeGeneration='+hash,netplayPlayer:0,netplayPlayerCount:2,netplaySeed:1,netplayDifficulty:0}}}));
+  const multiplayer = kind === 'room-preload' ? {kind, runtimeGeneration:hash} : {kind,options:{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?runtimeGeneration='+hash,netplayPlayer:0,netplayPlayerCount:2,netplaySeed:1,netplayDifficulty:0}};
+  const prepared=await api.prepareGame(gameInput(f,state,{productId:'th06mp',runtime:r.service,multiplayer}));
   assert.equal(calls.length,1);assert.equal(calls[0].requireCurrent,true);assert.equal(calls[0].expectedGeneration,hash);
   assert.deepEqual(prepared.plan.multiplayerProgram,{generation:hash});
 });
@@ -259,6 +260,46 @@ test('offline-first: cached acquisition never waits for an update decision or do
   assert.equal(result.generation,f.current);assert.equal(result.deferredUpdate.generation,f.current);
   const controller=new AbortController();controller.abort();
   await assert.rejects(f.acquisition.acquire({...request,signal:controller.signal}),{name:'AbortError'});
+});
+
+for (const decision of ['confirm', 'cancel']) test(`room entry: ${decision} update decision finishes before native preparation and never defers a match update`, async () => {
+  const events = []; const newer = generation({revision: 'newer', id: 'newer'});
+  const f = acquisitionFixture({catalogValue: catalog('newer'), dependencies: {installPublished: async (_game, options) => {
+    events.push('install'); assert.equal(options.expectedGenerationId, f.current.id);
+    f.setCurrent(newer); return {generation: newer};
+  }}});
+  const result = await f.acquisition.acquire({productId: 'th06mp', music: 'none', language: 'ja', updateBeforePrepare: true,
+    decideUpdate: async () => {events.push('decision'); return decision;}});
+  assert.deepEqual(events, decision === 'confirm' ? ['decision', 'install'] : ['decision']);
+  assert.equal(result.generation.descriptor.revision, decision === 'confirm' ? 'newer' : 'package-r1');
+  assert.equal(result.deferredUpdate, null);
+});
+
+for (const productId of ['th06', 'th06mp']) test(`${productId}: beauty selection requires a committed local installation`, () => {
+  const {model} = settingsFixture({productId});
+  model.refreshContext({...model.getSnapshot().context, beautyInstalled: false});
+  model.setGameVersion('beauty'); assert.equal(model.getSnapshot().gameVersion, 'original');
+  model.refreshContext({...model.getSnapshot().context, beautyInstalled: true});
+  model.setGameVersion('beauty'); assert.equal(model.getSnapshot().gameVersion, 'beauty');
+  model.setGameVersion('original'); assert.equal(model.getSnapshot().gameVersion, 'original');
+});
+
+test('in-game room resource warming does not navigate or configure the running native title', async () => {
+  const f = acquisitionFixture(), state = settingsFixture({productId: 'th06mp'});
+  let midi = 0;
+  const result = await api.prepareRoomResourcePlan(gameInput(f, state, {productId: 'th06mp', multiplayer: {kind: 'room-preload'}, prepareMidi: async () => {midi++;}}));
+  assert.equal(result.plan.runtimeVariant, 'multiplayer'); assert.equal(result.plan.generation, f.current);
+  assert.equal(result.plan.configure.options.netplayMode, undefined);
+  assert.equal(midi, 0, 'no-music resource warming does not require live MIDI ownership');
+  await assert.rejects(api.prepareRoomResourcePlan(gameInput(f, state)), /room-entry intent/);
+});
+
+test('room entry: cancellation during update decision cannot install or replace the current package', async () => {
+  const controller = new AbortController(), initial = generation();
+  const f = acquisitionFixture({current: initial, catalogValue: catalog('newer'), dependencies: {installPublished: async () => assert.fail('cancelled update must not install')}});
+  await assert.rejects(f.acquisition.acquire({productId: 'th06mp', music: 'none', language: 'ja', updateBeforePrepare: true, signal: controller.signal,
+    decideUpdate: async () => {controller.abort(); return 'confirm';}}), {name: 'AbortError'});
+  assert.equal(f.current, initial);
 });
 
 test('offline-first: failed background download keeps current and never announces an update', async () => {
@@ -396,6 +437,30 @@ test('complete-set OGG startup waits for every declared file and preserves DATA'
   assert.equal(result.music, 'ogg-stream');
   assert.deepEqual(result.generation.files['game-data'], current.files['game-data']);
   for (const id of requests[0]) assert.ok(result.generation.files[id]?.objectId);
+});
+
+test('room native preload mounts the complete OGG set before reporting prepared', async () => {
+  const initial=generation(),gate=deferred(),installs=[],order=[];
+  const state=settingsFixture({productId:'th06mp',music:'ogg-stream'});
+  let f;
+  f=acquisitionFixture({current:initial,catalogValue:catalog(),dependencies:{installPublished:async(_game,options)=>{
+    installs.push([...options.addFileIds]);await gate.promise;
+    const next=added(f.current,options.addFileIds);f.setCurrent(next);return {generation:next,installation:null};
+  }}});
+  const r=runtimeFixture(order);let prepared=false;
+  const pending=api.prepareGame(gameInput(f,state,{productId:'th06mp',runtime:r.service,multiplayer:{kind:'room-preload'}})).then(value=>{prepared=true;return value;});
+  for(let n=0;n<100&&!installs.length;n++)await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(installs,[['track-1','track-2','track-3','track-4']]);
+  assert.equal(prepared,false,'cannot advertise ready while the music barrier is unresolved');
+  gate.resolve();const result=await pending;
+  assert.equal(r.service.getSnapshot().phase,'prepared');assert.equal(r.service.getSnapshot().launched,false);
+  assert.deepEqual(result.plan.localOgg.fileIds,['track-1','track-2','track-3','track-4']);
+  assert.equal(r.writes.filter(path=>path.endsWith('.ogg')).length,4);
+  const writes=r.writes.length,downloads=installs.length;
+  await r.service.configurePreparedRoom(result.runtimeSnapshot.epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=1'});
+  await r.service.launch();await result.startBackground();
+  assert.equal(r.writes.length,writes,'Start cannot repeat music/FS loading');
+  assert.equal(installs.length,downloads,'Start cannot download missing music in the background');
 });
 test('main 5768 and music availability original: exactly two OGG tracks gate startup, DATA stays pinned, remaining tracks start after launch', async () => {
   const initial = generation(), order = [], installs = [], progress = [], third = deferred(), state = settingsFixture({music: 'ogg-full'});

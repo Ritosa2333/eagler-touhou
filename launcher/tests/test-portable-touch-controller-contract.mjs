@@ -11,16 +11,16 @@ const [th08, th10, th08Motion, th10Motion, th08Host, th10Host, th08GameHost, th1
   readFile(th10Path, "utf8").then(text => text.replaceAll("\r\n", "\n")),
   readFile(workspacePath("th08", "portable", "input", "MotionTrack.hpp"), "utf8").then(text => text.replaceAll("\r\n", "\n")),
   readFile(workspacePath("th10", "portable", "input", "MotionTrack.hpp"), "utf8").then(text => text.replaceAll("\r\n", "\n")),
-  readFile(workspacePath("th08", "th08_web", "sdl-runtime", "eagler-host.mjs"), "utf8"),
-  readFile(workspacePath("th10", "th10_web", "sdl-runtime", "eagler-host.mjs"), "utf8"),
-  readFile(workspacePath("th08", "th08_web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
-  readFile(workspacePath("th10", "th10_web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
-  readFile(workspacePath("th08", "th08_web", "cpp", "platform", "BrowserRuntime.cpp"), "utf8"),
-  readFile(workspacePath("th08", "th08_web", "cpp", "game", "ResultView.cpp"), "utf8"),
-  readFile(workspacePath("th08", "th08_web", "cpp", "game", "ReplayExport.cpp"), "utf8"),
-  readFile(workspacePath("th10", "th10_web", "cpp", "platform", "WorldPlayer.cpp"), "utf8"),
-  readFile(workspacePath("th10", "th10_web", "cpp", "game", "Results.cpp"), "utf8"),
-  readFile(workspacePath("th10", "th10_web", "cpp", "game", "ReplaySave.cpp"), "utf8"),
+  readFile(workspacePath("th08", "web", "sdl-runtime", "eagler-host.mjs"), "utf8"),
+  readFile(workspacePath("th10", "web", "sdl-runtime", "eagler-host.mjs"), "utf8"),
+  readFile(workspacePath("th08", "web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
+  readFile(workspacePath("th10", "web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
+  readFile(workspacePath("th08", "web", "cpp", "platform", "BrowserRuntime.cpp"), "utf8"),
+  readFile(workspacePath("th08", "web", "cpp", "game", "ResultView.cpp"), "utf8"),
+  readFile(workspacePath("th08", "web", "cpp", "game", "ReplayExport.cpp"), "utf8"),
+  readFile(workspacePath("th10", "web", "cpp", "platform", "WorldPlayer.cpp"), "utf8"),
+  readFile(workspacePath("th10", "web", "cpp", "game", "Results.cpp"), "utf8"),
+  readFile(workspacePath("th10", "web", "cpp", "game", "ReplaySave.cpp"), "utf8"),
 ]);
 
 assert.deepEqual(th08, th10, "TH08/TH10 portable TouchController implementations must remain byte-identical");
@@ -32,7 +32,7 @@ assert.ok(source.includes("const bool bomb=bomb_ticks>0;if(bomb_ticks>0)--bomb_t
 // Exercise the real controller for deathbomb, context transitions and menu
 // gestures instead of requiring an obsolete unguarded Bomb assignment.
 console.log(await runNativeCpp(await readFile(workspacePath("th08", "portable/eagler-touch-check.cpp"), "utf8"),
-  {includes:[workspacePath("th08", "portable"),workspacePath("th08", "third_party/eagler-common/include")]}));
+  {includes:[workspacePath("th08", "portable"),workspacePath("common", "include")]}));
 
 assert.equal(th08Motion, th10Motion, "TH08/TH10 MotionTrack implementations must remain byte-identical");
 assert.ok(th08Motion.includes("cheat_movement_used=false"), "unlimited-touch cheat use needs a run-level marker");

@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/game/AnmRenderer.hpp"
+#include "../web/cpp/game/AnmRenderer.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdio>

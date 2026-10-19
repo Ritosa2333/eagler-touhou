@@ -1,5 +1,5 @@
 #include <eagler/thprac/PracticeInput.hpp>
-#include "../th08_web/cpp/game/Types.hpp"
+#include "../web/cpp/game/Types.hpp"
 #include <cassert>
 using namespace th08;
 int main(){

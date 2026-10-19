@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/game/PracticeRsqrtTables.hpp"
+#include "../web/cpp/game/PracticeRsqrtTables.hpp"
 #include <cassert>
 #include <cstring>
 using th08::PracticeRsqrtTables;

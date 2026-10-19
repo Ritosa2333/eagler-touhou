@@ -2,7 +2,7 @@
   "schema": "th09-both4-render-work-evidence/v1",
   "scope": "Desktop only, artificial native-ABI joystick, no physical phone or Launcher multiplayer qualification. Uncalibrated added diagnostic numeric copies. No production code change between these runs.",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-failure.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c1-failure.json",
     "bytes": 71766293,
     "sha256": "9c7ffe42fab18919260f6a9811d1c143e1992138957a46b667c08b7dfdc64812"
   },
@@ -122,7 +122,7 @@
     }
   },
   "driverPassed": false,
-  "driverError": "AssertionError [ERR_ASSERTION]: RTC selected candidate evidence unavailable\n    at file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/tests/multiplayer/smoothness-browser.mjs:653:10",
+  "driverError": "AssertionError [ERR_ASSERTION]: RTC selected candidate evidence unavailable\n    at file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/smoothness-browser.mjs:653:10",
   "headedControl": {
     "launches": [
       {

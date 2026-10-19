@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/ItemOwnership.hpp"
+#include "../web/cpp/multiplayer/ItemOwnership.hpp"
 #include <cassert>
 #include <cstdio>
 using namespace th10;

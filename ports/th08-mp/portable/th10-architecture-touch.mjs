@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {writeFileSync,mkdirSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const out='th10_web/artifacts/architecture-candidate/validation';mkdirSync(out,{recursive:true});
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const out='web/artifacts/architecture-candidate/validation';mkdirSync(out,{recursive:true});
 const browser=await launchBrowser(),context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.stack));
 try{
  await page.goto('http://127.0.0.1:8093/?lang=chs&debug=1');await page.locator('.game[data-game="th10"]').tap();await page.locator('#launch').tap();await page.waitForFunction(()=>document.querySelector('#gameFrame')?.contentWindow?.__th10Runtime?.app,null,{timeout:120000});

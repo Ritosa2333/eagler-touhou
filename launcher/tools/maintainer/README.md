@@ -1,47 +1,16 @@
-# Maintainer-only tools and operational probes
+# 维护工具
 
-This directory contains public, stateless maintainer tool source and
-redacted templates. It must never contain credentials, private game resources,
-real server configuration, generated delivery archives, logs, or acceptance
-evidence.
+这里是发布产物工具和实际站点探测器。以下命令从 `launcher/` 运行，输入地址与输出目录由维护者指定。
 
-This directory contains both maintainer-only release/bundle adapters and live
-infrastructure probes. They intentionally live outside the portable
-product/build CLI in `scripts/`, are not ordinary self-host APIs, and are not
-formal Release entrypoints.
+| 工具 | 用途与说明 |
+| --- | --- |
+| `build-github-release-assets.ps1` | 从同一正式 Release 生成 Self-host、Runtime 下载包；见[公开附件](PUBLIC_RELEASE_ASSETS.md) |
+| `build-operator-delivery.mjs` | 生成部署交接包；见[交接模板](operator-delivery/README.md) |
+| `recover-external-site.mjs` | 从既有 Hosted generation 恢复 External 站点；见[恢复流程](EXTERNAL_RECOVERY_LANE.md) |
+| `verify-public-first-install.mjs` | 用新浏览器环境检查安装提交、Runtime 就绪和首帧 |
+| `verify-public-relay-fallback.mjs` | 检查指定 Relay 的回退连接 |
+| `verify-public-targeted-relay.mjs` | 检查指定 Relay 的定向转发 |
+| `verify-public-turn-quality.py` | 测量指定 TURN 的连接质量 |
+| `verify-thcrap-real.mjs` | 检查本地 thcrap 工具链 |
 
-- `verify-public-relay-fallback.mjs` checks public WebSocket relay fallback.
-- `verify-public-targeted-relay.mjs` checks targeted public relay routing.
-- `verify-public-turn-quality.py` measures a caller-supplied public TURN target.
-- `verify-public-first-install.mjs` starts a fresh Chromium profile against an
-  explicitly supplied staging URL and requires Package generation commit,
-  Runtime readiness, and a real first frame. Its timeout is a deadman; reported
-  elapsed time is diagnostic, not a performance threshold.
-- `verify-thcrap-real.mjs` checks the current workspace's real thcrap toolchain.
-- `build-github-release-assets.ps1` is the sole public project-asset producer.
-  It accepts a verified formal Release candidate and derives both the
-  recommended Self-host ZIP and advanced Runtime ZIP from its Runtime identity.
-- `recover-external-site.mjs` derives a validation/recovery External
-  deployment from an existing Hosted Package generation while allowing only
-  deployment-owned Relay/origin-migration overrides. See
-  `EXTERNAL_RECOVERY_LANE.md`.
-
-These tools intentionally have no npm aliases. Maintainers invoke the required
-file directly with explicit inputs. Live probes must record target, time, and
-release identity outside the source tree when the result is release evidence.
-A passing probe proves only the target and conditions actually exercised; it is
-not a repository-core, browser-device, or public-release acceptance result.
-
-`operator-delivery/` likewise contains only the public template and capability
-profile used to build an operator bundle. The generated bundle may contain a
-Hosted site's legally owned game resources and must be written outside the
-repository, transferred privately, and never committed.
-
-`recover-external-site.mjs` is a maintainer recovery/validation lane,
-not an ordinary self-host API or formal Release entrypoint. It exists so a
-staging or recovery External deployment can reuse an already-published Hosted
-Package generation without rebuilding a different MIDI/language capability set
-merely to change environment-specific Relay or migration metadata. It keeps
-DATA, music, language, feature, Package pointer, and Package Descriptor identity
-tied to the chosen Hosted generation and emits only `web-validation-*`
-authority.
+先准备[正式 Release](../../docs/RELEASE.md)，再使用对应工具。生成目录、测试记录、私有资源与服务配置存放在源码目录之外。每次探测记录实际地址、时间、构建身份和操作结果。

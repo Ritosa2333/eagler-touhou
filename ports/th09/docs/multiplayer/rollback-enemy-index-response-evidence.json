@@ -2,12 +2,12 @@
   "schema": "th09-enemy-index-response-evidence-v1",
   "generatedAtUtc": "2026-10-11T02:38:45.779Z",
   "source": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-enemy-index-burst-response-01-report.json",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-enemy-index-burst-response-01-report.json",
     "bytes": 25645547,
     "sha256": "76e8d8e6573e28950aa41da0356f88fc25ee628dac6c971fe9f1d47dc70b9f1e"
   },
   "analyzer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\analyze-enemy-index-response.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-enemy-index-response.mjs",
     "bytes": 19122,
     "sha256": "5a07b30936471e3272141d404a5ae777c0b553e814f2a9930688a6dd92e10fb9"
   },
@@ -17,12 +17,12 @@
     "sha256": "ac3b6ae5212f79490be10bc320740270f80939edf83c32c8c02c6425da554b7b"
   },
   "helper": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\smoothness-window.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\smoothness-window.mjs",
     "bytes": 9583,
     "sha256": "9c46c45b275b5b57912a62c58dbc309dfe3eec2bff6b788a2370ce6c214c0546"
   },
   "responseProbe": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\responsiveness-probe.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\responsiveness-probe.mjs",
     "bytes": 11857,
     "sha256": "b0abac8dd20e117c0579f65a0fb9a49eb8a0178ae15b9fd88605a8ae15969cc8"
   },
@@ -348,7 +348,7 @@
       "passed": true
     },
     {
-      "id": "unchanged-th09_web\\artifacts\\multiplayer-tests\\rollback4x-enemy-index-burst-response-01-report.json",
+      "id": "unchanged-web\\artifacts\\multiplayer-tests\\rollback4x-enemy-index-burst-response-01-report.json",
       "passed": true
     },
     {
@@ -356,15 +356,15 @@
       "passed": true
     },
     {
-      "id": "unchanged-th09_web\\tests\\multiplayer\\smoothness-window.mjs",
+      "id": "unchanged-web\\tests\\multiplayer\\smoothness-window.mjs",
       "passed": true
     },
     {
-      "id": "unchanged-th09_web\\tests\\multiplayer\\analyze-enemy-index-response.mjs",
+      "id": "unchanged-web\\tests\\multiplayer\\analyze-enemy-index-response.mjs",
       "passed": true
     },
     {
-      "id": "unchanged-th09_web\\tests\\multiplayer\\responsiveness-probe.mjs",
+      "id": "unchanged-web\\tests\\multiplayer\\responsiveness-probe.mjs",
       "passed": true
     }
   ],

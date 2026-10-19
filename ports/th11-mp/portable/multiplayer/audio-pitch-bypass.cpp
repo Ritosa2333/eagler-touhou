@@ -10,8 +10,8 @@
 #include "../sdl/third_party/stb_vorbis.h"
 #define MINIAUDIO_IMPLEMENTATION
 #include "../sdl/third_party/miniaudio.h"
-#include "../../th11_web/cpp/game/Archive.hpp"
-#include "../../th11_web/cpp/game/SoundEffects.hpp"
+#include "../../web/cpp/game/Archive.hpp"
+#include "../../web/cpp/game/SoundEffects.hpp"
 #include <algorithm>
 #include <array>
 #include <chrono>

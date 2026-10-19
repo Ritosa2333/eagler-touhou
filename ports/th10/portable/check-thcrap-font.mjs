@@ -10,7 +10,7 @@ const {unzipSync}=createRequire(resolve(workspace,'eagler-touhou/package.json'))
 const sdk=process.env.EMSDK??resolve(workspace,'th08/tools/emsdk');
 const packs=resolve(process.env.TH10_LANGUAGE_PACKS??resolve(workspace,'prepared/th10-auto-dialogue/language'));
 const fonts=resolve(process.env.TH10_ORIGINAL_FONTS??resolve(workspace,'th10/build-eagler/fonts'));
-const out=resolve(root,'th10_web/artifacts/thcrap-font');mkdirSync(out,{recursive:true});
+const out=resolve(root,'web/artifacts/thcrap-font');mkdirSync(out,{recursive:true});
 const loader=resolve(out,'check.mjs');
 execFileSync(process.env.TH_PYTHON??'python',[resolve(sdk,'install/emscripten/emcc.py'),
     '-O2','-std=c++17','-DTH_ENABLE_THCRAP=1','--use-port=sdl3','--use-port=sdl3_ttf',

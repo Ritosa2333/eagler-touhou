@@ -6,7 +6,7 @@
   "command": [
     "node",
     "--check",
-    "th09_web/tests/multiplayer/analyze-information-pacing-shadow.mjs"
+    "web/tests/multiplayer/analyze-information-pacing-shadow.mjs"
   ],
   "exitCode": 0,
   "analyzerSha256": "d0c0cb5eea57b89b138b3f53ce8d763789a1325bea680818543fc31fb99674e9",

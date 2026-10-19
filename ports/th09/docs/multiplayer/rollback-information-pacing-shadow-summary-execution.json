@@ -6,7 +6,7 @@
   "nodeElapsedMs": 141,
   "command": [
     "node",
-    "th09_web/tests/multiplayer/summarize-information-pacing-shadow.mjs"
+    "web/tests/multiplayer/summarize-information-pacing-shadow.mjs"
   ],
   "exitCode": 0,
   "sourceBeforeSha256": "50dae38eb02b14c92c97bc424ac071a71d61f49ad870c5a239f7d89444472bda",

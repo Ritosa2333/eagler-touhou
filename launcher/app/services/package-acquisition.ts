@@ -46,6 +46,8 @@ export interface PreparationProgress {
   failure?: {kind: 'language'; label: string; reason: string};
 }
 export interface AcquisitionRequest {
+  /** Room entry owns update decisions before pinning the native generation. */
+  updateBeforePrepare?: boolean;
   productId: ProductId;
   gameVersion?: GameVersion;
   music: MusicMode;
@@ -181,7 +183,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       // Keep both committed installations. Cached beauty launches are offline
       // and never consult or install an original publication.
       const local = await deps.readCurrent(game, {gameVersion}); checkPreparationAbort(request.signal);
-      if (local.generation) return {kind: 'managed', generation: local.generation, deferredUpdate: local};
+      if (local.generation) return installedResult(local, request);
       try {
         request.onAcquisitionActivity?.(true);
         const publication = await getPublication(gameVersion, request.signal);
@@ -202,6 +204,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (metadataSnapshot.siteManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.siteManifest, request);
     const installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
+      if (request.updateBeforePrepare) return installedResult(installed, request);
       const published = metadataSnapshot.releaseCatalog?.games[game];
       return {kind:'managed', generation:installed.generation,
         deferredUpdate: published?.revision === installed.generation.descriptor.revision ? null : installed};
@@ -310,6 +313,35 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (version === "beauty") adapted.descriptor = {...adapted.descriptor, gameVersion: version};
     return done(await deps.installZip(adapted, {
       onProgress: value => progress(request, 'package.migratingLegacyProgress', {...value})}));
+  }
+  async function installedResult(installed: CurrentPackageGeneration, request: AcquisitionRequest): Promise<PackageAcquisitionResult> {
+    if (!installed.generation) throw new Error('Installed package is unavailable');
+    if (!request.updateBeforePrepare) return {kind: 'managed', generation: installed.generation, deferredUpdate: installed};
+    const game = gameIdForProduct(request.productId);
+    if (!metadata.getSnapshot().releaseCatalog) {try {await metadata.initialize();} catch {}}
+    checkPreparationAbort(request.signal);
+    let publication;
+    try {publication = await getPublication(request.gameVersion ?? 'original', request.signal);}
+    catch {checkPreparationAbort(request.signal); return {kind: 'managed', generation: installed.generation, deferredUpdate: null};}
+    const published = publication.catalog?.games[game];
+    if (published && published.revision !== installed.generation.descriptor.revision && request.decideUpdate) {
+      const choice = await request.decideUpdate({message: t(installed.installation?.source === 'local' ? 'package.updateAvailableLocal' : 'package.updateAvailableRemote'),
+        confirmText: t('package.updateNow'), secondaryText: '', cancelText: t('update.nextLaunch')});
+      checkPreparationAbort(request.signal);
+      if (choice === 'confirm') {
+        request.onUpdateActivity?.(true);
+        try {
+          const result = await deps.installPublished(game, {...publication, gameVersion: request.gameVersion ?? 'original', addComponents: [],
+            expectedGenerationId: installed.generation.id, preserveLocalSource: true, signal: request.signal,
+            fetchImpl: getPackageFetch(game), selectedComponentEntries: selectedLanguages(game, request.language),
+            onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
+          checkPreparationAbort(request.signal); await installedChanged(game);
+          return {kind: 'managed', generation: result.generation, deferredUpdate: null};
+        } finally {request.onUpdateActivity?.(false);}
+      }
+    }
+    // The room-entry decision is final for this run, including "next launch".
+    return {kind: 'managed', generation: installed.generation, deferredUpdate: null};
   }
   function startBackgroundUpdate(installed: CurrentPackageGeneration, request: AcquisitionRequest): Promise<void> {
     const game = gameIdForProduct(request.productId);

@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/SessionRecords.hpp"
+#include "../web/cpp/multiplayer/SessionRecords.hpp"
 #include <cassert>
 #include <cstring>
 #include <memory>

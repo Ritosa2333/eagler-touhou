@@ -61,6 +61,15 @@ const TH09_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "
 // Character IDs follow TH09's original character_labels table in TitleData.inc.
 const TH09_MULTIPLAYER_GLYPHS = Object.freeze(["霊", "魔", "咲", "妖", "鈴", "チ", "リ", "ミ", "て", "幽", "文", "メ", "小", "映", "メ", "ル"]);
 const TH09_MULTIPLAYER_LOADOUTS = Object.freeze(Array.from({ length: 16 }, (_, character) => Object.freeze({ labelKey: `multiplayer.loadout.th09_${character}`, glyph: TH09_MULTIPLAYER_GLYPHS[character], character, shot: 0 })));
+const TH075_MULTIPLAYER_GLYPHS = Object.freeze(["霊","魔","咲","愛","パ","妖","蕾","幽","紫","萃","美"]);
+const TH075_MULTIPLAYER_LOADOUTS = Object.freeze(TH075_MULTIPLAYER_GLYPHS.flatMap((glyph, character) =>
+    Array.from({length:9}, (_,shot) => Object.freeze({labelKey:`multiplayer.loadout.th075_${character}_${shot}`,glyph,character,shot,
+        selection:Object.freeze([
+            Object.freeze({value:character,labelKey:`multiplayer.character.th075_${character}`}),
+            Object.freeze({value:shot%3,labelKey:`multiplayer.spell.th075_${character}_${shot%3}`}),
+            Object.freeze({value:Math.floor(shot/3),labelKey:`multiplayer.spell.th075_${character}_${3+Math.floor(shot/3)}`}),
+        ]),
+    }))));
 const STANDARD_MULTIPLAYER_PLAYER_COUNTS = Object.freeze([2, 3]);
 const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" });
 const CHARGE_TOUCH_FIRE = Object.freeze({
@@ -176,6 +185,19 @@ export const PRODUCT_GAMES = Object.freeze({
         package: Object.freeze({dataFileId:"game-data",dataTarget:"/th075.data",maxImportBytes:512 * 1024 * 1024,
             musicSourceDirectories:Object.freeze({ogg:"music"}),musicMounts:Object.freeze({ogg:"/music"})}),
         replay: Object.freeze({prefix:"th075",extensions:Object.freeze(["rep"]),naming:"filename"}),
+        multiplayerRuntime: "./runtime/th075/multiplayer/th075.html",
+        multiplayer: Object.freeze({
+            titleKey:"game.title.th075mp", gameplay:"versus",
+            inputTiming:Object.freeze({rollbackLimit:8,sendPredictionLimit:8,rollbackDefault:false,measuredStartup:true,manualDelayLimit:9}),
+            playerCounts:Object.freeze([2]), difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
+            loadouts:TH075_MULTIPLAYER_LOADOUTS, peerTransportGlobal:"__th075PeerTransport",
+            loadoutFields:Object.freeze([
+                Object.freeze({labelKey:"multiplayer.character"}),
+                Object.freeze({labelKey:"multiplayer.firstSpell",dependsOn:Object.freeze([0])}),
+                Object.freeze({labelKey:"multiplayer.secondSpell",dependsOn:Object.freeze([0])}),
+            ]),
+            spectator:true, titleRoomEntry:false,
+        }),
         features: Object.freeze({thprac:false,languages:true,focusHitbox:false}),
     }),
     th08: Object.freeze({

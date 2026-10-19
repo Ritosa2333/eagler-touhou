@@ -206,11 +206,11 @@ if ($resourceMode -eq 'import') {
             }
         }
         if ($selectedHasTh09) {
-            $runtimeBuilds.th09 = Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler'
+            $runtimeBuilds.th09 = Get-EaglerWorkspacePath $workspaceLayout 'th09' 'web\build-eagler'
             if (-not (Test-Path -LiteralPath (Join-Path $runtimeBuilds.th09 'runtime-files.json') -PathType Leaf)) {
                 throw "Prepared TH09 Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th09 'runtime-files.json')"
             }
-            $runtimeBuilds.th09Multiplayer = Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler-multiplayer'
+            $runtimeBuilds.th09Multiplayer = Get-EaglerWorkspacePath $workspaceLayout 'th09' 'web\build-eagler-multiplayer'
             if (-not (Test-Path -LiteralPath (Join-Path $runtimeBuilds.th09Multiplayer 'runtime-files.json') -PathType Leaf)) {
                 throw "Prepared TH09 multiplayer Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th09Multiplayer 'runtime-files.json')"
             }
@@ -286,10 +286,10 @@ $th10Build = if ($selectedHasTh10 -and -not $runtimeReleasePath) {
     (Resolve-Path -LiteralPath $Th10Build).Path
 } else { $null }
 $th09Build = if ($selectedHasTh09 -and -not $runtimeReleasePath) {
-    Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler'
+    Get-EaglerWorkspacePath $workspaceLayout 'th09' 'web\build-eagler'
 } else { $null }
 $th09MultiplayerBuild = if ($selectedHasTh09 -and -not $runtimeReleasePath) {
-    Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler-multiplayer'
+    Get-EaglerWorkspacePath $workspaceLayout 'th09' 'web\build-eagler-multiplayer'
 } else { $null }
 $font = (Resolve-Path -LiteralPath $FontFile).Path
 $vanillaFont = (Resolve-Path -LiteralPath $VanillaFontFile).Path

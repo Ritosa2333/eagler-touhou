@@ -1,4 +1,4 @@
-import {execFileSync} from 'node:child_process';
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Git blobs use LF even when the Windows checkout uses CRLF. */
 export const normalizeSourceText = value => value.replaceAll('\r\n', '\n');
 /** Added settings labels are covered separately by the shared-settings fixture.
@@ -10,7 +10,7 @@ export const pinnedUiAuthorityText = value => normalizeSourceText(value).replace
 export function synchronizedMainAuthority(path, project, fallbackRevision) {
   const domain = ['src/contracts/product-catalog.mts', 'src/launcher/i18n.mts', 'src/launcher/multiplayer-guide.mts', 'public/content/MULTIPLAYER.html'].includes(path);
   const revision = domain ? '8bdf6dbf4a81032f0725cc841b86d03e1465fe07' : fallbackRevision;
-  let source = execFileSync('git', ['show', `${revision}:${path}`], {cwd: project, encoding: 'utf8'});
+  let source = readUiHistoryText(revision, path);
   // TH15 was added after this committed controller. Extend only its declared
   // title catalog; parsing, sanitization and interaction remain the old oracle.
   if (path === 'src/launcher/multiplayer-guide.mts') source = source.replace(

@@ -22,6 +22,7 @@ import { parseTh09PlayerStats, type Th09PlayerStats } from '../../src/launcher/t
 export type DirectoryConnection = 'loading' | 'live' | 'offline' | 'unsupported' | 'missing';
 export type DirectoryFormMode = 'create' | 'join';
 export interface DirectorySeat {
+  loadout?: number;
   name?: string;
   machineSign?: string;
   stats?: Th09PlayerStats;
@@ -31,6 +32,7 @@ export interface DirectorySeat {
   controlMode: ReturnType<typeof multiplayerControlMode>;
 }
 export interface DirectoryRoom {
+  startedAt?: number;
   product: MultiplayerProductId;
   code: string;
   capacity: 2 | 3;
@@ -114,11 +116,9 @@ export function directoryRoomState(room: DirectoryRoom): 'recruiting' | 'full' |
   return room.phase !== 'lobby' ? 'playing' : room.players >= room.capacity ? 'full' : 'recruiting';
 }
 export function directoryRoomCanEnter(room: DirectoryRoom): boolean {
-  return (
-    (directoryRoomState(room) === 'recruiting' && room.joinable) ||
-    directoryRoomState(room) === 'full' || (room.phase !== 'lobby' && room.spectatable === true) ||
-    room.product === 'th09mp'
-  );
+  // Membership is independent of this engine's ability to catch up mid-game.
+  // A full/playing room admits a spectator, who may wait for the next run.
+  return directoryRoomState(room) !== 'recruiting' || room.joinable;
 }
 export function directoryRoomSpectatorEntry(room: DirectoryRoom): boolean {
   return directoryRoomState(room) !== 'recruiting' && directoryRoomCanEnter(room);
@@ -281,6 +281,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         ][0] || '?';
       return Object.freeze({
         initial,
+        ...(Number.isInteger(seat?.loadout) && Number(seat?.loadout) >= 0 && Number(seat?.loadout) < policy.loadouts.length ? {loadout: Number(seat?.loadout)} : {}),
         ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
         ...(row.product === 'th09mp'
           ? {
@@ -319,6 +320,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       phase: row.phase === 'lobby' ? 'lobby' : 'playing',
       joinable: row.joinable === true,
       spectatable: row.phase !== 'lobby' && row.spectatable === true,
+      ...(typeof row.startedAt === 'number' && Number.isSafeInteger(row.startedAt) && row.startedAt > 0 ? {startedAt: row.startedAt} : {}),
     });
   }
   function connect() {

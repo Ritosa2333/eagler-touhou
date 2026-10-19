@@ -140,8 +140,9 @@ test('metadata: latest per-game read wins and dispose prevents stale read/networ
   idb.generation = generation('new'); const current = service.refreshInstalled('th06');
   idb.requests[1].succeed(); await current; idb.requests[0].succeed(); await old;
   assert.equal(service.getSnapshot().installed.get('th06').descriptor.revision, 'new');
+  idb.requests.at(-1).succeed(); await flush(); // settle the optional beauty hint independently
   idb.generation = generation('after-dispose'); const stale = service.refreshInstalled('th06'), snapshot = service.getSnapshot();
-  service.dispose(); idb.requests[2].succeed(); await stale; assert.equal(service.getSnapshot(), snapshot);
+  service.dispose(); idb.requests.at(-1).succeed(); await stale; assert.equal(service.getSnapshot(), snapshot);
   const calls = [], deferred = [];
   const net = {fetch: (url, init) => new Promise(resolve => {calls.push({url, init}); deferred.push(() => resolve({ok: true, json: async () => String(url).includes('site-manifest') ? host() : catalog}));})};
   const other = fixture(net); const pending = other.initialize(); const loading = other.getSnapshot(); other.dispose();

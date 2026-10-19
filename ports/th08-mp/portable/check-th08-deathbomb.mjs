@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 const arg=(name,fallback)=>process.argv.includes(name)?process.argv[process.argv.indexOf(name)+1]:fallback;
 const base=arg('--base','http://127.0.0.1:8095'),label=arg('--label','after'),method=arg('--input','touch');
 const out=resolve(import.meta.dirname,'../artifacts/touch-bomb');mkdirSync(out,{recursive:true});

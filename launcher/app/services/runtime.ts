@@ -150,6 +150,8 @@ export interface RuntimeSnapshot {
   readonly source: string | null;
   readonly ready: boolean;
   readonly launched: boolean;
+  readonly roomPreviewSupported?: boolean;
+  readonly roomPreview?: boolean;
   readonly firstFrame: boolean;
   /** Main's nonfatal diagnostic watchdog is separate from caller-requested waits. */
   readonly firstFrameTimedOut: boolean;
@@ -563,7 +565,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (message.event === 'ready' && !snapshot.ready) {
       try { runtimeDocument = runtimeIdentity(token).document; }
       catch (error) { fail(error); return; }
-      update({ ready: true }); settle('ready');
+      update({ ready: true, roomPreviewSupported: message.roomPreview === true }); settle('ready');
     } else if (message.event === 'first-frame' && launchRequested) {
       clearFirstFrameWatchdog();
       update({ firstFrame: true, firstFrameTimedOut: false }); settle('first-frame');
@@ -965,6 +967,50 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   function prepareWithReady(input: RuntimePlan, onReady: RuntimeReadyContinuation, signal?: AbortSignal) {
     return prepareOwned(input, undefined, undefined, onReady, signal);
   }
+  /** Rooms surface cached-program updates before Ready, rather than interrupting
+   * a synchronized match after its launch ACK. The loaded epoch stays pinned. */
+  async function checkPreparedCodeUpdate(epoch: number): Promise<boolean> {
+    const pending = codeUpdate;
+    if (!pending || pending.epoch !== epoch || snapshot.epoch !== epoch || snapshot.launched) return false;
+    codeUpdate = null;
+    try {
+      const update = await pending.check();
+      if (!update || snapshot.epoch !== epoch || snapshot.launched || updateNotices.has(update.url)) return false;
+      updateNotices.add(update.url); return true;
+    } catch {return false;}
+  }
+  /** Bind a run to a fully prepared, unlaunched multiplayer engine. Legacy
+   * configure replaces language/music state: retain the prepared payload and
+   * required arrays instead of accidentally clearing localization or music. */
+  async function prepareRoomPreview(epoch: number): Promise<boolean> {
+    const token = sessions.current();
+    if (!token || token.id !== epoch || snapshot.phase !== 'prepared' || snapshot.launched || preparedPlan?.runtimeVariant !== 'multiplayer') throw new RuntimeSessionSupersededError();
+    if (!snapshot.roomPreviewSupported) return false;
+    if (snapshot.roomPreview) return true;
+    const response = await send('prepare-room', {}, options.timeouts?.configure ?? 120_000);
+    assertCurrent(token);
+    if (response.presented !== true) throw new Error('Native room preview did not present its title');
+    update({roomPreview: true});
+    return true;
+  }
+  async function configurePreparedRoom(epoch: number, roomOptions: RuntimeConfigureOptions): Promise<void> {
+    const token = sessions.current(), plan = preparedPlan;
+    if (!token || token.id !== epoch || !plan || plan.fileOnly || plan.runtimeVariant !== 'multiplayer' ||
+        snapshot.phase !== 'prepared' || snapshot.launched || launchRequested || closing || fileSession || fileClosing ||
+        roomOptions.netplayMode !== 'lan' || !roomOptions.netplayUrl) throw new RuntimeSessionSupersededError();
+    const configure = {...plan.configure, options: {...plan.configure.options, ...roomOptions}};
+    update({phase: 'configuring', spectator: roomOptions.netplaySpectator === true});
+    try {
+      await send('configure', snapshot.roomPreview
+        ? {music: configure.music, language: configure.language, options: configure.options, resources: [], runtimeResources: [], sharedResources: []}
+        : {...configure, resources: configure.resources ?? [], runtimeResources: configure.runtimeResources ?? [], sharedResources: []}, options.timeouts?.configure ?? 120_000);
+      assertCurrent(token);
+      preparedPlan = {...plan, configure};
+      if (launcherControlContext) launcherControlContext = Object.freeze({...launcherControlContext,
+        options: Object.freeze(structuredClone(configure.options))});
+      update({phase: 'prepared'});
+    } catch (error) {assertCurrent(token); reset('error', errorText(error)); throw error;}
+  }
   async function launch({awaitFirstFrame = false}: {awaitFirstFrame?: boolean} = {}): Promise<RuntimeSnapshot> {
     if (frame.isConnected === false) { disposeDetachedFrame(); throw new RuntimeSessionSupersededError(); }
     const token = sessions.current();
@@ -985,7 +1031,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       await send('launch', {}, options.timeouts?.launch ?? (directory ? 120_000 : 15_000));
       assertCurrent(token);
       if (directory && !networked && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
-      update({ launched: true, phase: 'running' });
+      update({ launched: true, roomPreview: false, phase: 'running' });
       const pendingUpdate = codeUpdate;
       if (!snapshot.multiplayerPreflight && pendingUpdate?.epoch === token.id) {
         codeUpdate = null;
@@ -1320,7 +1366,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
-  return Object.freeze({ prepare, prepareWithReady, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
+  return Object.freeze({ prepare, prepareWithReady, checkPreparedCodeUpdate, prepareRoomPreview, configurePreparedRoom, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
     getSnapshot: () => snapshot, getNetworkSnapshot: () => network.snapshot(),
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     subscribeEvents: (listener: (message: RuntimeEventMessage) => void) => {eventListeners.add(listener); return () => {eventListeners.delete(listener);};},

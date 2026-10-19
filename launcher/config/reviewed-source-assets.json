@@ -1,0 +1,308 @@
+{
+  "schema": "eagler-touhou/reviewed-source-assets/1",
+  "entries": [
+    {
+      "path": "ports/th08-mp/web/assets/native/vendor/SpessaSynth.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/native/vendor/SpessaSynth.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08/web/assets/native/vendor/SpessaSynth.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/native/vendor/SpessaSynth.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08-mp/web/assets/native/vendor/spessasynth.mjs",
+      "hashMode": "lf-text",
+      "sha256": "190d4158802da57cf4cb2157a13466f739ff2a1ecad41a51fd3ced79f0e16265",
+      "classification": "vendored-midi-synthesizer",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/native/vendor/SpessaSynth.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "tools/ci/fixtures/th08-packaging-source.txt",
+          "hashMode": "lf-text",
+          "sha256": "219578162ce4f2622358f71d39895ef9ec80f5ac9f09c3f40121a0ca2d2e270f"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08/web/assets/native/vendor/spessasynth.mjs",
+      "hashMode": "lf-text",
+      "sha256": "190d4158802da57cf4cb2157a13466f739ff2a1ecad41a51fd3ced79f0e16265",
+      "classification": "vendored-midi-synthesizer",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/native/vendor/SpessaSynth.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "tools/ci/fixtures/th08-packaging-source.txt",
+          "hashMode": "lf-text",
+          "sha256": "219578162ce4f2622358f71d39895ef9ec80f5ac9f09c3f40121a0ca2d2e270f"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08-mp/web/assets/native/vendor/stb-vorbis.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/native/vendor/stb-vorbis.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08/web/assets/native/vendor/stb-vorbis.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/native/vendor/stb-vorbis.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08-mp/web/assets/native/vendor/stb-vorbis.mjs",
+      "hashMode": "lf-text",
+      "sha256": "f2c9612be9718c3e93cbee86a5b7c25a901b786ba5542e82e9cb8dad3b11637b",
+      "classification": "vendored-compiled-vorbis-decoder",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/native/vendor/stb-vorbis.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "docs/migration/stb-vorbis-provenance.json",
+          "hashMode": "lf-text",
+          "sha256": "e35157ef7af10f4f78bc16fd3913272839b892584af5e852fb9062a34ae70d25"
+        },
+        {
+          "path": "tools/ci/fixtures/th08-packaging-source.txt",
+          "hashMode": "lf-text",
+          "sha256": "219578162ce4f2622358f71d39895ef9ec80f5ac9f09c3f40121a0ca2d2e270f"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08/web/assets/native/vendor/stb-vorbis.mjs",
+      "hashMode": "lf-text",
+      "sha256": "f2c9612be9718c3e93cbee86a5b7c25a901b786ba5542e82e9cb8dad3b11637b",
+      "classification": "vendored-compiled-vorbis-decoder",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/native/vendor/stb-vorbis.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "docs/migration/stb-vorbis-provenance.json",
+          "hashMode": "lf-text",
+          "sha256": "e35157ef7af10f4f78bc16fd3913272839b892584af5e852fb9062a34ae70d25"
+        },
+        {
+          "path": "tools/ci/fixtures/th08-packaging-source.txt",
+          "hashMode": "lf-text",
+          "sha256": "219578162ce4f2622358f71d39895ef9ec80f5ac9f09c3f40121a0ca2d2e270f"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08-mp/web/assets/sdl-native/music-layout.json",
+      "hashMode": "lf-text",
+      "sha256": "bbaae686c580c2933cdcdee177128eba4de733e72933d382c87131431f1dc5c2",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/sdl-native/music-layout.json",
+          "hashMode": "lf-text",
+          "sha256": "bbaae686c580c2933cdcdee177128eba4de733e72933d382c87131431f1dc5c2"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08/web/assets/sdl-native/music-layout.json",
+      "hashMode": "lf-text",
+      "sha256": "bbaae686c580c2933cdcdee177128eba4de733e72933d382c87131431f1dc5c2",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/sdl-native/music-layout.json",
+          "hashMode": "lf-text",
+          "sha256": "bbaae686c580c2933cdcdee177128eba4de733e72933d382c87131431f1dc5c2"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08-mp/web/assets/vendor/th10-rebuilt.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/vendor/th10-rebuilt.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8"
+        }
+      ]
+    },
+    {
+      "path": "ports/th08/web/assets/vendor/th10-rebuilt.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/vendor/th10-rebuilt.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8"
+        }
+      ]
+    },
+    {
+      "path": "ports/th10-mp/web/assets/vendor/th10-rebuilt.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/vendor/th10-rebuilt.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8"
+        }
+      ]
+    },
+    {
+      "path": "ports/th10/web/assets/vendor/th10-rebuilt.LICENSE",
+      "hashMode": "lf-text",
+      "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8",
+      "classification": "third-party-license-notice",
+      "evidence": [
+        {
+          "path": "ports/th08-mp/web/assets/vendor/th10-rebuilt.LICENSE",
+          "hashMode": "lf-text",
+          "sha256": "7882493a556c6d1a9f46b5e17189126e61c953b40277c9a8cb2b61f826ad42d8"
+        }
+      ]
+    },
+    {
+      "path": "ports/th09/web/assets/sdl-native/music-verification.json",
+      "hashMode": "lf-text",
+      "sha256": "c342ad3d591a952de783518feaf0da3edee4d20cbef44105e46bcc233556f2b6",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th09/web/assets/sdl-native/music-verification.json",
+          "hashMode": "lf-text",
+          "sha256": "c342ad3d591a952de783518feaf0da3edee4d20cbef44105e46bcc233556f2b6"
+        }
+      ]
+    },
+    {
+      "path": "ports/th10-mp/web/assets/sdl-native/music-layout.json",
+      "hashMode": "lf-text",
+      "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th10-mp/web/assets/sdl-native/music-layout.json",
+          "hashMode": "lf-text",
+          "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f"
+        }
+      ]
+    },
+    {
+      "path": "ports/th10/web/assets/sdl-native/music-layout.json",
+      "hashMode": "lf-text",
+      "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th10-mp/web/assets/sdl-native/music-layout.json",
+          "hashMode": "lf-text",
+          "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f"
+        }
+      ]
+    },
+    {
+      "path": "ports/th15-mp/web/assets/music/manifest.json",
+      "hashMode": "lf-text",
+      "sha256": "9abd7e3b6e6ac6962c9206ded38c79f575f71478599af48cafcb4c463a40ec97",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th15-mp/web/assets/music/manifest.json",
+          "hashMode": "lf-text",
+          "sha256": "9abd7e3b6e6ac6962c9206ded38c79f575f71478599af48cafcb4c463a40ec97"
+        }
+      ]
+    },
+    {
+      "path": "ports/th15/web/assets/music/manifest.json",
+      "hashMode": "lf-text",
+      "sha256": "9abd7e3b6e6ac6962c9206ded38c79f575f71478599af48cafcb4c463a40ec97",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th15-mp/web/assets/music/manifest.json",
+          "hashMode": "lf-text",
+          "sha256": "9abd7e3b6e6ac6962c9206ded38c79f575f71478599af48cafcb4c463a40ec97"
+        }
+      ]
+    },
+    {
+      "path": "ports/th15-mp/web/assets/sdl-native/fonts/manifest.json",
+      "hashMode": "lf-text",
+      "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th15-mp/web/assets/sdl-native/fonts/manifest.json",
+          "hashMode": "lf-text",
+          "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80"
+        }
+      ]
+    },
+    {
+      "path": "ports/th15/web/assets/sdl-native/fonts/manifest.json",
+      "hashMode": "lf-text",
+      "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80",
+      "classification": "resource-provenance-metadata",
+      "evidence": [
+        {
+          "path": "ports/th15-mp/web/assets/sdl-native/fonts/manifest.json",
+          "hashMode": "lf-text",
+          "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80"
+        }
+      ]
+    }
+  ]
+}

@@ -5,85 +5,85 @@
   "passed": true,
   "sourceStable": true,
   "before": {
-    "th09_web/tests/multiplayer/smoothness-browser.mjs": {
+    "web/tests/multiplayer/smoothness-browser.mjs": {
       "bytes": 81690,
       "sha256": "d899f3cf53ab6b769ccb6df7ae86e9e1aa28b091cae8ef60ff3fddc66ad27001"
     },
-    "th09_web/tests/multiplayer/gpu-vsync-control.mjs": {
+    "web/tests/multiplayer/gpu-vsync-control.mjs": {
       "bytes": 4192,
       "sha256": "d41c9213c38555d89d97196dac73c58b36d35ad47d76dd409c97468527bb3083"
     },
-    "th09_web/tests/multiplayer/gpu-vsync-control.test.mjs": {
+    "web/tests/multiplayer/gpu-vsync-control.test.mjs": {
       "bytes": 5512,
       "sha256": "1f6a488f56f7df19857813312949f58bd419e17f27aac10a8318854f98d6a9f0"
     },
-    "th09_web/tests/multiplayer/touch-input-probe.test.mjs": {
+    "web/tests/multiplayer/touch-input-probe.test.mjs": {
       "bytes": 13370,
       "sha256": "a3f626c631387e7d4c0e55c4a3aab471881fc88576434d1f9a0e27d0b015f2cb"
     },
-    "th09_web/tests/multiplayer/chrome-scheduler-trace.test.mjs": {
+    "web/tests/multiplayer/chrome-scheduler-trace.test.mjs": {
       "bytes": 28149,
       "sha256": "db5d32db4f472f383de05048b13e174f64665ca83de03baa53c860e4a0af44f0"
     },
-    "th09_web/tests/multiplayer/chrome-scheduler-finish.test.mjs": {
+    "web/tests/multiplayer/chrome-scheduler-finish.test.mjs": {
       "bytes": 18277,
       "sha256": "b2daf00b7d8350e612313fd2021b004f90f6f5aca57bf6dd18ba9c149cb5cb00"
     },
-    "th09_web/tests/multiplayer/touch-input-probe.mjs": {
+    "web/tests/multiplayer/touch-input-probe.mjs": {
       "bytes": 20658,
       "sha256": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785"
     },
-    "th09_web/tests/multiplayer/chrome-scheduler-trace.mjs": {
+    "web/tests/multiplayer/chrome-scheduler-trace.mjs": {
       "bytes": 26116,
       "sha256": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273"
     },
-    "th09_web/tests/multiplayer/smoothness-window.mjs": {
+    "web/tests/multiplayer/smoothness-window.mjs": {
       "bytes": 9700,
       "sha256": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f"
     },
-    "th10_web/scripts/native/browser-launch.mjs": {
+    "web/scripts/native/browser-launch.mjs": {
       "bytes": 1461,
       "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
     }
   },
   "after": {
-    "th09_web/tests/multiplayer/smoothness-browser.mjs": {
+    "web/tests/multiplayer/smoothness-browser.mjs": {
       "bytes": 81690,
       "sha256": "d899f3cf53ab6b769ccb6df7ae86e9e1aa28b091cae8ef60ff3fddc66ad27001"
     },
-    "th09_web/tests/multiplayer/gpu-vsync-control.mjs": {
+    "web/tests/multiplayer/gpu-vsync-control.mjs": {
       "bytes": 4192,
       "sha256": "d41c9213c38555d89d97196dac73c58b36d35ad47d76dd409c97468527bb3083"
     },
-    "th09_web/tests/multiplayer/gpu-vsync-control.test.mjs": {
+    "web/tests/multiplayer/gpu-vsync-control.test.mjs": {
       "bytes": 5512,
       "sha256": "1f6a488f56f7df19857813312949f58bd419e17f27aac10a8318854f98d6a9f0"
     },
-    "th09_web/tests/multiplayer/touch-input-probe.test.mjs": {
+    "web/tests/multiplayer/touch-input-probe.test.mjs": {
       "bytes": 13370,
       "sha256": "a3f626c631387e7d4c0e55c4a3aab471881fc88576434d1f9a0e27d0b015f2cb"
     },
-    "th09_web/tests/multiplayer/chrome-scheduler-trace.test.mjs": {
+    "web/tests/multiplayer/chrome-scheduler-trace.test.mjs": {
       "bytes": 28149,
       "sha256": "db5d32db4f472f383de05048b13e174f64665ca83de03baa53c860e4a0af44f0"
     },
-    "th09_web/tests/multiplayer/chrome-scheduler-finish.test.mjs": {
+    "web/tests/multiplayer/chrome-scheduler-finish.test.mjs": {
       "bytes": 18277,
       "sha256": "b2daf00b7d8350e612313fd2021b004f90f6f5aca57bf6dd18ba9c149cb5cb00"
     },
-    "th09_web/tests/multiplayer/touch-input-probe.mjs": {
+    "web/tests/multiplayer/touch-input-probe.mjs": {
       "bytes": 20658,
       "sha256": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785"
     },
-    "th09_web/tests/multiplayer/chrome-scheduler-trace.mjs": {
+    "web/tests/multiplayer/chrome-scheduler-trace.mjs": {
       "bytes": 26116,
       "sha256": "368f6a7e3f9315f01852547f5657d0857afa6b97e678d26ec128e9059c96b273"
     },
-    "th09_web/tests/multiplayer/smoothness-window.mjs": {
+    "web/tests/multiplayer/smoothness-window.mjs": {
       "bytes": 9700,
       "sha256": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f"
     },
-    "th10_web/scripts/native/browser-launch.mjs": {
+    "web/scripts/native/browser-launch.mjs": {
       "bytes": 1461,
       "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
     }
@@ -91,21 +91,21 @@
   "checks": [
     {
       "kind": "syntax",
-      "file": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "file": "web/tests/multiplayer/smoothness-browser.mjs",
       "status": 0,
       "signal": null,
       "error": null
     },
     {
       "kind": "syntax",
-      "file": "th09_web/tests/multiplayer/gpu-vsync-control.mjs",
+      "file": "web/tests/multiplayer/gpu-vsync-control.mjs",
       "status": 0,
       "signal": null,
       "error": null
     },
     {
       "kind": "syntax",
-      "file": "th09_web/tests/multiplayer/gpu-vsync-control.test.mjs",
+      "file": "web/tests/multiplayer/gpu-vsync-control.test.mjs",
       "status": 0,
       "signal": null,
       "error": null
@@ -113,10 +113,10 @@
     {
       "kind": "pure-tests",
       "files": [
-        "th09_web/tests/multiplayer/gpu-vsync-control.test.mjs",
-        "th09_web/tests/multiplayer/touch-input-probe.test.mjs",
-        "th09_web/tests/multiplayer/chrome-scheduler-trace.test.mjs",
-        "th09_web/tests/multiplayer/chrome-scheduler-finish.test.mjs"
+        "web/tests/multiplayer/gpu-vsync-control.test.mjs",
+        "web/tests/multiplayer/touch-input-probe.test.mjs",
+        "web/tests/multiplayer/chrome-scheduler-trace.test.mjs",
+        "web/tests/multiplayer/chrome-scheduler-finish.test.mjs"
       ],
       "status": 0,
       "signal": null,
@@ -132,7 +132,7 @@
     "todo": 0
   },
   "log": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-gpu-vsync-preflight-c1-process.log",
+    "path": "web/artifacts/multiplayer-tests/desktop-gpu-vsync-preflight-c1-process.log",
     "bytes": 7257,
     "sha256": "1469bfa99f21b7dc0d7c7ad58ff97226ad29604e85e0e1d37cf0cc476ca37cf9"
   }

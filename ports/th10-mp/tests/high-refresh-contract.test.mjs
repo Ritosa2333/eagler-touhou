@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import test from 'node:test';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replaceAll('\r','');
-const host=read('th10_web/cpp/sdl/ApplicationHost.cpp');
+const host=read('web/cpp/sdl/ApplicationHost.cpp');
 const script=read('portable/check-high-refresh-contract.mjs');
 const contract=script.split('// BEGIN CADENCE SOURCE CONTRACT')[1].split('// END CADENCE SOURCE CONTRACT')[0];
 const check=new Function('assert','host',contract);

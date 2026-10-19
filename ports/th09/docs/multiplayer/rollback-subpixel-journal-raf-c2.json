@@ -2,7 +2,7 @@
   "schema": "th09/journal-raf-summary/2",
   "createdAt": "2026-10-11T16:29:52.608Z",
   "source": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\tests\\multiplayer\\journal-raf-summary.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\tests\\multiplayer\\journal-raf-summary.mjs",
     "sha256": "c1bc6ecf6a4704466329a323cb442c13b2652daa10e738daf5b5a51eb3be3e8e"
   },
   "method": {
@@ -18,7 +18,7 @@
   },
   "runs": [
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-a1-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-a1-report.json",
       "rawSha256": "576059d8eef68805f69df31c31a467db32a7c55794ec2188590a6ccff4998e6c",
       "wasm": "cb03c6df0c460360d2d3548e63556a9b74bf18ac7f6613bdf8231a4e03c30480",
       "passed": true,
@@ -3490,7 +3490,7 @@
       ]
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-b1-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-b1-report.json",
       "rawSha256": "58042ce0b44eae2f6c9b5662412f99d87423dda59aa17c10fe273342e50597b7",
       "wasm": "2ae38afdffaac02d94924af07e5d385535964c8b57154589ce6a93fac3b04ddd",
       "passed": true,
@@ -6546,7 +6546,7 @@
       ]
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-b2-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-b2-report.json",
       "rawSha256": "45e5a6d18e7bf236500f9ba0c410206e0f0a70f1aa9f8e197437398c6d6d8e9e",
       "wasm": "2ae38afdffaac02d94924af07e5d385535964c8b57154589ce6a93fac3b04ddd",
       "passed": true,
@@ -9602,7 +9602,7 @@
       ]
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-a2-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\multiplayer-tests\\subpixel-journal-release-relay79-a2-report.json",
       "rawSha256": "31bb204ef95e5360733b25e7cc8654e5e4c2f6711e1f3935696881ce1dbfbf9f",
       "wasm": "cb03c6df0c460360d2d3548e63556a9b74bf18ac7f6613bdf8231a4e03c30480",
       "passed": true,

@@ -1,6 +1,6 @@
-#include "../th08_web/cpp/multiplayer/NetplayRuntime.hpp"
-#include "../th08_web/cpp/multiplayer/SpectatorStream.hpp"
-#include "../th08_web/cpp/multiplayer/InputSample.hpp"
+#include "../web/cpp/multiplayer/NetplayRuntime.hpp"
+#include "../web/cpp/multiplayer/SpectatorStream.hpp"
+#include "../web/cpp/multiplayer/InputSample.hpp"
 #include "support/previous-rule-contract.hpp"
 #include <cassert>
 #include <cstdio>

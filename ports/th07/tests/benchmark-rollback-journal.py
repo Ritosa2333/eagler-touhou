@@ -13,10 +13,13 @@ import os
 from pathlib import Path
 import statistics
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-COMMON = ROOT / "third_party" / "eagler-common"
+sys.path.insert(0, str(ROOT.parent.parent / "tools/build"))
+from emscripten_sdk import cpp_command
+COMMON = Path(os.environ.get("EAGLER_COMMON_ROOT", ROOT.parent.parent / "common"))
 
 
 def git(*args: str) -> str:
@@ -26,7 +29,7 @@ def git(*args: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--toolchain", choices=("native", "wasm"), default="wasm")
-    parser.add_argument("--before-ref", default="HEAD")
+    parser.add_argument("--before-ref", required=True)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -51,19 +54,17 @@ def main() -> int:
 
     env = os.environ.copy()
     if args.toolchain == "wasm":
-        emsdk = ROOT.parent / "toolchains/emsdk"
-        compiler = str(emsdk / "upstream/emscripten" / ("em++.exe" if os.name == "nt" else "em++"))
-        env["EM_CONFIG"] = str(emsdk / ".emscripten")
+        compiler, env = cpp_command(ROOT.parent.parent)
     else:
-        compiler = "g++"
+        compiler = [os.environ.get("CXX", "g++")]
     report = {"baseline_revision": revision, "toolchain": args.toolchain,
-              "compiler": subprocess.check_output([compiler, "--version"], cwd=ROOT, env=env, text=True).splitlines()[0],
+              "compiler": subprocess.check_output([*compiler, "--version"], cwd=ROOT, env=env, text=True).splitlines()[0],
               "flags": "-std=c++17 -O2", "runs": [], "summary": {}}
     with tempfile.TemporaryDirectory(prefix="th07-journal-bench-") as directory:
         binaries = {}
         for label, source in sources.items():
             output = Path(directory) / (label + (".cjs" if args.toolchain == "wasm" else ".exe"))
-            command = [compiler, "-std=c++17", "-O2", "-x", "c++", "-", "-o", str(output)]
+            command = [*compiler, "-std=c++17", "-O2", "-x", "c++", "-", "-o", str(output)]
             if args.toolchain == "wasm":
                 command += ["-sENVIRONMENT=node", "-sALLOW_MEMORY_GROWTH=1"]
             subprocess.run(command, input=source, text=True, cwd=ROOT, env=env, check=True, timeout=120)

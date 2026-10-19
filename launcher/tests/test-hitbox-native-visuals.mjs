@@ -20,17 +20,17 @@ assert.ok(emcc,'Emscripten compiler is required');
 const work=await mkdtemp(join(tmpdir(),'eagler-hitbox-visuals-'));
 function run(file,args,options={}){return execFileSync(file,args,{encoding:'utf8',windowsHide:true,timeout:180000,maxBuffer:8*1024*1024,...options});}
 try{
- const game15=workspacePath('th15','th15_web/cpp/game'),exe=resolve(work,process.platform==='win32'?'th15.exe':'th15');
+ const game15=workspacePath('th15','web/cpp/game'),exe=resolve(work,process.platform==='win32'?'th15.exe':'th15');
  const units=['AnmManager','AnmRegistry','AnmInterpreter','AnmResource','AnmUpdate','AnmVariables','AnmInterpolators','AnmVisualState','AnmCoordinates','AnmStrip','AnmGeometry','AnmTrail','AnmOverlay','AnmSceneEffects','Interpolation'];
  run(process.env.CXX||'g++',['-std=c++17','-O2','-I',game15,resolve(fixtures,'hitbox-th15.cpp'),...units.map(unit=>resolve(game15,unit+'.cpp')),'-o',exe]);
  console.log(run(exe,[resolve(assets.th15)]).trim());
- const game09=workspacePath('th09','th09_web/cpp/game'),wasm=resolve(work,'th09.wasm');
+ const game09=workspacePath('th09','web/cpp/game'),wasm=resolve(work,'th09.wasm');
  run(resolve(wasiSdk,'bin',process.platform==='win32'?'clang++.exe':'clang++'),['-std=c++17','-O2','-fno-exceptions','-I',game09,resolve(fixtures,'hitbox-th09.cpp'),...['AnmResource','AnmExecutor','Rng','Timer','GameMath'].map(unit=>resolve(game09,unit+'.cpp')),'-o',wasm]);
  const wasi=new WASI({version:'preview1',args:['check', '/assets/'+resolve(assets.th09).replaceAll('\\','/').split('/').at(-1)],env:{},preopens:{'/assets':resolve(assets.th09,'..')},returnOnExit:true});
  const instance=await WebAssembly.instantiate(await readFile(wasm),wasi.getImportObject());assert.equal(wasi.start(instance.instance),0);
  const root=workspacePath('th20'),program=resolve(work,'th20.cjs');
- const includes=['th20_web/cpp/shim','th20_web/cpp','th20_web/cpp/sdl','portable/sdl','include','native_recovered'].flatMap(path=>['-I',resolve(root,path)]);
- run(process.env.TH_PYTHON||'python',[emcc,'-std=c++20','-O2','-ffp-contract=off','-DTH_SDL3=1','-DTH_NATIVE_PLATFORM=1','-msimd128','-msse','-msse2','-mavx','-include',resolve(root,'th20_web/cpp/shim/msvc_compat.h'),...includes,resolve(fixtures,'hitbox-th20.cpp'),...['sprite_renderer/anm_vm','sprite_renderer/binding','sprite_renderer/animation','ecl_vm/math'].map(path=>resolve(root,'source_reconstruction',path+'.cpp')),'-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-sNODERAWFS=1','-sEXIT_RUNTIME=1','-o',program],{env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten')}});
+ const includes=['web/cpp/shim','web/cpp','web/cpp/sdl','portable/sdl','include','src'].flatMap(path=>['-I',resolve(root,path)]);
+ run(process.env.TH_PYTHON||'python',[emcc,'-std=c++20','-O2','-ffp-contract=off','-DTH_SDL3=1','-DTH_NATIVE_PLATFORM=1','-msimd128','-msse','-msse2','-mavx','-include',resolve(root,'web/cpp/shim/msvc_compat.h'),...includes,resolve(fixtures,'hitbox-th20.cpp'),...['sprite_renderer/anm_vm','sprite_renderer/binding','sprite_renderer/animation','ecl_vm/math'].map(path=>resolve(root,'src',path+'.cpp')),'-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-sNODERAWFS=1','-sEXIT_RUNTIME=1','-o',program],{env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten')}});
  console.log(run(process.execPath,[program,resolve(assets.th20)]).trim());
  console.log(JSON.stringify({passed:true,scope:'Native animation components with actual stock resources',resources:Object.fromEntries(await Promise.all(Object.entries(assets).map(async([game,path])=>[game,createHash('sha256').update(await readFile(path)).digest('hex')])))}));
 }finally{assert.equal(dirname(resolve(work)),resolve(tmpdir()));await rm(work,{recursive:true,force:true});}

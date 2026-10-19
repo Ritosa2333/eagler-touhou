@@ -1,4 +1,4 @@
-#include "../../th08_web/cpp/multiplayer/NetplayRuntime.hpp"
+#include "../../web/cpp/multiplayer/NetplayRuntime.hpp"
 #include <array>
 #include <cassert>
 #include <cstdio>

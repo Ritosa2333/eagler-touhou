@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/CooperativeRules.hpp"
+#include "../web/cpp/multiplayer/CooperativeRules.hpp"
 
 #include <cassert>
 #include <cstdint>

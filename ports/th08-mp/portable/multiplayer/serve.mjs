@@ -7,7 +7,7 @@ const root=resolve(import.meta.dirname,'../..');
 const workspace=resolve(process.env.EAGLER_WORKSPACE||root+'/../..');
 const fixture=process.env.TH08_MP_FIXTURES==='1';
 const buildRoot=resolve(process.env.TH08_MP_BUILD_ROOT||
-  resolve(root,'th08_web/artifacts',fixture?'multiplayer-fixtures':'multiplayer'));
+  resolve(root,'web/artifacts',fixture?'multiplayer-fixtures':'multiplayer'));
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 if(build.variant!==(fixture?'multiplayer-fixtures':'multiplayer'))throw Error('Build the requested TH08 multiplayer variant first');
 const wasm=resolve(buildRoot,'th08-sdl.wasm');
@@ -29,9 +29,9 @@ files.set('/runtime/manifest.json',hostManifest);
 files.set('/runtime/resources.json',resolve(import.meta.dirname,'host-resources.json'));
 files.set('/runtime/th08-sdl.mjs',resolve(buildRoot,'th08-sdl.mjs'));files.set('/runtime/th08-sdl.wasm',wasm);
 for(const file of ['th08.html','shell.mjs','startup-branding.mjs','directory-keyboard.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs','midi-worklet.mjs'])
- files.set('/runtime/'+file,resolve(root,'th08_web/sdl-runtime',file));
+ files.set('/runtime/'+file,resolve(root,'web/sdl-runtime',file));
 files.set('/runtime/motion-replay.mjs',resolve(root,'portable/browser/motion-replay.mjs'));
-files.set('/runtime/adonis-calibration.mjs',resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'browser/adonis-calibration.mjs'));
+files.set('/runtime/adonis-calibration.mjs',resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'browser/adonis-calibration.mjs'));
 files.set('/fonts/msgothic.ttc',process.env.TH08_MP_FONT||resolve(workspace,'th06-eagler/assets/msgothic.ttc'));
 const fontAssets=process.env.TH08_MP_FONT_ASSETS||resolve(workspace,'th08-eagler/build-eagler/fonts');
 for(const name of ['blend.bin','cp932.bin'])files.set('/fonts/'+name,resolve(fontAssets,name));

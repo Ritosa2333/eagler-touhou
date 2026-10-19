@@ -1,198 +1,64 @@
-# Self-hosting
+# 自托管
 
-Eagler Touhou can generate a complete, verified static site from a resource-free
-Runtime Release and legally-owned installations for every selected formal
-Product Catalog game. The normal
-self-host workflow is intentionally infrastructure-neutral: it does not install
-or configure nginx, Caddy, Apache, IIS, systemd, TLS, a CDN, firewall rules, or
-any other operator infrastructure.
+使用 Launcher Host 命令，从已发布 Runtime Release 和依法持有的本地游戏安装资源构建静态站点。正式 Host 构建使用 Product Catalog 中全部注册游戏；单作开发使用 workspace 开发服务器。
 
-## Requirements
+## 准备输入
 
-- Node.js 22 or newer;
-- Python 3;
-- a verified all-product `runtime-release/` supplied by the project;
-- legally-owned installations for the selected Product Catalog games;
-- FFmpeg on PATH for the bundled TH10 OGG preparer, or a supplied
-  `games/th10/assets-ogg/` containing `th10.data` and `bgm-ogg/`.
+需要 Node.js 22+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
 
-The self-host bundle includes a Launcher-owned TH10 content preparer. It uses
-the canonical portable SDL music layout to extract DATA/OGG from `games/th10`
-without carrying an obsolete TH10 Runtime/Wasm parser. The existing thtk
-artwork step also reconstructs `th10-card.webp` from the original title background.
-
-PowerShell, CMake, Ninja, Emscripten and the Runtime source repositories are
-not required for ordinary self-hosting.
-
-## Input layout
-
-Use this layout in either a source checkout or a distributable self-host bundle:
+在 `launcher/` 或自托管包根目录使用以下目录结构：
 
 ```text
-EaglerTouhou-Host/
+host-root/
 ├─ package.json
 ├─ package-lock.json
-├─ eagler-touhou.config.json    # optional persistent operator config
-├─ runtime-release/             # resource-free Runtime HTML/JS/WASM + metadata
-├─ shared/                      # bundled fonts when present
-│  ├─ unifont.otf
-│  └─ japanese-font.otf
-├─ games/
-│  ├─ th06/                     # copy the TH06 installation here
-│  ├─ th07/                     # copy the TH07 installation here
-│  ├─ th08/                     # copy the TH08 installation here
-│  └─ th10/                     # copy the TH10 installation here
-├─ .cache/                      # reusable local build state
-└─ dist/                        # generated output; do not edit
+├─ runtime-release/
+├─ games/<game-id>/       # 每个已登记游戏一个目录
+├─ shared/                # 可选：unifont.otf 和 japanese-font.otf
+├─ eagler-touhou.config.json  # 可选站点配置
+├─ .cache/                # 构建工具与可复用输出缓存
+└─ dist/                  # 生成的站点与 Package
 ```
 
-The persistent operator-owned inputs are `games/` and
-`eagler-touhou.config.json`. `runtime-release/` is a project release artifact.
-`dist/` is disposable output and must be regenerated rather than edited.
+需要配置 WebSocket Relay 或手动 Package 下载链接时，将 [`config/eagler-touhou.config.example.json`](../config/eagler-touhou.config.example.json) 复制为 `eagler-touhou.config.json`。Host 从本地目录读取原作资源；这些资源由运营者提供，不包含在仓库或 Runtime Release 中。
 
-## Generate and run the site
+## 构建与检查
 
-To build and verify the static hosted site:
+从源码检出在 `launcher/` 运行：
 
-```text
-npm run host:build
-```
-
-The result is:
-
-```text
-dist/site/
-```
-
-To build the same site and serve it locally on `127.0.0.1:8130`:
-
-```text
-npm run host
-```
-
-The local server is for development, LAN use and checking the generated site.
-For a public deployment, copy `dist/site/` to the Web server, object store, CDN,
-container image or hosting platform of your choice.
-
-Launcher builds enable Service Worker offline loading by default on the served
-origin and configured mount. HTTPS (or trusted loopback) is required. Once the
-Launcher and game have been installed online, they can be reopened offline.
-Use `EAGLER_REACT_APP_SHELL=disabled` only for fixtures or deployments that
-explicitly need offline loading disabled. `EAGLER_REACT_APP_SHELL=isolated` with
-`EAGLER_REACT_APP_SHELL_ORIGIN` retains exact-origin builds for isolated previews.
-
-To keep the large Package resources on a separate HTTPS origin, derive an
-External user site from the verified Hosted output:
-
-```powershell
-npm run package:external-site -- `
-  --source=dist/site `
-  --runtime-release=runtime-release `
-  --output=dist/external-site `
-  --profile=web-release-external
-```
-
-Publish `dist/site/` as the complete resource origin and
-`dist/external-site/` as the matching user-facing site. The user-facing server
-redirects `/games/` and `/shared/` to the resource origin; the resource origin
-provides CORS and byte-range responses. Follow
-[External resource mode](EXTERNAL_RESOURCE_MODE.md) for the complete paired
-deployment and public verification procedure.
-
-To inspect inputs without generating the site:
-
-```text
+```sh
+npm ci
+npm run build
 npm run host:doctor
+npm run host:build
+npm run verify:server -- dist/site
 ```
 
-## Dependencies and caches
+自托管包已包含构建好的 Launcher Host 文件。从包根目录安装依赖并运行 Host 检查：
 
-The npm commands are the public entrypoints on Windows, Linux and macOS.
-If their locked Node dependencies are absent, the Host tooling runs `npm ci`
-automatically. It never downloads original Touhou game content.
-
-Python build dependencies are installed into:
-
-```text
-.cache/python/
+```sh
+npm ci
+npm run host:doctor
+npm run host:build
+npm run verify:server -- dist/site
 ```
 
-Expensive reproducible outputs such as language packs, converted OGG and
-prepared artwork live under `.cache/generated/` and may be reused across site
-rebuilds. Deleting `.cache/` is always allowed when a cold rebuild is wanted.
+`npm run host:doctor` 在组装前检查所有 Runtime 和游戏输入。Host 准备游戏数据、可选音乐与语言包、封面、Launcher App Shell 和部署清单，生成的站点位于 `dist/site/`。
 
-On Windows, the Host tooling downloads the pinned official thtk 12 archive,
-verifies its SHA-256, and stores it under `.cache/tools/thtk/12/`. On other
-platforms, `thdat` and `thmsg` must be installed by the operator and available
-on `PATH`; `thanm` is optional.
+从源码检出或自托管包根目录运行以下命令，可在 `http://127.0.0.1:8130/` 本地提供站点：
 
-## Default content preparation
-
-The normal hosted build:
-
-- validates the Runtime Release and every selected original game directory;
-- prepares Japanese, Simplified Chinese and English for TH06/TH07;
-- prepares the Launcher-facing artwork needed by the selected products;
-- converts OGG using the project-owned production baselines when OGG is
-  enabled;
-- assembles Package DATA and optional package components;
-- builds the deployment-specific App Shell;
-- verifies the finished static site before reporting success.
-
-The default music selection is MIDI plus OGG. A different set can be supplied
-to the Node entrypoint, for example:
-
-```text
-node host/build.mjs --build-only --music=midi
+```sh
+npm run host -- --no-open
 ```
 
-## Generate Import artifacts
+## 发布
 
-To generate an import site and verified game-content ZIPs:
+将 `dist/site/` 内容复制到静态网站、对象存储或 CDN 的文档根目录，并通过 HTTPS 提供服务以启用浏览器 Service Worker 存储。然后验证公开地址：
 
-```text
-npm run import
-```
-
-This uses the same original inputs and Runtime Release as the hosted build and
-produces:
-
-```text
-dist/import-site/
-dist/import/th06.zip
-dist/import/th07.zip
-dist/import/th08.zip
-```
-
-The Import site contains the Launcher and App-managed Runtime but does not
-publish the original game payload. The ZIP set is staged and then published as
-one directory so a failed build does not intentionally expose a partial set.
-
-## Deploy the generated site
-
-Eagler Touhou owns the generated site's behavior, not the operator's operating
-system. A public host must provide the required MIME types, cache behavior,
-HTTPS/security context, and any configured WebSocket endpoint. It does not have
-to use a particular Web server or Linux distribution.
-
-After publishing, validate the real public URL:
-
-```text
+```sh
 npm run verify:deployed -- https://example.com/
 ```
 
-See [Self-hosting reference](SELF_HOSTING_REFERENCE.md) for Host configuration,
-Import mode, Relay/TURN integration, migration/HSTS behavior and Web-server
-requirements. Non-authoritative server examples live under
-`examples/deployment/`.
+若站点让玩家自行导入 Package，运行 `npm run import`；详情见[自托管参考](SELF_HOSTING_REFERENCE.md)。若大体积 Package 放在独立源站，按[外置资源模式](EXTERNAL_RESOURCE_MODE.md)配置。
 
-## Self-host bundle
-
-Project maintainers may publish a **self-host bundle** containing the portable
-Host tooling, compiled Launcher files, Runtime Release and redistributable
-shared resources while leaving all three `games/` directories empty. It is a
-distribution format for the workflow above, not a second hosting system.
-
-The bundle itself contains no maintainer PowerShell entrypoints and ordinary
-recipients still use only the npm commands documented here. Creating the bundle
-is a project-maintainer release task described in [Release engineering](RELEASE.md).
+源码检出的 `npm run host` 和 `npm run import` 使用同一套 Launcher Host 实现。维护者通过[发布流程](RELEASE.md)生成便携自托管包。

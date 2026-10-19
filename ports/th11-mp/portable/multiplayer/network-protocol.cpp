@@ -1,6 +1,6 @@
-#include "../../th11_web/cpp/multiplayer/NetplayRuntime.hpp"
-#include "../../th11_web/cpp/multiplayer/InputLanes.hpp"
-#include "../../th11_web/cpp/multiplayer/ReplayArchive.hpp"
+#include "../../web/cpp/multiplayer/NetplayRuntime.hpp"
+#include "../../web/cpp/multiplayer/InputLanes.hpp"
+#include "../../web/cpp/multiplayer/ReplayArchive.hpp"
 #include <array>
 #include <vector>
 #include <cstdio>

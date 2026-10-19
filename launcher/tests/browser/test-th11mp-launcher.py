@@ -373,9 +373,12 @@ def main() -> int:
         page.wait_for_selector("#netplayCalibrationDialog:not([open])", state="attached")
 
     def dismiss_decisions(page) -> None:
+        page.wait_for_function("""() => localStorage.getItem('eagler-touhou-first-use-notice-seen-v1') === '1' ||
+            document.querySelector('#firstUseNoticeDialog')?.open === true""", timeout=15000)
         first = page.locator("#firstUseNoticeDialog[open]")
         if first.count():
             page.locator("#firstUseNoticeClose").click()
+            page.wait_for_function("!document.querySelector('#firstUseNoticeDialog')?.open", timeout=15000)
         dialog = page.locator("#decisionDialog[open]:not(.closing)")
         if dialog.count():
             message = dialog.inner_text()
@@ -767,13 +770,14 @@ def main() -> int:
         before_identity = host.evaluate(IDENTITY)
         report["room"] = room
         trace("Real room " + room + " has all requested players and admitted spectators")
+        report["inputTimingProfile"] = "pure-delay"
         screenshot(host, "standard-room")
+        # The host owns timing selection. Other seats receive that choice in
+        # the synchronized start, not through their hidden local preference.
+        if host.locator("#mpRollbackToggle").get_attribute("aria-checked") == "true":
+            host.locator("#mpRollbackToggle").click()
+        assert host.locator("#mpRollbackToggle").get_attribute("aria-checked") == "false"
         for seat, page in enumerate(live):
-            assert page.locator("#mpRollbackToggle").get_attribute("aria-checked") == "false"
-            assert page.locator("#mpRollbackToggle").is_disabled()
-            page.locator("#mpRollbackToggle").evaluate("toggle => toggle.dispatchEvent(new MouseEvent('click', {bubbles:true}))")
-            assert page.locator("#mpRollbackToggle").get_attribute("aria-checked") == "false"
-            assert page.locator("#mpRollbackToggle").is_disabled()
             page.locator("#mpReady").click()
         wait_for(lambda: host.locator("#mpStartGame").is_enabled(), "Room readiness did not permit start")
         if a.loadout_check:

@@ -11,18 +11,18 @@
   "scope": "Pure Node post-processing repair for smoothness reports. It corrects a false gap introduced by frame filtering after rollback. It does not change game, input, transport, audio or browser scheduling and does not establish a new performance result.",
   "testedSources": {
     "harness": {
-      "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "path": "web/tests/multiplayer/smoothness-browser.mjs",
       "bytes": 56624,
       "sha256": "598c057dec10d6e265ad94ce3316498f405a994a582a97525177b494ae5f2126",
       "scope": "Tested window-integration revision before any later scheduler-probe integration; this identity is not silently updated when the harness changes."
     },
     "helper": {
-      "path": "th09_web/tests/multiplayer/smoothness-window.mjs",
+      "path": "web/tests/multiplayer/smoothness-window.mjs",
       "bytes": 9583,
       "sha256": "9c46c45b275b5b57912a62c58dbc309dfe3eec2bff6b788a2370ce6c214c0546"
     },
     "contracts": {
-      "path": "th09_web/tests/multiplayer/smoothness-window.test.mjs",
+      "path": "web/tests/multiplayer/smoothness-window.test.mjs",
       "bytes": 10714,
       "sha256": "133ea710aca8128ca2d85c2db60e74d93cd54eea799e3043b92e809756f8bbeb"
     }
@@ -50,11 +50,11 @@
       "executable": "node",
       "args": [
         "--test",
-        "th09_web/tests/multiplayer/smoothness-window.test.mjs"
+        "web/tests/multiplayer/smoothness-window.test.mjs"
       ],
       "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
       "environment": {
-        "TH09_SMOOTHNESS_WINDOW_RAW": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json"
+        "TH09_SMOOTHNESS_WINDOW_RAW": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json"
       }
     },
     "final": {
@@ -120,7 +120,7 @@
     }
   },
   "rawRegression": {
-    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
+    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay125-01-report.json",
     "bytes": 28866220,
     "sha256": "d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770",
     "rawShaReadBeforeAndAfterEqual": true,
@@ -179,37 +179,37 @@
     ],
     "retainedFields": [
       {
-        "path": "th09_web/tests/multiplayer/export-menu-evidence.mjs",
+        "path": "web/tests/multiplayer/export-menu-evidence.mjs",
         "use": "summary[side].scenes.includes(3)",
         "result": "scenes alias retained with all SessionPhase values in the continuous body"
       },
       {
-        "path": "th09_web/tests/multiplayer/summarize-smoothness-comparison.mjs",
+        "path": "web/tests/multiplayer/summarize-smoothness-comparison.mjs",
         "use": "lastFrame-firstFrame, elapsedMs, resimulated, waitCallbacks",
         "result": "Frame delta and elapsed now share the closed endpoint definition"
       },
       {
-        "path": "th09_web/tests/multiplayer/summarize-rollback4x.mjs",
+        "path": "web/tests/multiplayer/summarize-rollback4x.mjs",
         "use": "logicHz, callbackWorkMs and presentationGapMs distributions",
         "result": "Field shapes and body-only gap distributions retained"
       },
       {
-        "path": "th09_web/tests/multiplayer/analyze-direct-startup.mjs",
+        "path": "web/tests/multiplayer/analyze-direct-startup.mjs",
         "use": "logicHz, effectivePresentationGapMs and stored summary",
         "result": "Field shapes retained; body-only new-state gap is distinct from explicit endpoint closure"
       },
       {
-        "path": "th09_web/tests/multiplayer/summarize-endurance.mjs",
+        "path": "web/tests/multiplayer/summarize-endurance.mjs",
         "use": "stores summary object",
         "result": "New schema and window metadata remain in stored summary"
       },
       {
-        "path": "th09_web/tests/multiplayer/analyze-release-response.mjs",
+        "path": "web/tests/multiplayer/analyze-release-response.mjs",
         "use": "stores raw.summary[side]",
         "result": "No edit; frozen input reports stay original"
       },
       {
-        "path": "th09_web/tests/multiplayer/analyze-relay125-transport.mjs",
+        "path": "web/tests/multiplayer/analyze-relay125-transport.mjs",
         "use": "stores raw.summary[side]; exact frozen raw identity gate",
         "result": "No edit; independent corrected baseline remains frozen"
       }

@@ -15,7 +15,7 @@
     {
       "label": "old-diagnostic",
       "source": {
-        "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-live-relay-none-02-report.json",
+        "path": "web/artifacts/multiplayer-tests/rollback4x-chain-live-relay-none-02-report.json",
         "sha256": "63a1997798609a598d5256e77775eb6df58b042ff7a810ef59ba00241c2b58a7",
         "bytes": 39268580
       },
@@ -400,7 +400,7 @@
     {
       "label": "input-batch-simd-diagnostic",
       "source": {
-        "path": "D:/workspace/eagler/worktrees/th09-rollback-chain-profile/th09_web/artifacts/multiplayer-tests/rollback4x-chain-input-batch-simd-live-relay-none-01-report.json",
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-chain-profile/web/artifacts/multiplayer-tests/rollback4x-chain-input-batch-simd-live-relay-none-01-report.json",
         "sha256": "6fd99bbb29d3244f67db2632468ced5b040a26a063f35bc70d1d53ad0c7a170d",
         "bytes": 34170121
       },
@@ -785,7 +785,7 @@
   ],
   "releaseEnvironmentControl": {
     "source": {
-      "path": "th09_web/artifacts/multiplayer-tests/rollback4x-chain-release-relay-headed-02-report.json",
+      "path": "web/artifacts/multiplayer-tests/rollback4x-chain-release-relay-headed-02-report.json",
       "sha256": "311e43a281836de611e614dbe7730675386c8d599327833ecd0f4dd0e7a048c5",
       "bytes": 11005847
     },
@@ -1067,13 +1067,13 @@
   },
   "sources": [
     {
-      "path": "th09_web/cpp/sdl/Application.cpp",
+      "path": "web/cpp/sdl/Application.cpp",
       "sha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
       "bytes": 87130,
       "anchorLine": 617
     },
     {
-      "path": "th09_web/cpp/multiplayer/FrameSchedule.hpp",
+      "path": "web/cpp/multiplayer/FrameSchedule.hpp",
       "sha256": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
       "bytes": 1053,
       "anchorLine": 20
@@ -1085,13 +1085,13 @@
       "anchorLine": 12
     },
     {
-      "path": "th09_web/tests/multiplayer/frame-schedule.cpp",
+      "path": "web/tests/multiplayer/frame-schedule.cpp",
       "sha256": "a5f21959532b17e25110507bf7b08b2f168252ef03866ab532ee94d08728c7d6",
       "bytes": 2529,
       "anchorLine": 27
     },
     {
-      "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "path": "web/cpp/multiplayer/RollbackSession.cpp",
       "sha256": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
       "bytes": 15088,
       "anchorLine": 49
@@ -1135,22 +1135,22 @@
   ],
   "oldBuild": {
     "source": {
-      "path": "th09_web/artifacts/rollback4x-chain-live-profile/build.json",
+      "path": "web/artifacts/rollback4x-chain-live-profile/build.json",
       "sha256": "f0bd041d4000603fb84f20b1417b5dbb4d554dd5e0d8ec15d28124255af4b941",
       "bytes": 88821
     },
     "wasm": "7c8bdf579af8e18ace2208377d5a4f22a309eba9c1ec22f0248e252bd6f7deaa",
     "selectedSourceIdentities": {
-      "th09_web/cpp/sdl/Application.cpp": "a13de4320ec6c9210e6992b3abf38b09935e819372e67f1eac8307933b588d27",
-      "th09_web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
+      "web/cpp/sdl/Application.cpp": "a13de4320ec6c9210e6992b3abf38b09935e819372e67f1eac8307933b588d27",
+      "web/cpp/multiplayer/RollbackSession.cpp": "a6004deba637e2381745223b95c09c7e3323d7836c59b36dde0f400d7d7ef56a",
       "portable/sdl/FrameCadence.hpp": "d475dd64d34b68178c1da18b27e46f46476363946179aa156554df15f37702d6",
-      "th09_web/cpp/multiplayer/FrameSchedule.hpp": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
+      "web/cpp/multiplayer/FrameSchedule.hpp": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
       "../th09-rollback-transport-common/include/eagler/netplay/PendingFrameSchedule.hpp": "6e99f7c74d70936c061e079b2f7b028cf342d93ee55ba355ea9e53240e3ef67e"
     }
   },
   "candidateCheckoutTimingHeaders": [
     {
-      "path": "D:/workspace/eagler/worktrees/th09-rollback-chain-profile/th09_web/cpp/multiplayer/FrameSchedule.hpp",
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-chain-profile/web/cpp/multiplayer/FrameSchedule.hpp",
       "sha256": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
       "bytes": 1053
     },

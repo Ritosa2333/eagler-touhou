@@ -2,10 +2,10 @@
 // Executes retail gameplay only. Candidate simulation and comparison are separate.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { oracle, root, enableNativeMath, enableOriginalVectorMath } from '../../th15_web/tests/cpp/helpers.mjs';
+import { oracle, root, enableNativeMath, enableOriginalVectorMath } from '../../web/tests/cpp/helpers.mjs';
 import { recycleOriginalAllocations } from './arena.mjs';
 import { sceneFlags, stageCleared } from './original-progress.mjs';
-import { resourceLoader, nativePool, prepareBank } from '../../th15_web/tests/cpp/anm-oracle.mjs';
+import { resourceLoader, nativePool, prepareBank } from '../../web/tests/cpp/anm-oracle.mjs';
 export async function createOriginalWorld(spec, externalPath) {
     const replayName = externalPath.split(/[\\/]/).pop(), stagePrefix = 'st0' + spec.stage, playerPrefix = 'pl0' + spec.character;
     const m = await oracle({ memoryEnd: 0x18000000, heapStart: 0x08000000, heapLimit: 0x17000000 }), arg = i => m.u32(m.reg('ESP') + 4 + i * 4), files = new Map(), banks = new Map(), reads = [], loads = [];

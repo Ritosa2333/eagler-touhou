@@ -2,15 +2,15 @@ import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8').replaceAll('\r','');
-const app=read('th10_web/cpp/platform/Application.cpp');
-const popups=read('th10_web/cpp/game/ScorePopups.cpp');
-const bullets=read('th10_web/cpp/platform/WorldBullets.cpp');
-const items=read('th10_web/cpp/platform/WorldObjects.cpp');
-const lasers=read('th10_web/cpp/platform/WorldLasers.cpp');
-const backgrounds=read('th10_web/cpp/platform/Backgrounds.cpp');
-const startup=read('th10_web/cpp/game/StartupScreen.cpp');
-const screenEffects=read('th10_web/cpp/platform/ScreenEffects.cpp');
-const anim=read('th10_web/cpp/platform/AnimationEngine.cpp');
+const app=read('web/cpp/platform/Application.cpp');
+const popups=read('web/cpp/game/ScorePopups.cpp');
+const bullets=read('web/cpp/platform/WorldBullets.cpp');
+const items=read('web/cpp/platform/WorldObjects.cpp');
+const lasers=read('web/cpp/platform/WorldLasers.cpp');
+const backgrounds=read('web/cpp/platform/Backgrounds.cpp');
+const startup=read('web/cpp/game/StartupScreen.cpp');
+const screenEffects=read('web/cpp/platform/ScreenEffects.cpp');
+const anim=read('web/cpp/platform/AnimationEngine.cpp');
 
 // Draw-only frames restore shared camera/render/text bookkeeping that the
 // original 60 Hz draw chain is allowed to mutate.

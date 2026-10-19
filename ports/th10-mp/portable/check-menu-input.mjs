@@ -24,10 +24,10 @@ const flags=['--target=wasm32-wasip1','-O2','-std=c++17','-Wall','-Wextra','-Wer
 if(sanitized)flags.push('-fsanitize=undefined','-fsanitize-trap=undefined');
 const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576','-Wl,--gc-sections'];
 const bindings=[
-    ['th10_web/cpp/platform/Title.cpp','this->pressed=&owner.input.player_profiles[0].input.raw_pressed;'],
-    ['th10_web/cpp/platform/Title.cpp','pressed=o.main.pressed;'],
-    ['th10_web/cpp/platform/WorldResults.cpp','pressed=&w.input.player_profiles[0].input.raw_pressed;'],
-    ['th10_web/cpp/platform/Credits.cpp','pressed=&owner.input.player_profiles[0].input.raw_pressed;'],
+    ['web/cpp/platform/Title.cpp','this->pressed=&owner.input.player_profiles[0].input.raw_pressed;'],
+    ['web/cpp/platform/Title.cpp','pressed=o.main.pressed;'],
+    ['web/cpp/platform/WorldResults.cpp','pressed=&w.input.player_profiles[0].input.raw_pressed;'],
+    ['web/cpp/platform/Credits.cpp','pressed=&owner.input.player_profiles[0].input.raw_pressed;'],
 ];
 const dependencies=new Set([sourceDependencyTool,resolve(root,'portable/check-menu-input.mjs'),resolve(root,'portable/make-dependencies.mjs')]);
 for(const [source,directBinding] of bindings){
@@ -46,7 +46,7 @@ function compile(source,name,compileFlags){
     return object;
 }
 const softfloatFlags=['--target=wasm32-wasip1','-O2','-x','c','-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5','-ffunction-sections','-fdata-sections'];
-const softfloat=compile('th10_web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags);
+const softfloat=compile('web/cpp/rebuild/third_party/softfloat.c','softfloat',softfloatFlags);
 for(const multiplayer of [false,true]){
     const variant=multiplayer?'multiplayer':'ordinary';
     const variantFlags=[...flags,...(multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[])];
@@ -54,10 +54,10 @@ for(const multiplayer of [false,true]){
     // Existing platform sources are not warning-clean, so keep errors strict
     // for fixture/game sources without upgrading legacy platform warnings.
     const bindingFlags=[...variantFlags.filter(flag=>flag!=='-Werror'),'-I',resolve(root,'../../common/include')];
-    for(const source of ["th10_web/cpp/platform/Title.cpp", "th10_web/cpp/platform/WorldResults.cpp", "th10_web/cpp/platform/Credits.cpp"])
+    for(const source of ["web/cpp/platform/Title.cpp", "web/cpp/platform/WorldResults.cpp", "web/cpp/platform/Credits.cpp"])
         compile(source,variant+'-binding-'+source.split('/').at(-1).replace('.cpp',''),bindingFlags);
     const objects=[softfloat,compile('tests/menu-input-test.cpp',variant+'-test',variantFlags),
-        ...['GameInput','Arithmetic','GameMath','Timer','MenuCursor','TitleMenu','TitleMain','MusicRoom','LocalizationStub','AnmRegistry','Results','ResultsPause','Ending','Dialogue','BackgroundThread'].map(name=>compile(`th10_web/cpp/game/${name}.cpp`,variant+'-'+name,variantFlags))];
+        ...['GameInput','Arithmetic','GameMath','Timer','MenuCursor','TitleMenu','TitleMain','MusicRoom','LocalizationStub','AnmRegistry','Results','ResultsPause','Ending','Dialogue','BackgroundThread'].map(name=>compile(`web/cpp/game/${name}.cpp`,variant+'-'+name,variantFlags))];
     const wasm=resolve(out,variant+'.wasm');
     execFileSync(compiler,[...linkFlags,...objects,'-o',wasm],{cwd:root,stdio:'inherit'});
     const wasi=new WASI({version:'preview1',args:[variant],env:{},returnOnExit:true});

@@ -16,10 +16,10 @@
   "builds": {
     "baseline": {
       "record": {
-        "path": "D:/workspace/eagler/worktrees/th08-rollback-journal-baseline/th08_web/artifacts/multiplayer/build.json",
+        "path": "D:/workspace/eagler/worktrees/th08-rollback-journal-baseline/web/artifacts/multiplayer/build.json",
         "sha256": "63be07fbd5b454cf1cf19bf7affffa37990fe91019d16ea864dc30580b2e156f"
       },
-      "wasmPath": "D:\\workspace\\eagler\\worktrees\\th08-rollback-journal-baseline\\th08_web\\artifacts\\multiplayer\\th08-sdl.wasm",
+      "wasmPath": "D:\\workspace\\eagler\\worktrees\\th08-rollback-journal-baseline\\web\\artifacts\\multiplayer\\th08-sdl.wasm",
       "builtAt": "2026-10-11T23:40:20.265Z",
       "sha256": "050312dc6ccb37b7223e808b7d19a79c6a0666f14f84890a022cda73312ea4b3",
       "bytes": 3595984,
@@ -36,10 +36,10 @@
     },
     "candidate": {
       "record": {
-        "path": "D:/workspace/eagler/worktrees/th08-rollback-journal-4x/th08_web/artifacts/multiplayer/build.json",
+        "path": "D:/workspace/eagler/worktrees/th08-rollback-journal-4x/web/artifacts/multiplayer/build.json",
         "sha256": "29ceff8cd49e800b12443aaa174113d0f74d58afbc40be8afa732d583008272d"
       },
-      "wasmPath": "D:\\workspace\\eagler\\worktrees\\th08-rollback-journal-4x\\th08_web\\artifacts\\multiplayer\\th08-sdl.wasm",
+      "wasmPath": "D:\\workspace\\eagler\\worktrees\\th08-rollback-journal-4x\\web\\artifacts\\multiplayer\\th08-sdl.wasm",
       "builtAt": "2026-10-12T00:40:56.797Z",
       "sha256": "8ea9b23fc9ffbdb25ddd1d5bf1a94284fef5e60df00390ec735557ff27e71f55",
       "bytes": 3595502,
@@ -56,10 +56,10 @@
     },
     "diagnostic": {
       "record": {
-        "path": "D:/workspace/eagler/worktrees/th08-rollback-journal-4x/th08_web/artifacts/multiplayer-fixtures/build.json",
+        "path": "D:/workspace/eagler/worktrees/th08-rollback-journal-4x/web/artifacts/multiplayer-fixtures/build.json",
         "sha256": "4efe8333055733418a1ba9ba98cdb47aa4ced7bb09e12deef60c7f6bf92d11de"
       },
-      "wasmPath": "D:\\workspace\\eagler\\worktrees\\th08-rollback-journal-4x\\th08_web\\artifacts\\multiplayer-fixtures\\th08-sdl.wasm",
+      "wasmPath": "D:\\workspace\\eagler\\worktrees\\th08-rollback-journal-4x\\web\\artifacts\\multiplayer-fixtures\\th08-sdl.wasm",
       "builtAt": "2026-10-12T00:25:55.560Z",
       "sha256": "2eb30712d8be66f2e85d6c8f1d15988b6d6f416d2a412b87fafa7a04a5a7a92c",
       "bytes": 3792497,
@@ -8920,13 +8920,13 @@
       "sourceStable": true,
       "inputs": {
         "portable/multiplayer/replay-checkpoint-check.cpp": "24dce2accb5315281faa2b97c195b15b4d13d364ddc262ccf5e803f4af81222d",
-        "th08_web/cpp/game/ReplayRecording.cpp": "e8e883d703a7045afa38632edd9de33bc8b47eebf9a450556c154266d9643d3c",
-        "th08_web/cpp/game/ReplayStream.cpp": "df38e6d7443a170a035f83ece54a6627e2a1404b337a671b3d6b1224b59d78e9",
-        "th08_web/cpp/game/Arithmetic.cpp": "d56d3aa7ae036ebb93b6e4622ace339ceb6fe0fbfaf8e7754923dd0b68f81316",
-        "th08_web/cpp/multiplayer/ReplayCheckpoint.hpp": "9173ffbe6979669f082cc73e1856b1cd6266a649d0cf815d8866775899210718",
-        "th08_web/cpp/game/ReplayRecording.hpp": "2eba3ae5e666f07774a755cab9bc2f5b8cbf0b34fe1ac5a3fe00eabec97ff3b7",
-        "th08_web/cpp/game/ReplayStream.hpp": "a184171f8f11db890e87bb6ab862c1b61985bece2f9c2f8946ded06a5e4262e6",
-        "th08_web/cpp/third_party/softfloat.c": "918de5284362d6ff5acabc96ca5586a75db1177b010d7d5bb52be88256b8e6ae"
+        "web/cpp/game/ReplayRecording.cpp": "e8e883d703a7045afa38632edd9de33bc8b47eebf9a450556c154266d9643d3c",
+        "web/cpp/game/ReplayStream.cpp": "df38e6d7443a170a035f83ece54a6627e2a1404b337a671b3d6b1224b59d78e9",
+        "web/cpp/game/Arithmetic.cpp": "d56d3aa7ae036ebb93b6e4622ace339ceb6fe0fbfaf8e7754923dd0b68f81316",
+        "web/cpp/multiplayer/ReplayCheckpoint.hpp": "9173ffbe6979669f082cc73e1856b1cd6266a649d0cf815d8866775899210718",
+        "web/cpp/game/ReplayRecording.hpp": "2eba3ae5e666f07774a755cab9bc2f5b8cbf0b34fe1ac5a3fe00eabec97ff3b7",
+        "web/cpp/game/ReplayStream.hpp": "a184171f8f11db890e87bb6ab862c1b61985bece2f9c2f8946ded06a5e4262e6",
+        "web/cpp/third_party/softfloat.c": "918de5284362d6ff5acabc96ca5586a75db1177b010d7d5bb52be88256b8e6ae"
       },
       "flags": [
         "-O2",
@@ -8937,7 +8937,7 @@
         "-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1",
         "-Wl,-z,stack-size=1048576",
         "-ID:\\workspace\\eagler\\worktrees\\th08-rollback-journal-4x\\third_party\\eagler-common\\include",
-        "-ID:\\workspace\\eagler\\worktrees\\th08-rollback-journal-4x\\th08_web\\cpp\\multiplayer"
+        "-ID:\\workspace\\eagler\\worktrees\\th08-rollback-journal-4x\\web\\cpp\\multiplayer"
       ],
       "wasmSha256": "c0a6f329cbb4a65040b418c9be42770065764bf27a2f55bd869265856b47447d",
       "compiler": "clang version 23.1.0-rc3 (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)\nTarget: wasm32-unknown-wasip1\nThread model: posix\nInstalledDir: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\nConfiguration file: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\\clang++.cfg",

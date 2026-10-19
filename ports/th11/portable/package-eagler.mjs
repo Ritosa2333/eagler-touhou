@@ -8,7 +8,7 @@ import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'..');
 const game='th11';
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,'build-eagler');
-const buildRoot=resolve(root,'th11_web',process.env.TH11_OUTPUT||'artifacts/sdl3');
+const buildRoot=resolve(root,'web',process.env.TH11_OUTPUT||'artifacts/sdl3');
 const fonts=process.env.EAGLER_FONT_ROOT;
 if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private directory containing cp932.bin');
 const hash=b=>createHash('sha256').update(b).digest('hex');
@@ -33,7 +33,7 @@ function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).
 for(const path of walk(out))if(!allowed.has(relative(out,path).split(sep).join('/')))throw Error('Unexpected file in output; select a clean output directory: '+path);
 const write=(name,bytes)=>{const path=resolve(out,name);mkdirSync(dirname(path),{recursive:true});writeFileSync(path,bytes);};
 const copy=(from,name)=>write(name,readFileSync(from));
-const shellRoot=resolve(root,'th11_web/sdl-runtime');
+const shellRoot=resolve(root,'web/sdl-runtime');
 const html=readFileSync(resolve(shellRoot,'managed.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
 write(entry,html);
 for(const name of runtimeNames){

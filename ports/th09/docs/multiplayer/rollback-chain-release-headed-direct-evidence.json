@@ -3,18 +3,18 @@
   "complete": true,
   "scope": "Offline reconstruction of one actual headed release RTC run. No new browser, network, build or timing experiment.",
   "raw": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\rollback4x-chain-release-input-batch-headed-direct-01-report.json",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-release-input-batch-headed-direct-01-report.json",
     "bytes": 7527043,
     "sha256": "c5451f031b17de2c0d52cc3edb46f96660916079547870c3bca1f36c28c1c3ee"
   },
   "analyzer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\analyze-direct-startup.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-direct-startup.mjs",
     "bytes": 15720,
     "sha256": "7e34cc7b54ce3f425a07b411b53e2ba88479cd634888059c879274b4f4851715"
   },
   "sources": [
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\smoothness-browser.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\smoothness-browser.mjs",
       "bytes": 52850,
       "sha256": "a0ce03e2e79efaeab2f605c2e14f94415bce543cfdcb57d0e83eee4be4f34fef",
       "anchors": [
@@ -25,7 +25,7 @@
       ]
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\startup-transport-probe.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\startup-transport-probe.mjs",
       "bytes": 12047,
       "sha256": "b966f462f242bcac2a1306cf0d194b090ac2f885e9b6cd9e660f45c0cef8c4c8",
       "anchors": [
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\tests\\multiplayer\\relay-startup-probe.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-startup-probe.mjs",
       "bytes": 5130,
       "sha256": "15dd23710b0007ca0f43a6068da4dba497146773932cd0f75d596b2a0a2bd86a",
       "anchors": [
@@ -41,7 +41,7 @@
       ]
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
       "bytes": 57525,
       "sha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
       "anchors": [
@@ -7257,7 +7257,7 @@
       },
       "errors": [],
       "sourceIdentity": {
-        "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+        "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
         "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
         "probeSha256": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
         "fixtureSha256": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",

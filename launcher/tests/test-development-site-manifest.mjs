@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
-import { execFileSync } from "node:child_process";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { createDevelopmentSiteManifestFromContent } from "../lib/development-site-manifest.mjs";
@@ -10,6 +9,7 @@ import { SITE_MANIFEST_SCHEMA, validateSiteManifest } from "../lib/contracts/sit
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
 const root = await mkdtemp(join(resolve(import.meta.dirname, "../.."), "eagler-development-manifest-"));
+const project = fileURLToPath(new URL("..", import.meta.url));
 const fixtureData = Buffer.from([1, 2, 3, 4]);
 const fixtureScript = game => `loadPackage({files:[{filename:"/${game}-fixture.dat",start:0,end:4}],remote_package_size:4});`;
 const preloadGames = Object.entries(PRODUCT_GAMES)
@@ -60,9 +60,32 @@ for (const [game, entry] of Object.entries(manifest.games)) {
   assert.match(entry.gameData.version, /^sha256-[a-f0-9]{64}$/i);
   assert.match(entry.gameData.layout, /^sha256-[a-f0-9]{64}$/i);
 }
+const multiplayerRuntimeOwners = {
+  th06: "../ports/th06/build/web/multiplayer/th06.html",
+  th07: "../ports/th07/build/web/multiplayer/th07.html",
+  th08: "../ports/th08-mp/build-eagler-multiplayer/th08.html",
+  th09: "../ports/th09/web/build-eagler-multiplayer/th09.html",
+  th10: "../ports/th10-mp/build-eagler-multiplayer/th10.html",
+  th11: "../ports/th11-mp/build-eagler-multiplayer/th11.html",
+  th15: "../ports/th15-mp/build-eagler-multiplayer/th15.html",
+};
+const multiplayerGames = Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].multiplayerRuntime);
+assert.deepEqual(multiplayerGames, Object.keys(multiplayerRuntimeOwners), "all seven catalogued multiplayer games have a development Runtime owner");
+for (const [game, owner] of Object.entries(multiplayerRuntimeOwners)) {
+  const actual = manifest.games[game].multiplayerRuntime;
+  assert.ok(actual, `${game}: development Site Manifest must expose a multiplayer entrance`);
+  assert.equal(resolve(project, actual.split("?")[0]), resolve(project, owner),
+    `${game}: development multiplayer Runtime must point to its owning port build`);
+}
+for (const [game, owner] of Object.entries({
+  th06: "../ports/th06/build/web/normal/th06.html",
+  th07: "../ports/th07/build/web/normal/th07.html",
+})) {
+  assert.equal(resolve(project, manifest.games[game].runtime.split("?")[0]), resolve(project, owner),
+    `${game}: normal development Runtime must use the root recipe default output`);
+}
 // Prepared content outside the Launcher tree must still produce HTTP URLs,
 // rather than Windows drive schemes or Unix filesystem-root URLs.
-const project = fileURLToPath(new URL("..", import.meta.url));
 for (const game of ["th06", "th07", "th09", "th10", "th11", "th15", "th20"]) {
   const contentRoot = join(root, game);
   const musicDirectory = ["th09", "th11", "th15"].includes(game) ? "music" : "bgm-ogg";
@@ -79,10 +102,28 @@ for (const game of ["th06", "th07", "th09", "th10", "th11", "th15", "th20"]) {
   for (const name of PRODUCT_CONTENT[game].music.ogg.files) {
     await writeFile(join(contentRoot, musicDirectory, name), fixtureData);
   }
-  const prepared = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e",
-    `import { createDevelopmentSiteManifest } from './lib/development-site-manifest.mjs';
-     console.log(JSON.stringify(await createDevelopmentSiteManifest({ games: ['${game}'] })));`,
-  ], { cwd: project, encoding: "utf8", env: { ...process.env, [`EAGLER_${game.toUpperCase()}_CONTENT_DIR`]: contentRoot } }));
+  const sourcePath = path => relative(project, path).replaceAll("\\", "/");
+  const declaration = DEVELOPMENT_CONTENT.games[game];
+  const preparedGame = {
+    runtime: declaration.runtime,
+    ...(declaration.multiplayerRuntime ? { multiplayerRuntime: declaration.multiplayerRuntime } : {}),
+    data: PRODUCT_GAMES[game].dataProvider === "emscripten-preload" ? {
+      source: sourcePath(join(contentRoot, `${game}.data`)),
+      runtimeScript: sourcePath(join(contentRoot, `${game}.js`)),
+    } : {
+      source: sourcePath(join(contentRoot, `${game}.data`)),
+      layout: declaration.data.layout || declaration.data.identity?.layout,
+    },
+    music: Object.fromEntries(Object.entries(PRODUCT_CONTENT[game].music).map(([mode, music]) => {
+      const directory = mode === "ogg" ? musicDirectory : game === "th06" ? "bgm" : "";
+      const basePath = directory ? join(contentRoot, directory) : contentRoot;
+      return [mode, { ...music, base: `${sourcePath(basePath)}/` }];
+    })),
+  };
+  const prepared = await createDevelopmentSiteManifestFromContent({
+    shared: DEVELOPMENT_CONTENT.shared,
+    games: { [game]: preparedGame },
+  }, { sourceRoot: project, games: [game] });
   const entry = prepared.games[game];
   assert.equal(resolve(project, entry.gameData.source), join(contentRoot, `${game}.data`));
   assert.match(entry.gameData.source, /^\.\.\//);

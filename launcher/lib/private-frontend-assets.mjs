@@ -8,6 +8,7 @@ const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 // absent, the Launcher hides the corresponding optional control.
 export const PRIVATE_FRONTEND_ASSETS = Object.freeze([
   Object.freeze({ source: "private-assets/donation.webp", target: "assets/donation.webp" }),
+  Object.freeze({ source: "private-assets/th15-hud-ranks.png", target: "assets/th15-hud-ranks.png" }),
 ]);
 
 export function privateFrontendAssetSource(target) {

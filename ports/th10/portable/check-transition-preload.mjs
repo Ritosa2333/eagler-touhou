@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
-const game=process.argv.includes('--th08')?'th08':'th10',base='http://127.0.0.1:'+(game==='th08'?8095:8093),out=game+'_web/artifacts/architecture-candidate/validation',browser=await launchBrowser(),runs=[];
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
+const game=process.argv.includes('--th08')?'th08':'th10',base='http://127.0.0.1:'+(game==='th08'?8095:8093),out='web/artifacts/architecture-candidate/validation',browser=await launchBrowser(),runs=[];
 try{for(const baseline of [true,false]){
  const context=await browser.newContext({viewport:{width:800,height:600}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.stack));await page.addInitScript(()=>{Date.now=()=>100000;});
- if(baseline)for(const ext of ['wasm','mjs'])await page.route('**/'+game+'-sdl.'+ext,r=>r.fulfill({contentType:ext==='wasm'?'application/wasm':'text/javascript',body:readFileSync(game+'_web/artifacts/sdl-release/site/runtime/'+game+'/'+game+'-sdl.'+ext)}));
+ if(baseline)for(const ext of ['wasm','mjs'])await page.route('**/'+game+'-sdl.'+ext,r=>r.fulfill({contentType:ext==='wasm'?'application/wasm':'text/javascript',body:readFileSync('web/artifacts/sdl-release/site/runtime/'+game+'/'+game+'-sdl.'+ext)}));
  await page.goto(base+'/runtime/'+game+'/'+game+'.html?manual=1');await page.waitForFunction(game=>window['__'+game+'Runtime'],game,{timeout:120000});
  await page.evaluate(async game=>{
   const r=window['__'+game+'Runtime'],c=r.core;let app;if(game==='th08'){await r.launch();app=r.app;}else app=c.sdl_game_open(0,Date.now()&65535);
@@ -29,7 +29,7 @@ try{for(const baseline of [true,false]){
  const spriteColorsFixed=process.argv.includes('--sprite-colors-fixed');
  if(spriteColorsFixed){
   assert.equal(game,'th08');
-  const visual=JSON.parse(readFileSync('th08_web/artifacts/stage-visual/verified-transition.json'));
+  const visual=JSON.parse(readFileSync('web/artifacts/stage-visual/verified-transition.json'));
   assert.equal(visual.passed,true);assert.equal(visual.wasm,JSON.parse(readFileSync(out+'/../site/manifest.json')).execution.sha256);
   // 3.2's sprite submission ignored vertex alpha. Fixing the original
   // FlushVertexBuffer state also restores dimming of unselected music rows.

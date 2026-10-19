@@ -1,15 +1,15 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Pinned-main differential for background failure feedback ownership.
  * Foreground prompting is deliberately superseded by the offline-first tests:
  * complete local games start before downloads and only successful updates notify.
- * The original app functions and copy are read with git show, not copied into
- * new expected behavior. Actual React preparation services run against explicit
+ * The original app functions and copy come from immutable, hash-checked fixtures,
+ * not the current implementation. Actual React preparation services run against explicit
  * Package Store, network, and live-session ports. This is not browser, engine,
  * or durable IndexedDB validation; the BrowserSession mounted fixture checks
  * that its diagnostics callback does not become visible status/toast feedback.
  */
 import test, {before, after} from 'node:test';
 import assert from 'node:assert/strict';
-import {execFileSync} from 'node:child_process';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
@@ -21,7 +21,7 @@ const mainRevision = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const baseUrl = 'https://launcher.invalid/deploy/';
 let work, api, oracleMessages;
 const oracleCode = {};
-function pinned(path) {return execFileSync('git', ['show', `${mainRevision}:${path}`], {cwd: project, encoding: 'utf8'});}
+function pinned(path) {return readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', path);}
 function sourceBetween(source, first, next) {
   const start = source.indexOf(first), end = source.indexOf(next, start + first.length);
   assert.ok(start >= 0 && end > start, `Pinned source boundary ${first}`);

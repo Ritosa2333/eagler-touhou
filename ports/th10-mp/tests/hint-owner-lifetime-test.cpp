@@ -1,5 +1,5 @@
-#include "../th10_web/cpp/multiplayer/HintOwnerPool.hpp"
-#include "../th10_web/cpp/multiplayer/RollbackPoolCapture.hpp"
+#include "../web/cpp/multiplayer/HintOwnerPool.hpp"
+#include "../web/cpp/multiplayer/RollbackPoolCapture.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 
 #include <array>

@@ -80,7 +80,7 @@ if (workspaceAudit) {
   const {loadReviewedPublicationAssets}=await import('../lib/reviewed-publication-assets.mjs');
   const layout=loadSourceLayout(project),root=layout.root;
   const WORKSPACE_REPOSITORIES=layout.repositories,workspacePath=(...args)=>layout.path(...args);
-  const reviewed=await loadReviewedPublicationAssets(root,resolve(root,'docs/migration/reviewed-source-assets.json'));
+  const reviewed=await loadReviewedPublicationAssets(root,resolve(root,'launcher/config/reviewed-source-assets.json'));
   // Source publication must also run in a clean checkout before contracts or
   // frontend dependencies have been generated.
   const config=JSON.parse(await readFile(projectConfigurationPath('runtime-builds.json',project),'utf8'));

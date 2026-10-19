@@ -4,14 +4,14 @@ import {resolve} from 'node:path';
 import {WASI} from 'node:wasi';
 import assert from 'node:assert/strict';
 import {inspectMultiplayerReplay,MULTIPLAYER_REPLAY_MAX_FRAMES} from '../browser/multiplayer-replay.mjs';
-const root=resolve(import.meta.dirname,'../..'),common=resolve(root,'third_party/eagler-common');
+const root=resolve(import.meta.dirname,'../..'),common=resolve(root,'../../common');
 const sdk=process.env.WASI_SDK_ROOT||'D:/workspace/eagler/toolchains/wasi-sdk-34.0-x86_64-windows';
 const out=resolve(root,'artifacts/multiplayer-replay-capacity');mkdirSync(out,{recursive:true});
 const wasm=resolve(out,'replay-capacity.wasm');
 const source=[...['NetplayProtocol.cpp','InputReplay.cpp'].map(file=>resolve(common,'src/netplay',file)),
- ...['SessionSetup.cpp','InputLanes.cpp','ReplayArchive.cpp'].map(file=>resolve(root,'th11_web/cpp/multiplayer',file)),resolve(import.meta.dirname,'replay-capacity.cpp')];
+ ...['SessionSetup.cpp','InputLanes.cpp','ReplayArchive.cpp'].map(file=>resolve(root,'web/cpp/multiplayer',file)),resolve(import.meta.dirname,'replay-capacity.cpp')];
 const build=spawnSync(resolve(sdk,'bin/clang++.exe'),['--target=wasm32-wasip1','-std=c++17','-O1','-g0','-DTH11_MULTIPLAYER=1',
- '-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-I'+resolve(common,'include'),'-I'+resolve(root,'th11_web/cpp/multiplayer'),...source,
+ '-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-I'+resolve(common,'include'),'-I'+resolve(root,'web/cpp/multiplayer'),...source,
  '-Wl,-z,stack-size=2097152','-Wl,--max-memory=268435456','-o',wasm],{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:2*1024*1024});
 if(build.error)throw build.error;if(build.status)throw Error(build.stdout+build.stderr);
 const wasi=new WASI({version:'preview1',args:['replay-capacity','/output/capacity.rpy'],preopens:{'/output':out},returnOnExit:true});

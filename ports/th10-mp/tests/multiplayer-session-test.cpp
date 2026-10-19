@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/SessionSetup.hpp"
+#include "../web/cpp/multiplayer/SessionSetup.hpp"
 #include "multiplayer-contract-fixture.hpp"
 #include <cassert>
 #include <cstring>

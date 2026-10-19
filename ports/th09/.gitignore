@@ -9,10 +9,10 @@
 **/tools/node.exe
 **/tools/emsdk/
 **/tools/wasi-sdk*/
-th09_web/reference/assets/
-th09_web/assets/sdl-native/music-local-verification.json
+web/reference/assets/
+web/assets/sdl-native/music-local-verification.json
 **/assets/sdl-native/msgothic.ttc
-th10_web/tools/
+web/tools/
 tools/*
 !tools/download-emscripten.py
 !tools/replay-verifier/

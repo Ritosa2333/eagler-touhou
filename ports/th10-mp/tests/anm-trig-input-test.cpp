@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/game/AnmRotation.hpp"
+#include "../web/cpp/game/AnmRotation.hpp"
 #include <array>
 #include <cerrno>
 #include <cstdio>

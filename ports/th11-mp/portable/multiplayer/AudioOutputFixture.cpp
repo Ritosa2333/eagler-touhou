@@ -1,5 +1,5 @@
 // Linked only by audio-output.test.mjs, never by the Runtime builder.
-#include "../../th11_web/cpp/sdl/AudioDevice.hpp"
+#include "../../web/cpp/sdl/AudioDevice.hpp"
 #include <memory>
 namespace {
 std::unique_ptr<th11::GameResources> resources;

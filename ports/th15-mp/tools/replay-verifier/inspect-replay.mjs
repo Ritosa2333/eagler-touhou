@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {core,memory} from '../../th15_web/tests/cpp/helpers.mjs';
+import {core,memory} from '../../web/tests/cpp/helpers.mjs';
 export async function inspectReplay(input,{signal}={}) {
   signal?.throwIfAborted();const c=await core(),bytes=typeof input==='string'?readFileSync(input):Buffer.from(input),p=c.allocate(bytes.length),file=c.replay_create();
   memory(c,p,bytes.length).set(bytes);assert.equal(c.replay_open(file,p,bytes.length),1,'valid replay');

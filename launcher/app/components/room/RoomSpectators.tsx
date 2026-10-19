@@ -78,10 +78,10 @@ export function RoomSpectators({
         id="mpSpectatorJoin"
         type="button"
         hidden={
-          state.seat != null ||
+          (state.seat != null && room.phase !== 'lobby') ||
           (config as typeof config & { spectator?: boolean }).spectator === false
         }
-        disabled={!ready || state.seat != null}
+        disabled={!ready || (state.seat != null && room.phase !== 'lobby')}
         onClick={state.spectatorRequested ? service.leaveSpectator : service.spectate}
       >
         {t(state.spectatorRequested ? 'multiplayer.leaveSpectator' : 'multiplayer.joinSpectator')}

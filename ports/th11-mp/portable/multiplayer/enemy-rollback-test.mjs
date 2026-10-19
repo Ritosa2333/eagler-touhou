@@ -11,7 +11,7 @@ const outArg=process.argv.find(s=>s.startsWith('--out='));
 const out=resolve(root,outArg?outArg.slice(6):'artifacts/multiplayer-enemy-rollback/o2-01');
 if(existsSync(resolve(out,'receipt.json')))throw Error('Output receipt exists; choose a new --out= directory');
 mkdirSync(out,{recursive:true});
-const common=resolve(root,'third_party/eagler-common'),game=resolve(root,'th11_web/cpp/game');
+const common=resolve(root,'../../common'),game=resolve(root,'web/cpp/game');
 const names=['EnemyManager','EnemyRollback','EnemyScript','EnemyFrame','EnemyState','EnemyPhase','EnemyAnimations',
  'EnemyCommands','EnemyStateCommands','EnemyEmitterCommands','EnemyLaserCommands',
  'EclContext','EclInterpreter','EclOwner','EclResource',

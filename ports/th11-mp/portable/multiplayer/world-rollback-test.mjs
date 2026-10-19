@@ -60,7 +60,7 @@ if(process.argv.includes('--run-wasm')){
   try{
     if(!existsSync(archive))throw Error('TH11_TEST_ARCHIVE must name the existing supplied archive');
     receipt.archive={path:archive,bytes:readFileSync(archive).length,sha256:hash(readFileSync(archive))};
-    const game=resolve(root,'th11_web/cpp/game'),common=resolve(root,'third_party/eagler-common');
+    const game=resolve(root,'web/cpp/game'),common=resolve(root,'../../common');
     const suites=suite==='all'?['world','native']:[suite];
     const entries=Object.fromEntries(suites.map(name=>[name,resolve(import.meta.dirname,name==='world'?'world-rollback.cpp':'native-gameplay.cpp')]));
     const commonSource=resolve(common,'src/netplay/RollbackJournal.cpp');

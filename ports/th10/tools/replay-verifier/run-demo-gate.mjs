@@ -17,7 +17,7 @@ function options(argv) {
 }
 const args = options(process.argv.slice(2));
 if (!args.candidate) throw Error('usage: node run-demo-gate.mjs --candidate <suite.json> [--golden-root <published-golden>] [--original <advanced-source-suite>] [--common-root <eagler-common>] [--report <file>]');
-const commonRoot = resolve(args['common-root'] ?? join(here, '..', '..', '..', 'eagler-common'));
+const commonRoot = resolve(args['common-root'] ?? join(here, '..', '..', '..', '..', 'common'));
 const {compareTraces} = await import(pathToFileURL(join(commonRoot, 'testkit/replay-verifier/compare.mjs')));
 const commonAdapter = await import(pathToFileURL(join(commonRoot, 'testkit/replay-verifier/adapter.mjs')));
 const golden = args.original ? null : await loadGoldenManifest(args['golden-root']);

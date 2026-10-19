@@ -9,12 +9,12 @@
     "comparison": "All-observed input response spans each source's own active lifetime. The capture-frame subset is explicitly conditional and does not supply an all-due body denominator."
   },
   "helper": {
-    "path": "th09_web/tests/multiplayer/smoothness-window.mjs",
+    "path": "web/tests/multiplayer/smoothness-window.mjs",
     "bytes": 9700,
     "sha256": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f"
   },
   "inputHelper": {
-    "path": "th09_web/tests/multiplayer/touch-input-probe.mjs",
+    "path": "web/tests/multiplayer/touch-input-probe.mjs",
     "bytes": 20658,
     "sha256": "2fbec4adb37f80acd74745a69366c3ab77e510d5a259a10ae105c0c1dd0df785"
   },
@@ -24,7 +24,7 @@
       "variant": "A frozen",
       "scenario": "actual RTC direct; graphics trace enabled",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c2-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-direct-graphics-c2-report.json",
         "bytes": 31015079,
         "sha256": "d34892775465704c27aca89245b2c6adda904f97fa677f35f2ca8b3d0c2795f6"
       },
@@ -934,7 +934,7 @@
       "variant": "A frozen first",
       "scenario": "relay39",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-c1-report.json",
         "bytes": 32241884,
         "sha256": "2f1a14fadc9c5007b19d15f4eee65a662788e473a489060623df2ae67f9ce220"
       },
@@ -1847,7 +1847,7 @@
       "variant": "A frozen first",
       "scenario": "relay39 burst160",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-burst160-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-burst160-c1-report.json",
         "bytes": 32647281,
         "sha256": "24fe21737131713f372ef01b3d260e964861226bbe314bd0ee3a948acb01c9b7"
       },
@@ -2760,7 +2760,7 @@
       "variant": "B recovery tail",
       "scenario": "relay39",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-both4-relay39-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-recovery-tail-both4-relay39-c1-report.json",
         "bytes": 34828685,
         "sha256": "4d43591b230a9de653f146091695f56fc27ea03d55fb04b8a91126ef2cb5b4b5"
       },
@@ -3673,7 +3673,7 @@
       "variant": "B recovery tail",
       "scenario": "relay39 burst160",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-recovery-tail-both4-relay39-burst160-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-recovery-tail-both4-relay39-burst160-c1-report.json",
         "bytes": 34008735,
         "sha256": "b73fd742241d37f256028bcd013268c9ef6bf66d514ab76f9111c2802fe4f6ff"
       },
@@ -4586,7 +4586,7 @@
       "variant": "A frozen return after B",
       "scenario": "relay39 burst160",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-burst160-c2-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-burst160-c2-report.json",
         "bytes": 35669804,
         "sha256": "54974090a3dab5ad47d1c010d440cadb6a758a3ac7a09631bd02d7584760878c"
       },
@@ -5499,7 +5499,7 @@
       "variant": "C earlier information brake",
       "scenario": "relay39",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-network-brake-both4-relay39-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-network-brake-both4-relay39-c1-report.json",
         "bytes": 35114817,
         "sha256": "65b8f84ae53793e5ee982c4b0af2d8b7ebd70aa20eb091f03b238bf65e6f4bae"
       },
@@ -6413,7 +6413,7 @@
       "variant": "C earlier information brake",
       "scenario": "relay39 burst160",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-network-brake-both4-relay39-burst160-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-network-brake-both4-relay39-burst160-c1-report.json",
         "bytes": 33516070,
         "sha256": "e02f6dbb7414ccd713ab45658dd84e54412611d506fcb73cc250ad9d21e74969"
       },
@@ -7326,7 +7326,7 @@
       "variant": "A frozen ordinary return after C",
       "scenario": "relay39",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-c2-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-c2-report.json",
         "bytes": 34989227,
         "sha256": "72ed169c373cb8e1ba4f1dcfaed7c9da677bfec6eb5996057226876a6625a3a6"
       },

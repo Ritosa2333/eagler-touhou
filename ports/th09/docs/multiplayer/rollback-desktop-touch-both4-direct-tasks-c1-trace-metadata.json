@@ -1,7 +1,7 @@
 {
   "schema": "th09-browser-scheduler-metadata/v1",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-report.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-report.json",
     "bytes": 29685068,
     "sha256": "c19307e11c86183f3d6816078814a7da6cc091874ec77990cdd16bfdc42adb54"
   },
@@ -10,7 +10,7 @@
     {
       "side": 0,
       "artifact": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P1-scheduler-trace.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P1-scheduler-trace.json",
         "bytes": 37130407,
         "sha256": "7e6d167c0aca1249b948d0cf0f4e12c7e4a0313154302a4a35f6f23de205452e"
       },
@@ -693,7 +693,7 @@
     {
       "side": 1,
       "artifact": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P2-scheduler-trace.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P2-scheduler-trace.json",
         "bytes": 36020016,
         "sha256": "eb48934a32ae80fd70a63b53d0aebdf880b6c51c4926cda4b4b2712f84da58b7"
       },

@@ -23,6 +23,7 @@ export const RUNTIME_PROTOCOL_COMMANDS = Object.freeze([
 // Optional commands are capability-specific and are not required of every
 // Runtime shell. They still share the same envelope and request ownership.
 export const RUNTIME_PROTOCOL_OPTIONAL_COMMANDS = Object.freeze([
+  "prepare-room",
   "playback",
   "retry-music",
   "thprac-mouse",
@@ -210,6 +211,7 @@ export const RUNTIME_PROTOCOL_LEGACY_EVENTS = Object.freeze([
  * ACK with an optional feature.
  */
 export const RUNTIME_PROTOCOL_COMMAND_BEHAVIOR = Object.freeze({
+  "prepare-room": Object.freeze({ phase: "prelaunch", response: "required", requirement: "conditional", when: "Native Runtime advertises roomPreview at ready; initialize its real title before room readiness, animate without input/demo, reset RNG and match clocks at start" }),
   configure: Object.freeze({ phase: "prelaunch", response: "required", requirement: "required" }),
   resources: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
   keyboard: Object.freeze({ phase: "live", response: "optional", requirement: "required" }),
@@ -298,6 +300,7 @@ export interface RuntimeCommandPayloads {
   "touch-cancel": Record<string, never>;
   "direct-touch": { type: "down" | "move" | "up"; id: number; x: number; y: number };
   launch: Record<string, never>;
+  "prepare-room": Record<string, never>;
   list: Record<string, never>;
   read: { path: string };
   write: { path: string; bytes: number[]; replayMatch?: unknown };
@@ -319,7 +322,7 @@ export interface RuntimeCommandPayloads {
  * Runtime should prefer an existing event over inventing another event name.
  */
 export interface RuntimeEventPayloads {
-  ready: { saveRoot?: string };
+  ready: { saveRoot?: string; roomPreview?: boolean };
   transfer: { mode?: string; loaded?: number; total?: number; failed?: number; path?: string; [key: string]: unknown };
   "first-frame": Record<string, never>;
   "runtime-info": { renderer?: string; architecture?: string; version?: string; [key: string]: unknown };

@@ -4,7 +4,7 @@ import {once} from 'node:events';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 
 const base='http://127.0.0.1:8093';
 let server,browser,page;
@@ -23,7 +23,7 @@ async function startServer(site){
 try{
   browser=await launchBrowser();
   const context=await browser.newContext();page=await context.newPage();
-  for(const root of ['th10_web/artifacts/sdl-release','th08_web/artifacts/sdl-release','th10_web/artifacts/architecture-candidate']){
+  for(const root of ['web/artifacts/sdl-release','web/artifacts/sdl-release','web/artifacts/architecture-candidate']){
     const site=resolve(root,'site'),release=JSON.parse(readFileSync(resolve(root,'release.json'),'utf8'));
     const inventory=JSON.parse(readFileSync(resolve(site,'files.json'),'utf8'));
     await startServer(site);
@@ -79,6 +79,6 @@ try{
   console.log(JSON.stringify(report,null,2));throw error;
 }finally{
   if(browser)await browser.close();await stopServer();
-  mkdirSync('th10_web/artifacts/package-update-check',{recursive:true});
-  writeFileSync('th10_web/artifacts/package-update-check/cache-switch.json',JSON.stringify(report,null,2));
+  mkdirSync('web/artifacts/package-update-check',{recursive:true});
+  writeFileSync('web/artifacts/package-update-check/cache-switch.json',JSON.stringify(report,null,2));
 }

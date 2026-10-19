@@ -5,7 +5,7 @@ const root=resolve(import.meta.dirname,'../..');
 const workspace=resolve(process.env.EAGLER_WORKSPACE||root+'/../..');
 const profile=process.env.TH10_MP_PROFILE||'multiplayer';
 if(!['multiplayer','multiplayer-fixtures'].includes(profile))throw Error('Invalid MP test profile');
-const buildRoot=resolve(process.env.TH10_MP_BUILD_ROOT||resolve(root,'th10_web/artifacts',profile));
+const buildRoot=resolve(process.env.TH10_MP_BUILD_ROOT||resolve(root,'web/artifacts',profile));
 const fixtureRoot=resolve(process.env.TH10_MP_FIXTURE_ROOT||import.meta.dirname);
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 if(build.variant!=='multiplayer')throw Error('Build --multiplayer first');

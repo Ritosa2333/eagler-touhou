@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Executed pinned controller is the oracle. Synthetic DOM only: native browser
  * layout/top-layer focus and keyboard activation remain separate acceptance. */
 import test, {before, after, afterEach} from 'node:test';
@@ -12,7 +13,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 const project=fileURLToPath(new URL('../../',import.meta.url));
 let env, React, createRoot, api, work;const mounts=[];
-const pinned=path=>execFileSync('git',['show',`edee9633e5e3ee79cd2e1aa334f84f6caf755090:${path}`],{cwd:project,encoding:'utf8'});
+const pinned=path=>readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090',path);
 before(async()=>{
  env=installMountedDom();React=await import('react');({createRoot}=await import('react-dom/client'));
  await mkdir(resolve(project,'.cache'),{recursive:true});work=await mkdtemp(resolve(project,'.cache/main-select-test-')); const outfile=resolve(work,'actual.mjs');
@@ -190,6 +191,23 @@ test('live locale changes update the same open menu and trigger with pinned copy
   assert.equal(owner.menu,menu);assert.equal(menu.hidden,false);results.push(describe(owner.select,menu));await mounts.pop()();
  }
  assert.deepEqual(results[1],results[0]);assert.deepEqual(results[2],results[0]);
+});
+
+test('room selects carry their stacking scope after portaling and clear it when reused outside the room',async()=>{
+ const owner=await reactOwner(),room=env.document.createElement('div');room.className='room-workspace';env.document.body.append(room);
+ room.append(owner.host??owner.container);
+ await act(()=>owner.trigger.click());assert.equal(owner.menu.hasAttribute('data-room-workspace'),true);
+ assert.equal(owner.menu.parentElement,env.document.body);
+ await act(()=>key(owner.trigger,'Escape'));
+ const drawer=env.document.createElement('aside');drawer.className='mp-settings-room-drawer';env.document.body.append(drawer);
+ drawer.append(owner.host??owner.container);
+ await act(()=>owner.trigger.click());assert.equal(owner.menu.hasAttribute('data-room-workspace'),true);
+ assert.equal(owner.menu.parentElement,env.document.body);
+ await act(()=>owner.menu.querySelector('[data-value="b"]').click());
+ assert.equal(owner.select.value,'b');
+ env.document.body.append(owner.host??owner.container);
+ await act(()=>owner.trigger.click());assert.equal(owner.menu.hasAttribute('data-room-workspace'),false);
+ room.remove();drawer.remove();
 });
 
 test('React renders native props/ref and the exact supplied direct-child prefix without imperative tree creation',async()=>{

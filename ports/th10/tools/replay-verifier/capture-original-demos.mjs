@@ -6,7 +6,7 @@ const option = name => {
   const index = process.argv.indexOf(name);
   return index < 0 ? undefined : process.argv[index + 1];
 };
-const oracleRoot = resolve(option('--oracle-root') ?? 'D:/workspace/东方测试.zip/TouhouDev/th10_web');
+const oracleRoot = resolve(option('--oracle-root') ?? 'D:/workspace/东方测试.zip/TouhouDev/web');
 const output = resolve(option('--output') ?? 'artifacts/replay-verifier/original-demo/suite.json');
 const maxFrames = Number(option('--max-frames') ?? 100000);
 if (!Number.isSafeInteger(maxFrames) || maxFrames < 10000 || maxFrames > 500000)

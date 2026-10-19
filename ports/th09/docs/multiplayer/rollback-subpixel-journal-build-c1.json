@@ -4,52 +4,52 @@
   "root": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x",
   "head": "a3a59db525d2e76faf9bb683bc624d455d3aa3ae",
   "baseline": {
-    "manifest": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/th09_web/artifacts/subpixel-release-20261011-c1/build.json",
+    "manifest": "D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/artifacts/subpixel-release-20261011-c1/build.json",
     "manifestSha256": "6ee34897072d16f89a8e62decbcfcc13ea5adefb50e03501c4e8348a2d29212b",
     "wasm": "cb03c6df0c460360d2d3548e63556a9b74bf18ac7f6613bdf8231a4e03c30480",
     "bytes": 2808107
   },
   "candidate": {
-    "manifest": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\subpixel-journal-release-c1\\build.json",
+    "manifest": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\subpixel-journal-release-c1\\build.json",
     "manifestSha256": "5e57c356dd63a328928a919533001404c5c78fec457e798cde1e7834e4eaa573",
     "wasm": "2ae38afdffaac02d94924af07e5d385535964c8b57154589ce6a93fac3b04ddd",
     "bytes": 2828795
   },
   "diagnostic": {
-    "manifest": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\subpixel-journal-live-c1\\build.json",
+    "manifest": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\subpixel-journal-live-c1\\build.json",
     "manifestSha256": "64b7bedd7c6e01431b36a84b0c0bea676fc546a986e1c3756ed1983a98692534",
     "wasm": "75a8d6cb2734f944b392e256366fcb1727ac87865791eb6e3e0d6fc572b08cd3",
-    "wasmPath": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\th09_web\\artifacts\\subpixel-journal-live-c1\\th09-presentation.wasm"
+    "wasmPath": "D:\\workspace\\eagler\\worktrees\\th09-subpixel-journal-4x\\web\\artifacts\\subpixel-journal-live-c1\\th09-presentation.wasm"
   },
   "sourcesCount": 275,
   "changed": [
     {
-      "path": "th09_web/cpp/game/Player.cpp",
+      "path": "web/cpp/game/Player.cpp",
       "before": "4032b1f7961adfdf499b86a5986db39aa0e7abdc89be329b2343eb65b66821c8",
       "after": "648646598b73b2cbb919f58529a89bfc6ccaf036873ae96789c79c2299fc5ade"
     },
     {
-      "path": "th09_web/cpp/game/PlayerShots.cpp",
+      "path": "web/cpp/game/PlayerShots.cpp",
       "before": "1475efc3fe972f70f3aa1d65faa211d38cfd7aad72624f2e7876ad392e1897f6",
       "after": "f6570be60eaaaefa17443b017e87cc5c3d6f782d2d331e3acf492b283f119051"
     },
     {
-      "path": "th09_web/cpp/game/PlayerShots.hpp",
+      "path": "web/cpp/game/PlayerShots.hpp",
       "before": "7edeb86560d9942b71cfa5c9b965eec8ce2c98f18269493dd940fb99e26454bc",
       "after": "b78bbe1804a04de88ad74bbe2efd3026a6de1c1c4f76a8659449554e67a4ad8d"
     },
     {
-      "path": "th09_web/cpp/game/PoolCheckpoint.hpp",
+      "path": "web/cpp/game/PoolCheckpoint.hpp",
       "before": "bd5b6fb5cccfbc2cf055ad72789fbbf7e1f91046a2628df1264b557c73146c4f",
       "after": "9fe9c0ea136d4e2ddfafead336ba708680b10076ba185fc7d461925eba1d58b6"
     },
     {
-      "path": "th09_web/cpp/multiplayer/WorldState.cpp",
+      "path": "web/cpp/multiplayer/WorldState.cpp",
       "before": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
       "after": "54e7d4e7741c6edf1e8122e8dfc00083b2bc0f3d72a1724962c56574d11faca9"
     },
     {
-      "path": "th09_web/cpp/multiplayer/WorldState.hpp",
+      "path": "web/cpp/multiplayer/WorldState.hpp",
       "before": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
       "after": "ace57e804594a1c46ea728662cd7761c6f1a470e84d5e2bad7eef44e721f96a9"
     }
@@ -64,8 +64,8 @@
     "-fno-exceptions",
     "-fno-rtti",
     "-ID:/workspace/eagler/worktrees/th09-rollback-input-batch-common/include",
-    "-I<SOURCE_ROOT>/th09_web/cpp/sdl",
-    "-I<SOURCE_ROOT>/th09_web/cpp/multiplayer",
+    "-I<SOURCE_ROOT>/web/cpp/sdl",
+    "-I<SOURCE_ROOT>/web/cpp/multiplayer",
     "-DTH_NATIVE_PLATFORM=1",
     "-DTH_ENABLE_THCRAP=1",
     "-DTH09_DEVELOPMENT_HARNESS=0",
@@ -75,9 +75,9 @@
   "sourceCompilerFlags": {},
   "sourceDrift": [],
   "protectedFiles": {
-    "th09_web/cpp/game/AnmRenderer.cpp": "f9c0487d71fc958dbd9a47695a11c3df5ae178eb559f2fa45f890a5af0253f38",
-    "th09_web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
-    "th09_web/sdl-runtime/shared-netplay.mjs": "720b44fcb091b5db7b768f3b946703c5f6f91c3b2aad706d22455b068406908a"
+    "web/cpp/game/AnmRenderer.cpp": "f9c0487d71fc958dbd9a47695a11c3df5ae178eb559f2fa45f890a5af0253f38",
+    "web/sdl-runtime/managed.mjs": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
+    "web/sdl-runtime/shared-netplay.mjs": "720b44fcb091b5db7b768f3b946703c5f6f91c3b2aad706d22455b068406908a"
   },
   "tools": {
     "journal-run.mjs": "97f021a202462481697eed82d5938f91dfc3332f1fd2d89d07bb77ea5795c5b1",

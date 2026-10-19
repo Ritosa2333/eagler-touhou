@@ -6,7 +6,7 @@ import {transformSync} from 'esbuild';
 const source=readFileSync(new URL('../../app/services/abort-signals.ts',import.meta.url),'utf8');
 const {code}=transformSync(source,{loader:'ts',format:'cjs'}),module={exports:{}};
 runInNewContext(code,{module,exports:module.exports,AbortController,Set,Map});
-const {linkAbortSignals}=module.exports;
+const {linkAbortSignals,waitWithAbort}=module.exports;
 function tracked(){
   const controller=new AbortController(),signal=controller.signal,active=new Set(),add=signal.addEventListener.bind(signal),remove=signal.removeEventListener.bind(signal);
   signal.addEventListener=(type,handler,options)=>{if(type==='abort')active.add(handler);add(type,handler,options);};
@@ -35,4 +35,19 @@ test('disposing a completed operation removes its listeners without cancelling i
 test('absent and duplicate inputs preserve the existing single-signal identity',()=>{
   const a=tracked();assert.equal(linkAbortSignals(undefined).signal,undefined);
   assert.equal(linkAbortSignals(a.signal,undefined,a.signal).signal,a.signal);assert.equal(a.active.size,0);
+});
+
+test('cancelled room wait releases its successor without waiting for an unabortable old store read',async()=>{
+  const source=tracked(),reason=new Error('room resource version changed');let resolve;
+  const underlying=new Promise(done=>resolve=done),waiting=waitWithAbort(underlying,source.signal);
+  source.controller.abort(reason);await assert.rejects(waiting,error=>error===reason);
+  assert.equal(source.active.size,0);resolve('late');
+  assert.equal(await waitWithAbort(Promise.resolve('replacement'),new AbortController().signal),'replacement');
+});
+
+test('settled room waits return actual values/errors and release their abort listener',async()=>{
+  const source=tracked(),failure=new Error('read failed');
+  assert.equal(await waitWithAbort(Promise.resolve(7),source.signal),7);
+  await assert.rejects(waitWithAbort(Promise.reject(failure),source.signal),error=>error===failure);
+  await Promise.resolve();assert.equal(source.active.size,0);
 });

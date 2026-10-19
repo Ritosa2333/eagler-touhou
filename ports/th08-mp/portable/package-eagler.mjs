@@ -13,7 +13,7 @@ export function sha256(bytes) {
 }
 
 export function resolvePackagePlan(root, args = []) {
-  const game = existsSync(resolve(root, 'th08_web/cpp/game/AnmRenderer.cpp')) ? 'th08' : 'th10';
+  const game = 'th08';
   const presentationLab = args.includes('--presentation-lab');
   const multiplayer = args.includes('--multiplayer');
   if (presentationLab && multiplayer) {
@@ -28,7 +28,7 @@ export function resolvePackagePlan(root, args = []) {
   const out = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : presentationLab
     ? resolve(root, 'artifacts/presentation-lab/runtime')
     : multiplayer ? resolve(root, 'build-eagler-multiplayer') : resolve(root, 'build-eagler');
-  const buildRoot = resolve(root, game + '_web/artifacts', buildProfile);
+  const buildRoot = resolve(root, 'web/artifacts', buildProfile);
   return {game, presentationLab, multiplayer, buildProfile, variant, out, buildRoot};
 }
 
@@ -141,7 +141,7 @@ export function packageEagler({
     writeFileSync(path, bytes);
   };
 
-  const shellRoot = resolve(root, game + '_web/sdl-runtime');
+  const shellRoot = resolve(root, 'web/sdl-runtime');
   const html = readFileSync(resolve(shellRoot, game + '.html'), 'utf8')
     .replace('<head>', '<head><meta name="eagler-data-provider" content="retail-memory">');
   const shellFiles = Object.fromEntries(runtimeNames.map(name => [name, readFileSync(resolve(shellRoot, name))]));

@@ -25,7 +25,7 @@ const sha=b=>createHash('sha256').update(b).digest('hex');
 const inventory=JSON.parse(readFileSync(resolve(runtime,'runtime-files.json')));
 let derived=null;
 if(process.argv.includes('--derive-input-recording')){
- const common=resolve(root,'third_party/eagler-common'),native=resolve(root,'th11_web/cpp/multiplayer');
+ const common=resolve(root,'../../common'),native=resolve(root,'web/cpp/multiplayer');
  const compiler=resolve(root,'../../toolchains/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe'),wasm=resolve(out,'fixed-input-recording.wasm');
  const sources=[resolve(import.meta.dirname,'fixed-input-recording.cpp'),...['ReplayArchive','SessionSetup','InputLanes'].map(n=>resolve(native,n+'.cpp')),
   ...['InputReplay','NetplayProtocol'].map(n=>resolve(common,'src/netplay',n+'.cpp'))];

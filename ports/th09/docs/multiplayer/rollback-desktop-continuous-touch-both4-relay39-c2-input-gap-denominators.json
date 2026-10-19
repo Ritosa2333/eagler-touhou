@@ -1,7 +1,7 @@
 {
   "schema": "th09/desktop-input-gap-denominators/1",
   "raw": {
-    "path": "th09_web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-c2-report.json",
+    "path": "web/artifacts/multiplayer-tests/desktop-continuous-touch-both4-relay39-c2-report.json",
     "bytes": 34989227,
     "sha256": "72ed169c373cb8e1ba4f1dcfaed7c9da677bfec6eb5996057226876a6625a3a6"
   },

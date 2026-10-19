@@ -5,7 +5,7 @@ import {WASI} from 'node:wasi';
 const root=resolve(import.meta.dirname,'..'),game='th10';
 const sdk=process.env.EMSDK??resolve(root,'tools/emsdk');
 const emcc=resolve(sdk,'install/emscripten/emcc.py');
-const out=resolve(root,game+'_web/artifacts/touch');mkdirSync(out,{recursive:true});
+const out=resolve(root,'web/artifacts/touch');mkdirSync(out,{recursive:true});
 const file=resolve(out,'eagler-touch-check.wasm');
 const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk};
 execFileSync(process.env.TH_PYTHON??'python',[emcc,'-O2','-std=c++17',resolve(root,'portable/eagler-touch-check.cpp'),'-sDEFAULT_TO_CXX=1','-sSTANDALONE_WASM=1','-sSTACK_SIZE=1048576','-o',file],{env,windowsHide:true,stdio:'inherit'});

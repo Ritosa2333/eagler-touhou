@@ -103,7 +103,7 @@ export function midiStatusDataLength(status: number): number {
 //   - TH06/TH07 (src/midi/MidiWeb.cpp) dispatch every short message as a fixed
 //     three-byte record, so Program Change (0xC0-0xCF) and Channel Pressure
 //     (0xD0-0xDF) arrive as `[status, data, 0]`;
-//   - TH08 (th08_web/cpp/platform/GameAudioManager.cpp) dispatches the real
+//   - TH08 (web/cpp/platform/GameAudioManager.cpp) dispatches the real
 //     two-byte length.
 //
 // `splitMidiMessages` frames a byte stream, so it reads TH06/TH07's pad as a

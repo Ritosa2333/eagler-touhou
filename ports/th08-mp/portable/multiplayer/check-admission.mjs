@@ -13,7 +13,7 @@ const recordSparse=process.argv.includes('--record-sparse');
 const worldJournal=process.argv.includes('--world-journal')||loadouts||correction;
 const enemyJournal=process.argv.includes('--enemy-journal')||worldJournal||product;
 const variant=enemyJournal?'multiplayer-fixtures':'multiplayer';
-const buildRoot=resolve(root,'th08_web/artifacts',variant);
+const buildRoot=resolve(root,'web/artifacts',variant);
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const caseScript=product?'check-product.py':correction?'check-correction.py':worldJournal?'check-world-journal.py':enemyJournal?'check-enemy-journal.py':'check-admission.py';

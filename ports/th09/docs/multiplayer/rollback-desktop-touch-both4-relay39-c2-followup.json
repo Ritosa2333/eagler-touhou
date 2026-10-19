@@ -11,7 +11,7 @@
     {
       "label": "c1",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c1-report.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c1-report.json",
         "bytes": 26013187,
         "sha256": "32185bd7f93526011a547e9a77e178bc7313fd641c7edb364bc9a3d2dd5762e2"
       },
@@ -1239,7 +1239,7 @@
     {
       "label": "c2",
       "raw": {
-        "path": "th09_web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c2-failure.json",
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-relay39-c2-failure.json",
         "bytes": 26249699,
         "sha256": "f6e2b4a50ec5bafb2e476d7424f6f1a3f48713da00d4d53a03a2a02d354d5d3f"
       },

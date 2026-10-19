@@ -163,11 +163,20 @@ test('main stale import completion cannot clear/launch a newer attempt', async (
   assert.equal(f.calls.some(([name]) => name === 'launch'), false);
 });
 
-test('room import completes without resuming preparation or gameplay', async () => {
+test('matching room import immediately resumes preparation without starting gameplay', async () => {
   const calls = [], handle = {markImporting() {calls.push('importing');}, cancelIfImporting() {calls.push('cancelled');}, async resume() {calls.push('resume');}};
   const f = fixture({context: {product: 'th06mp', roomCode: 'ROOM'}, portOverrides: {roomPreparationForImport: value => value?.kind === 'install-only' ? handle : null}});
   f.model.beginManual(); await f.model.importFile(file());
-  assert.deepEqual(calls, ['importing', 'cancelled']); assert.deepEqual(f.statuses, [t('package.importedReady')]); assert.equal(f.calls.some(([name]) => name === 'launch'), false);
+  assert.deepEqual(calls, ['importing', 'cancelled', 'resume']); assert.deepEqual(f.statuses, [t('package.importedReady')]); assert.equal(f.calls.some(([name]) => name === 'launch'), false);
+});
+
+test('room import cannot resume a successor room after installation completes', async () => {
+  const pending=deferred(),calls=[];
+  const f=fixture({context:{product:'th06mp',roomCode:'ROOM'},importPackage:()=>pending.promise,
+    portOverrides:{roomPreparationForImport:()=>({markImporting(){},cancelIfImporting(){},async resume(){calls.push('resume');}})}});
+  f.model.beginManual();const importing=f.model.importFile(file());
+  f.context.roomCode='OTHER';pending.resolve({});await importing;
+  assert.deepEqual(calls,[]);
 });
 
 test('direct fallback import retires loading without opening or launching a Player', async () => {

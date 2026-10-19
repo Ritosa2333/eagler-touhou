@@ -1,4 +1,4 @@
-#include "../th11_web/tests/cpp/render-fixture.hpp"
+#include "../web/tests/cpp/render-fixture.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdio>

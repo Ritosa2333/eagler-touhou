@@ -20,7 +20,7 @@ const args = options(process.argv.slice(2));
 if (!args['capture-root'])
   throw new Error('usage: node run-current-candidate-gate.mjs --capture-root <capture-directory> [--golden-root <published-golden>] [--oracle-root <advanced-source>] [--common-root <eagler-common>] [--report <file>]');
 const oracleRoot = args['oracle-root'] ? resolve(args['oracle-root']) : null, captureRoot = resolve(args['capture-root']);
-const commonRoot = resolve(args['common-root'] ?? process.env.EAGLER_COMMON_ROOT ?? join(here, '..', '..', '..', 'eagler-common'));
+const commonRoot = resolve(args['common-root'] ?? process.env.EAGLER_COMMON_ROOT ?? join(here, '..', '..', '..', '..', 'common'));
 const {compareTraces} = await import(pathToFileURL(join(commonRoot, 'testkit', 'replay-verifier', 'compare.mjs')));
 const commonAdapter = await import(pathToFileURL(join(commonRoot, 'testkit', 'replay-verifier', 'adapter.mjs')));
 const corpus = JSON.parse(await readFile(join(here, 'corpus.json'), 'utf8'));

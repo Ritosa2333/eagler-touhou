@@ -1,5 +1,5 @@
-#include "../th10_web/cpp/game/Item.hpp"
-#include "../th10_web/cpp/multiplayer/AudioEvents.hpp"
+#include "../web/cpp/game/Item.hpp"
+#include "../web/cpp/multiplayer/AudioEvents.hpp"
 #include <cassert>
 #include <cstdio>
 #include <vector>

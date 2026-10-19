@@ -31,10 +31,10 @@ if(!legacy){
 if(/GetMem|\*\([^\n]*\*\)/.test(body))throw Error('Unmapped executable address in upstream patch');
 body=body.replace(/[ \t]+$/gm,'');
 if(legacy){
- const purple=JSON.parse(readFileSync(resolve(repository,'th08_web/sdl-runtime/practice-sections.mjs'),'utf8').split('export const sections=')[1].trim().replace(/;$/,''));
+ const purple=JSON.parse(readFileSync(resolve(repository,'web/sdl-runtime/practice-sections.mjs'),'utf8').split('export const sections=')[1].trim().replace(/;$/,''));
  if(entries.length!==104||entries.some(([key],i)=>purple[i].key!==key))throw Error('Legacy section IDs changed');
  body=body.replaceAll('THStageWarp','THStageWarpLegacy').replaceAll('THPatch','THPatchLegacy');
- const file=resolve(repository,'th08_web/cpp/game/PracticeLegacyPatches.inc');
+ const file=resolve(repository,'web/cpp/game/PracticeLegacyPatches.inc');
  const content=`// Blue 2.3.0.3 replay compatibility only (MIT), source sha256 ${digest}.\n// Regenerate with generate-thprac.mjs <blue-checkout> --legacy.\n${body}`;
  if(process.argv.includes('--write'))writeFileSync(file,content);
  else if(process.argv.includes('--check')){if(readFileSync(file,'utf8').replaceAll('\r\n','\n').trimEnd()!==content.trimEnd())throw Error('Stale legacy replay patch');}
@@ -52,12 +52,12 @@ const cppLabel=value=>JSON.stringify(value.replaceAll('\\0','\0')).replaceAll('\
 const sections=entries.map(([key,value],index)=>({id:index+1,key,stage:value.appearance[0]-1,group:value.appearance[1],spell:!!value.spell,bgm:value.bgm,
  names:Array.from({length:5},(_,difficulty)=>{const selector='ENHLX'[difficulty];const entry=Object.entries(value).find(([k])=>k.startsWith('!')&&(k.includes(selector)||k.includes('X')))?.[1];if(entry!==undefined)return typeof entry==='string'?glossary[entry]||[entry,entry,entry]:entry;return ['','',''];})}));
 const files={
- 'th08_web/cpp/game/PracticeVersion.hpp':`// Generated from purple THPrac (MIT).\n#pragma once\nnamespace th08 {inline constexpr const char* practice_source_version=${JSON.stringify(version)};}\n`,
- 'th08_web/cpp/game/PracticeUiLabels.hpp':`// Generated from purple glossary (MIT).\n#pragma once\nnamespace th08 {\n${uiKeys.map(k=>`inline constexpr const char* practice_${k}[3]{${glossary[k].map(cppLabel).join(',')}};`).join('\n')}\n}\n`,
- 'th08_web/cpp/game/PracticePatches.inc':`// Generated from thprac (MIT), sha256 ${digest}.\n// Regenerate with portable/generate-thprac.mjs; included inside PracticePatcher.\n${body}`,
- 'th08_web/cpp/game/PracticeSections.hpp':`// Generated from thprac_games_def.json (MIT); upstream enum order is significant.\n#pragma once\nnamespace th08 {\nenum PracticeSection {\n PracticeNone=0,\n${entries.map(([key],i)=>` ${key}=${i+1},`).join('\n')}\n};\nstruct PracticeSectionInfo {int stage,bgm;};\ninline constexpr PracticeSectionInfo practice_sections[]{\n {-1,0},\n${sections.map(s=>` {${s.stage},${s.bgm}},`).join('\n')}\n};\n}\n`,
- 'th08_web/sdl-runtime/practice-sections.mjs':`// Generated from thprac (MIT), source sha256 ${digest}.\nexport const sections=${JSON.stringify(sections,null,2)};\n`,
- 'th08_web/cpp/game/THPRAC-LICENSE.txt':read('LICENCE'),
+ 'web/cpp/game/PracticeVersion.hpp':`// Generated from purple THPrac (MIT).\n#pragma once\nnamespace th08 {inline constexpr const char* practice_source_version=${JSON.stringify(version)};}\n`,
+ 'web/cpp/game/PracticeUiLabels.hpp':`// Generated from purple glossary (MIT).\n#pragma once\nnamespace th08 {\n${uiKeys.map(k=>`inline constexpr const char* practice_${k}[3]{${glossary[k].map(cppLabel).join(',')}};`).join('\n')}\n}\n`,
+ 'web/cpp/game/PracticePatches.inc':`// Generated from thprac (MIT), sha256 ${digest}.\n// Regenerate with portable/generate-thprac.mjs; included inside PracticePatcher.\n${body}`,
+ 'web/cpp/game/PracticeSections.hpp':`// Generated from thprac_games_def.json (MIT); upstream enum order is significant.\n#pragma once\nnamespace th08 {\nenum PracticeSection {\n PracticeNone=0,\n${entries.map(([key],i)=>` ${key}=${i+1},`).join('\n')}\n};\nstruct PracticeSectionInfo {int stage,bgm;};\ninline constexpr PracticeSectionInfo practice_sections[]{\n {-1,0},\n${sections.map(s=>` {${s.stage},${s.bgm}},`).join('\n')}\n};\n}\n`,
+ 'web/sdl-runtime/practice-sections.mjs':`// Generated from thprac (MIT), source sha256 ${digest}.\nexport const sections=${JSON.stringify(sections,null,2)};\n`,
+ 'web/cpp/game/THPRAC-LICENSE.txt':read('LICENCE'),
 };
 if(process.argv.includes('--write')){
  for(const [path,content] of Object.entries(files))writeFileSync(resolve(repository,path),content);

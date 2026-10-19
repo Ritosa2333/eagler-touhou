@@ -1,3 +1,4 @@
+import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Run from repository root: node tests/react-main/site-notice.run.mjs */
 import {execFileSync} from 'node:child_process';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
@@ -21,9 +22,14 @@ try {
     bundle: true, platform: 'node', format: 'esm', write: false, jsx: 'automatic',
     plugins: [{name: 'read-only-repository-inputs', setup(build) {
       build.onResolve({filter: /^@pinned\/site-notice$/}, () => ({path: 'site-notice', namespace: 'pinned-main'}));
+      // Keep the history reader's import.meta.url anchored to its source file;
+      // bundling it into this temporary directory would redirect fixture lookup.
+      build.onResolve({filter: /^\.\.\/support\/ui-history\.mjs$/}, () => ({
+        path: pathToFileURL(join(repo, 'tests/support/ui-history.mjs')).href, external: true,
+      }));
       // The shared favicon replaced the old title icon. Keep the committed
       // parser/lifecycle oracle independent, adapting only this public asset URL.
-      build.onLoad({filter: /.*/, namespace: 'pinned-main'}, () => ({loader: 'ts', contents: execFileSync('git', ['show', 'edee9633e5e3ee79cd2e1aa334f84f6caf755090:src/launcher/site-notice.mts'], {cwd: repo, encoding: 'utf8'}).replaceAll('assets/th06.ico', 'assets/favicon.ico')}));
+      build.onLoad({filter: /.*/, namespace: 'pinned-main'}, () => ({loader: 'ts', contents: readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', 'src/launcher/site-notice.mts').replaceAll('assets/th06.ico', 'assets/favicon.ico')}));
       build.onResolve({filter: /^@source\//}, args => ({path: join(repo, args.path.slice('@source/'.length))}));
       build.onResolve({filter: /^[^./]/}, args => {
         if (args.kind === 'entry-point' || isAbsolute(args.path)) return;

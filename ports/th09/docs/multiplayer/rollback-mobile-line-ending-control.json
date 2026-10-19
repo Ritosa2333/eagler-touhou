@@ -2,9 +2,9 @@
   "schema": "th09/mobile-source-line-ending-control/1",
   "createdAt": "2026-10-11T03:51:39.886Z",
   "reason": "First build identity comparison found a Git checkout CRLF/LF byte difference in PerformanceDiagnostics.hpp. Freeze the initial checkout bytes and match the verified baseline source exactly before performance comparisons.",
-  "old": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/cpp/sdl/PerformanceDiagnostics.hpp",
-  "target": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\sdl\\PerformanceDiagnostics.hpp",
-  "archived": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-performance-diagnostics-checkout-crlf.hpp",
+  "old": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/cpp/sdl/PerformanceDiagnostics.hpp",
+  "target": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\cpp\\sdl\\PerformanceDiagnostics.hpp",
+  "archived": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-performance-diagnostics-checkout-crlf.hpp",
   "before": {
     "bytes": 7106,
     "sha256": "12be62ebfc146c9836eec53ee5cae17787922e5e8d169e9fdf680f3172cb62c0"

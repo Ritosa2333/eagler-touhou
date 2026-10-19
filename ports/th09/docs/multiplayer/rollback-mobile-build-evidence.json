@@ -9,7 +9,7 @@
     "sha256": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
   },
   "analyzer": {
-    "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\tests\\multiplayer\\mobile-build-identity.mjs",
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\tests\\multiplayer\\mobile-build-identity.mjs",
     "bytes": 5570,
     "sha256": "b5e4b266152ec0915eab7b6f7335be271e6911246de73aa173463b410da3a585"
   },
@@ -35,12 +35,12 @@
       "unchangedSourceCount": 273,
       "changed": [
         {
-          "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+          "path": "web/cpp/multiplayer/RollbackSession.cpp",
           "baseline": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
           "candidate": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808"
         },
         {
-          "path": "th09_web/cpp/sdl/PerformanceDiagnostics.hpp",
+          "path": "web/cpp/sdl/PerformanceDiagnostics.hpp",
           "baseline": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
           "candidate": "12be62ebfc146c9836eec53ee5cae17787922e5e8d169e9fdf680f3172cb62c0"
         }
@@ -48,34 +48,34 @@
       "wasmBytesDelta": -67,
       "baseline": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-release\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-enemy-index-release\\build.json",
           "bytes": 87045,
           "sha256": "ad19bc3a5f0c4e2bb39a9051d7fa8337a5f4b31748f327de85407829f72b61e9"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-release\\th09.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-enemy-index-release\\th09.wasm",
           "bytes": 2827974,
           "sha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-release\\th09.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-enemy-index-release\\th09.mjs",
           "bytes": 257184,
           "sha256": "4e53b06c7e2a99624bc4234ffde1682a9a18ce7c89be3d2a414b4f0cb3620ee8"
         }
       },
       "candidate": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release\\build.json",
           "bytes": 87059,
           "sha256": "3a225055933a4e8a6f6f2f58c15fd9cfbea3e4b3c4cff587e883b0a087ebf16e"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release\\th09.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release\\th09.wasm",
           "bytes": 2827907,
           "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release\\th09.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release\\th09.mjs",
           "bytes": 257184,
           "sha256": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3"
         }
@@ -90,8 +90,8 @@
           "-fno-exceptions",
           "-fno-rtti",
           "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
-          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\sdl",
-          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\sdl",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer",
           "-DTH_NATIVE_PLATFORM=1",
           "-DTH_ENABLE_THCRAP=1",
           "-DTH09_DEVELOPMENT_HARNESS=0",
@@ -107,8 +107,8 @@
           "-fno-exceptions",
           "-fno-rtti",
           "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
-          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\sdl",
-          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\cpp\\sdl",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\cpp\\multiplayer",
           "-DTH_NATIVE_PLATFORM=1",
           "-DTH_ENABLE_THCRAP=1",
           "-DTH09_DEVELOPMENT_HARNESS=0",
@@ -2804,12 +2804,12 @@
       "unchangedSourceCount": 273,
       "changed": [
         {
-          "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+          "path": "web/cpp/multiplayer/RollbackSession.cpp",
           "baseline": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
           "candidate": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808"
         },
         {
-          "path": "th09_web/cpp/sdl/PerformanceDiagnostics.hpp",
+          "path": "web/cpp/sdl/PerformanceDiagnostics.hpp",
           "baseline": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
           "candidate": "12be62ebfc146c9836eec53ee5cae17787922e5e8d169e9fdf680f3172cb62c0"
         }
@@ -2817,34 +2817,34 @@
       "wasmBytesDelta": -45,
       "baseline": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-live\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-enemy-index-live\\build.json",
           "bytes": 89493,
           "sha256": "be81865662f0672c3aff96c8cd5765fb895cc1fc9b7dc02244502f273c220b4c"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-live\\th09-presentation.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-enemy-index-live\\th09-presentation.wasm",
           "bytes": 3155589,
           "sha256": "59364fa88a9a23913fe2d808ae6e303790dcb1c1533f5e4d4e5893d14fde4877"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\artifacts\\rollback4x-enemy-index-live\\th09-presentation.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-enemy-index-live\\th09-presentation.mjs",
           "bytes": 260890,
           "sha256": "7f7080fa2d91486b07971b0054862554dd62c632a7320512ff0bd8d72a4f808a"
         }
       },
       "candidate": {
         "manifest": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live\\build.json",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-live\\build.json",
           "bytes": 89507,
           "sha256": "4616b9ba6eb6f17dccc68ec305b140cadaf43f7ac7feb765f5d7624cc3f7ba2a"
         },
         "wasm": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live\\th09-presentation.wasm",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-live\\th09-presentation.wasm",
           "bytes": 3155544,
           "sha256": "f0fe104e03cf4c10617c16c8c08897784a83b02d5e8eeeabf8c2ee1e7e9e58cb"
         },
         "loader": {
-          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-live\\th09-presentation.mjs",
+          "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-live\\th09-presentation.mjs",
           "bytes": 260890,
           "sha256": "d6dfb6c40fd632bb748bc4a881e6f5dd1429aaa6de1cc4dade11ba82005da295"
         }
@@ -2859,8 +2859,8 @@
           "-fno-exceptions",
           "-fno-rtti",
           "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
-          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\sdl",
-          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\th09_web\\cpp\\multiplayer",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\sdl",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer",
           "-DTH_NATIVE_PLATFORM=1",
           "-DTH_ENABLE_THCRAP=1",
           "-DTH09_DEVELOPMENT_HARNESS=1",
@@ -2876,8 +2876,8 @@
           "-fno-exceptions",
           "-fno-rtti",
           "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
-          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\sdl",
-          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\cpp\\multiplayer",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\cpp\\sdl",
+          "-ID:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\cpp\\multiplayer",
           "-DTH_NATIVE_PLATFORM=1",
           "-DTH_ENABLE_THCRAP=1",
           "-DTH09_DEVELOPMENT_HARNESS=1",
@@ -5685,7 +5685,7 @@
     {
       "label": "mobile-rollback-build-release-01",
       "identity": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-invocation.json",
         "bytes": 2397,
         "sha256": "45bb9b9c94c5977d936864541e094aa7ec49694bbf74c894278f9eedc9519ef8"
       },
@@ -5695,7 +5695,7 @@
       "status": 0,
       "signal": null,
       "args": [
-        "th09_web/scripts/build-sdl.mjs",
+        "web/scripts/build-sdl.mjs",
         "--release"
       ],
       "runLabel": "mobile-rollback-build-release-01",
@@ -5704,17 +5704,17 @@
       "scriptSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
       "scriptAfterSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
       "identityBefore": {
-        "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-        "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-        "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-        "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+        "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
       },
       "identityAfter": {
-        "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-        "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-        "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-        "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+        "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
       },
       "identityError": null,
@@ -5728,7 +5728,7 @@
         "buildJobs": 4,
         "parentCommit": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9"
       },
-      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-process.log",
+      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-process.log",
       "logSha256": "8a4ffab323d020fc58fc8dcc6784e197f162c3118dffdddb4d13bbeece0cebe7",
       "stdoutBytes": 8306,
       "stderrBytes": 0
@@ -5736,7 +5736,7 @@
     {
       "label": "mobile-rollback-build-live-01",
       "identity": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-invocation.json",
         "bytes": 2488,
         "sha256": "d06717b9d43a6feefdab4aa0ca43b96fe221ac1aa45e645e0db94f0e75ae8033"
       },
@@ -5746,7 +5746,7 @@
       "status": 0,
       "signal": null,
       "args": [
-        "th09_web/scripts/build-sdl.mjs"
+        "web/scripts/build-sdl.mjs"
       ],
       "runLabel": "mobile-rollback-build-live-01",
       "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -5754,17 +5754,17 @@
       "scriptSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
       "scriptAfterSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
       "identityBefore": {
-        "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-        "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-        "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-        "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+        "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
       },
       "identityAfter": {
-        "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-        "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-        "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-        "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+        "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+        "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
       },
       "identityError": null,
@@ -5779,7 +5779,7 @@
         "parentCommit": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
         "scope": "DEV three-world correctness and call-pressure build, matched diagnostic flags to old E live baseline"
       },
-      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-process.log",
+      "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-process.log",
       "logSha256": "5c4df074a3c5b48ffc1e6cd71368d5734ece3451698bd6e3deccd59bae6fc810",
       "stdoutBytes": 8316,
       "stderrBytes": 0

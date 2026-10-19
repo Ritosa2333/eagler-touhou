@@ -1,0 +1,2 @@
+# Preserve immutable historical fixture bytes on every platform.
+launcher/tests/fixtures/ui-history/** -text whitespace=-blank-at-eol

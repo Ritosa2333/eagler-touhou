@@ -24,7 +24,7 @@
   },
   "identity": {
     "build": {
-      "path": "th09_web/artifacts/rollback4x-chain-input-batch-release/build.json",
+      "path": "web/artifacts/rollback4x-chain-input-batch-release/build.json",
       "bytes": 87045,
       "sha256": "20eb7b45a3eb6bcd1fc6c726a96e9ece972a82736b85ae379529edfcae0928fd",
       "kind": "th09-native-web-release-candidate",
@@ -35,14 +35,14 @@
     "sourceMatchCount": 13,
     "matched": [
       {
-        "path": "th09_web/cpp/sdl/Application.cpp",
+        "path": "web/cpp/sdl/Application.cpp",
         "bytes": 87130,
         "manifestSha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
         "actualSha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
         "match": true
       },
       {
-        "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+        "path": "web/cpp/multiplayer/RollbackSession.cpp",
         "bytes": 15088,
         "manifestSha256": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
         "actualSha256": "c36c817c46cb62154f2ff438d76cb367decd787bd3d57c47d3a92a938dce8a69",
@@ -70,14 +70,14 @@
         "match": true
       },
       {
-        "path": "th09_web/cpp/multiplayer/FrameSchedule.hpp",
+        "path": "web/cpp/multiplayer/FrameSchedule.hpp",
         "bytes": 1053,
         "manifestSha256": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
         "actualSha256": "6a60a80761803016d8b8aa6e2b58474757bbce124f13c7a6bdd659ce570a2635",
         "match": true
       },
       {
-        "path": "th09_web/cpp/multiplayer/RollbackSession.hpp",
+        "path": "web/cpp/multiplayer/RollbackSession.hpp",
         "bytes": 5390,
         "manifestSha256": "b344877fe772c6a030707970db35a77f1d4432e7ef5b17d78501778ed255f978",
         "actualSha256": "b344877fe772c6a030707970db35a77f1d4432e7ef5b17d78501778ed255f978",
@@ -128,12 +128,12 @@
     ],
     "support": [
       {
-        "path": "th09_web/tests/multiplayer/session.cpp",
+        "path": "web/tests/multiplayer/session.cpp",
         "bytes": 20117,
         "sha256": "70426136949591040a848668c5c0877b2bcb9f016dbfbd80c15db95d57cfa8bf"
       },
       {
-        "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+        "path": "web/tests/multiplayer/smoothness-browser.mjs",
         "bytes": 55655,
         "sha256": "8c94c92453556670e9e748d3aca9edaf6b09402254e9864e80320b1b461f2f51"
       }
@@ -141,7 +141,7 @@
   },
   "anchors": [
     {
-      "path": "th09_web/cpp/multiplayer/RollbackSession.hpp",
+      "path": "web/cpp/multiplayer/RollbackSession.hpp",
       "lines": [
         11,
         11
@@ -149,7 +149,7 @@
       "supports": "History=8"
     },
     {
-      "path": "th09_web/cpp/multiplayer/RollbackSession.hpp",
+      "path": "web/cpp/multiplayer/RollbackSession.hpp",
       "lines": [
         40,
         48
@@ -157,7 +157,7 @@
       "supports": "Frame、PredictionFrontier、actual frontier 和 missing-input getters"
     },
     {
-      "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "path": "web/cpp/multiplayer/RollbackSession.cpp",
       "lines": [
         21,
         65
@@ -165,7 +165,7 @@
       "supports": "Configure/Clear: mode、8帧窗口、预测按钮/方向、网络状态复位"
     },
     {
-      "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "path": "web/cpp/multiplayer/RollbackSession.cpp",
       "lines": [
         96,
         152
@@ -173,7 +173,7 @@
       "supports": "实际输入缺口、目标及斜率、effective scale、PacedElapsedMs、Pump后更新"
     },
     {
-      "path": "th09_web/cpp/multiplayer/RollbackSession.cpp",
+      "path": "web/cpp/multiplayer/RollbackSession.cpp",
       "lines": [
         193,
         254
@@ -237,7 +237,7 @@
       "supports": "64样本窗口，至少20样本，截尾均值"
     },
     {
-      "path": "th09_web/cpp/sdl/Application.cpp",
+      "path": "web/cpp/sdl/Application.cpp",
       "lines": [
         379,
         410
@@ -245,7 +245,7 @@
       "supports": "只读导出及独立 timer Pump"
     },
     {
-      "path": "th09_web/cpp/sdl/Application.cpp",
+      "path": "web/cpp/sdl/Application.cpp",
       "lines": [
         437,
         440
@@ -253,7 +253,7 @@
       "supports": "8项 rollback_info 与 normalized confirmed"
     },
     {
-      "path": "th09_web/cpp/sdl/Application.cpp",
+      "path": "web/cpp/sdl/Application.cpp",
       "lines": [
         480,
         578
@@ -261,7 +261,7 @@
       "supports": "先收包/早采样/flush，再恢复及重演；8ms内部软预算"
     },
     {
-      "path": "th09_web/cpp/sdl/Application.cpp",
+      "path": "web/cpp/sdl/Application.cpp",
       "lines": [
         610,
         645
@@ -269,7 +269,7 @@
       "supports": "入口 elapsed/scale、cadence retry、10ms外层预算、末尾音频"
     },
     {
-      "path": "th09_web/cpp/multiplayer/FrameSchedule.hpp",
+      "path": "web/cpp/multiplayer/FrameSchedule.hpp",
       "lines": [
         1,
         27
@@ -277,7 +277,7 @@
       "supports": "blocked 后保留 retry，不累加整帧旧债；exhausted 条件复位"
     },
     {
-      "path": "th09_web/tests/multiplayer/smoothness-browser.mjs",
+      "path": "web/tests/multiplayer/smoothness-browser.mjs",
       "lines": [
         425,
         443
@@ -285,7 +285,7 @@
       "supports": "原 samples 及 callback末尾 networkPacing 导出位置"
     },
     {
-      "path": "th09_web/tests/multiplayer/session.cpp",
+      "path": "web/tests/multiplayer/session.cpp",
       "lines": [
         268,
         347
@@ -440,7 +440,7 @@
     }
   ],
   "existingTargetedSourceCoverage": {
-    "path": "th09_web/tests/multiplayer/session.cpp",
+    "path": "web/tests/multiplayer/session.cpp",
     "cases": [
       "零时钟及重复/倒退时钟",
       "Ready/mode/expectsInput gating",

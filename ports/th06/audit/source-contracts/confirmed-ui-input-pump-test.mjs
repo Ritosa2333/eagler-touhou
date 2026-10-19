@@ -3,7 +3,7 @@ import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 const root=resolve(import.meta.dirname,'../..'),game=root.endsWith('th07')?'th07':'th06';
 const source=readFileSync(resolve(root,`src/netplay/Th${game.slice(2)}LanStageProbe.cpp`),'utf8').replaceAll('\r\n','\n');
-const common=resolve(root,'third_party/eagler-common');
+const common=resolve(root,'../../common');
 const out=resolve(root,'artifacts/confirmed-ui-input');mkdirSync(out,{recursive:true});
 const pump=game==='th06'?source.split('// BEGIN CONFIRMED UI INPUT PUMP')[1].split('// END CONFIRMED UI INPUT PUMP')[0]:source.slice(source.indexOf('FrameInput ContinuePhysicalInput('),source.indexOf('bool SendLocalFrame(std::uint32_t frame)\n{'));
 if(!pump.includes(game==='th06'?'PumpConfirmedUiInput':'PumpBufferedLockstepInput'))throw Error('Missing production pump');

@@ -1,5 +1,5 @@
 #include "native-world.hpp"
-#include "../../th15_web/cpp/game/ScreenViews.hpp"
+#include "../../web/cpp/game/ScreenViews.hpp"
 #include <algorithm>
 struct GrazeGraphics final:ZunGraphics {
  touhou::graphics::PipelineState state;u32 submitted=0;std::vector<u32> colors;

@@ -1,8 +1,8 @@
 #include <eagler/thprac/PracticeSpeed.hpp>
-#include "../th08_web/cpp/game/PracticeCadence.hpp"
+#include "../web/cpp/game/PracticeCadence.hpp"
 #include <cassert>
 #include <cstring>
-#include "../th08_web/cpp/game/PracticeUiLabels.hpp"
+#include "../web/cpp/game/PracticeUiLabels.hpp"
 int main(){
  for(int locale=0;locale<3;++locale){
   const char* cpu=th08::practice_THPRAC_SELECT_CPU_COMBO[locale];

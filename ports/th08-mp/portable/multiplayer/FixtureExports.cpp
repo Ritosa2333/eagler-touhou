@@ -1,6 +1,6 @@
 // Diagnostic setup only. Production multiplayer and ordinary builds never link
 // this file; the following ticks still use native TH08 Player/Item/Menu owners.
-#include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
+#include "../../web/cpp/platform/BrowserRuntime.hpp"
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -14,9 +14,9 @@
 #include "world-journal-fixture.hpp"
 #include "correction-fixture.hpp"
 #include "product-fixture.hpp"
-#include "../../th08_web/cpp/multiplayer/TextureJournal.hpp"
-#include "../../th08_web/cpp/multiplayer/RollbackDriver.hpp"
-#include "../../th08_web/cpp/multiplayer/SpectatorStageState.hpp"
+#include "../../web/cpp/multiplayer/TextureJournal.hpp"
+#include "../../web/cpp/multiplayer/RollbackDriver.hpp"
+#include "../../web/cpp/multiplayer/SpectatorStageState.hpp"
 
 extern "C" __attribute__((export_name("mp_fixture_network_capture")))
 th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
@@ -25,10 +25,10 @@ th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
     // bytes to the same production channel that owns resend and repair.
     return const_cast<th08::multiplayer::NetworkConnection&>(r->network_driver()->Network()).Captured(frame);
 }
-#include "../../th08_web/cpp/game/Chain.hpp"
-#include "../../th08_web/cpp/game/PlayerCollision.hpp"
-#include "../../th08_web/cpp/game/BackgroundObjects.hpp"
-#include "../../th08_web/cpp/sdl/GraphicsHost.hpp"
+#include "../../web/cpp/game/Chain.hpp"
+#include "../../web/cpp/game/PlayerCollision.hpp"
+#include "../../web/cpp/game/BackgroundObjects.hpp"
+#include "../../web/cpp/sdl/GraphicsHost.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif

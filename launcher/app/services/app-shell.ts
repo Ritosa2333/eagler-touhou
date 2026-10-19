@@ -10,7 +10,7 @@ export interface AppShellSnapshot {
 export interface AppShellOptions {
   baseUrl: string;
   /** Explicit isolated deployment only. Omission never registers a worker. */
-  deployment?: {workerUrl: string; scope: string};
+  deployment?: {workerUrl: string; scope: string; previousWorkerUrls?: readonly string[]};
   serviceWorker: ClientOptions['serviceWorker'];
   secureContext: boolean;
   activity(): LauncherActivitySnapshot;
@@ -33,6 +33,7 @@ export function createAppShellService(options: AppShellOptions) {
   const registrationIdentity = options.deployment ? {
     workerUrl: new URL(options.deployment.workerUrl, options.baseUrl).href,
     scopeUrl: new URL(options.deployment.scope, options.baseUrl).href,
+    previousWorkerUrls: options.deployment.previousWorkerUrls,
   } : undefined;
   const defer = () => disposed || shouldDeferAppShellReload(options.activity());
   const client = createAppShellClient({

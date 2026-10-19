@@ -6,7 +6,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {build} from 'esbuild';
 import {authoredSourcesPlugin} from './react-main/authored-sources.mjs';
-import {loadPlaywright} from './support/playwright-loader.mjs';
+import {loadPlaywright} from '../../tools/browser/playwright.mjs';
 const project=resolve(import.meta.dirname,'..'),out=resolve(project,'artifacts/validation/game-update-dialog');
 await mkdir(out,{recursive:true});
 const app=await build({stdin:{resolveDir:project,loader:'tsx',contents:`

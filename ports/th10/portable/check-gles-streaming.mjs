@@ -2,11 +2,11 @@
 // builds. Desktop/mobile viewport results are not physical-phone benchmarks.
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
-import {launchBrowser} from '../th10_web/scripts/native/browser-launch.mjs';
+import {launchBrowser} from '../../../tools/browser/launch.mjs';
 const game=process.argv.includes('--th08')?'th08':'th10';
 const oldBase=process.env.OLD_URL??(game==='th08'?'http://127.0.0.1:8088':'http://127.0.0.1:8096');
 const newBase=process.env.TEST_URL??(game==='th08'?'http://127.0.0.1:8095':'http://127.0.0.1:8093');
-const out=game+'_web/artifacts/architecture-candidate/validation';mkdirSync(out,{recursive:true});
+const out='web/artifacts/architecture-candidate/validation';mkdirSync(out,{recursive:true});
 const browser=await launchBrowser(),runs={};
 try {
  for(const [label,base] of [['previous',oldBase],['candidate',newBase]]) {
@@ -35,7 +35,7 @@ try {
    gl.drawArrays=function(...args){counters.draws++;return draw.apply(this,args);};
    gl.drawArraysInstanced=function(...args){counters.draws++;return instanced.apply(this,args);};
    window.probe={r,c,app,tick,gl,counters,gpu:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)};
-  },{game,replay:game==='th08'?Array.from(readFileSync('th08_web/artifacts/cpp/campaign/extra/original.rpy')):null});
+  },{game,replay:game==='th08'?Array.from(readFileSync('web/artifacts/cpp/campaign/extra/original.rpy')):null});
   const rows=[],times=[],total=game==='th08'?10000:14000;
   for(let start=0;start<total;start+=500) {
    const row=await page.evaluate(async({game,start,count})=>{

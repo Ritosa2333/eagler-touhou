@@ -6,154 +6,154 @@
   "expectedWasm": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
   "sourceBefore": [
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\scripts\\build-eagler.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\scripts\\build-eagler.mjs",
       "bytes": 4734,
       "sha256": "fe08e50458a982635c1072adec2488415c899b89cb12b9d0f68191b5ef355972"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-materialize.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-materialize.mjs",
       "bytes": 3927,
       "sha256": "761181c00b130d45bf60457fc428f6207b0de80d0bc84671926bae32ac1e5ec0"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\managed.html",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\managed.html",
       "bytes": 863,
       "sha256": "3a5184a15944d467737f0ac81716c80f1fbd4336c5fbcea88455f447c32f5317"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\managed.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\managed.mjs",
       "bytes": 21364,
       "sha256": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\managed.css",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\managed.css",
       "bytes": 733,
       "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\keyboard.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\keyboard.mjs",
       "bytes": 1298,
       "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\directory-keyboard.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\directory-keyboard.mjs",
       "bytes": 6455,
       "sha256": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\shared-netplay.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\shared-netplay.mjs",
       "bytes": 23882,
       "sha256": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\motion-replay.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\motion-replay.mjs",
       "bytes": 1866,
       "sha256": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\startup-branding.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\startup-branding.mjs",
       "bytes": 6654,
       "sha256": "aaceeec628a1e666905a0eeb2f0c0510f1b1e5462ee801c9453ade8b0fbccd8a"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\th09.wasm",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\th09.wasm",
       "bytes": 2827907,
       "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\th09.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\th09.mjs",
       "bytes": 257184,
       "sha256": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\build.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\build.json",
       "bytes": 87059,
       "sha256": "86da4a062d000b3b4f238f823dee07d5fcaa5137e229778c3e9bc5a8eaabc21f"
     },
     {
-      "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\cp932.bin",
+      "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\cp932.bin",
       "bytes": 131072,
       "sha256": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919"
     },
     {
-      "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\blend.bin",
+      "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\blend.bin",
       "bytes": 131072,
       "sha256": "cd7099994c1d25a9526fba4422c518b38fbb4e7ac9940288adc0c0ddef2106eb"
     }
   ],
   "sourceAfter": [
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\scripts\\build-eagler.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\scripts\\build-eagler.mjs",
       "bytes": 4734,
       "sha256": "fe08e50458a982635c1072adec2488415c899b89cb12b9d0f68191b5ef355972"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\tests\\multiplayer\\managed-touch-materialize.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-materialize.mjs",
       "bytes": 3927,
       "sha256": "761181c00b130d45bf60457fc428f6207b0de80d0bc84671926bae32ac1e5ec0"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\managed.html",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\managed.html",
       "bytes": 863,
       "sha256": "3a5184a15944d467737f0ac81716c80f1fbd4336c5fbcea88455f447c32f5317"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\managed.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\managed.mjs",
       "bytes": 21364,
       "sha256": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\managed.css",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\managed.css",
       "bytes": 733,
       "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\keyboard.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\keyboard.mjs",
       "bytes": 1298,
       "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\directory-keyboard.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\directory-keyboard.mjs",
       "bytes": 6455,
       "sha256": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\shared-netplay.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\shared-netplay.mjs",
       "bytes": 23882,
       "sha256": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\motion-replay.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\motion-replay.mjs",
       "bytes": 1866,
       "sha256": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\sdl-runtime\\startup-branding.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\sdl-runtime\\startup-branding.mjs",
       "bytes": 6654,
       "sha256": "aaceeec628a1e666905a0eeb2f0c0510f1b1e5462ee801c9453ade8b0fbccd8a"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\th09.wasm",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\th09.wasm",
       "bytes": 2827907,
       "sha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\th09.mjs",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\th09.mjs",
       "bytes": 257184,
       "sha256": "0ce63595ee73ecd0bd608adbeeabb25c6c221f23cdc734b19d56df652fcdf9c3"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\mobile-rollback-release-matched\\build.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\mobile-rollback-release-matched\\build.json",
       "bytes": 87059,
       "sha256": "86da4a062d000b3b4f238f823dee07d5fcaa5137e229778c3e9bc5a8eaabc21f"
     },
     {
-      "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\cp932.bin",
+      "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\cp932.bin",
       "bytes": 131072,
       "sha256": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919"
     },
     {
-      "path": "D:\\workspace\\eagler\\th09-eagler\\th09_web\\assets\\sdl-native\\blend.bin",
+      "path": "D:\\workspace\\eagler\\th09-eagler\\web\\assets\\sdl-native\\blend.bin",
       "bytes": 131072,
       "sha256": "cd7099994c1d25a9526fba4422c518b38fbb4e7ac9940288adc0c0ddef2106eb"
     }
@@ -162,9 +162,9 @@
   "runs": [
     {
       "variant": "normal",
-      "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler",
+      "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler",
       "inventory": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler\\runtime-files.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler\\runtime-files.json",
         "bytes": 1959,
         "sha256": "b0bbd426bd602b02a05bc105b7e18f299cb7cf6dd4680b1157c0028d54a9920c"
       },
@@ -232,17 +232,17 @@
         "builtAt": "2026-10-11T03:52:10.728Z"
       },
       "args": [
-        "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\scripts\\build-eagler.mjs"
+        "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\scripts\\build-eagler.mjs"
       ],
       "status": 0,
-      "stdout": "{\"output\":\"D:\\\\workspace\\\\eagler\\\\worktrees\\\\th09-managed-touch-4x\\\\th09_web\\\\build-eagler\",\"files\":[\"th09.html\",\"shell.mjs\",\"managed.css\",\"keyboard.mjs\",\"directory-keyboard.mjs\",\"shared-netplay.mjs\",\"motion-replay.mjs\",\"startup-branding.mjs\",\"th09.mjs\",\"th09.wasm\",\"fonts/cp932.bin\",\"fonts/blend.bin\",\"manifest.json\",\"version.json\"],\"wasm\":\"037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373\"}\n",
+      "stdout": "{\"output\":\"D:\\\\workspace\\\\eagler\\\\worktrees\\\\th09-managed-touch-4x\\\\web\\\\build-eagler\",\"files\":[\"th09.html\",\"shell.mjs\",\"managed.css\",\"keyboard.mjs\",\"directory-keyboard.mjs\",\"shared-netplay.mjs\",\"motion-replay.mjs\",\"startup-branding.mjs\",\"th09.mjs\",\"th09.wasm\",\"fonts/cp932.bin\",\"fonts/blend.bin\",\"manifest.json\",\"version.json\"],\"wasm\":\"037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373\"}\n",
       "stderr": ""
     },
     {
       "variant": "multiplayer",
-      "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler-multiplayer",
+      "root": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler-multiplayer",
       "inventory": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\build-eagler-multiplayer\\runtime-files.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\build-eagler-multiplayer\\runtime-files.json",
         "bytes": 1959,
         "sha256": "ddd2c76cec41a918a2ae292e459c9e2b193cd311dcc5b62bd427c189f903d5df"
       },
@@ -310,11 +310,11 @@
         "builtAt": "2026-10-11T03:52:10.728Z"
       },
       "args": [
-        "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\th09_web\\scripts\\build-eagler.mjs",
+        "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\scripts\\build-eagler.mjs",
         "--multiplayer"
       ],
       "status": 0,
-      "stdout": "{\"output\":\"D:\\\\workspace\\\\eagler\\\\worktrees\\\\th09-managed-touch-4x\\\\th09_web\\\\build-eagler-multiplayer\",\"files\":[\"th09.html\",\"shell.mjs\",\"managed.css\",\"keyboard.mjs\",\"directory-keyboard.mjs\",\"shared-netplay.mjs\",\"motion-replay.mjs\",\"startup-branding.mjs\",\"th09.mjs\",\"th09.wasm\",\"fonts/cp932.bin\",\"fonts/blend.bin\",\"manifest.json\",\"version.json\"],\"wasm\":\"037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373\"}\n",
+      "stdout": "{\"output\":\"D:\\\\workspace\\\\eagler\\\\worktrees\\\\th09-managed-touch-4x\\\\web\\\\build-eagler-multiplayer\",\"files\":[\"th09.html\",\"shell.mjs\",\"managed.css\",\"keyboard.mjs\",\"directory-keyboard.mjs\",\"shared-netplay.mjs\",\"motion-replay.mjs\",\"startup-branding.mjs\",\"th09.mjs\",\"th09.wasm\",\"fonts/cp932.bin\",\"fonts/blend.bin\",\"manifest.json\",\"version.json\"],\"wasm\":\"037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373\"}\n",
       "stderr": ""
     }
   ]

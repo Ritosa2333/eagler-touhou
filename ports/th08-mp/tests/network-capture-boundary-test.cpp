@@ -1,4 +1,4 @@
-#include "../th08_web/cpp/multiplayer/NetworkConnection.hpp"
+#include "../web/cpp/multiplayer/NetworkConnection.hpp"
 #include <cassert>
 #include <cstdio>
 using namespace th08::multiplayer;

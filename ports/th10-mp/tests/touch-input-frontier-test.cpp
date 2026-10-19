@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/TouchInputFrontier.hpp"
+#include "../web/cpp/multiplayer/TouchInputFrontier.hpp"
 #include "../portable/input/TouchController.hpp"
 
 #include <array>

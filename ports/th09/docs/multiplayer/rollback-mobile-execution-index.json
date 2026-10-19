@@ -10,7 +10,7 @@
       "root": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x",
       "head": "a93fb876eb6be6c84c1cf2cf271153ee7fa4763e",
       "branch": "experiment/mobile-rollback-4x",
-      "status": "M docs/multiplayer/AGENT-HANDOFF.md\n M th09_web/tests/multiplayer/smoothness-browser.mjs\n M th09_web/tests/multiplayer/touch-peer-browser.mjs\n?? docs/multiplayer/rollback-mobile-analysis-corrections.json\n?? docs/multiplayer/rollback-mobile-build-evidence.json\n?? docs/multiplayer/rollback-mobile-build-matched-evidence.json\n?? docs/multiplayer/rollback-mobile-components-evidence.json\n?? docs/multiplayer/rollback-mobile-deep-corrected-evidence.json\n?? docs/multiplayer/rollback-mobile-deep-evidence.json\n?? docs/multiplayer/rollback-mobile-gap-dispatch-evidence.json\n?? docs/multiplayer/rollback-mobile-input-path-audit.md\n?? docs/multiplayer/rollback-mobile-js-evidence.json\n?? docs/multiplayer/rollback-mobile-line-ending-control.json\n?? docs/multiplayer/rollback-mobile-managed-queue-evidence.json\n?? docs/multiplayer/rollback-mobile-release-evidence.json\n?? docs/multiplayer/rollback-mobile-run-corrections.json\n?? docs/multiplayer/rollback-mobile-timing-boundaries.md\n?? docs/multiplayer/rollback-mobile-validation-addendum.json\n?? docs/multiplayer/rollback-mobile-validation-plan.json\n?? docs/multiplayer/rollback-mobile-work.md\n?? th09_web/tests/multiplayer/mobile-build-identity-matched.mjs\n?? th09_web/tests/multiplayer/mobile-build-identity.mjs\n?? th09_web/tests/multiplayer/mobile-evidence-summary.mjs\n?? th09_web/tests/multiplayer/mobile-final-verification.mjs\n?? th09_web/tests/multiplayer/mobile-gap-dispatch-summary.mjs\n?? th09_web/tests/multiplayer/mobile-release-evidence-summary.mjs\n?? th09_web/tests/multiplayer/touch-input-probe.mjs\n?? th09_web/tests/multiplayer/touch-input-probe.test.mjs\n?? th09_web/tests/server/managed-touch-queue.test.mjs"
+      "status": "M docs/multiplayer/AGENT-HANDOFF.md\n M web/tests/multiplayer/smoothness-browser.mjs\n M web/tests/multiplayer/touch-peer-browser.mjs\n?? docs/multiplayer/rollback-mobile-analysis-corrections.json\n?? docs/multiplayer/rollback-mobile-build-evidence.json\n?? docs/multiplayer/rollback-mobile-build-matched-evidence.json\n?? docs/multiplayer/rollback-mobile-components-evidence.json\n?? docs/multiplayer/rollback-mobile-deep-corrected-evidence.json\n?? docs/multiplayer/rollback-mobile-deep-evidence.json\n?? docs/multiplayer/rollback-mobile-gap-dispatch-evidence.json\n?? docs/multiplayer/rollback-mobile-input-path-audit.md\n?? docs/multiplayer/rollback-mobile-js-evidence.json\n?? docs/multiplayer/rollback-mobile-line-ending-control.json\n?? docs/multiplayer/rollback-mobile-managed-queue-evidence.json\n?? docs/multiplayer/rollback-mobile-release-evidence.json\n?? docs/multiplayer/rollback-mobile-run-corrections.json\n?? docs/multiplayer/rollback-mobile-timing-boundaries.md\n?? docs/multiplayer/rollback-mobile-validation-addendum.json\n?? docs/multiplayer/rollback-mobile-validation-plan.json\n?? docs/multiplayer/rollback-mobile-work.md\n?? web/tests/multiplayer/mobile-build-identity-matched.mjs\n?? web/tests/multiplayer/mobile-build-identity.mjs\n?? web/tests/multiplayer/mobile-evidence-summary.mjs\n?? web/tests/multiplayer/mobile-final-verification.mjs\n?? web/tests/multiplayer/mobile-gap-dispatch-summary.mjs\n?? web/tests/multiplayer/mobile-release-evidence-summary.mjs\n?? web/tests/multiplayer/touch-input-probe.mjs\n?? web/tests/multiplayer/touch-input-probe.test.mjs\n?? web/tests/server/managed-touch-queue.test.mjs"
     },
     "baseline": {
       "root": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x",
@@ -27,12 +27,12 @@
     {
       "label": "mobile-managed-queue-characterization-b1",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-invocation.json",
         "bytes": 2435,
         "sha256": "8b8d4985d792e07c12cc0e5494ac7e55d4aae994a83a9803dbb9ab95a86d5334"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-process.log",
         "bytes": 9861,
         "sha256": "b1c7f33f8d3da8a407a174116bd9e21e74d8c0ce493b2a61713c2c3185ac492f"
       },
@@ -44,7 +44,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/server/managed-touch-queue.test.mjs"
+          "web/tests/server/managed-touch-queue.test.mjs"
         ],
         "runLabel": "mobile-managed-queue-characterization-b1",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -52,16 +52,16 @@
         "scriptSha256": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
         "scriptAfterSha256": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
         "identityBefore": {
-          "th09_web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
-          "th09_web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
-          "th09_web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
-          "th09_web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
+          "web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
+          "web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+          "web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+          "web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
         },
         "identityAfter": {
-          "th09_web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
-          "th09_web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
-          "th09_web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
-          "th09_web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
+          "web/tests/server/managed-touch-queue.test.mjs": "989194de3df73bbabac500ab52b29095ba0d5495e2117cb798894204083e866a",
+          "web/sdl-runtime/managed.mjs": "1f4ef1810d58c76c6fb85a1032257af5d49ab09f81de56a1114eae2dc7a76608",
+          "web/sdl-runtime/directory-keyboard.mjs": "c0e55cc4ffc5297869ef08c1e0e470f071fbd1082adbf20db4f14bd3f9257501",
+          "web/sdl-runtime/motion-replay.mjs": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
         },
         "identityError": null,
         "build": null,
@@ -81,7 +81,7 @@
           ],
           "releaseAckChecks": true
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-managed-queue-characterization-b1-process.log",
         "logSha256": "b1c7f33f8d3da8a407a174116bd9e21e74d8c0ce493b2a61713c2c3185ac492f",
         "stdoutBytes": 9861,
         "stderrBytes": 0
@@ -90,12 +90,12 @@
     {
       "label": "mobile-rollback-build-identity-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-01-invocation.json",
         "bytes": 1832,
         "sha256": "0904ed5789f498be534e447137ce3165a657c7da7087ce0dd88f36fb60cedcd8"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-01-process.log",
         "bytes": 3550,
         "sha256": "af64d649fe4adb79d5915c4322083b8aba668a2b660621d0696e06cef795164c"
       },
@@ -107,7 +107,7 @@
         "status": 1,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/mobile-build-identity.mjs"
+          "web/tests/multiplayer/mobile-build-identity.mjs"
         ],
         "runLabel": "mobile-rollback-build-identity-01",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -115,14 +115,14 @@
         "scriptSha256": "b5e4b266152ec0915eab7b6f7335be271e6911246de73aa173463b410da3a585",
         "scriptAfterSha256": "b5e4b266152ec0915eab7b6f7335be271e6911246de73aa173463b410da3a585",
         "identityBefore": {
-          "th09_web/tests/multiplayer/mobile-build-identity.mjs": "b5e4b266152ec0915eab7b6f7335be271e6911246de73aa173463b410da3a585",
+          "web/tests/multiplayer/mobile-build-identity.mjs": "b5e4b266152ec0915eab7b6f7335be271e6911246de73aa173463b410da3a585",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808"
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/mobile-build-identity.mjs": "b5e4b266152ec0915eab7b6f7335be271e6911246de73aa173463b410da3a585",
+          "web/tests/multiplayer/mobile-build-identity.mjs": "b5e4b266152ec0915eab7b6f7335be271e6911246de73aa173463b410da3a585",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808"
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808"
         },
         "identityError": null,
         "build": null,
@@ -131,7 +131,7 @@
           "readOnlySourceAndBuildComparison": true,
           "performanceRun": false
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-01-process.log",
         "logSha256": "af64d649fe4adb79d5915c4322083b8aba668a2b660621d0696e06cef795164c",
         "stdoutBytes": 3550,
         "stderrBytes": 0
@@ -140,12 +140,12 @@
     {
       "label": "mobile-rollback-build-identity-matched-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-matched-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-matched-01-invocation.json",
         "bytes": 2149,
         "sha256": "49505f77cc6a1f62450502fe3e811788535b0e818e85345a4604cfdd5acb6b40"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-matched-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-matched-01-process.log",
         "bytes": 3185,
         "sha256": "5e2c9e82871655f0de7d995de3b36ef5964957524f38b326387f780dac781ccd"
       },
@@ -157,7 +157,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/mobile-build-identity-matched.mjs"
+          "web/tests/multiplayer/mobile-build-identity-matched.mjs"
         ],
         "runLabel": "mobile-rollback-build-identity-matched-01",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -165,16 +165,16 @@
         "scriptSha256": "c0549946f839b487268cd6b05f45281b78116f5f383049101c5d4cc378897330",
         "scriptAfterSha256": "c0549946f839b487268cd6b05f45281b78116f5f383049101c5d4cc378897330",
         "identityBefore": {
-          "th09_web/tests/multiplayer/mobile-build-identity-matched.mjs": "c0549946f839b487268cd6b05f45281b78116f5f383049101c5d4cc378897330",
+          "web/tests/multiplayer/mobile-build-identity-matched.mjs": "c0549946f839b487268cd6b05f45281b78116f5f383049101c5d4cc378897330",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035"
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/mobile-build-identity-matched.mjs": "c0549946f839b487268cd6b05f45281b78116f5f383049101c5d4cc378897330",
+          "web/tests/multiplayer/mobile-build-identity-matched.mjs": "c0549946f839b487268cd6b05f45281b78116f5f383049101c5d4cc378897330",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035"
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035"
         },
         "identityError": null,
         "build": null,
@@ -184,7 +184,7 @@
           "priorFailedByteComparisonPreserved": true,
           "performanceRun": false
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-matched-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-identity-matched-01-process.log",
         "logSha256": "5e2c9e82871655f0de7d995de3b36ef5964957524f38b326387f780dac781ccd",
         "stdoutBytes": 3185,
         "stderrBytes": 0
@@ -193,12 +193,12 @@
     {
       "label": "mobile-rollback-build-live-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-invocation.json",
         "bytes": 2488,
         "sha256": "d06717b9d43a6feefdab4aa0ca43b96fe221ac1aa45e645e0db94f0e75ae8033"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-process.log",
         "bytes": 8316,
         "sha256": "5c4df074a3c5b48ffc1e6cd71368d5734ece3451698bd6e3deccd59bae6fc810"
       },
@@ -210,7 +210,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/scripts/build-sdl.mjs"
+          "web/scripts/build-sdl.mjs"
         ],
         "runLabel": "mobile-rollback-build-live-01",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -218,17 +218,17 @@
         "scriptSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "scriptAfterSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "identityBefore": {
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-          "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
         },
         "identityAfter": {
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-          "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
         },
         "identityError": null,
@@ -243,7 +243,7 @@
           "parentCommit": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
           "scope": "DEV three-world correctness and call-pressure build, matched diagnostic flags to old E live baseline"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-01-process.log",
         "logSha256": "5c4df074a3c5b48ffc1e6cd71368d5734ece3451698bd6e3deccd59bae6fc810",
         "stdoutBytes": 8316,
         "stderrBytes": 0
@@ -252,12 +252,12 @@
     {
       "label": "mobile-rollback-build-live-matched-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-matched-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-matched-01-invocation.json",
         "bytes": 2955,
         "sha256": "3c5163f164c341791c9a00426f0eb4037e8839a5b7dceeb184aa8076fb1cf6ba"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-matched-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-matched-01-process.log",
         "bytes": 8324,
         "sha256": "c733dd0ce3c6537d8b5e322ba0f8850904b9c85ceeac205dd2581c299eb37d87"
       },
@@ -269,7 +269,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/scripts/build-sdl.mjs"
+          "web/scripts/build-sdl.mjs"
         ],
         "runLabel": "mobile-rollback-build-live-matched-01",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -277,20 +277,20 @@
         "scriptSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "scriptAfterSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "identityBefore": {
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-          "th09_web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
-          "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
+          "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-line-ending-control.json": "2fe1290c5d1595c11c0959fec549bddc51801394f0eb7333de21b0f1ef248bd3"
         },
         "identityAfter": {
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-          "th09_web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
-          "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
+          "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-line-ending-control.json": "2fe1290c5d1595c11c0959fec549bddc51801394f0eb7333de21b0f1ef248bd3"
         },
@@ -304,7 +304,7 @@
           "reason": "Exact frozen source bytes control after verified checkout CRLF-only difference; all initial artifacts retained.",
           "intendedProductionCodeChanges": 1
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-matched-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-live-matched-01-process.log",
         "logSha256": "c733dd0ce3c6537d8b5e322ba0f8850904b9c85ceeac205dd2581c299eb37d87",
         "stdoutBytes": 8324,
         "stderrBytes": 0
@@ -313,12 +313,12 @@
     {
       "label": "mobile-rollback-build-release-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-invocation.json",
         "bytes": 2397,
         "sha256": "45bb9b9c94c5977d936864541e094aa7ec49694bbf74c894278f9eedc9519ef8"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-process.log",
         "bytes": 8306,
         "sha256": "8a4ffab323d020fc58fc8dcc6784e197f162c3118dffdddb4d13bbeece0cebe7"
       },
@@ -330,7 +330,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/scripts/build-sdl.mjs",
+          "web/scripts/build-sdl.mjs",
           "--release"
         ],
         "runLabel": "mobile-rollback-build-release-01",
@@ -339,17 +339,17 @@
         "scriptSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "scriptAfterSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "identityBefore": {
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-          "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
         },
         "identityAfter": {
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-          "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
         },
         "identityError": null,
@@ -363,7 +363,7 @@
           "buildJobs": 4,
           "parentCommit": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-01-process.log",
         "logSha256": "8a4ffab323d020fc58fc8dcc6784e197f162c3118dffdddb4d13bbeece0cebe7",
         "stdoutBytes": 8306,
         "stderrBytes": 0
@@ -372,12 +372,12 @@
     {
       "label": "mobile-rollback-build-release-matched-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-matched-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-matched-01-invocation.json",
         "bytes": 3008,
         "sha256": "923b85abc1e8ea5e067f4e0d278f780d1d1e1a433c093e404e976036f8cfb110"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-matched-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-matched-01-process.log",
         "bytes": 8314,
         "sha256": "1ef1dc4d267a5b0c98bc7d810971bef1a28b6c346ee8d987ca9c21fd38225e2b"
       },
@@ -389,7 +389,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/scripts/build-sdl.mjs",
+          "web/scripts/build-sdl.mjs",
           "--release"
         ],
         "runLabel": "mobile-rollback-build-release-matched-01",
@@ -398,20 +398,20 @@
         "scriptSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "scriptAfterSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
         "identityBefore": {
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-          "th09_web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
-          "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
+          "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-line-ending-control.json": "2fe1290c5d1595c11c0959fec549bddc51801394f0eb7333de21b0f1ef248bd3"
         },
         "identityAfter": {
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
-          "th09_web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
-          "th09_web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/cpp/sdl/PerformanceDiagnostics.hpp": "f64d10fd255428b68080b8b8567941691779b2f416e0eb2886962b7345a54035",
+          "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-line-ending-control.json": "2fe1290c5d1595c11c0959fec549bddc51801394f0eb7333de21b0f1ef248bd3"
         },
@@ -425,7 +425,7 @@
           "reason": "Match exact frozen baseline header bytes after isolated checkout CRLF-only difference; original builds and failed identity check retained.",
           "intendedProductionCodeChanges": 1
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-matched-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-build-release-matched-01-process.log",
         "logSha256": "1ef1dc4d267a5b0c98bc7d810971bef1a28b6c346ee8d987ca9c21fd38225e2b",
         "stdoutBytes": 8314,
         "stderrBytes": 0
@@ -434,12 +434,12 @@
     {
       "label": "mobile-rollback-burst120-c1",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-burst120-c1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-burst120-c1-invocation.json",
         "bytes": 5747,
         "sha256": "5d1bda1ad2fcdaa34e3d4cdfabce7c9b5de0c4757aeca1c9739cd757a8cfff2d"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-burst120-c1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-burst120-c1-process.log",
         "bytes": 32407,
         "sha256": "4c53042836b16efa44f8e9653ee33a44193d0fe837b43931f774ed74cb83c665"
       },
@@ -451,7 +451,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/smoothness-browser.mjs",
+          "web/tests/multiplayer/smoothness-browser.mjs",
           "--release",
           "--relay"
         ],
@@ -461,37 +461,37 @@
         "scriptSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "scriptAfterSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "identityBefore": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched",
+        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-release-matched",
         "reference": null,
         "declaredParameters": {
           "frames": 1800,
@@ -539,7 +539,7 @@
           },
           "condition": "Three deterministic gates and full ABBA completed successfully; all outcomes retained."
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-burst120-c1-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-burst120-c1-process.log",
         "logSha256": "4c53042836b16efa44f8e9653ee33a44193d0fe837b43931f774ed74cb83c665",
         "stdoutBytes": 32407,
         "stderrBytes": 0
@@ -548,12 +548,12 @@
     {
       "label": "mobile-rollback-components-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01-invocation.json",
         "bytes": 2702,
         "sha256": "487bd9a4951caed0ff3b0461cbf46b55cc33b48f8f474d73ac8d7b7ed25e2cff"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01-process.log",
         "bytes": 9246,
         "sha256": "2351c3aa7cd68f79dd1373fc8ef2d3d2f27080ac3b99a02f3dae5a89731b9729"
       },
@@ -565,7 +565,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/run-tests.mjs",
+          "web/tests/multiplayer/run-tests.mjs",
           "session",
           "adonis",
           "mobile-prediction"
@@ -576,19 +576,19 @@
         "scriptSha256": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
         "scriptAfterSha256": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
         "identityBefore": {
-          "th09_web/tests/multiplayer/run-tests.mjs": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
-          "th09_web/tests/multiplayer/session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259",
-          "th09_web/tests/multiplayer/adonis.cpp": "550158756adc43cfbe57a46e34791ee2392802bb096c0ca096539b3403d99d35",
-          "th09_web/tests/multiplayer/mobile-prediction.cpp": "02b612bd5ceeebe5e28ecea42950fe8cefd715fca9c915b30a3461f3c4bc4272",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/tests/multiplayer/run-tests.mjs": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
+          "web/tests/multiplayer/session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259",
+          "web/tests/multiplayer/adonis.cpp": "550158756adc43cfbe57a46e34791ee2392802bb096c0ca096539b3403d99d35",
+          "web/tests/multiplayer/mobile-prediction.cpp": "02b612bd5ceeebe5e28ecea42950fe8cefd715fca9c915b30a3461f3c4bc4272",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/run-tests.mjs": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
-          "th09_web/tests/multiplayer/session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259",
-          "th09_web/tests/multiplayer/adonis.cpp": "550158756adc43cfbe57a46e34791ee2392802bb096c0ca096539b3403d99d35",
-          "th09_web/tests/multiplayer/mobile-prediction.cpp": "02b612bd5ceeebe5e28ecea42950fe8cefd715fca9c915b30a3461f3c4bc4272",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/tests/multiplayer/run-tests.mjs": "9f459ccd0874fcfcc523f3f85bc7672a4dee47274a4dc9e1d0810c23cb17c294",
+          "web/tests/multiplayer/session.cpp": "2278aafe60dd714796c271fd2bc0b0c866e434b19ecd03db2b16038dacf55259",
+          "web/tests/multiplayer/adonis.cpp": "550158756adc43cfbe57a46e34791ee2392802bb096c0ca096539b3403d99d35",
+          "web/tests/multiplayer/mobile-prediction.cpp": "02b612bd5ceeebe5e28ecea42950fe8cefd715fca9c915b30a3461f3c4bc4272",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce"
         },
         "identityError": null,
@@ -605,7 +605,7 @@
           "inputDelay": 0,
           "history": 8
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-components-01-process.log",
         "logSha256": "2351c3aa7cd68f79dd1373fc8ef2d3d2f27080ac3b99a02f3dae5a89731b9729",
         "stdoutBytes": 9079,
         "stderrBytes": 167
@@ -614,12 +614,12 @@
     {
       "label": "mobile-rollback-direct120-c1",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-invocation.json",
         "bytes": 5519,
         "sha256": "36245008d2d68abf87b3188afb178110c7639278968ad6446ecb77476d870c22"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
         "bytes": 450,
         "sha256": "30aedecafacd41da7b5431e38d87b7d3f4e8e67e75b8aea62d2f17ff66781ab1"
       },
@@ -631,7 +631,7 @@
         "status": 1,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/smoothness-browser.mjs",
+          "web/tests/multiplayer/smoothness-browser.mjs",
           "--release"
         ],
         "runLabel": "mobile-rollback-direct120-c1",
@@ -640,37 +640,37 @@
         "scriptSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "scriptAfterSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "identityBefore": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched",
+        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-release-matched",
         "reference": null,
         "declaredParameters": {
           "frames": 900,
@@ -713,7 +713,7 @@
           "buildRole": "matched-candidate-release",
           "expectedRtcPath": "direct"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c1-process.log",
         "logSha256": "30aedecafacd41da7b5431e38d87b7d3f4e8e67e75b8aea62d2f17ff66781ab1",
         "stdoutBytes": 0,
         "stderrBytes": 450
@@ -722,12 +722,12 @@
     {
       "label": "mobile-rollback-direct120-c2",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c2-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c2-invocation.json",
         "bytes": 5646,
         "sha256": "ae45854d89d3052734f129e687051abaafda6068f503aa2e9ce4635ef6447a8e"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c2-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c2-process.log",
         "bytes": 30944,
         "sha256": "79d684f0880fe01822bd10e128d629ba63e5a81ed14d1b26c2109ded2f791551"
       },
@@ -739,7 +739,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/smoothness-browser.mjs",
+          "web/tests/multiplayer/smoothness-browser.mjs",
           "--release"
         ],
         "runLabel": "mobile-rollback-direct120-c2",
@@ -748,37 +748,37 @@
         "scriptSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "scriptAfterSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "identityBefore": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched",
+        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-release-matched",
         "reference": null,
         "declaredParameters": {
           "frames": 900,
@@ -822,7 +822,7 @@
           "expectedRtcPath": "direct",
           "precedingAttempt": "mobile-rollback-direct120-c1 rejected top-level relay-only trace configuration; no browser run"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c2-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c2-process.log",
         "logSha256": "79d684f0880fe01822bd10e128d629ba63e5a81ed14d1b26c2109ded2f791551",
         "stdoutBytes": 30944,
         "stderrBytes": 0
@@ -831,12 +831,12 @@
     {
       "label": "mobile-rollback-gap-dispatch-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-gap-dispatch-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-gap-dispatch-01-invocation.json",
         "bytes": 1970,
         "sha256": "640186aab6a1cd86478e685a27b9f8f4447f1da398e4da3db170d3b0b84ce643"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-gap-dispatch-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-gap-dispatch-01-process.log",
         "bytes": 2761,
         "sha256": "c704b156c9f147b045faebe38a6c25ce470e9edad0af3893e6e1f2accde3f275"
       },
@@ -848,7 +848,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/mobile-gap-dispatch-summary.mjs",
+          "web/tests/multiplayer/mobile-gap-dispatch-summary.mjs",
           "docs/multiplayer/rollback-mobile-gap-dispatch-evidence.json",
           "docs/multiplayer/rollback-mobile-release-evidence.json"
         ],
@@ -858,11 +858,11 @@
         "scriptSha256": "605045b7c797d7fbb032a7c5aefbdbc9505616d1dafe18dc5640a6c33d86938d",
         "scriptAfterSha256": "605045b7c797d7fbb032a7c5aefbdbc9505616d1dafe18dc5640a6c33d86938d",
         "identityBefore": {
-          "th09_web/tests/multiplayer/mobile-gap-dispatch-summary.mjs": "605045b7c797d7fbb032a7c5aefbdbc9505616d1dafe18dc5640a6c33d86938d",
+          "web/tests/multiplayer/mobile-gap-dispatch-summary.mjs": "605045b7c797d7fbb032a7c5aefbdbc9505616d1dafe18dc5640a6c33d86938d",
           "docs/multiplayer/rollback-mobile-release-evidence.json": "291e63dabec8fb200a5143e9274d9dbc740eb722cc82c8289c74252106651118"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/mobile-gap-dispatch-summary.mjs": "605045b7c797d7fbb032a7c5aefbdbc9505616d1dafe18dc5640a6c33d86938d",
+          "web/tests/multiplayer/mobile-gap-dispatch-summary.mjs": "605045b7c797d7fbb032a7c5aefbdbc9505616d1dafe18dc5640a6c33d86938d",
           "docs/multiplayer/rollback-mobile-release-evidence.json": "291e63dabec8fb200a5143e9274d9dbc740eb722cc82c8289c74252106651118"
         },
         "identityError": null,
@@ -877,7 +877,7 @@
           "noWallMinusCpu": true,
           "noBrowserOrGameRerun": true
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-gap-dispatch-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-gap-dispatch-01-process.log",
         "logSha256": "c704b156c9f147b045faebe38a6c25ce470e9edad0af3893e6e1f2accde3f275",
         "stdoutBytes": 2761,
         "stderrBytes": 0
@@ -886,12 +886,12 @@
     {
       "label": "mobile-rollback-relay39-b1",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b1-invocation.json",
         "bytes": 5530,
         "sha256": "04cbfce2da95cce74847b4e5ff145e0378b967cedb028ec1ad836ce4c5a80177"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b1-process.log",
         "bytes": 31473,
         "sha256": "9ec69b74256b279411fbda9dff5af96d96f89a158496c68603dae7cc44ec8b5d"
       },
@@ -903,7 +903,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/smoothness-browser.mjs",
+          "web/tests/multiplayer/smoothness-browser.mjs",
           "--release",
           "--relay"
         ],
@@ -913,37 +913,37 @@
         "scriptSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "scriptAfterSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "identityBefore": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-release",
+        "build": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-release",
         "reference": null,
         "declaredParameters": {
           "frames": 1800,
@@ -985,7 +985,7 @@
           "label": "mobile-rollback-relay39-b1",
           "buildRole": "frozen-baseline-release"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b1-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b1-process.log",
         "logSha256": "9ec69b74256b279411fbda9dff5af96d96f89a158496c68603dae7cc44ec8b5d",
         "stdoutBytes": 31473,
         "stderrBytes": 0
@@ -994,12 +994,12 @@
     {
       "label": "mobile-rollback-relay39-b2",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b2-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b2-invocation.json",
         "bytes": 5529,
         "sha256": "8e60e1b2582c7f4d7e696a1d79a5ee2f1ca3224d81fe9053c3a2467a5c2c3c44"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b2-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b2-process.log",
         "bytes": 32575,
         "sha256": "915ce5107e255ea69ef6e6b4acc5f42dc8eebeaa4c04d9741560906c068d9bd6"
       },
@@ -1011,7 +1011,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/smoothness-browser.mjs",
+          "web/tests/multiplayer/smoothness-browser.mjs",
           "--release",
           "--relay"
         ],
@@ -1021,37 +1021,37 @@
         "scriptSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "scriptAfterSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "identityBefore": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-release",
+        "build": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-release",
         "reference": null,
         "declaredParameters": {
           "frames": 1800,
@@ -1093,7 +1093,7 @@
           "label": "mobile-rollback-relay39-b2",
           "buildRole": "frozen-baseline-release"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b2-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b2-process.log",
         "logSha256": "915ce5107e255ea69ef6e6b4acc5f42dc8eebeaa4c04d9741560906c068d9bd6",
         "stdoutBytes": 32575,
         "stderrBytes": 0
@@ -1102,12 +1102,12 @@
     {
       "label": "mobile-rollback-relay39-c1",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c1-invocation.json",
         "bytes": 5540,
         "sha256": "397adb8abb9c9fff9920ea10d79101c1915245bfed37cca67aaefb12299c36b7"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c1-process.log",
         "bytes": 32682,
         "sha256": "05a4868fc68bc33ff5a68b24f3b55d5c15af83d7ec9619295f67f147e1d83940"
       },
@@ -1119,7 +1119,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/smoothness-browser.mjs",
+          "web/tests/multiplayer/smoothness-browser.mjs",
           "--release",
           "--relay"
         ],
@@ -1129,37 +1129,37 @@
         "scriptSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "scriptAfterSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "identityBefore": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched",
+        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-release-matched",
         "reference": null,
         "declaredParameters": {
           "frames": 1800,
@@ -1201,7 +1201,7 @@
           "label": "mobile-rollback-relay39-c1",
           "buildRole": "matched-candidate-release"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c1-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c1-process.log",
         "logSha256": "05a4868fc68bc33ff5a68b24f3b55d5c15af83d7ec9619295f67f147e1d83940",
         "stdoutBytes": 32682,
         "stderrBytes": 0
@@ -1210,12 +1210,12 @@
     {
       "label": "mobile-rollback-relay39-c2",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c2-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c2-invocation.json",
         "bytes": 5548,
         "sha256": "e8d4f36f7f5495ed3dc8946158d8c6354f855441c8d7f26f851e931b256ad2e3"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c2-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c2-process.log",
         "bytes": 32312,
         "sha256": "d4fb1fc4b71ab79f7d405007815fb3e6acce4ccabc65a65152dbf4e758c7d496"
       },
@@ -1227,7 +1227,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/smoothness-browser.mjs",
+          "web/tests/multiplayer/smoothness-browser.mjs",
           "--release",
           "--relay"
         ],
@@ -1237,37 +1237,37 @@
         "scriptSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "scriptAfterSha256": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
         "identityBefore": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
-          "th09_web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/raf-anomaly-probe.mjs": "ccf7a08839fe7bdc85c201cc40b483ae8b05e4d0a8b3fa14fff7c5f8f2992247",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-release-matched",
+        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-release-matched",
         "reference": null,
         "declaredParameters": {
           "frames": 1800,
@@ -1309,7 +1309,7 @@
           "label": "mobile-rollback-relay39-c2",
           "buildRole": "matched-candidate-release"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c2-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c2-process.log",
         "logSha256": "d4fb1fc4b71ab79f7d405007815fb3e6acce4ccabc65a65152dbf4e758c7d496",
         "stdoutBytes": 32312,
         "stderrBytes": 0
@@ -1318,12 +1318,12 @@
     {
       "label": "mobile-rollback-release-summary-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-release-summary-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-release-summary-01-invocation.json",
         "bytes": 2748,
         "sha256": "a0407d8b8243c88ef9f3b0dcf54343588c85b002d5f3f0564abe56fe9fc5f860"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-release-summary-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-release-summary-01-process.log",
         "bytes": 4859,
         "sha256": "dc68352e4f56c67d0db789a7af0e0d8a05928aad27c597a56ffda3853e09fd08"
       },
@@ -1335,14 +1335,14 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/mobile-release-evidence-summary.mjs",
+          "web/tests/multiplayer/mobile-release-evidence-summary.mjs",
           "docs/multiplayer/rollback-mobile-release-evidence.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-b1-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-c1-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-c2-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-relay39-b2-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-burst120-c1-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-direct120-c2-report.json"
+          "web/artifacts/multiplayer-tests/mobile-rollback-relay39-b1-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-relay39-c1-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-relay39-c2-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-relay39-b2-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-burst120-c1-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c2-report.json"
         ],
         "runLabel": "mobile-rollback-release-summary-01",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -1350,13 +1350,13 @@
         "scriptSha256": "306405cdfcb8d047f50e69dbd0de053966a81d050a6eacd1abee52e0372695ff",
         "scriptAfterSha256": "306405cdfcb8d047f50e69dbd0de053966a81d050a6eacd1abee52e0372695ff",
         "identityBefore": {
-          "th09_web/tests/multiplayer/mobile-release-evidence-summary.mjs": "306405cdfcb8d047f50e69dbd0de053966a81d050a6eacd1abee52e0372695ff",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/mobile-release-evidence-summary.mjs": "306405cdfcb8d047f50e69dbd0de053966a81d050a6eacd1abee52e0372695ff",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
           "docs/multiplayer/rollback-mobile-run-corrections.json": "6ba8cce257809f56264c582793134a7553e2b9a5b35ef8026d9ad8ae14a2bbe0"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/mobile-release-evidence-summary.mjs": "306405cdfcb8d047f50e69dbd0de053966a81d050a6eacd1abee52e0372695ff",
-          "th09_web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
+          "web/tests/multiplayer/mobile-release-evidence-summary.mjs": "306405cdfcb8d047f50e69dbd0de053966a81d050a6eacd1abee52e0372695ff",
+          "web/tests/multiplayer/smoothness-window.mjs": "e685fd7dc7d4512f50195bab17f6b0a22f17de72c6c78f5dc0eae8ef810b959f",
           "docs/multiplayer/rollback-mobile-run-corrections.json": "6ba8cce257809f56264c582793134a7553e2b9a5b35ef8026d9ad8ae14a2bbe0"
         },
         "identityError": null,
@@ -1369,7 +1369,7 @@
           "stats5": "SessionChannel RepairsSent, not native wait",
           "crossProcessClock": "observed compatible brackets only"
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-release-summary-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-release-summary-01-process.log",
         "logSha256": "dc68352e4f56c67d0db789a7af0e0d8a05928aad27c597a56ffda3853e09fd08",
         "stdoutBytes": 4859,
         "stderrBytes": 0
@@ -1378,12 +1378,12 @@
     {
       "label": "mobile-rollback-stick-deep-c1",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-stick-deep-c1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-stick-deep-c1-invocation.json",
         "bytes": 4223,
         "sha256": "8afd44c75b39046e3eafa890b812dc2bf727a51893959466dcf65fe75d24d930"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-stick-deep-c1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-stick-deep-c1-process.log",
         "bytes": 2466,
         "sha256": "8970dc950e1be3da56dc81632ee3bb7db35649b9d035c150452dc570aa82c9b0"
       },
@@ -1395,7 +1395,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs"
+          "web/tests/multiplayer/touch-peer-browser.mjs"
         ],
         "runLabel": "mobile-rollback-stick-deep-c1",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -1403,33 +1403,33 @@
         "scriptSha256": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
         "scriptAfterSha256": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
         "identityBefore": {
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-live-matched",
+        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-live-matched",
         "reference": null,
         "declaredParameters": {
           "label": "mobile-rollback-stick-deep-c1",
@@ -1445,7 +1445,7 @@
           "touchSourceHz": 60,
           "scope": "Three sequential worlds in one CPU4 renderer; full actual-input reference; manual native ticks, no wall-clock FPS or phone claim."
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-stick-deep-c1-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-stick-deep-c1-process.log",
         "logSha256": "8970dc950e1be3da56dc81632ee3bb7db35649b9d035c150452dc570aa82c9b0",
         "stdoutBytes": 2466,
         "stderrBytes": 0
@@ -1454,12 +1454,12 @@
     {
       "label": "mobile-rollback-three-world-summary-01",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-01-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-01-invocation.json",
         "bytes": 3065,
         "sha256": "d918fd83159e89d128f3e4597e536d1260802a3dd57d27e43754378b8d7b5330"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-01-process.log",
         "bytes": 5691,
         "sha256": "e0e5e0197dedf7759dfd5d0b7b6c4b50829c49efab881e5f15e2d639fcf317e3"
       },
@@ -1471,11 +1471,11 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/mobile-evidence-summary.mjs",
+          "web/tests/multiplayer/mobile-evidence-summary.mjs",
           "docs/multiplayer/rollback-mobile-deep-evidence.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json"
+          "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json"
         ],
         "runLabel": "mobile-rollback-three-world-summary-01",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -1483,16 +1483,16 @@
         "scriptSha256": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
         "scriptAfterSha256": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
         "identityBefore": {
-          "th09_web/tests/multiplayer/mobile-evidence-summary.mjs": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json": "252adca4726260f63f7040466cd4040acdb047b1173b952736d9e39f9e059721",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json": "dfa40a4835635a8041d7ebba08337997ba5a2bd47d61bdcbcc069a5ebdaadaae",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json": "4d1bed8cbdd83f235ae9a7246356265c8e9c7c4f9e1f9dead6e990a3c87a178f"
+          "web/tests/multiplayer/mobile-evidence-summary.mjs": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
+          "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json": "252adca4726260f63f7040466cd4040acdb047b1173b952736d9e39f9e059721",
+          "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json": "dfa40a4835635a8041d7ebba08337997ba5a2bd47d61bdcbcc069a5ebdaadaae",
+          "web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json": "4d1bed8cbdd83f235ae9a7246356265c8e9c7c4f9e1f9dead6e990a3c87a178f"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/mobile-evidence-summary.mjs": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json": "252adca4726260f63f7040466cd4040acdb047b1173b952736d9e39f9e059721",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json": "dfa40a4835635a8041d7ebba08337997ba5a2bd47d61bdcbcc069a5ebdaadaae",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json": "4d1bed8cbdd83f235ae9a7246356265c8e9c7c4f9e1f9dead6e990a3c87a178f"
+          "web/tests/multiplayer/mobile-evidence-summary.mjs": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
+          "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json": "252adca4726260f63f7040466cd4040acdb047b1173b952736d9e39f9e059721",
+          "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json": "dfa40a4835635a8041d7ebba08337997ba5a2bd47d61bdcbcc069a5ebdaadaae",
+          "web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json": "4d1bed8cbdd83f235ae9a7246356265c8e9c7c4f9e1f9dead6e990a3c87a178f"
         },
         "identityError": null,
         "build": null,
@@ -1500,14 +1500,14 @@
         "declaredParameters": {
           "purpose": "Offline recheck of every declared three-world run; retain unfavorable cost, exact full tape equality and conditional opponent input-phase associations",
           "reports": [
-            "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
-            "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
-            "th09_web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json"
+            "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
+            "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
+            "web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json"
           ],
           "output": "docs/multiplayer/rollback-mobile-deep-evidence.json",
           "noBrowser": true
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-01-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-01-process.log",
         "logSha256": "e0e5e0197dedf7759dfd5d0b7b6c4b50829c49efab881e5f15e2d639fcf317e3",
         "stdoutBytes": 5691,
         "stderrBytes": 0
@@ -1516,12 +1516,12 @@
     {
       "label": "mobile-rollback-three-world-summary-02",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-02-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-02-invocation.json",
         "bytes": 2769,
         "sha256": "9d0ac8846bc7aca3e83f0bfe1bb0de6e6b61f14b4164ce1ce95de6092f4f7640"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-02-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-02-process.log",
         "bytes": 5749,
         "sha256": "9f8de52a04dd3b90b89fc9b8c2df27ef9521ad8b1c6df137d71a88e07f5da091"
       },
@@ -1533,11 +1533,11 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/mobile-evidence-summary.mjs",
+          "web/tests/multiplayer/mobile-evidence-summary.mjs",
           "docs/multiplayer/rollback-mobile-deep-corrected-evidence.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
-          "th09_web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json"
+          "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-b1-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-touch-deep-c1-report.json",
+          "web/artifacts/multiplayer-tests/mobile-rollback-stick-deep-c1-report.json"
         ],
         "runLabel": "mobile-rollback-three-world-summary-02",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -1545,16 +1545,16 @@
         "scriptSha256": "94571220d176f65b3fe1f160cf9f05445d1c72668f42542e34391980641d6825",
         "scriptAfterSha256": "94571220d176f65b3fe1f160cf9f05445d1c72668f42542e34391980641d6825",
         "identityBefore": {
-          "th09_web/tests/multiplayer/mobile-evidence-summary.mjs": "94571220d176f65b3fe1f160cf9f05445d1c72668f42542e34391980641d6825",
-          "th09_web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
+          "web/tests/multiplayer/mobile-evidence-summary.mjs": "94571220d176f65b3fe1f160cf9f05445d1c72668f42542e34391980641d6825",
+          "web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
           "docs/multiplayer/rollback-mobile-deep-evidence.json": "0e4426788deeef66695b18ce049f0f35c282b95c9d03231c888ac890fbbef357",
-          "th09_web/cpp/sdl/Application.cpp": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d"
+          "web/cpp/sdl/Application.cpp": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/mobile-evidence-summary.mjs": "94571220d176f65b3fe1f160cf9f05445d1c72668f42542e34391980641d6825",
-          "th09_web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
+          "web/tests/multiplayer/mobile-evidence-summary.mjs": "94571220d176f65b3fe1f160cf9f05445d1c72668f42542e34391980641d6825",
+          "web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155",
           "docs/multiplayer/rollback-mobile-deep-evidence.json": "0e4426788deeef66695b18ce049f0f35c282b95c9d03231c888ac890fbbef357",
-          "th09_web/cpp/sdl/Application.cpp": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d"
+          "web/cpp/sdl/Application.cpp": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d"
         },
         "identityError": null,
         "build": null,
@@ -1568,7 +1568,7 @@
           ],
           "expectedNumericResultsUnchanged": true
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-02-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-three-world-summary-02-process.log",
         "logSha256": "9f8de52a04dd3b90b89fc9b8c2df27ef9521ad8b1c6df137d71a88e07f5da091",
         "stdoutBytes": 5749,
         "stderrBytes": 0
@@ -1577,12 +1577,12 @@
     {
       "label": "mobile-rollback-touch-deep-b1",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-b1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-b1-invocation.json",
         "bytes": 4204,
         "sha256": "7459d9f628aa8940f94b39a6d29f9064508ca8f5dbcbd3f3192ef96ffff1e9ca"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-b1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-b1-process.log",
         "bytes": 2462,
         "sha256": "3a82af0feeba1693138d0fb6330197739263a3aca1bedeac3047e7ca1ba2169f"
       },
@@ -1594,7 +1594,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs"
+          "web/tests/multiplayer/touch-peer-browser.mjs"
         ],
         "runLabel": "mobile-rollback-touch-deep-b1",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -1602,33 +1602,33 @@
         "scriptSha256": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
         "scriptAfterSha256": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
         "identityBefore": {
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-rollback-4x/th09_web/artifacts/rollback4x-enemy-index-live",
+        "build": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-live",
         "reference": null,
         "declaredParameters": {
           "label": "mobile-rollback-touch-deep-b1",
@@ -1644,7 +1644,7 @@
           "touchSourceHz": 60,
           "scope": "Three sequential worlds in one CPU4 renderer; full actual-input reference; manual native ticks, no wall-clock FPS or phone claim."
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-b1-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-b1-process.log",
         "logSha256": "3a82af0feeba1693138d0fb6330197739263a3aca1bedeac3047e7ca1ba2169f",
         "stdoutBytes": 2462,
         "stderrBytes": 0
@@ -1653,12 +1653,12 @@
     {
       "label": "mobile-rollback-touch-deep-c1",
       "invocation": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-c1-invocation.json",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-c1-invocation.json",
         "bytes": 4214,
         "sha256": "0503105ceab7256a2988927be73840634dc27f8614694cf17f5e4f5c82ff2ee5"
       },
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-c1-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-c1-process.log",
         "bytes": 2463,
         "sha256": "2f7cfb53af6380f3ee08327255625c6afdea38b6baac71963eef0a07ff215348"
       },
@@ -1670,7 +1670,7 @@
         "status": 0,
         "signal": null,
         "args": [
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs"
+          "web/tests/multiplayer/touch-peer-browser.mjs"
         ],
         "runLabel": "mobile-rollback-touch-deep-c1",
         "head": "b243bb1d24335b1fdab3606e27c6f67e4c636ad9",
@@ -1678,33 +1678,33 @@
         "scriptSha256": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
         "scriptAfterSha256": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
         "identityBefore": {
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityAfter": {
-          "th09_web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
-          "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-          "th09_web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
-          "th09_web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
-          "th09_web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
-          "th10_web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
-          "th09_web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
-          "th09_web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
-          "th09_web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+          "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+          "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+          "web/tests/multiplayer/host-load-probe.mjs": "bdf8fecd62ed380249ad7717efcc9ae94eb2b6351bfebf557317673594c773ca",
+          "web/tests/browser/presentation.html": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+          "web/scripts/presentation-server.mjs": "d72f89dd7574fe3fec3c940cdbf8aef1b30488c48f936257a597cfae24c14802",
+          "web/scripts/native/browser-launch.mjs": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed",
+          "web/cpp/multiplayer/RollbackSession.cpp": "5ea686cb45f1a1d58114d972849a90b11cf4999e3cb2fad6741ed649bec68808",
+          "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+          "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
           "docs/multiplayer/rollback-mobile-validation-plan.json": "b9e3ffb76c7ccb6fed57385b67523f42840bb984df9ee92ea48ae072534bcfce",
           "docs/multiplayer/rollback-mobile-validation-addendum.json": "5f684f268fc90cd842998cd961a092510958a2983740e6d69578fec014a66903"
         },
         "identityError": null,
-        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/th09_web/artifacts/mobile-rollback-live-matched",
+        "build": "D:/workspace/eagler/worktrees/th09-mobile-rollback-4x/web/artifacts/mobile-rollback-live-matched",
         "reference": null,
         "declaredParameters": {
           "label": "mobile-rollback-touch-deep-c1",
@@ -1720,7 +1720,7 @@
           "touchSourceHz": 60,
           "scope": "Three sequential worlds in one CPU4 renderer; full actual-input reference; manual native ticks, no wall-clock FPS or phone claim."
         },
-        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-c1-process.log",
+        "logPath": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-c1-process.log",
         "logSha256": "2f7cfb53af6380f3ee08327255625c6afdea38b6baac71963eef0a07ff215348",
         "stdoutBytes": 2463,
         "stderrBytes": 0
@@ -1741,22 +1741,22 @@
       "passed": true,
       "sourceStable": true,
       "identityBefore": {
-        "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-        "th09_web/tests/multiplayer/touch-input-probe.test.mjs": "eda28e98680b6440c1068e6c40230848ac4eb3d49b9ea457837314771c432b8b",
-        "th09_web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
-        "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2"
+        "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+        "web/tests/multiplayer/touch-input-probe.test.mjs": "eda28e98680b6440c1068e6c40230848ac4eb3d49b9ea457837314771c432b8b",
+        "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+        "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2"
       },
       "identityAfter": {
-        "th09_web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
-        "th09_web/tests/multiplayer/touch-input-probe.test.mjs": "eda28e98680b6440c1068e6c40230848ac4eb3d49b9ea457837314771c432b8b",
-        "th09_web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
-        "th09_web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2"
+        "web/tests/multiplayer/touch-input-probe.mjs": "aa3bddbcd643ea7dcea9d36906ac4dddf17c1a735daaa679c1ff0fe419438eb0",
+        "web/tests/multiplayer/touch-input-probe.test.mjs": "eda28e98680b6440c1068e6c40230848ac4eb3d49b9ea457837314771c432b8b",
+        "web/tests/multiplayer/touch-peer-browser.mjs": "33db3f5578cc79373088f334d76b107abc0e47c0cab136fd8e4515d05c9c72ce",
+        "web/tests/multiplayer/smoothness-browser.mjs": "4eee9e331a62ceb61b5729e3ce219e5df175d991fa7424c51671b9e1db573ed2"
       },
       "results": [
         {
           "args": [
             "--check",
-            "th09_web/tests/multiplayer/touch-input-probe.mjs"
+            "web/tests/multiplayer/touch-input-probe.mjs"
           ],
           "status": 0,
           "error": null,
@@ -1765,7 +1765,7 @@
         {
           "args": [
             "--check",
-            "th09_web/tests/multiplayer/touch-peer-browser.mjs"
+            "web/tests/multiplayer/touch-peer-browser.mjs"
           ],
           "status": 0,
           "error": null,
@@ -1774,7 +1774,7 @@
         {
           "args": [
             "--check",
-            "th09_web/tests/multiplayer/smoothness-browser.mjs"
+            "web/tests/multiplayer/smoothness-browser.mjs"
           ],
           "status": 0,
           "error": null,
@@ -1783,7 +1783,7 @@
         {
           "args": [
             "--test",
-            "th09_web/tests/multiplayer/touch-input-probe.test.mjs"
+            "web/tests/multiplayer/touch-input-probe.test.mjs"
           ],
           "status": 0,
           "error": null,
@@ -1791,7 +1791,7 @@
         }
       ],
       "log": {
-        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-js-preflight-01-process.log",
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-js-preflight-01-process.log",
         "sha256": "14c40fc31f38d4e094f384abf8e4cc66eb6c2ed0130982580079d979f4bfd17e"
       },
       "scope": "Three syntax checks and eight offline mock/clock/wire contracts; no browser, gameplay or phone performance claim."
@@ -1800,60 +1800,60 @@
   "supersededSources": [
     {
       "label": "mobile-rollback-three-world-summary-01",
-      "originalPath": "th09_web/tests/multiplayer/mobile-evidence-summary.mjs",
-      "retainedPath": "th09_web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs",
+      "originalPath": "web/tests/multiplayer/mobile-evidence-summary.mjs",
+      "retainedPath": "web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs",
       "reason": "Semantic field correction, v1 source retained verbatim."
     },
     {
       "label": "mobile-rollback-three-world-summary-01",
-      "originalPath": "th09_web/tests/multiplayer/mobile-evidence-summary.mjs",
-      "retainedPath": "th09_web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs",
+      "originalPath": "web/tests/multiplayer/mobile-evidence-summary.mjs",
+      "retainedPath": "web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs",
       "reason": "Semantic field correction, v1 source retained verbatim."
     }
   ],
   "gameplayRaw": [
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-b1-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-b1-report.json",
       "bytes": 2607763,
       "sha256": "252adca4726260f63f7040466cd4040acdb047b1173b952736d9e39f9e059721"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-c1-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-touch-deep-c1-report.json",
       "bytes": 2926641,
       "sha256": "dfa40a4835635a8041d7ebba08337997ba5a2bd47d61bdcbcc069a5ebdaadaae"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-stick-deep-c1-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-stick-deep-c1-report.json",
       "bytes": 2708848,
       "sha256": "4d1bed8cbdd83f235ae9a7246356265c8e9c7c4f9e1f9dead6e990a3c87a178f"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b1-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b1-report.json",
       "bytes": 36546921,
       "sha256": "ec839cd9d923719415143e086ddf38ff989a04b6ed31a7465cf233f172878c84"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c1-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c1-report.json",
       "bytes": 35735928,
       "sha256": "17a76418b666d9e7733b80e0259bc6e7a4e88dbb1066d91947df3373a21884de"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c2-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-c2-report.json",
       "bytes": 35843671,
       "sha256": "1f2b858cc02e024ffe1257af4745ce89850a6f805d3cab4eb00f5cae8fe2b9d0"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b2-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-relay39-b2-report.json",
       "bytes": 35819079,
       "sha256": "ffb557acc38af18ec1d0421dd6f3afac70cca545aaf86f70837ed6f14eb43d88"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-burst120-c1-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-burst120-c1-report.json",
       "bytes": 41503634,
       "sha256": "6696aee1ceceb1a41a65d6e85c5193f136f54d00270b56afd905914fc1a40501"
     },
     {
-      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\th09_web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c2-report.json",
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\artifacts\\multiplayer-tests\\mobile-rollback-direct120-c2-report.json",
       "bytes": 22059253,
       "sha256": "ed80cbacf95c0a5f513e0fa39fbe196c45c0c127946a984bcc88303eceede5d6"
     }

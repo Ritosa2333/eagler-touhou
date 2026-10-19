@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/game/AnmUvScroll.hpp"
+#include "../web/cpp/game/AnmUvScroll.hpp"
 #include <array>
 #include <cerrno>
 #include <cstdio>

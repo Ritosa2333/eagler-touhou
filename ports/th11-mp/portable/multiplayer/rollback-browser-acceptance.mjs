@@ -7,7 +7,8 @@ import {readFileSync,writeFileSync,mkdirSync,existsSync,createReadStream,statSyn
 import {pipeline} from 'node:stream';
 import {resolve,dirname,extname,relative,isAbsolute,sep} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {createRequire} from 'node:module';
+import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
+import {expectedDisconnectConsole} from './acceptance-errors.mjs';
 import {createHash,randomUUID} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 
@@ -40,10 +41,9 @@ assert.ok(['stable','spike'].includes(profile),'profile: stable or spike');
 assert.ok(['sender','relay'].includes(delayLocation),'delay-location: sender or relay');
 assert.ok(delayLocation!=='relay'||(route==='relay'&&profile==='stable'),'Independent relay impairment requires --route relay --profile stable');
 assert.ok(latency>=0&&latency<=200&&jitter>=0&&jitter<=25&&maxGap>=30&&maxGap<=1000);
-const launcher=resolve(option('--launcher-root',process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../eagler-touhou')));
+const launcher=resolve(option('--launcher-root',process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../launcher')));
 const runtime=resolve(option('--runtime',process.env.TH11_MP_PACKAGE||resolve(root,'build-eagler-multiplayer')));
-const archive=resolve(process.env.TH11_TEST_ARCHIVE||resolve(root,'../../th11-eagler/[th11] 东方地灵殿 (汉化版+日文版)/th11.dat'));
-const diagnostics=resolve(option('--playwright-root',process.env.TH11_PLAYWRIGHT_ROOT||resolve(root,'../../eagler-touhou/th11/tools/diagnostics')));
+const archive=resolve(process.env.TH11_TEST_ARCHIVE||resolve(root,'../th11/assets-ogg/th11.data'));
 const stamp=new Date().toISOString().replaceAll(':','-').replaceAll('.','-');
 const out=resolve(option('--output',resolve(root,'artifacts/rollback-smoothness/browser-'+route+'-'+cpu+'x-'+profile+'-'+stamp)));
 assert.ok(!existsSync(resolve(out,'receipt.json')),'Never overwrite an earlier good or bad receipt');
@@ -307,13 +307,13 @@ function analysis(data){
 
 try{
   mark('preflight');
-  const web=existsSync(resolve(launcher,'server/netplay-relay.mjs'))?launcher:resolve(launcher,'launcher/web');
-  const relayFile=web===launcher?resolve(web,'server/netplay-relay.mjs'):resolve(launcher,'services/netplay/netplay-relay.mjs');
+  const web=launcher;
+  const relayFile=resolve(process.env.EAGLER_RELAY_ROOT||resolve(root,'../../services/relay'),'src/netplay-relay.mjs');
   const catalogFile=resolve(web,'lib/contracts/product-catalog.mjs');
   const relayUrlFile=resolve(web,'.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs');
   const optionsFile=resolve(web,'.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs');
   const touchHelperFile=resolve(web,'.cache/build/browser/assets/launcher/touch-runtime-protocol.mjs');
-  for(const file of [relayFile,catalogFile,relayUrlFile,optionsFile,resolve(diagnostics,'node_modules/playwright/package.json')])
+  for(const file of [relayFile,catalogFile,relayUrlFile,optionsFile])
     if(!existsSync(file))blocked('Missing migrated dependency: '+file);
   const catalog=await import(pathToFileURL(catalogFile)),policy=catalog.PRODUCT_GAMES.th11.multiplayer;
   const timing=catalog.multiplayerInputTimingPolicy(policy);report.policy={inputTiming:policy.inputTiming,resolved:timing};
@@ -327,7 +327,7 @@ try{
   const manifest=JSON.parse(readFileSync(resolve(runtime,'manifest.json'))),inventory=JSON.parse(readFileSync(resolve(runtime,'runtime-files.json')));
   assert.equal(manifest.product,'th11mp');assert.equal(manifest.variant,'multiplayer');
   const wasm=fileIdentity(resolve(runtime,'th11-sdl.wasm'));assert.equal(wasm.sha256,manifest.execution.sha256,'Actual WASM agrees with untouched manifest');
-  report.identity={game:gitIdentity(root),common:gitIdentity(resolve(root,'third_party/eagler-common')),launcher:gitIdentity(launcher),
+  report.identity={game:gitIdentity(root),common:gitIdentity(resolve(root,'../../common')),launcher:gitIdentity(launcher),
     archive:fileIdentity(archive),manifest:fileIdentity(resolve(runtime,'manifest.json')),inventory:fileIdentity(resolve(runtime,'runtime-files.json')),
     wasm,loader:fileIdentity(resolve(runtime,'th11-sdl.mjs')),shell:fileIdentity(resolve(runtime,'shell.mjs')),
     relay:fileIdentity(relayFile),catalog:fileIdentity(catalogFile),runtimeOptions:fileIdentity(optionsFile),relayUrl:fileIdentity(relayUrlFile),
@@ -336,6 +336,18 @@ try{
   if(delayLocation==='relay')report.identity.relayTimingObserver=fileIdentity(timingObserver);
   const pinned=new Map([report.identity.wasm,report.identity.loader,report.identity.shell,report.identity.manifest,report.identity.inventory,
     report.identity.relay,report.identity.catalog,report.identity.runtimeOptions,report.identity.relayUrl,report.identity.runner,report.identity.host].map(f=>[f.path,f.sha256]));
+  report.identity.errorClassifier=fileIdentity(resolve(import.meta.dirname,'acceptance-errors.mjs'));
+  pinned.set(report.identity.errorClassifier.path,report.identity.errorClassifier.sha256);
+  const sharedFiles=new Map();
+  const sharedResources=[];
+  report.identity.sharedFonts=[];
+  for(const [name,input] of [['msgothic.ttc',process.env.TH11_TEST_FONT||process.env.EAGLER_DEVELOPMENT_VANILLA_FONT],
+    ['unifont.otf',process.env.TH11_TEST_UNICODE_FONT||process.env.EAGLER_DEVELOPMENT_UNICODE_FONT]]){
+    if(!input||!existsSync(input))blocked('Supply shared font through TH11_TEST_FONT and TH11_TEST_UNICODE_FONT: '+name);
+    const file=fileIdentity(resolve(input)),url='/shared/'+name;sharedFiles.set(url,file.path);
+    sharedResources.push({path:'/'+name,url,bytes:file.bytes});
+    report.identity.sharedFonts.push(file);pinned.set(file.path,file.sha256);
+  }
   if(replayOracle){const f=fileIdentity(resolve(import.meta.dirname,'replay-prefix-oracle.mjs'));report.identity.replayOracle=f;pinned.set(f.path,f.sha256);}
   if(replayOracle){const f=fileIdentity(resolve(import.meta.dirname,'framebuffer-proof.mjs'));report.identity.framebufferProof=f;pinned.set(f.path,f.sha256);}
   report.pixelOracle={requested:pixelOracle,readbackPhase:'after measurement, confirmed pause boundary and exact Replay only',performanceWindowReadbacks:0};
@@ -358,7 +370,7 @@ try{
     report.touchCarrierScope='Unmodified compiled Launcher input helpers; no per-move RPC request. Fallback postMessage calls counted. Actual native movement and recorded input independently validated.';
   }
   if(delayLocation==='relay')pinned.set(timingObserver,report.identity.relayTimingObserver.sha256);
-  const require=createRequire(resolve(diagnostics,'package.json')),{chromium}=require('playwright');
+  const {chromium}=await loadPlaywright();
   const browserTemp=resolve(out,'browser-temp');mkdirSync(browserTemp,{recursive:true});
   // Scope temporary profiles/downloads to this owned test process and its children.
   // The machine's C: temp volume can be full; never clean another user's files.
@@ -366,7 +378,7 @@ try{
   report.browserTemp=browserTemp;
   const chrome=option('--chrome',process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE||chromium.executablePath());
   if(!existsSync(chrome))blocked('Installed desktop Chrome executable missing; pass --chrome (no download/install): '+chrome);
-  report.browserExecutable=fileIdentity(chrome);report.playwright=require('playwright/package.json').version;
+  report.browserExecutable=fileIdentity(chrome);report.playwrightDriver='shared Node/Python Playwright resolver';
   const gpu=option('--gpu','hardware');assert.ok(['hardware','swiftshader'].includes(gpu));report.settings.gpuRequested=gpu;
   // Child owns a separate event loop. Heartbeats are evidence of timer lateness,
   // not proof of per-packet forwarding; no cross-process clock subtraction.
@@ -398,7 +410,7 @@ try{
         res.setHeader('Content-Type','text/javascript');res.end(readFileSync(touchHelperFile));return;
       }
       if(pathname==='/favicon.ico'){res.writeHead(204);res.end();return;}
-      let file;if(pathname==='/data/th11')file=archive;
+      let file=sharedFiles.get(pathname);if(pathname==='/data/th11')file=archive;
       else if(pathname.startsWith('/runtime/')){
         const name=decodeURIComponent(pathname.slice(9)),candidate=resolve(runtime,name),rel=relative(runtime,candidate);
         if(!isAbsolute(rel)&&rel!== '..'&&!rel.startsWith('..'+sep)&&
@@ -480,7 +492,7 @@ try{
       spectator:false,spectatorId:'',spectatorCount:approved.spectatorCount,iceServers:[],loadouts},policy),
       touchEnabled:true,touchMovementMode:'touch',touchSensitivity:100,doubleTapBombEnabled:false};
     report.runtimeOptions.push(options);
-    await pages[seat].evaluate(async options=>{await host.configure(options);await host.launch();document.querySelector('iframe').contentWindow.__rollbackAcceptance.attach();},options);
+    await pages[seat].evaluate(async({options,sharedResources})=>{await host.configure(options,sharedResources);await host.launch();document.querySelector('iframe').contentWindow.__rollbackAcceptance.attach();},{options,sharedResources});
   }
   async function smalls(){return Promise.all(pages.map(p=>p.evaluate(()=>document.querySelector('iframe').contentWindow.__rollbackAcceptance.small())));}
   const capabilities=await smalls();
@@ -603,7 +615,7 @@ try{
   report.pauseLifecycle.completedCheckerMs=performance.now();
   mark('pause-resume-usability-checked');
   if(disconnect){
-    report.disconnect={before:await smalls()};
+    report.disconnect={before:await smalls(),requestedCheckerMs:performance.now()};
     await Promise.all(pages.map(p=>p.evaluate(()=>document.querySelector('iframe').contentWindow.__rollbackAcceptance.lifecycle())));
     await pages[0].evaluate(()=>{
       const r=document.querySelector('iframe').contentWindow,t=r.__eaglerPeerTransport;
@@ -675,7 +687,9 @@ try{
       failures.push({seat,kind:'launcher-input-rejected',touch:result.touch});
   }
   if(relayLogOverflow)failures.push({kind:'relay-log-overflow'});
-  if(report.errors.length)failures.push({kind:'page-or-server-errors',errors:report.errors});
+  const unexpectedErrors=report.errors.filter(entry=>!expectedDisconnectConsole(entry,report.disconnect));
+  if(report.disconnect)report.disconnect.expectedConsoleNotifications=report.errors.filter(entry=>expectedDisconnectConsole(entry,report.disconnect));
+  if(unexpectedErrors.length)failures.push({kind:'page-or-server-errors',errors:unexpectedErrors});
   report.failures=failures;report.performancePassed=!audioProfile&&!failures.some(f=>f.kind==='performance-threshold');
   if(audioProfile){
     report.audioProfileCollectionComplete=report.results.length===2&&report.results.every(r=>

@@ -7,7 +7,7 @@ const root=resolve(import.meta.dirname,'../..');
 const label=process.argv[2];
 if(!label||!/^[-a-zA-Z0-9_]+$/.test(label))throw Error('Usage: node freeze-performance.mjs LABEL [--production]');
 const profile=process.argv.includes('--production')?'multiplayer':'multiplayer-fixtures';
-const source=resolve(root,'th10_web/artifacts',profile);
+const source=resolve(root,'web/artifacts',profile);
 const target=resolve(root,'artifacts/rollback-performance',label,'runtime');
 if(existsSync(target))throw Error('Frozen Runtime already exists: '+target);
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');

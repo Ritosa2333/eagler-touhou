@@ -1,4 +1,4 @@
-#include "../th10_web/cpp/multiplayer/AudioEvents.hpp"
+#include "../web/cpp/multiplayer/AudioEvents.hpp"
 #include <cassert>
 #include <string>
 #include <vector>

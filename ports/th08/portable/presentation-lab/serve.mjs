@@ -10,7 +10,7 @@ for(const name of commonModules)if(!existsSync(resolve(common,name)))throw Error
 const snapshot=process.env.TH08_LAB_SNAPSHOT||'';
 if(snapshot&&!/^[a-z0-9-]{1,40}$/.test(snapshot))throw Error('Invalid snapshot');
 const runtime=snapshot?resolve(root,'artifacts/presentation-lab/builds',snapshot):resolve(root,'artifacts/presentation-lab/runtime'),input=resolve(root,'artifacts/presentation-lab/input');
-const build=JSON.parse(readFileSync(snapshot?resolve(runtime,'build.json'):resolve(root,'th08_web/artifacts/presentation-lab/build.json'),'utf8'));
+const build=JSON.parse(readFileSync(snapshot?resolve(runtime,'build.json'):resolve(root,'web/artifacts/presentation-lab/build.json'),'utf8'));
 const names=new Set(build.exports.map(x=>x.name));
 if(!build.diagnostic||build.profile!=='presentation-lab')throw Error('Refusing to serve a non-diagnostic build');
 for(const name of TH08_PRESENTATION_LAB_EXPORTS)if(!names.has(name))throw Error('Build with --th08 --presentation-lab first: missing '+name);

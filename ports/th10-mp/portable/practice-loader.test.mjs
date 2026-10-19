@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import test from 'node:test';
-import {createOptionalPractice} from '../th10_web/sdl-runtime/practice-loader.mjs';
+import {createOptionalPractice} from '../web/sdl-runtime/practice-loader.mjs';
 
 test('ordinary and diagnostic binaries without THPrac never load practice modules', async () => {
   for (const core of [{}, {practice_enable: undefined}, {practice_enable: 0}]) {
@@ -33,7 +33,7 @@ test('a missing required practice module fails rather than silently dropping THP
 });
 
 test('the real shell only statically imports the always-packaged loader', () => {
-  const shell = readFileSync(new URL('../th10_web/sdl-runtime/shell.mjs', import.meta.url), 'utf8');
+  const shell = readFileSync(new URL('../web/sdl-runtime/shell.mjs', import.meta.url), 'utf8');
   assert.match(shell, /import\s*\{createOptionalPractice\}\s*from\s*['"]\.\/practice-loader\.mjs['"]/);
   assert.doesNotMatch(shell, /from\s*['"]\.\/practice(?:-config|-sections)?\.mjs['"]/);
   assert.match(shell, /practice\?\.tick\(\)/);

@@ -1,20 +1,18 @@
 import {readFileSync,writeFileSync,mkdirSync,existsSync,readdirSync,rmSync} from 'node:fs';
 import {resolve,dirname,relative,sep} from 'node:path';
 import {createHash} from 'node:crypto';
-import {TH10_PRESENTATION_LAB_EXPORTS} from './presentation-lab/native-abi.mjs';
 const root=resolve(import.meta.dirname,'..');
-const game=process.argv.includes('--th20')||existsSync(resolve(root,'th20_web'))?'th20':existsSync(resolve(root,'th08_web/cpp/game/AnmRenderer.cpp'))?'th08':'th10';
+const game='th20';
 const presentationLab=process.argv.includes('--presentation-lab');
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):presentationLab?resolve(root,'artifacts/presentation-lab/runtime'):resolve(root,'build-eagler');
-const buildRoot=resolve(root,game+'_web/artifacts',presentationLab?'presentation-lab':'sdl3');
+const buildRoot=resolve(root,'web/artifacts',presentationLab?'presentation-lab':'sdl3');
 const fonts=process.env.EAGLER_FONT_ROOT;
-if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private SDL-native font resource directory');
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'),'utf8'));
 if(!Number.isFinite(Date.parse(build.builtAt)))throw Error('Rebuild Runtime with build timestamp');
 if(!!build.diagnostic!==presentationLab)throw Error('Build profile does not match requested package');
 const exported=new Set((build.exports||[]).map(entry=>entry.name));
-const auditExports=game==='th10'?TH10_PRESENTATION_LAB_EXPORTS:['presentation_lab_freeze','presentation_lab_resume','presentation_lab_draw'];
+const auditExports=['presentation_lab_freeze','presentation_lab_resume','presentation_lab_draw'];
 if(presentationLab){for(const name of auditExports)if(!exported.has(name))throw Error('Diagnostic build is missing '+name);}
 else for(const name of exported)if(name.startsWith('presentation_lab_')||name.startsWith('audit_'))throw Error('Production build contains diagnostic export '+name);
 for(const [name,expected] of Object.entries(build.sourceFiles)){
@@ -25,6 +23,7 @@ const entry=game==='th08'?'th08-modern.html':game+'.html';
 // it ships no font tables (blend.bin/codepages.bin are TH10-only). The font
 // files themselves arrive through the launcher's requiredShared supply.
 const fontNames=game==='th20'?[]:game==='th08'?['msgothic.ttc','blend.bin','cp932.bin']:['blend.bin','codepages.bin'];
+if(fontNames.length&&!fonts)throw Error('Set EAGLER_FONT_ROOT to the private SDL-native font resource directory');
 const thprac=build.features?.thprac===true;
 const runtimeNames=['startup-branding.mjs','shell.mjs','directory-keyboard.mjs','eagler-host.mjs',...(thprac?['practice.mjs','practice-config.mjs','practice-sections.mjs']:[])];
 const names=[entry,'manifest.json',...runtimeNames,'motion-replay.mjs',game+'-sdl.mjs',game+'-sdl.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
@@ -34,7 +33,7 @@ if(game!=='th08')for(const name of ['fonts/msgothic.ttc','fonts/simhei.ttf'])rmS
 for(const path of walk(out))if(!allowed.has(relative(out,path).split(sep).join('/')))throw Error('Unexpected file in output; select a clean output directory: '+path);
 const write=(name,bytes)=>{const path=resolve(out,name);mkdirSync(dirname(path),{recursive:true});writeFileSync(path,bytes);};
 const copy=(from,name)=>write(name,readFileSync(from));
-const shellRoot=resolve(root,game+'_web/sdl-runtime');
+const shellRoot=resolve(root,'web/sdl-runtime');
 const html=readFileSync(resolve(shellRoot,game+'.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
 write(entry,html);
 for(const name of runtimeNames)copy(resolve(shellRoot,name),name);

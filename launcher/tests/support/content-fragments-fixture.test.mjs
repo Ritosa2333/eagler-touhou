@@ -1,7 +1,7 @@
+import {readUiHistoryText} from './ui-history.mjs';
 /** Synthetic carrier/parsing/timing checks only. Real-browser XSS remains unrun. */
 import test, {before} from 'node:test';
 import assert from 'node:assert/strict';
-import {execFileSync} from 'node:child_process';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -14,7 +14,7 @@ import {normalizeSourceText} from '../react-main/source-text.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const path = 'tests/browser/test-content-fragments.mjs';
-const pinned = name => execFileSync('git', ['show', `${baseline}:${name}`], {cwd: project, encoding: 'utf8'});
+const pinned = name => readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', name);
 function nodes(source) {
   const result = [];
   function visit(node) {if (!node || typeof node !== 'object') return; if (node.type) result.push(node); for (const value of Object.values(node)) if (Array.isArray(value)) value.forEach(visit); else if (value && typeof value === 'object') visit(value);}
