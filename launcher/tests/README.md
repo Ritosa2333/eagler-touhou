@@ -50,3 +50,5 @@ Node 测试使用锁定的 `puppeteer-core`，通过 `EAGLER_CHROME_PATH` 或标
 ## 资源切换与房间返回
 
 `react-main/resource-download.test.mjs` 检查失败节点切换、首包与断流超时、慢传输、取消、静态托管、版本参数和跨节点凭据隔离。分流服务的 `npm test` 检查发布库存和有序节点发现。`browser-session-mounted.test.mjs` 在桌面与手机环境下覆盖七作旁观各三次往返，同时检查不自动全屏、隐藏游戏操作按键和保留原生实例。th09 构建直接验证正式 Wasm 中的房间返回导出。
+
+联机介绍通过固定历史转换器对照当前原文，另用独立的对战章节输入覆盖 th09 分组；正文按内容文档维护。
