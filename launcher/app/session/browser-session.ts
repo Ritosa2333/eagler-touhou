@@ -965,15 +965,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         // In-game TH09 entry already owns a running title engine. Do not close
         // it or take its FS ownership away just to warm a second engine.
         if (runtime?.getSnapshot().launched && !titleNetwork.getSnapshot().open) return roomPreparation.prepare(context, report);
-        const prior = roomPreload, priorRuntime = runtime?.getSnapshot();
-        const canReuse = prior?.product === context.product && prior.epoch === priorRuntime?.epoch && priorRuntime.phase === 'prepared' && priorRuntime.roomPreview === true;
+        const priorRuntime = runtime?.getSnapshot();
+        const canReuse = priorRuntime?.game === gameIdForProduct(context.product) && priorRuntime.runtimeVariant === 'multiplayer' && priorRuntime.phase === 'prepared' && priorRuntime.roomPreview === true;
         // A current-program check must not announce a download/reload to the
         // relay. If the identity changed, the real reload below reports it.
         const agreement = await waitWithAbort(roomPreparation.prepare(context, canReuse ? () => {} : report), context.signal);
         if (!context.isCurrent()) return;
         const cached = roomPreload, current = runtime?.getSnapshot();
-        if (cached?.product === context.product && cached.epoch === current?.epoch && current.phase === 'prepared' && current.roomPreview &&
-            cached.prepared.plan.multiplayerProgram?.generation === agreement?.runtimeGeneration) {
+        const generation = current?.codeGeneration ?? (cached?.epoch === current?.epoch ? cached?.prepared.plan.multiplayerProgram?.generation : undefined);
+        if (current?.game === gameIdForProduct(context.product) && current.runtimeVariant === 'multiplayer' && current.phase === 'prepared' && current.roomPreview &&
+            generation === agreement?.runtimeGeneration) {
           if (current.roomPreviewSupported && roomSession?.service.getSnapshot().seat != null && roomMusicConsentEpoch !== current.epoch) {
             if (!await waitWithAbort(confirmMusicWarnings(),context.signal)) throw new Error(t('room.resourcesCancelled'));
             roomMusicConsentEpoch = current.epoch;

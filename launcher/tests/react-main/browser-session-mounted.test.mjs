@@ -2286,6 +2286,29 @@ test('ordinary game loading reports success only after its first frame',async()=
  assert.equal(session.getRuntime().getSnapshot().firstFrame,true);assert.equal(node('#playerStatus').textContent,'Ready');
 });
 
+test('an existing native menu without a room preload record survives role changes and Ready',async()=>{
+ const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game=th09mp',host,socketBoundary:true,seedPackages:['th09']}),session=api.getTestSession();
+ await React.act(async()=>{
+  const {generation}=await session.acquisition.readCurrent('th09'),owner=session.getRuntime();
+  await owner.prepare({game:'th09',runtimeVariant:'multiplayer',generation,entry:host.games.th09.multiplayerRuntime,publishedRuntime:false,
+   developmentRuntimeHost:host,configure:{music:'none',language:'original',options:{},resources:[]}});
+  await owner.prepareRoomPreview(owner.getSnapshot().epoch);
+  session.room.service.enterRoom('th09mp','1234',false);
+ });
+ await until(()=>f.sockets.length>0,'in-game room entry');
+ const socket=f.sockets[0],id=new URL(socket.url).searchParams.get('lobby');
+ await React.act(async()=>{socket.open();socket.message({type:'state',room:{code:'1234',playerCount:2,difficulty:1,phase:'lobby',inputDelay:0,predictionLimit:8,startSerial:0,
+  seats:[{clientId:'host',name:'A',loadout:0,ready:false},null],spectators:[{clientId:id,name:'C'}]}});});
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','existing native title verified');
+ const epoch=session.getRuntime().getSnapshot().epoch,document=f.native.document,navigations=f.navigations.length,reads=f.dataReads.length;
+ await React.act(async()=>session.room.service.leaveSpectator());
+ await React.act(async()=>session.room.service.takeSeat(1));
+ await React.act(async()=>session.room.service.prepareResources(true));
+ assert.equal(session.getRuntime().getSnapshot().roomPreview,true);assert.equal(session.getRuntime().getSnapshot().epoch,epoch);
+ assert.equal(f.native.document,document);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+});
+
 test('leaving the spectator seat during configuration cancels its pending launch and keeps the loaded menu',async()=>{
  const host=developmentAcquisitionHost(['th06']);host.shared.netplayRelay='wss://relay.invalid/socket';
  const invite=api.encodeRoomInvite({g:'th06mp',r:'1234',f:true,a:'join',s:true});
