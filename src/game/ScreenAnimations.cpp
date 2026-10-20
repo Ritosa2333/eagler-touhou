@@ -62,6 +62,11 @@ uint64_t bindScreenAnimation(int bank, int script, int layer) {
                       {}, false, nullptr, 0, 0, layer);
   return key;
 }
+void showFullPowerNotice() {
+  // Native422d91 ->420f90(2), shared item-notice handle.
+  animationScene.remove(bossHud.itemNotice);
+  bossHud.itemNotice = bindScreenAnimation(7, 45);
+}
 void showExtendNotice() {
   // 422cff ->420f90(4): a successful life award replaces HUD+6c6c with
   // front47. Its original ANM supplies the glyph, position, scale and110ticks.
@@ -264,6 +269,18 @@ void endSpellAnimations(const spell_system::Result& result) {
           state.flags |= 1;
         else
           state.flags &= ~1u;
+      }
+    if (binding.bank == spell_system::VisualBank::Font &&
+        (binding.script == 13 || binding.script == 14))
+      if (auto* node = animationScene.find(key)) {
+        // Native421102/421167 replaces ascii13/14's default zero with comma257.
+        auto& state = node->vm.control();
+        state.sprite = 257;
+        const auto bank = animationScene.registry.bank(state.spriteBank);
+        if (bank && bank->sprites.size() > 257) {
+          state.spriteWidth = bank->sprites[257].width;
+          state.spriteHeight = bank->sprites[257].height;
+        }
       }
   }
 }

@@ -72,6 +72,10 @@ void tickItems(bool focus) {
       const auto before = resources;
       item_system::collectOrdinary(resources, event.entity, itemFrame.player);
       const int type = event.entity.type;
+      // 422d70 displays front45 when the award overflows the power cap.
+      const int powerAward = type == 3 ? before.powerStep : type == 8 ? before.maxPower : 0;
+      if (before.power < before.maxPower && before.power + powerAward > before.maxPower)
+        showFullPowerNotice();
       if (type == 3 || type == 8 || before.power / before.powerStep != power / resources.powerStep)
         sound_system::queue.play(13, event.entity.position.x);
       if ((type == 6 && before.lives < 8) ||

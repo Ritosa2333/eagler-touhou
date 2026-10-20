@@ -135,12 +135,13 @@ export class TitleScenes {
       this.openResultMenu(result);this.emit('result',{result,needsName:false,nameContext:'pause',afterName:'result-menu'});return;
     }
     if(mode==='extra'&&!result.clear){this.openContinue({...result,canContinue:false});return;}
+    const extraClear=mode==='extra'&&result.clear;
+    if(extraClear)this.emit('pause'); // Native432850, freeze gameplay before score music.
+    this.emit('stopEffects');this.emit('menuMusic',{track:'th10_17',restart:true});
     const eligible=result.ranked!==false&&!(result.continues>0||result.continueCount>0);
     if(!eligible){this.emit('result',{result,needsName:false});this.openReplaySave(result);return;}
     const ranking=this.scoreRanking(result);
     //Extra clear uses the common in-game ranking/name flow before root116.
-    const extraClear=mode==='extra'&&result.clear;
-    if(extraClear)this.emit('pause'); // Native432850, clear ranking over the frozen game.
     this.enter('name',ranking.ranked?90:0,{result,name:String(this.profile.data?.lastName||'').slice(0,8),nameKind:'score',
       nameContext:extraClear?'pause':'title',afterName:extraClear?'result-menu':'replay-save',...ranking,
       ...(extraClear?{context:result,revealAt:10,readyAt:21}:{})});
@@ -295,7 +296,7 @@ export class TitleScenes {
     const s=this.state;if(s.scene==='playing'||s.scene==='ending'||s.scene==='demo')return;
     const item=s.choices[s.selection];if(item?.disabled){this.emit('sound',{id:17});return;}
     //449b61..449c72 changes the Music Room track without a menu OK sound.
-    if(s.scene!=='music-room')this.emit('sound',{id:7});
+    if(s.scene!=='music-room'&&!(s.scene==='name'&&s.nameKind==='replay'&&item?.id==='end'))this.emit('sound',{id:7});
     switch(s.scene) {
       case 'title': {
         this.remember.title=s.selection;
@@ -355,7 +356,7 @@ export class TitleScenes {
   }
   completeName() {
     const {name,result,nameKind,slot,ranked,nameContext,afterName,context}=this.state;
-    if(nameKind==='replay'){this.emit('saveReplay',{slot,name:name.trim()||'        ',result});this.enter('replay-save',slot-1,{result,name,nameContext,readyAt:nameContext==='pause'?11:7});return;}
+    if(nameKind==='replay'){this.emit('sound',{id:18});this.emit('saveReplay',{slot,name:name.trim()||'        ',result});this.enter('replay-save',slot-1,{result,name,nameContext,readyAt:nameContext==='pause'?11:7});return;}
     if(ranked!==false)this.emit('saveName',{name:name.trim()||'        ',result,nameContext,afterName});
     if(afterName==='continue'){
       const selection=(context??result).canContinue===false?1:0;
