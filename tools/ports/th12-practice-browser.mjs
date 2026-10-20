@@ -14,7 +14,7 @@ window.core=await createCore();window.actions=[];window.context={scene:'playing'
 window.ui=new PracticeOverlay({bridge:new PracticeBridge(core),canvas:document.getElementById('game'),onMenuAction:action=>actions.push(action)});
 ui.configure({enabled:true,locale:'zh-CN'});await ui.initialize(new Map([['/unifont.otf',await (await fetch('/unifont.otf')).blob()]]));
 window.openPractice=()=>{window.context={scene:'practice',menu:new PracticeMenu({locale:'zh-CN'}),menuReady:true};};
-for(const name of ['keydown','keyup'])addEventListener(name,event=>{ui.key(event.code,name==='keydown');event.preventDefault();});
+window.routed=[];for(const name of ['keydown','keyup'])addEventListener(name,event=>{routed.push({code:event.code,down:name==='keydown',consumed:ui.key(event.code,name==='keydown')});event.preventDefault();});
 for(const name of ['pointerdown','pointermove','pointerup','pointercancel'])addEventListener(name,event=>{ui.pointer({id:event.pointerId,type:name==='pointercancel'?'cancel':name.slice(7),x:event.clientX,y:event.clientY,pointerType:event.pointerType,button:event.button});});
 addEventListener('wheel',event=>{if(ui.wheel(event))event.preventDefault();},{passive:false});
 window.ticks=0;let last=0;function frame(now){if(now-last>=1000/60-.5){ui.update(context);ui.tick(0);last=now;window.ticks++;}ui.render();requestAnimationFrame(frame);}requestAnimationFrame(frame);window.ready=true;
@@ -50,10 +50,22 @@ try{
   await settle();const tracker=await trackerVertices();assert.ok(tracker>100);
   for(const scene of ['pause','pause-confirm']){
     await page.evaluate(scene=>{context.scene=scene;},scene);await settle();assert.equal(await trackerVertices(),tracker,scene+' retains tracker geometry');
-    const tools=await page.evaluate(()=>ui.bridge.snapshot().tools);await page.keyboard.press('F1');assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),tools,'paused cheats stay gated');
+    for(const [code,bit] of [['F1',1],['F2',2],['F3',4],['F4',8],['F5',16],['F6',32],['F7',64],['KeyU',256]]){
+      const tools=await page.evaluate(()=>ui.bridge.snapshot().tools);
+      await page.keyboard.down(code);await settle();assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),tools^bit,scene+' toggles '+code);
+      await page.keyboard.down(code);await settle();assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),tools^bit,'held key does not toggle repeatedly');
+      await page.keyboard.up(code);await page.keyboard.press(code);await settle();assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),tools);
+      assert.ok(await page.evaluate(code=>routed.filter(e=>e.code===code).slice(-4).every(e=>e.consumed),code),'THPrac consumes keydown and keyup');
+    }
+    const tools=await page.evaluate(()=>ui.bridge.snapshot().tools);await page.mouse.click(50,46);await settle();assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),tools^1,'paused checkbox remains clickable');
+    await page.mouse.click(50,46);await settle();assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),tools);
+    await page.evaluate(()=>{context.replay=true;});await settle();await page.keyboard.press('F1');await page.mouse.click(50,46);await settle();assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),tools,'paused replay remains read only');
+    assert.ok(await page.evaluate(()=>routed.filter(e=>e.code==='F1').slice(-2).every(e=>e.consumed)),'readonly panel still consumes F1');
+    await page.evaluate(()=>{context.replay=false;});await settle();
   }
   await page.screenshot({path:resolve(output,'paused-tracker.png'),clip:{x:20,y:20,width:640,height:480}});
   await page.evaluate(()=>{context.scene='title';});await settle();assert.equal(await trackerVertices(),0);
+  const titleTools=await page.evaluate(()=>ui.bridge.snapshot().tools);await page.keyboard.press('F1');await settle();assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),titleTools);assert.ok(await page.evaluate(()=>routed.filter(e=>e.code==='F1').slice(-2).every(e=>!e.consumed)),'title retains manual shortcut');
   await page.evaluate(()=>{context.scene='playing';});await settle();assert.equal(await trackerVertices(),tracker);
   await page.keyboard.press('Tab');await page.waitForFunction(()=>!(core._th12_practice_ui_flags()&4));
   await page.keyboard.press('F12');await page.waitForFunction(()=>ui.capturesGameplay);
@@ -95,7 +107,7 @@ try{
   assert.equal(await page.evaluate(()=>actions.length),0,'Enter commits the numeric field before starting Practice');
   await page.keyboard.press('Escape');await page.waitForFunction(()=>actions.length>0);assert.equal(await page.evaluate(()=>actions.at(-1).type),'cancel');
   assert.deepEqual(errors,[]);
-  const report={status:'PASS',runtime:'actual TH12 Wasm + common ImGui + shared Unifont',checks:['native checkbox mutation','original hotkey gating','enemy invincibility','paused tracker geometry','pause-confirm tracker geometry','paused cheat isolation','title HUD isolation','replay cheat isolation','mobile folded reopen','pointer-only headers','game drag ownership','combo cancel isolation','numeric keyboard editing','native practice cancel'],retailAssets:false,screenshots:6};
+  const report={status:'PASS',runtime:'actual TH12 Wasm + common ImGui + shared Unifont',checks:['native checkbox mutation','original hotkey gating','enemy invincibility','paused tracker geometry','pause-confirm tracker geometry','paused F1-F7/U mutation and routing','paused checkbox mutation','held shortcut edge detection','paused replay read only','title manual routing','title HUD isolation','replay cheat isolation','mobile folded reopen','pointer-only headers','game drag ownership','combo cancel isolation','numeric keyboard editing','native practice cancel'],retailAssets:false,screenshots:6};
   await writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }catch(error){
   console.error({errors,state:await page.evaluate(()=>({ready:window.ready,flags:window.core?._th12_practice_ui_flags(),enabled:window.ui?.enabled,initialized:window.ui?.initialized})).catch(()=>null)});

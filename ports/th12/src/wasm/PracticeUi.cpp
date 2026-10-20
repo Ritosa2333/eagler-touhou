@@ -66,7 +66,7 @@ void hotkey_line(const char* key,const char* name,bool& value){
   ImGui::SetCursorPos(cursor);
   if(ImGui::InvisibleButton(key,{ImGui::GetWindowWidth()-ImGui::GetStyle().WindowPadding.x*2,ImGui::GetTextLineHeight()}))value=!value;
 }
-void toggle(int bit){if(!replaying&&in_game)setTools(tools()^uint32_t(bit));}
+void toggle(int bit){if(!replaying&&game_visible)setTools(tools()^uint32_t(bit));}
 void input_options(){
   auto& input=toolSettings().input;
   auto check=[](const char* const* name,bool& value,const char* const* description=nullptr){ImGui::Checkbox(label(name),&value);if(description)help_marker(description);};
@@ -179,10 +179,10 @@ void draw_overlay(){
     constexpr auto flags=ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoFocusOnAppearing|ImGuiWindowFlags_NoNav;
     if(Mobile::begin(Mobile::Cheats,"Mod Menu###th12-thprac-overlay",flags,locale)){
       const char* names[]{label(practice_TH_MUTEKI),label(practice_TH_INFLIVES),label(practice_TH_INFBOMBS),label(practice_TH_INFPOWER),label(practice_TH_TIMELOCK),label(practice_TH_AUTOBOMB),label(practice_TH_EL_BGM)};
-      const char* hotkeys[]{"F1","F2","F3","F4","F5","F6","F7"};ImGui::BeginDisabled(replaying||!in_game);
-      for(int i=0;i<7;i++){bool value=tools()&(1u<<i);hotkey_line(hotkeys[i],names[i],value);if(value!=bool(tools()&(1u<<i)))toggle(1<<i);}ImGui::EndDisabled(replaying||!in_game);
-      hotkey_line("Tab",label(practice_THPRAC_INGAMEINFO),tracker_open);ImGui::BeginDisabled(replaying||!in_game);
-      bool enemy=tools()&EnemyInvulnerable;hotkey_line("U",label(practice_TH_ENEMY_MUTEKI),enemy);if(enemy!=bool(tools()&EnemyInvulnerable))toggle(EnemyInvulnerable);ImGui::EndDisabled(replaying||!in_game);
+      const char* hotkeys[]{"F1","F2","F3","F4","F5","F6","F7"};ImGui::BeginDisabled(replaying||!game_visible);
+      for(int i=0;i<7;i++){bool value=tools()&(1u<<i);hotkey_line(hotkeys[i],names[i],value);if(value!=bool(tools()&(1u<<i)))toggle(1<<i);}ImGui::EndDisabled(replaying||!game_visible);
+      hotkey_line("Tab",label(practice_THPRAC_INGAMEINFO),tracker_open);ImGui::BeginDisabled(replaying||!game_visible);
+      bool enemy=tools()&EnemyInvulnerable;hotkey_line("U",label(practice_TH_ENEMY_MUTEKI),enemy);if(enemy!=bool(tools()&EnemyInvulnerable))toggle(EnemyInvulnerable);ImGui::EndDisabled(replaying||!game_visible);
     }ImGui::End();
   }
   if(Mobile::show(Mobile::Information,tracker_open)&&game_visible){
@@ -286,7 +286,7 @@ void th12_practice_ui_tick(int pad){
   if(!enabled()){menu_open=advanced_open=tracker_open=false;commands.clear();vertices.clear();indices.clear();std::fill(std::begin(pressed),std::end(pressed),false);return;}
   auto& io=ImGui::GetIO();if(pressed[8]&&!ImGui::IsAnyItemActive())menu_open=!menu_open;if(pressed[9]&&!ImGui::IsAnyItemActive()&&game_visible)tracker_open=!tracker_open;
   if(pressed[123])advanced_open=!advanced_open;
-  if(menu_open&&in_game&&!replaying){for(int i=0;i<7;i++)if(pressed[112+i])toggle(1<<i);if(pressed[85])toggle(EnemyInvulnerable);}
+  if(menu_open&&game_visible&&!replaying){for(int i=0;i<7;i++)if(pressed[112+i])toggle(1<<i);if(pressed[85])toggle(EnemyInvulnerable);}
   if(in_game&&!replaying&&!th12_practice_ui_capture()&&toolSettings().input.enable_fast_retry&&pressed[82])action=3;
   if(pressed[27]&&advanced_open)advanced_open=false;
   io.DeltaTime=1.f/60;io.MousePos={mouse_x,mouse_y};if(!edges.empty()){const auto edge=edges.front();edges.pop_front();sample_down=edge.down;io.MousePos={edge.x,edge.y};}io.MouseDown[0]=sample_down;
