@@ -73,6 +73,7 @@ i32 joy_button(i32);
 NetworkInput network;
 multiplayer::RollbackSession rollback(th09_shared_transport());
 bool rollback_active=false,network_selection=false;
+bool confirmed_gauge_enabled=true;
 Netplay::AdonisMode adonis_mode=Netplay::AdonisMode::Rollback;
 u32 adonis_snapshots=0,adonis_waits=0;
 u32 rollback_published=0,rollback_catchup=0;
@@ -91,6 +92,12 @@ constexpr u32 spectator_begin_bytes=offsetof(SpectatorBeginState,match)+sizeof(S
 static_assert(spectator_begin_bytes==78);
 SpectatorBeginState spectator_begin_buffer;
 bool spectator_after_restart=false;
+struct GaugeOutput {
+    std::array<AnmVm,hud_gauge_slots.size()> sprites{};
+    float charge=0,available=0;
+    u32 frame=Netplay::INVALID_FRAME;
+    bool valid=false;
+};
 struct RollbackFrame {
     u32 number=Netplay::INVALID_FRAME,hash=0;
     std::unique_ptr<multiplayer::WorldState> state;
@@ -104,6 +111,7 @@ struct RollbackFrame {
     using Sound=multiplayer::FrameAudio::Event;
     std::vector<Sound> sounds;
     multiplayer::FrameAudio audio;
+    std::array<GaugeOutput,2> gauges;
 };
 std::array<RollbackFrame,multiplayer::RollbackSession::History+1> rollback_frames;
 RollbackFrame* recording_frame=nullptr;
@@ -111,6 +119,15 @@ RollbackFrame* recording_frame=nullptr;
 u32 rollback_test_limit=Netplay::INVALID_FRAME;
 double probe_tick_cost[2]{}; // Update/UI and semantic Draw; diagnostic only.
 bool probe_full_sprite_geometry=false;
+constexpr unsigned probe_gauge_stride=68;
+u32 probe_gauge_draw[2*probe_gauge_stride]{};
+void probe_gauge_appearance(u32* out,const AnmVm& vm){
+    std::memcpy(out,&vm.scale.x,4);std::memcpy(out+1,&vm.scale.y,4);
+    out[2]=u32(vm.color1.d3dColor);out[3]=u32(vm.color2.d3dColor);
+    out[4]=vm.flags|(vm.flag17<<17);out[5]=u32(vm.activeSpriteIndex);out[6]=vm.loadedSprite!=nullptr;
+    std::memcpy(out+7,&vm.uvScrollPos.x,4);std::memcpy(out+8,&vm.uvScrollPos.y,4);
+    std::memcpy(out+9,&vm.rotation.z,4);
+}
 #endif
 struct SpectatorFrame { u32 frame=0;u16 keys[2]{};NetworkInput::Motion motion[2]; };
 std::deque<SpectatorFrame> spectator_frames;
@@ -125,6 +142,31 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     u32 startup_background=0,startup_branding=0;
     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
     GamePresentation presentation{graphics,resources,*this};InGameMenus menus{resources,*this};
+    std::array<GaugeOutput,2> confirmed_gauges;
+    const AnmVm* confirmed_gauge(i32 side,u32 slot)override{
+        const auto found=std::find(hud_gauge_slots.begin(),hud_gauge_slots.end(),slot);
+        if(side<0||side>1||found==hud_gauge_slots.end())return nullptr;
+        const auto& gauge=confirmed_gauges[side];
+        const bool use=confirmed_gauge_enabled&&rollback_active&&network.active&&!spectator_mode&&
+            rollback.Mode()!=Netplay::AdonisMode::Delay&&gauge.valid;
+        const auto* sprite=use?&gauge.sprites[std::size_t(found-hud_gauge_slots.begin())]:nullptr;
+#if TH09_DEVELOPMENT_HARNESS
+        if(!graphics.skipSubmission&&world){
+            auto* out=probe_gauge_draw+side*probe_gauge_stride;
+            const auto& drawn=sprite?*sprite:world->huds[side]->animations[slot];
+            probe_gauge_appearance(out+8+10*std::size_t(found-hud_gauge_slots.begin()),drawn);
+            if(slot==17){
+                const auto& control=world->battle->fields[side].player->control;
+                out[0]=use;out[1]=use?gauge.frame:Netplay::INVALID_FRAME;
+                const float charge=use?gauge.charge:control.charge,available=use?gauge.available:control.available;
+                std::memcpy(out+2,&charge,4);std::memcpy(out+3,&available,4);
+                std::memcpy(out+4,&drawn.scale.x,4);out[5]=u32(drawn.color1.d3dColor);
+                std::memcpy(out+6,&control.charge,4);std::memcpy(out+7,&control.available,4);
+            }
+        }
+#endif
+        return sprite;
+    }
     std::array<u8,2> local_focus{};i32 local_versus=1;
     void release_network(){network.end();network_selection=false;settings.auto_focus=local_focus;settings.versus=local_versus;sync_records();}
     PlayerRecords records;bool clock_running=true,host_music_enabled=true;TitleSettings settings;GameConfiguration saved_configuration;u32 storage_revision=0;std::vector<u8> import_bytes;std::unique_ptr<TitleMenus> title;bool in_title=false,launch_pending=false;std::map<std::string,u32> title_images;u32 background_image=0;
@@ -210,6 +252,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     bool start(){
         TH09_PERF_SCOPE(start_cost,StartMatch);
         stop_resume_frame=Netplay::INVALID_FRAME;
+        for(auto& gauge:confirmed_gauges)gauge.valid=false;
         presentation.renderer.flush();presentation.world=nullptr;world=nullptr;session.reset();executor.invalid=false;
         session=std::make_unique<GameSession>(state,resources,executor,presentation,*this,records);
         bool ok=false;if(replay_pending){replay_pending=false;ok=session->play(pending_replay,replay_stage,demo_pending);}
@@ -467,6 +510,10 @@ void sample_keys(u16 (&out)[3]){
 extern "C" {
 #define TH09_EXPORT(n) __attribute__((export_name(n)))
 void queue_rollback_recovery();
+// Display policy only. Safe to toggle during a match without restoring state.
+TH09_EXPORT("th09_confirmed_gauge_mode") u32 th09_confirmed_gauge_mode(u32 enabled){
+    if(enabled>1)return 0;confirmed_gauge_enabled=enabled!=0;return 1;
+}
 TH09_EXPORT("th09_rollback_recovery_mode") u32 th09_rollback_recovery_mode(u32 after){
     if(after>1||running||rollback_active)return 0;
     recovery_schedule.Configure(after!=0);recovery_callbacks=recovery_ticks=recovery_last_us=0;return 1;
@@ -679,6 +726,11 @@ bool publish_rollback_outputs(){
     while(through!=Netplay::INVALID_FRAME&&rollback_published<=through){
         auto& record=rollback_frames[rollback_published%rollback_frames.size()];
         if(record.number!=rollback_published){probe->error="Confirmed output history expired";return false;}
+        // Meter appearance is committed output, like audio and spectator data.
+        // It advances in confirmed frame order and is never restored with the
+        // predicted world. The live charge/release rules keep their own state.
+        for(unsigned side=0;side<2;++side)if(record.gauges[side].valid)
+            probe->confirmed_gauges[side]=record.gauges[side];
         TH09_PERF_COUNT(PublishedCommands,record.sounds.size());
         record.audio.Emit(record.sounds,true,[](const auto& s){TH09_PERF_COUNT(PublishedSfx,1);if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
         for(const auto& s:record.sounds)switch(s.kind){case 2:TH09_PERF_COUNT(PublishedMusic,1);probe->music(s.id);break;case 3:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.fade_music();break;case 4:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
@@ -813,6 +865,15 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         const auto priorStop=probe->stop_state();
         const bool deferPresent=render&&final&&speculative&&!probe->in_title;
         const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,render&&final,false,!deferPresent);
+        for(unsigned side=0;side<2;++side){
+            auto& gauge=record.gauges[side];
+            gauge.valid=probe->world&&!probe->in_title&&rollback.Mode()!=Netplay::AdonisMode::Delay;
+            if(!gauge.valid)continue;
+            const auto& control=probe->world->battle->fields[side].player->control;
+            gauge.frame=f+1;gauge.charge=control.charge;gauge.available=control.available;
+            for(std::size_t i=0;i<hud_gauge_slots.size();++i)
+                gauge.sprites[i]=probe->world->huds[side]->animations[hud_gauge_slots[i]];
+        }
         if(!record.hasBegin&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0){
             record.round=probe->world->rules.progress.round;record.replayRoundFrame=probe->session->recording.frame();}
         record.hasEnd=!wasComplete&&probe->complete;
@@ -1001,6 +1062,14 @@ TH09_EXPORT("th09_probe_stop_draw") const u32* th09_probe_stop_draw(){
             std::memcpy(words+4*side,&p.motion.position.x,4);std::memcpy(words+4*side+1,&p.motion.position.y,4);
             std::memcpy(words+4*side+2,&p.body.pos.x,4);std::memcpy(words+4*side+3,&p.body.pos.y,4);}}
     return words;
+}
+TH09_EXPORT("th09_probe_gauge_draw") const u32* th09_probe_gauge_draw(){return probe_gauge_draw;}
+TH09_EXPORT("th09_probe_gauge_live") const u32* th09_probe_gauge_live(){
+    static u32 data[2*probe_gauge_stride]{};
+    if(probe&&probe->world&&!probe->in_title)for(unsigned side=0;side<2;++side)
+        for(std::size_t i=0;i<hud_gauge_slots.size();++i)
+            probe_gauge_appearance(data+side*probe_gauge_stride+8+10*i,probe->world->huds[side]->animations[hud_gauge_slots[i]]);
+    return data;
 }
 TH09_EXPORT("th09_probe_replay") u32 th09_probe_replay(u32 size,u32 stage){if(!probe||size>probe->import_bytes.size())return 0;ReplayFile f;if(!f.decode(probe->import_bytes.data(),size))return 0;probe->title_play_replay(f,stage,"");probe->launch_pending=false;probe->in_title=false;return probe->start();}
 TH09_EXPORT("th09_probe_return_title") u32 th09_probe_return_title(u32 score){if(!probe)return 0;if(probe->session)probe->session->finish();return probe->return_title(score!=0);}
