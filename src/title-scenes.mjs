@@ -347,7 +347,9 @@ export class TitleScenes {
   }
   pauseAction(action,context) {
     if(action==='retry'){
-      const run={...this.run,...context},stage=run.mode==='practice'?run.stage:run.mode==='extra'?7:1;
+      // Result/pause context uses practice as a boolean. The running selection
+      // owns the parameter object used to restart the same practice session.
+      const run={...this.run,...context,practice:this.run.practice},stage=run.mode==='practice'?run.stage:run.mode==='extra'?7:1;
       this.run={mode:run.mode,character:run.character,shot:run.shot,difficulty:run.difficulty,stage,...(run.practice?{practice:{...run.practice}}:{})};
       this.enter('playing',0,{readyAt:0});this.emit('retry',{...this.run});
     }
