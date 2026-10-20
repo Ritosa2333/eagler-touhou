@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale } from '../../i18n';
 import { mountSpectatorPanel } from './spectator-panel-host';
+import './spectator-playback.css';
 
 /** The Runtime keeps its playback cursor/listeners; the Host information column
  * owns placement. Room wins render into the real controls' score slot. */

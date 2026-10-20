@@ -810,12 +810,12 @@ body.mp-room-active .main{display:block!important;min-height:0!important;width:1
 #mpRoomView.mp-room-view{box-sizing:border-box!important;display:flex!important;flex-direction:column!important;position:relative!important;gap:0!important;width:100%!important;max-width:1600px!important;min-height:100svh!important;height:auto!important;margin:auto!important;padding:28px 40px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;overflow:visible!important;color:var(--room-text)!important}
 #mpRoomView [hidden][hidden],#mpRoomView #mpRoomSettingsDrawer[hidden]{display:none!important}
 #mpRoomView[hidden][hidden]{display:none!important}
-#mpRoomView button,#mpRoomView input{font-family:inherit!important;touch-action:manipulation!important}
-#mpRoomView button{cursor:pointer!important;min-height:44px!important;box-shadow:none!important;transition:background .2s,transform .25s cubic-bezier(.2,.8,.2,1),color .2s!important}
-#mpRoomView button:disabled{cursor:default!important;opacity:.45!important;text-decoration:none!important}
-#mpRoomView button:not(:disabled):hover{filter:brightness(1.12)}
-#mpRoomView button:not(:disabled):active{transform:scale(.96)!important}
-#mpRoomView :focus-visible{outline:2px solid var(--room-accent)!important;outline-offset:4px!important}
+#mpRoomView :is(button,input):where(:not(.spectator-timeline *,#spectatorTimeline *)){font-family:inherit!important;touch-action:manipulation!important}
+#mpRoomView button:where(:not(.spectator-timeline *,#spectatorTimeline *)){cursor:pointer!important;min-height:44px!important;box-shadow:none!important;transition:background .2s,transform .25s cubic-bezier(.2,.8,.2,1),color .2s!important}
+#mpRoomView button:where(:not(.spectator-timeline *,#spectatorTimeline *)):disabled{cursor:default!important;opacity:.45!important;text-decoration:none!important}
+#mpRoomView button:where(:not(.spectator-timeline *,#spectatorTimeline *)):not(:disabled):hover{filter:brightness(1.12)}
+#mpRoomView button:where(:not(.spectator-timeline *,#spectatorTimeline *)):not(:disabled):active{transform:scale(.96)!important}
+#mpRoomView :focus-visible:where(:not(.spectator-timeline *,#spectatorTimeline *)){outline:2px solid var(--room-accent)!important;outline-offset:4px!important}
 #mpRoomView .room-icon{width:20px;height:20px;flex-shrink:0;object-fit:contain;filter:invert(92%) sepia(10%) saturate(393%) hue-rotate(316deg);vertical-align:middle}
 #mpRoomView .mp-room-head{position:static!important;display:flex!important;align-items:center!important;gap:18px!important;width:100%!important;min-height:48px!important;height:auto!important;padding:0!important;border:0!important}
 #mpRoomView .mp-room-back{position:static!important;display:flex!important;align-items:center!important;gap:6px!important;width:auto!important;min-width:44px!important;height:44px!important;padding:0 6px!important;border:0!important;border-radius:12px!important;background:transparent!important;color:var(--room-text)!important;font-size:13px!important;font-weight:600!important}
@@ -903,7 +903,7 @@ body.mp-room-active .main{display:block!important;min-height:0!important;width:1
 #mpRoomView .mp-panel-head button,#mpRoomView #mpRoomNetworkRetry{padding:0 14px;border:0;border-radius:14px;background:var(--room-raised);color:var(--room-accent);font-size:12px}
 #mpRoomView .mp-room-body,#mpRoomView .mp-room-network,#mpRoomView .mp-room-settings,#mpRoomView .mp-spectator-content{display:block!important;position:static!important;width:100%!important;max-height:none!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important;text-align:left!important}
 #mpRoomView .mp-name-editor{display:grid!important;gap:8px!important;margin-bottom:20px!important;font-size:12px!important;color:var(--room-muted)!important}
-#mpRoomView input{box-sizing:border-box;width:100%;height:48px;padding:0 14px;border:1px solid var(--room-line);border-radius:14px;background:var(--room-raised);color:var(--room-text);font-size:16px}
+#mpRoomView input:where(:not(.spectator-timeline *,#spectatorTimeline *)){box-sizing:border-box;width:100%;height:48px;padding:0 14px;border:1px solid var(--room-line);border-radius:14px;background:var(--room-raised);color:var(--room-text);font-size:16px}
 #mpRoomView .mp-local-player{display:flex!important;flex-direction:column-reverse!important;align-items:stretch!important;gap:20px!important;width:100%!important;margin:0!important;padding:0!important;border:0!important;background:none!important}
 #mpRoomView .mp-seated-loadout,#mpRoomView .mp-local-actions{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;height:auto!important}
 #mpRoomView .mp-seated-loadout span{font-size:16px!important;line-height:1.5!important}
@@ -1839,14 +1839,6 @@ body:has(#touchLayoutEditor:not([hidden]))>.mizuki-select-menu .mizuki-select-it
 #mpRoomView .mp-room-chat-phrases button:disabled{opacity:.45;cursor:default}
 .player-information-column,.th09-player-information{position:absolute;right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:31;display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:calc(100% - 16px);pointer-events:none}
 .player-information-column .runtime-diagnostics,.player-information-column .runtime-diagnostics.runtime-diagnostics-playback,.player.netplay-player-status-visible .player-information-column .runtime-diagnostics:not([hidden]),.player-information-column .netplay-player-status{position:static;inset:auto;max-width:100%}
-.spectator-playback-host,.th09-playback-host{display:flex;justify-content:flex-end;width:min(360px,calc(100vw - 16px));max-width:100%;pointer-events:none}
-.player-information-column :is(.spectator-timeline,#spectatorTimeline),.player-information-column :is(.spectator-timeline,#spectatorTimeline)[data-collapsed=true]{position:relative;inset:auto;transform:none;max-width:100%;z-index:auto;pointer-events:auto}
-.player-information-column :is(.spectator-timeline,#spectatorTimeline){box-sizing:border-box;display:flex;flex-direction:column-reverse;gap:8px;width:100%}
-.player-information-column :is(.spectator-timeline,#spectatorTimeline)[data-collapsed=true]{width:max-content;gap:0;background:transparent;border-color:transparent;box-shadow:none}
-.player-information-column :is(.spectator-timeline,#spectatorTimeline) .spectator-bar{width:100%}
-.player-information-column :is(.spectator-timeline,#spectatorTimeline) :is(.spectator-details,#spectatorDetails){width:100%;padding-bottom:6px}
-.player-information-column :is(.spectator-timeline,#spectatorTimeline) .spectator-detail-bar{align-items:flex-start;gap:8px}
-.player-information-column :is(.spectator-timeline,#spectatorTimeline) .spectator-actions{gap:4px}
 .th09-match-stats{display:grid;justify-items:end;gap:4px;padding:8px 10px;color:#e8e6e8;font:12px/1.4 var(--ui-font);text-align:right}
 .th09-match-score{font:700 24px/1.3 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap}
 .th09-match-stat{display:flex;align-items:center;justify-content:flex-end;gap:6px;color:#c6c2c9;white-space:nowrap}

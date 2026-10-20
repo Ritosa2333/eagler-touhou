@@ -18,8 +18,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-playback[data-visible=true]{margin-top:0;opacity:1;transform:translateY(0)}
 .room-workspace-playback-content{display:flow-root;min-width:0}
 #player.room-workspace .room-workspace-roster{order:2}
-.room-workspace-playback :is(.spectator-playback-host,.th09-playback-host){display:block;width:100%;max-width:none;pointer-events:auto}
-.room-workspace-playback .spectator-timeline,.room-workspace-playback .spectator-timeline[data-collapsed=true]{position:relative;inset:auto;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:0}
+.room-workspace-playback :is(.spectator-playback-host,.th09-playback-host){width:100%;max-width:none;pointer-events:auto}
 #player.room-workspace #transfer{position:absolute;inset:12px auto auto 12px;z-index:9;box-sizing:border-box;width:320px;max-width:calc(100% - 24px);margin:0}
 #player.room-workspace:has([data-preview-ready=true]) #gameFrame{opacity:1}
 #mpRoomView.room-workspace-view .room-workspace-header{grid-column:1/-1;grid-row:1;justify-content:initial!important;min-width:0!important;max-width:100%;width:100%;box-sizing:border-box;flex-shrink:0}
