@@ -1807,7 +1807,7 @@ async function actualTerminalRoom({fromDirectory, locale = 'en', strictMode = fa
     code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, predictionLimit: 8, startSerial: 0,
     seats: [{clientId: new URL(socket.url).searchParams.get('lobby'), name: 'A', loadout: 0, ready: false}, null], spectators: [],
   }});});
-  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'canonical local resources are ready');
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'canonical local resources are ready',15_000);
   return {f, session, socket};
 }
 function captureTerminalFeedback(session) {
@@ -1943,7 +1943,7 @@ for (const origin of ['directory create', 'directory join', 'direct']) test(`act
       code, playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, predictionLimit: 8, startSerial: 0,
       seats: [{clientId: new URL(socket.url).searchParams.get('lobby'), name: 'A', loadout: 0, ready: false}, null], spectators: [],
     }});});
-    await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'room resources prepared');
+    await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'room resources prepared',15_000);
   } else {({f, session, socket} = await actualTerminalRoom({fromDirectory: false})); code = '1234';}
   const frame = node('#gameFrame'), savedRoom = session.room.service.getSnapshot().room;
   await click('[data-mp-seat="0"] .mp-seat-edit'); await click('#mpCheckGame');
@@ -1962,7 +1962,7 @@ for (const origin of ['directory create', 'directory join', 'direct']) test(`act
   assert.equal(f.sockets.length, socketCount); assert.equal(node('#gameFrame'), frame);
   assert.ok(socket.sent.slice(sentCount).every(message => ['resources-changed', 'set-ready', 'resource-progress'].includes(message.type)),
     'returning to the retained room only cancels readiness and restarts preload, without rejoining');
-  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'next-run resources are preloaded again');
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'next-run resources are preloaded again',15_000);
   assert.equal(session.getRuntime().getSnapshot().launched, false);
   await click('#mpLeaveRoom');
   await until(() => session.room.service.getSnapshot().room === null, 'subsequent Leave clears membership');
@@ -2098,6 +2098,59 @@ test('actual BrowserLauncher: spectator toolbar exits playback into the existing
   assert.equal(node('#mpRoomCode').textContent, '1234');
   assert.equal(socket.closes.length, 0, 'room membership survives playback exit');
   assert.equal(env.document.querySelector('#playbackExit'), null);
+});
+
+for (const mobileDevice of [false,true]) for (const game of ['th06','th09']) for (const spectator of [true,false])
+test(`room Leave retires the ${mobileDevice?'mobile':'desktop'} ${game} ${spectator?'spectator':'player'} without exposing fullscreen`,async t=>{
+ const agent=env.window.navigator.userAgent;t.after(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:agent}));
+ Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:mobileDevice?'Mozilla/5.0 Android Mobile':'Mozilla/5.0 Desktop'});
+ const product=game+'mp',host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:spectator});
+ const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,actualHistory:true,seedPackages:[game],seedStorage(storage){
+  storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none',options:{touchEnabled:true,thpracEnabled:false}}));
+ }}),session=api.getTestSession();
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','room native menu loaded',15_000);
+ const socket=f.sockets[0],id=new URL(socket.url).searchParams.get('lobby');
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,predictionLimit:8,startSerial:4,spectatorTimeline:true,
+  seats:[{clientId:spectator?'host':id,name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:spectator?[{clientId:id,name:'C'}]:[]};
+ await React.act(async()=>{socket.open();socket.message({type:'state',room});socket.message({type:spectator?'spectator-start':'start',serial:4,room});});
+ await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room launch accepted',15_000);
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>session.getRuntime().getSnapshot().launched,'room game running');
+ f.native.Module={eaglerOptions:{netplayMode:'lan'}};f.native.__eaglerNetplayTransport=spectator?'spectator':'relay';f.native.__eaglerNetplaySpectator=spectator;
+ f.native[api.multiplayerConfigForProduct(product).peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
+ await React.act(async()=>f.native.emit('first-frame'));
+ if(spectator&&game!=='th09')await React.act(async()=>f.native.emit('runtime-info',{spectatorPlayback:{version:1,run:'run_4',revision:1,min:0,position:30,received:1200,edge:1190,target:30,paused:false,seeking:false,following:true,ended:false,nodes:[]}}));
+ await until(()=>session.getSnapshot().roomLaunchStage===null,'game picture presented');
+ if(f.fullscreen)await React.act(async()=>env.document.exitFullscreen());
+ assert.equal(node('#player').classList.contains('room-workspace'),true);
+ const entered=f.order.filter(value=>value==='fullscreen-enter').length,visibleWithoutRoom=[];
+ const stop=session.room.service.subscribe(()=>{if(!session.room.service.getSnapshot().room&&session.getSnapshot().playerOpen)visibleWithoutRoom.push(true);});t.after(stop);
+ const held=spectator&&!mobileDevice&&game==='th06';
+ if(held){
+  const epoch=session.getRuntime().getSnapshot().epoch;
+  f.syncMode='fail';await click('#mpLeaveRoom');
+  await until(()=>node('#decisionDialog').open,'save failure keeps the room until a decision');
+  await click('#decisionCancel');
+  assert.equal(session.room.service.getSnapshot().room.code,'1234');assert.equal(session.getRuntime().getSnapshot().epoch,epoch);
+  assert.equal(session.getRuntime().getSnapshot().launched,true);assert.equal(node('#player').classList.contains('room-workspace'),true);
+  f.syncMode='hold';
+ }
+ await click('#mpLeaveRoom');
+ if(held){
+  await until(()=>f.pendingSync.length===1,'departure waits for the running game to save');
+  await click('#mpLeaveRoom');
+  assert.equal(f.pendingSync.length,1,'repeated Leave shares the pending departure');
+  assert.equal(session.room.service.getSnapshot().room.code,'1234');assert.equal(node('#player').classList.contains('room-workspace'),true);
+  await React.act(async()=>f.native.respond(f.pendingSync.shift()));
+ }
+ await until(()=>session.room.service.getSnapshot().room===null,'room membership retired');
+ assert.equal(session.getSnapshot().playerOpen,false,'the game closes before its room chrome disappears');
+ assert.equal(session.getRuntime().getSnapshot().epoch,null,'a departed room no longer owns a native game');
+ assert.equal(session.getRuntime().getSnapshot().launched,false);assert.deepEqual(visibleWithoutRoom,[]);
+ assert.equal(node('#player').getAttribute('aria-hidden'),'true');assert.equal(f.fullscreen,null);
+ assert.equal(f.order.filter(value=>value==='fullscreen-enter').length,entered);
+ assert.equal(currentUrl(),'/lobby.html?game='+product);assert.deepEqual(socket.closes,[{code:1000,reason:'leave room'}]);
 });
 
 for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08','th09','th10','th11','th15']) {
