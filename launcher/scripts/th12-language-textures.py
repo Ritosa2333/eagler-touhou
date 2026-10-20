@@ -1,8 +1,8 @@
 """Prepare TH12 thpatch PNG replacements in the retail ANM atlas layout.
 
 Only pixel data is emitted. ANM programs and sprites always remain Japanese.
-thpatch images replace their named texture rectangle, including transparent
-pixels; declared ANM padding and unrelated texture entries remain unchanged.
+thpatch images patch each ANM sprite; empty replacement sprites preserve the
+source. Declared ANM padding and unrelated texture entries remain unchanged.
 """
 import io
 import json
@@ -45,13 +45,49 @@ def prepare(job):
     output = Image.new('RGBA', (max(width, logical_width), max(height, logical_height)),
                        (0, 0, 0, 255 if texture_format == 3 else 0))
     output.paste(pixels, (0, 0))
-    # thcrap supports cropped patches (title01 is 256x351 in a 256x512
-    # texture). Uncovered pixels retain their Japanese source values.
+    # thcrap anm.cpp sprite_patch: an empty replacement sprite is a no-op;
+    # opaque destination sprites blend, other destinations are overwritten.
     x, y = struct.unpack_from('<HH', data, at + 20)
-    right, bottom = min(patch.width, x + width), min(patch.height, y + height)
-    if right <= x or bottom <= y:
-        raise ValueError(f"{job['name']}: patch does not overlap the texture")
-    output.paste(patch.crop((x, y, right, bottom)), (0, 0))
+    count = struct.unpack_from('<H', data, at + 4)[0]
+    rectangles = []
+    if count <= 1:
+        rectangles.append((0, 0, width, height))
+    for index in range(count if count > 1 else 0):
+        sprite = at + struct.unpack_from('<I', data, at + 64 + index * 4)[0]
+        _, sx, sy, sw, sh = struct.unpack_from('<Iffff', data, sprite)
+        sx, sy, sw, sh = map(int, (sx, sy, sw, sh))
+        if not sw or not sh:
+            continue
+        sx, sy, sw, sh = sx % width, sy % height, min(sw, width), min(sh, height)
+        split_w, split_h = max(0, sx + sw - width), max(0, sy + sh - height)
+        sw, sh = min(sw, width - sx), min(sh, height - sy)
+        if split_w and split_h:
+            rectangles.append((0, 0, split_w, split_h))
+        if split_w:
+            rectangles.append((0, sy, split_w, sh))
+        if split_h:
+            rectangles.append((sx, 0, sw, split_h))
+        rectangles.append((sx, sy, sw, sh))
+    for sx, sy, sw, sh in rectangles:
+        sw, sh = min(sw, patch.width - x - sx, width - sx), min(sh, patch.height - y - sy, height - sy)
+        if sw <= 0 or sh <= 0:
+            continue
+        replacement = patch.crop((x + sx, y + sy, x + sx + sw, y + sy + sh))
+        # Quantize alpha before analysis, as thcrap does for ARGB4444.
+        if fmt == 5:
+            replacement = replacement.point([v // 16 * 17 for v in range(256)] * 4)
+        if replacement.getchannel('A').getextrema()[1] == 0:
+            continue
+        original = output.crop((sx, sy, sx + sw, sy + sh))
+        if original.getchannel('A').getextrema()[0] == 255:
+            if fmt in (1, 5):
+                maximum, shift, factor = (15, 4, 17) if fmt == 5 else (255, 8, 1)
+                merged = []
+                for dst, rep in zip(original.getdata(), replacement.getdata()):
+                    alpha = rep[3] // factor
+                    merged.append(tuple((((dst[c] // factor) * (maximum - alpha) + (rep[c] // factor) * alpha) >> shift) * factor for c in range(3)) + (255,))
+                replacement.putdata(merged)
+        output.paste(replacement, (sx, sy))
     output.save(job['out'], compress_level=9)
     return dict(job, width=output.width, height=output.height)
 
