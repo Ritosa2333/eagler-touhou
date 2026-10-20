@@ -364,11 +364,11 @@ export class Renderer {
     for(const a of poses)if(a.script!==79)this.state(a,0,0);
     this.flush();
   }
-  renderMenu(poses,texts=[],fps=null,{overlay=false,shade=0,clearColor}={}) {
+  renderMenu(poses,texts=[],fps=null,{overlay=false,shade=0,shadeBounds=[0,0,640,480],clearColor}={}) {
     const g=this.gl;
     if(!overlay)this.begin(clearColor);
     g.disable(g.SCISSOR_TEST);g.uniform3fv(this.fogColor,[0,0,0]);
-    if(shade>0)this.solidTriangles([[0,0],[640,0],[640,480],[0,480]].map(([x,y])=>({x,y,color:[0,0,0,shade]})),[0,1,2,0,2,3],0);
+    if(shade>0){const [left,top,right,bottom]=shadeBounds;this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color:[0,0,0,shade]})),[0,1,2,0,2,3],0);}
     for(const pose of orderPresentation(poses)){
       const a=pose.a??pose,payload=a.menuText;
       if(!payload){this.state(a,pose.x??0,pose.y??0,0,1,pose.alpha??1);continue;}

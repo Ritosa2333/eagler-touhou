@@ -243,7 +243,12 @@ async function nextStage(){
     const stage=session.replay?session.replay.stages.find(s=>s.number>session.stage)?.number:flow.nextStage;
     if(!stage){completeRun(true);return;}
     if(session.replay&&core._th12_practice_damage_transition(session.stage,stage)!==1)throw Error(damageSources.state().error||'录像跨关状态保存失败');
-    loadingScreen.startResources();
+    const heldPresentation=currentPresentation??renderer.capturePresentation(core,gamePresentationOptions());
+    loadingScreen.startResources({renderBase:()=>{
+      renderer.renderPresentation(null,heldPresentation,1);
+      renderer.renderMenu([],[],null,{overlay:true,shade:1,shadeBounds:[32,16,416,464]});
+      practiceUI?.render();
+    }});
     localization?.setContext({stage,character:session.character,shot:session.shot});
     await prepareStage(stage);resetGamePresentation();touch.cancel();session.stage=stage;session.cursor=0;session.previous=0;session.resultKey=null;session.spellCount=0;
     if(session.replay){initializeReplayStage(session.replay,session.replay.stages.find(s=>s.number===stage));}
