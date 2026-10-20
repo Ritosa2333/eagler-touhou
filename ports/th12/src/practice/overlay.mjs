@@ -39,7 +39,7 @@ export class PracticeOverlay {
   update({scene=this.scene,replay=this.replay,menu=null,menuReady=false,onMenuAction=this.onMenuAction}={}){
     this.scene=scene;this.replay=!!replay;this.onMenuAction=onMenuAction;
     if(!this.initialized)return;
-    this.core._th12_practice_ui_context(scene==='practice'?1:scene==='playing'||scene==='demo'?2:0,Number(menuReady),Number(this.replay),menu?.difficulty??1,localeIndex(this.locale));
+    this.core._th12_practice_ui_context(scene==='practice'?1:scene==='playing'||scene==='demo'?2:['pause','pause-confirm'].includes(scene)?3:0,Number(menuReady),Number(this.replay),menu?.difficulty??1,localeIndex(this.locale));
     if(menu&&menu!==this.menu){const words=parameterWords(menu.params),pointer=this.core._malloc(words.byteLength);try{this.core.HEAPU8.set(new Uint8Array(words.buffer),pointer);this.core._th12_practice_ui_params(pointer,words.length);}finally{this.core._free(pointer);}}
     this.menu=menu;
   }

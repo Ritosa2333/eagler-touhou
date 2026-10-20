@@ -40,6 +40,22 @@ try{
   await page.screenshot({path:resolve(output,'desktop-cheats.png'),clip:{x:20,y:20,width:640,height:480}});
   await page.keyboard.press('F1');await page.waitForFunction(()=>!(ui.bridge.snapshot().tools&1));
   await page.keyboard.press('KeyU');await page.waitForFunction(()=>ui.bridge.snapshot().tools&256);
+  await page.keyboard.press('Tab');await page.waitForFunction(()=>core._th12_practice_ui_flags()&4);
+  const trackerVertices=()=>page.evaluate(()=>{
+    const header=new Uint32Array(core.HEAPU8.buffer,core._th12_practice_ui_draw(),8),view=new DataView(core.HEAPU8.buffer);let count=0;
+    for(let i=0;i<header[3];i++){const at=header[0]+i*header[6],x=view.getFloat32(at,true),y=view.getFloat32(at+4,true);if(x>=425&&y>=338&&y<=480)count++;}
+    return count;
+  });
+  const settle=async()=>{const before=await page.evaluate(()=>ticks);await page.waitForFunction(value=>ticks>value+3,before);};
+  await settle();const tracker=await trackerVertices();assert.ok(tracker>100);
+  for(const scene of ['pause','pause-confirm']){
+    await page.evaluate(scene=>{context.scene=scene;},scene);await settle();assert.equal(await trackerVertices(),tracker,scene+' retains tracker geometry');
+    const tools=await page.evaluate(()=>ui.bridge.snapshot().tools);await page.keyboard.press('F1');assert.equal(await page.evaluate(()=>ui.bridge.snapshot().tools),tools,'paused cheats stay gated');
+  }
+  await page.screenshot({path:resolve(output,'paused-tracker.png'),clip:{x:20,y:20,width:640,height:480}});
+  await page.evaluate(()=>{context.scene='title';});await settle();assert.equal(await trackerVertices(),0);
+  await page.evaluate(()=>{context.scene='playing';});await settle();assert.equal(await trackerVertices(),tracker);
+  await page.keyboard.press('Tab');await page.waitForFunction(()=>!(core._th12_practice_ui_flags()&4));
   await page.keyboard.press('F12');await page.waitForFunction(()=>ui.capturesGameplay);
   await page.mouse.click(100,92); // Native Gameplay group.
   const expanded=await page.evaluate(()=>ticks);await page.waitForFunction(value=>ticks>value+2,expanded);
@@ -79,7 +95,7 @@ try{
   assert.equal(await page.evaluate(()=>actions.length),0,'Enter commits the numeric field before starting Practice');
   await page.keyboard.press('Escape');await page.waitForFunction(()=>actions.length>0);assert.equal(await page.evaluate(()=>actions.at(-1).type),'cancel');
   assert.deepEqual(errors,[]);
-  const report={status:'PASS',runtime:'actual TH12 Wasm + common ImGui + shared Unifont',checks:['native checkbox mutation','original hotkey gating','enemy invincibility','replay cheat isolation','mobile folded reopen','pointer-only headers','game drag ownership','combo cancel isolation','numeric keyboard editing','native practice cancel'],retailAssets:false,screenshots:5};
+  const report={status:'PASS',runtime:'actual TH12 Wasm + common ImGui + shared Unifont',checks:['native checkbox mutation','original hotkey gating','enemy invincibility','paused tracker geometry','pause-confirm tracker geometry','paused cheat isolation','title HUD isolation','replay cheat isolation','mobile folded reopen','pointer-only headers','game drag ownership','combo cancel isolation','numeric keyboard editing','native practice cancel'],retailAssets:false,screenshots:6};
   await writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }catch(error){
   console.error({errors,state:await page.evaluate(()=>({ready:window.ready,flags:window.core?._th12_practice_ui_flags(),enabled:window.ui?.enabled,initialized:window.ui?.initialized})).catch(()=>null)});

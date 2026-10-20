@@ -76,8 +76,6 @@ static void beginClear() {
   // Native41e09a waits380 ticks before the main-game ending scene.
   flow.clearDelay = flow.stage == 6 && !flow.practice ? 380 : 120;
   flow.nextStage = !flow.practice && flow.stage < 6 ? flow.stage + 1 : 0;
-  stageState.flags |= 4;
-  stageState.transitionAge = 0;
   gameSpeed = animationScene.runtime.delta = 1;
   // Native scene teardown retires the enemy, projectile, item and laser
   // managers without calling their kill/drop/cancel reward paths.
@@ -106,6 +104,7 @@ bool tickFullGame(int held, int pressed) {
     return false;
   if (flow.status == FullGameStatus::Playing) {
     tick(held, pressed);
+    flow.entryFadeAge = std::min(30, flow.entryFadeAge + 1);
     ++flow.totalFrames;
     if (ended == 1)
       beginClear();
@@ -119,14 +118,22 @@ bool tickFullGame(int held, int pressed) {
   sound_system::queue.reset();
   scorePopups.clear();
   animationScene.tickSecondary();
-  stageState.transitionAge = flow.clearAge;
+  //4227dc first holds the clear reward for120 ticks.422839 then starts
+  //4057e0's30-tick field fade;42296c creates the incoming stage afterwards.
+  if (flow.nextStage && flow.clearAge == flow.clearDelay) {
+    stageState.flags |= 4;
+    for (const auto* node : animationScene.chain(anm_logic::Membership::Primary))
+      if (node->vm.state().bank == 7 && node->vm.state().script == 85)
+        animationScene.interruptNode(node->id, 1);
+  }
+  stageState.transitionAge = std::max(0, flow.clearAge - flow.clearDelay);
   tickStage();
   animationScene.collect();
   animationScene.tickPrimary();
   animationScene.collect();
   ++flow.clearAge;
   ++flow.totalFrames;
-  if (flow.clearAge >= flow.clearDelay) {
+  if (flow.clearAge >= flow.clearDelay + (flow.nextStage ? 30 : 0)) {
     flow.carry = captureSessionCarry();
     if (flow.nextStage)
       flow.status = FullGameStatus::NextStage;
@@ -149,6 +156,7 @@ int startNextStage() {
     return 0;
   startGame(character, shot, difficulty, carry.seed, nullptr, &carry);
   setFullGameMode(false);
+  fullGameFlow.entryFadeAge = 0;
   fullGameFlow.totalFrames = total;
   fullGameFlow.recordHeader = carry;
   fullGameFlow.recordHeaderReady = true;

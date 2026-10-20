@@ -23,6 +23,7 @@ struct FullGameFlow {
   bool recordHeaderReady = false;
   SessionCarry recordHeader{}; // Immutable pre-main-birth recording boundary.
   SessionCarry carry{};
+  int entryFadeAge = 30;
 };
 extern FullGameFlow fullGameFlow;
 extern std::string stageFlowSnapshotBuffer;

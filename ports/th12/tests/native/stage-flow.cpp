@@ -61,7 +61,7 @@ int main(int argc,char** argv) {
   start();
   require(enemies.front()->contexts.front().locals[0]==100,"Full-game initial birth power differs");
   require(fullGameFlow.recordHeaderReady&&fullGameFlow.recordHeader.seed==1234&&
-    random.calls==2&&fullGameFlow.recordHeader.resources.power==100,
+    th12::random.calls==2&&fullGameFlow.recordHeader.resources.power==100,
     "Recorder initial header was sampled after main birth");
   resources.scoreStored=12345678;power=347;lives=5;bombs=4;
   resources.lifeFragments=3;resources.bombFragments=2;resources.pointValueStored=1595310;
@@ -75,24 +75,38 @@ int main(int argc,char** argv) {
   ufoManager.inventory.rotation=2;ufoManager.inventory.gateTimer=13;
   const auto original=captureSessionCarry();
   clear();
+  require(!(stageState.flags&4),"Clear reward prematurely started the stage fade");
   for(int i=0;i<119;i++)th12_tick(0,0);
   require(fullGameFlow.status==FullGameStatus::StageClear,"Next stage started before120 clear ticks");
+  require(std::string(th12_background()).find("\"transition\":null")!=std::string::npos,
+          "Clear hold published an early field fade");
   require(th12_start_next_stage()==0,"Premature stage birth succeeded");
   th12_tick(0,0);
+  require(fullGameFlow.status==FullGameStatus::StageClear&&fullGameFlow.clearAge==120,
+          "Clear reward did not retain the outgoing stage before its fade");
+  for(int i=0;i<29;i++)th12_tick(0,0);
+  require(fullGameFlow.status==FullGameStatus::StageClear&&(stageState.flags&4),
+          "Next stage interrupted the30-tick field fade");
+  require(std::string(th12_background()).find("\"transition\":{\"out\":true,\"age\":29}")!=std::string::npos,
+          "Outgoing field fade lost its logical snapshot age");
+  th12_tick(0,0);
   require(fullGameFlow.status==FullGameStatus::NextStage&&fullGameFlow.nextStage==2,
-          "Ordinary clear did not schedule the next stage at120 ticks");
-  const auto beforeQuery=fullGameFlow.totalFrames;const auto rngBefore=random;
+          "Ordinary clear did not schedule the next stage after120+30 ticks");
+  const auto beforeQuery=fullGameFlow.totalFrames;const auto rngBefore=th12::random;
   const std::string query=th12_stage_flow();th12_stage_flow();
-  require(query==th12_stage_flow()&&beforeQuery==fullGameFlow.totalFrames&&random.calls==rngBefore.calls,
+  require(query==th12_stage_flow()&&beforeQuery==fullGameFlow.totalFrames&&th12::random.calls==rngBefore.calls,
           "Stage-flow query advanced the simulation");
   require(th12_start_next_stage()==0,"Unloaded next-stage resources were accepted");
   th12_select_stage(2);loadBirthProbe();
   Random birthRandom{original.seed,0};const auto expectedWord=birthRandom.next32();
   require(th12_start_next_stage()==1,"Ready next-stage birth failed");
+  require(fullGameFlow.entryFadeAge==0,"Incoming stage skipped its field fade-in");
+  require(std::string(th12_background()).find("\"transition\":{\"out\":false,\"age\":0}")!=std::string::npos,
+          "Incoming field fade was absent from the renderer snapshot");
   const auto& locals=enemies.front()->contexts.front().locals;
   require(locals[0]==347&&asfloat(locals[1])==float(-4321/128.f)&&locals[2]==expectedWord,
           "Next-stage main birth observed late/unrestored power, position or RNG");
-  require(random.seed==birthRandom.seed&&random.calls==2,"Per-stage RNG call counter was not reset before birth");
+  require(th12::random.seed==birthRandom.seed&&th12::random.calls==2,"Per-stage RNG call counter was not reset before birth");
   require(fullGameFlow.recordHeaderReady&&fullGameFlow.recordHeader.seed==original.seed&&
     fullGameFlow.recordHeader.resources.power==347&&fullGameFlow.recordHeader.x==-4321&&
     fullGameFlow.recordHeader.nativeGlobals[1]==7,
@@ -112,9 +126,12 @@ int main(int argc,char** argv) {
     playerMotion.options[0].x==px&&playerMotion.options[0].y==py&&
     shotSchedule.frame==-1&&shotSchedule.previous==-2&&shotSchedule.time==-1,
     "Incoming stage retained old option-follow or shot-cycle state");
+  for(int i=0;i<30;i++)th12_tick(0,0);
+  require(fullGameFlow.entryFadeAge==30&&std::string(th12_background()).find("\"transition\":null")!=std::string::npos,
+          "Incoming field fade did not retire after30 logical ticks");
   for(int stage=2;stage<=5;stage++) {
     require(stageNumber==stage,"Full run stage order changed");clear();
-    for(int i=0;i<120;i++)th12_tick(0,0);
+    for(int i=0;i<150;i++)th12_tick(0,0);
     th12_select_stage(stage+1);loadBirthProbe();require(th12_start_next_stage()==1,"Story could not enter later stage");
   }
   clear();for(int i=0;i<379;i++)th12_tick(0,0);
@@ -140,7 +157,7 @@ int main(int argc,char** argv) {
   require(th12_start_replay(0,0,1,1234,header,17)==1,"Legacy replay failed to start");
   require(fullGameFlow.status==FullGameStatus::Disabled,"Full game leaked into legacy replay");
   th12_set_full_game_mode(0);require(fullGameFlow.replay,"Replay did not enable full-game transitions");
-  clear();for(int i=0;i<120;i++)th12_tick(0,0);
+  clear();for(int i=0;i<150;i++)th12_tick(0,0);
   th12_select_stage(3);require(th12_start_next_stage()==0,"Replay incorrectly uses live carry instead of stage header");
   th12_start(0,0,1,1234);require(fullGameFlow.status==FullGameStatus::Disabled,"Full mode leaked into legacy start");
   ended=1;const int oldFrame=frame;th12_tick(0,0);

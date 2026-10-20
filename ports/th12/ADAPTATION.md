@@ -186,3 +186,8 @@
 - PRESENTATION：使用原版 ANM 的7项 Wasm 检查通过，覆盖三个飞碟槽的15帧移动、库存轮转、提示动画和大 UFO 呈现。
 - AUDIO：7项音乐传输检查通过。Chromium 使用无共享 AudioContext 的宿主，完整解码与流式 OGG 在标题停留期间均已播放，无需菜单按键。
 - BUILD：普通 Runtime 构建、端口8项检查和文档检查通过。
+
+### 2026-10-20：换面与暂停呈现回归
+
+- PRESENTATION：6项流程与呈现检查通过，覆盖六面衔接、通关奖励等待、30帧淡出／淡入、跨面资源继承、Practice／Continue及日文原版暂停选项的连续高亮。
+- DISPLAY/THPrac：暂停与确认页保留状态栏和监视显示，游戏运行状态继续约束作弊修改与快速重开。实际Wasm／ImGui检查入口为`tools/ports/th12-practice-browser.mjs`。

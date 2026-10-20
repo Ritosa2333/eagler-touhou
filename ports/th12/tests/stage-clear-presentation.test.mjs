@@ -10,7 +10,7 @@ test('clear-screen digits use the separately sampled original award without addi
     //bonus to that same display field after the independently sampled branch.
     const expected=native.base.find(r=>r.stage===row.stage).displayAward+row.displayAward;
     assert.equal(stageClearAward(h),expected,JSON.stringify(row));assert.equal(stageClearAward(h,true),row.stage*1000000);
-    const before=[...h],pose={a:{name:'text',sprite:77,visible:true,alpha:.5}};
+    const before=[...h],pose={a:{name:'front',sprite:70,visible:true,alpha:.5}};
     const text=stageClearText(h,[pose]);assert.equal(text.text,expected.toLocaleString('en-US'));assert.equal(text.colorARGB>>>24,128);
     assert.deepEqual([text.font,text.x,text.y],[3,224,200]);assert.deepEqual(h,before);
   }

@@ -26,7 +26,7 @@
 namespace th12::practice::ui {
 namespace Mobile=eagler::thprac::mobile;
 bool initialized=false,menu_open=false,advanced_open=false,tracker_open=false;
-bool practice_open=false,armed=false,menu_ready=false,in_game=false,replaying=false,desktop_pointer=false;
+bool practice_open=false,armed=false,menu_ready=false,in_game=false,game_visible=false,replaying=false,desktop_pointer=false;
 bool text_editing=false;
 bool keys[256]{},pressed[256]{};int locale=0,difficulty=1,action=0,warp=0,section_index=0,previous_pad=0;
 float mouse_x=-FLT_MAX,mouse_y=-FLT_MAX;bool mouse_down=false,sample_down=false;
@@ -185,7 +185,7 @@ void draw_overlay(){
       bool enemy=tools()&EnemyInvulnerable;hotkey_line("U",label(practice_TH_ENEMY_MUTEKI),enemy);if(enemy!=bool(tools()&EnemyInvulnerable))toggle(EnemyInvulnerable);ImGui::EndDisabled(replaying||!in_game);
     }ImGui::End();
   }
-  if(Mobile::show(Mobile::Information,tracker_open)&&in_game){
+  if(Mobile::show(Mobile::Information,tracker_open)&&game_visible){
     ImGui::SetNextWindowPos({425,338},ImGuiCond_Always);ImGui::SetNextWindowSize({210,0},ImGuiCond_Always);
     constexpr auto flags=ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse|ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoInputs|ImGuiWindowFlags_NoFocusOnAppearing|ImGuiWindowFlags_NoNav;
     if(Mobile::begin(Mobile::Information,"Tracker###th12-thprac-tracker",flags,locale)){
@@ -208,10 +208,10 @@ void draw_overlay(){
     constexpr auto flags=ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoMove;
     if(Mobile::begin(Mobile::Advanced,"Advanced Options###th12-thprac-advanced",flags,locale)){draw_advanced();ImGui::SetWindowFocus();}ImGui::End();ImGui::PopStyleVar(2);
   }
-  if(toolSettings().show_keyboard_monitor&&in_game&&Mobile::draw_tool(Mobile::Keyboard,"Keys###th12-mobile-keys",{420,65},locale)){
+  if(toolSettings().show_keyboard_monitor&&game_visible&&Mobile::draw_tool(Mobile::Keyboard,"Keys###th12-mobile-keys",{420,65},locale)){
     KeyRectStyle style;style.text_color_press=style.text_color_release=IM_COL32(32,32,32,255);KeysHUD(12,{1280,0},{840,0},style,true,false);
   }
-  if(toolSettings().show_lock_timer&&tool(TimeLock)&&in_game&&Mobile::draw_tool(Mobile::Indicators,"Tools###th12-mobile-tools",{120,65},locale)){
+  if(toolSettings().show_lock_timer&&tool(TimeLock)&&game_visible&&Mobile::draw_tool(Mobile::Indicators,"Tools###th12-mobile-tools",{120,65},locale)){
     char text[32];std::snprintf(text,sizeof text,"%.2f",toolSettings().lock_frames/60.f);auto* draw=ImGui::GetOverlayDrawList();draw->AddRectFilled({32,0},{110,ImGui::GetFontSize()},0xffffffff);draw->AddText({110-ImGui::CalcTextSize(text).x,0},0xff000000,text);
   }
 }
@@ -255,7 +255,7 @@ void th12_practice_ui_mobile(int mode,int visible){
   th12::practice::ui::Mobile::update(mode!=0,visible!=0);
 }
 void th12_practice_ui_context(int scene,int ready,int replay,int diff,int language){
-  const bool entering=scene==1&&!practice_open;practice_open=scene==1;in_game=scene==2;menu_ready=ready!=0;replaying=replay!=0;difficulty=std::clamp(diff,0,4);locale=std::clamp(language,0,2);
+  const bool entering=scene==1&&!practice_open;practice_open=scene==1;in_game=scene==2;game_visible=in_game||scene==3;menu_ready=ready!=0;replaying=replay!=0;difficulty=std::clamp(diff,0,4);locale=std::clamp(language,0,2);
   if(entering){armed=false;action=0;cancel_pointer();}
 }
 void th12_practice_ui_params(const int32_t* words,int count){
@@ -284,7 +284,7 @@ int th12_practice_ui_behavior(){return enabled()?(int(toolSettings().disable_mas
 void th12_practice_ui_tick(int pad){
   if(!initialized)return;
   if(!enabled()){menu_open=advanced_open=tracker_open=false;commands.clear();vertices.clear();indices.clear();std::fill(std::begin(pressed),std::end(pressed),false);return;}
-  auto& io=ImGui::GetIO();if(pressed[8]&&!ImGui::IsAnyItemActive())menu_open=!menu_open;if(pressed[9]&&!ImGui::IsAnyItemActive()&&in_game)tracker_open=!tracker_open;
+  auto& io=ImGui::GetIO();if(pressed[8]&&!ImGui::IsAnyItemActive())menu_open=!menu_open;if(pressed[9]&&!ImGui::IsAnyItemActive()&&game_visible)tracker_open=!tracker_open;
   if(pressed[123])advanced_open=!advanced_open;
   if(menu_open&&in_game&&!replaying){for(int i=0;i<7;i++)if(pressed[112+i])toggle(1<<i);if(pressed[85])toggle(EnemyInvulnerable);}
   if(in_game&&!replaying&&!th12_practice_ui_capture()&&toolSettings().input.enable_fast_retry&&pressed[82])action=3;
