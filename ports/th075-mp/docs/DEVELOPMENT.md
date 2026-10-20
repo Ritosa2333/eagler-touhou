@@ -4,11 +4,11 @@
 
 ```sh
 npm run build:runtime -- --game=th075 --variant=multiplayer --emsdk=/path/to/emsdk
-node ports/th075-mp/portable/package-eagler.mjs --multiplayer
+node launcher/scripts/package-runtime.mjs --game=th075 --variant=multiplayer
 node --test ports/th075-mp/tests/eagler/*.test.mjs
 ```
 
-源码位于 `web/cpp/`，浏览器 Shell 位于 `web/sdl-runtime/`。本作使用 `common/include/`、`common/src/netplay/` 和 `common/browser/adonis-calibration.mjs`；编译记录同时包含实际公共输入哈希，打包时重新核验。构建输出到 `web/artifacts/sdl3-multiplayer/`，打包输出到 `build-eagler-multiplayer/`。
+源码位于 `web/cpp/`，浏览器 Shell 位于 `web/sdl-runtime/`。本作使用 `common/include/`、`common/src/netplay/` 和 `common/browser/adonis-calibration.mjs`；编译记录同时包含实际公共输入哈希，统一打包入口也把 Adonis calibration 绑定为 MP 打包控制输入。Runtime 清单与 HTML 明确标记 `th075mp`、`multiplayer` 模式，构建输出到 `web/artifacts/sdl3-multiplayer/`，打包输出到 `build-eagler-multiplayer/`。
 
 启动器开发站将 `th075mp` 指向本目录的 `build-eagler-multiplayer/th075.html`，普通版使用 `ports/th075` 的独立输出。开发站清单检查逐项核对全部多人产品的 Runtime 归属。
 

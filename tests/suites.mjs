@@ -111,7 +111,7 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
         {timeoutMs:600000, resources:['source-tree','launcher-build']})],
     },
     'ports-source': {
-      scope:'Current source and module checks for all 15 product variants', tier:'integration',
+      scope:'Current source and module checks for every registered product variant', tier:'integration',
       tasks:()=>[node('ports-source', ['tools/ports/check.mjs', '--all', '--check-status',
         `--output=${resolve(output, 'ports-source')}`], root,
       {timeoutMs:600000, resources:['source-tree','launcher-build'],...compilerHelperCleanup})],

@@ -74,14 +74,17 @@ export async function runAdaptationVerification(options,dependencies={}){
       process.once('SIGINT',cancel);process.once('SIGTERM',cancel);
       try{
         // Build the shared Launcher once. Per-title packaging reuses its content cache.
-        const needsLauncher=pending.some(task=>report.cases.find(item=>item.id===task.id).group.startsWith('offline'));
+        const needsLauncher=pending.some(task=>report.cases.find(item=>item.id===task.id).requiresLauncherBuild);
         if(needsLauncher&&!dependencies.skipPreparation){
           const prepared=await runTasks([{id:'launcher',command:process.execPath,args:['scripts/build-launcher.mjs'],
             cwd:resolve(root,'launcher'),timeoutMs:300000,resources:['launcher-build']}],
           {output:resolve(output,'prepare'),concurrency:1,environment,signal:controller.signal});
           report.preparation={status:prepared.status,path:resolve(output,'prepare/report.json')};
-          if(prepared.status!=='passed')for(const task of pending.splice(0)){
-            const item=report.cases.find(item=>item.id===task.id);item.status='blocked';item.issues=['Shared Launcher preparation failed'];
+          if(prepared.status!=='passed')for(let index=pending.length-1;index>=0;index--){
+            const item=report.cases.find(item=>item.id===pending[index].id);
+            if(!item.requiresLauncherBuild)continue;
+            pending.splice(index,1);item.status='blocked';item.issues=['Shared Launcher preparation failed'];
+            item.finishedAt=new Date().toISOString();
           }
         }
         if(pending.length)await runTasks(pending,{output:resolve(output,'processes'),concurrency:jobs,environment,
@@ -102,6 +105,7 @@ export async function runAdaptationVerification(options,dependencies={}){
         }catch(error){item.identityStable=false;item.status='failed';(item.issues??=[]).push(`Postflight: ${error.message}`);}
       }
       Object.assign(report,summarizeAdaptationCases(report.cases));
+      if(report.preparation&&report.preparation.status!=='passed'){report.status='failed';report.passed=false;}
       report.coverage=adaptationCoverage(report.cases,{checks:selection.checks,unmappedChecks:report.unmappedChecks});
       if((report.unmappedChecks.length||selection.checks.length&&!report.coverage.complete)&&report.status==='passed'){
         report.status='incomplete';report.passed=false;

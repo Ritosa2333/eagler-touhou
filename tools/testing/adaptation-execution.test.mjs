@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
+import {mkdir,mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {fileIdentity,identityDigest} from './dependency-snapshot.mjs';
@@ -17,17 +17,18 @@ startedAt,finishedAt:new Date().toISOString(),status:'passed',passed:true,target
 checks:[{id:'movement',checks:['INPUT-01'],status:behavior.fail?'failed':'passed',complete:false}]}]}));
 process.exitCode=behavior.exit??0;`;
 
-async function setup(t){
+async function setup(t,{offlineGames=[]}={}){
   const root=await mkdtemp(resolve(tmpdir(),'adaptation-execution-'));t.after(()=>rm(root,{recursive:true,force:true}));
   await writeFile(resolve(root,'driver.mjs'),fixture);
   for(const game of ['th06','th07'])await writeFile(resolve(root,game+'.json'),'{}');
-  const buildPlan=({output})=>({unmappedChecks:[],cases:['th06','th07'].map(game=>({id:game,game,variant:'normal',group:'runtime',checks:['INPUT-01'],
+  const buildPlan=({output})=>({unmappedChecks:[],cases:['th06','th07'].map(game=>({id:game,game,variant:'normal',
+    group:offlineGames.includes(game)?'offline':'runtime',requiresLauncherBuild:offlineGames.includes(game),checks:['INPUT-01'],
     status:'ready',reportPath:resolve(output,game,'report.json'),requiredInputs:[],blockedInputs:[],
     task:{command:process.execPath,args:[resolve(root,'driver.mjs'),root,game,resolve(output,game)],cwd:root,timeoutMs:30000,resources:[]}}))});
   const createIdentityReader=()=>async item=>({fingerprint:identityDigest({driver:await fileIdentity(resolve(root,'driver.mjs')),
     input:await fileIdentity(resolve(root,item.game+'.json'))})});
-  const run=(name,options={})=>runAdaptationVerification({root,output:resolve(root,name),environment:{},...options},
-    {buildPlan,createIdentityReader,skipPreparation:true});
+  const run=(name,options={},dependencies={})=>runAdaptationVerification({root,output:resolve(root,name),environment:{},...options},
+    {buildPlan,createIdentityReader,skipPreparation:true,...dependencies});
   const count=async game=>Number(await readFile(resolve(root,game+'.marker'),'utf8').catch(()=>0));
   return{root,run,count};
 }
@@ -38,6 +39,23 @@ test('real queue continues independent cases and rejects zero-exit false green',
   assert.deepEqual(report.cases.map(item=>item.status),['failed','passed']);assert.equal(await count('th07'),1);
   const queued=JSON.parse(await readFile(resolve(root,'first/processes/report.json'),'utf8'));
   assert.equal(queued.status,'failed');assert.equal(queued.results[0].processStatus,'passed');
+});
+
+test('failed Launcher preparation blocks its consumers while an independent Runtime still executes',async t=>{
+  const {root,run,count}=await setup(t,{offlineGames:['th06']});await mkdir(resolve(root,'launcher'));
+  const report=await run('prepare-failed',{}, {skipPreparation:false});
+  assert.equal(report.preparation.status,'failed');assert.equal(report.status,'failed');assert.equal(report.passed,false);
+  assert.equal(report.cases[0].status,'blocked');assert.equal(await count('th06'),0);
+  assert.equal(report.cases[1].status,'passed');assert.equal(report.cases[1].execution,'executed');assert.equal(await count('th07'),1);
+});
+
+test('several Launcher consumers share one successful preparation',async t=>{
+  const {root,run}=await setup(t,{offlineGames:['th06','th07']});await mkdir(resolve(root,'launcher/scripts'),{recursive:true});
+  await writeFile(resolve(root,'launcher/scripts/build-launcher.mjs'),
+    "import{appendFileSync}from'node:fs';appendFileSync('../prepared.log','prepared\\n');");
+  const report=await run('prepare-passed',{}, {skipPreparation:false});
+  assert.equal(report.status,'passed');assert.equal(report.executed,2);
+  assert.equal(await readFile(resolve(root,'prepared.log'),'utf8'),'prepared\n');
 });
 
 test('resume retains sealed evidence, failed rerun executes only failures, and corrupted evidence reruns',async t=>{

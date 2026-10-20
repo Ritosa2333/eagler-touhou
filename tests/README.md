@@ -67,13 +67,15 @@ npm run test:adaptation -- --rerun-failed=artifacts/validation/上次目录
 
 `--variant=normal|multiplayer|both` 选择产品身份，`mp` 是 `multiplayer` 的别名。`--suite` 可选 `runtime`、`desktop-input`、`desktop-background`、`practice`、`replay`、`music`、`offline`、`offline-update`、`rooms`、`spectator`。省略时生成全部场景。`--check` 选择适配编号；编号存在但没有对应场景时记录 unmapped，并返回未完成。显式选择编号要求对应完整证据，场景通过但编号覆盖 partial 时返回未完成。
 
-任务边界为作品 | 变体 | 场景组；房间再按人数与 RTC／Relay 拆分。输入和后台分别运行，支持更新的作品把基础离线与更新旅程合在一次任务里。共享 Launcher 准备执行一次，作品打包复用内容缓存。`--jobs=1` 控制排队并发，浏览器与共享资源按互斥声明运行。单项缺输入会记录 blocked，其他独立项继续。
+任务边界为作品 | 变体 | 场景组；房间再按人数与 RTC／Relay 拆分。输入和后台分别运行，支持更新的作品把基础离线与更新旅程合在一次任务里。依赖本地 Launcher 构建的任务声明 `requiresLauncherBuild`，整轮共享一次准备，作品打包复用内容缓存。准备失败时保留失败报告，并阻断依赖它的任务；独立 Runtime 任务继续执行。`--jobs=1` 控制排队并发，浏览器与共享资源按互斥声明运行。单项缺输入会记录 blocked，其他独立项继续。
 
 新作品随产品目录进入计划，原生观察与作品流程尚未登记时显示 blocked，并给出接入位置。th075 的正式构建和组件测试沿用本作入口，通用行为驱动在接入观察与流程后启用。
 
 本地输入配置采用 `eagler-touhou/adaptation-inputs/1`，可登记 `runtimeManifest`、`packages`、`updatePackages`、`musicManifest`、`artwork` 和 `launcherUrl`。前五项的相对路径以配置文件目录为基准；也可继续使用下文的环境变量。配置、私有资源与原始报告留在本地。
 
 每轮默认创建新目录，`--output` 可指定新的证据目录。`summary.json` 包含计划、实际命令、逐项状态、日志、原始封存报告的哈希、产物与输入身份，以及逐编号覆盖。`--plan` 保存同样的任务选择与缺失输入，不启动测试，报告为 planned。执行状态与编号完整度分别呈现：全部所选场景通过可返回 passed，完整适配证明由 `coverage.complete` 和逐编号记录给出。
+
+离线报告的 `scenarios` 列出本次实际选择的基础和更新旅程。未选择更新时，其适配要求保留在排除范围与逐编号记录中；显式选择更新但缺少第二代包时，队列记录 blocked/incomplete。基础场景及其完整编号证明独立判定。
 
 `--resume` 沿用身份一致且封存证据完整的已完成任务，执行未完成或身份变化的任务。`--rerun-failed` 额外重跑 failed、timeout 和 cancelled；已记录的 incomplete 覆盖范围保留原证据，补充输入或修改驱动后由身份变化触发重跑。沿用结果标为 retained，保留原运行编号、时间和报告路径，本次执行标为 executed。父报告、子报告、测试依赖、Runtime、DATA、录像、字体、音乐、离线包及浏览器身份共同约束复用；文档正文变化不触发游戏重跑。执行后独立复核身份。
 

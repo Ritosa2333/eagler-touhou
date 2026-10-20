@@ -88,6 +88,7 @@ test('offline base scenarios remain runnable while absent update evidence is exp
   assert.equal(plan.cases.length,MUSIC_BROWSER_GAMES.length);
   for(const item of plan.cases){
     assert.equal(item.status,'ready');assert.ok(item.task);
+    assert.equal(item.requiresLauncherBuild,true);
     assert.ok(item.scenarioIds.includes('offline-import-reopen'));
     assert.ok(item.scenarioIds.includes('package-update-and-user-data-recovery'));
     assert.deepEqual(item.blockedChecks,['PACKAGE-03','SAVE-06']);

@@ -771,9 +771,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/offline-runtime-b
         {id:'SAVE-06',status:'partial',complete:false,scope:'selected game, synchronized Replay across package generations',evidence:'The second ZIP changed the package descriptor generation while retaining the same DATA identity; the synchronized Replay remained byte-identical through the new-generation Runtime and offline launch. Score/configuration and changed-DATA recovery were not exercised.'}:
         {id:'SAVE-06',status:'blocked',reason:report.packageUpdate.reason},
     ];
-    Object.assign(report,offlineRuntimeOutcome({scenarioPassed:true,checks:report.checks}));
-    report.scenarios=[report.scenario,updateScenario??{id:'package-update-and-user-data-recovery',status:'not-run',passed:false,
-      reason:report.packageUpdate.reason}];
+    Object.assign(report,offlineRuntimeOutcome({scenarioPassed:true,checks:report.checks,updateScenario}));
     report.result=updateInput?
       'HTTPS Launcher import, package generation retry, Replay recovery and offline Runtime startup passed. PACKAGE-03 and SAVE-06 adaptation coverage remains partial.'
       :'HTTPS Launcher import, Runtime startup and offline user-file recovery passed. PACKAGE-03 and SAVE-06 remain blocked until a second-generation update manifest is selected.';

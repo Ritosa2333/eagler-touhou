@@ -82,7 +82,8 @@ function makeCase({root,output,id,game,variant,group,scenarioIds,checks,script,a
   const blockedChecks=[...new Set(blockedScenarios.flatMap(scenario=>scenario.checks))];
   return{
     id,game,variant,group,scenarioIds:[...scenarioIds],...(scenarioIds.length===1?{scenarioId:scenarioIds[0]}:{}),
-    checks:[...checks],status,task,requiredInputs:[...requiredInputs],inputs:inputNames,blockedInputs,
+    checks:[...checks],status,task,requiresLauncherBuild:['offline','offline-update'].includes(group),
+    requiredInputs:[...requiredInputs],inputs:inputNames,blockedInputs,
     blockedScenarios:blockedScenarios.map(scenario=>({...scenario,checks:[...scenario.checks]})),blockedChecks,
     reportPath,...(reason?{reason}:{}),...extra.caseFields,
   };

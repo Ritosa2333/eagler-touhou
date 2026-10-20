@@ -16,7 +16,7 @@
     "th075": {
       "variants": {
         "normal": { "kind": "script", "script": "portable/package-eagler.mjs", "args": [], "output": "build-eagler", "entry": "th075.html", "wasmFile": "th075.wasm", "controlFiles": ["portable/package-eagler.mjs"] },
-        "multiplayer": { "kind": "script", "script": "portable/package-eagler.mjs", "args": ["--multiplayer"], "output": "build-eagler-multiplayer", "entry": "th075.html", "wasmFile": "th075.wasm", "controlFiles": ["portable/package-eagler.mjs"] }
+        "multiplayer": { "kind": "script", "script": "portable/package-eagler.mjs", "args": ["--multiplayer"], "output": "build-eagler-multiplayer", "entry": "th075.html", "wasmFile": "th075.wasm", "controlFiles": ["portable/package-eagler.mjs"], "sharedControlFiles": ["common/browser/adonis-calibration.mjs"] }
       }
     },
     "th08": {

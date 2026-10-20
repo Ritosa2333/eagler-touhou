@@ -14,14 +14,15 @@ for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))if(
 const names=['th075.html','manifest.json','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','display.mjs','content-bundle.mjs','save-sync.mjs',...(multiplayer?['multiplayer.mjs','adonis-calibration.mjs']:[]),'th075.mjs','th075.wasm'];
 if(existsSync(out))for(const name of readdirSync(out))if(![...names,'runtime-files.json'].includes(name))throw Error('Unexpected Runtime file: '+name);
 mkdirSync(out,{recursive:true});const put=(name,bytes)=>writeFileSync(resolve(out,name),bytes);
+const variant=multiplayer?'multiplayer':'normal',product=multiplayer?'th075mp':'th075',profile=multiplayer?'multiplayer':'production';
 const version=(multiplayer?'1.0.4-eagler-mp-':'1.0.4-eagler-')+build.sha256.slice(0,12);
-put('th075.html',readFileSync(resolve(runtime,'managed.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">').replace('src="managed.mjs"','src="shell.mjs"'));
+put('th075.html',readFileSync(resolve(runtime,'managed.html'),'utf8').replace('<head>',`<head><meta name="eagler-runtime-variant" content="${variant}"><meta name="eagler-runtime-product" content="${product}"><meta name="eagler-data-provider" content="retail-memory">`).replace('src="managed.mjs"','src="shell.mjs"'));
 put('shell.mjs',readFileSync(resolve(runtime,'shell.mjs'),'utf8').replace("/*TH075_EAGLER_BUILD*/{version:'development',completeGame:false}",JSON.stringify({version,completeGame:true,multiplayer,builtAt:build.builtAt})));
 for(const name of ['managed.css','keyboard.mjs','directory-keyboard.mjs','display.mjs','save-sync.mjs'])put(name,readFileSync(resolve(runtime,name)));
 put('content-bundle.mjs',readFileSync(resolve(root,'portable/content-bundle.mjs')));
 if(multiplayer){put('multiplayer.mjs',readFileSync(resolve(runtime,'multiplayer.mjs')));put('adonis-calibration.mjs',readFileSync(resolve(common,'browser/adonis-calibration.mjs')));}
 put('th075.mjs',readFileSync(resolve(built,'th075.mjs')));put('th075.wasm',wasm);
-put('manifest.json',JSON.stringify({game:'th075',protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:'production',multiplayer,version,builtAt:build.builtAt,features:{thprac:false,languages:true,focusHitbox:false},music:['ogg','none'],execution:{kind:build.kind,sha256:build.sha256}},null,2)+'\n');
+put('manifest.json',JSON.stringify({game:'th075',product,variant,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile,multiplayer,version,builtAt:build.builtAt,features:{thprac:false,languages:true,focusHitbox:false},music:['ogg','none'],execution:{kind:build.kind,sha256:build.sha256}},null,2)+'\n');
 const files=Object.fromEntries(names.map(name=>{const bytes=readFileSync(resolve(out,name));return [name,{bytes:bytes.length,sha256:hash(bytes)}];}));
-put('runtime-files.json',JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game:'th075',files},null,2)+'\n');
+put('runtime-files.json',JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game:'th075',product,variant,files},null,2)+'\n');
 console.log(JSON.stringify({out,version,files:names.length,wasm:build.sha256}));
