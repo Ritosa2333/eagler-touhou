@@ -132,6 +132,7 @@ public:
     int mp_target(Vec3,bool power=false)const noexcept;
     bool mp_all_power_full()const noexcept;
     bool mp_collect(ItemState&,bool&);
+    bool mp_refund_transfer(ItemState&,i32 amount);
     bool mp_draw_players(AnmRenderer&);
     bool mp_draw_local_hud(AnmRenderer&);
     bool mp_draw_hud(AnmRenderer&);
@@ -151,6 +152,7 @@ public:
     i32 multiplayer_boss_damage(EnemyState&,i32)override;
     bool multiplayer_bullet_collision(const BulletState&,u8&,i32&)override;
     bool multiplayer_item_player(ItemState&,ItemPlayer&)override;
+    bool multiplayer_refund_transfer(ItemState& item,i32 amount)override{return mp_refund_transfer(item,amount);}
     bool multiplayer_power_full()const override{return mp_all_power_full();}
     unsigned multiplayer_item_copies(i32 type)const override{return !mp_enabled?1:type==1||type==4||type==10||type==11?mp_options.seat_count:type==7?mp_options.seat_count-1:1;}
     bool multiplayer_attract_players(const EnemyState& e)override{return mp_attract_players(e);}

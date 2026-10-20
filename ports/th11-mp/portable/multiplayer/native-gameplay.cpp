@@ -131,7 +131,16 @@ void rules_cases(const std::vector<u8>& bytes){
     for(auto& pilot:w.pilots)if(pilot)pilot->player->state.invincibility.set(100000,&w.animations.rate);
     put(*p.player,0,400);put(*q.player,10,400);put(*r.player,100,400);p.economy.power=40;q.economy.power=0;
     for(unsigned i=0;i<5;++i){in[0].held=1;step(*peer,in);in[0].held=0;step(*peer,in);}
-    for(unsigned i=0;i<15;++i)step(*peer,in);check(p.economy.power==20&&q.economy.power==12,"cross-loadout transfer consumes and grants one native level");
+    for(unsigned i=0;i<15;++i)step(*peer,in);check(p.economy.power==20&&q.economy.power==20,"cross-loadout transfer moves the donor's exact recorded level");
+    // Near-full receiver (#92 core): emission is clamped to the receiver's
+    // remaining headroom, and a mid-flight gain refunds the clamp difference
+    // to the donor instead of vanishing at the receiver's maximum.
+    p.economy.power=40;q.economy.power=q.economy.max_power-8;
+    for(unsigned i=0;i<5;++i){in[0].held=1;step(*peer,in);in[0].held=0;step(*peer,in);}
+    check(p.economy.power==32&&q.economy.power==q.economy.max_power-8,"near-full emission deducts only the receiver's headroom");
+    q.economy.power=q.economy.max_power-3; // a native P lands while the gift flies
+    for(unsigned i=0;i<15;++i)step(*peer,in);
+    check(p.economy.power==37&&q.economy.power==q.economy.max_power,"mid-flight clamp difference returns to the donor");
     p.economy.lives=3;q.economy.lives=1;for(unsigned i=0;i<90;++i){in[0].held=8;step(*peer,in);}for(unsigned i=0;i<15;++i)step(*peer,in);check(p.economy.lives==2&&q.economy.lives==2,"life transfer item delivery");
     for(unsigned i=0;i<95;++i)step(*peer,in);check(p.economy.lives==2,"life transfer latches until focus release");
     in={};step(*peer,in);q.economy.lives=-1;check(q.game_over(false),"native final death becomes ghost");

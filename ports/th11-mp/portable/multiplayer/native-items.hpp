@@ -74,12 +74,12 @@ void item_risk_cases(const std::vector<u8>& bytes){
     put(*q.player,gift.position.x,gift.position.y);place(0,-150,350);place(2,150,350);
     const int ghost_power=q.economy.power;check(w.items.update(),"detach Power from ghost recipient");
     check(w.items.multiplayer_targets[0]==-1&&gift.state==1&&gift.type==4,"ghost-directed Power becomes ordinary field Power");
-    check(q.economy.power==ghost_power&&p.economy.power==paid,"detachment neither feeds ghost nor refunds donor");
+    check(q.economy.power==ghost_power&&p.economy.power==40,"detachment never feeds the ghost and refunds the donor in full");
     for(unsigned frame=0;frame<8;++frame)check(w.items.update(),"detached Power remains in native falling pool");
     check(gift.state==1&&q.ghost,"ordinary detached item does not revive or feed its ghost");
     place(2,gift.position.x,gift.position.y);const int receiver_power=r.economy.power;
     check(w.items.update()&&gift.state==0&&r.economy.power==receiver_power+r.economy.power_step,"legal living player collects detached Power using own native step");
-    check(q.economy.power==ghost_power&&p.economy.power==paid,"later collection preserves ghost and donor resource balances");
+    check(q.economy.power==ghost_power&&p.economy.power==40,"later collection preserves ghost and refunded donor balance");
 
     // A fragment after the last Power pickup in the same ItemManager update
     // must not clear the pending all-Power-full conversion of remaining items.
@@ -95,5 +95,5 @@ void item_risk_cases(const std::vector<u8>& bytes){
         converted+=item.type==9;remaining_power+=item.type==1||item.type==4||item.type==10||item.type==11;
     }
     check(converted>0&&remaining_power==0,"later fragment cannot clear all-full field-Power conversion");
-    std::puts("PASS: native eligibility-before-nearest, focus/age/apex/pickup phases, Power ghost detachment, same-tick conversion");
+    std::puts("PASS: native eligibility-before-nearest, focus/age/apex/pickup phases, Power ghost detachment with donor refund, same-tick conversion");
 }

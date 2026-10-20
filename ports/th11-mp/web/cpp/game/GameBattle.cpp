@@ -153,6 +153,11 @@ bool GameBattle::next_stage(GameResources& source,u32 number){
     enemy_commands.stage_section=0;enemy_commands.section_frame=0;
     for(auto& value:enemy_environment.shared_integers)value=0;
     shakes.effects.clear();shakes.offset={};
+#ifdef TH11_MULTIPLAYER
+    // The stage wipe must not swallow an in-flight directed Power transfer:
+    // settle every pending transfer back to its donor before the pool resets.
+    if(!items.refund_all_transfers())return false;
+#endif
     items.reset();animations.rate=enemy_environment.rate=1;
     economy.communication=0;communication.reset(&animations.rate);
     outgoing_stage=std::move(stage);
@@ -187,6 +192,10 @@ bool GameBattle::activate_stage(){
 #endif
     if(!player->start_stage())return false;
     if(replaying&&!player->restore_replay_position(replay_entry))return false;
+#ifdef TH11_MULTIPLAYER
+    // Activation wipes the pool too; refund in-flight directed Power first.
+    if(!items.refund_all_transfers())return false;
+#endif
     items.reset();
     if(!enemies.reset(resources.stage->timeline))return false;
     animations.retire_resource(resources.core.enemy);animations.retire_resource(resources.stage->enemies);

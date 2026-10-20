@@ -1,5 +1,6 @@
 #include "../../web/cpp/game/BulletManager.hpp"
 #include "../../web/cpp/game/ItemManager.hpp"
+#include "../../web/cpp/game/ItemRewards.hpp"
 #include "../../web/cpp/game/AnmRenderer.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <cstdio>
@@ -40,13 +41,14 @@ struct Graphics final:ZunGraphics{
     bool clear_target(u32,const GraphicsViewport*)override{return true;}
 };
 struct World final:BulletWorld,ItemWorld{
-    bool multiplayer=false;unsigned effects=0;
+    bool multiplayer=false;unsigned effects=0,refunds=0;i32 refund_amount=-1;std::vector<i32> refund_log;
     bool multiplayer_world()const override{return multiplayer;}
     Vec3 multiplayer_target(Vec3)const override{return {0,400,0};}
     bool multiplayer_bullet_collision(const BulletState&,u8& grazed,i32& hit)override{grazed|=3;hit=0;return true;}
     bool multiplayer_item_player(ItemState&,ItemPlayer&)override{return true;}
     unsigned multiplayer_item_copies(i32 type)const override{return type==1||type==4?3:1;}
     bool multiplayer_power_full()const override{return false;}
+    bool multiplayer_refund_transfer(ItemState&,i32 amount)override{++refunds;refund_amount=amount;refund_log.push_back(amount);return true;}
     i32 collision(const BulletState&)override{return 0;}
     bool effect(const Vec3&,i32)override{++effects;return true;}
     bool effect(Vec3,i32)override{++effects;return true;}
@@ -143,9 +145,103 @@ void item_cases(){
     roundtrip(m,j,4,[&]{check(m.spawn(1,{0,0,0})==0,"full ordinary item return preserved");check(!m.spawn_transfer(4,{0,0,0},1),"full transfer rejects");});
     m.reset();
     roundtrip(m,j,5,[&]{m.at(19).reserved_44c=12.5f;check(m.activate(m.at(19)),"explicit inactive activation");m.multiplayer_spawning_transfer=true;m.player.communication=13000;});
+    // Directed Power transfers keep donor/amount sidecars, restore them on
+    // rollback, and refund the recorded amount whenever the item leaves play
+    // without delivering it (issue #92: near-full receivers and destroyed
+    // gifts swallowed the donor's Power).
+    check(ItemManager::multiplayer_transfer_amount(100,0,400)==100,"transfer sized to the donor step for an empty receiver");
+    check(ItemManager::multiplayer_transfer_amount(100,397,400)==3,"near-full receiver clamps the transfer to its headroom");
+    check(ItemManager::multiplayer_transfer_amount(100,400,400)==0,"full receiver leaves nothing to transfer");
+    check(ItemManager::multiplayer_transfer_amount(100,402,400)==0,"overflowed receiver state still transfers nothing");
+    f.world.multiplayer=true;
+    m.reset();
+    roundtrip(m,j,6,[&]{check(m.spawn_transfer(4,{0,100,0},2,1,3),"directed transfer records donor and amount");
+        check(m.multiplayer_targets[0]==2&&m.multiplayer_transfer_donors[0]==1&&m.multiplayer_transfer_amounts[0]==3,"transfer sidecars recorded");
+        check(m.at(0).state==3,"transfer item enters homing state");});
+    check(m.multiplayer_transfer_donors[0]==-1&&m.multiplayer_transfer_amounts[0]==0&&m.multiplayer_targets[0]==-1,"undo restores neutral transfer sidecars");
+    m.reset();m.player=ItemPlayer{};m.player.state=2;m.player.position={0,400,0};
+    check(m.spawn_transfer(4,{0,100,0},2,1,3),"offscreen-path transfer spawns");
+    m.at(0).state=1;m.at(0).position={0,480,0};m.at(0).velocity={0,3,0};
+    check(m.update(),"offscreen directed item settles");
+    check(f.world.refunds==1&&f.world.refund_amount==3,"offscreen destruction refunds the recorded amount");
+    check(m.multiplayer_transfer_donors[0]==-1&&m.multiplayer_transfer_amounts[0]==0&&m.multiplayer_targets[0]==-1,"refund clears the transfer sidecars");
+    check(m.at(0).state==0,"offscreen directed item is destroyed once");
+    m.reset();
+    check(m.spawn_transfer(4,{0,100,0},2,0,5),"convert-path transfer spawns");
+    check(m.convert_power_items(),"whole-pool conversion runs with a directed item in flight");
+    check(f.world.refunds==2&&f.world.refund_amount==5,"conversion refunds the donor");
+    check(m.multiplayer_transfer_donors[0]==-1&&m.multiplayer_transfer_amounts[0]==0,"conversion clears the transfer sidecars");
+    m.reset();m.player=ItemPlayer{};m.player.state=1;m.player.position={0,400,0};
+    m.player.pickup={-20,80,20,120};
+    check(m.spawn_transfer(4,{0,100,0},2,1,2),"pickup-path transfer spawns");
+    check(m.update(),"directed item homing reaches the collector");
+    check(f.world.refunds==2,"a collected directed item asks for no destruction refund");
+    check(m.multiplayer_transfer_donors[0]==-1&&m.multiplayer_transfer_amounts[0]==0,"pickup clears the transfer sidecars");
+    check(m.at(0).state==0,"collected directed item is consumed");
+    f.world.multiplayer=false;
 }
-void multi_frame_and_ownership(){
-    Fixture f;auto& b=*f.bullets;auto& i=*f.items;auto j=journal();const Image<BulletManager> beforeB(b);const Image<ItemManager> beforeI(i);
+struct RewardEffects final:ItemRewardEffects{
+    unsigned sounds=0,popups=0,notifies=0,power_changes=0;
+    bool sound(i32,float,bool)override{++sounds;return true;}
+    bool popup(Vec3,i32,u32)override{++popups;return true;}
+    bool notify(i32)override{++notifies;return true;}
+    bool power_changed()override{++power_changes;return true;}
+    bool lives_changed(i32,i32)override{return true;}
+};
+void transfer_settlement_cases(){
+    // Issue #92 conservation, pinned against the real ItemRewards::add_power
+    // clamp and the real emission formula the battle settlement calls. The
+    // donor-side refund expression mirrors GameBattle::mp_refund_transfer.
+    {RewardEffects effects;GameEconomy donor,receiver;
+     donor.max_power=80;donor.power_step=20;donor.power=80;
+     receiver.max_power=96;receiver.power_step=12;receiver.power=90;
+     const i32 amount=ItemManager::multiplayer_transfer_amount(donor.power_step,receiver.power,receiver.max_power);
+     check(amount==6,"near-full emission is clamped to the receiver's headroom");
+     donor.power-=amount;ItemRewards rewards(receiver,effects);bool changed=false;
+     check(rewards.add_power(amount,changed),"near-full pickup settles inside the headroom");
+     check(receiver.power==receiver.max_power&&changed,"closing level advances the power level counter");
+     check(donor.power+receiver.power==80+90,"power total is conserved across a clamped transfer");
+    }
+    {RewardEffects effects;GameEconomy donor,receiver;
+     donor.max_power=80;donor.power_step=20;donor.power=80;
+     receiver.max_power=96;receiver.power_step=12;receiver.power=88;
+     const i32 amount=ItemManager::multiplayer_transfer_amount(donor.power_step,receiver.power,receiver.max_power);
+     check(amount==8,"transfer is sized to an eight-point headroom");
+     donor.power-=amount;receiver.power=94; // a native P lands while the gift flies
+     ItemRewards rewards(receiver,effects);bool changed=false;
+     check(rewards.add_power(amount,changed),"mid-flight pickup clamps at the receiver maximum");
+     const i32 delivered=receiver.power-94;check(delivered==2,"only the remaining headroom is delivered");
+     const i32 refunded=amount-delivered;
+     donor.power=donor.power+refunded>donor.max_power?donor.max_power:donor.power+refunded;
+     check(donor.power==78&&receiver.power==96,"clamp difference returns to the donor");
+     check(donor.power+receiver.power==(80-8+94)+amount,"mid-flight gain splits the amount with zero loss");
+    }
+    {RewardEffects effects;GameEconomy receiver;receiver.max_power=96;receiver.power_step=12;receiver.power=96;
+     ItemRewards rewards(receiver,effects);bool changed=true;
+     check(rewards.add_power(8,changed)&&!changed&&receiver.power==96,"a full receiver early-outs without granting");
+    }
+    {GameEconomy donor;donor.max_power=80;donor.power_step=20;donor.power=79;const i32 refund=6;
+     donor.power=donor.power+refund>donor.max_power?donor.max_power:donor.power+refund;
+     check(donor.power==80,"a refund never overflows the donor's own maximum");
+    }
+    // Stage wipes settle every in-flight transfer before the pool resets.
+    Fixture f;auto& m=*f.items;f.world.multiplayer=true;m.reset();
+    check(m.spawn(2,{0,100,0})==0,"ordinary item flies alongside transfers");
+    check(m.spawn_transfer(4,{-20,100,0},2,1,3)&&m.spawn_transfer(4,{20,100,0},2,0,5),"two directed transfers in flight");
+    check(m.multiplayer_transfer_donors[1]==1&&m.multiplayer_transfer_amounts[1]==3&&
+          m.multiplayer_transfer_donors[2]==0&&m.multiplayer_transfer_amounts[2]==5,"both transfers are booked");
+    check(m.refund_all_transfers(),"stage wipe settles pending transfers");
+    check(f.world.refunds==2&&f.world.refund_log.size()==2&&f.world.refund_log[0]==3&&f.world.refund_log[1]==5,
+          "every in-flight transfer is refunded with its recorded amount");
+    check(m.multiplayer_transfer_donors[1]==-1&&m.multiplayer_transfer_amounts[2]==0&&m.multiplayer_targets[1]==-1,
+          "settlement clears every transfer sidecar");
+    check(m.at(1).state==3&&m.at(2).state==3&&m.at(0).state==1,"settlement leaves item destruction to the pool reset");
+    check(m.refund_all_transfers()&&f.world.refunds==2,"a second settlement is a no-op");
+    f.world.multiplayer=false;
+    check(m.refund_all_transfers()&&f.world.refunds==2,"an ordinary world needs no settlement");
+    ++cases;
+}
+void multi_frame_and_ownership(){Fixture f;auto& b=*f.bullets;auto& i=*f.items;auto j=journal();const Image<BulletManager> beforeB(b);const Image<ItemManager> beforeI(i);
     for(u32 frame=0;frame<3;++frame){check(j.BeginFrame(frame),"multi-owner open");check(b.BeginRollbackFrame(j)&&i.BeginRollbackFrame(j),"shared journal distinct owners");
         check(b.spawn(f.emitter(),0,0,0)==0&&i.spawn(1,{float(frame),100,0})==0,"multiple frame production spawns");
         b.EndRollbackFrame();i.EndRollbackFrame();check(j.EndFrame(),"multi-owner seal");}
@@ -224,7 +320,7 @@ void retained_slot_aliases(){
     auto& item=items.at(0);const auto value=item;item.state=0;check(items.update()&&items.active_count==0,"alias item removal");
     item=value;check(items.update()&&items.active_count==1,"alias item reactivation");
 }
-int main(){bullet_cases();item_cases();multi_frame_and_ownership();failures();retained_slot_aliases();
+int main(){bullet_cases();item_cases();transfer_settlement_cases();multi_frame_and_ownership();failures();retained_slot_aliases();
     activity_order_cases<1>();activity_order_cases<31>();activity_order_cases<32>();activity_order_cases<33>();activity_order_cases<65>();
     std::printf("PASS: TH11 real BulletManager/ItemManager rollback component: %u cases, %u checks\n",cases,checks);
     std::puts("Scope: manager/pool byte restoration, real interpreter/draw, allocation/reset paths; no Application, shared RNG, audio, network, whole-world rollback or performance claim.");

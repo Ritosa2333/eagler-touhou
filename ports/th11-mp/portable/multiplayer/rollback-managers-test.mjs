@@ -13,7 +13,7 @@ if(existsSync(resolve(out,'receipt.json')))throw Error('Output receipt already e
 mkdirSync(out,{recursive:true});
 const common=resolve(root,'../../common');
 const game=resolve(root,'web/cpp/game');
-const names=['BulletManager','ItemManager','BulletAppearance','BulletLaunch','BulletMotion','BulletTransforms','Movement','EnemyState',
+const names=['BulletManager','ItemManager','ItemRewards','BulletAppearance','BulletLaunch','BulletMotion','BulletTransforms','Movement','EnemyState',
     'AnmVm','AnmInterpreter','AnmGeometry','AnmProjection','AnmRenderer','AnmManager','AnmRollback','Interpolation','GraphicsMath','SceneCamera'];
 const sources=[...names.map(s=>resolve(game,s+'.cpp')),resolve(common,'src/netplay/RollbackJournal.cpp'),resolve(import.meta.dirname,'rollback-managers-test.cpp')];
 const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]);

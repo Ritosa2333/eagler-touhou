@@ -67,6 +67,10 @@ std::vector<unsigned char> run(unsigned count,unsigned delay,bool challenge=fals
   corrupt=bytes;corrupt[21]=static_cast<unsigned char>((s+1)%count);checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
   corrupt=bytes;corrupt[136]=2;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size())); // measured mode word
   corrupt=bytes;corrupt[164]=2;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size())); // invalid challenge flag
+  // Frozen gameplay contract: replays recorded before the Power transfer
+  // refund settlement (GameplayVersion 1) are rejected, never reinterpreted.
+  // The encoded description starts at byte 40; its gameplay word is at +8.
+  corrupt=bytes;corrupt[48]=SessionSetup::GameplayVersion-1;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
   CHECK(!ReplayArchive::Validate(bytes.data(),bytes.size()-1));
  }
  link(players,count);
