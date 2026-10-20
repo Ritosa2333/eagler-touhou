@@ -55,6 +55,7 @@ export interface LauncherHost {
   runtimeOpen?: boolean;
   replayWorkspace?: boolean;
   roomWorkspace?: boolean;
+  roomPlayerExpanded?: boolean;
   runtimeLaunched?: boolean;
   titleOverlayOpen?: boolean;
   requestRuntimeClose?(): Promise<boolean>;
@@ -156,7 +157,7 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
       lobbyHref={host.lobbyHref} roomUsersArtwork={host.assetUrl('assets/room-users.svg')} optionsOpen={presence.open} roomOpen={roomOpen} roomDrawer={host.roomDrawer} onBack={navigation.closeSurface}>
       {host.replayWorkspace && !roomOpen ? null : settingsPanel}{host.roomSurface}
     </LibrarySurface>}
-    <PlayerSurface roomWorkspace={roomWorkspace} replayWorkspace={host.replayWorkspace} preview={host.bootTouchPreview} previewImage={host.bootTouchPreviewImage} onElement={setPlayerElement} onFrame={host.runtimeFrame} open={roomWorkspace || navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} editing={navigation.surface === 'touch'}>{host.runtimeControls}</PlayerSurface>
+    <PlayerSurface roomWorkspace={roomWorkspace} replayWorkspace={host.replayWorkspace} preview={host.bootTouchPreview} previewImage={host.bootTouchPreviewImage} onElement={setPlayerElement} onFrame={host.runtimeFrame} open={roomWorkspace || roomOpen && host.roomPlayerExpanded === true || navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} editing={navigation.surface === 'touch'}>{host.runtimeControls}</PlayerSurface>
     {editor}{host.overlays}
   </OptionsOwnership>;
 }
