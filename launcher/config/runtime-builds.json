@@ -126,10 +126,10 @@
     },
     "th075": {
       "builder": "prebuilt", "workspaceRepository": "th075",
-      "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl.mjs", "--release", "--eagler"] },
+        "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl.mjs", "--release", "--eagler"], "execution": "web/artifacts/sdl3/th075.wasm" },
       "variants": {
         "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} },
-        "multiplayer": { "workspaceRepository": "th075mp", "sourceBuild": { "build": ["web/scripts/build-sdl.mjs", "--release", "--eagler", "--multiplayer"] }, "features": { "thcrap": false, "thprac": false }, "cache": {} }
+          "multiplayer": { "workspaceRepository": "th075mp", "sourceBuild": { "build": ["web/scripts/build-sdl.mjs", "--release", "--eagler", "--multiplayer"], "execution": "web/artifacts/sdl3-multiplayer/th075.wasm" }, "features": { "thcrap": false, "thprac": false }, "cache": {} }
       }
     },
     "th08": {

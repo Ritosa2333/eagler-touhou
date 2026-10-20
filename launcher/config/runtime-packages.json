@@ -13,6 +13,12 @@
         "multiplayer": { "kind": "cmake", "output": "build-eagler/multiplayer", "entry": "th07.html", "wasmFile": "th07.wasm", "files": ["th07.html", "th07.js", "th07.wasm"] }
       }
     },
+    "th075": {
+      "variants": {
+        "normal": { "kind": "script", "script": "portable/package-eagler.mjs", "args": [], "output": "build-eagler", "entry": "th075.html", "wasmFile": "th075.wasm", "controlFiles": ["portable/package-eagler.mjs"] },
+        "multiplayer": { "kind": "script", "script": "portable/package-eagler.mjs", "args": ["--multiplayer"], "output": "build-eagler-multiplayer", "entry": "th075.html", "wasmFile": "th075.wasm", "controlFiles": ["portable/package-eagler.mjs"] }
+      }
+    },
     "th08": {
       "variants": {
         "normal": { "kind": "script", "script": "portable/package-eagler.mjs", "args": [], "output": "build-eagler", "entry": "th08.html", "wasmFile": "th08-sdl.wasm", "controlFiles": ["portable/package-eagler.mjs", "portable/presentation-lab/native-abi.mjs"] },

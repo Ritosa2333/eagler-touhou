@@ -15,6 +15,7 @@ import {verifyRuntimePackageBuildOutputs} from '../lib/runtime-package-evidence.
 import {PRODUCT_GAMES} from '../lib/contracts/product-catalog.mjs';
 
 const project = resolve(import.meta.dirname, '../..');
+const variantCount=Object.values(PRODUCT_GAMES).reduce((total,product)=>total+1+Number(!!product.multiplayerRuntime),0);
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const identity = (name, bytes) => ({bytes: bytes.length, sha256: hash(bytes)});
 const workspace = await mkdtemp(join(tmpdir(), 'runtime-package-evidence-'));
@@ -70,7 +71,7 @@ try {
   assert.deepEqual(Object.keys(config.games), Object.keys(PRODUCT_GAMES));
   const plans = Object.entries(config.games).flatMap(([game, value]) => Object.keys(value.variants).map(variant =>
     resolveRuntimePackagePlan(game, variant, project)));
-  assert.equal(plans.length, 15, 'formal package plans cover all fifteen Runtime variants');
+  assert.equal(plans.length, variantCount, 'formal package plans cover every catalogued Runtime variant');
   assert.equal(plans.filter(plan => plan.kind === 'cmake').length, 4, 'th06/th07 use the CMake code-only packager');
   const sourceOutputOwners=new Map();
   for (const plan of plans) {
@@ -188,4 +189,4 @@ try {
   await rm(workspace, {recursive: true, force: true});
 }
 
-console.log(JSON.stringify({runtimePackageEvidence: 'PASS', variants: 15, schema: RUNTIME_PACKAGE_BUILD_SCHEMA}));
+console.log(JSON.stringify({runtimePackageEvidence: 'PASS', variants: variantCount, schema: RUNTIME_PACKAGE_BUILD_SCHEMA}));

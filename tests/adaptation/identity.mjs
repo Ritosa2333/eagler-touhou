@@ -52,8 +52,18 @@ export function createCaseIdentityReader({root,environment}){
       testCase.task.args[0],'tests/run.mjs','tests/adaptation/catalog.mjs','tests/adaptation/execution.mjs',
       'tests/adaptation/results.mjs','tests/adaptation/identity.mjs','tools/testing/runner.mjs','tools/testing/supervise.py',
       'launcher/package.json','launcher/package-lock.json','docs/adaptation/checklist.json',
+      'launcher/src/launcher/gamepad-mapping.mts','launcher/app/services/player-gamepad.ts','launcher/tests/fixtures/virtual-gamepads.mjs',
+      ...(isOffline?['launcher/scripts/build-launcher.mjs']:[]),
     ]));
     const inputs={products,shared};
+    if(isOffline)inputs.launcherSources=await once('launcher-sources',async()=>{
+      const launcher=resolve(root,'launcher'),directories=await Promise.all(
+        ['app','src','public','lib','scripts','config'].map(async directory=>[directory,identityDigest(await tree(resolve(launcher,directory)))]));
+      const rootFiles=await Promise.all((await readdir(launcher,{withFileTypes:true}))
+        .filter(entry=>entry.isFile()&&/\.(?:[cm]?[jt]s|jsonc?|css|html)$/.test(entry.name))
+        .map(async entry=>[entry.name,await file(resolve(launcher,entry.name))]));
+      return{directories:Object.fromEntries(directories),rootFiles:Object.fromEntries(rootFiles)};
+    });
     if(/(?:runtime-browser|replay-browser|offline-runtime-browser)\.mjs$/.test(testCase.task.args[0]))
       inputs.replays=await Promise.all(targets.filter(target=>!isOffline||target.variant==='normal').map(target=>
         once(`replay:${target.id}`,async()=>(await loadRuntimeReplayFixture(target)).identity)));

@@ -16,7 +16,7 @@ node launcher/scripts/build-runtime.mjs --game=th10 --variant=normal --emsdk=/pa
 
 将 SDK 路径换成本机路径；确认计划后去掉 `--dry-run` 执行编译。MP 使用 `--variant=multiplayer`。
 
-th06、th07 共目录双构建；th08、th10、th11、th15 分普通版和 MP 目录；th09 共目录并保留两种产品身份。
+th06、th07 共目录双构建；th075、th08、th10、th11、th15 分普通版和 MP 目录；th09 共目录并保留两种产品身份。
 
 每个成功构建后使用统一入口生成 Launcher Runtime 与包凭据：
 
@@ -26,6 +26,8 @@ node launcher/scripts/package-runtime.mjs --game=th10 --variant=multiplayer
 ```
 
 入口按正式配方调用作品打包器，或从本次 CMake 构建复制 HTML、JS、WASM，并核对来源凭据。闭集包输出沿用 Launcher 的作品目录；包凭据写入 `artifacts/validation/runtime-packages/<作品>-<模式>.json`，记录入口、整包身份、完整文件清单、当前源码输入和打包控制文件。th06、th07 的代码包位于 `build-eagler/{normal,multiplayer}/`；DATA 与预加载 JS 继续来自 `build/web/{normal,multiplayer}/`，在开发站点中作为内容输入提供。
+
+产品目录、构建配方与打包清单逐变体对应。th075 的普通版执行文件位于 `web/artifacts/sdl3/th075.wasm`，MP 位于 `web/artifacts/sdl3-multiplayer/th075.wasm`，统一入口按各自源码目录生成代码包。CI 从产品目录核对全部变体，新增作品随登记进入构建与打包身份检查。
 
 ## 工具链
 

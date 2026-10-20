@@ -53,3 +53,17 @@ test('a completed scenario cannot certify an adaptation ID without complete proo
   const coverage=adaptationCoverage(cases);assert.equal(coverage.complete,false);assert.equal(coverage.rows[0].status,'partial');
   assert.equal(coverage.rows[0].evidence[0].execution,'retained');
 });
+
+test('product-declared N/A combinations do not invalidate complete supported evidence',()=>{
+  const cases=[{...selected,id:'2p',status:'passed',checks:[{id:'INPUT-01',status:'passed',complete:true}]},
+    {...selected,id:'3p',status:'not-applicable',checks:[]}];
+  assert.equal(adaptationCoverage(cases).complete,true);
+});
+
+test('every selected applicable route must carry its own complete numbered proof',()=>{
+  const cases=[{...selected,id:'rtc',status:'passed',checks:[{id:'INPUT-01',status:'passed',complete:true}]},
+    {...selected,id:'relay',status:'passed',checks:[]}];
+  assert.equal(adaptationCoverage(cases).complete,false);
+  cases[1].checks=[{id:'INPUT-01',status:'passed',complete:false}];assert.equal(adaptationCoverage(cases).complete,false);
+  cases[1].checks[0].complete=true;assert.equal(adaptationCoverage(cases).complete,true);
+});

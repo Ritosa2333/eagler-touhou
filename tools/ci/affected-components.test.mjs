@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {affectedComponents,ciJobCoverage,nodeBuildTargets} from './affected-components.mjs';
+import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
+const expectedVariantCount=Object.values(PRODUCT_GAMES).reduce((total,product)=>total+1+Number(!!product.multiplayerRuntime),0);
+const expectedNodeCount=expectedVariantCount-4;
 const workspace = JSON.parse(await readFile(new URL('../../launcher/config/workspace.json', import.meta.url), 'utf8'));
 const builds = JSON.parse(await readFile(new URL('../../launcher/config/runtime-builds.json', import.meta.url), 'utf8'));
 const workflow = await readFile(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8');
@@ -93,7 +96,7 @@ test('runtime source-build implementation changes compile every CI Runtime varia
   ];
   const allTargets = nodeBuildTargets(affectedComponents(null, workspace, builds), workspace, builds)
     .map(({game, variant}) => `${game}/${variant}`).sort();
-  assert.equal(allTargets.length, 11, 'the node source-build matrix should contain every declared Node variant');
+  assert.equal(allTargets.length, expectedNodeCount, 'the node source-build matrix should contain every catalogued Node variant');
   const allBuildOwners = [...new Set(Object.entries(builds.games).flatMap(([game, entry]) =>
     Object.values(entry.variants).map(definition => workspace.repositories[definition.workspaceRepository ?? entry.workspaceRepository])))];
   const affectedOwners = [...new Set(['launcher', ...allBuildOwners])].sort();
@@ -114,8 +117,8 @@ test('runtime source-build implementation changes compile every CI Runtime varia
       cmakeWebVariants.push(`${game}/${variant}`);
     }
   }
-  assert.equal(allTargets.length + cmakeWebVariants.length, 15,
-    'the CI build consumers consist of 11 Node recipes and four TH06/TH07 Web matrix entries');
+  assert.equal(allTargets.length + cmakeWebVariants.length, expectedVariantCount,
+    'the CI build consumers cover every catalogued normal and multiplayer product');
 
   for (const input of inputs) {
     const affected = affectedComponents([input], workspace, builds);
@@ -139,7 +142,7 @@ test('Runtime build infrastructure scope composes with an independently changed 
   const relay = workspace.repositories.relay;
   const affected = affectedComponents(['launcher/lib/runtime-source-plan.mjs', relay + '/src/netplay-relay.mjs'], workspace, builds);
   assert(affected.includes(relay));
-  assert.equal(nodeBuildTargets(affected, workspace, builds).length, 11);
+  assert.equal(nodeBuildTargets(affected, workspace, builds).length, expectedNodeCount);
 });
 
 test('mixed diffs keep orchestration-only changes out of builds and preserve actual build consumers', () => {
@@ -153,7 +156,7 @@ test('mixed diffs keep orchestration-only changes out of builds and preserve act
   const withRuntimeBuilder = ['launcher/lib/runtime-source-plan.mjs', 'tests/suites.mjs', `${relay}/src/netplay-relay.mjs`];
   const built = affectedComponents(withRuntimeBuilder, workspace, builds);
   assert(built.includes(relay), 'the independently edited service retains its service gate');
-  assert.equal(nodeBuildTargets(built, workspace, builds).length, 11,
+  assert.equal(nodeBuildTargets(built, workspace, builds).length, expectedNodeCount,
     'a real Runtime planner change still selects all Node product builds');
   assert.deepEqual(ciJobCoverage(withRuntimeBuilder), {sourceContracts:true, portAdaptation:true});
 });

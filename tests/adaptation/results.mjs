@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
 import {fileIdentity} from '../../tools/testing/dependency-snapshot.mjs';
 
 const DRIVER_SCHEMAS=new Set(['runtime-browser','runtime-desktop-probes','practice-browser','replay-browser',
@@ -70,6 +71,11 @@ export async function reusableResult(previous,currentFingerprint){
     const actual=await fileIdentity(previous.report.path);
     if(actual.bytes!==previous.report.bytes||actual.sha256!==previous.report.sha256)return false;
     const driver=JSON.parse(await readFile(previous.report.path,'utf8'));
+    // Replay declares additional native/oracle files chosen at runtime.
+    for(const input of driver.decisionInputs??[]){
+      const path=resolve(previous.task.cwd,input.path),current=await fileIdentity(path);
+      if(current.bytes!==input.bytes||current.sha256!==input.sha256)return false;
+    }
     const assessed=assessDriverReport(previous,previous.process,driver);
     return assessed.status===previous.status&&assessed.driverRunId===previous.driverRunId;
   }catch{return false;}
@@ -93,7 +99,9 @@ export function adaptationCoverage(cases,{checks=[],unmappedChecks=[]}={}){
       const related=selected.filter(item=>item.checksMapped?.includes(id));
       const evidence=related.flatMap(item=>(item.checks??[]).filter(check=>check.id===id).map(check=>({...check,caseId:item.id,execution:item.execution})));
       const failed=evidence.some(item=>item.status==='failed');
-      const complete=evidence.some(item=>item.status==='passed'&&item.complete)&&related.every(item=>item.status==='passed');
+      const applicable=related.filter(item=>item.status!=='not-applicable');
+      const complete=applicable.length>0&&applicable.every(item=>item.status==='passed'&&
+        (item.checks??[]).some(check=>check.id===id&&check.status==='passed'&&check.complete===true));
       rows.push({game,variant,id,status:failed?'failed':complete?'complete':related.length?'partial':'unmapped',
         complete,evidence,caseIds:related.map(item=>item.id)});
     }

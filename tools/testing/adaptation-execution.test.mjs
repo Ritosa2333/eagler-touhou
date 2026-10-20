@@ -79,3 +79,12 @@ test('a tampered parent pass and missing or mismatched child reports cannot be r
   first.cases[1].status='passed';await writeFile(resolve(root,'first/summary.json'),JSON.stringify(first));
   const next=await run('second',{resume:resolve(root,'first')});assert.equal(next.executed,2);assert.equal(next.status,'failed');
 });
+
+test('runtime-selected native judging input changes invalidate retained Replay evidence',async t=>{
+  const {root,run,count}=await setup(t);const source=resolve(root,'oracle.cpp');await writeFile(source,'native reference 1');
+  const first=await run('first'),item=first.cases[0],driver=JSON.parse(await readFile(item.report.path,'utf8'));
+  driver.decisionInputs=[{path:'oracle.cpp',...await fileIdentity(source)}];
+  await writeFile(item.report.path,JSON.stringify(driver));item.report={path:item.report.path,...await fileIdentity(item.report.path)};
+  await writeFile(resolve(root,'first/summary.json'),JSON.stringify(first));await writeFile(source,'native reference 2');
+  const next=await run('second',{resume:resolve(root,'first')});assert.equal(next.executed,1);assert.equal(await count('th06'),2);
+});
