@@ -79,6 +79,9 @@ public:
   uint32_t presentationRevision() const { return presentationRevision_; }
   const State& state() const;
   State& control(); // explicit native custom-update hooks, never rendering
+  void interpolatePosition(float x, float y, float z, int duration, int mode) {
+    interpolate({X, Y, Z}, {x, y, z}, duration, mode);
+  }
   Diagnostic diagnostics() const;
   bool bind(Registry& registry, int bank, int script, Runtime& runtime,
             const std::array<float, 3>* initialScriptPosition = nullptr);

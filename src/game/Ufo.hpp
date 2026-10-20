@@ -107,6 +107,7 @@ struct RewardPlan {
   bool inventoryChanged = false, filledNow = false;
   DeathReason deathReason = DeathReason::Defeated;
   int tokenPickupScript = 0;
+  int tokenPickupSlot = 0;
   Vec2 tokenPickupPosition{}; // bullet201..203, optional pickup trail.
 };
 enum class Phase { Inactive, Active, Finished };
