@@ -464,9 +464,10 @@ window.addEventListener('keyup',e=>{if(assets.managed&&managedInput.key(e,false,
 for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])window.addEventListener(type,event=>{
   if(!ready||busy||runtimeOptions.replayViewer)return;
   if(type==='pointerdown')try{canvas.setPointerCapture(event.pointerId);}catch{}
+  if(type==='pointerdown')audioReady().catch(error=>notice('音频：'+error.message));
   if(practicePointer({id:'local:'+event.pointerId,type:type==='pointercancel'?'cancel':type.slice(7),x:event.clientX,y:event.clientY,button:event.button,pointerType:event.pointerType})){event.preventDefault();return;}
   if(event.pointerType==='mouse'||!touch.options.touchEnabled)return;
-  event.preventDefault();if(type==='pointerdown')audioReady().catch(fail);
+  event.preventDefault();
   const point=pointerPosition(event.clientX,event.clientY);touch.pointer({id:'local:'+event.pointerId,type:type==='pointercancel'?'cancel':type.slice(7),...point},touchState());
 },{passive:false});
 canvas.addEventListener('lostpointercapture',event=>{const id='local:'+event.pointerId;if(touch.points.has(id))touch.release(id,true);practiceUI?.pointer({type:'cancel',id});});
@@ -514,7 +515,10 @@ async function initialize(){
     resetTime:()=>{last=performance.now();accumulator=0;},silence:()=>{stopEffects();pauseAudio();},transport:viewerTransport,
     report:playback=>emit({event:'runtime-info',playback}),error:fail,
   });
-  if(assets.managed&&window.parent.__touhouAudioContext)audioReady().catch(error=>notice('音频：'+error.message));
+  // Start the title transport during initialization, including hosts that do
+  // not publish a shared AudioContext. Later pointer/key gestures can resume
+  // a context suspended by browser autoplay policy without entering a menu.
+  audioReady().catch(error=>notice('音频：'+error.message));
   await loadingScreen.waitForStartup();await actions();loadingScreen.endStartup();ready=true;last=performance.now();meter.reset(last);accumulator=0;
   if(!assets.managed)window.__th12Game={ready:()=>ready,state:()=>({scene:model.view(),session:session?{mode:session.mode,stage:session.stage,cursor:session.cursor}:null,flow:session?readJSON('stage_flow'):null}),profile:()=>profile.data,start:settings=>{model.run={...settings};model.enter('playing',0,{readyAt:0});return begin(settings);},model:()=>model,present};
 }

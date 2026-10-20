@@ -220,9 +220,16 @@ void ItemPresentation::consume(anm_logic::Scene& scene, ufo_system::Manager& man
 void ItemPresentation::plan(anm_logic::Scene& scene, const ufo_system::RewardPlan& plan) {
   if (plan.tokenPickupScript) {
     const auto key = transientKey();
-    scene.bind(key, 0xeb000000u + serial_, 0, plan.tokenPickupScript,
-               anm_logic::Membership::Primary, plan.tokenPickupPosition.x,
-               plan.tokenPickupPosition.y, {}, false, nullptr, 224, 16, 23);
+    if (auto* node = scene.bind(key, 0xeb000000u + serial_, 0, plan.tokenPickupScript,
+                               anm_logic::Membership::Primary, 0, 0, {}, false,
+                               nullptr, 0, 0, 23)) {
+      // Native427164..42719b configures the newborn VM after its first tick:
+      // screen-space Item pose -> logical stock slot, 15 ticks, mode4 ease-out.
+      auto& pose = node->vm.control();
+      pose.x = plan.tokenPickupPosition.x + 224;
+      pose.y = plan.tokenPickupPosition.y + 16;
+      node->vm.interpolatePosition(52.f + plan.tokenPickupSlot * 21, 440, 0, 15, 4);
+    }
   }
 }
 

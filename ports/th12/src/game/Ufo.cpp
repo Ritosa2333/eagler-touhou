@@ -129,6 +129,7 @@ RewardPlan Manager::collectToken(const TokenPickup& pickup, ResourceState& resou
   inventory.refresh(selected);
   plan.inventoryChanged = true;
   plan.tokenPickupScript = 201 + pickup.color;
+  plan.tokenPickupSlot = selected;
   plan.tokenPickupPosition = pickup.position;
   return plan;
 }

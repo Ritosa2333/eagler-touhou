@@ -7,6 +7,8 @@ item_system::Manager itemManager;
 ufo_system::Manager ufoManager;
 int frame=0;
 }
+// This fixture exercises animation ownership, without the practice tracker.
+namespace th12::practice { void recordUfoDropped(int) {} }
 using namespace th12;
 std::string result;
 extern "C" {
@@ -25,6 +27,7 @@ void hint_create(int id,int irq){if(auto* item=itemManager.find(id)){item->hintA
 void hint_collect(int id){if(auto* item=itemManager.find(id)){itemPresentationEvent({item_system::EventKind::HintCollected,*item,1});item->hintActive=false;item->state=item_system::State::Inactive;}}
 void rebind_item(int id,int type){if(auto* item=itemManager.find(id)){item->type=type;item->visualScript=type+165;item->visualAge=0;itemPresentationEvent({item_system::EventKind::AnimationRebind,*item,item->visualScript});}}
 void stock_color(int color){auto resources=item_system::ResourceState::initial(1);const auto plan=ufoManager.collectToken(color,resources);itemPresentationPlan(plan);consumeUfoPresentation();}
+void stock_color_at(int color,float x,float y){auto resources=item_system::ResourceState::initial(1);const auto plan=ufoManager.collectToken({color,{x,y}},resources);itemPresentationPlan(plan);consumeUfoPresentation();}
 void summon(){ufo_system::EnemyHooks hooks;hooks.spawn=[](const auto&){return 42u;};ufoManager.tick({},hooks);consumeUfoPresentation();}
 void fill(){for(int i=0;i<40;i++)ufoManager.absorb(2,1);consumeUfoPresentation();}
 void pose(int age,float x,float y,int life,int maxLife){ufoManager.age=age;ufoManager.elapsed=float(age);ufo_system::EnemyHooks hooks;hooks.query=[=](uint32_t){return ufo_system::EnemyView{true,42,{x,y},life,maxLife};};ufoManager.tick({},hooks);consumeUfoPresentation();}
