@@ -191,6 +191,11 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     try {return await task.promise;}
     finally {task.listeners.delete(options.onProgress);}
   }
+  async function migrateLocal(root, entry) {
+    if (typeof migrateLegacyRuntimeSnapshots !== "function") return;
+    await migrateLegacyRuntimeSnapshots({scopeUrl, root, entry, sha256,
+      importSnapshot: (root, descriptor, supplied, observedAt) => stage(root, descriptor, {localOnly: true, supplied, observedAt})});
+  }
   async function select(path, options = {}) {
     let group, error;
     const excluded = new Set(options.exclude || []);
@@ -199,9 +204,15 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       const root = parsed?.root || path.slice(0, path.lastIndexOf('/') + 1);
       const entry = parsed?.file || path.slice(path.lastIndexOf('/') + 1);
       if (!C.isRuntimeRoot(root)) throw new Error('Invalid local Runtime root');
-      for (const snapshot of await snapshots(root)) {
-        if (snapshot.descriptor.entry === entry && !excluded.has(snapshot.descriptor.generation) && await complete(snapshot)) return snapshot;
-      }
+      const findLocal = async () => {
+        for (const snapshot of await snapshots(root)) {
+          if (snapshot.descriptor.entry === entry && !excluded.has(snapshot.descriptor.generation) && await complete(snapshot)) return snapshot;
+        }
+        return null;
+      };
+      let local = await findLocal();
+      if (!local) {await migrateLocal(root, entry); local = await findLocal();}
+      if (local) return local;
       throw new Error('No complete local Runtime is available');
     }
     try {
@@ -213,10 +224,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     } catch (cause) { error = cause; }
     group ||= C.findRuntimeGroup(known, path);
     if (group) {
-      if (typeof migrateLegacyRuntimeSnapshots === "function") {
-        await migrateLegacyRuntimeSnapshots({ scopeUrl, root: group.root, entry: group.current.entry, sha256,
-          importSnapshot: (root, descriptor, supplied, observedAt) => stage(root, descriptor, { localOnly: true, supplied, observedAt }) });
-      }
+      await migrateLocal(group.root, group.current.entry);
       for (const snapshot of await snapshots(group.root)) {
         if (!excluded.has(snapshot.descriptor.generation) && await complete(snapshot)) return snapshot;
       }
