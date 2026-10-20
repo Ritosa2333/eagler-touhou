@@ -208,3 +208,8 @@
 
 - TEXTURE：语言编译按 thcrap 的 sprite 透明度规则合成 PNG，保留翻译图中全透明的原版菜单 sprite；支持裁剪、共享纹理偏移和跨纹理边界的 sprite。
 - CHECK：无零售资源的 Python 回归覆盖全透明 sprite 保留、非空 sprite 覆盖及其透明像素清除；简体与英文使用生产 renderer 检查标题菜单及音乐室。
+
+### 2026-10-20：Practice 面板触控确认与返回
+
+- INPUT：Practice 窗口外的单指轻触开始练习、双指轻触返回机体选择，沿用 TH10 的窗口命中与触摸归属规则；窗口内控件和弹出菜单继续由 ImGui 消费。
+- CHECK：`tools/ports/th12-practice-browser.mjs` 使用真实 Wasm、共享字体和 Chromium 触控事件，覆盖单指开始、双指返回、控件点击、弹出菜单关闭与触摸取消，同时运行已有键盘、暂停和工具面板检查。

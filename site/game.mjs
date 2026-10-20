@@ -401,10 +401,12 @@ function present(){
 function tick(){
   updatePracticeUI();
   const sampled=input(),controller=padInput(),pad=controller.value;
-  if(practiceUI?.tick(pad|sampled.ui)){presentation.tick(model.state);updatePracticeUI();return;}
+  // Outside-window menu gestures must reach THPrac before its keyboard
+  // capture blocks the title menu. Widget-owned pointers never enter TouchInput.
+  const touched=touch.sample(touchState(),{arrows:!!((sampled.held|pad)&0xf0)});
+  if(practiceUI?.tick(pad|sampled.ui|touched.held)){presentation.tick(model.state);updatePracticeUI();return;}
   updatePracticeUI();
   if(controller.capturing){previousPadUI=0;model.tick({held:0,pressed:0});presentation.tick(model.state);return;}
-  const touched=touch.sample(touchState(),{arrows:!!((sampled.held|pad)&0xf0)});
   if(practiceCaptured){if(['playing','demo'].includes(model.state.scene)){gameTick({held:0});if(captureThisTick)captureGamePresentation();}else{model.tick({held:0,pressed:0});presentation.tick(model.state);}updatePracticeUI();return;}
   const ui=sampled.ui|pad|touched.held,pressed=sampled.pressed|(pad&~previousPadUI)|touched.pressed;previousPadUI=pad;
   if(ending){ending.tick({held:ui,pressed});if(ending.finished){profile.recordEndingSeen(ending.message.id);profile.save().catch(fail);ending=null;model.finish({kind:'clear',...pendingResult});}return;}
