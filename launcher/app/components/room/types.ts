@@ -6,6 +6,7 @@ import type {
 import type { MultiplayerRoomService } from '../../services/multiplayer-room';
 import type { TouchMovementMode } from '../../../src/launcher/game-preferences.mts';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
+import type {ReactNode} from 'react';
 export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game';
 export interface RoomNetworkPresentation {
   subscribe(listener: () => void): () => void;
@@ -38,6 +39,7 @@ export interface RoomViewProps {
   settingsClosing?: boolean;
   workspaceHost?: HTMLElement | null;
   workspaceStage?: HTMLElement | null;
+  playbackControls?: ReactNode;
   reloadPending?: boolean;
   onReloadResources?(): void;
   onRestoreSettings?(): void;

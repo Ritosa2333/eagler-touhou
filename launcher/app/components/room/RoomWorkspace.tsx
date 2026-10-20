@@ -31,7 +31,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const currentPanel = props.panel || retainedPanel.current;
   const code = state.room?.code;
   useLayoutEffect(()=>{setTab('chat');}, [state.product,code]);
-  useLayoutEffect(()=>{service.setRoomSettingsOpen(tab === 'game');return ()=>service.setRoomSettingsOpen(false);}, [service,tab]);
+  useLayoutEffect(()=>{service.setRoomSettingsOpen(props.visible !== false && tab === 'game');return ()=>service.setRoomSettingsOpen(false);}, [service,tab,props.visible]);
   useLayoutEffect(()=>{
     const media = window.matchMedia('(max-width:760px)');
     const update = ()=>setNarrow(media.matches);
@@ -52,7 +52,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const loadingText = t(context.launchStage ? 'room.preparingRuntime' : loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : 'room.resourcesUnavailable');
   const icon = (name:string)=><img className="room-icon" src={assetUrl(`assets/${name}.svg`)} alt=""/>;
   const lounge = <RoomSpectatorPreview state={state} service={service} assetUrl={assetUrl} open={props.panel?.kind==='spectators'} onOpen={element=>openPanel('spectators',element)}/>;
-  const roster = <div className="room-workspace-roster" data-player-count={room.playerCount}><RoomSeats workspace state={state} service={service} network={network} context={context} openPanel={openPanel}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;
+  const roster = <div className="room-workspace-roster" data-player-count={room.playerCount}><RoomSeats state={state} service={service} network={network} context={context} openPanel={openPanel}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;
   return <>
     {createPortal(<section id="mpRoomView" className="mp-room-view room-workspace-view" data-public-names={state.nickname ? 'true' : undefined} data-roster-identities="true" aria-label={`${game.title} ${t('multiplayer.roomAria')}`} inert={props.settingsOpen}>
       <header className="mp-room-head room-workspace-header">
@@ -65,7 +65,7 @@ export function RoomWorkspace(props: RoomViewProps) {
         {(['chat','game'] as const).map((name,index)=><button id={`roomWorkspaceTab-${name}`} key={name} type="button" role="tab" aria-selected={tab===name} tabIndex={tab===name ? 0 : -1} aria-controls={`roomWorkspacePanel-${name}`} onClick={()=>setTab(name)} onKeyDown={event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();const next=index ? 'chat' : 'game';setTab(next);document.getElementById(`roomWorkspaceTab-${next}`)?.focus();}}}>{t(name==='chat' ? 'room.quickChat' : 'multiplayer.gameSettings')}</button>)}
       </nav><div className="room-workspace-panels">
         <div className="room-workspace-chat" id="roomWorkspacePanel-chat" role="tabpanel" aria-labelledby="roomWorkspaceTab-chat" hidden={tab!=='chat'}>{props.quickChat && <><RoomQuickChat model={props.quickChat} part="log"/><RoomQuickChat model={props.quickChat} part="actions"/></>}</div>
-        <div id="roomWorkspacePanel-game" role="tabpanel" aria-labelledby="roomWorkspaceTab-game" hidden={tab!=='game'}><fieldset disabled={locked}><RoomGameSettings grouped state={state} service={service} assetUrl={assetUrl} hidden={false}/></fieldset></div>
+        <div id="roomWorkspacePanel-game" role="tabpanel" aria-labelledby="roomWorkspaceTab-game" hidden={tab!=='game'}><fieldset disabled={locked}><RoomGameSettings state={state} service={service} hidden={false}/></fieldset><button id="mpRoomGuideOpen" type="button" onClick={props.onGuide}>{t('multiplayerGuide.action')}</button></div>
       </div></aside>
       {!sideLounge && lounge}
       <footer className="room-workspace-actions" hidden={!room.synced || !selecting}>
@@ -79,6 +79,7 @@ export function RoomWorkspace(props: RoomViewProps) {
       </RoomPanel>
     </section>,props.workspaceHost)}
     {createPortal(roster,props.workspaceStage)}
+    {props.playbackControls && createPortal(<div className="room-workspace-playback">{props.playbackControls}</div>,props.workspaceStage)}
     {sideLounge && loungeHost && createPortal(lounge,loungeHost)}
     {viewport && createPortal(<>
       {props.reloadPending && !context.launched && <section className="room-resource-reload" role="region" aria-label={t('room.reloadResources')}>

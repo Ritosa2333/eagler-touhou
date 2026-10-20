@@ -88,8 +88,8 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         />
       )}
       <PlayerInformationColumn enabled={informationColumn} className={th09Information ? 'th09-player-information' : undefined}>
-      {cooperativeSpectator && <SpectatorPlayback session={session} />}
-      {th09Information && (spectatorTimeline ? <SpectatorMatchScore wins={wins} minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
+      {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} />}
+      {th09Information && !roomWorkspace && (spectatorTimeline ? <SpectatorMatchScore wins={wins} minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
         names={[room.room?.seats?.[0]?.name ?? '', room.room?.seats?.[1]?.name ?? '']}/>
         : !room.spectatorRequested && room.seat != null ? <Th09MatchStats wins={wins}
           minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
@@ -347,7 +347,7 @@ function PlayerUtilities({
           type="button"
           aria-label={t(portrait ? 'player.switchLandscape' : 'player.switchPortrait')}
           title={t('player.switchOrientationTitle')}
-          hidden={spectating || !state.runtime?.launched || !session.nativeTouch.canSwitchOrientation()}
+          hidden={roomWorkspace || !state.runtime?.launched || !session.nativeTouch.canSwitchOrientation()}
           onClick={(event) => {
             if (!state.runtime?.launched) return;
             event.preventDefault();

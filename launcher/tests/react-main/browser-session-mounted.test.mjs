@@ -2102,6 +2102,11 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
  test(`actual BrowserLauncher: ${mobileDevice ? 'mobile' : 'desktop'} ${game} spectator return retains its Runtime and settles each launch cover`, async t => {
   const originalAgent=env.window.navigator.userAgent; t.after(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:originalAgent}));
   Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:mobileDevice ? 'Mozilla/5.0 Android Mobile' : 'Mozilla/5.0 Desktop'});
+  const orientation=Object.getOwnPropertyDescriptor(env.window.screen,'orientation'),locks=[];
+  if(mobileDevice){
+   Object.defineProperty(env.window.screen,'orientation',{configurable:true,value:{type:'portrait-primary',async lock(value){locks.push(value);},unlock(){},addEventListener(){},removeEventListener(){}}});
+   t.after(()=>{if(orientation)Object.defineProperty(env.window.screen,'orientation',orientation);else delete env.window.screen.orientation;});
+  }
   const product=game+'mp',invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true});
   const host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
   const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,seedPackages:[game],seedStorage(storage){
@@ -2143,19 +2148,34 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
    }
    await until(()=>session.getSnapshot().roomLaunchStage===null,'current first frame and receiver settle the loading cover');
    assert.equal(node('.room-workspace-preparation').hidden,true,'the cover exposes the running spectator picture');
+   if(game!=='th09'){
+    assert.ok(node('.room-workspace-playback').contains(node('#cooperativeSpectatorTimeline')),'embedded playback controls sit below the picture');
+    assert.equal(node('#cooperativeSpectatorDetails').hidden,false);
+   }
    const frame=node('#gameFrame'),returns=f.outbound.filter(m=>m.command==='return-room').length;
    const route=f.router.state.location;
    await click('.room-workspace-fullscreen');
    assert.equal(f.fullscreen,node('#player'));
    assert.equal(node('#player').classList.contains('room-workspace'),false);
+   assert.equal(env.document.querySelector('#mpRoomView'),null,'fullscreen never renders a room page over the game');
    assert.equal(env.document.querySelector('#touchHud'),null,'spectator fullscreen never mounts gameplay buttons');
    assert.equal(env.document.querySelector('#touchEscape'),null);
    assert.ok(node('#playbackExit'));
-   if(game!=='th09')assert.ok(node('#cooperativeSpectatorTimeline'),'normal spectator timeline remains available in fullscreen');
-   await React.act(async()=>env.document.exitFullscreen());
+   if(game!=='th09'){
+    assert.ok(node('#cooperativeSpectatorTimeline'),'normal spectator timeline remains available in fullscreen');
+    assert.equal(node('#cooperativeSpectatorDetails').hidden,false,'seek, pause and live controls start expanded');
+   }
+   if(mobileDevice){
+    assert.equal(node('#orientationToggle').hidden,false);
+    const target=(env.window.visualViewport?.height||env.window.innerHeight)>(env.window.visualViewport?.width||env.window.innerWidth)?'landscape':'portrait';
+    await click('#orientationToggle');assert.ok(locks.includes(target),'spectators use the normal orientation port');
+   }
+   if(attempt===1)await React.act(async()=>f.router.navigate(-1));
+   else await React.act(async()=>env.document.exitFullscreen());
+   await until(()=>!f.router.state.location.state?.launcherRoomFullscreen,'fullscreen history layer dismissed');
    assert.equal(node('#player').classList.contains('room-workspace'),true,'system fullscreen exit restores the room');
    assert.equal(node('#gameFrame'),frame);
-   assert.equal(f.router.state.location,route,'fullscreen changes do not add or traverse room history');
+   assert.equal(f.router.state.location.pathname+f.router.state.location.search,route.pathname+route.search,'Back dismisses only fullscreen presentation');
    assert.equal(session.getRuntime().getSnapshot().launched,true);
    assert.equal(f.outbound.filter(m=>m.command==='return-room').length,returns,'leaving fullscreen does not exit spectating');
    assert.equal(f.navigations.length,initialNavigations);assert.equal(f.dataReads.length,initialReads);
@@ -2194,6 +2214,11 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
  await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room launch music choice');
  if(node('#decisionDialog').open)await click('#decisionConfirm');
  await until(()=>session.getRuntime().getSnapshot().launched,'room player launched',15_000);
+ if(mobileDevice){
+  assert.equal(node('#player').classList.contains('room-workspace'),false,'mobile synchronized start opens the game presentation');
+  assert.equal(env.document.querySelector('#mpRoomView'),null,'native loading never brings back the retired room renderer');
+  assert.equal(node('#player').classList.contains('mp-room-launch-cover'),false);
+ }
  f.native.Module={eaglerOptions:{netplayMode:'lan'}};
  f.native.__eaglerNetplayTransport='relay';
  f.native[api.multiplayerConfigForProduct('th06mp').peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
@@ -2212,6 +2237,7 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
   assert.equal(f.fullscreen,nativeFullscreen?node('#player'):null);assert.equal(frame.hasAttribute('inert'),false);
   assert.equal(frame.contentDocument.dispatchEvent(new env.window.KeyboardEvent('keydown',{code:'KeyZ',bubbles:true,cancelable:true})),true,'fullscreen releases the embedded input gate');
   assert.equal(node('#player').classList.contains('room-workspace'),false,'page fullscreen keeps the normal game controls available');
+  assert.equal(env.document.querySelector('#mpRoomView'),null);
   assert.equal(node('#fullscreenToggle').dataset.fullscreen,'true');
   assert.ok(node('#touchHud'));assert.ok(node('#touchEscape'));assert.ok(node('#fullscreenToggle'));
   assert.equal(env.document.querySelector('#playbackExit'),null,'players get gameplay rather than spectator actions');

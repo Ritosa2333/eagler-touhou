@@ -14,6 +14,10 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace #gameViewport{position:relative!important;inset:auto!important;margin:0!important;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#090a09;transform:none!important}
 #player.room-workspace #gameFrame{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;pointer-events:none;transform:none!important;opacity:.2}
 #player.room-workspace :is(.player-information-column,.runtime-diagnostics,.netplay-player-status,.mp-quick-chat){display:none!important}
+#player.room-workspace .room-workspace-playback{order:1;flex:none;min-width:0}
+#player.room-workspace .room-workspace-roster{order:2}
+.room-workspace-playback :is(.spectator-playback-host,.th09-playback-host){display:block;width:100%;max-width:none;pointer-events:auto}
+.room-workspace-playback .spectator-timeline,.room-workspace-playback .spectator-timeline[data-collapsed=true]{position:relative;inset:auto;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:0}
 #player.room-workspace #transfer{position:absolute;inset:12px auto auto 12px;z-index:9;box-sizing:border-box;width:320px;max-width:calc(100% - 24px);margin:0}
 #player.room-workspace:has([data-preview-ready=true]) #gameFrame{opacity:1}
 #mpRoomView.room-workspace-view .room-workspace-header{grid-column:1/-1;grid-row:1;justify-content:initial!important;min-width:0!important;max-width:100%;width:100%;box-sizing:border-box;flex-shrink:0}
@@ -31,6 +35,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-workspace-tabs[data-active-tab=game]::after{transform:translateX(100%)}
 .room-workspace-panels{padding:18px;overflow:auto;min-height:0;flex:1}
 .room-workspace-panels fieldset{padding:0;margin:0;border:0;min-width:0}
+.room-workspace-panels #mpRoomGuideOpen{padding:8px 0;border:0;background:none;color:var(--muted);font:600 14px var(--ui-font);cursor:pointer}
 .room-workspace-chat{height:100%;display:flex;flex-direction:column;min-height:200px}
 #mpRoomView.room-workspace-view .mp-room-chat-log{position:static!important;display:flex!important;flex-direction:column;justify-content:flex-end;flex:1;min-height:0;overflow:auto;max-height:none!important;margin:0 0 12px;padding:0;background:none!important;font-size:15px;line-height:1.65}
 #mpRoomView.room-workspace-view .mp-room-chat-log p{margin:6px 0;overflow-wrap:anywhere}

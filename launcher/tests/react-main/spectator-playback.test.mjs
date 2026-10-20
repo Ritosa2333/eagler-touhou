@@ -14,6 +14,7 @@ before(async()=>{
  work=await mkdtemp(resolve(project,'.cache/spectator-ui-'));const outfile=resolve(work,'views.mjs');
  await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:[
  "export * from './app/components/player/SpectatorPlayback.tsx';",
+ "export * from './app/components/player/SpectatorMatchScore.tsx';",
  "export * from './src/launcher/spectator-playback.mts';",
  "export * from './app/i18n.tsx';"].join('\n')},bundle:true,format:'esm',platform:'node',jsx:'automatic',outfile,logLevel:'silent',
  plugins:[{name:'shared-react',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));}}]});
@@ -29,6 +30,18 @@ after(async()=>{env?.close();if(work)await rm(work,{recursive:true,force:true});
 const report=(extra={})=>({version:1,run:'session_1',revision:1,min:600,position:600,received:1600,edge:1510,target:1200,
  paused:false,seeking:true,following:false,ended:false,nodes:[{id:1,kind:'stage',frame:600,stage:4,bossSlots:0},{id:2,kind:'boss',frame:1200,stage:4,bossSlots:3}],...extra});
 const owner={epoch:3,game:'th06',launched:true,spectator:true};
+test('TH09 native controls retain their listeners when moved from room to fullscreen',async()=>{
+ const frame=env.document.createElement('iframe');frame.id='gameFrame';env.document.body.append(frame);
+ const native=frame.contentDocument,panel=native.createElement('section'),toggle=native.createElement('button'),score=native.createElement('div');
+ panel.id='spectatorTimeline';panel.dataset.collapsed='true';toggle.className='spectator-toggle';score.id='spectatorScore';panel.append(toggle,score);native.body.append(panel);
+ let toggles=0;toggle.addEventListener('click',()=>{toggles++;panel.dataset.collapsed=String(panel.dataset.collapsed!=='true');});
+ const render=async()=>{const host=env.document.createElement('div');env.document.body.append(host);const root=createRoot(host);mounts.push(root);
+  await React.act(async()=>root.render(React.createElement(views.LocaleProvider,{locale:'en'},React.createElement(views.SpectatorMatchScore,{wins:[2,1],minutes:3,names:['A','B']}))));return {host,root};};
+ const room=await render();assert.equal(room.host.querySelector('#spectatorTimeline'),panel);assert.equal(panel.dataset.collapsed,'false');assert.equal(toggles,1);
+ assert.ok(score.textContent.includes('<2 : 1>'));
+ await React.act(async()=>room.root.unmount());mounts.splice(mounts.indexOf(room.root),1);assert.equal(panel.parentElement,native.body);
+ const fullscreen=await render();assert.equal(fullscreen.host.querySelector('#spectatorTimeline'),panel);assert.equal(toggles,1,'the native panel and playback callbacks are reused');
+});
 async function fixture(locale='zh-CN'){
  const model=views.createSpectatorPlayback(),calls=[];
  let runtime=owner;
@@ -40,10 +53,10 @@ async function fixture(locale='zh-CN'){
 for(const locale of ['zh-CN','en'])test(locale+': cooperative data and commands use the shared TH09 view',async()=>{
  const f=await fixture(locale);assert.equal(f.container.textContent,'');await f.update(report());
  const panel=f.container.querySelector('section.spectator-timeline');assert.ok(panel);
- assert.equal(panel.dataset.collapsed,'true');
+ assert.equal(panel.dataset.collapsed,'false');
  assert.equal(panel.querySelector('[id$="Score"]').textContent,locale==='en'?'Stage 4':'第 4 面');
  assert.equal(panel.querySelector('[data-icon="toggle"]').getAttribute('src'),'https://example.test/assets/room-caret-right.svg');
- await f.click('[id$="Toggle"]');assert.equal(panel.dataset.collapsed,'false');
+ assert.equal(panel.querySelector('[id$="Details"]').hidden,false,'seek and live controls are immediately available');
  const nodes=[...panel.querySelectorAll('[id$="RoundMarks"] button')];assert.equal(nodes.length,2);
  assert.equal(nodes[1].getAttribute('aria-label'),(locale==='en'?'Stage 4 Boss':'第 4 面 Boss')+' · 0:10');
  assert.equal(nodes[1].dataset.nodeKind,'boss');assert.equal(nodes[1].dataset.kind,'round');
@@ -72,6 +85,7 @@ test('seeking displays actual progress and keeps pause available before reaching
 
 test('shared touch release expands once and suppresses the compatibility click',async()=>{
  const f=await fixture();await f.update(report());const panel=f.container.querySelector('.spectator-timeline');
+ await f.click('[id$="Toggle"]');
  const bar=panel.querySelector('.spectator-bar'),toggle=panel.querySelector('[id$="Toggle"]');
  await React.act(async()=>bar.dispatchEvent(new env.window.PointerEvent('pointerup',{bubbles:true,pointerId:3,pointerType:'touch'})));
  assert.equal(panel.dataset.collapsed,'false');
