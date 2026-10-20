@@ -47,7 +47,7 @@ Runtime 从已校验的日文 MSG 重建文字，保留等待、跳过、表情�
 解释 thcrap 的样式与 tab 排版指令；长行按文字矩形适配，保留整句。
 
 ANM 继续使用日文原版程序和 sprite 布局。翻译 PNG 按原版纹理名映射到 atlas；
-裁剪补丁只替换覆盖矩形，未覆盖像素保持原样。
+PNG 按 thcrap 的 sprite 边界合成：全透明的替换 sprite 保留原图，已有不透明底图使用混合，其余 sprite 使用覆盖；裁剪范围外保留原像素。
 
 ## 验证
 
@@ -55,6 +55,7 @@ ANM 继续使用日文原版程序和 sprite 布局。翻译 PNG 按原版纹理
 
 ```powershell
 node --test launcher/tests/react-main/th12-localization.test.mjs
+python launcher/tests/test-th12-language-textures.py
 ```
 
 设置 EMSDK 后，使用日文提取目录和已生成的两份语言包检查实际 MSG 虚拟机：
