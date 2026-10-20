@@ -183,6 +183,8 @@ function createNativeEndpoint(frame) {
     if (!message.request) return;
     if (message.command === 'sync' && owner.syncMode === 'hold') {owner.pendingSync.push(message); return;}
     if (message.command === 'write' && owner.writeMode === 'hold') {owner.pendingWrite.push(message); return;}
+    if (message.command === 'prepare-room' && owner.holdRoomPreview) {owner.pendingRoomPreview = message; return;}
+    if (message.command === 'configure' && message.options?.netplayMode === 'lan' && owner.holdRoomConfigure) {owner.pendingRoomConfigure = message; return;}
     if (message.command === 'list' && owner.holdImportedList && owner.storedFiles.size) {owner.pendingList.push(message); return;}
     if (message.command === 'write' && owner.writeMode !== 'fail') owner.storedFiles.set(message.path, [...message.bytes]);
     const response = message.command === 'configure' && owner.failConfigure ? {ok: false, error: 'Synthetic native configure failure'}
@@ -190,7 +192,7 @@ function createNativeEndpoint(frame) {
       : message.command === 'write' && owner.writeMode === 'fail' ? {ok: false, error: 'Synthetic native write failure'}
       : message.command === 'read' ? {bytes: owner.corruptRead ? [255] : owner.storedFiles.get(message.path) ?? [3, 4, 5]}
       : message.command === 'list' ? {files: [...owner.storedFiles].map(([path, bytes]) => ({path, size: bytes.length}))}
-      : message.command === 'return-room' ? {presented:true} : {};
+      : message.command === 'return-room' || message.command === 'prepare-room' ? {presented:true} : {};
     queueMicrotask(() => {native.respond(message, response);if(message.command==='launch'&&native.options?.replayViewer&&!owner.holdReplayFirstFrame)native.emit('first-frame');});
   };
   owner.native = native; owner.frame = frame; return native;
@@ -1478,7 +1480,7 @@ for (const status of ['ready', 'preparing', 'cancelled', 'failed']) for (const o
     const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
     const f = await mountBrowser({initial: '/en.html?game=th06mp&mpRoom=1234', host, socketBoundary: true, seedPackages: status === 'ready' ? ['th06'] : []});
     const session = api.getTestSession();
-    await until(() => session.room.service.getSnapshot().preparation?.status === (status === 'cancelled' ? 'preparing' : status), 'canonical room preparation reaches the test state');
+    await until(() => session.room.service.getSnapshot().preparation?.status === (status === 'cancelled' ? 'preparing' : status), 'canonical room preparation reaches the test state',15_000);
     if (status === 'cancelled') await click('#mpRoomResourceCancel');
     await React.act(async () => {session.gameData.openManual();});
     const events = [], unsubscribe = session.room.service.subscribe(() => events.push(session.room.service.getSnapshot().preparation?.status));
@@ -2254,6 +2256,99 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
   assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
   assert.equal(f.outbound.filter(m=>m.command==='return-room').length,0);
  }
+});
+
+for(const presented of [true,false])test(`room ready requires native game menu presentation (${presented?'presented':'rejected'})`,async()=>{
+ const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const invite=api.encodeRoomInvite({g:'th09mp',r:'1234',f:true,a:'join',s:true});
+ const f=await mountBrowser({initial:'/?j='+invite,host,autoReady:false,socketBoundary:true,seedPackages:['th09']});
+ const session=api.getTestSession();
+ await until(()=>!!f.native?.envelope,'native program loading');f.holdRoomPreview=true;
+ await React.act(async()=>f.native.emit('ready',{roomPreview:true}));
+ await until(()=>!!f.pendingRoomPreview,'resources configured and native menu starting');
+ assert.equal(session.getRuntime().getSnapshot().ready,true);assert.equal(session.getRuntime().getSnapshot().roomPreview===true,false);
+ assert.notEqual(session.room.service.getSnapshot().preparation?.status,'ready');
+ assert.doesNotMatch(node('#playerStatus').textContent,/^(Ready|Running)$/);
+ assert.notEqual(node('#mpRoomResourceLabel').textContent,'Game loaded');
+ await React.act(async()=>f.native.respond(f.pendingRoomPreview,{presented}));
+ await until(()=>session.room.service.getSnapshot().preparation?.status===(presented?'ready':'failed'),'native game menu result settled');
+ assert.equal(session.getRuntime().getSnapshot().roomPreview===true,presented);
+ if(presented)assert.equal(node('#playerStatus').textContent,'Ready');
+ else assert.notEqual(node('#mpRoomResourceLabel').textContent,'Game loaded');
+});
+
+test('ordinary game loading reports success only after its first frame',async()=>{
+ const f=await mountBrowser(),session=api.getTestSession();
+ await start();await until(()=>session.getRuntime().getSnapshot().launched,'game acknowledged launch');
+ assert.equal(session.getRuntime().getSnapshot().firstFrame,false);
+ assert.doesNotMatch(node('#playerStatus').textContent,/^(Ready|Running)$/);
+ await React.act(async()=>f.native.emit('first-frame'));
+ assert.equal(session.getRuntime().getSnapshot().firstFrame,true);assert.equal(node('#playerStatus').textContent,'Ready');
+});
+
+test('leaving the spectator seat during configuration cancels its pending launch and keeps the loaded menu',async()=>{
+ const host=developmentAcquisitionHost(['th06']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const invite=api.encodeRoomInvite({g:'th06mp',r:'1234',f:true,a:'join',s:true});
+ const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,seedPackages:['th06']});
+ const session=api.getTestSession();await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','native menu loaded',15_000);
+ const socket=f.sockets[0],id=new URL(socket.url).searchParams.get('lobby'),epoch=session.getRuntime().getSnapshot().epoch,navigations=f.navigations.length,reads=f.dataReads.length;
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,predictionLimit:8,startSerial:4,spectatorTimeline:true,
+  seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[{clientId:id,name:'C'}]};
+ f.holdRoomConfigure=true;
+ await React.act(async()=>{socket.open();socket.message({type:'state',room});socket.message({type:'spectator-start',serial:4,room});});
+ await until(()=>!!f.pendingRoomConfigure,'spectator configuration awaiting native ACK');
+ let leaving;await React.act(async()=>{leaving=session.room.service.leaveSpectator();});
+ assert.equal(socket.sent.some(m=>m.type==='leave-spectator'),false,'the pending native command settles before membership changes');
+ await React.act(async()=>{f.native.respond(f.pendingRoomConfigure);await leaving;});
+ assert.equal(socket.sent.some(m=>m.type==='leave-spectator'),true);assert.equal(f.outbound.some(m=>m.command==='launch'),false);
+ assert.equal(session.getRuntime().getSnapshot().roomPreview,true);assert.equal(session.getRuntime().getSnapshot().epoch,epoch);
+ assert.equal(session.getSnapshot().roomLaunchStage,null,'the settled native menu is visible after cancelling configuration');
+ assert.equal(session.room.service.getSnapshot().launchBusy,false);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+});
+
+for(const game of ['th06','th07','th08','th09','th10','th11','th15'])for(const action of ['leave spectator','take seat'])test(`actual BrowserLauncher: ${game} ${action} retains its game through spectator to player`,async()=>{
+ const product=game+'mp',host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true});
+ const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,seedPackages:[game],seedStorage(storage){
+  storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none',options:{touchEnabled:false,thpracEnabled:false}}));
+ }});
+ const session=api.getTestSession();await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','native menu loaded',15_000);
+ const pendingStart=game==='th06'&&action==='leave spectator';
+ const socket=f.sockets[0],id=new URL(socket.url).searchParams.get('lobby');
+ const policy=api.multiplayerConfigForProduct(product).inputTiming,rollback=policy?.rollbackLimit!==0;
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,adonisMode:rollback?0:1,inputDelayAuto:false,predictionLimit:rollback?(policy?.sendPredictionLimit??8):0,startSerial:4,spectatorTimeline:true,
+  seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[{clientId:id,name:'C'}]};
+ await React.act(async()=>{socket.open();socket.message({type:'state',room});socket.message({type:'spectator-start',serial:4,room});});
+ await until(()=>session.getRuntime().getSnapshot().launched,'spectator running');
+ const epoch=session.getRuntime().getSnapshot().epoch,frame=node('#gameFrame'),nativeDocument=f.native.document,reads=f.dataReads.length,navigations=f.navigations.length;
+ f.native.Module={eaglerOptions:{netplayMode:'lan'}};f.native.__eaglerNetplayTransport='spectator';f.native.__eaglerNetplaySpectator=true;
+ f.native[api.multiplayerConfigForProduct(product).peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
+ if(!pendingStart){
+  await React.act(async()=>{f.native.emit('first-frame');if(game!=='th09')f.native.emit('runtime-info',{spectatorPlayback:{version:1,run:'run_4',revision:1,min:0,position:30,received:1200,edge:1190,target:30,paused:false,seeking:false,following:false,ended:false,nodes:[]}});});
+  await until(()=>session.getSnapshot().roomLaunchStage===null,'spectator picture presented');
+ }
+ const lobby={...room,phase:'lobby',seats:[room.seats[0],null]};
+ if(!pendingStart)await React.act(async()=>socket.message({type:'state',room:lobby}));
+ const observations=[],send=socket.send.bind(socket);
+ socket.send=payload=>{const message=JSON.parse(payload);if(['leave-spectator','take-seat'].includes(message.type))observations.push({type:message.type,preview:session.getRuntime().getSnapshot().roomPreview,epoch:session.getRuntime().getSnapshot().epoch});send(payload);};
+ if(action==='leave spectator'){
+  const admissions=socket.sent.filter(m=>m.type==='spectate').length;
+  await React.act(async()=>session.room.service.leaveSpectator());
+  assert.equal(socket.sent.filter(m=>m.type==='spectate').length,admissions,'leaving during the first-frame wait never re-admits the old spectator');
+ }
+ if(pendingStart)await React.act(async()=>socket.message({type:'state',room:{...lobby,spectators:[]}}));
+ await React.act(async()=>session.room.service.takeSeat(1));
+ assert.ok(observations.length);assert.ok(observations.every(o=>o.preview&&o.epoch===epoch),'the game returns to its menu before the relay removes the spectator receiver');
+ const seated={...lobby,spectators:[],seats:[room.seats[0],{clientId:id,name:'C',loadout:1,ready:false}]};
+ await React.act(async()=>{socket.message({type:'state',room:seated});await session.room.service.prepareResources(true);});
+ assert.equal(session.getRuntime().getSnapshot().roomPreview,true);assert.equal(session.getRuntime().getSnapshot().epoch,epoch);
+ assert.equal(node('#gameFrame'),frame);assert.equal(f.native.document,nativeDocument);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+ await React.act(async()=>socket.message({type:'start',serial:5,room:{...seated,phase:'running',startSerial:5,seats:seated.seats.map(s=>({...s,ready:true}))}}));
+ await until(()=>node('#decisionDialog').open||f.outbound.filter(m=>m.command==='launch').length===2,'player starts from retained title');
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>f.outbound.filter(m=>m.command==='launch').length===2&&session.getRuntime().getSnapshot().launched,'player running in same game');
+ assert.equal(f.outbound.findLast(m=>m.command==='configure').options.netplaySpectator,false);
+ assert.equal(session.getRuntime().getSnapshot().epoch,epoch);assert.equal(f.native.document,nativeDocument);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
 });
 
 for(const failure of ['first frame','gameplay path'])test(`actual BrowserLauncher: room ${failure} failure preserves the acknowledged native game`,async()=>{

@@ -988,13 +988,10 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       updateNotices.add(update.url); return true;
     } catch {return false;}
   }
-  /** Bind a run to a fully prepared, unlaunched multiplayer engine. Legacy
-   * configure replaces language/music state: retain the prepared payload and
-   * required arrays instead of accidentally clearing localization or music. */
+  /** The native title presentation ACK completes room loading. */
   async function prepareRoomPreview(epoch: number): Promise<boolean> {
     const token = sessions.current();
     if (!token || token.id !== epoch || snapshot.phase !== 'prepared' || snapshot.launched || preparedPlan?.runtimeVariant !== 'multiplayer') throw new RuntimeSessionSupersededError();
-    if (!snapshot.roomPreviewSupported) return false;
     if (snapshot.roomPreview) return true;
     const response = await send('prepare-room', {}, options.timeouts?.configure ?? 120_000);
     assertCurrent(token);

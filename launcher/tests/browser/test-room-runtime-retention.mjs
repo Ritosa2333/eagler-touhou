@@ -50,6 +50,7 @@ try{
   const port=/listening ws:\/\/127.0.0.1:(\d+)/.exec(relayLog)[1],room=game+'mp-1234';
   for(let actor=0;actor<3;actor++){
     const client=new WebSocket('ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,lobby:'retention_client_'+actor,member:'retention_member_'+actor,intent:actor?'join':'create',players:'2',difficulty:'1'}));clients.push(client);
+    client.addEventListener('message',e=>{const message=JSON.parse(e.data);if(message.room)client.retentionRoom=message.room;});
     await send(client,null,m=>m.type==='state');
     await send(client,actor<2?{type:'take-seat',seat:actor,loadout:actor}:{type:'spectate'},m=>actor<2?!!m.room?.seats[actor]:m.room?.spectators?.some(s=>s.clientId==='retention_client_2'));
   }
@@ -65,7 +66,8 @@ try{
   for(const frame of frames())await frame.evaluate(()=>{window.retainedModule=Module;window.retainedDocument=document;});
   for(let actor=0;actor<2;actor++)await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[actor]?.ready);
   const start=await send(clients[0],{type:'start',inputDelay:0,adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit},m=>m.type==='start');
-  const options=actor=>({touchEnabled:false,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(start.serial),member:'retention_member_'+actor,...actor===2?{spectator:'retention_client_2'}:{player:String(actor)}}),netplayPlayer:actor<2?actor:0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:actor===2,netplaySpectatorId:actor===2?'retention_client_2':'',netplaySpectatorCount:1,netplaySpectatorTimeline:true,netplayInGameSelection:game==='th09'});
+  let run=start.serial,roles=[0,1,null];
+  const options=actor=>({touchEnabled:false,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true,netplayInGameSelection:game==='th09'});
   const configure=async(actor,serial)=>{
     await page.evaluate(async({actor,options})=>rpc(actor,'configure',{music:'none',options,resources:[],runtimeResources:[],sharedResources:[]}),{actor,options:options(actor)});
     // Give the running native title several ticks between protocol commands.
@@ -76,13 +78,17 @@ try{
     await page.evaluate(({actor,serial})=>rpc(actor,'launch',{launchSerial:serial}),{actor,serial});
   };
   await Promise.all([configure(0,1),configure(1,1)]);
-  if(game==='th09')await wait(async()=>{const reports=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(()=>Array.from(Module.HEAPU32.subarray(Module._th09_title_status()/4,Module._th09_title_status()/4+8)))));return reports.every(s=>s[2]===7&&s[3]===1&&s[5]>=10);},'native versus selection menu');
-  if(game==='th09')for(let press=0;press<3;press++){
+  const selectVersus=async actors=>{
+  if(game!=='th09')return;
+  await wait(async()=>{const reports=await Promise.all(actors.map(n=>frames()[n].evaluate(()=>Array.from(Module.HEAPU32.subarray(Module._th09_title_status()/4,Module._th09_title_status()/4+8)))));return reports.every(s=>s[2]===7&&s[3]===1&&s[5]>=10);},'native versus selection menu');
+  for(let press=0;press<3;press++){
     for(const down of [true,false]){
-      await page.evaluate(async down=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down}))),down);
+      await page.evaluate(async({down,actors})=>Promise.all(actors.map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down}))),{down,actors});
       await new Promise(r=>setTimeout(r,400));
     }
   }
+  };
+  await selectVersus([0,1]);
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
   const initialRequests=requests.length,viewer=frames()[2],cycles=[];
   for(let attempt=0;attempt<3;attempt++){
@@ -124,9 +130,24 @@ try{
     assert(players.every((s,i)=>!s.failed&&s.frame>beforeIdle[i]),'players keep advancing while the spectator stays at the menu');cycles.push({attempt:attempt+1,players});
     await page.evaluate(()=>{events=events.filter(e=>e.epoch!==3);});
   }
+  await page.evaluate(async()=>Promise.all([0,1].map(async n=>{await rpc(n,'sync');await rpc(n,'return-room');})));
+  await wait(()=>clients[0].retentionRoom?.phase==='lobby','both players return to the same room');
+  await send(clients[2],{type:'leave-spectator'},m=>m.room&&!m.room.spectators.some(s=>s.clientId==='retention_client_2'));
+  await send(clients[1],{type:'spectate'},m=>m.room?.spectators.some(s=>s.clientId==='retention_client_1'));
+  await send(clients[2],{type:'take-seat',seat:1,loadout:1},m=>m.room?.seats[1]?.clientId==='retention_client_2');
+  for(const [actor,seat] of [[0,0],[2,1]])await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[seat]?.ready);
+  const next=await send(clients[0],{type:'start',inputDelay:0,adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit},m=>m.type==='start');
+  run=next.serial;roles=[0,null,1];
+  await Promise.all([configure(0,2),configure(2,4)]);
+  await selectVersus([0,2]);
+  await configure(1,2);
+  await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.event==='first-frame'&&e.launchSerial===4),{timeout:90000});
+  await wait(async()=>{const values=await Promise.all([0,2].map(n=>frames()[n].evaluate(playerFrame)));return values.every(v=>v>120);},'former spectator advances as a player');
+  for(const frame of frames())assert(await frame.evaluate(()=>Module===retainedModule&&document===retainedDocument),'role changes retain every native game instance');
+  const roleSwap={spectatorToPlayer:true,playerToSpectator:true,run};
   assert(!requests.slice(initialRequests).some(u=>/\.(?:data|wasm|js|mjs)(?:\?|$)/.test(u)||u.endsWith('/data')),'spectator return/rejoin never reloads program or DATA');
-  assert.deepEqual(errors,[]);await page.screenshot({path:resolve(out,'spectator-menu-retained.png')});
-  await writeFile(resolve(out,'result.json'),JSON.stringify({passed:true,game,cycles,sameDocument:true,sameModule:true,noProgramOrDataReload:true,scope:'Production Wasm and original DATA, two local players and one spectator, real local Relay. No physical device or public-network acceptance.'},null,2));
-  console.log(JSON.stringify({passed:true,game,cycles}));
+  assert.deepEqual(errors,[]);await page.screenshot({path:resolve(out,'retained-role-swap.png')});
+  await writeFile(resolve(out,'result.json'),JSON.stringify({passed:true,game,cycles,roleSwap,sameDocument:true,sameModule:true,noProgramOrDataReload:true,scope:'Production Wasm and original DATA, two local players and one spectator, real local Relay. No physical device or public-network acceptance.'},null,2));
+  console.log(JSON.stringify({passed:true,game,cycles,roleSwap}));
 }catch(error){if(page){await writeFile(resolve(out,'failure.json'),JSON.stringify({error:String(error),errors,relayLog,events:await page.evaluate(()=>window.events).catch(()=>[]),native:await Promise.all(page.frames().filter(f=>f.url().includes('runtimeEpoch=')).map(f=>f.evaluate(()=>{const r=globalThis.__th08Runtime;return {globals:Object.fromEntries(Object.keys(globalThis).filter(k=>k.startsWith('__eaglerNetplay')&&['number','boolean','string'].includes(typeof globalThis[k])).map(k=>[k,globalThis[k]])),peer:(()=>{const p=globalThis.__eaglerPeerTransport;return p&&{closed:p.closed,retained:p.retainSpectatorHistory,route:p.route,relay:p.relay?.readyState};})(),th08:r&&{status:r.status(),netplay:Array.from(new Uint32Array(r.core.memory.buffer,r.core.multiplayer_netplay_status(r.app),15)),spectator:Array.from(new Uint32Array(r.core.memory.buffer,r.core.multiplayer_spectator_status(r.app),8))}};}).catch(()=>null)))},null,2));await page.screenshot({path:resolve(out,'failure.png')}).catch(()=>{});}throw error;}
 finally{for(const client of clients)client.close();await browser?.close();server.closeAllConnections();server.close();relay.kill();}

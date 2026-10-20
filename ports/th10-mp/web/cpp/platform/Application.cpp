@@ -517,8 +517,10 @@ i32 Application::multiplayer_update(){
     engine.snapshot_presentation();
     const bool replayActive=state.multiplayer_replay.Recording()||
                             state.multiplayer_replay.Playing();
-    if((replayActive&&!state.multiplayer_replay.Stamp(frame,u32(state.game.stage)))||
-       !world->begin_netplay_frame(frame)){
+    if(replayActive&&!state.multiplayer_replay.Stamp(frame,u32(state.game.stage))){
+        multiplayer_fail("Stamp forward Replay frame");return -1;
+    }
+    if(!world->begin_netplay_frame(frame)){
         multiplayer_fail("Begin forward frame");return -1;
     }
     world->capture_replay_checkpoint_precommit(state.multiplayer_replay.Base()+frame);
