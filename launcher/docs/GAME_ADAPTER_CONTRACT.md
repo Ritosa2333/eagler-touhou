@@ -45,7 +45,7 @@
 
 | 阶段 | 命令 / 事件 | 约定 |
 | --- | --- | --- |
-| 初始化 | `ready`、`configure`、`resources`、`launch` | `ready` 表示文件与 DATA 命令桥可用；`first-frame` 表示游戏已实际呈现首帧 |
+| 初始化 | `ready`、`configure`、`resources`、`launch` | `ready` 表示文件与 DATA 命令桥可用；`first-frame` 表示游戏已实际呈现首帧，启动器据此显示加载完成；房间使用 `prepare-room` 的 `presented: true` 确认原生菜单呈现后再发布就绪 |
 | 输入 | `keyboard`、`keyboard-clear`、`touch-controls`、`touch-cancel`、`direct-touch` | 进入原作逻辑输入路径；条件不适用时拒绝命令 |
 | 用户文件 | `list`、`read`、`write`、`remove`、`sync` | 仅访问声明的存档、配置与 Replay 文件 |
 | 健康与结束 | `runtime-info`、`frame-health`、`audio-health`、`exit`、`error` | 按协议要求上报身份、健康状态与终止状态 |

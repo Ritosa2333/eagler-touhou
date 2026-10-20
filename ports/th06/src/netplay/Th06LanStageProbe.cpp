@@ -88,6 +88,7 @@ bool g_Done = false;
 bool g_ProductionTransportStarted = false;
 bool g_LastTickAdvanced = false;
 std::uint32_t g_SessionGeneration = 0;
+std::uint32_t g_RoomRunGenerationBase = 0;
 std::uint16_t g_GameplayStartSeed = 0;
 std::uint8_t g_LocalPlayer = 0;
 std::uint8_t g_PlayerCount = 2;
@@ -229,7 +230,7 @@ std::uint64_t CurrentSessionId()
     // alive. Generation 0 preserves the initial wire id; later generations
     // reject late packets from a retired run.
     return SESSION_ID ^
-           (static_cast<std::uint64_t>(g_SessionGeneration) *
+           (static_cast<std::uint64_t>(g_SessionGeneration - g_RoomRunGenerationBase) *
             0x9e3779b97f4a7c15ull);
 }
 
@@ -3879,6 +3880,9 @@ void ReturnToRoom()
 
 void BeginRoomRun()
 {
+    // Wire generations start together for each relay run. Keep the local
+    // lifetime generation monotonic for audio and other confirmed side effects.
+    g_RoomRunGenerationBase = g_SessionGeneration;
     g_SpectatorRunRetired = false;
     g_SpectatorMode = false;
     g_Initialized = g_Active = g_Done = false;

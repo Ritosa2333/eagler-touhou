@@ -11,9 +11,13 @@ using namespace th10;
 extern "C" __attribute__((export_name("sdl_room_return"))) u32 sdl_room_return(browser::Application* app){
     if(!app||app->stopped||app->error)return 0;
     app->engine.rollback_state=nullptr;app->engine.netplay_frame=Netplay::INVALID_FRAME;
-    if(app->world)app->world->rollback.reset();
+    if(app->world){
+        app->world->rollback.reset();app->world->audio_events.Reset();
+        app->world->audio.manager.command_sink=nullptr;
+    }
     app->state.netplay_runtime.Clear();app->state.multiplayer_session={};app->state.input_lanes={};
-    app->multiplayer_replay_scope=app->multiplayer_frame_open=app->multiplayer_waiting=false;
+    app->state.multiplayer_replay.Clear();
+    app->multiplayer_replay_scope=app->multiplayer_frame_open=app->multiplayer_waiting=app->multiplayer_generation_pending=false;
     app->state.pending_screen=4;app->room_preview=true;return 1;
 }
 namespace {
