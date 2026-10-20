@@ -48,7 +48,7 @@ export class PracticeOverlay {
     if(!this.enabled||!this.initialized)return false;
     down?this.keys.add(code):this.keys.delete(code);const vk=virtualKey(code);if(vk>=0)this.core._th12_practice_ui_key(vk,Number(down));
     const flags=this.core._th12_practice_ui_flags();
-    return this.capturesGameplay||['Backspace','Tab','F12'].includes(code)||(flags&1)&&this.scene==='playing'&&(/^(F[1-7])$/.test(code)||code==='KeyU');
+    return this.capturesGameplay||['Backspace','Tab','F12'].includes(code)||(flags&1)&&['playing','demo','pause','pause-confirm'].includes(this.scene)&&(/^(F[1-7])$/.test(code)||code==='KeyU');
   }
   tick(pad=0){
     if(!this.enabled||!this.initialized)return;
