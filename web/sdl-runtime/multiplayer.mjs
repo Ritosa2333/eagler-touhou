@@ -70,7 +70,9 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
  function fail(reason){
   if(failed)return;
   const message=reason?.message||String(reason);failed=true;target.__eaglerNetplayFailed=true;
-  target.__eaglerNetplayError=message;calibration.stop();core.th11_loop_stop();clearSeek();onError(reason);
+  target.__eaglerNetplayError=message;calibration.stop();core.th11_loop_stop();clearSeek();
+  if(active&&target.__eaglerPeerTransport?.disconnected){emit('notice',{message});void onExit().catch(onError);return;}
+  onError(reason);
  }
  const calibration=createAdonisCalibration({core:{memory:core.memory,multiplayer_calibration_status:()=>core.th11_mp_calibration_status(),
   multiplayer_network_poll:()=>core.th11_mp_pump()},getApp:()=>active?1:0,getOptions,emit,game:'th11',build,onError:fail,pause:()=>{
