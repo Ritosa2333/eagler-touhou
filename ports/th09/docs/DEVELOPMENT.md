@@ -56,3 +56,7 @@ npm --prefix launcher run dev:workspace
 ## 原生只读运行观测
 
 `build-sdl.mjs` 将 `th09_native_observation_v1` 导出到普通版与开发构建。该函数返回 12 个 `uint32` 字段；字段编号、有效位、阶段编码和严格解码器见 [`native-observation-contract.mjs`](../../../tools/ports/native-observation-contract.mjs)。TH09 的 session 帧同时是世界帧与本局重开帧，暂停状态来自 `Application::paused`；输入和坐标读取网络本地 side（单机为 side 0）的游戏玩家状态。输入 capability 只在玩家存活且 `player_state==0` 时声明；`match` 阶段和位置仍按实际状态独立报告。应用帧由宿主 `Application::frames` 单独提供。观测调用只刷新自己的静态结果缓冲区，不改游戏状态。
+
+## 房间菜单返回
+
+正式 Runtime 导出 `th09_room_return`，结束当前对局、清理旁观状态与待退出标记，回到原生标题菜单。Launcher 保留同一 iframe、Module 和已加载资源，菜单呈现后完成 `return-room` 响应。普通版与多人版共用该生产接口，构建时核对导出存在；连续旁观往返核对菜单持续刷新与再次开局。

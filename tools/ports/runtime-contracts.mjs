@@ -12,7 +12,7 @@ const {parse} = require('acorn');
 export function runtimeSourceFiles(game, product) {
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
   if (game === 'th09') return ['web/sdl-runtime/managed.mjs'];
-  if (game === 'th15') return ['web/sdl-runtime/shell.mjs'];
+  if (['th075', 'th15'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
   return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/eagler-host.mjs'];
 }
 
@@ -66,7 +66,7 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
       assert.match(native, /SDL_GetGamepadAxis/, 'Compiled native source must read normalized gamepad axes');
     }
   }));
-  if (product.runtimeFileLayout === 'directory') {
+  if (product.runtimeFileLayout === 'directory' && product.features.focusHitbox !== false) {
     const file = `web/sdl-runtime/${game === 'th09' ? 'managed.mjs' : 'shell.mjs'}`;
     records.push(result('always-hitbox-abi', ['RUNTIME-06'], [file], () => {
       const text = read(file);

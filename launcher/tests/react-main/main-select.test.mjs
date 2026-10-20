@@ -193,6 +193,23 @@ test('live locale changes update the same open menu and trigger with pinned copy
  assert.deepEqual(results[1],results[0]);assert.deepEqual(results[2],results[0]);
 });
 
+test('room selects carry their stacking scope after portaling and clear it when reused outside the room',async()=>{
+ const owner=await reactOwner(),room=env.document.createElement('div');room.className='room-workspace';env.document.body.append(room);
+ room.append(owner.host??owner.container);
+ await act(()=>owner.trigger.click());assert.equal(owner.menu.hasAttribute('data-room-workspace'),true);
+ assert.equal(owner.menu.parentElement,env.document.body);
+ await act(()=>key(owner.trigger,'Escape'));
+ const drawer=env.document.createElement('aside');drawer.className='mp-settings-room-drawer';env.document.body.append(drawer);
+ drawer.append(owner.host??owner.container);
+ await act(()=>owner.trigger.click());assert.equal(owner.menu.hasAttribute('data-room-workspace'),true);
+ assert.equal(owner.menu.parentElement,env.document.body);
+ await act(()=>owner.menu.querySelector('[data-value="b"]').click());
+ assert.equal(owner.select.value,'b');
+ env.document.body.append(owner.host??owner.container);
+ await act(()=>owner.trigger.click());assert.equal(owner.menu.hasAttribute('data-room-workspace'),false);
+ room.remove();drawer.remove();
+});
+
 test('React renders native props/ref and the exact supplied direct-child prefix without imperative tree creation',async()=>{
  const host=env.document.createElement('div');env.document.body.append(host);const root=createRoot(host);let ref;
  mounts.push(async()=>{await act(()=>root.unmount());host.remove();});

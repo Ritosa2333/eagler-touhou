@@ -1,0 +1,2 @@
+#include "SakuyaState.hpp"
+namespace th075 {void reset_sakuya(FighterActor& a,SakuyaState& s,FighterCoreEvents& events){s.actionTicks=0;s.actionStage=0;s.emissionDelay=0;s.volleyLoops=0;s.burstCount=0;s.blockEffectSent=0;s.clockReserve=0;s.clockPulse=0;s.timeReserve=0;s.timeActive=0;s.knivesActive=0;s.farRangeFrames=0;s.introWait=s.captionWait=0;a.knockdownTime=0;a.commandTimers.fill(0);a.reset_round(events);}}

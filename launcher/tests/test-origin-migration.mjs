@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 import { APP_SHELL_FILES, FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
-import { PRODUCT_GAMES } from "../product-catalog.mjs";
+import { PRODUCT_GAMES, PRODUCT_IDS } from "../product-catalog.mjs";
+import { replayStorageLocation } from "../.cache/build/browser/assets/launcher/replay-storage-policy.mjs";
 import {
   gamePreferenceStorageKey,
   languagePreferenceStorageKey,
@@ -46,6 +47,10 @@ assert.ok(Array.isArray(databaseOwners), "origin migration IndexedDB owner list 
 for (const product of Object.values(PRODUCT_GAMES)) {
   assert.ok(databaseOwners.includes(product.storage.saveRoot),
     `origin migration does not cover registered save root: ${product.storage.saveRoot}`);
+}
+for (const product of PRODUCT_IDS) {
+  const {database} = replayStorageLocation(product);
+  assert.ok(databaseOwners.includes(database), `origin migration does not cover ${product}: ${database}`);
 }
 for (const database of ["eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]) {
   assert.ok(databaseOwners.includes(database), `origin migration lost persistent database owner: ${database}`);

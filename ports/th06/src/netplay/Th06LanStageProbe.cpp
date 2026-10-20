@@ -1525,8 +1525,8 @@ void RetireGameplaySession()
     if (g_SpectatorMode)
     {
         // A spectator admission belongs to exactly one relay run. The
-        // Launcher creates a fresh run/startSerial (and a fresh Runtime) for
-        // the next room start; never reinterpret the old read-only socket as
+        // Launcher explicitly rearms the retained Runtime for its next launch;
+        // never reinterpret the old read-only socket as
         // a second gameplay generation from the local post-game MainMenu.
         g_SpectatorRunRetired = true;
         if (ProductionLanMode() && g_ProductionTransportStarted)
@@ -1671,7 +1671,7 @@ bool ProductionLanMode()
 {
 #ifdef __EMSCRIPTEN__
     return EM_ASM_INT({
-        return Module.eaglerOptions?.netplayMode === 'lan' ? 1 : 0;
+        return !Module.eaglerRoomPreview && Module.eaglerOptions?.netplayMode === 'lan' ? 1 : 0;
     }) != 0;
 #else
     return false;
@@ -3861,6 +3861,29 @@ void SetGameplayStartSeed(std::uint16_t seed)
 bool Requested()
 {
     return RequestedInternal();
+}
+
+void ReturnToRoom()
+{
+    g_BrowserPeerTransport.Close();
+    g_ProductionTransportStarted = false;
+    RetireGameplaySession();
+    g_SpectatorRunRetired = true;
+    g_SpectatorPlayback.Clear();
+    g_SpectatorView.Clear();
+    if (g_Supervisor.wantedState == SUPERVISOR_STATE_MAINMENU &&
+        g_Supervisor.curState == SUPERVISOR_STATE_GAMEMANAGER)
+        g_Supervisor.wantedState = SUPERVISOR_STATE_INIT;
+    g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
+}
+
+void BeginRoomRun()
+{
+    g_SpectatorRunRetired = false;
+    g_SpectatorMode = false;
+    g_Initialized = g_Active = g_Done = false;
+    g_SpectatorPlayback.Clear();
+    g_SpectatorView.Clear();
 }
 
 double SimulationIntervalScale()

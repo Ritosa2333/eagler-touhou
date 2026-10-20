@@ -6,6 +6,7 @@ const TITLE_ENTRY=Object.freeze({
   th06:'confirm',th07:'confirm',th08:'confirm',th09:'confirm',
   th10:'confirm',th11:'confirm',th15:'confirm',th20:'th20-menu',
 });
+export const TITLE_FLOW_GAMES=Object.freeze(Object.keys(TITLE_ENTRY));
 const TITLE_MODES=Object.freeze(Object.fromEntries(Object.entries(TITLE_ENTRY).map(([game,normal])=>[
   game,Object.freeze({normal,multiplayer:PRODUCT_GAMES[game]?.multiplayerRuntime&&PRODUCT_GAMES[game]?.multiplayer?'room-owned':null}),
 ])));

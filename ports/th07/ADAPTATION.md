@@ -30,7 +30,7 @@
 | RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json)；multiplayer：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
+| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 不适用 | 不适用 | normal：本作未声明判定点显示；multiplayer：本作未声明判定点显示 |
 | PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
@@ -170,6 +170,10 @@
 <!-- manual-verification -->
 
 ## 运行验收记录
+
+2026-10-19 multiplayer：修复对话与共享结界同帧开启造成重复结算及待开启状态残留，2P/3P 生产函数级回归见[共享结界记录](../../docs/adaptation/th07-border-dialogue-20261019.md)。Gameplay ABI 13、Netplay ABI 14。
+
+2026-10-19 multiplayer：房间预览转正式开局补发实际呈现确认，双实例首帧、输入桥和同步检查通过，见[房间开局修复记录](../../docs/adaptation/room-start-20261019.md)。
 
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 

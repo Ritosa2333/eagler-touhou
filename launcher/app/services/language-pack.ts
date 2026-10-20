@@ -7,6 +7,7 @@ import type {GameId} from '../../src/contracts/product-catalog.mts';
 import type {Translate} from '../i18n';
 import {checkPreparationAbort, type PreparationProgress} from './package-acquisition';
 import type {PreparationNetwork} from './preparation-network';
+import {createResourceDownloader, resourcePath} from '../../src/launcher/resource-download.mts';
 
 export interface LanguagePackDependencies {
   readObject: typeof readPackageObject;
@@ -45,12 +46,14 @@ export async function prepareLanguagePack({game, entry, baseUrl, signal, transla
   let archive: Uint8Array | null = null, cache: Cache | null = null, cacheKey: Request | null = null;
   let fromCache = false, durableCache = false;
   const label = entry?.title || entry?.id || t('language.fallbackName');
+  const downloadResource = createResourceDownloader({fetchImpl});
   function progress(message: string, loaded?: number, totalBytes?: number, speed = 0, complete = false) {
     onProgress?.({stage: 'language', message, loaded, totalBytes,
       ...(loaded !== undefined ? {presentation: {kind: 'language', mode: 'language', label, loaded, total: totalBytes, speed}} : {}),
       ...(complete ? {completion: 'language'} : {})});
   }
   async function download(remote: RemoteLanguagePackSource, mode: RequestCache) {
+    const routed = resourcePath(new URL(remote.url));
     const controller = new AbortController(); let timedOut = false;
     let task: ReturnType<PreparationNetwork['beginLanguage']> | null = null;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -58,11 +61,20 @@ export async function prepareLanguagePack({game, entry, baseUrl, signal, transla
     const cancel = () => controller.abort(signal?.reason);
     checkPreparationAbort(signal);
     signal?.addEventListener('abort', cancel, {once: true});
-    arm();
+    if (!routed) arm();
     try {
       onLanguageDownloadActivity?.(true);
       task = network?.beginLanguage(label) ?? null;
       progress(t('language.requesting', {language: label}));
+      if (routed) {
+        const started = performance.now();
+        const response = await downloadResource(new URL(remote.url), {cache: mode, signal: controller.signal}, (loaded, total) => {
+          task?.received(loaded, total);
+          progress(t('language.downloading'), loaded, total, loaded / Math.max((performance.now() - started) / 1000, .1));
+        });
+        const bytes = new Uint8Array(await response.arrayBuffer()); checkPreparationAbort(signal);
+        progress(t('language.downloadComplete'), bytes.length, bytes.length, 0, true); return bytes;
+      }
       const response = await fetchImpl(remote.url, {cache: mode, signal: controller.signal});
       if (!response.ok) throw new Error(`${new URL(remote.url).pathname}: HTTP ${response.status}`);
       arm(); const total = Number(response.headers.get('Content-Length')) || remote.bytes || 0, started = performance.now();

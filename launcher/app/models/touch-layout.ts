@@ -21,6 +21,7 @@ export interface TouchLayoutModel {
   subscribe(listener: () => void): () => void;
   getSnapshot(): TouchLayoutSnapshot;
   hydrate(): void;
+  setGame(game: string): void;
   begin(orientation: TouchLayoutOrientation, defaults: TouchLayoutProfile, visible: readonly TouchLayoutControlName[]): void;
   ensureOrientation(orientation: TouchLayoutOrientation, defaults: TouchLayoutProfile): void;
   selectControl(name: TouchLayoutControlName): void;
@@ -36,6 +37,15 @@ export interface TouchLayoutModel {
  * The root decides exits; the React editor supplies measured original geometry. */
 export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage | null}): TouchLayoutModel {
   const listeners = new Set<() => void>();
+  // Fighting controls do not inherit or overwrite the shared shooter layout.
+  let scope = 'shared';
+  const sessionLayouts = new Map<string, TouchLayout | null>();
+  const scopedKey = (key: string) => scope === 'th075' ? key + '-th075' : key;
+  const layoutStorage: TouchLayoutStorage | null = storage && {
+    getItem: key => storage.getItem(scopedKey(key)),
+    setItem: (key, value) => storage.setItem(scopedKey(key), value),
+    removeItem: key => storage.removeItem(scopedKey(key)),
+  };
   const windowPositions = createTouchLayoutWindowPositionStore({storage});
   let saved: TouchLayout | null = null, draft: TouchLayout | null = null, editing = false;
   let orientation: TouchLayoutOrientation = 'landscape', selected: TouchLayoutControlName = 'bomb';
@@ -62,7 +72,7 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
     if (missing.length && baseline) {
       for (const name of missing) if (defaults.controls[name]) baseline.controls[name] = {...defaults.controls[name]!};
       normalizeTouchLayoutPriorityOrder(baseline.controls);
-      saved = persistTouchLayoutResult(storage, saved).value;
+      saved = persistTouchLayoutResult(layoutStorage, saved).value;
     }
   }
   function profile() {
@@ -73,7 +83,15 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
   return Object.freeze({
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};},
     getSnapshot: () => snapshot,
-    hydrate() {if (editing) return; saved = loadTouchLayoutFromStorage(storage); windowPositions.reload(); publish();},
+    hydrate() {if (editing) return; saved = loadTouchLayoutFromStorage(layoutStorage); windowPositions.reload(); publish();},
+    setGame(game: string) {
+      const next = game === 'th075' ? 'th075' : 'shared';
+      if (scope === next) return;
+      sessionLayouts.set(scope, cloneTouchLayout(saved));
+      scope = next; editing = false; draft = null; lastSave = null;
+      saved = sessionLayouts.has(scope) ? cloneTouchLayout(sessionLayouts.get(scope) ?? null) : loadTouchLayoutFromStorage(layoutStorage);
+      publish();
+    },
     begin(next: TouchLayoutOrientation, defaults: TouchLayoutProfile, visible: readonly TouchLayoutControlName[]) {
       if (editing) return;
       orientation = next; editing = true; lastSave = null; draft = cloneTouchLayout(saved) ?? emptyTouchLayout();
@@ -104,7 +122,7 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
     resetOrientation() {if (!editing || !draft) return; draft.profiles[orientation] = null; publish();},
     save() {
       if (!editing || !draft) throw new Error('touch.draftUnavailable');
-      lastSave = persistTouchLayoutResult(storage, draft);
+      lastSave = persistTouchLayoutResult(layoutStorage, draft);
       // A blocked durable write still commits the session's usable layout.
       saved = lastSave.value; draft = cloneTouchLayout(saved) ?? emptyTouchLayout(); publish(); return lastSave;
     },

@@ -215,10 +215,10 @@ bool RollbackDriver::RunFrame(bool render){
        !network.SpectatorPublishFailed()){
         const auto stage=u32(a.game.globals.stage)|(u32(session.multiplayer_route_state)<<8);
         const auto& previous=spectator_stage_tags[(frame-1u)%spectator_stage_tags.size()];
-        // A stage checkpoint starts a segment only when the stage actually
-        // changes, or when the immediately preceding tag is unavailable.
+        // The first initialized game world starts the spectator stream.
+        // Later checkpoints follow stage changes or a missing preceding tag.
         // A non-checkpoint frame is still valid evidence of the same stage.
-        const bool checkpoint=a.in_game()&&(frame==0||previous.frame!=frame-1u||previous.stage!=stage);
+        const bool checkpoint=a.in_game()&&(!network.SpectatorPublisherStarted()||frame==0||previous.frame!=frame-1u||previous.stage!=stage);
         pending_spectator_frame=frame;pending_spectator_stage=stage;
         pending_spectator_checkpoint=checkpoint;
         u32 capture_failure=0;

@@ -124,6 +124,14 @@
         }
       }
     },
+    "th075": {
+      "builder": "prebuilt", "workspaceRepository": "th075",
+      "sourceBuild": { "kind": "node", "build": ["web/scripts/build-sdl.mjs", "--release", "--eagler"] },
+      "variants": {
+        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} },
+        "multiplayer": { "workspaceRepository": "th075mp", "sourceBuild": { "build": ["web/scripts/build-sdl.mjs", "--release", "--eagler", "--multiplayer"] }, "features": { "thcrap": false, "thprac": false }, "cache": {} }
+      }
+    },
     "th08": {
       "builder": "prebuilt",
       "sourceBuild": { "kind": "node", "build": ["portable/build.mjs", "--th08"], "execution": "web/artifacts/sdl3/th08-sdl.wasm" },

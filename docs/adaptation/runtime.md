@@ -107,6 +107,14 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 
 [消息协议](../../launcher/src/contracts/runtime-protocol.mts) | [数据布局](../../launcher/lib/content-definition.mjs) | [包管理](../../launcher/package/README.md)
 
+## 房间内的持续实例
+
+支持房间菜单返回的 Runtime 在 `ready` 声明 `roomReturn`。退出旁观或返回房间使用 `return-room`：结束本局传输、清理回滚和临时输入，恢复原生标题菜单，并在菜单呈现后回复 `presented: true`。iframe、Wasm、DATA 和已安装资源持续保留。原生菜单操作返回时使用 `room-menu` 事件，同步恢复房间工作区。
+
+每次启动携带新的 `launchSerial`；`first-frame` 和 `room-menu` 回传该次编号。启动器只接收当前启动编号的呈现与菜单事件。验收连续三次旁观往返，核对同一 document 和 Module、菜单动画、玩家对局持续推进及零次程序和 DATA 重载。该约定覆盖共用启动器和各作多人 Runtime。
+
+每次旁观重进先清空上次的接收时间线，再以本次收到的历史重建画面。开局初始化期间也能返回菜单，原生场景管理器按当前阶段恢复标题资源；菜单停留后重进与连续快速切换使用同一套生命周期。
+
 ## 安装代次与后台更新
 
 Package Store 在领取暂存区和切换当前版本的 IndexedDB 事务中核对预期代次。后台 OGG 下载和共享字体升级携带所属安装代次，多个标签页同时导入或更新时，以完整的新安装为准。Web Locks 用于协调并发，持久化代次检查覆盖没有 Web Locks 的浏览器。

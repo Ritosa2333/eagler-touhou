@@ -1,5 +1,6 @@
 import {LaunchActions} from './components/launcher/LaunchActions';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
+import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS} from '../src/contracts/product-catalog.mts';
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
@@ -45,6 +46,8 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const replayModel = session.getReplays();
   const replayFiles = useSyncExternalStore(replayModel?.subscribe ?? emptySubscribe, replayModel?.getSnapshot ?? noDiagnostics, replayModel?.getSnapshot ?? noDiagnostics);
   const replayWorkspace = !!replayFiles?.open;
+  const room = useSyncExternalStore(session.room.service.subscribe, session.room.service.getSnapshot, session.room.service.getSnapshot);
+  const roomWorkspace = !!room.room && !replayWorkspace && (state.th09NetworkOverlayOpen || !state.roomPlayerExpanded && !session.nativeTouch.isFullscreen());
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   const preferences = useSyncExternalStore(session.preferences.subscribe, session.preferences.getSnapshot, session.preferences.getSnapshot);
   const firstUse = useRef<FirstUseNoticeHandle>(null), notice = useRef<SiteNoticeHandle>(null), network = useRef<NetworkDiagnosticsHandle>(null);
@@ -62,11 +65,12 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     nativeTouch: session.nativeTouch, touchFireEnabled: session.touchFireState.getEnabled(), assetUrl, lobbyHref: assetUrl('lobby.html'), masthead,
     footer: <Footer donationAvailable={donationAvailable}/>, serverStatusNote: <ServerStatusNote session={session}/>, metadataRevision: state.metadataRevision,
     replayWorkspace,
-    runtimeOpen: state.playerOpen, runtimeLaunched: state.runtime?.launched, titleOverlayOpen: state.th09NetworkOverlayOpen, runtimeFrame: session.attachFrame, requestRuntimeClose: session.requestRuntimeClose, requestRoomLeave: session.requestRoomLeave,
+    roomWorkspace,
+    runtimeOpen: state.playerOpen, runtimeLaunched: state.runtime?.launched, titleOverlayOpen: state.th09NetworkOverlayOpen, runtimeFrame: session.attachFrame, requestRuntimeClose: session.requestRuntimeClose, requestRoomLeave: session.requestRoomLeave, requestRoomFullscreenExit: session.exitRoomPlayerFullscreen,
     optionsActions: <SessionLaunchActions session={session}/>, multiplayerControls: <RoomSettingsControls session={session}/>, multiplayerDiagnostics: <InlineMultiplayerDiagnostics session={session}/>, multiplayerOnline: <LegacyMultiplayerOnline session={session}/>,
-    roomSurface: <RoomComposition session={session} settingsClosing={settingsClosing}/>,
+    roomSurface: <RoomComposition session={session} settingsClosing={settingsClosing} workspaceVisible={roomWorkspace}/>,
     roomDrawer: <RoomDrawer session={session} onClosingChange={setSettingsClosing}/>,
-    runtimeControls: <><PlayerControls session={session} replayWorkspace={replayWorkspace}/>{session.getReplays() && <ReplayWorkspace session={session}/>}<MultiplayerQuickChat model={session.room.quickChat}/></>,
+    runtimeControls: <><PlayerControls session={session} replayWorkspace={replayWorkspace} roomWorkspace={roomWorkspace}/>{session.getReplays() && <ReplayWorkspace session={session}/>}<MultiplayerQuickChat model={session.room.quickChat}/></>,
     // The real directory renderer derives these slots from the live service;
     // this structural value is never rendered by BrowserWorkspace.
     lobby: {masthead, onGuide: null, onNetwork: null, roomTools: null, roomList: null, hasRooms: false, loading: true, emptyState: null, roomCount: ''},
@@ -102,8 +106,10 @@ function RoomSettingsControls({session}: {session: BrowserSession}) {
 }
 function RoomDrawer({session, onClosingChange}: {session: BrowserSession; onClosingChange(value: boolean): void}) {
   const navigation = useSurfaceNavigation(), state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
-  return <RoomSettingsDrawer roomOpen={navigation.roomCode !== null && navigation.productId !== null && isMultiplayerProductId(navigation.productId)} open={navigation.roomSettingsOpen} onCloseRequest={navigation.closeRoomSettings}
-    foregroundActive={navigation.surface === 'touch' || state.playerOpen} onClosingChange={onClosingChange}/>;
+  // Escape LibrarySurface's z-index:2 stacking context without moving the
+  // options carrier after layout effects have already acquired its ownership.
+  return createPortal(<RoomSettingsDrawer roomOpen={navigation.roomCode !== null && navigation.productId !== null && isMultiplayerProductId(navigation.productId)} open={navigation.roomSettingsOpen} onCloseRequest={navigation.closeRoomSettings}
+    foregroundActive={navigation.surface === 'touch' || state.playerOpen} onClosingChange={onClosingChange}/>, document.body);
 }
 function Header({session, firstUse, notice, donationAvailable}: {
   session: BrowserSession; firstUse: React.RefObject<FirstUseNoticeHandle | null>; notice: React.RefObject<SiteNoticeHandle | null>; donationAvailable: boolean;
@@ -147,6 +153,7 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
   return <LobbyDirectoryView {...props} initialRows={document.documentElement.hasAttribute('data-lobby-boot')} service={session.directory} products={createLibraryProducts(directory.products, path => new URL(path, session.baseUrl).href, id => `?game=${id}`)}
     assetUrl={path => new URL(path, session.baseUrl).href} onGuide={() => navigation.openInfoDialog('mpGuideDialog')}
     onNetwork={() => {navigation.openInfoDialog('lobbyNetworkDialog'); void network.current?.run();}}
+    onReplay={() => {void session.openReplayViewer(directory.selectedProduct || directory.products[0] || 'th06mp');}}
     onOpenForm={mode => {if (session.directory.prepareForm(mode)) navigation.openDirectoryForm(mode);}}/>;
 }
 function SessionLaunchActions({session}: {session: BrowserSession}) {

@@ -76,7 +76,8 @@ try {
   const packCache = join(cacheRoot, "pack-processor");
   const packService = new ThcrapService({
     repository: "https://example.test", fetchImpl, cacheRoot: packCache, maxAgeMs: 60000,
-    packProcessor: async resources => {
+    packProcessor: async (resources,context) => {
+      assert.equal(context.language,"lang_en");
       packCalls++;
       assert.equal(resources.length, 2);
       return [

@@ -19,7 +19,7 @@ export function SpectatorPlayback({session}: {session: BrowserSession}) {
     if (!state || !host.current) {view.current?.destroy(); view.current = null; return;}
     const keyFor = (run: string) => `${session.getSnapshot().runtime?.epoch ?? ''}:${run}`;
     if (!view.current) view.current = createSpectatorTimelineView({
-      document: host.current.ownerDocument, mount: host.current, idPrefix: 'cooperativeSpectator',
+      document: host.current.ownerDocument, mount: host.current, idPrefix: 'cooperativeSpectator', expanded: true,
       async onAction(action, frame, key) {
         const current = session.spectatorPlayback.getSnapshot();
         if (!current || key !== keyFor(current.run)) return;

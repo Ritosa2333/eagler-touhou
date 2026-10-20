@@ -1,4 +1,4 @@
-export {RoomView} from './RoomView';
+export {RoomWorkspace as RoomView} from './RoomWorkspace';
 export type {RoomViewProps, RoomViewContext, RoomPanelKind, RoomNetworkPresentation} from './types';
 export {RoomSettingsDrawer, type RoomSettingsDrawerProps} from './RoomSettingsDrawer';
 export {MultiplayerSettingsControls, type MultiplayerSettingsControlsProps} from './MultiplayerSettingsControls';

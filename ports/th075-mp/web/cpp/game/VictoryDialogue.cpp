@@ -1,0 +1,4 @@
+#include "VictoryDialogue.hpp"
+namespace th075 {
+void select_victory_dialogue(RoundFighterState& winner,const FighterScript& script,u8 opponent,ReplayRandom& random){winner.victoryLines.clear();winner.victoryPortraits.clear();const auto choose=[&](u16 label){const auto roll=random.next()%256;i16 total=0;for(u32 i=0;;){const auto* weight=script.get(label,i);if(!weight)break;total=i16(u16(total)+u16(weight->argument));++i;if(i16(roll)<total){const auto* first=script.get(label,i);if(!first)return true;winner.victoryLines.push_back(first->text);winner.victoryPortraits.push_back(i8(first->argument));const auto* second=script.get(label,i+1);if(second&&second->kind==StoryCommand::Player){winner.victoryLines.push_back(second->text);winner.victoryPortraits.push_back(i8(second->argument));}return true;}while(const auto* line=script.get(label,i)){if(line->kind==StoryCommand::Voice)break;++i;}}return false;};if(!choose(u16(200+opponent)))choose(300);}
+}

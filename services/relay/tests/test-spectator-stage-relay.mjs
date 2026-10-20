@@ -5,6 +5,7 @@ import {spawn} from 'node:child_process';
 import net from 'node:net';
 import {fileURLToPath} from 'node:url';
 import {COOPERATIVE_SPECTATOR_MARKERS} from '../src/spectator-stages.mjs';
+import {multiplayerConfigForProduct} from '../../../common/contracts/product-catalog.mjs';
 const port=await new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p));});});
 const child=spawn(process.execPath,[fileURLToPath(new URL('../src/netplay-relay.mjs',import.meta.url))],{windowsHide:true,
   env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',
@@ -14,7 +15,7 @@ async function wait(check,label){const end=Date.now()+6000;while(!check()){if(Da
 async function open(query){const ws=new WebSocket(`ws://127.0.0.1:${port}/?${query}`),r={ws,json:[],binary:[],closed:false};sockets.push(ws);ws.binaryType='arraybuffer';
   ws.addEventListener('message',e=>typeof e.data==='string'?r.json.push(JSON.parse(e.data)):r.binary.push(Buffer.from(e.data)));
   ws.addEventListener('close',()=>r.closed=true);await wait(()=>ws.readyState===1||r.closed,'connect');assert.equal(ws.readyState,1,query+'\n'+log);return r;}
-const send=(r,v)=>r.ws.send(JSON.stringify(v));const room=r=>r.json.findLast(m=>m.room)?.room;
+const send=(r,v)=>r.ws.send(JSON.stringify(v));const room=r=>r.json.findLast(m=>m.room && typeof m.room === 'object')?.room;
 function event(marker,kind,frame,stage,serial){const b=Buffer.alloc(kind===1?44:kind===2?40:32);b.set([69,marker,83,86,1,kind,2,0]);b.writeBigUInt64LE(9n,8);b.writeUInt32LE(7,16);b.writeUInt32LE(frame,20);b.writeUInt32LE(stage,24);b.writeUInt32LE(serial,28);
  if(kind===1){b.writeUInt32LE(1,32);b.writeUInt32LE(4,36);b.set([4,3,2,1],40);}if(kind===2){b.writeUInt32LE(1,32);b[36]=2;b[37]=3;}return b;}
 function input(marker,frame){const b=Buffer.alloc(48);b.set([69,marker,78,80,4,3,2,0]);b.writeBigUInt64LE(9n,8);b.writeUInt32LE(frame,16);b.writeUInt32LE(7,20);return b;}
@@ -26,11 +27,38 @@ try{
   const host=await open(`room=${id}&lobby=${prefix}host&member=${prefix}member_host`),guest=await open(`room=${id}&lobby=${prefix}guest&member=${prefix}member_guest`);
   send(host,{type:'take-seat',seat:0,loadout:0});send(guest,{type:'take-seat',seat:1,loadout:1});
   await wait(()=>room(host)?.seats?.[0]&&room(host)?.seats?.[1],'seats');
+  send(guest,{type:'spectate'});
+  await wait(()=>!room(host)?.seats[1]&&room(host)?.spectators.some(s=>s.clientId===prefix+'guest'),'seated guest voluntarily moves to spectator');
+  send(guest,{type:'take-seat',seat:1,loadout:1});
+  await wait(()=>room(host)?.seats[1]?.clientId===prefix+'guest','spectator returns to player seat');
+  if (multiplayerConfigForProduct(product).inputTiming) {
+  send(host,{type:'timing-settings',rollbackEnabled:false,timingChoice:4});
+  await wait(()=>room(guest)?.timingChoice===4&&room(guest)?.adonisMode===1,'timing choice broadcast to guest');
+  const denied=guest.json.length;send(guest,{type:'timing-settings',rollbackEnabled:false,timingChoice:7});
+  await wait(()=>guest.json.slice(denied).some(m=>m.type==='error'),'guest cannot edit timing');
+  assert.equal(room(host).timingChoice,4);
+  send(host,{type:'timing-settings',rollbackEnabled:false,timingChoice:'auto'});
+  await wait(()=>room(guest)?.timingChoice==='auto','host restores automatic timing');
+  }
   const waiting=await open(`room=${id}&lobby=${prefix}waiting&member=${prefix}member_waiting`);send(waiting,{type:'spectate'});
   await wait(()=>room(host)?.spectatorCount===1,'full lobby admits an observer before start');
   assert.deepEqual(room(host).seats.slice(0,2).map(s=>s.clientId),[prefix+'host',prefix+'guest']);
+  send(waiting,{type:'quick-chat',phrase:'1',serial:0});
+  await wait(()=>host.json.some(m=>m.type==='quick-chat'&&m.clientId===prefix+'waiting'&&m.spectator&&m.seat===-1),'lobby spectators can use quick chat');
   send(host,{type:'set-ready',ready:true});send(guest,{type:'set-ready',ready:true});
-  await wait(()=>room(host)?.seats.slice(0,2).every(s=>s?.ready),'ready');send(host,{type:'start',...(product==='th15mp'?{adonisMode:1}: {})});await wait(()=>host.json.some(m=>m.type==='start'),'start');
+  await wait(()=>room(host)?.seats.slice(0,2).every(s=>s?.ready),'ready');
+  for(const client of [host,guest]) send(client,{type:'resource-progress',status:'ready',stage:'runtime',percent:100});
+  await wait(()=>room(host)?.seats.slice(0,2).every(s=>s?.resource?.status==='ready'),'native preload complete');
+  send(guest,{type:'resources-changed'});
+  await wait(()=>room(host)?.seats.slice(0,2).every(s=>s&&!s.ready),'resource switch cancels every ready acknowledgement');
+  const before=guest.json.length;send(guest,{type:'set-ready',ready:true});
+  await wait(()=>guest.json.length>before,'unprepared ready rejected');
+  assert.equal(room(guest).seats[1].ready,false);
+  send(guest,{type:'resource-progress',status:'ready',stage:'runtime',percent:100});
+  await wait(()=>room(host)?.seats[1]?.resource?.status==='ready','replacement preload complete');
+  send(host,{type:'set-ready',ready:true});send(guest,{type:'set-ready',ready:true});
+  await wait(()=>room(host)?.seats.slice(0,2).every(s=>s?.ready),'replacement ready');
+  send(host,{type:'start',...(product==='th15mp'?{adonisMode:1}: {})});await wait(()=>host.json.some(m=>m.type==='start'),'start');
   const p0=await open(base+`&player=0&member=${prefix}member_host`),p1=await open(base+`&player=1&member=${prefix}member_guest`);
   const s0=await open(base+`&player=0&signal=1&member=${prefix}member_host`),s1=await open(base+`&player=1&signal=1&member=${prefix}member_guest`);
   send(s0,{type:'rtc-failed'});send(s1,{type:'rtc-failed'});await wait(()=>s0.json.some(m=>m.type==='route'),'route');

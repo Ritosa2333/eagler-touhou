@@ -1,5 +1,16 @@
 interface LinkedAbortSignal {signal: AbortSignal | undefined; dispose(): void;}
 
+/** Stop waiting on read-only/background work that cannot itself be aborted.
+ * Its continuation must still check ownership before touching a live Runtime. */
+export function waitWithAbort<T>(task: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) {void task.catch(() => {}); return Promise.reject(signal.reason);}
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => {signal.removeEventListener('abort', abort); reject(signal.reason);};
+    signal.addEventListener('abort', abort, {once: true});
+    task.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+  });
+}
+
 export function linkAbortSignals(first: AbortSignal, ...rest: (AbortSignal | undefined)[]): LinkedAbortSignal & {signal: AbortSignal};
 export function linkAbortSignals(...signals: (AbortSignal | undefined)[]): LinkedAbortSignal;
 /** Operation-owned cancellation fan-in, without AbortSignal.any or a global shim. */

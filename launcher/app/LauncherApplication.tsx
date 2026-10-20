@@ -54,10 +54,12 @@ export interface LauncherHost {
   bootTouchPreviewImage?: string;
   runtimeOpen?: boolean;
   replayWorkspace?: boolean;
+  roomWorkspace?: boolean;
   runtimeLaunched?: boolean;
   titleOverlayOpen?: boolean;
   requestRuntimeClose?(): Promise<boolean>;
   requestRoomLeave?(): void;
+  requestRoomFullscreenExit?(): Promise<void>;
   roomSurface?: ReactNode;
   roomDrawer?: ReactNode;
   runtimeFrame?: RefCallback<HTMLIFrameElement>;
@@ -72,7 +74,7 @@ export function LauncherApplication({host}: {host: LauncherHost}) {
   const layout = useSyncExternalStore(host.touchLayout.subscribe, host.touchLayout.getSnapshot, host.touchLayout.getSnapshot);
   return <LocaleProvider locale={host.locale}>
     <SurfaceNavigationProvider dirty={layout.dirty} isEditing={layout.isEditing} onDiscard={host.touchLayout.discard} decisions={host.decisions}
-      playerOpen={host.runtimeOpen} requestRuntimeClose={host.requestRuntimeClose} requestRoomLeave={host.requestRoomLeave} titleOverlayOpen={host.titleOverlayOpen} productAvailable={host.productAvailable} onRouteSelection={host.onRouteSelection}>
+      playerOpen={host.runtimeOpen} requestRuntimeClose={host.requestRuntimeClose} requestRoomLeave={host.requestRoomLeave} requestRoomFullscreenExit={host.requestRoomFullscreenExit} titleOverlayOpen={host.titleOverlayOpen} productAvailable={host.productAvailable} onRouteSelection={host.onRouteSelection}>
       <LauncherSurfaces host={host}/>
     </SurfaceNavigationProvider>
   </LocaleProvider>;
@@ -87,6 +89,7 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
   const contextRevision = useRef<number | undefined>(undefined);
   const [playerElement, setPlayerElement] = useState<HTMLElement | null>(null);
   const roomOpen = navigation.roomCode !== null && navigation.productId !== null && isMultiplayerProductId(navigation.productId);
+  const roomWorkspace = roomOpen && host.roomWorkspace === true && navigation.surface !== 'touch';
   const catalog = host.catalogProducts ?? host.products;
   const optionsOpen = !roomOpen && navigation.hasSelection;
   const retainedProduct = useRef<ProductId | undefined>(host.products[0]?.id);
@@ -146,14 +149,14 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
   const lobbyProps: LobbySurfaceProps = {...host.lobby, products: host.products.filter(product => product.multiplayer),
     selectedProduct: navigation.filterProductId ?? undefined, openedProduct: presence.openedProduct, onSelect: id => {if (isProductId(id)) navigation.selectLobbyProduct(id);},
     onActivate: activate, roomUsersArtwork: host.assetUrl('assets/room-users.svg'),
-    children: <LobbyOptionsHost open={presence.open} foregroundActive={navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} onCloseRequest={navigation.closeSurface}>{host.replayWorkspace ? null : settingsPanel}</LobbyOptionsHost>};
+    children: <LobbyOptionsHost open={presence.open} foregroundActive={navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} onCloseRequest={navigation.closeSurface}>{host.replayWorkspace && !roomOpen ? null : settingsPanel}</LobbyOptionsHost>};
   return <OptionsOwnership value={presence.targets}>
     {navigation.context === 'lobby' ? host.renderLobby ? host.renderLobby(lobbyProps) : <LobbySurface {...lobbyProps}/> : <LibrarySurface products={host.products} selectedProduct={preview} openedProduct={presence.openedProduct}
       onSelect={setPreview} onActivate={activate} masthead={host.masthead} footer={host.footer} serverStatusNote={host.serverStatusNote}
       lobbyHref={host.lobbyHref} roomUsersArtwork={host.assetUrl('assets/room-users.svg')} optionsOpen={presence.open} roomOpen={roomOpen} roomDrawer={host.roomDrawer} onBack={navigation.closeSurface}>
-      {host.replayWorkspace ? null : settingsPanel}{host.roomSurface}
+      {host.replayWorkspace && !roomOpen ? null : settingsPanel}{host.roomSurface}
     </LibrarySurface>}
-    <PlayerSurface replayWorkspace={host.replayWorkspace} preview={host.bootTouchPreview} previewImage={host.bootTouchPreviewImage} onElement={setPlayerElement} onFrame={host.runtimeFrame} open={navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} editing={navigation.surface === 'touch'}>{host.runtimeControls}</PlayerSurface>
+    <PlayerSurface roomWorkspace={roomWorkspace} replayWorkspace={host.replayWorkspace} preview={host.bootTouchPreview} previewImage={host.bootTouchPreviewImage} onElement={setPlayerElement} onFrame={host.runtimeFrame} open={roomWorkspace || navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} editing={navigation.surface === 'touch'}>{host.runtimeControls}</PlayerSurface>
     {editor}{host.overlays}
   </OptionsOwnership>;
 }

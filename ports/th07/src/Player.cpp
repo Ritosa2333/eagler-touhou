@@ -336,6 +336,13 @@ void ClearSharedBorderState(Player *player)
 {
     if (!player)
         return;
+    if (player->hasBorder == BORDER_READY)
+    {
+        // A shared border may end while another pilot is still waiting to
+        // activate. Cancel that pending state without changing its life state.
+        player->hasBorder = BORDER_NONE;
+        return;
+    }
     player->hasBorder = BORDER_NONE;
     player->playerState = PLAYER_STATE_INVULNERABLE;
     player->invulnerabilityTimer = 40;
@@ -3697,6 +3704,9 @@ void Player::BreakBorderNaturally()
     i32 cherryDiff;
 
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Pending activation is not a completed border and cannot award a bonus.
+    if (MultiplayerGameplay::IsMultiplayer() && this->hasBorder != BORDER_ACTIVE)
+        return;
     if (MultiplayerGameplay::IsMultiplayer() && !g_SharedBorderTransition &&
         GetActivePlayerCount() > 1 && IsSharedBorderActive())
     {
@@ -3706,7 +3716,7 @@ void Player::BreakBorderNaturally()
         {
             Player *other = &g_Players[playerId];
             if (other != this && IsPlayerSlotActive(playerId) &&
-                (other->hasBorder == BORDER_ACTIVE ||
+                (other->hasBorder != BORDER_NONE ||
                  other->playerState == PLAYER_STATE_BORDER))
                 ClearSharedBorderState(other);
         }
@@ -3812,11 +3822,7 @@ void Player::ActivateBorder()
 #endif
 
     if (this->bombInfo.isInUse ||
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        (!g_SharedBorderTransition && g_Gui.HasCurrentMsgIdx())
-#else
         g_Gui.HasCurrentMsgIdx()
-#endif
     )
     {
         this->hasBorder = BORDER_READY;
@@ -3894,7 +3900,7 @@ void Player::BreakBorder()
         {
             Player *other = &g_Players[playerId];
             if (other != this && IsPlayerSlotActive(playerId) &&
-                (other->hasBorder == BORDER_ACTIVE ||
+                (other->hasBorder != BORDER_NONE ||
                  other->playerState == PLAYER_STATE_BORDER))
                 ClearSharedBorderState(other);
         }

@@ -1,8 +1,3 @@
-import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
-/** Pinned-main room view regression: SYNTHETIC DOM, relay, preparation, metrics,
- * clocks and animation promises. No native browser/network/runtime/layout claim.
- * Expected rendering executes main's original functions after TypeScript erasure.
- */
 import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
@@ -11,11 +6,9 @@ import {createRequire} from 'node:module';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {installMountedDom} from './mounted-dom-environment.mjs';
-import {readUiHistoryText} from '../support/ui-history.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url)), require = createRequire(resolve(project, 'package.json'));
-const {build, transform} = require('esbuild'), pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
-let env, React, createRoot, MemoryRouter, owners, work, originalHTML, originalRender;
+const {build} = require('esbuild');
+let env, React, createRoot, MemoryRouter, owners, work;
 const mounts = new Set(), fixtures = new Set();
 const n = (selector, scope = env.document) => {const node = scope.querySelector(selector); assert.ok(node, `Missing ${selector}`); return node;};
 const all = (selector, scope = env.document) => [...scope.querySelectorAll(selector)];
@@ -24,16 +17,6 @@ const act = fn => React.act(async () => {await fn?.(); for (let i = 0; i < 12; i
 const defaultContext = {launched: false, th09NetworkOverlayOpen: false, launchStage: null, touchEnabled: false, touchMovementMode: 'joystick'};
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client')); ({MemoryRouter} = await import('react-router'));
-  originalHTML = pinned('public/index.html'); const mainSource = readUiHistoryText('8bdf6dbf4a81032f0725cc841b86d03e1465fe07', 'src/launcher/app.mts');
-  // Retain origin/main's separately accepted editable-name block with main's
-  // updated room timing renderer. Both inputs are committed legacy authorities.
-  const nameBlock = text => text.slice(text.indexOf('  const nameInput = $("#mpDisplayName");', text.indexOf('function renderMpRoom()')), text.indexOf('  const spectator = $("#mpUnseatedNote");', text.indexOf('function renderMpRoom()')));
-  const source = mainSource.replace(nameBlock(mainSource), nameBlock(pinned('src/launcher/app.mts')));
-  const section = (start, end) => source.slice(source.indexOf(start), source.indexOf(end, source.indexOf(start)));
-  const original = section('function renderRoomPreparationProgress()', 'function packageNetworkMeta(') + '\n' +
-    section('function renderRoomNetwork()', '// FLIP: read the visible geometry once');
-  const {code} = await transform(original, {loader: 'ts', target: 'es2022'});
-  originalRender = new Function('scope', `with (scope) { ${code}; renderMpRoom(); }`);
   work = await mkdtemp(resolve(project, '.cache/room-views-'));
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/components/room/index.ts';
@@ -131,7 +114,8 @@ async function mount(Component, initial, {locale = 'en', strict = false} = {}) {
   mounts.add(m); await render(); return m;
 }
 async function mountRoom(f, extra = {}, options = {}) {
-  const intents = []; const m = await mount(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, assetUrl: path => path,
+  const host=env.document.createElement('section'),stage=env.document.createElement('div'),viewport=env.document.createElement('div');viewport.className='game-viewport';stage.append(viewport);host.append(stage);env.document.body.append(host);
+  const intents = []; const m = await mount(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path,
     onLeave: () => {intents.push(['leave']); f.service.leave();}, onCopyRoomCode: code => intents.push(['copy', code]), onGuide: () => intents.push(['guide']),
     onOpenSettings: () => intents.push(['settings']), settingsOpen: false, panel: null, onOpenPanel: (...args) => intents.push(['panel', ...args]), onClosePanel: () => intents.push(['close']), ...extra}, {locale: f.locale, ...options}); return {m, intents};
 }
@@ -151,91 +135,17 @@ test('TH09 auto-save preference reaches only player Runtime options and survives
   assert.equal(all('#mpReplayAutoSave').length,0);
   assert.equal('netplayReplayAutoSave' in other.service.runtimeOptions(),false);
 });
-function baseline(f, {panel = null, context = defaultContext} = {}) {
-  const doc = new env.window.DOMParser().parseFromString(originalHTML, 'text/html'), snapshot = f.service.getSnapshot(), room = snapshot.room && {...snapshot.room};
-  for (const el of all('[data-i18n]', doc)) el.textContent = t(f.locale, el.dataset.i18n);
-  for (const attr of ['aria-label', 'placeholder', 'title']) for (const el of all(`[data-i18n-${attr}]`, doc)) el.setAttribute(attr, t(f.locale, el.getAttribute(`data-i18n-${attr}`)));
-  const config = owners.multiplayerConfigForProduct(snapshot.product), game = owners.PRODUCT_GAMES[owners.gameIdForProduct(snapshot.product)], q = selector => n(selector, doc), roomPanel = q('#mpRoomPanel');
-  roomPanel.open = !!panel; roomPanel.dataset.panel = panel?.kind || 'personal'; if (panel?.peerId) roomPanel.dataset.networkPeer = panel.peerId;
-  for (const node of all('[data-room-panel]', doc)) node.hidden = node.dataset.roomPanel !== (panel?.kind || 'personal');
-  q('#mpRoomView').hidden = false; q('#mpSettingsRoomDrawerToggle').hidden = false;
-  const preparation = snapshot.preparation && {...snapshot.preparation, room, tracker: {snapshot: () => ({active: [snapshot.preparation]})}};
-  const player = doc.createElement('div'); if (context.launchStage) player.className = 'mp-room-launch-cover';
-  originalRender({document: doc, $: q, t: (key, params) => t(f.locale, key, params), mpUiState: {...snapshot, room}, mpLobby: {connected: snapshot.connected, clientId: snapshot.localClientId, socket: null},
-    roomPreparation: preparation, roomPanel, roomNetwork: {...f.network, update() {}}, state: {game: owners.gameIdForProduct(snapshot.product), launched: context.launched, options: context}, player,
-    roomLaunchStage: context.launchStage, th09NetworkOverlayOpen: () => context.th09NetworkOverlayOpen, game: () => game,
-    mpRoomOwnerLocal: () => room.synced === true && snapshot.seat === 0, mpLoadouts: () => config.loadouts, mpLoadoutLabel: loadout => t(f.locale, loadout.labelKey),
-    mpNormalizeLoadoutIndex: value => ((Number(value) || 0) % config.loadouts.length + config.loadouts.length) % config.loadouts.length,
-    mpPlayerCounts: () => config.playerCounts, mpDifficultyMax: () => config.difficulties.length - 1, mpInputTimingPolicy: () => config.inputTiming,
-    mpAdonisSupported: () => config.inputTiming?.measuredStartup === true, mpRollbackSupported: () => config.inputTiming?.measuredStartup === true && owners.multiplayerInputTimingPolicy(config).rollback, mpInputTimingRecommendation: () => f.service.timingRecommendation(), mpRollbackEnabled: snapshot.rollbackEnabled, mpPendingLoadout: snapshot.loadoutPending ? {index:snapshot.preferredLoadout} : null,
-    multiplayerDisplayInitial: owners.multiplayerDisplayInitial, touchMovementUsesJoystick: owners.touchMovementUsesJoystick,
-    networkMiB: value => `${(Math.max(0, Number(value) || 0) / 1048576).toFixed(1)} MiB`, mpGameCheckInFlight: snapshot.checkBusy, mpLaunchInFlight: snapshot.launchBusy,
-    updateMpQuickChat() {}, mpPersistRoomState() {}, mpAnimateSeatContents() {}, syncCustomSelect() {},
-    requiredDescendant: (scope, selector) => n(selector, scope), HTMLElement: env.window.HTMLElement,
-  });
-  return doc;
-}
-// Attribute order, empty class/style, translation hooks, select serialization and
-// closed/hidden stale descendant text are not rendering semantics. We compare
-// each functional region independently: main appends resource rows before other
-// seat additions, whereas React declares the same nodes in a stable tree.
-function canonical(element) {
-  const attrs = [...element.attributes].filter(a => !a.name.startsWith('data-i18n') && !(element.hidden && element.classList.contains('mp-seat-resource') && a.name === 'data-status') && !['open', 'selected', 'value'].includes(a.name) && !(['class', 'style'].includes(a.name) && !a.value))
-    .map(a => [a.name, a.name === 'style' ? a.value.replace(/\.0+(?=%)/g, '') : a.value]).sort(([a], [b]) => a.localeCompare(b));
-  const children = []; let text = '';
-  const finish = () => {if (text.trim()) children.push(text.replace(/\s+/g, ' ').trim()); text = '';};
-  for (const child of element.childNodes) {if (child.nodeType === 3) text += child.textContent; else if (child.nodeType === 1) {finish(); children.push(canonical(child));}} finish();
-  return [element.localName, attrs, element.hidden ? [] : children];
-}
-function compare(f, options = {}) {
-  const doc = baseline(f, options);
-  if (f.service.getSnapshot().product === 'th09mp') {
-    n('#mpRoomMode', doc).textContent = t(f.locale, 'room.versus', {count: f.service.getSnapshot().room.playerCount});
-    n('#mpRollbackToggle', doc).title = t(f.locale, 'room.rollbackDelayHint');
+function compare(f) {
+  const state=f.service.getSnapshot(),room=state.room,config=owners.multiplayerConfigForProduct(f.product);
+  assert.equal(n('#mpRoomCode').textContent,room.code);
+  assert.equal(n('#mpRoomDifficultyBadge').textContent,config.difficulties[room.difficulty] || 'Normal');
+  assert.equal(n('#mpRoomView').classList.contains('room-workspace-view'),true);
+  const ids=all('[id]').map(node=>node.id);assert.equal(new Set(ids).size,ids.length,'room has one set of live controls');
+  for (const [index,seat] of (room.seats || []).slice(0,room.playerCount).entries()) {
+    if(seat)assert.equal(n(`[data-mp-seat="${index}"] .mp-seat-name`).textContent,seat.name);
   }
-  const selectors = ['#mpRoomConnection', '#mpCopyRoomCode', '#mpRoomTitle', '.mp-room-tags', '#mpRoomResourceProgress', '#mpRoomSettingsDrawer', '#mpInputTiming',
-    '#mpSpectatorAvatars', '#mpSpectatorCount', '.mp-room-footer', '#mpNameEditor', '#mpUnseatedNote', '#mpLocalPlayer', '#mpCheckGame',
-    '#mpRoomSettings', '#mpSpectatorContent', '[data-room-panel="network"]'];
-  for (const selector of selectors) {
-    const actual = n(selector).cloneNode(true);
-    // Timing deliberately moved here; its values/permissions have their own
-    // exercised check below. Every other original room field stays identical.
-    if (selector === '#mpRoomSettings') {
-      actual.querySelector('#mpInputDelaySetting')?.remove();
-      // TH15 chapter rewards postdate this pinned renderer. Verify the current
-      // public control below, then compare the remaining original fields.
-      const chapter = actual.querySelector('#mpTh15ChapterSetting');
-      assert.equal(!!chapter, f.service.getSnapshot().product === 'th15mp');
-      if (chapter) {
-        const control = n('#mpTh15ChapterThreshold');
-        assert.deepEqual([...control.options].map(option => Number(option.value)), Array.from({length:19}, (_, index) => 500000 + index * 250000));
-        assert.equal(control.value, String(f.service.getSnapshot().room.chapterThreshold ?? (f.service.getSnapshot().room.playerCount === 3 ? 1500000 : 1250000)));
-        chapter.remove();
-      }
-    }
-    if (selector === '#mpRoomConnection' && (!f.service.getSnapshot().connected || !f.service.getSnapshot().room.synced)) {
-      assert.equal(actual.textContent, owners.roomConnectionMessage(f.service.getSnapshot(), key => t(f.locale, key)));
-      continue;
-    }
-    assert.deepEqual(canonical(actual), canonical(n(selector, doc)), `Executed pinned main: ${selector}`);
-  }
-  for (const [index, actual] of all('[data-mp-seat]').entries()) {
-    const expected = n(`[data-mp-seat="${index}"]`, doc);
-    for (const attr of ['class', 'hidden', 'title']) assert.equal(actual.getAttribute(attr), expected.getAttribute(attr), `Seat ${index}: ${attr}`);
-    for (const selector of ['.mp-seat-face', '.mp-seat-name', '.mp-seat-state', '.mp-seat-me', '.mp-seat-control', '.mp-seat-edit', '.mp-seat-resource'])
-      assert.deepEqual(canonical(n(selector, actual)), canonical(n(selector, expected)), `Executed pinned main seat ${index}: ${selector}`);
-    if (index) {
-      const remove = n('.mp-seat-remove', actual), previous = n('.mp-seat-remove', expected);
-      assert.equal(remove.textContent, previous.getAttribute('aria-label'), 'moderation action retains an accessible name');
-      assert.equal(remove.closest('details').hidden, previous.hidden, 'moderation stays unavailable outside the owner/lobby/occupied-seat context');
-    }
-    if (!n('.mp-seat-latency', expected).hidden) assert.deepEqual(canonical(n('.mp-seat-latency', actual)), canonical(n('.mp-seat-latency', expected)), `Pinned latency ${index}`);
-  }
-  assert.equal(n('#mpRoomView').getAttribute('aria-label'), n('#mpRoomView', doc).getAttribute('aria-label'));
-  assert.equal(n('#mpNetworkToggle').hidden, true);
-  const ids = all('[id]').map(node => node.id); assert.equal(new Set(ids).size, ids.length, 'No duplicate mounted IDs');
 }
-for (const locale of ['zh-CN', 'en']) test(`Pinned original rendering: ${locale}, unsynced/owner/offline/unseated/spectator/ready/running`, async () => {
+for (const locale of ['zh-CN', 'en']) test(`Room workspace follows authoritative state: ${locale}, unsynced/owner/offline/unseated/spectator/ready/running`, async () => {
   const f = await fixture({locale}).enter(), {m} = await mountRoom(f, {panel: {kind: 'game'}});
   compare(f, {panel: {kind: 'game'}});
   await act(() => f.socket.open()); await f.receive(); compare(f, {panel: {kind: 'game'}});
@@ -252,11 +162,10 @@ for (const locale of ['zh-CN', 'en']) test(`All catalog multiplayer products pre
     const f = await fixture({product, locale}).live(); const {m} = await mountRoom(f, {panel: {kind: 'game'}});
     const config = owners.multiplayerConfigForProduct(product);
     for (const loadout of [0, config.loadouts.length - 1]) {await f.receive({difficulty: config.difficulties.length - 1, seats: [{clientId: f.id, name: 'A', loadout, ready: false}, {clientId: 'peer12345', name: 'B', loadout: -1, ready: false, controlMode: 'cheat'}]}); if (config.inGameSelection) {
-      assert.equal(n('#mpRoomDifficultyBadge').textContent,'');
+      assert.equal(n('#mpRoomDifficultyBadge').textContent, config.difficulties[f.service.getSnapshot().room.difficulty]);
       assert.equal(all('[data-mp-difficulty]').length,0);
-      assert.equal(n('#mpRoomDifficulty').disabled,true);
+      assert.equal(all('[data-mp-difficulty]').length,0);
       assert.equal(all('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,0);
-      assert.equal(n('#mpLocalRoleLabel').textContent,'');
       assert.equal(f.service.runtimeOptions().netplayInGameSelection,true);
       assert.match(n('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
     } else compare(f, {panel: {kind: 'game'}});}
@@ -284,21 +193,21 @@ for (const locale of ['zh-CN', 'en']) test(`Original ${locale} preparation rende
   assert.equal(f.service.getSnapshot().ready, false); assert.equal(n('#mpReady').disabled, true); compare(f, {panel: {kind: 'personal'}});
   await act(() => f.preparations[0].resolve());
   assert.equal(f.socket.sent.some(message => message.type === 'set-ready' && message.ready), false, 'cancelled preparation cannot complete a stale Ready intent');
-  await click('#mpRoomResourceRetry'); assert.equal(f.preparations.length, 2); assert.equal(n('#mpReady').disabled, false);
-  await act(() => f.preparations.at(-1).reject(Error('Synthetic transfer rejected'))); assert.equal(n('#mpRoomPhase').title, 'Synthetic transfer rejected');
+  await click('#mpRoomResourceRetry'); assert.equal(f.preparations.length, 2); assert.equal(n('#mpReady').disabled, true);
+  await act(() => f.preparations.at(-1).reject(Error('Synthetic transfer rejected'))); assert.equal(n('.room-preparation-caption p').textContent, 'Synthetic transfer rejected');
   await click('#mpRoomResourceRetry'); assert.equal(f.preparations.length, 3);
-  await act(() => f.preparations.at(-1).resolve()); assert.equal(n('#mpRoomPhase').textContent, t(locale, 'room.resourcesReady'));
+  await act(() => f.preparations.at(-1).resolve()); assert.equal(n('.room-preparation-caption strong').textContent, t(locale, 'room.workspaceReady'));
   for (const launchStage of ['preparing', 'path']) {await m.update({context: {...defaultContext, launchStage}}); compare(f, {panel: {kind: 'personal'}, context: {...defaultContext, launchStage}});}
 });
 
 test('Room header and panel triggers reach required host edges with original code and peer identity', async () => {
   const f = await fixture().live({seats: null}); await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 2}]});
   const {m, intents} = await mountRoom(f);
-  await click('#mpCopyRoomCode'); await click('#mpRoomGuideOpen'); await click('#mpSettingsRoomDrawerToggle'); await click('#mpRoomSettingsToggle'); await click('#mpSpectatorToggle');
+  await click('#mpCopyRoomCode'); await click('#mpRoomGuideOpen'); await click('#mpSettingsRoomDrawerToggle'); await click('#roomWorkspaceTab-game'); await click('.room-spectator-preview-trigger');
   await click('[data-mp-seat="0"] .mp-seat-edit'); await click('[data-mp-seat="1"] .mp-seat-latency');
-  assert.deepEqual(intents, [['copy', '1234'], ['guide'], ['settings'], ['panel', 'game', undefined], ['panel', 'spectators', undefined], ['panel', 'personal', undefined], ['panel', 'network', 'peer12345']]);
-  await m.update({settingsOpen: true}); assert.equal(n('#mpRoomView').hasAttribute('inert'), true); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, true);
-  await m.update({settingsOpen: false, settingsClosing: true}); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, true);
+  assert.deepEqual(intents, [['copy', '1234'], ['guide'], ['settings'], ['panel', 'spectators', undefined], ['panel', 'personal', undefined], ['panel', 'network', 'peer12345']]);
+  await m.update({settingsOpen: true}); assert.equal(n('#mpRoomView').hasAttribute('inert'), true); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
+  await m.update({settingsOpen: false, settingsClosing: true}); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
   await m.update({settingsClosing: false}); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
   await click('#mpLeaveRoom'); assert.equal(f.service.getSnapshot().room, null); assert.equal(f.events.at(-1)[0], 'leave'); assert.equal(env.document.querySelector('#mpRoomView'), null);
 });
@@ -319,29 +228,28 @@ test('Real join, stand, spectator, loadout and become-host button ports retain r
   await click('#mpLoadoutPrev'); assert.equal(f.service.getSnapshot().preferredLoadout, 0);
 });
 
-test('Real game-settings buttons preserve optimistic count/difficulty, synchronized rules and owner changes without closing panel', async () => {
-  const f = await fixture().live(), {m} = await mountRoom(f, {panel: {kind: 'game'}});
-  await click('[data-mp-player-count="3"]'); assert.equal(f.service.getSnapshot().room.playerCount, 3); assert.equal(n('#mpSeatStage').dataset.playerCount, '3');
-  await click('[data-mp-difficulty="3"]'); assert.equal(f.service.getSnapshot().room.difficulty, 3); assert.equal(n('#mpRoomDifficultyText').textContent, 'Lunatic');
-  for (const [selector, key, value] of [['[data-room-visibility="private"]', 'visibility', 'private'], ['[data-room-rule="cheat"]', 'disableCheatMovement', true], ['[data-room-rule="challenge"]', 'challengeMode', true]]) {
-    await click(selector); assert.equal(f.socket.sent.at(-1).type, 'settings'); assert.equal(f.socket.sent.at(-1)[key], value); assert.notEqual(f.service.getSnapshot().room[key], value, 'Rule display waits for synchronized snapshot');
-  }
-  await f.receive({phase: 'running'}); assert.equal(n('[data-mp-player-count="3"]').disabled, false); await click('[data-mp-player-count="3"]'); assert.equal(f.service.getSnapshot().room.playerCount, 3);
-  assert.equal(n('[data-room-visibility="private"]').disabled, true); assert.equal(n('[data-room-rule="cheat"]').disabled, true);
-  await f.receive({seats: [{clientId: 'other12345', name: 'O', loadout: 1}, {clientId: f.id, name: 'A', loadout: 0}]});
-  assert.equal(n('#mpRoomPanel').open, true); assert.equal(n('#mpRoomSettings').hidden, false); assert.equal(n('[data-mp-player-count="3"]').disabled, true); assert.equal(f.service.getSnapshot().roomSettingsOpen, true);
-  await f.receive(); assert.equal(n('#mpRoomPanel').open, true); assert.equal(n('[data-mp-player-count="3"]').disabled, false);
-  await m.update({panel: null}); assert.equal(f.service.getSnapshot().roomSettingsOpen, false);
+test('Room settings remain synchronized while owner and phase change', async () => {
+ const f=await fixture().live();await mountRoom(f);await click('#roomWorkspaceTab-game');
+ const select=async(selector,value)=>act(()=>{const node=n(selector);node.value=value;node.dispatchEvent(new env.window.Event('change',{bubbles:true}));});
+ await select('#mpRoomPlayerCount','3');assert.equal(f.service.getSnapshot().room.playerCount,3);assert.equal(n('#mpSeatStage').dataset.playerCount,'3');
+ await click('[data-mp-difficulty="3"]');assert.equal(n('#mpRoomDifficultyBadge').textContent,'Lunatic');
+ for(const [selector,key,value] of [['#mpRoomVisibility','visibility','private'],['#mpRoomCheatToggle','disableCheatMovement',true],['#mpRoomChallengeToggle','challengeMode',true]]) {
+  if(key==='visibility')await select(selector,value);else await click(selector);
+  assert.equal(f.socket.sent.at(-1).type,'settings');assert.equal(f.socket.sent.at(-1)[key],value);assert.notEqual(f.service.getSnapshot().room[key],value);
+ }
+ await f.receive({phase:'running'});assert.equal(n('#mpRoomVisibility').disabled,true);assert.equal(n('#mpRoomCheatToggle').disabled,true);
+ await f.receive({seats:[{clientId:'other12345',name:'O',loadout:1},{clientId:f.id,name:'A',loadout:0}]});
+ assert.equal(n('#roomWorkspacePanel-game').hidden,false);assert.equal(n('#mpRoomPlayerCount').disabled,true);
+ await f.receive();assert.equal(n('#mpRoomPlayerCount').disabled,false);await click('#roomWorkspaceTab-chat');assert.equal(f.service.getSnapshot().roomSettingsOpen,false);
 });
 
 test('Ready/start gates use synchronized occupied seats and check-game calls real preparation/runtime port', async () => {
   const checked = deferred();
   const f = await fixture({checkGame: () => checked.promise}).live(), {m} = await mountRoom(f, {panel: {kind: 'personal'}});
-  assert.equal(n('#mpReady').disabled, false, 'Preparation alone must not disable ready');
-  await click('#mpReady');
+  assert.equal(n('#mpReady').disabled, true, 'Ready requires prepared resources');
   assert.equal(f.socket.sent.some(message => message.type === 'set-ready'), false, 'Ready waits for actual preparation completion');
-  await act(() => f.preparations[0].resolve());
-  assert.equal(f.socket.sent.at(-1).type, 'set-ready'); assert.equal(n('#mpStartGame').hidden, false); assert.equal(n('#mpStartGame').disabled, true);
+  await f.report({status:'ready',stage:'runtime',percent:100});await act(() => f.preparations[0].resolve());await click('#mpReady');await f.report({status:'ready',stage:'runtime',percent:100});await act(()=>f.preparations.at(-1).resolve());
+  assert.equal(f.socket.sent.findLast(message=>message.type==='set-ready')?.ready,true); assert.equal(n('#mpStartGame').hidden, false); assert.equal(n('#mpStartGame').disabled, true);
   assert.equal(n('#mpCheckGame').disabled, true);
   await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0, ready: true}, {clientId: 'peer12345', name: 'B', loadout: 2, ready: true}]});
   assert.equal(n('#mpStartGame').disabled, false); await click('#mpStartGame'); assert.equal(f.socket.sent.at(-1).type, 'start');
@@ -356,12 +264,12 @@ test('Seat/spectator removal calls real danger decisions and rejects a departed 
   const f = await fixture().live({seats: null});
   const room = {seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 1}], spectators: [{clientId: 'watch12345', name: 'W'}]};
   await f.receive(room); await mountRoom(f, {panel: {kind: 'spectators'}});
-  await click('[data-mp-seat="1"] .mp-seat-remove'); assert.equal(f.decisions.getSnapshot().tone, 'danger');
+  await click('[data-mp-seat="1"] .room-member-menu-trigger');await click('.room-member-menu [data-phrase="remove-player"]'); assert.equal(f.decisions.getSnapshot().tone, 'danger');
   assert.equal(f.decisions.getSnapshot().message, t('en', 'room.removePlayerConfirm', {seat: 2}));
   await act(() => f.decisions.resolve('confirm')); assert.deepEqual(f.socket.sent.at(-1), {type: 'remove-player', seat: 1, clientId: 'peer12345'});
   await click('.mp-spectator-remove'); assert.equal(f.decisions.getSnapshot().message, t('en', 'room.removeSpectatorConfirm'));
   await act(() => f.decisions.resolve('confirm')); assert.deepEqual(f.socket.sent.at(-1), {type: 'remove-spectator', clientId: 'watch12345'});
-  await click('[data-mp-seat="1"] .mp-seat-remove'); await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'successor', name: 'S', loadout: 2}]});
+  await click('[data-mp-seat="1"] .room-member-menu-trigger');await click('.room-member-menu [data-phrase="remove-player"]'); await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'successor', name: 'S', loadout: 2}]});
   const count = f.socket.sent.filter(message => message.type === 'remove-player').length; await act(() => f.decisions.resolve('confirm'));
   assert.equal(f.socket.sent.filter(message => message.type === 'remove-player').length, count);
 });
@@ -415,7 +323,74 @@ test('Measured rollback button routes through real room owner without overwritin
   assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'), 'true'); await click('#mpRollbackToggle'); assert.equal(f.service.getSnapshot().rollbackEnabled, false);
   await f.receive({phase: 'running', adonisMode: 2}); assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'), 'true'); assert.equal(n('#mpRollbackToggle').disabled, true);
   await f.receive({phase: 'running', adonisMode: 1}); assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'), 'false');
-  await f.receive({seats: [{clientId: 'host12345', name: 'H', loadout: 0}, {clientId: f.id, name: 'A', loadout: 1}]}); assert.equal(n('#mpInputTiming').hidden, true);
+  await f.receive({seats: [{clientId: 'host12345', name: 'H', loadout: 0}, {clientId: f.id, name: 'A', loadout: 1}]}); assert.equal(n('#mpInputTiming').hidden, false); assert.equal(n('#mpRollbackToggle').disabled, true);
+});
+
+test('seated players may enter the spectator lounge before start, never during a live run', async () => {
+  const f = await fixture().live(); await mountRoom(f, {panel:{kind:'spectators'}});
+  assert.equal(n('#mpSpectatorJoin').hidden, false); assert.equal(n('#mpSpectatorJoin').disabled, false);
+  await click('#mpSpectatorJoin');
+  assert.equal(f.service.getSnapshot().seat, null); assert.equal(f.service.getSnapshot().spectatorRequested, true);
+  assert.equal(f.socket.sent.at(-1).type, 'spectate');
+  await f.receive({phase:'running'});
+  assert.equal(n('#mpSpectatorJoin').hidden, true);
+  const count = f.socket.sent.length; await act(() => f.service.spectate()); assert.equal(f.socket.sent.length, count);
+});
+
+test('difficulty labels use the approved plain text without texture images', async () => {
+  const f = await fixture({product:'th15mp'}).live(); await mountRoom(f);
+  for (const [difficulty, name] of ['Easy','Normal','Hard','Lunatic','Extra'].entries()) {
+    await f.receive({difficulty});
+    const label=n('#mpRoomDifficultyBadge'), image=label.querySelector('img');
+    assert.equal(label.textContent,name);
+    assert.equal(image, null);
+  }
+  assert.equal(n('#mpRoomDifficultyBadge').textContent,'Extra');
+  assert.equal(n('#mpRoomDifficultyBadge').classList.contains('difficulty-texture'),false);
+});
+
+test('guests see authoritative rollback and delay values but cannot change them', async () => {
+  const f = await fixture({product:'th11mp'}).live({adonisMode:1,timingChoice:5});
+  // Resolve the generated local identity without relying on a synthetic name.
+  await f.receive({adonisMode:1,timingChoice:5,seats:[{clientId:'host12345',name:'Host',loadout:0},{clientId:f.id,name:'Guest',loadout:1}]});
+  await mountRoom(f);
+  assert.equal(n('#mpRollbackToggle').hidden,false); assert.equal(n('#mpRollbackToggle').disabled,true);
+  assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'),'false');
+  assert.equal(n('#mpInputDelaySetting').hidden,false); assert.equal(n('#mpInputDelay').value,'5'); assert.equal(n('#mpInputDelay').disabled,true);
+  const count=f.socket.sent.length; await click('#mpRollbackToggle'); await act(()=>f.service.setTimingChoice(7)); assert.equal(f.socket.sent.length,count);
+  await f.receive({adonisMode:0,timingChoice:2,seats:[{clientId:'host12345',name:'Host',loadout:0},{clientId:f.id,name:'Guest',loadout:1}]});
+  assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'),'true'); assert.equal(n('#mpInputDelaySetting').hidden,true);
+});
+
+test('missing resources never render a default filled or completed resource bar', async () => {
+  const f=await fixture().live();await mountRoom(f);
+  await f.report({status:'failed',stage:'package',percent:null,loaded:undefined,total:undefined,error:'Missing game package'});
+  for(const selector of ['#mpRoomResourceFill','#mpRoomLoadingFill'])assert.equal(n(selector).style.width,'0%');
+  for(const selector of ['#mpRoomResourceTrack','#mpRoomLoadingTrack']){
+    assert.equal(n(selector).getAttribute('aria-valuenow'),'0');
+    assert.equal(n(selector).classList.contains('indeterminate'),false);
+  }
+  for(const row of all('.mp-seat-resource .mp-resource-row'))assert.equal(row.querySelector('.mp-room-resource-track>span').style.width,'0%');
+  await f.report({status:'preparing',stage:'package',percent:null,error:''});
+  assert.equal(n('#mpRoomResourceTrack').getAttribute('aria-valuenow'),null);
+  assert.equal(n('#mpRoomLoadingTrack').getAttribute('aria-valuenow'),'0');
+  assert.equal(n('#mpRoomResourceTrack').parentElement.querySelector('.mp-resource-percent').textContent,'—');
+});
+
+test('room shows two real resource stages, names/roles and challenge difficulty beside the code', async () => {
+  const f = await fixture().live({challengeMode:true}); await mountRoom(f);
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,t('en','room.challengeEnabled'));
+  assert.equal(n('[data-mp-seat="0"] .mp-seat-name').textContent,'A');
+  assert.ok(n('[data-mp-seat="0"] .mp-seat-loadout').textContent.length > 0);
+  await f.report({loaded:25,total:100});
+  assert.equal(all('#mpRoomResourceProgress [role="progressbar"]').length,2);
+  assert.equal(n('#mpRoomResourceTrack').getAttribute('aria-valuenow'),'25');
+  assert.equal(n('#mpRoomLoadingTrack').getAttribute('aria-valuenow'),'0');
+  await f.report({stage:'runtime'});
+  assert.equal(n('#mpRoomResourceTrack').getAttribute('aria-valuenow'),'100');
+  assert.equal(n('#mpRoomLoadingTrack').getAttribute('aria-valuenow'),null);
+  await f.report({status:'ready',stage:'runtime',percent:100});
+  assert.equal(n('#mpRoomLoadingTrack').getAttribute('aria-valuenow'),'100');
 });
 function animationFixture() {
   globalThis.matchMedia = env.window.matchMedia = query => ({matches: false, media: query, addEventListener() {}, removeEventListener() {}});
@@ -447,71 +422,93 @@ test('Reopen during native close cancels stale animation; StrictMode subscriptio
   const f = await fixture().live(), {m} = await mountRoom(f, {}, {strict: true}); assert.equal(f.network.subscriberCount, 1); await m.unmount(); assert.equal(f.network.subscriberCount, 0);
 });
 test('Reduced-motion modal closes synchronously; room trigger focus and settings state settle together', async () => {
-  const f = await fixture().live(), {m} = await mountRoom(f); const trigger = n('#mpRoomSettingsToggle');
-  await click('#mpRoomSettingsToggle'); await m.update({panel: {kind: 'game'}}); assert.equal(f.service.getSnapshot().roomSettingsOpen, true);
+  const f = await fixture().live(), {m} = await mountRoom(f); const trigger = n('[data-mp-seat="0"] .mp-seat-edit');
+  await click('[data-mp-seat="0"] .mp-seat-edit'); await m.update({panel: {kind: 'personal'}}); assert.equal(f.service.getSnapshot().roomSettingsOpen, false);
   await act(() => n('#mpRoomPanelClose').focus()); await m.update({panel: null}); assert.equal(n('#mpRoomPanel').open, false); assert.equal(f.service.getSnapshot().roomSettingsOpen, false);
-  assert.ok(env.document.activeElement === trigger); assert.equal(trigger.getAttribute('aria-expanded'), 'false'); assert.equal(n('#mpSpectatorToggle').getAttribute('aria-expanded'), 'false');
+  assert.ok(env.document.activeElement === trigger); assert.equal(n('.room-spectator-preview-trigger').getAttribute('aria-expanded'), 'false');
 });
 test('Seat occupant changes animate only existing contents for 180ms and preserve mounted controls', async () => {
   const animations = animationFixture(), f = await fixture().live(), {m} = await mountRoom(f); const seat = n('[data-mp-seat="1"]');
   await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 1}]});
-  const changes = animations.filter(item => seat.contains(item.node)); assert.equal(changes.length, 4);
-  assert.ok(changes.every(item => item.options.duration === 180 && ['mp-seat-face', 'mp-seat-index', 'mp-seat-name', 'mp-seat-state'].some(name => item.node.classList.contains(name))));
+  const changes = animations.filter(item => seat.contains(item.node)); assert.equal(changes.length, 3);
+  assert.ok(changes.every(item => item.options.duration === 180 && ['mp-seat-face', 'mp-seat-index', 'mp-seat-name', 'mp-seat-identity', 'mp-seat-state'].some(name => item.node.classList.contains(name))));
   assert.ok(changes.every(item => !JSON.stringify(item.keyframes).includes('transform'))); const count = animations.length;
   await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 2, ready: true}]}); assert.equal(animations.length, count); assert.ok(n('[data-mp-seat="1"]') === seat);
   await m.unmount(); assert.ok(changes.every(item => item.cancelled));
 });
 test('Room views and domain owner add no independent History/Router controller', () => {
-  for (const file of ['RoomView.tsx', 'RoomPanel.tsx', 'RoomSeats.tsx', 'RoomPersonal.tsx', 'RoomProgress.tsx', 'RoomNetwork.tsx', 'RoomSpectators.tsx', 'RoomGameSettings.tsx', 'RoomSettingsDrawer.tsx', 'MultiplayerSettingsControls.tsx'])
+  for (const file of ['RoomWorkspace.tsx', 'RoomPanel.tsx', 'RoomSeats.tsx', 'RoomPersonal.tsx', 'RoomProgress.tsx', 'RoomNetwork.tsx', 'RoomSpectators.tsx', 'RoomGameSettings.tsx', 'RoomSettingsDrawer.tsx', 'MultiplayerSettingsControls.tsx'])
     assert.doesNotMatch(readFileSync(resolve(project, 'app/components/room', file), 'utf8'), /\b(?:pushState|replaceState|popstate|history\s*\.|useNavigate|useBlocker)\b/, file);
   assert.doesNotMatch(readFileSync(resolve(project, 'app/services/multiplayer-room.ts'), 'utf8'), /\b(?:pushState|replaceState|popstate|history\s*\.|useNavigate|useBlocker)\b/);
 });
 test('Native dialog close event clears room settings state and restores trigger as in pinned main', async () => {
-  const f = await fixture().live(), {m, intents} = await mountRoom(f); const trigger = n('#mpRoomSettingsToggle');
-  await click('#mpRoomSettingsToggle'); await m.update({panel: {kind: 'game'}}); await act(() => n('#mpRoomPanelClose').focus());
+  const f = await fixture().live(), {m, intents} = await mountRoom(f); const trigger = n('[data-mp-seat="0"] .mp-seat-edit');
+  await click('[data-mp-seat="0"] .mp-seat-edit'); await m.update({panel: {kind: 'personal'}}); await act(() => n('#mpRoomPanelClose').focus());
   await act(() => n('#mpRoomPanel').close()); assert.equal(f.service.getSnapshot().roomSettingsOpen, false); assert.ok(env.document.activeElement === trigger); assert.equal(intents.filter(([kind]) => kind === 'close').length, 1);
 });
 test('Unmount retires an open native modal synchronously', async () => {
   const h = await panelFixture(); await h.m.unmount(); assert.equal(h.node.open, false);
 });
 
-for (const locale of ['zh-CN', 'en']) test(`room game settings own ${locale} timing while local options retain replay/import for every product`, async () => {
+for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains host, rollback and Replay/import boundaries: ${locale}`, async () => {
   for (const product of owners.PRODUCT_IDS.filter(owners.isMultiplayerProductId)) {
-    const f = fixture({product, locale}), events = [], m = await mount(owners.MultiplayerSettingsControls, {product, service: f.service, onReplayViewer: () => events.push('replay-viewer'), onImport: () => events.push('import')}, {locale});
-    assert.equal(all('#mpInputDelay').length, 0, 'local options never contain a room-wide timing field');
-    for (const selector of ['#mpReplayViewer', '#mpGamePackageImport']) assert.equal(n(selector).disabled, false);
-    await click('#mpReplayViewer'); await click('#mpGamePackageImport'); assert.deepEqual(events, ['replay-viewer', 'import']);
-    await f.live(); const h = await mountRoom(f, {panel: {kind: 'game'}}, {locale});
-    const config = owners.multiplayerConfigForProduct(product), select = n('#mpInputDelay'), original = baseline(f);
-    assert.ok(n('#mpRoomSettings').contains(select));
-    assert.equal(n('#mpInputDelaySetting').hidden, !config.inputTiming);
-    const manualRollback = owners.multiplayerInputTimingPolicy(config).manualRollbackDelay;
-    assert.equal(manualRollback,product==='th09mp');
-    if (config.inputTiming) assert.deepEqual([...select.options].map(node => [node.value, node.textContent, node.disabled && !(manualRollback && node.value==='auto')]), [...n('#mpInputDelay', original).options].map(node => [node.value, node.textContent, node.disabled]));
-    for (const selector of ['#mpReplayViewer', '#mpGamePackageImport']) assert.deepEqual(canonical(n(selector)), canonical(n(selector, original)));
-    if (config.inputTiming) {
-      if(owners.multiplayerInputTimingPolicy(config).rollback){assert.equal(select.value,'0');assert.equal(select.disabled,!manualRollback);if(manualRollback)assert.equal(select.options[0].disabled,true);else await act(()=>f.service.setRollbackEnabled(false));assert.equal(select.disabled,false);}
-      await act(() => {select.value = '5'; select.dispatchEvent(new env.window.Event('change', {bubbles: true}));}); assert.equal(f.service.getSnapshot().timingChoice, 5); assert.equal(select.value, '5');
-      const trigger = select.closest('.mizuki-select').querySelector('.mizuki-select-trigger'); assert.match(trigger.textContent, /5f/);
-      await f.receive({seats: [{clientId: 'host12345', name: 'H', loadout: 0}, {clientId: f.id, name: 'A', loadout: 1}]});
-      assert.equal(select.disabled, true); assert.equal(select.dataset.triggerI18n, 'room.inputDelayHost'); assert.equal(trigger.textContent, t(locale, 'room.inputDelayHost'));
-      await f.receive({phase: 'running', inputDelay: 4, inputDelayAuto: false}); assert.equal(select.value, '4'); assert.equal(select.disabled, true); assert.equal(select.dataset.triggerI18n, undefined);
-      assert.equal(select.options[0].textContent, n('#mpInputDelay', baseline(f)).options[0].textContent);
-      if (config.inputTiming.measuredStartup) {
-        await f.receive({phase: 'running', inputDelay: 3, inputDelayAuto: true, adonisMode: 1}); assert.equal(select.value, 'auto');
-        assert.equal(select.options[0].textContent, n('#mpInputDelay', baseline(f)).options[0].textContent);
-        // The real normalizer accepts the full measured-timing contract below.
-        const timing = {phase: 'ready', route: 'rtc', inputDelay: 3, fullDelay: 3, predictionReserve: 0, rttP95Us: 100000, samples: 100, lost: 0, adonisMode: 1, automatic: true};
-        await f.receive({phase: 'running', inputDelay: 3, inputDelayAuto: true, adonisMode: 1, timing});
-        assert.ok(f.service.getSnapshot().room.timing); assert.equal(select.options[0].textContent, t(locale, 'room.inputDelayMeasured', {frames: 3}));
+    const f=fixture({product,locale}),events=[],m=await mount(owners.MultiplayerSettingsControls,{product,service:f.service,onReplayViewer:()=>events.push('replay'),onImport:()=>events.push('import')},{locale});
+    assert.equal(all('#mpInputDelay').length,0);
+    await click('#mpReplayViewer');await click('#mpGamePackageImport');assert.deepEqual(events,['replay','import']);
+    await f.live();const h=await mountRoom(f,{panel:{kind:'game'}},{locale});
+    const config=owners.multiplayerConfigForProduct(product),policy=owners.multiplayerInputTimingPolicy(config),value=n('#mpInputDelay');
+    assert.equal(n('#mpRoomSettings').contains(value),true);assert.equal(n('#mpInputTiming').contains(value),false);
+    assert.equal(n('#mpRoomSettings').contains(n('#mpRollbackToggle')),true);
+    assert.equal(all('#mpInputDelayHint').length,0);
+    assert.equal(n('#mpInputDelaySetting').hidden,!!config.inputTiming?.measuredStartup&&policy.rollback);
+    assert.ok(n('#mpRollbackToggle').compareDocumentPosition(n('#mpInputDelaySetting')) & env.window.Node.DOCUMENT_POSITION_FOLLOWING);
+    if(config.inputTiming){
+      if(policy.rollback){await act(()=>f.service.setRollbackEnabled(false));assert.equal(n('#mpInputDelaySetting').hidden,false);assert.equal(all('#mpInputDelayHint').length,0);}
+      await act(()=>f.service.setTimingChoice(0));assert.equal(value.textContent,'0f');assert.equal(n('#mpInputDelayMinus').disabled,true);
+      await click('#mpInputDelayPlus');assert.equal(f.service.getSnapshot().timingChoice,1);assert.equal(value.textContent,'1f');
+      await click('#mpInputDelayMinus');assert.equal(value.textContent,'0f');
+      const maximum=config.inputTiming.manualDelayLimit??8;
+      await act(()=>f.service.setTimingChoice(maximum));assert.equal(n('#mpInputDelayPlus').disabled,true);
+      if(policy.measuredStartup){
+        await click('#mpInputDelayAuto');assert.equal(f.service.getSnapshot().timingChoice,'auto');
+        for(const selector of ['#mpInputDelay','#mpInputDelayMinus','#mpInputDelayPlus'])assert.equal(n(selector).disabled,true);
+        await click('#mpInputDelayPlus');assert.equal(f.service.getSnapshot().timingChoice,'auto');
+        await click('#mpInputDelayAuto');assert.equal(typeof f.service.getSnapshot().timingChoice,'number');
+        assert.equal(n('#mpInputDelayPlus').disabled,false);
+      }else{await click('#mpInputDelay');assert.equal(f.service.getSnapshot().timingChoice,'auto');}
+      await act(()=>f.service.setTimingChoice(5));assert.equal(value.textContent,'5f');
+      await f.receive({adonisMode:1,timingChoice:5,seats:[{clientId:'host12345',name:'Host',loadout:0},{clientId:f.id,name:'Guest',loadout:1}]});
+      for(const selector of ['#mpInputDelay','#mpInputDelayMinus','#mpInputDelayPlus'])assert.equal(n(selector).disabled,true);
+      if(policy.measuredStartup)assert.equal(n('#mpInputDelayAuto').disabled,true);
+      assert.equal(value.textContent,'5f');
+      await f.receive({phase:'running',adonisMode:1,inputDelay:4,inputDelayAuto:false});assert.equal(value.textContent,'4f');assert.equal(value.disabled,true);
+      if(config.inputTiming.measuredStartup){
+        const timing={phase:'ready',route:'rtc',inputDelay:3,fullDelay:3,predictionReserve:0,rttP95Us:100000,samples:100,lost:0,adonisMode:1,automatic:true};
+        await f.receive({phase:'running',adonisMode:1,inputDelay:3,inputDelayAuto:true,timing});
+        assert.equal(value.textContent,'3f');assert.equal(value.title,t(locale,'room.inputDelayMeasured',{frames:3}));
       }
-      await act(() => f.socket.close(1006)); assert.equal(select.disabled, true);
+      if(policy.rollback){await f.receive({phase:'running',adonisMode:0});assert.equal(n('#mpInputDelaySetting').hidden,true);}
+      await act(()=>f.socket.close(1006));assert.equal(value.disabled,true);
+    }else{
+      assert.equal(n('#mpRollbackToggle').hidden,true);assert.equal(n('#mpInputDelaySetting').hidden,false);
+      assert.equal(value.textContent,'0f');assert.equal(value.disabled,true);
     }
-    await h.m.unmount(); await m.unmount(); assert.equal(all('.mizuki-select-menu').length, 0);
+    await h.m.unmount();await m.unmount();
   }
 });
+
 function settingsContext(productId, patch = {}) {return {productId, uiLocale: 'en', languages: [{id: 'ja', title: '日本語'}], musicAvailability: {audio: true, midiAvailable: true, importServer: false, remoteOggAdvertised: false}, webMidiAvailable: false, mobile: false, ...patch};}
+test('TH075 has no beauty option and rejects beauty selection even with a stale installed hint', async () => {
+  const model=owners.createGameSettingsModel({storage:new Storage()}); model.hydrate(settingsContext('th075',{beautyInstalled:true}));
+  const midi={enabled:false,granted:false,busy:false,supported:false,outputs:[],selectedId:'',hint:''};
+  const actions={confirm:async()=>false,file:async()=>{},showAppleNotice(){},feedback(){},reportError(error){throw error;},
+    externalMidi:{subscribe:()=>()=>{},getSnapshot:()=>midi,setEnabled:async()=>{},selectOutput:async()=>{}}};
+  await mount(owners.SettingsBody,{model,actions,onOpenTouchLayout(){}});
+  assert.equal(env.document.querySelector('#gameVersionSelect option[value="beauty"]'),null);
+  await act(()=>model.setGameVersion('beauty')); assert.equal(model.getSnapshot().gameVersion,'original');
+});
 async function sharedDrawer(f, {strict = false, roomOpen = true, open = true} = {}) {
+  const host=env.document.createElement('section'),stage=env.document.createElement('div');host.append(stage);env.document.body.append(host);
   const model = owners.createGameSettingsModel({storage: new Storage()}), events = []; model.hydrate(settingsContext(f.product));
   const midi = {enabled: false, granted: false, busy: false, supported: false, outputs: [], selectedId: '', hint: ''};
   const actions = {confirm: async () => false, file: async (...args) => events.push(['file', ...args]), showAppleNotice: () => events.push(['apple']), feedback: (...args) => events.push(['feedback', ...args]), reportError: error => {throw error;},
@@ -519,7 +516,7 @@ async function sharedDrawer(f, {strict = false, roomOpen = true, open = true} = 
   function Fixture({product = f.product, roomOpen, open, foregroundActive = false}) {
     const [closing, setClosing] = React.useState(false), requestClose = () => events.push(['close']);
     return React.createElement(MemoryRouter, null,
-      React.createElement(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, assetUrl: path => path, onLeave: () => {}, onCopyRoomCode: () => {}, onGuide: () => {}, onOpenSettings: () => {}, settingsOpen: open && !foregroundActive, settingsClosing: closing, panel: null, onOpenPanel: () => {}, onClosePanel: () => {}}),
+      React.createElement(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path, onLeave: () => {}, onCopyRoomCode: () => {}, onGuide: () => {}, onOpenSettings: () => {}, settingsOpen: open && !foregroundActive, settingsClosing: closing, panel: null, onOpenPanel: () => {}, onClosePanel: () => {}}),
       React.createElement(owners.RoomSettingsDrawer, {roomOpen, open, foregroundActive, onCloseRequest: requestClose, onClosingChange: setClosing}),
       React.createElement(owners.OptionsPanel, {product: owners.createLibraryProducts([product], path => path, id => `/?game=${id}`)[0], open: !roomOpen, roomDrawer: roomOpen, onBack: requestClose, assetUrl: path => path, lobbyHref: '/lobby.html',
         multiplayerDiagnostics: React.createElement('section', {id: 'mpNetworkDiagnostics'}, 'Synthetic diagnostics slot'), actions: React.createElement('div', {className: 'launch-wrap launch-actions', id: 'ordinary-launch-actions'}, 'Synthetic ordinary launch slot')},
@@ -563,7 +560,7 @@ test('Drawer close uses 220ms completion, retained fading backdrop and immediate
   animationFixture(); const f = await fixture().live(), h = await sharedDrawer(f), clock = fakeTimers();
   try {
     const cue = n('#mpSettingsRoomDrawerToggle'), focusCalls = [], originalFocus = cue.focus.bind(cue); cue.focus = options => {focusCalls.push({hidden: cue.hidden, roomInert: n('#mpRoomView').hasAttribute('inert')}); originalFocus(options);};
-    await h.m.update({open: false}); assert.equal(n('#mpSettingsRoomBackdrop').hidden, false); assert.equal(n('#mpSettingsRoomBackdrop').classList.contains('closing'), true); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').classList.contains('closing'), true); assert.equal(cue.hidden, true);
+    await h.m.update({open: false}); assert.equal(n('#mpSettingsRoomBackdrop').hidden, false); assert.equal(n('#mpSettingsRoomBackdrop').classList.contains('closing'), true); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').classList.contains('closing'), true); assert.equal(cue.hidden, false);
     assert.equal([...clock.tasks.values()].filter(task => task.delay === 220).length, 1); await clock.tick(219); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); await clock.tick(1);
     assert.equal(n('#mpSettingsRoomDrawer').hidden, true); assert.equal(n('#mpSettingsRoomBackdrop').hidden, true); assert.equal(cue.hidden, false); assert.deepEqual(focusCalls, [{hidden: false, roomInert: false}]);
     await h.m.update({open: true}); await h.m.update({open: false}); const stale = [...clock.tasks.values()].find(task => task.delay === 220); await h.m.update({open: true}); assert.equal([...clock.tasks.values()].some(task => task === stale), false);
@@ -578,6 +575,7 @@ test('Relocated shared settings controls retain Escape/backdrop close and cyclic
   const escape = new env.window.KeyboardEvent('keydown', {key: 'Escape', bubbles: true, cancelable: true});
   await act(() => n('#libraryBack').dispatchEvent(escape)); assert.equal(escape.defaultPrevented, true); assert.equal(h.events.filter(([kind]) => kind === 'close').length, 1);
   await click('#mpSettingsRoomBackdrop'); assert.equal(h.events.filter(([kind]) => kind === 'close').length, 2);
+  await click('#libraryBack');assert.equal(h.events.filter(([kind])=>kind==='close').length,3,'relocated Back closes exactly once');
   const controls = all('button:not(:disabled), summary, a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]', drawer).filter(node => node.tabIndex >= 0 && !node.closest('[hidden]'));
   // Explicit synthetic visibility rectangles, not a browser layout assertion.
   for (const node of controls) node.getClientRects = () => [node.getBoundingClientRect()];

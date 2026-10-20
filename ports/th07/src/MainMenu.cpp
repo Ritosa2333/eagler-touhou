@@ -127,6 +127,9 @@ MainMenu *g_MainMenuForDebug = nullptr;
 
 u32 MainMenu::OnUpdate(MainMenu *arg)
 {
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    if(EM_ASM_INT({return Module.eaglerRoomPreview?1:0;})){arg->idleFrames=0;arg->demoFramesCount=0;}
+#endif
     u32 result;
 
     arg->UpdatePrev();

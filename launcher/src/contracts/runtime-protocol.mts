@@ -23,6 +23,8 @@ export const RUNTIME_PROTOCOL_COMMANDS = Object.freeze([
 // Optional commands are capability-specific and are not required of every
 // Runtime shell. They still share the same envelope and request ownership.
 export const RUNTIME_PROTOCOL_OPTIONAL_COMMANDS = Object.freeze([
+  "prepare-room",
+  "return-room",
   "playback",
   "retry-music",
   "thprac-mouse",
@@ -50,6 +52,7 @@ export const RUNTIME_PROTOCOL_OPTIONAL_EVENTS = Object.freeze([
   "notice",
   "player-debug",
   "network-request",
+  "room-menu",
 ] as const);
 
 export type RuntimeProtocolCommand =
@@ -210,6 +213,8 @@ export const RUNTIME_PROTOCOL_LEGACY_EVENTS = Object.freeze([
  * ACK with an optional feature.
  */
 export const RUNTIME_PROTOCOL_COMMAND_BEHAVIOR = Object.freeze({
+  "prepare-room": Object.freeze({ phase: "prelaunch", response: "required", requirement: "conditional", when: "Native Runtime advertises roomPreview at ready; initialize its real title before room readiness, animate without input/demo, reset RNG and match clocks at start" }),
+  "return-room": Object.freeze({ phase: "live", response: "required", requirement: "conditional", when: "Native Runtime advertises roomReturn at ready; retire gameplay transport and return to its animated room title without replacing the Runtime document" }),
   configure: Object.freeze({ phase: "prelaunch", response: "required", requirement: "required" }),
   resources: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
   keyboard: Object.freeze({ phase: "live", response: "optional", requirement: "required" }),
@@ -250,6 +255,7 @@ export const RUNTIME_PROTOCOL_EVENT_BEHAVIOR = Object.freeze({
   ready: Object.freeze({ phase: "initialization", cadence: "once", requirement: "required" }),
   transfer: Object.freeze({ phase: "any", cadence: "contextual", requirement: "conditional" }),
   "first-frame": Object.freeze({ phase: "live", cadence: "per-launch", requirement: "required" }),
+  "room-menu": Object.freeze({phase:"live",cadence:"contextual",requirement:"conditional",when:"Runtime retains its loaded room title after native gameplay exit"}),
   "runtime-info": Object.freeze({ phase: "live", cadence: "per-launch", requirement: "required" }),
   "frame-health": Object.freeze({ phase: "live", cadence: "periodic", requirement: "required" }),
   "audio-health": Object.freeze({ phase: "live", cadence: "periodic", requirement: "required" }),
@@ -283,6 +289,8 @@ export interface RuntimeCommandPayloads {
   keyboard: { down: boolean; code: string; inputSource?: 'physical' | 'virtual'; repeat?: boolean; launcherOwnsFocus?: boolean };
   "keyboard-clear": Record<string, never>;
   "touch-controls": {
+    /** Product-declared native action bits; omitted by ordinary shooting profiles. */
+    actionButtons?: number;
     thpracMobilePanelsEnabled?: boolean;
     thpracMobilePanelsVisible?: boolean;
     fireEnabled: boolean;
@@ -295,7 +303,9 @@ export interface RuntimeCommandPayloads {
   };
   "touch-cancel": Record<string, never>;
   "direct-touch": { type: "down" | "move" | "up"; id: number; x: number; y: number };
-  launch: Record<string, never>;
+  launch: {launchSerial?: number};
+  "prepare-room": Record<string, never>;
+  "return-room": Record<string, never>;
   list: Record<string, never>;
   read: { path: string };
   write: { path: string; bytes: number[]; replayMatch?: unknown };
@@ -317,9 +327,10 @@ export interface RuntimeCommandPayloads {
  * Runtime should prefer an existing event over inventing another event name.
  */
 export interface RuntimeEventPayloads {
-  ready: { saveRoot?: string };
+  ready: { saveRoot?: string; roomPreview?: boolean; roomReturn?: boolean };
   transfer: { mode?: string; loaded?: number; total?: number; failed?: number; path?: string; [key: string]: unknown };
-  "first-frame": Record<string, never>;
+  "first-frame": {launchSerial?: number};
+  "room-menu": {launchSerial?: number};
   "runtime-info": { renderer?: string; architecture?: string; version?: string; [key: string]: unknown };
   "frame-health": { fps?: number; maxGapMs?: number; frameMs?: number; [key: string]: unknown };
   exit: { code?: number; status?: string; [key: string]: unknown };

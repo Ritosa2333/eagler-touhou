@@ -203,14 +203,15 @@ const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibra
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
-const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
+let launchSerial=0,roomOwned=false;
+const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
 const spectatorPlayback=createSpectatorPlaybackBridge({
  active:()=>multiplayerRuntime&&launched&&options.netplaySpectator===true&&!closing,memory:()=>new Uint8Array(core.memory.buffer),
  state:()=>core?.multiplayer_spectator_playback_state?.(app)||0,control:(run,action,frame)=>core?.multiplayer_spectator_playback_control?.(app,run,action,frame)||0,
  allocate:size=>core.graphics_allocate(size),deallocate:pointer=>core.graphics_free(pointer),emit,
 });
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
-let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=false;
+let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=false,roomPreview=false;
 // Source serials consume all authenticated snapshots, including dropped input.
 // Only accepted changes advance native serials. A real sdl_game_open resets
 // mapped serials; TH10 Replay stays in the same native Application/session.
@@ -402,11 +403,10 @@ async function resumeForegroundAudio(forcePause=false){
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&!!app&&launched&&!closing&&!touchRetired&&!document.hidden&&ownsTouchDocument());
 }
-async function stop(){if(closing)return;closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
+async function stop(){if(closing)return;if(roomOwned&&!options.replayViewer){closing=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{closing=false;}return;}closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>root()+'/'+replayFiles.physical(storage.relativeSave(value)),replayState:()=>{const v=Array.from(new Uint32Array(core.memory.buffer,core.eagler_replay_state(),multiplayerRuntime?6:5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:v[5]??0};},stopLoop:()=>{clearKeyboard();core.sdl_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:error});
-async function launch(){
- if(launched)return;
- const touchTicket=touchLifetime;launchSettled=false;clearKeyboard();
+async function initializeTitle(seed){
+ if(app)return;
  await installStartupBranding(Module,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});
  // The localized Runtime still constructs the Japanese core. Keep its font
  // alias alongside the selected localization font and user-file root.
@@ -414,9 +414,29 @@ async function launch(){
  ensureSharedFontAlias(Module,language);
  Module.eaglerSaveLanguage=language;
  const mode=Module.touhouMusicMode||'none';music=mode!=='none'&&mode!=='midi';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');
- core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,options.netplayMode==='lan'?options.netplaySeed:Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
+ core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,seed);if(!app)throw Error('C++ game initialization failed');
  mappedBomb=mappedEscape=0;
+}
+async function prepareRoom(){
+ if(!multiplayerRuntime||launched||options.replayViewer||options.netplayMode==='lan')throw Error('Room preview is unavailable');
+ if(roomPreview)return {presented:true};
+ await initializeTitle(0);
+ if(!core.sdl_room_preview(app))throw Error('Native room preview rejected');
+ clearKeyboard();applyOptions();core.sdl_loop_pause(document.hidden?1:0);core.sdl_loop_start(app);
+ const deadline=performance.now()+60000;
+ while(!core.sdl_room_preview_ready(app)){
+  if(core.application_error(app)||performance.now()>deadline)throw Error('Native room title initialization failed');
+  await new Promise(requestAnimationFrame);
+ }
+ roomPreview=true;return {presented:true};
+}
+async function launch(){
+ if(launched)return;
+ const touchTicket=touchLifetime;launchSettled=false;clearKeyboard();
+ await initializeTitle(options.netplayMode==='lan'?options.netplaySeed:Date.now()&65535);
+ if(roomPreview)core.sdl_loop_stop();
  try{await configureNetplay();}catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
+ roomPreview=false;
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();core.sdl_loop_start(app);
  launchSettled=touchTicket===touchLifetime&&!touchRetired&&!closing&&!!app&&ownsTouchDocument();
@@ -442,7 +462,19 @@ async function command(message){
  }
  case 'spectator-playback':return spectatorPlayback.command(message);
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(message);
- case 'launch':await launch();return {};
+ case 'launch':launchSerial=Number(message.launchSerial)||0;await launch();return {};
+ case 'prepare-room':roomOwned=true;return prepareRoom();
+ case 'return-room':roomOwned=true;{
+  if(!multiplayerRuntime||!core.sdl_room_return)throw Error('Room menu return is unavailable');
+  spectatorPlayback.stop();calibration?.stop();clearKeyboard();core.sdl_loop_stop();
+  if(!core.sdl_room_return(app))throw Error('Native room return rejected');
+  roomPreview=true;core.sdl_loop_pause(document.hidden?1:0);core.sdl_loop_start(app);const deadline=performance.now()+60000;
+  while(!core.sdl_room_preview_ready(app)){
+   if(core.application_error(app)||performance.now()>deadline)throw Error('Native room title initialization failed');
+   await new Promise(requestAnimationFrame);
+  }
+  launched=false;launchSettled=false;return {presented:true};
+ }
  case 'sync':await save();return {};
  case 'list':return {files:listLocalReplayFiles(Module.FS,root(),storage.relativeSave,path=>({path:replayFiles.exported(path,Module.FS.readFile(root()+'/'+path))}))};
  case 'read':{const path=replayFiles.physical(storage.relativeSave(message.path));return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
@@ -468,9 +500,9 @@ window.addEventListener('message',event=>{
  if(['keyboard','keyboard-clear','direct-touch','touch-controls','touch-cancel'].includes(m.command)){void dispatchCommand(m);return;}
  queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
 });
-document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouchInput();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
+document.addEventListener('visibilitychange',()=>{if(!core)return;if(roomPreview){clearKeyboard();core.sdl_loop_pause(document.hidden?1:0);return;}if(!launched)return;clearKeyboard();cancelTouchInput();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
 window.addEventListener('blur',()=>{if(core){clearKeyboard();cancelTouchInput();}});
-window.addEventListener('pagehide',()=>{invalidateTouches(true);clearKeyboard();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
+window.addEventListener('pagehide',()=>{invalidateTouches(true);clearKeyboard();if(core&&roomPreview){core.sdl_loop_stop();suspendRuntimeAudio(Module,core);}if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
 window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
@@ -510,5 +542,5 @@ const initialized=(async()=>{
  Module.runtimeStopped=()=>{};Module.callMain=launch;
  window.__th10Runtime={core,Module,get app(){return app;},status,launch,stop,command};
  initializedReady=true;
- emit('ready');
+ emit('ready',multiplayerRuntime?{roomPreview:true,roomReturn:typeof core.sdl_room_return==='function'}:{});
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});

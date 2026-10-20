@@ -30,7 +30,7 @@
 | RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待核对 | normal：[always-hitbox-abi](../../docs/adaptation/status.json) |
+| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 不适用 | normal：本作未声明判定点显示 |
 | PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
@@ -174,3 +174,9 @@
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 
 本轮桌面协议、输入、文件持久化与实际 MP 房间结果见[逐作运行记录](../../docs/adaptation/desktop-20261018.md)。按作品、模式和分项读取通过、失败及待复验结果，原始报告身份见同页机器记录。
+
+## 铃仙护盾受击时保持触点
+
+沿用本地 `4ec0521`、`ab72dac3` 的护盾修复，重新合入上游主线 `b7e322a3`（2026-10-19）。护盾吸收伤害时暂停该帧位移并保留移动手指，正常状态恢复后继续拖动；最后一层也适用。真正死亡、抬手、暂停继续释放手势。
+
+普通版补回 `retain_motion`；MP 保留已有的本地席位判断。执行 `EAGLER_WASI_CXX=<WASI clang++> node ports/th15/portable/input/touch-shield-check.mjs` 检查普通版与 MP 的三层护盾、Deathbomb 和移动输入，共六项，均通过。对应 TOUCH-01、TOUCH-02、TOUCH-09、TOUCH-16；手机实机和部署验收另行记录。

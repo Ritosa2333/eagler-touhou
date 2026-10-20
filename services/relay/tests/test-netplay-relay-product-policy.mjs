@@ -344,6 +344,24 @@ try {
   await waitListening(relay);
   for (const game of multiplayerGames) await verifyProduct(port, game);
   for (const game of multiplayerGames) await verifyModes(port, `${game}mp`);
+  // TH075 sends measured-startup fields in both pure delay and direct rollback.
+  // Its missing catalog entry previously made these valid envelopes look generic.
+  for (const mode of [0, 1]) {
+    const room=`th075mp-start${mode}${Date.now().toString(36)}`;
+    const host=await openLobby(port,room,`th075_host_${mode}`);
+    const guest=await openLobby(port,room,`th075_guest_${mode}`);
+    try {
+      await sendAndMatch(host,{type:'take-seat',seat:0,loadout:0},r=>r.room?.seats[0]);
+      await sendAndMatch(guest,{type:'take-seat',seat:1,loadout:9},r=>r.room?.seats[1]);
+      await sendAndMatch(host,{type:'set-ready',ready:true},r=>r.room?.seats[0]?.ready);
+      await sendAndMatch(guest,{type:'set-ready',ready:true},r=>r.room?.seats[1]?.ready);
+      const response=await sendAndMatch(host,{type:'start',adonisMode:mode,inputDelay:mode?4:0,
+        inputDelayAuto:false,predictionReserve:2,predictionLimit:8},r=>r.type==='start'||r.type==='error');
+      assert.equal(response.type,'start',JSON.stringify(response));
+      assert.equal(response.room.adonisMode,mode);
+      assert.equal(response.room.inputDelay,mode?4:0);
+    } finally {host.close(1000);guest.close(1000);}
+  }
   await verifyGenericRoom(port);
   await verifyRelayOnlyBarrier(port);
   await verifyRtcDisconnectSignal(port);

@@ -140,8 +140,9 @@ test('metadata: latest per-game read wins and dispose prevents stale read/networ
   idb.generation = generation('new'); const current = service.refreshInstalled('th06');
   idb.requests[1].succeed(); await current; idb.requests[0].succeed(); await old;
   assert.equal(service.getSnapshot().installed.get('th06').descriptor.revision, 'new');
+  idb.requests.at(-1).succeed(); await flush(); // settle the optional beauty hint independently
   idb.generation = generation('after-dispose'); const stale = service.refreshInstalled('th06'), snapshot = service.getSnapshot();
-  service.dispose(); idb.requests[2].succeed(); await stale; assert.equal(service.getSnapshot(), snapshot);
+  service.dispose(); idb.requests.at(-1).succeed(); await stale; assert.equal(service.getSnapshot(), snapshot);
   const calls = [], deferred = [];
   const net = {fetch: (url, init) => new Promise(resolve => {calls.push({url, init}); deferred.push(() => resolve({ok: true, json: async () => String(url).includes('site-manifest') ? host() : catalog}));})};
   const other = fixture(net); const pending = other.initialize(); const loading = other.getSnapshot(); other.dispose();
@@ -150,14 +151,20 @@ test('metadata: latest per-game read wins and dispose prevents stale read/networ
 });
 
 test('metadata: host publication, test-only product and multiplayer-runtime filters retain main policy', async () => {
-  const published = host({th06: hostGame('th06'), th07: hostGame('th07', {multiplayerRuntime: 'runtime/th07/mp.html'}), th20: hostGame('th20')});
-  const normal = fixture(network(published)); assert.equal(normal.getSnapshot().products.includes('th20'), false);
+  const published = host({th06: hostGame('th06'), th07: hostGame('th07', {multiplayerRuntime: 'runtime/th07/mp.html'}),
+    th075: hostGame('th075', {multiplayerRuntime: 'runtime/th075/mp.html'}), th20: hostGame('th20')});
+  const testProducts = ['th075', 'th075mp', 'th20'];
+  const normal = fixture(network(published));
+  for (const product of testProducts) assert.equal(normal.getSnapshot().products.includes(product), false);
   await normal.initialize(); assert.deepEqual(normal.getSnapshot().products, ['th06', 'th07', 'th07mp']); normal.dispose();
   for (const extra of [{testBuild: true}, {baseUrl: 'https://launcher.invalid/deploy/?test'}]) {
-    const service = fixture(network(published), extra); await service.initialize(); assert.ok(service.getSnapshot().products.includes('th20')); service.dispose();
+    const service = fixture(network(published), extra); await service.initialize();
+    for (const product of testProducts) assert.ok(service.getSnapshot().products.includes(product));
+    service.dispose();
   }
   const hostTest = fixture(network({...published, shared: {...published.shared, testBuild: true}})); await hostTest.initialize();
-  assert.ok(hostTest.getSnapshot().products.includes('th20')); hostTest.dispose();
+  for (const product of testProducts) assert.ok(hostTest.getSnapshot().products.includes(product));
+  hostTest.dispose();
 });
 
 test('metadata: original language overlays and music context use current package hints', async () => {

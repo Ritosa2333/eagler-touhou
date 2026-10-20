@@ -11,10 +11,11 @@ export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived
   assetUrl(path: string): string;
   /** The owner prepares the model then opens the original same-URL form entry. */
   onOpenForm(mode: DirectoryFormMode): void;
+  onReplay?(): void;
   initialRows?: boolean;
 }
 /** Original lobby.mts349–385 render conditions, composed once in LobbySurface. */
-export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
+export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
   const {t} = useLocale(), state = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const disabled = state.connection !== 'live' || !!state.mine || state.leaving || !state.products.length;
   const warning = <aside className="lobby-warning lobby-connection-warning" id="connectionWarning" role="alert" hidden={!state.connectionInterrupted}>
@@ -22,7 +23,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
     <button className="lobby-button" id="connectionRefresh" type="button" onClick={service.retry}>{t('lobby.refresh')}</button>
   </aside>;
   const membership = <aside className="lobby-membership" id="membership" hidden={!state.mine}><strong id="membershipTitle">{state.mine ? t('lobby.mine', {code: state.mine.code}) : ''}</strong><p id="membershipHint">{t(state.supportsRecovery ? 'lobby.mineHint' : 'lobby.releaseUnsupported')}</p><button className="lobby-button" id="releaseMembership" type="button" hidden={!state.mine || !state.supportsRecovery} disabled={!!state.recovering || state.connection !== 'live' || state.leaving || !state.mine?.recoveryToken} onClick={service.releaseMembership}>{t(state.recovering ? 'lobby.releasing' : 'lobby.release')}</button></aside>;
-  const roomTools = <LobbyRoomTools disabled={disabled} onCreate={() => onOpenForm('create')} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
+  const roomTools = <LobbyRoomTools disabled={disabled} onCreate={() => onOpenForm('create')} onReplay={onReplay} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
   const empty = state.loading || state.visibleRooms.length || state.connectionInterrupted ? null : {
     title: t(state.connection === 'live' ? 'lobby.empty' : state.connection === 'loading' ? 'lobby.connecting' : state.connection === 'unsupported' ? 'lobby.unsupported' : 'lobby.offline'),
     hint: t(state.connection === 'live' ? 'lobby.emptyHint' : state.connection === 'loading' ? 'lobby.loadingHint' : state.connection === 'unsupported' ? 'lobby.unsupportedHint' : state.connection === 'missing' ? 'lobby.noService' : 'lobby.offlineHint'),

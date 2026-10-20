@@ -4,6 +4,8 @@
     "launcher": "launcher",
     "th06": "ports/th06",
     "th07": "ports/th07",
+    "th075": "ports/th075",
+    "th075mp": "ports/th075-mp",
     "th08": "ports/th08",
     "th09": "ports/th09",
     "th10": "ports/th10",
@@ -20,6 +22,7 @@
     "th08mp": "ports/th08-mp",
     "relay": "services/relay",
     "turn": "services/turn",
-    "telemetry": "services/telemetry"
+    "telemetry": "services/telemetry",
+    "resources": "services/resource-router"
   }
 }

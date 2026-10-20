@@ -338,6 +338,11 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
         if(mp_enabled)blocking_bomb=spells.bomb_active;
 #endif
         if(!boss_position(boss)||!spells.update(player->motion.state.position.y,boss,blocking_bomb)){last_error=-1006;if(error.empty())error="spell update";return false;}}
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled&&!spell_timing.update_multiplayer(spell_flags,spells.frame_count)){
+        error="Invalid multiplayer spell timing state";return false;
+    }
+#endif
     completion.update();
     if(!runtime_cost::run(32,[&]{return hud.update(hud_input());})){last_error=-1010;error="HUD update";return false;}
     if(dialogue&&dialogue->active){

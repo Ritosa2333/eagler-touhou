@@ -161,7 +161,9 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     if(event.type==SDL_EVENT_GAMEPAD_ADDED&&!gamepad)gamepad=SDL_OpenGamepad(event.gdevice.which);
     if(event.type==SDL_EVENT_GAMEPAD_REMOVED&&gamepad&&SDL_GetGamepadID(gamepad)==event.gdevice.which){SDL_CloseGamepad(gamepad);gamepad=nullptr;}
     }
-    auto* keys=runtime->keyboard_state();std::memset(keys,0,256);const bool* physical=th08_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
+    auto* keys=runtime->keyboard_state();std::memset(keys,0,256);
+    if(runtime->room_preview){runtime->motion.target(0,0,0);return;}
+    const bool* physical=th08_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){keys[k.vk]=128;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=128;}
     const int mappedPad=eagler::input::BrowserGamepadState();eagler::input::ApplyGamepadVirtualKeys(keys,mappedPad);
     if(mappedPad<0&&gamepad&&SDL_GamepadConnected(gamepad)){u8 buttons[128]{};for(size_t i=0;i<sizeof(gamepad_slots)/sizeof(*gamepad_slots);++i)buttons[i]=SDL_GetGamepadButton(gamepad,gamepad_slots[i])?128:0;
@@ -468,6 +470,16 @@ EX("sdl_prepare_next") i32 sdl_prepare_next(){if(!runtime)return -1;if(prepared>
     ++prepared;return ok?i32(prepared):-1;}
 EX("sdl_warm_assets") u32 sdl_warm_assets(){return warm_mask;}
 EX("sdl_game_initialize") bool sdl_game_initialize(){if(!runtime||prepared!=sdl_prepare_total()||!runtime->initialize()||!ThpracUi::initialize())return false;sdl_validate_capture();return true;}
+EX("sdl_room_preview") bool sdl_room_preview(){
+    if(!runtime||runtime->app.session.multiplayer_session.configured||runtime->app.in_game())return false;
+    runtime->room_preview=true;return true;
+}
+EX("sdl_room_preview_ready") bool sdl_room_preview_ready(){
+    return runtime&&runtime->room_preview&&runtime->app.title.ready_for_session();
+}
+EX("sdl_room_return") bool sdl_room_return(){
+    if(!runtime)return false;sdl_keys_clear();runtime->return_to_room();return true;
+}
 EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;reset_cadence();display_cadence.reset();presentation_gate.reset();emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
 EX("sdl_loop_stop") void sdl_loop_stop(){running=false;++loop_epoch;sdl_audio_pause(true);}
 EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;reset_cadence();display_cadence.reset();presentation_gate.reset();sdl_audio_pause(suspended);}

@@ -2,6 +2,7 @@ import {existsSync,readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {PRODUCT_GAMES,PRODUCT_IDS} from '../../common/contracts/product-catalog.mjs';
 import {MUSIC_BROWSER_GAMES} from '../../tools/ports/music-browser-helpers.mjs';
+import {TITLE_FLOW_GAMES} from './adapters/title-flow.mjs';
 
 const DEFAULT_ROOT=resolve(import.meta.dirname,'../..');
 export const ADAPTATION_GROUPS=Object.freeze([
@@ -12,7 +13,7 @@ const UPDATE_CHECKS=Object.freeze(['PACKAGE-03','SAVE-06']);
 const OFFLINE_CHECKS=Object.freeze(['PACKAGE-02','PACKAGE-04','PACKAGE-05','SAVE-02','SAVE-03','SAVE-04','SAVE-05']);
 const GROUP_CHECKS=Object.freeze({
   runtime:Object.freeze(['RUNTIME-01','RUNTIME-02','RUNTIME-03','RUNTIME-05','RUNTIME-06']),
-  'desktop-input':Object.freeze(['INPUT-01','INPUT-02','INPUT-03','INPUT-04','INPUT-05','INPUT-07',...Array.from({length:19},(_,index)=>`TOUCH-${String(index+1).padStart(2,'0')}`)]),
+  'desktop-input':Object.freeze(['INPUT-01','INPUT-02','INPUT-03','INPUT-04','INPUT-05','INPUT-07','AUDIO-02',...Array.from({length:19},(_,index)=>`TOUCH-${String(index+1).padStart(2,'0')}`)]),
   'desktop-background':Object.freeze(['RUNTIME-04','INPUT-06','TOUCH-16','AUDIO-04']),
   practice:Object.freeze(['PRACTICE-01','PRACTICE-02','PRACTICE-03','PRACTICE-07']),
   replay:Object.freeze(['REPLAY-01']),
@@ -234,6 +235,9 @@ export function buildAdaptationPlan({root=DEFAULT_ROOT,output=resolve(root,'arti
     addOfflineUpdateOnlyCases({cases,products:products.filter(entry=>entry.variant==='normal'),root,output,environment,updateState,selectedChecks});
   const selectedBase=[...new Set(products.map(entry=>entry.game))].map(game=>({game,product:PRODUCT_GAMES[game]}));
   if(variant!=='normal')addRoomCases({cases,products:selectedBase,root,output,environment,groups:selectedGroups,selectedChecks});
+  for(const item of cases)if(item.status!=='not-applicable'&&!TITLE_FLOW_GAMES.includes(item.game)){
+    item.status='blocked';item.task=null;item.reason=`Register ${item.game} native observations and scenario flow before executing this driver`;
+  }
   const mappedChecks=new Set(cases.flatMap(item=>item.checks));
   const unmappedChecks=checks.filter(check=>!mappedChecks.has(check)).map(check=>({id:check,reason:'No selected scenario group maps this adaptation check'}));
   return{cases,unmappedChecks};

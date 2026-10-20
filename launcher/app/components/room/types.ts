@@ -6,6 +6,7 @@ import type {
 import type { MultiplayerRoomService } from '../../services/multiplayer-room';
 import type { TouchMovementMode } from '../../../src/launcher/game-preferences.mts';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
+import type {ReactNode} from 'react';
 export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game';
 export interface RoomNetworkPresentation {
   subscribe(listener: () => void): () => void;
@@ -17,6 +18,7 @@ export interface RoomNetworkPresentation {
 export interface RoomViewContext {
   transfer?: import('../../models/transfer').TransferSnapshot;
   launched: boolean;
+  previewReady?: boolean;
   th09NetworkOverlayOpen: boolean;
   launchStage: 'path' | 'preparing' | null;
   touchEnabled: boolean;
@@ -35,6 +37,13 @@ export interface RoomViewProps {
   settingsOpen: boolean;
   visible?: boolean;
   settingsClosing?: boolean;
+  workspaceHost?: HTMLElement | null;
+  workspaceStage?: HTMLElement | null;
+  playbackControls?: ReactNode;
+  reloadPending?: boolean;
+  onReloadResources?(): void;
+  onRestoreSettings?(): void;
+  onFullscreen?(): void;
   panel: { kind: RoomPanelKind; peerId?: string } | null;
   onOpenPanel(kind: RoomPanelKind, peerId?: string): void;
   onClosePanel(): void;

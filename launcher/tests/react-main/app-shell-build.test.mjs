@@ -97,7 +97,10 @@ for (const name of ['root', 'nested']) test(`${name} output uses actual React ch
     assert.ok(html.includes(`"basename":${JSON.stringify(mountPath)}`));
     const metadata = elements.filter(node => node.tagName === 'meta' && node.attrs.some(attr => attr.name === 'name' && attr.value === 'eagler-react-app-shell'));
     const doc = {querySelectorAll: () => metadata.map(node => ({getAttribute: name => node.attrs.find(attr => attr.name === name)?.value}))};
-    assert.deepEqual(readReactAppShellDeployment(doc, {href: origin + mountPath + path}), {workerUrl: origin + mountPath + 'app-shell-sw.js', scope: origin + mountPath});
+    assert.deepEqual(readReactAppShellDeployment(doc, {href: origin + mountPath + path}), {
+      workerUrl: origin + mountPath + 'app-shell-sw.js', scope: origin + mountPath,
+      previousWorkerUrls: [origin + mountPath + 'app-shell-sw-fontfix-1fefcaa790f0.js'],
+    });
     assert.equal(readReactAppShellDeployment(doc, {href: 'https://production.invalid' + mountPath + path}), undefined);
     for (const node of elements) for (const attr of node.attrs) if (['src', 'href'].includes(attr.name) && attr.value.startsWith('/') && attr.value.includes('/assets/')) {
       assert.ok(attr.value.startsWith(mountPath + 'assets/'), attr.value);

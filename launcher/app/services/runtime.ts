@@ -150,6 +150,9 @@ export interface RuntimeSnapshot {
   readonly source: string | null;
   readonly ready: boolean;
   readonly launched: boolean;
+  readonly roomPreviewSupported?: boolean;
+  readonly roomReturnSupported?: boolean;
+  readonly roomPreview?: boolean;
   readonly firstFrame: boolean;
   /** Main's nonfatal diagnostic watchdog is separate from caller-requested waits. */
   readonly firstFrameTimedOut: boolean;
@@ -294,6 +297,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   let lease: { id: string; timer: Timer } | null = null;
   let runtimeDocument: object | null = null;
   let preparedPlan: RuntimePlan | null = null;
+  let roomMenuConfigure: RuntimePlan['configure'] | null = null;
+  let roomLaunchSerial = 0;
   let codeUpdate: {epoch:number; check:NonNullable<Awaited<ReturnType<typeof prepareRuntimeLaunch>>['checkForUpdate']>} | null = null;
   const updateNotices = new Set<string>();
   let oggExtensionTail: Promise<void> = Promise.resolve();
@@ -434,7 +439,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     operation++;
     finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
-    runtimeDocument = null; preparedPlan = null; launchRequested = false;codeUpdate = null;
+    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
     takeTelemetry(); // A display tick from an old epoch cannot repopulate reset state.
     if (!hasTerminalSaveLoss) terminalLossEpoch = null;
@@ -559,12 +564,15 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       return;
     }
     if (message.event === 'thprac-session') return;
+    if (message.event === 'room-menu' && (!snapshot.roomReturnSupported || message.launchSerial !== roomLaunchSerial)) return;
+    if (message.event === 'first-frame' && snapshot.roomReturnSupported && message.launchSerial !== roomLaunchSerial) return;
     const eventContext = Object.freeze({epoch: token.id, fileOnly: snapshot.fileOnly});
     if (message.event === 'ready' && !snapshot.ready) {
       try { runtimeDocument = runtimeIdentity(token).document; }
       catch (error) { fail(error); return; }
-      update({ ready: true }); settle('ready');
-    } else if (message.event === 'first-frame' && launchRequested) {
+      update({ ready: true, roomPreviewSupported: message.roomPreview === true, roomReturnSupported: message.roomReturn === true }); settle('ready');
+    } else if (message.event === 'first-frame' && launchRequested &&
+        (!snapshot.roomReturnSupported || message.launchSerial === roomLaunchSerial)) {
       clearFirstFrameWatchdog();
       update({ firstFrame: true, firstFrameTimedOut: false }); settle('first-frame');
     } else if (message.event === 'runtime-info') {
@@ -591,6 +599,9 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       for (const waiter of [...waiters]) {
         timers.clearTimeout(waiter.timer); waiters.delete(waiter); waiter.reject(error);
       }
+    }
+    else if (message.event === 'room-menu' && snapshot.roomReturnSupported && message.launchSerial === roomLaunchSerial) {
+      completeRoomReturn(token);
     }
     else if (message.event === 'exit') {
       // Runtime has already exited; no sync receiver remains, but failure must
@@ -965,6 +976,81 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   function prepareWithReady(input: RuntimePlan, onReady: RuntimeReadyContinuation, signal?: AbortSignal) {
     return prepareOwned(input, undefined, undefined, onReady, signal);
   }
+  /** Rooms surface cached-program updates before Ready, rather than interrupting
+   * a synchronized match after its launch ACK. The loaded epoch stays pinned. */
+  async function checkPreparedCodeUpdate(epoch: number): Promise<boolean> {
+    const pending = codeUpdate;
+    if (!pending || pending.epoch !== epoch || snapshot.epoch !== epoch || snapshot.launched) return false;
+    codeUpdate = null;
+    try {
+      const update = await pending.check();
+      if (!update || snapshot.epoch !== epoch || snapshot.launched || updateNotices.has(update.url)) return false;
+      updateNotices.add(update.url); return true;
+    } catch {return false;}
+  }
+  /** Bind a run to a fully prepared, unlaunched multiplayer engine. Legacy
+   * configure replaces language/music state: retain the prepared payload and
+   * required arrays instead of accidentally clearing localization or music. */
+  async function prepareRoomPreview(epoch: number): Promise<boolean> {
+    const token = sessions.current();
+    if (!token || token.id !== epoch || snapshot.phase !== 'prepared' || snapshot.launched || preparedPlan?.runtimeVariant !== 'multiplayer') throw new RuntimeSessionSupersededError();
+    if (!snapshot.roomPreviewSupported) return false;
+    if (snapshot.roomPreview) return true;
+    const response = await send('prepare-room', {}, options.timeouts?.configure ?? 120_000);
+    assertCurrent(token);
+    if (response.presented !== true) throw new Error('Native room preview did not present its title');
+    update({roomPreview: true});
+    return true;
+  }
+  async function configurePreparedRoom(epoch: number, roomOptions: RuntimeConfigureOptions,
+    {checkGame = false}: {checkGame?: boolean} = {}): Promise<void> {
+    const token = sessions.current(), plan = preparedPlan;
+    if (!token || token.id !== epoch || !plan || plan.fileOnly || plan.runtimeVariant !== 'multiplayer' ||
+        snapshot.phase !== 'prepared' || snapshot.launched || launchRequested || closing || fileSession || fileClosing ||
+        (!checkGame && (roomOptions.netplayMode !== 'lan' || !roomOptions.netplayUrl))) throw new RuntimeSessionSupersededError();
+    roomMenuConfigure ??= structuredClone(plan.configure);
+    const product = PRODUCT_GAMES[plan.game];
+    const configure = checkGame ? {...roomMenuConfigure, options: {...roomMenuConfigure.options,
+      ...('multiplayer' in product && 'preflightWithoutRoom' in product.multiplayer ? {multiplayerPreflight:true} : {})}}
+      : {...plan.configure, options: {...plan.configure.options, ...roomOptions}};
+    update({phase: 'configuring', spectator: roomOptions.netplaySpectator === true});
+    try {
+      await send('configure', snapshot.roomPreview
+        ? {music: configure.music, language: configure.language, options: configure.options, resources: [], runtimeResources: [], sharedResources: []}
+        : {...configure, resources: configure.resources ?? [], runtimeResources: configure.runtimeResources ?? [], sharedResources: []}, options.timeouts?.configure ?? 120_000);
+      assertCurrent(token);
+      preparedPlan = {...plan, configure};
+      if (launcherControlContext) launcherControlContext = Object.freeze({...launcherControlContext,
+        options: Object.freeze(structuredClone(configure.options))});
+      update({phase: 'prepared'});
+    } catch (error) {assertCurrent(token); reset('error', errorText(error)); throw error;}
+  }
+  function completeRoomReturn(token: RuntimeSessionToken) {
+    assertCurrent(token);
+    const plan = preparedPlan;
+    if (!plan || plan.runtimeVariant !== 'multiplayer') throw new RuntimeSessionSupersededError();
+    clearFirstFrameWatchdog(); launchRequested = false;
+    for (const waiter of [...waiters]) if (waiter.kind === 'first-frame' && waiter.token.id === token.id) {
+      waiters.delete(waiter);timers.clearTimeout(waiter.timer);waiter.reject(new RuntimeSessionSupersededError());
+    }
+    const configure = roomMenuConfigure ?? plan.configure;
+    preparedPlan = {...plan, configure};
+    if (launcherControlContext) launcherControlContext = Object.freeze({...launcherControlContext,
+      options: Object.freeze(structuredClone(configure.options ?? {}))});
+    update({phase:'prepared',launched:false,spectator:false,roomPreview:true,firstFrame:false,firstFrameTimedOut:false,
+      runtimeInfo:{},netplayTiming:null,error:null});
+  }
+  async function returnToRoom(): Promise<void> {
+    const token = sessions.current(), plan = preparedPlan;
+    if (!token || !plan || plan.fileOnly || plan.runtimeVariant !== 'multiplayer' || !snapshot.ready ||
+        !snapshot.launched || !snapshot.roomReturnSupported || closing || fileSession || fileClosing)
+      throw new Error(options.translate('runtime.roomReturnUnavailable'));
+    await sync(); assertCurrent(token);
+    const response = await send('return-room', {}, options.timeouts?.configure ?? 120_000);
+    assertCurrent(token);
+    if (response.presented !== true) throw new Error('Native room menu did not present');
+    completeRoomReturn(token);
+  }
   async function launch({awaitFirstFrame = false}: {awaitFirstFrame?: boolean} = {}): Promise<RuntimeSnapshot> {
     if (frame.isConnected === false) { disposeDetachedFrame(); throw new RuntimeSessionSupersededError(); }
     const token = sessions.current();
@@ -974,6 +1060,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const directory = 'runtimeFileLayout' in product && product.runtimeFileLayout === 'directory';
     const networked = plan.configure.options?.netplayMode === 'lan';
     launchRequested = true;
+    if (snapshot.roomReturnSupported) roomLaunchSerial++;
+    const serial = roomLaunchSerial;
     update({ phase: 'launching' });
     const presented = awaitFirstFrame ? waitFor('first-frame', token, options.timeouts?.firstFrame ?? (directory || networked ? 122_000 : 14_000)) : null;
     if (presented) void presented.catch(() => {});
@@ -982,10 +1070,11 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (networked) clearFirstFrameWatchdog();
     else armFirstFrameWatchdog(token, directory ? 122_000 : 12_000);
     try {
-      await send('launch', {}, options.timeouts?.launch ?? (directory ? 120_000 : 15_000));
+      await send('launch', snapshot.roomReturnSupported ? {launchSerial:roomLaunchSerial} : {}, options.timeouts?.launch ?? (directory ? 120_000 : 15_000));
       assertCurrent(token);
+      if (snapshot.roomReturnSupported && (serial !== roomLaunchSerial || !launchRequested)) throw new RuntimeSessionSupersededError();
       if (directory && !networked && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
-      update({ launched: true, phase: 'running' });
+      update({ launched: true, roomPreview: false, phase: 'running' });
       const pendingUpdate = codeUpdate;
       if (!snapshot.multiplayerPreflight && pendingUpdate?.epoch === token.id) {
         codeUpdate = null;
@@ -999,6 +1088,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       return snapshot;
     } catch (error) {
       assertCurrent(token);
+      if (error instanceof RuntimeSessionSupersededError && snapshot.roomReturnSupported &&
+          (serial !== roomLaunchSerial || !launchRequested && snapshot.roomPreview)) throw error;
       // Main keeps an acknowledged launch alive if an optional presentation wait
       // fails; only an unacknowledged launch is reset by this event chain.
       if (!snapshot.launched) reset('error', errorText(error));
@@ -1320,7 +1411,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
-  return Object.freeze({ prepare, prepareWithReady, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
+  return Object.freeze({ prepare, prepareWithReady, checkPreparedCodeUpdate, prepareRoomPreview, configurePreparedRoom, returnToRoom, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
     getSnapshot: () => snapshot, getNetworkSnapshot: () => network.snapshot(),
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     subscribeEvents: (listener: (message: RuntimeEventMessage) => void) => {eventListeners.add(listener); return () => {eventListeners.delete(listener);};},

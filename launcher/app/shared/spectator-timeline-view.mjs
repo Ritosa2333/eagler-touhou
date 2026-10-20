@@ -8,7 +8,7 @@
  * @typedef {{key:string,min:number,position:number,edge:number,received:number,target?:number,paused:boolean,seeking:boolean,following:boolean,ended:boolean,marks:readonly SpectatorTimelineMark[],timeOrigin?:number,statusText?:string,lagText?:string,durationText?:string,summaryText?:string,liveDisabled?:boolean}} SpectatorTimelineModel
  * @typedef {{controls?:string,summary?:string,expand?:string,collapse?:string,progress?:string,nodes?:string,pause?:string,play?:string,live?:string,error?:string}} SpectatorTimelineLabels
  * @typedef {{toggle?:string,pause?:string,play?:string,live?:string}} SpectatorTimelineIcons
- * @typedef {{document?:Document,mount?:Element,idPrefix?:string,onAction?:(action:SpectatorTimelineAction,frame?:number,key?:string)=>unknown,labels?:SpectatorTimelineLabels,icons?:SpectatorTimelineIcons}} SpectatorTimelineOptions
+ * @typedef {{document?:Document,mount?:Element,idPrefix?:string,expanded?:boolean,onAction?:(action:SpectatorTimelineAction,frame?:number,key?:string)=>unknown,labels?:SpectatorTimelineLabels,icons?:SpectatorTimelineIcons}} SpectatorTimelineOptions
  * @typedef {{panel:HTMLElement,slots:{summary:HTMLElement,duration:HTMLElement},update:(model:SpectatorTimelineModel)=>void,updateLabels:(labels?:SpectatorTimelineLabels,icons?:SpectatorTimelineIcons)=>void,destroy:()=>void}} SpectatorTimelineView
  */
 
@@ -425,6 +425,6 @@ export function createSpectatorTimelineView(options = {}) {
       panel.remove(); releaseStyles();
     },
   };
-  renderLabels();
+  setExpanded(options.expanded === true);
   return view;
 }

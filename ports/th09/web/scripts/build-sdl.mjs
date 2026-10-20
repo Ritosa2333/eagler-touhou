@@ -54,6 +54,7 @@ await run([...common,...(profiling?['--profiling-funcs']:[]),'--no-entry','-sDEF
 const wasm=readFileSync(loader.replace('.mjs','.wasm')),module=new WebAssembly.Module(wasm);
 const wasmExports=WebAssembly.Module.exports(module);
 if(!wasmExports.some(e=>e.name==='th09_native_observation_v1'))throw Error('Native observation ABI v1 export is missing');
+if(!wasmExports.some(e=>e.name==='th09_room_return'))throw Error('Room menu return entry point is missing');
 if(release&&wasmExports.some(e=>e.name.startsWith('th09_probe_')||e.name==='th09_title_open'))throw Error('Development entry point in release');
 writeFileSync(resolve(out,'build.json'),JSON.stringify({kind:release?'th09-native-web-release-candidate':'th09-presentation-harness',builtAt,completeGame:false,audioSimd,compilerFlags:common,sourceCompilerFlags:Object.fromEntries(source.filter(file=>sourceFlags(file).length).map(file=>[relative(workspace,file).replaceAll('\\','/'),sourceFlags(file)])),sha256:sha(wasm),bytes:wasm.length,imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),sources:Object.fromEntries([...source,...headers,compilerArgumentsSource,fileURLToPath(import.meta.url),resolve(workspace,'portable/sdl/Renderer.cpp')].map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]))},null,2)+'\n');
 console.log(JSON.stringify({loader,bytes:wasm.length,sha256:sha(wasm)}));

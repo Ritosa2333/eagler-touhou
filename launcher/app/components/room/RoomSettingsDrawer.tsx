@@ -66,10 +66,18 @@ export function RoomSettingsDrawer({roomOpen, open, foregroundActive = false, on
       cycleFocus(node, event);
     };
     node.addEventListener('keydown', keydown);
+    // The shared header is moved out of its original React container. Native
+    // bubbling must own its Back action here just as it already owns Escape.
+    const click = (event: MouseEvent) => {
+      if (!latest.current.open || latest.current.foregroundActive || !(event.target instanceof Element) ||
+          !event.target.closest('#libraryBack')) return;
+      event.preventDefault(); event.stopPropagation(); latest.current.onCloseRequest();
+    };
+    node.addEventListener('click', click);
     const gesture = createEdgeDrawerGesture({side: 'right', drawer: node,
       enabled: () => latest.current.open && !latest.current.foregroundActive,
       isOpen: () => latest.current.open, open: () => {}, close: () => latest.current.onCloseRequest()});
-    return () => {node.removeEventListener('keydown', keydown); gesture.destroy();};
+    return () => {node.removeEventListener('keydown', keydown); node.removeEventListener('click', click); gesture.destroy();};
   }, []);
   return <><button className={`settings-room-backdrop${presence.closing ? ' closing' : ''}`} id="mpSettingsRoomBackdrop" type="button" aria-label={t('settings.drawerClose')} hidden={!roomOpen || presence.hidden || foregroundActive} onClick={onCloseRequest}/>
     <aside ref={drawer} className={`mp-settings-room-drawer settings-ui${presence.closing ? ' closing' : ''}`} id="mpSettingsRoomDrawer" role="dialog" aria-modal="true" aria-label={t('settings.title')} hidden={presence.hidden || foregroundActive} inert={foregroundActive}><div className="mp-settings-room-content" id="mpSettingsRoomDrawerContent"/></aside>

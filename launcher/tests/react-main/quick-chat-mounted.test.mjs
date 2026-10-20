@@ -152,7 +152,10 @@ async function mount(model, { strict = false, dispose, room = false } = {}) {
       },
       React.createElement(React.Fragment, null,
         React.createElement(owner.MultiplayerQuickChat, {model}),
-        room ? React.createElement(owner.RoomQuickChat, {model}) : null),
+        room === 'split' ? React.createElement(React.Fragment, null,
+          React.createElement('div', {id:'roomUpperSpace'}, React.createElement(owner.RoomQuickChat, {model,part:'log'})),
+          React.createElement('div', {id:'roomBottomControls'}, React.createElement(owner.RoomQuickChat, {model,part:'actions'})))
+          : room ? React.createElement(owner.RoomQuickChat, {model}) : null),
     ),
   );
   mounted = {
@@ -195,6 +198,20 @@ test('pregame room chat is independent and shares safe text, send and ten-second
   await act(()=>clock.tick(1));
   assert.equal(query('#mpRoomChat .mp-room-chat-log').children.length,0);
 });
+test('room messages stay above the controls and sending closes the upward picker', async () => {
+  const {model,clock,calls}=fixture();model.update({...context(),inRoom:true});
+  await mount(model,{room:'split',strict:true});
+  assert.equal(query('#roomBottomControls').querySelector('.mp-room-chat-log'),null);
+  const actions=query('#mpRoomChat .room-quick-chat-trigger');await act(()=>actions.click());
+  assert.equal(query('#roomBottomControls').querySelector('.room-quick-chat-picker'),null);
+  await act(()=>query('.room-quick-chat-picker [data-phrase="1"]').click());
+  assert.equal(calls.at(-1)[0],'send');assert.equal(actions.getAttribute('aria-expanded'),'false');
+  await act(()=>model.receive(message()));
+  assert.equal(query('#roomUpperSpace .mp-room-chat-log').children.length,1);
+  await act(()=>clock.tick(10000));
+  assert.equal(query('#roomUpperSpace .mp-room-chat-log').children.length,0);
+});
+
 test('actual React chat keeps main copy, safe author text, stable controls, mute history and Player identity', async () => {
   const { model, calls } = fixture();
   await mount(model);

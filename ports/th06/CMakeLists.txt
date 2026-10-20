@@ -238,7 +238,7 @@ if(EMSCRIPTEN)
         -sMIN_SAFARI_VERSION=150000
         -sENVIRONMENT=web
         -sINVOKE_RUN=0
-        "-sEXPORTED_RUNTIME_METHODS=['callMain']"
+        "-sEXPORTED_RUNTIME_METHODS=['callMain','FS','IDBFS']"
         -lidbfs.js
         --shell-file "${CMAKE_SOURCE_DIR}/resources/shell.html"
     )

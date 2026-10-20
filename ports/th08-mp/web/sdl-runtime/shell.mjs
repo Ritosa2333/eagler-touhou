@@ -202,14 +202,15 @@ const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibra
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
-const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
+let launchSerial=0,roomOwned=false;
+const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
 const spectatorPlayback=createSpectatorPlaybackBridge({
  active:()=>multiplayerRuntime&&launched&&options.netplaySpectator===true&&!closing,memory:()=>new Uint8Array(core.memory.buffer),
  state:()=>core?.multiplayer_spectator_playback_state?.(app)||0,control:(run,action,frame)=>core?.multiplayer_spectator_playback_control?.(app,run,action,frame)||0,
  allocate:size=>core.allocate(size),deallocate:pointer=>core.deallocate(pointer),emit,
 });
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
-let initializedReady=false,launchSettled=false,replayReopening=false,touchLifetime=0,touchRetired=false;
+let initializedReady=false,launchSettled=false,replayReopening=false,touchLifetime=0,touchRetired=false,roomPreview=false;
 // Source serials consume every received snapshot, including ineligible input.
 // Only accepted changes advance native serials; game open/reopen resets those
 // mapped counters, while the source baseline remains owned by this document.
@@ -369,7 +370,7 @@ async function resumeForegroundAudio(forcePause=false){
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&!!app&&launched&&!closing&&!touchRetired&&ownsTouchDocument()&&!document.hidden);
 }
-async function stop(){if(closing)return;closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
+async function stop(){if(closing)return;if(roomOwned&&!options.replayViewer){closing=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{closing=false;}return;}closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
 let localReplayStart=0;
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,
  physical:value=>root()+'/'+storage.relativeSave(value),stopLoop:()=>{clearKeyboard();core.sdl_loop_stop();},
@@ -377,8 +378,13 @@ const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,
  stepReplay:()=>core.sdl_loop_tick(app,1/60,17)===0,
  replayState:()=>{if(!multiplayerRuntime){const v=Array.from(new Uint32Array(core.memory.buffer,core.eagler_replay_state(),5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4]};}const s=replayWords();return {frame:s[4],total:s[5],ended:!!(s[9]||s[11]),stage:status()[1],startStage:localReplayStart,bootstrapTarget:s[8]};},
  onState:playback=>emit('runtime-info',{playback}),onError:error});
-async function launch(){
- if(launched)return;const touchTicket=touchLifetime;launchSettled=false;clearKeyboard();
+async function initializeTitle({roomTitle=false}={}){
+ if(app){
+  const multiplayer=multiplayerRuntime?validateMultiplayerOptions(options):null;
+  if(multiplayer)await configureMultiplayer(core,app,options,{runtimeBuildWords});
+  return multiplayer;
+ }
+ clearKeyboard();
  const {installStartupBranding}=await import('./startup-branding.mjs');
  const build=await(await fetch('./manifest.json')).json();
  await installStartupBranding(Module,{game:'th08',builtAt:build.builtAt});
@@ -395,9 +401,9 @@ async function launch(){
  const multiplayer=multiplayerRuntime?validateMultiplayerOptions(options):null;
  const replayViewer=multiplayerRuntime&&options.replayViewer===true;
  const multiplayerPreflight=multiplayerRuntime&&options.multiplayerPreflight===true;
- if((replayViewer&&multiplayer)||(multiplayerPreflight&&(multiplayer||replayViewer)))
+ if((replayViewer&&multiplayer)||(multiplayerPreflight&&(multiplayer||replayViewer))||(roomTitle&&(multiplayer||replayViewer)))
   throw Error('Conflicting TH08 multiplayer Runtime role');
- if(multiplayerRuntime&&!multiplayer&&!replayViewer&&!multiplayerPreflight)
+ if(multiplayerRuntime&&!multiplayer&&!replayViewer&&!multiplayerPreflight&&!roomTitle)
   throw Error('TH08 multiplayer Runtime requires a room start, preflight or Replay viewer');
  if(!multiplayerRuntime&&options.netplayMode==='lan')throw Error('Network session requires the multiplayer Runtime');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
@@ -416,6 +422,12 @@ async function launch(){
  if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');await new Promise(resolve=>setTimeout(resolve,Math.max(0,2000-(performance.now()-startupImageAt))));performance.mark('eagler-startup-menu-ready');document.querySelector('#loading').textContent='';
  if(multiplayer&&!multiplayer.spectator)await configureMultiplayer(core,app,options,{runtimeBuildWords});
  }catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
+ return multiplayer;
+}
+async function launch(){
+ if(launched)return;const touchTicket=touchLifetime;launchSettled=false;clearKeyboard();
+ if(roomPreview)core.sdl_loop_stop();
+ const multiplayer=await initializeTitle();roomPreview=false;
  if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);if(multiplayer.adonisMode&&!multiplayer.spectator)calibration?.start();else calibration?.stop();}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();if(query.get('manual')!=='1')core.sdl_loop_start();
@@ -470,7 +482,30 @@ async function command(message){
  }
  case 'spectator-playback':return spectatorPlayback.command(message);
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(message);
- case 'launch':await launch();return {};
+ case 'prepare-room':roomOwned=true;{
+  if(!multiplayerRuntime||launched)throw Error('Invalid room preview owner');
+  await initializeTitle({roomTitle:true});
+  if(!core.sdl_room_preview())throw Error('Native room preview rejected');
+  roomPreview=true;core.sdl_loop_start();
+  const deadline=performance.now()+60000;
+  while(!core.sdl_room_preview_ready()){
+   if(closing||touchRetired||performance.now()>deadline)throw Error('Native room title did not become ready');
+   await new Promise(requestAnimationFrame);
+  }
+  return {presented:true};
+ }
+ case 'return-room':roomOwned=true;{
+  if(!multiplayerRuntime||!core.sdl_room_return)throw Error('Room menu return is unavailable');
+  spectatorPlayback.stop();calibration?.stop();clearKeyboard();core.sdl_loop_stop();
+  if(!core.sdl_room_return())throw Error('Native room return rejected');
+  roomPreview=true;core.sdl_loop_pause(document.hidden?1:0);core.sdl_loop_start();const deadline=performance.now()+60000;
+  while(!core.sdl_room_preview_ready()){
+   if(closing||touchRetired||performance.now()>deadline)throw Error('Native room title did not become ready');
+   await new Promise(requestAnimationFrame);
+  }
+  launched=false;launchSettled=false;return {presented:true};
+ }
+ case 'launch':launchSerial=Number(message.launchSerial)||0;await launch();return {};
  case 'sync':await save();return {};
  case 'list':return {files:listLocalReplayFiles(Module.FS,root(),storage.relativeSave,path=>({path:multiplayerRuntime?path:exportReplayName(path,Module.FS.readFile(root()+'/'+path),8)}))};
  case 'read':{let path=storage.relativeSave(message.path);if(!multiplayerRuntime&&path.endsWith('.rpyx'))path=path.slice(0,-1);return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
@@ -553,5 +588,5 @@ const initialized=(async()=>{
  window.__th08Runtime={core,Module,get app(){return app;},status,launch,stop,command,resourceTrace:{start:traceStart,read:traceRead,export:exportResourceTrace}};
  installResourceTrace();
  initializedReady=true;
- emit('ready');
+ emit('ready',multiplayerRuntime?{roomPreview:true,roomReturn:typeof core.sdl_room_return==='function'}:{});
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});

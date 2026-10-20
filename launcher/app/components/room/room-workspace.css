@@ -1,0 +1,283 @@
+/* Room layout uses the same surfaces, typography and permanent Player stage as
+ * the Replay workspace. Rules stay scoped: native game/fullscreen is unchanged. */
+.room-resource-reload{position:absolute;top:12px;right:12px;z-index:8;width:380px;max-width:calc(100% - 24px);box-sizing:border-box;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--panel,#191a17);color:var(--paper);box-shadow:0 8px 24px #0004;pointer-events:auto;touch-action:pan-y}
+.room-resource-reload p{margin:0 0 14px;font:500 14px/1.65 var(--ui-font);overflow-wrap:anywhere}
+.room-resource-reload>div{display:flex;gap:10px}
+.room-resource-reload button{flex:1;min-width:0;min-height:44px;padding:8px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--paper);font:600 14px var(--ui-font);cursor:pointer}
+.room-resource-reload .room-resource-reload-confirm{background:var(--red);border-color:var(--red)}
+#player.room-workspace{position:fixed!important;inset:0!important;z-index:210!important;display:grid!important;grid-template-columns:minmax(0,2.3fr) minmax(320px,1fr);grid-template-rows:48px minmax(0,1fr) auto auto;gap:12px;padding:16px 20px 20px!important;box-sizing:border-box;width:100%!important;height:100dvh!important;min-height:0;background:var(--ink)!important;color:var(--paper);overflow:auto!important;font-family:var(--ui-font)}
+#player.room-workspace #mpRoomView.room-workspace-view{display:contents!important}
+body:has(#player.room-workspace) .mp-settings-room-drawer{z-index:230}
+body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
+#player.room-workspace [hidden][hidden]{display:none!important}
+#player.room-workspace .player-stage{grid-column:1;grid-row:2/5;display:flex;flex-direction:column;min-width:0;min-height:0;gap:12px;padding:0;border:0;background:none}
+#player.room-workspace #gameViewport{position:relative!important;inset:auto!important;margin:0!important;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#090a09;transform:none!important}
+#player.room-workspace #gameFrame{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;pointer-events:none;transform:none!important;opacity:.2}
+#player.room-workspace :is(.player-information-column,.runtime-diagnostics,.netplay-player-status,.mp-quick-chat){display:none!important}
+#player.room-workspace .room-workspace-playback{order:1;flex:none;min-width:0}
+#player.room-workspace .room-workspace-roster{order:2}
+.room-workspace-playback :is(.spectator-playback-host,.th09-playback-host){display:block;width:100%;max-width:none;pointer-events:auto}
+.room-workspace-playback .spectator-timeline,.room-workspace-playback .spectator-timeline[data-collapsed=true]{position:relative;inset:auto;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:0}
+#player.room-workspace #transfer{position:absolute;inset:12px auto auto 12px;z-index:9;box-sizing:border-box;width:320px;max-width:calc(100% - 24px);margin:0}
+#player.room-workspace:has([data-preview-ready=true]) #gameFrame{opacity:1}
+#mpRoomView.room-workspace-view .room-workspace-header{grid-column:1/-1;grid-row:1;justify-content:initial!important;min-width:0!important;max-width:100%;width:100%;box-sizing:border-box;flex-shrink:0}
+.room-workspace-heading,.room-workspace-meta,.room-workspace-top-actions{display:flex;align-items:center;gap:18px;min-width:0}
+.room-workspace-heading h2{font-size:27px!important;line-height:1.3;font-weight:800;white-space:nowrap;margin:0;overflow:hidden;text-overflow:ellipsis}
+.room-workspace-meta{font-size:17px;white-space:nowrap}
+.room-workspace-meta>span{padding-left:18px;border-left:1px solid var(--line)}
+.room-workspace-top-actions{margin-left:auto;gap:12px}
+#mpRoomView.room-workspace-view .room-workspace-top-actions #mpSettingsRoomDrawerToggle{width:auto!important;flex-basis:auto!important;padding:0 12px!important}
+.room-workspace-sidebar{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:20px;background:#111110e8;overflow:hidden}
+.room-workspace-tabs{position:relative;display:flex;flex-shrink:0;border-bottom:1px solid var(--line);padding:8px 10px 0;gap:2px}
+#mpRoomView.room-workspace-view .room-workspace-tabs button{flex:1;border:0!important;border-radius:0!important;border-bottom:3px solid transparent!important;background:transparent!important;color:var(--muted);padding:13px 4px;font:600 14px var(--ui-font);white-space:nowrap}
+#mpRoomView.room-workspace-view .room-workspace-tabs button[aria-selected=true]{color:var(--paper)}
+.room-workspace-tabs::after{content:"";position:absolute;left:10px;bottom:0;width:calc((100% - 20px) / 2);height:3px;border-radius:3px;background:var(--red-bright);transform:translateX(0);transition:transform .38s cubic-bezier(.22,1,.36,1)}
+.room-workspace-tabs[data-active-tab=game]::after{transform:translateX(100%)}
+.room-workspace-panels{padding:18px;overflow:auto;min-height:0;flex:1}
+.room-workspace-panels fieldset{padding:0;margin:0;border:0;min-width:0}
+.room-workspace-panels #mpRoomGuideOpen{padding:8px 0;border:0;background:none;color:var(--muted);font:600 14px var(--ui-font);cursor:pointer}
+.room-workspace-chat{height:100%;display:flex;flex-direction:column;min-height:200px}
+#mpRoomView.room-workspace-view .mp-room-chat-log{position:static!important;display:flex!important;flex-direction:column;justify-content:flex-end;flex:1;min-height:0;overflow:auto;max-height:none!important;margin:0 0 12px;padding:0;background:none!important;font-size:15px;line-height:1.65}
+#mpRoomView.room-workspace-view .mp-room-chat-log p{margin:6px 0;overflow-wrap:anywhere}
+#mpRoomView.room-workspace-view .mp-room-quick-chat{display:block!important;position:relative;min-width:0}
+#mpRoomView.room-workspace-view .mp-room-chat-actions{position:relative!important;width:100%}
+#mpRoomView.room-workspace-view .mp-room-chat-actions summary{padding:14px;border:1px solid var(--line);border-radius:16px;font-size:14px}
+#mpRoomView.room-workspace-view .mp-room-chat-phrases{position:absolute!important;bottom:calc(100% + 8px)!important;top:auto!important;left:0!important;right:0!important;width:auto!important;max-height:330px;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px;z-index:5}
+#mpRoomView.room-workspace-view .mp-room-chat-phrases button{font-size:14px;white-space:normal;text-align:left}
+#mpRoomView.room-workspace-view #mpRoomChat{padding:0;margin:0;background:none;border:0}
+#mpRoomView.room-workspace-view .room-quick-chat-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;padding:12px 16px;border:1px solid var(--line);border-radius:14px;background:#242422;color:var(--paper);font:600 14px var(--ui-font);cursor:pointer;transition:background-color .2s,transform .18s}
+.room-quick-chat-trigger>span{display:inline-block;font-size:18px;transition:transform .25s cubic-bezier(.22,1,.36,1)}
+.room-quick-chat-trigger[aria-expanded=true]>span{transform:rotate(180deg)}
+.room-action-menu{position:fixed;z-index:270;display:flex;flex-direction:column;gap:4px;box-sizing:border-box;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:7px;border:1px solid #ffffff24;border-radius:16px;background:#232321;color:var(--paper);box-shadow:0 16px 44px #0009;font:14px/1.5 var(--ui-font);animation:room-chat-picker-in .24s cubic-bezier(.16,1,.3,1) both}
+.room-action-menu[data-closing=true]{pointer-events:none;animation:room-chat-picker-out .14s ease both}
+.room-action-menu button{flex:none;min-height:44px;padding:10px 12px;border:0;border-radius:9px;background:transparent;color:inherit;text-align:left;font:inherit;overflow-wrap:anywhere;cursor:pointer;transition:background-color .15s,transform .15s}
+.room-action-menu button:hover,.room-action-menu button:focus-visible{background:#bd443833;outline:2px solid #e56a5d;outline-offset:-2px}
+.room-action-menu button:active{transform:translateX(3px)}
+.room-action-menu button[data-danger=true]{color:#f0a99f}
+.room-action-menu button:disabled{opacity:.5;cursor:default}
+@keyframes room-chat-picker-in{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes room-chat-picker-out{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(5px) scale(.98)}}
+.less-motion .room-action-menu,.less-motion .room-action-menu *{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){.room-action-menu,.room-action-menu *{animation:none!important;transition:none!important}}
+.room-workspace-spectators{grid-column:2;grid-row:3;display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:#111110e8;min-width:0;min-height:40px}
+.room-spectator-preview-trigger{display:flex;align-items:center;gap:6px;flex:none;min-height:32px;margin:0;padding:0;border:0;background:none;color:var(--paper);font:700 12px/1.4 var(--ui-font);white-space:nowrap;cursor:pointer}
+#player.room-workspace .room-spectator-preview-trigger .room-icon{width:18px;height:18px;flex:none;object-fit:contain;filter:invert(92%) sepia(10%) saturate(393%) hue-rotate(316deg)}
+.room-spectator-preview-trigger #mpSpectatorCount{color:var(--muted);font-variant-numeric:tabular-nums}
+.room-spectator-preview-avatars{display:flex;flex:1;gap:6px;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:none}
+.room-workspace-spectators:is([data-member-count="1"],[data-member-count="2"]){--preview-avatar-size:40px}
+.room-spectator-preview-avatar{display:grid;place-items:center;flex:0 0 var(--preview-avatar-size,30px);width:var(--preview-avatar-size,30px);height:var(--preview-avatar-size,30px);padding:0;border:1px solid var(--line);border-radius:50%;background:#282b26;color:var(--paper);font:700 calc(var(--preview-avatar-size,30px) * .44)/1 "ET Chill Round",system-ui,sans-serif;cursor:pointer;transition:transform .18s,background-color .18s,width .2s,height .2s}
+.room-spectator-preview-avatar.mine{border-color:#b7e9a7}
+.room-spectator-preview-avatar:active{transform:scale(.92)}
+.room-spectator-preview-join{flex:none;min-height:36px;margin-left:auto;padding:6px 8px;border:0;border-radius:10px;background:#242422;color:var(--red-bright);font:700 12px/1.4 var(--ui-font);white-space:nowrap;cursor:pointer;transition:background-color .18s,transform .18s}
+.room-spectator-preview-join:disabled{opacity:.5;cursor:default}
+.room-spectator-preview-join:not(:disabled):active{transform:scale(.96)}
+.room-spectator-preview-trigger:focus-visible,.room-spectator-preview-avatar:focus-visible{outline:2px solid var(--red-bright);outline-offset:2px}
+.room-workspace-lounge-host{min-width:0;min-height:0}
+.room-workspace-lounge-host:empty{display:none}
+#mpRoomView.room-workspace-view #mpRoomPanel[data-panel=spectators] .mp-spectator-content{padding:4px 0}
+#mpRoomView.room-workspace-view .mp-room-panel{--room-surface:var(--ink);--room-text:var(--paper);--room-raised:#242422;--room-tonal:#30342c;--room-muted:var(--muted);--room-line:var(--line);--room-accent:var(--red-bright);background:var(--ink)!important;color:var(--paper)!important;border-color:var(--line)!important}
+#mpRoomView.room-workspace-view #mpRoomPanel[data-panel=spectators] .mp-spectator-intro{font-size:13px;line-height:1.6;color:var(--muted)}
+#mpRoomView.room-workspace-view #mpRoomPanel[data-panel=spectators] .mp-spectator-join{min-height:44px;padding:10px 16px;border:0;border-radius:12px;background:var(--red);color:var(--paper);font:700 14px var(--ui-font)}
+.room-workspace-actions{grid-column:2;grid-row:4;display:flex;gap:10px}
+#mpRoomView.room-workspace-view .room-workspace-actions button{flex:1;min-height:58px!important;border:0!important;border-radius:18px!important;background:var(--red)!important;color:var(--paper)!important;font:700 20px var(--ui-font)}
+#mpRoomView.room-workspace-view .room-workspace-actions button:disabled{background:#242422!important;color:var(--muted)!important;opacity:1!important}
+#mpRoomView.room-workspace-view .room-workspace-actions button{font:700 20px var(--ui-font)!important}
+.room-workspace-preparation{position:absolute;inset:0;display:grid;place-items:center;background:#090a09f0;padding:24px;box-sizing:border-box;overflow:auto}
+.room-preparation-caption{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;max-width:600px;font-size:16px}
+.room-preparation-spinner{width:32px;height:32px;border:4px solid var(--line);border-top-color:var(--red-bright);border-right-color:var(--paper);border-radius:50%;animation:room-loading-spin 1s linear infinite}
+@keyframes room-loading-spin{to{transform:rotate(360deg)}}
+.room-workspace-preparation .mp-resource-tracks,.room-workspace-preparation #mpRoomResourceAmount{display:none}
+.room-workspace-preparation .mp-room-resource-progress{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;background:none;padding:0;border:0;font:14px/1.6 var(--ui-font);color:var(--paper)}
+.room-workspace-preparation .mp-room-resource-progress button{padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--paper);font:14px var(--ui-font)}
+.room-workspace-fullscreen{position:absolute;right:12px;bottom:12px;z-index:2;display:grid;place-items:center;width:44px;height:44px;padding:10px;border:1px solid var(--line);border-radius:14px;background:#141413d9;color:var(--paper)}
+.room-workspace-fullscreen svg{width:22px;height:22px}
+/* Grouped form reuses MainSelect, RoomTiming, RoomChoiceGroup and OptionSwitch. */
+#mpRoomView.room-workspace-view .room-grouped-settings{display:block!important;position:static!important;padding:0!important;background:none!important;border:0!important}
+.room-settings-group{padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid var(--line)}
+.room-settings-group h3{font-size:17px;margin:0 0 18px}
+.room-basic-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+#mpRoomView.room-workspace-view .room-basic-fields label{display:grid!important;grid-template-columns:1fr!important;gap:10px;font-size:14px!important;color:var(--muted)}
+#mpRoomView.room-workspace-view .mizuki-select{width:100%}
+#mpRoomView.room-workspace-view .mizuki-select-trigger{min-height:40px;padding:8px 12px;font-size:14px;border:1px solid var(--line);border-radius:12px;background:#242422}
+.mizuki-select-menu[data-room-workspace]{z-index:240}
+#mpRoomView.room-workspace-view .mp-room-choice-group{display:flex!important;flex-wrap:nowrap!important;gap:0!important;background:#242422;border-radius:12px;overflow:hidden;margin-top:10px}
+#mpRoomView.room-workspace-view .mp-room-choice-group button{flex:1 1 0;min-width:0!important;border-radius:10px!important;padding:10px 3px!important;font-size:12px!important}
+#mpRoomView.room-workspace-view .mp-room-setting-title{font-size:14px!important}
+#mpRoomView.room-workspace-view .room-reward-field{display:grid;grid-template-columns:1fr 1.4fr;align-items:center;gap:10px;margin-top:18px;font-size:14px!important;line-height:1.5}
+#mpRoomView.room-workspace-view .room-setting-description,#mpRoomView.room-workspace-view .mp-room-delay-hint{font-size:14px!important;line-height:1.65!important;color:#b8b2a7!important;margin:8px 0 0!important}
+#mpRoomView.room-workspace-view #mpTh15ChapterGraze{color:var(--paper)!important}
+#mpRoomView.room-workspace-view .mp-room-input-timing{padding:0!important;margin:0!important;max-width:none!important}
+#mpRoomView.room-workspace-view .mp-room-input-timing:has(>.mp-rollback-toggle[hidden]),
+#mpRoomView.room-workspace-view .mp-room-input-timing:has(>.mp-room-delay[hidden]){display:none!important}
+#mpRoomView.room-workspace-view .mp-room-input-timing:has(>.mp-rollback-toggle[hidden])+.mp-room-input-timing>.mp-room-delay{margin-top:0}
+#mpRoomView.room-workspace-view .mp-rollback-toggle{display:flex!important;align-items:center;justify-content:space-between;gap:12px;min-height:44px!important;width:100%;padding:8px 0!important;background:none!important;border:0!important;color:var(--paper);font:600 14px var(--ui-font)!important}
+#mpRoomView.room-workspace-view .mp-rollback-toggle>span{min-width:0;white-space:normal;text-align:left;line-height:1.6}
+#mpRoomView.room-workspace-view .mp-rollback-toggle i{position:relative;display:block;flex:0 0 46px;width:46px;height:26px;background:#363632;border-radius:99px}
+#mpRoomView.room-workspace-view .mp-rollback-toggle i:after{content:"";position:absolute;left:4px;top:4px;width:18px;height:18px;background:var(--muted);border-radius:50%}
+#mpRoomView.room-workspace-view .mp-rollback-toggle[aria-checked=true] i{background:var(--red)}
+#mpRoomView.room-workspace-view .mp-rollback-toggle i:after{transform:none}
+#mpRoomView.room-workspace-view .mp-rollback-toggle[aria-checked=true] i:after{left:24px;transform:none;background:var(--paper)}
+#mpRoomView.room-workspace-view .mp-room-delay{display:flex!important;align-items:center;justify-content:flex-start!important;gap:12px;margin-top:12px}
+#mpRoomView.room-workspace-view .mp-delay-stepper{display:inline-flex!important;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#242422}
+#mpRoomView.room-workspace-view .mp-delay-stepper button{border:0!important;min-height:38px!important;width:40px;padding:6px!important;background:transparent!important;color:var(--paper);font:600 15px var(--ui-font)}
+#mpRoomView.room-workspace-view .mp-room-delay{gap:8px;flex-wrap:nowrap}
+#mpRoomView.room-workspace-view .mp-room-delay>span{font-size:13px;white-space:nowrap}
+#mpRoomView.room-workspace-view .mp-delay-stepper{flex:none}
+#mpRoomView.room-workspace-view .mp-delay-stepper button{width:28px;min-width:0;font-size:14px}
+#mpRoomView.room-workspace-view .mp-delay-stepper button:disabled{color:var(--muted)!important;opacity:.45}
+.mp-delay-auto{display:inline-flex!important;align-items:center;gap:6px;white-space:nowrap;font-size:12px!important;line-height:1.4;margin:0}
+#mpRoomView.room-workspace-view .mp-delay-auto .option-switch{flex-basis:36px!important;width:36px!important;min-width:36px!important;max-width:36px!important;height:22px!important;min-height:22px!important;max-height:22px!important}
+#mpRoomView.room-workspace-view .mp-delay-auto .option-switch i{width:14px!important;height:14px!important}
+#mpRoomView.room-workspace-view .mp-delay-auto .option-switch.on i{transform:translateX(14px)!important}
+.room-rule-field{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px;font-size:14px}
+.room-rule-field>div{flex:1;min-width:0}
+#mpRoomView.room-workspace-view .option-switch{position:relative!important;display:block!important;box-sizing:border-box;flex:0 0 46px!important;width:46px!important;min-width:46px!important;max-width:46px!important;height:26px!important;min-height:26px!important;max-height:26px!important;padding:0!important;border:1px solid var(--line)!important;border-radius:99px!important;background:var(--ink)!important;box-shadow:none!important}
+#mpRoomView.room-workspace-view .option-switch i{position:absolute!important;left:3px!important;top:3px!important;width:18px!important;height:18px!important;border-radius:50%!important;background:var(--muted)!important;transform:translateX(0)!important}
+#mpRoomView.room-workspace-view .option-switch.on{background:var(--red)!important}
+#mpRoomView.room-workspace-view .option-switch.on i{background:var(--paper)!important;transform:translateX(20px)!important}
+/* Compact real member cards. Hidden native status remains in accessible names. */
+#player.room-workspace .room-workspace-roster{flex:0 0 auto;min-width:0;min-height:0;touch-action:pan-y}
+#player.room-workspace .room-workspace-roster .mp-seat-stage{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:auto!important;gap:10px!important;height:auto!important;flex:none!important;min-height:0!important;max-width:none!important;padding:0!important;margin:0!important;background:none!important;border:0!important}
+#player.room-workspace .room-workspace-roster .mp-seat-stage[data-player-count="3"]{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#player.room-workspace .room-workspace-roster .mp-seat{--seat-avatar-size:44px;position:relative!important;display:grid!important;grid-template-columns:var(--seat-avatar-size) minmax(0,1fr)!important;grid-template-rows:1fr!important;align-items:center!important;align-content:center!important;gap:14px!important;min-height:112px!important;height:auto!important;padding:16px!important;box-sizing:border-box;border:1px solid var(--line)!important;border-radius:16px!important;overflow:hidden;isolation:isolate;box-shadow:none!important}
+#player.room-workspace .room-workspace-roster .mp-seat{transition:background-color .45s cubic-bezier(.22,1,.36,1),border-color .45s ease!important;color:#fff6ed}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=loading]{background:#b46424!important;border-color:transparent!important}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=unready]{background:var(--red)!important;border-color:transparent!important}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=ready]{background:#028a74!important;border-color:transparent!important}
+.room-seat-watermark{position:absolute;z-index:-1;right:-9px;bottom:-15px;color:var(--ink,#141413);font:900 italic 60px/1.1 var(--ui-font);letter-spacing:-3px;white-space:nowrap;transform:translateY(65%) rotate(-6deg);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .4s cubic-bezier(.22,1,.36,1)}
+.room-seat-watermark.active{transform:translateY(0) rotate(-12deg);opacity:.36}
+.room-seat-letter{display:inline-block}
+.room-seat-watermark.active .room-seat-letter{animation:room-seat-word-arrive .72s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--glyph) * 22ms)}
+@keyframes room-seat-word-arrive{from{opacity:0;transform:translate3d(18px,38px,0) rotate(9deg) scale(.9)}to{opacity:1;transform:translate3d(0,0,0) rotate(0) scale(1)}}
+.room-seat-decoration{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none}
+#player.room-workspace .room-workspace-roster .mp-seat{overflow:visible}
+#player.room-workspace .room-workspace-roster .mp-seat:has(.mp-seat-moderation[open]){z-index:10}
+#player.room-workspace .room-workspace-roster .mp-seat-face{position:relative!important;z-index:1;grid-column:1!important;grid-row:1!important;align-self:start!important;width:var(--seat-avatar-size)!important;height:calc(var(--seat-avatar-size) + 18px)!important;margin:0!important;min-height:0!important;border:0!important;background:none!important;border-radius:0!important;overflow:visible!important;transform:none!important}
+#player.room-workspace .room-workspace-roster .mp-seat-glyph{position:absolute!important;bottom:0;display:grid!important;place-items:center;width:100%;height:var(--seat-avatar-size);font:700 20px/1 "ET Chill Round",system-ui,sans-serif!important;border:3px solid transparent;box-sizing:border-box;border-radius:50%;background-clip:padding-box}
+.room-seat-ring{position:absolute;inset:auto 0 0;height:var(--seat-avatar-size);border-radius:50%;background:conic-gradient(#b7e9a7 0 var(--loading-angle),transparent var(--loading-angle) 360deg),conic-gradient(#f0ca56 0 var(--base-angle),#ffffff25 var(--base-angle) 360deg);mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));pointer-events:none}
+.room-seat-ring.indeterminate{background:conic-gradient(transparent 0 270deg,#f0ca56 270deg 360deg);animation:room-loading-spin 1.2s linear infinite}
+#player.room-workspace .room-workspace-roster .mp-seat-index{position:static!important;grid-column:1/-1!important;grid-row:2!important;display:flex!important;align-items:center;gap:6px;margin:0!important;font-size:11px!important}
+#player.room-workspace .room-workspace-roster .mp-seat-index>span:first-child{display:none}
+#player.room-workspace .room-workspace-roster .mp-seat-identity{position:relative!important;z-index:2;grid-column:2!important;grid-row:1!important;display:flex!important;flex-direction:column;justify-content:center;gap:5px;min-width:0;margin:0!important;padding:0!important;align-items:flex-start!important;pointer-events:none}
+.room-seat-player-tag{position:absolute;top:0;left:0;right:0;text-align:center;font:700 11px/14px "ET Chill Round",system-ui,sans-serif;letter-spacing:.02em;color:#fff6ed}
+#player.room-workspace .room-workspace-roster .mp-seat-name{position:static!important;display:block!important;margin:0!important;padding:0!important;font:700 20px/1.25 "ET Chill Round",system-ui,sans-serif!important;letter-spacing:.01em;text-align:left!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;box-sizing:border-box}
+#player.room-workspace .room-workspace-roster .mp-seat-details{display:flex!important;gap:5px;max-width:100%;font-size:12px!important;align-items:center}
+#player.room-workspace .room-workspace-roster .mp-seat-loadout{font:700 12px/1.4 "ET Chill Round",system-ui,sans-serif!important;opacity:.65;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#player.room-workspace .room-workspace-roster .mp-seat-control{display:none!important}
+#player.room-workspace .room-workspace-roster .mp-seat-latency{display:flex;align-items:center;gap:12px;position:relative!important;min-height:20px!important;margin:4px 0 0!important;padding:0!important;background:none!important;border:0!important;color:var(--paper)!important;font:700 11px/1.4 "ET Chill Round",system-ui,sans-serif!important;pointer-events:auto;flex-wrap:wrap;text-align:left}
+.room-seat-network-pair{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
+.room-seat-network-label{opacity:.6}
+.room-seat-network-value{font-variant-numeric:tabular-nums}
+#player.room-workspace .room-workspace-roster .mp-seat-latency:disabled{opacity:1!important;text-decoration:none}
+#player.room-workspace .room-workspace-roster .mp-seat-state,#player.room-workspace .room-workspace-roster .mp-seat-me,#player.room-workspace .room-workspace-roster .mp-seat-resource{display:none!important}
+#player.room-workspace .room-workspace-roster .mp-seat-edit{position:absolute!important;inset:0!important;z-index:1!important;background:transparent!important;border:0!important;border-radius:16px!important}
+#player.room-workspace .room-workspace-roster .mp-seat-owner-mark{position:absolute;bottom:-2px;right:-2px;width:15px;height:15px;z-index:2}
+#player.room-workspace .room-workspace-roster .mp-seat-moderation{position:absolute;top:4px;right:4px;z-index:4;font-size:12px}
+#player.room-workspace .room-member-menu-trigger{display:grid;place-items:center;width:30px;height:28px;padding:0;border:0;border-radius:10px;background:transparent;color:#fff6edb3;font:22px/1 system-ui;cursor:pointer;transition:background-color .18s,color .18s,transform .18s}
+#player.room-workspace .room-member-menu-trigger>span{display:block;transition:transform .24s cubic-bezier(.22,1,.36,1)}
+#player.room-workspace .room-member-menu-trigger[aria-expanded=true]{background:#14141355;color:var(--paper)}
+#player.room-workspace .room-member-menu-trigger[aria-expanded=true]>span{transform:rotate(90deg)}
+#player.room-workspace .room-member-menu-trigger:focus-visible{outline:2px solid var(--paper);outline-offset:1px}
+#player.room-workspace .room-member-menu-trigger:active{transform:scale(.92)}
+@media(hover:hover){#player.room-workspace .room-member-menu-trigger:hover:not(:active){background:#ffffff1a;color:var(--paper);transform:translateY(-1px)}}
+#player.room-workspace .room-workspace-roster .mp-seat-moderation-actions{top:auto!important;bottom:calc(100% + 6px);height:auto!important;min-width:160px;box-sizing:border-box;font:14px var(--ui-font)}
+#player.room-workspace .room-workspace-roster .mp-seat-moderation-actions button{min-height:40px;white-space:nowrap;font-size:14px!important}
+#player.room-workspace .room-workspace-roster .mp-seat-drop{position:absolute!important;inset:0!important;display:grid;place-items:center}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty]{background:#171816!important;border-style:dashed!important}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-face{position:absolute!important;inset:0!important;grid-column:auto!important;grid-row:auto!important;width:100%!important;height:100%!important;display:block!important;background:none!important}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty]>.mp-seat-name,
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-owner-mark{display:none!important}
+#player.room-workspace .room-workspace-roster .mp-seat-drop button{min-height:44px!important;padding:10px 14px!important;font-size:14px!important;border:1px dashed var(--line);border-radius:16px;background:none;color:var(--muted)}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-drop button{display:flex!important;align-items:center;justify-content:center;gap:8px;width:100%!important;height:100%!important;border:0!important;border-radius:16px!important;background:none!important;color:var(--muted)!important;font:700 14px/1.4 "ET Chill Round",system-ui,sans-serif!important;transition:background-color .18s,color .18s,transform .18s}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-drop button::before{flex:none;margin:0!important}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-drop button:focus-visible{outline:2px solid var(--red-bright);outline-offset:-4px}
+@media(hover:hover){#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-drop button:hover{background:#ffffff08!important;color:var(--paper)!important}}
+/* Motion follows actual entry, tab changes, messages and deliberate actions. */
+#player.room-workspace .room-workspace-roster .mp-seat{animation:room-card-enter .48s cubic-bezier(.22,1,.36,1) both}
+#player.room-workspace .room-workspace-roster .mp-seat:nth-child(2){animation-delay:60ms}
+#player.room-workspace .room-workspace-roster .mp-seat:nth-child(3){animation-delay:120ms}
+.room-workspace-panels>[role=tabpanel]:not([hidden]){animation:room-panel-enter .3s cubic-bezier(.22,1,.36,1) both}
+#mpRoomView.room-workspace-view .mp-room-chat-log p{animation:room-panel-enter .28s cubic-bezier(.22,1,.36,1) both}
+#player.room-workspace .mp-seat-moderation[open] .mp-seat-moderation-actions,
+#mpRoomView.room-workspace-view .mp-room-chat-actions[open] .mp-room-chat-phrases{animation:room-panel-enter .22s cubic-bezier(.22,1,.36,1) both}
+#mpRoomView.room-workspace-view :is(.mp-room-top-action,.room-workspace-actions button,.mp-spectator-join,.room-workspace-tabs button,.mp-room-chat-actions summary){transition:transform .18s cubic-bezier(.22,1,.36,1),background-color .2s ease,color .2s ease,filter .2s ease}
+@media(hover:hover){
+ #mpRoomView.room-workspace-view :is(.mp-room-top-action,.room-workspace-actions button,.mp-spectator-join):not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.1)}
+}
+#mpRoomView.room-workspace-view :is(.mp-room-top-action,.room-workspace-actions button,.mp-spectator-join,.room-workspace-tabs button):not(:disabled):active{transform:scale(.97)}
+@keyframes room-card-enter{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes room-panel-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:760px){
+ #player.room-workspace{display:flex!important;flex-direction:column;height:100dvh!important;min-height:0;gap:12px;padding:12px 12px calc(100px + env(safe-area-inset-bottom))!important;overflow-y:auto!important;overflow-x:hidden!important;touch-action:pan-y!important;overscroll-behavior-y:contain}
+ #player.room-workspace:has(.room-workspace-actions[hidden]){padding-bottom:calc(12px + env(safe-area-inset-bottom))!important}
+ #player.room-workspace :is(.room-workspace-header,.room-workspace-roster,.room-workspace-roster button,.room-workspace-sidebar,.room-workspace-spectators){touch-action:pan-y!important}
+ #mpRoomView.room-workspace-view .room-workspace-header{order:0;display:grid!important;grid-template-columns:44px minmax(0,1fr) max-content!important;gap:8px!important;flex-wrap:nowrap!important}
+ .room-workspace-heading{justify-content:center;gap:6px;white-space:nowrap}
+ .room-workspace-heading h2{font-size:14px!important;margin:0!important;text-align:center;min-width:0;flex:0 1 auto}
+ .room-workspace-meta{font-size:10px;gap:4px;flex-shrink:0}
+ .room-workspace-meta>span{border:0;padding-left:0}
+ .room-workspace-meta>span+span{border-left:1px solid var(--line);padding-left:5px}
+ .room-workspace-meta .room-challenge-on{white-space:normal;font-size:9px;max-width:40px}
+ #mpRoomView.room-workspace-view .room-workspace-top-actions{grid-column:3!important;grid-row:1!important;gap:4px;margin:0;width:max-content!important;min-width:max-content!important}
+ #mpRoomView.room-workspace-view .room-workspace-heading{grid-column:2!important;grid-row:1!important;width:auto!important}
+ #mpRoomView.room-workspace-view .room-workspace-top-actions .mp-room-code{padding:0 8px!important;gap:5px!important}
+ #mpRoomView.room-workspace-view .room-workspace-top-actions .mp-room-code strong{font-size:14px!important;letter-spacing:.03em!important}
+ #mpRoomView.room-workspace-view .room-workspace-header .mp-room-back{min-width:44px!important;width:44px!important;padding:0!important}
+ #mpRoomView.room-workspace-view .room-workspace-top-actions #mpSettingsRoomDrawerToggle{width:44px!important;padding:0!important}
+ .room-workspace-top-actions #mpSettingsRoomDrawerToggle span{display:none}
+ #player.room-workspace .player-stage{order:1;flex:none;gap:12px;min-height:0}
+ #player.room-workspace #gameViewport{flex:none;aspect-ratio:4/3;min-height:0!important}
+ #player.room-workspace .room-workspace-roster .mp-seat-stage{gap:6px!important}
+ #player.room-workspace .room-workspace-roster .mp-seat{--seat-avatar-size:32px;grid-template-columns:var(--seat-avatar-size) minmax(0,1fr)!important;gap:10px!important;padding:12px!important;min-height:104px!important}
+ #player.room-workspace .room-workspace-roster .mp-seat-glyph{font-size:14px!important}
+ #player.room-workspace .room-workspace-roster .mp-seat-name{font-size:16px!important;padding:0!important}
+ #player.room-workspace .room-workspace-roster .mp-seat-index>span:first-child{display:none}
+ #player.room-workspace .room-workspace-roster .mp-seat-details{font-size:11px!important;gap:0}
+ #player.room-workspace .room-workspace-roster .mp-seat-loadout{font-size:11px!important}
+ #player.room-workspace .room-workspace-roster .mp-seat-latency{font-size:9px!important;gap:3px 9px;min-height:16px!important}
+ #player.room-workspace .room-workspace-roster .mp-seat-owner-mark{display:none}
+ .room-seat-watermark{font-size:31px;bottom:-5px;right:-6px;letter-spacing:-2px}
+ .room-workspace-spectators{order:2;gap:10px;padding:6px 10px;flex:none;min-height:36px}
+ .room-workspace-sidebar{order:3;flex:none;min-height:360px;overflow:visible}
+ .room-workspace-panels{overflow:visible;padding:16px}
+ .room-workspace-chat{height:300px;min-height:0}
+ .room-workspace-tabs{padding:6px 6px 0}
+ .room-workspace-tabs::after{left:6px;width:calc((100% - 12px) / 2)}
+ .room-seat-player-tag{font-size:10px}
+ /* Keep the original card contents beside an avatar-only spectator rail. */
+ #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]){display:grid;grid-template-columns:minmax(0,3fr) minmax(64px,1fr);gap:8px}
+ #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-lounge-host{position:relative;align-self:stretch}
+ #player.room-workspace .room-workspace-roster .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]){grid-template-columns:minmax(0,1fr)!important}
+ #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat{min-height:84px!important;padding:8px 10px!important}
+ #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat-identity{gap:3px}
+ #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat-latency{margin-top:2px!important}
+ #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-spectators{--preview-avatar-size:28px;position:absolute;inset:0;box-sizing:border-box;width:100%;height:100%;min-height:0;flex-direction:column;gap:6px;padding:6px 4px}
+ #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-spectator-preview-trigger{flex-wrap:wrap;justify-content:center;gap:2px;min-height:24px;font-size:11px;line-height:1.3}
+ #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-spectator-preview-avatars{display:grid;grid-template-columns:repeat(2,var(--preview-avatar-size));grid-auto-rows:var(--preview-avatar-size);justify-content:center;align-content:start;gap:4px;flex:1;width:100%;max-height:184px;overflow-y:auto}
+ #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-spectators:is([data-member-count="1"],[data-member-count="2"]){--preview-avatar-size:40px}
+ #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-spectators:is([data-member-count="1"],[data-member-count="2"]) .room-spectator-preview-avatars{grid-template-columns:var(--preview-avatar-size);gap:4px}
+ #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-spectator-preview-join{width:100%;min-height:32px;margin:auto 0 0;padding:6px 4px;font-size:11px}
+ #mpRoomView.room-workspace-view .room-workspace-tabs button{font-size:13px!important}
+ .room-workspace-actions{position:fixed;z-index:220;bottom:0;left:0;right:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#141413ed;border-top:1px solid var(--line);backdrop-filter:blur(16px)}
+ #mpRoomView.room-workspace-view .room-workspace-actions button{min-height:54px!important;font-size:19px!important}
+}
+@media(max-width:399px){
+ .room-workspace-heading{flex-direction:column;gap:1px}
+ .room-workspace-meta>span{padding-left:0}
+}
+@media(orientation:portrait){
+ #player.room-workspace .room-workspace-chat>.mp-room-quick-chat{order:-1;flex:none;margin:0 0 12px}
+ #mpRoomView.room-workspace-view .room-workspace-chat>.mp-room-chat-log{justify-content:flex-start;margin:0!important}
+}
+@media(prefers-reduced-motion:reduce){.room-preparation-spinner,.room-seat-ring.indeterminate{animation:none}}
+.less-motion .room-seat-watermark,.less-motion .room-seat-letter{animation:none!important;transition:none!important}
+.less-motion #player.room-workspace .room-workspace-roster .mp-seat{transition:none!important}
+.less-motion #player.room-workspace *,.less-motion #player.room-workspace *::after{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){
+ .room-seat-watermark,.room-seat-letter{animation:none!important;transition:none!important}
+ #player.room-workspace .room-workspace-roster .mp-seat{transition:none!important}
+ #player.room-workspace *,#player.room-workspace *::after{animation:none!important;transition:none!important}
+}
+/* Legacy card/utility display rules must not resurrect hidden seats or controls. */
+#player.room-workspace :is(#mpRoomView.room-workspace-view,.room-workspace-roster) [hidden][hidden][hidden]{display:none!important}
+#player.room-workspace .touch-utility-row{display:none!important}

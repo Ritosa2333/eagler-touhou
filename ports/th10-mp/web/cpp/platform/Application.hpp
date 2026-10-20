@@ -90,6 +90,7 @@ struct Application final:CallbackReceiver {
     bool stopped=false,writer_pending=false,initialized=false;
     bool always_hitbox=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool room_preview=false;
     // Physical controls read the last complete logical endpoint while the
     // world is rewound. This host view never enters canonical/journal state.
     multiplayer::TouchInputFrontier touch_input_frontier;

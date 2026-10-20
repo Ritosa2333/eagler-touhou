@@ -76,6 +76,10 @@ EX("multiplayer_configure") u32 browser_multiplayer_configure(BrowserRuntime* r,
     if(candidate.session_id){if(!session.netplay.Reset(candidate))return 0;}
     else{if(session.netplay.Configured()&&session.netplay.LastFrame()!=Netplay::INVALID_FRAME)return 0;session.netplay.Clear();}
     session.multiplayer_session=candidate;
+    // Neutral title frames still advance native key-repeat counters. They
+    // belong to the waiting room, not the agreed frame-zero input history.
+    r->app.supervisor.input={};
+    r->room_preview=false;r->begin_room_run();
     session.multiplayer_route_state=0xff;
     if(candidate.session_id){
         // Live local practice state is not a synchronized room command.

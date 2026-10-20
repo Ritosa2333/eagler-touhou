@@ -207,3 +207,19 @@ test('Viewport Done restores the current orientation’s saved workbench positio
     for (const [name, descriptor] of [['clientWidth', width], ['clientHeight', height]]) {if (descriptor) Object.defineProperty(env.document.documentElement, name, descriptor); else delete env.document.documentElement[name];}
   }
 });
+
+test('TH075 layout is independent from shared shooters and persists across game switches', () => {
+  const values=new Map(),storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+  const defaults={controls:Object.fromEntries(api.touchLayoutControlNames.map(name=>[name,{x:.2,y:.3,scale:1,priority:api.touchLayoutControlMeta[name].priority}])),viewport:{x:0}};
+  const model=api.createTouchLayoutModel({storage});model.hydrate();
+  model.begin('landscape',defaults,['joystick']);model.updateControl('joystick',{x:.25});model.save();model.discard();
+  const shared=values.get('eagler-touhou-touch-layout-v1');
+  model.setGame('th075');assert.equal(model.getSnapshot().saved,null);
+  model.begin('landscape',defaults,['joystick']);model.updateControl('joystick',{x:.7,y:.6});model.save();model.discard();
+  assert.equal(values.get('eagler-touhou-touch-layout-v1'),shared);assert.ok(values.has('eagler-touhou-touch-layout-v1-th075'));
+  model.setGame('th06');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.25);
+  model.setGame('th07');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.25);
+  model.setGame('th075');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.7);
+  const reopened=api.createTouchLayoutModel({storage});reopened.hydrate();reopened.setGame('th075');
+  assert.equal(reopened.getSnapshot().saved.profiles.landscape.controls.joystick.x,.7);
+});

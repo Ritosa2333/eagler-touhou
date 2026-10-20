@@ -148,9 +148,8 @@ function expectedRow(snapshot, room, locale, initial = false) {
   const row = originalRows(doc, n('#roomRowTemplate', doc), new Map(), snapshot.rooms, snapshot.connection, snapshot.mine, snapshot.leaving,
     owners.PRODUCT_GAMES, owners.gameIdForProduct, owners.multiplayerConfigForProduct, () => locale, (key, params) => t(locale, key, params), () => {})(room);
   for (const control of row.querySelectorAll('.lobby-seat-control')) control.title = control.textContent;
-  // Accepted spectator rollout: a full lobby remains enterable through its
-  // observer role. Other row presentation retains the pinned authority.
-  if (room.phase === 'lobby' && room.players >= room.capacity) {
+  // Full/playing membership is independent of native mid-run restoration.
+  if (room.phase !== 'lobby' || room.players >= room.capacity) {
     const button = row.querySelector('.lobby-join');
     button.disabled = snapshot.connection !== 'live' || !!snapshot.mine || snapshot.leaving;
     button.textContent = t(locale, 'multiplayer.joinSpectator');
@@ -164,7 +163,8 @@ function expectedDialog(f, locale) {
   const option = (value, text) => {const node = doc.createElement('option'); node.value = String(value); node.textContent = text; return node;};
   n('#gameSelect', doc).replaceChildren(...f.service.getSnapshot().products.map(product => {const game = owners.PRODUCT_GAMES[owners.gameIdForProduct(product)]; return option(product, locale === 'en' ? game.subtitle : game.title);}));
   n('#capacitySelect', doc).replaceChildren(...policy.playerCounts.map(count => option(count, t(locale, 'lobby.playersCount', {count}))));
-  n('#difficultySelect', doc).replaceChildren(...policy.difficulties.map((name, index) => option(index, name)));
+  const rank = n('#difficultySelect', doc); rank.className = 'difficulty-label'; rank.dataset.difficulty = (policy.difficulties[form.difficulty] || '').toLowerCase();
+  rank.replaceChildren(...policy.difficulties.map((name, index) => {const node = option(index, name); node.className = 'difficulty-label'; node.dataset.difficulty = name.toLowerCase(); return node;}));
   n('#dialogTitle', doc).textContent = t(locale, create ? 'lobby.create' : 'lobby.byCode');
   n('#submitRoom', doc).textContent = t(locale, create ? 'lobby.create' : 'lobby.joinRoom');
   n('#createFields', doc).hidden = n('#policyFields', doc).hidden = !create; n('#codeField', doc).hidden = create;
@@ -173,26 +173,33 @@ function expectedDialog(f, locale) {
   return n('#roomDialog', doc);
 }
 
-for (const locale of ['zh-CN', 'en']) test(`Rows reproduce executed pinned renderer: ${locale} copy/classes/ARIA/seats/states`, async () => {
-  const f = fixture({locale});
-  await f.live([room(), room({code: '2345', capacity: 2, seats: [{initial: '魔', online: true, ready: false, controlMode: 'cheat'}, {initial: '咲', ready: true, online: true}], disableCheatMovement: true, challengeMode: true}),
-    room({code: '3456', phase: 'playing', difficulty: 4, seats: [null, null, null]})]);
-  const snapshot = f.service.getSnapshot();
-  await mount(owners.DirectoryRoomRows, {snapshot, service: f.service, assetUrl, initialRows: true}, {locale});
-  assert.deepEqual(all('.lobby-room-row').map(normalize), snapshot.visibleRooms.map(row => normalize(expectedRow(snapshot, row, locale, true))));
+for (const locale of ['zh-CN', 'en']) test(`Large cards show room code, rank texture, roles, names and spectators: ${locale}`, async () => {
+  const f = await fixture({locale}).live([room({challengeMode:true,publicNames:true,spectators:3,seats:[{initial:'A',name:'Alice',loadout:1,online:true,ready:true},null]})]);
+  const snapshot=f.service.getSnapshot();await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true},{locale});
+  assert.equal(n('.lobby-room-code').textContent,'#1234');
+  assert.equal(n('.difficulty-label').dataset.difficulty,'normal');
+  assert.equal(n('.room-challenge-on').textContent,t(locale,'room.challengeEnabled'));
+  assert.equal(n('.th09-duel-name').textContent,'Alice');
+  assert.ok(n('.room-card-loadout').textContent.length>0);
+  assert.equal(all('.th09-duel-avatar').length,snapshot.visibleRooms[0].capacity);
+  assert.match(n('.th09-room-spectators').textContent,/3/);
+  assert.equal(n('.th09-room-duration').textContent,t(locale,'lobby.recruiting'));
+  assert.equal(env.document.querySelector('.room-elapsed'),null);
 });
-test('Rows preserve keyed identity, failed cover, and creation-time motion suppression across updates/reorder', async () => {
-  const f = await fixture().live([room()]); const first = f.service.getSnapshot();
-  const m = await mount(owners.DirectoryRoomRows, {snapshot: first, service: f.service, assetUrl: p => `/assets-base/${p}`, initialRows: true});
-  const original = n('.lobby-room-row'), cover = n('.lobby-cover img'); assert.equal(cover.getAttribute('src'), '/assets-base/assets/th06-card.webp');
-  await React.act(async () => cover.dispatchEvent(new env.window.Event('error'))); assert.equal(cover.hidden, true);
-  await f.receive([room({code: '5678'}), room({difficulty: 3})]); await m.update({snapshot: f.service.getSnapshot(), initialRows: false});
-  assert.equal(all('.lobby-room-row')[1], original); assert.equal(n('.lobby-cover img', original), cover); assert.equal(cover.hidden, true);
-  assert.equal(original.classList.contains('lobby-room-initial'), true); assert.equal(all('.lobby-room-row')[0].classList.contains('lobby-room-initial'), false);
-  await f.receive([room({code: '5678'})]); await m.update({snapshot: f.service.getSnapshot()}); assert.equal(original.isConnected, false);
+
+test('Large cards retain keyed identity and creation-time motion across reorder', async () => {
+  const f=await fixture().live([room()]), m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl,initialRows:true});
+  const original=n('.lobby-room-row');
+  await f.receive([room({code:'5678'}),room({difficulty:3})]);await m.update({snapshot:f.service.getSnapshot(),initialRows:false});
+  assert.equal(all('.lobby-room-row')[1],original);
+  assert.equal(original.classList.contains('lobby-room-initial'),true);
+  assert.equal(all('.lobby-room-row')[0].classList.contains('lobby-room-initial'),false);
+  assert.equal(n('.difficulty-label',original).dataset.difficulty,'lunatic');
+  await f.receive([room({code:'5678'})]);await m.update({snapshot:f.service.getSnapshot()});assert.equal(original.isConnected,false);
 });
+
 test('Rows enforce live/recruiting/joinable/membership/leaving gates and use the latest service room', async () => {
-  for (const patch of [{joinable: false}, {phase: 'playing'}]) {
+  for (const patch of [{joinable: false}]) {
     const f = await fixture().live([room(patch)]); const m = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service, assetUrl});
     assert.equal(n('.lobby-join').disabled, true); await click('.lobby-join'); assert.equal(f.navigations.length, 0); await m.unmount();
   }
@@ -221,12 +228,12 @@ for (const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th
   await m.unmount();
 });
 
-test('Running cooperative room requires a real spectator stream before the directory can launch its observer',async()=>{
+test('Running cooperative room admits an observer even when its engine must wait for the next run',async()=>{
   for(const spectatable of [false,true]){
     const f=await fixture().live([room({phase:'playing',joinable:false,spectatable})]);
     const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
-    assert.equal(n('.lobby-join').disabled,!spectatable);await click('.lobby-join');assert.equal(f.navigations.length,spectatable?1:0);
-    if(spectatable)assert.equal(owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j')).s,true);
+    assert.equal(n('.lobby-join').disabled,false);await click('.lobby-join');assert.equal(f.navigations.length,1);
+    assert.equal(owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j')).s,true);
     await m.unmount();
   }
 });
@@ -246,7 +253,7 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   }
   await click('#emptyAction'); await click('#createButton'); await click('#codeButton'); assert.deepEqual(opens, ['create', 'create', 'join']);
   assert.equal(n('#refreshRooms').getAttribute('aria-label'), t(locale, 'lobby.refresh'));
-  await f.receive([room()], {total: 45}); assert.equal(n('#listHead').hidden, false); assert.equal(env.document.querySelector('#emptyState'), null);
+  await f.receive([room()], {total: 45}); assert.equal(n('#listHead').hidden, true); assert.equal(env.document.querySelector('#emptyState'), null);
   assert.equal(n('#connectionNote').hidden, false); assert.equal(n('#connectionNote').textContent, t(locale, 'lobby.truncated', {count: 1}));
   assert.equal(n('#roomCount').getAttribute('aria-live'), 'polite'); assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 1}));
   await click('#refreshRooms'); assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listHead').hidden, true);
@@ -404,22 +411,44 @@ test('Actual navigation owner Back closes form once without entering a room; For
   await React.act(async () => h.router.navigate(1)); assert.equal(n('#roomDialog').open, true); assert.equal(n('#roomCodeInput').value, '6789');
   await h.back(); assert.equal(f.closeCalls, 2); assert.equal(f.navigations.length, 0);
 });
-for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product uses original row metadata and native game policy: ${locale}`, async () => {
-  const f = await fixture({locale}).live();
+for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) test(`Room cards show recruiting/full before start and time only during play: ${locale} ${product}`, async()=>{
+  const f=await fixture({locale,selectedProduct:product}).live();
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale});
+  const seats=[{initial:'A',online:true,ready:false},null];
+  for(const [phase,players,key] of [['lobby',1,'lobby.recruiting'],['lobby',2,'lobby.roomFull'],['playing',2,null],['lobby',1,'lobby.recruiting']]){
+    await f.receive([room({product,capacity:2,players,phase,startedAt:Date.now()-65000,seats:players===1?seats:[seats[0],{initial:'B',online:true,ready:false}]})]);
+    await m.update({snapshot:f.service.getSnapshot()});
+    const text=n('.th09-room-duration').textContent;
+    assert.equal(env.document.querySelector('.lobby-room-state'),null,'state has one display location');
+    if(key){assert.equal(text,t(locale,key));assert.equal(env.document.querySelector('.room-elapsed'),null);}
+    else if(product==='th09mp')assert.equal(text,t(locale,'th09.elapsed',{minutes:0}));
+    else assert.ok(n('.room-elapsed').textContent.includes(':'));
+  }
+});
+
+for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product uses room metadata and native game policy: ${locale}`, async () => {
+  const f = await fixture({locale, host: {games: Object.keys(owners.PRODUCT_GAMES)}}).live();
   const rowsMount = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service, assetUrl}, {locale});
   for (const product of f.service.getSnapshot().products) {
     await React.act(async () => f.service.selectProduct(product));
     await f.receive([room({product, capacity: 2, seats: [{initial: 'A', online: false, ready: true}, null]})]);
     await rowsMount.update({snapshot: f.service.getSnapshot()});
     const snapshot = f.service.getSnapshot();
+    const policy = owners.multiplayerConfigForProduct(product);
+    assert.equal(n('.lobby-difficulty').hidden, !!policy.inGameSelection);
+    if (policy.inGameSelection) {
+      assert.equal(n('.lobby-difficulty').textContent, '');
+      assert.equal(all('.difficulty-label').length, 0);
+    } else {
+      assert.equal(n('.difficulty-label').textContent, policy.difficulties[snapshot.visibleRooms[0].difficulty]);
+    }
     if (product === 'th09mp') {
       assert.equal(n('.th09-room-score').textContent,'VS');
-      assert.equal(n('.th09-room-duration').textContent,t(locale,'th09.notStarted',{minutes:0}));
+      assert.equal(n('.th09-room-duration').textContent,t(locale,'lobby.recruiting'));
       assert.equal(all('.th09-duel-avatar').length,2);
-      assert.equal(n('.th09-room-row .lobby-difficulty').textContent,'');
     } else {
-      assert.deepEqual(normalize(n('.lobby-room-row')), normalize(expectedRow(snapshot, snapshot.visibleRooms[0], locale)));
-      assert.equal(n('.lobby-seats').classList.contains('has-controls'), false);
+      assert.equal(n('.lobby-room-code').textContent, '#' + snapshot.visibleRooms[0].code);
+      assert.equal(all('.th09-duel-avatar').length,2);
     }
   }
   await rowsMount.unmount();
@@ -504,5 +533,5 @@ for (const product of ['th06mp','th09mp']) test(`Approved public names remain co
   const snapshot=f.service.getSnapshot();
   assert.deepEqual(snapshot.visibleRooms[0].seats.map(seat=>seat.name),names);
   await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true});
-  assert.deepEqual(all(product==='th09mp'?'.th09-duel-name':'.lobby-seat-name').map(node=>node.textContent),names);
+  assert.deepEqual(all('.th09-duel-name').map(node=>node.textContent),names);
 });

@@ -8,6 +8,8 @@
 
 记录本作普通版和 MP 的存储根。保存一个设置、一份成绩与一个 Replay，按下面的步骤操作。存储根的当前定义见[产品目录](../../common/contracts/product-catalog.mjs)和[MP 路径规则](../../launcher/src/launcher/replay-storage-policy.mts)。
 
+跨源迁移按普通版与多人版各自的数据库归属传输存档和 Replay，覆盖全部注册产品。迁移检查将公开页面的数据库白名单与同一套 MP 存储规则逐项核对，新增作品时同步验证其普通版和多人版迁移入口。
+
 ## 逐项检查
 
 | 编号 | 操作 | 通过时应看到 |

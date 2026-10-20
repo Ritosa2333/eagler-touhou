@@ -96,6 +96,7 @@ public:
     bool multiplayer_open_clear_results(u32 held);
 #endif
 
+    void suppress_title_demo() noexcept { title_idle=0; }
     bool begin(GameResources& source, u32 stage=1, i32 character=0,
                i32 subtype=0, i32 difficulty=1, bool demo=false, bool replay=false,bool practice=false,const PracticeConfig* parameters=nullptr);
     bool open_title(GameResources&,bool first=false,TitleScreen screen=TitleScreen::Main);

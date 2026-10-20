@@ -15,6 +15,8 @@ npm --prefix launcher ci --ignore-scripts
 
 ## 2. 运行前端
 
+已有完整打包 Runtime 的本地预览可指定 `EAGLER_DEVELOPMENT_SITE_MANIFEST`，由正常 Site Manifest 校验器读取运营者提供的 JSON。相对地址从预览站点解析；`EAGLER_TOUHOU_NETPLAY_RELAY` 可覆盖其联机地址。该选项只供源码开发服务器使用，不修改 Host 发布输入。
+
 ```sh
 npm run dev
 ```

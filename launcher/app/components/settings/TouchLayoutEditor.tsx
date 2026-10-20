@@ -8,7 +8,7 @@ import {useLocale} from '../../i18n';
 import {closeMainSelectMenus} from '../launcher/MainSelect';
 import {TouchSettingsFields} from './TouchSettingsFields';
 import {TouchControlPreview} from './TouchControlPreview';
-import {captureTouchLayoutDefaults, controlElement, effectivePlacement, overlapRatio, visibleTouchControls} from './touch-layout-geometry';
+import {captureTouchLayoutDefaults, controlElement, effectiveControlScale, effectivePlacement, overlapRatio, visibleTouchControls} from './touch-layout-geometry';
 import type {SettingsActions, TouchEditorNativePorts} from './types';
 
 type Gesture = {kind: 'move'; pointer: number; name: TouchLayoutControlName; x: number; y: number}
@@ -211,7 +211,7 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
       const point = effectivePlacement(element, item, safe);
       element.style.setProperty('--touch-layout-x', `${safe.left - h.left + point.x * safe.width}px`);
       element.style.setProperty('--touch-layout-y', `${safe.top - h.top + point.y * safe.height}px`);
-      element.style.setProperty('--touch-layout-scale', String(item.scale)); element.style.zIndex = String(31 + item.priority);
+      element.style.setProperty('--touch-layout-scale', String(effectiveControlScale(element, item, safe))); element.style.zIndex = String(31 + item.priority);
     }
     const visible = visibleTouchControls(host), reserved = host.querySelector<HTMLElement>('#touchLayoutReservedZone')!.getBoundingClientRect();
     for (let i = 0; i < visible.length; i++) {
@@ -318,7 +318,7 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
     <section ref={panel} className={`touch-layout-editor${collapsed ? ' is-collapsed' : ''}`} id="touchLayoutEditor" role="region" aria-labelledby="touchWorkbenchTitle" hidden={viewportEditing}>
       <header className="touch-workbench-header"><div className="touch-layout-editor-copy" id="touchLayoutEditorDragHandle" title={t('touch.dragWindow')}><span className="touch-workbench-grip" aria-hidden="true">⠿</span><strong id="touchWorkbenchTitle">{t('touch.workbenchTitle')}</strong><em id="touchLayoutOrientation">{t(layout.orientation === 'landscape' ? 'touch.landscape' : 'touch.portrait')}</em></div><button className="touch-workbench-collapse" id="touchLayoutCollapse" type="button" aria-expanded={!collapsed} aria-controls="touchWorkbenchBody" aria-label={t(collapsed ? 'touch.expandPanel' : 'touch.collapsePanel')} onClick={() => {endGesture(); setCollapsed(!collapsed);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg></button></header>
       <div className="touch-workbench-body" id="touchWorkbenchBody" hidden={collapsed}><div className="touch-workbench-scroll">
-        <section id="touchLayoutArrangement" className="touch-layout-arrangement" aria-label={t('touch.layoutTab')}><div className="touch-layout-secondary-actions"><button id="touchLayoutOrientationHelpOpen" type="button" hidden={!native.canSwitchOrientation()} disabled={orientationPending} onClick={() => {void switchOrientation();}}>{t(layout.orientation === 'landscape' ? 'player.switchPortrait' : 'player.switchLandscape')}</button><button id="touchLayoutReset" type="button" disabled={!layout.isEditing} onClick={() => {void resetOrientation().catch(actions.reportError);}}>{t('touch.restoreDirection')}</button></div><p className="touch-workbench-note">{t('touch.profileHint')}</p></section><hr className="touch-workbench-divider"/>
+        <section id="touchLayoutArrangement" className="touch-layout-arrangement" aria-label={t('touch.layoutTab')}><div className="touch-layout-secondary-actions"><button id="touchLayoutOrientationHelpOpen" type="button" hidden={!native.canSwitchOrientation()} disabled={orientationPending} onClick={() => {void switchOrientation();}}>{t(layout.orientation === 'landscape' ? 'player.switchPortrait' : 'player.switchLandscape')}</button><button id="touchLayoutReset" type="button" disabled={!layout.isEditing} onClick={() => {void resetOrientation().catch(actions.reportError);}}>{t('touch.restoreDirection')}</button></div><p className="touch-workbench-note">{t(state.gameId === 'th075' ? 'touch.independentLayoutHint' : 'touch.profileHint')}</p></section><hr className="touch-workbench-divider"/>
         <TouchSettingsFields model={settings} actions={actions} onAdjustViewport={() => viewportModeSet(true)} onResetViewport={() => {if (!model.getSnapshot().isEditing) return; model.setViewport(0); actions.feedback(t('touch.restoreViewport', {orientation: t(layout.orientation === 'landscape' ? 'touch.landscape' : 'touch.portrait')}));}}/>
       </div><footer className="touch-workbench-footer"><small id="touchLayoutSaveHint">{t('touch.settingsAutoSaveHint')}</small><div className="touch-layout-editor-actions"><button id="touchLayoutExit" type="button" onClick={() => {if (viewportMode.current) viewportModeSet(false); rememberPanel(); onCloseIntent();}}>{t('action.exit')}</button><button id="touchLayoutSave" type="button" disabled={!layout.isEditing} onClick={save}>{t('touch.saveLayout')}</button></div></footer></div>
     </section>

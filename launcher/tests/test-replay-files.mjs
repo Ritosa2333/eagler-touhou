@@ -14,7 +14,14 @@ import {
   selectReplayExportPaths,
 } from "../.cache/build/browser/assets/launcher/replay-files.mjs";
 
-assert.equal(replayImportAccept, ".zip,.rpy,.rpyx");
+assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.rep");
+assert.equal(isReplayFilePath("replay/replay000.rep"), true);
+assert.equal(isValidReplayName("th075", "replay000.rep"), true);
+assert.equal(isValidReplayName("th075", "../replay000.rep"), false);
+assert.equal(allocateReplayName("th075", [], "recorded match.rep"), "recorded_match.rep");
+assert.equal(allocateReplayName("th075", ["replay/replay000.rep"], "replay000.rep"), "th075_ud0000.rep");
+assert.equal(allocateReplayName("th6", [], "replay000.rep"), null);
+assert.equal(allocateReplayName("th075", [], "th6_01.rpy"), null);
 assert.equal(isReplayFilePath("replay/th6_01.rpy"), true);
 assert.equal(isReplayFilePath("replay/th7_ud00af.rpyx"), true);
 assert.equal(isReplayFilePath("replay/th6_01.rpy.thprac.json"), false);

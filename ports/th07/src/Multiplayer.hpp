@@ -8,9 +8,9 @@
 // locally without pulling a socket implementation into Player/GameManager.
 constexpr int TH07_MULTI_MAX_PLAYERS = 3;
 constexpr int TH07_MULTI_MAX_GUESTS = TH07_MULTI_MAX_PLAYERS - 1;
-// Gameplay ABI records challenge deaths and shares authored Bomb invulnerability.
+// Gameplay ABI also fences the dialogue/shared-border one-shot settlement fix.
 // Old multiplayer Replays must be rejected rather than replayed with new rules.
-constexpr unsigned int TH07_MULTI_GAMEPLAY_ABI = 12;
+constexpr unsigned int TH07_MULTI_GAMEPLAY_ABI = 13;
 // Netplay ABI binds the current gameplay and challenge-mode contract.
 // Ordinary single-player builds and Replay formats are unchanged.
-constexpr unsigned int TH07_MULTI_NETPLAY_ABI = 13;
+constexpr unsigned int TH07_MULTI_NETPLAY_ABI = 14;

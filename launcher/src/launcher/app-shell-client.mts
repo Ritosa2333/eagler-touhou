@@ -49,6 +49,15 @@ interface AppShellClientOptions {
 export interface AppShellRegistrationIdentity {
   readonly scopeUrl: string;
   readonly workerUrl: string;
+  /** Explicit retired names owned by this same application and exact mount. */
+  readonly previousWorkerUrls?: readonly string[];
+}
+function appShellWorkerUrls(identity: AppShellRegistrationIdentity) {
+  const scope = new URL(identity.scopeUrl);
+  return new Set([new URL(identity.workerUrl).href, ...(identity.previousWorkerUrls ?? []).filter(value => {
+    const url = new URL(value);
+    return url.origin === scope.origin && new URL('./', url).href === scope.href;
+  }).map(value => new URL(value).href)]);
 }
 /** getRegistration(scope) is a longest-prefix lookup, not an exact-scope lookup.
  * Validate every live slot too: an unrelated pending worker must not inherit
@@ -59,9 +68,9 @@ export function matchesAppShellRegistration(
 ): registration is ServiceWorkerRegistrationLike {
   try {
     if (!registration?.scope || new URL(registration.scope).href !== new URL(identity.scopeUrl).href) return false;
-    const expected = new URL(identity.workerUrl).href;
+    const allowed = appShellWorkerUrls(identity);
     const workers = [registration.active, registration.waiting, registration.installing].filter(Boolean);
-    return workers.length > 0 && workers.every(worker => !!worker?.scriptURL && new URL(worker.scriptURL).href === expected);
+    return workers.length > 0 && workers.every(worker => !!worker?.scriptURL && allowed.has(new URL(worker.scriptURL).href));
   } catch { return false; }
 }
 function browserServiceWorker(): ServiceWorkerContainerLike | null {
@@ -224,7 +233,9 @@ export function createAppShellClient({
     // scope. That controller does not make the nested scope's first install an
     // update. Older test doubles do not expose scriptURL, so retain the
     // conservative controlled-page behavior for them.
-    return (!registrationIdentity && typeof controller.scriptURL !== "string") || controller.scriptURL === resolvedWorkerUrl;
+    if ((!registrationIdentity && typeof controller.scriptURL !== "string") || controller.scriptURL === resolvedWorkerUrl) return true;
+    try { return !!registrationIdentity && !!controller.scriptURL && appShellWorkerUrls(registrationIdentity).has(new URL(controller.scriptURL).href); }
+    catch { return false; }
   };
   const controlledBeforeRegistration = controllerBelongsToRegistration();
   function watchRegistration(registration: ServiceWorkerRegistrationLike) {

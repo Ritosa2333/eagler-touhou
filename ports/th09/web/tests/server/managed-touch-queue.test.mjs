@@ -121,7 +121,7 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
   for (const [name, op] of [
     ['touch', 'touch'], ['touch_cancel', 'touch-cancel'], ['touch_controls', 'touch-controls'],
     ['touch_stick', 'touch-stick'], ['touch_options', 'touch-options'], ['key', 'key'],
-    ['keys_clear', 'keys-clear'], ['music_enabled', 'music'], ['loop_start', 'loop-start'],
+    ['keys_clear', 'keys-clear'], ['always_hitbox', 'always-hitbox'], ['music_enabled', 'music'], ['loop_start', 'loop-start'],
     ['loop_pause', 'loop-pause'], ['loop_stop', 'loop-stop'],
   ]) core['_th09_' + name] = (...args) => native(op, args);
 

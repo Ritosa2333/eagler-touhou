@@ -83,6 +83,7 @@
       window.addEventListener("resize", fitCanvasToViewport, { passive: true });
       window.visualViewport?.addEventListener("resize", fitCanvasToViewport, { passive: true });
       let launched = false;
+      let launchSerial = 0;
       let loadedMusicFiles = [];
       let loadedRuntimeFiles = [];
       let thpracCatalog = [];
@@ -93,7 +94,7 @@
         if (hosted) window.parent.postMessage({ protocol, game, epoch, request, ok, ...payload }, location.origin);
       };
       const emit = (event, payload = {}) => {
-        if (hosted) window.parent.postMessage({ protocol, game, epoch, event, ...payload }, location.origin);
+        if (hosted) window.parent.postMessage({ protocol, game, epoch, event, ...(event==='first-frame'?{launchSerial}:{}), ...payload }, location.origin);
       };
       globalThis.EaglerTouhouGameExited = result => {
         spectatorPlayback.stop();
@@ -791,6 +792,13 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
         stopLoop:()=>{clearBrowserKeyboard();Module._eagler_replay_stop_loop();},onState:playback=>emit('runtime-info',{playback}),onError:error=>emit('notice',{message:String(error)})});
       const launch = async () => {
         if (launched) return;
+        if(Module.eaglerRoomPreview){
+          // The title already emitted its one-shot startup frame. The Host
+          // needs a new acknowledgement after this launch's actual swap.
+          Module._eagler_room_preview_report_launch_frame();
+          Module._eagler_room_begin_run?.();Module.eaglerRoomPreview=false;launched=true;clearBrowserKeyboard();
+          if(Module.eaglerOptions.netplaySpectator)spectatorPlayback.start();return;
+        }
         await installStartupBranding(Module, {game:'th07', builtAt:Module.eaglerBuiltAt, fs:FS});
         const start = session => {
           if (launched) return;
@@ -1128,7 +1136,31 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
             if (!launched || Module.eaglerOptions?.replayViewer !== true) throw Error("请先打开录像管理器");
             reply(message.request, true, await localReplay.command(message));
             break;
-          case "launch": await launch(); reply(message.request, true); break;
+          case "prepare-room": {
+            if(params.get('runtimeVariant')!=='multiplayer'||launched)throw Error('Invalid room preview owner');
+            if(!Module.eaglerRoomPreview){
+              await installStartupBranding(Module,{game:'th07',builtAt:Module.eaglerBuiltAt,fs:FS});
+              Module.eaglerRoomPreview=true;status.textContent='';Module.callMain([]);
+            }
+            const deadline=performance.now()+60000;
+            while(!Module._eagler_room_preview_ready()){
+              if(performance.now()>deadline)throw Error('Native room title timeout');
+              await new Promise(requestAnimationFrame);
+            }
+            reply(message.request,true,{presented:true});break;
+          }
+          case "return-room": {
+            if(params.get('runtimeVariant')!=='multiplayer'||!Module._eagler_room_return)throw Error('Room menu return is unavailable');
+            spectatorPlayback.stop();clearBrowserKeyboard();Module.eaglerRoomPreview=true;
+            Module._eagler_room_return();
+            const deadline=performance.now()+60000;
+            while(!Module._eagler_room_preview_ready()){
+              if(performance.now()>deadline)throw Error('Native room title timeout');
+              await new Promise(requestAnimationFrame);
+            }
+            launched=false;reply(message.request,true,{presented:true});break;
+          }
+          case "launch": launchSerial=Number(message.launchSerial)||0;await launch(); reply(message.request, true); break;
           case "touch-controls":
             applyRuntimeInputEvent(message);
             if (message.request) reply(message.request, true); break;
@@ -1205,7 +1237,7 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
         }],
         onRuntimeInitialized: () => {
           setWebAudioActive(document.visibilityState !== "hidden");
-          if (hosted) { status.textContent = "Ready"; emit("ready", { saveRoot }); }
+          if (hosted) { status.textContent = "Ready"; emit("ready", { saveRoot,roomPreview:params.get('runtimeVariant')==='multiplayer',roomReturn:params.get('runtimeVariant')==='multiplayer'&&typeof Module._eagler_room_return==='function' }); }
           else launch();
         },
         setStatus: text => {

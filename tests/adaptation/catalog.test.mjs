@@ -64,6 +64,12 @@ test('desktop groups use distinct explicit driver modes',()=>{
   assert.ok(cases.find(item=>item.group==='desktop-background').task.args.includes('--background-only'));
 });
 
+test('a newly catalogued product stays visible and blocked until its driver interface is registered',()=>{
+  const plan=buildAdaptationPlan({root,environment:env(),games:['th075'],variant:'normal',groups:['runtime']});
+  assert.equal(plan.cases.length,1);assert.equal(plan.cases[0].status,'blocked');assert.equal(plan.cases[0].task,null);
+  assert.match(plan.cases[0].reason,/native observations and scenario flow/);
+});
+
 test('music plan selects exactly catalogued OGG products and requires both manifests',()=>{
   const plan=buildAdaptationPlan({root,environment:{},groups:['music'],variant:'normal'});
   assert.deepEqual(plan.cases.filter(item=>item.status!=='not-applicable').map(item=>item.game).sort(),[...MUSIC_BROWSER_GAMES].sort());

@@ -1,0 +1,13 @@
+{
+  "name": "eagler-resource-router",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node router.mjs",
+    "test": "node test-router.mjs"
+  }
+}

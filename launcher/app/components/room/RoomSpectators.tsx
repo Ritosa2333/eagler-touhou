@@ -12,7 +12,7 @@ export function RoomSpectators({
   hidden: boolean;
 }) {
   const { t } = useLocale(),
-    { room, ready, owner, config } = roomPresentation(state, t)!,
+    { room, ready, owner } = roomPresentation(state, t)!,
     entries = room.spectators || [];
   return (
     <div
@@ -73,19 +73,29 @@ export function RoomSpectators({
           <div className="mp-spectator-empty">{t('status.noSpectators')}</div>
         )}
       </div>
-      <button
-        className="mp-spectator-join"
-        id="mpSpectatorJoin"
+      <RoomSpectatorJoin state={state} service={service}/>
+    </div>
+  );
+}
+
+export function RoomSpectatorJoin({state, service, id = 'mpSpectatorJoin', className = 'mp-spectator-join'}: {
+  state: RoomOwnerSnapshot;
+  service: MultiplayerRoomService;
+  id?: string;
+  className?: string;
+}) {
+  const {t} = useLocale(), {room, ready, config} = roomPresentation(state,t)!;
+  return <button
+        className={className}
+        id={id}
         type="button"
         hidden={
-          state.seat != null ||
+          (state.seat != null && room.phase !== 'lobby') ||
           (config as typeof config & { spectator?: boolean }).spectator === false
         }
-        disabled={!ready || state.seat != null}
+        disabled={!ready || (state.seat != null && room.phase !== 'lobby')}
         onClick={state.spectatorRequested ? service.leaveSpectator : service.spectate}
       >
         {t(state.spectatorRequested ? 'multiplayer.leaveSpectator' : 'multiplayer.joinSpectator')}
-      </button>
-    </div>
-  );
+      </button>;
 }

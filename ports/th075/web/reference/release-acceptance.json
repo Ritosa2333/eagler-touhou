@@ -1,0 +1,774 @@
+{
+  "game": "th075",
+  "originalVersion": "Japanese 1.11",
+  "webVersion": "1.0.4",
+  "date": "2026-10-12",
+  "completeGame": true,
+  "playableGame": true,
+  "published": true,
+  "acceptedDevelopmentWasmSha256": "29d9b8216521b574fea75ac800862e5b72978526133118742f547a1f77401bd3",
+  "sourceHashes": {
+    "th075_web/cpp/game/AliceActions.cpp": "c33a6254315dd1d9f5a08d9c2b16ad95afa994f5f6ac42e176f4c26863040ff3",
+    "th075_web/cpp/game/AliceAI.cpp": "1f9a9de3917f48f249e89a59d2e1f530471a29f6bb2f753d1d27cfaa753b403e",
+    "th075_web/cpp/game/AliceCharacter.cpp": "17ff1b64c84042113c28b20d44573b1b598c9add8baed5daf170a1e4844bb894",
+    "th075_web/cpp/game/AliceCommands.cpp": "27ff5131d2b5ed2969f951994f6909c5309784e29607e91ed75924679b29a3a5",
+    "th075_web/cpp/game/AliceFrame.cpp": "7d76d406194e08101816f3457b8a12ecf18a8e4336f239f9709ed46557b8c50e",
+    "th075_web/cpp/game/AliceInputs.cpp": "5d5d757ee1564c494c4487e4230bfb86775821daee490fa7c8536333fb28cabd",
+    "th075_web/cpp/game/AliceObjects.cpp": "8def72dbd9c3c131ea3d8812b0ab49397a7c7c82944b33bae86879c72afd94ff",
+    "th075_web/cpp/game/AliceState.cpp": "c3541d8294d2deeea965af45e3e4ee8fd65c6335c04c303eb7a713bb2f165fe3",
+    "th075_web/cpp/game/AliceStory.cpp": "8fc00a2c56ef8f8039da3c655887d5004937c177574e7275bf08126a6320b2e9",
+    "th075_web/cpp/game/AliceStorySetup.cpp": "52c387265e1981517745354f9e01d20b62d671709974822e51087081374aa7cd",
+    "th075_web/cpp/game/BackgroundStage.cpp": "cc263e22557dca32c2312e1006d67729ce1e5084c4f84e75de4f818fbf17186d",
+    "th075_web/cpp/game/BackgroundWater.cpp": "6b7ab87e77c61968af833b5961bfc2391493c6da2aad1b4185fc4154faa472ed",
+    "th075_web/cpp/game/BattleContacts.cpp": "5bed8349a2592a86b450df41dd1b8d6220e2865d2b0a9603771ef6cd4b430970",
+    "th075_web/cpp/game/BattleControls.cpp": "5814d72c5cf7405ae055a40fa56a12ae221f225e6c5fbc5be49f5bd624a2f496",
+    "th075_web/cpp/game/BattleFrame.cpp": "e1292f9f6fa2e8ea587695ceefd3488f50d6364a22a8161894d0ef7e71bba484",
+    "th075_web/cpp/game/BattleGeometry.cpp": "ac942f98f162981148d99d48ae4ccfe27b2854051f070d5e5897d6728be82ce7",
+    "th075_web/cpp/game/BattleHud.cpp": "e0dd2ad272906a7318ffc8d1daa8dee06fd0da433ceb81c71524e041888d00d1",
+    "th075_web/cpp/game/BattleHudSpells.cpp": "110e37dab1afef42d80956b9346ef01c5d3c7ac58ad6e68a09f6557cfe99946b",
+    "th075_web/cpp/game/BattleHudStatus.cpp": "341194adbc270538d56ad8d81624116eb5904bc59c469a98fb99a05163e0a727",
+    "th075_web/cpp/game/BattleLoading.cpp": "2dd9f5c3e76041f2905c5c0ea98eec822c5bf605d9851b2205c22b019a4d9c44",
+    "th075_web/cpp/game/BattleOverlay.cpp": "7a9615ffc719078c8a009e9ed694b0389e60ae6a36a56d6d1016819a100ef4d0",
+    "th075_web/cpp/game/BattlePortraits.cpp": "0a5aaceaa0e47e557f73de6bf4e911f172b280d10ad00bbdd77872e64c200c98",
+    "th075_web/cpp/game/BattleProgress.cpp": "b463e35705181c0dc9125f615dbf6182ce81bc2fcd97a354dd45752cbae4dccf",
+    "th075_web/cpp/game/BattleRenderer.cpp": "df4b242b379bfef42589fed077a95bd6c926d3724a2dffe514be11f3a0e3ace6",
+    "th075_web/cpp/game/BattleRenderOrder.cpp": "de291e5e87061ee4c407be0429f8ebebb1fd7b2b5d429b89715664613ca3daef",
+    "th075_web/cpp/game/BattleScene.cpp": "88dc00d633b785ed396e0d705ef3f532c3daa685df6b5fd282d9ef0da56fc854",
+    "th075_web/cpp/game/BattleSimulation.cpp": "a5f0c5bea2858bdf19cc1c30228559bbbb05f88a41a11ba39525fed1a8107954",
+    "th075_web/cpp/game/BitmapData.cpp": "5bcb983a57f353670f5b87039cd5fcd368a02bf5115abd861a116f873bd98ee2",
+    "th075_web/cpp/game/BodySeparation.cpp": "4539f187b32a5b504db65755e331072fef1b22a3cbede46bea7eb9c5fe818d4e",
+    "th075_web/cpp/game/CameraMotion.cpp": "176aa37a68a5534ef7b2d18b5e6d5a99b35f361428cc060db6d2ed182e4e633a",
+    "th075_web/cpp/game/CardList.cpp": "7cd0cc77b3180522d43fe5539698fccb3ce90a9bc76efb2bdf319f7ffe31d2f0",
+    "th075_web/cpp/game/CharacterFactory.cpp": "11047d6d6b28093414707956701633c49a5aee561940c0b4d1cd49aea5d23890",
+    "th075_web/cpp/game/CharacterSelectDrawing.cpp": "717a64792d5f1cd5082751e55ec46637d1912ae769c4e29171df870fa95121f6",
+    "th075_web/cpp/game/CharacterSelectScene.cpp": "26dcb3790eda2194446f79d5bb7e36370c39c769aa09d6bd287e2a29f3e437fa",
+    "th075_web/cpp/game/CinemaDrawing.cpp": "b3884b3f916ca1848b854215c03a1860832d504fe9025008cfcfa739d9722d0f",
+    "th075_web/cpp/game/CinemaScene.cpp": "fad09c40aaa40ff56233b06aba63d21b202e98ea502526324ee261b6eeaa5b64",
+    "th075_web/cpp/game/CollisionPipeline.cpp": "041c974ce13fed4639e0cc75485fabbffd4fdf094152807170ebbc2c710110bf",
+    "th075_web/cpp/game/CollisionResponse.cpp": "f77bcff980dd11c8cc52013efcbcce820e0fc3b8f5836d52ca965a0840502b15",
+    "th075_web/cpp/game/DamageModel.cpp": "455e7cc236e5989e270dd2f9a8b3976c31f08ab67569ec0822cff3dd99fd16d6",
+    "th075_web/cpp/game/DataArchive.cpp": "38adf258eee954512c97951eda19aac1a3fe7ad4f0bb4428cf68fbca9b58a9dd",
+    "th075_web/cpp/game/EffectPattern.cpp": "40f546122bf295fea6242c956288f543929e85aadd4457061c2424e124007f01",
+    "th075_web/cpp/game/FighterActor.cpp": "f4b48ebbc70a2afaa399b84f257ff35ab1bed121d5aadb47e9fd3a58a1b0322f",
+    "th075_web/cpp/game/FighterAnimation.cpp": "fcdbf763a1a7531eff7576a880b1caf1898e3ec6e0f76ee38da5506489690f9f",
+    "th075_web/cpp/game/FighterCombat.cpp": "4cdf1fddd727b669ec7950d4bebf579722bdc675acbb4347dc65785ac45a74d5",
+    "th075_web/cpp/game/FighterControls.cpp": "e074bf86ef8cc8ebc735ba01cf7684044197b20c6b6ae5a34d8be9a0886e32bb",
+    "th075_web/cpp/game/FighterInputs.cpp": "9dced4667cdb25cab7200d1cfa60a98b92e0a93d713d7951326eb16f29b46ef5",
+    "th075_web/cpp/game/FighterMovement.cpp": "851ca372969dd7832101e99968681e7377d77d8cad78697d586d5eb1d625768e",
+    "th075_web/cpp/game/FighterPattern.cpp": "dad1234ab330f3f6c22e5149dceeed3f355714e748e8621fed89af7c007a6045",
+    "th075_web/cpp/game/FighterScript.cpp": "d894a8b208bd18b63f17e046014c7a9f4ee6b58c0a3c6922d74b74b5993a7209",
+    "th075_web/cpp/game/GameProfile.cpp": "7a366b0260c51f0b4646a0843c7ca3cb23ca69ece15f2ea9ad3f6b4813cb3e19",
+    "th075_web/cpp/game/GameResources.cpp": "b0497743e1d815f674c69cbaac4c7032384d4d67acf4c4bd998c483357ef0cf4",
+    "th075_web/cpp/game/GameSettings.cpp": "55323b6fbf42106d08dc55707f880b1f0f52890d2cb5334f162f926404aff54f",
+    "th075_web/cpp/game/GuardSelector.cpp": "d384572441b5c69934890f8e92807d5aeed4cc141d6f0fae383cf3c6645b536e",
+    "th075_web/cpp/game/ImageRenderer.cpp": "bc6d2503031cc43abed1dfde01a7df4f4e33ae3da7ac1fba07b4beb922da31e5",
+    "th075_web/cpp/game/InputMapping.cpp": "d526fe03a80e3fa53cc5788f2aa4c5b1e82bc3402276133cfe35bd1f07d5337e",
+    "th075_web/cpp/game/MarisaActions.cpp": "f4fa8f959f840c0d5c65105edb19bb762745e4c1e878a007b23de5d16a261f8b",
+    "th075_web/cpp/game/MarisaAI.cpp": "ab583f98a2b71bd72d624f1a7786ecbf34ee927701e9570aa78132e8e09127bd",
+    "th075_web/cpp/game/MarisaCharacter.cpp": "c3a4c1dce1f702f19830b833dda30bbe5c0f3e12b10bb8d709c5c64d4b5069af",
+    "th075_web/cpp/game/MarisaCommands.cpp": "aeaca2c242f73c868291ab8cf5a946aeae902b1268b5da0098ad4c9cc0b50646",
+    "th075_web/cpp/game/MarisaFrame.cpp": "4deee9196fa57863de2515d55aa7cca0032a75799ce3131f2c596f33effb86c6",
+    "th075_web/cpp/game/MarisaInputs.cpp": "6b08333268951b0b49dddc0ff4e965eba100f3f4f86f8d4dfb8b738eae7316ca",
+    "th075_web/cpp/game/MarisaObjects.cpp": "47e9ec3f8361f7ce2955626df0d0ca88e37dba5b9af15ab62c52f64c1dac0224",
+    "th075_web/cpp/game/MarisaRender.cpp": "15328bc1582b41489c5725e4e49becd1b48471953c2cbaaa9f5122df9c497fd7",
+    "th075_web/cpp/game/MarisaState.cpp": "197c765f06e1027b75dd5ef6df522fc37552a21d33d17be2475878d0423540ca",
+    "th075_web/cpp/game/MarisaStory.cpp": "1046c4baa4c8970a7c979509b590a2bbd2bd38efe555db1a7a08a7092b8ddfe5",
+    "th075_web/cpp/game/MarisaStorySetup.cpp": "19a1849471d5cb86bc3a08043032d47e087a6b9fa5cdca4b91195b6abfb9dcbc",
+    "th075_web/cpp/game/MeilingActions.cpp": "098009bb723fb0deb56eb64abfab18ee80d26ab50b2abef783b80ebe1577932d",
+    "th075_web/cpp/game/MeilingAI.cpp": "47b58c6c5483b3cafc9ebfa0529030d892d60c1fa593c687f78da3e0f4ee3405",
+    "th075_web/cpp/game/MeilingCharacter.cpp": "08ba32f2a958ceeea21e050ad1fcc988482b19167ab90b174e9038c56a45d0a1",
+    "th075_web/cpp/game/MeilingCommands.cpp": "06885c089bc0f3108b659cdf3d1af1db50a1615e4c69041a18e7eb38251beb59",
+    "th075_web/cpp/game/MeilingFrame.cpp": "e059e1b7852c7121d2c01377595f29d507f8dc80ca141cdd2d06d93f73613c45",
+    "th075_web/cpp/game/MeilingInputs.cpp": "9421fcc91ce12c31bc784eee177f5575cbc4e1fd8bf2ea78f5a5f08fc4ec0a91",
+    "th075_web/cpp/game/MeilingObjects.cpp": "27bb7c760fec3b2d88808ef9705c1a051de857854bf16db192eb04ab24c7c3d1",
+    "th075_web/cpp/game/MeilingState.cpp": "1d7d91d8419eee8b232f0805cb1622e602c6992add79a8c54164ba5f024974b4",
+    "th075_web/cpp/game/MeilingStory.cpp": "1ec993e3389cf1c946b275b5a126554802a32964cf4b170012b2cf6a7b55d775",
+    "th075_web/cpp/game/MeilingStorySetup.cpp": "8ac89e0dfd1f9d8f173c8322c3bbb8749209f8ae4fc85cff1cc20940df28981d",
+    "th075_web/cpp/game/MenuDrawing.cpp": "a2dc19ee7fa5778418b3898faf32ef180da76ecb334d8c2f471df23e73eeed66",
+    "th075_web/cpp/game/MusicRoomDrawing.cpp": "23907dd1ff36c59bde55f9b97fce1176cda1d514a7edd7b434fd569c86ef59b7",
+    "th075_web/cpp/game/MusicRoomScene.cpp": "6e5d584d9957bbb474d7d01c11e315768f50051825a048f9c4f02805b8d93396",
+    "th075_web/cpp/game/NameEntryScene.cpp": "4e5c1bb5e6bd6b1289a37cf49315580b9fb406dc8abb86837f1bc5c91d387a9a",
+    "th075_web/cpp/game/OptionsDrawing.cpp": "5801448b2abeda2fd2e062007b57d495769cb7a3e905301064736f06f8f85012",
+    "th075_web/cpp/game/OptionsScene.cpp": "535b5b79dadcf3937459666e16c5f8f72fea5a67410e53d4c9db9ad1db1af6e5",
+    "th075_web/cpp/game/OwnedObjects.cpp": "b8ec04c478e133c8d9bb8f2e8f2f74ee86876ce609a3e037ced81020b686697d",
+    "th075_web/cpp/game/PatchouliActions.cpp": "88513b7d9513e559e2f7c987a1d40601c5c31a03aba94a52b55dcfad79386998",
+    "th075_web/cpp/game/PatchouliAI.cpp": "70f8ef06e9729829f9a6d741035a4422a75ccd9463787d8bdaad3108c461e97c",
+    "th075_web/cpp/game/PatchouliCharacter.cpp": "cea7b659b9487375b5ab649ddee02d42c7ef0dc690d90d39e476b4dd8097f589",
+    "th075_web/cpp/game/PatchouliCommands.cpp": "aa84f8c2773ff4deb075f45129d5ce7b6bcc32b7c990699272a3d09b7aa70043",
+    "th075_web/cpp/game/PatchouliFrame.cpp": "a6560c3558b4587f09233c495045aa9d9b94eaed9625937f9488ee91bd1d4aa2",
+    "th075_web/cpp/game/PatchouliInputs.cpp": "249c1326be6aa1cbeeb494cef967e54d6c50fa5f47717f96ceb7eea1775e93c7",
+    "th075_web/cpp/game/PatchouliObjects.cpp": "08defd2371b1418ea1f8cb525fdf61853092714cd33ee29b688bf69e8d3dd5ed",
+    "th075_web/cpp/game/PatchouliState.cpp": "1b631c667b9abbdd8dd94ecf4fa9b7c38e932260417a67154cbae0e750ef4056",
+    "th075_web/cpp/game/PatchouliStory.cpp": "063b780a055082c21a85a8ea232e2851d5c6bf99d3efed843f4d3a1b2d3a6af7",
+    "th075_web/cpp/game/PatchouliStorySetup.cpp": "6a7a2aa609505b58ada24fa68964e868384808a13b0f90636188ee721f6aee8f",
+    "th075_web/cpp/game/QuadTransform.cpp": "e6e5b1cd83a3e1e097d81812e0046877b2caf1bbbae249d1ff974748f8efd268",
+    "th075_web/cpp/game/ReimuAI.cpp": "88ef0272bf626fe3fabeee5f3f210ceae72dd457b6b00ce08cee43fff72c1322",
+    "th075_web/cpp/game/ReimuAttacks.cpp": "b4e21e753a3f04726b8b8bb52e620ad4256d12a736371fb0986018676bf92819",
+    "th075_web/cpp/game/ReimuCharacter.cpp": "bd7008b0e9d7a90bf21111d8f1dd9e57da502c795559338164473cde1e964649",
+    "th075_web/cpp/game/ReimuCommands.cpp": "4a70177c387518351521f321cd576f0dc944665a85c03913c7402dbd6bb0985b",
+    "th075_web/cpp/game/ReimuFrame.cpp": "e773c9cb876049a8ddd157e9f95414744679afad474011694c92460213a8b017",
+    "th075_web/cpp/game/ReimuInputs.cpp": "ab070a21d45bbee21296344b29c41f02083b84deb077d24203b2d49a02d43531",
+    "th075_web/cpp/game/ReimuObjects.cpp": "a3e39311cfb7f4a6300e9f07b12af5851c85206d5d1f76b9b5be9890e1e73db2",
+    "th075_web/cpp/game/ReimuObjectsBasic.cpp": "0b44cb5461d547794874cb92e8efc1ac927d81e76ba11a1a263baa3d48e01056",
+    "th075_web/cpp/game/ReimuObjectsStory.cpp": "e399558cbc0cb107e5f4947fd5b48308e77ba525931d729d5ed851f0f29987dc",
+    "th075_web/cpp/game/ReimuRanged.cpp": "b9f4a87dc93b81cb99e40c276dee32093e6bf7f0056312ce945dcf92692d5770",
+    "th075_web/cpp/game/ReimuRecovery.cpp": "4b5185a7262589e83b13955a1d8fb92e1d3274fef93aac5bb078a28b4cbcb317",
+    "th075_web/cpp/game/ReimuSpells.cpp": "8d689fd502692736dbdc5985a462a62af87e2d450067a6fd5613e3b1cf60b1fa",
+    "th075_web/cpp/game/ReimuStory.cpp": "476bec63b1bfcadeb3443cf3af91a09caa2bb418b11224786fa2af653d296e35",
+    "th075_web/cpp/game/RemiliaActions.cpp": "d1542785183b2a1e3630215e419d6c20dc7fcd4e376dea6f18bed66acb32c87b",
+    "th075_web/cpp/game/RemiliaAI.cpp": "20beef427dc75fa7dd5edb3ea3116dcdebf557bab596a9625a1b359dc26570a3",
+    "th075_web/cpp/game/RemiliaCharacter.cpp": "fc7288c77452490a0188c6cc5a5d6ef23b83d3e495a01220d2c8b0460c63e495",
+    "th075_web/cpp/game/RemiliaCommands.cpp": "1ffd270c64f4be6b8ec2ae57ac06186777d6b37f29a8d3b90d44c36d5b2186ac",
+    "th075_web/cpp/game/RemiliaFrame.cpp": "4982a21e53cfc6280ef05b47498543de57e67dd4f5417e0a002166fe31b2fbd4",
+    "th075_web/cpp/game/RemiliaInputs.cpp": "e41f0bc73e215380a7925675b6598bea4dd1c4ad507d85be206e3d443aedd352",
+    "th075_web/cpp/game/RemiliaObjects.cpp": "50784e65121cabc950d34368897eccf603d8dfad2b2b8e07dbd4d57b1b4e51ff",
+    "th075_web/cpp/game/RemiliaState.cpp": "945e8596c9cab4133c4aa3db9ae106dbffa85ec186d330e795cb25e6c99fadcc",
+    "th075_web/cpp/game/RemiliaStory.cpp": "dd6af449e70cae15d67d290ae510483fe1657dfdb6302f0bd75694d0a9b2403e",
+    "th075_web/cpp/game/RemiliaStorySetup.cpp": "8d091c2f113b856cfa7ef1d624b83ff6a0e9dc6337bacf99efbcde623725dd87",
+    "th075_web/cpp/game/ReplayBrowserScene.cpp": "321746a5491fd013cb6d4c4956570cfbda646512eafc7f57e2721d6741ac9eb8",
+    "th075_web/cpp/game/ReplayConfiguration.cpp": "77286f405842c561f0c4da343d5d562f78cf351ce2155a2c176be759c324cbfc",
+    "th075_web/cpp/game/ReplayFile.cpp": "64b461657b0c7ec1bac6dbb7ed2c2b10e9f07b2c1fb5c581a0f9aec970f229ca",
+    "th075_web/cpp/game/ResultDrawing.cpp": "96006d0499f481c63fccb33b38d6bfae21a86499497094b5b27bbe33a0f04f03",
+    "th075_web/cpp/game/ResultListDrawing.cpp": "a56758d3a34099d6ad2ad882bdf3a172b632dbd248f971e27718e567314a42bf",
+    "th075_web/cpp/game/ResultListScene.cpp": "1f952621915333e623164d7d2ed4f3432e698408f640f40660959bc4551e8adb",
+    "th075_web/cpp/game/ResultScene.cpp": "c74a15f1a3fe4f44ad38702a16a907922513b3b27c6410d017b7b43634cd1454",
+    "th075_web/cpp/game/RoundRules.cpp": "a7eb364a3cc649e001bf6da63b5b68c1cfb448984cbc85b78a92e4f5c58d1a3f",
+    "th075_web/cpp/game/SakuyaActions.cpp": "abeb48f3607c54fb21ae6507cff507c9cd3084af435640bda8f45fa7cde6bec1",
+    "th075_web/cpp/game/SakuyaAI.cpp": "6f086ebe05ae3ed86983ca0fdf452e48a2b6a9f349d8e650d08cdff40c38d9cc",
+    "th075_web/cpp/game/SakuyaCharacter.cpp": "88cb01f0fe86634ab4cbdcaab511fe36a4bec40196741f4050cff0d07d577323",
+    "th075_web/cpp/game/SakuyaCommands.cpp": "f4edda117903fc8755c8b4b52c02c8b9dd4f773d2aac56d2179241870edcd469",
+    "th075_web/cpp/game/SakuyaFrame.cpp": "7cce0fdce24efd36ec4c6d56b24fe4d1c531a8a2e8cf210d7603e46a91c6fbf9",
+    "th075_web/cpp/game/SakuyaInputs.cpp": "a9ef350604cdbe9291cec28b37596b9af86b2260953d9175e1969907a676f3e8",
+    "th075_web/cpp/game/SakuyaObjects.cpp": "e8b9c93d6bff59e79831fa20e1b0d5df1eba0ef00dc77d46fa75fbfa23f81016",
+    "th075_web/cpp/game/SakuyaState.cpp": "63b2cd118d3eeb51019de76bb0b284e1d4fb6786a6e4fde119b3ccf8c27ba0aa",
+    "th075_web/cpp/game/SakuyaStory.cpp": "495df7550cde2b7e6fbb1f5d3db7917ed8649b0003e6173df9ad8669e691adb1",
+    "th075_web/cpp/game/SakuyaStorySetup.cpp": "9f82acfc1960ee571f37cd46de01f2c86d32bb5bdbd69663bda3787c204dbb3f",
+    "th075_web/cpp/game/SceneFade.cpp": "c79e29d999084f9d0b66c0a93aa775d650a20f5cd1ca55326b86324bec443e8a",
+    "th075_web/cpp/game/SceneFadeDrawing.cpp": "7b8ad42de148d37f90dfc6265ddab63a4154a3166dd461bd0d9426f8722d91d5",
+    "th075_web/cpp/game/SelectionUnlocks.cpp": "1336d9ecc9d9d953247b80488c816ee1905268edc993f9a7bbad8f37282a170e",
+    "th075_web/cpp/game/SharedEffectActions.cpp": "f670694f6adbbd42f2f00d1b2e0dca1ded9060bfd4c188d935ca8ad83fa9c12e",
+    "th075_web/cpp/game/SharedEffects.cpp": "7daa0a044c6a8b55bbbc7f3f8b4c36ce3b0de9e024d813432c6668661d316280",
+    "th075_web/cpp/game/SoundPack.cpp": "e514c16b77f8f6577225feb12f5ca25816b5281589aa2a69356d9be5462e7aea",
+    "th075_web/cpp/game/SpriteRenderer.cpp": "c9afd0ea9eea8db62a4c520f08f719b7326490a05675909267c980bc6cfc280c",
+    "th075_web/cpp/game/StoryDialogue.cpp": "4df5ab8b7ec51bc864760d51f07e2af7a3e374c4fbc7aaa2e34dc156a57ea92c",
+    "th075_web/cpp/game/StorySequence.cpp": "2b112b46d9049e5ae476c56d59d63aae6cab6a7d577abbfd70bd73117b24db16",
+    "th075_web/cpp/game/SuikaActions.cpp": "a335523062f9069e2eee6ead36ea1bba419276cc723ed021877aed4862111b5a",
+    "th075_web/cpp/game/SuikaAI.cpp": "334352fcbb0aeb8bf9a93e6baba05fa48bc4c41114e72df59a8eabfead0fbb0d",
+    "th075_web/cpp/game/SuikaCharacter.cpp": "9d99c7ff62dfba01378f4236689bc4818495a130e2d774a9179db0e6fc4c1b62",
+    "th075_web/cpp/game/SuikaCommands.cpp": "e6d433d7438f854fe6bb8ab94312038aee572801be83664f4424f3e9ad5f62fb",
+    "th075_web/cpp/game/SuikaFrame.cpp": "c9494be9ef6033d36cb2a90cdc2b899077e5314057ddc32c972d7d436d1785c1",
+    "th075_web/cpp/game/SuikaInputs.cpp": "1d95ce1358b04ed13bc0c4961975d249cf160b25206179401c134ab474afefdb",
+    "th075_web/cpp/game/SuikaObjects.cpp": "3113903a6f8d062c5b66c8ebf60c670a0d40eb7e33a1f7585dc3ca622cddd2d6",
+    "th075_web/cpp/game/SuikaState.cpp": "2d13eb740d54928559651df3fa5c48f30dfff3e3dcf64d09dc84fd93ae239d3a",
+    "th075_web/cpp/game/SuikaStory.cpp": "0e8a64c7d3155c308394407520d6da8c1baf2b007601a9275a2dd1868ec572be",
+    "th075_web/cpp/game/SuikaStorySetup.cpp": "ff0ba15417ab9f06523d9b1338cf2db6854d8f9eefc64608aa87da8dc89f72e7",
+    "th075_web/cpp/game/TextRaster.cpp": "1cef7eeeed067f72ee03dc161bb22f1cfbef441729dfb343753a0b60e1863a31",
+    "th075_web/cpp/game/TextSurfaceDrawing.cpp": "ff8002402e6f660e7c172c9d7c7cb5a104c717d3ca1b67409ee149955328565f",
+    "th075_web/cpp/game/TitleScene.cpp": "9b9b7ee7996e3649a517b05e749f1c9219ce5db370131906d7e756fb75ed63e7",
+    "th075_web/cpp/game/VictoryDialogue.cpp": "66b8046a8bede0ef4e1a9df83f1a0600ee7333e54f3f70369c787e9f66e8d1d0",
+    "th075_web/cpp/game/YoumuActions.cpp": "db048293cd02fb84155b4bf4ce1bb15fe6dea97df118535f45996cf8e266a72e",
+    "th075_web/cpp/game/YoumuAI.cpp": "60fa5951941c93161ed9d792ebc9af014aa6a749f5f0b9938736c791711209e2",
+    "th075_web/cpp/game/YoumuCharacter.cpp": "8eb6c578037b8db00c312aab764fcbf4282cb0e1083466a5d2754ea1ef7fdb9d",
+    "th075_web/cpp/game/YoumuCommands.cpp": "09bd0ae307e9b15d39ce81af993d8c44a6f5a84e9efb996239d688243637ea28",
+    "th075_web/cpp/game/YoumuFrame.cpp": "b1e951584cf5610c63b73382ef67fcf657130ec79ca6b12b83fede6a1a3bbdbd",
+    "th075_web/cpp/game/YoumuInputs.cpp": "46fdfc510e5f592e5d362d5410f323dbc88a3c379ef3db2ac9fe950e8cd7d353",
+    "th075_web/cpp/game/YoumuObjects.cpp": "95423e7f72ef414e9515614f472c952389fd6e2da19f9bbe48b328b64322aca9",
+    "th075_web/cpp/game/YoumuState.cpp": "a7703b15f005432a8d339af47bde49a51afa322aed28b580e1d65d52f03d1ff2",
+    "th075_web/cpp/game/YoumuStory.cpp": "ec671852a168377f146bb1db9521075f803845c38791bd68793a15fc06f1d23b",
+    "th075_web/cpp/game/YoumuStorySetup.cpp": "5f55f6a7a979ae38fe2db793441ec45abba7a1331c23c3e5935821679b701e33",
+    "th075_web/cpp/game/YukariActions.cpp": "60802406e777a73cdc0ac2f5633354fb71245888f3bd0915026b932decd4c87e",
+    "th075_web/cpp/game/YukariAI.cpp": "f47f82c3f1e9b959f8cf96469edde1e6aa4824109577e51f8471891e0a04c05f",
+    "th075_web/cpp/game/YukariCharacter.cpp": "639850be7b43ad9d4d13a15fb4ee7db259d7369d0875a67bcf2662061d13b30c",
+    "th075_web/cpp/game/YukariCommands.cpp": "cdc3bf77b589cbc059307445e0bd5184113336c032c1bfe1dab76d88dcdfc57d",
+    "th075_web/cpp/game/YukariFrame.cpp": "d9a00a281d58e1afa665bd6911c6d8bf1c0df861e84408775ef6998fe5dfd1b2",
+    "th075_web/cpp/game/YukariInputs.cpp": "2535a15e5da5f72d44e0c51d141912fbb437259f574494fdd77ebefa1b5a4eec",
+    "th075_web/cpp/game/YukariObjects.cpp": "712097afee55d94e7a963c5b0eb97b5c5a5ede5a63892fa69b38c3cac4bfc6ef",
+    "th075_web/cpp/game/YukariState.cpp": "303c38869fe2463608eda0e3856f45360c672600e454e9330aad7394902a13ee",
+    "th075_web/cpp/game/YukariStory.cpp": "749eef9a60ecf2dc5ceecb7d4a874936186adc5286da2d7aa1d5b34ed212c5a1",
+    "th075_web/cpp/game/YukariStorySetup.cpp": "7366900e9fb148079ce758ca9c5eb3a7849d94c95b5f053e6ce04b95be92edf1",
+    "th075_web/cpp/game/YuyukoActions.cpp": "01b0c5104e7cc475cdeeadea20fdd701990be7cd5207dd7a9212f7b0355da2d4",
+    "th075_web/cpp/game/YuyukoAI.cpp": "b668c4455ee49bb8c53ed4251e2ded3045cfa9025e6ecaad0558d08ec45a0081",
+    "th075_web/cpp/game/YuyukoCharacter.cpp": "e8cdf79e99eabec1890551ccb280a1bfc3f0ec5c4095b91cbe6889e3324d8d71",
+    "th075_web/cpp/game/YuyukoCommands.cpp": "114333bd4af683ddb13ec158d0769c03ad1e6cc73581355e7ec4b45f654962e7",
+    "th075_web/cpp/game/YuyukoFrame.cpp": "d91e654c5a74a280f027130c454832fbce28e9fc6836e635e818cc8fa11bc624",
+    "th075_web/cpp/game/YuyukoInputs.cpp": "16a7d67f4533c584aa3a8a8bc9ea2f50bd920b6b09b7cb6974cdd6cbc0a2e1d1",
+    "th075_web/cpp/game/YuyukoObjects.cpp": "a5ea7ae8129b78ea2804b156bfd41b6edb1307d327783a9dad5b7c8ace32905f",
+    "th075_web/cpp/game/YuyukoState.cpp": "6fad7560eb35bb2447df779a1a94d67da035a9b75ec74dded7c034ff1af1a270",
+    "th075_web/cpp/game/YuyukoStory.cpp": "20594a7ed735c3f072a1b8e7c6f572a47de3cc96a77b0ceb8c4691b3b3825895",
+    "th075_web/cpp/game/YuyukoStorySetup.cpp": "d2f4e86a76f8f120e4f472caaea2bf66da0d156a9d3f0b691c7d0c7cc05602a6",
+    "th075_web/cpp/game/ZunGraphics.cpp": "aa5badd155c960934f5dbe2e78ed95abde24ebb9c9bc92736200116ef5b11b17",
+    "th075_web/cpp/sdl/Application.cpp": "522f0e3dfbbbc4577db1e7dbeba54a2fe8482e1a9b502e62fe3d68564f8b26da",
+    "th075_web/cpp/sdl/ApplicationBattle.cpp": "3102ee6fb11f31e031b48cd97540816507e2bf13e14ff65134c0d769eebd432c",
+    "th075_web/cpp/sdl/ApplicationMenus.cpp": "2ed8e987052c63e9aea5333a2d36289c3ad978ba0cc6cb19f182d6aa481c651e",
+    "th075_web/cpp/sdl/ApplicationScenes.cpp": "974f2fbd500956070678a6b066514335c5b835d573e08d031b21c944cfaf1f84",
+    "th075_web/cpp/sdl/AudioDevice.cpp": "0c6b8a5d6d6538730d8a53c19e1d6c5ee12e5ad739b8622ed84e5e503e130176",
+    "th075_web/cpp/sdl/BrowserRuntime.cpp": "dec165cfb5d85f6268c5914ee6e0fa714a308602b00610e64f95812ae6edd1d2",
+    "th075_web/cpp/sdl/FileResources.cpp": "730d32a1562711f5de425ed12e0c4dd7e9011eab07865803ba85d715746420a9",
+    "th075_web/cpp/sdl/FontDevice.cpp": "e8ca07accfb8850741c92c04607fcfdf763266dc3c8d8d86164e84fc44008399",
+    "th075_web/cpp/sdl/GraphicsDevice.cpp": "17953cac628be095aadefc88c85dc0f009de12861c636045e1fbdf8222b4ae69",
+    "portable/sdl/Renderer.cpp": "b15c11caee6185c3cbe7997684639198f4a6b10a73cbcc833a2b7e9035d2e974"
+  },
+  "headerHashes": {
+    "portable/sdl/AssetPixelFormat.hpp": "5653937bc3857013326a95420effa3d1200469a48a65303cb2915772086cb894",
+    "portable/sdl/FrameCadence.hpp": "1b2a610ac172de2089b4cd6551e88b04d36fb4030da93526a4442cefa8cdbed8",
+    "portable/sdl/GraphicsState.hpp": "e11ee01c47ef4cea3cd64eff069cd8bd1f4cfb8f761982f9769626dc62ba5a6b",
+    "portable/sdl/LegacyGraphics.hpp": "e604d1e07504fc2b1633c54359be8a3243488cc94c44ab0a4d1e95e6a502f897",
+    "portable/sdl/RenderCommands.hpp": "0e0e53d13c2b56b90b09e1ed83088dd43a7b658d72359b3c7c5ea2058c85f5c4",
+    "portable/sdl/Renderer.hpp": "4c82260993bd076fdfaf4eea82e5a07c7ad636b572ea764d3f8b204ba44637a2",
+    "portable/sdl/ResampleShader.hpp": "93a0270dc680b8d095af700a36f1ea1dc7008a5c07fa471c20b9efd8164ea8a1",
+    "portable/sdl/Shaders.hpp": "744c82640fdeb00ba8bc253f768d59b039652edb50be534cc7aab27c22a00754",
+    "portable/sdl/third_party/miniaudio.h": "2ff4797ef263c070ad9030884b515ef162efc2e00140db943f2daa95e8f08314",
+    "portable/sdl/third_party/stb_image.h": "3e08556d97b2e07881df61b72aceb1e89d8c43f70354155749da4c37bde62a6a",
+    "portable/sdl/third_party/stb_vorbis.h": "c8daf8d9f0dad818a1cb6c9194eeb4503b63b8cbf8c744efc12942f3d679f686",
+    "th075_web/cpp/game/AliceCharacter.hpp": "6a2404aef9ab476730f24ba443cf623b02281a809ecf77b75620ba026d5c7d15",
+    "th075_web/cpp/game/AliceObjects.hpp": "f47494110c47e7d4d25c2a064f0a1925d48244e8c1904f719fc8dd058cba4408",
+    "th075_web/cpp/game/AliceState.hpp": "8f4ba0ea0db0681b01df8463d6712d598da66b0d2c3cc750d9573e77ebc78d29",
+    "th075_web/cpp/game/AliceStory.hpp": "46878310d4e5077886e1adb306cf8ed88f593ef7bbad52b112e56fb6b4931372",
+    "th075_web/cpp/game/AngleTable.inc": "27112bb15677e948c15c31e7f160148a27193b679ec606dd76eb262fa74918fa",
+    "th075_web/cpp/game/BackgroundStage.hpp": "b3ceff925d3aae48b4c602e9624f7a49ea26229ca78d495bdfd45ed7f818a2a5",
+    "th075_web/cpp/game/BattleContacts.hpp": "8292203706edf24129b70292bb931da236b6f9811a8b9f0fb4631e9b037735e7",
+    "th075_web/cpp/game/BattleControls.hpp": "dc8e8c1ecdbb553c015275c7ad624cbef5f562488dfceda0077dc0448e9bf6d4",
+    "th075_web/cpp/game/BattleFrame.hpp": "80a16b921b41774473001291ef98ef8e31810e8f708cb2b04d89438bf44ad18e",
+    "th075_web/cpp/game/BattleGeometry.hpp": "4032f7ac496e96fa8601c604ce2e4646511c3076aa771ae5ddd6f03b5bf255d3",
+    "th075_web/cpp/game/BattleHud.hpp": "0652849ee0fab395b1815c9838b7f06236f45346292ef32c6e906caee76f8575",
+    "th075_web/cpp/game/BattleLoading.hpp": "44bc3508ff7dc78a4f54fff8b80ab0efa0cbcc3c4ecc56d358c880f6b15c5cd9",
+    "th075_web/cpp/game/BattleOverlay.hpp": "baa4ffef183bec5f1e405a60ff8b48ce8b29a50b3de403af98e243bfc48c7163",
+    "th075_web/cpp/game/BattlePortraits.hpp": "4b4469c99254eb0b79270a97744159f70a3707563771d27c4526c97d8a3d9581",
+    "th075_web/cpp/game/BattleProgress.hpp": "e1ec40788f72e100ca38168e7e4552f2bd77df53b659bfefc72ada84db3fbf08",
+    "th075_web/cpp/game/BattleRenderOrder.hpp": "c7ba292f9fa45b6e5c68a4800e1fb5ce39df7914a26ec2134122ce26dadcfbec",
+    "th075_web/cpp/game/BattleRenderer.hpp": "73db33b4b425c9c8baef317089c62ce2bd23173ba3cb6920700adfbfd1b0f101",
+    "th075_web/cpp/game/BattleScene.hpp": "5a82cbb91dffd6d843634742d33e1918e2194f60b70993e31d481d3245288196",
+    "th075_web/cpp/game/BattleSimulation.hpp": "b53c1c0313d4f0059db9ecdaf4140deb6aa217604702468e680af7a7c9e0ab3a",
+    "th075_web/cpp/game/BattleStory.hpp": "88deeaedcd185e76658337666eea03b0a076f28953d85de546967888a265fc0a",
+    "th075_web/cpp/game/BitmapData.hpp": "b1f4109f023a12a890a6ebab4b188035539c75d6f282c9796f9675ccb32d52bd",
+    "th075_web/cpp/game/BodySeparation.hpp": "8a2eac6c3f0d781dbedcafe0e67399f8c0fd92bd8a396ec91f0c32bdfcbdb9b5",
+    "th075_web/cpp/game/CameraMotion.hpp": "fe044e4f15f1950c71542ee3344d736316944b7d8f6c6d18e3f9f7a404d0423a",
+    "th075_web/cpp/game/CardList.hpp": "a121b433b21464b517198356687e944586a6a9635a91b7600bd0b907ab68c903",
+    "th075_web/cpp/game/CharacterAI.hpp": "b67690d530f9e48676ca720d53e3b42744c82913821f31cc11cd9e36cc49d9d8",
+    "th075_web/cpp/game/CharacterController.hpp": "e2eaed09a0212aac6dc28a6b53ed4df72fda331c01a7442cd837c10b4c93d12b",
+    "th075_web/cpp/game/CharacterFactory.hpp": "76c7b9b4511130b459122b2a709590fe104550f893b9f284a3188e25394612ad",
+    "th075_web/cpp/game/CharacterSelectScene.hpp": "21403fe1361c1fb173e08edf1cc735cf26e3ec60e2fcf01397fa144f4a341681",
+    "th075_web/cpp/game/CinemaScene.hpp": "359f40ac66c42f6780b124525f7df1207768200cdef63dd0740eb74b4e1cf1b4",
+    "th075_web/cpp/game/CollisionPipeline.hpp": "752c1d1ccea4fe085a8aeed40e0dc625512eb669da7257df7c8cc81e0a5c6824",
+    "th075_web/cpp/game/CollisionResponse.hpp": "700f089c39ce7740acd28f491528d1c7f2e7f6f34c9927164c9be542286cee70",
+    "th075_web/cpp/game/DamageModel.hpp": "dcc8adba378702337b29696b580ad62d5962fb79a336f05ca341625f93d6073e",
+    "th075_web/cpp/game/DataArchive.hpp": "3719eac1d07e47c4b64666cf438961a94bfa08c5143b2fa9974380e511682a09",
+    "th075_web/cpp/game/EffectPattern.hpp": "9e3e2cdfb8988b92807f9cdfafeb3b61c8bb82850ec4b36291ff6051d727d09b",
+    "th075_web/cpp/game/FighterActionEvents.hpp": "b7cda68223863426aa2e77b7de37011581505fcfb9744db4d3e2c13a591da4ba",
+    "th075_web/cpp/game/FighterActionTools.hpp": "478b2512c34f47828ecc57e3e85449c4f69f570244231b5f50c4bea2cfff8fe6",
+    "th075_web/cpp/game/FighterActor.hpp": "8342ea04321b1371bbee2b371cce0af1ea2bc59e9d3d8c679ea4ffeae5e0d55f",
+    "th075_web/cpp/game/FighterAnimation.hpp": "762ceb222eb46b1b9b543cd5e971fa229ba013af4c53228b2ee915305fc3f1df",
+    "th075_web/cpp/game/FighterCombat.hpp": "99912de9ededf8d56d199636fe6d698d601a13037b9791b3f03fb46dd4813eae",
+    "th075_web/cpp/game/FighterControls.hpp": "95ef7a8a7bcd59dc8037aa82daf32cfe2e21d558079817687538d7c29860fce0",
+    "th075_web/cpp/game/FighterInputs.hpp": "29e4b5cad7486c4d6c2d7d651f79077210eb277e0ff7738fa7d8a6f2b8b7c4b6",
+    "th075_web/cpp/game/FighterMovement.hpp": "83d62255617be755b18ef5afefab9d27a6c5b4f28820e401b524ee2b15c7a4a6",
+    "th075_web/cpp/game/FighterObject.hpp": "f9593c9be64249006ba3e361115c26016df293f0ac0a1d1380e5ac99aac0d9e4",
+    "th075_web/cpp/game/FighterPattern.hpp": "b850c824fbb247a46913d3ffb9698d9ef82f11ec30f4549db6a4ad21a5e338fd",
+    "th075_web/cpp/game/FighterScript.hpp": "51ee8fd3d18bc7e9613f60b41d7d849c7bfdc64ea9627f41429412ae5220eb3c",
+    "th075_web/cpp/game/GameMode.hpp": "cc6658d0251f0eef30bd963c3752cac6a3ad0fa248a375dae48064a132eba1f3",
+    "th075_web/cpp/game/GameProfile.hpp": "d9c3c146e94bcd70f52d8a1065409ed6e67bbf041bf9e50d046fbde016741758",
+    "th075_web/cpp/game/GameResources.hpp": "aa34676135b2e52fca5c98b6bdf232c4d6a242a2a663e1f041f192d5e3dee3da",
+    "th075_web/cpp/game/GameSettings.hpp": "7fca8488f3ae9087b80dbbdb41196569e279a5778d29ee429be014753f077c42",
+    "th075_web/cpp/game/GuardSelector.hpp": "9cca690060da94fbc30e1bb430b079300014907bcd757da6fabf76fade4476e6",
+    "th075_web/cpp/game/HudDigits.inc": "7b00b4f0720342c785634d71937b8af858d7d2342768efd084363363f4eb724c",
+    "th075_web/cpp/game/ImageRenderer.hpp": "2b801e7df832c1553344236338bc962146679ef38e8623d6e6a47ecaad45564b",
+    "th075_web/cpp/game/InputMapping.hpp": "07053d51ce8392851bc53173342afe042f16e08fa30667ac5a5b4591ddba7677",
+    "th075_web/cpp/game/MarisaCharacter.hpp": "4e5a6f3eb291c00730c89147e077c567cc89a617b608656f8ee991fc4fda24ed",
+    "th075_web/cpp/game/MarisaObjects.hpp": "196d35b9bf8655490dd636f6570335b08628949b1057241934315373d936b825",
+    "th075_web/cpp/game/MarisaRender.hpp": "385dd9669c8b8f9ebd6155c6f2c09043480927db17e71089e0a8e0ef82f1bd43",
+    "th075_web/cpp/game/MarisaState.hpp": "809d74c908c8159b1a0242809aba150702785ca97126c8a7629a5e149d434e7e",
+    "th075_web/cpp/game/MarisaStory.hpp": "a9b0d06ae036cf8f9802f4f3482c02b6bb501d9b6f29b8c227be8be4730de561",
+    "th075_web/cpp/game/MeilingCharacter.hpp": "2450128fcef22712363ef01b5b8456fc9a426d3ef35c28cc30f1145fbed59928",
+    "th075_web/cpp/game/MeilingObjects.hpp": "e9d4014ce4dd15ec20f904d857af90df165942f0d44df3f16d966c00b5bae65e",
+    "th075_web/cpp/game/MeilingState.hpp": "0c53f09c0ac19e1423351501c4d7c437aedf0e7a8561dc3587ba3637d0a5cfb9",
+    "th075_web/cpp/game/MeilingStory.hpp": "47b7314428f9c71bd2ad0c1737336ff75c73c36b537e03ba2dd53a95d7f86c78",
+    "th075_web/cpp/game/MenuDrawing.hpp": "bc63dc6c8a44a203e88e5b0792070ade7ddd83119c95f69668053ca0a6b6d93f",
+    "th075_web/cpp/game/MusicRoomScene.hpp": "ab1d6f00705b85bb4b3363d599675370b0aa0c02f40d8dcfbb56dd713ddfc66d",
+    "th075_web/cpp/game/NameEntryScene.hpp": "04acfab1ad02157114a1496d9461e7226f8aedf38ad69fd8a22911775847f8f7",
+    "th075_web/cpp/game/ObjectTools.hpp": "a8195b09063712a069e5a042986e845613eb7bc7a9dcf55950335f06d2a62388",
+    "th075_web/cpp/game/OptionsScene.hpp": "89a7d23591e70bd014f098509c5da28e5daa966aa349e43838e95e4f02d7a5ef",
+    "th075_web/cpp/game/OwnedObjects.hpp": "135bb03e14fd454c290d37a0bc899679305f2c207e1dc8947dd3f9193d0c176f",
+    "th075_web/cpp/game/PatchouliCharacter.hpp": "0fdfe9eed099411194e99aa12377eb1a535e933cbac01b8c8b4111881a367c5e",
+    "th075_web/cpp/game/PatchouliObjects.hpp": "a6efdc932f70702ba52afa71bac21fc7bbc40ba4380c291f1985f42e08b8f8bb",
+    "th075_web/cpp/game/PatchouliState.hpp": "0ce45d9734eea4b91c26b3ed324a5d3cd9996bfe690add14c11d6e14529acf24",
+    "th075_web/cpp/game/PatchouliStory.hpp": "5cb853b675ade572cdd37f963f2669affc3f752cc245cab267f970be7df05d87",
+    "th075_web/cpp/game/QuadTransform.hpp": "cd42b09822ea21cbcd82b318b10cf9439b67da9feb60271cd7168d929fcabbb9",
+    "th075_web/cpp/game/ReimuAI.hpp": "23a76b655774acbf40ab132034a587518fe1669a7c48add514f089dca35d881a",
+    "th075_web/cpp/game/ReimuAttacks.hpp": "21f610cb5b77bbf75b87462a5e3fff39a365bc2835ba8af3a57c25a7d1c4d192",
+    "th075_web/cpp/game/ReimuCharacter.hpp": "87778c587ec903c9fdac42e51ed1f12a8712ff9c0286c4666de48fd2cbf8cca7",
+    "th075_web/cpp/game/ReimuCommands.hpp": "9b31cb28345a9aea5b1eeb43bd3d13b9ad20ef473fdede947278406c2ca21b74",
+    "th075_web/cpp/game/ReimuFrame.hpp": "c5ec61f797e60dcfcffcdfb83bad230db8d3e7659ef47d3250326858f0292d07",
+    "th075_web/cpp/game/ReimuInputs.hpp": "266793d0f690c552a1a77248ac624bb91dd662a3204d4d6b82484b9291d36f5a",
+    "th075_web/cpp/game/ReimuObjects.hpp": "f5a07fb417f35fbeb8f54185949ef5e731d3ec6ac5492624566bdfc16d40d07e",
+    "th075_web/cpp/game/ReimuRanged.hpp": "a8e9844c79571807305657bb8c839600f2cbf92ba0c4da02933f00495150f72f",
+    "th075_web/cpp/game/ReimuRecovery.hpp": "82d0de7813bc18aabc33b41d9c97610c61a0ed0c6898cecf72b6dd6e4a1d01ff",
+    "th075_web/cpp/game/ReimuSpells.hpp": "8560865b538a3a1e26d048c514f9ca23b128f9ab2e7a34d2c44a1a82c84c8463",
+    "th075_web/cpp/game/ReimuState.hpp": "64c13125c994c033ec40ba75716a1a51985efa6ea93ae4c1da6beebbf46fd9f0",
+    "th075_web/cpp/game/ReimuStory.hpp": "95d4dd1a5200b4421361f28ae4bf5c74c2458d638acc3129c61095a43b57785d",
+    "th075_web/cpp/game/RemiliaCharacter.hpp": "cc578c4ae71b2b728738cf1ae33c3ccfd77cf32f5360609ca62ec856bf8b1d76",
+    "th075_web/cpp/game/RemiliaObjects.hpp": "75c7970f77fe78be05f5a1e640dc82f03cae71a1728cd64e4b41efc4d1e43482",
+    "th075_web/cpp/game/RemiliaState.hpp": "5bb86b4d97319f39a82681ba49bb8636cf7bddad78e76926cf3482c6aa77867d",
+    "th075_web/cpp/game/RemiliaStory.hpp": "dbb7f9d2544cd137a4fc91c9fd5a11405e066668e5aa10b09e972a83c3c6f68f",
+    "th075_web/cpp/game/ReplayBrowserScene.hpp": "4223ee1f13b9c12f3c8fc2cde89da47c6e0a7ffc1cfed1395d7bec107d282d45",
+    "th075_web/cpp/game/ReplayConfiguration.hpp": "946d89a57dcc841032401f1d882ff0cface8f93775e627944288cbad257eda65",
+    "th075_web/cpp/game/ReplayFile.hpp": "c5915bb1cebcab1e41985127021c4661d28ab9e5c9bc3ad2d7984e03b7d758a5",
+    "th075_web/cpp/game/ResultListScene.hpp": "d4419b8e44e817d5455c26589419cac0a6c3c05f2c9a79a236e9b7467ec1c83f",
+    "th075_web/cpp/game/ResultScene.hpp": "1c5038dde4efecccfe089568f46fbaeea230721e218a965913a27f1de393260d",
+    "th075_web/cpp/game/RoundRules.hpp": "0b8da455d51efde6e822fd5ba454098bd02cae0d63591843fff4906aa4660478",
+    "th075_web/cpp/game/SakuyaCharacter.hpp": "1dfa1a647fbd9db953a83f7685d02e658153b66866ff7d8b5128ac6e6dd7ba39",
+    "th075_web/cpp/game/SakuyaObjects.hpp": "0e4b8bbfd56b3fbe3bc0427f8c3d1aa607acadd1318f46ebaa9e84f0f38e9efa",
+    "th075_web/cpp/game/SakuyaState.hpp": "1c10ccf3530700ef79f101e673832a8d5f77a793fd6c68d62c92e47731849d02",
+    "th075_web/cpp/game/SakuyaStory.hpp": "fac6480bfe83c5286db5e7c0e61afa87eef737494ad58273eb87e9dfd38b1957",
+    "th075_web/cpp/game/SceneFade.hpp": "4cd3e635de625890328dbe8c5b92d1b574e7bf526cc25af7e08c17aec9dc3b69",
+    "th075_web/cpp/game/SharedEffects.hpp": "854f776f33906653ffed08baf15776e9470a8b53c5483d954cf7141dfbcececf",
+    "th075_web/cpp/game/SoundPack.hpp": "2c390d28f07efbc82c91789ef1861b4853c386cbb73d6e1b3a2ce081747cd28a",
+    "th075_web/cpp/game/SpriteRenderer.hpp": "7d43e3f55e535e38641f7d9940a9b873f5b626184dc609220df11e5838ecc00d",
+    "th075_web/cpp/game/StoryDialogue.hpp": "a35339102714af0d234eb00150f9e75739e8818b18a560a09a29e33dc0dd08a3",
+    "th075_web/cpp/game/StorySequence.hpp": "b41eacc724ad8b14959c033f1a624b4c7656454ff6dddbba31c5cc75e54f0baa",
+    "th075_web/cpp/game/SuikaCharacter.hpp": "1efed845d5529944064357238b8c551313ae00972148a985d3e1e4fce76ea523",
+    "th075_web/cpp/game/SuikaObjects.hpp": "98b437d86717267c3920bd66aa8749f6132a18329d6404cc11c345f3193a3f83",
+    "th075_web/cpp/game/SuikaState.hpp": "99866db9bf78c14446bab277abd951bdf99f2c679c2a70cae7ccfe53c71ceb08",
+    "th075_web/cpp/game/SuikaStory.hpp": "89a51ff36576ce71c07a916493d0a5b0bdd45a5397796bd53ecdd1ec33cb0ddb",
+    "th075_web/cpp/game/TextRaster.hpp": "ba0f53155fc7c49c09bb9185956a5c51ff8aa48a562ad002c09417ab2b0751a5",
+    "th075_web/cpp/game/TextSurface.hpp": "25e2340836c864ccc21d6a151de9f7ff672b43699ada73231dcf4d09d4dd4066",
+    "th075_web/cpp/game/TitleScene.hpp": "3705d2bbe413ff2a0db9931eea70b250b4d4ce995d8f26d93a8b470376a46781",
+    "th075_web/cpp/game/Types.hpp": "f04d52634719b59ecc965b8864c7e7eab440a3d6b7b42948e23a50ed4263eb3c",
+    "th075_web/cpp/game/VictoryDialogue.hpp": "5079d505a532af598bcd7df6ef18df2e599b6ec45b0ee68b8b3837cfde717e7b",
+    "th075_web/cpp/game/YoumuCharacter.hpp": "6b4593cbb8aa2863d795a320801905e3588f7e5dc7b257f8af34c41bf1163f0d",
+    "th075_web/cpp/game/YoumuObjects.hpp": "31ce420e695606155ec888ac0c6e6ff9b0fc4a27cc5d44923c3c359667487153",
+    "th075_web/cpp/game/YoumuState.hpp": "8fe34e6243401107d07f44846f2281e13f8530b99a18b12b25e86546419069ab",
+    "th075_web/cpp/game/YoumuStory.hpp": "1fc0b9cc3c9d533ed1fe901d84b2d6f4cadd0f5e7a45a381378dc191e6519162",
+    "th075_web/cpp/game/YukariCharacter.hpp": "98f7d519f9789933ada285ef85d5782d973e9c0ea3ce3e7f41c752361af5c407",
+    "th075_web/cpp/game/YukariObjects.hpp": "71c698c3c0685346dfb3800fa57583849237c67134ee58560d1b3fce106e4934",
+    "th075_web/cpp/game/YukariState.hpp": "bd79b37159dc63345f48b4f5efb70065d891369deb8b928b59d7ac8e2c6c9263",
+    "th075_web/cpp/game/YukariStory.hpp": "6e8616594472f3349f6b997a6507c00733a774dab6768fff91d72da0ed08d911",
+    "th075_web/cpp/game/YuyukoCharacter.hpp": "a6d379906db9eb975d2d38b6567eee2c07c51353c7de1e77297318171483d4b8",
+    "th075_web/cpp/game/YuyukoObjects.hpp": "32e21d0cc787f0c69c65b718c4d1e665ea9827d72f0877bbacb2674c1c34e0bd",
+    "th075_web/cpp/game/YuyukoState.hpp": "a6f5133d8616a83e065382c9e2c6d39927c744060d3bdb2a7e9ac1066c75b4cd",
+    "th075_web/cpp/game/YuyukoStory.hpp": "27507a650ebe3cc6b83bf6acd8cd1adfbd7306884b4268e01c0696abf14bc436",
+    "th075_web/cpp/game/ZunGraphics.hpp": "7af2938f2bbef2c86c74651b8a90854b06d766c04513ebd05737f59331d62f48",
+    "th075_web/cpp/sdl/Application.hpp": "45f9ef7ef576558f0a6b4d2395c766f3e001495bd8069aedecd5778c755d6de3",
+    "th075_web/cpp/sdl/AudioDevice.hpp": "d52a9fe39388d93a985c49f30f794f802edbee3440f44abc068010459538372b",
+    "th075_web/cpp/sdl/FileResources.hpp": "451761851da0afd381c08f223bdcb43fc500fade538bd3f480672e09b758137d",
+    "th075_web/cpp/sdl/FontDevice.hpp": "6c837545b2e44b9fdbe266c85e1d73ead9fa02ae53d05da0d8a9e5264ad8cbcb",
+    "th075_web/cpp/sdl/GraphicsDevice.hpp": "6e7a54180b419f93a055916fa93edfec0d0499a8575a59d18cf58fc9c70b1d07",
+    "th075_web/cpp/sdl/MenuText.hpp": "f2626db69012a69223780bcaa5856a5c32bf05d9541bd60fc845277f73f34272",
+    "th075_web/cpp/sdl/MenuTextChinese.hpp": "939b68867b919a1d0f54c796bc8aed90cbfa65ccebe3c40d5cc1bbbb52e61a9e",
+    "th075_web/cpp/sdl/TextureBank.hpp": "ea313bfded96837dfc7a7bd7cadb69ff1c2114840f72df7a4955d924b4a8a41c"
+  },
+  "native": {
+    "passedReports": 209,
+    "reportedChecks": 14256133,
+    "scope": "Each component report retains its executed core hash and stated native scope; this does not imply all tests were rerun on every build.",
+    "requiredReports": [
+      "battle-simulation-original",
+      "battle-frame-original",
+      "battle-progress-original",
+      "battle-controls-original",
+      "name-entry-state-original",
+      "result-state-original",
+      "replay-file-original",
+      "replay-configuration-original",
+      "replay-random-original",
+      "sdl-webgl-pixels"
+    ]
+  },
+  "browser": [
+    {
+      "report": "artifacts/browser/full-flow.json",
+      "sha256": "b764ebdea63b55e2f21d854952f8235b387199cfeb011eb11e9d2f53901284c8"
+    },
+    {
+      "report": "artifacts/browser/story-routes.json",
+      "sha256": "d918157fbb2cb252a9f5c322c0b4ca9b4c5ebfc08c0906c627d703dc2981f8ba"
+    },
+    {
+      "report": "artifacts/browser/arcade-flow.json",
+      "sha256": "a653da876f227f98441a41545ebe99e7120312a13886e43a967d7df527b4c826"
+    },
+    {
+      "report": "artifacts/browser/audio.json",
+      "sha256": "477178f06ef5bafb701d397de9f837e1823d84276ef62e2d32bda1ed65f741c5"
+    },
+    {
+      "report": "artifacts/browser/candidate-launcher.json",
+      "sha256": "f6dda03fb490c909e4d2c33806d8653f100c65dbb9b6a6491fa62cbf3b51a5f3"
+    },
+    {
+      "report": "artifacts/browser/production-launcher.json",
+      "sha256": "3f4b0f9d2e1fd315a4e8b4b6190d34ece7d9f4cca4165220dad650292e5b9cb3"
+    },
+    {
+      "report": "artifacts/browser/release-static.json",
+      "sha256": "4e81b280de6670df37ea20e4760b1a4dc4b60afd926538ab70c826941dd59e93"
+    },
+    {
+      "report": "artifacts/browser/public-launcher.json",
+      "sha256": "f50e37b4483c778d54bf904ba501a2693ea38bad01161d522746f99e590a2f12"
+    },
+    {
+      "report": "artifacts/browser/package-install.json",
+      "sha256": "d9161193d6b98e9b16704757b9c4d6a2ef9975481332e978c30cb12aaa800a11"
+    }
+  ],
+  "phoneHardwareVerified": false,
+  "limits": [
+    "Native original EXE is used only by the comparison oracle; no original EXE or interpreter executes in the shipped game.",
+    "All ten selectable original story routes use test-only forced KO to exercise progression; native character/action/object/collision tests cover combat separately.",
+    "Phone layout/touch is verified in Chromium simulation. Device-specific driver, latency and FPS require phone testing.",
+    "All 13 supplied original matches passed full per-frame gameplay state comparison (226898 frames). Rendering/audio are excluded from that oracle, and initial common actor state is supplied from C++; browser visuals/audio and constructors have separate tests. This does not prove every possible route or input is bug-free."
+  ],
+  "patchAcceptance": {
+    "version": "1.0.4",
+    "date": "2026-10-12",
+    "kind": "display-scaling-layout",
+    "compiledGameUnchanged": true,
+    "gameWasmSha256": "155a8e66c893f8cacbca3ec6c4a309ef03a7e41a6d2e4188260420cf88a0ba9b",
+    "originalTexturesResampled": false,
+    "desktopComparison": {
+      "viewport": [
+        1920,
+        1080
+      ],
+      "previousDisplay": [
+        1440,
+        1080
+      ],
+      "newDefaultDisplay": [
+        1280,
+        960
+      ],
+      "originalLogicalSize": [
+        640,
+        480
+      ],
+      "pixelDifferenceChannels": 0,
+      "checkedChannels": 9830400
+    },
+    "phoneSimulation": {
+      "dpr": 2.75,
+      "portrait": [
+        390,
+        844
+      ],
+      "smallTouchScreenFit": true
+    },
+    "doc": "docs/2026-10-12-画面缩放与清晰度.md",
+    "evidence": [
+      {
+        "report": "artifacts/cpp/verification/graphics-vertices-original.json",
+        "sha256": "9961f2c260bd231032e110435cae206dba54e10d3a5e9c98add0b1982f15377d"
+      },
+      {
+        "report": "artifacts/cpp/verification/graphics-state-original.json",
+        "sha256": "3da7eabe553194ceed7a9fa6729c26fb155783da65902b1e64b82b42f0d8e0bc"
+      },
+      {
+        "report": "artifacts/browser/crisp-presentation.json",
+        "sha256": "36f9eed3c4b4db71482d188324fb4d32bfe850658e8e8fcfbb2f7b72d799b2b1"
+      },
+      {
+        "report": "artifacts/browser/display-launcher.json",
+        "sha256": "6b16262893d9e41155098a0edc76c9f128e09356032cc56e507ffe5db87f3b4d"
+      },
+      {
+        "report": "artifacts/browser/launcher-language.json",
+        "sha256": "6500723c25d84deb137b12e90b314dcf67a8ce699631c2e6ddd26b0187356582"
+      },
+      {
+        "report": "artifacts/browser/upgrade-1.0.4.json",
+        "sha256": "fa41079e52e38524274421732c421752cc59dd4c85e6c3ebe9950f576276fbd1"
+      },
+      {
+        "report": "artifacts/browser/release-static.json",
+        "sha256": "199b05b02cb222a98863c01129a1e827493d77e687b8230ec5acc6aac830b551"
+      },
+      {
+        "report": "artifacts/browser/public-display-1.0.4.json",
+        "sha256": "f2818227d93a0143ebb65cb46080adf353c320a6ec64a42326df494877c4235a"
+      }
+    ],
+    "previousReplayScope": "13 full original matches (226898 frames) remain historical gameplay evidence. This display-only patch keeps the same game/rendering Wasm and does not claim full matches were rerun."
+  },
+  "patchHistory": [
+    {
+      "webVersion": "1.0.1",
+      "date": "2026-10-12",
+      "sourceOfIssues": "User screenshots and 13 original match replays",
+      "verified": [
+        "GPU vertex alpha and framebuffer clearing",
+        "Menu return pixel equality",
+        "Original main input queue EOF",
+        "Actual browser recorded/original replay, story/continue and audio regression",
+        "Production candidate desktop/mobile touch simulation; 1.0.0 upgrade retains save/replay without game asset download; actual HTTPS installation and battle"
+      ],
+      "originalFullMatchComparison": {
+        "passed": true,
+        "replays": 13,
+        "frames": 226898,
+        "report": "artifacts/cpp/verification/original-replays-full-original.json",
+        "scope": "full original main battle loop versus named C++ scene, real recorded inputs/random stream; rendering and audio excluded; neutral initial actor fields supplied from C++ and original constructors verified separately"
+      },
+      "reportsNote": "Historical 1.0.1 acceptance; changing report files are updated for the current release. Prior detailed results are described in docs/2026-10-12-画面与原版录像修复.md."
+    },
+    {
+      "webVersion": "1.0.2",
+      "date": "2026-10-12",
+      "sourceOfIssues": "User Escape pause screenshot, blurry image and request to inspect all related scenes",
+      "verified": [
+        "Distinct original HUD / character sprite / portrait banks, including Training and Continue",
+        "Per-draw original nearest/linear texture filtering in cinema/results",
+        "Native ATTACK/GO/KO full timeline and paused redraw",
+        "Actual Escape/freeze/resume in five interactive modes and all eleven characters at both 640x480 and 1280x960",
+        "Original imported replay pause, defeat/continue/result/return, exact title pixels after six scenes, Arcade complete route",
+        "Natural pause exit and replay-save exit paths",
+        "Production 1.0.2 desktop/mobile touch simulation, actual Pause, 1280x960 and pixelated canvas; installed 1.0.1 upgrades preserving save/replay with zero game asset downloads",
+        "Actual public HTTPS first installation, title, training selection/battle, Escape pause/resume and 1280x960 pixelated canvas"
+      ],
+      "reports": [
+        {
+          "report": "artifacts/browser/pause-native-regression.log",
+          "sha256": "9933768ff69550fa4db352541bd7f285686fd5c3ed0a22d78816e4e83d8cae66"
+        },
+        {
+          "report": "artifacts/browser/presentation-filter-regression.log",
+          "sha256": "e9a20108609fbac7fc3d770ec1510c249bfe499a9f248d2502d4a35e0d9bf482"
+        },
+        {
+          "report": "artifacts/browser/overlay-timeline-regression.log",
+          "sha256": "2607ce38bc8887498bd19984bd83ad1d037bc851c6a5d95a85fae447e6da8c97"
+        },
+        {
+          "report": "artifacts/browser/visual-audit-regression.log",
+          "sha256": "2f2f6562beb039e5fa785c1038a4546524911c0460bb472d110cf98392b43600"
+        },
+        {
+          "report": "artifacts/browser/pause-flow.log",
+          "sha256": "ada926f42848c4fb274b6aa1dc3f78b19d6d654fa4c2e8fa98ba7264a20753bd"
+        },
+        {
+          "report": "artifacts/browser/pause-exit.log",
+          "sha256": "b507f9d1e5db54567a48b63fc3b39ea77f09c3d2032b9cb8a4518ce363f89da2"
+        },
+        {
+          "report": "artifacts/browser/pause-flow-1.json",
+          "sha256": "2aa72fa1b8c4764965db8ee6e35c91ded7c6f7f4ed2d1ac49a9441c09ace8100"
+        },
+        {
+          "report": "artifacts/browser/pause-flow-2.json",
+          "sha256": "1ffeb982fea3027d84aabaedec5cf68a36659ea1b070bf0c9693fee310a9af1b"
+        },
+        {
+          "report": "artifacts/browser/pause-exit.json",
+          "sha256": "8399468b66b3b70614aeba3917921fd18e6c177c9aaf9481e3faa0c66319987c"
+        },
+        {
+          "report": "artifacts/browser/scene-composition.json",
+          "sha256": "21796e1045ab57dad05f9ad6ef19d08a98b18319df76bbe96572d05060d40278"
+        },
+        {
+          "report": "artifacts/browser/arcade-flow.json",
+          "sha256": "a653da876f227f98441a41545ebe99e7120312a13886e43a967d7df527b4c826"
+        },
+        {
+          "report": "artifacts/cpp/verification/battle-hud-status-original.json",
+          "sha256": "542209958b5286bc7ffc8acaecf2161f43a83f0ceba6253b43dc2d0072b26cde"
+        },
+        {
+          "report": "artifacts/cpp/verification/battle-hud-spells-original.json",
+          "sha256": "60590a6ed41eab3f36c9b0f9d0874f56241cf90ef40348f2341aa15213c3494c"
+        },
+        {
+          "report": "artifacts/cpp/verification/battle-overlay-timelines-original.json",
+          "sha256": "2279d39993ee01277e9a7006a271fd982deda7b21ab28903d517d6fa9272af00"
+        },
+        {
+          "report": "artifacts/cpp/verification/presentation-original.json",
+          "sha256": "641ec056b996f7539d87bfc944f738fc46c3ca47ac92aeba75bb0f6b60318113"
+        },
+        {
+          "report": "artifacts/browser/production-launcher.json",
+          "sha256": "3f4b0f9d2e1fd315a4e8b4b6190d34ece7d9f4cca4165220dad650292e5b9cb3"
+        },
+        {
+          "report": "artifacts/browser/upgrade-1.0.2.json",
+          "sha256": "b694391727569446422b3540304b4a343dd3a6caf7904923ca97fa82ba7bc83d"
+        },
+        {
+          "report": "artifacts/browser/pause-production-launcher.log",
+          "sha256": "121f1212463bc623a7657f8b8b1981838270f0027d117550a26d12a2dde086ac"
+        },
+        {
+          "report": "artifacts/browser/release-static.json",
+          "sha256": "4e81b280de6670df37ea20e4760b1a4dc4b60afd926538ab70c826941dd59e93"
+        },
+        {
+          "report": "artifacts/browser/public-1.0.2-identity.json",
+          "sha256": "002e746e12d7f6233bee260f4253662e58f94b051a95c3b08ea40e8b8d31c082"
+        },
+        {
+          "report": "artifacts/browser/public-smoke.json",
+          "sha256": "1960422dece57690217332ad4aa3e646adcab7ca9f69b767b4136199593b4466"
+        },
+        {
+          "report": "artifacts/browser/pause-public-smoke.log",
+          "sha256": "d3452fb1fc765c810e733e282929feb6e8a71ae42fdfcffb5ce994e3bd027461"
+        }
+      ],
+      "previousReplayScope": "The 13 full matches (226898 frames) in 1.0.1 remain historical gameplay evidence; this patch changes rendering only and does not claim those matches were rerun.",
+      "production": {
+        "wasmSha256": "9f6d63cd680f8ace4556bb92f25af036bce6cd86aed97a031cb9ab2cd8685d04",
+        "manifestVersion": "617e666be31fc6981e55835b",
+        "webVersion": "1.0.2",
+        "releaseDate": "2026-10-12",
+        "development": false
+      },
+      "public": {
+        "url": "https://api.steinsgateon.com/?game=th075",
+        "port": 3007,
+        "verifiedAt": "2026-10-12T02:04:36.605Z",
+        "manifestVersion": "617e666be31fc6981e55835b",
+        "report": "artifacts/browser/public-smoke.json",
+        "identityReport": "artifacts/browser/public-1.0.2-identity.json",
+        "passed": true,
+        "scope": "actual production HTTP/HTTPS origin with server CSP and isolation headers; first installation, title, selection, training battle, actual Escape pause/resume and pixelated 1280x960 canvas in mobile viewport; phone hardware not measured"
+      },
+      "reportsNote": "Historical 1.0.2 acceptance. Reports that use shared filenames may later be replaced; detailed evidence is retained in the 1.0.2 acceptance documentation."
+    },
+    {
+      "date": "2026-10-12",
+      "sourceOfIssues": "User KO recovery / Spell Card screenshot and request for the local Chinese game option",
+      "verified": [
+        "All eleven characters in versus and story rule context: native complete battle loop compares recovery phase, positions, actions, input masks and combat flags for 9482 frames",
+        "Actual SDL browser keyboard/touch KO recovery in versus and story: KO blocks input, recovery allows movement/dash and blocks A/B/C until active",
+        "Japanese menu/text regression retains original 1200 raster cases and exact PCM sound packs",
+        "Local Chinese resources preserve Japanese 1.11 script labels, command kinds, numerical arguments, expressions, waits/music/routes and card/music indexing; no untranslated script lines remain",
+        "Actual Chinese menu, ten story intro dialogues/portraits and pause; Japanese scene/story and pause browser regression",
+        "Final common launcher desktop/mobile viewport: JA/CN/JA switch and reload preference retention, existing score and original replay bytes retained, zero resource HTTP requests after installation",
+        "Production upgrade: old installed boot DATA is byte-identical; old cache can launch, then update adds Chinese assets without redownloading unchanged Japanese/music resources or losing score/replay",
+        "Chinese glyph bank is a separate managed asset, retaining the exact original 20,172,376-byte boot DATA for old installed generations",
+        "Actual public HTTPS first installation of Chinese: title, selection, training battle, Escape pause/resume and pixelated 1280x960 canvas; no game/resource HTTP errors"
+      ],
+      "reports": [
+        {
+          "report": "artifacts/cpp/verification/knockdown-flow-original.json",
+          "sha256": "720c5203a48972a76604fe10f7cdadae116821eda0ec6a3881bd0deb5bc6d17d"
+        },
+        {
+          "report": "artifacts/cpp/verification/text-raster-original.json",
+          "sha256": "3425fbdc382c481122d0f6b38c94dcad2041dbdf8aff240727cb918acb162a0e"
+        },
+        {
+          "report": "artifacts/cpp/verification/sound-pack-original.json",
+          "sha256": "3b4c3066907c84d52f48913162f142f446c43126f81c83946708cdf72bd9991c"
+        },
+        {
+          "report": "reference/chinese-overlay.json",
+          "sha256": "866548f9d9c12a0b6c9fb69af125f335ee43dbf17378986f0362a7ed5cebdc13"
+        },
+        {
+          "report": "assets/fonts/chinese-manifest.json",
+          "sha256": "4367cb46f92b02503b463d44ebf766ed69d96bbc6dce754cf713ccc52eb92f4a"
+        },
+        {
+          "report": "artifacts/browser/language-ja-flow.json",
+          "sha256": "1ced195f27f2b0e3f90f0c09ac56ca43019611ac1048d3b4e5dd78c2aaa4865c"
+        },
+        {
+          "report": "artifacts/browser/language-lang_zh-hant-flow.json",
+          "sha256": "ace2bfd579d5dc94b3ba5865aea9e16c2176f471cebb8c048825c416229f3fe0"
+        },
+        {
+          "report": "artifacts/browser/launcher-language.json",
+          "sha256": "6500723c25d84deb137b12e90b314dcf67a8ce699631c2e6ddd26b0187356582"
+        },
+        {
+          "report": "artifacts/browser/upgrade-1.0.3.json",
+          "sha256": "888ba489d5ec9ee6c8503ac8d3f887d95ea6dbd9b2cfb2497287d1d678cddb3d"
+        },
+        {
+          "report": "artifacts/browser/release-static.json",
+          "sha256": "6a90850cf34f84a46ac19d7578fd08729743352afddecad5578286c7bdbff8a7"
+        },
+        {
+          "report": "artifacts/browser/public-1.0.3-identity.json",
+          "sha256": "382fba076071941e612ad6646f903b9632c72924bdbc45ab965824c7d1c935d9"
+        },
+        {
+          "report": "artifacts/browser/public-smoke.json",
+          "sha256": "c789c105ea046582bb9d119b8ff97fab360183784a832ef7cb420eed0b9de596"
+        },
+        {
+          "report": "artifacts/chinese-public-smoke.log",
+          "sha256": "f56437ca3a20ed41c795ec991da1c9c61bb3dae7b6040860813e407fddefb540"
+        }
+      ],
+      "previousReplayScope": "The 13 full matches (226898 frames) from 1.0.1 remain historical gameplay evidence. This patch changes text/resources and adds input verification, not combat logic; it does not claim those full matches were rerun.",
+      "webVersion": "1.0.3",
+      "production": {
+        "wasmSha256": "155a8e66c893f8cacbca3ec6c4a309ef03a7e41a6d2e4188260420cf88a0ba9b",
+        "manifestVersion": "7b3b60678d1903bd4cf46023",
+        "webVersion": "1.0.3",
+        "releaseDate": "2026-10-12",
+        "development": false
+      },
+      "public": {
+        "url": "https://api.steinsgateon.com/?game=th075",
+        "port": 3007,
+        "verifiedAt": "2026-10-12T05:34:09.255Z",
+        "manifestVersion": "7b3b60678d1903bd4cf46023",
+        "report": "artifacts/browser/public-smoke.json",
+        "identityReport": "artifacts/browser/public-1.0.3-identity.json",
+        "passed": true,
+        "language": "lang_zh-hant",
+        "scope": "actual production HTTP/HTTPS origin with server CSP and isolation headers; first installation, title, selection, training battle, actual Escape pause/resume and pixelated 1280x960 canvas in mobile viewport; phone hardware not measured"
+      },
+      "reportsNote": "Historical 1.0.3. Full acceptance snapshot is saved in artifacts/deploy-backup-1.0.3-before-crisp/release-acceptance.json; reused report filenames may later be replaced."
+    }
+  ],
+  "presentationLanguages": [
+    "ja",
+    "lang_zh-hant"
+  ],
+  "production": {
+    "wasmSha256": "155a8e66c893f8cacbca3ec6c4a309ef03a7e41a6d2e4188260420cf88a0ba9b",
+    "manifestVersion": "d989c5e41b410aabf3748429",
+    "webVersion": "1.0.4",
+    "releaseDate": "2026-10-12",
+    "development": false
+  },
+  "public": {
+    "url": "https://api.steinsgateon.com/?game=th075",
+    "port": 3007,
+    "verifiedAt": "2026-10-12T07:28:39.318Z",
+    "manifestVersion": "d989c5e41b410aabf3748429",
+    "report": "artifacts/browser/public-display-1.0.4.json",
+    "passed": true,
+    "language": "lang_zh-hant",
+    "scope": "real public HTTPS origin/frontend/Wasm, CSP/isolation, new display module, Chinese selection and training Escape pause/resume; unchanged game assets supplied from local verified copies, not a fresh CDN download test; desktop Chromium software GPU, phone hardware not measured"
+  },
+  "eaglerSharedEffectStack": {
+    "date": "2026-10-16",
+    "previousSourceSha256": "776a64b03ac082b52809261e0345ddf366254ec7598149d364eb2291d1b6dbcf",
+    "sourceSha256": "f670694f6adbbd42f2f00d1b2e0dca1ded9060bfd4c188d935ca8ad83fa9c12e",
+    "reason": "Bound the Wasm activation size in the nested shared-effect path identified by Safari 17.5 failure report; preserve synchronous child updates and RNG.",
+    "originalComparison": {
+      "effectUpdates": 15180,
+      "managerFrames": 3600,
+      "managerObjectChecks": 81330,
+      "passed": true
+    },
+    "browser": {
+      "engines": [
+        "Chromium",
+        "Windows WebKit 26.6 (mock WebAudio)"
+      ],
+      "battlesPerEngine": 6,
+      "framesPerBattle": 3600,
+      "hitDamageObserved": true,
+      "passed": true
+    },
+    "limitations": "Original iPadOS 17.5.1 failure not reproduced on desktop engines; physical-device verification remains required.",
+    "reports": "artifacts/eagler/shared-effect-stack/"
+  }
+}

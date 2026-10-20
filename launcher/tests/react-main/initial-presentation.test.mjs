@@ -76,7 +76,7 @@ for (const path of ['/', '/index.html', '/en.html', '/nested/', '/nested/en.html
     assert.equal(document.querySelector('#singleplayerHeading').textContent, api.translate(locale, 'library.singleplayer'));
     assert.equal(document.querySelector('#multiplayerHeading').textContent, api.translate(locale, 'library.multiplayer'));
     assert.equal(document.querySelector('#uiLanguageSelect').value, locale);
-    assert.deepEqual([...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent)), [...originalLibrary.querySelectorAll('.site-footer p')].map(node => normal(node.textContent)));
+    assert.deepEqual([...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent)), [...originalLibrary.querySelectorAll('.site-footer p')].slice(1).map(node => normal(node.textContent)));
     assert.equal(document.querySelector('.shelf-lobby-link').getAttribute('href'), 'lobby.html');
     assert.equal(document.querySelector('#originMigrationOpen').hidden, true);
     assert.equal(document.querySelector('iframe'), null);

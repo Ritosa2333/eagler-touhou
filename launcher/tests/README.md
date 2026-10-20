@@ -10,7 +10,13 @@
 | 单个 Node 测试 | `node tests/test-名称.mjs` | 文件中声明的夹具 |
 | 浏览器与设备 | `package.json` 中对应的 `test:*:browser` | 浏览器及该测试声明的游戏包、地址和资源 |
 
-核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。全仓统一入口、并发与时间预算见[测试目录](../../tests/README.md)。
+核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行，每个测试入口在同一计划中执行一次。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。
+
+`react-main/directory-views.test.mjs` 在中英文环境中遍历完整作品目录，检查已发布多人作品的房间信息和创建表单。采用原生菜单选择的作品隐藏大厅难度，其余作品展示房间声明的难度。
+
+`npm run test:workspace-viewport:browser` 使用真实房间、Replay 和触控组件的展示夹具，检查手机 4:3 画面、桌面全宽及高度上限、双人和三人房右侧观战栏、少量观众头像放大、头像预览与完整名单、空席、加入及离开旁观、重新入座、成员移至旁观、竖屏快捷发言位置、面板触控隔离、大尺寸自定义控件边界和房间状态动效。截图输出到 `.cache/workspace-viewport/`。设置 `WORKSPACE_VIEWPORT_PREVIEW_ONLY=1` 可直接启动交互预览，`WORKSPACE_VIEWPORT_PREVIEW_PORT` 指定端口。
+
+交互预览挂载真实设置抽屉与共用设置模型，房间人数、难度和规则会更新展示状态，输入延迟遵循作品目录声明的能力。成员菜单与快捷发言使用同一浮层组件，覆盖展开、收起、键盘返回和减少动态效果。
 
 会建立临时 Git 仓库、索引和子模块的构建凭据测试共用 `runtime-git-fixture` 资源锁。它们仍可与其他测试并行，但彼此串行，避免 Git 夹具同时运行争用磁盘与 Git 子进程资源。资源归属集中声明在测试计划中。
 
@@ -22,7 +28,15 @@
 
 `npm test` 最后会运行 [`site-notice.run.mjs`](react-main/site-notice.run.mjs)。该检查把临时 bundle 与源目录分开构建，历史输入仍由 [`ui-history.mjs`](support/ui-history.mjs) 从固定夹具读取并校验。
 
+`npm run test:netplay-windows:browser` 挂载生产连接窗口、标定模型、报告、更新确认和资源导入组件，检查桌面、手机竖屏和横屏的按钮可达性，以及全屏中的报告和更新选择。缺字体的导入提示、下载链接与启动错误分别验证房间内和全屏中的实际点击命中，关闭后恢复房间操作。截图和结果位于 `.cache/netplay-windows/`。网络事件由明确的展示夹具提供。
+
+`react-main/browser-session-mounted.test.mjs` 通过生产页面、房间服务与 Runtime 协议边界检查入房、准备、开局、退出和原生返回菜单。旁观覆盖七部作品各连续三次进入和退出，验证房间身份、同一原生实例及 DATA 的保留和按次解除的加载遮罩；`multiplayer-services.test.mjs` 同时覆盖晚加入旁观的程序版本匹配与本地 Relay 交互。真实游戏画面、输入同步和多设备链路按对应作品的浏览器验收入口运行。
+
 ## 浏览器环境
+
+`npm run test:room-runtime-retention:browser` 使用真实 th06 或 th07 多人 Wasm、两名玩家、一名旁观者和本地 Relay，连续三次从旁观回到原生菜单并重进同一局。显式设置 `ROOM_RUNTIME_GAME`、`ROOM_RUNTIME_ROOT`、`ROOM_RUNTIME_DATA`、`EAGLER_SHARED_GOTHIC` 和 `EAGLER_SHARED_UNIFONT`；结果与截图位于 `.cache/native-room-retention/<game>/`。
+
+`npm run test:th10-room-native-preview:browser` 检查 th10 原生标题动画、同实例双人开局、相同逻辑帧的 RNG 与世界状态，以及主动返回和原生退出后的菜单动画。输入为 `TH10_PREVIEW_RUNTIME`、`TH10_TEST_ARCHIVE` 与上述两项字体路径，`TH10_PREVIEW_MODE` 选择同步模式。`test:room-native-preview:browser` 提供 th15 标题与双人启动检查，使用对应的 `TH15_PREVIEW_RUNTIME`、`TH15_TEST_ARCHIVE`；`test:room-title-preload:browser -- <game> <mode>` 提供各作预加载检查，使用 `ROOM_PREVIEW_RUNTIME`、`ROOM_PREVIEW_DATA` 与上述字体路径。
 
 Python 浏览器测试使用锁定依赖：
 
@@ -46,3 +60,9 @@ Node 测试使用锁定的 `puppeteer-core`，通过 `EAGLER_CHROME_PATH` 或标
 ## 记录结果
 
 记录测试名称、作品与模式、构建标识、浏览器、输入夹具和结果。游戏行为填写本作 `ADAPTATION.md`；[验证模板](../../docs/adaptation/record-template.md)用于保存操作和附件。截图、日志和录屏以链接附在对应条目中。
+
+## 资源切换与房间返回
+
+`react-main/resource-download.test.mjs` 检查失败节点切换、首包与断流超时、慢传输、取消、静态托管、版本参数和跨节点凭据隔离。`transfer.test.mjs` 通过实际语言包准备入口检查换节点、单一进度任务与完整归档校验。分流服务的 `npm test` 检查发布库存和有序节点发现。`browser-session-mounted.test.mjs` 在桌面与手机环境下覆盖七作旁观各三次往返，同时检查不自动全屏、隐藏游戏操作按键和保留原生实例。th09 构建直接验证正式 Wasm 中的房间返回导出。
+
+联机介绍通过固定历史转换器对照当前原文，另用独立的对战章节输入覆盖 th09 分组；正文按内容文档维护。

@@ -379,7 +379,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
 };
 std::unique_ptr<Application> probe;std::string failure;
-bool running=false,suspended=false;u32 loop_epoch=0;double previous_frame=-1;multiplayer::FrameSchedule cadence;
+bool running=false,suspended=false,room_preview=false;u32 loop_epoch=0;double previous_frame=-1;multiplayer::FrameSchedule cadence;
 multiplayer::RecoverySchedule recovery_schedule;
 u32 recovery_callbacks=0,recovery_ticks=0,recovery_last_us=0;
 bool deferred_recovery_active(){
@@ -510,6 +510,11 @@ TH09_EXPORT("th09_game_open") u32 th09_game_open(u32 seed){
     network.end();spectator_mode=false;spectator_frames.clear();spectator_next=spectator_simulated=0;clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
     if(!probe||!probe->platform_prepared||probe->in_title)probe=std::make_unique<Application>();if(!probe->open_title()){failure=probe->error;return 0;}probe->state.random={u16(seed),0,0};return 1;
 }
+TH09_EXPORT("th09_room_preview") u32 th09_room_preview(u32 on){
+    if(!probe||!probe->in_title||network.active||spectator_mode)return 0;
+    clear_inputs();room_preview=on!=0;return 1;
+}
+TH09_EXPORT("th09_room_return") u32 th09_room_return(){if(!probe)return 0;clear_inputs();if(probe->session)probe->session->finish();if(!probe->return_title(false))return 0;spectator_mode=false;spectator_frames.clear();probe->requested_transition=-1;room_preview=true;return 1;}
 TH09_EXPORT("th09_prepare_loading") u32 th09_prepare_loading(){TH09_PERF_SCOPE(loading_cost,PrepareLoading);if(running)return 0;probe=std::make_unique<Application>();if(!probe->prepare_loading()){failure=probe->error;return 0;}return 1;}
 TH09_EXPORT("th09_game_metrics") const u32* th09_game_metrics(){static u32 data[10]{};if(probe){auto& s=probe->graphics.backend.stats;data[0]=s.batches;data[1]=s.uploadBytes;data[2]=s.readBytes;data[3]=s.vertexUploadBytes;data[4]=s.programCompiles;data[5]=s.bufferReplacements;data[6]=s.bufferSubUpdates;data[7]=s.frames;data[8]=s.resamples;data[9]=s.presentations;}return data;}
 TH09_EXPORT("th09_network_begin") u32 th09_network_begin(u32 seed,i32 side,u32 unlocked,u32 difficulty,u32 focus){
@@ -912,6 +917,11 @@ u32 spectator_tick(u32 render,u32 dueTicks=1){
         return ok;
 }
 TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(game_cost,GameTick);if(!probe)return 0;u16 keys[3]{};
+    if(room_preview){
+        if(!probe->in_title||!probe->title)return 0;
+        probe->title->state.idle_frames=0;
+        const u32 ok=probe->tick_inputs(0,0,0,false);if(ok&&render)probe->draw();return ok;
+    }
     if(spectator_mode)return spectator_tick(render);
     if(rollback_active&&network.active)return rollback_tick(render);
     if(network.active){if(network.wants_input()){sample_keys(keys);const u32 frame=network.sending_frame();const auto m=probe->session&&!probe->in_title?probe->session->motion_input[network.side]:GameSession::MotionSample{};const u8 mode=!m.enabled?NetworkInput::MotionNone:m.target?(m.unlimited?NetworkInput::MotionTargetUnlimited:NetworkInput::MotionTarget):NetworkInput::MotionVelocity;if(!network.submit(network.side,frame,keys[2],mode,m.x,m.y))return 0;th09_network_send(frame,keys[2],i32(mode),m.x,m.y);}if(network.failed){probe->error="Network input order invalid";return 0;}NetworkInput::Motion motion[2];const u32 frame=network.frame();const bool publisher=network.side==0;if(!network.take(keys,motion))return 2;if(probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={motion[s].enabled,motion[s].x,motion[s].y,motion[s].unlimited,motion[s].target};

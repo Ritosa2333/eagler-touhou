@@ -11,13 +11,17 @@ u32 multiplayer_local_player_visibility(browser::Application* app,u32 enabled){
 }
 extern "C" __attribute__((export_name("multiplayer_connect")))
 u32 multiplayer_connect(browser::Application* app,const char* relay){
-    if(!app||app->stopped||app->world||app->state.multiplayer_session.started)return 0;
+    if(!app||app->stopped||app->state.multiplayer_session.started)return 0;
+    if(app->world&&!(app->value.screen==4&&app->title&&!app->title->loading&&
+       !app->world->actors.session&&app->state.multiplayer_session.configured))return 0;
     return app->state.netplay_runtime.Connect(relay)?1:0;
 }
 extern "C" __attribute__((export_name("multiplayer_spectator_connect")))
 u32 multiplayer_spectator_connect(browser::Application* app,const char* relay,
                                   const char* spectatorId){
-    if(!app||app->stopped||app->world||app->state.multiplayer_session.started)return 0;
+    if(!app||app->stopped||app->state.multiplayer_session.started)return 0;
+    if(app->world&&!(app->value.screen==4&&app->title&&!app->title->loading&&
+       !app->world->actors.session&&app->state.multiplayer_session.configured))return 0;
     return app->state.netplay_runtime.ConnectSpectator(relay,spectatorId)?1:0;
 }
 extern "C" __attribute__((export_name("multiplayer_spectator_playback_state")))

@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { isAbsolute } from "node:path";
 import { resolve, relative } from "node:path";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { projectConfigurationPath } from "../lib/source-layout.mjs";
 import {
   WORKSPACE_REPOSITORIES,
   launcherRoot,
@@ -25,11 +26,11 @@ assert.notEqual(workspacePath('th08'), workspacePath('th08mp'));
 assert.notEqual(workspacePath('th15'), workspacePath('th15mp'));
 assert.ok(isAbsolute(workspacePath("th07", "resources", "shell.html")));
 assert.equal(workspacePath("launcher"), launcherRoot());
-for (const [game, directory, suffix] of [
-  ["th06", "th06-eagler", ["src", "FileSystem.cpp"]],
-  ["th08", "th08-eagler", ["build-eagler"]],
-  ["th10", "th10-eagler", ["build-eagler"]],
-  ["th09", "th09-eagler", ["web", "build-eagler"]],
+for (const [game, suffix] of [
+  ["th06", ["src", "FileSystem.cpp"]],
+  ["th08", ["build-eagler"]],
+  ["th10", ["build-eagler"]],
+  ["th09", ["web", "build-eagler"]],
 ]) {
   assert.equal(resolve(launcherRoot(), projectRelativeWorkspacePath(game, ...suffix)),
     resolve(workspaceRoot(), configuration.repositories[game], ...suffix));

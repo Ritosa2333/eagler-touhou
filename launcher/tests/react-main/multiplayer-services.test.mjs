@@ -21,6 +21,7 @@ before(async () => {
     export {createLobbyDirectory,directoryRoomCanEnter} from './app/services/lobby-directory.ts';
     export {createMultiplayerRoom} from './app/services/multiplayer-room.ts';
     export {createRoomPreparation} from './app/services/room-preparation.ts';
+    export {createNetworkActivityTracker} from './src/launcher/network-activity.mts';
     export {createDecisionStore} from './app/models/decisions.ts';
     export {createMultiplayerIdentityStore,multiplayerDisplayNameStorageKey} from './src/launcher/multiplayer-identity.mts';
     export {createMultiplayerRoomSessionStore,multiplayerRoomSessionStorageKey} from './src/launcher/multiplayer-room-session.mts';
@@ -99,6 +100,23 @@ test('directory preserves main host-existence product subset and 3s retry withou
   clock.tick(17000);
   assert.equal(service.getSnapshot().connection, 'offline'); assert.equal(socket.closes.length, 1);
   clock.tick(1500); assert.equal(sockets.length, 2); service.dispose();
+});
+
+for (const mode of ['normal', 'manifest-test', 'query-test']) test(`directory applies test-product visibility to filters and creation: ${mode}`, async () => {
+  const published = manifest();
+  published.games.th075 = {...published.games.th06, runtime: 'runtime/th075/game.html', multiplayerRuntime: 'runtime/th075/mp.html',
+    gameData: {...published.games.th06.gameData, path: 'th075.data'}};
+  if (mode === 'manifest-test') published.shared.testBuild = true;
+  const {service, sockets} = directory({loadSiteManifest: async () => published, testBuild: mode === 'query-test', selectedProduct: 'th075mp'});
+  try {
+    await service.initialize();
+    sockets[0].open(); sockets[0].message(directoryState({product: service.getSnapshot().selectedProduct}));
+    assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th075mp']);
+    assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th075mp');
+    assert.equal(service.prepareForm('create'), true);
+    service.updateForm({product: 'th075mp'});
+    assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th075mp');
+  } finally {service.dispose();}
 });
 
 test('directory 10s manifest timeout and StrictMode-style suspend/resume do not strand leaving', async () => {
@@ -190,7 +208,10 @@ test('room program versions refresh before readiness and pin the agreed generati
   let preparations=0;
   const f=await joinedRoom({prepareResources:async()=>{preparations++;return {runtimeGeneration:hash};}}),socket=f.sockets[0],id=f.identity.lobbyClientId('th06mp');
   socket.message({type:'state',roomDirectory:{runtimeVersions:true},room:roomState(id)});
+  const beforeReady = socket.sent.length;
   await f.service.toggleReady();
+  assert.equal(socket.sent.slice(beforeReady).some(m=>m.type==='resource-progress'&&m.status!=='ready'),false,
+    'rechecking an already prepared program must not invalidate other players readiness');
   assert.equal(preparations,2,'ready rechecks the current publication after lobby precache');
   assert.equal(socket.sent.findLast(m=>m.type==='set-ready').runtimeGeneration,hash);
   const seats=[{clientId:id,loadout:0,ready:true,runtimeGeneration:hash},{clientId:'guest12345',loadout:1,ready:true,runtimeGeneration:'b'.repeat(64)}];
@@ -201,6 +222,25 @@ test('room program versions refresh before readiness and pin the agreed generati
   const launch=f.events.find(([kind])=>kind==='launch');assert.ok(launch);
   assert.equal(new URL(launch[1].runtimeOptions.netplayUrl).searchParams.get('runtimeGeneration'),hash);
   socket.message({type:'state',room:roomState(id,{seats})});assert.equal(f.service.getSnapshot().room.runtimeGeneration,undefined,'next lobby cannot retain the last run identity');
+  f.service.dispose();
+});
+
+for (const matches of [false, true]) test(`late spectator admission requires the running match program: matches=${matches}`, async () => {
+  const localGeneration = matches ? hash : 'b'.repeat(64);
+  const f = roomFixture({prepareResources: async () => ({runtimeGeneration: localGeneration})});
+  const invite = owner.encodeRoomInvite({g:'th06mp',r:'1234',a:'join',s:true});
+  f.service.restoreInvite('https://launcher.invalid/?j='+invite,'th06mp');
+  await flush(); const socket = f.sockets[0]; socket.open();
+  const room = roomState('other-host',{phase:'playing',startSerial:4,spectatorTimeline:true,runtimeGeneration:hash});
+  socket.message({type:'state',roomDirectory:{runtimeVersions:true},room});
+  await flush(); socket.message({type:'spectator-start',serial:4,room}); await flush();
+  assert.equal(f.events.some(([kind])=>kind==='launch'),matches);
+  if (matches) assert.equal(new URL(f.events.find(([kind])=>kind==='launch')[1].runtimeOptions.netplayUrl).searchParams.get('runtimeGeneration'),hash);
+  else {
+    assert.equal(f.events.find(([kind])=>kind==='operation-error')[2].message,'multiplayer.runtimeVersionMismatch');
+    assert.equal(f.service.getSnapshot().room.code,'1234');
+    assert.equal(f.service.getSnapshot().spectatorRequested,true);
+  }
   f.service.dispose();
 });
 
@@ -355,7 +395,11 @@ test('live relay reconnect recovers a lost start without a duplicate Runtime lau
     await wait(()=>f.service.getSnapshot().connected,'guest join');
     await f.service.takeSeat(1);await wait(()=>f.service.getSnapshot().seat===1,'guest seat');
     host.send(JSON.stringify({type:'set-ready',ready:true,movementMode:'keyboard',runtimeGeneration:hash}));
+    await wait(()=>f.service.getSnapshot().room?.seats[0]?.ready,'host ready before guest');
+    const readinessMessages=hostMessages.length;
     await f.service.toggleReady();await wait(()=>{const room=f.service.getSnapshot().room;return room?.seats.slice(0,room.playerCount).every(seat=>seat?.ready);},'ready');
+    assert.equal(hostMessages.slice(readinessMessages).some(message=>message.type==='state'&&!message.room.seats[0]?.ready),false,
+      'the other player stays ready throughout the guest current-program verification');
     host.send(JSON.stringify({type:'start',inputDelay:0}));
     await wait(()=>dropped&&connections===2&&f.events.some(([kind])=>kind==='launch'),'reconnected launch');
     assert.equal(f.service.getSnapshot().room.phase,'starting');assert.equal(f.service.getSnapshot().startSerial,1);
@@ -419,7 +463,59 @@ test('room runtime-stage preparation cannot take package cancellation path and p
   finish(); await flush(); assert.equal(service.getSnapshot().preparation.status, 'ready'); service.dispose();
 });
 
-function preparationFixture({installed = true, worker = null, installError, noCatalog = false} = {}) {
+test('room resource switch aborts old preparation, requests all-seat unready, and ignores late completion', async () => {
+  const tasks = [];
+  const f = await joinedRoom({prepareResources(context, report) {return new Promise(resolve => tasks.push({context, report, resolve}));}});
+  assert.equal(tasks.length, 1);
+  f.service.resourcesChanged(); await flush();
+  assert.equal(tasks[0].context.signal.aborted, true); assert.equal(tasks.length, 2);
+  assert.ok(f.sockets[0].sent.some(message => message.type === 'resources-changed'));
+  tasks[0].resolve(); await flush();
+  assert.equal(f.service.getSnapshot().preparation.status, 'preparing');
+  const readiness = f.service.toggleReady(); await flush(); assert.equal(f.service.getSnapshot().ready, false);
+  tasks[1].resolve(); await readiness;
+  assert.equal(f.service.getSnapshot().ready, true); f.service.dispose();
+});
+
+test('settings reload pauses resource work and readiness until explicit resume', async () => {
+  const tasks = [];let released=0;
+  const f = await joinedRoom({releasePreparedResources(){released++;},prepareResources(context, report) {return new Promise(resolve => tasks.push({context, report, resolve}));}});
+  const initialReleased=released;
+  f.service.suspendForSettingsReload();
+  assert.equal(released,initialReleased,'draft settings must not retire the visible native title');
+  assert.equal(tasks[0].context.signal.aborted, true);
+  assert.ok(f.sockets[0].sent.some(message => message.type === 'resources-changed'));
+  tasks[0].resolve(); await flush();
+  f.service.retryPreparation(); f.service.resourcesChanged();
+  await f.service.toggleReady(); await f.service.launch(); await flush();
+  assert.equal(tasks.length, 1, 'neither retry, Ready nor Start can bypass the settings decision');
+  assert.equal(f.service.getSnapshot().ready, false);
+  assert.equal(f.events.some(([kind]) => kind === 'launch'), false);
+  f.service.resumeAfterSettingsReload(); await flush();
+  assert.equal(released,initialReleased+1,'only the explicit reload may release the old resources');
+  assert.equal(tasks.length, 2);
+  tasks[1].resolve(); await flush();
+  assert.equal(f.service.getSnapshot().preparation.status, 'ready');
+  f.service.dispose();
+});
+
+test('discarding draft room settings revalidates without releasing prepared resources',async()=>{
+ let released=0;
+ const f=await joinedRoom({releasePreparedResources(){released++;}});await flush();
+ const before=released;f.service.suspendForSettingsReload();
+ f.service.resumeAfterSettingsReload(true);await flush();
+ assert.equal(released,before);assert.equal(f.service.getSnapshot().preparation.status,'ready');
+ f.service.dispose();
+});
+
+test('every playing or full directory room admits spectators even without mid-run playback', () => {
+  for (const product of ['th06mp', 'th07mp', 'th08mp', 'th09mp', 'th10mp', 'th11mp', 'th15mp']) {
+    assert.equal(owner.directoryRoomCanEnter({product, phase: 'playing', players: 2, capacity: 2, joinable: false, spectatable: false}), true);
+    assert.equal(owner.directoryRoomCanEnter({product, phase: 'lobby', players: 2, capacity: 2, joinable: false}), true);
+  }
+});
+
+function preparationFixture({installed = true, worker = null, installError, noCatalog = false, network, prepareProgram} = {}) {
   const events = [], progress = [], controller = new AbortController(); let onChange;
   let generation = installed ? {game: 'th06'} : null;
   const host = {games: {th06: {multiplayerRuntime: 'runtime/th06/mp.html'}}, shared: {runtimeManifest: 'runtime-manifest.json'}};
@@ -433,10 +529,10 @@ function preparationFixture({installed = true, worker = null, installError, noCa
   };
   const context = {product: 'th06mp', roomCode: '1234', epoch: 1, signal: controller.signal, isCurrent: () => !controller.signal.aborted};
   const service = owner.createRoomPreparation({acquisition, metadataReady: async () => {events.push(['metadata']);},
-    baseUrl: 'https://launcher.invalid/', translate: key => key,
+    baseUrl: 'https://launcher.invalid/', translate: key => key, network,
     activeWorker: async () => {events.push(['worker']); return worker;}, dependencies: {
-      createTracker: options => {onChange = options.onChange; return {xhrFetch: async () => {throw new Error('fixture installer does not request bytes');}};},
-      prepareRuntime: async (...args) => {events.push(['runtime', ...args]); return {url: '', generation: hash, cached: true};},
+      createTracker: options => {onChange = options.onChange; return {resourceFetch: async () => {throw new Error('fixture installer does not request bytes');}};},
+      prepareRuntime: async (...args) => {events.push(['runtime', ...args]); await prepareProgram?.(args[1].onProgress); return {url: '', generation: hash, cached: true};},
     }});
   return {service, events, progress, controller, context, report: value => progress.push(value), emit: snapshot => onChange(snapshot)};
 }
@@ -465,6 +561,29 @@ test('room preparation verifies the current generation with its real worker and 
   const count = fixture.progress.length; fixture.controller.abort();
   fixture.emit({active: [{loaded: 50, total: 100, title: 'late'}]});
   assert.equal(fixture.progress.length, count);
+});
+
+for (const aborted of [false,true]) test(`room program downloads share visible byte progress and release their own tasks (${aborted?'cancel':'complete'})`,async()=>{
+ const visible=[],network=owner.createNetworkActivityTracker({fetchImpl:async()=>new Response(''),onChange:value=>visible.push(value)});
+ const unrelated=network.begin({title:'unrelated',loaded:10,total:20});
+ let late,fixture;
+ fixture=preparationFixture({network,prepareProgram:async report=>{
+  late=report;
+  report({path:'runtime/th06/game.wasm',phase:'requesting',loaded:0,total:4096});
+  report({path:'runtime/th06/game.wasm',phase:'receiving',loaded:2048,total:4096});
+  assert.equal(network.activeCount,2);
+  assert.ok(visible.some(value=>value.active.some(task=>task.label==='TH06 WebAssembly'&&task.loaded===2048&&task.total===4096)));
+  assert.ok(fixture.progress.some(value=>value.stage==='runtime'&&value.loaded===2048&&value.total===4096&&value.percent===50));
+  if(aborted)fixture.controller.abort();
+ }});
+ await fixture.service.prepare(fixture.context,fixture.report);
+ assert.equal(network.activeCount,1,'unrelated foreground downloads remain active');
+ const count=fixture.progress.length;
+ late({path:'runtime/th06/game.wasm',phase:'receiving',loaded:3072,total:4096});
+ network.update(unrelated,{loaded:15});
+ assert.equal(network.activeCount,1,'late program callbacks cannot create stale transfer tasks');
+ assert.equal(fixture.progress.length,count,'completed room preparation unsubscribes from foreground activity');
+ network.finish(unrelated);
 });
 
 test('room preparation classifies install errors while preserving original cancellation identity', async () => {
@@ -770,6 +889,20 @@ for(const product of ['th06mp','th07mp','th08mp','th10mp','th11mp','th15mp'])tes
   await flush();assert.equal(socket.sent.some(m=>m.type==='take-seat'),false);
   assert.equal(socket.sent.some(m=>m.type==='spectate'),true);
   assert.equal(f.service.getSnapshot().spectatorRequested,true);f.service.dispose();
+});
+
+for (const phase of ['lobby', 'playing']) test(`directory join falls back to a spectator when a room fills or starts: ${phase}`, async () => {
+  const f = roomFixture();
+  assert.equal(f.service.restoreInvite('https://launcher.invalid/?j=' + owner.encodeRoomInvite({g:'th06mp',r:'1234',f:true,a:'join'}), 'th06mp'), true);
+  await flush(); const socket = f.sockets.at(-1); socket.open();
+  socket.message({type:'state', room:roomState('other_host', {phase, seats:[
+    {clientId:'other_host',name:'A',loadout:0,ready:true}, {clientId:'other_guest',name:'B',loadout:1,ready:true},
+  ]})});
+  await flush();
+  assert.equal(socket.sent.some(message => message.type === 'take-seat'), false);
+  assert.equal(socket.sent.some(message => message.type === 'spectate'), true);
+  assert.equal(f.service.getSnapshot().spectatorRequested, true);
+  f.service.dispose();
 });
 
 test('public nickname commits only an authoritative approval and ignores stale connection replies',async()=>{

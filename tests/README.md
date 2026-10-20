@@ -69,6 +69,8 @@ npm run test:adaptation -- --rerun-failed=artifacts/validation/上次目录
 
 任务边界为作品 | 变体 | 场景组；房间再按人数与 RTC／Relay 拆分。输入和后台分别运行，支持更新的作品把基础离线与更新旅程合在一次任务里。共享 Launcher 准备执行一次，作品打包复用内容缓存。`--jobs=1` 控制排队并发，浏览器与共享资源按互斥声明运行。单项缺输入会记录 blocked，其他独立项继续。
 
+新作品随产品目录进入计划，原生观察与作品流程尚未登记时显示 blocked，并给出接入位置。th075 的正式构建和组件测试沿用本作入口，通用行为驱动在接入观察与流程后启用。
+
 本地输入配置采用 `eagler-touhou/adaptation-inputs/1`，可登记 `runtimeManifest`、`packages`、`updatePackages`、`musicManifest`、`artwork` 和 `launcherUrl`。前五项的相对路径以配置文件目录为基准；也可继续使用下文的环境变量。配置、私有资源与原始报告留在本地。
 
 每轮默认创建新目录，`--output` 可指定新的证据目录。`summary.json` 包含计划、实际命令、逐项状态、日志、原始封存报告的哈希、产物与输入身份，以及逐编号覆盖。`--plan` 保存同样的任务选择与缺失输入，不启动测试，报告为 planned。执行状态与编号完整度分别呈现：全部所选场景通过可返回 passed，完整适配证明由 `coverage.complete` 和逐编号记录给出。

@@ -99,6 +99,10 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
         if(event.type==SDL_EVENT_FINGER_DOWN||event.type==SDL_EVENT_FINGER_MOTION||event.type==SDL_EVENT_FINGER_UP)touch(event.type==SDL_EVENT_FINGER_DOWN?0:event.type==SDL_EVENT_FINGER_MOTION?1:2,int(event.tfinger.fingerID),event.tfinger.x,event.tfinger.y);
     }
     auto& snapshot=app->input.snapshot;std::memset(&snapshot,0,sizeof(snapshot));snapshot.focused=1;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A room owns an animated title, not an input-enabled standalone game.
+    if(app->room_preview){app->state.inactive_frames=0;return;}
+#endif
     const bool* physical=th10_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native]))key(snapshot,k.scan,k.vk);
     const int keyboardDpad=th10_keyboard_gamepad_dpad();if(keyboardDpad&1)key(snapshot,0xc8,38);if(keyboardDpad&2)key(snapshot,0xd0,40);if(keyboardDpad&4)key(snapshot,0xcb,37);if(keyboardDpad&8)key(snapshot,0xcd,39);
@@ -150,6 +154,16 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
 }
 #define EXPORT(name) __attribute__((export_name(name)))
 void sdl_keys_clear();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+EXPORT("sdl_room_preview") u32 sdl_room_preview(Application* app){
+    if(!app||app->stopped||app->world||app->state.multiplayer_session.configured)return 0;
+    sdl_keys_clear();app->room_preview=true;return 1;
+}
+EXPORT("sdl_room_preview_ready") u32 sdl_room_preview_ready(Application* app){
+    return app&&app->room_preview&&!app->stopped&&!app->error&&app->value.screen==4&&
+        app->title&&!app->title->loading&&app->title->value?1:0;
+}
+#endif
 EXPORT("sdl_game_open") Application* sdl_game_open(u32 chinese,u32 seed){
     sdl_keys_clear();
     gestures.begin_session();

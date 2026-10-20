@@ -233,7 +233,7 @@ test('main 1372: Package network copy retains every original file-kind label in 
 test('main Package foreground uses XHR metadata while background updates stay outside the visible tracker', async () => {
   const foregroundCalls = [], rawCalls = [];
   const adapter = api.createPreparationNetwork({baseUrl: 'https://launcher.invalid/', translate: t, xhrFactory: null,
-    foreground: {xhrFetch: async (...args) => {foregroundCalls.push(args); return new Response('foreground');},
+    foreground: {resourceFetch: async (...args) => {foregroundCalls.push(args); return new Response('foreground');},
       begin() {throw new Error('Unexpected foreground task');}, update() {}, finish() {}},
     fetchImpl: async (input, init) => {rawCalls.push({input, init}); return new Response('background');}});
   const signal = new AbortController().signal;
@@ -275,6 +275,29 @@ test('main language cancellation/task lifetime brackets only downloads, closes o
       if (mode === 'success') assert.ok(snapshots.some(value => value.active[0]?.loaded === zip.length && value.active[0].label === 'English'));
     }
   }
+});
+
+test('language download switches mirrors inside one transfer and validates the completed archive', async () => {
+  const path = 'thcrap/th06/localization/strings.etl', payload = strToU8('ETL1');
+  const manifest = {schema: 'eagler-touhou/thcrap-static-pack/1', game: 'th06', language: 'lang_en', runtimeVersion: 'mirror-test', files: [{path: `/${path}`, bytes: payload.length}]};
+  const zip = zipSync({'manifest.json': strToU8(JSON.stringify(manifest)), [path]: payload}, {level: 0});
+  const hash = createHash('sha256').update(zip).digest('hex'), visits = [], snapshots = [];
+  const foreground = api.createNetworkActivityTracker({onChange: snapshot => snapshots.push(snapshot)});
+  const network = api.createPreparationNetwork({foreground, baseUrl: 'https://launcher.invalid/', translate: t});
+  const result = await api.prepareLanguagePack({game: 'th06', baseUrl: 'https://launcher.invalid/', translate: t,
+    entry: {id: 'lang_en', title: 'English', pack: {url: '/language/th06/en.zip', bytes: zip.length, sha256: hash}},
+    caches: null, storage: null, network, fetchImpl: async input => {
+      const url = new URL(input); visits.push(url.origin);
+      if (url.pathname === '/_eagler/resource-routes') return Response.json({schema: 'eagler-touhou/resource-routes/1',
+        path: '/language/th06/en.zip', bytes: zip.length, sha256: hash,
+        sources: ['https://first.invalid', 'https://second.invalid'].map(origin => origin + url.searchParams.get('path'))});
+      if (url.origin === 'https://first.invalid') throw new TypeError('Node disconnected');
+      return new Response(zip);
+    }});
+  assert.deepEqual(visits, ['https://launcher.invalid', 'https://first.invalid', 'https://second.invalid']);
+  assert.equal(result.files.length, 1); assert.equal(snapshots.at(-1).count, 0);
+  assert.equal(Math.max(...snapshots.map(value => value.count)), 1);
+  assert(snapshots.some(value => value.active[0]?.loaded === zip.length));
 });
 
 test('dispose clears pending frames and timers, and late completion does not rearm them', () => {

@@ -1,3 +1,4 @@
+import {PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
 import {useEffect, useRef, useState, useSyncExternalStore, type CSSProperties} from 'react';
 import {isTouchFocusMode, isTouchMovementMode, touchMovementUsesJoystick} from '../../../src/launcher/game-preferences.mts';
 import type {GameSettingsModel} from '../../models/game-settings';
@@ -27,6 +28,7 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
   }, [model]);
   if (!state) return null;
   const options = state.options, wheel = touchMovementUsesJoystick(options.touchMovementMode);
+  const nativeActions = 'touchActions' in PRODUCT_GAMES[state.gameId];
   const custom = customOpen || ![100, 150, 200].includes(options.touchSensitivity);
   function setMovement(value: string) {
     if (!isTouchMovementMode(value) || value === options.touchMovementMode) return;
@@ -39,12 +41,12 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
     <div className="touch-layout-setting-row"><span><span>{title}</span><small>{hint}</small></span><OptionSwitch id={id} checked={options[name]} label={title} onChange={() => model.setOption(name, !options[name])}/></div>;
   return <section className="touch-layout-settings" id="touchLayoutSettingsPanel" aria-label={t('touch.settingsAria')}><div className="touch-layout-settings-list">
     <div className="touch-layout-setting-row"><label htmlFor="touchMovementMode">{t('touch.movement')}</label><MainSelect className="option-select" id="touchMovementMode" value={options.touchMovementMode} aria-label={t('touch.movement')} onChange={event => setMovement(event.target.value)}>
-      <option value="touch">{t('touch.movement.touch')}</option><option value="touch-unlimited">{t('touch.movement.unlimited')}</option><option value="joystick">{t('touch.movement.joystick')}</option><option value="joystick-free">{t('touch.movement.joystickFree')}</option>
+      <option value="touch" hidden={nativeActions}>{t('touch.movement.touch')}</option><option value="touch-unlimited" hidden={nativeActions}>{t('touch.movement.unlimited')}</option><option value="joystick">{t('touch.movement.joystick')}</option><option value="joystick-free">{t('touch.movement.joystickFree')}</option>
     </MainSelect></div>
-    <div className="touch-layout-setting-row"><label htmlFor="touchFocusMode">{t('touch.focusMethod')}</label><MainSelect className="option-select" id="touchFocusMode" value={options.touchFocusMode} aria-label={t('touch.focusMethod')} onChange={event => {if (isTouchFocusMode(event.target.value)) model.setOption('touchFocusMode', event.target.value);}}>
+    <div className="touch-layout-setting-row" hidden={nativeActions}><label htmlFor="touchFocusMode">{t('touch.focusMethod')}</label><MainSelect className="option-select" id="touchFocusMode" value={options.touchFocusMode} aria-label={t('touch.focusMethod')} onChange={event => {if (isTouchFocusMode(event.target.value)) model.setOption('touchFocusMode', event.target.value);}}>
       <option value="hold-button">{t('touch.focus.hold')}</option><option value="toggle-button">{t('touch.focus.toggle')}</option><option value="two-finger" disabled={wheel}>{t('touch.focus.twoFinger')}</option>
     </MainSelect></div>
-    <div className="touch-layout-setting-row touch-sensitivity-row"><span className="touch-sensitivity-heading"><span>{t('touch.sensitivity')}</span> <output id="touchSensitivityValue">{options.touchSensitivity}%</output></span><small>{t('touch.sensitivityHint')}</small>
+    <div className="touch-layout-setting-row touch-sensitivity-row" hidden={nativeActions}><span className="touch-sensitivity-heading"><span>{t('touch.sensitivity')}</span> <output id="touchSensitivityValue">{options.touchSensitivity}%</output></span><small>{t('touch.sensitivityHint')}</small>
       <div className="touch-sensitivity-presets" role="group" aria-label={t('touch.sensitivityPresets')}>
         {[100, 150, 200].map(value => <button key={value} type="button" data-touch-sensitivity-preset={value} disabled={wheel} aria-pressed={!custom && options.touchSensitivity === value} className={!custom && options.touchSensitivity === value ? 'selected' : ''} onClick={() => {setCustomOpen(false); model.setOption('touchSensitivity', value);}}>{value}%</button>)}
         <button type="button" id="touchSensitivityCustomToggle" disabled={wheel} aria-pressed={custom} aria-expanded={custom} className={custom ? 'selected' : ''} onClick={() => setCustomOpen(true)}>{t('touch.custom')}</button>
@@ -53,7 +55,7 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
         style={{'--touch-range-progress': `${(options.touchSensitivity - 100) / 2}%`} as CSSProperties}
         onInput={event => {setCustomOpen(true); model.previewSensitivity(Number(event.currentTarget.value));}} onChange={() => {}}/></label>
     </div>
-    {rowSwitch('doubleTapBombToggle', 'doubleTapBombEnabled', t('touch.doubleTapBomb'), t('touch.doubleTapBombHint'))}
+    {!nativeActions && rowSwitch('doubleTapBombToggle', 'doubleTapBombEnabled', t('touch.doubleTapBomb'), t('touch.doubleTapBombHint'))}
     {rowSwitch('restartButtonToggle', 'restartButtonEnabled', 'R', t('touch.restartHint'))}
     {rowSwitch('thpracTouchControlsToggle', 'thpracTouchControlsEnabled', t('touch.thpracButtons'), t('touch.thpracButtonsHint'))}
     <div className="touch-layout-setting-row touch-layout-viewport-row"><span><span>{t('touch.viewportPosition')}</span><small>{t('touch.viewportHint')}</small></span><div className="touch-layout-viewport-actions"><button id="touchViewportAdjust" type="button" onClick={onAdjustViewport}>{t('touch.adjustViewport')}</button><button id="touchViewportReset" type="button" onClick={onResetViewport}>{t('action.reset')}</button></div></div>

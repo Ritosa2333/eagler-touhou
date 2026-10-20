@@ -4,3 +4,10 @@
 /games/
 /node_modules/
 /.local/
+
+# Local build caches and private inputs
+/.cache/
+/.react-router/
+/prepared/
+/private-assets/
+**/__pycache__/
