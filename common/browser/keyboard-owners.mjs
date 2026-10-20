@@ -1,4 +1,6 @@
 // Generic browser ownership only. The adapter maps DOM events to logical bits.
+// hostHeld, when provided, answers whether the host still reports the event's
+// key physically held; only host-attested repeats may rebuild a cleared owner.
 export function keyboardLocation(event) {
   const code = event.code || "";
   if (/^(Shift|Control)(Left|Right)$/.test(code)) return code.endsWith("Left") ? 1 : 2;
@@ -6,7 +8,7 @@ export function keyboardLocation(event) {
   return Number.isInteger(event.location) ? event.location : 0;
 }
 
-export function updateKeyboardOwners(owners, event, bit, down) {
+export function updateKeyboardOwners(owners, event, bit, down, hostHeld) {
   if (!bit) return false;
   const location = keyboardLocation(event);
   const code = event.code && event.code !== "Unidentified" ? event.code : "";
@@ -16,8 +18,9 @@ export function updateKeyboardOwners(owners, event, bit, down) {
   if (down) {
     const existing = owners.get(id) || (!code && sameSide.length === 1 ? sameSide[0][1]
       : !code && !location && candidates.length === 1 ? candidates[0][1] : null);
-    // Lifecycle cancellation must not be undone by an old auto-repeat event.
-    if (event.repeat && !existing) return false;
+    // Lifecycle cancellation must not be undone by an old auto-repeat event —
+    // unless the host itself still reports the key held after that clear.
+    if (event.repeat && !existing && !hostHeld?.(event)) return false;
     if (!existing) owners.set(id, {bit, location, code});
     return true;
   }

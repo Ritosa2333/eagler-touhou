@@ -25,4 +25,17 @@ assert.equal(bits(owners), 0, 'UP with better physical identity releases unknown
 owners.clear();
 assert.equal(updateKeyboardOwners(owners, event('ShiftLeft', 1, true), 4, true), false);
 assert.equal(bits(owners), 0, 'repeat cannot re-arm cancelled input');
-console.log('PASS shared browser key ownership: aliases, modifier sides, ambiguity and cancellation');
+// Host-attested repeat rebuilds ownership cleared by a runtime reset, so a key
+// still physically held through the between-stage loading barrier returns.
+owners.clear();
+assert.equal(updateKeyboardOwners(owners, event('KeyZ', 0, true), 1, true, () => true), true);
+assert.equal(bits(owners), 1, 'host-attested repeat rebuilds a cleared owner');
+assert.equal(updateKeyboardOwners(owners, event('KeyZ', 0, true), 1, true), true);
+assert.equal(bits(owners), 1, 'an established owner keeps reporting repeats');
+updateKeyboardOwners(owners, event('KeyZ', 0), 1, false);
+assert.equal(bits(owners), 0, 'rebuilt owner still releases on keyup');
+// Unattested repeats from synthesized or mapper sources stay cancelled.
+owners.clear();
+assert.equal(updateKeyboardOwners(owners, event('KeyZ', 0, true), 1, true, () => false), false);
+assert.equal(bits(owners), 0, 'repeat without host attestation cannot re-arm');
+console.log('PASS shared browser key ownership: aliases, modifier sides, ambiguity, cancellation and repeat rebuild');

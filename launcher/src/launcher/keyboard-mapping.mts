@@ -68,7 +68,9 @@ export class KeyboardMapping {
       return this.publish();
     }
     if(profile==='th09-local')return this.local?.map(event,down,context)?[]:null;
-    if (!this.physical.recognizes(event)) return null;
+    // Recognition gates fresh input only; a release always reaches the owners
+    // so a mapping change mid-press can never strand a held key.
+    if (down && !this.physical.recognizes(event)) return null;
     const owners = this.physical.forward({...event,type:down?'keydown':'keyup'},context,!!event.launcherOwnsFocus);
     const orphaned: HostedKeySpec[] = [];
     for (const raw of owners) {
@@ -79,7 +81,7 @@ export class KeyboardMapping {
     for (const key of orphaned) if (!this.published.has(key.code)) changes.push({...key,location:key.location??0,down:false});
     return changes;
   }
-  clear(): CanonicalKeyTransition[] {
-    this.physical.clear(); this.held.clear(); this.virtual.clear();this.local?.clear();this.context = null;return this.publish();
+  clear(retire = true): CanonicalKeyTransition[] {
+    this.physical.clear(retire); this.held.clear(); this.virtual.clear();this.local?.clear();this.context = null;return this.publish();
   }
 }

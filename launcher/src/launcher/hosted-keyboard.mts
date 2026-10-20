@@ -50,8 +50,8 @@ export class HostedKeyboard {
 
   recognizes(event: HostedKeySpec): boolean { return !!describe(event, this.codes); }
 
-  clear(): void {
-    for (const owner of this.owners.values()) this.retiredFamilies.add(owner.family);
+  clear(retire = true): void {
+    if (retire) for (const owner of this.owners.values()) this.retiredFamilies.add(owner.family);
     this.owners.clear(); this.context = null;
   }
 
@@ -73,8 +73,10 @@ export class HostedKeyboard {
       const existing = exact || (!Object.hasOwn(this.codes, event.code)
         ? sameSide.length === 1 ? sameSide[0] : !key.spec.location && candidates.length === 1 ? candidates[0] : undefined
         : undefined);
-      // A repeat after blur/reset cannot recreate an owner without a fresh DOWN.
-      if (event.repeat && !existing) return [];
+      // A repeat after a cancelled lifecycle cannot recreate an owner without a
+      // fresh DOWN; a routine runtime reset (for example the between-stage
+      // loading barrier) still rebuilds from browser-reported auto-repeat.
+      if (event.repeat && !existing && this.retiredFamilies.has(key.family)) return [];
       if (existing) return [existing.spec];
       this.retiredFamilies.delete(key.family);
       this.owners.set(key.identity, key);

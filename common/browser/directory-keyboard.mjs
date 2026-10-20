@@ -71,7 +71,12 @@ export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{},hostC
         location:/^(Alt|Meta)(Left|Right)$/.test(event.code||'')?
           (event.code.endsWith('Right')?2:1):event.location,repeat:!!event.repeat};
       const family=Object.hasOwn(aliases,code)?aliases[code]:code;
-      if(!updateKeyboardOwners(owners,evidence,family,!!down))return false;
+      // A host-sourced repeat is the browser itself reporting the key still
+      // held, so it may rebuild ownership cleared by a runtime reset (for
+      // example the between-stage loading barrier). Synthesized repeats and
+      // canonical mapper output carry no such attestation.
+      const hostAttested=source==='native'||source==='hosted'&&event.inputSource==='physical';
+      if(!updateKeyboardOwners(owners,evidence,family,!!down,hostAttested?()=>true:undefined))return false;
       for(const owner of owners.values())if(!owner.output)owner.output=code;
       publish();return true;
     },

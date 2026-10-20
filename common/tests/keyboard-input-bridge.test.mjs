@@ -63,3 +63,26 @@ test('gamepad snapshots preserve native ownership until a matching frontend port
   f.setReady(true);bits=-1;assert.equal(bridge.sample(0),-1);assert.equal(bridge.owned(),false);
   bits=4096;assert.equal(bridge.sample(0),0,'invalid actions cannot leak into game bits');
 });
+test('a host-reported repeat rebuilds native ownership after a runtime reset',()=>{
+  const f=fixture();
+  const physical=(code,down,repeat=false)=>f.keyboard.event({code,key:code==='KeyZ'?'z':'Shift',keyCode:code==='KeyZ'?90:16,
+    location:code==='ShiftLeft'?1:0,repeat},down,'native');
+  assert.equal(physical('KeyZ',true),true);assert.deepEqual(f.events,[['KeyZ',true]]);
+  // The runtime-side reset (between-stage loading barrier, focus handshakes).
+  f.keyboard.clear();assert.deepEqual(f.events,[['KeyZ',true],['KeyZ',false]]);
+  // The browser still reports the key physically held via auto-repeat.
+  assert.equal(physical('KeyZ',true,true),true,'host-attested repeat must rebuild');
+  assert.deepEqual(f.events,[['KeyZ',true],['KeyZ',false],['KeyZ',true]]);
+  // And the rebuilt owner releases normally once the key is let go.
+  assert.equal(physical('KeyZ',false),true);
+  assert.deepEqual(f.events,[['KeyZ',true],['KeyZ',false],['KeyZ',true],['KeyZ',false]]);
+});
+test('virtual and mapper repeats never rebuild cleared ownership',()=>{
+  const f=fixture();
+  assert.equal(f.keyboard.event({code:'KeyZ',key:'z',keyCode:90,location:0,repeat:true,inputSource:'virtual'},true,'hosted'),false);
+  assert.deepEqual(f.events,[],'first virtual repeat with no owner reports nothing');
+  f.keyboard.event({code:'KeyZ',key:'z',keyCode:90,location:0},true,'hosted');assert.deepEqual(f.events,[['KeyZ',true]]);
+  f.keyboard.clear();
+  assert.equal(f.keyboard.event({code:'KeyZ',key:'z',keyCode:90,location:0,repeat:true,inputSource:'virtual'},true,'hosted'),false);
+  assert.deepEqual(f.events,[['KeyZ',true],['KeyZ',false]],'virtual repeat cannot re-arm cleared input');
+});
