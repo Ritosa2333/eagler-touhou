@@ -58,11 +58,11 @@ function reply(message, ok, extra) {
 
 function surface() {
   const host = runtime && runtime.host;
-  if (!host || typeof host.InputSurface !== "function") return "play";
+  if (!host || typeof host.InputSurface !== "function") return null;
   const value = host.InputSurface();
   if (value === 2) return "dialogue";
-  if (value === 0) return "menu";
-  return "play";
+  if (value === 1) return "play";
+  return "menu";
 }
 
 const files = createFileBridge({ getRuntime: () => runtime, reply });

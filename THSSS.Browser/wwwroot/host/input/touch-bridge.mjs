@@ -15,13 +15,23 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
   const pulses = [];
   let previous = null;
   let focus = false;
+  let fire = false;
 
   function settings() {
     return options() || {};
   }
 
+  function reported() {
+    const value = surface();
+    return value === "menu" || value === "dialogue" || value === "play" ? value : null;
+  }
+
   function mode() {
-    return surface() || "play";
+    return reported() || "play";
+  }
+
+  function applyFire() {
+    keys.setKey("Z", fire && reported() === "play", "touch-fire");
   }
 
   function sensitivity() {
@@ -54,7 +64,8 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
 
   function controls(message) {
     const next = message || {};
-    keys.setKey("Z", !!next.fireEnabled, "touch-fire");
+    fire = !!next.fireEnabled;
+    applyFire();
     keys.setKey("ShiftKey", !!next.focusEnabled, "touch-focus");
     focus = !!next.focusEnabled;
     if (previous && next.bombSerial !== previous.bombSerial) pulse("X");
@@ -115,6 +126,7 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
   }
 
   function presented() {
+    applyFire();
     releasePulses();
     const current = mode();
     keys.setKey("ControlKey", gestures.skipping(now(), current), "dialogue-skip");

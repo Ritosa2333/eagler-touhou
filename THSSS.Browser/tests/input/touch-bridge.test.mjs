@@ -7,10 +7,11 @@ function harness(options = {}, surface = "play") {
   const sent = [];
   const keys = createKeyOwners((name, down) => sent.push([name, down]));
   const shifts = [];
+  const scene = { value: surface };
   let clock = 0;
   const bridge = createTouchBridge({
     keys,
-    surface: () => surface,
+    surface: () => scene.value,
     options: () => options,
     shift(x, y) {
       shifts.push([x, y]);
@@ -24,8 +25,18 @@ function harness(options = {}, surface = "play") {
     keys,
     bridge,
     at(value) { clock = value; },
+    scene,
   };
 }
+
+test("the fire latch holds Z only on a reported play surface", () => {
+  const menu = harness({}, "menu");
+  menu.bridge.controls({ fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
+  assert.equal(menu.keys.isDown("Z"), false);
+  const unknown = harness({}, null);
+  unknown.bridge.controls({ fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
+  assert.equal(unknown.keys.isDown("Z"), false);
+});
 
 test("shooting stays on until the fire latch is cleared", () => {
   const { bridge, keys, sent } = harness();
@@ -36,6 +47,14 @@ test("shooting stays on until the fire latch is cleared", () => {
   bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
   assert.equal(keys.isDown("Z"), false);
   assert.deepEqual(sent.filter(([name]) => name === "Z"), [["Z", true], ["Z", false]]);
+  const resumed = harness();
+  resumed.bridge.controls({ fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
+  resumed.scene.value = "menu";
+  resumed.bridge.presented();
+  assert.equal(resumed.keys.isDown("Z"), false);
+  resumed.scene.value = "play";
+  resumed.bridge.presented();
+  assert.equal(resumed.keys.isDown("Z"), true);
 });
 
 test("a play drag moves along the path and a joystick uses the launcher axis", () => {
