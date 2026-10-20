@@ -25,12 +25,12 @@ export class LoadingPresentation {
     if(this.indicator)return;
     this.indicator=new MenuAnimation(this.sampler,'ascii',18);this.indicator.tick();
   }
-  startResources(){this.waiting=true;this.showIndicator();}
+  startResources({renderBase=null}={}){this.resourceBase=renderBase;this.waiting=true;this.showIndicator();}
   retireIndicator(){
     if(!this.indicator)return;
     this.indicator.interrupt(1);this.retiring.push(this.indicator);this.indicator=null;
   }
-  completeResources(){this.waiting=false;this.retireIndicator();}
+  completeResources(){this.waiting=false;this.resourceBase=null;this.retireIndicator();}
   waitForStartup(){
     //43f320 waits for at least180 startup frames, independently of worker
     //completion. Stage resource workers have no invented minimum duration.
@@ -54,6 +54,7 @@ export class LoadingPresentation {
     return [this.indicator,...this.retiring].filter(Boolean).flatMap(vm=>vm.poses().map(a=>({a,x:480,y:392,alpha:1})));
   }
   renderBase(fps=null){
+    if(!this.startup&&this.resourceBase){this.resourceBase(fps);this.renderOverlay();return;}
     const signature=this.signature?.poses().map(a=>({a,x:0,y:0,alpha:1}))??[];
     this.renderer.renderMenu(signature,[],fps,{clearColor:[0,0,0,1]});this.renderOverlay();
     //42ef00 counts actual startup draws; catching up several VM ticks in
