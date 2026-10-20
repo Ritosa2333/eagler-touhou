@@ -36,9 +36,15 @@ void awardPlayerGraze(float x, float y, float z) {
   eventBits |= 16;
 }
 void playerMissCollision() {
-  if (invuln || playerState != 1 || practice::tool(practice::Invulnerable))
+  if (invuln || playerState != 1)
     return;
   sound_system::queue.play(2, 0, false);
+  // Purple patches43837f to state1 and bypasses the death-effect birth,
+  // while retaining4384fd's miss sound and438546's six invulnerability ticks.
+  if (practice::tool(practice::Invulnerable)) {
+    invuln = 6;
+    return;
+  }
   // 438370 loses capture eligibility on collision, before the deathbomb window.
   spellState.onMiss(playerBomb.active);
   playerState = 4;
